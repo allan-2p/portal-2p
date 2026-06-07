@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { clients, type Segment } from "@/lib/mock-data";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { ChevronDown, Sparkles, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/segmentacao")({
   head: () => ({
