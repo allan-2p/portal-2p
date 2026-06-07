@@ -126,12 +126,12 @@ function SegmentacaoPage() {
                   const isOpen = expanded.has(c.id);
                   const generationPct = (c.generation / c.projection) * 100;
                   return (
-                    <>
+                    <Fragment key={c.id}>
                       <tr
-                        key={c.id}
                         onClick={() => toggle(c.id)}
                         className="border-b border-border/40 hover:bg-surface-2/50 cursor-pointer"
                       >
+
                         <td className="px-2">
                           <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
                         </td>
