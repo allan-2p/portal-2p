@@ -181,7 +181,7 @@ function SegmentacaoPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
                 <tr className="bg-surface-2 font-display font-bold border-t-2 border-primary/40">
