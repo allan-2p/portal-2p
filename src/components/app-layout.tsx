@@ -1,13 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Briefcase, KanbanSquare, Layers, Sparkles, Search, Bell } from "lucide-react";
+import { Home, KanbanSquare, Layers, Sparkles, Search, Bell } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import logo from "@/assets/2p-logo.jpg";
 import { AtlasPanel } from "./atlas-panel";
+import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { to: "/", label: "Home", icon: Home },
-  { to: "/carteira", label: "Carteira", icon: Briefcase },
   { to: "/pedidos", label: "Pedidos", icon: KanbanSquare },
   { to: "/segmentacao", label: "Segmentação", icon: Layers },
 ];
@@ -18,9 +18,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex bg-background">
-      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-surface/40 backdrop-blur">
+      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-surface/60 backdrop-blur">
         <div className="px-5 py-6 flex items-center gap-3">
-          <img src={logo} alt="2P" className="h-9 w-auto" />
+          <img src={logo} alt="2P" className="h-9 w-auto rounded" />
           <div>
             <div className="font-display font-bold text-base leading-none">Portal 2P</div>
             <div className="text-[11px] text-muted-foreground mt-1">Inteligência de vendas</div>
@@ -63,10 +63,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="flex-1 min-w-0">
-        <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-lg">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-lg">
           <div className="flex items-center gap-4 px-6 h-16">
             <div className="md:hidden flex items-center gap-2">
-              <img src={logo} alt="2P" className="h-7 w-auto" />
+              <img src={logo} alt="2P" className="h-7 w-auto rounded" />
               <span className="font-display font-bold">Portal 2P</span>
             </div>
             <div className="hidden md:flex items-center gap-2 flex-1 max-w-md">
@@ -79,7 +79,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </div>
             </div>
             <div className="flex items-center gap-2 ml-auto">
-              <button className="relative p-2 rounded-lg hover:bg-surface">
+              <ThemeToggle />
+              <button className="relative p-2 rounded-lg hover:bg-surface-2 border border-border bg-surface">
                 <Bell className="h-4 w-4 text-muted-foreground" />
                 <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
               </button>

@@ -1,28 +1,54 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { clients, portfolio, atlasInsights, tasks, monthSeries } from "@/lib/mock-data";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, CheckCircle2, Clock, TrendingUp } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Sparkles,
+  Target,
+  AlertTriangle,
+  Clock,
+  TrendingUp,
+  CheckCircle2,
+  Phone,
+  Mail,
+  Calendar,
+  Info,
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Home — Portal 2P" },
-      { name: "description", content: "Visão diária com insights do Atlas: oportunidades, riscos e plano de ação." },
+      { name: "description", content: "Visão da carteira, projeção vs realizado, tarefas do dia e sugestões do Atlas." },
     ],
   }),
   component: HomePage,
 });
 
-const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const fmt = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+// CSS-var resolved colors for Recharts (work in both themes)
+const C = {
+  axis: "var(--chart-axis)",
+  grid: "var(--border)",
+  projected: "var(--muted-foreground)",
+  generated: "var(--success)",
+  sold: "var(--primary)",
+};
 
 function HomePage() {
-  const topPerformers = [...clients].sort((a, b) => b.health - a.health).slice(0, 4);
-  const atRisk = [...clients].sort((a, b) => a.health - b.health).slice(0, 4);
-  const projectedToday = portfolio.projected;
-  const sold = portfolio.sold;
-  const pct = (sold / projectedToday) * 100;
+  const todayPct = (portfolio.sold / portfolio.projected) * 100;
+  const goalPct = (portfolio.achieved / portfolio.goal) * 100;
+
+  // Clientes ligados às tarefas de hoje
+  const taskClientNames = new Set(tasks.map((t) => t.client));
+  const taskInsights = atlasInsights.filter((i) => i.client && taskClientNames.has(i.client));
+
+  // Insights "fora da agenda": clientes sem tarefa hoje mas com follow-up sugerido
+  const offRadarInsights = atlasInsights.filter((i) => !i.client || !taskClientNames.has(i.client));
 
   return (
     <AppLayout>
@@ -32,196 +58,315 @@ function HomePage() {
           <div>
             <div className="text-sm text-muted-foreground">Bom dia, Bruno</div>
             <h1 className="text-3xl md:text-4xl font-bold mt-1">
-              Sua carteira está em <span className="text-gradient-primary">{pct.toFixed(0)}%</span> da meta de hoje
+              Sua carteira está em{" "}
+              <span className="text-gradient-primary">{todayPct.toFixed(0)}%</span> da meta de hoje
             </h1>
             <p className="text-sm text-muted-foreground mt-2">
               Atlas identificou {atlasInsights.length} ações que podem destravar R$ 104k esta semana.
             </p>
           </div>
-          <div className="flex gap-2">
-            <button className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm flex items-center gap-2 hover:opacity-90">
-              <Sparkles className="h-4 w-4" /> Ver plano do Atlas
-            </button>
-          </div>
+          <button className="px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm flex items-center gap-2 hover:opacity-90 self-start md:self-auto">
+            <Sparkles className="h-4 w-4" /> Ver plano do Atlas
+          </button>
         </div>
 
-        {/* KPI Strip */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard label="Vendido / Projetado" value={fmt(sold)} sub={`Meta hoje ${fmt(projectedToday)}`} trend={-9.3} accent="primary" />
-          <KpiCard label="Ticket Médio" value="R$ 18,27 mil" sub="Média 3M: R$ 20,68 mil" trend={-11.6} />
-          <KpiCard label="Conversão R$" value="25,63%" sub="Média 3M: 31,44%" trend={-5.8} />
-          <KpiCard label="Conversão Qtd" value="21,21%" sub="Média 3M: 33,52%" trend={-12.3} />
+        {/* KPI strip */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <Kpi label="Vendido / Projetado" value={fmt(portfolio.sold)} sub={`Meta hoje ${fmt(portfolio.projected)}`} trend={-9.3} highlight />
+          <Kpi label="Ticket Médio" value="R$ 18,27 mil" sub="Média 3M: R$ 20,68 mil" trend={-11.6} />
+          <Kpi label="Conversão R$" value="25,63%" sub="Média 3M: 31,44%" trend={-5.8} />
+          <Kpi label="Conversão Qtd" value="21,21%" sub="Média 3M: 33,52%" trend={-12.3} />
+          <Kpi label="Sem Cotar +30d" value="1.628" sub="clientes" />
+          <Kpi label="Sem Pedido +30d" value="1.778" sub="clientes" />
         </div>
 
-        {/* Atlas insights top row */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <div className="h-6 w-6 rounded-md bg-gradient-to-br from-primary to-[oklch(0.7_0.18_280)] flex items-center justify-center">
-                <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
-              Atlas recomenda
-            </h2>
-            <span className="text-xs text-muted-foreground">atualizado há 4min</span>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {atlasInsights.slice(0, 3).map((i) => (
-              <div key={i.id} className="glass rounded-2xl p-5 hover:border-primary/40 transition-colors group">
-                <div className="flex items-center gap-2 mb-3">
-                  {i.type === "opportunity" && <Target className="h-4 w-4 text-success" />}
-                  {i.type === "risk" && <AlertTriangle className="h-4 w-4 text-destructive" />}
-                  {i.type === "action" && <TrendingUp className="h-4 w-4 text-primary" />}
-                  <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                    {i.type === "opportunity" ? "Oportunidade" : i.type === "risk" ? "Risco" : "Ação"}
-                  </span>
-                  {i.impact && <span className="ml-auto text-xs text-primary font-medium">{i.impact}</span>}
+        {/* Meta do mês */}
+        <div className="glass rounded-2xl p-5">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+              <Target className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="font-display font-semibold">Meta do mês</div>
+                <div className="text-sm">
+                  <span className="text-primary font-bold">{fmt(portfolio.achieved)}</span>
+                  <span className="text-muted-foreground"> / {fmt(portfolio.goal)}</span>
                 </div>
-                <div className="font-display font-semibold leading-snug">{i.title}</div>
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{i.description}</p>
-                <button className="mt-4 text-xs font-medium text-primary flex items-center gap-1 hover:gap-2 transition-all">
-                  Criar plano de ação →
-                </button>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Main grid */}
-        <div className="grid lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 glass rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-display font-semibold">Vendas do mês</h3>
-                <p className="text-xs text-muted-foreground">Projetado · Gerado · Vendido</p>
+              <div className="h-2 mt-2 rounded-full bg-surface-2 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-[oklch(0.78_0.19_60)]"
+                  style={{ width: `${goalPct}%` }}
+                />
               </div>
-              <div className="text-right">
-                <div className="text-xs text-muted-foreground">Valor vendido</div>
-                <div className="font-display font-bold text-lg">{fmt(sold)}</div>
+              <div className="text-xs text-muted-foreground mt-1.5">
+                {goalPct.toFixed(2)}% alcançado · {todayPct.toFixed(0)}% do dia
               </div>
             </div>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthSeries} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="oklch(0.72 0.19 47)" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="oklch(0.72 0.19 47)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="oklch(0.72 0.17 155)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="oklch(0.72 0.17 155)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="day" stroke="oklch(0.55 0.015 250)" fontSize={11} tickLine={false} axisLine={false} interval={4} />
-                  <YAxis hide />
-                  <Tooltip
-                    contentStyle={{ background: "oklch(0.22 0.013 250)", border: "1px solid oklch(0.3 0.012 250)", borderRadius: 8, fontSize: 12 }}
-                    formatter={(v: number) => fmt(v)}
-                  />
-                  <Area type="monotone" dataKey="projected" stroke="oklch(0.55 0.015 250)" strokeDasharray="3 3" fill="none" />
-                  <Area type="monotone" dataKey="generated" stroke="oklch(0.72 0.17 155)" fill="url(#g2)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="sold" stroke="oklch(0.72 0.19 47)" fill="url(#g1)" strokeWidth={2.5} />
-                </AreaChart>
-              </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="glass rounded-2xl p-5">
+          <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+            <div>
+              <h3 className="font-display font-semibold">Projeção × Geração × Vendas</h3>
+              <p className="text-xs text-muted-foreground">Acumulado diário do mês</p>
+            </div>
+            <div className="flex gap-4 text-xs">
+              <Legenda color={C.projected} dashed label="Projetado" value={fmt(portfolio.projected)} />
+              <Legenda color={C.generated} label="Gerado" value={fmt(portfolio.generationMonth)} />
+              <Legenda color={C.sold} label="Vendido" value={fmt(portfolio.sold)} />
             </div>
           </div>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthSeries} margin={{ left: 0, right: 8, top: 10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="g-sold" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={C.sold} stopOpacity={0.35} />
+                    <stop offset="95%" stopColor={C.sold} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="g-gen" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={C.generated} stopOpacity={0.25} />
+                    <stop offset="95%" stopColor={C.generated} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="day" stroke={C.axis} fontSize={11} tickLine={false} axisLine={false} interval={4} />
+                <YAxis stroke={C.axis} fontSize={11} tickLine={false} axisLine={false} width={60} tickFormatter={(v) => `R$${Math.round(v / 1000)}k`} />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--chart-tooltip-bg)",
+                    border: "1px solid var(--chart-tooltip-border)",
+                    borderRadius: 10,
+                    fontSize: 12,
+                    color: "var(--foreground)",
+                    boxShadow: "0 8px 24px -8px rgba(0,0,0,0.15)",
+                  }}
+                  labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
+                  formatter={(v: number) => fmt(v)}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="projected"
+                  name="Projetado"
+                  stroke={C.projected}
+                  strokeDasharray="4 4"
+                  fill="none"
+                  strokeWidth={1.5}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="generated"
+                  name="Gerado"
+                  stroke={C.generated}
+                  fill="url(#g-gen)"
+                  strokeWidth={2}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="sold"
+                  name="Vendido"
+                  stroke={C.sold}
+                  fill="url(#g-sold)"
+                  strokeWidth={2.5}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
+        {/* Two columns: Tarefas + Off-radar */}
+        <div className="grid lg:grid-cols-2 gap-4">
+          {/* Coluna 1: Tarefas Salesforce + sugestões */}
           <div className="glass rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-semibold">Tarefas de hoje</h3>
+              <div>
+                <h3 className="font-display font-semibold flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  Agenda de hoje
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Tarefas do Salesforce + sugestões do Atlas para cada cliente
+                </p>
+              </div>
               <span className="text-xs text-muted-foreground">{tasks.length} pendentes</span>
             </div>
-            <div className="space-y-2">
-              {tasks.map((t) => (
-                <div key={t.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-surface-2 group cursor-pointer">
-                  <button className="h-5 w-5 rounded-md border-2 border-border group-hover:border-primary flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="h-3 w-3 text-primary opacity-0 group-hover:opacity-50" />
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{t.title}</div>
-                    <div className="text-xs text-muted-foreground truncate">{t.client}</div>
+
+            <div className="space-y-3">
+              {tasks.map((t) => {
+                const insight = atlasInsights.find((i) => i.client === t.client);
+                return (
+                  <div key={t.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <button className="mt-0.5 h-5 w-5 rounded-md border-2 border-border hover:border-primary flex items-center justify-center shrink-0 group">
+                        <CheckCircle2 className="h-3 w-3 text-primary opacity-0 group-hover:opacity-60" />
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold truncate">{t.title}</div>
+                            <div className="text-xs text-muted-foreground truncate">{t.client}</div>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded shrink-0 flex items-center gap-1 ${
+                            t.priority === "high" ? "bg-destructive/15 text-destructive" :
+                            t.priority === "medium" ? "bg-warning/20 text-[color:var(--warning)]" :
+                            "bg-surface-2 text-muted-foreground"
+                          }`}>
+                            <Clock className="h-2.5 w-2.5" /> {t.due}
+                          </span>
+                        </div>
+                        {insight && (
+                          <div className="mt-3 rounded-lg bg-primary/8 border border-primary/20 p-2.5">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Sparkles className="h-3 w-3 text-primary" />
+                              <span className="text-[10px] uppercase tracking-wider font-semibold text-primary">
+                                Atlas sugere
+                              </span>
+                              {insight.impact && (
+                                <span className="ml-auto text-[10px] font-medium text-primary">{insight.impact}</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-foreground/90 leading-snug">{insight.title}</div>
+                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{insight.description}</p>
+                          </div>
+                        )}
+                        <div className="flex gap-1.5 mt-2.5">
+                          <button className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1">
+                            <Phone className="h-3 w-3" /> Ligar
+                          </button>
+                          <button className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1">
+                            <Mail className="h-3 w-3" /> E-mail
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className={`text-[10px] px-2 py-0.5 rounded shrink-0 flex items-center gap-1 ${
-                    t.priority === "high" ? "bg-destructive/15 text-destructive" :
-                    t.priority === "medium" ? "bg-warning/15 text-[color:var(--warning)]" :
-                    "bg-surface-2 text-muted-foreground"
-                  }`}>
-                    <Clock className="h-2.5 w-2.5" /> {t.due}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
-        </div>
 
-        {/* Top performers vs at risk */}
-        <div className="grid lg:grid-cols-2 gap-4">
-          <ClientList title="Indo bem" subtitle="Clientes saudáveis na sua carteira" data={topPerformers} good />
-          <ClientList title="Precisa de atenção" subtitle="Risco de churn ou queda de geração" data={atRisk} />
-        </div>
+          {/* Coluna 2: Off-radar (sem tarefa hoje, mas Atlas vê algo) */}
+          <div className="glass rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-display font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Atlas radar
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Clientes sem tarefa hoje, mas com sinal de oportunidade ou risco
+                </p>
+              </div>
+              <span className="text-xs text-muted-foreground">{offRadarInsights.length} sinais</span>
+            </div>
 
-        <div className="text-center pt-4">
-          <Link to="/carteira" className="text-sm text-primary hover:underline">Ver carteira completa →</Link>
+            <div className="space-y-3">
+              {offRadarInsights.map((i) => {
+                const client = clients.find((c) => c.name === i.client);
+                const typeMeta =
+                  i.type === "opportunity"
+                    ? { Icon: TrendingUp, color: "text-success", bg: "bg-success/15", label: "Oportunidade" }
+                    : i.type === "risk"
+                    ? { Icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/15", label: "Risco" }
+                    : i.type === "trend"
+                    ? { Icon: Info, color: "text-[color:var(--atlas)]", bg: "bg-[color:var(--atlas)]/15", label: "Tendência" }
+                    : { Icon: TrendingUp, color: "text-primary", bg: "bg-primary/15", label: "Ação" };
+                const Icon = typeMeta.Icon;
+                return (
+                  <div
+                    key={i.id}
+                    className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`h-8 w-8 rounded-lg ${typeMeta.bg} flex items-center justify-center shrink-0`}>
+                        <Icon className={`h-4 w-4 ${typeMeta.color}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-[10px] uppercase tracking-wider font-semibold ${typeMeta.color}`}>
+                            {typeMeta.label}
+                          </span>
+                          {i.impact && (
+                            <span className="ml-auto text-[10px] font-medium text-primary">{i.impact}</span>
+                          )}
+                        </div>
+                        <div className="text-sm font-semibold leading-snug">{i.title}</div>
+                        {i.client && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {i.client}
+                            {client && <> · última interação {client.lastInteraction}</>}
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{i.description}</p>
+                        <div className="flex gap-1.5 mt-2.5">
+                          <button className="text-[11px] px-2 py-1 rounded bg-primary/15 text-primary hover:bg-primary/25 font-medium">
+                            Criar tarefa
+                          </button>
+                          <button className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-surface-2 text-muted-foreground">
+                            Dispensar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </AppLayout>
   );
 }
 
-function KpiCard({ label, value, sub, trend, accent }: { label: string; value: string; sub: string; trend: number; accent?: "primary" }) {
-  const up = trend >= 0;
+function Kpi({
+  label,
+  value,
+  sub,
+  trend,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  trend?: number;
+  highlight?: boolean;
+}) {
+  const up = (trend ?? 0) >= 0;
   return (
-    <div className={`glass rounded-2xl p-5 ${accent === "primary" ? "border-primary/30" : ""}`}>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="font-display font-bold text-2xl mt-1.5">{value}</div>
-      <div className="flex items-center gap-2 mt-2">
-        <span className={`text-xs flex items-center gap-0.5 ${up ? "text-success" : "text-destructive"}`}>
-          {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-          {Math.abs(trend).toFixed(1)}%
-        </span>
-        <span className="text-xs text-muted-foreground truncate">{sub}</span>
+    <div className={`glass rounded-xl p-4 ${highlight ? "border-primary/40" : ""}`}>
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className="font-display font-bold text-xl mt-1">{value}</div>
+      <div className="flex items-center gap-1.5 mt-1.5">
+        {trend !== undefined && (
+          <span className={`text-[11px] flex items-center gap-0.5 ${up ? "text-success" : "text-destructive"}`}>
+            {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+            {Math.abs(trend).toFixed(1)}%
+          </span>
+        )}
+        <span className="text-[11px] text-muted-foreground truncate">{sub}</span>
       </div>
     </div>
   );
 }
 
-function ClientList({ title, subtitle, data, good }: { title: string; subtitle: string; data: typeof clients; good?: boolean }) {
+function Legenda({ color, label, value, dashed }: { color: string; label: string; value: string; dashed?: boolean }) {
   return (
-    <div className="glass rounded-2xl p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="font-display font-semibold flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${good ? "bg-success" : "bg-destructive"}`} />
-            {title}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
-        </div>
-      </div>
-      <div className="space-y-2">
-        {data.map((c) => (
-          <div key={c.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-2 cursor-pointer">
-            <div className="h-9 w-9 rounded-lg bg-surface-2 flex items-center justify-center font-display font-bold text-sm text-primary">
-              {c.segment}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate">{c.name}</div>
-              <div className="text-xs text-muted-foreground">Última interação: {c.lastInteraction}</div>
-            </div>
-            <div className="text-right shrink-0">
-              <div className="text-sm font-semibold">{fmt(c.sales)}</div>
-              <div className="flex items-center gap-1 justify-end">
-                <div className="w-16 h-1.5 rounded-full bg-surface-2 overflow-hidden">
-                  <div
-                    className={`h-full ${c.health > 70 ? "bg-success" : c.health > 40 ? "bg-warning" : "bg-destructive"}`}
-                    style={{ width: `${c.health}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-muted-foreground">{c.health}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="flex items-center gap-2">
+      <span
+        className="inline-block w-6 h-0.5 rounded"
+        style={{
+          background: dashed
+            ? `repeating-linear-gradient(to right, ${color} 0 4px, transparent 4px 8px)`
+            : color,
+        }}
+      />
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-semibold text-foreground">{value}</span>
     </div>
   );
 }
