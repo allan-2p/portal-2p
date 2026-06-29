@@ -12,7 +12,9 @@ import {
   adminDeleteUser,
 } from "@/lib/users.functions";
 import { toast } from "sonner";
-import { Loader2, UserPlus, Mail, Shield, Trash2, Power } from "lucide-react";
+import { Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera } from "lucide-react";
+import { uploadAvatar } from "@/lib/avatar";
+import { useAvatarUrl } from "@/hooks/use-avatar-url";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
   head: () => ({ meta: [{ title: "Usuários — Portal 2P" }] }),
