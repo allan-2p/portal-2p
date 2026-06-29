@@ -451,4 +451,3 @@ function AvatarCell({ row, onUploaded }: { row: Row; onUploaded: () => void }) {
     </div>
   );
 }
-}
