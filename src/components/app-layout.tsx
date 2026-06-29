@@ -26,7 +26,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [atlasOpen, setAtlasOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, profile, roles, hasRole } = useAuth();
+  const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
+  useNotificationsDemoFeed();
 
   const nav = hasRole("admin")
     ? [...baseNav, { to: "/usuarios", label: "Usuários", icon: Users }]
