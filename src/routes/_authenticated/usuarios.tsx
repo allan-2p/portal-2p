@@ -157,6 +157,7 @@ function UsuariosPage() {
           <table className="w-full text-sm">
             <thead className="bg-surface/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
+                <th className="px-4 py-3"></th>
                 <th className="text-left px-4 py-3 font-medium">Nome</th>
                 <th className="text-left px-4 py-3 font-medium">E-mail</th>
                 <th className="text-left px-4 py-3 font-medium">Equipe</th>
@@ -168,19 +169,22 @@ function UsuariosPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-muted-foreground">
+                  <td colSpan={7} className="text-center py-10 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-muted-foreground">
+                  <td colSpan={7} className="text-center py-10 text-muted-foreground">
                     Nenhum usuário ainda.
                   </td>
                 </tr>
               ) : (
                 rows.map((r) => (
                   <tr key={r.id} className="border-t border-border">
+                    <td className="px-4 py-3 w-14">
+                      <AvatarCell row={r} onUploaded={load} />
+                    </td>
                     <td className="px-4 py-3 font-medium">{r.full_name ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.email}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.equipe ?? "—"}</td>
