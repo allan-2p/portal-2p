@@ -321,16 +321,14 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-2">
-              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90">
-                <Phone className="h-4 w-4" /> Ligar
-              </button>
-              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-surface-2 text-sm font-medium hover:bg-surface">
-                <Mail className="h-4 w-4" /> E-mail
-              </button>
-              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-surface-2 text-sm font-medium hover:bg-surface">
-                <Calendar className="h-4 w-4" /> Criar tarefa
-              </button>
+            <div className="rounded-xl bg-surface-2 border border-border p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Observações (Salesforce)</span>
+              </div>
+              <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
+                {client.notes ?? "Sem observações registradas no Salesforce para este cliente."}
+              </p>
             </div>
           </div>
         </div>
@@ -338,3 +336,28 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
     </>
   );
 }
+
+function SortableTh({ label, k, sortKey, sortDir, onSort, align, className }: {
+  label: string;
+  k: SortKey;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (k: SortKey) => void;
+  align: "left" | "right" | "center";
+  className?: string;
+}) {
+  const active = sortKey === k;
+  const alignCls = align === "right" ? "text-right justify-end" : align === "center" ? "text-center justify-center" : "text-left justify-start";
+  return (
+    <th className={cn("px-4 py-2.5", className)}>
+      <button
+        onClick={() => onSort(k)}
+        className={cn("inline-flex items-center gap-1 w-full hover:text-foreground transition-colors", alignCls, active && "text-primary")}
+      >
+        {label}
+        {active ? (sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />) : <ChevronsUpDown className="h-3 w-3 opacity-50" />}
+      </button>
+    </th>
+  );
+}
+
