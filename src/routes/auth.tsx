@@ -57,19 +57,22 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Bem-vindo de volta!");
-        navigate({ to: "/" });
+        setSplash(true);
+        setTimeout(() => navigate({ to: "/" }), 1100);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro ao entrar";
       toast.error(msg.includes("Invalid login") ? "E-mail ou senha incorretos." : msg);
       setShake((s) => s + 1);
-    } finally {
       setLoading(false);
+      return;
     }
+    setLoading(false);
   }
 
   return (
     <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
+      {splash && <LoginSplash />}
       {/* ambient — single soft glow */}
       <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[640px] w-[640px] rounded-full bg-primary/10 blur-[140px]" />
 
