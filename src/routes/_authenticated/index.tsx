@@ -268,6 +268,16 @@ function HomePage() {
           </div>
         </div>
 
+        {/* Seção: Pipeline */}
+        <div>
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <h2 className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-semibold">Pipeline comercial</h2>
+              <h3 className="font-display font-bold text-xl mt-1">Orçamentos & Previsões de Fechamento</h3>
+            </div>
+          </div>
+        </div>
+
         {/* Orçamentos + Previsão */}
         <div className="grid lg:grid-cols-2 gap-4">
           <div className="glass rounded-2xl p-5">
