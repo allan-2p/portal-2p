@@ -174,14 +174,25 @@ function AuthPage() {
                   <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     Senha
                   </label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-0 py-2.5 bg-transparent border-0 border-b border-border text-sm transition-colors focus:outline-none focus:border-primary placeholder:text-muted-foreground/60"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-0 py-2.5 pr-8 bg-transparent border-0 border-b border-border text-sm transition-colors focus:outline-none focus:border-primary placeholder:text-muted-foreground/60"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      tabIndex={-1}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               )}
 
