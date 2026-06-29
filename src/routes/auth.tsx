@@ -1,12 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Lock, Sparkles, TrendingUp, Package, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
 import logo from "@/assets/2p-logo.jpg";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -19,36 +18,12 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0 },
-};
-
-function BentoCard({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  return (
-    <motion.div
-      variants={fadeUp}
-      initial="hidden"
-      animate="show"
-      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay }}
-      className={cn(
-        "relative rounded-2xl border border-border/70 bg-card overflow-hidden",
-        "shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.08)]",
-        className,
-      )}
-    >
-      {children}
-    </motion.div>
-  );
-}
+const ACTIVE_SELLERS = [
+  "https://i.pravatar.cc/80?img=12",
+  "https://i.pravatar.cc/80?img=32",
+  "https://i.pravatar.cc/80?img=47",
+  "https://i.pravatar.cc/80?img=68",
+];
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -91,207 +66,153 @@ function AuthPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background overflow-hidden">
-      {/* ambient background — radial dot grid + warm glow */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.35] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--foreground) 18%, transparent) 1px, transparent 0)",
-          backgroundSize: "22px 22px",
-        }}
-      />
-      <div className="pointer-events-none absolute -top-32 -left-32 h-[520px] w-[520px] rounded-full bg-primary/25 blur-[120px]" />
-      <div className="pointer-events-none absolute -bottom-40 -right-20 h-[480px] w-[480px] rounded-full bg-[oklch(0.78_0.18_60)]/20 blur-[140px]" />
+    <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
+      {/* ambient — single soft glow */}
+      <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[640px] w-[640px] rounded-full bg-primary/10 blur-[140px]" />
 
       {/* top bar */}
-      <header className="relative z-10 flex items-center justify-between px-6 md:px-10 py-5">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="2P" className="h-9 w-auto rounded-lg ring-1 ring-border" />
-          <div>
-            <div className="font-display font-bold text-base leading-none">Portal 2P</div>
-            <div className="text-[11px] text-muted-foreground mt-1">Inteligência de vendas</div>
-          </div>
+      <header className="relative z-10 flex items-center justify-between px-6 md:px-12 py-6">
+        <div className="flex items-center gap-2.5">
+          <img src={logo} alt="2P" className="h-8 w-auto rounded-md" />
+          <span className="font-display font-semibold text-sm tracking-tight">Portal 2P</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground px-2.5 py-1 rounded-full border border-border bg-card/60">
-            <Lock className="h-3 w-3" /> Acesso restrito
-          </span>
-          <ThemeToggle />
-        </div>
+        <ThemeToggle />
       </header>
 
-      {/* bento grid */}
-      <main className="relative z-10 px-4 md:px-10 pb-10">
-        <div className="mx-auto max-w-7xl grid gap-4 lg:grid-cols-12 lg:grid-rows-[auto_auto_auto]">
-          {/* Hero card */}
-          <BentoCard className="lg:col-span-7 lg:row-span-2 p-8 md:p-12" delay={0.05}>
-            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary/5" />
-            <div className="relative flex flex-col h-full">
-              <div className="inline-flex items-center gap-2 text-[11px] font-medium text-muted-foreground self-start px-2.5 py-1 rounded-full border border-border bg-background/60">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
-                </span>
+      {/* content */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-6 pb-16">
+        <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+          {/* Left — narrative */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-10"
+          >
+            <div className="space-y-6">
+              <span className="inline-flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                 Portal interno · time 2P
-              </div>
-
-              <h1 className="font-display font-bold tracking-tight text-4xl md:text-5xl lg:text-6xl leading-[1.02] mt-8">
-                Inteligência<br />que move <span className="text-primary">metas.</span>
+              </span>
+              <h1 className="font-display font-semibold tracking-tight text-[44px] md:text-[56px] leading-[1.02]">
+                Inteligência
+                <br />
+                que move <span className="text-primary">metas.</span>
               </h1>
-              <p className="text-base md:text-lg text-muted-foreground mt-5 max-w-md leading-relaxed">
+              <p className="text-[15px] text-muted-foreground max-w-md leading-relaxed">
                 Carteira, pedidos e insights do Atlas em uma única tela — feita para quem vende.
               </p>
-
-              <div className="mt-auto pt-10 flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="flex -space-x-2">
-                  {["#ff6b35", "#1a1a2e", "#f7931e"].map((c) => (
-                    <span key={c} className="h-6 w-6 rounded-full ring-2 ring-card" style={{ background: c }} />
-                  ))}
-                </div>
-                <span>Vendedores ativos no Portal hoje</span>
-              </div>
             </div>
-          </BentoCard>
 
-          {/* Form card */}
-          <BentoCard className="lg:col-span-5 lg:row-span-3 p-7 md:p-9" delay={0.12}>
-            <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-60 pointer-events-none" />
-            <motion.div
-              key={shake}
-              animate={shake ? { x: [0, -6, 6, -4, 4, 0] } : {}}
-              transition={{ duration: 0.4 }}
-              className="relative flex flex-col h-full"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="font-display font-semibold text-xl">
-                  {resetMode ? "Recuperar senha" : "Entrar na sua conta"}
-                </h2>
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary px-2 py-0.5 rounded-full bg-primary/10">
-                  <Sparkles className="h-3 w-3" /> Atlas
-                </span>
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-2">
+                {ACTIVE_SELLERS.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt=""
+                    className="h-7 w-7 rounded-full ring-2 ring-background object-cover"
+                  />
+                ))}
               </div>
-              <p className="text-sm text-muted-foreground mt-1.5">
-                {resetMode ? "Enviamos um link de redefinição." : "Use seu e-mail corporativo 2P."}
-              </p>
+              <span className="text-xs text-muted-foreground">
+                Vendedores ativos no Portal hoje
+              </span>
+            </div>
 
-              <form onSubmit={handleSubmit} className="mt-7 space-y-4 flex-1 flex flex-col">
+            <div className="pt-6 border-t border-border/60 max-w-md">
+              <p className="font-display italic text-[15px] leading-snug text-foreground/80">
+                "Inovação e parceria é o que nos move!"
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Right — form */}
+          <motion.div
+            key={shake}
+            initial={{ opacity: 0, y: 12 }}
+            animate={
+              shake
+                ? { x: [0, -6, 6, -4, 4, 0], opacity: 1, y: 0 }
+                : { opacity: 1, y: 0 }
+            }
+            transition={{ duration: shake ? 0.4 : 0.6, ease: [0.22, 1, 0.36, 1], delay: shake ? 0 : 0.08 }}
+            className="w-full max-w-sm justify-self-center lg:justify-self-end"
+          >
+            <div className="space-y-1.5 mb-8">
+              <h2 className="font-display font-semibold text-2xl tracking-tight">
+                {resetMode ? "Recuperar senha" : "Entrar"}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {resetMode ? "Enviaremos um link de redefinição." : "Use seu e-mail corporativo 2P."}
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  E-mail
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="voce@2pgroup.com.br"
+                  className="w-full px-0 py-2.5 bg-transparent border-0 border-b border-border text-sm transition-colors focus:outline-none focus:border-primary placeholder:text-muted-foreground/60"
+                />
+              </div>
+
+              {!resetMode && (
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    E-mail
+                  <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Senha
                   </label>
                   <input
-                    type="email"
+                    type="password"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="voce@2pgroup.com.br"
-                    className="w-full px-3.5 py-3 rounded-xl bg-background border border-border text-sm transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-0 py-2.5 bg-transparent border-0 border-b border-border text-sm transition-colors focus:outline-none focus:border-primary placeholder:text-muted-foreground/60"
                   />
                 </div>
+              )}
 
-                {!resetMode && (
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Senha
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full px-3.5 py-3 rounded-xl bg-background border border-border text-sm transition-all focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-                    />
-                  </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="group mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-full bg-foreground text-background font-medium text-sm transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    {resetMode ? "Enviar instruções" : "Entrar"}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </>
                 )}
+              </button>
 
+              <div className="flex items-center justify-between text-xs pt-1">
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="group relative w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm transition-all hover:shadow-[0_8px_24px_-8px_var(--primary)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0"
+                  type="button"
+                  onClick={() => setResetMode((v) => !v)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      {resetMode ? "Enviar instruções" : "Entrar"}
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                    </>
-                  )}
+                  {resetMode ? "Voltar ao login" : "Esqueci minha senha"}
                 </button>
-
-                <div className="flex items-center justify-between text-xs pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setResetMode((v) => !v)}
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {resetMode ? "Voltar ao login" : "Esqueci minha senha"}
-                  </button>
-                  <span className="text-muted-foreground/70">v1.0</span>
-                </div>
-
-                <div className="mt-auto pt-6 border-t border-border/70">
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    Problemas para acessar? Fale com o administrador.
-                  </p>
-                </div>
-              </form>
-            </motion.div>
-          </BentoCard>
-
-          {/* Stat card 1 */}
-          <BentoCard className="lg:col-span-3 p-6 group hover:-translate-y-0.5 transition-transform" delay={0.2}>
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Vendido no mês
-              </span>
-              <TrendingUp className="h-3.5 w-3.5 text-primary" />
-            </div>
-            <div className="font-display font-bold text-3xl mt-3 tracking-tight">R$ 38M</div>
-            <div className="text-xs text-success mt-1">+12% vs. meta</div>
-          </BentoCard>
-
-          {/* Stat card 2 */}
-          <BentoCard className="lg:col-span-2 p-6 group hover:-translate-y-0.5 transition-transform" delay={0.25}>
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Pedidos
-              </span>
-              <Package className="h-3.5 w-3.5 text-primary" />
-            </div>
-            <div className="font-display font-bold text-3xl mt-3 tracking-tight">1.2k</div>
-            <div className="text-xs text-muted-foreground mt-1">ativos hoje</div>
-          </BentoCard>
-
-          {/* Tag Atlas (full width on the row) */}
-          <BentoCard className="lg:col-span-2 p-6 bg-gradient-to-br from-primary/10 via-card to-card" delay={0.3}>
-            <div className="flex flex-col h-full justify-between">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <div>
-                <div className="font-display font-semibold text-sm leading-tight">Atlas AI</div>
-                <div className="text-[11px] text-muted-foreground mt-1">sugestões em tempo real</div>
+                <span className="text-muted-foreground/60">v1.0</span>
               </div>
-            </div>
-          </BentoCard>
-
-          {/* Quote */}
-          <BentoCard className="lg:col-span-7 p-6 md:p-7" delay={0.35}>
-            <div className="flex items-start gap-4">
-              <div className="w-1 self-stretch rounded-full bg-primary shrink-0" />
-              <div>
-                <p className="font-display italic text-base md:text-lg leading-snug text-foreground/90">
-                  "Inovação e parceria é o que nos move!"
-                </p>
-                <div className="text-[11px] text-muted-foreground mt-2 uppercase tracking-wider">
-                  — Diretoria 2P Acessórios
-                </div>
-              </div>
-            </div>
-          </BentoCard>
+            </form>
+          </motion.div>
         </div>
       </main>
+
+      <footer className="relative z-10 px-6 md:px-12 py-5 text-[11px] text-muted-foreground/70 flex justify-between">
+        <span>© 2P Acessórios</span>
+        <span>Acesso restrito</span>
+      </footer>
     </div>
   );
 }
