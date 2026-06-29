@@ -6,9 +6,9 @@ import { Fragment, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/carteira")({
-  head: () => ({ meta: [{ title: "Carteira — Portal 2P" }, { name: "description", content: "Carteira rankeada com detalhamento por cliente." }] }),
-  component: CarteiraPage,
+export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
+  head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
+  component: SegmentacaoPage,
 });
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -16,7 +16,7 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 type SortKey = "rank" | "name" | "segment" | "projection" | "generation" | "sales" | "health";
 type SortDir = "asc" | "desc";
 
-function CarteiraPage() {
+function SegmentacaoPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
   const [filterSeg, setFilterSeg] = useState<Segment | "all">("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -25,7 +25,6 @@ function CarteiraPage() {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const search = useGlobalSearch().trim().toLowerCase();
 
-  // Rank por vendas (fixo, independente da ordenação visível)
   const ranked = useMemo(
     () => [...clients].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
     [],
@@ -76,8 +75,8 @@ function CarteiraPage() {
       <div className="max-w-[1600px] mx-auto space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Visão</div>
-            <h1 className="text-3xl font-bold mt-1">Carteira</h1>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Clientes</div>
+            <h1 className="text-3xl font-bold mt-1">Segmentação</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex bg-surface rounded-lg p-1 border border-border">
@@ -120,7 +119,7 @@ function CarteiraPage() {
 
         <div className="glass rounded-2xl overflow-hidden">
           <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-            <h2 className="font-display font-semibold">Carteira | Visão {period === "mensal" ? "Mensal" : "Trimestral"}</h2>
+            <h2 className="font-display font-semibold">Segmentação | Visão {period === "mensal" ? "Mensal" : "Trimestral"}</h2>
             <span className="text-xs text-muted-foreground">{visible.length} clientes</span>
           </div>
           <div className="overflow-x-auto">
@@ -221,7 +220,6 @@ function CarteiraPage() {
         </div>
       </div>
 
-      {/* Modal de detalhe */}
       {detailClient && <ClientDetailModal client={detailClient} onClose={() => setDetailClient(null)} />}
     </AppLayout>
   );
@@ -360,4 +358,3 @@ function SortableTh({ label, k, sortKey, sortDir, onSort, align, className }: {
     </th>
   );
 }
-
