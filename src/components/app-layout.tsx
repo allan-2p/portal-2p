@@ -175,9 +175,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
                           </div>
                         )}
                       </div>
+                      <Link
+                        to="/perfil"
+                        onClick={() => setMenuOpen(false)}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2"
+                      >
+                        <UserIcon className="h-4 w-4" />
+                        Meu perfil
+                      </Link>
                       <button
                         onClick={handleSignOut}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 text-destructive"
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 text-destructive border-t border-border"
                       >
                         <LogOut className="h-4 w-4" />
                         Sair
