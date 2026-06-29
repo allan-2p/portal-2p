@@ -86,6 +86,14 @@ export const portfolio = {
   withoutOrder: 1778,
   goal: 4550000,
   achieved: 423883,
+  // Semanal
+  weekGoal: 1100000,
+  weekAchieved: 612340,
+  weekProjected: 980000,
+  // Detalhes
+  retention: 82.4, // % carteira ativa do mês anterior que recomprou
+  recurrence: 64.1, // % vendas vindas de clientes recorrentes
+  newRecurringClients: 7,
 };
 
 export interface AtlasInsight {
@@ -98,44 +106,11 @@ export interface AtlasInsight {
 }
 
 export const atlasInsights: AtlasInsight[] = [
-  {
-    id: "i1",
-    type: "risk",
-    title: "Vertice Construtora desacelerou geração",
-    description: "Queda de 18% nas últimas 2 semanas. Cliente A — risco de churn na carteira top.",
-    client: "Vertice Construtora Solar",
-    impact: "R$ 79.2k em risco",
-  },
-  {
-    id: "i2",
-    type: "opportunity",
-    title: "Cipriani está pronto para upgrade",
-    description: "Compra recorrente há 4 meses + ticket subindo. Sugiro apresentar linha premium de limpadores.",
-    client: "Cipriani Engenharia Solar",
-    impact: "+R$ 12k potenciais",
-  },
-  {
-    id: "i3",
-    type: "action",
-    title: "3 clientes A sem interação há +10 dias",
-    description: "Economy Solar, ALC Solar e Enertrend. Recomendo follow-up esta semana.",
-    impact: "Carteira saudável",
-  },
-  {
-    id: "i4",
-    type: "trend",
-    title: "Conversão R$ abaixo da média 3M",
-    description: "25,63% vs 31,44%. Tendência: clientes pedindo prazos maiores. Considere revisar política comercial.",
-    impact: "-5,8 p.p.",
-  },
-  {
-    id: "i5",
-    type: "opportunity",
-    title: "Sol Engenharia em ritmo de fechamento",
-    description: "Geração 86% da projeção. Próximo follow-up pode converter R$ 13k já em junho.",
-    client: "Sol Engenharia Energéticas",
-    impact: "+R$ 13k em junho",
-  },
+  { id: "i1", type: "risk", title: "Vertice Construtora desacelerou geração", description: "Queda de 18% nas últimas 2 semanas. Cliente A — risco de churn na carteira top.", client: "Vertice Construtora Solar", impact: "R$ 79.2k em risco" },
+  { id: "i2", type: "opportunity", title: "Cipriani está pronto para upgrade", description: "Compra recorrente há 4 meses + ticket subindo. Sugiro apresentar linha premium de limpadores.", client: "Cipriani Engenharia Solar", impact: "+R$ 12k potenciais" },
+  { id: "i3", type: "action", title: "3 clientes A sem interação há +10 dias", description: "Economy Solar, ALC Solar e Enertrend. Recomendo follow-up esta semana.", impact: "Carteira saudável" },
+  { id: "i4", type: "trend", title: "Conversão R$ abaixo da média 3M", description: "25,63% vs 31,44%. Tendência: clientes pedindo prazos maiores. Considere revisar política comercial.", impact: "-5,8 p.p." },
+  { id: "i5", type: "opportunity", title: "Sol Engenharia em ritmo de fechamento", description: "Geração 86% da projeção. Próximo follow-up pode converter R$ 13k já em junho.", client: "Sol Engenharia Energéticas", impact: "+R$ 13k em junho" },
 ];
 
 export const tasks = [
@@ -145,3 +120,93 @@ export const tasks = [
   { id: "t4", title: "Treinamento — Linha Smat10", due: "Quinta 15h", priority: "low" as const, client: "Equipe" },
   { id: "t5", title: "Revisar pedido 40982", due: "Hoje", priority: "medium" as const, client: "AOLE Comércio" },
 ];
+
+// ====== Calendário de tarefas (Salesforce-like) ======
+export type TaskType = "Ligação" | "E-mail" | "Visita" | "Reunião" | "Follow-up";
+export interface CalendarTask {
+  id: string;
+  title: string;
+  client: string;
+  date: string; // YYYY-MM-DD
+  time: string;
+  priority: "high" | "medium" | "low";
+  type: TaskType;
+  notes?: string;
+}
+
+export const calendarTasks: CalendarTask[] = [
+  { id: "c1", title: "Ligar para ALC Solar", client: "ALC Solar - Renováveis", date: "2026-06-29", time: "14:00", priority: "high", type: "Ligação", notes: "Retomar contato após 12d sem interação." },
+  { id: "c2", title: "Enviar proposta limpador premium", client: "Cipriani Engenharia Solar", date: "2026-06-29", time: "17:00", priority: "high", type: "E-mail" },
+  { id: "c3", title: "Revisar pedido 40982", client: "AOLE Comércio", date: "2026-06-29", time: "11:30", priority: "medium", type: "Follow-up" },
+  { id: "c4", title: "Visita técnica agendada", client: "Vertice Construtora Solar", date: "2026-06-30", time: "09:00", priority: "medium", type: "Visita" },
+  { id: "c5", title: "Reunião comercial mensal", client: "Equipe", date: "2026-07-01", time: "10:00", priority: "low", type: "Reunião" },
+  { id: "c6", title: "Follow-up cotação 8421", client: "Sol Engenharia Energéticas", date: "2026-07-02", time: "15:00", priority: "medium", type: "Follow-up" },
+  { id: "c7", title: "Treinamento Linha Smat10", client: "Equipe", date: "2026-07-02", time: "16:00", priority: "low", type: "Reunião" },
+  { id: "c8", title: "Ligar Hoger Soluções", client: "Hoger Soluções em Energia", date: "2026-06-25", time: "10:00", priority: "low", type: "Ligação" },
+  { id: "c9", title: "Apresentar linha premium", client: "Gualberto & Lazarotto", date: "2026-06-26", time: "14:30", priority: "high", type: "Reunião" },
+  { id: "c10", title: "Pós-venda módulos", client: "Sunday Energia Solar LTDA", date: "2026-06-22", time: "11:00", priority: "low", type: "Ligação" },
+  { id: "c11", title: "Reunião kickoff projeto", client: "GTC Engenharia LTDA", date: "2026-06-18", time: "09:30", priority: "high", type: "Reunião" },
+  { id: "c12", title: "E-mail follow-up cotação", client: "Maxpower Comércio Placas", date: "2026-06-15", time: "13:00", priority: "medium", type: "E-mail" },
+  { id: "c13", title: "Visita comercial", client: "JN Construções Ecoeficientes", date: "2026-06-12", time: "10:00", priority: "high", type: "Visita" },
+  { id: "c14", title: "Renegociar prazo de pagamento", client: "Economy Solar LTDA", date: "2026-07-03", time: "11:00", priority: "high", type: "Ligação" },
+  { id: "c15", title: "Apresentação técnica", client: "Retrofit Elétrica Industrial", date: "2026-07-06", time: "14:00", priority: "medium", type: "Reunião" },
+  { id: "c16", title: "Ligar Solaron Franquias", client: "Solaron Franquias LTDA", date: "2026-07-07", time: "16:00", priority: "high", type: "Ligação" },
+  { id: "c17", title: "Visita pós-instalação", client: "Elo Solar LTDA", date: "2026-07-08", time: "09:00", priority: "low", type: "Visita" },
+  { id: "c18", title: "Reunião carteira A", client: "Equipe", date: "2026-07-10", time: "10:00", priority: "medium", type: "Reunião" },
+  { id: "c19", title: "Follow-up proposta Vertice", client: "Vertice Construtora Solar", date: "2026-06-29", time: "10:00", priority: "high", type: "Follow-up" },
+  { id: "c20", title: "E-mail boas-vindas", client: "Solarwave Energia", date: "2026-07-15", time: "09:00", priority: "low", type: "E-mail" },
+];
+
+// ====== Orçamentos em aberto ======
+export type BudgetStage = "Projeto Fechado" | "Projeto Não Fechado" | "Estoque" | "Em Negociação";
+export interface Budget {
+  id: string;
+  code: string;
+  client: string;
+  value: number;
+  stage: BudgetStage;
+  createdAt: string;
+}
+export const budgets: Budget[] = [
+  { id: "b1", code: "ORC-9821", client: "Vertice Construtora Solar", value: 84200, stage: "Em Negociação", createdAt: "20/06/2026" },
+  { id: "b2", code: "ORC-9817", client: "Cipriani Engenharia Solar", value: 32100, stage: "Projeto Fechado", createdAt: "18/06/2026" },
+  { id: "b3", code: "ORC-9810", client: "GTC Engenharia LTDA", value: 18900, stage: "Projeto Não Fechado", createdAt: "15/06/2026" },
+  { id: "b4", code: "ORC-9805", client: "Sol Engenharia Energéticas", value: 27600, stage: "Estoque", createdAt: "12/06/2026" },
+  { id: "b5", code: "ORC-9801", client: "Jislaine Farias dos Anjos", value: 14750, stage: "Em Negociação", createdAt: "10/06/2026" },
+  { id: "b6", code: "ORC-9795", client: "Gualberto & Lazarotto", value: 22300, stage: "Projeto Fechado", createdAt: "08/06/2026" },
+  { id: "b7", code: "ORC-9790", client: "Maxpower Comércio Placas", value: 9800, stage: "Em Negociação", createdAt: "05/06/2026" },
+];
+
+// ====== Previsão de fechamento ======
+export interface Forecast {
+  id: string;
+  client: string;
+  value: number;
+  expectedClose: string; // YYYY-MM-DD
+  probability: number; // 0-100
+  note?: string;
+}
+export const forecasts: Forecast[] = [
+  { id: "f1", client: "Vertice Construtora Solar", value: 84200, expectedClose: "2026-06-20", probability: 70, note: "Aguardando assinatura — passou da data!" },
+  { id: "f2", client: "Cipriani Engenharia Solar", value: 32100, expectedClose: "2026-07-02", probability: 85 },
+  { id: "f3", client: "Sol Engenharia Energéticas", value: 27600, expectedClose: "2026-07-05", probability: 75 },
+  { id: "f4", client: "GTC Engenharia LTDA", value: 18900, expectedClose: "2026-06-25", probability: 60, note: "Cliente reavaliando escopo — atrasado." },
+  { id: "f5", client: "Gualberto & Lazarotto", value: 22300, expectedClose: "2026-07-10", probability: 90 },
+  { id: "f6", client: "Jislaine Farias dos Anjos", value: 14750, expectedClose: "2026-07-15", probability: 50 },
+  { id: "f7", client: "Maxpower Comércio Placas", value: 9800, expectedClose: "2026-07-20", probability: 45 },
+];
+
+// ====== Séries separadas para gráficos ======
+export const generationSeries = Array.from({ length: 30 }, (_, i) => {
+  const day = i + 1;
+  const projected = Math.round(50000 + day * 3000 + Math.random() * 5000);
+  const generated = day <= 29 ? Math.round(projected * (0.85 + Math.random() * 0.2)) : null;
+  return { day: `${day.toString().padStart(2, "0")}/06`, projected, generated };
+});
+
+export const salesSeries = Array.from({ length: 30 }, (_, i) => {
+  const day = i + 1;
+  const projected = Math.round(35000 + day * 2200 + Math.random() * 4000);
+  const sold = day <= 29 ? Math.round(projected * (0.55 + Math.random() * 0.25)) : null;
+  return { day: `${day.toString().padStart(2, "0")}/06`, projected, sold };
+});

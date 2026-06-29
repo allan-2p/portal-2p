@@ -1,11 +1,11 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Sparkles, Search, Users, LogOut, ShieldCheck, User as UserIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Home, KanbanSquare, Layers, Search, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/2p-logo.jpg";
-import { AtlasPanel } from "./atlas-panel";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationsDropdown } from "./notifications-dropdown";
+import { AtlasFab } from "./atlas-fab";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
@@ -16,30 +16,43 @@ import { toast } from "sonner";
 
 const baseNav = [
   { to: "/", label: "Home", icon: Home },
+  { to: "/tarefas", label: "Tarefas", icon: Calendar },
   { to: "/pedidos", label: "Pedidos", icon: KanbanSquare },
-  { to: "/segmentacao", label: "Segmentação", icon: Layers },
+  { to: "/carteira", label: "Carteira", icon: Layers },
+  { to: "/dashboards", label: "Dashboards", icon: BarChart3 },
 ];
+
+const COLLAPSE_KEY = "portal2p-sidebar-collapsed";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const [atlasOpen, setAtlasOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const { user, profile, roles, hasRole } = useAuth();
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
   useNotificationsDemoFeed();
+
+  useEffect(() => {
+    const saved = localStorage.getItem(COLLAPSE_KEY);
+    if (saved === "1") setCollapsed(true);
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((v) => {
+      const next = !v;
+      localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      return next;
+    });
+  };
 
   const nav = hasRole("admin")
     ? [...baseNav, { to: "/usuarios", label: "Usuários", icon: Users }]
     : baseNav;
 
   const initials = (profile?.full_name ?? user?.email ?? "U")
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+    .split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -49,28 +62,29 @@ export function AppLayout({ children }: { children: ReactNode }) {
   async function handlePromote() {
     try {
       const res = await bootstrap();
-      if (res.promoted) {
-        toast.success("Você agora é administrador.");
-        location.reload();
-      } else {
-        toast.info("Já existe um administrador.");
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
+      if (res.promoted) { toast.success("Você agora é administrador."); location.reload(); }
+      else toast.info("Já existe um administrador.");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
   }
 
   return (
     <div className="min-h-screen flex bg-background">
-      <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-surface/60 backdrop-blur">
-        <div className="px-5 py-6 flex items-center gap-3">
-          <img src={logo} alt="2P" className="h-9 w-auto rounded" />
-          <div>
-            <div className="font-display font-bold text-base leading-none">Portal 2P</div>
-            <div className="text-[11px] text-muted-foreground mt-1">Inteligência de vendas</div>
-          </div>
+      <aside
+        className={cn(
+          "hidden md:flex shrink-0 flex-col border-r border-border bg-surface/60 backdrop-blur transition-[width] duration-300 relative",
+          collapsed ? "w-16" : "w-64",
+        )}
+      >
+        <div className={cn("flex items-center gap-3 py-6", collapsed ? "px-3 justify-center" : "px-5")}>
+          <img src={logo} alt="2P" className="h-9 w-auto rounded shrink-0" />
+          {!collapsed && (
+            <div className="min-w-0">
+              <div className="font-display font-bold text-base leading-none truncate">Portal 2P</div>
+              <div className="text-[11px] text-muted-foreground mt-1 truncate">Inteligência de vendas</div>
+            </div>
+          )}
         </div>
-        <nav className="px-3 py-2 flex-1">
+        <nav className="px-2 py-2 flex-1">
           {nav.map((item) => {
             const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
             const Icon = item.icon;
@@ -78,31 +92,27 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
+                title={collapsed ? item.label : undefined}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all mb-1",
+                  "flex items-center gap-3 rounded-lg text-sm transition-all mb-1",
+                  collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
                   active
                     ? "bg-primary/15 text-primary font-medium"
                     : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                 )}
               >
-                <Icon className="h-4 w-4" />
-                {item.label}
+                <Icon className="h-4 w-4 shrink-0" />
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </Link>
             );
           })}
         </nav>
         <button
-          onClick={() => setAtlasOpen(true)}
-          className="mx-3 mb-4 glass rounded-xl p-4 text-left hover:glow-primary transition-all group"
+          onClick={toggleCollapsed}
+          className="absolute -right-3 top-7 h-6 w-6 rounded-full bg-surface border border-border flex items-center justify-center shadow hover:bg-surface-2 z-10"
+          aria-label="Recolher menu"
         >
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-[oklch(0.7_0.18_280)] flex items-center justify-center">
-              <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
-            </div>
-            <span className="font-display font-semibold text-sm">Atlas</span>
-            <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary">AI</span>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">5 insights novos para sua carteira hoje.</p>
+          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
         </button>
       </aside>
 
@@ -127,7 +137,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <button
                   onClick={handlePromote}
                   className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25"
-                  title="Promova-se a admin se for o primeiro usuário"
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
                   Tornar-me admin
@@ -135,60 +144,35 @@ export function AppLayout({ children }: { children: ReactNode }) {
               )}
               <ThemeToggle />
               <NotificationsDropdown />
-              <button
-                onClick={() => setAtlasOpen(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors text-sm font-medium"
-              >
-                <Sparkles className="h-4 w-4" />
-                Atlas
-              </button>
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
                   className="h-9 w-9 rounded-full overflow-hidden bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center font-semibold text-sm text-primary-foreground ring-2 ring-background"
                 >
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    initials
-                  )}
+                  {avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" /> : initials}
                 </button>
                 {menuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                     <div className="absolute right-0 top-10 z-50 w-60 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
                       <div className="px-4 py-3 border-b border-border">
-                        <div className="font-medium text-sm truncate">
-                          {profile?.full_name ?? user?.email}
-                        </div>
+                        <div className="font-medium text-sm truncate">{profile?.full_name ?? user?.email}</div>
                         <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
                         {roles.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {roles.map((r) => (
-                              <span
-                                key={r}
-                                className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary"
-                              >
+                              <span key={r} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary">
                                 {ROLE_LABELS[r]}
                               </span>
                             ))}
                           </div>
                         )}
                       </div>
-                      <Link
-                        to="/perfil"
-                        onClick={() => setMenuOpen(false)}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2"
-                      >
-                        <UserIcon className="h-4 w-4" />
-                        Meu perfil
+                      <Link to="/perfil" onClick={() => setMenuOpen(false)} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2">
+                        <UserIcon className="h-4 w-4" /> Meu perfil
                       </Link>
-                      <button
-                        onClick={handleSignOut}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 text-destructive border-t border-border"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Sair
+                      <button onClick={handleSignOut} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 text-destructive border-t border-border">
+                        <LogOut className="h-4 w-4" /> Sair
                       </button>
                     </div>
                   </>
@@ -200,7 +184,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <div className="p-6">{children}</div>
       </main>
 
-      <AtlasPanel open={atlasOpen} onClose={() => setAtlasOpen(false)} />
+      <AtlasFab />
     </div>
   );
 }

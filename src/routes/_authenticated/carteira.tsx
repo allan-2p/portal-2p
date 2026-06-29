@@ -1,27 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { clients, type Segment } from "@/lib/mock-data";
-import { Fragment, useState } from "react";
-import { ChevronDown, Sparkles, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { clients, type Client, type Segment } from "@/lib/mock-data";
+import { Fragment, useMemo, useState } from "react";
+import { ChevronDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, Phone, Mail, X, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-
-export const Route = createFileRoute("/_authenticated/segmentacao")({
-  head: () => ({
-    meta: [
-      { title: "Segmentação — Portal 2P" },
-      { name: "description", content: "Carteira segmentada por A, B, C, D com detalhamento por cliente." },
-    ],
-  }),
-  component: SegmentacaoPage,
+export const Route = createFileRoute("/_authenticated/carteira")({
+  head: () => ({ meta: [{ title: "Carteira — Portal 2P" }, { name: "description", content: "Carteira rankeada com detalhamento por cliente." }] }),
+  component: CarteiraPage,
 });
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
-function SegmentacaoPage() {
+function CarteiraPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
   const [filterSeg, setFilterSeg] = useState<Segment | "all">("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [detailClient, setDetailClient] = useState<Client | null>(null);
+
+  // Rank por vendas
+  const ranked = useMemo(
+    () => [...clients].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
+    [],
+  );
+  const visible = ranked.filter((c) => filterSeg === "all" || c.segment === filterSeg);
+  const totals = visible.reduce(
+    (acc, c) => ({ projection: acc.projection + c.projection, generation: acc.generation + c.generation, sales: acc.sales + c.sales }),
+    { projection: 0, generation: 0, sales: 0 },
+  );
 
   const toggle = (id: string) => {
     setExpanded((prev) => {
@@ -31,22 +37,8 @@ function SegmentacaoPage() {
     });
   };
 
-  const visible = clients.filter((c) => filterSeg === "all" || c.segment === filterSeg);
-  const totals = visible.reduce(
-    (acc, c) => ({
-      projection: acc.projection + c.projection,
-      generation: acc.generation + c.generation,
-      sales: acc.sales + c.sales,
-    }),
-    { projection: 0, generation: 0, sales: 0 },
-  );
-
   const segments: { key: Segment | "all"; label: string }[] = [
-    { key: "all", label: "Todos" },
-    { key: "A", label: "A" },
-    { key: "B", label: "B" },
-    { key: "C", label: "C" },
-    { key: "D", label: "D" },
+    { key: "all", label: "Todos" }, { key: "A", label: "A" }, { key: "B", label: "B" }, { key: "C", label: "C" }, { key: "D", label: "D" },
   ];
 
   return (
@@ -54,18 +46,15 @@ function SegmentacaoPage() {
       <div className="max-w-[1600px] mx-auto space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Carteira</div>
-            <h1 className="text-3xl font-bold mt-1">Segmentação</h1>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Visão</div>
+            <h1 className="text-3xl font-bold mt-1">Carteira</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex bg-surface rounded-lg p-1 border border-border">
               {(["mensal", "trimestral"] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
+                <button key={p} onClick={() => setPeriod(p)}
                   className={cn("px-3 py-1.5 rounded-md text-sm capitalize",
-                    period === p ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
-                >{p}</button>
+                    period === p ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>{p}</button>
               ))}
             </div>
             <div className="flex items-center gap-3 px-4 py-2 rounded-lg glass">
@@ -79,12 +68,9 @@ function SegmentacaoPage() {
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground mr-2">Segmento:</span>
           {segments.map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setFilterSeg(s.key)}
+            <button key={s.key} onClick={() => setFilterSeg(s.key)}
               className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
-                filterSeg === s.key ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}
-            >
+                filterSeg === s.key ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}>
               {s.label}
             </button>
           ))}
@@ -112,13 +98,15 @@ function SegmentacaoPage() {
               <thead>
                 <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
                   <th className="w-10"></th>
+                  <th className="text-center px-2 py-2.5 w-16">Rank</th>
                   <th className="text-left px-4 py-2.5">Cliente</th>
                   <th className="text-center px-2 py-2.5">Seg</th>
-                  <th className="text-right px-4 py-2.5">Projeção {period === "mensal" ? "| Mensal" : "| Trim."}</th>
+                  <th className="text-right px-4 py-2.5">Projeção</th>
                   <th className="text-right px-4 py-2.5">Geração R$</th>
                   <th className="text-right px-4 py-2.5">Vendas R$</th>
                   <th className="text-center px-4 py-2.5">Tendência</th>
                   <th className="text-center px-4 py-2.5">Saúde</th>
+                  <th className="w-10"></th>
                 </tr>
               </thead>
               <tbody>
@@ -127,14 +115,11 @@ function SegmentacaoPage() {
                   const generationPct = (c.generation / c.projection) * 100;
                   return (
                     <Fragment key={c.id}>
-                      <tr
-                        onClick={() => toggle(c.id)}
-                        className="border-b border-border/40 hover:bg-surface-2/50 cursor-pointer"
-                      >
-
+                      <tr onClick={() => toggle(c.id)} className="border-b border-border/40 hover:bg-surface-2/50 cursor-pointer">
                         <td className="px-2">
                           <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
                         </td>
+                        <td className="px-2 py-3 text-center"><RankBadge rank={c.rank} /></td>
                         <td className="px-4 py-3 font-medium">{c.name}</td>
                         <td className="px-2 py-3 text-center">
                           <span className="inline-flex h-6 w-6 items-center justify-center rounded font-display font-bold text-xs bg-primary/15 text-primary">{c.segment}</span>
@@ -150,17 +135,24 @@ function SegmentacaoPage() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2 justify-center">
                             <div className="w-20 h-1.5 rounded-full bg-surface-2 overflow-hidden">
-                              <div className={cn("h-full",
-                                c.health > 70 ? "bg-success" : c.health > 40 ? "bg-warning" : "bg-destructive")}
-                                style={{ width: `${c.health}%` }} />
+                              <div className={cn("h-full", c.health > 70 ? "bg-success" : c.health > 40 ? "bg-warning" : "bg-destructive")} style={{ width: `${c.health}%` }} />
                             </div>
                             <span className="text-xs text-muted-foreground w-6">{c.health}</span>
                           </div>
                         </td>
+                        <td className="px-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDetailClient(c); }}
+                            className="p-1.5 rounded hover:bg-primary/15 text-muted-foreground hover:text-primary"
+                            title="Ver detalhes"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                        </td>
                       </tr>
                       {isOpen && (
                         <tr key={`${c.id}-d`} className="bg-surface-2/30 border-b border-border/40">
-                          <td colSpan={8} className="px-6 py-5">
+                          <td colSpan={10} className="px-6 py-5">
                             <div className="grid md:grid-cols-4 gap-4">
                               <Detail label="Projeção de Vendas" value={fmt(c.projection)} />
                               <Detail label="Geração R$" value={fmt(c.generation)} sub={`${generationPct.toFixed(0)}% da projeção`} />
@@ -185,21 +177,48 @@ function SegmentacaoPage() {
                   );
                 })}
                 <tr className="bg-surface-2 font-display font-bold border-t-2 border-primary/40">
-                  <td></td>
+                  <td colSpan={2}></td>
                   <td className="px-4 py-3">Total ({visible.length})</td>
                   <td></td>
                   <td className="px-4 py-3 text-right tabular-nums">{fmt(totals.projection)}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-success">{fmt(totals.generation)}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-primary">{fmt(totals.sales)}</td>
-                  <td colSpan={2}></td>
+                  <td colSpan={3}></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
+
+      {/* Modal de detalhe */}
+      {detailClient && <ClientDetailModal client={detailClient} onClose={() => setDetailClient(null)} />}
     </AppLayout>
   );
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  if (rank === 1) return (
+    <span className="inline-flex items-center justify-center gap-1 h-8 w-12 rounded-lg font-display font-bold text-sm bg-gradient-to-br from-[oklch(0.85_0.16_85)] to-[oklch(0.72_0.18_75)] text-white shadow-md">
+      <Trophy className="h-3.5 w-3.5" />1
+    </span>
+  );
+  if (rank === 2) return (
+    <span className="inline-flex items-center justify-center gap-1 h-8 w-12 rounded-lg font-display font-bold text-sm bg-gradient-to-br from-[oklch(0.82_0.02_250)] to-[oklch(0.65_0.02_250)] text-white shadow">
+      <Medal className="h-3.5 w-3.5" />2
+    </span>
+  );
+  if (rank === 3) return (
+    <span className="inline-flex items-center justify-center gap-1 h-8 w-12 rounded-lg font-display font-bold text-sm bg-gradient-to-br from-[oklch(0.65_0.12_50)] to-[oklch(0.5_0.13_45)] text-white shadow">
+      <Award className="h-3.5 w-3.5" />3
+    </span>
+  );
+  if (rank <= 10) return (
+    <span className="inline-flex h-7 w-9 items-center justify-center rounded-md font-display font-bold text-xs bg-primary/15 text-primary border border-primary/30">
+      {rank}
+    </span>
+  );
+  return <span className="text-xs text-muted-foreground tabular-nums">#{rank}</span>;
 }
 
 function Legend({ color, label }: { color: string; label: string }) {
@@ -218,5 +237,74 @@ function Detail({ label, value, sub }: { label: string; value: string; sub?: str
       <div className="font-display font-bold text-lg mt-1">{value}</div>
       {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
     </div>
+  );
+}
+
+function ClientDetailModal({ client, onClose }: { client: Client & { rank?: number }; onClose: () => void }) {
+  const conversion = ((client.sales / client.projection) * 100).toFixed(0);
+  const generationPct = ((client.generation / client.projection) * 100).toFixed(0);
+  return (
+    <>
+      <div className="fixed inset-0 bg-background/70 backdrop-blur-sm z-50" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-2xl pointer-events-auto overflow-hidden">
+          <div className="px-6 py-4 border-b border-border flex items-start justify-between gap-3 bg-gradient-to-r from-primary/10 to-transparent">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                {client.rank && <RankBadge rank={client.rank} />}
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-bold">Seg {client.segment}</span>
+              </div>
+              <h2 className="font-display font-bold text-xl truncate">{client.name}</h2>
+              <div className="text-xs text-muted-foreground mt-0.5">Última interação há {client.lastInteraction}</div>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-surface-2 rounded-lg shrink-0">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Detail label="Projeção" value={fmt(client.projection)} />
+              <Detail label="Geração" value={fmt(client.generation)} sub={`${generationPct}%`} />
+              <Detail label="Vendas" value={fmt(client.sales)} sub={`${conversion}%`} />
+              <Detail label="Saúde" value={`${client.health}/100`} />
+            </div>
+
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Saúde da relação</div>
+              <div className="h-3 rounded-full bg-surface-2 overflow-hidden">
+                <div className={cn("h-full", client.health > 70 ? "bg-success" : client.health > 40 ? "bg-warning" : "bg-destructive")} style={{ width: `${client.health}%` }} />
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-primary/8 border border-primary/20 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-xs uppercase tracking-wider font-semibold text-primary">Atlas — Plano sugerido</span>
+              </div>
+              <p className="text-sm text-foreground/90 leading-relaxed">
+                {client.health > 70
+                  ? `${client.name} está em excelente forma. Apresente a linha premium e proponha um plano trimestral de recompras.`
+                  : client.health > 40
+                  ? `Cliente desacelerando. Recomendo um follow-up estruturado nos próximos 7 dias e revisar cotações pendentes.`
+                  : `Cliente em risco crítico. Agendar ligação imediata com gestor e oferecer condição comercial diferenciada para retomada.`}
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-2">
+              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90">
+                <Phone className="h-4 w-4" /> Ligar
+              </button>
+              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-surface-2 text-sm font-medium hover:bg-surface">
+                <Mail className="h-4 w-4" /> E-mail
+              </button>
+              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-surface-2 text-sm font-medium hover:bg-surface">
+                <Calendar className="h-4 w-4" /> Criar tarefa
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
