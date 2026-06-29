@@ -1,13 +1,16 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Sparkles, Search, Bell, Users, LogOut, ShieldCheck } from "lucide-react";
+import { Home, KanbanSquare, Layers, Sparkles, Search, Users, LogOut, ShieldCheck, User as UserIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/2p-logo.jpg";
 import { AtlasPanel } from "./atlas-panel";
 import { ThemeToggle } from "./theme-toggle";
+import { NotificationsDropdown } from "./notifications-dropdown";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
+import { useAvatarUrl } from "@/hooks/use-avatar-url";
+import { useNotificationsDemoFeed } from "@/hooks/use-notifications";
 import { bootstrapFirstAdmin } from "@/lib/users.functions";
 import { toast } from "sonner";
 
