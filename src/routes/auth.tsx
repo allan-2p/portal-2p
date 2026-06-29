@@ -51,6 +51,24 @@ function AuthPage() {
   const [shake, setShake] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [splash, setSplash] = useState(false);
+  const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({ email: false, password: false });
+
+  const emailError = useMemo(() => {
+    if (!touched.email && !email) return null;
+    const r = emailSchema.safeParse(email);
+    return r.success ? null : r.error.issues[0].message;
+  }, [email, touched.email]);
+
+  const passwordError = useMemo(() => {
+    if (resetMode) return null;
+    if (!touched.password && !password) return null;
+    const r = passwordSchema.safeParse(password);
+    return r.success ? null : r.error.issues[0].message;
+  }, [password, touched.password, resetMode]);
+
+  const canSubmit =
+    emailSchema.safeParse(email).success &&
+    (resetMode || passwordSchema.safeParse(password).success);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -60,6 +78,14 @@ function AuthPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setTouched({ email: true, password: true });
+    const emailCheck = emailSchema.safeParse(email);
+    const pwdCheck = resetMode ? { success: true as const } : passwordSchema.safeParse(password);
+    if (!emailCheck.success || !pwdCheck.success) {
+      toast.error("Corrija os campos destacados.");
+      setShake((s) => s + 1);
+      return;
+    }
     setLoading(true);
     try {
       if (resetMode) {
