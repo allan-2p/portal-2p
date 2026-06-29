@@ -27,16 +27,17 @@ const C = {
 };
 
 function HomePage() {
-  const [metaPeriod, setMetaPeriod] = useState<"semanal" | "mensal">("mensal");
   const [metaOpen, setMetaOpen] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"todos" | "7d" | "30d" | "atrasados">("todos");
 
-  const goal = metaPeriod === "mensal" ? portfolio.goal : portfolio.weekGoal;
-  const achieved = metaPeriod === "mensal" ? portfolio.achieved : portfolio.weekAchieved;
-  const projected = metaPeriod === "mensal" ? portfolio.projected : portfolio.weekProjected;
-  const sold = metaPeriod === "mensal" ? portfolio.sold : portfolio.weekAchieved;
+  const goal = portfolio.goal;
+  const achieved = portfolio.achieved;
+  const projected = portfolio.projected;
+  const sold = portfolio.sold;
   const goalPct = (achieved / goal) * 100;
-  const todayPct = (sold / projected) * 100;
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
 
   const taskClientNames = new Set(tasks.map((t) => t.client));
   const offRadarInsights = atlasInsights.filter((i) => !i.client || !taskClientNames.has(i.client));
@@ -62,10 +63,9 @@ function HomePage() {
       <div className="max-w-[1500px] mx-auto space-y-6">
         {/* Hero */}
         <div>
-          <div className="text-sm text-muted-foreground">Bom dia, Bruno</div>
+          <div className="text-sm text-muted-foreground">{greeting}, Bruno</div>
           <h1 className="text-3xl md:text-4xl font-bold mt-1">
-            Sua carteira está em{" "}
-            <span className="text-gradient-primary">{todayPct.toFixed(0)}%</span> da meta {metaPeriod === "mensal" ? "do mês" : "da semana"}
+            Você está em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
             Atlas identificou {atlasInsights.length} ações que podem destravar R$ 104k esta semana.
@@ -80,18 +80,7 @@ function HomePage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="font-display font-semibold">Meta {metaPeriod === "mensal" ? "do mês" : "da semana"}</div>
-                  <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border">
-                    {(["semanal", "mensal"] as const).map((p) => (
-                      <button key={p} onClick={() => setMetaPeriod(p)}
-                        className={cn("px-2.5 py-1 rounded-md text-xs capitalize",
-                          metaPeriod === p ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <div className="font-display font-semibold">Meta do mês</div>
                 <div className="text-sm flex items-center gap-3">
                   <span><span className="text-muted-foreground">Vendido </span><span className="text-primary font-bold">{fmt(sold)}</span></span>
                   <span className="text-muted-foreground">·</span>
@@ -99,16 +88,16 @@ function HomePage() {
                 </div>
               </div>
 
-              {/* Barra com % sobreposta de forma legível */}
-              <div className="relative h-7 mt-3 rounded-full bg-surface-2 overflow-hidden border border-border">
+              {/* % acima da barra, legível em qualquer tema */}
+              <div className="flex items-center justify-between mt-3 text-xs">
+                <span className="font-semibold text-foreground">{goalPct.toFixed(1)}% alcançado</span>
+                <span className="text-muted-foreground tabular-nums">{fmt(achieved)} / {fmt(goal)}</span>
+              </div>
+              <div className="relative h-3 mt-1.5 rounded-full bg-surface-2 overflow-hidden border border-border">
                 <div
                   className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-[oklch(0.78_0.19_60)] rounded-full transition-all"
                   style={{ width: `${Math.min(goalPct, 100)}%` }}
                 />
-                <div className="absolute inset-0 flex items-center justify-between px-3 text-[12px] font-semibold mix-blend-difference text-white">
-                  <span>{goalPct.toFixed(1)}% alcançado</span>
-                  <span>{fmt(achieved)} / {fmt(goal)}</span>
-                </div>
               </div>
 
               <button onClick={() => setMetaOpen(!metaOpen)} className="mt-3 text-xs text-primary font-medium flex items-center gap-1 hover:underline">
@@ -122,8 +111,16 @@ function HomePage() {
             <div className="mt-5 pt-5 border-t border-border space-y-5">
               {/* Detalhes KPIs */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                <MiniKpi label="Retenção" value={`${portfolio.retention}%`} sub="Carteira ativa" />
-                <MiniKpi label="Recorrência" value={`${portfolio.recurrence}%`} sub="Vendas recorrentes" />
+                <MiniKpi
+                  label="Retenção"
+                  value={`${portfolio.retentionActive} / ${portfolio.retentionBase}`}
+                  sub={`${portfolio.retention.toFixed(1)}% da carteira ativa`}
+                />
+                <MiniKpi
+                  label="Recorrência"
+                  value={`${portfolio.recurrenceCount} / ${portfolio.recurrenceBase}`}
+                  sub={`${portfolio.recurrence.toFixed(1)}% dos clientes`}
+                />
                 <MiniKpi label="Novos recorrentes" value={`${portfolio.newRecurringClients}`} sub="Clientes no mês" />
                 <MiniKpi label="Ticket médio" value="R$ 18,27k" sub="3M: R$ 20,68k" trend={-11.6} />
                 <MiniKpi label="Conversão R$" value="25,63%" sub="3M: 31,44%" trend={-5.8} />
@@ -149,6 +146,16 @@ function HomePage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Seção: Tarefas e Sugestões */}
+        <div>
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <h2 className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-semibold">Operação do dia</h2>
+              <h3 className="font-display font-bold text-xl mt-1">Tarefas & Sugestões</h3>
+            </div>
+          </div>
         </div>
 
         {/* Tarefas + Atlas Radar */}
