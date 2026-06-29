@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/2p-logo.jpg";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LoginSplash } from "@/components/login-splash";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
