@@ -402,3 +402,53 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+function AvatarCell({ row, onUploaded }: { row: Row; onUploaded: () => void }) {
+  const url = useAvatarUrl(row.avatar_url);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const initials = (row.full_name ?? row.email)
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return (
+    <div className="relative group h-10 w-10">
+      <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center text-xs font-semibold text-primary-foreground">
+        {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials}
+      </div>
+      <button
+        onClick={() => fileRef.current?.click()}
+        disabled={busy}
+        className="absolute inset-0 rounded-full bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity disabled:opacity-100"
+        aria-label="Trocar foto"
+        title="Trocar foto"
+      >
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          setBusy(true);
+          try {
+            await uploadAvatar(row.id, f);
+            toast.success("Foto atualizada");
+            onUploaded();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erro ao enviar imagem");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
+    </div>
+  );
+}
+}
