@@ -12,6 +12,7 @@ import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { useNotificationsDemoFeed } from "@/hooks/use-notifications";
 import { bootstrapFirstAdmin } from "@/lib/users.functions";
+import { setGlobalSearch, useGlobalSearch } from "@/lib/search-store";
 import { toast } from "sonner";
 
 const baseNav = [
@@ -29,6 +30,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const searchValue = useGlobalSearch();
+  const [, setSearchValue] = useState("");
+  void setSearchValue;
   const { user, profile, roles, hasRole } = useAuth();
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
@@ -127,6 +131,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="relative w-full">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
+                  value={searchValue}
+                  onChange={(e) => {
+                    setSearchValue(e.target.value);
+                    setGlobalSearch(e.target.value);
+                  }}
+                  onFocus={() => {
+                    if (!pathname.startsWith("/carteira") && !pathname.startsWith("/pedidos")) {
+                      navigate({ to: "/carteira" });
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") navigate({ to: "/carteira" });
+                  }}
                   placeholder="Buscar cliente, pedido, projeto…"
                   className="w-full pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                 />
