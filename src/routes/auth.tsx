@@ -77,7 +77,7 @@ function AuthPage() {
           <div className="max-w-md">
             <div className="h-px w-12 bg-primary mb-5" />
             <h2 className="font-display font-semibold text-3xl leading-tight">
-              Energia que move metas.
+              Inovação e parceria é o que nos move!
             </h2>
             <p className="text-sm text-white/70 mt-3">
               Carteira, pedidos e insights do Atlas em uma única tela — feita para quem vende.
