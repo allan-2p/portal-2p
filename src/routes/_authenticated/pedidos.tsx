@@ -5,7 +5,7 @@ import { useState } from "react";
 import { KanbanSquare, List, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/pedidos")({
+export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
     meta: [
       { title: "Pedidos — Portal 2P" },

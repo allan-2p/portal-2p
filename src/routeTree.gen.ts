@@ -9,86 +9,91 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SegmentacaoRouteImport } from './routes/segmentacao'
-import { Route as PedidosRouteImport } from './routes/pedidos'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedSegmentacaoRouteImport } from './routes/_authenticated/segmentacao'
+import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 
-const SegmentacaoRoute = SegmentacaoRouteImport.update({
-  id: '/segmentacao',
-  path: '/segmentacao',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PedidosRoute = PedidosRouteImport.update({
-  id: '/pedidos',
-  path: '/pedidos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/_authenticated/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSegmentacaoRoute =
+  AuthenticatedSegmentacaoRouteImport.update({
+    id: '/_authenticated/segmentacao',
+    path: '/segmentacao',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
+  id: '/_authenticated/pedidos',
+  path: '/pedidos',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/pedidos': typeof PedidosRoute
-  '/segmentacao': typeof SegmentacaoRoute
+  '/pedidos': typeof AuthenticatedPedidosRoute
+  '/segmentacao': typeof AuthenticatedSegmentacaoRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/pedidos': typeof PedidosRoute
-  '/segmentacao': typeof SegmentacaoRoute
+  '/pedidos': typeof AuthenticatedPedidosRoute
+  '/segmentacao': typeof AuthenticatedSegmentacaoRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/pedidos': typeof PedidosRoute
-  '/segmentacao': typeof SegmentacaoRoute
+  '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
+  '/_authenticated/segmentacao': typeof AuthenticatedSegmentacaoRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/pedidos' | '/segmentacao'
+  fullPaths: '/pedidos' | '/segmentacao' | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/pedidos' | '/segmentacao'
-  id: '__root__' | '/' | '/pedidos' | '/segmentacao'
+  to: '/pedidos' | '/segmentacao' | '/'
+  id:
+    | '__root__'
+    | '/_authenticated/pedidos'
+    | '/_authenticated/segmentacao'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  PedidosRoute: typeof PedidosRoute
-  SegmentacaoRoute: typeof SegmentacaoRoute
+  AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
+  AuthenticatedSegmentacaoRoute: typeof AuthenticatedSegmentacaoRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/segmentacao': {
-      id: '/segmentacao'
-      path: '/segmentacao'
-      fullPath: '/segmentacao'
-      preLoaderRoute: typeof SegmentacaoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pedidos': {
-      id: '/pedidos'
-      path: '/pedidos'
-      fullPath: '/pedidos'
-      preLoaderRoute: typeof PedidosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/segmentacao': {
+      id: '/_authenticated/segmentacao'
+      path: '/segmentacao'
+      fullPath: '/segmentacao'
+      preLoaderRoute: typeof AuthenticatedSegmentacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/pedidos': {
+      id: '/_authenticated/pedidos'
+      path: '/pedidos'
+      fullPath: '/pedidos'
+      preLoaderRoute: typeof AuthenticatedPedidosRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  PedidosRoute: PedidosRoute,
-  SegmentacaoRoute: SegmentacaoRoute,
+  AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
+  AuthenticatedSegmentacaoRoute: AuthenticatedSegmentacaoRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
