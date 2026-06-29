@@ -1,12 +1,17 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Sparkles, Search, Bell } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Home, KanbanSquare, Layers, Sparkles, Search, Bell, Users, LogOut, ShieldCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/2p-logo.jpg";
 import { AtlasPanel } from "./atlas-panel";
 import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
+import { bootstrapFirstAdmin } from "@/lib/users.functions";
+import { toast } from "sonner";
 
-const nav = [
+const baseNav = [
   { to: "/", label: "Home", icon: Home },
   { to: "/pedidos", label: "Pedidos", icon: KanbanSquare },
   { to: "/segmentacao", label: "Segmentação", icon: Layers },
@@ -14,7 +19,41 @@ const nav = [
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
   const [atlasOpen, setAtlasOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { user, profile, roles, hasRole } = useAuth();
+  const bootstrap = useServerFn(bootstrapFirstAdmin);
+
+  const nav = hasRole("admin")
+    ? [...baseNav, { to: "/usuarios", label: "Usuários", icon: Users }]
+    : baseNav;
+
+  const initials = (profile?.full_name ?? user?.email ?? "U")
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  }
+
+  async function handlePromote() {
+    try {
+      const res = await bootstrap();
+      if (res.promoted) {
+        toast.success("Você agora é administrador.");
+        location.reload();
+      } else {
+        toast.info("Já existe um administrador.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -79,6 +118,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </div>
             </div>
             <div className="flex items-center gap-2 ml-auto">
+              {user && roles.length === 0 && (
+                <button
+                  onClick={handlePromote}
+                  className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25"
+                  title="Promova-se a admin se for o primeiro usuário"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Tornar-me admin
+                </button>
+              )}
               <ThemeToggle />
               <button className="relative p-2 rounded-lg hover:bg-surface-2 border border-border bg-surface">
                 <Bell className="h-4 w-4 text-muted-foreground" />
@@ -91,8 +140,45 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Sparkles className="h-4 w-4" />
                 Atlas
               </button>
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center font-semibold text-sm text-primary-foreground">
-                BA
+              <div className="relative">
+                <button
+                  onClick={() => setMenuOpen((v) => !v)}
+                  className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center font-semibold text-sm text-primary-foreground"
+                >
+                  {initials}
+                </button>
+                {menuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                    <div className="absolute right-0 top-10 z-50 w-60 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+                      <div className="px-4 py-3 border-b border-border">
+                        <div className="font-medium text-sm truncate">
+                          {profile?.full_name ?? user?.email}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+                        {roles.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {roles.map((r) => (
+                              <span
+                                key={r}
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary"
+                              >
+                                {ROLE_LABELS[r]}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 text-destructive"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Sair
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
