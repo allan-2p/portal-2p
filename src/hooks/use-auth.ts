@@ -32,7 +32,11 @@ export function useAuth() {
       supabase.from("user_roles").select("role").eq("user_id", u.id),
     ]);
     setProfile(prof as Profile | null);
-    setRoles((roleRows ?? []).map((r: { role: AppRole }) => r.role));
+    const priority: Record<AppRole, number> = { admin: 0, diretoria: 1, gestor: 2, vendedor: 3 };
+    const sorted = (roleRows ?? [])
+      .map((r: { role: AppRole }) => r.role)
+      .sort((a, b) => priority[a] - priority[b]);
+    setRoles(sorted);
   }, []);
 
   useEffect(() => {
