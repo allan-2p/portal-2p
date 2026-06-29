@@ -84,8 +84,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:title", content: "Portal 2P — Inteligência para Vendedores" },
       { name: "twitter:description", content: "Portal 2P: visão de carteira, pedidos e insights do Atlas para acelerar vendas." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/58309939-65b1-40b6-b5fa-fc533bfa0ead" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/58309939-65b1-40b6-b5fa-fc533bfa0ead" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/0b017d20-3d07-4558-818e-42bc2a024677" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/0b017d20-3d07-4558-818e-42bc2a024677" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
