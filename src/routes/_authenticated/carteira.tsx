@@ -58,10 +58,6 @@ function CarteiraPage() {
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(k); setSortDir(k === "name" || k === "segment" ? "asc" : "desc"); }
   };
-  const totals = visible.reduce(
-    (acc, c) => ({ projection: acc.projection + c.projection, generation: acc.generation + c.generation, sales: acc.sales + c.sales }),
-    { projection: 0, generation: 0, sales: 0 },
-  );
 
   const toggle = (id: string) => {
     setExpanded((prev) => {
