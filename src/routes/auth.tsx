@@ -33,6 +33,8 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const [shake, setShake] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [splash, setSplash] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
