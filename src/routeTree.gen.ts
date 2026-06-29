@@ -18,7 +18,10 @@ import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
 import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authenticated/dashboards'
+import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/atlas'
+import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
+import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -64,33 +67,56 @@ const AuthenticatedDashboardsRoute = AuthenticatedDashboardsRouteImport.update({
   path: '/dashboards',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAtlasRoute = AuthenticatedAtlasRouteImport.update({
   id: '/atlas',
   path: '/atlas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedClientesSegmentacaoRoute =
+  AuthenticatedClientesSegmentacaoRouteImport.update({
+    id: '/segmentacao',
+    path: '/segmentacao',
+    getParentRoute: () => AuthenticatedClientesRoute,
+  } as any)
+const AuthenticatedClientesCadastrosRoute =
+  AuthenticatedClientesCadastrosRouteImport.update({
+    id: '/cadastros',
+    path: '/cadastros',
+    getParentRoute: () => AuthenticatedClientesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/atlas': typeof AuthenticatedAtlasRoute
+  '/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
+  '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
+  '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/atlas': typeof AuthenticatedAtlasRoute
+  '/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
+  '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
+  '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,12 +124,15 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/atlas': typeof AuthenticatedAtlasRoute
+  '/_authenticated/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
+  '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -112,34 +141,43 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/atlas'
+    | '/clientes'
     | '/dashboards'
     | '/pedidos'
     | '/perfil'
     | '/tarefas'
     | '/usuarios'
+    | '/clientes/cadastros'
+    | '/clientes/segmentacao'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
     | '/reset-password'
     | '/atlas'
+    | '/clientes'
     | '/dashboards'
     | '/pedidos'
     | '/perfil'
     | '/tarefas'
     | '/usuarios'
     | '/'
+    | '/clientes/cadastros'
+    | '/clientes/segmentacao'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
     | '/_authenticated/atlas'
+    | '/_authenticated/clientes'
     | '/_authenticated/dashboards'
     | '/_authenticated/pedidos'
     | '/_authenticated/perfil'
     | '/_authenticated/tarefas'
     | '/_authenticated/usuarios'
     | '/_authenticated/'
+    | '/_authenticated/clientes/cadastros'
+    | '/_authenticated/clientes/segmentacao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -213,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/clientes': {
+      id: '/_authenticated/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof AuthenticatedClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/atlas': {
       id: '/_authenticated/atlas'
       path: '/atlas'
@@ -220,11 +265,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAtlasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/clientes/segmentacao': {
+      id: '/_authenticated/clientes/segmentacao'
+      path: '/segmentacao'
+      fullPath: '/clientes/segmentacao'
+      preLoaderRoute: typeof AuthenticatedClientesSegmentacaoRouteImport
+      parentRoute: typeof AuthenticatedClientesRoute
+    }
+    '/_authenticated/clientes/cadastros': {
+      id: '/_authenticated/clientes/cadastros'
+      path: '/cadastros'
+      fullPath: '/clientes/cadastros'
+      preLoaderRoute: typeof AuthenticatedClientesCadastrosRouteImport
+      parentRoute: typeof AuthenticatedClientesRoute
+    }
   }
 }
 
+interface AuthenticatedClientesRouteChildren {
+  AuthenticatedClientesCadastrosRoute: typeof AuthenticatedClientesCadastrosRoute
+  AuthenticatedClientesSegmentacaoRoute: typeof AuthenticatedClientesSegmentacaoRoute
+}
+
+const AuthenticatedClientesRouteChildren: AuthenticatedClientesRouteChildren = {
+  AuthenticatedClientesCadastrosRoute: AuthenticatedClientesCadastrosRoute,
+  AuthenticatedClientesSegmentacaoRoute: AuthenticatedClientesSegmentacaoRoute,
+}
+
+const AuthenticatedClientesRouteWithChildren =
+  AuthenticatedClientesRoute._addFileChildren(
+    AuthenticatedClientesRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAtlasRoute: typeof AuthenticatedAtlasRoute
+  AuthenticatedClientesRoute: typeof AuthenticatedClientesRouteWithChildren
   AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
@@ -235,6 +310,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAtlasRoute: AuthenticatedAtlasRoute,
+  AuthenticatedClientesRoute: AuthenticatedClientesRouteWithChildren,
   AuthenticatedDashboardsRoute: AuthenticatedDashboardsRoute,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
