@@ -1,12 +1,28 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import logo from "@/assets/2p-logo.jpg";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginSplash } from "@/components/login-splash";
+
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, "Informe seu e-mail.")
+  .email("E-mail inválido.")
+  .max(255, "E-mail muito longo.");
+
+const passwordSchema = z
+  .string()
+  .min(1, "Informe sua senha.")
+  .min(6, "Senha deve ter ao menos 6 caracteres.")
+  .max(128, "Senha muito longa.");
+
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
