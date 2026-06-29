@@ -1,12 +1,28 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import logo from "@/assets/2p-logo.jpg";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginSplash } from "@/components/login-splash";
+
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, "Informe seu e-mail.")
+  .email("E-mail inválido.")
+  .max(255, "E-mail muito longo.");
+
+const passwordSchema = z
+  .string()
+  .min(1, "Informe sua senha.")
+  .min(6, "Senha deve ter ao menos 6 caracteres.")
+  .max(128, "Senha muito longa.");
+
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -35,6 +51,24 @@ function AuthPage() {
   const [shake, setShake] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [splash, setSplash] = useState(false);
+  const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({ email: false, password: false });
+
+  const emailError = useMemo(() => {
+    if (!touched.email && !email) return null;
+    const r = emailSchema.safeParse(email);
+    return r.success ? null : r.error.issues[0].message;
+  }, [email, touched.email]);
+
+  const passwordError = useMemo(() => {
+    if (resetMode) return null;
+    if (!touched.password && !password) return null;
+    const r = passwordSchema.safeParse(password);
+    return r.success ? null : r.error.issues[0].message;
+  }, [password, touched.password, resetMode]);
+
+  const canSubmit =
+    emailSchema.safeParse(email).success &&
+    (resetMode || passwordSchema.safeParse(password).success);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -44,6 +78,14 @@ function AuthPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setTouched({ email: true, password: true });
+    const emailCheck = emailSchema.safeParse(email);
+    const pwdCheck = resetMode ? { success: true as const } : passwordSchema.safeParse(password);
+    if (!emailCheck.success || !pwdCheck.success) {
+      toast.error("Corrija os campos destacados.");
+      setShake((s) => s + 1);
+      return;
+    }
     setLoading(true);
     try {
       if (resetMode) {
@@ -154,34 +196,62 @@ function AuthPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} noValidate className="space-y-5">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                <label htmlFor="email" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                   E-mail
                 </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="voce@2pgroup.com.br"
-                  className="w-full px-0 py-2.5 bg-transparent border-0 border-b border-border text-sm transition-colors focus:outline-none focus:border-primary placeholder:text-muted-foreground/60"
-                />
+                <div className="relative">
+                  <input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                    aria-invalid={!!emailError}
+                    aria-describedby={emailError ? "email-error" : undefined}
+                    placeholder="voce@2pgroup.com.br"
+                    className={cn(
+                      "w-full px-0 py-2.5 pr-7 bg-transparent border-0 border-b text-sm transition-colors focus:outline-none placeholder:text-muted-foreground/60",
+                      emailError
+                        ? "border-destructive focus:border-destructive"
+                        : "border-border focus:border-primary",
+                    )}
+                  />
+                  {!emailError && email && emailSchema.safeParse(email).success && (
+                    <CheckCircle2 className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
+                  )}
+                </div>
+                {emailError && (
+                  <p id="email-error" className="flex items-center gap-1 text-[11px] text-destructive animate-fade-in">
+                    <AlertCircle className="h-3 w-3" /> {emailError}
+                  </p>
+                )}
               </div>
 
               {!resetMode && (
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  <label htmlFor="password" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     Senha
                   </label>
                   <div className="relative">
                     <input
+                      id="password"
                       type={showPassword ? "text" : "password"}
-                      required
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+                      aria-invalid={!!passwordError}
+                      aria-describedby={passwordError ? "password-error" : undefined}
                       placeholder="••••••••"
-                      className="w-full px-0 py-2.5 pr-8 bg-transparent border-0 border-b border-border text-sm transition-colors focus:outline-none focus:border-primary placeholder:text-muted-foreground/60"
+                      className={cn(
+                        "w-full px-0 py-2.5 pr-8 bg-transparent border-0 border-b text-sm transition-colors focus:outline-none placeholder:text-muted-foreground/60",
+                        passwordError
+                          ? "border-destructive focus:border-destructive"
+                          : "border-border focus:border-primary",
+                      )}
                     />
                     <button
                       type="button"
@@ -193,13 +263,18 @@ function AuthPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {passwordError && (
+                    <p id="password-error" className="flex items-center gap-1 text-[11px] text-destructive animate-fade-in">
+                      <AlertCircle className="h-3 w-3" /> {passwordError}
+                    </p>
+                  )}
                 </div>
               )}
 
               <button
                 type="submit"
-                disabled={loading}
-                className="group mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-full bg-foreground text-background font-medium text-sm transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-60"
+                disabled={loading || !canSubmit}
+                className="group mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-full bg-foreground text-background font-medium text-sm transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
