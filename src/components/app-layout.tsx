@@ -31,8 +31,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const searchValue = useGlobalSearch();
-  const [, setSearchValue] = useState("");
-  void setSearchValue;
   const { user, profile, roles, hasRole } = useAuth();
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
@@ -132,10 +130,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   value={searchValue}
-                  onChange={(e) => {
-                    setSearchValue(e.target.value);
-                    setGlobalSearch(e.target.value);
-                  }}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
                   onFocus={() => {
                     if (!pathname.startsWith("/carteira") && !pathname.startsWith("/pedidos")) {
                       navigate({ to: "/carteira" });
