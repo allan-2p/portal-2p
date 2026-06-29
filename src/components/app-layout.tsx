@@ -40,6 +40,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (pathname.startsWith("/clientes")) setClientesOpen(true);
   }, [pathname]);
 
+  // Only show the top progress bar for slow nav (>200ms) to avoid flashing on instant transitions
+  const [showBar, setShowBar] = useState(false);
+  useEffect(() => {
+    if (!isLoadingRoute) { setShowBar(false); return; }
+    const t = setTimeout(() => setShowBar(true), 200);
+    return () => clearTimeout(t);
+  }, [isLoadingRoute]);
+
+
   const toggleCollapsed = () => {
     setCollapsed((v) => {
       const next = !v;
