@@ -10,6 +10,7 @@ export interface Client {
   trend: "up" | "down" | "stable";
   lastInteraction: string;
   health: number; // 0-100
+  notes?: string; // Observações puxadas do Salesforce
 }
 
 export const clients: Client[] = [
@@ -91,8 +92,12 @@ export const portfolio = {
   weekAchieved: 612340,
   weekProjected: 980000,
   // Detalhes
-  retention: 82.4, // % carteira ativa do mês anterior que recomprou
-  recurrence: 64.1, // % vendas vindas de clientes recorrentes
+  retention: 82.4,
+  retentionActive: 15,
+  retentionBase: 24,
+  recurrence: 64.1,
+  recurrenceCount: 19,
+  recurrenceBase: 30,
   newRecurringClients: 7,
 };
 
