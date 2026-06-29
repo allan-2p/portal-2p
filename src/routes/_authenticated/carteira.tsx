@@ -126,16 +126,16 @@ function CarteiraPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+                <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50 select-none">
                   <th className="w-10"></th>
-                  <th className="text-center px-2 py-2.5 w-16">Rank</th>
-                  <th className="text-left px-4 py-2.5">Cliente</th>
-                  <th className="text-center px-2 py-2.5">Seg</th>
-                  <th className="text-right px-4 py-2.5">Projeção</th>
-                  <th className="text-right px-4 py-2.5">Geração R$</th>
-                  <th className="text-right px-4 py-2.5">Vendas R$</th>
+                  <SortableTh label="Rank" k="rank" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" className="w-16" />
+                  <SortableTh label="Cliente" k="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="left" />
+                  <SortableTh label="Seg" k="segment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" />
+                  <SortableTh label="Projeção" k="projection" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                  <SortableTh label="Geração R$" k="generation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                  <SortableTh label="Vendas R$" k="sales" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                   <th className="text-center px-4 py-2.5">Tendência</th>
-                  <th className="text-center px-4 py-2.5">Saúde</th>
+                  <SortableTh label="Saúde" k="health" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" />
                   <th className="w-10"></th>
                 </tr>
               </thead>
