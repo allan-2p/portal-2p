@@ -17,7 +17,7 @@ import {
   Info,
 } from "lucide-react";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Home — Portal 2P" },

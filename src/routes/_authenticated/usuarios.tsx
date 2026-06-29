@@ -1,0 +1,397 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { AppLayout } from "@/components/app-layout";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth, ROLE_LABELS, type AppRole } from "@/hooks/use-auth";
+import {
+  adminCreateUser,
+  adminInviteUser,
+  adminSetRole,
+  adminToggleActive,
+  adminDeleteUser,
+} from "@/lib/users.functions";
+import { toast } from "sonner";
+import { Loader2, UserPlus, Mail, Shield, Trash2, Power } from "lucide-react";
+
+export const Route = createFileRoute("/_authenticated/usuarios")({
+  head: () => ({ meta: [{ title: "Usuários — Portal 2P" }] }),
+  component: UsuariosPage,
+});
+
+type Row = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  cargo: string | null;
+  equipe: string | null;
+  ativo: boolean;
+  roles: AppRole[];
+};
+
+const ROLES: AppRole[] = ["admin", "gestor", "vendedor", "diretoria"];
+
+function UsuariosPage() {
+  const { hasRole, loading: authLoading, user } = useAuth();
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState<"create" | "invite" | null>(null);
+
+  const createFn = useServerFn(adminCreateUser);
+  const inviteFn = useServerFn(adminInviteUser);
+  const setRoleFn = useServerFn(adminSetRole);
+  const toggleFn = useServerFn(adminToggleActive);
+  const deleteFn = useServerFn(adminDeleteUser);
+
+  async function load() {
+    setLoading(true);
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id,email,full_name,cargo,equipe,ativo")
+      .order("full_name");
+    const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
+    const byUser = new Map<string, AppRole[]>();
+    (rolesData ?? []).forEach((r: { user_id: string; role: AppRole }) => {
+      const arr = byUser.get(r.user_id) ?? [];
+      arr.push(r.role);
+      byUser.set(r.user_id, arr);
+    });
+    setRows(
+      (profiles ?? []).map((p) => ({
+        ...p,
+        roles: byUser.get(p.id) ?? [],
+      })) as Row[],
+    );
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    if (!authLoading) load();
+  }, [authLoading]);
+
+  if (authLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!hasRole("admin")) {
+    return (
+      <AppLayout>
+        <div className="max-w-md mx-auto mt-20 text-center">
+          <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+          <h1 className="font-display font-bold text-xl mb-1">Acesso restrito</h1>
+          <p className="text-sm text-muted-foreground">
+            Apenas administradores podem gerenciar usuários.
+          </p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  async function handleRoleChange(userId: string, role: AppRole) {
+    try {
+      await setRoleFn({ data: { user_id: userId, role } });
+      toast.success("Papel atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  async function handleToggle(userId: string, ativo: boolean) {
+    try {
+      await toggleFn({ data: { user_id: userId, ativo: !ativo } });
+      toast.success(ativo ? "Usuário desativado" : "Usuário ativado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  async function handleDelete(userId: string) {
+    if (!confirm("Remover este usuário permanentemente?")) return;
+    try {
+      await deleteFn({ data: { user_id: userId } });
+      toast.success("Usuário removido");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display font-bold text-2xl">Usuários</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Crie, convide e gerencie os papéis do time.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setModal("invite")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm font-medium"
+            >
+              <Mail className="h-4 w-4" /> Convidar
+            </button>
+            <button
+              onClick={() => setModal("create")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
+            >
+              <UserPlus className="h-4 w-4" /> Criar usuário
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-surface/50 text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium">Nome</th>
+                <th className="text-left px-4 py-3 font-medium">E-mail</th>
+                <th className="text-left px-4 py-3 font-medium">Equipe</th>
+                <th className="text-left px-4 py-3 font-medium">Papel</th>
+                <th className="text-left px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-10 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin inline" />
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-10 text-muted-foreground">
+                    Nenhum usuário ainda.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((r) => (
+                  <tr key={r.id} className="border-t border-border">
+                    <td className="px-4 py-3 font-medium">{r.full_name ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{r.email}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{r.equipe ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <select
+                        value={r.roles[0] ?? "vendedor"}
+                        onChange={(e) => handleRoleChange(r.id, e.target.value as AppRole)}
+                        disabled={r.id === user?.id}
+                        className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                      >
+                        {ROLES.map((role) => (
+                          <option key={role} value={role}>
+                            {ROLE_LABELS[role]}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          r.ativo
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {r.ativo ? "Ativo" : "Inativo"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex gap-1 justify-end">
+                        <button
+                          onClick={() => handleToggle(r.id, r.ativo)}
+                          disabled={r.id === user?.id}
+                          className="p-1.5 rounded hover:bg-surface-2 disabled:opacity-30"
+                          title={r.ativo ? "Desativar" : "Ativar"}
+                        >
+                          <Power className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(r.id)}
+                          disabled={r.id === user?.id}
+                          className="p-1.5 rounded hover:bg-destructive/10 text-destructive disabled:opacity-30"
+                          title="Remover"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {modal && (
+        <UserModal
+          mode={modal}
+          onClose={() => setModal(null)}
+          onSubmit={async (data) => {
+            try {
+              if (modal === "create") await createFn({ data: data as any });
+              else await inviteFn({ data });
+              toast.success(modal === "create" ? "Usuário criado" : "Convite enviado");
+              setModal(null);
+              load();
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Erro");
+            }
+          }}
+        />
+      )}
+    </AppLayout>
+  );
+}
+
+function UserModal({
+  mode,
+  onClose,
+  onSubmit,
+}: {
+  mode: "create" | "invite";
+  onClose: () => void;
+  onSubmit: (data: any) => Promise<void>;
+}) {
+  const [form, setForm] = useState({
+    email: "",
+    full_name: "",
+    cargo: "",
+    equipe: "",
+    password: "",
+    role: "vendedor" as AppRole,
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
+          const payload =
+            mode === "create"
+              ? form
+              : {
+                  email: form.email,
+                  full_name: form.full_name,
+                  cargo: form.cargo || null,
+                  equipe: form.equipe || null,
+                  role: form.role,
+                };
+          await onSubmit(payload);
+          setSubmitting(false);
+        }}
+        className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-3"
+      >
+        <h2 className="font-display font-bold text-lg">
+          {mode === "create" ? "Criar usuário" : "Convidar usuário"}
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          {mode === "create"
+            ? "Você define o e-mail e a senha inicial. O usuário entra imediatamente."
+            : "Enviamos um e-mail para o usuário definir a própria senha."}
+        </p>
+
+        <Field label="Nome completo">
+          <input
+            required
+            value={form.full_name}
+            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+            className="input"
+          />
+        </Field>
+        <Field label="E-mail">
+          <input
+            required
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className="input"
+          />
+        </Field>
+        {mode === "create" && (
+          <Field label="Senha inicial (mínimo 8)">
+            <input
+              required
+              type="text"
+              minLength={8}
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="input"
+            />
+          </Field>
+        )}
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Cargo">
+            <input
+              value={form.cargo}
+              onChange={(e) => setForm({ ...form, cargo: e.target.value })}
+              className="input"
+            />
+          </Field>
+          <Field label="Equipe">
+            <input
+              value={form.equipe}
+              onChange={(e) => setForm({ ...form, equipe: e.target.value })}
+              className="input"
+            />
+          </Field>
+        </div>
+        <Field label="Papel">
+          <select
+            value={form.role}
+            onChange={(e) => setForm({ ...form, role: e.target.value as AppRole })}
+            className="input"
+          >
+            {ROLES.map((r) => (
+              <option key={r} value={r}>
+                {ROLE_LABELS[r]}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <div className="flex gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+            {mode === "create" ? "Criar" : "Enviar convite"}
+          </button>
+        </div>
+
+        <style>{`.input{width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;background:hsl(var(--background));border:1px solid hsl(var(--border));font-size:0.875rem;outline:none}.input:focus{border-color:hsl(var(--primary))}`}</style>
+      </form>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <label className="text-xs font-medium text-muted-foreground">{label}</label>
+      {children}
+    </div>
+  );
+}

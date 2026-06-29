@@ -6,7 +6,7 @@ import { ChevronDown, Sparkles, TrendingUp, TrendingDown, Minus } from "lucide-r
 import { cn } from "@/lib/utils";
 
 
-export const Route = createFileRoute("/segmentacao")({
+export const Route = createFileRoute("/_authenticated/segmentacao")({
   head: () => ({
     meta: [
       { title: "Segmentação — Portal 2P" },
