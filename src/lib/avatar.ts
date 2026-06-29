@@ -64,8 +64,3 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
   return path;
 }
 
-export function useAvatarUrl(path: string | null | undefined): string | null {
-  // simple hook wrapping resolveAvatarUrl
-  // kept here to avoid extra files; React import lazy-loaded by caller
-  throw new Error("Use useAvatarUrl from hooks/use-avatar-url");
-}
