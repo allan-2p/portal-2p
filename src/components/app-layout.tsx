@@ -134,10 +134,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </button>
               )}
               <ThemeToggle />
-              <button className="relative p-2 rounded-lg hover:bg-surface-2 border border-border bg-surface">
-                <Bell className="h-4 w-4 text-muted-foreground" />
-                <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-              </button>
+              <NotificationsDropdown />
               <button
                 onClick={() => setAtlasOpen(true)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors text-sm font-medium"
@@ -148,9 +145,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center font-semibold text-sm text-primary-foreground"
+                  className="h-9 w-9 rounded-full overflow-hidden bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center font-semibold text-sm text-primary-foreground ring-2 ring-background"
                 >
-                  {initials}
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    initials
+                  )}
                 </button>
                 {menuOpen && (
                   <>
