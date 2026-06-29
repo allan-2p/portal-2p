@@ -275,8 +275,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </header>
-        {isLoadingRoute && <div className="route-bar" aria-hidden />}
+        {showBar && <div className="route-bar" aria-hidden />}
         <div key={pathname} className="p-6 page-transition">{children}</div>
+
       </main>
     </div>
   );
