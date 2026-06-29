@@ -1,13 +1,16 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Sparkles, Search, Bell, Users, LogOut, ShieldCheck } from "lucide-react";
+import { Home, KanbanSquare, Layers, Sparkles, Search, Users, LogOut, ShieldCheck, User as UserIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/2p-logo.jpg";
 import { AtlasPanel } from "./atlas-panel";
 import { ThemeToggle } from "./theme-toggle";
+import { NotificationsDropdown } from "./notifications-dropdown";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
+import { useAvatarUrl } from "@/hooks/use-avatar-url";
+import { useNotificationsDemoFeed } from "@/hooks/use-notifications";
 import { bootstrapFirstAdmin } from "@/lib/users.functions";
 import { toast } from "sonner";
 
@@ -23,7 +26,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [atlasOpen, setAtlasOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, profile, roles, hasRole } = useAuth();
+  const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
+  useNotificationsDemoFeed();
 
   const nav = hasRole("admin")
     ? [...baseNav, { to: "/usuarios", label: "Usuários", icon: Users }]
@@ -129,10 +134,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </button>
               )}
               <ThemeToggle />
-              <button className="relative p-2 rounded-lg hover:bg-surface-2 border border-border bg-surface">
-                <Bell className="h-4 w-4 text-muted-foreground" />
-                <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-              </button>
+              <NotificationsDropdown />
               <button
                 onClick={() => setAtlasOpen(true)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors text-sm font-medium"
@@ -143,9 +145,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center font-semibold text-sm text-primary-foreground"
+                  className="h-9 w-9 rounded-full overflow-hidden bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center font-semibold text-sm text-primary-foreground ring-2 ring-background"
                 >
-                  {initials}
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    initials
+                  )}
                 </button>
                 {menuOpen && (
                   <>
@@ -169,9 +175,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
                           </div>
                         )}
                       </div>
+                      <Link
+                        to="/perfil"
+                        onClick={() => setMenuOpen(false)}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2"
+                      >
+                        <UserIcon className="h-4 w-4" />
+                        Meu perfil
+                      </Link>
                       <button
                         onClick={handleSignOut}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 text-destructive"
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 text-destructive border-t border-border"
                       >
                         <LogOut className="h-4 w-4" />
                         Sair

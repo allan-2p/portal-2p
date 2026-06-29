@@ -71,6 +71,10 @@ function subscribe(cb: () => void) {
 
 const getSnapshot = () => state;
 
+export async function refreshAuthProfile() {
+  if (state.user) await loadFor(state.user);
+}
+
 export function useAuth() {
   useEffect(() => {
     initialize();
@@ -83,7 +87,7 @@ export function useAuth() {
     [snap.roles],
   );
 
-  return { ...snap, hasRole, hasAnyRole };
+  return { ...snap, hasRole, hasAnyRole, refresh: refreshAuthProfile };
 }
 
 export const ROLE_LABELS: Record<AppRole, string> = {

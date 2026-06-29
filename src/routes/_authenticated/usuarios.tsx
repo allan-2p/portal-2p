@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppLayout } from "@/components/app-layout";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,9 @@ import {
   adminDeleteUser,
 } from "@/lib/users.functions";
 import { toast } from "sonner";
-import { Loader2, UserPlus, Mail, Shield, Trash2, Power } from "lucide-react";
+import { Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera } from "lucide-react";
+import { uploadAvatar } from "@/lib/avatar";
+import { useAvatarUrl } from "@/hooks/use-avatar-url";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
   head: () => ({ meta: [{ title: "Usuários — Portal 2P" }] }),
@@ -26,6 +28,7 @@ type Row = {
   cargo: string | null;
   equipe: string | null;
   ativo: boolean;
+  avatar_url: string | null;
   roles: AppRole[];
 };
 
@@ -47,7 +50,7 @@ function UsuariosPage() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id,email,full_name,cargo,equipe,ativo")
+      .select("id,email,full_name,cargo,equipe,ativo,avatar_url")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
     const byUser = new Map<string, AppRole[]>();
@@ -154,6 +157,7 @@ function UsuariosPage() {
           <table className="w-full text-sm">
             <thead className="bg-surface/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
+                <th className="px-4 py-3"></th>
                 <th className="text-left px-4 py-3 font-medium">Nome</th>
                 <th className="text-left px-4 py-3 font-medium">E-mail</th>
                 <th className="text-left px-4 py-3 font-medium">Equipe</th>
@@ -165,19 +169,22 @@ function UsuariosPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-muted-foreground">
+                  <td colSpan={7} className="text-center py-10 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-muted-foreground">
+                  <td colSpan={7} className="text-center py-10 text-muted-foreground">
                     Nenhum usuário ainda.
                   </td>
                 </tr>
               ) : (
                 rows.map((r) => (
                   <tr key={r.id} className="border-t border-border">
+                    <td className="px-4 py-3 w-14">
+                      <AvatarCell row={r} onUploaded={load} />
+                    </td>
                     <td className="px-4 py-3 font-medium">{r.full_name ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.email}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.equipe ?? "—"}</td>
@@ -392,6 +399,55 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1">
       <label className="text-xs font-medium text-muted-foreground">{label}</label>
       {children}
+    </div>
+  );
+}
+
+function AvatarCell({ row, onUploaded }: { row: Row; onUploaded: () => void }) {
+  const url = useAvatarUrl(row.avatar_url);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const initials = (row.full_name ?? row.email)
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return (
+    <div className="relative group h-10 w-10">
+      <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center text-xs font-semibold text-primary-foreground">
+        {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : initials}
+      </div>
+      <button
+        onClick={() => fileRef.current?.click()}
+        disabled={busy}
+        className="absolute inset-0 rounded-full bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity disabled:opacity-100"
+        aria-label="Trocar foto"
+        title="Trocar foto"
+      >
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          setBusy(true);
+          try {
+            await uploadAvatar(row.id, f);
+            toast.success("Foto atualizada");
+            onUploaded();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erro ao enviar imagem");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
     </div>
   );
 }
