@@ -28,6 +28,7 @@ type Row = {
   cargo: string | null;
   equipe: string | null;
   ativo: boolean;
+  avatar_url: string | null;
   roles: AppRole[];
 };
 
