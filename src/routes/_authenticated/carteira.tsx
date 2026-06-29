@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { clients, type Client, type Segment } from "@/lib/mock-data";
+import { useGlobalSearch } from "@/lib/search-store";
 import { Fragment, useMemo, useState } from "react";
-import { ChevronDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, Phone, Mail, X, Calendar } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/carteira")({
@@ -12,18 +13,51 @@ export const Route = createFileRoute("/_authenticated/carteira")({
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
+type SortKey = "rank" | "name" | "segment" | "projection" | "generation" | "sales" | "health";
+type SortDir = "asc" | "desc";
+
 function CarteiraPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
   const [filterSeg, setFilterSeg] = useState<Segment | "all">("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detailClient, setDetailClient] = useState<Client | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("rank");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const search = useGlobalSearch().trim().toLowerCase();
 
-  // Rank por vendas
+  // Rank por vendas (fixo, independente da ordenação visível)
   const ranked = useMemo(
     () => [...clients].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
     [],
   );
-  const visible = ranked.filter((c) => filterSeg === "all" || c.segment === filterSeg);
+
+  const filtered = ranked.filter((c) => {
+    if (filterSeg !== "all" && c.segment !== filterSeg) return false;
+    if (search && !c.name.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  const visible = useMemo(() => {
+    const arr = [...filtered];
+    const dir = sortDir === "asc" ? 1 : -1;
+    arr.sort((a, b) => {
+      const av = a[sortKey] as string | number;
+      const bv = b[sortKey] as string | number;
+      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+
+  const totals = visible.reduce(
+    (acc, c) => ({ projection: acc.projection + c.projection, generation: acc.generation + c.generation, sales: acc.sales + c.sales }),
+    { projection: 0, generation: 0, sales: 0 },
+  );
+
+  const handleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir(k === "name" || k === "segment" ? "asc" : "desc"); }
+  };
   const totals = visible.reduce(
     (acc, c) => ({ projection: acc.projection + c.projection, generation: acc.generation + c.generation, sales: acc.sales + c.sales }),
     { projection: 0, generation: 0, sales: 0 },
