@@ -19,6 +19,7 @@ const CLIENTES_OPEN_KEY = "portal2p-clientes-open";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isLoadingRoute = useRouterState({ select: (s) => s.isLoading || s.isTransitioning });
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -265,7 +266,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </header>
-        <div className="p-6">{children}</div>
+        {isLoadingRoute && <div className="route-bar" aria-hidden />}
+        <div key={pathname} className="p-6 page-transition">{children}</div>
       </main>
     </div>
   );
