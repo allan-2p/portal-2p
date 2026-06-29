@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/2p-logo.jpg";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LoginSplash } from "@/components/login-splash";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -32,6 +33,8 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const [shake, setShake] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [splash, setSplash] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -54,19 +57,22 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Bem-vindo de volta!");
-        navigate({ to: "/" });
+        setSplash(true);
+        setTimeout(() => navigate({ to: "/" }), 1100);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro ao entrar";
       toast.error(msg.includes("Invalid login") ? "E-mail ou senha incorretos." : msg);
       setShake((s) => s + 1);
-    } finally {
       setLoading(false);
+      return;
     }
+    setLoading(false);
   }
 
   return (
     <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
+      {splash && <LoginSplash />}
       {/* ambient — single soft glow */}
       <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[640px] w-[640px] rounded-full bg-primary/10 blur-[140px]" />
 
@@ -168,14 +174,25 @@ function AuthPage() {
                   <label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     Senha
                   </label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-0 py-2.5 bg-transparent border-0 border-b border-border text-sm transition-colors focus:outline-none focus:border-primary placeholder:text-muted-foreground/60"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-0 py-2.5 pr-8 bg-transparent border-0 border-b border-border text-sm transition-colors focus:outline-none focus:border-primary placeholder:text-muted-foreground/60"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      tabIndex={-1}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               )}
 
