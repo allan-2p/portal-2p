@@ -52,6 +52,7 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [splash, setSplash] = useState(false);
   const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({ email: false, password: false });
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const emailError = useMemo(() => {
     if (!touched.email && !email) return null;
@@ -78,6 +79,7 @@ function AuthPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setAuthError(null);
     setTouched({ email: true, password: true });
     const emailCheck = emailSchema.safeParse(email);
     const pwdCheck = resetMode ? { success: true as const } : passwordSchema.safeParse(password);
@@ -103,8 +105,13 @@ function AuthPage() {
         setTimeout(() => navigate({ to: "/" }), 1100);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro ao entrar";
-      toast.error(msg.includes("Invalid login") ? "E-mail ou senha incorretos." : msg);
+      const raw = err instanceof Error ? err.message : "Erro ao entrar";
+      const friendly =
+        raw.includes("Invalid login") || raw.toLowerCase().includes("invalid credentials")
+          ? "E-mail ou senha incorretos."
+          : raw;
+      setAuthError(friendly);
+      toast.error(friendly);
       setShake((s) => s + 1);
       setLoading(false);
       return;
@@ -207,7 +214,7 @@ function AuthPage() {
                     type="email"
                     autoComplete="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); if (authError) setAuthError(null); }}
                     onBlur={() => setTouched((t) => ({ ...t, email: true }))}
                     aria-invalid={!!emailError}
                     aria-describedby={emailError ? "email-error" : undefined}
@@ -241,7 +248,7 @@ function AuthPage() {
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => { setPassword(e.target.value); if (authError) setAuthError(null); }}
                       onBlur={() => setTouched((t) => ({ ...t, password: true }))}
                       aria-invalid={!!passwordError}
                       aria-describedby={passwordError ? "password-error" : undefined}
@@ -270,6 +277,17 @@ function AuthPage() {
                   )}
                 </div>
               )}
+
+              {authError && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[12px] text-destructive animate-fade-in"
+                >
+                  <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
 
               <button
                 type="submit"
