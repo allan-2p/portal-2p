@@ -79,6 +79,7 @@ function AuthPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setAuthError(null);
     setTouched({ email: true, password: true });
     const emailCheck = emailSchema.safeParse(email);
     const pwdCheck = resetMode ? { success: true as const } : passwordSchema.safeParse(password);
@@ -104,8 +105,13 @@ function AuthPage() {
         setTimeout(() => navigate({ to: "/" }), 1100);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro ao entrar";
-      toast.error(msg.includes("Invalid login") ? "E-mail ou senha incorretos." : msg);
+      const raw = err instanceof Error ? err.message : "Erro ao entrar";
+      const friendly =
+        raw.includes("Invalid login") || raw.toLowerCase().includes("invalid credentials")
+          ? "E-mail ou senha incorretos."
+          : raw;
+      setAuthError(friendly);
+      toast.error(friendly);
       setShake((s) => s + 1);
       setLoading(false);
       return;
