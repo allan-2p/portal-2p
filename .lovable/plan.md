@@ -1,70 +1,49 @@
-## Redesign da tela de login — Bento Cinematográfico Claro
+## 1. Painel de Metas (Administrador → Metas)
 
-Visão: tela `/auth` deixa de ser split simples (imagem + form) e vira uma **composição bento clara** com identidade 2P, sensação de produto premium tipo Linear/Vercel/Arc, mantendo o laranja como protagonista.
+**Backend**
+- Nova tabela `public.salesperson_goals`:
+  - `sf_user_id text primary key`
+  - `monthly_goal numeric(14,2) not null default 0` (meta de faturamento em R$)
+  - `updated_by uuid`, `updated_at timestamptz default now()`
+- RLS: SELECT liberado para `authenticated`; INSERT/UPDATE/DELETE apenas admin (via `has_role`). GRANTs padrão.
+- `src/lib/admin.functions.ts`:
+  - `listSalespersonGoals` — lista vendedores do Salesforce (mesma query do painel de Vendedores) + meta atual (join com a tabela).
+  - `setSalespersonGoal({ sf_user_id, monthly_goal })` — upsert, restrito a admin.
 
-### Direção visual
-- **Paleta:** fundo `#fafbfc`, superfícies brancas, tinta `#1a1a2e`, acento `#ff6b35`. Sem dark hero — claro o tempo todo (com toggle preservado).
-- **Tipografia:** Space Grotesk display + DM Sans body, via `@fontsource`. Headline grande (`text-5xl/6xl tracking-tight`) com palavra-chave em laranja.
-- **Energia:** cinematográfica e premium — gradientes sutis, grid de fundo leve, glow laranja controlado, animações de entrada com `framer-motion` (fade + slide stagger).
+**UI**
+- Nova rota `src/routes/_authenticated/admin.metas.tsx`:
+  - Tabela: Vendedor · E-mail · Cargo · **Meta mensal (R$)** editável (input com máscara BRL, debounce ~600ms → salva automático) · última atualização.
+  - Busca por nome/e-mail.
+  - Card de total no topo (soma das metas).
+- Sidebar: adicionar `SubLink` "Metas" (ícone `Target`) no grupo Administrador.
 
-### Layout (desktop ≥ lg)
+## 2. UX da seleção de segmentação
 
-```text
-┌────────────────────────────────────────────────────────────────┐
-│  [logo 2P] Portal 2P                          [tema] [PT-BR]   │
-├──────────────────────────┬─────────────────────────────────────┤
-│  HERO BENTO (col-span-7) │  FORM CARD (col-span-5)             │
-│  Headline gigante:       │  "Entrar na sua conta"              │
-│  "Inteligência que       │  email / senha / botão laranja      │
-│   move metas."           │  esqueci minha senha                 │
-│  Sub + tag laranja        │                                     │
-│                          │                                     │
-├─────────┬────────┬───────┤                                     │
-│ STAT 1  │ STAT 2 │ TAG   │                                     │
-│ +R$ X M │ 1.2k   │ Atlas │                                     │
-│ vendido │ pedid. │ AI ◐  │                                     │
-├─────────┴────────┴───────┤                                     │
-│ FRASE: "Inovação e       │                                     │
-│ parceria é o que nos     │                                     │
-│ move!"  — diretoria 2P   │                                     │
-└──────────────────────────┴─────────────────────────────────────┘
-```
+Hoje começa com todos selecionados e sem estado ativo visível, então clicar parece "não desmarcar". Trocar para modelo aditivo:
 
-Mobile: stack vertical — form primeiro, bento abaixo compactado.
+- Estado inicial: `selectedSegs` vazio ⇒ significa "mostrar todos" (botão **Todos** fica ativo).
+- Clicar em A/B/C/D **adiciona** o segmento ao filtro; clicar de novo remove.
+- Enquanto tiver 1+ selecionado, só esses segmentos aparecem; se remover o último, volta ao estado "Todos".
+- Botão **Todos** limpa a seleção (não força todos como marcados).
+- Filtro de linhas: `selectedSegs.size === 0 || selectedSegs.has(c.segment)`.
 
-### Blocos do bento (lado esquerdo)
-1. **Hero card grande** — headline em Space Grotesk, palavra "metas" em `text-primary`, sub em muted, micro-tag "Portal interno · time 2P" com bolinha pulsante laranja.
-2. **Stat cards (2)** — números mock representativos ("R$ 38M vendido no mês", "1.2k pedidos ativos") em Space Grotesk bold, label menor. Bordas suaves, fundo branco, sombra `shadow-sm`.
-3. **Tag Atlas** — card menor com ícone `Sparkles` laranja, "Atlas AI · sugestões em tempo real", gradiente sutil laranja→transparente.
-4. **Quote card** — frase "Inovação e parceria é o que nos move!" em itálico Space Grotesk, com filete laranja à esquerda e assinatura discreta.
+## 3. Notificações reais
 
-Fundo do hero: grid sutil de pontos (radial mask) + blob laranja desfocado no canto inferior esquerdo (`blur-3xl opacity-30`) para profundidade cinematográfica sem perder o claro.
+Remover o demo feed (`useNotificationsDemoFeed`) e substituir por notificações vindas do Salesforce:
 
-### Form card (direita)
-- Card branco `rounded-2xl border shadow-lg` flutuante, com leve glow laranja por trás (`::before` blur).
-- Topo: chip "Acesso restrito" com ícone cadeado.
-- Campos com label flutuante minimalista, foco com ring laranja.
-- Botão primário em laranja sólido, hover com leve scale + sombra colorida.
-- Footer do card: separador "ou" + linha discreta "Problemas para acessar? Fale com o admin".
-- Toggle de tema permanece no canto superior direito (fora do card).
+- Novo hook `useSalesforceNotifications`:
+  - A cada 2 min chama `getSalesforceTasks({ start: hoje, end: hoje })` (tarefas abertas de hoje).
+  - Também chama `getSalesforceForecasts()` filtrando oportunidades com `forecastDate` ≤ hoje+3 dias.
+  - Mantém em `localStorage` um `Set<string>` de IDs já notificados (`portal2p-seen-notifs`) para não duplicar entre reloads.
+  - Para IDs novos: `pushNotification({ kind: 'task', ... })` (tarefas) ou `kind: 'atlas'` (oportunidades com forecast próximo).
+- Primeira execução: marca tudo como "visto" sem tocar sino se `localStorage` estiver vazio (evita disparar 30 toasts na primeira visita) — só notifica os que aparecerem daí em diante.
+- `AppLayout` troca `useNotificationsDemoFeed()` por `useSalesforceNotifications()`.
+- Texto no dropdown mantém "Tarefas do Salesforce e recomendações do Atlas".
 
-### Animações (framer-motion)
-- Entrada da página: stagger dos blocos do bento (y: 12→0, opacity 0→1, 60ms entre cada).
-- Hover dos stat cards: leve `translateY(-2px)` + sombra mais intensa.
-- Bolinha "ao vivo" pulsando no tag superior.
-- Form: shake sutil em erro de login (já temos toast, adicionar shake no card).
+## Detalhes técnicos
 
-### Implementação técnica
-- Instalar `@fontsource/space-grotesk` e `@fontsource/dm-sans` via `bun add`, importar em `src/start.ts` (entry global).
-- Confirmar tokens em `src/styles.css` — paleta light atual já compatível, apenas ajustar `--primary` para casar com `#ff6b35` se necessário.
-- Reescrever `src/routes/auth.tsx`:
-  - Grid `lg:grid-cols-12` com `gap-4 p-6`.
-  - Componentes locais `BentoCard`, `StatCard`, `QuoteCard` no mesmo arquivo (sem novos arquivos globais — escopo local da rota).
-  - Manter toda a lógica de auth (`handleSubmit`, `resetMode`, redirect) intacta.
-- `framer-motion` já está disponível? Se não, `bun add framer-motion`.
-- Imagem `src/assets/auth-bg.jpg` deixa de ser usada como fundo full-bleed; pode ser removida ou reaproveitada como textura sutil dentro de um dos cards menores (decido na implementação — provavelmente removida para manter o claro).
-
-### Fora do escopo
-- Não muda lógica de autenticação, rotas protegidas, ou reset de senha.
-- Não muda o resto do app (header, sidebar, home).
-- Não adiciona dark hero — tema claro é o default desta tela; toggle continua funcionando.
+- Migração: `CREATE TABLE` + `GRANT SELECT ON ... TO authenticated`, `GRANT ALL ... TO service_role`, RLS + policies (SELECT authenticated, ALL admin).
+- Input de meta: `<input inputMode="decimal">` que aceita "1234,56" ou "1234.56"; parse para número antes de salvar.
+- Debounce no salvamento por linha para não bater no server a cada tecla.
+- Server function usa `context.userId` para gravar `updated_by`.
+- O hook de notificações só roda quando há sessão (usa `useAuth`) e cancela intervalos no unmount.
