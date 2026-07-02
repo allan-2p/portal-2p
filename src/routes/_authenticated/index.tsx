@@ -99,7 +99,7 @@ function HomePage() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-  const opps = oppsQ.data?.records ?? [];
+  const opps: SalesforceOpportunity[] = oppsQ.data?.records ?? [];
   const filteredOpps = stageFilter === "all" ? opps : opps.filter((o) => o.stage === stageFilter);
   const oppsTotal = filteredOpps.reduce((a, b) => a + (b.amount ?? 0), 0);
 
