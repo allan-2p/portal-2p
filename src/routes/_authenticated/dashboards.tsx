@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { BarChart3, Target, Wallet, TrendingUp } from "lucide-react";
+import { useState } from "react";
+import { VendedorFilter } from "@/components/vendedor-filter";
 
 export const Route = createFileRoute("/_authenticated/dashboards")({
   head: () => ({ meta: [{ title: "Dashboards — Portal 2P" }] }),
@@ -8,13 +10,18 @@ export const Route = createFileRoute("/_authenticated/dashboards")({
 });
 
 function DashboardsPage() {
+  const [ownerId, setOwnerId] = useState<string>("all");
+  void ownerId;
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-5">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Pessoal</div>
-          <h1 className="text-3xl font-bold mt-1">Meus Dashboards</h1>
-          <p className="text-sm text-muted-foreground mt-1">Acompanhe suas próprias metas, comissões e indicadores.</p>
+        <div className="flex items-end justify-between flex-wrap gap-3">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Pessoal</div>
+            <h1 className="text-3xl font-bold mt-1">Meus Dashboards</h1>
+            <p className="text-sm text-muted-foreground mt-1">Acompanhe suas próprias metas, comissões e indicadores.</p>
+          </div>
+          <VendedorFilter value={ownerId} onChange={setOwnerId} />
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
