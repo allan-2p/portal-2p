@@ -141,17 +141,23 @@ export type SalesforceSalesperson = { id: string; name: string; email: string | 
 
 export const getSalesforceSalespeople = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
     const soql =
       `SELECT Id, Name, Email FROM User ` +
       `WHERE IsActive = true AND Email LIKE '%@2pgroup.com.br' ` +
       `ORDER BY Name ASC LIMIT 200`;
-    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
-    const records: SalesforceSalesperson[] = (res?.records ?? []).map((r: any) => ({
-      id: r.Id,
-      name: r.Name,
-      email: r.Email ?? null,
-    }));
+    const [res, hiddenRes] = await Promise.all([
+      sfFetch(`/query?q=${encodeURIComponent(soql)}`),
+      context.supabase.from("hidden_salespeople").select("sf_user_id"),
+    ]);
+    const hidden = new Set<string>((hiddenRes.data ?? []).map((r: any) => r.sf_user_id));
+    const records: SalesforceSalesperson[] = (res?.records ?? [])
+      .filter((r: any) => !hidden.has(r.Id))
+      .map((r: any) => ({
+        id: r.Id,
+        name: r.Name,
+        email: r.Email ?? null,
+      }));
     return { records };
   });
 
