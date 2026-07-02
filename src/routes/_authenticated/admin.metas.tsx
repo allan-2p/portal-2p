@@ -202,10 +202,12 @@ function StatCard({ label, value, highlight }: { label: string; value: string; h
 
 function GoalRow({
   person,
-  onSave,
+  onSaveGoal,
+  onToggleActive,
 }: {
   person: SalespersonGoal;
-  onSave: (monthly_goal: number) => void;
+  onSaveGoal: (monthly_goal: number) => void;
+  onToggleActive: (active: boolean) => void;
 }) {
   const [value, setValue] = useState<string>(person.monthlyGoal ? formatInput(person.monthlyGoal) : "");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "invalid">("idle");
@@ -213,7 +215,6 @@ function GoalRow({
   const savedRef = useRef(person.monthlyGoal);
 
   useEffect(() => {
-    // sync when server data mudar (ex.: outro admin editou)
     if (person.monthlyGoal !== savedRef.current) {
       savedRef.current = person.monthlyGoal;
       setValue(person.monthlyGoal ? formatInput(person.monthlyGoal) : "");
@@ -233,7 +234,7 @@ function GoalRow({
     }
     setStatus("saving");
     timer.current = setTimeout(() => {
-      onSave(parsed);
+      onSaveGoal(parsed);
       savedRef.current = parsed;
       setStatus("saved");
       setTimeout(() => setStatus((s) => (s === "saved" ? "idle" : s)), 1500);
@@ -247,6 +248,22 @@ function GoalRow({
       <td className="px-4 py-3 font-medium">{person.name}</td>
       <td className="px-4 py-3 text-muted-foreground">{person.email ?? "—"}</td>
       <td className="px-4 py-3 text-muted-foreground">{person.title ?? "—"}</td>
+      <td className="px-4 py-3">
+        <div className="flex justify-center">
+          <select
+            value={person.active ? "yes" : "no"}
+            onChange={(e) => onToggleActive(e.target.value === "yes")}
+            className={`py-1 px-2 rounded-md bg-surface border text-xs focus:outline-none ${
+              person.active
+                ? "border-success/40 text-success"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            <option value="yes">Ativa</option>
+            <option value="no">Inativa</option>
+          </select>
+        </div>
+      </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-2">
           <div className="relative">
