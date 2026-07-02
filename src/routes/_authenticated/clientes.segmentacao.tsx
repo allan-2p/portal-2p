@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
+import { getSalesforceAccounts, getSalesforceSalespeople, type SalesforceAccount } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
@@ -60,7 +60,7 @@ function accountToClient(a: SalesforceAccount): Client {
 
 function SegmentacaoPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
-  const [filterSeg, setFilterSeg] = useState<Segment | "all">("all");
+  const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set(["A", "B", "C", "D"]));
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detailClient, setDetailClient] = useState<Client | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
@@ -69,17 +69,31 @@ function SegmentacaoPage() {
   const [ownerId, setOwnerId] = useState<string>("all");
 
   const fetchAccounts = useServerFn(getSalesforceAccounts);
+  const fetchPeople = useServerFn(getSalesforceSalespeople);
   const { data, isLoading, error } = useQuery({
     queryKey: ["salesforce", "accounts"],
     queryFn: () => fetchAccounts(),
     staleTime: 60_000,
   });
+  const peopleQ = useQuery({
+    queryKey: ["sf-salespeople"],
+    queryFn: () => fetchPeople(),
+    staleTime: 5 * 60_000,
+  });
+  const activeOwnerIds = useMemo(
+    () => new Set((peopleQ.data?.records ?? []).map((p) => p.id)),
+    [peopleQ.data],
+  );
 
   const clients = useMemo(() => {
     const accounts = data?.records ?? [];
-    const scoped = ownerId === "all" ? accounts : accounts.filter((a) => a.ownerId === ownerId);
+    // Somente contas cujo vendedor está ativo no momento (não oculto no admin).
+    const activeOnly = activeOwnerIds.size > 0
+      ? accounts.filter((a) => a.ownerId && activeOwnerIds.has(a.ownerId))
+      : [];
+    const scoped = ownerId === "all" ? activeOnly : activeOnly.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
-  }, [data, ownerId]);
+  }, [data, ownerId, activeOwnerIds]);
 
   const ranked = useMemo(
     () => [...clients].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
@@ -88,7 +102,7 @@ function SegmentacaoPage() {
 
   const s = search.trim().toLowerCase();
   const filtered = ranked.filter((c) => {
-    if (filterSeg !== "all" && c.segment !== filterSeg) return false;
+    if (!selectedSegs.has(c.segment)) return false;
     if (s && !c.name.toLowerCase().includes(s)) return false;
     return true;
   });
@@ -123,9 +137,16 @@ function SegmentacaoPage() {
     });
   };
 
-  const segments: { key: Segment | "all"; label: string }[] = [
-    { key: "all", label: "Todos" }, { key: "A", label: "A" }, { key: "B", label: "B" }, { key: "C", label: "C" }, { key: "D", label: "D" },
-  ];
+  const allSegs: Segment[] = ["A", "B", "C", "D"];
+  const allSelected = selectedSegs.size === allSegs.length;
+  const toggleSeg = (seg: Segment) => {
+    setSelectedSegs((prev) => {
+      const n = new Set(prev);
+      if (n.has(seg)) n.delete(seg); else n.add(seg);
+      if (n.size === 0) return new Set(allSegs); // nunca vazio
+      return n;
+    });
+  };
 
   return (
     <AppLayout>
@@ -161,15 +182,33 @@ function SegmentacaoPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground mr-2">Segmento:</span>
-          {segments.map((s) => (
-            <button key={s.key} onClick={() => setFilterSeg(s.key)}
-              className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
-                filterSeg === s.key ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}>
-              {s.label}
-            </button>
-          ))}
+          <button
+            onClick={() => setSelectedSegs(new Set(allSegs))}
+            className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
+              allSelected ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}
+          >
+            Todos
+          </button>
+          {allSegs.map((seg) => {
+            const active = !allSelected && selectedSegs.has(seg);
+            return (
+              <button
+                key={seg}
+                onClick={() => toggleSeg(seg)}
+                className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
+                  active ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}
+              >
+                {seg}
+              </button>
+            );
+          })}
+          {!allSelected && (
+            <span className="text-[11px] text-muted-foreground ml-1">
+              {selectedSegs.size} selecionado{selectedSegs.size > 1 ? "s" : ""}
+            </span>
+          )}
         </div>
 
         <div className="glass rounded-2xl p-4 flex items-start gap-3 border-primary/30">

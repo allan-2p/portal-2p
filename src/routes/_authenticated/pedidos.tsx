@@ -2,9 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { orders, kanbanColumns, type Order } from "@/lib/mock-data";
 import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { KanbanSquare, List, Sparkles, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VendedorFilter } from "@/components/vendedor-filter";
+import { getSalesforceSalespeople } from "@/lib/salesforce.functions";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
@@ -23,17 +26,39 @@ function PedidosPage() {
   const [search, setSearch] = useState("");
   const [ownerId, setOwnerId] = useState<string>("all");
 
+  const fetchSalespeople = useServerFn(getSalesforceSalespeople);
+  const peopleQ = useQuery({
+    queryKey: ["sf-salespeople"],
+    queryFn: () => fetchSalespeople(),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const people = peopleQ.data?.records ?? [];
+
+  // Mapa determinístico pedido -> vendedor (mock), até integrar OwnerId real dos pedidos.
+  const ownerByOrder = useMemo(() => {
+    const m = new Map<string, string>();
+    if (people.length === 0) return m;
+    for (const o of orders) {
+      let h = 0;
+      for (let i = 0; i < o.id.length; i++) h = (h * 31 + o.id.charCodeAt(i)) >>> 0;
+      m.set(o.id, people[h % people.length].id);
+    }
+    return m;
+  }, [people]);
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return orders;
-    return orders.filter(
-      (o) =>
+    return orders.filter((o) => {
+      if (ownerId !== "all" && ownerByOrder.get(o.id) !== ownerId) return false;
+      if (!s) return true;
+      return (
         o.code.toLowerCase().includes(s) ||
         o.title.toLowerCase().includes(s) ||
-        o.client.toLowerCase().includes(s),
-    );
-  }, [search]);
-  void ownerId; // filtro de vendedor será aplicado quando dados vierem do Salesforce
+        o.client.toLowerCase().includes(s)
+      );
+    });
+  }, [search, ownerId, ownerByOrder]);
 
   return (
     <AppLayout>

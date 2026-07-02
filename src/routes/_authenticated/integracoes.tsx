@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { CheckCircle2, XCircle, RefreshCw, ExternalLink, Cloud, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, RefreshCw, ExternalLink, Cloud, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getSalesforceStatus, getSalesforceSample } from "@/lib/salesforce.functions";
@@ -32,6 +32,12 @@ function IntegracoesPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" /> Voltar
+      </Link>
       <div>
         <h1 className="font-display text-2xl font-bold">Integrações</h1>
         <p className="text-sm text-muted-foreground mt-1">
