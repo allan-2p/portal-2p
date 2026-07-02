@@ -248,7 +248,7 @@ function AuthPage() {
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => { setPassword(e.target.value); if (authError) setAuthError(null); }}
                       onBlur={() => setTouched((t) => ({ ...t, password: true }))}
                       aria-invalid={!!passwordError}
                       aria-describedby={passwordError ? "password-error" : undefined}
