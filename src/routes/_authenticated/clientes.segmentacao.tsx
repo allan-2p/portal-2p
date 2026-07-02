@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { clients, type Client, type Segment } from "@/lib/mock-data";
+import { type Client, type Segment } from "@/lib/mock-data";
 import { useGlobalSearch } from "@/lib/search-store";
 import { Fragment, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
   head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
@@ -16,6 +19,45 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 type SortKey = "rank" | "name" | "segment" | "projection" | "generation" | "sales" | "health";
 type SortDir = "asc" | "desc";
 
+// Hash determinístico do id do Salesforce para gerar métricas de performance
+// visuais consistentes enquanto a integração de números reais não existe.
+function seedFromId(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+function rand(seed: number, offset: number): number {
+  const x = Math.sin(seed + offset) * 10000;
+  return x - Math.floor(x);
+}
+function accountToClient(a: SalesforceAccount): Client {
+  const seed = seedFromId(a.id);
+  const segment: Segment = a.segment ?? "D";
+  const baseByTier: Record<Segment, number> = { A: 40000, B: 15000, C: 8000, D: 4000 };
+  const base = baseByTier[segment];
+  const projection = Math.round(base + rand(seed, 1) * base * 1.2);
+  const generation = Math.round(projection * (0.15 + rand(seed, 2) * 0.75));
+  const sales = Math.round(generation * (0.55 + rand(seed, 3) * 0.4));
+  const health = Math.round(10 + rand(seed, 4) * 90);
+  const trend: Client["trend"] = health > 70 ? "up" : health > 40 ? "stable" : "down";
+  const lastInteraction = `${Math.max(1, Math.round(rand(seed, 5) * 25))}d`;
+  return {
+    id: a.id,
+    name: a.name,
+    segment,
+    projection,
+    generation,
+    sales,
+    trend,
+    lastInteraction,
+    health,
+    notes: a.tubos.length > 0 ? `Segmentação Tubos: ${a.tubos.join(", ")}.` : undefined,
+  };
+}
+
 function SegmentacaoPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
   const [filterSeg, setFilterSeg] = useState<Segment | "all">("all");
@@ -25,10 +67,20 @@ function SegmentacaoPage() {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const search = useGlobalSearch().trim().toLowerCase();
 
+  const fetchAccounts = useServerFn(getSalesforceAccounts);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["salesforce", "accounts"],
+    queryFn: () => fetchAccounts(),
+    staleTime: 60_000,
+  });
+
+  const clients = useMemo(() => (data?.records ?? []).map(accountToClient), [data]);
+
   const ranked = useMemo(
     () => [...clients].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
-    [],
+    [clients],
   );
+
 
   const filtered = ranked.filter((c) => {
     if (filterSeg !== "all" && c.segment !== filterSeg) return false;
@@ -139,6 +191,28 @@ function SegmentacaoPage() {
                 </tr>
               </thead>
               <tbody>
+                {isLoading && (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                      <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
+                      Carregando contas do Salesforce…
+                    </td>
+                  </tr>
+                )}
+                {error && !isLoading && (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-6 text-sm text-destructive">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 mt-0.5" />
+                        <div>
+                          <div className="font-medium">Não foi possível carregar as contas do Salesforce.</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{error instanceof Error ? error.message : String(error)}</div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+
                 {visible.map((c) => {
                   const isOpen = expanded.has(c.id);
                   const generationPct = (c.generation / c.projection) * 100;

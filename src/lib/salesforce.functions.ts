@@ -219,3 +219,57 @@ export const getSalesforceForecasts = createServerFn({ method: "GET" })
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOpp) };
   });
+
+export type SalesforceAccount = {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  segment: "A" | "B" | "C" | "D" | null;
+  tubos: string[];
+  ownerId: string | null;
+  ownerName: string | null;
+  createdAt: string | null;
+  phone: string | null;
+  website: string | null;
+  industry: string | null;
+};
+
+function formatCnpj(v: string | null): string | null {
+  if (!v) return null;
+  const d = v.replace(/\D/g, "");
+  if (d.length !== 14) return v;
+  return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12,14)}`;
+}
+
+function mapAccount(r: any): SalesforceAccount {
+  const rawSeg = (r.Segmentacao_Solar__c ?? "").toString().trim().toUpperCase();
+  const segment = (["A","B","C","D"] as const).includes(rawSeg as any) ? (rawSeg as "A"|"B"|"C"|"D") : null;
+  const tubos = typeof r.Segmentacao_Tubos__c === "string" && r.Segmentacao_Tubos__c
+    ? r.Segmentacao_Tubos__c.split(";").map((s: string) => s.trim()).filter(Boolean)
+    : [];
+  return {
+    id: r.Id,
+    name: r.Name,
+    cnpj: formatCnpj(r.CNPJ__c ?? null),
+    segment,
+    tubos,
+    ownerId: r.OwnerId ?? null,
+    ownerName: r.Owner?.Name ?? null,
+    createdAt: r.CreatedDate ?? null,
+    phone: r.Phone ?? null,
+    website: r.Website ?? null,
+    industry: r.Industry ?? null,
+  };
+}
+
+export const getSalesforceAccounts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const soql =
+      `SELECT Id, Name, CNPJ__c, Segmentacao_Solar__c, Segmentacao_Tubos__c, ` +
+      `Industry, Phone, Website, OwnerId, Owner.Name, CreatedDate ` +
+      `FROM Account ORDER BY Name ASC LIMIT 2000`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    return { records: (res?.records ?? []).map(mapAccount) as SalesforceAccount[] };
+  });
+
