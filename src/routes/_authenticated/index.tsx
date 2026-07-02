@@ -18,6 +18,7 @@ import {
   getSalesforceForecasts,
   opportunityStages,
   type OpportunityStage,
+  type SalesforceOpportunity,
 } from "@/lib/salesforce.functions";
 
 export const Route = createFileRoute("/_authenticated/")({
