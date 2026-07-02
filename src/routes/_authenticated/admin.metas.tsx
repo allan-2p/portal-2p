@@ -146,6 +146,7 @@ function MetasPage() {
                   <th className="text-left px-4 py-2.5">Vendedor</th>
                   <th className="text-left px-4 py-2.5">E-mail</th>
                   <th className="text-left px-4 py-2.5">Cargo</th>
+                  <th className="text-center px-4 py-2.5 w-32">Meta ativa</th>
                   <th className="text-right px-4 py-2.5 w-56">Meta mensal (R$)</th>
                   <th className="text-left px-4 py-2.5 w-40">Última atualização</th>
                 </tr>
@@ -153,7 +154,7 @@ function MetasPage() {
               <tbody>
                 {q.isLoading && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                    <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">
                       <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
                       Carregando vendedores…
                     </td>
@@ -164,12 +165,15 @@ function MetasPage() {
                     <GoalRow
                       key={p.id}
                       person={p}
-                      onSave={(monthly_goal) => mut.mutate({ sf_user_id: p.id, monthly_goal })}
+                      onSaveGoal={(monthly_goal) =>
+                        mut.mutate({ sf_user_id: p.id, monthly_goal, active: true })
+                      }
+                      onToggleActive={(active) => mut.mutate({ sf_user_id: p.id, active })}
                     />
                   ))}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
                       Nenhum vendedor encontrado.
                     </td>
                   </tr>
