@@ -60,7 +60,7 @@ function accountToClient(a: SalesforceAccount): Client {
 
 function SegmentacaoPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
-  const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set(["A", "B", "C", "D"]));
+  const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detailClient, setDetailClient] = useState<Client | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
@@ -102,7 +102,8 @@ function SegmentacaoPage() {
 
   const s = search.trim().toLowerCase();
   const filtered = ranked.filter((c) => {
-    if (!selectedSegs.has(c.segment)) return false;
+    // Vazio = todos os segmentos
+    if (selectedSegs.size > 0 && !selectedSegs.has(c.segment)) return false;
     if (s && !c.name.toLowerCase().includes(s)) return false;
     return true;
   });
@@ -138,12 +139,11 @@ function SegmentacaoPage() {
   };
 
   const allSegs: Segment[] = ["A", "B", "C", "D"];
-  const allSelected = selectedSegs.size === allSegs.length;
+  const allSelected = selectedSegs.size === 0; // vazio = mostrar todos
   const toggleSeg = (seg: Segment) => {
     setSelectedSegs((prev) => {
       const n = new Set(prev);
       if (n.has(seg)) n.delete(seg); else n.add(seg);
-      if (n.size === 0) return new Set(allSegs); // nunca vazio
       return n;
     });
   };
@@ -185,14 +185,14 @@ function SegmentacaoPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground mr-2">Segmento:</span>
           <button
-            onClick={() => setSelectedSegs(new Set(allSegs))}
+            onClick={() => setSelectedSegs(new Set())}
             className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
               allSelected ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}
           >
             Todos
           </button>
           {allSegs.map((seg) => {
-            const active = !allSelected && selectedSegs.has(seg);
+            const active = selectedSegs.has(seg);
             return (
               <button
                 key={seg}

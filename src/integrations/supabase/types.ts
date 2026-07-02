@@ -74,6 +74,30 @@ export type Database = {
         }
         Relationships: []
       }
+      salesperson_goals: {
+        Row: {
+          created_at: string
+          monthly_goal: number
+          sf_user_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          monthly_goal?: number
+          sf_user_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          monthly_goal?: number
+          sf_user_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       user_invites: {
         Row: {
           accepted_at: string | null

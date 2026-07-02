@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/2p-logo.jpg";
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
-import { useNotificationsDemoFeed } from "@/hooks/use-notifications";
+import { useSalesforceNotifications } from "@/hooks/use-salesforce-notifications";
 import { bootstrapFirstAdmin } from "@/lib/users.functions";
 
 import { toast } from "sonner";
@@ -28,7 +28,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { user, profile, roles, hasRole } = useAuth();
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
-  useNotificationsDemoFeed();
+  useSalesforceNotifications();
 
   useEffect(() => {
     if (localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
@@ -354,6 +354,7 @@ function AdminGroup({ pathname, collapsed }: { pathname: string; collapsed: bool
         <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
           <SubLink to="/usuarios" label="Usuários" icon={Users} active={pathname.startsWith("/usuarios")} />
           <SubLink to="/admin/vendedores" label="Vendedores" icon={UserCog} active={pathname.startsWith("/admin/vendedores")} />
+          <SubLink to="/admin/metas" label="Metas" icon={Target} active={pathname.startsWith("/admin/metas")} />
           <SubLink to="/integracoes" label="Integrações" icon={Plug} active={pathname.startsWith("/integracoes")} />
         </div>
       )}
