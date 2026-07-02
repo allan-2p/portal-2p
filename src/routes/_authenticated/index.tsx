@@ -11,6 +11,7 @@ import {
   FileText, CalendarClock, Gift, Lock, Users as UsersIcon, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 import {
   getSalesforceTasks,
   getSalesforceSalespeople,
