@@ -136,6 +136,16 @@ function SegmentacaoPage() {
             <h1 className="text-3xl font-bold mt-1">Segmentação</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar cliente…"
+                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-56 focus:outline-none focus:border-primary/50"
+              />
+            </div>
+            <VendedorFilter value={ownerId} onChange={setOwnerId} />
             <div className="flex bg-surface rounded-lg p-1 border border-border">
               {(["mensal", "trimestral"] as const).map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
