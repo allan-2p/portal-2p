@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Search, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList } from "lucide-react";
+import { Home, KanbanSquare, Layers, Search, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/2p-logo.jpg";
@@ -187,7 +187,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           })}
 
           {hasRole("admin") && (
-            <NavLink item={{ to: "/usuarios", label: "Usuários", icon: Users }} active={pathname.startsWith("/usuarios")} collapsed={collapsed} />
+            <>
+              <NavLink item={{ to: "/usuarios", label: "Usuários", icon: Users }} active={pathname.startsWith("/usuarios")} collapsed={collapsed} />
+              <NavLink item={{ to: "/integracoes", label: "Integrações", icon: Plug }} active={pathname.startsWith("/integracoes")} collapsed={collapsed} />
+            </>
           )}
         </nav>
 
