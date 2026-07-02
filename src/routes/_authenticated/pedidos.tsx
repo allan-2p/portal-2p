@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { orders, kanbanColumns, type Order } from "@/lib/mock-data";
-import { useState } from "react";
-import { KanbanSquare, List, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { KanbanSquare, List, Sparkles, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VendedorFilter } from "@/components/vendedor-filter";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
@@ -19,6 +20,20 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 
 function PedidosPage() {
   const [view, setView] = useState<"kanban" | "list">("kanban");
+  const [search, setSearch] = useState("");
+  const [ownerId, setOwnerId] = useState<string>("all");
+
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return orders;
+    return orders.filter(
+      (o) =>
+        o.code.toLowerCase().includes(s) ||
+        o.title.toLowerCase().includes(s) ||
+        o.client.toLowerCase().includes(s),
+    );
+  }, [search]);
+  void ownerId; // filtro de vendedor será aplicado quando dados vierem do Salesforce
 
   return (
     <AppLayout>
@@ -28,7 +43,17 @@ function PedidosPage() {
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Carteira</div>
             <h1 className="text-3xl font-bold mt-1">Detalhamento de Pedidos</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar pedido, cliente…"
+                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-64 focus:outline-none focus:border-primary/50"
+              />
+            </div>
+            <VendedorFilter value={ownerId} onChange={setOwnerId} />
             <div className="flex bg-surface rounded-lg p-1 border border-border">
               <button
                 onClick={() => setView("kanban")}
@@ -45,9 +70,6 @@ function PedidosPage() {
                 <List className="h-4 w-4" /> Lista
               </button>
             </div>
-            <select className="bg-surface border border-border rounded-lg px-3 py-2 text-sm">
-              <option>Todos</option>
-            </select>
           </div>
         </div>
 
@@ -61,7 +83,7 @@ function PedidosPage() {
           </div>
         </div>
 
-        {view === "kanban" ? <KanbanView /> : <ListView />}
+        {view === "kanban" ? <KanbanView data={filtered} /> : <ListView data={filtered} />}
       </div>
     </AppLayout>
   );
@@ -75,11 +97,11 @@ const statusCount: Record<Order["status"], number> = {
   "Coletado": 101,
 };
 
-function KanbanView() {
+function KanbanView({ data }: { data: Order[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
       {kanbanColumns.map((col) => {
-        const cards = orders.filter((o) => o.status === col);
+        const cards = data.filter((o) => o.status === col);
         return (
           <div key={col} className="bg-surface/60 rounded-2xl border border-border overflow-hidden flex flex-col max-h-[75vh]">
             <div className="bg-gradient-to-r from-primary to-[oklch(0.62_0.22_30)] px-4 py-2.5 flex items-center justify-between">
@@ -112,7 +134,7 @@ function KanbanView() {
   );
 }
 
-function ListView() {
+function ListView({ data }: { data: Order[] }) {
   return (
     <div className="glass rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
@@ -128,7 +150,7 @@ function ListView() {
             </tr>
           </thead>
           <tbody>
-            {orders.map((o) => (
+            {data.map((o) => (
               <tr key={o.id} className="border-b border-border/50 hover:bg-surface-2 cursor-pointer">
                 <td className="px-4 py-3 font-medium">{o.code}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.title}</td>

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSalesforceTasks, type SalesforceTask } from "@/lib/salesforce.functions";
+import { VendedorFilter } from "@/components/vendedor-filter";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
   head: () => ({
@@ -74,6 +75,8 @@ function TarefasPage() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [ownerId, setOwnerId] = useState<string>("all");
+  const ownerParam = ownerId === "all" ? null : ownerId;
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -90,8 +93,8 @@ function TarefasPage() {
 
   const fetchTasks = useServerFn(getSalesforceTasks);
   const tasksQuery = useQuery({
-    queryKey: ["sf-tasks", range.start, range.end],
-    queryFn: () => fetchTasks({ data: range }),
+    queryKey: ["sf-tasks", range.start, range.end, ownerParam],
+    queryFn: () => fetchTasks({ data: { ...range, ownerId: ownerParam } }),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -128,7 +131,8 @@ function TarefasPage() {
                 : "Carregando tarefas sincronizadas do Salesforce…"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <VendedorFilter value={ownerId} onChange={setOwnerId} />
             <button
               onClick={() => setCursor(new Date(year, month - 1, 1))}
               className="p-2 rounded-lg bg-surface border border-border hover:bg-surface-2"

@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      hidden_salespeople: {
+        Row: {
+          created_at: string
+          hidden_by: string | null
+          sf_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hidden_by?: string | null
+          sf_user_id: string
+        }
+        Update: {
+          created_at?: string
+          hidden_by?: string | null
+          sf_user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean

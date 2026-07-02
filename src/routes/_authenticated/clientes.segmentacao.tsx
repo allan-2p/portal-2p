@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { type Client, type Segment } from "@/lib/mock-data";
-import { useGlobalSearch } from "@/lib/search-store";
 import { Fragment, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
+import { VendedorFilter } from "@/components/vendedor-filter";
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
   head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
@@ -65,7 +65,8 @@ function SegmentacaoPage() {
   const [detailClient, setDetailClient] = useState<Client | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const search = useGlobalSearch().trim().toLowerCase();
+  const [search, setSearch] = useState("");
+  const [ownerId, setOwnerId] = useState<string>("all");
 
   const fetchAccounts = useServerFn(getSalesforceAccounts);
   const { data, isLoading, error } = useQuery({
@@ -74,17 +75,21 @@ function SegmentacaoPage() {
     staleTime: 60_000,
   });
 
-  const clients = useMemo(() => (data?.records ?? []).map(accountToClient), [data]);
+  const clients = useMemo(() => {
+    const accounts = data?.records ?? [];
+    const scoped = ownerId === "all" ? accounts : accounts.filter((a) => a.ownerId === ownerId);
+    return scoped.map(accountToClient);
+  }, [data, ownerId]);
 
   const ranked = useMemo(
     () => [...clients].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
     [clients],
   );
 
-
+  const s = search.trim().toLowerCase();
   const filtered = ranked.filter((c) => {
     if (filterSeg !== "all" && c.segment !== filterSeg) return false;
-    if (search && !c.name.toLowerCase().includes(search)) return false;
+    if (s && !c.name.toLowerCase().includes(s)) return false;
     return true;
   });
 
@@ -131,6 +136,16 @@ function SegmentacaoPage() {
             <h1 className="text-3xl font-bold mt-1">Segmentação</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar cliente…"
+                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-56 focus:outline-none focus:border-primary/50"
+              />
+            </div>
+            <VendedorFilter value={ownerId} onChange={setOwnerId} />
             <div className="flex bg-surface rounded-lg p-1 border border-border">
               {(["mensal", "trimestral"] as const).map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}

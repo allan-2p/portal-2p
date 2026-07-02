@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Search, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/2p-logo.jpg";
@@ -11,7 +11,7 @@ import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { useNotificationsDemoFeed } from "@/hooks/use-notifications";
 import { bootstrapFirstAdmin } from "@/lib/users.functions";
-import { setGlobalSearch, useGlobalSearch } from "@/lib/search-store";
+
 import { toast } from "sonner";
 
 const COLLAPSE_KEY = "portal2p-sidebar-collapsed";
@@ -24,7 +24,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [clientesOpen, setClientesOpen] = useState(true);
-  const searchValue = useGlobalSearch();
+  
   const { user, profile, roles, hasRole } = useAuth();
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
@@ -187,10 +187,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           })}
 
           {hasRole("admin") && (
-            <>
-              <NavLink item={{ to: "/usuarios", label: "Usuários", icon: Users }} active={pathname.startsWith("/usuarios")} collapsed={collapsed} />
-              <NavLink item={{ to: "/integracoes", label: "Integrações", icon: Plug }} active={pathname.startsWith("/integracoes")} collapsed={collapsed} />
-            </>
+            <AdminGroup
+              pathname={pathname}
+              collapsed={collapsed}
+            />
           )}
         </nav>
 
@@ -210,25 +210,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <img src={logo} alt="2P" className="h-7 w-auto rounded" />
               <span className="font-display font-bold">Portal 2P</span>
             </div>
-            <div className="hidden md:flex items-center gap-2 flex-1 max-w-md">
-              <div className="relative w-full">
-                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  value={searchValue}
-                  onChange={(e) => setGlobalSearch(e.target.value)}
-                  onFocus={() => {
-                    if (!pathname.startsWith("/clientes") && !pathname.startsWith("/pedidos")) {
-                      navigate({ to: "/clientes/segmentacao" });
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") navigate({ to: "/clientes/segmentacao" });
-                  }}
-                  placeholder="Buscar cliente, pedido, projeto…"
-                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                />
-              </div>
-            </div>
+            <div className="hidden md:flex flex-1" />
+
             <div className="flex items-center gap-2 ml-auto">
               {user && roles.length === 0 && (
                 <button
@@ -324,5 +307,56 @@ function SubLink({ to, label, icon: Icon, active }: { to: string; label: string;
       <Icon className="h-3.5 w-3.5" />
       <span className="truncate">{label}</span>
     </Link>
+  );
+}
+
+const ADMIN_OPEN_KEY = "portal2p-admin-open";
+
+function AdminGroup({ pathname, collapsed }: { pathname: string; collapsed: boolean }) {
+  const active = pathname.startsWith("/admin") || pathname.startsWith("/usuarios") || pathname.startsWith("/integracoes");
+  const [open, setOpen] = useState(active);
+  useEffect(() => {
+    const saved = localStorage.getItem(ADMIN_OPEN_KEY);
+    if (saved !== null) setOpen(saved === "1");
+  }, []);
+  useEffect(() => { if (active) setOpen(true); }, [active]);
+  const toggle = () => setOpen((v) => { localStorage.setItem(ADMIN_OPEN_KEY, !v ? "1" : "0"); return !v; });
+
+  if (collapsed) {
+    return (
+      <Link
+        to="/integracoes"
+        preload="intent"
+        title="Administrador"
+        className={cn(
+          "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
+          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+        )}
+      >
+        <Shield className="h-4 w-4" />
+      </Link>
+    );
+  }
+  return (
+    <div className="mb-1">
+      <button
+        onClick={toggle}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+          active ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+        )}
+      >
+        <Shield className="h-4 w-4 shrink-0" />
+        <span className="truncate">Administrador</span>
+        <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !open && "-rotate-90")} />
+      </button>
+      {open && (
+        <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
+          <SubLink to="/usuarios" label="Usuários" icon={Users} active={pathname.startsWith("/usuarios")} />
+          <SubLink to="/admin/vendedores" label="Vendedores" icon={UserCog} active={pathname.startsWith("/admin/vendedores")} />
+          <SubLink to="/integracoes" label="Integrações" icon={Plug} active={pathname.startsWith("/integracoes")} />
+        </div>
+      )}
+    </div>
   );
 }
