@@ -111,7 +111,7 @@ function HomePage() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-  const forecasts = forecastsQ.data?.records ?? [];
+  const forecasts: SalesforceOpportunity[] = forecastsQ.data?.records ?? [];
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const filteredForecasts = forecasts.filter((f) => {
     if (!f.forecastDate) return false;
