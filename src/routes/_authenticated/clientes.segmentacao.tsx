@@ -191,6 +191,28 @@ function SegmentacaoPage() {
                 </tr>
               </thead>
               <tbody>
+                {isLoading && (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                      <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
+                      Carregando contas do Salesforce…
+                    </td>
+                  </tr>
+                )}
+                {error && !isLoading && (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-6 text-sm text-destructive">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 mt-0.5" />
+                        <div>
+                          <div className="font-medium">Não foi possível carregar as contas do Salesforce.</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{error instanceof Error ? error.message : String(error)}</div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+
                 {visible.map((c) => {
                   const isOpen = expanded.has(c.id);
                   const generationPct = (c.generation / c.projection) * 100;
