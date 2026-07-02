@@ -58,6 +58,8 @@ const AGENDA_RANGES = [
 type AgendaKey = (typeof AGENDA_RANGES)[number]["k"];
 
 function HomePage() {
+  const { profile, user } = useAuth();
+  const displayName = (profile?.full_name?.trim().split(/\s+/)[0]) || (user?.email?.split("@")[0]) || "";
   const [metaOpen, setMetaOpen] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"todos" | "7d" | "30d" | "atrasados">("todos");
   const [ownerId, setOwnerId] = useState<string>("all");
