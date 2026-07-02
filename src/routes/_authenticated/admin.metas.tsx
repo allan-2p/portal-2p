@@ -29,7 +29,7 @@ type ActiveFilter = "all" | "active" | "inactive";
 function MetasPage() {
   const { hasRole } = useAuth();
   const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("active");
 
   const fetchList = useServerFn(listSalespersonGoals);
   const saveGoal = useServerFn(setSalespersonGoal);
