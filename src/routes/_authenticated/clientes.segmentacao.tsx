@@ -185,14 +185,14 @@ function SegmentacaoPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground mr-2">Segmento:</span>
           <button
-            onClick={() => setSelectedSegs(new Set(allSegs))}
+            onClick={() => setSelectedSegs(new Set())}
             className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
               allSelected ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}
           >
             Todos
           </button>
           {allSegs.map((seg) => {
-            const active = !allSelected && selectedSegs.has(seg);
+            const active = selectedSegs.has(seg);
             return (
               <button
                 key={seg}
