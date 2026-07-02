@@ -85,3 +85,65 @@ export const setSalespersonVisibility = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+// ---------------- Metas de faturamento ---------------- //
+
+export type SalespersonGoal = {
+  id: string;
+  name: string;
+  email: string | null;
+  title: string | null;
+  monthlyGoal: number;
+  updatedAt: string | null;
+};
+
+export const listSalespersonGoals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const [people, goalsRes] = await Promise.all([
+      fetchAllSFSalespeople(),
+      context.supabase.from("salesperson_goals").select("sf_user_id, monthly_goal, updated_at"),
+    ]);
+    const goals = new Map<string, { monthly_goal: number; updated_at: string | null }>();
+    for (const g of goalsRes.data ?? []) {
+      goals.set(g.sf_user_id, {
+        monthly_goal: Number(g.monthly_goal) || 0,
+        updated_at: g.updated_at ?? null,
+      });
+    }
+    const records: SalespersonGoal[] = people.map(
+      (p: { id: string; name: string; email: string | null; title: string | null }) => {
+        const g = goals.get(p.id);
+        return {
+          ...p,
+          monthlyGoal: g?.monthly_goal ?? 0,
+          updatedAt: g?.updated_at ?? null,
+        };
+      },
+    );
+    return { records };
+  });
+
+const SetGoalInput = z.object({
+  sf_user_id: z.string().min(3),
+  monthly_goal: z.number().min(0).max(999_999_999),
+});
+
+export const setSalespersonGoal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SetGoalInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase
+      .from("salesperson_goals")
+      .upsert({
+        sf_user_id: data.sf_user_id,
+        monthly_goal: data.monthly_goal,
+        updated_by: context.userId,
+        updated_at: new Date().toISOString(),
+      });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
