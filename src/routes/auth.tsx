@@ -214,7 +214,7 @@ function AuthPage() {
                     type="email"
                     autoComplete="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); if (authError) setAuthError(null); }}
                     onBlur={() => setTouched((t) => ({ ...t, email: true }))}
                     aria-invalid={!!emailError}
                     aria-describedby={emailError ? "email-error" : undefined}
