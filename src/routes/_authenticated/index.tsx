@@ -11,6 +11,7 @@ import {
   FileText, CalendarClock, Gift, Lock, Users as UsersIcon, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 import {
   getSalesforceTasks,
   getSalesforceSalespeople,
@@ -57,6 +58,8 @@ const AGENDA_RANGES = [
 type AgendaKey = (typeof AGENDA_RANGES)[number]["k"];
 
 function HomePage() {
+  const { profile, user } = useAuth();
+  const displayName = (profile?.full_name?.trim().split(/\s+/)[0]) || (user?.email?.split("@")[0]) || "";
   const [metaOpen, setMetaOpen] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"todos" | "7d" | "30d" | "atrasados">("todos");
   const [ownerId, setOwnerId] = useState<string>("all");
@@ -140,7 +143,7 @@ function HomePage() {
         {/* Hero + filtro global de vendedor */}
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
-            <div className="text-sm text-muted-foreground">{greeting}, Bruno</div>
+            <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""}</div>
             <h1 className="text-3xl md:text-4xl font-bold mt-1">
               Você está em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
             </h1>
