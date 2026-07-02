@@ -143,7 +143,7 @@ function HomePage() {
         {/* Hero + filtro global de vendedor */}
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
-            <div className="text-sm text-muted-foreground">{greeting}, Bruno</div>
+            <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""}</div>
             <h1 className="text-3xl md:text-4xl font-bold mt-1">
               Você está em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
             </h1>
