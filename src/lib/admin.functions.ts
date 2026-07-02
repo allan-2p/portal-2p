@@ -139,7 +139,13 @@ export const setSalespersonGoal = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SetGoalInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const patch: Record<string, unknown> = {
+    const patch: {
+      sf_user_id: string;
+      updated_by: string;
+      updated_at: string;
+      monthly_goal?: number;
+      active?: boolean;
+    } = {
       sf_user_id: data.sf_user_id,
       updated_by: context.userId,
       updated_at: new Date().toISOString(),
