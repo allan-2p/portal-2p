@@ -102,7 +102,8 @@ function SegmentacaoPage() {
 
   const s = search.trim().toLowerCase();
   const filtered = ranked.filter((c) => {
-    if (!selectedSegs.has(c.segment)) return false;
+    // Vazio = todos os segmentos
+    if (selectedSegs.size > 0 && !selectedSegs.has(c.segment)) return false;
     if (s && !c.name.toLowerCase().includes(s)) return false;
     return true;
   });
@@ -138,12 +139,11 @@ function SegmentacaoPage() {
   };
 
   const allSegs: Segment[] = ["A", "B", "C", "D"];
-  const allSelected = selectedSegs.size === allSegs.length;
+  const allSelected = selectedSegs.size === 0; // vazio = mostrar todos
   const toggleSeg = (seg: Segment) => {
     setSelectedSegs((prev) => {
       const n = new Set(prev);
       if (n.has(seg)) n.delete(seg); else n.add(seg);
-      if (n.size === 0) return new Set(allSegs); // nunca vazio
       return n;
     });
   };
