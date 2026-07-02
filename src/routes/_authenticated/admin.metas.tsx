@@ -24,9 +24,12 @@ function parseBRL(v: string): number | null {
   return Math.round(n * 100) / 100;
 }
 
+type ActiveFilter = "all" | "active" | "inactive";
+
 function MetasPage() {
   const { hasRole } = useAuth();
   const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
 
   const fetchList = useServerFn(listSalespersonGoals);
   const saveGoal = useServerFn(setSalespersonGoal);
@@ -40,7 +43,8 @@ function MetasPage() {
   });
 
   const mut = useMutation({
-    mutationFn: (v: { sf_user_id: string; monthly_goal: number }) => saveGoal({ data: v }),
+    mutationFn: (v: { sf_user_id: string; monthly_goal?: number; active?: boolean }) =>
+      saveGoal({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-salesperson-goals"] }),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar meta"),
   });
@@ -48,19 +52,23 @@ function MetasPage() {
   const people = q.data?.records ?? [];
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return people;
-    return people.filter(
-      (p) =>
+    return people.filter((p) => {
+      if (activeFilter === "active" && !p.active) return false;
+      if (activeFilter === "inactive" && p.active) return false;
+      if (!s) return true;
+      return (
         p.name.toLowerCase().includes(s) ||
         (p.email ?? "").toLowerCase().includes(s) ||
-        (p.title ?? "").toLowerCase().includes(s),
-    );
-  }, [people, search]);
+        (p.title ?? "").toLowerCase().includes(s)
+      );
+    });
+  }, [people, search, activeFilter]);
 
   const totals = useMemo(() => {
-    const total = people.reduce((acc, p) => acc + p.monthlyGoal, 0);
-    const withGoal = people.filter((p) => p.monthlyGoal > 0).length;
-    return { total, withGoal, count: people.length };
+    const active = people.filter((p) => p.active);
+    const total = active.reduce((acc, p) => acc + p.monthlyGoal, 0);
+    const withGoal = active.filter((p) => p.monthlyGoal > 0).length;
+    return { total, withGoal, count: people.length, activeCount: active.length };
   }, [people]);
 
   if (!hasRole("admin")) {
