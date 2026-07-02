@@ -97,7 +97,7 @@ function MetasPage() {
               automaticamente.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -107,14 +107,26 @@ function MetasPage() {
                 className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-64 focus:outline-none focus:border-primary/50"
               />
             </div>
+            <select
+              value={activeFilter}
+              onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
+              className="py-2 px-3 rounded-lg bg-surface border border-border text-sm focus:outline-none focus:border-primary/50"
+            >
+              <option value="all">Todas as metas</option>
+              <option value="active">Meta ativa</option>
+              <option value="inactive">Meta inativa</option>
+            </select>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <StatCard label="Meta total mensal" value={fmt(totals.total)} highlight />
-          <StatCard label="Vendedores com meta" value={`${totals.withGoal} / ${totals.count}`} />
+          <StatCard label="Meta total mensal (ativas)" value={fmt(totals.total)} highlight />
           <StatCard
-            label="Meta média"
+            label="Metas ativas"
+            value={`${totals.activeCount} / ${totals.count}`}
+          />
+          <StatCard
+            label="Meta média (ativas)"
             value={fmt(totals.withGoal > 0 ? totals.total / totals.withGoal : 0)}
           />
         </div>
