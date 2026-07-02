@@ -187,10 +187,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           })}
 
           {hasRole("admin") && (
-            <>
-              <NavLink item={{ to: "/usuarios", label: "Usuários", icon: Users }} active={pathname.startsWith("/usuarios")} collapsed={collapsed} />
-              <NavLink item={{ to: "/integracoes", label: "Integrações", icon: Plug }} active={pathname.startsWith("/integracoes")} collapsed={collapsed} />
-            </>
+            <AdminGroup
+              pathname={pathname}
+              collapsed={collapsed}
+            />
           )}
         </nav>
 
@@ -210,25 +210,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <img src={logo} alt="2P" className="h-7 w-auto rounded" />
               <span className="font-display font-bold">Portal 2P</span>
             </div>
-            <div className="hidden md:flex items-center gap-2 flex-1 max-w-md">
-              <div className="relative w-full">
-                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  value={searchValue}
-                  onChange={(e) => setGlobalSearch(e.target.value)}
-                  onFocus={() => {
-                    if (!pathname.startsWith("/clientes") && !pathname.startsWith("/pedidos")) {
-                      navigate({ to: "/clientes/segmentacao" });
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") navigate({ to: "/clientes/segmentacao" });
-                  }}
-                  placeholder="Buscar cliente, pedido, projeto…"
-                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                />
-              </div>
-            </div>
+            <div className="hidden md:flex flex-1" />
+
             <div className="flex items-center gap-2 ml-auto">
               {user && roles.length === 0 && (
                 <button
