@@ -131,7 +131,8 @@ function TarefasPage() {
                 : "Carregando tarefas sincronizadas do Salesforce…"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <VendedorFilter value={ownerId} onChange={setOwnerId} />
             <button
               onClick={() => setCursor(new Date(year, month - 1, 1))}
               className="p-2 rounded-lg bg-surface border border-border hover:bg-surface-2"
