@@ -278,6 +278,17 @@ function AuthPage() {
                 </div>
               )}
 
+              {authError && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[12px] text-destructive animate-fade-in"
+                >
+                  <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+
               <button
                 type="submit"
                 disabled={loading || !canSubmit}
