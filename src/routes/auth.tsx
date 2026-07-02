@@ -52,6 +52,7 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [splash, setSplash] = useState(false);
   const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({ email: false, password: false });
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const emailError = useMemo(() => {
     if (!touched.email && !email) return null;
