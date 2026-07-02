@@ -79,7 +79,17 @@ function CadastrosPage() {
               Contas sincronizadas do Salesforce (objeto <span className="font-mono text-foreground/80">Account</span>).
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar cliente, CNPJ…"
+                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-64 focus:outline-none focus:border-primary/50"
+              />
+            </div>
+            <VendedorFilter value={ownerId} onChange={setOwnerId} />
             <button
               onClick={() => refetch()}
               disabled={isFetching}
