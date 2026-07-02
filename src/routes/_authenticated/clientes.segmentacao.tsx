@@ -65,7 +65,8 @@ function SegmentacaoPage() {
   const [detailClient, setDetailClient] = useState<Client | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const search = useGlobalSearch().trim().toLowerCase();
+  const [search, setSearch] = useState("");
+  const [ownerId, setOwnerId] = useState<string>("all");
 
   const fetchAccounts = useServerFn(getSalesforceAccounts);
   const { data, isLoading, error } = useQuery({
@@ -74,17 +75,21 @@ function SegmentacaoPage() {
     staleTime: 60_000,
   });
 
-  const clients = useMemo(() => (data?.records ?? []).map(accountToClient), [data]);
+  const clients = useMemo(() => {
+    const accounts = data?.records ?? [];
+    const scoped = ownerId === "all" ? accounts : accounts.filter((a) => a.ownerId === ownerId);
+    return scoped.map(accountToClient);
+  }, [data, ownerId]);
 
   const ranked = useMemo(
     () => [...clients].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
     [clients],
   );
 
-
+  const s = search.trim().toLowerCase();
   const filtered = ranked.filter((c) => {
     if (filterSeg !== "all" && c.segment !== filterSeg) return false;
-    if (search && !c.name.toLowerCase().includes(search)) return false;
+    if (s && !c.name.toLowerCase().includes(s)) return false;
     return true;
   });
 
