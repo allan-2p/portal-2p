@@ -182,15 +182,33 @@ function SegmentacaoPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground mr-2">Segmento:</span>
-          {segments.map((s) => (
-            <button key={s.key} onClick={() => setFilterSeg(s.key)}
-              className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
-                filterSeg === s.key ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}>
-              {s.label}
-            </button>
-          ))}
+          <button
+            onClick={() => setSelectedSegs(new Set(allSegs))}
+            className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
+              allSelected ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}
+          >
+            Todos
+          </button>
+          {allSegs.map((seg) => {
+            const active = !allSelected && selectedSegs.has(seg);
+            return (
+              <button
+                key={seg}
+                onClick={() => toggleSeg(seg)}
+                className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
+                  active ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}
+              >
+                {seg}
+              </button>
+            );
+          })}
+          {!allSelected && (
+            <span className="text-[11px] text-muted-foreground ml-1">
+              {selectedSegs.size} selecionado{selectedSegs.size > 1 ? "s" : ""}
+            </span>
+          )}
         </div>
 
         <div className="glass rounded-2xl p-4 flex items-start gap-3 border-primary/30">
