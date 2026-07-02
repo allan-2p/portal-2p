@@ -2,9 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { orders, kanbanColumns, type Order } from "@/lib/mock-data";
 import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { KanbanSquare, List, Sparkles, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VendedorFilter } from "@/components/vendedor-filter";
+import { getSalesforceSalespeople } from "@/lib/salesforce.functions";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
