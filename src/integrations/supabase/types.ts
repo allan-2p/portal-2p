@@ -76,6 +76,7 @@ export type Database = {
       }
       salesperson_goals: {
         Row: {
+          active: boolean
           created_at: string
           monthly_goal: number
           sf_user_id: string
@@ -83,6 +84,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          active?: boolean
           created_at?: string
           monthly_goal?: number
           sf_user_id: string
@@ -90,6 +92,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          active?: boolean
           created_at?: string
           monthly_goal?: number
           sf_user_id?: string

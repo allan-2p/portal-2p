@@ -94,6 +94,7 @@ export type SalespersonGoal = {
   email: string | null;
   title: string | null;
   monthlyGoal: number;
+  active: boolean;
   updatedAt: string | null;
 };
 
@@ -103,12 +104,13 @@ export const listSalespersonGoals = createServerFn({ method: "GET" })
     await assertAdmin(context);
     const [people, goalsRes] = await Promise.all([
       fetchAllSFSalespeople(),
-      context.supabase.from("salesperson_goals").select("sf_user_id, monthly_goal, updated_at"),
+      context.supabase.from("salesperson_goals").select("sf_user_id, monthly_goal, active, updated_at"),
     ]);
-    const goals = new Map<string, { monthly_goal: number; updated_at: string | null }>();
+    const goals = new Map<string, { monthly_goal: number; active: boolean; updated_at: string | null }>();
     for (const g of goalsRes.data ?? []) {
       goals.set(g.sf_user_id, {
         monthly_goal: Number(g.monthly_goal) || 0,
+        active: g.active ?? true,
         updated_at: g.updated_at ?? null,
       });
     }
@@ -118,6 +120,7 @@ export const listSalespersonGoals = createServerFn({ method: "GET" })
         return {
           ...p,
           monthlyGoal: g?.monthly_goal ?? 0,
+          active: g?.active ?? false,
           updatedAt: g?.updated_at ?? null,
         };
       },
@@ -127,7 +130,8 @@ export const listSalespersonGoals = createServerFn({ method: "GET" })
 
 const SetGoalInput = z.object({
   sf_user_id: z.string().min(3),
-  monthly_goal: z.number().min(0).max(999_999_999),
+  monthly_goal: z.number().min(0).max(999_999_999).optional(),
+  active: z.boolean().optional(),
 });
 
 export const setSalespersonGoal = createServerFn({ method: "POST" })
@@ -135,14 +139,20 @@ export const setSalespersonGoal = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SetGoalInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { error } = await context.supabase
-      .from("salesperson_goals")
-      .upsert({
-        sf_user_id: data.sf_user_id,
-        monthly_goal: data.monthly_goal,
-        updated_by: context.userId,
-        updated_at: new Date().toISOString(),
-      });
+    const patch: {
+      sf_user_id: string;
+      updated_by: string;
+      updated_at: string;
+      monthly_goal?: number;
+      active?: boolean;
+    } = {
+      sf_user_id: data.sf_user_id,
+      updated_by: context.userId,
+      updated_at: new Date().toISOString(),
+    };
+    if (typeof data.monthly_goal === "number") patch.monthly_goal = data.monthly_goal;
+    if (typeof data.active === "boolean") patch.active = data.active;
+    const { error } = await context.supabase.from("salesperson_goals").upsert(patch);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

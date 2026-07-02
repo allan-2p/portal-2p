@@ -24,9 +24,12 @@ function parseBRL(v: string): number | null {
   return Math.round(n * 100) / 100;
 }
 
+type ActiveFilter = "all" | "active" | "inactive";
+
 function MetasPage() {
   const { hasRole } = useAuth();
   const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
 
   const fetchList = useServerFn(listSalespersonGoals);
   const saveGoal = useServerFn(setSalespersonGoal);
@@ -40,7 +43,8 @@ function MetasPage() {
   });
 
   const mut = useMutation({
-    mutationFn: (v: { sf_user_id: string; monthly_goal: number }) => saveGoal({ data: v }),
+    mutationFn: (v: { sf_user_id: string; monthly_goal?: number; active?: boolean }) =>
+      saveGoal({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-salesperson-goals"] }),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar meta"),
   });
@@ -48,19 +52,23 @@ function MetasPage() {
   const people = q.data?.records ?? [];
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return people;
-    return people.filter(
-      (p) =>
+    return people.filter((p) => {
+      if (activeFilter === "active" && !p.active) return false;
+      if (activeFilter === "inactive" && p.active) return false;
+      if (!s) return true;
+      return (
         p.name.toLowerCase().includes(s) ||
         (p.email ?? "").toLowerCase().includes(s) ||
-        (p.title ?? "").toLowerCase().includes(s),
-    );
-  }, [people, search]);
+        (p.title ?? "").toLowerCase().includes(s)
+      );
+    });
+  }, [people, search, activeFilter]);
 
   const totals = useMemo(() => {
-    const total = people.reduce((acc, p) => acc + p.monthlyGoal, 0);
-    const withGoal = people.filter((p) => p.monthlyGoal > 0).length;
-    return { total, withGoal, count: people.length };
+    const active = people.filter((p) => p.active);
+    const total = active.reduce((acc, p) => acc + p.monthlyGoal, 0);
+    const withGoal = active.filter((p) => p.monthlyGoal > 0).length;
+    return { total, withGoal, count: people.length, activeCount: active.length };
   }, [people]);
 
   if (!hasRole("admin")) {
@@ -89,7 +97,7 @@ function MetasPage() {
               automaticamente.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -99,14 +107,26 @@ function MetasPage() {
                 className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-64 focus:outline-none focus:border-primary/50"
               />
             </div>
+            <select
+              value={activeFilter}
+              onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
+              className="py-2 px-3 rounded-lg bg-surface border border-border text-sm focus:outline-none focus:border-primary/50"
+            >
+              <option value="all">Todas as metas</option>
+              <option value="active">Meta ativa</option>
+              <option value="inactive">Meta inativa</option>
+            </select>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <StatCard label="Meta total mensal" value={fmt(totals.total)} highlight />
-          <StatCard label="Vendedores com meta" value={`${totals.withGoal} / ${totals.count}`} />
+          <StatCard label="Meta total mensal (ativas)" value={fmt(totals.total)} highlight />
           <StatCard
-            label="Meta média"
+            label="Metas ativas"
+            value={`${totals.activeCount} / ${totals.count}`}
+          />
+          <StatCard
+            label="Meta média (ativas)"
             value={fmt(totals.withGoal > 0 ? totals.total / totals.withGoal : 0)}
           />
         </div>
@@ -126,6 +146,7 @@ function MetasPage() {
                   <th className="text-left px-4 py-2.5">Vendedor</th>
                   <th className="text-left px-4 py-2.5">E-mail</th>
                   <th className="text-left px-4 py-2.5">Cargo</th>
+                  <th className="text-center px-4 py-2.5 w-32">Meta ativa</th>
                   <th className="text-right px-4 py-2.5 w-56">Meta mensal (R$)</th>
                   <th className="text-left px-4 py-2.5 w-40">Última atualização</th>
                 </tr>
@@ -133,7 +154,7 @@ function MetasPage() {
               <tbody>
                 {q.isLoading && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                    <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">
                       <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
                       Carregando vendedores…
                     </td>
@@ -144,12 +165,15 @@ function MetasPage() {
                     <GoalRow
                       key={p.id}
                       person={p}
-                      onSave={(monthly_goal) => mut.mutate({ sf_user_id: p.id, monthly_goal })}
+                      onSaveGoal={(monthly_goal) =>
+                        mut.mutate({ sf_user_id: p.id, monthly_goal, active: true })
+                      }
+                      onToggleActive={(active) => mut.mutate({ sf_user_id: p.id, active })}
                     />
                   ))}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
                       Nenhum vendedor encontrado.
                     </td>
                   </tr>
@@ -178,10 +202,12 @@ function StatCard({ label, value, highlight }: { label: string; value: string; h
 
 function GoalRow({
   person,
-  onSave,
+  onSaveGoal,
+  onToggleActive,
 }: {
   person: SalespersonGoal;
-  onSave: (monthly_goal: number) => void;
+  onSaveGoal: (monthly_goal: number) => void;
+  onToggleActive: (active: boolean) => void;
 }) {
   const [value, setValue] = useState<string>(person.monthlyGoal ? formatInput(person.monthlyGoal) : "");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "invalid">("idle");
@@ -189,7 +215,6 @@ function GoalRow({
   const savedRef = useRef(person.monthlyGoal);
 
   useEffect(() => {
-    // sync when server data mudar (ex.: outro admin editou)
     if (person.monthlyGoal !== savedRef.current) {
       savedRef.current = person.monthlyGoal;
       setValue(person.monthlyGoal ? formatInput(person.monthlyGoal) : "");
@@ -209,7 +234,7 @@ function GoalRow({
     }
     setStatus("saving");
     timer.current = setTimeout(() => {
-      onSave(parsed);
+      onSaveGoal(parsed);
       savedRef.current = parsed;
       setStatus("saved");
       setTimeout(() => setStatus((s) => (s === "saved" ? "idle" : s)), 1500);
@@ -223,6 +248,22 @@ function GoalRow({
       <td className="px-4 py-3 font-medium">{person.name}</td>
       <td className="px-4 py-3 text-muted-foreground">{person.email ?? "—"}</td>
       <td className="px-4 py-3 text-muted-foreground">{person.title ?? "—"}</td>
+      <td className="px-4 py-3">
+        <div className="flex justify-center">
+          <select
+            value={person.active ? "yes" : "no"}
+            onChange={(e) => onToggleActive(e.target.value === "yes")}
+            className={`py-1 px-2 rounded-md bg-surface border text-xs focus:outline-none ${
+              person.active
+                ? "border-success/40 text-success"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            <option value="yes">Ativa</option>
+            <option value="no">Inativa</option>
+          </select>
+        </div>
+      </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-2">
           <div className="relative">
