@@ -32,6 +32,12 @@ function IntegracoesPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" /> Voltar
+      </Link>
       <div>
         <h1 className="font-display text-2xl font-bold">Integrações</h1>
         <p className="text-sm text-muted-foreground mt-1">
