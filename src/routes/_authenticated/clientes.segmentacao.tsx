@@ -60,7 +60,7 @@ function accountToClient(a: SalesforceAccount): Client {
 
 function SegmentacaoPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
-  const [filterSeg, setFilterSeg] = useState<Segment | "all">("all");
+  const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set(["A", "B", "C", "D"]));
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detailClient, setDetailClient] = useState<Client | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
@@ -69,17 +69,31 @@ function SegmentacaoPage() {
   const [ownerId, setOwnerId] = useState<string>("all");
 
   const fetchAccounts = useServerFn(getSalesforceAccounts);
+  const fetchPeople = useServerFn(getSalesforceSalespeople);
   const { data, isLoading, error } = useQuery({
     queryKey: ["salesforce", "accounts"],
     queryFn: () => fetchAccounts(),
     staleTime: 60_000,
   });
+  const peopleQ = useQuery({
+    queryKey: ["sf-salespeople"],
+    queryFn: () => fetchPeople(),
+    staleTime: 5 * 60_000,
+  });
+  const activeOwnerIds = useMemo(
+    () => new Set((peopleQ.data?.records ?? []).map((p) => p.id)),
+    [peopleQ.data],
+  );
 
   const clients = useMemo(() => {
     const accounts = data?.records ?? [];
-    const scoped = ownerId === "all" ? accounts : accounts.filter((a) => a.ownerId === ownerId);
+    // Somente contas cujo vendedor está ativo no momento (não oculto no admin).
+    const activeOnly = activeOwnerIds.size > 0
+      ? accounts.filter((a) => a.ownerId && activeOwnerIds.has(a.ownerId))
+      : [];
+    const scoped = ownerId === "all" ? activeOnly : activeOnly.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
-  }, [data, ownerId]);
+  }, [data, ownerId, activeOwnerIds]);
 
   const ranked = useMemo(
     () => [...clients].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
@@ -88,7 +102,7 @@ function SegmentacaoPage() {
 
   const s = search.trim().toLowerCase();
   const filtered = ranked.filter((c) => {
-    if (filterSeg !== "all" && c.segment !== filterSeg) return false;
+    if (!selectedSegs.has(c.segment)) return false;
     if (s && !c.name.toLowerCase().includes(s)) return false;
     return true;
   });
