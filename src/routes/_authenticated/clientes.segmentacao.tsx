@@ -60,7 +60,7 @@ function accountToClient(a: SalesforceAccount): Client {
 
 function SegmentacaoPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
-  const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set(["A", "B", "C", "D"]));
+  const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detailClient, setDetailClient] = useState<Client | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
