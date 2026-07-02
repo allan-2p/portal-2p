@@ -137,9 +137,16 @@ function SegmentacaoPage() {
     });
   };
 
-  const segments: { key: Segment | "all"; label: string }[] = [
-    { key: "all", label: "Todos" }, { key: "A", label: "A" }, { key: "B", label: "B" }, { key: "C", label: "C" }, { key: "D", label: "D" },
-  ];
+  const allSegs: Segment[] = ["A", "B", "C", "D"];
+  const allSelected = selectedSegs.size === allSegs.length;
+  const toggleSeg = (seg: Segment) => {
+    setSelectedSegs((prev) => {
+      const n = new Set(prev);
+      if (n.has(seg)) n.delete(seg); else n.add(seg);
+      if (n.size === 0) return new Set(allSegs); // nunca vazio
+      return n;
+    });
+  };
 
   return (
     <AppLayout>
