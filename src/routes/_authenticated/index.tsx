@@ -1,14 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
-import { clients, portfolio, atlasInsights, tasks, generationSeries, salesSeries, budgets, forecasts, type BudgetStage } from "@/lib/mock-data";
+import { clients, portfolio, atlasInsights, tasks as mockTasks, generationSeries, salesSeries } from "@/lib/mock-data";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, Clock,
   TrendingUp, CheckCircle2, Phone, Mail, Calendar, Info, ChevronDown,
-  FileText, CalendarClock, Gift, Lock,
+  FileText, CalendarClock, Gift, Lock, Users as UsersIcon, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  getSalesforceTasks,
+  getSalesforceSalespeople,
+  getSalesforceOpportunities,
+  getSalesforceForecasts,
+  opportunityStages,
+  type OpportunityStage,
+} from "@/lib/salesforce.functions";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Home — Portal 2P" }, { name: "description", content: "Visão da carteira, projeção vs realizado, tarefas, orçamentos e previsão." }] }),
@@ -22,57 +32,142 @@ const C = {
   axis: "var(--chart-axis)",
   grid: "var(--border)",
   projected: "var(--muted-foreground)",
-  generation: "oklch(0.55 0.2 250)", // azul
-  sales: "var(--primary)", // laranja
+  generation: "oklch(0.55 0.2 250)",
+  sales: "var(--primary)",
 };
+
+const STAGE_COLOR: Record<OpportunityStage, string> = {
+  "Projeto Fechado": "bg-success/15 text-success",
+  "Projeto Não Fechado": "bg-destructive/15 text-destructive",
+  "Estoque": "bg-[color:var(--atlas)]/15 text-[color:var(--atlas)]",
+  "Em Negociação": "bg-warning/20 text-[color:var(--warning)]",
+};
+
+function fmtKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+const AGENDA_RANGES = [
+  { k: "hoje", l: "Hoje", days: 0 },
+  { k: "3d", l: "3 dias", days: 3 },
+  { k: "7d", l: "7 dias", days: 7 },
+  { k: "30d", l: "30 dias", days: 30 },
+] as const;
+type AgendaKey = (typeof AGENDA_RANGES)[number]["k"];
 
 function HomePage() {
   const [metaOpen, setMetaOpen] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"todos" | "7d" | "30d" | "atrasados">("todos");
+  const [ownerId, setOwnerId] = useState<string>("all");
+  const [agendaRange, setAgendaRange] = useState<AgendaKey>("hoje");
+  const [stageFilter, setStageFilter] = useState<"all" | OpportunityStage>("all");
 
-  const goal = portfolio.goal;
-  const achieved = portfolio.achieved;
-  const projected = portfolio.projected;
-  const sold = portfolio.sold;
-  const goalPct = (achieved / goal) * 100;
+  const ownerParam = ownerId === "all" ? null : ownerId;
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  // ---- Server data ----
+  const fetchSalespeople = useServerFn(getSalesforceSalespeople);
+  const peopleQ = useQuery({
+    queryKey: ["sf-salespeople"],
+    queryFn: () => fetchSalespeople(),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const salespeople = peopleQ.data?.records ?? [];
 
-  const taskClientNames = new Set(tasks.map((t) => t.client));
-  const offRadarInsights = atlasInsights.filter((i) => !i.client || !taskClientNames.has(i.client));
+  const fetchTasks = useServerFn(getSalesforceTasks);
+  const today = useMemo(() => new Date(), []);
+  const agenda = AGENDA_RANGES.find((a) => a.k === agendaRange)!;
+  const agendaRangeParams = useMemo(() => {
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const end = new Date(start);
+    end.setDate(end.getDate() + agenda.days);
+    return { start: fmtKey(start), end: fmtKey(end) };
+  }, [today, agenda.days]);
 
-  const today = new Date("2026-06-29");
+  const tasksQ = useQuery({
+    queryKey: ["sf-home-tasks", agendaRangeParams.start, agendaRangeParams.end, ownerParam],
+    queryFn: () => fetchTasks({ data: { ...agendaRangeParams, ownerId: ownerParam } }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const sfTasks = tasksQ.data?.records ?? [];
+
+  const fetchOpps = useServerFn(getSalesforceOpportunities);
+  const oppsQ = useQuery({
+    queryKey: ["sf-home-opps", ownerParam],
+    queryFn: () => fetchOpps({ data: { ownerId: ownerParam } }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const opps = oppsQ.data?.records ?? [];
+  const filteredOpps = stageFilter === "all" ? opps : opps.filter((o) => o.stage === stageFilter);
+  const oppsTotal = filteredOpps.reduce((a, b) => a + (b.amount ?? 0), 0);
+
+  const fetchForecasts = useServerFn(getSalesforceForecasts);
+  const forecastsQ = useQuery({
+    queryKey: ["sf-home-forecasts", ownerParam],
+    queryFn: () => fetchForecasts({ data: { ownerId: ownerParam } }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const forecasts = forecastsQ.data?.records ?? [];
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const filteredForecasts = forecasts.filter((f) => {
-    const d = new Date(f.expectedClose);
-    const diff = (d.getTime() - today.getTime()) / 86400000;
+    if (!f.forecastDate) return false;
+    const d = new Date(f.forecastDate + "T00:00:00");
+    const diff = Math.round((d.getTime() - todayStart.getTime()) / 86400000);
     if (forecastFilter === "7d") return diff >= 0 && diff <= 7;
     if (forecastFilter === "30d") return diff >= 0 && diff <= 30;
     if (forecastFilter === "atrasados") return diff < 0;
     return true;
   });
-  const stageColor: Record<BudgetStage, string> = {
-    "Projeto Fechado": "bg-success/15 text-success",
-    "Projeto Não Fechado": "bg-destructive/15 text-destructive",
-    "Estoque": "bg-[color:var(--atlas)]/15 text-[color:var(--atlas)]",
-    "Em Negociação": "bg-warning/20 text-[color:var(--warning)]",
-  };
+
+  // ---- Mock (mantidos) ----
+  const goal = portfolio.goal;
+  const achieved = portfolio.achieved;
+  const projected = portfolio.projected;
+  const sold = portfolio.sold;
+  const goalPct = (achieved / goal) * 100;
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const taskClientNames = new Set(mockTasks.map((t) => t.client));
+  const offRadarInsights = atlasInsights.filter((i) => !i.client || !taskClientNames.has(i.client));
 
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-6">
-        {/* Hero */}
-        <div>
-          <div className="text-sm text-muted-foreground">{greeting}, Bruno</div>
-          <h1 className="text-3xl md:text-4xl font-bold mt-1">
-            Você está em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            Atlas identificou {atlasInsights.length} ações que podem destravar R$ 104k esta semana.
-          </p>
+        {/* Hero + filtro global de vendedor */}
+        <div className="flex items-end justify-between flex-wrap gap-4">
+          <div>
+            <div className="text-sm text-muted-foreground">{greeting}, Bruno</div>
+            <h1 className="text-3xl md:text-4xl font-bold mt-1">
+              Você está em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              Atlas identificou {atlasInsights.length} ações que podem destravar R$ 104k esta semana.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border">
+              <UsersIcon className="h-4 w-4 text-primary" />
+              <label className="text-xs text-muted-foreground">Vendedor</label>
+              <select
+                value={ownerId}
+                onChange={(e) => setOwnerId(e.target.value)}
+                className="bg-transparent text-sm font-medium outline-none pr-1 max-w-[220px]"
+                disabled={peopleQ.isLoading}
+              >
+                <option value="all">Todos</option>
+                {salespeople.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              {peopleQ.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+            </div>
+          </div>
         </div>
 
-        {/* Meta — bloco principal com toggle */}
+        {/* Meta */}
         <div className="glass rounded-2xl p-5">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
@@ -87,8 +182,6 @@ function HomePage() {
                   <span><span className="text-muted-foreground">Projetado </span><span className="font-semibold">{fmt(projected)}</span></span>
                 </div>
               </div>
-
-              {/* % acima da barra, legível em qualquer tema */}
               <div className="flex items-center justify-between mt-3 text-xs">
                 <span className="font-semibold text-foreground">{goalPct.toFixed(1)}% alcançado</span>
                 <span className="text-muted-foreground tabular-nums">{fmt(achieved)} / {fmt(goal)}</span>
@@ -99,7 +192,6 @@ function HomePage() {
                   style={{ width: `${Math.min(goalPct, 100)}%` }}
                 />
               </div>
-
               <button onClick={() => setMetaOpen(!metaOpen)} className="mt-3 text-xs text-primary font-medium flex items-center gap-1 hover:underline">
                 {metaOpen ? "Ocultar detalhes" : "Detalhar"}
                 <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", metaOpen && "rotate-180")} />
@@ -109,46 +201,23 @@ function HomePage() {
 
           {metaOpen && (
             <div className="mt-5 pt-5 border-t border-border space-y-5">
-              {/* Detalhes KPIs */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                <MiniKpi
-                  label="Retenção"
-                  value={`${portfolio.retentionActive} / ${portfolio.retentionBase}`}
-                  sub={`${portfolio.retention.toFixed(1)}% da carteira ativa`}
-                />
-                <MiniKpi
-                  label="Recorrência"
-                  value={`${portfolio.recurrenceCount} / ${portfolio.recurrenceBase}`}
-                  sub={`${portfolio.recurrence.toFixed(1)}% dos clientes`}
-                />
+                <MiniKpi label="Retenção" value={`${portfolio.retentionActive} / ${portfolio.retentionBase}`} sub={`${portfolio.retention.toFixed(1)}% da carteira ativa`} />
+                <MiniKpi label="Recorrência" value={`${portfolio.recurrenceCount} / ${portfolio.recurrenceBase}`} sub={`${portfolio.recurrence.toFixed(1)}% dos clientes`} />
                 <MiniKpi label="Novos recorrentes" value={`${portfolio.newRecurringClients}`} sub="Clientes no mês" />
                 <MiniKpi label="Ticket médio" value="R$ 18,27k" sub="3M: R$ 20,68k" trend={-11.6} />
                 <MiniKpi label="Conversão R$" value="25,63%" sub="3M: 31,44%" trend={-5.8} />
                 <MiniKpi label="Conversão Qtd" value="21,21%" sub="3M: 33,52%" trend={-12.3} />
               </div>
-
-              {/* Dois gráficos */}
               <div className="grid lg:grid-cols-2 gap-4">
-                <ChartCard
-                  title="Geração — Projetado × Realizado"
-                  series={generationSeries}
-                  valueKey="generated"
-                  valueColor={C.generation}
-                  valueLabel="Gerado"
-                />
-                <ChartCard
-                  title="Vendas — Projetado × Realizado"
-                  series={salesSeries}
-                  valueKey="sold"
-                  valueColor={C.sales}
-                  valueLabel="Vendido"
-                />
+                <ChartCard title="Geração — Projetado × Realizado" series={generationSeries} valueKey="generated" valueColor={C.generation} valueLabel="Gerado" />
+                <ChartCard title="Vendas — Projetado × Realizado" series={salesSeries} valueKey="sold" valueColor={C.sales} valueLabel="Vendido" />
               </div>
             </div>
           )}
         </div>
 
-        {/* Seção: Tarefas e Sugestões */}
+        {/* Seção: Operação */}
         <div>
           <div className="flex items-end justify-between mb-3">
             <div>
@@ -158,61 +227,78 @@ function HomePage() {
           </div>
         </div>
 
-        {/* Tarefas + Atlas Radar */}
+        {/* Agenda + Atlas Radar */}
         <div className="grid lg:grid-cols-2 gap-4">
           <div className="glass rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
               <div>
                 <h3 className="font-display font-semibold flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-primary" /> Agenda de hoje
+                  {tasksQ.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                 </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Tarefas do Salesforce com sugestões do Atlas</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Tarefas em aberto do Salesforce
+                </p>
               </div>
-              <span className="text-xs text-muted-foreground">{tasks.length} pendentes</span>
+              <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
+                {AGENDA_RANGES.map((o) => (
+                  <button
+                    key={o.k}
+                    onClick={() => setAgendaRange(o.k)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md",
+                      agendaRange === o.k ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                    )}
+                  >
+                    {o.l}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-3">
-              {tasks.map((t) => {
-                const insight = atlasInsights.find((i) => i.client === t.client);
-                return (
-                  <div key={t.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <button className="mt-0.5 h-5 w-5 rounded-md border-2 border-border hover:border-primary flex items-center justify-center shrink-0 group">
-                        <CheckCircle2 className="h-3 w-3 text-primary opacity-0 group-hover:opacity-60" />
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold truncate">{t.title}</div>
-                            <div className="text-xs text-muted-foreground truncate">{t.client}</div>
+            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
+              {tasksQ.isLoading && (
+                <div className="text-center text-sm text-muted-foreground py-8">Carregando…</div>
+              )}
+              {!tasksQ.isLoading && sfTasks.length === 0 && (
+                <div className="text-center text-sm text-muted-foreground py-8">
+                  Nenhuma tarefa em aberto no período.
+                </div>
+              )}
+              {sfTasks.map((t) => (
+                <div key={t.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
+                  <div className="flex items-start gap-3">
+                    <button className="mt-0.5 h-5 w-5 rounded-md border-2 border-border hover:border-primary flex items-center justify-center shrink-0 group">
+                      <CheckCircle2 className="h-3 w-3 text-primary opacity-0 group-hover:opacity-60" />
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold truncate">{t.subject}</div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {t.what ?? t.who ?? t.owner ?? "—"}
                           </div>
-                          <span className={`text-[10px] px-2 py-0.5 rounded shrink-0 flex items-center gap-1 ${
-                            t.priority === "high" ? "bg-destructive/15 text-destructive" :
-                            t.priority === "medium" ? "bg-warning/20 text-[color:var(--warning)]" :
-                            "bg-surface-2 text-muted-foreground"
-                          }`}>
-                            <Clock className="h-2.5 w-2.5" /> {t.due}
-                          </span>
                         </div>
-                        {insight && (
-                          <div className="mt-3 rounded-lg bg-primary/8 border border-primary/20 p-2.5">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <Sparkles className="h-3 w-3 text-primary" />
-                              <span className="text-[10px] uppercase tracking-wider font-semibold text-primary">Atlas sugere</span>
-                              {insight.impact && <span className="ml-auto text-[10px] font-medium text-primary">{insight.impact}</span>}
-                            </div>
-                            <div className="text-xs text-foreground/90 leading-snug">{insight.title}</div>
-                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{insight.description}</p>
-                          </div>
-                        )}
-                        <div className="flex gap-1.5 mt-2.5">
-                          <button className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> Ligar</button>
-                          <button className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3" /> E-mail</button>
-                        </div>
+                        <span className={cn(
+                          "text-[10px] px-2 py-0.5 rounded shrink-0 flex items-center gap-1",
+                          t.priority?.toLowerCase().startsWith("alt") ? "bg-destructive/15 text-destructive" :
+                          t.priority?.toLowerCase().startsWith("baix") ? "bg-surface-2 text-muted-foreground" :
+                          "bg-warning/20 text-[color:var(--warning)]",
+                        )}>
+                          <Clock className="h-2.5 w-2.5" />
+                          {new Date(t.date + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                        </span>
+                      </div>
+                      {t.owner && (
+                        <div className="text-[11px] text-muted-foreground mt-1">Responsável: {t.owner}</div>
+                      )}
+                      <div className="flex gap-1.5 mt-2.5">
+                        <button className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> Ligar</button>
+                        <button className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3" /> E-mail</button>
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
 
@@ -222,7 +308,7 @@ function HomePage() {
                 <h3 className="font-display font-semibold flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-primary" /> Atlas radar
                 </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Clientes sem tarefa hoje com sinais de oportunidade ou risco</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Clientes com sinais de oportunidade ou risco</p>
               </div>
               <span className="text-xs text-muted-foreground">{offRadarInsights.length} sinais</span>
             </div>
@@ -255,10 +341,6 @@ function HomePage() {
                           </div>
                         )}
                         <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{i.description}</p>
-                        <div className="flex gap-1.5 mt-2.5">
-                          <button className="text-[11px] px-2 py-1 rounded bg-primary/15 text-primary hover:bg-primary/25 font-medium">Criar tarefa</button>
-                          <button className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-surface-2 text-muted-foreground">Dispensar</button>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -278,45 +360,80 @@ function HomePage() {
           </div>
         </div>
 
-        {/* Orçamentos + Previsão */}
         <div className="grid lg:grid-cols-2 gap-4">
+          {/* Orçamentos */}
           <div className="glass rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
               <div>
                 <h3 className="font-display font-semibold flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" /> Orçamentos em aberto
+                  <FileText className="h-4 w-4 text-primary" /> Orçamentos
+                  {oppsQ.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {budgets.length} orçamentos · {fmt(budgets.reduce((a, b) => a + b.value, 0))}
+                  {filteredOpps.length} oportunidade(s) · {fmt(oppsTotal)}
                 </p>
               </div>
             </div>
-            <div className="space-y-2">
-              {budgets.map((b) => (
+            <div className="flex flex-wrap gap-1.5 mb-3 text-xs">
+              <button
+                onClick={() => setStageFilter("all")}
+                className={cn(
+                  "px-2.5 py-1 rounded-md border",
+                  stageFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-surface-2 border-border text-muted-foreground",
+                )}
+              >
+                Todas
+              </button>
+              {opportunityStages.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStageFilter(s)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md border",
+                    stageFilter === s ? "bg-primary text-primary-foreground border-primary" : "bg-surface-2 border-border text-muted-foreground",
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+              {oppsQ.isLoading && (
+                <div className="text-center text-sm text-muted-foreground py-8">Carregando…</div>
+              )}
+              {!oppsQ.isLoading && filteredOpps.length === 0 && (
+                <div className="text-center text-sm text-muted-foreground py-8">Nenhuma oportunidade.</div>
+              )}
+              {filteredOpps.map((b) => (
                 <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-surface hover:border-primary/40 transition-colors">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground">{b.code}</span>
-                      <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", stageColor[b.stage])}>{b.stage}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", STAGE_COLOR[b.stage as OpportunityStage] ?? "bg-surface-2 text-muted-foreground")}>{b.stage}</span>
+                      {b.owner && <span className="text-[10px] text-muted-foreground">· {b.owner}</span>}
                     </div>
-                    <div className="text-sm font-medium truncate mt-0.5">{b.client}</div>
-                    <div className="text-[11px] text-muted-foreground">criado em {b.createdAt}</div>
+                    <div className="text-sm font-medium truncate mt-0.5">{b.name}</div>
+                    <div className="text-[11px] text-muted-foreground truncate">{b.account ?? "—"}</div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="font-display font-bold text-sm">{fmt(b.value)}</div>
+                    <div className="font-display font-bold text-sm">{b.amount != null ? fmt(b.amount) : "—"}</div>
+                    {b.closeDate && (
+                      <div className="text-[10px] text-muted-foreground">{new Date(b.closeDate + "T00:00:00").toLocaleDateString("pt-BR")}</div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Previsão de fechamento */}
           <div className="glass rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div>
                 <h3 className="font-display font-semibold flex items-center gap-2">
                   <CalendarClock className="h-4 w-4 text-primary" /> Previsão de fechamento
+                  {forecastsQ.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                 </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Datas que o vendedor previu</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Oportunidades em aberto com previsão preenchida</p>
               </div>
               <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
                 {([
@@ -333,10 +450,16 @@ function HomePage() {
                 ))}
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+              {forecastsQ.isLoading && (
+                <div className="text-center text-sm text-muted-foreground py-8">Carregando…</div>
+              )}
+              {!forecastsQ.isLoading && filteredForecasts.length === 0 && (
+                <div className="text-center text-sm text-muted-foreground py-8">Nenhuma previsão nesse período.</div>
+              )}
               {filteredForecasts.map((f) => {
-                const d = new Date(f.expectedClose);
-                const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
+                const d = new Date(f.forecastDate! + "T00:00:00");
+                const diff = Math.round((d.getTime() - todayStart.getTime()) / 86400000);
                 const late = diff < 0;
                 return (
                   <div key={f.id} className={cn(
@@ -345,8 +468,9 @@ function HomePage() {
                   )}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium truncate">{f.client}</div>
-                        <div className="text-[11px] text-muted-foreground flex items-center gap-2">
+                        <div className="text-sm font-medium truncate">{f.name}</div>
+                        <div className="text-[11px] text-muted-foreground truncate">{f.account ?? "—"}</div>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-2 mt-1 flex-wrap">
                           <CalendarClock className="h-3 w-3" />
                           {d.toLocaleDateString("pt-BR")}
                           {late ? (
@@ -354,20 +478,18 @@ function HomePage() {
                           ) : (
                             <span>· em {diff}d</span>
                           )}
-                          <span>· {f.probability}% prob.</span>
+                          {f.probability != null && <span>· {f.probability}% prob.</span>}
+                          <span className={cn("px-1.5 py-0.5 rounded", STAGE_COLOR[f.stage as OpportunityStage] ?? "bg-surface-2")}>{f.stage}</span>
                         </div>
-                        {f.note && <div className={cn("text-[11px] mt-1", late ? "text-destructive" : "text-muted-foreground")}>{f.note}</div>}
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="font-display font-bold text-sm">{fmt(f.value)}</div>
+                        <div className="font-display font-bold text-sm">{f.amount != null ? fmt(f.amount) : "—"}</div>
+                        {f.owner && <div className="text-[10px] text-muted-foreground">{f.owner}</div>}
                       </div>
                     </div>
                   </div>
                 );
               })}
-              {filteredForecasts.length === 0 && (
-                <div className="text-center text-sm text-muted-foreground py-8">Nenhuma previsão nesse período.</div>
-              )}
             </div>
           </div>
         </div>
