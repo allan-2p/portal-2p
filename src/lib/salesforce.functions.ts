@@ -99,3 +99,45 @@ export const getSalesforceSample = createServerFn({ method: "GET" })
     );
     return { records: data?.records ?? [] };
   });
+
+export type SalesforceTask = {
+  id: string;
+  date: string; // YYYY-MM-DD
+  subject: string;
+  status: string | null;
+  priority: string | null;
+  description: string | null;
+  who: string | null;
+  what: string | null;
+  owner: string | null;
+};
+
+export const getSalesforceTasks = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { start: string; end: string }) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.start) || !/^\d{4}-\d{2}-\d{2}$/.test(input.end)) {
+      throw new Error("Datas inválidas (formato esperado YYYY-MM-DD).");
+    }
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const soql =
+      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Who.Name, What.Name, Owner.Name ` +
+      `FROM Task ` +
+      `WHERE ActivityDate >= ${data.start} AND ActivityDate <= ${data.end} ` +
+      `ORDER BY ActivityDate ASC LIMIT 500`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    const records: SalesforceTask[] = (res?.records ?? []).map((r: any) => ({
+      id: r.Id,
+      date: r.ActivityDate,
+      subject: r.Subject ?? "(sem assunto)",
+      status: r.Status ?? null,
+      priority: r.Priority ?? null,
+      description: r.Description ?? null,
+      who: r.Who?.Name ?? null,
+      what: r.What?.Name ?? null,
+      owner: r.Owner?.Name ?? null,
+    }));
+    return { records, totalSize: res?.totalSize ?? records.length };
+  });
+
