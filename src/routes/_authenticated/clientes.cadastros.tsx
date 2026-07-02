@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { useGlobalSearch } from "@/lib/search-store";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Pencil, Eye, X, Building2, Calendar, User, FileText, Save, Plus, Phone, Globe, Loader2, AlertTriangle } from "lucide-react";
+import { Pencil, Eye, X, Building2, Calendar, User, FileText, Save, Plus, Phone, Globe, Loader2, AlertTriangle, Search } from "lucide-react";
 import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
+import { VendedorFilter } from "@/components/vendedor-filter";
 
 export const Route = createFileRoute("/_authenticated/clientes/cadastros")({
   head: () => ({ meta: [{ title: "Cadastros — Portal 2P" }] }),
@@ -22,11 +22,12 @@ function fmtDate(iso: string | null): string {
 }
 
 function CadastrosPage() {
-  const search = useGlobalSearch().trim().toLowerCase();
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Row | null>(null);
   const [viewing, setViewing] = useState<Row | null>(null);
   const [overrides, setOverrides] = useState<Record<string, Partial<Row>>>({});
   const [segFilter, setSegFilter] = useState<"all" | "A" | "B" | "C" | "D" | "none">("all");
+  const [ownerId, setOwnerId] = useState<string>("all");
 
   const fetchAccounts = useServerFn(getSalesforceAccounts);
   const { data, isLoading, error, refetch, isFetching } = useQuery({
@@ -43,11 +44,13 @@ function CadastrosPage() {
   const filtered = rows.filter((r) => {
     if (segFilter === "none" && r.segment !== null) return false;
     if (segFilter !== "all" && segFilter !== "none" && r.segment !== segFilter) return false;
-    if (!search) return true;
+    if (ownerId !== "all" && r.ownerId !== ownerId) return false;
+    const s = search.trim().toLowerCase();
+    if (!s) return true;
     return (
-      r.name.toLowerCase().includes(search) ||
-      (r.cnpj ?? "").toLowerCase().includes(search) ||
-      (r.ownerName ?? "").toLowerCase().includes(search)
+      r.name.toLowerCase().includes(s) ||
+      (r.cnpj ?? "").toLowerCase().includes(s) ||
+      (r.ownerName ?? "").toLowerCase().includes(s)
     );
   });
 
