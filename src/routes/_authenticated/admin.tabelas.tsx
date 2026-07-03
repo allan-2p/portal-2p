@@ -56,7 +56,7 @@ function OppTable({
 
   return (
     <div className="glass rounded-2xl overflow-hidden">
-      {error && (
+      {!!error && (
         <div className="border-b border-destructive/40 bg-destructive/10 text-destructive text-sm px-4 py-3 flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 mt-0.5" />
           <div>{error instanceof Error ? error.message : "Erro ao carregar dados"}</div>
