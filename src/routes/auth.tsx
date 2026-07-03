@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
 import logo from "@/assets/2p-logo.jpg";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginSplash } from "@/components/login-splash";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { getActiveUsersToday } from "@/lib/active-users.functions";
 
 const emailSchema = z
   .string()
@@ -35,12 +38,6 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const ACTIVE_SELLERS = [
-  "https://i.pravatar.cc/80?img=12",
-  "https://i.pravatar.cc/80?img=32",
-  "https://i.pravatar.cc/80?img=47",
-  "https://i.pravatar.cc/80?img=68",
-];
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -53,6 +50,15 @@ function AuthPage() {
   const [splash, setSplash] = useState(false);
   const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({ email: false, password: false });
   const [authError, setAuthError] = useState<string | null>(null);
+
+  const fetchActive = useServerFn(getActiveUsersToday);
+  const activeQ = useQuery({
+    queryKey: ["auth-active-today"],
+    queryFn: () => fetchActive(),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const activeUsers = activeQ.data?.records ?? [];
 
   const emailError = useMemo(() => {
     if (!touched.email && !email) return null;
@@ -159,20 +165,48 @@ function AuthPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex -space-x-2">
-                {ACTIVE_SELLERS.map((src, i) => (
-                  <img
-                    key={i}
-                    src={src}
-                    alt=""
-                    className="h-7 w-7 rounded-full ring-2 ring-background object-cover"
-                  />
-                ))}
-              </div>
-              <span className="text-xs text-muted-foreground">
-                Vendedores ativos no Portal hoje
-              </span>
+            <div className="flex items-center gap-3 min-h-[28px]">
+              {activeQ.isLoading ? (
+                <span className="text-xs text-muted-foreground/70 flex items-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" /> carregando atividade…
+                </span>
+              ) : activeUsers.length === 0 ? (
+                <span className="text-xs text-muted-foreground/70">
+                  Nenhum usuário ativo no Portal hoje ainda.
+                </span>
+              ) : (
+                <>
+                  <div className="flex -space-x-2">
+                    {activeUsers.slice(0, 5).map((u) => {
+                      const initials = u.name
+                        .split(/\s+/)
+                        .map((s) => s[0])
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase();
+                      return (
+                        <div
+                          key={u.id}
+                          title={u.name}
+                          className="h-7 w-7 rounded-full ring-2 ring-background bg-muted overflow-hidden flex items-center justify-center text-[10px] font-medium text-muted-foreground"
+                        >
+                          {u.avatarUrl ? (
+                            <img src={u.avatarUrl} alt={u.name} className="h-full w-full object-cover" />
+                          ) : (
+                            initials || "·"
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {activeUsers.length === 1
+                      ? "1 usuário ativo no Portal hoje"
+                      : `${activeUsers.length} usuários ativos no Portal hoje`}
+                  </span>
+                </>
+              )}
             </div>
 
             <div className="pt-6 border-t border-border/60 max-w-md">
