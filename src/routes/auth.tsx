@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logo from "@/assets/2p-logo.jpg";
+import logoBlack from "@/assets/2p-logo-black.png.asset.json";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginSplash } from "@/components/login-splash";
 import { useServerFn } from "@tanstack/react-start";
