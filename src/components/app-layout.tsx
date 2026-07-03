@@ -355,6 +355,8 @@ function AdminGroup({ pathname, collapsed }: { pathname: string; collapsed: bool
           <SubLink to="/usuarios" label="Usuários" icon={Users} active={pathname.startsWith("/usuarios")} />
           <SubLink to="/admin/vendedores" label="Vendedores" icon={UserCog} active={pathname.startsWith("/admin/vendedores")} />
           <SubLink to="/admin/metas" label="Metas" icon={Target} active={pathname.startsWith("/admin/metas")} />
+          <SubLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} active={pathname.startsWith("/admin/tabelas")} />
+
           <SubLink to="/integracoes" label="Integrações" icon={Plug} active={pathname.startsWith("/integracoes")} />
         </div>
       )}
