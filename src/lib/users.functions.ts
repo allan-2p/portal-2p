@@ -57,6 +57,9 @@ const InviteInput = z.object({
   cargo: z.string().optional().nullable(),
   equipe: z.string().optional().nullable(),
   role: RoleEnum,
+  is_external: z.boolean().optional().default(false),
+  sf_user_id: z.string().optional().nullable(),
+  avatar_url: z.string().optional().nullable(),
 });
 
 export const adminInviteUser = createServerFn({ method: "POST" })
@@ -74,6 +77,9 @@ export const adminInviteUser = createServerFn({ method: "POST" })
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
         invited_by: context.userId,
+        is_external: data.is_external ?? false,
+        sf_user_id: data.sf_user_id ?? null,
+        avatar_url: data.avatar_url ?? null,
       },
       { onConflict: "email" },
     );
@@ -86,6 +92,7 @@ export const adminInviteUser = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 const RoleInput = z.object({
   user_id: z.string().uuid(),
