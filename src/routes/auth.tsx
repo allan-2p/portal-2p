@@ -126,236 +126,269 @@ function AuthPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-neutral-50 dark:bg-neutral-950 overflow-hidden flex flex-col text-neutral-900 dark:text-neutral-50">
+    <div className="relative min-h-screen w-full flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-hidden transition-colors duration-300">
       {splash && <LoginSplash />}
 
-      {/* top bar */}
-      <header className="relative z-10 flex items-center justify-between px-6 md:px-12 py-6">
-        <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-md bg-white dark:bg-neutral-100 flex items-center justify-center shadow-sm ring-1 ring-neutral-200/60">
-            <img src={logoBlack.url} alt="Grupo 2P" className="h-5 w-auto" />
-          </div>
-          <span className="font-display font-semibold text-sm tracking-tight">Portal Grupo 2P</span>
-        </div>
+      {/* Atmospheric silvery depth */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[45%] h-[45%] rounded-full bg-slate-200/40 dark:bg-zinc-800/25 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-zinc-300/30 dark:bg-zinc-900/40 blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] h-[35%] rounded-full bg-white/30 dark:bg-zinc-800/10 blur-[140px]" />
+      </div>
+
+      {/* Faint precision grid */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 opacity-[0.35] dark:opacity-[0.15]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(120,120,130,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(120,120,130,0.08) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+          maskImage: "radial-gradient(ellipse at center, rgba(0,0,0,0.9), transparent 70%)",
+          WebkitMaskImage: "radial-gradient(ellipse at center, rgba(0,0,0,0.9), transparent 70%)",
+        }}
+      />
+
+      {/* Top-right theme toggle */}
+      <div className="absolute z-20 top-6 right-6 md:top-8 md:right-10">
         <ThemeToggle />
-      </header>
+      </div>
 
-      {/* content */}
-      <main className="relative z-10 flex-1 flex items-center justify-center px-6 pb-16">
-        <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-          {/* Left — narrative */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-10"
-          >
-            <div className="space-y-6">
-              <span className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-neutral-900 dark:bg-neutral-100" />
-                Portal interno · Grupo 2P
-              </span>
-              <h1 className="font-display font-semibold tracking-tight text-[44px] md:text-[56px] leading-[1.02] text-neutral-900 dark:text-neutral-50">
-                Um grupo.
-                <br />
-                Uma <span className="italic font-light">plataforma.</span>
-              </h1>
-              <p className="text-[15px] text-neutral-600 dark:text-neutral-400 max-w-md leading-relaxed">
-                Carteira, pedidos e insights do Atlas em uma única tela — feita para todo o time do Grupo 2P.
-              </p>
+      {/* Content */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-16 md:py-24">
+        <motion.div
+          key={shake}
+          initial={{ opacity: 0, y: 14 }}
+          animate={
+            shake
+              ? { x: [0, -6, 6, -4, 4, 0], opacity: 1, y: 0 }
+              : { opacity: 1, y: 0 }
+          }
+          transition={{ duration: shake ? 0.4 : 0.65, ease: [0.22, 1, 0.36, 1] }}
+          className="relative w-full max-w-5xl flex flex-col md:flex-row bg-white/80 dark:bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-[0_30px_80px_-30px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)]"
+        >
+          {/* Chrome hairline highlight */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-zinc-400/40 dark:via-zinc-500/20 to-transparent" />
+
+          {/* Narrative column */}
+          <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-between border-b md:border-b-0 md:border-r border-zinc-200 dark:border-zinc-800 bg-gradient-to-br from-transparent via-zinc-50/50 to-zinc-100/60 dark:via-zinc-900/20 dark:to-zinc-800/20">
+            <div>
+              {/* 2P Logo tile */}
+              <div className="w-12 h-12 bg-white dark:bg-zinc-100 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-zinc-900/10 dark:ring-white/10">
+                <img src={logoBlack.url} alt="Grupo 2P" className="h-7 w-auto" />
+              </div>
+
+              <div className="mt-14">
+                <span className="inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400">
+                  <span className="h-1 w-1 rounded-full bg-zinc-500 dark:bg-zinc-400" />
+                  Portal interno · Grupo 2P
+                </span>
+                <h1 className="mt-4 text-3xl lg:text-[40px] font-light text-zinc-900 dark:text-zinc-100 leading-[1.05] tracking-tight font-display">
+                  Um grupo. <span className="font-medium">Uma plataforma.</span>
+                </h1>
+                <p className="mt-5 text-sm text-zinc-500 dark:text-zinc-400 max-w-sm leading-relaxed">
+                  Carteira, pedidos e insights do Atlas em uma única tela — feita para todo o time do Grupo 2P.
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3 min-h-[28px]">
-              {activeQ.isLoading ? (
-                <span className="text-xs text-neutral-500 dark:text-neutral-500 flex items-center gap-2">
-                  <Loader2 className="h-3 w-3 animate-spin" /> carregando atividade…
-                </span>
-              ) : activeUsers.length === 0 ? (
-                <span className="text-xs text-neutral-500 dark:text-neutral-500">
-                  Nenhum usuário ativo no Portal hoje ainda.
-                </span>
-              ) : (
-                <>
-                  <div className="flex -space-x-2">
-                    {activeUsers.slice(0, 5).map((u) => {
-                      const initials = u.name
-                        .split(/\s+/)
-                        .map((s) => s[0])
-                        .filter(Boolean)
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase();
-                      return (
-                        <div
-                          key={u.id}
-                          title={u.name}
-                          className="h-7 w-7 rounded-full ring-2 ring-neutral-50 dark:ring-neutral-950 bg-neutral-200 dark:bg-neutral-800 overflow-hidden flex items-center justify-center text-[10px] font-medium text-neutral-600 dark:text-neutral-300"
-                        >
-                          {u.avatarUrl ? (
-                            <img src={u.avatarUrl} alt={u.name} className="h-full w-full object-cover" />
-                          ) : (
-                            initials || "·"
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {activeUsers.length === 1
-                      ? "1 usuário ativo no Portal hoje"
-                      : `${activeUsers.length} usuários ativos no Portal hoje`}
+            <div className="mt-12">
+              {/* Active users row */}
+              <div className="flex items-center gap-3 min-h-[32px] mb-8">
+                {activeQ.isLoading ? (
+                  <span className="text-xs text-zinc-500 dark:text-zinc-500 flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin" /> carregando atividade…
                   </span>
-                </>
-              )}
-            </div>
-
-            <div className="pt-6 border-t border-neutral-200 dark:border-neutral-800 max-w-md">
-              <p className="font-display italic text-[15px] leading-snug text-neutral-700 dark:text-neutral-300">
-                "Inovação e parceria é o que nos move."
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Right — form */}
-          <motion.div
-            key={shake}
-            initial={{ opacity: 0, y: 12 }}
-            animate={
-              shake
-                ? { x: [0, -6, 6, -4, 4, 0], opacity: 1, y: 0 }
-                : { opacity: 1, y: 0 }
-            }
-            transition={{ duration: shake ? 0.4 : 0.6, ease: [0.22, 1, 0.36, 1], delay: shake ? 0 : 0.08 }}
-            className="w-full max-w-sm justify-self-center lg:justify-self-end"
-          >
-            <div className="space-y-1.5 mb-8">
-              <h2 className="font-display font-semibold text-2xl tracking-tight">
-                {resetMode ? "Recuperar senha" : "Entrar"}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {resetMode ? "Enviaremos um link de redefinição." : "Use seu e-mail corporativo 2P."}
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} noValidate className="space-y-5">
-              <div className="space-y-1.5">
-                <label htmlFor="email" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  E-mail
-                </label>
-                <div className="relative">
-                  <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); if (authError) setAuthError(null); }}
-                    onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-                    aria-invalid={!!emailError}
-                    aria-describedby={emailError ? "email-error" : undefined}
-                    placeholder="voce@2pgroup.com.br"
-                    className={cn(
-                      "w-full px-0 py-2.5 pr-7 bg-transparent border-0 border-b text-sm transition-colors focus:outline-none placeholder:text-muted-foreground/60",
-                      emailError
-                        ? "border-destructive focus:border-destructive"
-                        : "border-neutral-200 dark:border-neutral-800 focus:border-neutral-900 dark:focus:border-neutral-100",
-                    )}
-                  />
-                  {!emailError && email && emailSchema.safeParse(email).success && (
-                    <CheckCircle2 className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
-                  )}
-                </div>
-                {emailError && (
-                  <p id="email-error" className="flex items-center gap-1 text-[11px] text-destructive animate-fade-in">
-                    <AlertCircle className="h-3 w-3" /> {emailError}
-                  </p>
+                ) : activeUsers.length === 0 ? (
+                  <span className="text-xs text-zinc-500 dark:text-zinc-500">
+                    Nenhum usuário ativo no Portal hoje ainda.
+                  </span>
+                ) : (
+                  <>
+                    <div className="flex -space-x-2">
+                      {activeUsers.slice(0, 5).map((u) => {
+                        const initials = u.name
+                          .split(/\s+/)
+                          .map((s) => s[0])
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase();
+                        return (
+                          <div
+                            key={u.id}
+                            title={u.name}
+                            className="h-8 w-8 rounded-full border-2 border-white dark:border-zinc-900 bg-zinc-200 dark:bg-zinc-800 overflow-hidden flex items-center justify-center text-[10px] font-medium text-zinc-600 dark:text-zinc-300"
+                          >
+                            {u.avatarUrl ? (
+                              <img src={u.avatarUrl} alt={u.name} className="h-full w-full object-cover" />
+                            ) : (
+                              initials || "·"
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                      {activeUsers.length === 1
+                        ? "1 usuário ativo no Portal hoje"
+                        : `${activeUsers.length} usuários ativos no Portal hoje`}
+                    </span>
+                  </>
                 )}
               </div>
 
-              {!resetMode && (
-                <div className="space-y-1.5">
-                  <label htmlFor="password" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                    Senha
+              <blockquote className="border-l-2 border-zinc-300 dark:border-zinc-700 pl-4 py-1 max-w-md">
+                <p className="text-sm italic text-zinc-500 dark:text-zinc-500 leading-relaxed">
+                  "Inovação e parceria é o que nos move."
+                </p>
+              </blockquote>
+            </div>
+          </div>
+
+          {/* Form column */}
+          <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
+            <div className="max-w-sm mx-auto w-full">
+              <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 font-display">
+                {resetMode ? "Recuperar senha" : "Bem-vindo de volta"}
+              </h2>
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1 mb-8">
+                {resetMode ? "Enviaremos um link de redefinição." : "Use seu e-mail corporativo 2P para entrar."}
+              </p>
+
+              <form onSubmit={handleSubmit} noValidate className="space-y-5">
+                <div>
+                  <label htmlFor="email" className="block text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">
+                    E-mail
                   </label>
                   <div className="relative">
                     <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); if (authError) setAuthError(null); }}
-                      onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-                      aria-invalid={!!passwordError}
-                      aria-describedby={passwordError ? "password-error" : undefined}
-                      placeholder="••••••••"
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); if (authError) setAuthError(null); }}
+                      onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                      aria-invalid={!!emailError}
+                      aria-describedby={emailError ? "email-error" : undefined}
+                      placeholder="voce@2pgroup.com.br"
                       className={cn(
-                        "w-full px-0 py-2.5 pr-8 bg-transparent border-0 border-b text-sm transition-colors focus:outline-none placeholder:text-muted-foreground/60",
-                        passwordError
-                          ? "border-destructive focus:border-destructive"
-                          : "border-neutral-200 dark:border-neutral-800 focus:border-neutral-900 dark:focus:border-neutral-100",
+                        "w-full px-4 py-3 pr-10 bg-white dark:bg-zinc-950 border rounded-lg outline-none text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 transition-all focus:ring-1",
+                        emailError
+                          ? "border-destructive focus:border-destructive focus:ring-destructive/20"
+                          : "border-zinc-200 dark:border-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-zinc-400/20",
                       )}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                      tabIndex={-1}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
+                    {!emailError && email && emailSchema.safeParse(email).success && (
+                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-success" />
+                    )}
                   </div>
-                  {passwordError && (
-                    <p id="password-error" className="flex items-center gap-1 text-[11px] text-destructive animate-fade-in">
-                      <AlertCircle className="h-3 w-3" /> {passwordError}
+                  {emailError && (
+                    <p id="email-error" className="flex items-center gap-1 text-[11px] text-destructive animate-fade-in mt-1.5">
+                      <AlertCircle className="h-3 w-3" /> {emailError}
                     </p>
                   )}
                 </div>
-              )}
 
-              {authError && (
-                <div
-                  role="alert"
-                  className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[12px] text-destructive animate-fade-in"
-                >
-                  <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                  <span>{authError}</span>
-                </div>
-              )}
-
-
-              <button
-                type="submit"
-                disabled={loading || !canSubmit}
-                className="group mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-full bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 font-medium text-sm transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    {resetMode ? "Enviar instruções" : "Entrar"}
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                  </>
+                {!resetMode && (
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <label htmlFor="password" className="block text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+                        Senha
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setResetMode(true)}
+                        className="text-[11px] text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                      >
+                        Esqueceu?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => { setPassword(e.target.value); if (authError) setAuthError(null); }}
+                        onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+                        aria-invalid={!!passwordError}
+                        aria-describedby={passwordError ? "password-error" : undefined}
+                        placeholder="••••••••"
+                        className={cn(
+                          "w-full px-4 py-3 pr-10 bg-white dark:bg-zinc-950 border rounded-lg outline-none text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 transition-all focus:ring-1",
+                          passwordError
+                            ? "border-destructive focus:border-destructive focus:ring-destructive/20"
+                            : "border-zinc-200 dark:border-zinc-800 focus:border-zinc-400 dark:focus:border-zinc-600 focus:ring-zinc-400/20",
+                        )}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                        tabIndex={-1}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {passwordError && (
+                      <p id="password-error" className="flex items-center gap-1 text-[11px] text-destructive animate-fade-in mt-1.5">
+                        <AlertCircle className="h-3 w-3" /> {passwordError}
+                      </p>
+                    )}
+                  </div>
                 )}
-              </button>
 
-              <div className="flex items-center justify-between text-xs pt-1">
-                <button
-                  type="button"
-                  onClick={() => setResetMode((v) => !v)}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {resetMode ? "Voltar ao login" : "Esqueci minha senha"}
-                </button>
-                <span className="text-muted-foreground/60">v1.0</span>
-              </div>
-            </form>
-          </motion.div>
-        </div>
+                {authError && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[12px] text-destructive animate-fade-in"
+                  >
+                    <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <span>{authError}</span>
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={loading || !canSubmit}
+                    className="group relative w-full py-3 px-4 rounded-lg font-medium text-sm bg-gradient-to-b from-zinc-800 to-black dark:from-white dark:to-zinc-200 text-white dark:text-zinc-900 border border-zinc-700/60 dark:border-white/30 shadow-lg hover:shadow-zinc-400/30 dark:hover:shadow-white/10 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        {resetMode ? "Enviar instruções" : "Entrar no Portal"}
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {resetMode && (
+                  <button
+                    type="button"
+                    onClick={() => setResetMode(false)}
+                    className="w-full text-center text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                  >
+                    Voltar ao login
+                  </button>
+                )}
+              </form>
+
+              <p className="mt-10 text-center text-[11px] uppercase tracking-[0.18em] text-zinc-400 dark:text-zinc-600">
+                Acesso restrito · v1.0
+              </p>
+            </div>
+          </div>
+        </motion.div>
       </main>
 
-      <footer className="relative z-10 px-6 md:px-12 py-5 text-[11px] text-muted-foreground/70 flex justify-between">
+      <footer className="relative z-10 px-6 md:px-12 py-5 text-[10px] uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600 flex justify-between">
         <span>© Grupo 2P</span>
-        <span>Acesso restrito</span>
+        <span>Portal interno</span>
       </footer>
     </div>
   );
