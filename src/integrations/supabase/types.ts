@@ -42,7 +42,9 @@ export type Database = {
           equipe: string | null
           full_name: string | null
           id: string
+          is_external: boolean
           meta_mensal: number | null
+          sf_user_id: string | null
           telefone: string | null
           updated_at: string
         }
@@ -55,7 +57,9 @@ export type Database = {
           equipe?: string | null
           full_name?: string | null
           id: string
+          is_external?: boolean
           meta_mensal?: number | null
+          sf_user_id?: string | null
           telefone?: string | null
           updated_at?: string
         }
@@ -68,7 +72,9 @@ export type Database = {
           equipe?: string | null
           full_name?: string | null
           id?: string
+          is_external?: boolean
           meta_mensal?: number | null
+          sf_user_id?: string | null
           telefone?: string | null
           updated_at?: string
         }
@@ -110,6 +116,7 @@ export type Database = {
       user_invites: {
         Row: {
           accepted_at: string | null
+          avatar_url: string | null
           cargo: string | null
           created_at: string
           email: string
@@ -117,10 +124,13 @@ export type Database = {
           full_name: string | null
           id: string
           invited_by: string | null
+          is_external: boolean
           role: Database["public"]["Enums"]["app_role"]
+          sf_user_id: string | null
         }
         Insert: {
           accepted_at?: string | null
+          avatar_url?: string | null
           cargo?: string | null
           created_at?: string
           email: string
@@ -128,10 +138,13 @@ export type Database = {
           full_name?: string | null
           id?: string
           invited_by?: string | null
+          is_external?: boolean
           role?: Database["public"]["Enums"]["app_role"]
+          sf_user_id?: string | null
         }
         Update: {
           accepted_at?: string | null
+          avatar_url?: string | null
           cargo?: string | null
           created_at?: string
           email?: string
@@ -139,7 +152,9 @@ export type Database = {
           full_name?: string | null
           id?: string
           invited_by?: string | null
+          is_external?: boolean
           role?: Database["public"]["Enums"]["app_role"]
+          sf_user_id?: string | null
         }
         Relationships: []
       }
