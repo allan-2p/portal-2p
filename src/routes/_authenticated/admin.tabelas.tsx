@@ -3,8 +3,20 @@ import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Loader2, AlertTriangle, Search, Table as TableIcon, FileText, ShoppingCart } from "lucide-react";
+import {
+  Loader2,
+  AlertTriangle,
+  Search,
+  Table as TableIcon,
+  FileText,
+  ShoppingCart,
+  CalendarIcon,
+} from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
@@ -26,16 +38,125 @@ const fmtDate = (d: string | null) => {
   return `${day}/${m}/${y}`;
 };
 
+function fmtKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+type PeriodPreset = "custom" | "week" | "month" | "quarter" | "year";
+
+function presetRange(preset: PeriodPreset): { from: Date; to: Date } | null {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  if (preset === "week") {
+    const day = now.getDay();
+    const from = new Date(y, m, d - day);
+    const to = new Date(y, m, d - day + 6);
+    return { from, to };
+  }
+  if (preset === "month") {
+    return { from: new Date(y, m, 1), to: new Date(y, m + 1, 0) };
+  }
+  if (preset === "quarter") {
+    const q = Math.floor(m / 3);
+    return { from: new Date(y, q * 3, 1), to: new Date(y, q * 3 + 3, 0) };
+  }
+  if (preset === "year") {
+    return { from: new Date(y, 0, 1), to: new Date(y, 11, 31) };
+  }
+  return null;
+}
+
+function DateRangeFilter({
+  from,
+  to,
+  preset,
+  onChange,
+}: {
+  from: Date;
+  to: Date;
+  preset: PeriodPreset;
+  onChange: (v: { from: Date; to: Date; preset: PeriodPreset }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const label = `${from.toLocaleDateString("pt-BR")} — ${to.toLocaleDateString("pt-BR")}`;
+
+  const setPreset = (p: PeriodPreset) => {
+    const r = presetRange(p);
+    if (r) onChange({ ...r, preset: p });
+  };
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
+        {(
+          [
+            { k: "week", l: "Semana" },
+            { k: "month", l: "Mês" },
+            { k: "quarter", l: "Trimestre" },
+            { k: "year", l: "Ano" },
+          ] as const
+        ).map((o) => (
+          <button
+            key={o.k}
+            onClick={() => setPreset(o.k)}
+            className={cn(
+              "px-2.5 py-1 rounded-md transition-colors",
+              preset === o.k
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {o.l}
+          </button>
+        ))}
+      </div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "justify-start text-left font-normal",
+              preset === "custom" && "border-primary/50",
+            )}
+          >
+            <CalendarIcon className="h-4 w-4" />
+            {label}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="end">
+          <Calendar
+            mode="range"
+            defaultMonth={from}
+            selected={{ from, to }}
+            onSelect={(r) => {
+              if (r?.from && r?.to) {
+                onChange({ from: r.from, to: r.to, preset: "custom" });
+                setOpen(false);
+              }
+            }}
+            numberOfMonths={2}
+            className={cn("p-3 pointer-events-auto")}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 function OppTable({
   records,
   loading,
   error,
   search,
+  dateField,
 }: {
   records: SalesforceOppRow[];
   loading: boolean;
   error: unknown;
   search: string;
+  dateField: "createdDate" | "closeDate";
 }) {
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -49,10 +170,16 @@ function OppTable({
     );
   }, [records, search]);
 
-  const total = useMemo(
-    () => filtered.reduce((sum, r) => sum + (r.amount ?? 0), 0),
-    [filtered],
-  );
+  const totals = useMemo(() => {
+    const acc = { total: 0, liq: 0, frete: 0, desc: 0 };
+    for (const r of filtered) {
+      acc.total += r.total ?? 0;
+      acc.liq += r.valorLiq ?? 0;
+      acc.frete += r.frete ?? 0;
+      acc.desc += r.desconto ?? 0;
+    }
+    return acc;
+  }, [filtered]);
 
   return (
     <div className="glass rounded-2xl overflow-hidden">
@@ -60,7 +187,6 @@ function OppTable({
         <div className="border-b border-destructive/40 bg-destructive/10 text-destructive text-sm px-4 py-3 flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 mt-0.5" />
           <div>{error instanceof Error ? error.message : "Erro ao carregar dados"}</div>
-
         </div>
       )}
       <div className="overflow-x-auto">
@@ -73,13 +199,16 @@ function OppTable({
               <th className="text-left px-4 py-2.5">Etapa</th>
               <th className="text-left px-4 py-2.5">Tipo NF</th>
               <th className="text-left px-4 py-2.5">Data</th>
-              <th className="text-right px-4 py-2.5">Valor</th>
+              <th className="text-right px-4 py-2.5">Valor Total</th>
+              <th className="text-right px-4 py-2.5">Valor Líquido</th>
+              <th className="text-right px-4 py-2.5">Frete</th>
+              <th className="text-right px-4 py-2.5">Desconto</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                <td colSpan={10} className="px-4 py-16 text-center text-muted-foreground text-sm">
                   <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
                   Carregando do Salesforce…
                 </td>
@@ -97,13 +226,16 @@ function OppTable({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{r.tipoNf ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{fmtDate(r.closeDate)}</td>
-                  <td className="px-4 py-3 text-right font-mono">{brl(r.amount)}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{fmtDate(r[dateField])}</td>
+                  <td className="px-4 py-3 text-right font-mono">{brl(r.total)}</td>
+                  <td className="px-4 py-3 text-right font-mono">{brl(r.valorLiq)}</td>
+                  <td className="px-4 py-3 text-right font-mono">{brl(r.frete)}</td>
+                  <td className="px-4 py-3 text-right font-mono">{brl(r.desconto)}</td>
                 </tr>
               ))}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
                   Nenhum registro encontrado.
                 </td>
               </tr>
@@ -115,7 +247,10 @@ function OppTable({
                 <td colSpan={6} className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]">
                   Total ({filtered.length} {filtered.length === 1 ? "registro" : "registros"})
                 </td>
-                <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(total)}</td>
+                <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.total)}</td>
+                <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.liq)}</td>
+                <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.frete)}</td>
+                <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.desc)}</td>
               </tr>
             </tfoot>
           )}
@@ -130,18 +265,28 @@ function TabelasPage() {
   const [tab, setTab] = useState<"orcamentos" | "vendas">("orcamentos");
   const [search, setSearch] = useState("");
 
+  const initial = presetRange("month")!;
+  const [from, setFrom] = useState<Date>(initial.from);
+  const [to, setTo] = useState<Date>(initial.to);
+  const [preset, setPreset] = useState<PeriodPreset>("month");
+
+  const range = useMemo(
+    () => ({ start: fmtKey(from), end: fmtKey(to) }),
+    [from, to],
+  );
+
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
 
   const qOrc = useQuery({
-    queryKey: ["sf-orcamentos"],
-    queryFn: () => fetchOrc(),
+    queryKey: ["sf-orcamentos", range.start, range.end],
+    queryFn: () => fetchOrc({ data: range }),
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "orcamentos",
   });
   const qVen = useQuery({
-    queryKey: ["sf-vendas"],
-    queryFn: () => fetchVen(),
+    queryKey: ["sf-vendas", range.start, range.end],
+    queryFn: () => fetchVen({ data: range }),
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "vendas",
   });
@@ -182,33 +327,46 @@ function TabelasPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas")}>
-          <TabsList>
-            <TabsTrigger value="orcamentos" className="gap-2">
-              <FileText className="h-4 w-4" /> Orçamento
-            </TabsTrigger>
-            <TabsTrigger value="vendas" className="gap-2">
-              <ShoppingCart className="h-4 w-4" /> Vendas
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="orcamentos" className="mt-4">
-            <OppTable
-              records={qOrc.data?.records ?? []}
-              loading={qOrc.isLoading}
-              error={qOrc.error}
-              search={search}
-            />
-          </TabsContent>
-          <TabsContent value="vendas" className="mt-4">
-            <OppTable
-              records={qVen.data?.records ?? []}
-              loading={qVen.isLoading}
-              error={qVen.error}
-              search={search}
-            />
-          </TabsContent>
-        </Tabs>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas")}>
+            <TabsList>
+              <TabsTrigger value="orcamentos" className="gap-2">
+                <FileText className="h-4 w-4" /> Orçamento
+              </TabsTrigger>
+              <TabsTrigger value="vendas" className="gap-2">
+                <ShoppingCart className="h-4 w-4" /> Vendas
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="orcamentos" className="mt-4">
+              <OppTable
+                records={qOrc.data?.records ?? []}
+                loading={qOrc.isLoading}
+                error={qOrc.error}
+                search={search}
+                dateField="createdDate"
+              />
+            </TabsContent>
+            <TabsContent value="vendas" className="mt-4">
+              <OppTable
+                records={qVen.data?.records ?? []}
+                loading={qVen.isLoading}
+                error={qVen.error}
+                search={search}
+                dateField="closeDate"
+              />
+            </TabsContent>
+          </Tabs>
+          <DateRangeFilter
+            from={from}
+            to={to}
+            preset={preset}
+            onChange={(v) => {
+              setFrom(v.from);
+              setTo(v.to);
+              setPreset(v.preset);
+            }}
+          />
+        </div>
       </div>
     </AppLayout>
   );
