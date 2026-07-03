@@ -86,13 +86,11 @@ function HomePage() {
 
   const fetchTasks = useServerFn(getSalesforceTasks);
   const today = useMemo(() => new Date(), []);
-  const agenda = AGENDA_RANGES.find((a) => a.k === agendaRange)!;
   const agendaRangeParams = useMemo(() => {
-    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const end = new Date(start);
-    end.setDate(end.getDate() + agenda.days);
-    return { start: fmtKey(start), end: fmtKey(end) };
-  }, [today, agenda.days]);
+    const key = fmtKey(agendaDate);
+    return { start: key, end: key };
+  }, [agendaDate]);
+
 
   const tasksQ = useQuery({
     queryKey: ["sf-home-tasks", agendaRangeParams.start, agendaRangeParams.end, ownerParam],
