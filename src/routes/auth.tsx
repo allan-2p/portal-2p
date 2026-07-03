@@ -38,12 +38,6 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const ACTIVE_SELLERS = [
-  "https://i.pravatar.cc/80?img=12",
-  "https://i.pravatar.cc/80?img=32",
-  "https://i.pravatar.cc/80?img=47",
-  "https://i.pravatar.cc/80?img=68",
-];
 
 function AuthPage() {
   const navigate = useNavigate();
