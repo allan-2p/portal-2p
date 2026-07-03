@@ -354,7 +354,7 @@ function AuthPage() {
       </main>
 
       <footer className="relative z-10 px-6 md:px-12 py-5 text-[11px] text-muted-foreground/70 flex justify-between">
-        <span>© 2P Acessórios</span>
+        <span>© Grupo 2P</span>
         <span>Acesso restrito</span>
       </footer>
     </div>
