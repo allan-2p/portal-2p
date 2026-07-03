@@ -9,7 +9,12 @@ import {
   ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, Clock,
   TrendingUp, CheckCircle2, Phone, Mail, Calendar, Info, ChevronDown,
   FileText, CalendarClock, Gift, Lock, Users as UsersIcon, Loader2,
+  CalendarIcon,
 } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import {
