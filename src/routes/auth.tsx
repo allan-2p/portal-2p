@@ -51,6 +51,15 @@ function AuthPage() {
   const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({ email: false, password: false });
   const [authError, setAuthError] = useState<string | null>(null);
 
+  const fetchActive = useServerFn(getActiveUsersToday);
+  const activeQ = useQuery({
+    queryKey: ["auth-active-today"],
+    queryFn: () => fetchActive(),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const activeUsers = activeQ.data?.records ?? [];
+
   const emailError = useMemo(() => {
     if (!touched.email && !email) return null;
     const r = emailSchema.safeParse(email);
