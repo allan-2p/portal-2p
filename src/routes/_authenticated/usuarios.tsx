@@ -10,9 +10,15 @@ import {
   adminSetRole,
   adminToggleActive,
   adminDeleteUser,
+  listSalesforceCandidates,
+  inviteSalesforceUser,
+  syncSalesforcePhoto,
+  type SFCandidate,
 } from "@/lib/users.functions";
 import { toast } from "sonner";
-import { Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera } from "lucide-react";
+import {
+  Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink,
+} from "lucide-react";
 import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 
@@ -29,16 +35,25 @@ type Row = {
   equipe: string | null;
   ativo: boolean;
   avatar_url: string | null;
+  sf_user_id: string | null;
+  is_external: boolean;
   roles: AppRole[];
 };
 
 const ROLES: AppRole[] = ["admin", "gestor", "vendedor", "diretoria"];
+type Tab = "portal" | "salesforce";
 
 function UsuariosPage() {
   const { hasRole, loading: authLoading, user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState<"create" | "invite" | null>(null);
+  const [tab, setTab] = useState<Tab>("portal");
+  const [modal, setModal] = useState<
+    | { kind: "create" }
+    | { kind: "invite"; external?: boolean }
+    | { kind: "invite-sf"; candidate: SFCandidate }
+    | null
+  >(null);
 
   const createFn = useServerFn(adminCreateUser);
   const inviteFn = useServerFn(adminInviteUser);
@@ -50,7 +65,7 @@ function UsuariosPage() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id,email,full_name,cargo,equipe,ativo,avatar_url")
+      .select("id,email,full_name,cargo,equipe,ativo,avatar_url,sf_user_id,is_external")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
     const byUser = new Map<string, AppRole[]>();
@@ -130,22 +145,28 @@ function UsuariosPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="font-display font-bold text-2xl">Usuários</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Crie, convide e gerencie os papéis do time.
+              Sincronize com Salesforce, convide externos e gerencie papéis.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button
-              onClick={() => setModal("invite")}
+              onClick={() => setModal({ kind: "invite", external: true })}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm font-medium"
+            >
+              <ExternalLink className="h-4 w-4" /> Convidar externo
+            </button>
+            <button
+              onClick={() => setModal({ kind: "invite" })}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm font-medium"
             >
               <Mail className="h-4 w-4" /> Convidar
             </button>
             <button
-              onClick={() => setModal("create")}
+              onClick={() => setModal({ kind: "create" })}
               className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
             >
               <UserPlus className="h-4 w-4" /> Criar usuário
@@ -153,108 +174,72 @@ function UsuariosPage() {
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-surface/50 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3"></th>
-                <th className="text-left px-4 py-3 font-medium">Nome</th>
-                <th className="text-left px-4 py-3 font-medium">E-mail</th>
-                <th className="text-left px-4 py-3 font-medium">Equipe</th>
-                <th className="text-left px-4 py-3 font-medium">Papel</th>
-                <th className="text-left px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-10 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin inline" />
-                  </td>
-                </tr>
-              ) : rows.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-10 text-muted-foreground">
-                    Nenhum usuário ainda.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((r) => (
-                  <tr key={r.id} className="border-t border-border">
-                    <td className="px-4 py-3 w-14">
-                      <AvatarCell row={r} onUploaded={load} />
-                    </td>
-                    <td className="px-4 py-3 font-medium">{r.full_name ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.email}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.equipe ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      <select
-                        value={r.roles[0] ?? "vendedor"}
-                        onChange={(e) => handleRoleChange(r.id, e.target.value as AppRole)}
-                        disabled={r.id === user?.id}
-                        className="px-2 py-1 rounded-md bg-background border border-border text-xs"
-                      >
-                        {ROLES.map((role) => (
-                          <option key={role} value={role}>
-                            {ROLE_LABELS[role]}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          r.ativo
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {r.ativo ? "Ativo" : "Inativo"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex gap-1 justify-end">
-                        <button
-                          onClick={() => handleToggle(r.id, r.ativo)}
-                          disabled={r.id === user?.id}
-                          className="p-1.5 rounded hover:bg-surface-2 disabled:opacity-30"
-                          title={r.ativo ? "Desativar" : "Ativar"}
-                        >
-                          <Power className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(r.id)}
-                          disabled={r.id === user?.id}
-                          className="p-1.5 rounded hover:bg-destructive/10 text-destructive disabled:opacity-30"
-                          title="Remover"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
+          {[
+            { id: "portal", label: "Usuários do portal" },
+            { id: "salesforce", label: "Sincronizar com Salesforce" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id as Tab)}
+              className={`px-4 py-1.5 rounded-md font-medium transition-colors ${
+                tab === t.id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
+
+        {tab === "portal" ? (
+          <PortalTable
+            rows={rows}
+            loading={loading}
+            currentUserId={user?.id}
+            onRoleChange={handleRoleChange}
+            onToggle={handleToggle}
+            onDelete={handleDelete}
+            onReload={load}
+          />
+        ) : (
+          <SalesforceTable onInvite={(c) => setModal({ kind: "invite-sf", candidate: c })} />
+        )}
       </div>
 
-      {modal && (
+      {modal?.kind === "create" && (
         <UserModal
-          mode={modal}
+          mode="create"
           onClose={() => setModal(null)}
           onSubmit={async (data) => {
-            try {
-              if (modal === "create") await createFn({ data: data as any });
-              else await inviteFn({ data });
-              toast.success(modal === "create" ? "Usuário criado" : "Convite enviado");
-              setModal(null);
-              load();
-            } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Erro");
-            }
+            await createFn({ data: data as any });
+            toast.success("Usuário criado");
+            setModal(null);
+            load();
+          }}
+        />
+      )}
+      {modal?.kind === "invite" && (
+        <UserModal
+          mode="invite"
+          external={modal.external}
+          onClose={() => setModal(null)}
+          onSubmit={async (data) => {
+            await inviteFn({ data: { ...data, is_external: !!modal.external } });
+            toast.success("Convite enviado");
+            setModal(null);
+            load();
+          }}
+        />
+      )}
+      {modal?.kind === "invite-sf" && (
+        <InviteSFModal
+          candidate={modal.candidate}
+          onClose={() => setModal(null)}
+          onDone={() => {
+            setModal(null);
+            load();
           }}
         />
       )}
@@ -262,12 +247,365 @@ function UsuariosPage() {
   );
 }
 
+function PortalTable({
+  rows, loading, currentUserId, onRoleChange, onToggle, onDelete, onReload,
+}: {
+  rows: Row[];
+  loading: boolean;
+  currentUserId: string | undefined;
+  onRoleChange: (id: string, r: AppRole) => void;
+  onToggle: (id: string, ativo: boolean) => void;
+  onDelete: (id: string) => void;
+  onReload: () => void;
+}) {
+  const syncPhoto = useServerFn(syncSalesforcePhoto);
+  async function handleSyncPhoto(userId: string) {
+    try {
+      await syncPhoto({ data: { user_id: userId } });
+      toast.success("Foto sincronizada do Salesforce");
+      onReload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-surface/50 text-xs uppercase tracking-wide text-muted-foreground">
+          <tr>
+            <th className="px-4 py-3"></th>
+            <th className="text-left px-4 py-3 font-medium">Nome</th>
+            <th className="text-left px-4 py-3 font-medium">E-mail</th>
+            <th className="text-left px-4 py-3 font-medium">Equipe</th>
+            <th className="text-left px-4 py-3 font-medium">Papel</th>
+            <th className="text-left px-4 py-3 font-medium">Status</th>
+            <th className="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <tr>
+              <td colSpan={7} className="text-center py-10 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin inline" />
+              </td>
+            </tr>
+          ) : rows.length === 0 ? (
+            <tr>
+              <td colSpan={7} className="text-center py-10 text-muted-foreground">
+                Nenhum usuário ainda.
+              </td>
+            </tr>
+          ) : (
+            rows.map((r) => (
+              <tr key={r.id} className="border-t border-border">
+                <td className="px-4 py-3 w-14">
+                  <AvatarCell row={r} onUploaded={onReload} />
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium">{r.full_name ?? "—"}</span>
+                    {r.is_external && (
+                      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                        Externo
+                      </span>
+                    )}
+                    {r.sf_user_id && (
+                      <span
+                        title="Vinculado ao Salesforce"
+                        className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 flex items-center gap-1"
+                      >
+                        <Cloud className="h-2.5 w-2.5" /> SF
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">{r.email}</td>
+                <td className="px-4 py-3 text-muted-foreground">{r.equipe ?? "—"}</td>
+                <td className="px-4 py-3">
+                  <select
+                    value={r.roles[0] ?? "vendedor"}
+                    onChange={(e) => onRoleChange(r.id, e.target.value as AppRole)}
+                    disabled={r.id === currentUserId}
+                    className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                  >
+                    {ROLES.map((role) => (
+                      <option key={role} value={role}>
+                        {ROLE_LABELS[role]}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      r.ativo
+                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {r.ativo ? "Ativo" : "Inativo"}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <div className="flex gap-1 justify-end">
+                    {r.sf_user_id && (
+                      <button
+                        onClick={() => handleSyncPhoto(r.id)}
+                        className="p-1.5 rounded hover:bg-surface-2"
+                        title="Sincronizar foto do Salesforce"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onToggle(r.id, r.ativo)}
+                      disabled={r.id === currentUserId}
+                      className="p-1.5 rounded hover:bg-surface-2 disabled:opacity-30"
+                      title={r.ativo ? "Desativar" : "Ativar"}
+                    >
+                      <Power className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(r.id)}
+                      disabled={r.id === currentUserId}
+                      className="p-1.5 rounded hover:bg-destructive/10 text-destructive disabled:opacity-30"
+                      title="Remover"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SalesforceTable({ onInvite }: { onInvite: (c: SFCandidate) => void }) {
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "invited" | "active">("pending");
+  const [search, setSearch] = useState("");
+  const fetchFn = useServerFn(listSalesforceCandidates);
+  const [data, setData] = useState<SFCandidate[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true); setErr(null);
+    try {
+      const r = await fetchFn();
+      setData(r.records);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Erro");
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const filtered = (data ?? []).filter((c) => {
+    if (statusFilter !== "all" && c.status !== statusFilter) return false;
+    const s = search.trim().toLowerCase();
+    if (!s) return true;
+    return c.name.toLowerCase().includes(s) || (c.email ?? "").toLowerCase().includes(s);
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por nome ou e-mail…"
+          className="px-3 py-2 rounded-lg bg-surface border border-border text-sm w-72"
+        />
+        <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
+          {[
+            { id: "pending", label: "Pendentes" },
+            { id: "invited", label: "Convidados" },
+            { id: "active", label: "Ativos no portal" },
+            { id: "all", label: "Todos" },
+          ].map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setStatusFilter(s.id as any)}
+              className={`px-3 py-1.5 rounded-md font-medium ${
+                statusFilter === s.id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={load}
+          className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm"
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> Atualizar
+        </button>
+      </div>
+
+      {err && (
+        <div className="rounded-xl border border-destructive/40 bg-destructive/10 text-destructive text-sm px-4 py-3">
+          {err}
+        </div>
+      )}
+
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-surface/50 text-xs uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="text-left px-4 py-3 font-medium">Nome</th>
+              <th className="text-left px-4 py-3 font-medium">E-mail</th>
+              <th className="text-left px-4 py-3 font-medium">Cargo</th>
+              <th className="text-left px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="text-center py-10 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin inline" />
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-center py-10 text-muted-foreground">
+                  Nenhum usuário do Salesforce nesse filtro.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((c) => (
+                <tr key={c.sf_user_id} className="border-t border-border">
+                  <td className="px-4 py-3 font-medium">{c.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{c.email ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{c.title ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={c.status} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {c.status === "pending" && c.email && (
+                      <button
+                        onClick={() => onInvite(c)}
+                        className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
+                      >
+                        Convidar para o portal
+                      </button>
+                    )}
+                    {c.status === "invited" && (
+                      <span className="text-xs text-muted-foreground">Aguardando aceite</span>
+                    )}
+                    {c.status === "active" && (
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400">Já no portal</span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: SFCandidate["status"] }) {
+  const map = {
+    pending: { label: "Pendente", cls: "bg-muted text-muted-foreground" },
+    invited: { label: "Convidado", cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+    active: { label: "Ativo", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+  } as const;
+  const s = map[status];
+  return <span className={`text-xs px-2 py-1 rounded-full ${s.cls}`}>{s.label}</span>;
+}
+
+function InviteSFModal({
+  candidate, onClose, onDone,
+}: { candidate: SFCandidate; onClose: () => void; onDone: () => void }) {
+  const [role, setRole] = useState<AppRole>("vendedor");
+  const [equipe, setEquipe] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const inviteFn = useServerFn(inviteSalesforceUser);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
+          try {
+            const r = await inviteFn({
+              data: {
+                sf_user_id: candidate.sf_user_id,
+                role,
+                cargo: candidate.title ?? null,
+                equipe: equipe || null,
+              },
+            });
+            toast.success(
+              r.photo_synced
+                ? "Convite enviado (foto sincronizada)"
+                : "Convite enviado (foto SF indisponível)",
+            );
+            onDone();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erro");
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+        className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-3"
+      >
+        <h2 className="font-display font-bold text-lg">Convidar do Salesforce</h2>
+        <div className="text-sm space-y-1">
+          <div><span className="text-muted-foreground">Nome:</span> <span className="font-medium">{candidate.name}</span></div>
+          <div><span className="text-muted-foreground">E-mail:</span> {candidate.email ?? "—"}</div>
+          <div><span className="text-muted-foreground">Cargo:</span> {candidate.title ?? "—"}</div>
+        </div>
+        <Field label="Papel no portal">
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value as AppRole)}
+            className="input"
+          >
+            {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+          </select>
+        </Field>
+        <Field label="Equipe (opcional)">
+          <input value={equipe} onChange={(e) => setEquipe(e.target.value)} className="input" />
+        </Field>
+        <div className="flex gap-2 pt-2">
+          <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+            Enviar convite
+          </button>
+        </div>
+        <style>{`.input{width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;background:hsl(var(--background));border:1px solid hsl(var(--border));font-size:0.875rem;outline:none}.input:focus{border-color:hsl(var(--primary))}`}</style>
+      </form>
+    </div>
+  );
+}
+
 function UserModal({
   mode,
+  external,
   onClose,
   onSubmit,
 }: {
   mode: "create" | "invite";
+  external?: boolean;
   onClose: () => void;
   onSubmit: (data: any) => Promise<void>;
 }) {
@@ -287,95 +625,71 @@ function UserModal({
         onSubmit={async (e) => {
           e.preventDefault();
           setSubmitting(true);
-          const payload =
-            mode === "create"
-              ? form
-              : {
-                  email: form.email,
-                  full_name: form.full_name,
-                  cargo: form.cargo || null,
-                  equipe: form.equipe || null,
-                  role: form.role,
-                };
-          await onSubmit(payload);
-          setSubmitting(false);
+          try {
+            const payload =
+              mode === "create"
+                ? form
+                : {
+                    email: form.email,
+                    full_name: form.full_name,
+                    cargo: form.cargo || null,
+                    equipe: form.equipe || null,
+                    role: form.role,
+                  };
+            await onSubmit(payload);
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Erro");
+          } finally {
+            setSubmitting(false);
+          }
         }}
         className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-3"
       >
-        <h2 className="font-display font-bold text-lg">
-          {mode === "create" ? "Criar usuário" : "Convidar usuário"}
+        <h2 className="font-display font-bold text-lg flex items-center gap-2">
+          {mode === "create" ? "Criar usuário" : external ? "Convidar externo" : "Convidar usuário"}
+          {external && (
+            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+              Externo
+            </span>
+          )}
         </h2>
         <p className="text-xs text-muted-foreground">
           {mode === "create"
             ? "Você define o e-mail e a senha inicial. O usuário entra imediatamente."
-            : "Enviamos um e-mail para o usuário definir a própria senha."}
+            : external
+              ? "Usuário fora do Salesforce. Receberá um e-mail para definir a senha e ficará marcado como Externo."
+              : "Enviamos um e-mail para o usuário definir a própria senha."}
         </p>
 
         <Field label="Nome completo">
-          <input
-            required
-            value={form.full_name}
-            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-            className="input"
-          />
+          <input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} className="input" />
         </Field>
         <Field label="E-mail">
-          <input
-            required
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="input"
-          />
+          <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input" />
         </Field>
         {mode === "create" && (
           <Field label="Senha inicial (mínimo 8)">
-            <input
-              required
-              type="text"
-              minLength={8}
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="input"
-            />
+            <input required type="text" minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="input" />
           </Field>
         )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Cargo">
-            <input
-              value={form.cargo}
-              onChange={(e) => setForm({ ...form, cargo: e.target.value })}
-              className="input"
-            />
+            <input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} className="input" />
           </Field>
           <Field label="Equipe">
-            <input
-              value={form.equipe}
-              onChange={(e) => setForm({ ...form, equipe: e.target.value })}
-              className="input"
-            />
+            <input value={form.equipe} onChange={(e) => setForm({ ...form, equipe: e.target.value })} className="input" />
           </Field>
         </div>
         <Field label="Papel">
-          <select
-            value={form.role}
-            onChange={(e) => setForm({ ...form, role: e.target.value as AppRole })}
-            className="input"
-          >
+          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as AppRole })} className="input">
             {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_LABELS[r]}
-              </option>
+              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
             ))}
           </select>
         </Field>
 
         <div className="flex gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2"
-          >
+          <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2">
             Cancelar
           </button>
           <button
