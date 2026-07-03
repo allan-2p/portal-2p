@@ -216,6 +216,28 @@ function AuthPage() {
         <div className="absolute bottom-6 left-6 w-6 h-6 border-l border-b border-slate-400/40 dark:border-zinc-600/40" />
         <div className="absolute bottom-6 right-6 w-6 h-6 border-r border-b border-slate-400/40 dark:border-zinc-600/40" />
 
+        {/* Subtle depth gradients */}
+        <div className="absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-white/50 via-white/10 to-transparent dark:from-zinc-100/[0.04] dark:via-zinc-100/[0.01] dark:to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-slate-300/30 via-slate-200/10 to-transparent dark:from-black/60 dark:via-black/20 dark:to-transparent" />
+        <div className="absolute inset-y-0 left-0 w-[30%] bg-gradient-to-r from-slate-200/25 to-transparent dark:from-black/40 dark:to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-[30%] bg-gradient-to-l from-slate-200/25 to-transparent dark:from-black/40 dark:to-transparent" />
+
+        {/* Vignette */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 40%, rgba(15,23,42,0.18) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 hidden dark:block"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.65) 100%)",
+          }}
+        />
+
         {/* Grain */}
         <div
           className="absolute inset-0 opacity-[0.08] dark:opacity-[0.06] mix-blend-overlay"
