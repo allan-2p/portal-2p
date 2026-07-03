@@ -76,6 +76,7 @@ export type Database = {
       }
       salesperson_goals: {
         Row: {
+          active: boolean
           created_at: string
           month: number
           monthly_goal: number
@@ -85,6 +86,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          active?: boolean
           created_at?: string
           month: number
           monthly_goal?: number
@@ -94,6 +96,7 @@ export type Database = {
           year: number
         }
         Update: {
+          active?: boolean
           created_at?: string
           month?: number
           monthly_goal?: number

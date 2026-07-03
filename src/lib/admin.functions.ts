@@ -97,6 +97,8 @@ export type SalespersonMonthlyGoals = {
   title: string | null;
   /** key = `${year}-${month}` (month 1-12) */
   goals: Record<string, number>;
+  /** key = `${year}-${month}` -> active flag. Missing = inactive. */
+  active: Record<string, boolean>;
 };
 
 const ListGoalsInput = z.object({
@@ -113,25 +115,32 @@ export const listSalespersonGoals = createServerFn({ method: "POST" })
       fetchAllSFSalespeople(),
       context.supabase
         .from("salesperson_goals")
-        .select("sf_user_id, year, month, monthly_goal")
+        .select("sf_user_id, year, month, monthly_goal, active")
         .eq("year", data.year)
         .in("month", data.months),
     ]);
-    const byUser = new Map<string, Record<string, number>>();
+    const goalsByUser = new Map<string, Record<string, number>>();
+    const activeByUser = new Map<string, Record<string, boolean>>();
     for (const g of (goalsRes.data ?? []) as Array<{
       sf_user_id: string;
       year: number;
       month: number;
       monthly_goal: number | string;
+      active: boolean;
     }>) {
-      const map = byUser.get(g.sf_user_id) ?? {};
-      map[`${g.year}-${g.month}`] = Number(g.monthly_goal) || 0;
-      byUser.set(g.sf_user_id, map);
+      const key = `${g.year}-${g.month}`;
+      const gm = goalsByUser.get(g.sf_user_id) ?? {};
+      gm[key] = Number(g.monthly_goal) || 0;
+      goalsByUser.set(g.sf_user_id, gm);
+      const am = activeByUser.get(g.sf_user_id) ?? {};
+      am[key] = !!g.active;
+      activeByUser.set(g.sf_user_id, am);
     }
     const records: SalespersonMonthlyGoals[] = people.map(
       (p: { id: string; name: string; email: string | null; title: string | null }) => ({
         ...p,
-        goals: byUser.get(p.id) ?? {},
+        goals: goalsByUser.get(p.id) ?? {},
+        active: activeByUser.get(p.id) ?? {},
       }),
     );
     return { records };
@@ -164,6 +173,35 @@ export const setSalespersonGoal = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Ativar/desativar meta por trimestre ---------- //
+
+const SetQuarterActiveInput = z.object({
+  sf_user_id: z.string().min(3),
+  year: z.number().int().min(2020).max(2100),
+  months: z.array(z.number().int().min(1).max(12)).min(1).max(12),
+  active: z.boolean(),
+});
+
+export const setQuarterGoalActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SetQuarterActiveInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const rows = data.months.map((m) => ({
+      sf_user_id: data.sf_user_id,
+      year: data.year,
+      month: m,
+      active: data.active,
+      updated_by: context.userId,
+      updated_at: new Date().toISOString(),
+    }));
+    const { error } = await context.supabase
+      .from("salesperson_goals")
+      .upsert(rows, { onConflict: "sf_user_id,year,month" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Meta do período atual (usada na home) ---------- //
 
 const CurrentGoalInput = z.object({
@@ -180,7 +218,8 @@ export const getMonthGoalTotal = createServerFn({ method: "POST" })
       .from("salesperson_goals")
       .select("sf_user_id, monthly_goal")
       .eq("year", data.year)
-      .eq("month", data.month);
+      .eq("month", data.month)
+      .eq("active", true);
     if (data.ownerId) q = q.eq("sf_user_id", data.ownerId);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
@@ -190,3 +229,4 @@ export const getMonthGoalTotal = createServerFn({ method: "POST" })
     );
     return { total, count: rows?.length ?? 0 };
   });
+

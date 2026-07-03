@@ -3,14 +3,16 @@ import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, AlertTriangle, Search, Target, Check } from "lucide-react";
+import { Loader2, AlertTriangle, Target, Check, Users as UsersIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   listSalespersonGoals,
   setSalespersonGoal,
+  setQuarterGoalActive,
   type SalespersonMonthlyGoals,
 } from "@/lib/admin.functions";
 import { useAuth } from "@/hooks/use-auth";
+
 
 export const Route = createFileRoute("/_authenticated/admin/metas")({
   head: () => ({ meta: [{ title: "Metas — Portal 2P" }] }),
@@ -50,12 +52,13 @@ const QUARTERS: QuarterOpt[] = [
 
 function MetasPage() {
   const { hasRole } = useAuth();
-  const [search, setSearch] = useState("");
+  const [ownerId, setOwnerId] = useState<string>("all");
   const [quarterId, setQuarterId] = useState<string>("2026-Q3");
   const quarter = QUARTERS.find((q) => q.id === quarterId) ?? QUARTERS[2];
 
   const fetchList = useServerFn(listSalespersonGoals);
   const saveGoal = useServerFn(setSalespersonGoal);
+  const saveActive = useServerFn(setQuarterGoalActive);
   const qc = useQueryClient();
 
   const q = useQuery({
@@ -72,33 +75,42 @@ function MetasPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar meta"),
   });
 
+  const activeMut = useMutation({
+    mutationFn: (v: { sf_user_id: string; active: boolean }) =>
+      saveActive({
+        data: {
+          sf_user_id: v.sf_user_id,
+          year: quarter.year,
+          months: [...quarter.months],
+          active: v.active,
+        },
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-salesperson-goals"] }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao atualizar meta"),
+  });
+
   const people = q.data?.records ?? [];
-  const filtered = useMemo(() => {
-    const s = search.trim().toLowerCase();
-    if (!s) return people;
-    return people.filter(
-      (p) =>
-        p.name.toLowerCase().includes(s) || (p.title ?? "").toLowerCase().includes(s),
-    );
-  }, [people, search]);
+  const filtered = useMemo(
+    () => (ownerId === "all" ? people : people.filter((p) => p.id === ownerId)),
+    [people, ownerId],
+  );
 
   const totals = useMemo(() => {
     const perMonth: Record<number, number> = {};
     let quarterTotal = 0;
-    let withAny = 0;
     for (const m of quarter.months) perMonth[m] = 0;
-    for (const p of people) {
-      let personTotal = 0;
+    for (const p of filtered) {
       for (const m of quarter.months) {
-        const v = p.goals[`${quarter.year}-${m}`] ?? 0;
+        const key = `${quarter.year}-${m}`;
+        if (!p.active[key]) continue;
+        const v = p.goals[key] ?? 0;
         perMonth[m] += v;
-        personTotal += v;
+        quarterTotal += v;
       }
-      if (personTotal > 0) withAny += 1;
-      quarterTotal += personTotal;
     }
-    return { perMonth, quarterTotal, withAny, count: people.length };
-  }, [people, quarter]);
+    return { perMonth, quarterTotal, count: filtered.length };
+  }, [filtered, quarter]);
+
 
   if (!hasRole("admin")) {
     return (
@@ -127,14 +139,20 @@ function MetasPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar vendedor…"
-                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-64 focus:outline-none focus:border-primary/50"
-              />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border">
+              <UsersIcon className="h-4 w-4 text-primary" />
+              <label className="text-xs text-muted-foreground">Vendedor</label>
+              <select
+                value={ownerId}
+                onChange={(e) => setOwnerId(e.target.value)}
+                className="bg-transparent text-sm font-medium outline-none pr-1 max-w-[220px]"
+                disabled={q.isLoading}
+              >
+                <option value="all">Todos</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
             </div>
             <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm">
               {QUARTERS.map((qo) => (
@@ -152,6 +170,7 @@ function MetasPage() {
               ))}
             </div>
           </div>
+
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -179,6 +198,7 @@ function MetasPage() {
                 <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
                   <th className="text-left px-4 py-2.5">Vendedor</th>
                   <th className="text-left px-4 py-2.5">Cargo</th>
+                  <th className="text-center px-4 py-2.5 w-36">Meta {quarter.label}</th>
                   {quarter.months.map((m) => (
                     <th key={m} className="text-right px-4 py-2.5 w-48">
                       {MONTH_FULL[m - 1]} <span className="text-muted-foreground/70">(R$)</span>
@@ -191,7 +211,7 @@ function MetasPage() {
                 {q.isLoading && (
                   <tr>
                     <td
-                      colSpan={3 + quarter.months.length}
+                      colSpan={4 + quarter.months.length}
                       className="px-4 py-16 text-center text-muted-foreground text-sm"
                     >
                       <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
@@ -214,16 +234,20 @@ function MetasPage() {
                           monthly_goal,
                         })
                       }
+                      onToggleActive={(active) =>
+                        activeMut.mutate({ sf_user_id: p.id, active })
+                      }
                     />
                   ))}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>
                     <td
-                      colSpan={3 + quarter.months.length}
+                      colSpan={4 + quarter.months.length}
                       className="px-4 py-10 text-center text-sm text-muted-foreground"
                     >
                       Nenhum vendedor encontrado.
                     </td>
+
                   </tr>
                 )}
               </tbody>
@@ -253,17 +277,37 @@ function GoalRow({
   year,
   months,
   onSaveGoal,
+  onToggleActive,
 }: {
   person: SalespersonMonthlyGoals;
   year: number;
   months: readonly number[];
   onSaveGoal: (month: number, monthly_goal: number) => void;
+  onToggleActive: (active: boolean) => void;
 }) {
+  // Meta ativa do trimestre = qualquer mês ativo
+  const isActive = months.some((m) => person.active[`${year}-${m}`]);
   const total = months.reduce((acc, m) => acc + (person.goals[`${year}-${m}`] ?? 0), 0);
   return (
     <tr className="border-b border-border/40 hover:bg-surface-2/50">
       <td className="px-4 py-3 font-medium">{person.name}</td>
       <td className="px-4 py-3 text-muted-foreground">{person.title ?? "—"}</td>
+      <td className="px-4 py-3">
+        <div className="flex justify-center">
+          <select
+            value={isActive ? "yes" : "no"}
+            onChange={(e) => onToggleActive(e.target.value === "yes")}
+            className={`py-1 px-2 rounded-md bg-surface border text-xs focus:outline-none ${
+              isActive
+                ? "border-success/40 text-success"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            <option value="yes">Ativa</option>
+            <option value="no">Inativa</option>
+          </select>
+        </div>
+      </td>
       {months.map((m) => (
         <td key={m} className="px-4 py-3">
           <GoalCell
@@ -278,6 +322,7 @@ function GoalRow({
     </tr>
   );
 }
+
 
 function GoalCell({
   value: initialValue,
