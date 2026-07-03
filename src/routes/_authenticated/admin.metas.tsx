@@ -3,14 +3,16 @@ import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, AlertTriangle, Search, Target, Check } from "lucide-react";
+import { Loader2, AlertTriangle, Target, Check, Users as UsersIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   listSalespersonGoals,
   setSalespersonGoal,
+  setQuarterGoalActive,
   type SalespersonMonthlyGoals,
 } from "@/lib/admin.functions";
 import { useAuth } from "@/hooks/use-auth";
+
 
 export const Route = createFileRoute("/_authenticated/admin/metas")({
   head: () => ({ meta: [{ title: "Metas — Portal 2P" }] }),
