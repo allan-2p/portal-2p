@@ -56,13 +56,10 @@ function fmtKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const AGENDA_RANGES = [
-  { k: "hoje", l: "Hoje", days: 0 },
-  { k: "3d", l: "3 dias", days: 3 },
-  { k: "7d", l: "7 dias", days: 7 },
-  { k: "30d", l: "30 dias", days: 30 },
-] as const;
-type AgendaKey = (typeof AGENDA_RANGES)[number]["k"];
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 
 function HomePage() {
   const { profile, user } = useAuth();
