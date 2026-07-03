@@ -367,16 +367,8 @@ function TabelasPage() {
             />
           </TabsContent>
         </Tabs>
+      </div>
 
-            to={to}
-            preset={preset}
-            onChange={(v) => {
-              setFrom(v.from);
-              setTo(v.to);
-              setPreset(v.preset);
-            }}
-          />
-        </div>
       </div>
     </AppLayout>
   );
