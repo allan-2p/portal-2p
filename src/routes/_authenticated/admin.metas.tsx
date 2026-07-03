@@ -52,12 +52,13 @@ const QUARTERS: QuarterOpt[] = [
 
 function MetasPage() {
   const { hasRole } = useAuth();
-  const [search, setSearch] = useState("");
+  const [ownerId, setOwnerId] = useState<string>("all");
   const [quarterId, setQuarterId] = useState<string>("2026-Q3");
   const quarter = QUARTERS.find((q) => q.id === quarterId) ?? QUARTERS[2];
 
   const fetchList = useServerFn(listSalespersonGoals);
   const saveGoal = useServerFn(setSalespersonGoal);
+  const saveActive = useServerFn(setQuarterGoalActive);
   const qc = useQueryClient();
 
   const q = useQuery({
@@ -74,33 +75,42 @@ function MetasPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar meta"),
   });
 
+  const activeMut = useMutation({
+    mutationFn: (v: { sf_user_id: string; active: boolean }) =>
+      saveActive({
+        data: {
+          sf_user_id: v.sf_user_id,
+          year: quarter.year,
+          months: [...quarter.months],
+          active: v.active,
+        },
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-salesperson-goals"] }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao atualizar meta"),
+  });
+
   const people = q.data?.records ?? [];
-  const filtered = useMemo(() => {
-    const s = search.trim().toLowerCase();
-    if (!s) return people;
-    return people.filter(
-      (p) =>
-        p.name.toLowerCase().includes(s) || (p.title ?? "").toLowerCase().includes(s),
-    );
-  }, [people, search]);
+  const filtered = useMemo(
+    () => (ownerId === "all" ? people : people.filter((p) => p.id === ownerId)),
+    [people, ownerId],
+  );
 
   const totals = useMemo(() => {
     const perMonth: Record<number, number> = {};
     let quarterTotal = 0;
-    let withAny = 0;
     for (const m of quarter.months) perMonth[m] = 0;
-    for (const p of people) {
-      let personTotal = 0;
+    for (const p of filtered) {
       for (const m of quarter.months) {
-        const v = p.goals[`${quarter.year}-${m}`] ?? 0;
+        const key = `${quarter.year}-${m}`;
+        if (!p.active[key]) continue;
+        const v = p.goals[key] ?? 0;
         perMonth[m] += v;
-        personTotal += v;
+        quarterTotal += v;
       }
-      if (personTotal > 0) withAny += 1;
-      quarterTotal += personTotal;
     }
-    return { perMonth, quarterTotal, withAny, count: people.length };
-  }, [people, quarter]);
+    return { perMonth, quarterTotal, count: filtered.length };
+  }, [filtered, quarter]);
+
 
   if (!hasRole("admin")) {
     return (
