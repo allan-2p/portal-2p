@@ -327,8 +327,8 @@ function TabelasPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas")}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas")}>
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <TabsList>
               <TabsTrigger value="orcamentos" className="gap-2">
                 <FileText className="h-4 w-4" /> Orçamento
@@ -337,27 +337,37 @@ function TabelasPage() {
                 <ShoppingCart className="h-4 w-4" /> Vendas
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="orcamentos" className="mt-4">
-              <OppTable
-                records={qOrc.data?.records ?? []}
-                loading={qOrc.isLoading}
-                error={qOrc.error}
-                search={search}
-                dateField="createdDate"
-              />
-            </TabsContent>
-            <TabsContent value="vendas" className="mt-4">
-              <OppTable
-                records={qVen.data?.records ?? []}
-                loading={qVen.isLoading}
-                error={qVen.error}
-                search={search}
-                dateField="closeDate"
-              />
-            </TabsContent>
-          </Tabs>
-          <DateRangeFilter
-            from={from}
+            <DateRangeFilter
+              from={from}
+              to={to}
+              preset={preset}
+              onChange={(v) => {
+                setFrom(v.from);
+                setTo(v.to);
+                setPreset(v.preset);
+              }}
+            />
+          </div>
+          <TabsContent value="orcamentos" className="mt-4">
+            <OppTable
+              records={qOrc.data?.records ?? []}
+              loading={qOrc.isLoading}
+              error={qOrc.error}
+              search={search}
+              dateField="createdDate"
+            />
+          </TabsContent>
+          <TabsContent value="vendas" className="mt-4">
+            <OppTable
+              records={qVen.data?.records ?? []}
+              loading={qVen.isLoading}
+              error={qVen.error}
+              search={search}
+              dateField="closeDate"
+            />
+          </TabsContent>
+        </Tabs>
+
             to={to}
             preset={preset}
             onChange={(v) => {
