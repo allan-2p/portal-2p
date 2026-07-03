@@ -368,8 +368,7 @@ function TabelasPage() {
           </TabsContent>
         </Tabs>
       </div>
-
-      </div>
     </AppLayout>
+
   );
 }
