@@ -126,16 +126,16 @@ function AuthPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
+    <div className="relative min-h-screen bg-neutral-50 dark:bg-neutral-950 overflow-hidden flex flex-col text-neutral-900 dark:text-neutral-50">
       {splash && <LoginSplash />}
-      {/* ambient — single soft glow */}
-      <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[640px] w-[640px] rounded-full bg-primary/10 blur-[140px]" />
 
       {/* top bar */}
       <header className="relative z-10 flex items-center justify-between px-6 md:px-12 py-6">
         <div className="flex items-center gap-2.5">
-          <img src={logo} alt="2P" className="h-8 w-auto rounded-md" />
-          <span className="font-display font-semibold text-sm tracking-tight">Portal 2P</span>
+          <div className="h-8 w-8 rounded-md bg-white dark:bg-neutral-100 flex items-center justify-center shadow-sm ring-1 ring-neutral-200/60">
+            <img src={logoBlack.url} alt="Grupo 2P" className="h-5 w-auto" />
+          </div>
+          <span className="font-display font-semibold text-sm tracking-tight">Portal Grupo 2P</span>
         </div>
         <ThemeToggle />
       </header>
@@ -151,27 +151,27 @@ function AuthPage() {
             className="space-y-10"
           >
             <div className="space-y-6">
-              <span className="inline-flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                Portal interno · time 2P
+              <span className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-neutral-900 dark:bg-neutral-100" />
+                Portal interno · Grupo 2P
               </span>
-              <h1 className="font-display font-semibold tracking-tight text-[44px] md:text-[56px] leading-[1.02]">
-                Inteligência
+              <h1 className="font-display font-semibold tracking-tight text-[44px] md:text-[56px] leading-[1.02] text-neutral-900 dark:text-neutral-50">
+                Um grupo.
                 <br />
-                que move <span className="text-primary">metas.</span>
+                Uma <span className="italic font-light">plataforma.</span>
               </h1>
-              <p className="text-[15px] text-muted-foreground max-w-md leading-relaxed">
-                Carteira, pedidos e insights do Atlas em uma única tela — feita para quem vende.
+              <p className="text-[15px] text-neutral-600 dark:text-neutral-400 max-w-md leading-relaxed">
+                Carteira, pedidos e insights do Atlas em uma única tela — feita para todo o time do Grupo 2P.
               </p>
             </div>
 
             <div className="flex items-center gap-3 min-h-[28px]">
               {activeQ.isLoading ? (
-                <span className="text-xs text-muted-foreground/70 flex items-center gap-2">
+                <span className="text-xs text-neutral-500 dark:text-neutral-500 flex items-center gap-2">
                   <Loader2 className="h-3 w-3 animate-spin" /> carregando atividade…
                 </span>
               ) : activeUsers.length === 0 ? (
-                <span className="text-xs text-muted-foreground/70">
+                <span className="text-xs text-neutral-500 dark:text-neutral-500">
                   Nenhum usuário ativo no Portal hoje ainda.
                 </span>
               ) : (
@@ -189,7 +189,7 @@ function AuthPage() {
                         <div
                           key={u.id}
                           title={u.name}
-                          className="h-7 w-7 rounded-full ring-2 ring-background bg-muted overflow-hidden flex items-center justify-center text-[10px] font-medium text-muted-foreground"
+                          className="h-7 w-7 rounded-full ring-2 ring-neutral-50 dark:ring-neutral-950 bg-neutral-200 dark:bg-neutral-800 overflow-hidden flex items-center justify-center text-[10px] font-medium text-neutral-600 dark:text-neutral-300"
                         >
                           {u.avatarUrl ? (
                             <img src={u.avatarUrl} alt={u.name} className="h-full w-full object-cover" />
@@ -200,7 +200,7 @@ function AuthPage() {
                       );
                     })}
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">
                     {activeUsers.length === 1
                       ? "1 usuário ativo no Portal hoje"
                       : `${activeUsers.length} usuários ativos no Portal hoje`}
@@ -209,9 +209,9 @@ function AuthPage() {
               )}
             </div>
 
-            <div className="pt-6 border-t border-border/60 max-w-md">
-              <p className="font-display italic text-[15px] leading-snug text-foreground/80">
-                "Inovação e parceria é o que nos move!"
+            <div className="pt-6 border-t border-neutral-200 dark:border-neutral-800 max-w-md">
+              <p className="font-display italic text-[15px] leading-snug text-neutral-700 dark:text-neutral-300">
+                "Inovação e parceria é o que nos move."
               </p>
             </div>
           </motion.div>
