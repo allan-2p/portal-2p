@@ -159,3 +159,216 @@ export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { promoted: true };
   });
+
+// ================= Salesforce sync ================= //
+
+const SF_GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
+
+async function sfFetchAllUsers(): Promise<
+  Array<{ id: string; name: string; email: string | null; title: string | null; smallPhotoUrl: string | null; fullPhotoUrl: string | null }>
+> {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  const sfKey = process.env.SALESFORCE_API_KEY;
+  if (!lovableKey || !sfKey) throw new Error("Salesforce connector não está configurado.");
+  const soql =
+    `SELECT Id, Name, Email, Title, SmallPhotoUrl, FullPhotoUrl FROM User ` +
+    `WHERE IsActive = true AND Email LIKE '%@2pgroup.com.br' ` +
+    `ORDER BY Name ASC LIMIT 500`;
+  const res = await fetch(`${SF_GATEWAY_URL}/query?q=${encodeURIComponent(soql)}`, {
+    headers: {
+      Authorization: `Bearer ${lovableKey}`,
+      "X-Connection-Api-Key": sfKey,
+      "Content-Type": "application/json",
+    },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`Salesforce ${res.status}: ${JSON.stringify(body)}`);
+  return (body?.records ?? []).map((r: any) => ({
+    id: r.Id as string,
+    name: r.Name as string,
+    email: (r.Email ?? null) as string | null,
+    title: (r.Title ?? null) as string | null,
+    smallPhotoUrl: (r.SmallPhotoUrl ?? null) as string | null,
+    fullPhotoUrl: (r.FullPhotoUrl ?? null) as string | null,
+  }));
+}
+
+async function downloadSFPhotoToStorage(
+  sfUserId: string,
+  photoUrl: string | null,
+): Promise<string | null> {
+  if (!photoUrl) return null;
+  try {
+    const lovableKey = process.env.LOVABLE_API_KEY!;
+    const sfKey = process.env.SALESFORCE_API_KEY!;
+    let pathAfterHost: string;
+    try {
+      pathAfterHost = new URL(photoUrl).pathname;
+    } catch {
+      return null;
+    }
+    const gwUrl = `${SF_GATEWAY_URL}${pathAfterHost}`;
+    const res = await fetch(gwUrl, {
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": sfKey,
+      },
+    });
+    if (!res.ok) return null;
+    const contentType = res.headers.get("content-type") ?? "image/jpeg";
+    if (!contentType.startsWith("image/")) return null;
+    const buf = new Uint8Array(await res.arrayBuffer());
+    if (buf.byteLength === 0) return null;
+    const ext = contentType.includes("png") ? "png" : "jpg";
+    const storagePath = `sf/${sfUserId}.${ext}`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.storage
+      .from("avatars")
+      .upload(storagePath, buf, { upsert: true, contentType });
+    if (error) return null;
+    return storagePath;
+  } catch {
+    return null;
+  }
+}
+
+export type SFCandidate = {
+  sf_user_id: string;
+  name: string;
+  email: string | null;
+  title: string | null;
+  status: "active" | "invited" | "pending";
+  portal_user_id: string | null;
+};
+
+export const listSalesforceCandidates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const [people, profilesRes, invitesRes] = await Promise.all([
+      sfFetchAllUsers(),
+      context.supabase.from("profiles").select("id, email, sf_user_id"),
+      context.supabase
+        .from("user_invites")
+        .select("email, sf_user_id, accepted_at")
+        .is("accepted_at", null),
+    ]);
+    const profiles = (profilesRes.data ?? []) as Array<{ id: string; email: string; sf_user_id: string | null }>;
+    const invites = (invitesRes.data ?? []) as Array<{ email: string; sf_user_id: string | null }>;
+
+    const profileByEmail = new Map(profiles.map((p) => [p.email.toLowerCase(), p]));
+    const profileBySf = new Map(profiles.filter((p) => p.sf_user_id).map((p) => [p.sf_user_id!, p]));
+    const inviteEmails = new Set(invites.map((i) => i.email.toLowerCase()));
+    const inviteSf = new Set(invites.map((i) => i.sf_user_id).filter(Boolean) as string[]);
+
+    const records: SFCandidate[] = people.map((p) => {
+      const email = (p.email ?? "").toLowerCase();
+      const existing = profileBySf.get(p.id) ?? (email ? profileByEmail.get(email) : undefined);
+      if (existing) {
+        return {
+          sf_user_id: p.id,
+          name: p.name,
+          email: p.email,
+          title: p.title,
+          status: "active",
+          portal_user_id: existing.id,
+        };
+      }
+      if (inviteSf.has(p.id) || (email && inviteEmails.has(email))) {
+        return {
+          sf_user_id: p.id,
+          name: p.name,
+          email: p.email,
+          title: p.title,
+          status: "invited",
+          portal_user_id: null,
+        };
+      }
+      return {
+        sf_user_id: p.id,
+        name: p.name,
+        email: p.email,
+        title: p.title,
+        status: "pending",
+        portal_user_id: null,
+      };
+    });
+    return { records };
+  });
+
+const InviteSFInput = z.object({
+  sf_user_id: z.string().min(3),
+  role: RoleEnum,
+  cargo: z.string().optional().nullable(),
+  equipe: z.string().optional().nullable(),
+});
+
+export const inviteSalesforceUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => InviteSFInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const users = await sfFetchAllUsers();
+    const sfUser = users.find((u) => u.id === data.sf_user_id);
+    if (!sfUser) throw new Error("Usuário do Salesforce não encontrado.");
+    if (!sfUser.email) throw new Error("Este usuário do Salesforce não possui e-mail.");
+
+    const photoPath = await downloadSFPhotoToStorage(
+      sfUser.id,
+      sfUser.smallPhotoUrl ?? sfUser.fullPhotoUrl,
+    );
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("user_invites").upsert(
+      {
+        email: sfUser.email,
+        role: data.role,
+        full_name: sfUser.name,
+        cargo: data.cargo ?? sfUser.title ?? null,
+        equipe: data.equipe ?? null,
+        invited_by: context.userId,
+        sf_user_id: sfUser.id,
+        is_external: false,
+        avatar_url: photoPath,
+      },
+      { onConflict: "email" },
+    );
+
+    const origin = process.env.SITE_URL ?? "";
+    const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(sfUser.email, {
+      data: { full_name: sfUser.name },
+      redirectTo: origin ? `${origin}/reset-password` : undefined,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true, photo_synced: !!photoPath };
+  });
+
+const SyncPhotoInput = z.object({ user_id: z.string().uuid() });
+
+export const syncSalesforcePhoto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SyncPhotoInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("sf_user_id")
+      .eq("id", data.user_id)
+      .maybeSingle();
+    if (!profile?.sf_user_id) throw new Error("Usuário não está vinculado ao Salesforce.");
+    const users = await sfFetchAllUsers();
+    const sfUser = users.find((u) => u.id === profile.sf_user_id);
+    if (!sfUser) throw new Error("Usuário do Salesforce não encontrado.");
+    const path = await downloadSFPhotoToStorage(
+      sfUser.id,
+      sfUser.smallPhotoUrl ?? sfUser.fullPhotoUrl,
+    );
+    if (!path) throw new Error("Não foi possível baixar a foto do Salesforce.");
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ avatar_url: path })
+      .eq("id", data.user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true, path };
+  });
