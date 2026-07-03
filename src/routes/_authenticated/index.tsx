@@ -128,12 +128,29 @@ function HomePage() {
     return true;
   });
 
-  // ---- Mock (mantidos) ----
-  const goal = portfolio.goal;
+  // ---- Meta do mês atual (do banco) ----
+  const fetchMonthGoal = useServerFn(getMonthGoalTotal);
+  const monthGoalQ = useQuery({
+    queryKey: ["month-goal", today.getFullYear(), today.getMonth() + 1, ownerParam],
+    queryFn: () =>
+      fetchMonthGoal({
+        data: {
+          year: today.getFullYear(),
+          month: today.getMonth() + 1,
+          ownerId: ownerParam,
+        },
+      }),
+    staleTime: 60_000,
+  });
+  const dbGoal = monthGoalQ.data?.total ?? 0;
+
+  // ---- Mock (mantidos para vendido/projetado/realizado) ----
+  const goal = dbGoal > 0 ? dbGoal : portfolio.goal;
   const achieved = portfolio.achieved;
   const projected = portfolio.projected;
   const sold = portfolio.sold;
-  const goalPct = (achieved / goal) * 100;
+  const goalPct = goal > 0 ? (achieved / goal) * 100 : 0;
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   const taskClientNames = new Set(mockTasks.map((t) => t.client));
