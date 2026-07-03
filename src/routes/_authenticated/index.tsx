@@ -140,48 +140,57 @@ function HomePage() {
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-6">
-        {/* Hero + filtro global de vendedor */}
-        <div className="flex items-end justify-between flex-wrap gap-4">
-          <div>
-            <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""}</div>
-            <h1 className="text-3xl md:text-4xl font-bold mt-1">
-              Você está em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
-            </h1>
-            <p className="text-sm text-muted-foreground mt-2">
-              Atlas identificou {atlasInsights.length} ações que podem destravar R$ 104k esta semana.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border">
-              <UsersIcon className="h-4 w-4 text-primary" />
-              <label className="text-xs text-muted-foreground">Vendedor</label>
-              <select
-                value={ownerId}
-                onChange={(e) => setOwnerId(e.target.value)}
-                className="bg-transparent text-sm font-medium outline-none pr-1 max-w-[220px]"
-                disabled={peopleQ.isLoading}
-              >
-                <option value="all">Todos</option>
-                {salespeople.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              {peopleQ.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+        {/* Hero — Grupo 2P */}
+        <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-800 dark:from-neutral-900 dark:via-neutral-950 dark:to-black text-neutral-50 px-8 md:px-12 py-10">
+          <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
+          <div className="relative flex items-start justify-between gap-8 flex-wrap">
+            <div className="flex items-start gap-6 min-w-0">
+              <div className="h-16 w-16 shrink-0 rounded-2xl bg-white flex items-center justify-center shadow-xl">
+                <img src="/__l5e/assets-v1/57deffc2-4d4a-42fd-b596-fa2f4b4d2020/2p-logo-black.png" alt="Grupo 2P" className="h-10 w-auto" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">Grupo 2P</div>
+                <h1 className="font-display font-semibold tracking-tight text-3xl md:text-4xl mt-2 leading-tight">
+                  {greeting}{displayName ? `, ${displayName}` : ""}.
+                </h1>
+                <p className="text-sm text-neutral-300/90 mt-2 max-w-xl">
+                  Você está em <span className="text-white font-semibold">{goalPct.toFixed(1)}%</span> da meta do mês. Atlas identificou {atlasInsights.length} ações que podem destravar R$ 104k esta semana.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/15">
+                <UsersIcon className="h-4 w-4 text-neutral-200" />
+                <label className="text-xs text-neutral-300">Vendedor</label>
+                <select
+                  value={ownerId}
+                  onChange={(e) => setOwnerId(e.target.value)}
+                  className="bg-transparent text-sm font-medium outline-none pr-1 max-w-[220px] text-white [&>option]:text-foreground"
+                  disabled={peopleQ.isLoading}
+                >
+                  <option value="all">Todos</option>
+                  {salespeople.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                {peopleQ.isFetching && <Loader2 className="h-3 w-3 animate-spin text-neutral-300" />}
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Meta */}
         <div className="glass rounded-2xl p-5">
           <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-              <Target className="h-5 w-5 text-primary" />
+            <div className="h-10 w-10 rounded-xl bg-foreground/10 flex items-center justify-center shrink-0">
+              <Target className="h-5 w-5 text-foreground" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="font-display font-semibold">Meta do mês</div>
                 <div className="text-sm flex items-center gap-3">
-                  <span><span className="text-muted-foreground">Vendido </span><span className="text-primary font-bold">{fmt(sold)}</span></span>
+                  <span><span className="text-muted-foreground">Vendido </span><span className="text-foreground font-bold">{fmt(sold)}</span></span>
                   <span className="text-muted-foreground">·</span>
                   <span><span className="text-muted-foreground">Projetado </span><span className="font-semibold">{fmt(projected)}</span></span>
                 </div>
@@ -192,11 +201,11 @@ function HomePage() {
               </div>
               <div className="relative h-3 mt-1.5 rounded-full bg-surface-2 overflow-hidden border border-border">
                 <div
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-[oklch(0.78_0.19_60)] rounded-full transition-all"
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-neutral-500 via-neutral-700 to-neutral-900 dark:from-neutral-300 dark:via-neutral-100 dark:to-white rounded-full transition-all"
                   style={{ width: `${Math.min(goalPct, 100)}%` }}
                 />
               </div>
-              <button onClick={() => setMetaOpen(!metaOpen)} className="mt-3 text-xs text-primary font-medium flex items-center gap-1 hover:underline">
+              <button onClick={() => setMetaOpen(!metaOpen)} className="mt-3 text-xs text-foreground font-medium flex items-center gap-1 hover:underline">
                 {metaOpen ? "Ocultar detalhes" : "Detalhar"}
                 <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", metaOpen && "rotate-180")} />
               </button>
