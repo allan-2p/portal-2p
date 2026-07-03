@@ -139,14 +139,20 @@ function MetasPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar vendedor…"
-                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-64 focus:outline-none focus:border-primary/50"
-              />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border">
+              <UsersIcon className="h-4 w-4 text-primary" />
+              <label className="text-xs text-muted-foreground">Vendedor</label>
+              <select
+                value={ownerId}
+                onChange={(e) => setOwnerId(e.target.value)}
+                className="bg-transparent text-sm font-medium outline-none pr-1 max-w-[220px]"
+                disabled={q.isLoading}
+              >
+                <option value="all">Todos</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
             </div>
             <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm">
               {QUARTERS.map((qo) => (
@@ -164,6 +170,7 @@ function MetasPage() {
               ))}
             </div>
           </div>
+
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
