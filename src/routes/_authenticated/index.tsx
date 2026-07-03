@@ -21,6 +21,8 @@ import {
   type OpportunityStage,
   type SalesforceOpportunity,
 } from "@/lib/salesforce.functions";
+import { getMonthGoalTotal } from "@/lib/admin.functions";
+
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Home — Portal 2P" }, { name: "description", content: "Visão da carteira, projeção vs realizado, tarefas, orçamentos e previsão." }] }),
