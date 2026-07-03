@@ -277,17 +277,37 @@ function GoalRow({
   year,
   months,
   onSaveGoal,
+  onToggleActive,
 }: {
   person: SalespersonMonthlyGoals;
   year: number;
   months: readonly number[];
   onSaveGoal: (month: number, monthly_goal: number) => void;
+  onToggleActive: (active: boolean) => void;
 }) {
+  // Meta ativa do trimestre = qualquer mês ativo
+  const isActive = months.some((m) => person.active[`${year}-${m}`]);
   const total = months.reduce((acc, m) => acc + (person.goals[`${year}-${m}`] ?? 0), 0);
   return (
     <tr className="border-b border-border/40 hover:bg-surface-2/50">
       <td className="px-4 py-3 font-medium">{person.name}</td>
       <td className="px-4 py-3 text-muted-foreground">{person.title ?? "—"}</td>
+      <td className="px-4 py-3">
+        <div className="flex justify-center">
+          <select
+            value={isActive ? "yes" : "no"}
+            onChange={(e) => onToggleActive(e.target.value === "yes")}
+            className={`py-1 px-2 rounded-md bg-surface border text-xs focus:outline-none ${
+              isActive
+                ? "border-success/40 text-success"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            <option value="yes">Ativa</option>
+            <option value="no">Inativa</option>
+          </select>
+        </div>
+      </td>
       {months.map((m) => (
         <td key={m} className="px-4 py-3">
           <GoalCell
@@ -302,6 +322,7 @@ function GoalRow({
     </tr>
   );
 }
+
 
 function GoalCell({
   value: initialValue,
