@@ -502,8 +502,8 @@ function HomePage() {
         <div className="relative glass rounded-2xl p-8 overflow-hidden">
           <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-neutral-800 to-neutral-950 dark:from-neutral-200 dark:to-white flex items-center justify-center shadow-lg">
-                <Gift className="h-7 w-7 text-white dark:text-neutral-900" />
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-[oklch(0.62_0.22_30)] flex items-center justify-center shadow-lg">
+                <Gift className="h-7 w-7 text-primary-foreground" />
               </div>
               <div>
                 <h3 className="font-display font-bold text-xl">Plano Fidelidade 2P</h3>
