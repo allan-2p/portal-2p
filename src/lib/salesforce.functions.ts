@@ -292,20 +292,31 @@ export type SalesforceOppRow = {
   stage: string;
   tipoNf: string | null;
   amount: number | null;
+  total: number | null;
+  valorLiq: number | null;
+  frete: number | null;
+  desconto: number | null;
   closeDate: string | null;
+  createdDate: string | null;
   account: string | null;
   owner: string | null;
   ownerId: string | null;
 };
 
 function mapOppRow(r: any): SalesforceOppRow {
+  const num = (v: any) => (typeof v === "number" ? v : null);
   return {
     id: r.Id,
     name: r.Name,
     stage: r.StageName,
     tipoNf: r.Tipo_de_NF__c ?? null,
-    amount: typeof r.Amount === "number" ? r.Amount : null,
+    amount: num(r.Amount),
+    total: num(r.Total__c),
+    valorLiq: num(r.Valor_L_q__c),
+    frete: num(r.Frete__c),
+    desconto: num(r.Desconto__c),
     closeDate: r.CloseDate ?? null,
+    createdDate: r.CreatedDate ? String(r.CreatedDate).slice(0, 10) : null,
     account: r.Account?.Name ?? null,
     owner: r.Owner?.Name ?? null,
     ownerId: r.OwnerId ?? null,
@@ -313,29 +324,45 @@ function mapOppRow(r: any): SalesforceOppRow {
 }
 
 const OPP_COLS =
-  `Id, Name, StageName, Tipo_de_NF__c, Amount, CloseDate, Account.Name, Owner.Name, OwnerId`;
+  `Id, Name, StageName, Tipo_de_NF__c, Amount, Total__c, Valor_L_q__c, Frete__c, Desconto__c, ` +
+  `CloseDate, CreatedDate, Account.Name, Owner.Name, OwnerId`;
+
+function validDate(v: string | null | undefined) {
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+}
 
 export const getSalesforceOrcamentos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .inputValidator((input: { start?: string | null; end?: string | null }) => input ?? {})
+  .handler(async ({ data }) => {
+    const clauses: string[] = [
+      `StageName != 'Pedido Concluído'`,
+      `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
+    ];
+    if (validDate(data.start)) clauses.push(`CreatedDate >= ${data.start}T00:00:00Z`);
+    if (validDate(data.end)) clauses.push(`CreatedDate <= ${data.end}T23:59:59Z`);
     const soql =
-      `SELECT ${OPP_COLS} FROM Opportunity ` +
-      `WHERE StageName != 'Pedido Concluído' ` +
-      `AND (Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação') ` +
-      `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+      `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
+      `ORDER BY CreatedDate DESC LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
 
 export const getSalesforceVendas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .inputValidator((input: { start?: string | null; end?: string | null }) => input ?? {})
+  .handler(async ({ data }) => {
+    const clauses: string[] = [
+      `StageName = 'Pedido Concluído'`,
+      `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
+    ];
+    if (validDate(data.start)) clauses.push(`CloseDate >= ${data.start}`);
+    if (validDate(data.end)) clauses.push(`CloseDate <= ${data.end}`);
     const soql =
-      `SELECT ${OPP_COLS} FROM Opportunity ` +
-      `WHERE StageName = 'Pedido Concluído' ` +
-      `AND (Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação') ` +
+      `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
       `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
+
 

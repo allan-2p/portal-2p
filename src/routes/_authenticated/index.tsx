@@ -9,7 +9,12 @@ import {
   ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, Clock,
   TrendingUp, CheckCircle2, Phone, Mail, Calendar, Info, ChevronDown,
   FileText, CalendarClock, Gift, Lock, Users as UsersIcon, Loader2,
+  CalendarIcon,
 } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -51,13 +56,10 @@ function fmtKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const AGENDA_RANGES = [
-  { k: "hoje", l: "Hoje", days: 0 },
-  { k: "3d", l: "3 dias", days: 3 },
-  { k: "7d", l: "7 dias", days: 7 },
-  { k: "30d", l: "30 dias", days: 30 },
-] as const;
-type AgendaKey = (typeof AGENDA_RANGES)[number]["k"];
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 
 function HomePage() {
   const { profile, user } = useAuth();
@@ -65,7 +67,9 @@ function HomePage() {
   const [metaOpen, setMetaOpen] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"todos" | "7d" | "30d" | "atrasados">("todos");
   const [ownerId, setOwnerId] = useState<string>("all");
-  const [agendaRange, setAgendaRange] = useState<AgendaKey>("hoje");
+  const [agendaDate, setAgendaDate] = useState<Date>(() => startOfDay(new Date()));
+  const [agendaOpen, setAgendaOpen] = useState(false);
+
   const [stageFilter, setStageFilter] = useState<"all" | OpportunityStage>("all");
 
   const ownerParam = ownerId === "all" ? null : ownerId;
@@ -82,13 +86,11 @@ function HomePage() {
 
   const fetchTasks = useServerFn(getSalesforceTasks);
   const today = useMemo(() => new Date(), []);
-  const agenda = AGENDA_RANGES.find((a) => a.k === agendaRange)!;
   const agendaRangeParams = useMemo(() => {
-    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const end = new Date(start);
-    end.setDate(end.getDate() + agenda.days);
-    return { start: fmtKey(start), end: fmtKey(end) };
-  }, [today, agenda.days]);
+    const key = fmtKey(agendaDate);
+    return { start: key, end: key };
+  }, [agendaDate]);
+
 
   const tasksQ = useQuery({
     queryKey: ["sf-home-tasks", agendaRangeParams.start, agendaRangeParams.end, ownerParam],
@@ -263,20 +265,32 @@ function HomePage() {
                   Tarefas em aberto do Salesforce
                 </p>
               </div>
-              <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
-                {AGENDA_RANGES.map((o) => (
-                  <button
-                    key={o.k}
-                    onClick={() => setAgendaRange(o.k)}
-                    className={cn(
-                      "px-2.5 py-1 rounded-md",
-                      agendaRange === o.k ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-                    )}
-                  >
-                    {o.l}
-                  </button>
-                ))}
-              </div>
+              <Popover open={agendaOpen} onOpenChange={setAgendaOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {fmtKey(agendaDate) === fmtKey(today)
+                      ? "Hoje"
+                      : agendaDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <CalendarPicker
+                    mode="single"
+                    selected={agendaDate}
+                    defaultMonth={agendaDate}
+                    onSelect={(d) => {
+                      if (d) {
+                        setAgendaDate(startOfDay(d));
+                        setAgendaOpen(false);
+                      }
+                    }}
+                    disabled={{ before: startOfDay(today) }}
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+
             </div>
             <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
               {tasksQ.isLoading && (
