@@ -198,6 +198,7 @@ function MetasPage() {
                 <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
                   <th className="text-left px-4 py-2.5">Vendedor</th>
                   <th className="text-left px-4 py-2.5">Cargo</th>
+                  <th className="text-center px-4 py-2.5 w-36">Meta {quarter.label}</th>
                   {quarter.months.map((m) => (
                     <th key={m} className="text-right px-4 py-2.5 w-48">
                       {MONTH_FULL[m - 1]} <span className="text-muted-foreground/70">(R$)</span>
@@ -210,7 +211,7 @@ function MetasPage() {
                 {q.isLoading && (
                   <tr>
                     <td
-                      colSpan={3 + quarter.months.length}
+                      colSpan={4 + quarter.months.length}
                       className="px-4 py-16 text-center text-muted-foreground text-sm"
                     >
                       <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
@@ -233,16 +234,20 @@ function MetasPage() {
                           monthly_goal,
                         })
                       }
+                      onToggleActive={(active) =>
+                        activeMut.mutate({ sf_user_id: p.id, active })
+                      }
                     />
                   ))}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>
                     <td
-                      colSpan={3 + quarter.months.length}
+                      colSpan={4 + quarter.months.length}
                       className="px-4 py-10 text-center text-sm text-muted-foreground"
                     >
                       Nenhum vendedor encontrado.
                     </td>
+
                   </tr>
                 )}
               </tbody>
