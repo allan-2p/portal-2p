@@ -257,7 +257,7 @@ function AuthPage() {
                       "w-full px-0 py-2.5 pr-7 bg-transparent border-0 border-b text-sm transition-colors focus:outline-none placeholder:text-muted-foreground/60",
                       emailError
                         ? "border-destructive focus:border-destructive"
-                        : "border-border focus:border-primary",
+                        : "border-neutral-200 dark:border-neutral-800 focus:border-neutral-900 dark:focus:border-neutral-100",
                     )}
                   />
                   {!emailError && email && emailSchema.safeParse(email).success && (
@@ -291,7 +291,7 @@ function AuthPage() {
                         "w-full px-0 py-2.5 pr-8 bg-transparent border-0 border-b text-sm transition-colors focus:outline-none placeholder:text-muted-foreground/60",
                         passwordError
                           ? "border-destructive focus:border-destructive"
-                          : "border-border focus:border-primary",
+                          : "border-neutral-200 dark:border-neutral-800 focus:border-neutral-900 dark:focus:border-neutral-100",
                       )}
                     />
                     <button
@@ -326,7 +326,7 @@ function AuthPage() {
               <button
                 type="submit"
                 disabled={loading || !canSubmit}
-                className="group mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-full bg-foreground text-background font-medium text-sm transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-full bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900 font-medium text-sm transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
