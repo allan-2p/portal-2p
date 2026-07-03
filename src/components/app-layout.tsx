@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import logo from "@/assets/2p-logo.jpg";
@@ -355,6 +355,8 @@ function AdminGroup({ pathname, collapsed }: { pathname: string; collapsed: bool
           <SubLink to="/usuarios" label="Usuários" icon={Users} active={pathname.startsWith("/usuarios")} />
           <SubLink to="/admin/vendedores" label="Vendedores" icon={UserCog} active={pathname.startsWith("/admin/vendedores")} />
           <SubLink to="/admin/metas" label="Metas" icon={Target} active={pathname.startsWith("/admin/metas")} />
+          <SubLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} active={pathname.startsWith("/admin/tabelas")} />
+
           <SubLink to="/integracoes" label="Integrações" icon={Plug} active={pathname.startsWith("/integracoes")} />
         </div>
       )}

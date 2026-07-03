@@ -279,3 +279,56 @@ export const getSalesforceAccounts = createServerFn({ method: "GET" })
     return { records: (res?.records ?? []).map(mapAccount) as SalesforceAccount[] };
   });
 
+export type SalesforceOppRow = {
+  id: string;
+  name: string;
+  stage: string;
+  tipoNf: string | null;
+  amount: number | null;
+  closeDate: string | null;
+  account: string | null;
+  owner: string | null;
+  ownerId: string | null;
+};
+
+function mapOppRow(r: any): SalesforceOppRow {
+  return {
+    id: r.Id,
+    name: r.Name,
+    stage: r.StageName,
+    tipoNf: r.Tipo_de_NF__c ?? null,
+    amount: typeof r.Amount === "number" ? r.Amount : null,
+    closeDate: r.CloseDate ?? null,
+    account: r.Account?.Name ?? null,
+    owner: r.Owner?.Name ?? null,
+    ownerId: r.OwnerId ?? null,
+  };
+}
+
+const OPP_COLS =
+  `Id, Name, StageName, Tipo_de_NF__c, Amount, CloseDate, Account.Name, Owner.Name, OwnerId`;
+
+export const getSalesforceOrcamentos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const soql =
+      `SELECT ${OPP_COLS} FROM Opportunity ` +
+      `WHERE StageName != 'Pedido Concluído' ` +
+      `AND (Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação') ` +
+      `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+  });
+
+export const getSalesforceVendas = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const soql =
+      `SELECT ${OPP_COLS} FROM Opportunity ` +
+      `WHERE StageName = 'Pedido Concluído' ` +
+      `AND (Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação') ` +
+      `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+  });
+

@@ -24,6 +24,7 @@ import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
 import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
 import { Route as AuthenticatedAdminVendedoresRouteImport } from './routes/_authenticated/admin.vendedores'
+import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -104,6 +105,12 @@ const AuthenticatedAdminVendedoresRoute =
     path: '/admin/vendedores',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminTabelasRoute =
+  AuthenticatedAdminTabelasRouteImport.update({
+    id: '/admin/tabelas',
+    path: '/admin/tabelas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminMetasRoute = AuthenticatedAdminMetasRouteImport.update({
   id: '/admin/metas',
   path: '/admin/metas',
@@ -123,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
@@ -140,6 +148,7 @@ export interface FileRoutesByTo {
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
@@ -159,6 +168,7 @@ export interface FileRoutesById {
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/_authenticated/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/tarefas'
     | '/usuarios'
     | '/admin/metas'
+    | '/admin/tabelas'
     | '/admin/vendedores'
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/'
     | '/admin/metas'
+    | '/admin/tabelas'
     | '/admin/vendedores'
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
@@ -213,6 +225,7 @@ export interface FileRouteTypes {
     | '/_authenticated/usuarios'
     | '/_authenticated/'
     | '/_authenticated/admin/metas'
+    | '/_authenticated/admin/tabelas'
     | '/_authenticated/admin/vendedores'
     | '/_authenticated/clientes/cadastros'
     | '/_authenticated/clientes/segmentacao'
@@ -331,6 +344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminVendedoresRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/tabelas': {
+      id: '/_authenticated/admin/tabelas'
+      path: '/admin/tabelas'
+      fullPath: '/admin/tabelas'
+      preLoaderRoute: typeof AuthenticatedAdminTabelasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/metas': {
       id: '/_authenticated/admin/metas'
       path: '/admin/metas'
@@ -367,6 +387,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
+  AuthenticatedAdminTabelasRoute: typeof AuthenticatedAdminTabelasRoute
   AuthenticatedAdminVendedoresRoute: typeof AuthenticatedAdminVendedoresRoute
 }
 
@@ -381,6 +402,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
+  AuthenticatedAdminTabelasRoute: AuthenticatedAdminTabelasRoute,
   AuthenticatedAdminVendedoresRoute: AuthenticatedAdminVendedoresRoute,
 }
 
