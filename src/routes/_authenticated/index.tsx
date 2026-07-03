@@ -67,7 +67,9 @@ function HomePage() {
   const [metaOpen, setMetaOpen] = useState(false);
   const [forecastFilter, setForecastFilter] = useState<"todos" | "7d" | "30d" | "atrasados">("todos");
   const [ownerId, setOwnerId] = useState<string>("all");
-  const [agendaRange, setAgendaRange] = useState<AgendaKey>("hoje");
+  const [agendaDate, setAgendaDate] = useState<Date>(() => startOfDay(new Date()));
+  const [agendaOpen, setAgendaOpen] = useState(false);
+
   const [stageFilter, setStageFilter] = useState<"all" | OpportunityStage>("all");
 
   const ownerParam = ownerId === "all" ? null : ownerId;
