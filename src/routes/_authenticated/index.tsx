@@ -265,20 +265,32 @@ function HomePage() {
                   Tarefas em aberto do Salesforce
                 </p>
               </div>
-              <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
-                {AGENDA_RANGES.map((o) => (
-                  <button
-                    key={o.k}
-                    onClick={() => setAgendaRange(o.k)}
-                    className={cn(
-                      "px-2.5 py-1 rounded-md",
-                      agendaRange === o.k ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-                    )}
-                  >
-                    {o.l}
-                  </button>
-                ))}
-              </div>
+              <Popover open={agendaOpen} onOpenChange={setAgendaOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {fmtKey(agendaDate) === fmtKey(today)
+                      ? "Hoje"
+                      : agendaDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <CalendarPicker
+                    mode="single"
+                    selected={agendaDate}
+                    defaultMonth={agendaDate}
+                    onSelect={(d) => {
+                      if (d) {
+                        setAgendaDate(startOfDay(d));
+                        setAgendaOpen(false);
+                      }
+                    }}
+                    disabled={{ before: startOfDay(today) }}
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+
             </div>
             <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
               {tasksQ.isLoading && (
