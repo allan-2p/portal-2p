@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
 import logo from "@/assets/2p-logo.jpg";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginSplash } from "@/components/login-splash";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { getActiveUsersToday } from "@/lib/active-users.functions";
 
 const emailSchema = z
   .string()
