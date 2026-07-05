@@ -127,7 +127,7 @@ export const getSalesforceTasks = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const ownerClause = validId(data.ownerId) ? ` AND OwnerId = '${data.ownerId}'` : "";
     const soql =
-      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Type, ` +
+      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, ` +
       `Who.Name, WhoId, What.Name, WhatId, Owner.Name, OwnerId ` +
       `FROM Task ` +
       `WHERE Status = 'Open' AND ActivityDate >= ${data.start} AND ActivityDate <= ${data.end}${ownerClause} ` +
@@ -140,7 +140,7 @@ export const getSalesforceTasks = createServerFn({ method: "GET" })
       status: r.Status ?? null,
       priority: r.Priority ?? null,
       description: r.Description ?? null,
-      type: r.Type ?? null,
+      type: null,
       who: r.Who?.Name ?? null,
       whoId: r.WhoId ?? null,
       what: r.What?.Name ?? null,
