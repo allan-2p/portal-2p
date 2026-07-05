@@ -1,19 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { clients, portfolio, atlasInsights, tasks as mockTasks, generationSeries, salesSeries } from "@/lib/mock-data";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useMemo, useState } from "react";
 import {
   ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, Clock,
-  TrendingUp, CheckCircle2, Phone, Mail, Calendar, Info, ChevronDown,
+  TrendingUp, CheckCircle2, Calendar, Info, ChevronDown,
   FileText, CalendarClock, Gift, Lock, Users as UsersIcon, Loader2,
-  CalendarIcon,
+  CalendarIcon, MessageSquare, Check, Plus,
 } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -23,11 +29,17 @@ import {
   getSalesforceOpportunities,
   getSalesforceForecasts,
   getSalesforceVendas,
+  getSalesforceInteractionsFor,
+  completeSalesforceTask,
+  createSalesforceTask,
+  logSalesforceInteraction,
   opportunityStages,
   type OpportunityStage,
   type SalesforceOpportunity,
+  type SalesforceTask,
 } from "@/lib/salesforce.functions";
 import { getMonthGoalTotal } from "@/lib/admin.functions";
+
 
 
 export const Route = createFileRoute("/_authenticated/")({
