@@ -123,20 +123,21 @@ const statusCount: Record<Order["status"], number> = {
 };
 
 const STATUS_HEADER: Record<Order["status"], string> = {
-  "Aguard. Pagamento": "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white",
-  "Processando": "bg-gradient-to-r from-yellow-500 to-yellow-400 text-neutral-900",
-  "Separação": "bg-gradient-to-r from-sky-500 to-sky-400 text-white",
-  "Faturado": "bg-gradient-to-r from-neutral-900 to-neutral-700 text-white",
-  "Coletado": "bg-gradient-to-r from-green-600 to-green-500 text-white",
+  "Aguard. Pagamento": "bg-emerald-500 text-white",
+  "Processando": "bg-yellow-400 text-neutral-900",
+  "Separação": "bg-sky-400 text-white",
+  "Faturado": "bg-black text-white",
+  "Coletado": "bg-green-500 text-white",
 };
 
 const STATUS_PILL: Record<Order["status"], string> = {
-  "Aguard. Pagamento": "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
-  "Processando": "bg-yellow-400/15 text-yellow-500 border border-yellow-500/30",
-  "Separação": "bg-sky-400/15 text-sky-400 border border-sky-400/30",
-  "Faturado": "bg-neutral-800 text-neutral-100 border border-neutral-700",
-  "Coletado": "bg-green-500/15 text-green-500 border border-green-500/30",
+  "Aguard. Pagamento": "bg-emerald-500 text-white",
+  "Processando": "bg-yellow-400 text-neutral-900",
+  "Separação": "bg-sky-400 text-white",
+  "Faturado": "bg-black text-white",
+  "Coletado": "bg-green-500 text-white",
 };
+
 
 function KanbanView({ data }: { data: Order[] }) {
   return (
