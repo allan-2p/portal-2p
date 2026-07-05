@@ -234,6 +234,30 @@ function buildTaskBody(p: TaskPayload) {
   return body;
 }
 
+// Cache de valor default para Org_Atividade__c (picklist restrita e obrigatória nesta org).
+let cachedOrgAtividadeDefault: string | null = null;
+async function getOrgAtividadeDefault(): Promise<string | null> {
+  if (cachedOrgAtividadeDefault) return cachedOrgAtividadeDefault;
+  try {
+    const desc = await sfFetch(`/sobjects/Task/describe`);
+    const field = (desc?.fields ?? []).find((f: any) => f.name === "Org_Atividade__c");
+    if (!field) return null;
+    const values = (field.picklistValues ?? []).filter((v: any) => v.active);
+    const def = values.find((v: any) => v.defaultValue) ?? values[0];
+    cachedOrgAtividadeDefault = def?.value ?? null;
+    return cachedOrgAtividadeDefault;
+  } catch {
+    return null;
+  }
+}
+
+async function postTaskWithDefaults(body: Record<string, unknown>) {
+  const enriched: Record<string, unknown> = { ...body };
+  const atividade = await getOrgAtividadeDefault();
+  if (atividade && !enriched.Org_Atividade__c) enriched.Org_Atividade__c = atividade;
+  return sfFetch(`/sobjects/Task`, { method: "POST", body: JSON.stringify(enriched) });
+}
+
 export const createSalesforceTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: TaskPayload) => {
@@ -245,7 +269,7 @@ export const createSalesforceTask = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const body = buildTaskBody({ status: "Open", ...data });
-    const res = await sfFetch(`/sobjects/Task`, { method: "POST", body: JSON.stringify(body) });
+    const res = await postTaskWithDefaults(body);
     return { id: res?.id ?? null };
   });
 
@@ -261,7 +285,7 @@ export const logSalesforceInteraction = createServerFn({ method: "POST" })
       data.activityDate ||
       `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const body = buildTaskBody({ ...data, status: "Completed", activityDate });
-    const res = await sfFetch(`/sobjects/Task`, { method: "POST", body: JSON.stringify(body) });
+    const res = await postTaskWithDefaults(body);
     return { id: res?.id ?? null };
   });
 
