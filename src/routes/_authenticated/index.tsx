@@ -165,8 +165,10 @@ function HomePage() {
   const today = useMemo(() => new Date(), []);
   const agendaRangeParams = useMemo(() => {
     const key = fmtKey(agendaDate);
-    return { start: key, end: key };
-  }, [agendaDate]);
+    const isToday = key === fmtKey(today);
+    // Quando "Hoje" está selecionado, incluir também tarefas atrasadas (em aberto e vencidas).
+    return { start: isToday ? "1970-01-01" : key, end: key };
+  }, [agendaDate, today]);
 
 
   const tasksQ = useQuery({
@@ -416,21 +418,38 @@ function HomePage() {
               {sfTasks.map((t) => {
                 const inter = taskInteractions[t.id] ?? null;
                 const suggestion = buildAtlasSuggestion(t, inter, todayStart);
+                const dueDate = new Date(t.date + "T00:00:00");
+                const overdueDays = Math.round((todayStart.getTime() - dueDate.getTime()) / 86400000);
+                const isOverdue = overdueDays > 0;
                 return (
-                <div key={t.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
+                <div key={t.id} className={cn(
+                  "rounded-xl border p-3.5 transition-colors",
+                  isOverdue
+                    ? "border-destructive/50 bg-destructive/5 hover:border-destructive"
+                    : "border-border bg-surface hover:border-primary/40",
+                )}>
                   <div className="flex items-start gap-3">
                     <button
                       onClick={() => setCompleteTask(t)}
                       title="Concluir tarefa"
-                      className="mt-0.5 h-5 w-5 rounded-full border-2 border-border hover:border-primary flex items-center justify-center shrink-0 group"
+                      className={cn(
+                        "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 group",
+                        isOverdue ? "border-destructive/60 hover:border-destructive" : "border-border hover:border-primary",
+                      )}
                     >
-                      <CheckCircle2 className="h-3 w-3 text-primary opacity-0 group-hover:opacity-80" />
+                      <CheckCircle2 className={cn("h-3 w-3 opacity-0 group-hover:opacity-80", isOverdue ? "text-destructive" : "text-primary")} />
                     </button>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="text-sm font-semibold truncate flex items-center gap-1.5">
                             {t.subject}
+                            {isOverdue && (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-destructive/15 text-destructive">
+                                <AlertTriangle className="h-2.5 w-2.5" />
+                                Atrasada {overdueDays}d
+                              </span>
+                            )}
                             {inter && (
                               <span
                                 title={`${inter.type ?? "Interação"} — ${inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}`}
@@ -452,12 +471,13 @@ function HomePage() {
                         </div>
                         <span className={cn(
                           "text-[10px] px-2 py-0.5 rounded shrink-0 flex items-center gap-1",
+                          isOverdue ? "bg-destructive/15 text-destructive font-semibold" :
                           t.priority?.toLowerCase().startsWith("alt") ? "bg-destructive/15 text-destructive" :
                           t.priority?.toLowerCase().startsWith("baix") ? "bg-surface-2 text-muted-foreground" :
                           "bg-warning/20 text-[color:var(--warning)]",
                         )}>
                           <Clock className="h-2.5 w-2.5" />
-                          {new Date(t.date + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                          {dueDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
                         </span>
                       </div>
                       {t.owner && (
