@@ -461,6 +461,57 @@ function SegmentacaoPage() {
                               <Detail label="Última interação" value={c.lastInteraction} sub={`Saúde ${c.health}/100`} />
                             </div>
                             <div className="mt-4 p-3 rounded-lg bg-background/60 border border-border">
+                              <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                                <div className="flex items-center gap-2">
+                                  <Package className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                                    Pedidos em curso
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap gap-2 text-[10px]">
+                                  {(["Aguardando Pagamento","Processando","Separação","Faturado","Coletado"] as const).map((s) => (
+                                    <span key={s} className="inline-flex items-center gap-1 text-muted-foreground">
+                                      <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[s])} />
+                                      {s}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              {(() => {
+                                const orders = ordersByAccount.get(c.id) ?? [];
+                                if (orders.length === 0) {
+                                  return <div className="text-xs text-muted-foreground">Nenhum pedido em curso no período.</div>;
+                                }
+                                return (
+                                  <div className="space-y-1.5">
+                                    {orders
+                                      .slice()
+                                      .sort((a, b) => (b.total ?? b.amount ?? 0) - (a.total ?? a.amount ?? 0))
+                                      .map((o) => (
+                                        <div key={o.id} className="flex items-center gap-3 text-xs">
+                                          <span className={cn(
+                                            "px-2 py-0.5 rounded-md border font-medium whitespace-nowrap",
+                                            (o.status && STATUS_COLOR[o.status]) || "bg-surface-2 text-muted-foreground border-border",
+                                          )}>
+                                            {o.status ?? "—"}
+                                          </span>
+                                          <span className="truncate flex-1">{o.name}</span>
+                                          {o.owner && <span className="text-muted-foreground truncate">{o.owner}</span>}
+                                          {o.closeDate && (
+                                            <span className="text-muted-foreground tabular-nums">
+                                              {new Date(o.closeDate + "T00:00:00").toLocaleDateString("pt-BR")}
+                                            </span>
+                                          )}
+                                          <span className="font-display font-semibold tabular-nums w-28 text-right">
+                                            {fmt(o.total ?? o.amount ?? 0)}
+                                          </span>
+                                        </div>
+                                      ))}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                            <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border">
                               <div className="flex items-center gap-2 mb-1.5">
                                 <FileText className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Observações (Salesforce)</span>
@@ -469,6 +520,7 @@ function SegmentacaoPage() {
                                 {c.notes ?? "Sem observações registradas no Salesforce."}
                               </p>
                             </div>
+
                             <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border flex items-start gap-2">
                               <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
 
