@@ -653,6 +653,27 @@ function HomePage() {
                 </button>
               ))}
             </div>
+            <div className="flex flex-wrap gap-1.5 mb-3 text-xs">
+              {([
+                { k: "all", l: "Todos" },
+                { k: "7d", l: "≤ 7 dias" },
+                { k: "15-30", l: "15–30 dias" },
+                { k: "30-60", l: "30–60 dias" },
+                { k: "60+", l: "+60 dias" },
+              ] as const).map((o) => (
+                <button
+                  key={o.k}
+                  onClick={() => setOppsAgeFilter(o.k)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md border",
+                    oppsAgeFilter === o.k ? "bg-primary text-primary-foreground border-primary" : "bg-surface-2 border-border text-muted-foreground",
+                  )}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
+
             <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
               {oppsQ.isLoading && (
                 <div className="text-center text-sm text-muted-foreground py-8">Carregando…</div>
