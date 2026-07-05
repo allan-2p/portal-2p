@@ -261,19 +261,20 @@ function OppTable({
   );
 }
 
-function previousQuarterRange(): { start: string; end: string; label: string } {
+function quarterRange(year: number, q: number): { start: string; end: string; label: string } {
+  // q is 1..4; wrap to previous year if 0
+  let yy = year;
+  let qq = q;
+  if (qq < 1) { qq = 4; yy = year - 1; }
+  if (qq > 4) { qq = 1; yy = year + 1; }
+  const start = new Date(yy, (qq - 1) * 3, 1);
+  const end = new Date(yy, qq * 3, 0);
+  return { start: fmtKey(start), end: fmtKey(end), label: `Q${qq}/${yy}` };
+}
+
+function currentQuarter(): { year: number; q: number } {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const q = Math.floor(m / 3);
-  const prevQStart = new Date(y, (q - 1) * 3, 1);
-  const prevQEnd = new Date(prevQStart.getFullYear(), prevQStart.getMonth() + 3, 0);
-  const qNum = Math.floor(prevQStart.getMonth() / 3) + 1;
-  return {
-    start: fmtKey(prevQStart),
-    end: fmtKey(prevQEnd),
-    label: `Q${qNum}/${prevQStart.getFullYear()}`,
-  };
+  return { year: now.getFullYear(), q: Math.floor(now.getMonth() / 3) + 1 };
 }
 
 type ProjectionRow = {
@@ -286,7 +287,14 @@ type ProjectionRow = {
 };
 
 function ProjectionsPanel({ search }: { search: string }) {
-  const range = useMemo(previousQuarterRange, []);
+  const cur = useMemo(currentQuarter, []);
+  const [selYear, setSelYear] = useState<number>(cur.year);
+  const [selQ, setSelQ] = useState<number>(cur.q);
+
+  // Base = trimestre anterior ao selecionado
+  const baseRange = useMemo(() => quarterRange(selYear, selQ - 1), [selYear, selQ]);
+  const targetLabel = useMemo(() => quarterRange(selYear, selQ).label, [selYear, selQ]);
+  const range = baseRange;
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
 
@@ -345,12 +353,43 @@ function ProjectionsPanel({ search }: { search: string }) {
     return acc;
   }, [filtered]);
 
+  const quarters2026 = [1, 2, 3, 4];
+
   return (
     <div className="space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs uppercase tracking-wider text-muted-foreground mr-1">Projetar</span>
+        <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
+          {quarters2026.map((q) => {
+            const active = selYear === 2026 && selQ === q;
+            const isCurrent = cur.year === 2026 && cur.q === q;
+            return (
+              <button
+                key={q}
+                onClick={() => { setSelYear(2026); setSelQ(q); }}
+                className={cn(
+                  "px-3 py-1 rounded-md transition-colors",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Q{q}/2026{isCurrent ? " • atual" : ""}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-4 text-sm">
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Base</div>
-          <div className="font-medium">Trimestre anterior — {range.label}</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Projeção alvo</div>
+          <div className="font-medium">{targetLabel}</div>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Base (trimestre anterior)</div>
+          <div className="font-medium">{range.label}</div>
         </div>
         <div className="h-8 w-px bg-border" />
         <div>
@@ -368,6 +407,7 @@ function ProjectionsPanel({ search }: { search: string }) {
           </div>
         </div>
       </div>
+
 
       <div className="glass rounded-2xl overflow-hidden">
         {!!error && (
