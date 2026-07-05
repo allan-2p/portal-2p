@@ -442,10 +442,18 @@ function HomePage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
+                          {t.what && (
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <FileText className="h-3 w-3 text-[color:var(--atlas)] shrink-0" />
+                              <span className="text-[11px] uppercase tracking-wider font-semibold text-[color:var(--atlas)] truncate">
+                                {t.what}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <UsersIcon className="h-3 w-3 text-primary shrink-0" />
                             <span className="text-sm font-bold text-foreground truncate">
-                              {t.what ?? t.who ?? "Sem cliente vinculado"}
+                              {t.who ?? (t.what ? "—" : "Sem cliente vinculado")}
                             </span>
                           </div>
                           <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
