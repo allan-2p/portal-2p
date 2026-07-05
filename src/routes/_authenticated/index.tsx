@@ -165,8 +165,10 @@ function HomePage() {
   const today = useMemo(() => new Date(), []);
   const agendaRangeParams = useMemo(() => {
     const key = fmtKey(agendaDate);
-    return { start: key, end: key };
-  }, [agendaDate]);
+    const isToday = key === fmtKey(today);
+    // Quando "Hoje" está selecionado, incluir também tarefas atrasadas (em aberto e vencidas).
+    return { start: isToday ? "1970-01-01" : key, end: key };
+  }, [agendaDate, today]);
 
 
   const tasksQ = useQuery({
