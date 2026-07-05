@@ -439,7 +439,7 @@ function ProjectionsPanel({ search }: { search: string }) {
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  const [tab, setTab] = useState<"orcamentos" | "vendas">("orcamentos");
+  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes">("orcamentos");
   const [search, setSearch] = useState("");
 
   const initial = presetRange("month")!;
