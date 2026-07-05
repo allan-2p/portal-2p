@@ -256,13 +256,13 @@ async function getOrgAtividadeDefault(): Promise<string | null> {
       const values = (picklist?.values ?? []).filter((v: any) => v.active !== false);
       const def = values.find((v: any) => v.defaultValue) ?? values[0];
       cachedOrgAtividadeDefault = def?.value ?? null;
-      return cachedOrgAtividadeDefault;
+      return cachedOrgAtividadeDefault ?? null;
     } catch {
       const field = (desc?.fields ?? []).find((f: any) => f.name === "Org_Atividade__c");
       const values = (field?.picklistValues ?? []).filter((v: any) => v.active && v.value !== "Tubos 2P");
       const def = values.find((v: any) => v.defaultValue) ?? values[0];
       cachedOrgAtividadeDefault = def?.value ?? null;
-      return cachedOrgAtividadeDefault;
+      return cachedOrgAtividadeDefault ?? null;
     }
   } catch {
     cachedOrgAtividadeDefault = null;
