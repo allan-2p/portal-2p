@@ -737,28 +737,6 @@ function TabelasPage() {
             />
           </TabsContent>
         </Tabs>
-          <TabsContent value="orcamentos" className="mt-4">
-            <OppTable
-              records={qOrc.data?.records ?? []}
-              loading={qOrc.isLoading}
-              error={qOrc.error}
-              search={search}
-              dateField="createdDate"
-            />
-          </TabsContent>
-          <TabsContent value="vendas" className="mt-4">
-            <OppTable
-              records={qVen.data?.records ?? []}
-              loading={qVen.isLoading}
-              error={qVen.error}
-              search={search}
-              dateField="closeDate"
-            />
-          </TabsContent>
-          <TabsContent value="projecoes" className="mt-4">
-            <ProjectionsPanel search={search} />
-          </TabsContent>
-        </Tabs>
       </div>
     </AppLayout>
 
