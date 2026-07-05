@@ -167,7 +167,7 @@ function HomePage() {
   }, [vendasQ.data, ownerParam]);
 
   // ---- Mock (mantidos para projetado) ----
-  const goal = dbGoal > 0 ? dbGoal : portfolio.goal;
+  const goal = dbGoal;
   const achieved = sold;
   const projected = portfolio.projected;
   const goalPct = goal > 0 ? (sold / goal) * 100 : 0;
