@@ -225,7 +225,7 @@ function buildTaskBody(p: TaskPayload) {
   if (p.activityDate) body.ActivityDate = p.activityDate;
   if (p.priority) body.Priority = p.priority;
   if (p.status) body.Status = p.status;
-  if (p.type) body.Type = p.type;
+  // Task.Type não existe nesta org; ignoramos p.type intencionalmente.
   if (p.description) body.Description = p.description;
   if (validId(p.whatId)) body.WhatId = p.whatId;
   if (validId(p.whoId)) body.WhoId = p.whoId;
