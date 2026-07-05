@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getSalesforceAccounts, getSalesforceSalespeople, type SalesforceAccount } from "@/lib/salesforce.functions";
+import { getSalesforceAccounts, getSalesforceSalespeople, getSalesforceOrcamentos, getSalesforceVendas, type SalesforceAccount } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
@@ -19,8 +19,8 @@ const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 type SortKey = "rank" | "name" | "segment" | "projection" | "generation" | "sales" | "health";
 type SortDir = "asc" | "desc";
 
-// Hash determinístico do id do Salesforce para gerar métricas de performance
-// visuais consistentes enquanto a integração de números reais não existe.
+// Hash determinístico só para métricas visuais (saúde/tendência/última interação)
+// enquanto não existe fonte real para elas.
 function seedFromId(id: string): number {
   let h = 2166136261;
   for (let i = 0; i < id.length; i++) {
@@ -33,29 +33,19 @@ function rand(seed: number, offset: number): number {
   const x = Math.sin(seed + offset) * 10000;
   return x - Math.floor(x);
 }
-function accountToClient(a: SalesforceAccount): Client {
-  const seed = seedFromId(a.id);
-  const segment: Segment = a.segment ?? "D";
-  const baseByTier: Record<Segment, number> = { A: 40000, B: 15000, C: 8000, D: 4000 };
-  const base = baseByTier[segment];
-  const projection = Math.round(base + rand(seed, 1) * base * 1.2);
-  const generation = Math.round(projection * (0.15 + rand(seed, 2) * 0.75));
-  const sales = Math.round(generation * (0.55 + rand(seed, 3) * 0.4));
-  const health = Math.round(10 + rand(seed, 4) * 90);
-  const trend: Client["trend"] = health > 70 ? "up" : health > 40 ? "stable" : "down";
-  const lastInteraction = `${Math.max(1, Math.round(rand(seed, 5) * 25))}d`;
-  return {
-    id: a.id,
-    name: a.name,
-    segment,
-    projection,
-    generation,
-    sales,
-    trend,
-    lastInteraction,
-    health,
-    notes: a.tubos.length > 0 ? `Segmentação Tubos: ${a.tubos.join(", ")}.` : undefined,
-  };
+
+function pad(n: number) { return n < 10 ? `0${n}` : `${n}`; }
+function fmtKey(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+
+function periodRange(period: "mensal" | "trimestral"): { start: string; end: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  if (period === "mensal") {
+    return { start: fmtKey(new Date(y, m, 1)), end: fmtKey(new Date(y, m + 1, 0)) };
+  }
+  const qStart = Math.floor(m / 3) * 3;
+  return { start: fmtKey(new Date(y, qStart, 1)), end: fmtKey(new Date(y, qStart + 3, 0)) };
 }
 
 function SegmentacaoPage() {
@@ -70,6 +60,9 @@ function SegmentacaoPage() {
 
   const fetchAccounts = useServerFn(getSalesforceAccounts);
   const fetchPeople = useServerFn(getSalesforceSalespeople);
+  const fetchOrcamentos = useServerFn(getSalesforceOrcamentos);
+  const fetchVendas = useServerFn(getSalesforceVendas);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["salesforce", "accounts"],
     queryFn: () => fetchAccounts(),
@@ -85,15 +78,72 @@ function SegmentacaoPage() {
     [peopleQ.data],
   );
 
+  const range = useMemo(() => periodRange(period), [period]);
+
+  const orcamentosQ = useQuery({
+    queryKey: ["sf-segmentacao-orcamentos", range.start, range.end],
+    queryFn: () => fetchOrcamentos({ data: range }),
+    staleTime: 60_000,
+  });
+  const vendasQ = useQuery({
+    queryKey: ["sf-segmentacao-vendas", range.start, range.end],
+    queryFn: () => fetchVendas({ data: range }),
+    staleTime: 60_000,
+  });
+
+  const generationByAccount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of orcamentosQ.data?.records ?? []) {
+      if (!r.accountId) continue;
+      map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+    return map;
+  }, [orcamentosQ.data]);
+  const salesByAccount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of vendasQ.data?.records ?? []) {
+      if (!r.accountId) continue;
+      map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+    return map;
+  }, [vendasQ.data]);
+
+  function accountToClient(a: SalesforceAccount): Client {
+    const seed = seedFromId(a.id);
+    const segment: Segment = a.segment ?? "D";
+    const quarterProj = a.quarterProjection ?? 0;
+    const projection = period === "mensal" ? Math.round(quarterProj / 3) : Math.round(quarterProj);
+    const generation = Math.round(generationByAccount.get(a.id) ?? 0);
+    const sales = Math.round(salesByAccount.get(a.id) ?? 0);
+    const denom = projection > 0 ? projection : 1;
+    const rawHealth = Math.round((sales / denom) * 100);
+    const health = Math.max(0, Math.min(100, rawHealth || Math.round(10 + rand(seed, 4) * 30)));
+    const trend: Client["trend"] = health > 70 ? "up" : health > 40 ? "stable" : "down";
+    const lastInteraction = `${Math.max(1, Math.round(rand(seed, 5) * 25))}d`;
+    return {
+      id: a.id,
+      name: a.name,
+      segment,
+      projection,
+      generation,
+      sales,
+      trend,
+      lastInteraction,
+      health,
+      notes: a.observacoes ?? a.description ?? undefined,
+    };
+  }
+
   const clients = useMemo(() => {
     const accounts = data?.records ?? [];
-    // Somente contas cujo vendedor está ativo no momento (não oculto no admin).
     const activeOnly = activeOwnerIds.size > 0
       ? accounts.filter((a) => a.ownerId && activeOwnerIds.has(a.ownerId))
       : [];
     const scoped = ownerId === "all" ? activeOnly : activeOnly.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
-  }, [data, ownerId, activeOwnerIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount]);
+
 
   const ranked = useMemo(
     () => [...clients].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
@@ -269,7 +319,10 @@ function SegmentacaoPage() {
 
                 {visible.map((c) => {
                   const isOpen = expanded.has(c.id);
-                  const generationPct = (c.generation / c.projection) * 100;
+                  const denom = c.projection > 0 ? c.projection : 1;
+                  const generationPct = (c.generation / denom) * 100;
+                  const salesPct = (c.sales / denom) * 100;
+
                   return (
                     <Fragment key={c.id}>
                       <tr onClick={() => toggle(c.id)} className="border-b border-border/40 hover:bg-surface-2/50 cursor-pointer">
@@ -311,13 +364,23 @@ function SegmentacaoPage() {
                         <tr key={`${c.id}-d`} className="bg-surface-2/30 border-b border-border/40">
                           <td colSpan={10} className="px-6 py-5">
                             <div className="grid md:grid-cols-4 gap-4">
-                              <Detail label="Projeção de Vendas" value={fmt(c.projection)} />
-                              <Detail label="Geração R$" value={fmt(c.generation)} sub={`${generationPct.toFixed(0)}% da projeção`} />
-                              <Detail label="Vendas R$" value={fmt(c.sales)} sub={`${((c.sales / c.projection) * 100).toFixed(0)}% da projeção`} />
+                              <Detail label={period === "mensal" ? "Projeção (mês)" : "Projeção (trimestre)"} value={fmt(c.projection)} />
+                              <Detail label="Geração R$" value={fmt(c.generation)} sub={c.projection > 0 ? `${generationPct.toFixed(0)}% da projeção` : undefined} />
+                              <Detail label="Vendas R$" value={fmt(c.sales)} sub={c.projection > 0 ? `${salesPct.toFixed(0)}% da projeção` : undefined} />
                               <Detail label="Última interação" value={c.lastInteraction} sub={`Saúde ${c.health}/100`} />
                             </div>
-                            <div className="mt-4 p-3 rounded-lg bg-background/60 border border-border flex items-start gap-2">
+                            <div className="mt-4 p-3 rounded-lg bg-background/60 border border-border">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Observações (Salesforce)</span>
+                              </div>
+                              <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
+                                {c.notes ?? "Sem observações registradas no Salesforce."}
+                              </p>
+                            </div>
+                            <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border flex items-start gap-2">
                               <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+
                               <div className="text-xs text-muted-foreground leading-relaxed">
                                 <span className="text-foreground font-medium">Atlas sugere: </span>
                                 {c.health > 70

@@ -414,6 +414,10 @@ export type SalesforceAccount = {
   phone: string | null;
   website: string | null;
   industry: string | null;
+  observacoes: string | null;
+  description: string | null;
+  quarterProjection: number | null;
+  quarterSold: number | null;
 };
 
 function formatCnpj(v: string | null): string | null {
@@ -429,6 +433,7 @@ function mapAccount(r: any): SalesforceAccount {
   const tubos = typeof r.Segmentacao_Tubos__c === "string" && r.Segmentacao_Tubos__c
     ? r.Segmentacao_Tubos__c.split(";").map((s: string) => s.trim()).filter(Boolean)
     : [];
+  const num = (v: any) => (typeof v === "number" ? v : null);
   return {
     id: r.Id,
     name: r.Name,
@@ -441,6 +446,10 @@ function mapAccount(r: any): SalesforceAccount {
     phone: r.Phone ?? null,
     website: r.Website ?? null,
     industry: r.Industry ?? null,
+    observacoes: r.Observacoes__c ?? null,
+    description: r.Description ?? null,
+    quarterProjection: num(r.Total_Vendido_Trimestre_Anterior__c),
+    quarterSold: num(r.Total_Vendido_Esse_Trimestre__c),
   };
 }
 
@@ -449,11 +458,13 @@ export const getSalesforceAccounts = createServerFn({ method: "GET" })
   .handler(async () => {
     const soql =
       `SELECT Id, Name, CNPJ__c, Segmentacao_Solar__c, Segmentacao_Tubos__c, ` +
-      `Industry, Phone, Website, OwnerId, Owner.Name, CreatedDate ` +
+      `Industry, Phone, Website, OwnerId, Owner.Name, CreatedDate, ` +
+      `Observacoes__c, Description, Total_Vendido_Trimestre_Anterior__c, Total_Vendido_Esse_Trimestre__c ` +
       `FROM Account ORDER BY Name ASC LIMIT 2000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapAccount) as SalesforceAccount[] };
   });
+
 
 export type SalesforceOppRow = {
   id: string;
@@ -468,6 +479,7 @@ export type SalesforceOppRow = {
   closeDate: string | null;
   createdDate: string | null;
   account: string | null;
+  accountId: string | null;
   owner: string | null;
   ownerId: string | null;
 };
@@ -487,6 +499,7 @@ function mapOppRow(r: any): SalesforceOppRow {
     closeDate: r.CloseDate ?? null,
     createdDate: r.CreatedDate ? String(r.CreatedDate).slice(0, 10) : null,
     account: r.Account?.Name ?? null,
+    accountId: r.AccountId ?? null,
     owner: r.Owner?.Name ?? null,
     ownerId: r.OwnerId ?? null,
   };
@@ -494,7 +507,8 @@ function mapOppRow(r: any): SalesforceOppRow {
 
 const OPP_COLS =
   `Id, Name, StageName, Tipo_de_NF__c, Amount, Total__c, Valor_L_q__c, Frete__c, Desconto__c, ` +
-  `CloseDate, CreatedDate, Account.Name, Owner.Name, OwnerId`;
+  `CloseDate, CreatedDate, AccountId, Account.Name, Owner.Name, OwnerId`;
+
 
 function validDate(v: string | null | undefined) {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
