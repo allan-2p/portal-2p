@@ -557,8 +557,3 @@ function TabelasPage() {
 
   );
 }
-      </div>
-    </AppLayout>
-
-  );
-}
