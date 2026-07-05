@@ -142,7 +142,11 @@ function HomePage() {
   const { profile, user } = useAuth();
   const displayName = (profile?.full_name?.trim().split(/\s+/)[0]) || (user?.email?.split("@")[0]) || "";
   const [metaOpen, setMetaOpen] = useState(false);
-  const [forecastFilter, setForecastFilter] = useState<"todos" | "7d" | "30d" | "atrasados">("todos");
+  type AgeKey = "all" | "7d" | "15-30" | "30-60" | "60+";
+  type ForecastKey = AgeKey | "semana" | "atrasados";
+  const [forecastFilter, setForecastFilter] = useState<ForecastKey>("all");
+  const [oppsAgeFilter, setOppsAgeFilter] = useState<AgeKey>("all");
+
   const [ownerId, setOwnerId] = useState<string>("all");
   const [agendaDate, setAgendaDate] = useState<Date>(() => startOfDay(new Date()));
   const [agendaOpen, setAgendaOpen] = useState(false);
@@ -204,7 +208,23 @@ function HomePage() {
     refetchOnWindowFocus: false,
   });
   const opps: SalesforceOpportunity[] = oppsQ.data?.records ?? [];
-  const filteredOpps = stageFilter === "all" ? opps : opps.filter((o) => o.stage === stageFilter);
+  const ageMatches = (createdISO: string | null, key: AgeKey) => {
+    if (key === "all") return true;
+    if (!createdISO) return false;
+    const created = new Date(createdISO + "T00:00:00");
+    const ageDays = Math.floor((todayStartRef.getTime() - created.getTime()) / 86400000);
+    if (key === "7d") return ageDays <= 7;
+    if (key === "15-30") return ageDays >= 15 && ageDays <= 30;
+    if (key === "30-60") return ageDays > 30 && ageDays <= 60;
+    if (key === "60+") return ageDays > 60;
+    return true;
+  };
+  const todayStartRef = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const filteredOpps = (stageFilter === "all" ? opps : opps.filter((o) => o.stage === stageFilter))
+    .filter((o) => ageMatches(o.createdDate, oppsAgeFilter))
+    .slice()
+    .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
   const oppsTotal = filteredOpps.reduce((a, b) => a + (b.amount ?? 0), 0);
 
   const fetchForecasts = useServerFn(getSalesforceForecasts);
@@ -215,16 +235,31 @@ function HomePage() {
     refetchOnWindowFocus: false,
   });
   const forecasts: SalesforceOpportunity[] = forecastsQ.data?.records ?? [];
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const filteredForecasts = forecasts.filter((f) => {
-    if (!f.forecastDate) return false;
-    const d = new Date(f.forecastDate + "T00:00:00");
-    const diff = Math.round((d.getTime() - todayStart.getTime()) / 86400000);
-    if (forecastFilter === "7d") return diff >= 0 && diff <= 7;
-    if (forecastFilter === "30d") return diff >= 0 && diff <= 30;
-    if (forecastFilter === "atrasados") return diff < 0;
-    return true;
-  });
+  const todayStart = todayStartRef;
+  // Início da semana atual (segunda) e fim (domingo)
+  const weekStart = new Date(todayStart);
+  const dow = (weekStart.getDay() + 6) % 7; // 0 = segunda
+  weekStart.setDate(weekStart.getDate() - dow);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const filteredForecasts = forecasts
+    .filter((f) => {
+      if (forecastFilter === "semana") {
+        if (!f.forecastDate) return false;
+        const d = new Date(f.forecastDate + "T00:00:00");
+        return d.getTime() >= weekStart.getTime() && d.getTime() <= weekEnd.getTime();
+      }
+      if (forecastFilter === "atrasados") {
+        if (!f.forecastDate) return false;
+        const d = new Date(f.forecastDate + "T00:00:00");
+        return d.getTime() < todayStart.getTime();
+      }
+      return ageMatches(f.createdDate, forecastFilter);
+    })
+    .slice()
+    .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
+
 
   // ---- Meta do mês atual (do banco) ----
   const fetchMonthGoal = useServerFn(getMonthGoalTotal);
@@ -618,6 +653,27 @@ function HomePage() {
                 </button>
               ))}
             </div>
+            <div className="flex flex-wrap gap-1.5 mb-3 text-xs">
+              {([
+                { k: "all", l: "Todos" },
+                { k: "7d", l: "≤ 7 dias" },
+                { k: "15-30", l: "15–30 dias" },
+                { k: "30-60", l: "30–60 dias" },
+                { k: "60+", l: "+60 dias" },
+              ] as const).map((o) => (
+                <button
+                  key={o.k}
+                  onClick={() => setOppsAgeFilter(o.k)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md border",
+                    oppsAgeFilter === o.k ? "bg-primary text-primary-foreground border-primary" : "bg-surface-2 border-border text-muted-foreground",
+                  )}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
+
             <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
               {oppsQ.isLoading && (
                 <div className="text-center text-sm text-muted-foreground py-8">Carregando…</div>
@@ -656,11 +712,14 @@ function HomePage() {
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Oportunidades em aberto com previsão preenchida</p>
               </div>
-              <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
+              <div className="flex flex-wrap bg-surface-2 rounded-lg p-0.5 border border-border text-xs gap-0.5">
                 {([
-                  { k: "todos", l: "Todos" },
-                  { k: "7d", l: "7 dias" },
-                  { k: "30d", l: "30 dias" },
+                  { k: "all", l: "Todos" },
+                  { k: "7d", l: "≤ 7d" },
+                  { k: "15-30", l: "15–30d" },
+                  { k: "30-60", l: "30–60d" },
+                  { k: "60+", l: "+60d" },
+                  { k: "semana", l: "Semana atual" },
                   { k: "atrasados", l: "Atrasados" },
                 ] as const).map((o) => (
                   <button key={o.k} onClick={() => setForecastFilter(o.k)}
@@ -670,6 +729,7 @@ function HomePage() {
                   </button>
                 ))}
               </div>
+
             </div>
             <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
               {forecastsQ.isLoading && (
