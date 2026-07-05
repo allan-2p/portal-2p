@@ -117,6 +117,7 @@ function SegmentacaoPage() {
   );
 
   const range = useMemo(() => periodRange(period), [period]);
+  const prevQuarter = useMemo(() => previousQuarterRange(), []);
 
   const orcamentosQ = useQuery({
     queryKey: ["sf-segmentacao-orcamentos", range.start, range.end],
@@ -128,33 +129,72 @@ function SegmentacaoPage() {
     queryFn: () => fetchVendas({ data: range }),
     staleTime: 60_000,
   });
+  // Vendas do trimestre anterior — base da projeção de cada conta.
+  const prevQuarterVendasQ = useQuery({
+    queryKey: ["sf-segmentacao-prev-vendas", prevQuarter.start, prevQuarter.end],
+    queryFn: () => fetchVendas({ data: prevQuarter }),
+    staleTime: 5 * 60_000,
+  });
+
+  const ownerMatches = (r: { ownerId: string | null }) =>
+    ownerId === "all" ? true : r.ownerId === ownerId;
 
   const generationByAccount = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of orcamentosQ.data?.records ?? []) {
-      if (!r.accountId) continue;
+      if (!r.accountId || !ownerMatches(r)) continue;
       map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
     }
     return map;
-  }, [orcamentosQ.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orcamentosQ.data, ownerId]);
+
   const salesByAccount = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of vendasQ.data?.records ?? []) {
-      if (!r.accountId) continue;
+      if (!r.accountId || !ownerMatches(r)) continue;
+      if (!r.status || !ALLOWED_ORDER_STATUS.has(r.status)) continue;
       map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
     }
     return map;
-  }, [vendasQ.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendasQ.data, ownerId]);
+
+  // Pedidos em curso por conta — para exibir na expansão.
+  const ordersByAccount = useMemo(() => {
+    const map = new Map<string, SalesforceOppRow[]>();
+    for (const r of vendasQ.data?.records ?? []) {
+      if (!r.accountId || !ownerMatches(r)) continue;
+      if (!r.status || !ALLOWED_ORDER_STATUS.has(r.status)) continue;
+      const list = map.get(r.accountId) ?? [];
+      list.push(r);
+      map.set(r.accountId, list);
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendasQ.data, ownerId]);
+
+  // Projeção base = SUM(Total__c ou Amount) das vendas do trimestre anterior por conta,
+  // respeitando o filtro de vendedor (dono da Opportunity).
+  const quarterProjectionByAccount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of prevQuarterVendasQ.data?.records ?? []) {
+      if (!r.accountId || !ownerMatches(r)) continue;
+      map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prevQuarterVendasQ.data, ownerId]);
 
   function accountToClient(a: SalesforceAccount): Client {
     const seed = seedFromId(a.id);
     const segment: Segment = a.segment ?? "D";
-    const quarterProj = a.quarterProjection ?? 0;
+    const quarterProj = quarterProjectionByAccount.get(a.id) ?? 0;
     const projection = period === "mensal" ? Math.round(quarterProj / 3) : Math.round(quarterProj);
     const generation = Math.round(generationByAccount.get(a.id) ?? 0);
     const sales = Math.round(salesByAccount.get(a.id) ?? 0);
     const denom = projection > 0 ? projection : 1;
-    const rawHealth = Math.round((sales / denom) * 100);
+    const rawHealth = projection > 0 ? Math.round((sales / denom) * 100) : 0;
     const health = Math.max(0, Math.min(100, rawHealth || Math.round(10 + rand(seed, 4) * 30)));
     const trend: Client["trend"] = health > 70 ? "up" : health > 40 ? "stable" : "down";
     const lastInteraction = `${Math.max(1, Math.round(rand(seed, 5) * 25))}d`;
@@ -177,10 +217,23 @@ function SegmentacaoPage() {
     const activeOnly = activeOwnerIds.size > 0
       ? accounts.filter((a) => a.ownerId && activeOwnerIds.has(a.ownerId))
       : [];
-    const scoped = ownerId === "all" ? activeOnly : activeOnly.filter((a) => a.ownerId === ownerId);
+
+    let scoped: SalesforceAccount[];
+    if (ownerId === "all") {
+      scoped = activeOnly;
+    } else {
+      // Quando um vendedor está selecionado, incluímos toda conta que teve
+      // alguma oportunidade (projeção/geração/venda) sob esse vendedor.
+      const relevant = new Set<string>();
+      quarterProjectionByAccount.forEach((_, id) => relevant.add(id));
+      generationByAccount.forEach((_, id) => relevant.add(id));
+      salesByAccount.forEach((_, id) => relevant.add(id));
+      scoped = activeOnly.filter((a) => relevant.has(a.id));
+    }
     return scoped.map(accountToClient);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount]);
+  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount, quarterProjectionByAccount]);
+
 
 
   const ranked = useMemo(
