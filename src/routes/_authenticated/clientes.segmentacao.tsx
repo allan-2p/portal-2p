@@ -186,15 +186,36 @@ function SegmentacaoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendasQ.data, ownerId, accountOwnerById]);
 
+  // Projeção por conta = SUM(Total__c ou Amount) das vendas do trimestre anterior,
+  // exatamente como a tabela "Projeções" (Admin › Tabelas) calcula.
+  // Não aplicamos o filtro de vendedor aqui — a projeção é uma característica da conta.
+  const quarterProjectionById = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of prevQuarterVendasQ.data?.records ?? []) {
+      if (!r.accountId) continue;
+      map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+    return map;
+  }, [prevQuarterVendasQ.data]);
+  const quarterProjectionByName = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of prevQuarterVendasQ.data?.records ?? []) {
+      const key = r.account;
+      if (!key) continue;
+      map.set(key, (map.get(key) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+    return map;
+  }, [prevQuarterVendasQ.data]);
+
   function accountToClient(a: SalesforceAccount): Client {
     const seed = seedFromId(a.id);
     const segment: Segment = a.segment ?? "D";
-    // Projeção vem direto da tabela do Salesforce (Total_Vendido_Trimestre_Anterior__c).
-    // Esse campo já representa a projeção do trimestre atual da conta.
-    const quarterProj = a.quarterProjection ?? 0;
+    // Projeção = base do trimestre anterior (mesma fonte da tabela Projeções).
+    const quarterProj = quarterProjectionById.get(a.id) ?? quarterProjectionByName.get(a.name) ?? 0;
     const projection = period === "mensal" ? Math.round(quarterProj / 3) : Math.round(quarterProj);
     const generation = Math.round(generationByAccount.get(a.id) ?? 0);
     const sales = Math.round(salesByAccount.get(a.id) ?? 0);
+
     const denom = projection > 0 ? projection : 1;
     const rawHealth = projection > 0 ? Math.round((sales / denom) * 100) : 0;
     const health = Math.max(0, Math.min(100, rawHealth || Math.round(10 + rand(seed, 4) * 30)));
