@@ -479,6 +479,7 @@ export type SalesforceOppRow = {
   closeDate: string | null;
   createdDate: string | null;
   account: string | null;
+  accountId: string | null;
   owner: string | null;
   ownerId: string | null;
 };
@@ -498,6 +499,7 @@ function mapOppRow(r: any): SalesforceOppRow {
     closeDate: r.CloseDate ?? null,
     createdDate: r.CreatedDate ? String(r.CreatedDate).slice(0, 10) : null,
     account: r.Account?.Name ?? null,
+    accountId: r.AccountId ?? null,
     owner: r.Owner?.Name ?? null,
     ownerId: r.OwnerId ?? null,
   };
@@ -505,7 +507,8 @@ function mapOppRow(r: any): SalesforceOppRow {
 
 const OPP_COLS =
   `Id, Name, StageName, Tipo_de_NF__c, Amount, Total__c, Valor_L_q__c, Frete__c, Desconto__c, ` +
-  `CloseDate, CreatedDate, Account.Name, Owner.Name, OwnerId`;
+  `CloseDate, CreatedDate, AccountId, Account.Name, Owner.Name, OwnerId`;
+
 
 function validDate(v: string | null | undefined) {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
