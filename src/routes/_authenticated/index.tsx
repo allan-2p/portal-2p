@@ -208,7 +208,23 @@ function HomePage() {
     refetchOnWindowFocus: false,
   });
   const opps: SalesforceOpportunity[] = oppsQ.data?.records ?? [];
-  const filteredOpps = stageFilter === "all" ? opps : opps.filter((o) => o.stage === stageFilter);
+  const ageMatches = (createdISO: string | null, key: AgeKey) => {
+    if (key === "all") return true;
+    if (!createdISO) return false;
+    const created = new Date(createdISO + "T00:00:00");
+    const ageDays = Math.floor((todayStartRef.getTime() - created.getTime()) / 86400000);
+    if (key === "7d") return ageDays <= 7;
+    if (key === "15-30") return ageDays >= 15 && ageDays <= 30;
+    if (key === "30-60") return ageDays > 30 && ageDays <= 60;
+    if (key === "60+") return ageDays > 60;
+    return true;
+  };
+  const todayStartRef = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const filteredOpps = (stageFilter === "all" ? opps : opps.filter((o) => o.stage === stageFilter))
+    .filter((o) => ageMatches(o.createdDate, oppsAgeFilter))
+    .slice()
+    .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
   const oppsTotal = filteredOpps.reduce((a, b) => a + (b.amount ?? 0), 0);
 
   const fetchForecasts = useServerFn(getSalesforceForecasts);
@@ -219,16 +235,31 @@ function HomePage() {
     refetchOnWindowFocus: false,
   });
   const forecasts: SalesforceOpportunity[] = forecastsQ.data?.records ?? [];
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const filteredForecasts = forecasts.filter((f) => {
-    if (!f.forecastDate) return false;
-    const d = new Date(f.forecastDate + "T00:00:00");
-    const diff = Math.round((d.getTime() - todayStart.getTime()) / 86400000);
-    if (forecastFilter === "7d") return diff >= 0 && diff <= 7;
-    if (forecastFilter === "30d") return diff >= 0 && diff <= 30;
-    if (forecastFilter === "atrasados") return diff < 0;
-    return true;
-  });
+  const todayStart = todayStartRef;
+  // Início da semana atual (segunda) e fim (domingo)
+  const weekStart = new Date(todayStart);
+  const dow = (weekStart.getDay() + 6) % 7; // 0 = segunda
+  weekStart.setDate(weekStart.getDate() - dow);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const filteredForecasts = forecasts
+    .filter((f) => {
+      if (forecastFilter === "semana") {
+        if (!f.forecastDate) return false;
+        const d = new Date(f.forecastDate + "T00:00:00");
+        return d.getTime() >= weekStart.getTime() && d.getTime() <= weekEnd.getTime();
+      }
+      if (forecastFilter === "atrasados") {
+        if (!f.forecastDate) return false;
+        const d = new Date(f.forecastDate + "T00:00:00");
+        return d.getTime() < todayStart.getTime();
+      }
+      return ageMatches(f.createdDate, forecastFilter);
+    })
+    .slice()
+    .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
+
 
   // ---- Meta do mês atual (do banco) ----
   const fetchMonthGoal = useServerFn(getMonthGoalTotal);
