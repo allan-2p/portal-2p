@@ -679,23 +679,28 @@ function HomePage() {
 
       <InteractionQuickDialog
         task={interactionTask}
+        existing={interactionTask ? taskInteractions[interactionTask.id] ?? null : null}
         onClose={() => setInteractionTask(null)}
-        onDone={() => {
+        onSaved={(state) => {
+          if (interactionTask) setTaskInteraction(interactionTask.id, state);
           setInteractionTask(null);
-          queryClient.invalidateQueries({ queryKey: ["sf-home-interactions"] });
         }}
       />
 
       <CompleteTaskDialog
         task={completeTask}
-        hasInteraction={completeTask ? interactionsCountFor(completeTask) > 0 : false}
+        existing={completeTask ? taskInteractions[completeTask.id] ?? null : null}
         onClose={() => setCompleteTask(null)}
+        onSaveInteraction={(state) => {
+          if (completeTask) setTaskInteraction(completeTask.id, state);
+        }}
         onDone={() => {
+          if (completeTask) setTaskInteraction(completeTask.id, null);
           setCompleteTask(null);
           queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
-          queryClient.invalidateQueries({ queryKey: ["sf-home-interactions"] });
         }}
       />
+
     </AppLayout>
   );
 }
