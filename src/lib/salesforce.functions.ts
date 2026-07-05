@@ -127,7 +127,7 @@ export const getSalesforceTasks = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const ownerClause = validId(data.ownerId) ? ` AND OwnerId = '${data.ownerId}'` : "";
     const soql =
-      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Type, ` +
+      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, ` +
       `Who.Name, WhoId, What.Name, WhatId, Owner.Name, OwnerId ` +
       `FROM Task ` +
       `WHERE Status = 'Open' AND ActivityDate >= ${data.start} AND ActivityDate <= ${data.end}${ownerClause} ` +
@@ -140,7 +140,7 @@ export const getSalesforceTasks = createServerFn({ method: "GET" })
       status: r.Status ?? null,
       priority: r.Priority ?? null,
       description: r.Description ?? null,
-      type: r.Type ?? null,
+      type: null,
       who: r.Who?.Name ?? null,
       whoId: r.WhoId ?? null,
       what: r.What?.Name ?? null,
@@ -178,14 +178,14 @@ export const getSalesforceInteractionsFor = createServerFn({ method: "GET" })
     if (whoIds.length) idClauses.push(`WhoId IN (${whoIds.map((i) => `'${i}'`).join(",")})`);
     clauses.push(`(${idClauses.join(" OR ")})`);
     const soql =
-      `SELECT Id, Subject, Type, ActivityDate, Description, WhatId, WhoId, Owner.Name ` +
+      `SELECT Id, Subject, ActivityDate, Description, WhatId, WhoId, Owner.Name ` +
       `FROM Task WHERE ${clauses.join(" AND ")} ORDER BY LastModifiedDate DESC LIMIT 500`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     const records: SalesforceInteraction[] = (res?.records ?? []).map((r: any) => ({
       id: r.Id,
       date: r.ActivityDate ?? null,
       subject: r.Subject ?? "(sem assunto)",
-      type: r.Type ?? null,
+      type: null,
       description: r.Description ?? null,
       whatId: r.WhatId ?? null,
       whoId: r.WhoId ?? null,
@@ -225,7 +225,7 @@ function buildTaskBody(p: TaskPayload) {
   if (p.activityDate) body.ActivityDate = p.activityDate;
   if (p.priority) body.Priority = p.priority;
   if (p.status) body.Status = p.status;
-  if (p.type) body.Type = p.type;
+  // Task.Type não existe nesta org; ignoramos p.type intencionalmente.
   if (p.description) body.Description = p.description;
   if (validId(p.whatId)) body.WhatId = p.whatId;
   if (validId(p.whoId)) body.WhoId = p.whoId;
