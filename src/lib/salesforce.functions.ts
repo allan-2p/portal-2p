@@ -339,6 +339,7 @@ export type SalesforceOpportunity = {
   amount: number | null;
   closeDate: string | null;
   forecastDate: string | null;
+  createdDate: string | null;
   probability: number | null;
   isClosed: boolean;
   account: string | null;
@@ -354,6 +355,7 @@ function mapOpp(r: any): SalesforceOpportunity {
     amount: typeof r.Amount === "number" ? r.Amount : null,
     closeDate: r.CloseDate ?? null,
     forecastDate: r.Previsao_de_Fechamento__c ?? null,
+    createdDate: r.CreatedDate ? String(r.CreatedDate).slice(0, 10) : null,
     probability: typeof r.Probability === "number" ? r.Probability : null,
     isClosed: !!r.IsClosed,
     account: r.Account?.Name ?? null,
@@ -361,6 +363,7 @@ function mapOpp(r: any): SalesforceOpportunity {
     ownerId: r.OwnerId ?? null,
   };
 }
+
 
 export const getSalesforceOpportunities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
