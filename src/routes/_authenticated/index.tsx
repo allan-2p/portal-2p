@@ -970,6 +970,16 @@ function CompleteTaskDialog({
       toast.error("Selecione se conseguiu falar com o cliente.");
       return;
     }
+    if (!interactionAlreadyLogged && !interactionType) {
+      toast.error("Selecione o tipo de interação.");
+      return;
+    }
+    if (createNext) {
+      if (!subject.trim()) { toast.error("Assunto da nova tarefa é obrigatório."); return; }
+      if (!type) { toast.error("Tipo da nova tarefa é obrigatório."); return; }
+      if (!priority) { toast.error("Prioridade da nova tarefa é obrigatória."); return; }
+      if (!date) { toast.error("Vencimento da nova tarefa é obrigatório."); return; }
+    }
     setSaving(true);
     try {
       if (!interactionAlreadyLogged) {
@@ -985,7 +995,7 @@ function CompleteTaskDialog({
         onSaveInteraction({ contacted, type: interactionType, note: interactionNote, ts: Date.now() });
       }
       await completeFn({ data: { taskId: task.id } });
-      if (createNext && subject.trim()) {
+      if (createNext) {
         await createFn({
           data: {
             subject,
@@ -1033,13 +1043,13 @@ function CompleteTaskDialog({
               )}
             </div>
             <div>
-              <Label className="text-xs mb-1.5 block">Conseguiu falar com o cliente?</Label>
+              <Label className="text-xs mb-1.5 block">Conseguiu falar com o cliente? <span className="text-destructive">*</span></Label>
               <ContactedToggle value={contacted} onChange={(v) => { setContacted(v); setInteractionAlreadyLogged(false); }} />
             </div>
             {!interactionAlreadyLogged && (
               <>
                 <div>
-                  <Label className="text-xs mb-1.5 block">Tipo de interação</Label>
+                  <Label className="text-xs mb-1.5 block">Tipo de interação <span className="text-destructive">*</span></Label>
                   <Select value={interactionType} onValueChange={setInteractionType}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -1068,12 +1078,12 @@ function CompleteTaskDialog({
             {createNext && (
               <div className="space-y-2">
                 <div>
-                  <Label className="text-xs">Assunto</Label>
-                  <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+                  <Label className="text-xs">Assunto <span className="text-destructive">*</span></Label>
+                  <Input value={subject} onChange={(e) => setSubject(e.target.value)} required />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <Label className="text-xs">Tipo</Label>
+                    <Label className="text-xs">Tipo <span className="text-destructive">*</span></Label>
                     <Select value={type} onValueChange={setType}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -1082,7 +1092,7 @@ function CompleteTaskDialog({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">Prioridade</Label>
+                    <Label className="text-xs">Prioridade <span className="text-destructive">*</span></Label>
                     <Select value={priority} onValueChange={setPriority}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -1091,8 +1101,8 @@ function CompleteTaskDialog({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">Vencimento</Label>
-                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    <Label className="text-xs">Vencimento <span className="text-destructive">*</span></Label>
+                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
                   </div>
                 </div>
                 <div>
