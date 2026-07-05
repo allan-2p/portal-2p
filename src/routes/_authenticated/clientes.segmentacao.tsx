@@ -118,6 +118,7 @@ function SegmentacaoPage() {
   );
 
   const range = useMemo(() => periodRange(period), [period]);
+  const prevQuarter = useMemo(() => previousQuarterRange(), []);
 
   const orcamentosQ = useQuery({
     queryKey: ["sf-segmentacao-orcamentos", range.start, range.end],
@@ -129,6 +130,13 @@ function SegmentacaoPage() {
     queryFn: () => fetchVendas({ data: range }),
     staleTime: 60_000,
   });
+  // Base da projeção: vendas do trimestre anterior — mesmo cálculo da tabela Projeções.
+  const prevQuarterVendasQ = useQuery({
+    queryKey: ["sf-segmentacao-prev-vendas", prevQuarter.start, prevQuarter.end],
+    queryFn: () => fetchVendas({ data: prevQuarter }),
+    staleTime: 5 * 60_000,
+  });
+
 
   // Mapa accountId -> ownerId da conta (filtro de vendedor é o DONO DA CONTA).
   const accountOwnerById = useMemo(() => {
