@@ -29,7 +29,6 @@ import {
   getSalesforceOpportunities,
   getSalesforceForecasts,
   getSalesforceVendas,
-  getSalesforceInteractionsFor,
   completeSalesforceTask,
   createSalesforceTask,
   logSalesforceInteraction,
@@ -39,6 +38,22 @@ import {
   type SalesforceTask,
 } from "@/lib/salesforce.functions";
 import { getMonthGoalTotal } from "@/lib/admin.functions";
+
+type TaskInteractionState = { contacted: "yes" | "no"; note?: string; ts: number };
+const TASK_INTERACTIONS_KEY = "portal2p:task-interactions:v1";
+function loadTaskInteractions(): Record<string, TaskInteractionState> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(TASK_INTERACTIONS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function persistTaskInteractions(map: Record<string, TaskInteractionState>) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(TASK_INTERACTIONS_KEY, JSON.stringify(map)); } catch {}
+}
+
 
 
 
@@ -113,35 +128,21 @@ function HomePage() {
   });
   const sfTasks = tasksQ.data?.records ?? [];
 
-  // Interações completadas recentes para as mesmas contas/leads (marcador nas tarefas)
-  const fetchInteractions = useServerFn(getSalesforceInteractionsFor);
-  const interactionIds = useMemo(() => {
-    const whatIds = Array.from(new Set(sfTasks.map((t) => t.whatId).filter(Boolean) as string[])).sort();
-    const whoIds = Array.from(new Set(sfTasks.map((t) => t.whoId).filter(Boolean) as string[])).sort();
-    return { whatIds, whoIds };
-  }, [sfTasks]);
-  const interactionsQ = useQuery({
-    queryKey: ["sf-home-interactions", interactionIds.whatIds.join(","), interactionIds.whoIds.join(",")],
-    queryFn: () => fetchInteractions({ data: { ...interactionIds, sinceDays: 60 } }),
-    enabled: interactionIds.whatIds.length > 0 || interactionIds.whoIds.length > 0,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-  const interactionsByKey = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of interactionsQ.data?.records ?? []) {
-      if (r.whatId) map.set(`w:${r.whatId}`, (map.get(`w:${r.whatId}`) ?? 0) + 1);
-      if (r.whoId) map.set(`p:${r.whoId}`, (map.get(`p:${r.whoId}`) ?? 0) + 1);
-    }
-    return map;
-  }, [interactionsQ.data]);
-  const interactionsCountFor = (t: SalesforceTask) =>
-    (t.whatId ? interactionsByKey.get(`w:${t.whatId}`) ?? 0 : 0) +
-    (t.whoId ? interactionsByKey.get(`p:${t.whoId}`) ?? 0 : 0);
-
+  // Interação por tarefa (persistida localmente) — "Consegui falar" / "Não consegui falar"
   const queryClient = useQueryClient();
+  const [taskInteractions, setTaskInteractions] = useState<Record<string, TaskInteractionState>>(() => loadTaskInteractions());
+  const setTaskInteraction = (taskId: string, s: TaskInteractionState | null) => {
+    setTaskInteractions((prev) => {
+      const next = { ...prev };
+      if (s === null) delete next[taskId];
+      else next[taskId] = s;
+      persistTaskInteractions(next);
+      return next;
+    });
+  };
   const [interactionTask, setInteractionTask] = useState<SalesforceTask | null>(null);
   const [completeTask, setCompleteTask] = useState<SalesforceTask | null>(null);
+
 
 
   const fetchOpps = useServerFn(getSalesforceOpportunities);
@@ -364,7 +365,7 @@ function HomePage() {
                 </div>
               )}
               {sfTasks.map((t) => {
-                const count = interactionsCountFor(t);
+                const inter = taskInteractions[t.id] ?? null;
                 return (
                 <div key={t.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
                   <div className="flex items-start gap-3">
@@ -380,12 +381,18 @@ function HomePage() {
                         <div className="min-w-0">
                           <div className="text-sm font-semibold truncate flex items-center gap-1.5">
                             {t.subject}
-                            {count > 0 && (
+                            {inter && (
                               <span
-                                title={`${count} interação(ões) registrada(s) recentemente`}
-                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-success/15 text-success font-medium"
+                                title={inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}
+                                className={cn(
+                                  "inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                                  inter.contacted === "yes"
+                                    ? "bg-success/15 text-success"
+                                    : "bg-warning/20 text-[color:var(--warning)]",
+                                )}
                               >
-                                <Check className="h-2.5 w-2.5" /> Interagido{count > 1 ? ` · ${count}` : ""}
+                                <Check className="h-2.5 w-2.5" />
+                                {inter.contacted === "yes" ? "Falou" : "Não falou"}
                               </span>
                             )}
                           </div>
@@ -672,28 +679,32 @@ function HomePage() {
 
       <InteractionQuickDialog
         task={interactionTask}
+        existing={interactionTask ? taskInteractions[interactionTask.id] ?? null : null}
         onClose={() => setInteractionTask(null)}
-        onDone={() => {
+        onSaved={(state) => {
+          if (interactionTask) setTaskInteraction(interactionTask.id, state);
           setInteractionTask(null);
-          queryClient.invalidateQueries({ queryKey: ["sf-home-interactions"] });
         }}
       />
 
       <CompleteTaskDialog
         task={completeTask}
-        hasInteraction={completeTask ? interactionsCountFor(completeTask) > 0 : false}
+        existing={completeTask ? taskInteractions[completeTask.id] ?? null : null}
         onClose={() => setCompleteTask(null)}
+        onSaveInteraction={(state) => {
+          if (completeTask) setTaskInteraction(completeTask.id, state);
+        }}
         onDone={() => {
+          if (completeTask) setTaskInteraction(completeTask.id, null);
           setCompleteTask(null);
           queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
-          queryClient.invalidateQueries({ queryKey: ["sf-home-interactions"] });
         }}
       />
+
     </AppLayout>
   );
 }
 
-const INTERACTION_TYPES = ["Ligação", "E-mail", "Reunião", "Visita", "WhatsApp", "Outro"] as const;
 const TASK_TYPES = ["Ligação", "E-mail", "Reunião", "Visita", "Follow-up", "Outro"] as const;
 const PRIORITIES = ["Alta", "Normal", "Baixa"] as const;
 
@@ -702,45 +713,81 @@ function todayKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function ContactedToggle({
+  value,
+  onChange,
+}: {
+  value: "yes" | "no" | null;
+  onChange: (v: "yes" | "no") => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <button
+        type="button"
+        onClick={() => onChange("yes")}
+        className={cn(
+          "px-3 py-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors",
+          value === "yes"
+            ? "border-success bg-success/15 text-success"
+            : "border-border bg-surface hover:bg-surface-2 text-muted-foreground",
+        )}
+      >
+        <Check className="h-3.5 w-3.5" /> Falei com o cliente
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("no")}
+        className={cn(
+          "px-3 py-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors",
+          value === "no"
+            ? "border-[color:var(--warning)] bg-warning/20 text-[color:var(--warning)]"
+            : "border-border bg-surface hover:bg-surface-2 text-muted-foreground",
+        )}
+      >
+        <AlertTriangle className="h-3.5 w-3.5" /> Não consegui falar
+      </button>
+    </div>
+  );
+}
+
 function InteractionQuickDialog({
   task,
+  existing,
   onClose,
-  onDone,
+  onSaved,
 }: {
   task: SalesforceTask | null;
+  existing: TaskInteractionState | null;
   onClose: () => void;
-  onDone: () => void;
+  onSaved: (state: TaskInteractionState) => void;
 }) {
   const logInteraction = useServerFn(logSalesforceInteraction);
-  const [subject, setSubject] = useState("");
-  const [type, setType] = useState<string>("Ligação");
-  const [description, setDescription] = useState("");
+  const [contacted, setContacted] = useState<"yes" | "no" | null>(null);
+  const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
   useMemo(() => {
     if (task) {
-      setSubject(`Interação — ${task.what ?? task.who ?? task.subject}`);
-      setType("Ligação");
-      setDescription("");
+      setContacted(existing?.contacted ?? null);
+      setNote(existing?.note ?? "");
     }
   }, [task?.id]);
 
   const submit = async () => {
-    if (!task) return;
+    if (!task || !contacted) return;
     setSaving(true);
     try {
       await logInteraction({
         data: {
-          subject,
-          type,
-          description,
+          subject: `${contacted === "yes" ? "Interação — Falei" : "Interação — Sem contato"}: ${task.subject}`,
+          description: note,
           whatId: task.whatId,
           whoId: task.whoId,
           ownerId: task.ownerId,
         },
       });
       toast.success("Interação registrada no Salesforce.");
-      onDone();
+      onSaved({ contacted, note, ts: Date.now() });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao registrar interação.");
     } finally {
@@ -754,31 +801,22 @@ function InteractionQuickDialog({
         <DialogHeader>
           <DialogTitle>Registrar interação</DialogTitle>
           <DialogDescription>
-            {task?.what ?? task?.who ?? "Registrar interação no Salesforce"}
+            {task?.subject} — {task?.what ?? task?.who ?? "—"}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label>Assunto</Label>
-            <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
-          </div>
-          <div>
-            <Label>Tipo</Label>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {INTERACTION_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Label className="mb-1.5 block">Conseguiu falar com o cliente?</Label>
+            <ContactedToggle value={contacted} onChange={setContacted} />
           </div>
           <div>
             <Label>Comentários</Label>
-            <Textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Textarea rows={4} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Detalhes da conversa, próximos passos…" />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button onClick={submit} disabled={saving || !subject.trim()}>
+          <Button onClick={submit} disabled={saving || !contacted}>
             {saving && <Loader2 className="h-3 w-3 animate-spin" />}
             Registrar
           </Button>
@@ -790,22 +828,24 @@ function InteractionQuickDialog({
 
 function CompleteTaskDialog({
   task,
-  hasInteraction,
+  existing,
   onClose,
+  onSaveInteraction,
   onDone,
 }: {
   task: SalesforceTask | null;
-  hasInteraction: boolean;
+  existing: TaskInteractionState | null;
   onClose: () => void;
+  onSaveInteraction: (state: TaskInteractionState) => void;
   onDone: () => void;
 }) {
   const completeFn = useServerFn(completeSalesforceTask);
   const createFn = useServerFn(createSalesforceTask);
   const logFn = useServerFn(logSalesforceInteraction);
 
-  const [logNow, setLogNow] = useState(false);
-  const [interactionType, setInteractionType] = useState<string>("Ligação");
+  const [contacted, setContacted] = useState<"yes" | "no" | null>(null);
   const [interactionNote, setInteractionNote] = useState("");
+  const [interactionAlreadyLogged, setInteractionAlreadyLogged] = useState(false);
 
   const [createNext, setCreateNext] = useState(true);
   const [subject, setSubject] = useState("");
@@ -817,9 +857,9 @@ function CompleteTaskDialog({
 
   useMemo(() => {
     if (task) {
-      setLogNow(!hasInteraction);
-      setInteractionType("Ligação");
-      setInteractionNote("");
+      setContacted(existing?.contacted ?? null);
+      setInteractionNote(existing?.note ?? "");
+      setInteractionAlreadyLogged(!!existing);
       setCreateNext(true);
       setSubject(`Follow-up — ${task.what ?? task.who ?? task.subject}`);
       setType("Follow-up");
@@ -833,19 +873,23 @@ function CompleteTaskDialog({
 
   const submit = async () => {
     if (!task) return;
+    if (!contacted) {
+      toast.error("Selecione se conseguiu falar com o cliente.");
+      return;
+    }
     setSaving(true);
     try {
-      if (logNow && interactionNote.trim().length + interactionType.length > 0) {
+      if (!interactionAlreadyLogged) {
         await logFn({
           data: {
-            subject: `Interação — ${task.what ?? task.who ?? task.subject}`,
-            type: interactionType,
+            subject: `${contacted === "yes" ? "Interação — Falei" : "Interação — Sem contato"}: ${task.subject}`,
             description: interactionNote,
             whatId: task.whatId,
             whoId: task.whoId,
             ownerId: task.ownerId,
           },
         });
+        onSaveInteraction({ contacted, note: interactionNote, ts: Date.now() });
       }
       await completeFn({ data: { taskId: task.id } });
       if (createNext && subject.trim()) {
@@ -887,33 +931,22 @@ function CompleteTaskDialog({
           <div className="rounded-lg border border-border p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold flex items-center gap-2">
-                <MessageSquare className="h-3.5 w-3.5 text-primary" /> Registrar interação
+                <MessageSquare className="h-3.5 w-3.5 text-primary" /> Interação
               </div>
-              {hasInteraction && (
+              {interactionAlreadyLogged && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-success/15 text-success font-medium flex items-center gap-1">
                   <Check className="h-2.5 w-2.5" /> Já registrada
                 </span>
               )}
-              <label className="text-xs flex items-center gap-1 cursor-pointer">
-                <input type="checkbox" checked={logNow} onChange={(e) => setLogNow(e.target.checked)} />
-                Registrar agora
-              </label>
             </div>
-            {logNow && (
-              <div className="space-y-2">
-                <div>
-                  <Label className="text-xs">Tipo</Label>
-                  <Select value={interactionType} onValueChange={setInteractionType}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {INTERACTION_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs">Comentários</Label>
-                  <Textarea rows={3} value={interactionNote} onChange={(e) => setInteractionNote(e.target.value)} />
-                </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Conseguiu falar com o cliente?</Label>
+              <ContactedToggle value={contacted} onChange={(v) => { setContacted(v); setInteractionAlreadyLogged(false); }} />
+            </div>
+            {!interactionAlreadyLogged && (
+              <div>
+                <Label className="text-xs">Comentários</Label>
+                <Textarea rows={3} value={interactionNote} onChange={(e) => setInteractionNote(e.target.value)} />
               </div>
             )}
           </div>
@@ -972,7 +1005,7 @@ function CompleteTaskDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
-          <Button onClick={submit} disabled={saving}>
+          <Button onClick={submit} disabled={saving || !contacted}>
             {saving && <Loader2 className="h-3 w-3 animate-spin" />}
             Concluir tarefa
           </Button>
@@ -981,6 +1014,7 @@ function CompleteTaskDialog({
     </Dialog>
   );
 }
+
 
 
 function MiniKpi({ label, value, sub, trend }: { label: string; value: string; sub: string; trend?: number }) {
