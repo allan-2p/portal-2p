@@ -662,17 +662,24 @@ function HomePage() {
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Clientes com sinais de oportunidade ou risco</p>
               </div>
-              <span className="text-xs text-muted-foreground">{offRadarInsights.length} sinais</span>
+              <span className="text-xs text-muted-foreground">
+                {atlasRadarInsights.length} sinais
+                {accountsQ.isFetching && <Loader2 className="h-3 w-3 animate-spin inline ml-1.5 align-[-2px]" />}
+              </span>
             </div>
             <div className="space-y-3">
-              {offRadarInsights.map((i) => {
-                const client = clients.find((c) => c.name === i.client);
+              {atlasRadarInsights.length === 0 && !accountsQ.isLoading && (
+                <div className="text-xs text-muted-foreground py-4 text-center">
+                  Nenhum sinal para a carteira selecionada.
+                </div>
+              )}
+              {atlasRadarInsights.map((i) => {
                 const meta = i.type === "opportunity"
                   ? { Icon: TrendingUp, color: "text-success", bg: "bg-success/15", label: "Oportunidade" }
                   : i.type === "risk"
                   ? { Icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/15", label: "Risco" }
                   : i.type === "trend"
-                  ? { Icon: Info, color: "text-[color:var(--atlas)]", bg: "bg-[color:var(--atlas)]/15", label: "Tendência" }
+                  ? { Icon: Info, color: "text-[color:var(--atlas)]", bg: "bg-[color:var(--atlas)]/15", label: "Observação" }
                   : { Icon: TrendingUp, color: "text-primary", bg: "bg-primary/15", label: "Ação" };
                 const Icon = meta.Icon;
                 return (
@@ -687,17 +694,14 @@ function HomePage() {
                           {i.impact && <span className="ml-auto text-[10px] font-medium text-primary">{i.impact}</span>}
                         </div>
                         <div className="text-sm font-semibold leading-snug">{i.title}</div>
-                        {i.client && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {i.client}{client && <> · última interação {client.lastInteraction}</>}
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{i.description}</p>
+                        <div className="text-xs text-muted-foreground mt-0.5">{i.client}</div>
+                        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed whitespace-pre-line">{i.description}</p>
                       </div>
                     </div>
                   </div>
                 );
               })}
+
             </div>
           </div>
         </div>
