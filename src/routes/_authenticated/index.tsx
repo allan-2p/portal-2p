@@ -39,7 +39,7 @@ import {
 } from "@/lib/salesforce.functions";
 import { getMonthGoalTotal } from "@/lib/admin.functions";
 
-type TaskInteractionState = { contacted: "yes" | "no"; note?: string; ts: number };
+type TaskInteractionState = { contacted: "yes" | "no"; type?: string; note?: string; ts: number };
 const TASK_INTERACTIONS_KEY = "portal2p:task-interactions:v1";
 function loadTaskInteractions(): Record<string, TaskInteractionState> {
   if (typeof window === "undefined") return {};
@@ -87,6 +87,55 @@ function fmtKey(d: Date) {
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
+
+function buildAtlasSuggestion(
+  t: SalesforceTask,
+  inter: TaskInteractionState | null,
+  todayStart: Date,
+): string | null {
+  const parts: string[] = [];
+
+  // Sinais do Atlas cruzados por nome de cliente/conta
+  const clientHay = `${t.what ?? ""} ${t.who ?? ""}`.toLowerCase();
+  const matchedInsight = atlasInsights.find(
+    (i) => i.client && clientHay.includes(i.client.toLowerCase()),
+  );
+  const matchedClient = clients.find(
+    (c) => c.name && clientHay.includes(c.name.toLowerCase()),
+  );
+
+  if (matchedInsight) {
+    parts.push(matchedInsight.description || matchedInsight.title);
+  }
+
+  // Atraso
+  const due = new Date(t.date + "T00:00:00");
+  const diffDays = Math.round((due.getTime() - todayStart.getTime()) / 86400000);
+  if (diffDays < 0) {
+    parts.push(`Tarefa em atraso há ${Math.abs(diffDays)}d — priorize contato hoje.`);
+  }
+
+  // Última tentativa sem contato
+  if (inter?.contacted === "no") {
+    parts.push("Última tentativa sem contato — tente novo horário ou canal (WhatsApp/E-mail).");
+  }
+
+  // Alta prioridade
+  if (t.priority?.toLowerCase().startsWith("alt") && !parts.length) {
+    parts.push("Alta prioridade — considere ligação direta agora.");
+  }
+
+  // Contexto do cliente (última interação)
+  if (matchedClient?.lastInteraction && parts.length) {
+    parts.push(`Última interação registrada: ${matchedClient.lastInteraction}.`);
+  }
+
+  if (!parts.length) return null;
+  return parts.join(" ");
+}
+
+
+
 
 
 function HomePage() {
@@ -366,6 +415,7 @@ function HomePage() {
               )}
               {sfTasks.map((t) => {
                 const inter = taskInteractions[t.id] ?? null;
+                const suggestion = buildAtlasSuggestion(t, inter, todayStart);
                 return (
                 <div key={t.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
                   <div className="flex items-start gap-3">
@@ -383,7 +433,7 @@ function HomePage() {
                             {t.subject}
                             {inter && (
                               <span
-                                title={inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}
+                                title={`${inter.type ?? "Interação"} — ${inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}`}
                                 className={cn(
                                   "inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium",
                                   inter.contacted === "yes"
@@ -392,7 +442,7 @@ function HomePage() {
                                 )}
                               >
                                 <Check className="h-2.5 w-2.5" />
-                                {inter.contacted === "yes" ? "Falou" : "Não falou"}
+                                {inter.type ? `${inter.type} · ` : ""}{inter.contacted === "yes" ? "Falou" : "Não falou"}
                               </span>
                             )}
                           </div>
@@ -412,6 +462,14 @@ function HomePage() {
                       </div>
                       {t.owner && (
                         <div className="text-[11px] text-muted-foreground mt-1">Responsável: {t.owner}</div>
+                      )}
+                      {suggestion && (
+                        <div className="mt-2 rounded-lg bg-[color:var(--atlas)]/10 border border-[color:var(--atlas)]/25 p-2 flex items-start gap-1.5">
+                          <Sparkles className="h-3 w-3 text-[color:var(--atlas)] mt-0.5 shrink-0" />
+                          <div className="text-[11px] text-foreground/90 leading-snug">
+                            <span className="font-semibold text-[color:var(--atlas)]">Atlas: </span>{suggestion}
+                          </div>
+                        </div>
                       )}
                       <div className="flex gap-1.5 mt-2.5">
                         <button
@@ -726,10 +784,10 @@ function ContactedToggle({
         type="button"
         onClick={() => onChange("yes")}
         className={cn(
-          "px-3 py-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors",
+          "px-3 py-2 rounded-lg border-2 text-sm font-medium flex items-center justify-center gap-2 transition-all",
           value === "yes"
-            ? "border-success bg-success/15 text-success"
-            : "border-border bg-surface hover:bg-surface-2 text-muted-foreground",
+            ? "border-success bg-success/25 text-success ring-2 ring-success/40 shadow-sm"
+            : "border-success/40 bg-success/10 text-success/80 hover:bg-success/15",
         )}
       >
         <Check className="h-3.5 w-3.5" /> Falei com o cliente
@@ -738,10 +796,10 @@ function ContactedToggle({
         type="button"
         onClick={() => onChange("no")}
         className={cn(
-          "px-3 py-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors",
+          "px-3 py-2 rounded-lg border-2 text-sm font-medium flex items-center justify-center gap-2 transition-all",
           value === "no"
-            ? "border-[color:var(--warning)] bg-warning/20 text-[color:var(--warning)]"
-            : "border-border bg-surface hover:bg-surface-2 text-muted-foreground",
+            ? "border-[color:var(--warning)] bg-warning/30 text-[color:var(--warning)] ring-2 ring-warning/40 shadow-sm"
+            : "border-warning/40 bg-warning/10 text-[color:var(--warning)]/80 hover:bg-warning/20",
         )}
       >
         <AlertTriangle className="h-3.5 w-3.5" /> Não consegui falar
@@ -749,6 +807,8 @@ function ContactedToggle({
     </div>
   );
 }
+
+const INTERACTION_TYPES = ["Ligação", "Mensagem", "E-mail", "Reunião", "Visita", "Outro"] as const;
 
 function InteractionQuickDialog({
   task,
@@ -763,12 +823,14 @@ function InteractionQuickDialog({
 }) {
   const logInteraction = useServerFn(logSalesforceInteraction);
   const [contacted, setContacted] = useState<"yes" | "no" | null>(null);
+  const [interactionType, setInteractionType] = useState<string>("Ligação");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
   useMemo(() => {
     if (task) {
       setContacted(existing?.contacted ?? null);
+      setInteractionType(existing?.type ?? "Ligação");
       setNote(existing?.note ?? "");
     }
   }, [task?.id]);
@@ -779,7 +841,7 @@ function InteractionQuickDialog({
     try {
       await logInteraction({
         data: {
-          subject: `${contacted === "yes" ? "Interação — Falei" : "Interação — Sem contato"}: ${task.subject}`,
+          subject: `${interactionType} — ${contacted === "yes" ? "Falei" : "Sem contato"}: ${task.subject}`,
           description: note,
           whatId: task.whatId,
           whoId: task.whoId,
@@ -787,7 +849,7 @@ function InteractionQuickDialog({
         },
       });
       toast.success("Interação registrada no Salesforce.");
-      onSaved({ contacted, note, ts: Date.now() });
+      onSaved({ contacted, type: interactionType, note, ts: Date.now() });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao registrar interação.");
     } finally {
@@ -808,6 +870,15 @@ function InteractionQuickDialog({
           <div>
             <Label className="mb-1.5 block">Conseguiu falar com o cliente?</Label>
             <ContactedToggle value={contacted} onChange={setContacted} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block">Tipo de interação</Label>
+            <Select value={interactionType} onValueChange={setInteractionType}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {INTERACTION_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Comentários</Label>
@@ -844,6 +915,7 @@ function CompleteTaskDialog({
   const logFn = useServerFn(logSalesforceInteraction);
 
   const [contacted, setContacted] = useState<"yes" | "no" | null>(null);
+  const [interactionType, setInteractionType] = useState<string>("Ligação");
   const [interactionNote, setInteractionNote] = useState("");
   const [interactionAlreadyLogged, setInteractionAlreadyLogged] = useState(false);
 
@@ -858,6 +930,7 @@ function CompleteTaskDialog({
   useMemo(() => {
     if (task) {
       setContacted(existing?.contacted ?? null);
+      setInteractionType(existing?.type ?? "Ligação");
       setInteractionNote(existing?.note ?? "");
       setInteractionAlreadyLogged(!!existing);
       setCreateNext(true);
@@ -882,14 +955,14 @@ function CompleteTaskDialog({
       if (!interactionAlreadyLogged) {
         await logFn({
           data: {
-            subject: `${contacted === "yes" ? "Interação — Falei" : "Interação — Sem contato"}: ${task.subject}`,
+            subject: `${interactionType} — ${contacted === "yes" ? "Falei" : "Sem contato"}: ${task.subject}`,
             description: interactionNote,
             whatId: task.whatId,
             whoId: task.whoId,
             ownerId: task.ownerId,
           },
         });
-        onSaveInteraction({ contacted, note: interactionNote, ts: Date.now() });
+        onSaveInteraction({ contacted, type: interactionType, note: interactionNote, ts: Date.now() });
       }
       await completeFn({ data: { taskId: task.id } });
       if (createNext && subject.trim()) {
@@ -944,10 +1017,21 @@ function CompleteTaskDialog({
               <ContactedToggle value={contacted} onChange={(v) => { setContacted(v); setInteractionAlreadyLogged(false); }} />
             </div>
             {!interactionAlreadyLogged && (
-              <div>
-                <Label className="text-xs">Comentários</Label>
-                <Textarea rows={3} value={interactionNote} onChange={(e) => setInteractionNote(e.target.value)} />
-              </div>
+              <>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Tipo de interação</Label>
+                  <Select value={interactionType} onValueChange={setInteractionType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {INTERACTION_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Comentários</Label>
+                  <Textarea rows={3} value={interactionNote} onChange={(e) => setInteractionNote(e.target.value)} />
+                </div>
+              </>
             )}
           </div>
 
