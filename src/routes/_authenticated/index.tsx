@@ -857,6 +857,7 @@ function CompleteTaskDialog({
   const logFn = useServerFn(logSalesforceInteraction);
 
   const [contacted, setContacted] = useState<"yes" | "no" | null>(null);
+  const [interactionType, setInteractionType] = useState<string>("Ligação");
   const [interactionNote, setInteractionNote] = useState("");
   const [interactionAlreadyLogged, setInteractionAlreadyLogged] = useState(false);
 
