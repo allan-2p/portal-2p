@@ -246,7 +246,7 @@ function SegmentacaoPage() {
       : activeOnly.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount]);
+  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount, quarterProjectionById, quarterProjectionByName]);
 
 
 
