@@ -1043,13 +1043,13 @@ function CompleteTaskDialog({
               )}
             </div>
             <div>
-              <Label className="text-xs mb-1.5 block">Conseguiu falar com o cliente?</Label>
+              <Label className="text-xs mb-1.5 block">Conseguiu falar com o cliente? <span className="text-destructive">*</span></Label>
               <ContactedToggle value={contacted} onChange={(v) => { setContacted(v); setInteractionAlreadyLogged(false); }} />
             </div>
             {!interactionAlreadyLogged && (
               <>
                 <div>
-                  <Label className="text-xs mb-1.5 block">Tipo de interação</Label>
+                  <Label className="text-xs mb-1.5 block">Tipo de interação <span className="text-destructive">*</span></Label>
                   <Select value={interactionType} onValueChange={setInteractionType}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -1078,12 +1078,12 @@ function CompleteTaskDialog({
             {createNext && (
               <div className="space-y-2">
                 <div>
-                  <Label className="text-xs">Assunto</Label>
-                  <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+                  <Label className="text-xs">Assunto <span className="text-destructive">*</span></Label>
+                  <Input value={subject} onChange={(e) => setSubject(e.target.value)} required />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <Label className="text-xs">Tipo</Label>
+                    <Label className="text-xs">Tipo <span className="text-destructive">*</span></Label>
                     <Select value={type} onValueChange={setType}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -1092,7 +1092,7 @@ function CompleteTaskDialog({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">Prioridade</Label>
+                    <Label className="text-xs">Prioridade <span className="text-destructive">*</span></Label>
                     <Select value={priority} onValueChange={setPriority}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -1101,9 +1101,18 @@ function CompleteTaskDialog({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">Vencimento</Label>
-                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    <Label className="text-xs">Vencimento <span className="text-destructive">*</span></Label>
+                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
                   </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Comentários</Label>
+                  <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Relacionada a: {task?.what ?? task?.who ?? "—"}
+                </div>
+              </div>
                 </div>
                 <div>
                   <Label className="text-xs">Comentários</Label>
