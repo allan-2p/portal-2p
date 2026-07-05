@@ -872,6 +872,7 @@ function CompleteTaskDialog({
   useMemo(() => {
     if (task) {
       setContacted(existing?.contacted ?? null);
+      setInteractionType(existing?.type ?? "Ligação");
       setInteractionNote(existing?.note ?? "");
       setInteractionAlreadyLogged(!!existing);
       setCreateNext(true);
