@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { orders, kanbanColumns, type Order } from "@/lib/mock-data";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { KanbanSquare, List, Sparkles, Search } from "lucide-react";
+import { AlertTriangle, KanbanSquare, List, Loader2, Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VendedorFilter } from "@/components/vendedor-filter";
-import { getSalesforceSalespeople } from "@/lib/salesforce.functions";
+import { getSalesforcePedidos, PEDIDO_STATUS, type PedidoStatus, type SalesforceOppRow } from "@/lib/salesforce.functions";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
@@ -21,44 +20,78 @@ export const Route = createFileRoute("/_authenticated/pedidos")({
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
 
+type Pedido = {
+  id: string;
+  code: string;
+  title: string;
+  client: string;
+  closing: string;
+  value: number;
+  status: PedidoStatus;
+  owner: string | null;
+};
+
+function isPedidoStatus(status: string | null): status is PedidoStatus {
+  return PEDIDO_STATUS.includes(status as PedidoStatus);
+}
+
+function datePtBr(date: string | null) {
+  if (!date) return "—";
+  return new Date(`${date}T00:00:00`).toLocaleDateString("pt-BR");
+}
+
+function orderCode(row: SalesforceOppRow) {
+  const numberMatch = row.name.match(/\b\d{4,}\b/);
+  return numberMatch?.[0] ?? row.id.slice(-6);
+}
+
+function mapPedido(row: SalesforceOppRow): Pedido | null {
+  if (!isPedidoStatus(row.status)) return null;
+  return {
+    id: row.id,
+    code: orderCode(row),
+    title: row.name,
+    client: row.account ?? "—",
+    closing: datePtBr(row.closeDate),
+    value: row.total ?? row.amount ?? 0,
+    status: row.status,
+    owner: row.owner,
+  };
+}
+
 function PedidosPage() {
   const [view, setView] = useState<"kanban" | "list">("kanban");
   const [search, setSearch] = useState("");
   const [ownerId, setOwnerId] = useState<string>("all");
 
-  const fetchSalespeople = useServerFn(getSalesforceSalespeople);
-  const peopleQ = useQuery({
-    queryKey: ["sf-salespeople"],
-    queryFn: () => fetchSalespeople(),
-    staleTime: 5 * 60_000,
+  const fetchPedidos = useServerFn(getSalesforcePedidos);
+  const pedidosQ = useQuery({
+    queryKey: ["salesforce", "pedidos", ownerId],
+    queryFn: () => fetchPedidos({ data: { ownerId } }),
+    staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-  const people = peopleQ.data?.records ?? [];
 
-  // Mapa determinístico pedido -> vendedor (mock), até integrar OwnerId real dos pedidos.
-  const ownerByOrder = useMemo(() => {
-    const m = new Map<string, string>();
-    if (people.length === 0) return m;
-    for (const o of orders) {
-      let h = 0;
-      for (let i = 0; i < o.id.length; i++) h = (h * 31 + o.id.charCodeAt(i)) >>> 0;
-      m.set(o.id, people[h % people.length].id);
-    }
-    return m;
-  }, [people]);
+  const pedidos = useMemo(
+    () => (pedidosQ.data?.records ?? []).map(mapPedido).filter((o): o is Pedido => Boolean(o)),
+    [pedidosQ.data],
+  );
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    return orders.filter((o) => {
-      if (ownerId !== "all" && ownerByOrder.get(o.id) !== ownerId) return false;
+    return pedidos.filter((o) => {
       if (!s) return true;
       return (
         o.code.toLowerCase().includes(s) ||
         o.title.toLowerCase().includes(s) ||
-        o.client.toLowerCase().includes(s)
+        o.client.toLowerCase().includes(s) ||
+        (o.owner ?? "").toLowerCase().includes(s)
       );
-    });
-  }, [search, ownerId, ownerByOrder]);
+    }).sort((a, b) => b.value - a.value);
+  }, [search, pedidos]);
+
+  const totalValue = filtered.reduce((sum, pedido) => sum + pedido.value, 0);
+  const faturados = filtered.filter((pedido) => pedido.status === "Faturado").length;
 
   return (
     <AppLayout>
@@ -104,51 +137,50 @@ function PedidosPage() {
           </div>
           <div className="text-sm">
             <span className="font-semibold">Atlas: </span>
-            <span className="text-muted-foreground">14 pedidos faturados aguardam coleta — R$ 96,4k. Pedido 40883 (R.V. Energia, R$ 63k) é o de maior impacto, vale priorizar a logística.</span>
+            <span className="text-muted-foreground">
+              {pedidosQ.isLoading
+                ? "Carregando pedidos do Salesforce…"
+                : `${filtered.length} pedidos em curso do Salesforce — ${fmt(totalValue)}. ${faturados} faturados aguardam avanço para coleta.`}
+            </span>
           </div>
         </div>
 
-        {view === "kanban" ? <KanbanView data={filtered} /> : <ListView data={filtered} />}
+        {pedidosQ.isLoading ? (
+          <div className="glass rounded-2xl p-8 flex items-center justify-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Carregando pedidos do Salesforce…
+          </div>
+        ) : pedidosQ.error ? (
+          <div className="glass rounded-2xl p-8 flex items-center gap-3 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            Não foi possível carregar os pedidos do Salesforce.
+          </div>
+        ) : view === "kanban" ? <KanbanView data={filtered} /> : <ListView data={filtered} />}
       </div>
     </AppLayout>
   );
 }
 
-const statusCount: Record<Order["status"], number> = {
-  "Aguard. Pagamento": 6,
-  "Processando": 3,
-  "Separação": 10,
-  "Faturado": 14,
-  "Coletado": 101,
-};
-
-const STATUS_HEADER: Record<Order["status"], string> = {
-  "Aguard. Pagamento": "bg-emerald-500 text-white",
-  "Processando": "bg-yellow-400 text-neutral-900",
-  "Separação": "bg-sky-400 text-white",
-  "Faturado": "bg-black text-white",
-  "Coletado": "bg-green-500 text-white",
-};
-
-const STATUS_PILL: Record<Order["status"], string> = {
-  "Aguard. Pagamento": "bg-emerald-500 text-white",
-  "Processando": "bg-yellow-400 text-neutral-900",
-  "Separação": "bg-sky-400 text-white",
-  "Faturado": "bg-black text-white",
-  "Coletado": "bg-green-500 text-white",
+const STATUS_STYLE: Record<PedidoStatus, { bg: string; fg: string }> = {
+  "Aguardando Pagamento": { bg: "#32658A", fg: "#F8FAFC" },
+  "Processando": { bg: "#C6A24A", fg: "#1F1A10" },
+  "Separação": { bg: "#5F97B8", fg: "#F8FAFC" },
+  "Faturado": { bg: "#262626", fg: "#F8FAFC" },
+  "Coletado": { bg: "#4A9F8C", fg: "#F8FAFC" },
 };
 
 
-function KanbanView({ data }: { data: Order[] }) {
+function KanbanView({ data }: { data: Pedido[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-      {kanbanColumns.map((col) => {
+      {PEDIDO_STATUS.map((col) => {
         const cards = data.filter((o) => o.status === col);
+        const style = STATUS_STYLE[col];
         return (
           <div key={col} className="bg-surface/60 rounded-2xl border border-border overflow-hidden flex flex-col max-h-[75vh]">
-            <div className={cn("px-4 py-2.5 flex items-center justify-between", STATUS_HEADER[col])}>
+            <div className="px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: style.bg, color: style.fg }}>
               <span className="font-display font-semibold text-sm">{col}</span>
-              <span className="text-xs font-bold bg-background/30 px-2 py-0.5 rounded">{statusCount[col]}</span>
+              <span className="text-xs font-bold bg-background/30 px-2 py-0.5 rounded">{cards.length}</span>
             </div>
             <div className="p-2 space-y-2 overflow-y-auto flex-1">
               {cards.map((c) => (
@@ -166,8 +198,12 @@ function KanbanView({ data }: { data: Order[] }) {
                       <div className="text-xs font-semibold">{fmt(c.value)}</div>
                     </div>
                   </div>
+                  {c.owner && <div className="text-[11px] text-muted-foreground mt-2 truncate">{c.owner}</div>}
                 </div>
               ))}
+              {cards.length === 0 && (
+                <div className="text-xs text-muted-foreground px-2 py-6 text-center">Nenhum pedido neste status.</div>
+              )}
             </div>
           </div>
         );
@@ -176,7 +212,7 @@ function KanbanView({ data }: { data: Order[] }) {
   );
 }
 
-function ListView({ data }: { data: Order[] }) {
+function ListView({ data }: { data: Pedido[] }) {
   return (
     <div className="glass rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
@@ -187,6 +223,7 @@ function ListView({ data }: { data: Order[] }) {
               <th className="text-left px-4 py-3">Pedido</th>
               <th className="text-left px-4 py-3">Cliente</th>
               <th className="text-left px-4 py-3">Status</th>
+              <th className="text-left px-4 py-3">Vendedor</th>
               <th className="text-left px-4 py-3">Fechamento</th>
               <th className="text-right px-4 py-3">Valor</th>
             </tr>
@@ -198,12 +235,25 @@ function ListView({ data }: { data: Order[] }) {
                 <td className="px-4 py-3 text-muted-foreground">{o.title}</td>
                 <td className="px-4 py-3">{o.client}</td>
                 <td className="px-4 py-3">
-                  <span className={cn("text-[11px] px-2 py-0.5 rounded font-medium", STATUS_PILL[o.status])}>{o.status}</span>
+                  <span
+                    className="text-[11px] px-2 py-0.5 rounded font-medium"
+                    style={{ backgroundColor: STATUS_STYLE[o.status].bg, color: STATUS_STYLE[o.status].fg }}
+                  >
+                    {o.status}
+                  </span>
                 </td>
+                <td className="px-4 py-3 text-muted-foreground">{o.owner ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.closing}</td>
                 <td className="px-4 py-3 text-right font-semibold">{fmt(o.value)}</td>
               </tr>
             ))}
+            {data.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                  Nenhum pedido encontrado nos status em curso.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

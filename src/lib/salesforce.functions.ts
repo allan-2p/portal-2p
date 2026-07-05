@@ -485,6 +485,15 @@ export type SalesforceOppRow = {
   ownerId: string | null;
 };
 
+export const PEDIDO_STATUS = [
+  "Aguardando Pagamento",
+  "Processando",
+  "Separação",
+  "Faturado",
+  "Coletado",
+] as const;
+export type PedidoStatus = (typeof PEDIDO_STATUS)[number];
+
 function mapOppRow(r: any): SalesforceOppRow {
   const num = (v: any) => (typeof v === "number" ? v : null);
   return {
@@ -547,6 +556,23 @@ export const getSalesforceVendas = createServerFn({ method: "GET" })
     const soql =
       `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
       `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+  });
+
+export const getSalesforcePedidos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { ownerId?: string | null }) => input ?? {})
+  .handler(async ({ data }) => {
+    const statusList = PEDIDO_STATUS.map((s) => `'${esc(s)}'`).join(",");
+    const ownerClause = validId(data.ownerId) ? ` AND OwnerId = '${data.ownerId}'` : "";
+    const clauses: string[] = [
+      `Status_do_Pedido__c IN (${statusList})`,
+      `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
+    ];
+    const soql =
+      `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")}${ownerClause} ` +
+      `ORDER BY CreatedDate DESC LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
