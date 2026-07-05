@@ -108,7 +108,10 @@ export type SalesforceTask = {
   priority: string | null;
   description: string | null;
   who: string | null;
+  whoId: string | null;
   what: string | null;
+  whatId: string | null;
+  type: string | null;
   owner: string | null;
   ownerId: string | null;
 };
@@ -124,7 +127,8 @@ export const getSalesforceTasks = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const ownerClause = validId(data.ownerId) ? ` AND OwnerId = '${data.ownerId}'` : "";
     const soql =
-      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Who.Name, What.Name, Owner.Name, OwnerId ` +
+      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Type, ` +
+      `Who.Name, WhoId, What.Name, WhatId, Owner.Name, OwnerId ` +
       `FROM Task ` +
       `WHERE Status = 'Open' AND ActivityDate >= ${data.start} AND ActivityDate <= ${data.end}${ownerClause} ` +
       `ORDER BY ActivityDate ASC LIMIT 500`;
@@ -136,12 +140,128 @@ export const getSalesforceTasks = createServerFn({ method: "GET" })
       status: r.Status ?? null,
       priority: r.Priority ?? null,
       description: r.Description ?? null,
+      type: r.Type ?? null,
       who: r.Who?.Name ?? null,
+      whoId: r.WhoId ?? null,
       what: r.What?.Name ?? null,
+      whatId: r.WhatId ?? null,
       owner: r.Owner?.Name ?? null,
       ownerId: r.OwnerId ?? null,
     }));
     return { records, totalSize: res?.totalSize ?? records.length };
+  });
+
+export type SalesforceInteraction = {
+  id: string;
+  date: string | null;
+  subject: string;
+  type: string | null;
+  description: string | null;
+  whatId: string | null;
+  whoId: string | null;
+  owner: string | null;
+};
+
+export const getSalesforceInteractionsFor = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { whatIds?: string[]; whoIds?: string[]; sinceDays?: number }) => input ?? {})
+  .handler(async ({ data }) => {
+    const whatIds = (data.whatIds ?? []).filter(validId);
+    const whoIds = (data.whoIds ?? []).filter(validId);
+    if (whatIds.length === 0 && whoIds.length === 0) {
+      return { records: [] as SalesforceInteraction[] };
+    }
+    const sinceDays = Math.max(1, Math.min(365, data.sinceDays ?? 90));
+    const clauses: string[] = [`Status = 'Completed'`, `LastModifiedDate = LAST_N_DAYS:${sinceDays}`];
+    const idClauses: string[] = [];
+    if (whatIds.length) idClauses.push(`WhatId IN (${whatIds.map((i) => `'${i}'`).join(",")})`);
+    if (whoIds.length) idClauses.push(`WhoId IN (${whoIds.map((i) => `'${i}'`).join(",")})`);
+    clauses.push(`(${idClauses.join(" OR ")})`);
+    const soql =
+      `SELECT Id, Subject, Type, ActivityDate, Description, WhatId, WhoId, Owner.Name ` +
+      `FROM Task WHERE ${clauses.join(" AND ")} ORDER BY LastModifiedDate DESC LIMIT 500`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    const records: SalesforceInteraction[] = (res?.records ?? []).map((r: any) => ({
+      id: r.Id,
+      date: r.ActivityDate ?? null,
+      subject: r.Subject ?? "(sem assunto)",
+      type: r.Type ?? null,
+      description: r.Description ?? null,
+      whatId: r.WhatId ?? null,
+      whoId: r.WhoId ?? null,
+      owner: r.Owner?.Name ?? null,
+    }));
+    return { records };
+  });
+
+export const completeSalesforceTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { taskId: string }) => {
+    if (!validId(input.taskId)) throw new Error("ID de tarefa inválido.");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    await sfFetch(`/sobjects/Task/${data.taskId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ Status: "Completed" }),
+    });
+    return { ok: true };
+  });
+
+type TaskPayload = {
+  subject: string;
+  activityDate?: string | null;
+  priority?: string | null;
+  status?: string | null;
+  type?: string | null;
+  description?: string | null;
+  whatId?: string | null;
+  whoId?: string | null;
+  ownerId?: string | null;
+};
+
+function buildTaskBody(p: TaskPayload) {
+  const body: Record<string, unknown> = { Subject: p.subject };
+  if (p.activityDate) body.ActivityDate = p.activityDate;
+  if (p.priority) body.Priority = p.priority;
+  if (p.status) body.Status = p.status;
+  if (p.type) body.Type = p.type;
+  if (p.description) body.Description = p.description;
+  if (validId(p.whatId)) body.WhatId = p.whatId;
+  if (validId(p.whoId)) body.WhoId = p.whoId;
+  if (validId(p.ownerId)) body.OwnerId = p.ownerId;
+  return body;
+}
+
+export const createSalesforceTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: TaskPayload) => {
+    if (!input.subject || !input.subject.trim()) throw new Error("Assunto é obrigatório.");
+    if (input.activityDate && !/^\d{4}-\d{2}-\d{2}$/.test(input.activityDate)) {
+      throw new Error("Data inválida (YYYY-MM-DD).");
+    }
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const body = buildTaskBody({ status: "Open", ...data });
+    const res = await sfFetch(`/sobjects/Task`, { method: "POST", body: JSON.stringify(body) });
+    return { id: res?.id ?? null };
+  });
+
+export const logSalesforceInteraction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: TaskPayload) => {
+    if (!input.subject || !input.subject.trim()) throw new Error("Assunto é obrigatório.");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const today = new Date();
+    const activityDate =
+      data.activityDate ||
+      `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const body = buildTaskBody({ ...data, status: "Completed", activityDate });
+    const res = await sfFetch(`/sobjects/Task`, { method: "POST", body: JSON.stringify(body) });
+    return { id: res?.id ?? null };
   });
 
 export type SalesforceSalesperson = { id: string; name: string; email: string | null };
