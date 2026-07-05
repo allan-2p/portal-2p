@@ -122,6 +122,22 @@ const statusCount: Record<Order["status"], number> = {
   "Coletado": 101,
 };
 
+const STATUS_HEADER: Record<Order["status"], string> = {
+  "Aguard. Pagamento": "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white",
+  "Processando": "bg-gradient-to-r from-yellow-500 to-yellow-400 text-neutral-900",
+  "Separação": "bg-gradient-to-r from-sky-500 to-sky-400 text-white",
+  "Faturado": "bg-gradient-to-r from-neutral-900 to-neutral-700 text-white",
+  "Coletado": "bg-gradient-to-r from-green-600 to-green-500 text-white",
+};
+
+const STATUS_PILL: Record<Order["status"], string> = {
+  "Aguard. Pagamento": "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30",
+  "Processando": "bg-yellow-400/15 text-yellow-500 border border-yellow-500/30",
+  "Separação": "bg-sky-400/15 text-sky-400 border border-sky-400/30",
+  "Faturado": "bg-neutral-800 text-neutral-100 border border-neutral-700",
+  "Coletado": "bg-green-500/15 text-green-500 border border-green-500/30",
+};
+
 function KanbanView({ data }: { data: Order[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -129,9 +145,9 @@ function KanbanView({ data }: { data: Order[] }) {
         const cards = data.filter((o) => o.status === col);
         return (
           <div key={col} className="bg-surface/60 rounded-2xl border border-border overflow-hidden flex flex-col max-h-[75vh]">
-            <div className="bg-gradient-to-r from-primary to-[oklch(0.62_0.22_30)] px-4 py-2.5 flex items-center justify-between">
-              <span className="font-display font-semibold text-sm text-primary-foreground">{col}</span>
-              <span className="text-xs font-bold bg-background/30 text-primary-foreground px-2 py-0.5 rounded">{statusCount[col]}</span>
+            <div className={cn("px-4 py-2.5 flex items-center justify-between", STATUS_HEADER[col])}>
+              <span className="font-display font-semibold text-sm">{col}</span>
+              <span className="text-xs font-bold bg-background/30 px-2 py-0.5 rounded">{statusCount[col]}</span>
             </div>
             <div className="p-2 space-y-2 overflow-y-auto flex-1">
               {cards.map((c) => (
@@ -181,7 +197,7 @@ function ListView({ data }: { data: Order[] }) {
                 <td className="px-4 py-3 text-muted-foreground">{o.title}</td>
                 <td className="px-4 py-3">{o.client}</td>
                 <td className="px-4 py-3">
-                  <span className="text-[11px] px-2 py-0.5 rounded bg-primary/15 text-primary font-medium">{o.status}</span>
+                  <span className={cn("text-[11px] px-2 py-0.5 rounded font-medium", STATUS_PILL[o.status])}>{o.status}</span>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{o.closing}</td>
                 <td className="px-4 py-3 text-right font-semibold">{fmt(o.value)}</td>
@@ -193,3 +209,4 @@ function ListView({ data }: { data: Order[] }) {
     </div>
   );
 }
+
