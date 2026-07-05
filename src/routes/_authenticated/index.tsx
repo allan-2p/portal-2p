@@ -142,7 +142,11 @@ function HomePage() {
   const { profile, user } = useAuth();
   const displayName = (profile?.full_name?.trim().split(/\s+/)[0]) || (user?.email?.split("@")[0]) || "";
   const [metaOpen, setMetaOpen] = useState(false);
-  const [forecastFilter, setForecastFilter] = useState<"todos" | "7d" | "30d" | "atrasados">("todos");
+  type AgeKey = "all" | "7d" | "15-30" | "30-60" | "60+";
+  type ForecastKey = AgeKey | "semana" | "atrasados";
+  const [forecastFilter, setForecastFilter] = useState<ForecastKey>("all");
+  const [oppsAgeFilter, setOppsAgeFilter] = useState<AgeKey>("all");
+
   const [ownerId, setOwnerId] = useState<string>("all");
   const [agendaDate, setAgendaDate] = useState<Date>(() => startOfDay(new Date()));
   const [agendaOpen, setAgendaOpen] = useState(false);
