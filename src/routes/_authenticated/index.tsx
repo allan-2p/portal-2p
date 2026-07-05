@@ -1113,15 +1113,6 @@ function CompleteTaskDialog({
                   Relacionada a: {task?.what ?? task?.who ?? "—"}
                 </div>
               </div>
-                </div>
-                <div>
-                  <Label className="text-xs">Comentários</Label>
-                  <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
-                </div>
-                <div className="text-[11px] text-muted-foreground">
-                  Relacionada a: {task?.what ?? task?.who ?? "—"}
-                </div>
-              </div>
             )}
           </div>
         </div>
