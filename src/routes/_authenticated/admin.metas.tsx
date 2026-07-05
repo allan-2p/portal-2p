@@ -173,6 +173,15 @@ function MetasPage() {
                 </button>
               ))}
             </div>
+            <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border cursor-pointer text-sm">
+              <input
+                type="checkbox"
+                checked={onlyActive}
+                onChange={(e) => setOnlyActive(e.target.checked)}
+                className="h-4 w-4 accent-primary cursor-pointer"
+              />
+              <span className="font-medium">Só metas ativas</span>
+            </label>
           </div>
 
         </div>
