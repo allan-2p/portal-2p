@@ -392,8 +392,9 @@ export const getSalesforceForecasts = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const ownerClause = validId(data.ownerId) ? ` AND OwnerId = '${data.ownerId}'` : "";
     const soql =
-      `SELECT Id, Name, StageName, Amount, CloseDate, Previsao_de_Fechamento__c, Probability, IsClosed, ` +
+      `SELECT Id, Name, StageName, Amount, CloseDate, Previsao_de_Fechamento__c, Probability, IsClosed, CreatedDate, ` +
       `Account.Name, Owner.Name, OwnerId ` +
+
       `FROM Opportunity ` +
       `WHERE IsClosed = false AND Previsao_de_Fechamento__c != null${ownerClause} ` +
       `ORDER BY Previsao_de_Fechamento__c ASC LIMIT 500`;
