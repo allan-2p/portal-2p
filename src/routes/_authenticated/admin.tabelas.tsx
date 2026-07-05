@@ -12,6 +12,7 @@ import {
   ShoppingCart,
   CalendarIcon,
   TrendingUp,
+  CalendarDays,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -477,9 +478,143 @@ function ProjectionsPanel({ search }: { search: string }) {
   );
 }
 
+// ----- Concentração de fechamentos por semana do mês ----- //
+
+function weekOfMonth(dateStr: string): number {
+  // Retorna 0..3 dividindo o mês em 4 partes proporcionais.
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+  const idx = Math.floor(((d - 1) * 4) / lastDay);
+  return Math.max(0, Math.min(3, idx));
+}
+
+function weekLabelRange(monthLen: number, i: number): string {
+  const step = monthLen / 4;
+  const startD = Math.floor(i * step) + 1;
+  const endD = i === 3 ? monthLen : Math.floor((i + 1) * step);
+  return `dia ${startD} a ${endD}`;
+}
+
+function WeeksPanel({
+  records,
+  loading,
+  error,
+}: {
+  records: SalesforceOppRow[];
+  loading: boolean;
+  error: unknown;
+}) {
+  const stats = useMemo(() => {
+    const buckets = [0, 0, 0, 0];
+    const counts = [0, 0, 0, 0];
+    let total = 0;
+    for (const r of records) {
+      if (!r.closeDate) continue;
+      const v = r.total ?? r.valorLiq ?? r.amount ?? 0;
+      const w = weekOfMonth(r.closeDate);
+      buckets[w] += v;
+      counts[w] += 1;
+      total += v;
+    }
+    return { buckets, counts, total };
+  }, [records]);
+
+  const maxBucket = Math.max(...stats.buckets, 1);
+  // Usa o mês atual como referência dos rótulos de dias
+  const now = new Date();
+  const monthLen = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      {!!error && (
+        <div className="border-b border-destructive/40 bg-destructive/10 text-destructive text-sm px-4 py-3 flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 mt-0.5" />
+          <div>{error instanceof Error ? error.message : "Erro ao carregar dados"}</div>
+        </div>
+      )}
+      <div className="p-4 border-b border-border text-sm text-muted-foreground">
+        Distribuição de fechamentos por semana do mês no período selecionado. Cada mês é dividido
+        em 4 semanas proporcionais — a primeira ou a última é esticada quando necessário.
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+              <th className="text-left px-4 py-2.5 w-32">Semana</th>
+              <th className="text-left px-4 py-2.5">Faixa (mês típico)</th>
+              <th className="text-right px-4 py-2.5 w-28">Fechamentos</th>
+              <th className="text-right px-4 py-2.5 w-40">Valor total</th>
+              <th className="text-right px-4 py-2.5 w-24">% do valor</th>
+              <th className="px-4 py-2.5 w-[280px]">Participação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && (
+              <tr>
+                <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                  <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
+                  Carregando do Salesforce…
+                </td>
+              </tr>
+            )}
+            {!loading && stats.total === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  Nenhum fechamento no período.
+                </td>
+              </tr>
+            )}
+            {!loading && stats.total > 0 &&
+              stats.buckets.map((val, i) => {
+                const pct = (val / stats.total) * 100;
+                const rel = (val / maxBucket) * 100;
+                return (
+                  <tr key={i} className="border-b border-border/40 hover:bg-surface-2/50">
+                    <td className="px-4 py-3 font-medium">Semana {i + 1}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {weekLabelRange(monthLen, i)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono">{stats.counts[i]}</td>
+                    <td className="px-4 py-3 text-right font-mono">{brl(val)}</td>
+                    <td className="px-4 py-3 text-right font-mono font-semibold">
+                      {pct.toFixed(1).replace(".", ",")}%
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${rel}%` }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+          {!loading && stats.total > 0 && (
+            <tfoot>
+              <tr className="border-t border-border bg-surface-2/50 text-sm">
+                <td colSpan={2} className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]">
+                  Total
+                </td>
+                <td className="px-4 py-2.5 text-right font-mono font-semibold">
+                  {stats.counts.reduce((a, b) => a + b, 0)}
+                </td>
+                <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(stats.total)}</td>
+                <td className="px-4 py-2.5 text-right font-mono font-semibold">100%</td>
+                <td />
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function TabelasPage() {
   const { hasRole } = useAuth();
-  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes">("orcamentos");
+  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas">("orcamentos");
   const [search, setSearch] = useState("");
 
   const initial = presetRange("month")!;
@@ -505,7 +640,7 @@ function TabelasPage() {
     queryKey: ["sf-vendas", range.start, range.end],
     queryFn: () => fetchVen({ data: range }),
     staleTime: 60_000,
-    enabled: hasRole("admin") && tab === "vendas",
+    enabled: hasRole("admin") && (tab === "vendas" || tab === "semanas"),
   });
 
   if (!hasRole("admin")) {
@@ -544,7 +679,7 @@ function TabelasPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes")}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas")}>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <TabsList>
               <TabsTrigger value="orcamentos" className="gap-2">
@@ -555,6 +690,9 @@ function TabelasPage() {
               </TabsTrigger>
               <TabsTrigger value="projecoes" className="gap-2">
                 <TrendingUp className="h-4 w-4" /> Projeções
+              </TabsTrigger>
+              <TabsTrigger value="semanas" className="gap-2">
+                <CalendarDays className="h-4 w-4" /> Semanas
               </TabsTrigger>
             </TabsList>
             {tab !== "projecoes" && (
@@ -590,6 +728,13 @@ function TabelasPage() {
           </TabsContent>
           <TabsContent value="projecoes" className="mt-4">
             <ProjectionsPanel search={search} />
+          </TabsContent>
+          <TabsContent value="semanas" className="mt-4">
+            <WeeksPanel
+              records={qVen.data?.records ?? []}
+              loading={qVen.isLoading}
+              error={qVen.error}
+            />
           </TabsContent>
         </Tabs>
       </div>
