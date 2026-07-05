@@ -970,6 +970,16 @@ function CompleteTaskDialog({
       toast.error("Selecione se conseguiu falar com o cliente.");
       return;
     }
+    if (!interactionAlreadyLogged && !interactionType) {
+      toast.error("Selecione o tipo de interação.");
+      return;
+    }
+    if (createNext) {
+      if (!subject.trim()) { toast.error("Assunto da nova tarefa é obrigatório."); return; }
+      if (!type) { toast.error("Tipo da nova tarefa é obrigatório."); return; }
+      if (!priority) { toast.error("Prioridade da nova tarefa é obrigatória."); return; }
+      if (!date) { toast.error("Vencimento da nova tarefa é obrigatório."); return; }
+    }
     setSaving(true);
     try {
       if (!interactionAlreadyLogged) {
@@ -985,7 +995,7 @@ function CompleteTaskDialog({
         onSaveInteraction({ contacted, type: interactionType, note: interactionNote, ts: Date.now() });
       }
       await completeFn({ data: { taskId: task.id } });
-      if (createNext && subject.trim()) {
+      if (createNext) {
         await createFn({
           data: {
             subject,
