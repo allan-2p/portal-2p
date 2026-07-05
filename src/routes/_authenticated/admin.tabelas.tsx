@@ -745,12 +745,29 @@ function TabelasPage() {
           <TabsContent value="projecoes" className="mt-4">
             <ProjectionsPanel search={search} />
           </TabsContent>
-          <TabsContent value="semanas" className="mt-4">
-            <WeeksPanel
-              records={qVen.data?.records ?? []}
-              loading={qVen.isLoading}
-              error={qVen.error}
-            />
+          <TabsContent value="semanas" className="mt-4 space-y-6">
+            <section className="space-y-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                Período selecionado
+              </h2>
+              <WeeksPanel
+                records={qVen.data?.records ?? []}
+                loading={qVen.isLoading}
+                error={qVen.error}
+              />
+            </section>
+            <section className="space-y-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                Ano de 2025 (completo)
+              </h2>
+              <FixedRangeWeeksPanel start="2025-01-01" end="2025-12-31" />
+            </section>
+            <section className="space-y-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                2026 — Janeiro a Junho
+              </h2>
+              <FixedRangeWeeksPanel start="2026-01-01" end="2026-06-30" />
+            </section>
           </TabsContent>
         </Tabs>
       </div>
