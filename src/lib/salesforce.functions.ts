@@ -235,18 +235,37 @@ function buildTaskBody(p: TaskPayload) {
 }
 
 // Cache de valor default para Org_Atividade__c (picklist restrita e obrigatória nesta org).
-let cachedOrgAtividadeDefault: string | null = null;
+// O describe global pode listar valores que não são válidos para o Record Type ativo
+// (ex.: "Tubos 2P"), então usamos a UI API para buscar os valores por Record Type.
+let cachedOrgAtividadeDefault: string | null | undefined;
 async function getOrgAtividadeDefault(): Promise<string | null> {
-  if (cachedOrgAtividadeDefault) return cachedOrgAtividadeDefault;
+  if (cachedOrgAtividadeDefault !== undefined) return cachedOrgAtividadeDefault;
   try {
     const desc = await sfFetch(`/sobjects/Task/describe`);
-    const field = (desc?.fields ?? []).find((f: any) => f.name === "Org_Atividade__c");
-    if (!field) return null;
-    const values = (field.picklistValues ?? []).filter((v: any) => v.active);
-    const def = values.find((v: any) => v.defaultValue) ?? values[0];
-    cachedOrgAtividadeDefault = def?.value ?? null;
-    return cachedOrgAtividadeDefault;
+    const defaultRecordTypeId =
+      desc?.defaultRecordTypeId ??
+      (desc?.recordTypeInfos ?? []).find((rt: any) => rt.defaultRecordTypeMapping)?.recordTypeId ??
+      (desc?.recordTypeInfos ?? []).find((rt: any) => rt.available && !rt.master)?.recordTypeId ??
+      (desc?.recordTypeInfos ?? []).find((rt: any) => rt.available)?.recordTypeId ??
+      "012000000000000AAA";
+
+    try {
+      const picklist = await sfFetch(
+        `/ui-api/object-info/Task/picklist-values/${defaultRecordTypeId}/Org_Atividade__c`,
+      );
+      const values = (picklist?.values ?? []).filter((v: any) => v.active !== false);
+      const def = values.find((v: any) => v.defaultValue) ?? values[0];
+      cachedOrgAtividadeDefault = def?.value ?? null;
+      return cachedOrgAtividadeDefault;
+    } catch {
+      const field = (desc?.fields ?? []).find((f: any) => f.name === "Org_Atividade__c");
+      const values = (field?.picklistValues ?? []).filter((v: any) => v.active && v.value !== "Tubos 2P");
+      const def = values.find((v: any) => v.defaultValue) ?? values[0];
+      cachedOrgAtividadeDefault = def?.value ?? null;
+      return cachedOrgAtividadeDefault;
+    }
   } catch {
+    cachedOrgAtividadeDefault = null;
     return null;
   }
 }
