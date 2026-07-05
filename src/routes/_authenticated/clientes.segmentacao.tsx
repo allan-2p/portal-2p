@@ -71,12 +71,13 @@ const ALLOWED_ORDER_STATUS = new Set<string>([
 ]);
 
 const STATUS_COLOR: Record<string, string> = {
-  "Aguardando Pagamento": "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
-  "Processando": "bg-yellow-400/15 text-yellow-500 border-yellow-500/30",
-  "Separação": "bg-sky-400/15 text-sky-400 border-sky-400/30",
-  "Faturado": "bg-neutral-800 text-neutral-100 border-neutral-700",
-  "Coletado": "bg-green-500/15 text-green-500 border-green-500/30",
+  "Aguardando Pagamento": "bg-emerald-500 text-white border-transparent",
+  "Processando": "bg-yellow-400 text-neutral-900 border-transparent",
+  "Separação": "bg-sky-400 text-white border-transparent",
+  "Faturado": "bg-black text-white border-transparent",
+  "Coletado": "bg-green-500 text-white border-transparent",
 };
+
 
 const STATUS_DOT: Record<string, string> = {
   "Aguardando Pagamento": "bg-emerald-500",
