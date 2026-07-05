@@ -29,7 +29,6 @@ import {
   getSalesforceOpportunities,
   getSalesforceForecasts,
   getSalesforceVendas,
-  getSalesforceInteractionsFor,
   completeSalesforceTask,
   createSalesforceTask,
   logSalesforceInteraction,
@@ -39,6 +38,22 @@ import {
   type SalesforceTask,
 } from "@/lib/salesforce.functions";
 import { getMonthGoalTotal } from "@/lib/admin.functions";
+
+type TaskInteractionState = { contacted: "yes" | "no"; note?: string; ts: number };
+const TASK_INTERACTIONS_KEY = "portal2p:task-interactions:v1";
+function loadTaskInteractions(): Record<string, TaskInteractionState> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(TASK_INTERACTIONS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function persistTaskInteractions(map: Record<string, TaskInteractionState>) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(TASK_INTERACTIONS_KEY, JSON.stringify(map)); } catch {}
+}
+
 
 
 
