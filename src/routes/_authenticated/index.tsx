@@ -712,11 +712,14 @@ function HomePage() {
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Oportunidades em aberto com previsão preenchida</p>
               </div>
-              <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
+              <div className="flex flex-wrap bg-surface-2 rounded-lg p-0.5 border border-border text-xs gap-0.5">
                 {([
-                  { k: "todos", l: "Todos" },
-                  { k: "7d", l: "7 dias" },
-                  { k: "30d", l: "30 dias" },
+                  { k: "all", l: "Todos" },
+                  { k: "7d", l: "≤ 7d" },
+                  { k: "15-30", l: "15–30d" },
+                  { k: "30-60", l: "30–60d" },
+                  { k: "60+", l: "+60d" },
+                  { k: "semana", l: "Semana atual" },
                   { k: "atrasados", l: "Atrasados" },
                 ] as const).map((o) => (
                   <button key={o.k} onClick={() => setForecastFilter(o.k)}
@@ -726,6 +729,7 @@ function HomePage() {
                   </button>
                 ))}
               </div>
+
             </div>
             <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
               {forecastsQ.isLoading && (
