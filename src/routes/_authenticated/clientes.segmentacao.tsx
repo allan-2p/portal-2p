@@ -4,10 +4,11 @@ import { type Client, type Segment } from "@/lib/mock-data";
 import { Fragment, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle, Search, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getSalesforceAccounts, getSalesforceSalespeople, getSalesforceOrcamentos, getSalesforceVendas, type SalesforceAccount } from "@/lib/salesforce.functions";
+import { getSalesforceAccounts, getSalesforceSalespeople, getSalesforceOrcamentos, getSalesforceVendas, type SalesforceAccount, type SalesforceOppRow } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
+
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
   head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
@@ -48,6 +49,43 @@ function periodRange(period: "mensal" | "trimestral"): { start: string; end: str
   return { start: fmtKey(new Date(y, qStart, 1)), end: fmtKey(new Date(y, qStart + 3, 0)) };
 }
 
+// Trimestre anterior (base para a projeção).
+function previousQuarterRange(): { start: string; end: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const qStart = Math.floor(m / 3) * 3 - 3;
+  const start = new Date(y, qStart, 1);
+  const end = new Date(y, qStart + 3, 0);
+  return { start: fmtKey(start), end: fmtKey(end) };
+}
+
+// Status do pedido considerados "vendas em curso" — até "Coletado", inclusive.
+const ALLOWED_ORDER_STATUS = new Set<string>([
+  "Aguardando Pagamento",
+  "Processando",
+  "Separação",
+  "Faturado",
+  "Coletado",
+]);
+
+const STATUS_COLOR: Record<string, string> = {
+  "Aguardando Pagamento": "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
+  "Processando": "bg-yellow-400/15 text-yellow-500 border-yellow-500/30",
+  "Separação": "bg-sky-400/15 text-sky-400 border-sky-400/30",
+  "Faturado": "bg-neutral-800 text-neutral-100 border-neutral-700",
+  "Coletado": "bg-green-500/15 text-green-500 border-green-500/30",
+};
+
+const STATUS_DOT: Record<string, string> = {
+  "Aguardando Pagamento": "bg-emerald-500",
+  "Processando": "bg-yellow-400",
+  "Separação": "bg-sky-400",
+  "Faturado": "bg-neutral-900",
+  "Coletado": "bg-green-500",
+};
+
+
 function SegmentacaoPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
   const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set());
@@ -79,6 +117,7 @@ function SegmentacaoPage() {
   );
 
   const range = useMemo(() => periodRange(period), [period]);
+  const prevQuarter = useMemo(() => previousQuarterRange(), []);
 
   const orcamentosQ = useQuery({
     queryKey: ["sf-segmentacao-orcamentos", range.start, range.end],
@@ -90,33 +129,72 @@ function SegmentacaoPage() {
     queryFn: () => fetchVendas({ data: range }),
     staleTime: 60_000,
   });
+  // Vendas do trimestre anterior — base da projeção de cada conta.
+  const prevQuarterVendasQ = useQuery({
+    queryKey: ["sf-segmentacao-prev-vendas", prevQuarter.start, prevQuarter.end],
+    queryFn: () => fetchVendas({ data: prevQuarter }),
+    staleTime: 5 * 60_000,
+  });
+
+  const ownerMatches = (r: { ownerId: string | null }) =>
+    ownerId === "all" ? true : r.ownerId === ownerId;
 
   const generationByAccount = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of orcamentosQ.data?.records ?? []) {
-      if (!r.accountId) continue;
+      if (!r.accountId || !ownerMatches(r)) continue;
       map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
     }
     return map;
-  }, [orcamentosQ.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orcamentosQ.data, ownerId]);
+
   const salesByAccount = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of vendasQ.data?.records ?? []) {
-      if (!r.accountId) continue;
+      if (!r.accountId || !ownerMatches(r)) continue;
+      if (!r.status || !ALLOWED_ORDER_STATUS.has(r.status)) continue;
       map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
     }
     return map;
-  }, [vendasQ.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendasQ.data, ownerId]);
+
+  // Pedidos em curso por conta — para exibir na expansão.
+  const ordersByAccount = useMemo(() => {
+    const map = new Map<string, SalesforceOppRow[]>();
+    for (const r of vendasQ.data?.records ?? []) {
+      if (!r.accountId || !ownerMatches(r)) continue;
+      if (!r.status || !ALLOWED_ORDER_STATUS.has(r.status)) continue;
+      const list = map.get(r.accountId) ?? [];
+      list.push(r);
+      map.set(r.accountId, list);
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendasQ.data, ownerId]);
+
+  // Projeção base = SUM(Total__c ou Amount) das vendas do trimestre anterior por conta,
+  // respeitando o filtro de vendedor (dono da Opportunity).
+  const quarterProjectionByAccount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of prevQuarterVendasQ.data?.records ?? []) {
+      if (!r.accountId || !ownerMatches(r)) continue;
+      map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prevQuarterVendasQ.data, ownerId]);
 
   function accountToClient(a: SalesforceAccount): Client {
     const seed = seedFromId(a.id);
     const segment: Segment = a.segment ?? "D";
-    const quarterProj = a.quarterProjection ?? 0;
+    const quarterProj = quarterProjectionByAccount.get(a.id) ?? 0;
     const projection = period === "mensal" ? Math.round(quarterProj / 3) : Math.round(quarterProj);
     const generation = Math.round(generationByAccount.get(a.id) ?? 0);
     const sales = Math.round(salesByAccount.get(a.id) ?? 0);
     const denom = projection > 0 ? projection : 1;
-    const rawHealth = Math.round((sales / denom) * 100);
+    const rawHealth = projection > 0 ? Math.round((sales / denom) * 100) : 0;
     const health = Math.max(0, Math.min(100, rawHealth || Math.round(10 + rand(seed, 4) * 30)));
     const trend: Client["trend"] = health > 70 ? "up" : health > 40 ? "stable" : "down";
     const lastInteraction = `${Math.max(1, Math.round(rand(seed, 5) * 25))}d`;
@@ -139,10 +217,23 @@ function SegmentacaoPage() {
     const activeOnly = activeOwnerIds.size > 0
       ? accounts.filter((a) => a.ownerId && activeOwnerIds.has(a.ownerId))
       : [];
-    const scoped = ownerId === "all" ? activeOnly : activeOnly.filter((a) => a.ownerId === ownerId);
+
+    let scoped: SalesforceAccount[];
+    if (ownerId === "all") {
+      scoped = activeOnly;
+    } else {
+      // Quando um vendedor está selecionado, incluímos toda conta que teve
+      // alguma oportunidade (projeção/geração/venda) sob esse vendedor.
+      const relevant = new Set<string>();
+      quarterProjectionByAccount.forEach((_, id) => relevant.add(id));
+      generationByAccount.forEach((_, id) => relevant.add(id));
+      salesByAccount.forEach((_, id) => relevant.add(id));
+      scoped = activeOnly.filter((a) => relevant.has(a.id));
+    }
     return scoped.map(accountToClient);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount]);
+  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount, quarterProjectionByAccount]);
+
 
 
   const ranked = useMemo(
@@ -370,6 +461,57 @@ function SegmentacaoPage() {
                               <Detail label="Última interação" value={c.lastInteraction} sub={`Saúde ${c.health}/100`} />
                             </div>
                             <div className="mt-4 p-3 rounded-lg bg-background/60 border border-border">
+                              <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                                <div className="flex items-center gap-2">
+                                  <Package className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                                    Pedidos em curso
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap gap-2 text-[10px]">
+                                  {(["Aguardando Pagamento","Processando","Separação","Faturado","Coletado"] as const).map((s) => (
+                                    <span key={s} className="inline-flex items-center gap-1 text-muted-foreground">
+                                      <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[s])} />
+                                      {s}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              {(() => {
+                                const orders = ordersByAccount.get(c.id) ?? [];
+                                if (orders.length === 0) {
+                                  return <div className="text-xs text-muted-foreground">Nenhum pedido em curso no período.</div>;
+                                }
+                                return (
+                                  <div className="space-y-1.5">
+                                    {orders
+                                      .slice()
+                                      .sort((a, b) => (b.total ?? b.amount ?? 0) - (a.total ?? a.amount ?? 0))
+                                      .map((o) => (
+                                        <div key={o.id} className="flex items-center gap-3 text-xs">
+                                          <span className={cn(
+                                            "px-2 py-0.5 rounded-md border font-medium whitespace-nowrap",
+                                            (o.status && STATUS_COLOR[o.status]) || "bg-surface-2 text-muted-foreground border-border",
+                                          )}>
+                                            {o.status ?? "—"}
+                                          </span>
+                                          <span className="truncate flex-1">{o.name}</span>
+                                          {o.owner && <span className="text-muted-foreground truncate">{o.owner}</span>}
+                                          {o.closeDate && (
+                                            <span className="text-muted-foreground tabular-nums">
+                                              {new Date(o.closeDate + "T00:00:00").toLocaleDateString("pt-BR")}
+                                            </span>
+                                          )}
+                                          <span className="font-display font-semibold tabular-nums w-28 text-right">
+                                            {fmt(o.total ?? o.amount ?? 0)}
+                                          </span>
+                                        </div>
+                                      ))}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                            <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border">
                               <div className="flex items-center gap-2 mb-1.5">
                                 <FileText className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Observações (Salesforce)</span>
@@ -378,6 +520,7 @@ function SegmentacaoPage() {
                                 {c.notes ?? "Sem observações registradas no Salesforce."}
                               </p>
                             </div>
+
                             <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border flex items-start gap-2">
                               <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
 
