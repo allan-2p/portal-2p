@@ -470,6 +470,7 @@ export type SalesforceOppRow = {
   id: string;
   name: string;
   stage: string;
+  status: string | null;
   tipoNf: string | null;
   amount: number | null;
   total: number | null;
@@ -490,6 +491,7 @@ function mapOppRow(r: any): SalesforceOppRow {
     id: r.Id,
     name: r.Name,
     stage: r.StageName,
+    status: r.Status_do_Pedido__c ?? null,
     tipoNf: r.Tipo_de_NF__c ?? null,
     amount: num(r.Amount),
     total: num(r.Total__c),
@@ -506,8 +508,9 @@ function mapOppRow(r: any): SalesforceOppRow {
 }
 
 const OPP_COLS =
-  `Id, Name, StageName, Tipo_de_NF__c, Amount, Total__c, Valor_L_q__c, Frete__c, Desconto__c, ` +
+  `Id, Name, StageName, Status_do_Pedido__c, Tipo_de_NF__c, Amount, Total__c, Valor_L_q__c, Frete__c, Desconto__c, ` +
   `CloseDate, CreatedDate, AccountId, Account.Name, Owner.Name, OwnerId`;
+
 
 
 function validDate(v: string | null | undefined) {
