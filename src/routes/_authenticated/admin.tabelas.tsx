@@ -261,6 +261,182 @@ function OppTable({
   );
 }
 
+function previousQuarterRange(): { start: string; end: string; label: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const q = Math.floor(m / 3);
+  const prevQStart = new Date(y, (q - 1) * 3, 1);
+  const prevQEnd = new Date(prevQStart.getFullYear(), prevQStart.getMonth() + 3, 0);
+  const qNum = Math.floor(prevQStart.getMonth() / 3) + 1;
+  return {
+    start: fmtKey(prevQStart),
+    end: fmtKey(prevQEnd),
+    label: `Q${qNum}/${prevQStart.getFullYear()}`,
+  };
+}
+
+type ProjectionRow = {
+  account: string;
+  prevSales: number;
+  salesMonthly: number;
+  salesQuarter: number;
+  genMonthly: number;
+  genQuarter: number;
+};
+
+function ProjectionsPanel({ search }: { search: string }) {
+  const range = useMemo(previousQuarterRange, []);
+  const fetchOrc = useServerFn(getSalesforceOrcamentos);
+  const fetchVen = useServerFn(getSalesforceVendas);
+
+  const qOrc = useQuery({
+    queryKey: ["sf-orcamentos", range.start, range.end],
+    queryFn: () => fetchOrc({ data: { start: range.start, end: range.end } }),
+    staleTime: 60_000,
+  });
+  const qVen = useQuery({
+    queryKey: ["sf-vendas", range.start, range.end],
+    queryFn: () => fetchVen({ data: { start: range.start, end: range.end } }),
+    staleTime: 60_000,
+  });
+
+  const loading = qOrc.isLoading || qVen.isLoading;
+  const error = qOrc.error ?? qVen.error;
+  const orcRecs = qOrc.data?.records ?? [];
+  const venRecs = qVen.data?.records ?? [];
+
+  // Taxa de conversão média (por contagem): fechados / gerados totais
+  const generatedCount = orcRecs.length + venRecs.length;
+  const closedCount = venRecs.length;
+  const convRate = generatedCount > 0 ? closedCount / generatedCount : 0;
+
+  const rows: ProjectionRow[] = useMemo(() => {
+    const byAccount = new Map<string, number>();
+    for (const v of venRecs) {
+      const key = v.account ?? "(sem cliente)";
+      byAccount.set(key, (byAccount.get(key) ?? 0) + (v.total ?? v.amount ?? 0));
+    }
+    const out: ProjectionRow[] = [];
+    for (const [account, prevSales] of byAccount) {
+      const salesMonthly = prevSales / 3;
+      const salesQuarter = salesMonthly * 3;
+      const genMonthly = convRate > 0 ? salesMonthly / convRate : 0;
+      const genQuarter = genMonthly * 3;
+      out.push({ account, prevSales, salesMonthly, salesQuarter, genMonthly, genQuarter });
+    }
+    return out.sort((a, b) => b.salesMonthly - a.salesMonthly);
+  }, [venRecs, convRate]);
+
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return rows;
+    return rows.filter((r) => r.account.toLowerCase().includes(s));
+  }, [rows, search]);
+
+  const totals = useMemo(() => {
+    const acc = { salesMonthly: 0, salesQuarter: 0, genMonthly: 0, genQuarter: 0 };
+    for (const r of filtered) {
+      acc.salesMonthly += r.salesMonthly;
+      acc.salesQuarter += r.salesQuarter;
+      acc.genMonthly += r.genMonthly;
+      acc.genQuarter += r.genQuarter;
+    }
+    return acc;
+  }, [filtered]);
+
+  return (
+    <div className="space-y-3">
+      <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-4 text-sm">
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Base</div>
+          <div className="font-medium">Trimestre anterior — {range.label}</div>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Orçamentos gerados</div>
+          <div className="font-medium">{generatedCount}</div>
+        </div>
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Fechados</div>
+          <div className="font-medium">{closedCount}</div>
+        </div>
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Taxa de conversão</div>
+          <div className="font-medium">
+            {(convRate * 100).toFixed(1).replace(".", ",")}%
+          </div>
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl overflow-hidden">
+        {!!error && (
+          <div className="border-b border-destructive/40 bg-destructive/10 text-destructive text-sm px-4 py-3 flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 mt-0.5" />
+            <div>{error instanceof Error ? error.message : "Erro ao carregar dados"}</div>
+          </div>
+        )}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+                <th className="text-left px-4 py-2.5">Cliente</th>
+                <th className="text-right px-4 py-2.5">Vendas {range.label}</th>
+                <th className="text-right px-4 py-2.5">Projeção Vendas / mês</th>
+                <th className="text-right px-4 py-2.5">Projeção Vendas / trim.</th>
+                <th className="text-right px-4 py-2.5">Projeção Geração / mês</th>
+                <th className="text-right px-4 py-2.5">Projeção Geração / trim.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                    <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
+                    Calculando projeções…
+                  </td>
+                </tr>
+              )}
+              {!loading &&
+                filtered.map((r) => (
+                  <tr key={r.account} className="border-b border-border/40 hover:bg-surface-2/50">
+                    <td className="px-4 py-3 font-medium">{r.account}</td>
+                    <td className="px-4 py-3 text-right font-mono text-muted-foreground">{brl(r.prevSales)}</td>
+                    <td className="px-4 py-3 text-right font-mono">{brl(r.salesMonthly)}</td>
+                    <td className="px-4 py-3 text-right font-mono">{brl(r.salesQuarter)}</td>
+                    <td className="px-4 py-3 text-right font-mono">{brl(r.genMonthly)}</td>
+                    <td className="px-4 py-3 text-right font-mono">{brl(r.genQuarter)}</td>
+                  </tr>
+                ))}
+              {!loading && filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    Nenhum cliente com vendas no trimestre anterior.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            {!loading && filtered.length > 0 && (
+              <tfoot>
+                <tr className="border-t border-border bg-surface-2/50 text-sm">
+                  <td className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]">
+                    Total ({filtered.length})
+                  </td>
+                  <td />
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.salesMonthly)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.salesQuarter)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.genMonthly)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.genQuarter)}</td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TabelasPage() {
   const { hasRole } = useAuth();
   const [tab, setTab] = useState<"orcamentos" | "vendas">("orcamentos");
