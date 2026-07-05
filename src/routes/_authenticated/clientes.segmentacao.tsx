@@ -319,7 +319,10 @@ function SegmentacaoPage() {
 
                 {visible.map((c) => {
                   const isOpen = expanded.has(c.id);
-                  const generationPct = (c.generation / c.projection) * 100;
+                  const denom = c.projection > 0 ? c.projection : 1;
+                  const generationPct = (c.generation / denom) * 100;
+                  const salesPct = (c.sales / denom) * 100;
+
                   return (
                     <Fragment key={c.id}>
                       <tr onClick={() => toggle(c.id)} className="border-b border-border/40 hover:bg-surface-2/50 cursor-pointer">
