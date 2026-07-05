@@ -11,6 +11,7 @@ import {
   FileText,
   ShoppingCart,
   CalendarIcon,
+  TrendingUp,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
