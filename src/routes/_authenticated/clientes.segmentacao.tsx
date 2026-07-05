@@ -49,6 +49,43 @@ function periodRange(period: "mensal" | "trimestral"): { start: string; end: str
   return { start: fmtKey(new Date(y, qStart, 1)), end: fmtKey(new Date(y, qStart + 3, 0)) };
 }
 
+// Trimestre anterior (base para a projeção).
+function previousQuarterRange(): { start: string; end: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const qStart = Math.floor(m / 3) * 3 - 3;
+  const start = new Date(y, qStart, 1);
+  const end = new Date(y, qStart + 3, 0);
+  return { start: fmtKey(start), end: fmtKey(end) };
+}
+
+// Status do pedido considerados "vendas em curso" — até "Coletado", inclusive.
+const ALLOWED_ORDER_STATUS = new Set<string>([
+  "Aguardando Pagamento",
+  "Processando",
+  "Separação",
+  "Faturado",
+  "Coletado",
+]);
+
+const STATUS_COLOR: Record<string, string> = {
+  "Aguardando Pagamento": "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
+  "Processando": "bg-yellow-400/15 text-yellow-500 border-yellow-500/30",
+  "Separação": "bg-sky-400/15 text-sky-400 border-sky-400/30",
+  "Faturado": "bg-neutral-800 text-neutral-100 border-neutral-700",
+  "Coletado": "bg-green-500/15 text-green-500 border-green-500/30",
+};
+
+const STATUS_DOT: Record<string, string> = {
+  "Aguardando Pagamento": "bg-emerald-500",
+  "Processando": "bg-yellow-400",
+  "Separação": "bg-sky-400",
+  "Faturado": "bg-neutral-900",
+  "Coletado": "bg-green-500",
+};
+
+
 function SegmentacaoPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
   const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set());
