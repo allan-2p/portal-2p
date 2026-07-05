@@ -614,7 +614,7 @@ function WeeksPanel({
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes">("orcamentos");
+  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas">("orcamentos");
   const [search, setSearch] = useState("");
 
   const initial = presetRange("month")!;
