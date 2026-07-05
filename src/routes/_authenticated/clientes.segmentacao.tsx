@@ -169,23 +169,12 @@ function SegmentacaoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendasQ.data, ownerId, accountOwnerById]);
 
-
-  // Projeção base = SUM(Total__c ou Amount) das vendas do trimestre anterior por conta,
-  // respeitando o filtro de vendedor (dono da Opportunity).
-  const quarterProjectionByAccount = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of prevQuarterVendasQ.data?.records ?? []) {
-      if (!r.accountId || !ownerMatches(r)) continue;
-      map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
-    }
-    return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prevQuarterVendasQ.data, ownerId]);
-
   function accountToClient(a: SalesforceAccount): Client {
     const seed = seedFromId(a.id);
     const segment: Segment = a.segment ?? "D";
-    const quarterProj = quarterProjectionByAccount.get(a.id) ?? 0;
+    // Projeção vem direto da tabela do Salesforce (Total_Vendido_Trimestre_Anterior__c).
+    // Esse campo já representa a projeção do trimestre atual da conta.
+    const quarterProj = a.quarterProjection ?? 0;
     const projection = period === "mensal" ? Math.round(quarterProj / 3) : Math.round(quarterProj);
     const generation = Math.round(generationByAccount.get(a.id) ?? 0);
     const sales = Math.round(salesByAccount.get(a.id) ?? 0);
@@ -213,22 +202,14 @@ function SegmentacaoPage() {
     const activeOnly = activeOwnerIds.size > 0
       ? accounts.filter((a) => a.ownerId && activeOwnerIds.has(a.ownerId))
       : [];
-
-    let scoped: SalesforceAccount[];
-    if (ownerId === "all") {
-      scoped = activeOnly;
-    } else {
-      // Quando um vendedor está selecionado, incluímos toda conta que teve
-      // alguma oportunidade (projeção/geração/venda) sob esse vendedor.
-      const relevant = new Set<string>();
-      quarterProjectionByAccount.forEach((_, id) => relevant.add(id));
-      generationByAccount.forEach((_, id) => relevant.add(id));
-      salesByAccount.forEach((_, id) => relevant.add(id));
-      scoped = activeOnly.filter((a) => relevant.has(a.id));
-    }
+    // Filtro de vendedor = dono da CONTA.
+    const scoped = ownerId === "all"
+      ? activeOnly
+      : activeOnly.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount, quarterProjectionByAccount]);
+  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount]);
+
 
 
 
