@@ -679,7 +679,7 @@ function TabelasPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes")}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas")}>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <TabsList>
               <TabsTrigger value="orcamentos" className="gap-2">
@@ -690,6 +690,9 @@ function TabelasPage() {
               </TabsTrigger>
               <TabsTrigger value="projecoes" className="gap-2">
                 <TrendingUp className="h-4 w-4" /> Projeções
+              </TabsTrigger>
+              <TabsTrigger value="semanas" className="gap-2">
+                <CalendarDays className="h-4 w-4" /> Semanas
               </TabsTrigger>
             </TabsList>
             {tab !== "projecoes" && (
@@ -705,6 +708,35 @@ function TabelasPage() {
               />
             )}
           </div>
+          <TabsContent value="orcamentos" className="mt-4">
+            <OppTable
+              records={qOrc.data?.records ?? []}
+              loading={qOrc.isLoading}
+              error={qOrc.error}
+              search={search}
+              dateField="createdDate"
+            />
+          </TabsContent>
+          <TabsContent value="vendas" className="mt-4">
+            <OppTable
+              records={qVen.data?.records ?? []}
+              loading={qVen.isLoading}
+              error={qVen.error}
+              search={search}
+              dateField="closeDate"
+            />
+          </TabsContent>
+          <TabsContent value="projecoes" className="mt-4">
+            <ProjectionsPanel search={search} />
+          </TabsContent>
+          <TabsContent value="semanas" className="mt-4">
+            <WeeksPanel
+              records={qVen.data?.records ?? []}
+              loading={qVen.isLoading}
+              error={qVen.error}
+            />
+          </TabsContent>
+        </Tabs>
           <TabsContent value="orcamentos" className="mt-4">
             <OppTable
               records={qOrc.data?.records ?? []}
