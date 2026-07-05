@@ -504,7 +504,7 @@ function TabelasPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas")}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes")}>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <TabsList>
               <TabsTrigger value="orcamentos" className="gap-2">
@@ -513,17 +513,22 @@ function TabelasPage() {
               <TabsTrigger value="vendas" className="gap-2">
                 <ShoppingCart className="h-4 w-4" /> Vendas
               </TabsTrigger>
+              <TabsTrigger value="projecoes" className="gap-2">
+                <TrendingUp className="h-4 w-4" /> Projeções
+              </TabsTrigger>
             </TabsList>
-            <DateRangeFilter
-              from={from}
-              to={to}
-              preset={preset}
-              onChange={(v) => {
-                setFrom(v.from);
-                setTo(v.to);
-                setPreset(v.preset);
-              }}
-            />
+            {tab !== "projecoes" && (
+              <DateRangeFilter
+                from={from}
+                to={to}
+                preset={preset}
+                onChange={(v) => {
+                  setFrom(v.from);
+                  setTo(v.to);
+                  setPreset(v.preset);
+                }}
+              />
+            )}
           </div>
           <TabsContent value="orcamentos" className="mt-4">
             <OppTable
@@ -543,7 +548,15 @@ function TabelasPage() {
               dateField="closeDate"
             />
           </TabsContent>
+          <TabsContent value="projecoes" className="mt-4">
+            <ProjectionsPanel search={search} />
+          </TabsContent>
         </Tabs>
+      </div>
+    </AppLayout>
+
+  );
+}
       </div>
     </AppLayout>
 
