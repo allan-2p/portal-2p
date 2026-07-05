@@ -350,7 +350,7 @@ function HomePage() {
                 </div>
               )}
               {sfTasks.map((t) => {
-                const count = interactionsCountFor(t);
+                const inter = taskInteractions[t.id] ?? null;
                 return (
                 <div key={t.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
                   <div className="flex items-start gap-3">
@@ -366,12 +366,18 @@ function HomePage() {
                         <div className="min-w-0">
                           <div className="text-sm font-semibold truncate flex items-center gap-1.5">
                             {t.subject}
-                            {count > 0 && (
+                            {inter && (
                               <span
-                                title={`${count} interação(ões) registrada(s) recentemente`}
-                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-success/15 text-success font-medium"
+                                title={inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}
+                                className={cn(
+                                  "inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                                  inter.contacted === "yes"
+                                    ? "bg-success/15 text-success"
+                                    : "bg-warning/20 text-[color:var(--warning)]",
+                                )}
                               >
-                                <Check className="h-2.5 w-2.5" /> Interagido{count > 1 ? ` · ${count}` : ""}
+                                <Check className="h-2.5 w-2.5" />
+                                {inter.contacted === "yes" ? "Falou" : "Não falou"}
                               </span>
                             )}
                           </div>
