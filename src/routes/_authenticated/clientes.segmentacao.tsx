@@ -49,16 +49,8 @@ function periodRange(period: "mensal" | "trimestral"): { start: string; end: str
   return { start: fmtKey(new Date(y, qStart, 1)), end: fmtKey(new Date(y, qStart + 3, 0)) };
 }
 
-// Trimestre anterior (base para a projeção).
-function previousQuarterRange(): { start: string; end: string } {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const qStart = Math.floor(m / 3) * 3 - 3;
-  const start = new Date(y, qStart, 1);
-  const end = new Date(y, qStart + 3, 0);
-  return { start: fmtKey(start), end: fmtKey(end) };
-}
+
+
 
 // Status do pedido considerados "vendas em curso" — até "Coletado", inclusive.
 const ALLOWED_ORDER_STATUS = new Set<string>([
@@ -117,7 +109,6 @@ function SegmentacaoPage() {
   );
 
   const range = useMemo(() => periodRange(period), [period]);
-  const prevQuarter = useMemo(() => previousQuarterRange(), []);
 
   const orcamentosQ = useQuery({
     queryKey: ["sf-segmentacao-orcamentos", range.start, range.end],
@@ -129,42 +120,46 @@ function SegmentacaoPage() {
     queryFn: () => fetchVendas({ data: range }),
     staleTime: 60_000,
   });
-  // Vendas do trimestre anterior — base da projeção de cada conta.
-  const prevQuarterVendasQ = useQuery({
-    queryKey: ["sf-segmentacao-prev-vendas", prevQuarter.start, prevQuarter.end],
-    queryFn: () => fetchVendas({ data: prevQuarter }),
-    staleTime: 5 * 60_000,
-  });
 
-  const ownerMatches = (r: { ownerId: string | null }) =>
-    ownerId === "all" ? true : r.ownerId === ownerId;
+  // Mapa accountId -> ownerId da conta (filtro de vendedor é o DONO DA CONTA).
+  const accountOwnerById = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const a of data?.records ?? []) map.set(a.id, a.ownerId ?? null);
+    return map;
+  }, [data]);
+
+  const accountOwnerMatches = (accountId: string | null) => {
+    if (ownerId === "all") return true;
+    if (!accountId) return false;
+    return accountOwnerById.get(accountId) === ownerId;
+  };
 
   const generationByAccount = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of orcamentosQ.data?.records ?? []) {
-      if (!r.accountId || !ownerMatches(r)) continue;
+      if (!r.accountId || !accountOwnerMatches(r.accountId)) continue;
       map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orcamentosQ.data, ownerId]);
+  }, [orcamentosQ.data, ownerId, accountOwnerById]);
 
   const salesByAccount = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of vendasQ.data?.records ?? []) {
-      if (!r.accountId || !ownerMatches(r)) continue;
+      if (!r.accountId || !accountOwnerMatches(r.accountId)) continue;
       if (!r.status || !ALLOWED_ORDER_STATUS.has(r.status)) continue;
       map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vendasQ.data, ownerId]);
+  }, [vendasQ.data, ownerId, accountOwnerById]);
 
   // Pedidos em curso por conta — para exibir na expansão.
   const ordersByAccount = useMemo(() => {
     const map = new Map<string, SalesforceOppRow[]>();
     for (const r of vendasQ.data?.records ?? []) {
-      if (!r.accountId || !ownerMatches(r)) continue;
+      if (!r.accountId || !accountOwnerMatches(r.accountId)) continue;
       if (!r.status || !ALLOWED_ORDER_STATUS.has(r.status)) continue;
       const list = map.get(r.accountId) ?? [];
       list.push(r);
@@ -172,24 +167,14 @@ function SegmentacaoPage() {
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vendasQ.data, ownerId]);
-
-  // Projeção base = SUM(Total__c ou Amount) das vendas do trimestre anterior por conta,
-  // respeitando o filtro de vendedor (dono da Opportunity).
-  const quarterProjectionByAccount = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of prevQuarterVendasQ.data?.records ?? []) {
-      if (!r.accountId || !ownerMatches(r)) continue;
-      map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
-    }
-    return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prevQuarterVendasQ.data, ownerId]);
+  }, [vendasQ.data, ownerId, accountOwnerById]);
 
   function accountToClient(a: SalesforceAccount): Client {
     const seed = seedFromId(a.id);
     const segment: Segment = a.segment ?? "D";
-    const quarterProj = quarterProjectionByAccount.get(a.id) ?? 0;
+    // Projeção vem direto da tabela do Salesforce (Total_Vendido_Trimestre_Anterior__c).
+    // Esse campo já representa a projeção do trimestre atual da conta.
+    const quarterProj = a.quarterProjection ?? 0;
     const projection = period === "mensal" ? Math.round(quarterProj / 3) : Math.round(quarterProj);
     const generation = Math.round(generationByAccount.get(a.id) ?? 0);
     const sales = Math.round(salesByAccount.get(a.id) ?? 0);
@@ -217,22 +202,14 @@ function SegmentacaoPage() {
     const activeOnly = activeOwnerIds.size > 0
       ? accounts.filter((a) => a.ownerId && activeOwnerIds.has(a.ownerId))
       : [];
-
-    let scoped: SalesforceAccount[];
-    if (ownerId === "all") {
-      scoped = activeOnly;
-    } else {
-      // Quando um vendedor está selecionado, incluímos toda conta que teve
-      // alguma oportunidade (projeção/geração/venda) sob esse vendedor.
-      const relevant = new Set<string>();
-      quarterProjectionByAccount.forEach((_, id) => relevant.add(id));
-      generationByAccount.forEach((_, id) => relevant.add(id));
-      salesByAccount.forEach((_, id) => relevant.add(id));
-      scoped = activeOnly.filter((a) => relevant.has(a.id));
-    }
+    // Filtro de vendedor = dono da CONTA.
+    const scoped = ownerId === "all"
+      ? activeOnly
+      : activeOnly.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount, quarterProjectionByAccount]);
+  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount]);
+
 
 
 
