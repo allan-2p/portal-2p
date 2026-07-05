@@ -640,7 +640,7 @@ function TabelasPage() {
     queryKey: ["sf-vendas", range.start, range.end],
     queryFn: () => fetchVen({ data: range }),
     staleTime: 60_000,
-    enabled: hasRole("admin") && tab === "vendas",
+    enabled: hasRole("admin") && (tab === "vendas" || tab === "semanas"),
   });
 
   if (!hasRole("admin")) {
