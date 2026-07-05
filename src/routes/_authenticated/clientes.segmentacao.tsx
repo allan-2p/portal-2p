@@ -109,7 +109,6 @@ function SegmentacaoPage() {
   );
 
   const range = useMemo(() => periodRange(period), [period]);
-  const prevQuarter = useMemo(() => previousQuarterRange(), []);
 
   const orcamentosQ = useQuery({
     queryKey: ["sf-segmentacao-orcamentos", range.start, range.end],
@@ -121,42 +120,46 @@ function SegmentacaoPage() {
     queryFn: () => fetchVendas({ data: range }),
     staleTime: 60_000,
   });
-  // Vendas do trimestre anterior — base da projeção de cada conta.
-  const prevQuarterVendasQ = useQuery({
-    queryKey: ["sf-segmentacao-prev-vendas", prevQuarter.start, prevQuarter.end],
-    queryFn: () => fetchVendas({ data: prevQuarter }),
-    staleTime: 5 * 60_000,
-  });
 
-  const ownerMatches = (r: { ownerId: string | null }) =>
-    ownerId === "all" ? true : r.ownerId === ownerId;
+  // Mapa accountId -> ownerId da conta (filtro de vendedor é o DONO DA CONTA).
+  const accountOwnerById = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const a of data?.records ?? []) map.set(a.id, a.ownerId ?? null);
+    return map;
+  }, [data]);
+
+  const accountOwnerMatches = (accountId: string | null) => {
+    if (ownerId === "all") return true;
+    if (!accountId) return false;
+    return accountOwnerById.get(accountId) === ownerId;
+  };
 
   const generationByAccount = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of orcamentosQ.data?.records ?? []) {
-      if (!r.accountId || !ownerMatches(r)) continue;
+      if (!r.accountId || !accountOwnerMatches(r.accountId)) continue;
       map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orcamentosQ.data, ownerId]);
+  }, [orcamentosQ.data, ownerId, accountOwnerById]);
 
   const salesByAccount = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of vendasQ.data?.records ?? []) {
-      if (!r.accountId || !ownerMatches(r)) continue;
+      if (!r.accountId || !accountOwnerMatches(r.accountId)) continue;
       if (!r.status || !ALLOWED_ORDER_STATUS.has(r.status)) continue;
       map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vendasQ.data, ownerId]);
+  }, [vendasQ.data, ownerId, accountOwnerById]);
 
   // Pedidos em curso por conta — para exibir na expansão.
   const ordersByAccount = useMemo(() => {
     const map = new Map<string, SalesforceOppRow[]>();
     for (const r of vendasQ.data?.records ?? []) {
-      if (!r.accountId || !ownerMatches(r)) continue;
+      if (!r.accountId || !accountOwnerMatches(r.accountId)) continue;
       if (!r.status || !ALLOWED_ORDER_STATUS.has(r.status)) continue;
       const list = map.get(r.accountId) ?? [];
       list.push(r);
@@ -164,7 +167,8 @@ function SegmentacaoPage() {
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vendasQ.data, ownerId]);
+  }, [vendasQ.data, ownerId, accountOwnerById]);
+
 
   // Projeção base = SUM(Total__c ou Amount) das vendas do trimestre anterior por conta,
   // respeitando o filtro de vendedor (dono da Opportunity).
