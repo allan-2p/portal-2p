@@ -54,6 +54,7 @@ function MetasPage() {
   const { hasRole } = useAuth();
   const [ownerId, setOwnerId] = useState<string>("all");
   const [quarterId, setQuarterId] = useState<string>("2026-Q3");
+  const [onlyActive, setOnlyActive] = useState<boolean>(false);
   const quarter = QUARTERS.find((q) => q.id === quarterId) ?? QUARTERS[2];
 
   const fetchList = useServerFn(listSalespersonGoals);
@@ -90,10 +91,13 @@ function MetasPage() {
   });
 
   const people = q.data?.records ?? [];
-  const filtered = useMemo(
-    () => (ownerId === "all" ? people : people.filter((p) => p.id === ownerId)),
-    [people, ownerId],
-  );
+  const filtered = useMemo(() => {
+    let list = ownerId === "all" ? people : people.filter((p) => p.id === ownerId);
+    if (onlyActive) {
+      list = list.filter((p) => quarter.months.some((m) => p.active[`${quarter.year}-${m}`]));
+    }
+    return list;
+  }, [people, ownerId, onlyActive, quarter]);
 
   const totals = useMemo(() => {
     const perMonth: Record<number, number> = {};
@@ -169,6 +173,15 @@ function MetasPage() {
                 </button>
               ))}
             </div>
+            <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border cursor-pointer text-sm">
+              <input
+                type="checkbox"
+                checked={onlyActive}
+                onChange={(e) => setOnlyActive(e.target.checked)}
+                className="h-4 w-4 accent-primary cursor-pointer"
+              />
+              <span className="font-medium">Só metas ativas</span>
+            </label>
           </div>
 
         </div>
