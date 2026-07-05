@@ -29,6 +29,7 @@ import {
   getSalesforceOpportunities,
   getSalesforceForecasts,
   getSalesforceVendas,
+  getSalesforceAccounts,
   completeSalesforceTask,
   createSalesforceTask,
   logSalesforceInteraction,
@@ -36,7 +37,9 @@ import {
   type OpportunityStage,
   type SalesforceOpportunity,
   type SalesforceTask,
+  type SalesforceAccount,
 } from "@/lib/salesforce.functions";
+
 import { getMonthGoalTotal } from "@/lib/admin.functions";
 
 type TaskInteractionState = { contacted: "yes" | "no"; type?: string; note?: string; ts: number };
