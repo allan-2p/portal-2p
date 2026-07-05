@@ -376,8 +376,9 @@ export const getSalesforceOpportunities = createServerFn({ method: "GET" })
     const stageList = stages.map((s) => `'${esc(s)}'`).join(",");
     const ownerClause = validId(data.ownerId) ? ` AND OwnerId = '${data.ownerId}'` : "";
     const soql =
-      `SELECT Id, Name, StageName, Amount, CloseDate, Previsao_de_Fechamento__c, Probability, IsClosed, ` +
+      `SELECT Id, Name, StageName, Amount, CloseDate, Previsao_de_Fechamento__c, Probability, IsClosed, CreatedDate, ` +
       `Account.Name, Owner.Name, OwnerId ` +
+
       `FROM Opportunity ` +
       `WHERE StageName IN (${stageList})${ownerClause} ` +
       `ORDER BY CloseDate DESC LIMIT 500`;
