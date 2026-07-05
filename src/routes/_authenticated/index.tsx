@@ -750,6 +750,8 @@ function ContactedToggle({
   );
 }
 
+const INTERACTION_TYPES = ["Ligação", "Mensagem", "E-mail", "Reunião", "Visita", "Outro"] as const;
+
 function InteractionQuickDialog({
   task,
   existing,
@@ -763,12 +765,14 @@ function InteractionQuickDialog({
 }) {
   const logInteraction = useServerFn(logSalesforceInteraction);
   const [contacted, setContacted] = useState<"yes" | "no" | null>(null);
+  const [interactionType, setInteractionType] = useState<string>("Ligação");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
   useMemo(() => {
     if (task) {
       setContacted(existing?.contacted ?? null);
+      setInteractionType(existing?.type ?? "Ligação");
       setNote(existing?.note ?? "");
     }
   }, [task?.id]);
@@ -779,7 +783,7 @@ function InteractionQuickDialog({
     try {
       await logInteraction({
         data: {
-          subject: `${contacted === "yes" ? "Interação — Falei" : "Interação — Sem contato"}: ${task.subject}`,
+          subject: `${interactionType} — ${contacted === "yes" ? "Falei" : "Sem contato"}: ${task.subject}`,
           description: note,
           whatId: task.whatId,
           whoId: task.whoId,
@@ -787,7 +791,7 @@ function InteractionQuickDialog({
         },
       });
       toast.success("Interação registrada no Salesforce.");
-      onSaved({ contacted, note, ts: Date.now() });
+      onSaved({ contacted, type: interactionType, note, ts: Date.now() });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao registrar interação.");
     } finally {
@@ -808,6 +812,15 @@ function InteractionQuickDialog({
           <div>
             <Label className="mb-1.5 block">Conseguiu falar com o cliente?</Label>
             <ContactedToggle value={contacted} onChange={setContacted} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block">Tipo de interação</Label>
+            <Select value={interactionType} onValueChange={setInteractionType}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {INTERACTION_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Comentários</Label>
