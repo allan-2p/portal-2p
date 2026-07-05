@@ -959,10 +959,21 @@ function CompleteTaskDialog({
               <ContactedToggle value={contacted} onChange={(v) => { setContacted(v); setInteractionAlreadyLogged(false); }} />
             </div>
             {!interactionAlreadyLogged && (
-              <div>
-                <Label className="text-xs">Comentários</Label>
-                <Textarea rows={3} value={interactionNote} onChange={(e) => setInteractionNote(e.target.value)} />
-              </div>
+              <>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Tipo de interação</Label>
+                  <Select value={interactionType} onValueChange={setInteractionType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {INTERACTION_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Comentários</Label>
+                  <Textarea rows={3} value={interactionNote} onChange={(e) => setInteractionNote(e.target.value)} />
+                </div>
+              </>
             )}
           </div>
 
