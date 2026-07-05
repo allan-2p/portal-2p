@@ -54,6 +54,7 @@ function MetasPage() {
   const { hasRole } = useAuth();
   const [ownerId, setOwnerId] = useState<string>("all");
   const [quarterId, setQuarterId] = useState<string>("2026-Q3");
+  const [onlyActive, setOnlyActive] = useState<boolean>(false);
   const quarter = QUARTERS.find((q) => q.id === quarterId) ?? QUARTERS[2];
 
   const fetchList = useServerFn(listSalespersonGoals);
