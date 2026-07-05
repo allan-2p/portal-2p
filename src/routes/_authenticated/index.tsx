@@ -442,7 +442,13 @@ function HomePage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="text-sm font-semibold truncate flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <UsersIcon className="h-3 w-3 text-primary shrink-0" />
+                            <span className="text-sm font-bold text-foreground truncate">
+                              {t.what ?? t.who ?? "Sem cliente vinculado"}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
                             {t.subject}
                             {isOverdue && (
                               <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-destructive/15 text-destructive">
@@ -464,9 +470,6 @@ function HomePage() {
                                 {inter.type ? `${inter.type} · ` : ""}{inter.contacted === "yes" ? "Falou" : "Não falou"}
                               </span>
                             )}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {t.what ?? t.who ?? t.owner ?? "—"}
                           </div>
                         </div>
                         <span className={cn(
