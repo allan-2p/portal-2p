@@ -363,16 +363,32 @@ function HomePage() {
                   Nenhuma tarefa em aberto no período.
                 </div>
               )}
-              {sfTasks.map((t) => (
+              {sfTasks.map((t) => {
+                const count = interactionsCountFor(t);
+                return (
                 <div key={t.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
                   <div className="flex items-start gap-3">
-                    <button className="mt-0.5 h-5 w-5 rounded-md border-2 border-border hover:border-primary flex items-center justify-center shrink-0 group">
-                      <CheckCircle2 className="h-3 w-3 text-primary opacity-0 group-hover:opacity-60" />
+                    <button
+                      onClick={() => setCompleteTask(t)}
+                      title="Concluir tarefa"
+                      className="mt-0.5 h-5 w-5 rounded-full border-2 border-border hover:border-primary flex items-center justify-center shrink-0 group"
+                    >
+                      <CheckCircle2 className="h-3 w-3 text-primary opacity-0 group-hover:opacity-80" />
                     </button>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="text-sm font-semibold truncate">{t.subject}</div>
+                          <div className="text-sm font-semibold truncate flex items-center gap-1.5">
+                            {t.subject}
+                            {count > 0 && (
+                              <span
+                                title={`${count} interação(ões) registrada(s) recentemente`}
+                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-success/15 text-success font-medium"
+                              >
+                                <Check className="h-2.5 w-2.5" /> Interagido{count > 1 ? ` · ${count}` : ""}
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-muted-foreground truncate">
                             {t.what ?? t.who ?? t.owner ?? "—"}
                           </div>
@@ -391,13 +407,23 @@ function HomePage() {
                         <div className="text-[11px] text-muted-foreground mt-1">Responsável: {t.owner}</div>
                       )}
                       <div className="flex gap-1.5 mt-2.5">
-                        <button className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> Ligar</button>
-                        <button className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3" /> E-mail</button>
+                        <button
+                          onClick={() => setInteractionTask(t)}
+                          className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1"
+                        >
+                          <MessageSquare className="h-3 w-3" /> Interação
+                        </button>
+                        <button
+                          onClick={() => setCompleteTask(t)}
+                          className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-success/15 hover:text-success text-muted-foreground flex items-center gap-1"
+                        >
+                          <Check className="h-3 w-3" /> Concluir
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              );})}
             </div>
           </div>
 
