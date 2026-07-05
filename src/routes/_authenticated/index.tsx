@@ -22,6 +22,7 @@ import {
   getSalesforceSalespeople,
   getSalesforceOpportunities,
   getSalesforceForecasts,
+  getSalesforceVendas,
   opportunityStages,
   type OpportunityStage,
   type SalesforceOpportunity,
@@ -146,12 +147,30 @@ function HomePage() {
   });
   const dbGoal = monthGoalQ.data?.total ?? 0;
 
-  // ---- Mock (mantidos para vendido/projetado/realizado) ----
+  // ---- Vendido do mês (Salesforce: Opportunity StageName = 'Pedido Concluído') ----
+  const monthRange = useMemo(() => {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    return { start: fmtKey(new Date(y, m, 1)), end: fmtKey(new Date(y, m + 1, 0)) };
+  }, [today]);
+  const fetchVendas = useServerFn(getSalesforceVendas);
+  const vendasQ = useQuery({
+    queryKey: ["sf-home-vendas", monthRange.start, monthRange.end],
+    queryFn: () => fetchVendas({ data: monthRange }),
+    staleTime: 60_000,
+  });
+  const sold = useMemo(() => {
+    const recs = vendasQ.data?.records ?? [];
+    return recs
+      .filter((r) => ownerParam == null || r.ownerId === ownerParam)
+      .reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
+  }, [vendasQ.data, ownerParam]);
+
+  // ---- Mock (mantidos para projetado) ----
   const goal = dbGoal > 0 ? dbGoal : portfolio.goal;
-  const achieved = portfolio.achieved;
+  const achieved = sold;
   const projected = portfolio.projected;
-  const sold = portfolio.sold;
-  const goalPct = goal > 0 ? (achieved / goal) * 100 : 0;
+  const goalPct = goal > 0 ? (sold / goal) * 100 : 0;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
