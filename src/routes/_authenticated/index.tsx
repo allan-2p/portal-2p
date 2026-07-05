@@ -22,6 +22,7 @@ import {
   getSalesforceSalespeople,
   getSalesforceOpportunities,
   getSalesforceForecasts,
+  getSalesforceVendas,
   opportunityStages,
   type OpportunityStage,
   type SalesforceOpportunity,
