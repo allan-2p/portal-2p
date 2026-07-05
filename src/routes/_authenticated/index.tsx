@@ -307,8 +307,100 @@ function HomePage() {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-  const taskClientNames = new Set(mockTasks.map((t) => t.client));
-  const offRadarInsights = atlasInsights.filter((i) => !i.client || !taskClientNames.has(i.client));
+
+  // Identifica o vendedor SF do usuário logado via email
+  const currentUserSfId = useMemo(() => {
+    const email = user?.email?.toLowerCase();
+    if (!email) return null;
+    return salespeople.find((p) => p.email?.toLowerCase() === email)?.id ?? null;
+  }, [salespeople, user?.email]);
+
+  const goalSubject = useMemo(() => {
+    if (ownerId === "all") return "O time está";
+    if (currentUserSfId && ownerId === currentUserSfId) return "Você está";
+    const sp = salespeople.find((p) => p.id === ownerId);
+    return `${sp?.name ?? "Vendedor"} está`;
+  }, [ownerId, currentUserSfId, salespeople]);
+
+  // ---- Atlas Radar: insights a partir das contas do vendedor selecionado ----
+  const fetchAccounts = useServerFn(getSalesforceAccounts);
+  const accountsQ = useQuery({
+    queryKey: ["sf-home-accounts"],
+    queryFn: () => fetchAccounts(),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const accounts: SalesforceAccount[] = accountsQ.data?.records ?? [];
+  const atlasRadarInsights = useMemo(() => {
+    const owned = ownerParam
+      ? accounts.filter((a) => a.ownerId === ownerParam)
+      : accounts;
+    const ownedNames = new Set(owned.map((a) => a.name));
+    // Oportunidades abertas por conta (nome), do owner selecionado
+    const openByAccount = new Map<string, { count: number; total: number }>();
+    for (const o of opps) {
+      if (o.isClosed) continue;
+      if (!o.account) continue;
+      if (!ownedNames.has(o.account)) continue;
+      const cur = openByAccount.get(o.account) ?? { count: 0, total: 0 };
+      cur.count += 1;
+      cur.total += o.amount ?? 0;
+      openByAccount.set(o.account, cur);
+    }
+    type Insight = {
+      id: string;
+      type: "opportunity" | "risk" | "trend" | "action";
+      title: string;
+      client: string;
+      description: string;
+      impact?: string;
+      priority: number;
+    };
+    const out: Insight[] = [];
+    for (const a of owned) {
+      const open = openByAccount.get(a.name);
+      const proj = a.quarterProjection ?? 0;
+      const sold = a.quarterSold ?? 0;
+      // Risco: projeção do trimestre existe mas venda no trimestre está muito abaixo
+      if (proj > 0 && sold < proj * 0.4) {
+        out.push({
+          id: `risk-${a.id}`,
+          type: "risk",
+          title: `${a.name} abaixo da projeção do trimestre`,
+          client: a.name,
+          description: `Vendido no trimestre ${fmt(sold)} vs projeção ${fmt(proj)}. Reforçar contato.`,
+          impact: fmt(proj - sold),
+          priority: 0,
+        });
+      }
+      // Oportunidade: pipeline aberto relevante
+      if (open && open.total > 0) {
+        out.push({
+          id: `opp-${a.id}`,
+          type: "opportunity",
+          title: `${open.count} oportunidade(s) em aberto — ${a.name}`,
+          client: a.name,
+          description: `Pipeline aberto de ${fmt(open.total)} para avançar.`,
+          impact: fmt(open.total),
+          priority: 1,
+        });
+      }
+      // Observações da conta
+      const obs = (a.observacoes ?? "").trim();
+      if (obs) {
+        out.push({
+          id: `obs-${a.id}`,
+          type: "trend",
+          title: `Observação — ${a.name}`,
+          client: a.name,
+          description: obs.length > 220 ? obs.slice(0, 217) + "…" : obs,
+          priority: 2,
+        });
+      }
+    }
+    out.sort((x, y) => x.priority - y.priority);
+    return out.slice(0, 12);
+  }, [accounts, opps, ownerParam]);
 
   return (
     <AppLayout>
@@ -318,12 +410,13 @@ function HomePage() {
           <div>
             <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""}</div>
             <h1 className="text-3xl md:text-4xl font-bold mt-1">
-              Você está em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
+              {goalSubject} em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
             </h1>
             <p className="text-sm text-muted-foreground mt-2">
-              Atlas identificou {atlasInsights.length} ações que podem destravar R$ 104k esta semana.
+              Atlas identificou {atlasRadarInsights.length} sinal(is) na carteira selecionada.
             </p>
           </div>
+
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border">
               <UsersIcon className="h-4 w-4 text-primary" />
