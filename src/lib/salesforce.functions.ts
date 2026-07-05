@@ -223,7 +223,8 @@ type TaskPayload = {
 function buildTaskBody(p: TaskPayload) {
   const body: Record<string, unknown> = { Subject: p.subject };
   if (p.activityDate) body.ActivityDate = p.activityDate;
-  if (p.priority) body.Priority = p.priority;
+  // Priority é obrigatório por validação customizada da org — default "Normal".
+  body.Priority = p.priority && p.priority.trim() ? p.priority : "Normal";
   if (p.status) body.Status = p.status;
   // Task.Type não existe nesta org; ignoramos p.type intencionalmente.
   if (p.description) body.Description = p.description;
