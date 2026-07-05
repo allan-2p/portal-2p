@@ -91,10 +91,13 @@ function MetasPage() {
   });
 
   const people = q.data?.records ?? [];
-  const filtered = useMemo(
-    () => (ownerId === "all" ? people : people.filter((p) => p.id === ownerId)),
-    [people, ownerId],
-  );
+  const filtered = useMemo(() => {
+    let list = ownerId === "all" ? people : people.filter((p) => p.id === ownerId);
+    if (onlyActive) {
+      list = list.filter((p) => quarter.months.some((m) => p.active[`${quarter.year}-${m}`]));
+    }
+    return list;
+  }, [people, ownerId, onlyActive, quarter]);
 
   const totals = useMemo(() => {
     const perMonth: Record<number, number> = {};
