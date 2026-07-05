@@ -366,6 +366,7 @@ function HomePage() {
               )}
               {sfTasks.map((t) => {
                 const inter = taskInteractions[t.id] ?? null;
+                const suggestion = buildAtlasSuggestion(t, inter, todayStart);
                 return (
                 <div key={t.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
                   <div className="flex items-start gap-3">
@@ -383,7 +384,7 @@ function HomePage() {
                             {t.subject}
                             {inter && (
                               <span
-                                title={inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}
+                                title={`${inter.type ?? "Interação"} — ${inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}`}
                                 className={cn(
                                   "inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium",
                                   inter.contacted === "yes"
@@ -392,7 +393,7 @@ function HomePage() {
                                 )}
                               >
                                 <Check className="h-2.5 w-2.5" />
-                                {inter.contacted === "yes" ? "Falou" : "Não falou"}
+                                {inter.type ? `${inter.type} · ` : ""}{inter.contacted === "yes" ? "Falou" : "Não falou"}
                               </span>
                             )}
                           </div>
@@ -412,6 +413,14 @@ function HomePage() {
                       </div>
                       {t.owner && (
                         <div className="text-[11px] text-muted-foreground mt-1">Responsável: {t.owner}</div>
+                      )}
+                      {suggestion && (
+                        <div className="mt-2 rounded-lg bg-[color:var(--atlas)]/10 border border-[color:var(--atlas)]/25 p-2 flex items-start gap-1.5">
+                          <Sparkles className="h-3 w-3 text-[color:var(--atlas)] mt-0.5 shrink-0" />
+                          <div className="text-[11px] text-foreground/90 leading-snug">
+                            <span className="font-semibold text-[color:var(--atlas)]">Atlas: </span>{suggestion}
+                          </div>
+                        </div>
                       )}
                       <div className="flex gap-1.5 mt-2.5">
                         <button
