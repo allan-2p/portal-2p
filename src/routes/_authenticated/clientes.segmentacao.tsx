@@ -364,13 +364,23 @@ function SegmentacaoPage() {
                         <tr key={`${c.id}-d`} className="bg-surface-2/30 border-b border-border/40">
                           <td colSpan={10} className="px-6 py-5">
                             <div className="grid md:grid-cols-4 gap-4">
-                              <Detail label="Projeção de Vendas" value={fmt(c.projection)} />
-                              <Detail label="Geração R$" value={fmt(c.generation)} sub={`${generationPct.toFixed(0)}% da projeção`} />
-                              <Detail label="Vendas R$" value={fmt(c.sales)} sub={`${((c.sales / c.projection) * 100).toFixed(0)}% da projeção`} />
+                              <Detail label={period === "mensal" ? "Projeção (mês)" : "Projeção (trimestre)"} value={fmt(c.projection)} />
+                              <Detail label="Geração R$" value={fmt(c.generation)} sub={c.projection > 0 ? `${generationPct.toFixed(0)}% da projeção` : undefined} />
+                              <Detail label="Vendas R$" value={fmt(c.sales)} sub={c.projection > 0 ? `${salesPct.toFixed(0)}% da projeção` : undefined} />
                               <Detail label="Última interação" value={c.lastInteraction} sub={`Saúde ${c.health}/100`} />
                             </div>
-                            <div className="mt-4 p-3 rounded-lg bg-background/60 border border-border flex items-start gap-2">
+                            <div className="mt-4 p-3 rounded-lg bg-background/60 border border-border">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Observações (Salesforce)</span>
+                              </div>
+                              <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
+                                {c.notes ?? "Sem observações registradas no Salesforce."}
+                              </p>
+                            </div>
+                            <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border flex items-start gap-2">
                               <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+
                               <div className="text-xs text-muted-foreground leading-relaxed">
                                 <span className="text-foreground font-medium">Atlas sugere: </span>
                                 {c.health > 70
