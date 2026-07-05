@@ -669,9 +669,319 @@ function HomePage() {
           </div>
         </div>
       </div>
+
+      <InteractionQuickDialog
+        task={interactionTask}
+        onClose={() => setInteractionTask(null)}
+        onDone={() => {
+          setInteractionTask(null);
+          queryClient.invalidateQueries({ queryKey: ["sf-home-interactions"] });
+        }}
+      />
+
+      <CompleteTaskDialog
+        task={completeTask}
+        hasInteraction={completeTask ? interactionsCountFor(completeTask) > 0 : false}
+        onClose={() => setCompleteTask(null)}
+        onDone={() => {
+          setCompleteTask(null);
+          queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
+          queryClient.invalidateQueries({ queryKey: ["sf-home-interactions"] });
+        }}
+      />
     </AppLayout>
   );
 }
+
+const INTERACTION_TYPES = ["Ligação", "E-mail", "Reunião", "Visita", "WhatsApp", "Outro"] as const;
+const TASK_TYPES = ["Ligação", "E-mail", "Reunião", "Visita", "Follow-up", "Outro"] as const;
+const PRIORITIES = ["Alta", "Normal", "Baixa"] as const;
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function InteractionQuickDialog({
+  task,
+  onClose,
+  onDone,
+}: {
+  task: SalesforceTask | null;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const logInteraction = useServerFn(logSalesforceInteraction);
+  const [subject, setSubject] = useState("");
+  const [type, setType] = useState<string>("Ligação");
+  const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useMemo(() => {
+    if (task) {
+      setSubject(`Interação — ${task.what ?? task.who ?? task.subject}`);
+      setType("Ligação");
+      setDescription("");
+    }
+  }, [task?.id]);
+
+  const submit = async () => {
+    if (!task) return;
+    setSaving(true);
+    try {
+      await logInteraction({
+        data: {
+          subject,
+          type,
+          description,
+          whatId: task.whatId,
+          whoId: task.whoId,
+          ownerId: task.ownerId,
+        },
+      });
+      toast.success("Interação registrada no Salesforce.");
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao registrar interação.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!task} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Registrar interação</DialogTitle>
+          <DialogDescription>
+            {task?.what ?? task?.who ?? "Registrar interação no Salesforce"}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Assunto</Label>
+            <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+          </div>
+          <div>
+            <Label>Tipo</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {INTERACTION_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Comentários</Label>
+            <Textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button onClick={submit} disabled={saving || !subject.trim()}>
+            {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+            Registrar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CompleteTaskDialog({
+  task,
+  hasInteraction,
+  onClose,
+  onDone,
+}: {
+  task: SalesforceTask | null;
+  hasInteraction: boolean;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const completeFn = useServerFn(completeSalesforceTask);
+  const createFn = useServerFn(createSalesforceTask);
+  const logFn = useServerFn(logSalesforceInteraction);
+
+  const [logNow, setLogNow] = useState(false);
+  const [interactionType, setInteractionType] = useState<string>("Ligação");
+  const [interactionNote, setInteractionNote] = useState("");
+
+  const [createNext, setCreateNext] = useState(true);
+  const [subject, setSubject] = useState("");
+  const [type, setType] = useState<string>("Follow-up");
+  const [priority, setPriority] = useState<string>("Normal");
+  const [date, setDate] = useState<string>(todayKey());
+  const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useMemo(() => {
+    if (task) {
+      setLogNow(!hasInteraction);
+      setInteractionType("Ligação");
+      setInteractionNote("");
+      setCreateNext(true);
+      setSubject(`Follow-up — ${task.what ?? task.who ?? task.subject}`);
+      setType("Follow-up");
+      setPriority(task.priority ?? "Normal");
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      setDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+      setDescription("");
+    }
+  }, [task?.id]);
+
+  const submit = async () => {
+    if (!task) return;
+    setSaving(true);
+    try {
+      if (logNow && interactionNote.trim().length + interactionType.length > 0) {
+        await logFn({
+          data: {
+            subject: `Interação — ${task.what ?? task.who ?? task.subject}`,
+            type: interactionType,
+            description: interactionNote,
+            whatId: task.whatId,
+            whoId: task.whoId,
+            ownerId: task.ownerId,
+          },
+        });
+      }
+      await completeFn({ data: { taskId: task.id } });
+      if (createNext && subject.trim()) {
+        await createFn({
+          data: {
+            subject,
+            type,
+            priority,
+            activityDate: date,
+            description,
+            whatId: task.whatId,
+            whoId: task.whoId,
+            ownerId: task.ownerId,
+          },
+        });
+      }
+      toast.success("Tarefa concluída no Salesforce.");
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao concluir tarefa.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!task} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-success" /> Concluir tarefa
+          </DialogTitle>
+          <DialogDescription>
+            {task?.subject} — {task?.what ?? task?.who ?? "—"}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="rounded-lg border border-border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold flex items-center gap-2">
+                <MessageSquare className="h-3.5 w-3.5 text-primary" /> Registrar interação
+              </div>
+              {hasInteraction && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-success/15 text-success font-medium flex items-center gap-1">
+                  <Check className="h-2.5 w-2.5" /> Já registrada
+                </span>
+              )}
+              <label className="text-xs flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" checked={logNow} onChange={(e) => setLogNow(e.target.checked)} />
+                Registrar agora
+              </label>
+            </div>
+            {logNow && (
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-xs">Tipo</Label>
+                  <Select value={interactionType} onValueChange={setInteractionType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {INTERACTION_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Comentários</Label>
+                  <Textarea rows={3} value={interactionNote} onChange={(e) => setInteractionNote(e.target.value)} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold flex items-center gap-2">
+                <Plus className="h-3.5 w-3.5 text-primary" /> Nova tarefa
+              </div>
+              <label className="text-xs flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" checked={createNext} onChange={(e) => setCreateNext(e.target.checked)} />
+                Criar próxima
+              </label>
+            </div>
+            {createNext && (
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-xs">Assunto</Label>
+                  <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label className="text-xs">Tipo</Label>
+                    <Select value={type} onValueChange={setType}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {TASK_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Prioridade</Label>
+                    <Select value={priority} onValueChange={setPriority}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PRIORITIES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Vencimento</Label>
+                    <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Comentários</Label>
+                  <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Relacionada a: {task?.what ?? task?.who ?? "—"}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+            Concluir tarefa
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function MiniKpi({ label, value, sub, trend }: { label: string; value: string; sub: string; trend?: number }) {
   const up = (trend ?? 0) >= 0;
