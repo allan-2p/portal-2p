@@ -897,14 +897,14 @@ function CompleteTaskDialog({
       if (!interactionAlreadyLogged) {
         await logFn({
           data: {
-            subject: `${contacted === "yes" ? "Interação — Falei" : "Interação — Sem contato"}: ${task.subject}`,
+            subject: `${interactionType} — ${contacted === "yes" ? "Falei" : "Sem contato"}: ${task.subject}`,
             description: interactionNote,
             whatId: task.whatId,
             whoId: task.whoId,
             ownerId: task.ownerId,
           },
         });
-        onSaveInteraction({ contacted, note: interactionNote, ts: Date.now() });
+        onSaveInteraction({ contacted, type: interactionType, note: interactionNote, ts: Date.now() });
       }
       await completeFn({ data: { taskId: task.id } });
       if (createNext && subject.trim()) {
