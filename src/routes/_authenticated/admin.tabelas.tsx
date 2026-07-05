@@ -261,19 +261,20 @@ function OppTable({
   );
 }
 
-function previousQuarterRange(): { start: string; end: string; label: string } {
+function quarterRange(year: number, q: number): { start: string; end: string; label: string } {
+  // q is 1..4; wrap to previous year if 0
+  let yy = year;
+  let qq = q;
+  if (qq < 1) { qq = 4; yy = year - 1; }
+  if (qq > 4) { qq = 1; yy = year + 1; }
+  const start = new Date(yy, (qq - 1) * 3, 1);
+  const end = new Date(yy, qq * 3, 0);
+  return { start: fmtKey(start), end: fmtKey(end), label: `Q${qq}/${yy}` };
+}
+
+function currentQuarter(): { year: number; q: number } {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const q = Math.floor(m / 3);
-  const prevQStart = new Date(y, (q - 1) * 3, 1);
-  const prevQEnd = new Date(prevQStart.getFullYear(), prevQStart.getMonth() + 3, 0);
-  const qNum = Math.floor(prevQStart.getMonth() / 3) + 1;
-  return {
-    start: fmtKey(prevQStart),
-    end: fmtKey(prevQEnd),
-    label: `Q${qNum}/${prevQStart.getFullYear()}`,
-  };
+  return { year: now.getFullYear(), q: Math.floor(now.getMonth() / 3) + 1 };
 }
 
 type ProjectionRow = {
@@ -286,7 +287,14 @@ type ProjectionRow = {
 };
 
 function ProjectionsPanel({ search }: { search: string }) {
-  const range = useMemo(previousQuarterRange, []);
+  const cur = useMemo(currentQuarter, []);
+  const [selYear, setSelYear] = useState<number>(cur.year);
+  const [selQ, setSelQ] = useState<number>(cur.q);
+
+  // Base = trimestre anterior ao selecionado
+  const baseRange = useMemo(() => quarterRange(selYear, selQ - 1), [selYear, selQ]);
+  const targetLabel = useMemo(() => quarterRange(selYear, selQ).label, [selYear, selQ]);
+  const range = baseRange;
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
 
