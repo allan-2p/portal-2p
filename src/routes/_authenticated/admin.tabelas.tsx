@@ -612,6 +612,22 @@ function WeeksPanel({
   );
 }
 
+function FixedRangeWeeksPanel({ start, end }: { start: string; end: string }) {
+  const fetchVen = useServerFn(getSalesforceVendas);
+  const q = useQuery({
+    queryKey: ["sf-vendas", start, end],
+    queryFn: () => fetchVen({ data: { start, end } }),
+    staleTime: 60_000,
+  });
+  return (
+    <WeeksPanel
+      records={q.data?.records ?? []}
+      loading={q.isLoading}
+      error={q.error}
+    />
+  );
+}
+
 function TabelasPage() {
   const { hasRole } = useAuth();
   const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas">("orcamentos");
