@@ -4,10 +4,11 @@ import { type Client, type Segment } from "@/lib/mock-data";
 import { Fragment, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle, Search, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getSalesforceAccounts, getSalesforceSalespeople, getSalesforceOrcamentos, getSalesforceVendas, type SalesforceAccount } from "@/lib/salesforce.functions";
+import { getSalesforceAccounts, getSalesforceSalespeople, getSalesforceOrcamentos, getSalesforceVendas, type SalesforceAccount, type SalesforceOppRow } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
+
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
   head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
