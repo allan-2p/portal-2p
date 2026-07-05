@@ -49,7 +49,16 @@ function periodRange(period: "mensal" | "trimestral"): { start: string; end: str
   return { start: fmtKey(new Date(y, qStart, 1)), end: fmtKey(new Date(y, qStart + 3, 0)) };
 }
 
-
+// Trimestre anterior — mesma base que a tabela "Projeções" do Portal (Admin › Tabelas).
+function previousQuarterRange(): { start: string; end: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const qStart = Math.floor(m / 3) * 3 - 3;
+  const start = new Date(y, qStart, 1);
+  const end = new Date(y, qStart + 3, 0);
+  return { start: fmtKey(start), end: fmtKey(end) };
+}
 
 
 // Status do pedido considerados "vendas em curso" — até "Coletado", inclusive.
