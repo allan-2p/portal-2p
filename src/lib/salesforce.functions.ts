@@ -178,14 +178,14 @@ export const getSalesforceInteractionsFor = createServerFn({ method: "GET" })
     if (whoIds.length) idClauses.push(`WhoId IN (${whoIds.map((i) => `'${i}'`).join(",")})`);
     clauses.push(`(${idClauses.join(" OR ")})`);
     const soql =
-      `SELECT Id, Subject, Type, ActivityDate, Description, WhatId, WhoId, Owner.Name ` +
+      `SELECT Id, Subject, ActivityDate, Description, WhatId, WhoId, Owner.Name ` +
       `FROM Task WHERE ${clauses.join(" AND ")} ORDER BY LastModifiedDate DESC LIMIT 500`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     const records: SalesforceInteraction[] = (res?.records ?? []).map((r: any) => ({
       id: r.Id,
       date: r.ActivityDate ?? null,
       subject: r.Subject ?? "(sem assunto)",
-      type: r.Type ?? null,
+      type: null,
       description: r.Description ?? null,
       whatId: r.WhatId ?? null,
       whoId: r.WhoId ?? null,
