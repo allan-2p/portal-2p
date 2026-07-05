@@ -113,35 +113,21 @@ function HomePage() {
   });
   const sfTasks = tasksQ.data?.records ?? [];
 
-  // Interações completadas recentes para as mesmas contas/leads (marcador nas tarefas)
-  const fetchInteractions = useServerFn(getSalesforceInteractionsFor);
-  const interactionIds = useMemo(() => {
-    const whatIds = Array.from(new Set(sfTasks.map((t) => t.whatId).filter(Boolean) as string[])).sort();
-    const whoIds = Array.from(new Set(sfTasks.map((t) => t.whoId).filter(Boolean) as string[])).sort();
-    return { whatIds, whoIds };
-  }, [sfTasks]);
-  const interactionsQ = useQuery({
-    queryKey: ["sf-home-interactions", interactionIds.whatIds.join(","), interactionIds.whoIds.join(",")],
-    queryFn: () => fetchInteractions({ data: { ...interactionIds, sinceDays: 60 } }),
-    enabled: interactionIds.whatIds.length > 0 || interactionIds.whoIds.length > 0,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-  const interactionsByKey = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of interactionsQ.data?.records ?? []) {
-      if (r.whatId) map.set(`w:${r.whatId}`, (map.get(`w:${r.whatId}`) ?? 0) + 1);
-      if (r.whoId) map.set(`p:${r.whoId}`, (map.get(`p:${r.whoId}`) ?? 0) + 1);
-    }
-    return map;
-  }, [interactionsQ.data]);
-  const interactionsCountFor = (t: SalesforceTask) =>
-    (t.whatId ? interactionsByKey.get(`w:${t.whatId}`) ?? 0 : 0) +
-    (t.whoId ? interactionsByKey.get(`p:${t.whoId}`) ?? 0 : 0);
-
+  // Interação por tarefa (persistida localmente) — "Consegui falar" / "Não consegui falar"
   const queryClient = useQueryClient();
+  const [taskInteractions, setTaskInteractions] = useState<Record<string, TaskInteractionState>>(() => loadTaskInteractions());
+  const setTaskInteraction = (taskId: string, s: TaskInteractionState | null) => {
+    setTaskInteractions((prev) => {
+      const next = { ...prev };
+      if (s === null) delete next[taskId];
+      else next[taskId] = s;
+      persistTaskInteractions(next);
+      return next;
+    });
+  };
   const [interactionTask, setInteractionTask] = useState<SalesforceTask | null>(null);
   const [completeTask, setCompleteTask] = useState<SalesforceTask | null>(null);
+
 
 
   const fetchOpps = useServerFn(getSalesforceOpportunities);
