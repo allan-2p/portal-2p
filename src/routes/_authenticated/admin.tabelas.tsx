@@ -353,12 +353,43 @@ function ProjectionsPanel({ search }: { search: string }) {
     return acc;
   }, [filtered]);
 
+  const quarters2026 = [1, 2, 3, 4];
+
   return (
     <div className="space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs uppercase tracking-wider text-muted-foreground mr-1">Projetar</span>
+        <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
+          {quarters2026.map((q) => {
+            const active = selYear === 2026 && selQ === q;
+            const isCurrent = cur.year === 2026 && cur.q === q;
+            return (
+              <button
+                key={q}
+                onClick={() => { setSelYear(2026); setSelQ(q); }}
+                className={cn(
+                  "px-3 py-1 rounded-md transition-colors",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Q{q}/2026{isCurrent ? " • atual" : ""}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-4 text-sm">
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Base</div>
-          <div className="font-medium">Trimestre anterior — {range.label}</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Projeção alvo</div>
+          <div className="font-medium">{targetLabel}</div>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Base (trimestre anterior)</div>
+          <div className="font-medium">{range.label}</div>
         </div>
         <div className="h-8 w-px bg-border" />
         <div>
@@ -376,6 +407,7 @@ function ProjectionsPanel({ search }: { search: string }) {
           </div>
         </div>
       </div>
+
 
       <div className="glass rounded-2xl overflow-hidden">
         {!!error && (
