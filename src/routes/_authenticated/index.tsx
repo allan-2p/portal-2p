@@ -726,10 +726,10 @@ function ContactedToggle({
         type="button"
         onClick={() => onChange("yes")}
         className={cn(
-          "px-3 py-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors",
+          "px-3 py-2 rounded-lg border-2 text-sm font-medium flex items-center justify-center gap-2 transition-all",
           value === "yes"
-            ? "border-success bg-success/15 text-success"
-            : "border-border bg-surface hover:bg-surface-2 text-muted-foreground",
+            ? "border-success bg-success/25 text-success ring-2 ring-success/40 shadow-sm"
+            : "border-success/40 bg-success/10 text-success/80 hover:bg-success/15",
         )}
       >
         <Check className="h-3.5 w-3.5" /> Falei com o cliente
@@ -738,10 +738,10 @@ function ContactedToggle({
         type="button"
         onClick={() => onChange("no")}
         className={cn(
-          "px-3 py-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors",
+          "px-3 py-2 rounded-lg border-2 text-sm font-medium flex items-center justify-center gap-2 transition-all",
           value === "no"
-            ? "border-[color:var(--warning)] bg-warning/20 text-[color:var(--warning)]"
-            : "border-border bg-surface hover:bg-surface-2 text-muted-foreground",
+            ? "border-[color:var(--warning)] bg-warning/30 text-[color:var(--warning)] ring-2 ring-warning/40 shadow-sm"
+            : "border-warning/40 bg-warning/10 text-[color:var(--warning)]/80 hover:bg-warning/20",
         )}
       >
         <AlertTriangle className="h-3.5 w-3.5" /> Não consegui falar
