@@ -39,7 +39,7 @@ import {
 } from "@/lib/salesforce.functions";
 import { getMonthGoalTotal } from "@/lib/admin.functions";
 
-type TaskInteractionState = { contacted: "yes" | "no"; note?: string; ts: number };
+type TaskInteractionState = { contacted: "yes" | "no"; type?: string; note?: string; ts: number };
 const TASK_INTERACTIONS_KEY = "portal2p:task-interactions:v1";
 function loadTaskInteractions(): Record<string, TaskInteractionState> {
   if (typeof window === "undefined") return {};
