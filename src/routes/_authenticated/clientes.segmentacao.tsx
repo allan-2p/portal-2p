@@ -210,9 +210,12 @@ function SegmentacaoPage() {
 
   function accountToClient(a: SalesforceAccount): Client {
     const seed = seedFromId(a.id);
-    const segment: Segment = a.segment ?? "D";
     // Projeção = base do trimestre anterior (mesma fonte da tabela Projeções).
     const quarterProj = quarterProjectionById.get(a.id) ?? quarterProjectionByName.get(a.name) ?? 0;
+    // Segmentação = vendas do trimestre ANTERIOR (regra Estância Solar):
+    // A > 30k | B 15k-30k | C >0 e <15k | D = 0
+    const segment: Segment =
+      quarterProj > 30000 ? "A" : quarterProj >= 15000 ? "B" : quarterProj > 0 ? "C" : "D";
     const projection = period === "mensal" ? Math.round(quarterProj / 3) : Math.round(quarterProj);
     const generation = Math.round(generationByAccount.get(a.id) ?? 0);
     const sales = Math.round(salesByAccount.get(a.id) ?? 0);
