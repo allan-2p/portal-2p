@@ -29,6 +29,7 @@ import {
   getSalesforceOpportunities,
   getSalesforceForecasts,
   getSalesforceVendas,
+  getSalesforceOrcamentos,
   getSalesforceAccounts,
   completeSalesforceTask,
   createSalesforceTask,
