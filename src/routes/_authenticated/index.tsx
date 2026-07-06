@@ -617,12 +617,27 @@ function HomePage() {
                 <MiniKpi label="Retenção" value={`${portfolio.retentionActive} / ${portfolio.retentionBase}`} sub={`${portfolio.retention.toFixed(1)}% da carteira ativa`} />
                 <MiniKpi label="Recorrência" value={`${portfolio.recurrenceCount} / ${portfolio.recurrenceBase}`} sub={`${portfolio.recurrence.toFixed(1)}% dos clientes`} />
                 <MiniKpi label="Novos recorrentes" value={`${portfolio.newRecurringClients}`} sub="Clientes no mês" />
-                <MiniKpi label="Ticket médio" value="R$ 18,27k" sub="3M: R$ 20,68k" trend={-11.6} />
-                <MiniKpi label="Conversão R$" value="25,63%" sub="3M: 31,44%" trend={-5.8} />
-                <MiniKpi label="Conversão Qtd" value="21,21%" sub="3M: 33,52%" trend={-12.3} />
+                <MiniKpi
+                  label="Ticket médio"
+                  value={fmt(conversionKpis.ticketCur)}
+                  sub={`3M: ${fmt(conversionKpis.ticket3)}`}
+                  trend={trendPct(conversionKpis.ticketCur, conversionKpis.ticket3)}
+                />
+                <MiniKpi
+                  label="Conversão R$"
+                  value={fmtPct(conversionKpis.convRCur)}
+                  sub={`3M: ${fmtPct(conversionKpis.convR3)}`}
+                  trend={trendPct(conversionKpis.convRCur, conversionKpis.convR3)}
+                />
+                <MiniKpi
+                  label="Conversão Qtd"
+                  value={fmtPct(conversionKpis.convQCur)}
+                  sub={`3M: ${fmtPct(conversionKpis.convQ3)}`}
+                  trend={trendPct(conversionKpis.convQCur, conversionKpis.convQ3)}
+                />
               </div>
               <div className="grid lg:grid-cols-2 gap-4">
-                <ChartCard title="Geração — Projetado × Realizado" series={generationSeries} valueKey="generated" valueColor={C.generation} valueLabel="Gerado" />
+                <ChartCard title="Geração — Projetado × Realizado" series={genChartSeries} valueKey="generated" valueColor={C.generation} valueLabel="Gerado" />
                 <ChartCard title="Vendas — Projetado × Realizado" series={salesChartSeries} valueKey="sold" valueColor={C.sales} valueLabel="Vendido" />
               </div>
             </div>
