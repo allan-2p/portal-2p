@@ -271,6 +271,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </button>
               )}
               <InstanceSwitcher />
+              <ViewAsSwitcher currentScreen={currentScreenKey(pathname)} />
               <ThemeToggle />
               <NotificationsDropdown />
 
