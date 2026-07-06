@@ -32,6 +32,27 @@ export type Database = {
         }
         Relationships: []
       }
+      instances: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean
@@ -139,6 +160,64 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      user_feature_permissions: {
+        Row: {
+          allowed: boolean
+          feature_key: string
+          instance_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allowed?: boolean
+          feature_key: string
+          instance_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allowed?: boolean
+          feature_key?: string
+          instance_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_feature_permissions_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_instance_access: {
+        Row: {
+          granted_at: string
+          instance_id: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          instance_id: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          instance_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_instance_access_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_invites: {
         Row: {
