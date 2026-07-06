@@ -460,10 +460,19 @@ export const getSalesforceAccounts = createServerFn({ method: "GET" })
       `SELECT Id, Name, CNPJ__c, Segmentacao_Solar__c, Segmentacao_Tubos__c, ` +
       `Industry, Phone, Website, OwnerId, Owner.Name, CreatedDate, ` +
       `Observacoes__c, Description, Total_Vendido_Trimestre_Anterior__c, Total_Vendido_Esse_Trimestre__c ` +
-      `FROM Account ORDER BY Name ASC LIMIT 2000`;
-    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
-    return { records: (res?.records ?? []).map(mapAccount) as SalesforceAccount[] };
+      `FROM Account ORDER BY Name ASC LIMIT 5000`;
+    let res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    const all: any[] = [...(res?.records ?? [])];
+    // SF devolve batches de ~1000 quando o payload é pesado — seguir nextRecordsUrl.
+    let safety = 10;
+    while (res && res.done === false && res.nextRecordsUrl && safety-- > 0) {
+      const path = String(res.nextRecordsUrl).replace(/^\/services\/data\/v\d+\.\d+/, "");
+      res = await sfFetch(path);
+      all.push(...(res?.records ?? []));
+    }
+    return { records: all.map(mapAccount) as SalesforceAccount[] };
   });
+
 
 
 export type SalesforceOppRow = {
