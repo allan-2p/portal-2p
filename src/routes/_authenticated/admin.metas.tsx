@@ -11,6 +11,8 @@ import {
   setQuarterGoalActive,
   type SalespersonMonthlyGoals,
 } from "@/lib/admin.functions";
+import { listNewAbGoals, setNewAbGoal } from "@/lib/goals.functions";
+import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_NAMES } from "@/lib/salespeople";
 import { useAuth } from "@/hooks/use-auth";
 
 
