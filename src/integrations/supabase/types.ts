@@ -58,6 +58,7 @@ export type Database = {
           ativo: boolean
           avatar_url: string | null
           cargo: string | null
+          cargo_tipo: string | null
           created_at: string
           email: string
           equipe: string | null
@@ -73,6 +74,7 @@ export type Database = {
           ativo?: boolean
           avatar_url?: string | null
           cargo?: string | null
+          cargo_tipo?: string | null
           created_at?: string
           email: string
           equipe?: string | null
@@ -88,6 +90,7 @@ export type Database = {
           ativo?: boolean
           avatar_url?: string | null
           cargo?: string | null
+          cargo_tipo?: string | null
           created_at?: string
           email?: string
           equipe?: string | null
@@ -282,6 +285,66 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_view_preferences: {
+        Row: {
+          screen: string
+          updated_at: string
+          user_id: string
+          variant_key: string
+        }
+        Insert: {
+          screen: string
+          updated_at?: string
+          user_id: string
+          variant_key: string
+        }
+        Update: {
+          screen?: string
+          updated_at?: string
+          user_id?: string
+          variant_key?: string
+        }
+        Relationships: []
+      }
+      view_variants: {
+        Row: {
+          cargo: string | null
+          created_at: string
+          enabled: boolean
+          id: string
+          instance_id: string | null
+          label: string | null
+          role: Database["public"]["Enums"]["app_role"] | null
+          screen: string
+          updated_at: string
+          variant_key: string
+        }
+        Insert: {
+          cargo?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          instance_id?: string | null
+          label?: string | null
+          role?: Database["public"]["Enums"]["app_role"] | null
+          screen: string
+          updated_at?: string
+          variant_key: string
+        }
+        Update: {
+          cargo?: string | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          instance_id?: string | null
+          label?: string | null
+          role?: Database["public"]["Enums"]["app_role"] | null
+          screen?: string
+          updated_at?: string
+          variant_key?: string
         }
         Relationships: []
       }
