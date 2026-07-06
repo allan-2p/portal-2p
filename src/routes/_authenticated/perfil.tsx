@@ -48,7 +48,7 @@ function PerfilPage() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName, cargo: cargo || null })
+        .update({ full_name: fullName, cargo: cargo || null, cargo_tipo: cargoTipo || null })
         .eq("id", user.id);
       if (error) throw error;
       await refreshAuthProfile();
