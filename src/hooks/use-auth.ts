@@ -2,7 +2,7 @@ import { useEffect, useCallback, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-export type AppRole = "admin" | "gestor" | "vendedor" | "diretoria";
+export type AppRole = "admin" | "gerente" | "vendedor" | "diretor" | "marketing";
 
 export interface Profile {
   id: string;
@@ -22,7 +22,7 @@ interface AuthState {
   loading: boolean;
 }
 
-const PRIORITY: Record<AppRole, number> = { admin: 0, diretoria: 1, gestor: 2, vendedor: 3 };
+const PRIORITY: Record<AppRole, number> = { admin: 0, diretor: 1, gerente: 2, marketing: 3, vendedor: 4 };
 
 let state: AuthState = { user: null, profile: null, roles: [], loading: true };
 const listeners = new Set<() => void>();
@@ -92,7 +92,8 @@ export function useAuth() {
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   admin: "Administrador",
-  gestor: "Gestor",
+  gerente: "Gerente",
   vendedor: "Vendedor",
-  diretoria: "Diretoria",
+  diretor: "Diretor",
+  marketing: "Marketing",
 };
