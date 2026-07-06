@@ -512,6 +512,74 @@ function HomePage() {
     };
   }, [orcQ.data, vendas4Q.data, ownerParam, today]);
 
+  // ---- Retenção / Recorrência / Novos recorrentes (por trimestre calendário) ----
+  const quarterRange = useMemo(() => {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    const qStartMonth = Math.floor(m / 3) * 3; // 0,3,6,9
+    const curStart = new Date(y, qStartMonth, 1);
+    const curEnd = new Date(y, qStartMonth + 3, 0);
+    const prevStart = new Date(y, qStartMonth - 3, 1);
+    const prevEnd = new Date(y, qStartMonth, 0);
+    return {
+      prevStart, prevEnd, curStart, curEnd,
+      start: fmtKey(prevStart),
+      end: fmtKey(curEnd),
+    };
+  }, [today]);
+
+  const vendasQuarterQ = useQuery({
+    queryKey: ["sf-home-vendas-quarters", quarterRange.start, quarterRange.end],
+    queryFn: () => fetchVendas({ data: { start: quarterRange.start, end: quarterRange.end } }),
+    staleTime: 60_000,
+  });
+
+  const retentionKpis = useMemo(() => {
+    const AB_THRESHOLD = 15000;
+    const prevStartT = quarterRange.prevStart.getTime();
+    const prevEndT = quarterRange.prevEnd.getTime();
+    const curStartT = quarterRange.curStart.getTime();
+    const curEndT = quarterRange.curEnd.getTime();
+    const prevTotals = new Map<string, number>();
+    const curTotals = new Map<string, number>();
+    for (const r of vendasQuarterQ.data?.records ?? []) {
+      if (ownerParam && r.ownerId !== ownerParam) continue;
+      const acc = r.accountId;
+      if (!acc) continue;
+      if (!r.closeDate) continue;
+      const [yr, mo, dd] = r.closeDate.split("-").map(Number);
+      const t = new Date(yr, mo - 1, dd).getTime();
+      const val = r.total ?? r.amount ?? 0;
+      if (t >= prevStartT && t <= prevEndT) {
+        prevTotals.set(acc, (prevTotals.get(acc) ?? 0) + val);
+      } else if (t >= curStartT && t <= curEndT) {
+        curTotals.set(acc, (curTotals.get(acc) ?? 0) + val);
+      }
+    }
+    const prevAB = new Set<string>();
+    for (const [id, v] of prevTotals) if (v >= AB_THRESHOLD) prevAB.add(id);
+    const curAB = new Set<string>();
+    for (const [id, v] of curTotals) if (v >= AB_THRESHOLD) curAB.add(id);
+    let retained = 0;
+    for (const id of prevAB) if (curAB.has(id)) retained++;
+    let newRecurring = 0;
+    for (const id of curAB) if (!prevAB.has(id)) newRecurring++;
+    const retentionBase = prevAB.size;
+    const retentionGoal = Math.round(retentionBase * 0.9);
+    const retentionPct = retentionBase > 0 ? (retained / retentionBase) * 100 : 0;
+    const recurrencePct = retentionBase > 0 ? (curAB.size / retentionBase) * 100 : 0;
+    return {
+      retentionBase,
+      retentionGoal,
+      retentionActive: retained,
+      retentionPct,
+      recurrenceBase: retentionBase,
+      recurrenceCount: curAB.size,
+      recurrencePct,
+      newRecurring,
+    };
+  }, [vendasQuarterQ.data, ownerParam, quarterRange]);
+
   const fmtPct = (n: number) =>
     `${(n * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
   const trendPct = (cur: number, base: number) =>
