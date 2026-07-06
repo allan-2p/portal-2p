@@ -17,15 +17,21 @@ import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
+import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
 import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
 import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authenticated/dashboards'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/atlas'
+import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
+import { Route as AuthenticatedMarketingFunilRouteImport } from './routes/_authenticated/marketing.funil'
+import { Route as AuthenticatedMarketingCampanhasRouteImport } from './routes/_authenticated/marketing.campanhas'
 import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
 import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
 import { Route as AuthenticatedAdminVendedoresRouteImport } from './routes/_authenticated/admin.vendedores'
 import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
+import { Route as AuthenticatedAdminPermissoesRouteImport } from './routes/_authenticated/admin.permissoes'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
+import { Route as AuthenticatedAdminAcessosInstanciasRouteImport } from './routes/_authenticated/admin.acessos-instancias'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -66,6 +72,11 @@ const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
   path: '/pedidos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMarketingRoute = AuthenticatedMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedIntegracoesRoute =
   AuthenticatedIntegracoesRouteImport.update({
     id: '/integracoes',
@@ -87,6 +98,24 @@ const AuthenticatedAtlasRoute = AuthenticatedAtlasRouteImport.update({
   path: '/atlas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMarketingIndexRoute =
+  AuthenticatedMarketingIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
+const AuthenticatedMarketingFunilRoute =
+  AuthenticatedMarketingFunilRouteImport.update({
+    id: '/funil',
+    path: '/funil',
+    getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
+const AuthenticatedMarketingCampanhasRoute =
+  AuthenticatedMarketingCampanhasRouteImport.update({
+    id: '/campanhas',
+    path: '/campanhas',
+    getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
 const AuthenticatedClientesSegmentacaoRoute =
   AuthenticatedClientesSegmentacaoRouteImport.update({
     id: '/segmentacao',
@@ -111,11 +140,23 @@ const AuthenticatedAdminTabelasRoute =
     path: '/admin/tabelas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminPermissoesRoute =
+  AuthenticatedAdminPermissoesRouteImport.update({
+    id: '/admin/permissoes',
+    path: '/admin/permissoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminMetasRoute = AuthenticatedAdminMetasRouteImport.update({
   id: '/admin/metas',
   path: '/admin/metas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminAcessosInstanciasRoute =
+  AuthenticatedAdminAcessosInstanciasRouteImport.update({
+    id: '/admin/acessos-instancias',
+    path: '/admin/acessos-instancias',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -125,15 +166,21 @@ export interface FileRoutesByFullPath {
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/integracoes': typeof AuthenticatedIntegracoesRoute
+  '/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
+  '/admin/acessos-instancias': typeof AuthenticatedAdminAcessosInstanciasRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
+  '/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
+  '/marketing/funil': typeof AuthenticatedMarketingFunilRoute
+  '/marketing/': typeof AuthenticatedMarketingIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -147,11 +194,16 @@ export interface FileRoutesByTo {
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/acessos-instancias': typeof AuthenticatedAdminAcessosInstanciasRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
+  '/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
+  '/marketing/funil': typeof AuthenticatedMarketingFunilRoute
+  '/marketing': typeof AuthenticatedMarketingIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -162,16 +214,22 @@ export interface FileRoutesById {
   '/_authenticated/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRoute
   '/_authenticated/integracoes': typeof AuthenticatedIntegracoesRoute
+  '/_authenticated/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/acessos-instancias': typeof AuthenticatedAdminAcessosInstanciasRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/_authenticated/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/_authenticated/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
+  '/_authenticated/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
+  '/_authenticated/marketing/funil': typeof AuthenticatedMarketingFunilRoute
+  '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -183,15 +241,21 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/dashboards'
     | '/integracoes'
+    | '/marketing'
     | '/pedidos'
     | '/perfil'
     | '/tarefas'
     | '/usuarios'
+    | '/admin/acessos-instancias'
     | '/admin/metas'
+    | '/admin/permissoes'
     | '/admin/tabelas'
     | '/admin/vendedores'
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
+    | '/marketing/campanhas'
+    | '/marketing/funil'
+    | '/marketing/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -205,11 +269,16 @@ export interface FileRouteTypes {
     | '/tarefas'
     | '/usuarios'
     | '/'
+    | '/admin/acessos-instancias'
     | '/admin/metas'
+    | '/admin/permissoes'
     | '/admin/tabelas'
     | '/admin/vendedores'
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
+    | '/marketing/campanhas'
+    | '/marketing/funil'
+    | '/marketing'
   id:
     | '__root__'
     | '/_authenticated'
@@ -219,16 +288,22 @@ export interface FileRouteTypes {
     | '/_authenticated/clientes'
     | '/_authenticated/dashboards'
     | '/_authenticated/integracoes'
+    | '/_authenticated/marketing'
     | '/_authenticated/pedidos'
     | '/_authenticated/perfil'
     | '/_authenticated/tarefas'
     | '/_authenticated/usuarios'
     | '/_authenticated/'
+    | '/_authenticated/admin/acessos-instancias'
     | '/_authenticated/admin/metas'
+    | '/_authenticated/admin/permissoes'
     | '/_authenticated/admin/tabelas'
     | '/_authenticated/admin/vendedores'
     | '/_authenticated/clientes/cadastros'
     | '/_authenticated/clientes/segmentacao'
+    | '/_authenticated/marketing/campanhas'
+    | '/_authenticated/marketing/funil'
+    | '/_authenticated/marketing/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -295,6 +370,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPedidosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/marketing': {
+      id: '/_authenticated/marketing'
+      path: '/marketing'
+      fullPath: '/marketing'
+      preLoaderRoute: typeof AuthenticatedMarketingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/integracoes': {
       id: '/_authenticated/integracoes'
       path: '/integracoes'
@@ -322,6 +404,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/atlas'
       preLoaderRoute: typeof AuthenticatedAtlasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/marketing/': {
+      id: '/_authenticated/marketing/'
+      path: '/'
+      fullPath: '/marketing/'
+      preLoaderRoute: typeof AuthenticatedMarketingIndexRouteImport
+      parentRoute: typeof AuthenticatedMarketingRoute
+    }
+    '/_authenticated/marketing/funil': {
+      id: '/_authenticated/marketing/funil'
+      path: '/funil'
+      fullPath: '/marketing/funil'
+      preLoaderRoute: typeof AuthenticatedMarketingFunilRouteImport
+      parentRoute: typeof AuthenticatedMarketingRoute
+    }
+    '/_authenticated/marketing/campanhas': {
+      id: '/_authenticated/marketing/campanhas'
+      path: '/campanhas'
+      fullPath: '/marketing/campanhas'
+      preLoaderRoute: typeof AuthenticatedMarketingCampanhasRouteImport
+      parentRoute: typeof AuthenticatedMarketingRoute
     }
     '/_authenticated/clientes/segmentacao': {
       id: '/_authenticated/clientes/segmentacao'
@@ -351,11 +454,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTabelasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/permissoes': {
+      id: '/_authenticated/admin/permissoes'
+      path: '/admin/permissoes'
+      fullPath: '/admin/permissoes'
+      preLoaderRoute: typeof AuthenticatedAdminPermissoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/metas': {
       id: '/_authenticated/admin/metas'
       path: '/admin/metas'
       fullPath: '/admin/metas'
       preLoaderRoute: typeof AuthenticatedAdminMetasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/acessos-instancias': {
+      id: '/_authenticated/admin/acessos-instancias'
+      path: '/admin/acessos-instancias'
+      fullPath: '/admin/acessos-instancias'
+      preLoaderRoute: typeof AuthenticatedAdminAcessosInstanciasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
@@ -376,17 +493,38 @@ const AuthenticatedClientesRouteWithChildren =
     AuthenticatedClientesRouteChildren,
   )
 
+interface AuthenticatedMarketingRouteChildren {
+  AuthenticatedMarketingCampanhasRoute: typeof AuthenticatedMarketingCampanhasRoute
+  AuthenticatedMarketingFunilRoute: typeof AuthenticatedMarketingFunilRoute
+  AuthenticatedMarketingIndexRoute: typeof AuthenticatedMarketingIndexRoute
+}
+
+const AuthenticatedMarketingRouteChildren: AuthenticatedMarketingRouteChildren =
+  {
+    AuthenticatedMarketingCampanhasRoute: AuthenticatedMarketingCampanhasRoute,
+    AuthenticatedMarketingFunilRoute: AuthenticatedMarketingFunilRoute,
+    AuthenticatedMarketingIndexRoute: AuthenticatedMarketingIndexRoute,
+  }
+
+const AuthenticatedMarketingRouteWithChildren =
+  AuthenticatedMarketingRoute._addFileChildren(
+    AuthenticatedMarketingRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAtlasRoute: typeof AuthenticatedAtlasRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRouteWithChildren
   AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRoute
   AuthenticatedIntegracoesRoute: typeof AuthenticatedIntegracoesRoute
+  AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRouteWithChildren
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedTarefasRoute: typeof AuthenticatedTarefasRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAdminAcessosInstanciasRoute: typeof AuthenticatedAdminAcessosInstanciasRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
+  AuthenticatedAdminPermissoesRoute: typeof AuthenticatedAdminPermissoesRoute
   AuthenticatedAdminTabelasRoute: typeof AuthenticatedAdminTabelasRoute
   AuthenticatedAdminVendedoresRoute: typeof AuthenticatedAdminVendedoresRoute
 }
@@ -396,12 +534,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClientesRoute: AuthenticatedClientesRouteWithChildren,
   AuthenticatedDashboardsRoute: AuthenticatedDashboardsRoute,
   AuthenticatedIntegracoesRoute: AuthenticatedIntegracoesRoute,
+  AuthenticatedMarketingRoute: AuthenticatedMarketingRouteWithChildren,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedTarefasRoute: AuthenticatedTarefasRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAdminAcessosInstanciasRoute:
+    AuthenticatedAdminAcessosInstanciasRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
+  AuthenticatedAdminPermissoesRoute: AuthenticatedAdminPermissoesRoute,
   AuthenticatedAdminTabelasRoute: AuthenticatedAdminTabelasRoute,
   AuthenticatedAdminVendedoresRoute: AuthenticatedAdminVendedoresRoute,
 }
