@@ -8,6 +8,7 @@ import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingD
 import { cn } from "@/lib/utils";
 import { getSalesforceAccounts, getSalesforceSalespeople, getSalesforceOrcamentos, getSalesforceVendas, getSalesforceSalesByAccount, type SalesforceAccount, type SalesforceOppRow } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
+import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_SET } from "@/lib/salespeople";
 
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
@@ -87,14 +88,9 @@ const STATUS_DOT: Record<string, string> = {
   "Coletado": "bg-green-500",
 };
 
-// Segmentação considera apenas a carteira destes vendedores.
-const SEG_OWNER_IDS = [
-  "005U400000FDLnbIAH", // Matheus Nunes
-  "005Dn000007GxFcIAK", // Gustavo Chahad
-  "005Dn000007GxFrIAK", // Bruno Amaral
-  "005U400000B5NYjIAN", // Raphael Vaz
-];
-const SEG_OWNER_SET = new Set(SEG_OWNER_IDS);
+// Segmentação considera apenas a carteira definida em `salespeople.ts`.
+const SEG_OWNER_IDS = [...CARTEIRA_OWNER_IDS];
+const SEG_OWNER_SET = CARTEIRA_OWNER_SET;
 
 
 

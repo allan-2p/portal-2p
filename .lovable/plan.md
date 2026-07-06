@@ -1,49 +1,53 @@
-## 1. Painel de Metas (Administrador → Metas)
+# Dashboards — Metas por vendedor
 
-**Backend**
-- Nova tabela `public.salesperson_goals`:
-  - `sf_user_id text primary key`
-  - `monthly_goal numeric(14,2) not null default 0` (meta de faturamento em R$)
-  - `updated_by uuid`, `updated_at timestamptz default now()`
-- RLS: SELECT liberado para `authenticated`; INSERT/UPDATE/DELETE apenas admin (via `has_role`). GRANTs padrão.
-- `src/lib/admin.functions.ts`:
-  - `listSalespersonGoals` — lista vendedores do Salesforce (mesma query do painel de Vendedores) + meta atual (join com a tabela).
-  - `setSalespersonGoal({ sf_user_id, monthly_goal })` — upsert, restrito a admin.
+Adicionar um painel de **Metas** na página `/dashboards` com 3 indicadores por vendedor: **Faturamento**, **Retenção** e **Novos A+B**. Cada card mostra realizado × meta, % de atingimento e barra de progresso, respeitando o filtro de vendedor já existente no topo da página.
 
-**UI**
-- Nova rota `src/routes/_authenticated/admin.metas.tsx`:
-  - Tabela: Vendedor · E-mail · Cargo · **Meta mensal (R$)** editável (input com máscara BRL, debounce ~600ms → salva automático) · última atualização.
-  - Busca por nome/e-mail.
-  - Card de total no topo (soma das metas).
-- Sidebar: adicionar `SubLink` "Metas" (ícone `Target`) no grupo Administrador.
+## Escopo do painel
 
-## 2. UX da seleção de segmentação
+Período: **trimestre atual** (mesma base já usada em Retenção da Home). Cada card tem 3 linhas: valor realizado, meta e % atingido.
 
-Hoje começa com todos selecionados e sem estado ativo visível, então clicar parece "não desmarcar". Trocar para modelo aditivo:
+1. **Faturamento** — soma das vendas do trimestre atual do vendedor (Opportunities com `StageName = 'Pedido Concluído'`, excluindo Bonificação), comparado à soma das metas mensais dos 3 meses do trimestre (fonte: `listSalespersonGoals`, mesma tabela usada em `/admin/metas`).
+2. **Retenção** — contas A/B do vendedor no trimestre anterior (>= R$ 15k) que voltaram a comprar >= R$ 15k no trimestre atual. Meta = **90% da base A/B do tri anterior** (mesma regra da Home).
+3. **Novos A+B** — contas do vendedor que **não** eram A/B no trimestre anterior (< R$ 15k) e que compraram >= R$ 15k no trimestre atual. Meta = valor configurável por vendedor por trimestre (persistido no banco).
 
-- Estado inicial: `selectedSegs` vazio ⇒ significa "mostrar todos" (botão **Todos** fica ativo).
-- Clicar em A/B/C/D **adiciona** o segmento ao filtro; clicar de novo remove.
-- Enquanto tiver 1+ selecionado, só esses segmentos aparecem; se remover o último, volta ao estado "Todos".
-- Botão **Todos** limpa a seleção (não força todos como marcados).
-- Filtro de linhas: `selectedSegs.size === 0 || selectedSegs.has(c.segment)`.
+Se o filtro estiver em **Todos**, os cards agregam todos os vendedores da carteira (soma para Faturamento, soma para Retenção/Novos A+B). Se um vendedor específico for selecionado, os números são só dele.
 
-## 3. Notificações reais
+## Meta de "Novos A+B" (novo campo)
 
-Remover o demo feed (`useNotificationsDemoFeed`) e substituir por notificações vindas do Salesforce:
+Criar tabela `salesperson_new_ab_goals` para armazenar a meta trimestral por vendedor:
 
-- Novo hook `useSalesforceNotifications`:
-  - A cada 2 min chama `getSalesforceTasks({ start: hoje, end: hoje })` (tarefas abertas de hoje).
-  - Também chama `getSalesforceForecasts()` filtrando oportunidades com `forecastDate` ≤ hoje+3 dias.
-  - Mantém em `localStorage` um `Set<string>` de IDs já notificados (`portal2p-seen-notifs`) para não duplicar entre reloads.
-  - Para IDs novos: `pushNotification({ kind: 'task', ... })` (tarefas) ou `kind: 'atlas'` (oportunidades com forecast próximo).
-- Primeira execução: marca tudo como "visto" sem tocar sino se `localStorage` estiver vazio (evita disparar 30 toasts na primeira visita) — só notifica os que aparecerem daí em diante.
-- `AppLayout` troca `useNotificationsDemoFeed()` por `useSalesforceNotifications()`.
-- Texto no dropdown mantém "Tarefas do Salesforce e recomendações do Atlas".
+```text
+salesperson_new_ab_goals
+  sf_user_id   text
+  year         int
+  quarter      int   (1..4)
+  goal         int   (quantidade)
+  PK (sf_user_id, year, quarter)
+```
+
+Com RLS: admin escreve/lê; demais autenticados só leem. GRANT SELECT para authenticated; ALL para service_role.
+
+Server functions em `src/lib/admin.functions.ts`:
+- `listNewAbGoals({ year, quarter })` → `{ records: { sf_user_id, goal }[] }`
+- `setNewAbGoal({ sf_user_id, year, quarter, goal })` (admin-only via `has_role`)
+
+Página `/admin/metas` ganha uma segunda aba/seção simples com input de meta trimestral de "Novos A+B" por vendedor (mesmo padrão visual do painel de Faturamento). Sem meta configurada = meta 0 e a página de Dashboards mostra "—" no denominador.
+
+## Componente novo
+
+`src/components/goals-panel.tsx` — recebe o `ownerId` selecionado e renderiza os 3 cards com barras de progresso. Cores: verde >= 100%, âmbar 70–99%, vermelho < 70% (usar tokens `success`/`warning`/`destructive` já existentes).
+
+`src/routes/_authenticated/dashboards.tsx` — substitui os 4 cards placeholder ("Meta acumulada", "Comissão prevista", etc.) pelo `<GoalsPanel ownerId={ownerId} />`. O bloco "Dashboards detalhados em construção" fica abaixo, inalterado.
 
 ## Detalhes técnicos
 
-- Migração: `CREATE TABLE` + `GRANT SELECT ON ... TO authenticated`, `GRANT ALL ... TO service_role`, RLS + policies (SELECT authenticated, ALL admin).
-- Input de meta: `<input inputMode="decimal">` que aceita "1234,56" ou "1234.56"; parse para número antes de salvar.
-- Debounce no salvamento por linha para não bater no server a cada tecla.
-- Server function usa `context.userId` para gravar `updated_by`.
-- O hook de notificações só roda quando há sessão (usa `useAuth`) e cancela intervalos no unmount.
+- Reutiliza `getSalesforceSalesByAccount` (para trimestre anterior e atual) e `getSalesforceVendas` para o total de faturamento por owner.
+- Range de trimestre: helpers já existentes na Home (`quarterRange` / `previousQuarterRange`) — extrair para `src/lib/business-days.ts` (ou novo `src/lib/quarters.ts`) para reuso pela Home, Segmentação e Dashboards.
+- Filtro de vendedor: usa `SEG_OWNER_IDS` (Matheus, Gustavo, Bruno, Raphael) — mover essa constante para `src/lib/salespeople.ts` e importar em Segmentação e Dashboards, para manter a mesma carteira nos dois lugares.
+- Migração SQL segue o padrão: `CREATE TABLE` → `GRANT` → `ENABLE RLS` → `CREATE POLICY` (leitura para authenticated, escrita apenas via `has_role(auth.uid(), 'admin')`).
+
+## Fora de escopo
+
+- Comissão prevista, ranking da equipe e bônus do trimestre (permanecem como placeholder ou removidos, a decidir).
+- Gráficos de evolução histórica das metas.
+- Metas mensais de Retenção / Novos A+B (mantemos trimestral apenas).
