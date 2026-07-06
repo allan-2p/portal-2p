@@ -87,6 +87,17 @@ const STATUS_DOT: Record<string, string> = {
   "Coletado": "bg-green-500",
 };
 
+// Segmentação considera apenas a carteira destes vendedores.
+const SEG_OWNER_IDS = [
+  "005U400000FDLnbIAH", // Matheus Nunes
+  "005Dn000007GxFcIAK", // Gustavo Chahad
+  "005Dn000007GxFrIAK", // Bruno Amaral
+  "005U400000B5NYjIAN", // Raphael Vaz
+];
+const SEG_OWNER_SET = new Set(SEG_OWNER_IDS);
+
+
+
 
 function SegmentacaoPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
