@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle, Search, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getSalesforceAccounts, getSalesforceSalespeople, getSalesforceOrcamentos, getSalesforceVendas, type SalesforceAccount, type SalesforceOppRow } from "@/lib/salesforce.functions";
+import { getSalesforceAccounts, getSalesforceSalespeople, getSalesforceOrcamentos, getSalesforceVendas, getSalesforceSalesByAccount, type SalesforceAccount, type SalesforceOppRow } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
 
 
@@ -102,6 +102,7 @@ function SegmentacaoPage() {
   const fetchPeople = useServerFn(getSalesforceSalespeople);
   const fetchOrcamentos = useServerFn(getSalesforceOrcamentos);
   const fetchVendas = useServerFn(getSalesforceVendas);
+  const fetchSalesByAccount = useServerFn(getSalesforceSalesByAccount);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["salesforce", "accounts"],
@@ -131,10 +132,11 @@ function SegmentacaoPage() {
     queryFn: () => fetchVendas({ data: range }),
     staleTime: 60_000,
   });
-  // Base da projeção: vendas do trimestre anterior — mesmo cálculo da tabela Projeções.
-  const prevQuarterVendasQ = useQuery({
-    queryKey: ["sf-segmentacao-prev-vendas", prevQuarter.start, prevQuarter.end],
-    queryFn: () => fetchVendas({ data: prevQuarter }),
+  // Base da segmentação: agregação SOQL por AccountId no trimestre anterior
+  // (evita o teto de 1000 pedidos e cobre todas as contas).
+  const prevQuarterAggQ = useQuery({
+    queryKey: ["sf-segmentacao-prev-agg", prevQuarter.start, prevQuarter.end],
+    queryFn: () => fetchSalesByAccount({ data: prevQuarter }),
     staleTime: 5 * 60_000,
   });
 
@@ -188,30 +190,20 @@ function SegmentacaoPage() {
   }, [vendasQ.data, ownerId, accountOwnerById]);
 
   // Projeção por conta = SUM(Total__c ou Amount) das vendas do trimestre anterior,
-  // exatamente como a tabela "Projeções" (Admin › Tabelas) calcula.
-  // Não aplicamos o filtro de vendedor aqui — a projeção é uma característica da conta.
+  // via agregação SOQL para não perder contas por teto de linhas.
   const quarterProjectionById = useMemo(() => {
     const map = new Map<string, number>();
-    for (const r of prevQuarterVendasQ.data?.records ?? []) {
+    for (const r of prevQuarterAggQ.data?.records ?? []) {
       if (!r.accountId) continue;
-      map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
+      map.set(r.accountId, r.total);
     }
     return map;
-  }, [prevQuarterVendasQ.data]);
-  const quarterProjectionByName = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of prevQuarterVendasQ.data?.records ?? []) {
-      const key = r.account;
-      if (!key) continue;
-      map.set(key, (map.get(key) ?? 0) + (r.total ?? r.amount ?? 0));
-    }
-    return map;
-  }, [prevQuarterVendasQ.data]);
+  }, [prevQuarterAggQ.data]);
 
   function accountToClient(a: SalesforceAccount): Client {
     const seed = seedFromId(a.id);
     // Projeção = base do trimestre anterior (mesma fonte da tabela Projeções).
-    const quarterProj = quarterProjectionById.get(a.id) ?? quarterProjectionByName.get(a.name) ?? 0;
+    const quarterProj = quarterProjectionById.get(a.id) ?? 0;
     // Segmentação = vendas do trimestre ANTERIOR (regra Estância Solar):
     // A > 30k | B 15k-30k | C >0 e <15k | D = 0
     const segment: Segment =
@@ -241,16 +233,19 @@ function SegmentacaoPage() {
 
   const clients = useMemo(() => {
     const accounts = data?.records ?? [];
-    const activeOnly = activeOwnerIds.size > 0
-      ? accounts.filter((a) => a.ownerId && activeOwnerIds.has(a.ownerId))
-      : [];
-    // Filtro de vendedor = dono da CONTA.
-    const scoped = ownerId === "all"
-      ? activeOnly
-      : activeOnly.filter((a) => a.ownerId === ownerId);
+    // Filtro por vendedor ativo aplica-se apenas quando "Todos" está selecionado
+    // — assim contas de vendedores fora do domínio não somem quando o usuário
+    // busca por um vendedor específico. Se a lista ainda não carregou, mostramos tudo.
+    const scoped =
+      ownerId === "all"
+        ? activeOwnerIds.size > 0
+          ? accounts.filter((a) => a.ownerId && activeOwnerIds.has(a.ownerId))
+          : accounts
+        : accounts.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount, quarterProjectionById, quarterProjectionByName]);
+  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount, quarterProjectionById]);
+
 
 
 
