@@ -6,9 +6,11 @@ import { getSalesforceSalespeople } from "@/lib/salesforce.functions";
 export function VendedorFilter({
   value,
   onChange,
+  allowedIds,
 }: {
   value: string;
   onChange: (v: string) => void;
+  allowedIds?: string[];
 }) {
   const fetchSalespeople = useServerFn(getSalesforceSalespeople);
   const q = useQuery({
@@ -17,7 +19,9 @@ export function VendedorFilter({
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
   });
-  const people = q.data?.records ?? [];
+  const allowed = allowedIds ? new Set(allowedIds) : null;
+  const people = (q.data?.records ?? []).filter((p) => (allowed ? allowed.has(p.id) : true));
+
   return (
     <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border">
       <UsersIcon className="h-4 w-4 text-primary" />
