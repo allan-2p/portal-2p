@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_authenticated/dashboards")({
 function DashboardsLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   if (pathname === "/dashboards" || pathname === "/dashboards/") {
-    return <Navigate to="/dashboards/geral" replace />;
+    return <Navigate to="/dashboards/metas" replace />;
   }
   return <Outlet />;
 }
