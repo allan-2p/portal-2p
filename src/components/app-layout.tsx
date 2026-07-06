@@ -460,3 +460,10 @@ function AdminGroup({ pathname, collapsed, show }: { pathname: string; collapsed
     </div>
   );
 }
+
+function currentScreenKey(pathname: string): ScreenKey | null {
+  if (pathname === "/") return "home";
+  if (pathname.startsWith("/dashboards")) return "dashboards";
+  if (pathname.startsWith("/clientes/segmentacao")) return "clientes.segmentacao";
+  return SCREENS.find((s) => pathname.startsWith("/" + s.key))?.key ?? null;
+}
