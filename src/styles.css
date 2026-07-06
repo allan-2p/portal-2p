@@ -114,6 +114,54 @@
   --chart-tooltip-border: oklch(0.3 0.012 250);
 }
 
+/* === Instance themes === */
+/* Carregadores — azul 2P */
+:root[data-instance="carregadores"] {
+  --primary: oklch(0.5 0.19 265);
+  --accent: oklch(0.5 0.19 265);
+  --ring: oklch(0.5 0.19 265);
+  --atlas: oklch(0.55 0.18 265);
+  --chart-1: oklch(0.5 0.19 265);
+}
+.dark[data-instance="carregadores"],
+:root[data-instance="carregadores"] .dark {
+  --primary: oklch(0.62 0.18 265);
+  --accent: oklch(0.62 0.18 265);
+  --ring: oklch(0.62 0.18 265);
+  --atlas: oklch(0.68 0.18 265);
+  --chart-1: oklch(0.62 0.18 265);
+}
+
+/* Marketing — cinza + amarelo fosco */
+:root[data-instance="marketing"] {
+  --background: oklch(0.965 0.004 90);
+  --surface: oklch(0.985 0.003 90);
+  --surface-2: oklch(0.94 0.005 90);
+  --primary: oklch(0.78 0.13 92);
+  --primary-foreground: oklch(0.22 0.02 90);
+  --accent: oklch(0.78 0.13 92);
+  --accent-foreground: oklch(0.22 0.02 90);
+  --ring: oklch(0.78 0.13 92);
+  --atlas: oklch(0.55 0.015 90);
+  --border: oklch(0.87 0.006 90);
+  --input: oklch(0.9 0.006 90);
+  --chart-1: oklch(0.78 0.13 92);
+  --chart-2: oklch(0.55 0.015 90);
+}
+.dark[data-instance="marketing"],
+:root[data-instance="marketing"] .dark {
+  --background: oklch(0.19 0.005 90);
+  --surface: oklch(0.23 0.006 90);
+  --surface-2: oklch(0.27 0.007 90);
+  --primary: oklch(0.82 0.14 92);
+  --primary-foreground: oklch(0.16 0.01 90);
+  --accent: oklch(0.82 0.14 92);
+  --ring: oklch(0.82 0.14 92);
+  --border: oklch(0.33 0.006 90);
+  --input: oklch(0.31 0.006 90);
+  --chart-1: oklch(0.82 0.14 92);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   html, body { background-color: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); }
