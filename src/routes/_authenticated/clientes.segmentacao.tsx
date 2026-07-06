@@ -244,14 +244,14 @@ function SegmentacaoPage() {
 
   const clients = useMemo(() => {
     const accounts = data?.records ?? [];
-    // Não filtramos por "vendedor ativo" aqui — o filtro `hidden_salespeople`
-    // só esconde nomes do seletor; contas com dono oculto continuam válidas
-    // na carteira e devem aparecer na Segmentação (igual à tabela Projeções).
+    // Segmentação restrita à carteira dos 4 vendedores definidos em SEG_OWNER_IDS.
+    const carteira = accounts.filter((a) => a.ownerId && SEG_OWNER_SET.has(a.ownerId));
     const scoped =
-      ownerId === "all" ? accounts : accounts.filter((a) => a.ownerId === ownerId);
+      ownerId === "all" ? carteira : carteira.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, ownerId, period, generationByAccount, salesByAccount, quarterProjectionById]);
+
 
 
 
