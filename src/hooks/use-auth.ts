@@ -9,6 +9,7 @@ export interface Profile {
   email: string;
   full_name: string | null;
   cargo: string | null;
+  cargo_tipo: string | null;
   equipe: string | null;
   avatar_url: string | null;
   meta_mensal: number | null;
