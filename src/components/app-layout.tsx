@@ -353,9 +353,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
 }
 
-function LayoutGridIcon() {
-  return <Shield className="h-4 w-4" />;
-}
+
+
 
 function NavLink({
   item, active, collapsed,
