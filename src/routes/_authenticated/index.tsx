@@ -617,15 +617,97 @@ function HomePage() {
       <div className="max-w-[1500px] mx-auto space-y-6">
         {/* Hero + filtro global de vendedor */}
         <div className="flex items-end justify-between flex-wrap gap-4">
-          <div>
-            <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""}</div>
-            <h1 className="text-3xl md:text-4xl font-bold mt-1">
-              {goalSubject} em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
-            </h1>
-            <p className="text-sm text-muted-foreground mt-2">
-              Atlas identificou {atlasRadarInsights.length} sinal(is) na carteira selecionada.
-            </p>
-          </div>
+          <ViewSlot
+            screen="home"
+            variants={{
+              default: (
+                <div>
+                  <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""}</div>
+                  <h1 className="text-3xl md:text-4xl font-bold mt-1">
+                    {goalSubject} em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Atlas identificou {atlasRadarInsights.length} sinal(is) na carteira selecionada.
+                  </p>
+                </div>
+              ),
+              "vendedor.closer": (
+                <div>
+                  <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""} · Closer</div>
+                  <h1 className="text-3xl md:text-4xl font-bold mt-1">
+                    Foco no fechamento: <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {filteredOpps.filter((o) => o.stage === "Em Negociação").length} oportunidade(s) em negociação · {atlasRadarInsights.length} sinal(is) do Atlas.
+                  </p>
+                </div>
+              ),
+              "vendedor.farmer": (
+                <div>
+                  <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""} · Farmer</div>
+                  <h1 className="text-3xl md:text-4xl font-bold mt-1">
+                    Sua carteira: <span className="text-foreground">{fmt(sold)}</span> no mês
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Priorize recompra e relacionamento — {atlasRadarInsights.length} sinal(is) na base.
+                  </p>
+                </div>
+              ),
+              "vendedor.sdr": (
+                <div>
+                  <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""} · SDR</div>
+                  <h1 className="text-3xl md:text-4xl font-bold mt-1">
+                    Prospecção do dia: <span className="text-foreground">{sfTasks.length}</span> tarefa(s)
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-2">Qualifique e passe para o Closer o quanto antes.</p>
+                </div>
+              ),
+              gerente: (
+                <div>
+                  <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""} · Gerente</div>
+                  <h1 className="text-3xl md:text-4xl font-bold mt-1">
+                    Time em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta consolidada
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Use o filtro de vendedor para drill-down por representante.
+                  </p>
+                </div>
+              ),
+              diretor: (
+                <div>
+                  <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""} · Diretoria</div>
+                  <h1 className="text-3xl md:text-4xl font-bold mt-1">
+                    Consolidado: <span className="text-foreground">{fmt(sold)}</span> · {goalPct.toFixed(1)}% da meta
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Forecast e ranking de equipes disponíveis nos dashboards.
+                  </p>
+                </div>
+              ),
+              marketing: (
+                <div>
+                  <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""} · Marketing</div>
+                  <h1 className="text-3xl md:text-4xl font-bold mt-1">
+                    Impacto comercial das campanhas
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Visão consolidada de funil e leads gerados — abra o módulo Marketing para detalhar.
+                  </p>
+                </div>
+              ),
+              admin: (
+                <div>
+                  <div className="text-sm text-muted-foreground">{greeting}{displayName ? `, ${displayName}` : ""} · Administrador</div>
+                  <h1 className="text-3xl md:text-4xl font-bold mt-1">
+                    Portal 2P — visão geral
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {atlasRadarInsights.length} sinal(is) do Atlas · {sfTasks.length} tarefa(s) na agenda selecionada.
+                  </p>
+                </div>
+              ),
+            }}
+          />
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border">
