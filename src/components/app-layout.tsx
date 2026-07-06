@@ -216,7 +216,39 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
 
           {show("dashboards") && (
-            <NavLink item={{ to: "/dashboards", label: "Dashboards", icon: BarChart3 }} active={pathname.startsWith("/dashboards")} collapsed={collapsed} />
+            collapsed ? (
+              <Link
+                to="/dashboards/geral"
+                preload="intent"
+                title="Dashboards"
+                className={cn(
+                  "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
+                  dashboardsActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                )}
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Link>
+            ) : (
+              <div className="mb-1">
+                <button
+                  onClick={toggleDashboards}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                    dashboardsActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                  )}
+                >
+                  <BarChart3 className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Dashboards</span>
+                  <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !dashboardsOpen && "-rotate-90")} />
+                </button>
+                {dashboardsOpen && (
+                  <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
+                    <SubLink to="/dashboards/geral" label="Dashboard" icon={LineChart} active={pathname.startsWith("/dashboards/geral")} />
+                    <SubLink to="/dashboards/metas" label="Metas" icon={Target} active={pathname.startsWith("/dashboards/metas")} />
+                  </div>
+                )}
+              </div>
+            )
           )}
 
           {/* Marketing — só na instância marketing */}
