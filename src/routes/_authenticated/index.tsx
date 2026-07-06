@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
-import { clients, portfolio, atlasInsights, tasks as mockTasks, generationSeries, salesSeries } from "@/lib/mock-data";
+import { clients, portfolio, atlasInsights, tasks as mockTasks, salesSeries } from "@/lib/mock-data";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useMemo, useState } from "react";
 import {
@@ -29,6 +29,7 @@ import {
   getSalesforceOpportunities,
   getSalesforceForecasts,
   getSalesforceVendas,
+  getSalesforceOrcamentos,
   getSalesforceAccounts,
   completeSalesforceTask,
   createSalesforceTask,
@@ -439,6 +440,110 @@ function HomePage() {
     return out;
   }, [dbGoal, vendasQ.data, ownerParam, today]);
 
+  // ---- Conversão / Ticket médio (mês atual x média 3M) ----
+  const rangeMulti = useMemo(() => {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    return {
+      start: fmtKey(new Date(y, m - 3, 1)),
+      end: fmtKey(new Date(y, m + 1, 0)),
+    };
+  }, [today]);
+
+  const fetchOrcamentos = useServerFn(getSalesforceOrcamentos);
+  const orcQ = useQuery({
+    queryKey: ["sf-home-orc-4m", rangeMulti.start, rangeMulti.end],
+    queryFn: () => fetchOrcamentos({ data: rangeMulti }),
+    staleTime: 60_000,
+  });
+  const vendas4Q = useQuery({
+    queryKey: ["sf-home-vendas-4m", rangeMulti.start, rangeMulti.end],
+    queryFn: () => fetchVendas({ data: rangeMulti }),
+    staleTime: 60_000,
+  });
+
+  const conversionKpis = useMemo(() => {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    type Bkt = { orcVal: number; orcIds: Set<string>; venVal: number; venIds: Set<string> };
+    const buckets = new Map<string, Bkt>();
+    const bkey = (yy: number, mm: number) => `${yy}-${mm}`;
+    for (let i = -3; i <= 0; i++) {
+      const d = new Date(y, m + i, 1);
+      buckets.set(bkey(d.getFullYear(), d.getMonth()), {
+        orcVal: 0, orcIds: new Set(), venVal: 0, venIds: new Set(),
+      });
+    }
+    for (const r of orcQ.data?.records ?? []) {
+      if (ownerParam && r.ownerId !== ownerParam) continue;
+      if (!r.createdDate) continue;
+      const [yr, mo] = r.createdDate.split("-").map(Number);
+      const b = buckets.get(bkey(yr, mo - 1));
+      if (!b) continue;
+      b.orcVal += r.total ?? r.amount ?? 0;
+      b.orcIds.add(r.id);
+    }
+    for (const r of vendas4Q.data?.records ?? []) {
+      if (ownerParam && r.ownerId !== ownerParam) continue;
+      if (!r.closeDate) continue;
+      const [yr, mo] = r.closeDate.split("-").map(Number);
+      const b = buckets.get(bkey(yr, mo - 1));
+      if (!b) continue;
+      b.venVal += r.total ?? r.amount ?? 0;
+      b.venIds.add(r.id);
+    }
+    const cur = buckets.get(bkey(y, m))!;
+    const prevs = [-3, -2, -1].map((i) => {
+      const d = new Date(y, m + i, 1);
+      return buckets.get(bkey(d.getFullYear(), d.getMonth()))!;
+    });
+    const safeDiv = (n: number, d: number) => (d > 0 ? n / d : 0);
+    const avg = (fn: (b: Bkt) => number) => {
+      const vs = prevs.map(fn);
+      return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : 0;
+    };
+    return {
+      convRCur: safeDiv(cur.venVal, cur.orcVal),
+      convR3: avg((b) => safeDiv(b.venVal, b.orcVal)),
+      convQCur: safeDiv(cur.venIds.size, cur.orcIds.size),
+      convQ3: avg((b) => safeDiv(b.venIds.size, b.orcIds.size)),
+      ticketCur: safeDiv(cur.venVal, cur.venIds.size),
+      ticket3: avg((b) => safeDiv(b.venVal, b.venIds.size)),
+    };
+  }, [orcQ.data, vendas4Q.data, ownerParam, today]);
+
+  const fmtPct = (n: number) =>
+    `${(n * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+  const trendPct = (cur: number, base: number) =>
+    base > 0 ? ((cur - base) / base) * 100 : undefined;
+
+  // ---- Série diária: Geração — Projetado × Realizado (mês atual) ----
+  // Projetado = venda projetada / taxa de conversão (R$). Usa 3M como base estável.
+  const genChartSeries = useMemo(() => {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    const rate = conversionKpis.convR3 || conversionKpis.convRCur || 0;
+    const genByDay = new Map<number, number>();
+    for (const r of orcQ.data?.records ?? []) {
+      if (ownerParam && r.ownerId !== ownerParam) continue;
+      if (!r.createdDate) continue;
+      const [yr, mo, dd] = r.createdDate.split("-").map(Number);
+      if (yr !== y || mo !== m + 1) continue;
+      genByDay.set(dd, (genByDay.get(dd) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+    const todayDay = today.getDate();
+    let cumGen = 0;
+    return salesChartSeries.map((row, idx) => {
+      const d = idx + 1;
+      cumGen += genByDay.get(d) ?? 0;
+      return {
+        day: row.day,
+        projected: rate > 0 ? Math.round(row.projected / rate) : 0,
+        generated: d <= todayDay ? Math.round(cumGen) : null,
+      };
+    });
+  }, [salesChartSeries, orcQ.data, ownerParam, conversionKpis, today]);
+
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-6">
@@ -512,12 +617,27 @@ function HomePage() {
                 <MiniKpi label="Retenção" value={`${portfolio.retentionActive} / ${portfolio.retentionBase}`} sub={`${portfolio.retention.toFixed(1)}% da carteira ativa`} />
                 <MiniKpi label="Recorrência" value={`${portfolio.recurrenceCount} / ${portfolio.recurrenceBase}`} sub={`${portfolio.recurrence.toFixed(1)}% dos clientes`} />
                 <MiniKpi label="Novos recorrentes" value={`${portfolio.newRecurringClients}`} sub="Clientes no mês" />
-                <MiniKpi label="Ticket médio" value="R$ 18,27k" sub="3M: R$ 20,68k" trend={-11.6} />
-                <MiniKpi label="Conversão R$" value="25,63%" sub="3M: 31,44%" trend={-5.8} />
-                <MiniKpi label="Conversão Qtd" value="21,21%" sub="3M: 33,52%" trend={-12.3} />
+                <MiniKpi
+                  label="Ticket médio"
+                  value={fmt(conversionKpis.ticketCur)}
+                  sub={`3M: ${fmt(conversionKpis.ticket3)}`}
+                  trend={trendPct(conversionKpis.ticketCur, conversionKpis.ticket3)}
+                />
+                <MiniKpi
+                  label="Conversão R$"
+                  value={fmtPct(conversionKpis.convRCur)}
+                  sub={`3M: ${fmtPct(conversionKpis.convR3)}`}
+                  trend={trendPct(conversionKpis.convRCur, conversionKpis.convR3)}
+                />
+                <MiniKpi
+                  label="Conversão Qtd"
+                  value={fmtPct(conversionKpis.convQCur)}
+                  sub={`3M: ${fmtPct(conversionKpis.convQ3)}`}
+                  trend={trendPct(conversionKpis.convQCur, conversionKpis.convQ3)}
+                />
               </div>
               <div className="grid lg:grid-cols-2 gap-4">
-                <ChartCard title="Geração — Projetado × Realizado" series={generationSeries} valueKey="generated" valueColor={C.generation} valueLabel="Gerado" />
+                <ChartCard title="Geração — Projetado × Realizado" series={genChartSeries} valueKey="generated" valueColor={C.generation} valueLabel="Gerado" />
                 <ChartCard title="Vendas — Projetado × Realizado" series={salesChartSeries} valueKey="sold" valueColor={C.sales} valueLabel="Vendido" />
               </div>
             </div>
