@@ -218,7 +218,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {show("dashboards") && (
             collapsed ? (
               <Link
-                to="/dashboards/geral"
+                to="/dashboards/metas"
                 preload="intent"
                 title="Dashboards"
                 className={cn(
@@ -243,7 +243,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </button>
                 {dashboardsOpen && (
                   <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-                    <SubLink to="/dashboards/geral" label="Dashboard" icon={LineChart} active={pathname.startsWith("/dashboards/geral")} />
                     <SubLink to="/dashboards/metas" label="Metas" icon={Target} active={pathname.startsWith("/dashboards/metas")} />
                   </div>
                 )}
