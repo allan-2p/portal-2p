@@ -109,7 +109,6 @@ function SegmentacaoPage() {
   const fetchPeople = useServerFn(getSalesforceSalespeople);
   const fetchOrcamentos = useServerFn(getSalesforceOrcamentos);
   const fetchVendas = useServerFn(getSalesforceVendas);
-  const fetchSalesByAccount = useServerFn(getSalesforceSalesByAccount);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["salesforce", "accounts"],
@@ -127,7 +126,6 @@ function SegmentacaoPage() {
   );
 
   const range = useMemo(() => periodRange(period), [period]);
-  const prevQuarter = useMemo(() => previousQuarterRange(), []);
 
   const orcamentosQ = useQuery({
     queryKey: ["sf-segmentacao-orcamentos", range.start, range.end],
@@ -138,13 +136,6 @@ function SegmentacaoPage() {
     queryKey: ["sf-segmentacao-vendas", range.start, range.end],
     queryFn: () => fetchVendas({ data: range }),
     staleTime: 60_000,
-  });
-  // Base da segmentação: agregação SOQL por AccountId no trimestre anterior
-  // (evita o teto de 1000 pedidos e cobre todas as contas).
-  const prevQuarterAggQ = useQuery({
-    queryKey: ["sf-segmentacao-prev-agg", prevQuarter.start, prevQuarter.end],
-    queryFn: () => fetchSalesByAccount({ data: prevQuarter }),
-    staleTime: 5 * 60_000,
   });
 
 
@@ -196,21 +187,12 @@ function SegmentacaoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendasQ.data, ownerId, accountOwnerById]);
 
-  // Projeção por conta = SUM(Total__c ou Amount) das vendas do trimestre anterior,
-  // via agregação SOQL para não perder contas por teto de linhas.
-  const quarterProjectionById = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of prevQuarterAggQ.data?.records ?? []) {
-      if (!r.accountId) continue;
-      map.set(r.accountId, r.total);
-    }
-    return map;
-  }, [prevQuarterAggQ.data]);
-
   function accountToClient(a: SalesforceAccount): Client {
     const seed = seedFromId(a.id);
-    // Projeção = base do trimestre anterior (mesma fonte da tabela Projeções).
-    const quarterProj = quarterProjectionById.get(a.id) ?? 0;
+    // Projeção = campo oficial da Account (Total_Vendido_Trimestre_Anterior__c).
+    // Isso garante consistência com o Salesforce e evita perder contas por
+    // teto de linhas em consultas agregadas.
+    const quarterProj = a.quarterProjection ?? 0;
     // Segmentação = vendas do trimestre ANTERIOR (regra Estância Solar):
     // A > 30k | B 15k-30k | C >0 e <15k | D = 0
     const segment: Segment =
@@ -246,7 +228,7 @@ function SegmentacaoPage() {
       ownerId === "all" ? carteira : carteira.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, ownerId, period, generationByAccount, salesByAccount, quarterProjectionById]);
+  }, [data, ownerId, period, generationByAccount, salesByAccount]);
 
 
 
