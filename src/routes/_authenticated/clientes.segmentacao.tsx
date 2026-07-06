@@ -87,6 +87,17 @@ const STATUS_DOT: Record<string, string> = {
   "Coletado": "bg-green-500",
 };
 
+// Segmentação considera apenas a carteira destes vendedores.
+const SEG_OWNER_IDS = [
+  "005U400000FDLnbIAH", // Matheus Nunes
+  "005Dn000007GxFcIAK", // Gustavo Chahad
+  "005Dn000007GxFrIAK", // Bruno Amaral
+  "005U400000B5NYjIAN", // Raphael Vaz
+];
+const SEG_OWNER_SET = new Set(SEG_OWNER_IDS);
+
+
+
 
 function SegmentacaoPage() {
   const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
@@ -233,14 +244,14 @@ function SegmentacaoPage() {
 
   const clients = useMemo(() => {
     const accounts = data?.records ?? [];
-    // Não filtramos por "vendedor ativo" aqui — o filtro `hidden_salespeople`
-    // só esconde nomes do seletor; contas com dono oculto continuam válidas
-    // na carteira e devem aparecer na Segmentação (igual à tabela Projeções).
+    // Segmentação restrita à carteira dos 4 vendedores definidos em SEG_OWNER_IDS.
+    const carteira = accounts.filter((a) => a.ownerId && SEG_OWNER_SET.has(a.ownerId));
     const scoped =
-      ownerId === "all" ? accounts : accounts.filter((a) => a.ownerId === ownerId);
+      ownerId === "all" ? carteira : carteira.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, ownerId, period, generationByAccount, salesByAccount, quarterProjectionById]);
+
 
 
 
@@ -318,7 +329,7 @@ function SegmentacaoPage() {
                 className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-56 focus:outline-none focus:border-primary/50"
               />
             </div>
-            <VendedorFilter value={ownerId} onChange={setOwnerId} />
+            <VendedorFilter value={ownerId} onChange={setOwnerId} allowedIds={SEG_OWNER_IDS} />
             <div className="flex bg-surface rounded-lg p-1 border border-border">
               {(["mensal", "trimestral"] as const).map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
