@@ -21,6 +21,7 @@ function PerfilPage() {
   const [savingName, setSavingName] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
   const [cargo, setCargo] = useState(profile?.cargo ?? "");
+  const [cargoTipo, setCargoTipo] = useState(profile?.cargo_tipo ?? "");
 
   // keep form in sync if profile loads later
   if (profile && fullName === "" && profile.full_name) {
