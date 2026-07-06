@@ -41,6 +41,7 @@ import {
 } from "@/lib/salesforce.functions";
 
 import { getMonthGoalTotal } from "@/lib/admin.functions";
+import { businessDaysOfMonth } from "@/lib/business-days";
 
 type TaskInteractionState = { contacted: "yes" | "no"; type?: string; note?: string; ts: number };
 const TASK_INTERACTIONS_KEY = "portal2p:task-interactions:v1";
@@ -402,6 +403,42 @@ function HomePage() {
     return out.slice(0, 12);
   }, [accounts, opps, ownerParam]);
 
+  // ---- Série diária: Vendas — Projetado × Realizado (mês atual) ----
+  // Meta diária = meta do mês / dias úteis do mês (exclui sáb, dom e feriados nacionais).
+  const salesChartSeries = useMemo(() => {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const bizDays = businessDaysOfMonth(y, m);
+    const bizSet = new Set(bizDays);
+    const dailyGoal = bizDays.length ? dbGoal / bizDays.length : 0;
+
+    const soldByDay = new Map<number, number>();
+    const recs = vendasQ.data?.records ?? [];
+    for (const r of recs) {
+      if (!r.closeDate) continue;
+      if (ownerParam && r.ownerId !== ownerParam) continue;
+      const [yr, mo, dd] = r.closeDate.split("-").map(Number);
+      if (yr !== y || mo !== m + 1) continue;
+      soldByDay.set(dd, (soldByDay.get(dd) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+
+    const todayDay = today.getDate();
+    let cumProjected = 0;
+    let cumSold = 0;
+    const out: Array<{ day: string; projected: number; sold: number | null }> = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (bizSet.has(d)) cumProjected += dailyGoal;
+      cumSold += soldByDay.get(d) ?? 0;
+      out.push({
+        day: `${String(d).padStart(2, "0")}/${String(m + 1).padStart(2, "0")}`,
+        projected: Math.round(cumProjected),
+        sold: d <= todayDay ? Math.round(cumSold) : null,
+      });
+    }
+    return out;
+  }, [dbGoal, vendasQ.data, ownerParam, today]);
+
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-6">
@@ -481,7 +518,7 @@ function HomePage() {
               </div>
               <div className="grid lg:grid-cols-2 gap-4">
                 <ChartCard title="Geração — Projetado × Realizado" series={generationSeries} valueKey="generated" valueColor={C.generation} valueLabel="Gerado" />
-                <ChartCard title="Vendas — Projetado × Realizado" series={salesSeries} valueKey="sold" valueColor={C.sales} valueLabel="Vendido" />
+                <ChartCard title="Vendas — Projetado × Realizado" series={salesChartSeries} valueKey="sold" valueColor={C.sales} valueLabel="Vendido" />
               </div>
             </div>
           )}
