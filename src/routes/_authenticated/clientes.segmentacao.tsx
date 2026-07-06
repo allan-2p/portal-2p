@@ -8,6 +8,7 @@ import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingD
 import { cn } from "@/lib/utils";
 import { getSalesforceAccounts, getSalesforceSalespeople, getSalesforceOrcamentos, getSalesforceVendas, getSalesforceSalesByAccount, type SalesforceAccount, type SalesforceOppRow } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
+import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_SET } from "@/lib/salespeople";
 
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
