@@ -682,9 +682,21 @@ function HomePage() {
           {metaOpen && (
             <div className="mt-5 pt-5 border-t border-border space-y-5">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                <MiniKpi label="Retenção" value={`${portfolio.retentionActive} / ${portfolio.retentionBase}`} sub={`${portfolio.retention.toFixed(1)}% da carteira ativa`} />
-                <MiniKpi label="Recorrência" value={`${portfolio.recurrenceCount} / ${portfolio.recurrenceBase}`} sub={`${portfolio.recurrence.toFixed(1)}% dos clientes`} />
-                <MiniKpi label="Novos recorrentes" value={`${portfolio.newRecurringClients}`} sub="Clientes no mês" />
+                <MiniKpi
+                  label="Retenção"
+                  value={`${retentionKpis.retentionActive} / ${retentionKpis.retentionGoal}`}
+                  sub={`${retentionKpis.retentionPct.toFixed(1)}% · base A/B tri anterior: ${retentionKpis.retentionBase}`}
+                />
+                <MiniKpi
+                  label="Recorrência"
+                  value={`${retentionKpis.recurrenceCount} / ${retentionKpis.recurrenceBase}`}
+                  sub={`${retentionKpis.recurrencePct.toFixed(1)}% dos A/B do tri anterior`}
+                />
+                <MiniKpi
+                  label="Novos recorrentes"
+                  value={`${retentionKpis.newRecurring}`}
+                  sub="A/B no tri atual e não no anterior"
+                />
                 <MiniKpi
                   label="Ticket médio"
                   value={fmt(conversionKpis.ticketCur)}
