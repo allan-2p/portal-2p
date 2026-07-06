@@ -40,7 +40,7 @@ type Row = {
   roles: AppRole[];
 };
 
-const ROLES: AppRole[] = ["admin", "gestor", "vendedor", "diretoria"];
+const ROLES: AppRole[] = ["admin", "gerente", "vendedor", "diretor", "marketing"];
 type Tab = "portal" | "salesforce";
 
 function UsuariosPage() {
