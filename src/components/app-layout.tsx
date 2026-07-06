@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound, Eye } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound, Eye, LineChart } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ThemeToggle } from "./theme-toggle";
@@ -20,6 +20,7 @@ import { toast } from "sonner";
 
 const COLLAPSE_KEY = "portal2p-sidebar-collapsed";
 const CLIENTES_OPEN_KEY = "portal2p-clientes-open";
+const DASHBOARDS_OPEN_KEY = "portal2p-dashboards-open";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -29,6 +30,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [clientesOpen, setClientesOpen] = useState(true);
+  const [dashboardsOpen, setDashboardsOpen] = useState(true);
 
   const { user, profile, roles, hasRole } = useAuth();
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
@@ -41,10 +43,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
     const saved = localStorage.getItem(CLIENTES_OPEN_KEY);
     if (saved !== null) setClientesOpen(saved === "1");
+    const savedD = localStorage.getItem(DASHBOARDS_OPEN_KEY);
+    if (savedD !== null) setDashboardsOpen(savedD === "1");
   }, []);
 
   useEffect(() => {
     if (pathname.startsWith("/clientes")) setClientesOpen(true);
+    if (pathname.startsWith("/dashboards")) setDashboardsOpen(true);
   }, [pathname]);
 
   // Se usuário está numa rota que a instância atual não permite, redireciona para home.
@@ -79,6 +84,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
     });
   };
 
+  const toggleDashboards = () => {
+    setDashboardsOpen((v) => {
+      localStorage.setItem(DASHBOARDS_OPEN_KEY, !v ? "1" : "0");
+      return !v;
+    });
+  };
+
   const initials = (profile?.full_name ?? user?.email ?? "U")
     .split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
@@ -97,6 +109,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const atlasActive = pathname.startsWith("/atlas");
   const clientesActive = pathname.startsWith("/clientes");
+  const dashboardsActive = pathname.startsWith("/dashboards");
   const marketingActive = pathname.startsWith("/marketing");
 
   // Filtragem de itens por feature.
