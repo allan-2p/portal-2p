@@ -577,4 +577,35 @@ export const getSalesforcePedidos = createServerFn({ method: "GET" })
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
 
+export type SalesforceSalesByAccount = { accountId: string; total: number };
+
+// Agregação por conta usando SOQL GROUP BY — evita o teto de 1000 pedidos
+// e garante que TODAS as contas do trimestre entrem no cálculo de segmentação.
+export const getSalesforceSalesByAccount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { start: string; end: string }) => {
+    if (!validDate(input.start) || !validDate(input.end)) throw new Error("Datas inválidas.");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const clauses: string[] = [
+      `StageName = 'Pedido Concluído'`,
+      `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
+      `CloseDate >= ${data.start}`,
+      `CloseDate <= ${data.end}`,
+      `AccountId != null`,
+    ];
+    const soql =
+      `SELECT AccountId, SUM(Total__c) sumT, SUM(Amount) sumA ` +
+      `FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
+      `GROUP BY AccountId LIMIT 2000`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    const records: SalesforceSalesByAccount[] = (res?.records ?? []).map((r: any) => ({
+      accountId: r.AccountId,
+      total: typeof r.sumT === "number" ? r.sumT : typeof r.sumA === "number" ? r.sumA : 0,
+    }));
+    return { records };
+  });
+
+
 
