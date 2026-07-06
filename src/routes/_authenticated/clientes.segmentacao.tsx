@@ -329,7 +329,7 @@ function SegmentacaoPage() {
                 className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-56 focus:outline-none focus:border-primary/50"
               />
             </div>
-            <VendedorFilter value={ownerId} onChange={setOwnerId} />
+            <VendedorFilter value={ownerId} onChange={setOwnerId} allowedIds={SEG_OWNER_IDS} />
             <div className="flex bg-surface rounded-lg p-1 border border-border">
               {(["mensal", "trimestral"] as const).map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
