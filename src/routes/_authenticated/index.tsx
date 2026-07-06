@@ -440,6 +440,110 @@ function HomePage() {
     return out;
   }, [dbGoal, vendasQ.data, ownerParam, today]);
 
+  // ---- Conversão / Ticket médio (mês atual x média 3M) ----
+  const rangeMulti = useMemo(() => {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    return {
+      start: fmtKey(new Date(y, m - 3, 1)),
+      end: fmtKey(new Date(y, m + 1, 0)),
+    };
+  }, [today]);
+
+  const fetchOrcamentos = useServerFn(getSalesforceOrcamentos);
+  const orcQ = useQuery({
+    queryKey: ["sf-home-orc-4m", rangeMulti.start, rangeMulti.end],
+    queryFn: () => fetchOrcamentos({ data: rangeMulti }),
+    staleTime: 60_000,
+  });
+  const vendas4Q = useQuery({
+    queryKey: ["sf-home-vendas-4m", rangeMulti.start, rangeMulti.end],
+    queryFn: () => fetchVendas({ data: rangeMulti }),
+    staleTime: 60_000,
+  });
+
+  const conversionKpis = useMemo(() => {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    type Bkt = { orcVal: number; orcIds: Set<string>; venVal: number; venIds: Set<string> };
+    const buckets = new Map<string, Bkt>();
+    const bkey = (yy: number, mm: number) => `${yy}-${mm}`;
+    for (let i = -3; i <= 0; i++) {
+      const d = new Date(y, m + i, 1);
+      buckets.set(bkey(d.getFullYear(), d.getMonth()), {
+        orcVal: 0, orcIds: new Set(), venVal: 0, venIds: new Set(),
+      });
+    }
+    for (const r of orcQ.data?.records ?? []) {
+      if (ownerParam && r.ownerId !== ownerParam) continue;
+      if (!r.createdDate) continue;
+      const [yr, mo] = r.createdDate.split("-").map(Number);
+      const b = buckets.get(bkey(yr, mo - 1));
+      if (!b) continue;
+      b.orcVal += r.total ?? r.amount ?? 0;
+      b.orcIds.add(r.id);
+    }
+    for (const r of vendas4Q.data?.records ?? []) {
+      if (ownerParam && r.ownerId !== ownerParam) continue;
+      if (!r.closeDate) continue;
+      const [yr, mo] = r.closeDate.split("-").map(Number);
+      const b = buckets.get(bkey(yr, mo - 1));
+      if (!b) continue;
+      b.venVal += r.total ?? r.amount ?? 0;
+      b.venIds.add(r.id);
+    }
+    const cur = buckets.get(bkey(y, m))!;
+    const prevs = [-3, -2, -1].map((i) => {
+      const d = new Date(y, m + i, 1);
+      return buckets.get(bkey(d.getFullYear(), d.getMonth()))!;
+    });
+    const safeDiv = (n: number, d: number) => (d > 0 ? n / d : 0);
+    const avg = (fn: (b: Bkt) => number) => {
+      const vs = prevs.map(fn);
+      return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : 0;
+    };
+    return {
+      convRCur: safeDiv(cur.venVal, cur.orcVal),
+      convR3: avg((b) => safeDiv(b.venVal, b.orcVal)),
+      convQCur: safeDiv(cur.venIds.size, cur.orcIds.size),
+      convQ3: avg((b) => safeDiv(b.venIds.size, b.orcIds.size)),
+      ticketCur: safeDiv(cur.venVal, cur.venIds.size),
+      ticket3: avg((b) => safeDiv(b.venVal, b.venIds.size)),
+    };
+  }, [orcQ.data, vendas4Q.data, ownerParam, today]);
+
+  const fmtPct = (n: number) =>
+    `${(n * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+  const trendPct = (cur: number, base: number) =>
+    base > 0 ? ((cur - base) / base) * 100 : undefined;
+
+  // ---- Série diária: Geração — Projetado × Realizado (mês atual) ----
+  // Projetado = venda projetada / taxa de conversão (R$). Usa 3M como base estável.
+  const genChartSeries = useMemo(() => {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    const rate = conversionKpis.convR3 || conversionKpis.convRCur || 0;
+    const genByDay = new Map<number, number>();
+    for (const r of orcQ.data?.records ?? []) {
+      if (ownerParam && r.ownerId !== ownerParam) continue;
+      if (!r.createdDate) continue;
+      const [yr, mo, dd] = r.createdDate.split("-").map(Number);
+      if (yr !== y || mo !== m + 1) continue;
+      genByDay.set(dd, (genByDay.get(dd) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+    const todayDay = today.getDate();
+    let cumGen = 0;
+    return salesChartSeries.map((row, idx) => {
+      const d = idx + 1;
+      cumGen += genByDay.get(d) ?? 0;
+      return {
+        day: row.day,
+        projected: rate > 0 ? Math.round(row.projected / rate) : 0,
+        generated: d <= todayDay ? Math.round(cumGen) : null,
+      };
+    });
+  }, [salesChartSeries, orcQ.data, ownerParam, conversionKpis, today]);
+
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-6">
