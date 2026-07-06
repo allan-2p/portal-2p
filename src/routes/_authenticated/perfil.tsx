@@ -21,6 +21,7 @@ function PerfilPage() {
   const [savingName, setSavingName] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
   const [cargo, setCargo] = useState(profile?.cargo ?? "");
+  const [cargoTipo, setCargoTipo] = useState(profile?.cargo_tipo ?? "");
 
   // keep form in sync if profile loads later
   if (profile && fullName === "" && profile.full_name) {
@@ -47,7 +48,7 @@ function PerfilPage() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName, cargo: cargo || null })
+        .update({ full_name: fullName, cargo: cargo || null, cargo_tipo: cargoTipo || null })
         .eq("id", user.id);
       if (error) throw error;
       await refreshAuthProfile();
@@ -149,7 +150,32 @@ function PerfilPage() {
               />
             </Field>
             <Field label="Cargo">
-              <input value={cargo} onChange={(e) => setCargo(e.target.value)} className="input" />
+              <input value={cargo} onChange={(e) => setCargo(e.target.value)} className="input" placeholder="Ex.: Gerente Comercial" />
+            </Field>
+            <Field label="Especialização (para versões de tela)">
+              <input
+                value={cargoTipo}
+                onChange={(e) => setCargoTipo(e.target.value)}
+                className="input"
+                placeholder="Ex.: Closer, Farmer, SDR, Regional, Performance"
+                list="cargo-tipo-suggestions"
+              />
+              <datalist id="cargo-tipo-suggestions">
+                <option value="Closer" />
+                <option value="Farmer" />
+                <option value="SDR" />
+                <option value="Hunter" />
+                <option value="Regional" />
+                <option value="Nacional" />
+                <option value="Comercial" />
+                <option value="Executivo" />
+                <option value="Performance" />
+                <option value="Branded" />
+                <option value="Growth" />
+              </datalist>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Define qual variante de tela você recebe automaticamente (ex.: Vendedor · Closer).
+              </p>
             </Field>
             <Field label="E-mail">
               <input value={user.email ?? ""} disabled className="input opacity-70" />

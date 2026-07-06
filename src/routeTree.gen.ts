@@ -27,6 +27,7 @@ import { Route as AuthenticatedMarketingFunilRouteImport } from './routes/_authe
 import { Route as AuthenticatedMarketingCampanhasRouteImport } from './routes/_authenticated/marketing.campanhas'
 import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
 import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
+import { Route as AuthenticatedAdminVisualizacoesRouteImport } from './routes/_authenticated/admin.visualizacoes'
 import { Route as AuthenticatedAdminVendedoresRouteImport } from './routes/_authenticated/admin.vendedores'
 import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
 import { Route as AuthenticatedAdminPermissoesRouteImport } from './routes/_authenticated/admin.permissoes'
@@ -128,6 +129,12 @@ const AuthenticatedClientesCadastrosRoute =
     path: '/cadastros',
     getParentRoute: () => AuthenticatedClientesRoute,
   } as any)
+const AuthenticatedAdminVisualizacoesRoute =
+  AuthenticatedAdminVisualizacoesRouteImport.update({
+    id: '/admin/visualizacoes',
+    path: '/admin/visualizacoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminVendedoresRoute =
   AuthenticatedAdminVendedoresRouteImport.update({
     id: '/admin/vendedores',
@@ -176,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
+  '/admin/visualizacoes': typeof AuthenticatedAdminVisualizacoesRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
@@ -199,6 +207,7 @@ export interface FileRoutesByTo {
   '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
+  '/admin/visualizacoes': typeof AuthenticatedAdminVisualizacoesRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
@@ -225,6 +234,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/_authenticated/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
+  '/_authenticated/admin/visualizacoes': typeof AuthenticatedAdminVisualizacoesRoute
   '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/_authenticated/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/admin/permissoes'
     | '/admin/tabelas'
     | '/admin/vendedores'
+    | '/admin/visualizacoes'
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
     | '/marketing/campanhas'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/admin/permissoes'
     | '/admin/tabelas'
     | '/admin/vendedores'
+    | '/admin/visualizacoes'
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
     | '/marketing/campanhas'
@@ -299,6 +311,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/permissoes'
     | '/_authenticated/admin/tabelas'
     | '/_authenticated/admin/vendedores'
+    | '/_authenticated/admin/visualizacoes'
     | '/_authenticated/clientes/cadastros'
     | '/_authenticated/clientes/segmentacao'
     | '/_authenticated/marketing/campanhas'
@@ -440,6 +453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientesCadastrosRouteImport
       parentRoute: typeof AuthenticatedClientesRoute
     }
+    '/_authenticated/admin/visualizacoes': {
+      id: '/_authenticated/admin/visualizacoes'
+      path: '/admin/visualizacoes'
+      fullPath: '/admin/visualizacoes'
+      preLoaderRoute: typeof AuthenticatedAdminVisualizacoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/vendedores': {
       id: '/_authenticated/admin/vendedores'
       path: '/admin/vendedores'
@@ -527,6 +547,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminPermissoesRoute: typeof AuthenticatedAdminPermissoesRoute
   AuthenticatedAdminTabelasRoute: typeof AuthenticatedAdminTabelasRoute
   AuthenticatedAdminVendedoresRoute: typeof AuthenticatedAdminVendedoresRoute
+  AuthenticatedAdminVisualizacoesRoute: typeof AuthenticatedAdminVisualizacoesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -546,6 +567,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminPermissoesRoute: AuthenticatedAdminPermissoesRoute,
   AuthenticatedAdminTabelasRoute: AuthenticatedAdminTabelasRoute,
   AuthenticatedAdminVendedoresRoute: AuthenticatedAdminVendedoresRoute,
+  AuthenticatedAdminVisualizacoesRoute: AuthenticatedAdminVisualizacoesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

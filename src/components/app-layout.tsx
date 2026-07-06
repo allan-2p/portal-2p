@@ -1,12 +1,14 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound, Eye } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationsDropdown } from "./notifications-dropdown";
 import { InstanceSwitcher } from "./instance-switcher";
+import { ViewAsSwitcher } from "./view-as-switcher";
 import { useInstance } from "./instance-provider";
 import { INSTANCES, type FeatureKey } from "@/lib/instances";
+import { SCREENS, type ScreenKey } from "@/lib/view-screens";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
@@ -269,6 +271,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </button>
               )}
               <InstanceSwitcher />
+              <ViewAsSwitcher currentScreen={currentScreenKey(pathname)} />
               <ThemeToggle />
               <NotificationsDropdown />
 
@@ -301,6 +304,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 border-t border-border"
                         >
                           <KeyRound className="h-4 w-4" /> Permissões de Usuários
+                        </Link>
+                        <Link
+                          to="/admin/visualizacoes"
+                          onClick={() => setAdminMenuOpen(false)}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 border-t border-border"
+                        >
+                          <Eye className="h-4 w-4" /> Versões de Tela
                         </Link>
                       </div>
                     </>
@@ -456,4 +466,11 @@ function AdminGroup({ pathname, collapsed, show }: { pathname: string; collapsed
       )}
     </div>
   );
+}
+
+function currentScreenKey(pathname: string): ScreenKey | null {
+  if (pathname === "/") return "home";
+  if (pathname.startsWith("/dashboards")) return "dashboards";
+  if (pathname.startsWith("/clientes/segmentacao")) return "clientes.segmentacao";
+  return SCREENS.find((s) => pathname.startsWith("/" + s.key))?.key ?? null;
 }
