@@ -25,6 +25,8 @@ import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
 import { Route as AuthenticatedMarketingFunilRouteImport } from './routes/_authenticated/marketing.funil'
 import { Route as AuthenticatedMarketingCampanhasRouteImport } from './routes/_authenticated/marketing.campanhas'
+import { Route as AuthenticatedDashboardsMetasRouteImport } from './routes/_authenticated/dashboards.metas'
+import { Route as AuthenticatedDashboardsGeralRouteImport } from './routes/_authenticated/dashboards.geral'
 import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
 import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
 import { Route as AuthenticatedAdminVisualizacoesRouteImport } from './routes/_authenticated/admin.visualizacoes'
@@ -117,6 +119,18 @@ const AuthenticatedMarketingCampanhasRoute =
     path: '/campanhas',
     getParentRoute: () => AuthenticatedMarketingRoute,
   } as any)
+const AuthenticatedDashboardsMetasRoute =
+  AuthenticatedDashboardsMetasRouteImport.update({
+    id: '/metas',
+    path: '/metas',
+    getParentRoute: () => AuthenticatedDashboardsRoute,
+  } as any)
+const AuthenticatedDashboardsGeralRoute =
+  AuthenticatedDashboardsGeralRouteImport.update({
+    id: '/geral',
+    path: '/geral',
+    getParentRoute: () => AuthenticatedDashboardsRoute,
+  } as any)
 const AuthenticatedClientesSegmentacaoRoute =
   AuthenticatedClientesSegmentacaoRouteImport.update({
     id: '/segmentacao',
@@ -171,7 +185,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/atlas': typeof AuthenticatedAtlasRoute
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
-  '/dashboards': typeof AuthenticatedDashboardsRoute
+  '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
   '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/pedidos': typeof AuthenticatedPedidosRoute
@@ -186,6 +200,8 @@ export interface FileRoutesByFullPath {
   '/admin/visualizacoes': typeof AuthenticatedAdminVisualizacoesRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
+  '/dashboards/geral': typeof AuthenticatedDashboardsGeralRoute
+  '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
   '/marketing/funil': typeof AuthenticatedMarketingFunilRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
@@ -195,7 +211,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/atlas': typeof AuthenticatedAtlasRoute
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
-  '/dashboards': typeof AuthenticatedDashboardsRoute
+  '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
   '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -210,6 +226,8 @@ export interface FileRoutesByTo {
   '/admin/visualizacoes': typeof AuthenticatedAdminVisualizacoesRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
+  '/dashboards/geral': typeof AuthenticatedDashboardsGeralRoute
+  '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
   '/marketing/funil': typeof AuthenticatedMarketingFunilRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
@@ -221,7 +239,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/atlas': typeof AuthenticatedAtlasRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRouteWithChildren
-  '/_authenticated/dashboards': typeof AuthenticatedDashboardsRoute
+  '/_authenticated/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
   '/_authenticated/integracoes': typeof AuthenticatedIntegracoesRoute
   '/_authenticated/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
@@ -237,6 +255,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/visualizacoes': typeof AuthenticatedAdminVisualizacoesRoute
   '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
+  '/_authenticated/dashboards/geral': typeof AuthenticatedDashboardsGeralRoute
+  '/_authenticated/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/_authenticated/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
   '/_authenticated/marketing/funil': typeof AuthenticatedMarketingFunilRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
@@ -264,6 +284,8 @@ export interface FileRouteTypes {
     | '/admin/visualizacoes'
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
+    | '/dashboards/geral'
+    | '/dashboards/metas'
     | '/marketing/campanhas'
     | '/marketing/funil'
     | '/marketing/'
@@ -288,6 +310,8 @@ export interface FileRouteTypes {
     | '/admin/visualizacoes'
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
+    | '/dashboards/geral'
+    | '/dashboards/metas'
     | '/marketing/campanhas'
     | '/marketing/funil'
     | '/marketing'
@@ -314,6 +338,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/visualizacoes'
     | '/_authenticated/clientes/cadastros'
     | '/_authenticated/clientes/segmentacao'
+    | '/_authenticated/dashboards/geral'
+    | '/_authenticated/dashboards/metas'
     | '/_authenticated/marketing/campanhas'
     | '/_authenticated/marketing/funil'
     | '/_authenticated/marketing/'
@@ -439,6 +465,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMarketingCampanhasRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
     }
+    '/_authenticated/dashboards/metas': {
+      id: '/_authenticated/dashboards/metas'
+      path: '/metas'
+      fullPath: '/dashboards/metas'
+      preLoaderRoute: typeof AuthenticatedDashboardsMetasRouteImport
+      parentRoute: typeof AuthenticatedDashboardsRoute
+    }
+    '/_authenticated/dashboards/geral': {
+      id: '/_authenticated/dashboards/geral'
+      path: '/geral'
+      fullPath: '/dashboards/geral'
+      preLoaderRoute: typeof AuthenticatedDashboardsGeralRouteImport
+      parentRoute: typeof AuthenticatedDashboardsRoute
+    }
     '/_authenticated/clientes/segmentacao': {
       id: '/_authenticated/clientes/segmentacao'
       path: '/segmentacao'
@@ -513,6 +553,22 @@ const AuthenticatedClientesRouteWithChildren =
     AuthenticatedClientesRouteChildren,
   )
 
+interface AuthenticatedDashboardsRouteChildren {
+  AuthenticatedDashboardsGeralRoute: typeof AuthenticatedDashboardsGeralRoute
+  AuthenticatedDashboardsMetasRoute: typeof AuthenticatedDashboardsMetasRoute
+}
+
+const AuthenticatedDashboardsRouteChildren: AuthenticatedDashboardsRouteChildren =
+  {
+    AuthenticatedDashboardsGeralRoute: AuthenticatedDashboardsGeralRoute,
+    AuthenticatedDashboardsMetasRoute: AuthenticatedDashboardsMetasRoute,
+  }
+
+const AuthenticatedDashboardsRouteWithChildren =
+  AuthenticatedDashboardsRoute._addFileChildren(
+    AuthenticatedDashboardsRouteChildren,
+  )
+
 interface AuthenticatedMarketingRouteChildren {
   AuthenticatedMarketingCampanhasRoute: typeof AuthenticatedMarketingCampanhasRoute
   AuthenticatedMarketingFunilRoute: typeof AuthenticatedMarketingFunilRoute
@@ -534,7 +590,7 @@ const AuthenticatedMarketingRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAtlasRoute: typeof AuthenticatedAtlasRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRouteWithChildren
-  AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRoute
+  AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRouteWithChildren
   AuthenticatedIntegracoesRoute: typeof AuthenticatedIntegracoesRoute
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRouteWithChildren
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
@@ -553,7 +609,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAtlasRoute: AuthenticatedAtlasRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRouteWithChildren,
-  AuthenticatedDashboardsRoute: AuthenticatedDashboardsRoute,
+  AuthenticatedDashboardsRoute: AuthenticatedDashboardsRouteWithChildren,
   AuthenticatedIntegracoesRoute: AuthenticatedIntegracoesRoute,
   AuthenticatedMarketingRoute: AuthenticatedMarketingRouteWithChildren,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
