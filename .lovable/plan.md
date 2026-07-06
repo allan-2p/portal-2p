@@ -1,127 +1,104 @@
+# Versões de tela por Papel + Cargo
 
-# Portal em Instâncias — Solar / Carregadores / Marketing
+## Ideia central
 
-## Visão geral
+Cada tela vira um **layout base com "slots"**. Cada slot pode ter várias variantes, e o sistema escolhe automaticamente qual variante mostrar com base em **(Papel, Cargo)** do usuário logado — mais a instância ativa, que já existe. Se o usuário se encaixa em mais de uma persona, aparece um **toggle "Ver como…"** no header para ele alternar.
 
-Transformar o Portal 2P num sistema **multi-instância**. O usuário troca de instância pelo canto superior direito e o app inteiro muda de identidade visual, menu, dados e permissões.
-
-- **Solar** (atual) — laranja 2P, tudo como está hoje.
-- **Carregadores** — tema **azul**, logo enviado (`Logo.png` 2P azul).
-- **Marketing** — tema **cinza + amarelo fosco**, página nova quase do zero agregando dados das duas instâncias anteriores.
-
-Administradores ganham dois controles novos no menu superior esquerdo (perto do avatar):
-1. **Instâncias liberadas** por usuário.
-2. **Permissões finas** (quais abas / tabelas / funções cada usuário vê) dentro de cada instância.
+Nada de duplicar telas inteiras. Nada de `if role === 'vendedor'` espalhado. Um único lugar declara "quem vê o quê".
 
 ---
 
-## Arquitetura
+## Como o usuário vai perceber
 
-### 1. Modelo de instância
-Novo arquivo `src/lib/instances.ts` central:
-- `type InstanceId = "solar" | "carregadores" | "marketing"`
-- Metadata: label, cor primária (tokens CSS), logo, rotas habilitadas, ícone.
-- `INSTANCE_ROUTES`: mapa `InstanceId → string[]` com as rotas visíveis daquela instância (sidebar e roteamento).
-- `INSTANCE_FEATURES`: chaves finas usadas por permissões (`clientes.segmentacao`, `dashboards.metas`, `pedidos`, `atlas`, `admin.metas`, `admin.tabelas`, `admin.vendedores`, `usuarios`, `integracoes`, `tarefas`, `perfil`, `marketing.overview` etc.).
-
-### 2. Contexto React `InstanceProvider`
-`src/components/instance-provider.tsx`:
-- Guarda `currentInstance`, persiste em `localStorage` (`portal.instance`).
-- Ao trocar, aplica classe no `<html>`: `data-instance="solar|carregadores|marketing"` — o `src/styles.css` reage e sobrescreve tokens (`--primary`, `--accent`, `--ring`, `--atlas`) por instância. Solar mantém laranja atual; carregadores azul; marketing cinza+amarelo fosco.
-- Expõe `useInstance()` com: `instance`, `setInstance`, `allowedInstances`, `hasFeature(key)`.
-- Filtra automaticamente para as instâncias que o usuário tem acesso (via query nas tabelas novas).
-
-### 3. Trocador de instância (superior direito)
-Novo `src/components/instance-switcher.tsx` — dropdown com as instâncias liberadas ao usuário, logo/label/cor de cada uma, indicador da ativa. Inserir no `app-layout.tsx` ao lado do `NotificationsDropdown`/`ThemeToggle`.
-
-### 4. Admin (superior esquerdo, perto da foto)
-No `app-layout.tsx`, se `hasRole('admin')`, exibir um botão de engrenagem que abre menu com:
-- **Acessos por Instância** → `/admin/acessos-instancias`
-- **Permissões de Usuários** → `/admin/permissoes`
-
-Ambas as rotas ficam dentro de `_authenticated/` e são gateadas por `has_role('admin')`.
-
-### 5. Filtragem de menu e roteamento
-`app-layout.tsx` (sidebar) filtra os itens do menu por:
-`INSTANCE_ROUTES[currentInstance]` ∩ `permissões do usuário`.
-Rota acessada diretamente sem permissão → redirect para `/` com toast.
+1. **Home (e todas as telas):** carrega automaticamente a versão adequada ao seu Papel + Cargo.
+   - Ex.: `Vendedor + Closer` vê KPIs de fechamento, pipeline curto, metas de conversão.
+   - `Vendedor + Farmer` vê carteira ativa, recompra, NPS.
+   - `Diretor` vê consolidado, ranking de equipes, forecast.
+   - `Gerente` vê time direto + drill-down.
+   - `Marketing` vê funil, campanhas, CAC.
+2. **Toggle "Ver como" no header** (ao lado do InstanceSwitcher): lista as personas que o usuário pode assumir. Admin vê todas. Um `Gerente` que também é `Vendedor Closer` pode alternar entre as duas visões.
+3. **Admin ganha uma tela nova** para configurar quais variantes existem para cada tela e quem pode ver o quê (sem precisar mexer em código para casos simples de "esconder bloco X do cargo Y").
 
 ---
 
-## Backend (migração SQL)
+## Estrutura (não-técnica)
 
-Uma migração cria:
-
-- `public.instances` (seed com 3 linhas: solar, carregadores, marketing) — usada só como enum de referência.
-- `public.user_instance_access` — `(user_id uuid, instance_id text, granted_at)`, PK composta.
-  - RLS: usuário lê o próprio, admin lê/escreve tudo.
-- `public.user_feature_permissions` — `(user_id uuid, instance_id text, feature_key text, allowed boolean)`, PK composta.
-  - RLS: usuário lê o próprio, admin lê/escreve tudo.
-- GRANTs completos para `authenticated` e `service_role`.
-- Trigger opcional: ao criar user, dar acesso default a `solar` (mantém retro-compat).
-
-Backfill: dar acesso a `solar` para todos os `auth.users` existentes; dar acesso a `carregadores` e `marketing` só a admins por padrão.
-
-Server functions em `src/lib/access.functions.ts`:
-- `listUserAccess()` — instâncias e features do usuário logado.
-- `adminListUsersAccess()` — matriz completa (admin).
-- `adminSetInstanceAccess({ user_id, instance_id, allowed })`.
-- `adminSetFeaturePermission({ user_id, instance_id, feature_key, allowed })`.
-
-Todas com `requireSupabaseAuth` e verificação `has_role('admin')` para as `admin*`.
+- **Papel** já existe: Administrador, Vendedor, Gerente, Diretor, Marketing.
+- **Cargo** vira um novo campo no perfil, com valores livres por Papel:
+  - Vendedor: `Closer`, `Farmer`, `SDR`, `Hunter`…
+  - Gerente: `Regional`, `Nacional`…
+  - Diretor: `Comercial`, `Executivo`…
+  - Marketing: `Performance`, `Branded`, `Growth`…
+  - Administrador: sem cargo (ou "Geral").
+- Cada tela declara suas **variantes** (`home.vendedor.closer`, `home.vendedor.farmer`, `home.diretor`, `home.default`) e o resolvedor escolhe a melhor combinação, caindo em `default` quando não houver match.
 
 ---
 
-## Frontend por instância
+## Escopo desta entrega
 
-### Solar
-Zero mudança funcional. Só passa a existir como instância explícita e usa as mesmas rotas atuais.
+1. **Banco**
+   - Adicionar coluna `cargo_tipo` em `profiles` (texto livre, opcional — o `cargo` atual já é livre; renomear seria arriscado, então crio um campo dedicado normalizado).
+   - Tabela `view_variants`: registro de cada variante disponível (tela + papel + cargo + label).
+   - Tabela `user_view_preferences`: guarda a última visão escolhida pelo usuário no toggle.
 
-### Carregadores
-- Tema azul via `data-instance="carregadores"` em `styles.css` (novos valores para `--primary`, `--accent`, `--ring`).
-- Logo: fazer upload do `Logo.png` como Lovable Asset → `src/assets/2p-carregadores-logo.png.asset.json`. `app-layout.tsx` troca o logo conforme instância.
-- Rotas iniciais reutilizadas: `dashboards`, `clientes.segmentacao`, `clientes.cadastros`, `pedidos`, `tarefas`, `perfil`. Dados vindos do Salesforce podem, num próximo passo, ser filtrados por linha de produto — nesta entrega ficam iguais aos de Solar (marcado como TODO no código).
+2. **Camada de resolução (`src/lib/view-resolver.ts`)**
+   - Função `resolveVariant(screen, { role, cargo, instance })` que retorna a chave da variante a renderizar, com fallback determinístico:
+     `role+cargo+instance` → `role+cargo` → `role` → `default`.
+   - Hook `useViewVariant(screen)` que já considera o override do toggle.
 
-### Marketing (nova)
-- Tema cinza + amarelo fosco (`--primary` oklch amarelo desaturado, `--surface` cinzas frios).
-- Rotas novas em `src/routes/_authenticated/marketing.*`:
-  - `marketing.index.tsx` — overview com KPIs agregados (leads, MQL, SQL, conversão, ticket médio) unificando Solar + Carregadores.
-  - `marketing.campanhas.tsx` — placeholder com estrutura para campanhas.
-  - `marketing.funil.tsx` — placeholder funil consolidado.
-- Layout específico com header cinza/amarelo.
-- Fontes de dados: reaproveita `getSalesforceVendas` / `getSalesforceSalesByAccount` já existentes, agrupando por período. Onde não houver dado real ainda, mostrar estado vazio elegante (não mock).
+3. **Slots reutilizáveis (`src/components/view-slot.tsx`)**
+   - `<ViewSlot screen="home" name="hero" variants={{ ... }} />` — recebe um mapa de variantes e renderiza a certa.
+   - Layout base da Home fica um só; cada bloco (Hero, KPIs, Ranking, Ações rápidas) é um Slot com N variantes.
+
+4. **Toggle "Ver como" no header**
+   - Dropdown ao lado do InstanceSwitcher. Lista as personas permitidas ao usuário (baseado em Papel + acesso admin). Persistido em `user_view_preferences` e refletido em toda a navegação até o usuário voltar para "Automático".
+
+5. **Home refatorada como exemplo completo**
+   - Slots: `hero`, `kpis`, `pipeline`, `metas`, `atividades`.
+   - Variantes iniciais: `default`, `vendedor.closer`, `vendedor.farmer`, `gerente`, `diretor`, `marketing`.
+   - Cada variante é um componente pequeno em `src/components/home/variants/`.
+
+6. **Página Admin: `/admin/visualizacoes`**
+   - Lista todas as telas registradas.
+   - Para cada tela, mostra as variantes existentes e permite:
+     - Ativar/desativar variante.
+     - Definir qual variante um Papel+Cargo específico deve ver (override do resolvedor).
+   - Não cria variantes novas via UI (isso continua sendo código); só configura o roteamento entre elas.
+
+7. **Documentação curta em `.lovable/plan.md`** explicando como adicionar uma variante nova em 3 passos (criar componente → registrar no mapa do Slot → opcional: cadastrar em `view_variants` para aparecer no admin).
 
 ---
 
-## UX / Detalhes
+## Fora do escopo (fica para depois)
 
-- Ao logar, escolhe automaticamente a última instância usada; se não tiver acesso, cai na primeira liberada.
-- Trocar de instância dá fade de 150ms e invalida queries relacionadas.
-- Página `/admin/permissoes`: tabela com usuários nas linhas, tabs no topo por instância, colunas = features. Toggle por célula. Bulk actions (marcar tudo / desmarcar).
-- Página `/admin/acessos-instancias`: lista de usuários com 3 switches (Solar / Carregadores / Marketing).
+- Migrar todas as telas de uma vez. Faço a Home como referência; as demais migram sob demanda seguindo o padrão.
+- Editor visual de variantes (arrastar blocos). O admin só configura roteamento entre variantes já codificadas.
+- Versionamento histórico (voltar para "versão de ontem"). É controle de variantes, não de versões no tempo.
 
 ---
 
-## Detalhes técnicos (para revisão)
+## Detalhes técnicos
 
-**Ordem de implementação:**
-1. Migração SQL (`instances`, `user_instance_access`, `user_feature_permissions` + RLS + GRANT + backfill).
-2. `src/lib/instances.ts` (metadata + features), `src/lib/access.functions.ts` (server fns).
-3. `InstanceProvider` + `useInstance` hook + tokens CSS por `data-instance`.
-4. `InstanceSwitcher` (top-right) + admin menu (top-left).
-5. Filtragem no `app-layout.tsx` (sidebar + guards).
-6. Rotas admin: `/admin/acessos-instancias` e `/admin/permissoes`.
-7. Upload do logo azul + tema Carregadores.
-8. Rotas `marketing.*` novas + tema.
-9. QA: trocar instância, testar sem permissão, admin adicionando/removendo acessos.
+- **Migration:**
+  - `ALTER TABLE profiles ADD COLUMN cargo_tipo text;`
+  - `CREATE TABLE view_variants (id, screen text, role app_role, cargo text, variant_key text, label text, enabled bool, ...)` + GRANTs + RLS (SELECT para authenticated; INSERT/UPDATE/DELETE só admin via `has_role`).
+  - `CREATE TABLE user_view_preferences (user_id, screen, variant_key, ...)` + GRANTs + RLS (usuário mexe só nos próprios).
+- **Server fns em `src/lib/views.functions.ts`:**
+  - `listVariants()`, `upsertVariantRouting(...)` (admin), `getUserPreference(screen)`, `setUserPreference(screen, key)`.
+- **Resolver:** puro TS, sem I/O — recebe contexto e mapa e devolve chave. Testável isolado.
+- **Hook `useViewVariant`:** combina `useAuth` (role, cargo_tipo), `useInstance`, `useQuery(getUserPreference)`.
+- **`<ViewSlot />`:** props `screen`, `slot`, `variants: Record<string, ReactNode>`, `fallback?: ReactNode`. Sem lógica de negócio.
+- **Toggle no header:** componente `ViewAsSwitcher` em `src/components/view-as-switcher.tsx`, ao lado de `InstanceSwitcher` em `app-layout.tsx`.
+- **Home:** `src/routes/_authenticated/index.tsx` (ou onde estiver hoje) vira composição de `<ViewSlot />`s. Variantes ficam em `src/components/home/variants/{hero,kpis,pipeline,metas,atividades}/{default,vendedor-closer,...}.tsx`.
+- **Admin:** `src/routes/_authenticated/admin.visualizacoes.tsx` com matriz Tela × Papel/Cargo → Variante.
 
-**Compatibilidade:**
-- Rotas atuais continuam funcionando.
-- Usuários existentes recebem acesso automático a Solar.
-- Nada quebra para não-admins que não têm as novas rotas.
+---
 
-**Não incluído nesta entrega:**
-- Filtragem por linha de produto no Salesforce (Carregadores usa mesmos dados de Solar por enquanto, com TODO).
-- Dashboards profundos de Marketing (entra com esqueleto + agregados básicos).
+## Ordem de execução
 
-Confirma que sigo por esse caminho? Se quiser, ajusto qualquer parte (ex: features específicas, mais rotas em Marketing, cores exatas dos temas) antes de implementar.
+1. Migration (cargo_tipo, view_variants, user_view_preferences).
+2. Resolver + hook + `<ViewSlot />` + server fns.
+3. Refactor da Home em Slots com variantes iniciais.
+4. `ViewAsSwitcher` no header.
+5. Página admin `/admin/visualizacoes`.
+6. Nota curta no plano explicando como replicar em Dashboards/Clientes/etc.
