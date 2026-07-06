@@ -233,18 +233,15 @@ function SegmentacaoPage() {
 
   const clients = useMemo(() => {
     const accounts = data?.records ?? [];
-    // Filtro por vendedor ativo aplica-se apenas quando "Todos" está selecionado
-    // — assim contas de vendedores fora do domínio não somem quando o usuário
-    // busca por um vendedor específico. Se a lista ainda não carregou, mostramos tudo.
+    // Não filtramos por "vendedor ativo" aqui — o filtro `hidden_salespeople`
+    // só esconde nomes do seletor; contas com dono oculto continuam válidas
+    // na carteira e devem aparecer na Segmentação (igual à tabela Projeções).
     const scoped =
-      ownerId === "all"
-        ? activeOwnerIds.size > 0
-          ? accounts.filter((a) => a.ownerId && activeOwnerIds.has(a.ownerId))
-          : accounts
-        : accounts.filter((a) => a.ownerId === ownerId);
+      ownerId === "all" ? accounts : accounts.filter((a) => a.ownerId === ownerId);
     return scoped.map(accountToClient);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, ownerId, activeOwnerIds, period, generationByAccount, salesByAccount, quarterProjectionById]);
+  }, [data, ownerId, period, generationByAccount, salesByAccount, quarterProjectionById]);
+
 
 
 
