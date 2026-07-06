@@ -1,10 +1,12 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import logo from "@/assets/2p-logo.jpg";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationsDropdown } from "./notifications-dropdown";
+import { InstanceSwitcher } from "./instance-switcher";
+import { useInstance } from "./instance-provider";
+import { INSTANCES, type FeatureKey } from "@/lib/instances";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
@@ -22,13 +24,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isLoadingRoute = useRouterState({ select: (s) => s.isLoading || s.isTransitioning });
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [clientesOpen, setClientesOpen] = useState(true);
-  
+
   const { user, profile, roles, hasRole } = useAuth();
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
   useSalesforceNotifications();
+  const { instance, hasFeature, isRouteAllowed } = useInstance();
+  const instMeta = INSTANCES[instance];
 
   useEffect(() => {
     if (localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
@@ -40,7 +45,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (pathname.startsWith("/clientes")) setClientesOpen(true);
   }, [pathname]);
 
-  // Only show the top progress bar for slow nav (>200ms) to avoid flashing on instant transitions
+  // Se usuário está numa rota que a instância atual não permite, redireciona para home.
+  useEffect(() => {
+    if (!isRouteAllowed(pathname)) {
+      toast.info(`"${pathname}" não está disponível na instância ${instMeta.label}.`);
+      navigate({ to: "/" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [instance, pathname]);
+
   const [showBar, setShowBar] = useState(false);
   useEffect(() => {
     if (!isLoadingRoute) { setShowBar(false); return; }
@@ -82,13 +95,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const atlasActive = pathname.startsWith("/atlas");
   const clientesActive = pathname.startsWith("/clientes");
+  const marketingActive = pathname.startsWith("/marketing");
 
-  const navItems = [
-    { to: "/", label: "Home", icon: Home, match: (p: string) => p === "/" },
-    { to: "/tarefas", label: "Tarefas", icon: Calendar },
-    { to: "/pedidos", label: "Pedidos", icon: KanbanSquare },
-    { to: "/dashboards", label: "Dashboards", icon: BarChart3 },
-  ];
+  // Filtragem de itens por feature.
+  const show = (k: FeatureKey) => hasFeature(k);
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -99,98 +109,134 @@ export function AppLayout({ children }: { children: ReactNode }) {
         )}
       >
         <div className={cn("flex items-center gap-3 py-6", collapsed ? "px-3 justify-center" : "px-5")}>
-          <img src={logo} alt="2P" className="h-9 w-auto rounded shrink-0" />
+          <img src={instMeta.logo} alt={instMeta.label} className="h-9 w-auto rounded shrink-0 object-contain" />
           {!collapsed && (
             <div className="min-w-0">
               <div className="font-display font-bold text-base leading-none truncate">Portal 2P</div>
-              <div className="text-[11px] text-muted-foreground mt-1 truncate">Inteligência de vendas</div>
+              <div className="text-[11px] text-muted-foreground mt-1 truncate">{instMeta.label}</div>
             </div>
           )}
         </div>
 
         <nav className="px-2 py-2 flex-1 overflow-y-auto">
-          {/* Atlas — destaque */}
-          <Link
-            to="/atlas"
-            preload="intent"
-            title={collapsed ? "Atlas" : undefined}
-            className={cn(
-              "flex items-center gap-3 rounded-xl text-sm transition-all mb-2 relative overflow-hidden group",
-              collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
-              atlasActive
-                ? "bg-gradient-to-r from-primary to-[oklch(0.65_0.2_30)] text-primary-foreground shadow-md shadow-primary/30 font-semibold"
-                : "bg-gradient-to-r from-primary/10 to-[oklch(0.65_0.2_30)]/5 text-foreground hover:from-primary/20 hover:to-[oklch(0.65_0.2_30)]/10 border border-primary/20",
-            )}
-          >
-            <Sparkles className={cn("h-4 w-4 shrink-0", !atlasActive && "text-primary")} />
-            {!collapsed && (
-              <>
-                <span className="font-semibold">Atlas</span>
-                <span className={cn(
-                  "ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-bold tracking-wider",
-                  atlasActive ? "bg-background/20" : "bg-primary text-primary-foreground",
-                )}>AI</span>
-              </>
-            )}
-          </Link>
-
-          <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
-
-          {navItems.slice(0, 1).map((item) => {
-            const active = item.match ? item.match(pathname) : pathname.startsWith(item.to);
-            return <NavLink key={item.to} item={item} active={active} collapsed={collapsed} />;
-          })}
-
-          {navItems.slice(1, 3).map((item) => {
-            const active = pathname.startsWith(item.to);
-            return <NavLink key={item.to} item={item} active={active} collapsed={collapsed} />;
-          })}
-
-          {/* Clientes — grupo expansível */}
-          {collapsed ? (
-            <Link
-              to="/clientes/segmentacao"
-              preload="intent"
-              title="Clientes"
-              className={cn(
-                "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
-                clientesActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-              )}
-            >
-              <Layers className="h-4 w-4" />
-            </Link>
-          ) : (
-            <div className="mb-1">
-              <button
-                onClick={toggleClientes}
+          {/* Atlas — só se instância permitir */}
+          {show("atlas") && (
+            <>
+              <Link
+                to="/atlas"
+                preload="intent"
+                title={collapsed ? "Atlas" : undefined}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                  clientesActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                  "flex items-center gap-3 rounded-xl text-sm transition-all mb-2 relative overflow-hidden group",
+                  collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
+                  atlasActive
+                    ? "bg-gradient-to-r from-primary to-[oklch(0.65_0.2_30)] text-primary-foreground shadow-md shadow-primary/30 font-semibold"
+                    : "bg-gradient-to-r from-primary/10 to-[oklch(0.65_0.2_30)]/5 text-foreground hover:from-primary/20 hover:to-[oklch(0.65_0.2_30)]/10 border border-primary/20",
                 )}
               >
-                <Layers className="h-4 w-4 shrink-0" />
-                <span className="truncate">Clientes</span>
-                <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !clientesOpen && "-rotate-90")} />
-              </button>
-              {clientesOpen && (
-                <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-                  <SubLink to="/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/clientes/cadastros")} />
-                  <SubLink to="/clientes/segmentacao" label="Segmentação" icon={Layers} active={pathname.startsWith("/clientes/segmentacao")} />
-                </div>
-              )}
-            </div>
+                <Sparkles className={cn("h-4 w-4 shrink-0", !atlasActive && "text-primary")} />
+                {!collapsed && (
+                  <>
+                    <span className="font-semibold">Atlas</span>
+                    <span className={cn(
+                      "ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-bold tracking-wider",
+                      atlasActive ? "bg-background/20" : "bg-primary text-primary-foreground",
+                    )}>AI</span>
+                  </>
+                )}
+              </Link>
+              <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
+            </>
           )}
 
-          {navItems.slice(3).map((item) => {
-            const active = pathname.startsWith(item.to);
-            return <NavLink key={item.to} item={item} active={active} collapsed={collapsed} />;
-          })}
+          {show("home") && (
+            <NavLink item={{ to: "/", label: "Home", icon: Home }} active={pathname === "/"} collapsed={collapsed} />
+          )}
+          {show("tarefas") && (
+            <NavLink item={{ to: "/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/tarefas")} collapsed={collapsed} />
+          )}
+          {show("pedidos") && (
+            <NavLink item={{ to: "/pedidos", label: "Pedidos", icon: KanbanSquare }} active={pathname.startsWith("/pedidos")} collapsed={collapsed} />
+          )}
+
+          {/* Clientes — grupo expansível */}
+          {(show("clientes.cadastros") || show("clientes.segmentacao")) && (
+            collapsed ? (
+              <Link
+                to={show("clientes.segmentacao") ? "/clientes/segmentacao" : "/clientes/cadastros"}
+                preload="intent"
+                title="Clientes"
+                className={cn(
+                  "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
+                  clientesActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                )}
+              >
+                <Layers className="h-4 w-4" />
+              </Link>
+            ) : (
+              <div className="mb-1">
+                <button
+                  onClick={toggleClientes}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                    clientesActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                  )}
+                >
+                  <Layers className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Clientes</span>
+                  <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !clientesOpen && "-rotate-90")} />
+                </button>
+                {clientesOpen && (
+                  <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
+                    {show("clientes.cadastros") && (
+                      <SubLink to="/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/clientes/cadastros")} />
+                    )}
+                    {show("clientes.segmentacao") && (
+                      <SubLink to="/clientes/segmentacao" label="Segmentação" icon={Layers} active={pathname.startsWith("/clientes/segmentacao")} />
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          )}
+
+          {show("dashboards") && (
+            <NavLink item={{ to: "/dashboards", label: "Dashboards", icon: BarChart3 }} active={pathname.startsWith("/dashboards")} collapsed={collapsed} />
+          )}
+
+          {/* Marketing — só na instância marketing */}
+          {show("marketing.overview") && (
+            collapsed ? (
+              <Link
+                to="/marketing"
+                preload="intent"
+                title="Marketing"
+                className={cn(
+                  "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
+                  marketingActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                )}
+              >
+                <Megaphone className="h-4 w-4" />
+              </Link>
+            ) : (
+              <div className="mb-1">
+                <NavLink item={{ to: "/marketing", label: "Overview", icon: Megaphone }} active={pathname === "/marketing"} collapsed={false} />
+                {show("marketing.campanhas") && (
+                  <div className="ml-3 pl-3 border-l border-border space-y-0.5">
+                    <SubLink to="/marketing/campanhas" label="Campanhas" icon={Filter} active={pathname.startsWith("/marketing/campanhas")} />
+                  </div>
+                )}
+                {show("marketing.funil") && (
+                  <div className="ml-3 pl-3 border-l border-border space-y-0.5">
+                    <SubLink to="/marketing/funil" label="Funil" icon={TrendingUp} active={pathname.startsWith("/marketing/funil")} />
+                  </div>
+                )}
+              </div>
+            )
+          )}
 
           {hasRole("admin") && (
-            <AdminGroup
-              pathname={pathname}
-              collapsed={collapsed}
-            />
+            <AdminGroup pathname={pathname} collapsed={collapsed} show={show} />
           )}
         </nav>
 
@@ -207,7 +253,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-lg">
           <div className="flex items-center gap-4 px-6 h-16">
             <div className="md:hidden flex items-center gap-2">
-              <img src={logo} alt="2P" className="h-7 w-auto rounded" />
+              <img src={instMeta.logo} alt={instMeta.label} className="h-7 w-auto rounded object-contain" />
               <span className="font-display font-bold">Portal 2P</span>
             </div>
             <div className="hidden md:flex flex-1" />
@@ -222,8 +268,46 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   Tornar-me admin
                 </button>
               )}
+              <InstanceSwitcher />
               <ThemeToggle />
               <NotificationsDropdown />
+
+              {hasRole("admin") && (
+                <div className="relative">
+                  <button
+                    onClick={() => setAdminMenuOpen((v) => !v)}
+                    className="h-9 w-9 rounded-lg border border-border bg-surface hover:bg-surface-2 flex items-center justify-center"
+                    title="Configurações de administrador"
+                  >
+                    <Settings2 className="h-4 w-4" />
+                  </button>
+                  {adminMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setAdminMenuOpen(false)} />
+                      <div className="absolute right-0 top-11 z-50 w-64 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+                        <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+                          Administração
+                        </div>
+                        <Link
+                          to="/admin/acessos-instancias"
+                          onClick={() => setAdminMenuOpen(false)}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2"
+                        >
+                          <LayoutGridIcon /> Acessos por Instância
+                        </Link>
+                        <Link
+                          to="/admin/permissoes"
+                          onClick={() => setAdminMenuOpen(false)}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 border-t border-border"
+                        >
+                          <KeyRound className="h-4 w-4" /> Permissões de Usuários
+                        </Link>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
@@ -269,6 +353,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
 }
 
+function LayoutGridIcon() {
+  return <Shield className="h-4 w-4" />;
+}
+
 function NavLink({
   item, active, collapsed,
 }: {
@@ -312,7 +400,7 @@ function SubLink({ to, label, icon: Icon, active }: { to: string; label: string;
 
 const ADMIN_OPEN_KEY = "portal2p-admin-open";
 
-function AdminGroup({ pathname, collapsed }: { pathname: string; collapsed: boolean }) {
+function AdminGroup({ pathname, collapsed, show }: { pathname: string; collapsed: boolean; show: (k: FeatureKey) => boolean }) {
   const active = pathname.startsWith("/admin") || pathname.startsWith("/usuarios") || pathname.startsWith("/integracoes");
   const [open, setOpen] = useState(active);
   useEffect(() => {
@@ -322,10 +410,18 @@ function AdminGroup({ pathname, collapsed }: { pathname: string; collapsed: bool
   useEffect(() => { if (active) setOpen(true); }, [active]);
   const toggle = () => setOpen((v) => { localStorage.setItem(ADMIN_OPEN_KEY, !v ? "1" : "0"); return !v; });
 
+  const showUsers = show("admin.usuarios");
+  const showVend = show("admin.vendedores");
+  const showMetas = show("admin.metas");
+  const showTab = show("admin.tabelas");
+  const showInt = show("admin.integracoes");
+  const anyChild = showUsers || showVend || showMetas || showTab || showInt;
+  if (!anyChild) return null;
+
   if (collapsed) {
     return (
       <Link
-        to="/integracoes"
+        to={showInt ? "/integracoes" : showUsers ? "/usuarios" : "/admin/metas"}
         preload="intent"
         title="Administrador"
         className={cn(
@@ -352,12 +448,11 @@ function AdminGroup({ pathname, collapsed }: { pathname: string; collapsed: bool
       </button>
       {open && (
         <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-          <SubLink to="/usuarios" label="Usuários" icon={Users} active={pathname.startsWith("/usuarios")} />
-          <SubLink to="/admin/vendedores" label="Vendedores" icon={UserCog} active={pathname.startsWith("/admin/vendedores")} />
-          <SubLink to="/admin/metas" label="Metas" icon={Target} active={pathname.startsWith("/admin/metas")} />
-          <SubLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} active={pathname.startsWith("/admin/tabelas")} />
-
-          <SubLink to="/integracoes" label="Integrações" icon={Plug} active={pathname.startsWith("/integracoes")} />
+          {showUsers && <SubLink to="/usuarios" label="Usuários" icon={Users} active={pathname.startsWith("/usuarios")} />}
+          {showVend && <SubLink to="/admin/vendedores" label="Vendedores" icon={UserCog} active={pathname.startsWith("/admin/vendedores")} />}
+          {showMetas && <SubLink to="/admin/metas" label="Metas" icon={Target} active={pathname.startsWith("/admin/metas")} />}
+          {showTab && <SubLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} active={pathname.startsWith("/admin/tabelas")} />}
+          {showInt && <SubLink to="/integracoes" label="Integrações" icon={Plug} active={pathname.startsWith("/integracoes")} />}
         </div>
       )}
     </div>
