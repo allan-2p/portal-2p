@@ -26,7 +26,6 @@ import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedMarketingFunilRouteImport } from './routes/_authenticated/marketing.funil'
 import { Route as AuthenticatedMarketingCampanhasRouteImport } from './routes/_authenticated/marketing.campanhas'
 import { Route as AuthenticatedDashboardsMetasRouteImport } from './routes/_authenticated/dashboards.metas'
-import { Route as AuthenticatedDashboardsGeralRouteImport } from './routes/_authenticated/dashboards.geral'
 import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
 import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
 import { Route as AuthenticatedAdminVisualizacoesRouteImport } from './routes/_authenticated/admin.visualizacoes'
@@ -125,12 +124,6 @@ const AuthenticatedDashboardsMetasRoute =
     path: '/metas',
     getParentRoute: () => AuthenticatedDashboardsRoute,
   } as any)
-const AuthenticatedDashboardsGeralRoute =
-  AuthenticatedDashboardsGeralRouteImport.update({
-    id: '/geral',
-    path: '/geral',
-    getParentRoute: () => AuthenticatedDashboardsRoute,
-  } as any)
 const AuthenticatedClientesSegmentacaoRoute =
   AuthenticatedClientesSegmentacaoRouteImport.update({
     id: '/segmentacao',
@@ -200,7 +193,6 @@ export interface FileRoutesByFullPath {
   '/admin/visualizacoes': typeof AuthenticatedAdminVisualizacoesRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
-  '/dashboards/geral': typeof AuthenticatedDashboardsGeralRoute
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
   '/marketing/funil': typeof AuthenticatedMarketingFunilRoute
@@ -226,7 +218,6 @@ export interface FileRoutesByTo {
   '/admin/visualizacoes': typeof AuthenticatedAdminVisualizacoesRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
-  '/dashboards/geral': typeof AuthenticatedDashboardsGeralRoute
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
   '/marketing/funil': typeof AuthenticatedMarketingFunilRoute
@@ -255,7 +246,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/visualizacoes': typeof AuthenticatedAdminVisualizacoesRoute
   '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
-  '/_authenticated/dashboards/geral': typeof AuthenticatedDashboardsGeralRoute
   '/_authenticated/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/_authenticated/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
   '/_authenticated/marketing/funil': typeof AuthenticatedMarketingFunilRoute
@@ -284,7 +274,6 @@ export interface FileRouteTypes {
     | '/admin/visualizacoes'
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
-    | '/dashboards/geral'
     | '/dashboards/metas'
     | '/marketing/campanhas'
     | '/marketing/funil'
@@ -310,7 +299,6 @@ export interface FileRouteTypes {
     | '/admin/visualizacoes'
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
-    | '/dashboards/geral'
     | '/dashboards/metas'
     | '/marketing/campanhas'
     | '/marketing/funil'
@@ -338,7 +326,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/visualizacoes'
     | '/_authenticated/clientes/cadastros'
     | '/_authenticated/clientes/segmentacao'
-    | '/_authenticated/dashboards/geral'
     | '/_authenticated/dashboards/metas'
     | '/_authenticated/marketing/campanhas'
     | '/_authenticated/marketing/funil'
@@ -472,13 +459,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardsMetasRouteImport
       parentRoute: typeof AuthenticatedDashboardsRoute
     }
-    '/_authenticated/dashboards/geral': {
-      id: '/_authenticated/dashboards/geral'
-      path: '/geral'
-      fullPath: '/dashboards/geral'
-      preLoaderRoute: typeof AuthenticatedDashboardsGeralRouteImport
-      parentRoute: typeof AuthenticatedDashboardsRoute
-    }
     '/_authenticated/clientes/segmentacao': {
       id: '/_authenticated/clientes/segmentacao'
       path: '/segmentacao'
@@ -554,13 +534,11 @@ const AuthenticatedClientesRouteWithChildren =
   )
 
 interface AuthenticatedDashboardsRouteChildren {
-  AuthenticatedDashboardsGeralRoute: typeof AuthenticatedDashboardsGeralRoute
   AuthenticatedDashboardsMetasRoute: typeof AuthenticatedDashboardsMetasRoute
 }
 
 const AuthenticatedDashboardsRouteChildren: AuthenticatedDashboardsRouteChildren =
   {
-    AuthenticatedDashboardsGeralRoute: AuthenticatedDashboardsGeralRoute,
     AuthenticatedDashboardsMetasRoute: AuthenticatedDashboardsMetasRoute,
   }
 
