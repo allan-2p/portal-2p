@@ -10,6 +10,7 @@ import {
 import {
   listFaturamentoGoalsForOwners,
   listNewAbGoals,
+  listRetentionGoals,
 } from "@/lib/goals.functions";
 import { CARTEIRA_OWNER_IDS } from "@/lib/salespeople";
 
@@ -112,6 +113,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   const fetchSalesByAccount = useServerFn(getSalesforceSalesByAccount);
   const fetchFaturamentoGoals = useServerFn(listFaturamentoGoalsForOwners);
   const fetchNewAbGoals = useServerFn(listNewAbGoals);
+  const fetchRetentionGoals = useServerFn(listRetentionGoals);
 
   // Vendas do trimestre atual (para faturamento por owner e Novos A+B por accountId+owner)
   const curVendasQ = useQuery({
@@ -147,8 +149,17 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     staleTime: 60_000,
   });
 
+  const retentionGoalsQ = useQuery({
+    queryKey: ["goals-retention", info.year, info.quarter, owners.join(",")],
+    queryFn: () =>
+      fetchRetentionGoals({
+        data: { year: info.year, quarter: info.quarter, sfUserIds: owners },
+      }),
+    staleTime: 60_000,
+  });
+
   const loading =
-    curVendasQ.isLoading || prevVendasQ.isLoading || goalsQ.isLoading || newAbGoalsQ.isLoading;
+    curVendasQ.isLoading || prevVendasQ.isLoading || goalsQ.isLoading || newAbGoalsQ.isLoading || retentionGoalsQ.isLoading;
 
   const ownerSet = useMemo(() => new Set(owners), [owners.join(",")]);
 
@@ -212,7 +223,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
       retencaoBase++;
       if (curAB.has(id)) retencaoAtivos++;
     }
-    const retencaoMeta = Math.round(retencaoBase * 0.9);
+    const retencaoMetaFallback = Math.round(retencaoBase * 0.9);
 
     // Novos A+B: contas do owner que estão em curAB e NÃO estavam em prevAB
     let novosAB = 0;
@@ -221,7 +232,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
       if (!prevAB.has(id)) novosAB++;
     }
 
-    return { retencaoBase, retencaoAtivos, retencaoMeta, novosAB };
+    return { retencaoBase, retencaoAtivos, retencaoMetaFallback, novosAB };
   }, [curVendasQ.data, prevVendasQ.data, ownerSet]);
 
   const novosAbMeta = useMemo(() => {
@@ -229,6 +240,11 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     for (const g of newAbGoalsQ.data?.records ?? []) total += g.goal;
     return total;
   }, [newAbGoalsQ.data]);
+
+  const retencaoMeta = useMemo(() => {
+    const configured = (retentionGoalsQ.data?.records ?? []).reduce((a, r) => a + r.goal, 0);
+    return configured > 0 ? configured : abKpis.retencaoMetaFallback;
+  }, [retentionGoalsQ.data, abKpis.retencaoMetaFallback]);
 
   const pct = (real: number, meta: number) => (meta > 0 ? (real / meta) * 100 : null);
 
@@ -257,8 +273,8 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
           label="Retenção A/B"
           Icon={Repeat}
           realized={String(abKpis.retencaoAtivos)}
-          goal={String(abKpis.retencaoMeta)}
-          pct={pct(abKpis.retencaoAtivos, abKpis.retencaoMeta)}
+          goal={String(retencaoMeta)}
+          pct={pct(abKpis.retencaoAtivos, retencaoMeta)}
           hint={`base A/B tri ant.: ${abKpis.retencaoBase}`}
           loading={loading}
         />

@@ -164,6 +164,33 @@ export type Database = {
         }
         Relationships: []
       }
+      salesperson_retention_goals: {
+        Row: {
+          created_at: string
+          goal: number
+          quarter: number
+          sf_user_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          goal?: number
+          quarter: number
+          sf_user_id: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          goal?: number
+          quarter?: number
+          sf_user_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       user_feature_permissions: {
         Row: {
           allowed: boolean

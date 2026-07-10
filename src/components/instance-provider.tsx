@@ -11,6 +11,15 @@ import {
 } from "@/lib/instances";
 
 const STORAGE_KEY = "portal2p-instance";
+const MKT_UNIT_KEY = "portal2p-marketing-unit";
+
+export type MarketingUnit = "solar" | "carregadores";
+
+function readMarketingUnit(): MarketingUnit {
+  if (typeof window === "undefined") return "solar";
+  const v = window.localStorage.getItem(MKT_UNIT_KEY);
+  return v === "carregadores" ? "carregadores" : "solar";
+}
 
 type Ctx = {
   instance: InstanceId;
@@ -118,4 +127,25 @@ export function useInstance(): Ctx {
     };
   }
   return ctx;
+}
+
+// --- Marketing sub-unit (Solar vs Carregadores) ---
+export function useMarketingUnit() {
+  const [marketingUnit, setUnit] = useState<MarketingUnit>(() => readMarketingUnit());
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === MKT_UNIT_KEY) setUnit(readMarketingUnit());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+  const setMarketingUnit = useCallback((u: MarketingUnit) => {
+    setUnit(u);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(MKT_UNIT_KEY, u);
+      // dispara no próprio tab para sincronizar componentes montados
+      window.dispatchEvent(new StorageEvent("storage", { key: MKT_UNIT_KEY }));
+    }
+  }, []);
+  return { marketingUnit, setMarketingUnit };
 }
