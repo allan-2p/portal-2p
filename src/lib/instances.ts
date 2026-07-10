@@ -21,9 +21,11 @@ export type FeatureKey =
   | "admin.metas"
   | "admin.tabelas"
   | "admin.integracoes"
-  | "marketing.overview"
-  | "marketing.campanhas"
-  | "marketing.funil";
+  | "marketing.home"
+  | "marketing.social"
+  | "marketing.trafego"
+  | "marketing.cohort"
+  | "marketing.cac";
 
 export type InstanceMeta = {
   id: InstanceId;
@@ -88,9 +90,11 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
     logo: solarLogoRaw,
     swatch: "oklch(0.78 0.14 90)",
     routes: [
-      "marketing.overview",
-      "marketing.campanhas",
-      "marketing.funil",
+      "marketing.home",
+      "marketing.social",
+      "marketing.trafego",
+      "marketing.cohort",
+      "marketing.cac",
       "admin.usuarios",
       "admin.integracoes",
     ],
@@ -111,9 +115,11 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/admin/metas": "admin.metas",
   "/admin/tabelas": "admin.tabelas",
   "/integracoes": "admin.integracoes",
-  "/marketing": "marketing.overview",
-  "/marketing/campanhas": "marketing.campanhas",
-  "/marketing/funil": "marketing.funil",
+  "/marketing": "marketing.home",
+  "/marketing/social": "marketing.social",
+  "/marketing/trafego": "marketing.trafego",
+  "/marketing/cohort": "marketing.cohort",
+  "/marketing/cac": "marketing.cac",
 };
 
 export const FEATURE_LABELS: Record<FeatureKey, string> = {
@@ -129,9 +135,11 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.metas": "Admin • Metas",
   "admin.tabelas": "Admin • Tabelas",
   "admin.integracoes": "Admin • Integrações",
-  "marketing.overview": "Marketing • Overview",
-  "marketing.campanhas": "Marketing • Campanhas",
-  "marketing.funil": "Marketing • Funil",
+  "marketing.home": "Marketing • Home",
+  "marketing.social": "Marketing • Social Media",
+  "marketing.trafego": "Marketing • Tráfego Pago",
+  "marketing.cohort": "Marketing • Cohort",
+  "marketing.cac": "Marketing • CAC",
 };
 
 export const ALL_FEATURES: FeatureKey[] = Object.keys(FEATURE_LABELS) as FeatureKey[];

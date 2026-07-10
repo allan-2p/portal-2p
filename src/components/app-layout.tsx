@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationsDropdown } from "./notifications-dropdown";
 import { InstanceSwitcher } from "./instance-switcher";
+import { MarketingUnitSwitch } from "./marketing-unit-switch";
 import { ViewAsSwitcher } from "./view-as-switcher";
 import { useInstance } from "./instance-provider";
 import { INSTANCES, type FeatureKey } from "@/lib/instances";
@@ -251,7 +252,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
 
           {/* Marketing — só na instância marketing */}
-          {show("marketing.overview") && (
+          {show("marketing.home") && (
             collapsed ? (
               <Link
                 to="/marketing"
@@ -265,17 +266,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Megaphone className="h-4 w-4" />
               </Link>
             ) : (
-              <div className="mb-1">
-                <NavLink item={{ to: "/marketing", label: "Overview", icon: Megaphone }} active={pathname === "/marketing"} collapsed={false} />
-                {show("marketing.campanhas") && (
-                  <div className="ml-3 pl-3 border-l border-border space-y-0.5">
-                    <SubLink to="/marketing/campanhas" label="Campanhas" icon={Filter} active={pathname.startsWith("/marketing/campanhas")} />
-                  </div>
+              <div className="mb-1 space-y-0.5">
+                <NavLink item={{ to: "/marketing", label: "Home", icon: Megaphone }} active={pathname === "/marketing"} collapsed={false} />
+                {show("marketing.social") && (
+                  <NavLink item={{ to: "/marketing/social", label: "Social Media", icon: Users }} active={pathname.startsWith("/marketing/social")} collapsed={false} />
                 )}
-                {show("marketing.funil") && (
-                  <div className="ml-3 pl-3 border-l border-border space-y-0.5">
-                    <SubLink to="/marketing/funil" label="Funil" icon={TrendingUp} active={pathname.startsWith("/marketing/funil")} />
-                  </div>
+                {show("marketing.trafego") && (
+                  <NavLink item={{ to: "/marketing/trafego", label: "Tráfego Pago", icon: Filter }} active={pathname.startsWith("/marketing/trafego")} collapsed={false} />
+                )}
+                {show("marketing.cohort") && (
+                  <NavLink item={{ to: "/marketing/cohort", label: "Análise Cohort", icon: LineChart }} active={pathname.startsWith("/marketing/cohort")} collapsed={false} />
+                )}
+                {show("marketing.cac") && (
+                  <NavLink item={{ to: "/marketing/cac", label: "CAC", icon: TrendingUp }} active={pathname.startsWith("/marketing/cac")} collapsed={false} />
                 )}
               </div>
             )
@@ -315,6 +318,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </button>
               )}
               <InstanceSwitcher />
+              {instance === "marketing" && <MarketingUnitSwitch />}
               <ViewAsSwitcher currentScreen={currentScreenKey(pathname)} />
               <ThemeToggle />
               <NotificationsDropdown />

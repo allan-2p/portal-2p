@@ -23,8 +23,10 @@ import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/atlas'
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
-import { Route as AuthenticatedMarketingFunilRouteImport } from './routes/_authenticated/marketing.funil'
-import { Route as AuthenticatedMarketingCampanhasRouteImport } from './routes/_authenticated/marketing.campanhas'
+import { Route as AuthenticatedMarketingTrafegoRouteImport } from './routes/_authenticated/marketing.trafego'
+import { Route as AuthenticatedMarketingSocialRouteImport } from './routes/_authenticated/marketing.social'
+import { Route as AuthenticatedMarketingCohortRouteImport } from './routes/_authenticated/marketing.cohort'
+import { Route as AuthenticatedMarketingCacRouteImport } from './routes/_authenticated/marketing.cac'
 import { Route as AuthenticatedDashboardsMetasRouteImport } from './routes/_authenticated/dashboards.metas'
 import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
 import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
@@ -106,16 +108,28 @@ const AuthenticatedMarketingIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedMarketingRoute,
   } as any)
-const AuthenticatedMarketingFunilRoute =
-  AuthenticatedMarketingFunilRouteImport.update({
-    id: '/funil',
-    path: '/funil',
+const AuthenticatedMarketingTrafegoRoute =
+  AuthenticatedMarketingTrafegoRouteImport.update({
+    id: '/trafego',
+    path: '/trafego',
     getParentRoute: () => AuthenticatedMarketingRoute,
   } as any)
-const AuthenticatedMarketingCampanhasRoute =
-  AuthenticatedMarketingCampanhasRouteImport.update({
-    id: '/campanhas',
-    path: '/campanhas',
+const AuthenticatedMarketingSocialRoute =
+  AuthenticatedMarketingSocialRouteImport.update({
+    id: '/social',
+    path: '/social',
+    getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
+const AuthenticatedMarketingCohortRoute =
+  AuthenticatedMarketingCohortRouteImport.update({
+    id: '/cohort',
+    path: '/cohort',
+    getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
+const AuthenticatedMarketingCacRoute =
+  AuthenticatedMarketingCacRouteImport.update({
+    id: '/cac',
+    path: '/cac',
     getParentRoute: () => AuthenticatedMarketingRoute,
   } as any)
 const AuthenticatedDashboardsMetasRoute =
@@ -194,8 +208,10 @@ export interface FileRoutesByFullPath {
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
-  '/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
-  '/marketing/funil': typeof AuthenticatedMarketingFunilRoute
+  '/marketing/cac': typeof AuthenticatedMarketingCacRoute
+  '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
+  '/marketing/social': typeof AuthenticatedMarketingSocialRoute
+  '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
 }
 export interface FileRoutesByTo {
@@ -219,8 +235,10 @@ export interface FileRoutesByTo {
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
-  '/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
-  '/marketing/funil': typeof AuthenticatedMarketingFunilRoute
+  '/marketing/cac': typeof AuthenticatedMarketingCacRoute
+  '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
+  '/marketing/social': typeof AuthenticatedMarketingSocialRoute
+  '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
 }
 export interface FileRoutesById {
@@ -247,8 +265,10 @@ export interface FileRoutesById {
   '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/_authenticated/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
-  '/_authenticated/marketing/campanhas': typeof AuthenticatedMarketingCampanhasRoute
-  '/_authenticated/marketing/funil': typeof AuthenticatedMarketingFunilRoute
+  '/_authenticated/marketing/cac': typeof AuthenticatedMarketingCacRoute
+  '/_authenticated/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
+  '/_authenticated/marketing/social': typeof AuthenticatedMarketingSocialRoute
+  '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
 }
 export interface FileRouteTypes {
@@ -275,8 +295,10 @@ export interface FileRouteTypes {
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
     | '/dashboards/metas'
-    | '/marketing/campanhas'
-    | '/marketing/funil'
+    | '/marketing/cac'
+    | '/marketing/cohort'
+    | '/marketing/social'
+    | '/marketing/trafego'
     | '/marketing/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -300,8 +322,10 @@ export interface FileRouteTypes {
     | '/clientes/cadastros'
     | '/clientes/segmentacao'
     | '/dashboards/metas'
-    | '/marketing/campanhas'
-    | '/marketing/funil'
+    | '/marketing/cac'
+    | '/marketing/cohort'
+    | '/marketing/social'
+    | '/marketing/trafego'
     | '/marketing'
   id:
     | '__root__'
@@ -327,8 +351,10 @@ export interface FileRouteTypes {
     | '/_authenticated/clientes/cadastros'
     | '/_authenticated/clientes/segmentacao'
     | '/_authenticated/dashboards/metas'
-    | '/_authenticated/marketing/campanhas'
-    | '/_authenticated/marketing/funil'
+    | '/_authenticated/marketing/cac'
+    | '/_authenticated/marketing/cohort'
+    | '/_authenticated/marketing/social'
+    | '/_authenticated/marketing/trafego'
     | '/_authenticated/marketing/'
   fileRoutesById: FileRoutesById
 }
@@ -438,18 +464,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMarketingIndexRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
     }
-    '/_authenticated/marketing/funil': {
-      id: '/_authenticated/marketing/funil'
-      path: '/funil'
-      fullPath: '/marketing/funil'
-      preLoaderRoute: typeof AuthenticatedMarketingFunilRouteImport
+    '/_authenticated/marketing/trafego': {
+      id: '/_authenticated/marketing/trafego'
+      path: '/trafego'
+      fullPath: '/marketing/trafego'
+      preLoaderRoute: typeof AuthenticatedMarketingTrafegoRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
     }
-    '/_authenticated/marketing/campanhas': {
-      id: '/_authenticated/marketing/campanhas'
-      path: '/campanhas'
-      fullPath: '/marketing/campanhas'
-      preLoaderRoute: typeof AuthenticatedMarketingCampanhasRouteImport
+    '/_authenticated/marketing/social': {
+      id: '/_authenticated/marketing/social'
+      path: '/social'
+      fullPath: '/marketing/social'
+      preLoaderRoute: typeof AuthenticatedMarketingSocialRouteImport
+      parentRoute: typeof AuthenticatedMarketingRoute
+    }
+    '/_authenticated/marketing/cohort': {
+      id: '/_authenticated/marketing/cohort'
+      path: '/cohort'
+      fullPath: '/marketing/cohort'
+      preLoaderRoute: typeof AuthenticatedMarketingCohortRouteImport
+      parentRoute: typeof AuthenticatedMarketingRoute
+    }
+    '/_authenticated/marketing/cac': {
+      id: '/_authenticated/marketing/cac'
+      path: '/cac'
+      fullPath: '/marketing/cac'
+      preLoaderRoute: typeof AuthenticatedMarketingCacRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
     }
     '/_authenticated/dashboards/metas': {
@@ -548,15 +588,19 @@ const AuthenticatedDashboardsRouteWithChildren =
   )
 
 interface AuthenticatedMarketingRouteChildren {
-  AuthenticatedMarketingCampanhasRoute: typeof AuthenticatedMarketingCampanhasRoute
-  AuthenticatedMarketingFunilRoute: typeof AuthenticatedMarketingFunilRoute
+  AuthenticatedMarketingCacRoute: typeof AuthenticatedMarketingCacRoute
+  AuthenticatedMarketingCohortRoute: typeof AuthenticatedMarketingCohortRoute
+  AuthenticatedMarketingSocialRoute: typeof AuthenticatedMarketingSocialRoute
+  AuthenticatedMarketingTrafegoRoute: typeof AuthenticatedMarketingTrafegoRoute
   AuthenticatedMarketingIndexRoute: typeof AuthenticatedMarketingIndexRoute
 }
 
 const AuthenticatedMarketingRouteChildren: AuthenticatedMarketingRouteChildren =
   {
-    AuthenticatedMarketingCampanhasRoute: AuthenticatedMarketingCampanhasRoute,
-    AuthenticatedMarketingFunilRoute: AuthenticatedMarketingFunilRoute,
+    AuthenticatedMarketingCacRoute: AuthenticatedMarketingCacRoute,
+    AuthenticatedMarketingCohortRoute: AuthenticatedMarketingCohortRoute,
+    AuthenticatedMarketingSocialRoute: AuthenticatedMarketingSocialRoute,
+    AuthenticatedMarketingTrafegoRoute: AuthenticatedMarketingTrafegoRoute,
     AuthenticatedMarketingIndexRoute: AuthenticatedMarketingIndexRoute,
   }
 
@@ -615,13 +659,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

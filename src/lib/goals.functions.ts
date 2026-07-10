@@ -99,3 +99,50 @@ export const setNewAbGoal = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---- Metas trimestrais de Retenção ---- //
+
+export type RetentionGoalRow = { sf_user_id: string; year: number; quarter: number; goal: number };
+
+export const listRetentionGoals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => NewAbListInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("salesperson_retention_goals")
+      .select("sf_user_id, year, quarter, goal")
+      .eq("year", data.year)
+      .eq("quarter", data.quarter)
+      .in("sf_user_id", data.sfUserIds);
+    if (error) throw new Error(error.message);
+    const records: RetentionGoalRow[] = (rows ?? []).map((r: any) => ({
+      sf_user_id: r.sf_user_id,
+      year: r.year,
+      quarter: r.quarter,
+      goal: Number(r.goal) || 0,
+    }));
+    return { records };
+  });
+
+export const setRetentionGoal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => NewAbSetInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    const { error } = await context.supabase.from("salesperson_retention_goals").upsert(
+      {
+        sf_user_id: data.sf_user_id,
+        year: data.year,
+        quarter: data.quarter,
+        goal: data.goal,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "sf_user_id,year,quarter" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
