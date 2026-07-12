@@ -572,11 +572,11 @@ const BrandStat = ({
 }) => {
   const p = pct(real, meta);
   const bg = invert
-    ? "linear-gradient(135deg, rgba(255,138,61,.28), rgba(107,91,255,.32))"
-    : T.card;
-  const fg = T.ink;
-  const dim = invert ? "rgba(255,255,255,.75)" : T.dim;
-  const track = invert ? "rgba(255,255,255,.12)" : T.track;
+    ? "linear-gradient(135deg, #1B1F3A 0%, #2A1F55 60%, #3B2A7A 100%)"
+    : "linear-gradient(140deg, #F7F8FC 0%, #ECEEF6 55%, #E4E5F1 100%)";
+  const fg = invert ? "#FFFFFF" : T.ink;
+  const dim = invert ? "rgba(255,255,255,.72)" : T.dim;
+  const track = invert ? "rgba(255,255,255,.14)" : T.track;
   const barColor = gradientBar ? gradGlow : invert ? "#FFFFFF" : T.ink;
   const v = useCountUp(real);
   return (
