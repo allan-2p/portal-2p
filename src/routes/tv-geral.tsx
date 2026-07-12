@@ -4,19 +4,19 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import solarLogoAsset from "@/assets/2p-logo-black.png.asset.json";
 import {
-  getSalesforceVendas,
-  getSalesforceVendidoMesAtual,
+  getPublicSalesforceVendas,
+  getPublicSalesforceVendidoOpp,
   OPP_DEFAULTS_VENDIDO_MES,
   OPP_DEFAULTS_GERADO_MES,
   OPP_DEFAULTS_VENDAS,
 } from "@/lib/salesforce.functions";
-import { getMonthGoalTotal } from "@/lib/admin.functions";
-import { listGroupKpiGoals } from "@/lib/goals.functions";
+import { getPublicMonthGoalTotal, getPublicGroupKpiGoals } from "@/lib/tv-public.functions";
 import { businessDaysOfMonth, isBusinessDay } from "@/lib/business-days";
 
 const solarLogo = solarLogoAsset.url;
 
 export const Route = createFileRoute("/tv-geral")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "2P Group · Painel de Performance" },
