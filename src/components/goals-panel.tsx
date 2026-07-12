@@ -385,7 +385,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
         />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
         <CommissionCard
           label="Comissão · Vendido"
           Icon={Wallet}
@@ -394,6 +394,17 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
             faturamentoMeta === 0
               ? "sem meta ativa"
               : `atingimento: ${pct(faturamentoReal, faturamentoMeta)?.toFixed(1) ?? "0"}%`
+          }
+          loading={loading || commissionQ.isLoading}
+        />
+        <CommissionCard
+          label="Comissão · Retenção"
+          Icon={Repeat}
+          value={fmtBRL(comissao.retencao)}
+          hint={
+            retencaoMeta === 0
+              ? "sem meta"
+              : `atingimento: ${pct(abKpis.retencaoAtivos, retencaoMeta)?.toFixed(1) ?? "0"}%`
           }
           loading={loading || commissionQ.isLoading}
         />
