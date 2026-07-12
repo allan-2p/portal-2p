@@ -814,6 +814,7 @@ function TabelasPage() {
   const { hasRole } = useAuth();
   const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas" | "vendido-mes">("orcamentos");
   const [vendedorMes, setVendedorMes] = useState<string>("__all__");
+  const [vendidoFilters, setVendidoFilters] = useState<VendidoFilters>({ ...VENDIDO_DEFAULTS });
 
   const [search, setSearch] = useState("");
 
