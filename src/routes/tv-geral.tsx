@@ -31,27 +31,31 @@ export const Route = createFileRoute("/tv-geral")({
    ============================================================ */
 
 const T = {
-  bg0: "#232530",
-  bg1: "#2E3039",
+  bg0: "#07080F",
+  bg1: "#0E1120",
+  bg2: "#141A2E",
   bgTxt: "#F2F3F7",
   bgFaint: "#8A8FA0",
-  card: "#F1F2F5",
-  card2: "#FAFAFC",
-  cardBorder: "#E1E3EA",
-  ink: "#1B1D25",
-  dim: "#5B5F6D",
-  faint: "#9BA0AE",
-  track: "#E2E4EB",
-  barReal: "#3B3E4A",
-  barProj: "#DDDFE7",
-  orange: "#F07E2D",
-  blue: "#4230FF",
-  green: "#0FA958",
-  amber: "#D98A06",
-  red: "#DC3E32",
+  card: "rgba(255,255,255,0.045)",
+  card2: "rgba(255,255,255,0.07)",
+  cardBorder: "rgba(255,255,255,0.10)",
+  ink: "#F5F7FF",
+  dim: "#B7BDD1",
+  faint: "#8A90A6",
+  track: "rgba(255,255,255,0.08)",
+  barReal: "#F5F7FF",
+  barProj: "rgba(255,255,255,0.18)",
+  orange: "#FF8A3D",
+  blue: "#6B5BFF",
+  cyan: "#5CC8FF",
+  green: "#22D68F",
+  amber: "#F4B430",
+  red: "#FF5A4E",
+  chip: "#0A0D1A",
 };
 
 const grad = `linear-gradient(90deg, ${T.orange}, ${T.blue})`;
+const gradGlow = `linear-gradient(120deg, ${T.orange} 0%, #FF3D9A 45%, ${T.blue} 100%)`;
 
 const fmtBRL = (v: number, compact = false) => {
   if (compact) {
@@ -460,12 +464,17 @@ const Card = ({
 }) => (
   <div
     style={{
-      background: T.card,
+      background:
+        "linear-gradient(140deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 55%, rgba(107,91,255,0.06) 100%)",
       border: `1px solid ${T.cardBorder}`,
       borderRadius: 22,
       padding: 22,
-      boxShadow: "0 12px 40px -20px rgba(0,0,0,.6)",
+      boxShadow:
+        "0 24px 60px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,0.05)",
+      backdropFilter: "blur(14px) saturate(140%)",
       animation: `fadeUp .6s ease ${delay}s both`,
+      position: "relative",
+      overflow: "hidden",
       ...style,
     }}
   >
@@ -536,8 +545,8 @@ const ProgressBar = ({
           left: `${Math.min(100, marker)}%`,
           width: 2,
           height: height + 6,
-          background: T.ink,
-          opacity: 0.55,
+          background: "#fff",
+          opacity: 0.7,
           borderRadius: 2,
         }}
       />
@@ -561,11 +570,13 @@ const BrandStat = ({
   gradientBar?: boolean;
 }) => {
   const p = pct(real, meta);
-  const bg = invert ? T.ink : T.card;
-  const fg = invert ? T.bgTxt : T.ink;
-  const dim = invert ? "#B7BAC7" : T.dim;
-  const track = invert ? "rgba(255,255,255,.09)" : T.track;
-  const barColor = gradientBar ? grad : invert ? T.bgTxt : T.ink;
+  const bg = invert
+    ? "linear-gradient(135deg, rgba(255,138,61,.28), rgba(107,91,255,.32))"
+    : T.card;
+  const fg = T.ink;
+  const dim = invert ? "rgba(255,255,255,.75)" : T.dim;
+  const track = invert ? "rgba(255,255,255,.12)" : T.track;
+  const barColor = gradientBar ? gradGlow : invert ? "#FFFFFF" : T.ink;
   const v = useCountUp(real);
   return (
     <div
@@ -770,8 +781,9 @@ const GraficoSemanal = ({
                         style={{
                           position: "absolute",
                           top: -26,
-                          background: T.ink,
-                          color: T.bgTxt,
+                          background: `linear-gradient(135deg, ${T.orange}, ${T.blue})`,
+                          color: "#fff",
+                          boxShadow: "0 6px 18px -6px rgba(107,91,255,.7)",
                           fontSize: 11,
                           fontWeight: 800,
                           padding: "3px 8px",
@@ -801,8 +813,8 @@ const GraficoSemanal = ({
                 style={{
                   fontSize: 11,
                   fontWeight: hoje ? 900 : 700,
-                  color: hoje ? T.bgTxt : T.dim,
-                  background: hoje ? T.ink : "transparent",
+                  color: hoje ? "#fff" : T.dim,
+                  background: hoje ? `linear-gradient(135deg, ${T.orange}, ${T.blue})` : "transparent",
                   padding: hoje ? "2px 8px" : 0,
                   borderRadius: 999,
                   letterSpacing: 0.5,
@@ -981,12 +993,13 @@ function Dashboard2P() {
         width: "100vw",
         height: "100vh",
         overflow: "hidden",
-        background: `radial-gradient(1200px 800px at 20% 0%, ${T.bg1}, ${T.bg0} 70%)`,
+        background: `radial-gradient(1400px 900px at 15% -10%, ${T.bg2} 0%, ${T.bg1} 45%, ${T.bg0} 100%)`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontFamily: "'Inter', system-ui, sans-serif",
         color: T.bgTxt,
+        position: "relative",
       }}
     >
       <style>{`
@@ -996,7 +1009,26 @@ function Dashboard2P() {
         @keyframes growUp { from{transform:scaleY(0)} to{transform:scaleY(1)} }
         @keyframes sweep { 0%{transform:translateX(-30%) rotate(12deg)} 100%{transform:translateX(130%) rotate(12deg)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+        @keyframes floatOrb1 { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(60px,-40px,0) scale(1.08)} }
+        @keyframes floatOrb2 { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(-80px,50px,0) scale(1.12)} }
+        @keyframes floatOrb3 { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(40px,60px,0) scale(0.95)} }
+        @keyframes gridDrift { from{background-position:0 0, 0 0} to{background-position:60px 60px, 60px 60px} }
+        @keyframes scanline { 0%{transform:translateY(-10%); opacity:0} 10%{opacity:.6} 90%{opacity:.6} 100%{transform:translateY(110%); opacity:0} }
+        @keyframes hueShift { 0%,100%{filter:hue-rotate(0deg)} 50%{filter:hue-rotate(24deg)} }
       `}</style>
+
+      {/* ---------- FUTURISTIC BACKDROP (fills the entire screen) ---------- */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", animation: "hueShift 22s ease-in-out infinite" }}>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(107,91,255,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(107,91,255,.10) 1px, transparent 1px)", backgroundSize: "60px 60px, 60px 60px", maskImage: "radial-gradient(ellipse at 50% 40%, black 40%, transparent 85%)", WebkitMaskImage: "radial-gradient(ellipse at 50% 40%, black 40%, transparent 85%)", animation: "gridDrift 24s linear infinite", opacity: 0.6 }} />
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px)", backgroundSize: "26px 26px", opacity: 0.5 }} />
+        <div style={{ position: "absolute", top: "-14%", left: "-8%", width: 900, height: 900, borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, rgba(255,138,61,.55), rgba(255,138,61,0) 60%)", filter: "blur(60px)", animation: "floatOrb1 18s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", bottom: "-18%", right: "-10%", width: 1000, height: 1000, borderRadius: "50%", background: "radial-gradient(circle at 50% 50%, rgba(107,91,255,.55), rgba(107,91,255,0) 65%)", filter: "blur(70px)", animation: "floatOrb2 22s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", top: "35%", left: "40%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle at 50% 50%, rgba(92,200,255,.28), rgba(92,200,255,0) 70%)", filter: "blur(80px)", animation: "floatOrb3 26s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, width: 220, height: "160%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,.07), transparent)", animation: "sweep 14s linear infinite" }} />
+        <div style={{ position: "absolute", left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, rgba(92,200,255,.55), transparent)", boxShadow: "0 0 24px rgba(92,200,255,.55)", animation: "scanline 9s linear infinite" }} />
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%)" }} />
+      </div>
+
 
       <div
         style={{
@@ -1009,57 +1041,9 @@ function Dashboard2P() {
           flexDirection: "column",
           gap: 18,
           position: "relative",
-          overflow: "hidden",
+          zIndex: 1,
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: "radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px)",
-            backgroundSize: "22px 22px",
-            pointerEvents: "none",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: -100,
-            right: -200,
-            width: 900,
-            height: 600,
-            background: "linear-gradient(120deg, rgba(255,255,255,.05), transparent 60%)",
-            borderRadius: 40,
-            transform: "rotate(12deg)",
-            pointerEvents: "none",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: -80,
-            left: -120,
-            width: 500,
-            height: 400,
-            background: "linear-gradient(60deg, rgba(240,126,45,.06), transparent 70%)",
-            borderRadius: 40,
-            transform: "rotate(-8deg)",
-            pointerEvents: "none",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: 180,
-            height: "160%",
-            background: "linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent)",
-            animation: "sweep 12s linear infinite",
-            pointerEvents: "none",
-          }}
-        />
-
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div
@@ -1067,14 +1051,18 @@ function Dashboard2P() {
                 width: 62,
                 height: 62,
                 borderRadius: 14,
-                background: T.card,
+                background: "linear-gradient(140deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04))",
+                border: `1px solid ${T.cardBorder}`,
+                boxShadow: "0 8px 24px -12px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,0.08)",
+                backdropFilter: "blur(10px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 8,
               }}
             >
-              <img src={solarLogo} alt="2P" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+              <img src={solarLogo} alt="2P" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+
             </div>
             <div>
               <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5 }}>Grupo 2P</div>
