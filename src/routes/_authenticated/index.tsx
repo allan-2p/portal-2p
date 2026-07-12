@@ -590,7 +590,7 @@ function HomePage() {
                     {goalSubject} em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
                   </h1>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Atlas identificou {atlasRadarInsights.length} sinal(is) na carteira selecionada.
+                    Visão geral da carteira selecionada.
                   </p>
                 </div>
               ),
