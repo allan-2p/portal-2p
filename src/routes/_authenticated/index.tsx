@@ -1295,6 +1295,9 @@ function InteractionQuickDialog({
           whatId: task.whatId,
           whoId: task.whoId,
           ownerId: task.ownerId,
+          tipoInteracao: interactionType,
+          conseguiuFalar: contacted === "yes" ? "Sim" : "Não",
+          comments: note,
         },
       });
       toast.success("Interação registrada no Salesforce.");
