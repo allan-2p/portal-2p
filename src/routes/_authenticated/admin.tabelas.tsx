@@ -958,7 +958,17 @@ function TabelasPage() {
           <TabsContent value="compras-efetuadas" className="mt-4">
             <ComprasEfetuadasTable search={search} />
           </TabsContent>
+          <TabsContent value="vendido-mes" className="mt-4">
+            <OppTable
+              records={qVendidoMes.data?.records ?? []}
+              loading={qVendidoMes.isLoading}
+              error={qVendidoMes.error}
+              search={search}
+              dateField="closeDate"
+            />
+          </TabsContent>
         </Tabs>
+
 
       </div>
     </AppLayout>
