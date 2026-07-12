@@ -337,12 +337,37 @@ function SegmentacaoPage() {
     });
   }, [projected, salesMesByAccount, generationMesByAccount, notesByAccount]);
 
-  // Vendedores disponíveis (accountOwner das linhas de projeção)
+  // Vendedores disponíveis (accountOwner das linhas de projeção),
+  // filtrados pelo escopo do usuário logado.
   const vendedores = useMemo(() => {
     const set = new Set<string>();
-    for (const p of projected) if (p.accountOwner) set.add(p.accountOwner);
+    for (const p of projected) {
+      if (!p.accountOwner) continue;
+      if (allowedOwnerNames && !allowedOwnerNames.has(p.accountOwner)) continue;
+      set.add(p.accountOwner);
+    }
     return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [projected]);
+  }, [projected, allowedOwnerNames]);
+
+  const isIndividual = !scopeReady || scope?.scope === "individual";
+
+  // Trava a seleção no próprio vendedor quando o escopo é individual.
+  // Também garante que "__all__" nunca fique selecionado fora dos escopos "geral".
+  useEffect(() => {
+    if (isIndividual && ownOwnerName && vendedor !== ownOwnerName) {
+      setVendedor(ownOwnerName);
+      return;
+    }
+    if (
+      !isIndividual &&
+      allowedOwnerNames &&
+      vendedor !== "__all__" &&
+      !allowedOwnerNames.has(vendedor)
+    ) {
+      const first = vendedores[0];
+      if (first) setVendedor(first);
+    }
+  }, [isIndividual, ownOwnerName, vendedor, allowedOwnerNames, vendedores]);
 
   const ownerByAccount = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -351,9 +376,18 @@ function SegmentacaoPage() {
   }, [projected]);
 
   const scoped = useMemo(() => {
-    if (vendedor === "__all__") return clients;
-    return clients.filter((c) => (ownerByAccount.get(c.id) ?? "") === vendedor);
-  }, [clients, vendedor, ownerByAccount]);
+    let base = clients;
+    // Restringe ao escopo (nomes permitidos) antes do filtro por vendedor.
+    if (allowedOwnerNames) {
+      base = base.filter((c) => {
+        const owner = ownerByAccount.get(c.id) ?? "";
+        return allowedOwnerNames.has(owner);
+      });
+    }
+    if (vendedor === "__all__") return base;
+    return base.filter((c) => (ownerByAccount.get(c.id) ?? "") === vendedor);
+  }, [clients, vendedor, ownerByAccount, allowedOwnerNames]);
+
 
   const prevSalesByAccount = useMemo(() => {
     const map = new Map<string, number>();
