@@ -515,7 +515,7 @@ function AdminGroup({ pathname, collapsed, show }: { pathname: string; collapsed
         <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
           {showUsers && <SubLink to="/usuarios" label="Usuários" icon={Users} active={pathname.startsWith("/usuarios")} />}
           {showVend && <SubLink to="/admin/vendedores" label="Vendedores" icon={UserCog} active={pathname.startsWith("/admin/vendedores")} />}
-          {showMetas && <SubLink to="/admin/metas" label="Metas" icon={Target} active={pathname.startsWith("/admin/metas")} />}
+          {showMetas && <SubLink to="/admin/metas" label="Regras de Metas" icon={Target} active={pathname.startsWith("/admin/metas")} />}
           {showTab && <SubLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} active={pathname.startsWith("/admin/tabelas")} />}
           {showInt && <SubLink to="/integracoes" label="Integrações" icon={Plug} active={pathname.startsWith("/integracoes")} />}
         </div>
