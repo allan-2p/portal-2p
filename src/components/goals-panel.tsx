@@ -144,6 +144,17 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     staleTime: 60_000,
   });
 
+  // Vendido - Mês Atual (mesma lógica de Administrador > Tabelas), respeitando filtro de vendedor
+  const vendidoOwnerParam = ownerId === "all" ? null : ownerId;
+  const vendidoMesQ = useQuery({
+    queryKey: ["goals-vendido-mes", vendidoOwnerParam ?? "all"],
+    queryFn: () =>
+      fetchVendidoMes({
+        data: { ...OPP_DEFAULTS_VENDIDO_MES, ownerId: vendidoOwnerParam ?? undefined },
+      }),
+    staleTime: 60_000,
+  });
+
   // Metas de faturamento (todas as 3 mensalidades ativas do trimestre para os owners)
   const goalsQ = useQuery({
     queryKey: ["goals-faturamento", info.year, info.months.join(","), owners.join(",")],
@@ -172,21 +183,30 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   });
 
   const loading =
-    curVendasQ.isLoading || prevVendasQ.isLoading || goalsQ.isLoading || retentionGoalsQ.isLoading;
+    curVendasQ.isLoading || prevVendasQ.isLoading || vendidoMesQ.isLoading || goalsQ.isLoading || retentionGoalsQ.isLoading;
 
   const ownerSet = useMemo(() => new Set(owners), [owners.join(",")]);
 
-  // ---- Faturamento (VENDIDO): baseado no mês atual apenas ---- //
+  // ---- VENDIDO: baseado na tabela "Vendido - Mês Atual", filtrado por vendedor ---- //
   const faturamentoReal = useMemo(() => {
     let total = 0;
-    for (const r of curVendasQ.data?.records ?? []) {
+    for (const r of vendidoMesQ.data?.records ?? []) {
       if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
-      if (r.tipoNf === "Bonificação") continue;
-      if (!r.closeDate || r.closeDate < info.monthStart || r.closeDate > info.monthEnd) continue;
       total += r.total ?? r.amount ?? 0;
     }
     return total;
-  }, [curVendasQ.data, ownerSet, info.monthStart, info.monthEnd]);
+  }, [vendidoMesQ.data, ownerSet]);
+
+  const faturamentoMeta = useMemo(() => {
+    let total = 0;
+    for (const g of goalsQ.data?.records ?? []) {
+      if (!g.active) continue;
+      if (g.month !== info.currentMonth) continue;
+      total += g.monthly_goal;
+    }
+    return total;
+  }, [goalsQ.data, info.currentMonth]);
+
 
   const faturamentoMeta = useMemo(() => {
     let total = 0;
