@@ -144,6 +144,57 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const UpdateInput = z.object({
+  user_id: z.string().uuid(),
+  email: z.string().email().optional(),
+  full_name: z.string().min(1).optional(),
+  cargo: z.string().optional().nullable(),
+  equipe: z.string().optional().nullable(),
+  is_external: z.boolean().optional(),
+});
+
+export const adminUpdateUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => UpdateInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const profilePatch: {
+      email?: string;
+      full_name?: string;
+      cargo?: string | null;
+      equipe?: string | null;
+      is_external?: boolean;
+    } = {};
+    if (data.email !== undefined) profilePatch.email = data.email;
+    if (data.full_name !== undefined) profilePatch.full_name = data.full_name;
+    if (data.cargo !== undefined) profilePatch.cargo = data.cargo;
+    if (data.equipe !== undefined) profilePatch.equipe = data.equipe;
+    if (data.is_external !== undefined) profilePatch.is_external = data.is_external;
+
+    if (Object.keys(profilePatch).length > 0) {
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .update(profilePatch)
+        .eq("id", data.user_id);
+      if (error) throw new Error(error.message);
+    }
+
+    if (data.email || data.full_name) {
+      const authPatch: { email?: string; user_metadata?: { full_name: string } } = {};
+      if (data.email) authPatch.email = data.email;
+      if (data.full_name) authPatch.user_metadata = { full_name: data.full_name };
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(
+        data.user_id,
+        authPatch,
+      );
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
+
 export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

@@ -10,6 +10,7 @@ import {
   adminSetRole,
   adminToggleActive,
   adminDeleteUser,
+  adminUpdateUser,
   listSalesforceCandidates,
   inviteSalesforceUser,
   syncSalesforcePhoto,
@@ -19,7 +20,7 @@ import { adminSetUserScope, adminSetUserSfId, type FilterScope } from "@/lib/sco
 import { toast } from "sonner";
 
 import {
-  Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink,
+  Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink, Pencil,
 } from "lucide-react";
 import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
@@ -62,6 +63,7 @@ function UsuariosPage() {
     | { kind: "create" }
     | { kind: "invite"; external?: boolean }
     | { kind: "invite-sf"; candidate: SFCandidate }
+    | { kind: "edit"; row: Row }
     | null
   >(null);
 
@@ -72,6 +74,7 @@ function UsuariosPage() {
   const deleteFn = useServerFn(adminDeleteUser);
   const setScopeFn = useServerFn(adminSetUserScope);
   const setSfIdFn = useServerFn(adminSetUserSfId);
+  const updateFn = useServerFn(adminUpdateUser);
 
   async function load() {
     setLoading(true);
@@ -239,11 +242,26 @@ function UsuariosPage() {
             onReload={load}
             onScopeChange={handleScopeChange}
             onSfIdChange={handleSfIdChange}
+            onEdit={(row) => setModal({ kind: "edit", row })}
           />
         ) : (
           <SalesforceTable onInvite={(c) => setModal({ kind: "invite-sf", candidate: c })} />
         )}
       </div>
+
+
+      {modal?.kind === "edit" && (
+        <EditUserModal
+          row={modal.row}
+          onClose={() => setModal(null)}
+          onSubmit={async (data) => {
+            await updateFn({ data: { user_id: modal.row.id, ...data } });
+            toast.success("Usuário atualizado");
+            setModal(null);
+            load();
+          }}
+        />
+      )}
 
 
       {modal?.kind === "create" && (
@@ -286,7 +304,7 @@ function UsuariosPage() {
 }
 
 function PortalTable({
-  rows, loading, currentUserId, onRoleChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange,
+  rows, loading, currentUserId, onRoleChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onEdit,
 }: {
   rows: Row[];
   loading: boolean;
@@ -297,6 +315,7 @@ function PortalTable({
   onReload: () => void;
   onScopeChange: (id: string, scope: FilterScope) => void;
   onSfIdChange: (id: string, sf_user_id: string | null) => void;
+  onEdit: (row: Row) => void;
 }) {
 
   const syncPhoto = useServerFn(syncSalesforcePhoto);
@@ -416,6 +435,13 @@ function PortalTable({
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex gap-1 justify-end">
+                    <button
+                      onClick={() => onEdit(r)}
+                      className="p-1.5 rounded hover:bg-surface-2"
+                      title="Editar informações"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
                     {r.sf_user_id && (
                       <button
                         onClick={() => handleSyncPhoto(r.id)}
@@ -863,4 +889,98 @@ function SfIdCell({
     </div>
   );
 }
+
+type EditPayload = {
+  email: string;
+  full_name: string;
+  cargo: string | null;
+  equipe: string | null;
+  is_external: boolean;
+};
+
+function EditUserModal({
+  row,
+  onClose,
+  onSubmit,
+}: {
+  row: Row;
+  onClose: () => void;
+  onSubmit: (data: EditPayload) => Promise<void>;
+}) {
+  const [form, setForm] = useState({
+    email: row.email,
+    full_name: row.full_name ?? "",
+    cargo: row.cargo ?? "",
+    equipe: row.equipe ?? "",
+    is_external: row.is_external,
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setSubmitting(true);
+          try {
+            await onSubmit({
+              email: form.email,
+              full_name: form.full_name,
+              cargo: form.cargo || null,
+              equipe: form.equipe || null,
+              is_external: form.is_external,
+            });
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Erro");
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+        className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-3"
+      >
+        <h2 className="font-display font-bold text-lg">Editar usuário</h2>
+        <Field label="Nome completo">
+          <input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} className="input" />
+        </Field>
+        <Field label="E-mail">
+          <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input" />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Cargo">
+            <input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} className="input" />
+          </Field>
+          <Field label="Equipe">
+            <input value={form.equipe} onChange={(e) => setForm({ ...form, equipe: e.target.value })} className="input" />
+          </Field>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={form.is_external}
+            onChange={(e) => setForm({ ...form, is_external: e.target.checked })}
+          />
+          Usuário externo
+        </label>
+        <p className="text-xs text-muted-foreground">
+          Papel, escopo e ID do Salesforce são editados diretamente na tabela.
+        </p>
+        <div className="flex gap-2 pt-2">
+          <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+            Salvar
+          </button>
+        </div>
+        <style>{`.input{width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;background:hsl(var(--background));border:1px solid hsl(var(--border));font-size:0.875rem;outline:none}.input:focus{border-color:hsl(var(--primary))}`}</style>
+      </form>
+    </div>
+  );
+}
+
 
