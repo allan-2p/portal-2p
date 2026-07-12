@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { type Client, type Segment } from "@/lib/mock-data";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -27,10 +27,12 @@ import {
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
   getSalesforcePedidos,
+  getSalesforceSalespeople,
   OPP_DEFAULTS_VENDIDO_MES,
   OPP_DEFAULTS_GERADO_MES,
   type SalesforceOppRow,
 } from "@/lib/salesforce.functions";
+import { useSellerScope } from "@/hooks/use-seller-scope";
 import {
   Select,
   SelectContent,
@@ -38,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
   head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
@@ -136,11 +139,38 @@ function SegmentacaoPage() {
 
   const baseRange = useMemo(previousQuarterRange, []);
 
+  const { scope, ready: scopeReady } = useSellerScope();
+
   const fetchAccounts = useServerFn(getSalesforceAccounts);
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
   const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
   const fetchPedidos = useServerFn(getSalesforcePedidos);
+  const fetchSalespeople = useServerFn(getSalesforceSalespeople);
+
+  const salespeopleQ = useQuery({
+    queryKey: ["sf-salespeople"],
+    queryFn: () => fetchSalespeople(),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Nomes permitidos pelo escopo (mapa SF id -> Name)
+  const allowedOwnerNames = useMemo<Set<string> | null>(() => {
+    if (!scopeReady || !scope) return new Set(); // enquanto carrega, restringe tudo
+    if (scope.scope === "geral" || !scope.allowed_sf_ids) return null; // sem restrição
+    const nameById = new Map<string, string>();
+    for (const p of salespeopleQ.data?.records ?? []) nameById.set(p.id, p.name);
+    return new Set(scope.allowed_sf_ids.map((id) => nameById.get(id) ?? "").filter(Boolean));
+  }, [scope, scopeReady, salespeopleQ.data]);
+
+  const ownOwnerName = useMemo<string | null>(() => {
+    if (!scope?.sf_user_id) return null;
+    const p = (salespeopleQ.data?.records ?? []).find((r) => r.id === scope.sf_user_id);
+    return p?.name ?? null;
+  }, [scope, salespeopleQ.data]);
+
+
 
   const accountsQ = useQuery({
     queryKey: ["salesforce", "accounts"],
@@ -307,12 +337,37 @@ function SegmentacaoPage() {
     });
   }, [projected, salesMesByAccount, generationMesByAccount, notesByAccount]);
 
-  // Vendedores disponíveis (accountOwner das linhas de projeção)
+  // Vendedores disponíveis (accountOwner das linhas de projeção),
+  // filtrados pelo escopo do usuário logado.
   const vendedores = useMemo(() => {
     const set = new Set<string>();
-    for (const p of projected) if (p.accountOwner) set.add(p.accountOwner);
+    for (const p of projected) {
+      if (!p.accountOwner) continue;
+      if (allowedOwnerNames && !allowedOwnerNames.has(p.accountOwner)) continue;
+      set.add(p.accountOwner);
+    }
     return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [projected]);
+  }, [projected, allowedOwnerNames]);
+
+  const isIndividual = !scopeReady || scope?.scope === "individual";
+
+  // Trava a seleção no próprio vendedor quando o escopo é individual.
+  // Também garante que "__all__" nunca fique selecionado fora dos escopos "geral".
+  useEffect(() => {
+    if (isIndividual && ownOwnerName && vendedor !== ownOwnerName) {
+      setVendedor(ownOwnerName);
+      return;
+    }
+    if (
+      !isIndividual &&
+      allowedOwnerNames &&
+      vendedor !== "__all__" &&
+      !allowedOwnerNames.has(vendedor)
+    ) {
+      const first = vendedores[0];
+      if (first) setVendedor(first);
+    }
+  }, [isIndividual, ownOwnerName, vendedor, allowedOwnerNames, vendedores]);
 
   const ownerByAccount = useMemo(() => {
     const map = new Map<string, string | null>();
@@ -321,9 +376,18 @@ function SegmentacaoPage() {
   }, [projected]);
 
   const scoped = useMemo(() => {
-    if (vendedor === "__all__") return clients;
-    return clients.filter((c) => (ownerByAccount.get(c.id) ?? "") === vendedor);
-  }, [clients, vendedor, ownerByAccount]);
+    let base = clients;
+    // Restringe ao escopo (nomes permitidos) antes do filtro por vendedor.
+    if (allowedOwnerNames) {
+      base = base.filter((c) => {
+        const owner = ownerByAccount.get(c.id) ?? "";
+        return allowedOwnerNames.has(owner);
+      });
+    }
+    if (vendedor === "__all__") return base;
+    return base.filter((c) => (ownerByAccount.get(c.id) ?? "") === vendedor);
+  }, [clients, vendedor, ownerByAccount, allowedOwnerNames]);
+
 
   const prevSalesByAccount = useMemo(() => {
     const map = new Map<string, number>();
@@ -425,12 +489,14 @@ function SegmentacaoPage() {
             </div>
             <div className="flex items-center gap-2">
               <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Vendedor</label>
-              <Select value={vendedor} onValueChange={setVendedor}>
+              <Select value={vendedor} onValueChange={setVendedor} disabled={isIndividual}>
                 <SelectTrigger className="h-9 w-[220px] text-sm">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__all__">Todos</SelectItem>
+                  {scope?.scope === "geral" && (
+                    <SelectItem value="__all__">Todos</SelectItem>
+                  )}
                   {vendedores.map((v) => (
                     <SelectItem key={v} value={v}>
                       {v}
@@ -439,6 +505,7 @@ function SegmentacaoPage() {
                 </SelectContent>
               </Select>
             </div>
+
           </div>
         </div>
 
