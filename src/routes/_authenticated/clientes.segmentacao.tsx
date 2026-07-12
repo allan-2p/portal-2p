@@ -26,6 +26,7 @@ import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
+  getSalesforcePedidos,
   OPP_DEFAULTS_VENDIDO_MES,
   OPP_DEFAULTS_GERADO_MES,
   type SalesforceOppRow,
@@ -139,6 +140,7 @@ function SegmentacaoPage() {
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
   const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
+  const fetchPedidos = useServerFn(getSalesforcePedidos);
 
   const accountsQ = useQuery({
     queryKey: ["salesforce", "accounts"],
@@ -165,6 +167,11 @@ function SegmentacaoPage() {
   const qGeradoMes = useQuery({
     queryKey: ["sf-gerado-mes", "seg"],
     queryFn: () => fetchVendidoMes({ data: OPP_DEFAULTS_GERADO_MES }),
+    staleTime: 60_000,
+  });
+  const qPedidos = useQuery({
+    queryKey: ["sf-pedidos", "seg"],
+    queryFn: () => fetchPedidos({ data: {} }),
     staleTime: 60_000,
   });
 
@@ -264,17 +271,17 @@ function SegmentacaoPage() {
     return map;
   }, [qGeradoMes.data]);
 
-  // Pedidos em curso (Vendido - Mês) para exposição.
+  // Pedidos em andamento (getSalesforcePedidos — status até "Coletado").
   const ordersByAccount = useMemo(() => {
     const map = new Map<string, SalesforceOppRow[]>();
-    for (const r of qVendidoMes.data?.records ?? []) {
+    for (const r of qPedidos.data?.records ?? []) {
       const key = r.account ?? "(sem cliente)";
       const list = map.get(key) ?? [];
       list.push(r);
       map.set(key, list);
     }
     return map;
-  }, [qVendidoMes.data]);
+  }, [qPedidos.data]);
 
   // ================ Combinação em Client[] ================
   const clients: Client[] = useMemo(() => {
@@ -606,7 +613,7 @@ function SegmentacaoPage() {
                                   <div className="flex items-center gap-2">
                                     <Package className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                                      Pedidos do mês (Vendido - Mês Atual)
+                                      Pedidos em andamento
                                     </span>
                                   </div>
                                   <div className="flex flex-wrap gap-2 text-[10px]">
@@ -621,7 +628,7 @@ function SegmentacaoPage() {
                                 {(() => {
                                   const orders = ordersByAccount.get(c.id) ?? [];
                                   if (orders.length === 0) {
-                                    return <div className="text-xs text-muted-foreground">Nenhum pedido no mês.</div>;
+                                    return <div className="text-xs text-muted-foreground">Nenhum pedido em andamento.</div>;
                                   }
                                   return (
                                     <div className="space-y-1.5">
