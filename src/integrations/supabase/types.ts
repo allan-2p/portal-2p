@@ -32,6 +32,30 @@ export type Database = {
         }
         Relationships: []
       }
+      group_kpi_goals: {
+        Row: {
+          goal: number
+          kpi_key: string
+          label: string
+          period_type: string
+          updated_at: string
+        }
+        Insert: {
+          goal?: number
+          kpi_key: string
+          label: string
+          period_type: string
+          updated_at?: string
+        }
+        Update: {
+          goal?: number
+          kpi_key?: string
+          label?: string
+          period_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hidden_salespeople: {
         Row: {
           created_at: string

@@ -1083,7 +1083,7 @@ function OppFiltersPanel({
             </div>
             <Select
               value={df}
-              onValueChange={(v) => set("dateField", v as "CloseDate" | "CreatedDate")}
+              onValueChange={(v) => set("dateField", v as "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c")}
             >
               <SelectTrigger className="h-8 text-sm">
                 <SelectValue />
@@ -1091,6 +1091,7 @@ function OppFiltersPanel({
               <SelectContent>
                 <SelectItem value="CloseDate">CloseDate</SelectItem>
                 <SelectItem value="CreatedDate">CreatedDate</SelectItem>
+                <SelectItem value="Data_de_Faturamento__c">Data de Faturamento</SelectItem>
               </SelectContent>
             </Select>
           </div>

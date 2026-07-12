@@ -146,3 +146,51 @@ export const setRetentionGoal = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---- Metas do grupo (KPIs da TV — novos / novos+reativações / recorrência / retenção) ---- //
+
+export type GroupKpiKey = "novos" | "novos_reativacoes" | "recorrencia" | "retencao";
+export type GroupKpiGoalRow = {
+  kpi_key: GroupKpiKey;
+  label: string;
+  period_type: "mensal" | "trimestral";
+  goal: number;
+};
+
+export const listGroupKpiGoals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("group_kpi_goals")
+      .select("kpi_key, label, period_type, goal");
+    if (error) throw new Error(error.message);
+    const records: GroupKpiGoalRow[] = (rows ?? []).map((r: any) => ({
+      kpi_key: r.kpi_key,
+      label: r.label,
+      period_type: r.period_type,
+      goal: Number(r.goal) || 0,
+    }));
+    return { records };
+  });
+
+const SetGroupKpiInput = z.object({
+  kpi_key: z.enum(["novos", "novos_reativacoes", "recorrencia", "retencao"]),
+  goal: z.number().min(0).max(9_999_999),
+});
+
+export const setGroupKpiGoal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SetGroupKpiInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    const { error } = await context.supabase
+      .from("group_kpi_goals")
+      .update({ goal: data.goal, updated_at: new Date().toISOString() })
+      .eq("kpi_key", data.kpi_key);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

@@ -11,7 +11,7 @@ import {
   setQuarterGoalActive,
   type SalespersonMonthlyGoals,
 } from "@/lib/admin.functions";
-import { listRetentionGoals, setRetentionGoal } from "@/lib/goals.functions";
+import { listRetentionGoals, setRetentionGoal, listGroupKpiGoals, setGroupKpiGoal } from "@/lib/goals.functions";
 import {
   getCommissionSettings,
   setVendidoTiers,
@@ -282,6 +282,7 @@ function MetasPage() {
         </div>
 
         <RetentionGoalsPanel year={quarter.year} quarter={QUARTERS.findIndex((qo) => qo.id === quarterId) + 1} quarterLabel={quarter.label} />
+        <GroupKpiGoalsPanel />
         <CommissionVendidoPanel />
         <CommissionRetencaoPanel />
         <CommissionNovosPanel />
@@ -347,6 +348,94 @@ function RetentionGoalsPanel({ year, quarter, quarterLabel }: { year: number; qu
         </table>
       </div>
     </div>
+  );
+}
+
+
+function GroupKpiGoalsPanel() {
+  const fetchList = useServerFn(listGroupKpiGoals);
+  const saveGoal = useServerFn(setGroupKpiGoal);
+  const qc = useQueryClient();
+
+  const q = useQuery({
+    queryKey: ["admin-group-kpi-goals"],
+    queryFn: () => fetchList(),
+    staleTime: 60_000,
+  });
+
+  const mut = useMutation({
+    mutationFn: (v: { kpi_key: "novos" | "novos_reativacoes" | "recorrencia" | "retencao"; goal: number }) =>
+      saveGoal({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-group-kpi-goals"] });
+      qc.invalidateQueries({ queryKey: ["tv-group-kpi-goals"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar meta"),
+  });
+
+  const ORDER: Array<"novos" | "novos_reativacoes" | "recorrencia" | "retencao"> = [
+    "novos", "novos_reativacoes", "recorrencia", "retencao",
+  ];
+  const byKey = new Map((q.data?.records ?? []).map((r) => [r.kpi_key, r]));
+
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-border">
+        <h2 className="font-display font-semibold">Metas do Grupo · Painel de TV</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Alvos gerais exibidos no painel de performance (TV). Aplicados ao grupo inteiro.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+              <th className="text-left px-4 py-2.5">KPI</th>
+              <th className="text-left px-4 py-2.5 w-32">Período</th>
+              <th className="text-right px-4 py-2.5 w-40">Meta</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ORDER.map((k) => {
+              const r = byKey.get(k);
+              return (
+                <tr key={k} className="border-b border-border/40 hover:bg-surface-2/50">
+                  <td className="px-4 py-3 font-medium">{r?.label ?? k}</td>
+                  <td className="px-4 py-3 text-muted-foreground capitalize">{r?.period_type ?? "—"}</td>
+                  <td className="px-4 py-2">
+                    <NewAbGoalRowInline
+                      value={r?.goal ?? 0}
+                      onSave={(v) => mut.mutate({ kpi_key: k, goal: v })}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function NewAbGoalRowInline({ value, onSave }: { value: number; onSave: (v: number) => void }) {
+  const [text, setText] = useState<string>(String(value));
+  const initial = useRef<number>(value);
+  useEffect(() => { setText(String(value)); initial.current = value; }, [value]);
+  const commit = () => {
+    const n = Math.max(0, Math.floor(Number(text.replace(/[^\d]/g, "")) || 0));
+    if (n === initial.current) return;
+    onSave(n);
+  };
+  return (
+    <input
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+      inputMode="numeric"
+      className="w-full text-right py-1.5 px-2 rounded-md bg-surface border border-border focus:outline-none focus:border-primary/50 tabular-nums"
+    />
   );
 }
 
