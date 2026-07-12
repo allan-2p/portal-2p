@@ -4,19 +4,19 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import solarLogoAsset from "@/assets/2p-logo-black.png.asset.json";
 import {
-  getSalesforceVendas,
-  getSalesforceVendidoMesAtual,
+  getPublicSalesforceVendas,
+  getPublicSalesforceVendidoOpp,
   OPP_DEFAULTS_VENDIDO_MES,
   OPP_DEFAULTS_GERADO_MES,
   OPP_DEFAULTS_VENDAS,
 } from "@/lib/salesforce.functions";
-import { getMonthGoalTotal } from "@/lib/admin.functions";
-import { listGroupKpiGoals } from "@/lib/goals.functions";
+import { getPublicMonthGoalTotal, getPublicGroupKpiGoals } from "@/lib/tv-public.functions";
 import { businessDaysOfMonth, isBusinessDay } from "@/lib/business-days";
 
 const solarLogo = solarLogoAsset.url;
 
-export const Route = createFileRoute("/_authenticated/tv-geral")({
+export const Route = createFileRoute("/tv-geral")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "2P Group · Painel de Performance" },
@@ -167,32 +167,32 @@ function useTvData(): { data: TvData; loading: boolean } {
   const prevQEnd = fmtKey(new Date(y, qStartMonth, 0));
   const yearBackStart = fmtKey(new Date(y, m - 12, 1));
 
-  const fetchVendido = useServerFn(getSalesforceVendidoMesAtual);
-  const fetchVendas = useServerFn(getSalesforceVendas);
-  const fetchMonthGoal = useServerFn(getMonthGoalTotal);
-  const fetchKpiGoals = useServerFn(listGroupKpiGoals);
+  const fetchVendido = useServerFn(getPublicSalesforceVendidoOpp);
+  const fetchVendas = useServerFn(getPublicSalesforceVendas);
+  const fetchMonthGoal = useServerFn(getPublicMonthGoalTotal);
+  const fetchKpiGoals = useServerFn(getPublicGroupKpiGoals);
 
   const vendidoMesQ = useQuery({
     queryKey: ["tv-vendido-mes"],
-    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDIDO_MES, unscoped: true } }),
+    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDIDO_MES } }),
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
   const geradoMesQ = useQuery({
     queryKey: ["tv-gerado-mes"],
-    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_GERADO_MES, unscoped: true } }),
+    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_GERADO_MES } }),
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
   const faturamentoMesQ = useQuery({
     queryKey: ["tv-faturamento-mes"],
-    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDAS, unscoped: true } }),
+    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDAS } }),
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
   const monthGoalQ = useQuery({
     queryKey: ["tv-month-goal", y, m + 1],
-    queryFn: () => fetchMonthGoal({ data: { year: y, month: m + 1, ownerId: null } }),
+    queryFn: () => fetchMonthGoal({ data: { year: y, month: m + 1 } }),
     staleTime: 5 * 60_000,
   });
   const kpiGoalsQ = useQuery({
@@ -202,18 +202,18 @@ function useTvData(): { data: TvData; loading: boolean } {
   });
   const vendasTriQ = useQuery({
     queryKey: ["tv-vendas-tri", curQStart, curQEnd],
-    queryFn: () => fetchVendas({ data: { start: curQStart, end: curQEnd, unscoped: true } }),
+    queryFn: () => fetchVendas({ data: { start: curQStart, end: curQEnd } }),
     refetchInterval: 5 * 60_000,
     staleTime: 60_000,
   });
   const vendasTriPrevQ = useQuery({
     queryKey: ["tv-vendas-tri-prev", prevQStart, prevQEnd],
-    queryFn: () => fetchVendas({ data: { start: prevQStart, end: prevQEnd, unscoped: true } }),
+    queryFn: () => fetchVendas({ data: { start: prevQStart, end: prevQEnd } }),
     staleTime: 10 * 60_000,
   });
   const vendas12mQ = useQuery({
     queryKey: ["tv-vendas-12m", yearBackStart, monthEnd],
-    queryFn: () => fetchVendas({ data: { start: yearBackStart, end: monthEnd, unscoped: true } }),
+    queryFn: () => fetchVendas({ data: { start: yearBackStart, end: monthEnd } }),
     staleTime: 10 * 60_000,
   });
 
