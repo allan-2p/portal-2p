@@ -28,14 +28,21 @@ export const getPublicMonthGoalTotal = createServerFn({ method: "POST" })
     return { total, count: rows?.length ?? 0 };
   });
 
+export type PublicGroupKpiGoalRow = {
+  kpi_key: string;
+  label: string;
+  period_type: "mensal" | "trimestral";
+  goal: number;
+};
+
 export const getPublicGroupKpiGoals = createServerFn({ method: "GET" }).handler(
-  async () => {
+  async (): Promise<{ records: PublicGroupKpiGoalRow[] }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("group_kpi_goals")
       .select("kpi_key, label, period_type, goal");
     if (error) throw new Error(error.message);
-    const records = (rows ?? []).map((r: any) => ({
+    const records: PublicGroupKpiGoalRow[] = (rows ?? []).map((r: any) => ({
       kpi_key: r.kpi_key as string,
       label: r.label as string,
       period_type: r.period_type as "mensal" | "trimestral",
