@@ -95,49 +95,11 @@ function startOfDay(d: Date) {
 }
 
 function buildAtlasSuggestion(
-  t: SalesforceTask,
-  inter: TaskInteractionState | null,
-  todayStart: Date,
+  _t: SalesforceTask,
+  _inter: TaskInteractionState | null,
+  _todayStart: Date,
 ): string | null {
-  const parts: string[] = [];
-
-  // Sinais do Atlas cruzados por nome de cliente/conta
-  const clientHay = `${t.what ?? ""} ${t.who ?? ""}`.toLowerCase();
-  const matchedInsight = atlasInsights.find(
-    (i) => i.client && clientHay.includes(i.client.toLowerCase()),
-  );
-  const matchedClient = clients.find(
-    (c) => c.name && clientHay.includes(c.name.toLowerCase()),
-  );
-
-  if (matchedInsight) {
-    parts.push(matchedInsight.description || matchedInsight.title);
-  }
-
-  // Atraso
-  const due = new Date(t.date + "T00:00:00");
-  const diffDays = Math.round((due.getTime() - todayStart.getTime()) / 86400000);
-  if (diffDays < 0) {
-    parts.push(`Tarefa em atraso há ${Math.abs(diffDays)}d — priorize contato hoje.`);
-  }
-
-  // Última tentativa sem contato
-  if (inter?.contacted === "no") {
-    parts.push("Última tentativa sem contato — tente novo horário ou canal (WhatsApp/E-mail).");
-  }
-
-  // Alta prioridade
-  if (t.priority?.toLowerCase().startsWith("alt") && !parts.length) {
-    parts.push("Alta prioridade — considere ligação direta agora.");
-  }
-
-  // Contexto do cliente (última interação)
-  if (matchedClient?.lastInteraction && parts.length) {
-    parts.push(`Última interação registrada: ${matchedClient.lastInteraction}.`);
-  }
-
-  if (!parts.length) return null;
-  return parts.join(" ");
+  return null;
 }
 
 
