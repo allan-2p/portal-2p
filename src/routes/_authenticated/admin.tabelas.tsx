@@ -13,6 +13,7 @@ import {
   CalendarIcon,
   TrendingUp,
   CalendarDays,
+  ShoppingBag,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -22,9 +23,11 @@ import { cn } from "@/lib/utils";
 import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
+  getSalesforceReportByName,
   type SalesforceOppRow,
 } from "@/lib/salesforce.functions";
 import { useAuth } from "@/hooks/use-auth";
+
 
 export const Route = createFileRoute("/_authenticated/admin/tabelas")({
   head: () => ({ meta: [{ title: "Tabelas — Portal 2P" }] }),
