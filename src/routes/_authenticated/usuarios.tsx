@@ -302,13 +302,18 @@ function PortalTable({
   const syncPhoto = useServerFn(syncSalesforcePhoto);
   async function handleSyncPhoto(userId: string) {
     try {
-      await syncPhoto({ data: { user_id: userId } });
-      toast.success("Foto sincronizada do Salesforce");
-      onReload();
+      const r = await syncPhoto({ data: { user_id: userId } });
+      if (r.ok) {
+        toast.success("Foto sincronizada do Salesforce");
+        onReload();
+      } else {
+        toast.warning(r.reason);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     }
   }
+
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       <table className="w-full text-sm">
