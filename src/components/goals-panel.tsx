@@ -184,25 +184,27 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
 
   const ownerSet = useMemo(() => new Set(owners), [owners.join(",")]);
 
-  // ---- Faturamento agregado ---- //
+  // ---- Faturamento (VENDIDO): baseado no mês atual apenas ---- //
   const faturamentoReal = useMemo(() => {
     let total = 0;
     for (const r of curVendasQ.data?.records ?? []) {
       if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
       if (r.tipoNf === "Bonificação") continue;
+      if (!r.closeDate || r.closeDate < info.monthStart || r.closeDate > info.monthEnd) continue;
       total += r.total ?? r.amount ?? 0;
     }
     return total;
-  }, [curVendasQ.data, ownerSet]);
+  }, [curVendasQ.data, ownerSet, info.monthStart, info.monthEnd]);
 
   const faturamentoMeta = useMemo(() => {
     let total = 0;
     for (const g of goalsQ.data?.records ?? []) {
       if (!g.active) continue;
+      if (g.month !== info.currentMonth) continue;
       total += g.monthly_goal;
     }
     return total;
-  }, [goalsQ.data]);
+  }, [goalsQ.data, info.currentMonth]);
 
   // ---- Retenção e Novos A/B (agregados + por owner p/ comissão) ---- //
   const abKpis = useMemo(() => {
