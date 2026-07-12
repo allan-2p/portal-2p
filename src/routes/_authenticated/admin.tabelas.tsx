@@ -1361,7 +1361,7 @@ function TabelasPage() {
               <FileText className="h-4 w-4" /> Orçamento
             </TabsTrigger>
             <TabsTrigger value="vendas" className="gap-2">
-              <ShoppingCart className="h-4 w-4" /> Vendas
+              <ShoppingCart className="h-4 w-4" /> Faturamento - Mês Atual
             </TabsTrigger>
             <TabsTrigger value="vendido-mes" className="gap-2">
               <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
