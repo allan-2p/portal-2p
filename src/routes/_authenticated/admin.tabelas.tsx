@@ -13,7 +13,6 @@ import {
   CalendarIcon,
   TrendingUp,
   CalendarDays,
-  ShoppingBag,
   Filter,
   X as XIcon,
   RotateCcw,
@@ -26,15 +25,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  getSalesforceOrcamentos,
-  getSalesforceVendas,
   getSalesforceVendidoMesAtual,
-  getSalesforceReportByName,
-  VENDIDO_DATE_LITERALS,
-  VENDIDO_DEFAULTS,
-  type VendidoFilters,
+  OPP_DATE_LITERALS,
+  OPP_DEFAULTS_ORCAMENTOS,
+  OPP_DEFAULTS_VENDAS,
+  OPP_DEFAULTS_VENDIDO_MES,
+  type OppFilters,
   type SalesforceOppRow,
-  type SalesforceReportRow,
 } from "@/lib/salesforce.functions";
 import { useAuth } from "@/hooks/use-auth";
 
