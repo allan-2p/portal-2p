@@ -1122,17 +1122,42 @@ function Dashboard2P() {
             position: "relative",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span
               style={{
-                width: 7,
-                height: 7,
+                width: 8,
+                height: 8,
                 borderRadius: 999,
-                background: loading ? T.amber : T.green,
-                boxShadow: `0 0 10px ${loading ? T.amber : T.green}`,
+                background: loading ? T.amber : isFetching ? T.blue : T.green,
+                boxShadow: `0 0 10px ${loading ? T.amber : isFetching ? T.blue : T.green}`,
+                animation: isFetching ? "pulse 1.2s ease-in-out infinite" : undefined,
               }}
             />
-            {loading ? "Carregando…" : `Conectado · em tela há ${ago}s`}
+            <span>
+              {loading
+                ? "Carregando dados…"
+                : isFetching
+                  ? "Sincronizando ao vivo…"
+                  : `Ao vivo · ${updateLabel}`}
+            </span>
+            <button
+              onClick={toggleFullscreen}
+              style={{
+                marginLeft: 12,
+                background: "rgba(255,255,255,.06)",
+                border: "1px solid rgba(255,255,255,.12)",
+                color: T.bgTxt,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                padding: "4px 10px",
+                borderRadius: 999,
+                cursor: "pointer",
+              }}
+            >
+              {isFs ? "Sair de tela cheia" : "Tela cheia"}
+            </button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <span><span style={{ color: T.orange }}>●</span> 2P Solar</span>
