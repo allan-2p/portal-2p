@@ -62,6 +62,7 @@ export type Database = {
           created_at: string
           email: string
           equipe: string | null
+          filter_scope: Database["public"]["Enums"]["filter_scope"]
           full_name: string | null
           id: string
           is_external: boolean
@@ -78,6 +79,7 @@ export type Database = {
           created_at?: string
           email: string
           equipe?: string | null
+          filter_scope?: Database["public"]["Enums"]["filter_scope"]
           full_name?: string | null
           id: string
           is_external?: boolean
@@ -94,12 +96,34 @@ export type Database = {
           created_at?: string
           email?: string
           equipe?: string | null
+          filter_scope?: Database["public"]["Enums"]["filter_scope"]
           full_name?: string | null
           id?: string
           is_external?: boolean
           meta_mensal?: number | null
           sf_user_id?: string | null
           telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      salesforce_team_members: {
+        Row: {
+          created_at: string
+          sf_user_id: string
+          team: Database["public"]["Enums"]["sf_team"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          sf_user_id: string
+          team: Database["public"]["Enums"]["sf_team"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          sf_user_id?: string
+          team?: Database["public"]["Enums"]["sf_team"]
           updated_at?: string
         }
         Relationships: []
@@ -390,6 +414,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "gerente" | "vendedor" | "diretor" | "marketing"
+      filter_scope: "geral" | "pre_vendas" | "carteira" | "individual"
+      sf_team: "pre_vendas" | "carteira"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -518,6 +544,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "gerente", "vendedor", "diretor", "marketing"],
+      filter_scope: ["geral", "pre_vendas", "carteira", "individual"],
+      sf_team: ["pre_vendas", "carteira"],
     },
   },
 } as const
