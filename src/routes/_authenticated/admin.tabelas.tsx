@@ -500,6 +500,7 @@ function ProjectionsPanel({ search }: { search: string }) {
 
 type QuarterProjectionRow = {
   account: string;
+  accountOwner: string | null;
   prevSales: number;
   generatedCount: number;
   closedCount: number;
@@ -547,17 +548,20 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
     const generatedByAccount = new Map<string, number>();
     const closedByAccount = new Map<string, number>();
     const salesByAccount = new Map<string, number>();
+    const ownerByAccount = new Map<string, string | null>();
 
     // "Gerados" = orçamentos + vendas (todo pedido nasce como orçamento)
     for (const o of orcRecs) {
       const key = o.account ?? "(sem cliente)";
       generatedByAccount.set(key, (generatedByAccount.get(key) ?? 0) + 1);
+      if (!ownerByAccount.has(key)) ownerByAccount.set(key, o.accountOwner ?? null);
     }
     for (const v of venRecs) {
       const key = v.account ?? "(sem cliente)";
       generatedByAccount.set(key, (generatedByAccount.get(key) ?? 0) + 1);
       closedByAccount.set(key, (closedByAccount.get(key) ?? 0) + 1);
       salesByAccount.set(key, (salesByAccount.get(key) ?? 0) + (v.total ?? v.amount ?? 0));
+      if (!ownerByAccount.get(key)) ownerByAccount.set(key, v.accountOwner ?? ownerByAccount.get(key) ?? null);
     }
 
     // Fallback global (para clientes sem orçamentos rastreados)
@@ -580,6 +584,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
       const genQuarter = genMonthly * 3;
       out.push({
         account,
+        accountOwner: ownerByAccount.get(account) ?? null,
         prevSales,
         generatedCount,
         closedCount,
@@ -597,7 +602,11 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     if (!s) return rows;
-    return rows.filter((r) => r.account.toLowerCase().includes(s));
+    return rows.filter(
+      (r) =>
+        r.account.toLowerCase().includes(s) ||
+        (r.accountOwner ?? "").toLowerCase().includes(s),
+    );
   }, [rows, search]);
 
   const totals = useMemo(() => {
@@ -683,6 +692,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
             <thead>
               <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
                 <th className="text-left px-4 py-2.5">Cliente</th>
+                <th className="text-left px-4 py-2.5">Vendedor</th>
                 <th className="text-center px-2 py-2.5">Classe</th>
                 <th className="text-right px-4 py-2.5">Vendas {baseRange.label}</th>
                 <th className="text-right px-4 py-2.5">Conversão</th>
@@ -695,7 +705,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                  <td colSpan={9} className="px-4 py-16 text-center text-muted-foreground text-sm">
                     <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
                     Calculando projeções…
                   </td>
@@ -705,6 +715,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
                 filtered.map((r) => (
                   <tr key={r.account} className="border-b border-border/40 hover:bg-surface-2/50">
                     <td className="px-4 py-3 font-medium">{r.account}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{r.accountOwner ?? "—"}</td>
                     <td className="px-2 py-3 text-center">{classBadge(r.classification)}</td>
                     <td className="px-4 py-3 text-right font-mono text-muted-foreground">{brl(r.prevSales)}</td>
                     <td className="px-4 py-3 text-right font-mono text-muted-foreground">
@@ -718,7 +729,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
                 ))}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     Nenhum cliente com atividade no trimestre anterior.
                   </td>
                 </tr>
@@ -727,7 +738,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
             {!loading && filtered.length > 0 && (
               <tfoot>
                 <tr className="border-t border-border bg-surface-2/50 text-sm">
-                  <td className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]" colSpan={2}>
+                  <td className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]" colSpan={3}>
                     Total ({filtered.length})
                   </td>
                   <td className="px-4 py-2.5 text-right font-mono font-semibold text-muted-foreground">{brl(totals.prevSales)}</td>
