@@ -51,6 +51,15 @@ const DEFAULT_NOVOS: NovosValuesConfig = {
   carteira: { A: 200, B: 100 },
 };
 
+const DEFAULT_RETENCAO: RetencaoTiersConfig = {
+  tiers: [
+    { min: 70, max: 80 },
+    { min: 80, max: 90 },
+    { min: 90, max: null },
+  ],
+  values: [500, 1000, 1500],
+};
+
 // ---- Server functions ---- //
 
 export const getCommissionSettings = createServerFn({ method: "GET" })
@@ -65,9 +74,11 @@ export const getCommissionSettings = createServerFn({ method: "GET" })
     return {
       vendido: (map.get("vendido_tiers") as VendidoTiersConfig) ?? DEFAULT_VENDIDO,
       novos: (map.get("novos_values") as NovosValuesConfig) ?? DEFAULT_NOVOS,
+      retencao: (map.get("retencao_tiers") as RetencaoTiersConfig) ?? DEFAULT_RETENCAO,
       equipe: (map.get("salesperson_equipe") as SalespersonEquipeConfig) ?? {},
     };
   });
+
 
 const VendidoInput = z.object({
   tiers: z
