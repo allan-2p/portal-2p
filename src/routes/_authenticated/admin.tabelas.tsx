@@ -699,23 +699,26 @@ function TagListEditor({
   );
 }
 
-function VendidoFiltersPanel({
+function OppFiltersPanel({
   value,
+  defaults,
   onApply,
 }: {
-  value: VendidoFilters;
-  onApply: (next: VendidoFilters) => void;
+  value: OppFilters;
+  defaults: OppFilters;
+  onApply: (next: OppFilters) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<VendidoFilters>(value);
+  const [draft, setDraft] = useState<OppFilters>(value);
 
   // Sync draft when applied value changes externally (e.g. reset).
   useMemo(() => setDraft(value), [value]);
 
-  const set = <K extends keyof VendidoFilters>(k: K, v: VendidoFilters[K]) =>
+  const set = <K extends keyof OppFilters>(k: K, v: OppFilters[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
 
-  const literal = draft.closeDateLiteral ?? VENDIDO_DEFAULTS.closeDateLiteral;
+  const literal = draft.dateLiteral ?? defaults.dateLiteral ?? "";
+  const df = draft.dateField ?? defaults.dateField ?? "CloseDate";
 
   return (
     <div className="glass rounded-2xl border border-border overflow-hidden">
@@ -748,17 +751,47 @@ function VendidoFiltersPanel({
 
           <div className="space-y-1.5">
             <div className="text-xs font-medium text-muted-foreground">
-              CloseDate (período)
+              StageName (diferente de)
+            </div>
+            <Input
+              className="h-8 text-sm"
+              value={draft.stageNotEquals ?? ""}
+              onChange={(e) => set("stageNotEquals", e.target.value)}
+              placeholder="Ex.: Pedido Concluído"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-muted-foreground">
+              Campo de data
             </div>
             <Select
-              value={literal}
-              onValueChange={(v) => set("closeDateLiteral", v)}
+              value={df}
+              onValueChange={(v) => set("dateField", v as "CloseDate" | "CreatedDate")}
             >
               <SelectTrigger className="h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {VENDIDO_DATE_LITERALS.map((l) => (
+                <SelectItem value="CloseDate">CloseDate</SelectItem>
+                <SelectItem value="CreatedDate">CreatedDate</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-muted-foreground">
+              Período ({df})
+            </div>
+            <Select
+              value={literal || "THIS_MONTH"}
+              onValueChange={(v) => set("dateLiteral", v)}
+            >
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {OPP_DATE_LITERALS.map((l) => (
                   <SelectItem key={l} value={l}>{l}</SelectItem>
                 ))}
                 <SelectItem value="CUSTOM">Personalizado…</SelectItem>
@@ -769,14 +802,14 @@ function VendidoFiltersPanel({
                 <Input
                   type="date"
                   className="h-8 text-sm"
-                  value={draft.closeDateFrom ?? ""}
-                  onChange={(e) => set("closeDateFrom", e.target.value)}
+                  value={draft.dateFrom ?? ""}
+                  onChange={(e) => set("dateFrom", e.target.value)}
                 />
                 <Input
                   type="date"
                   className="h-8 text-sm"
-                  value={draft.closeDateTo ?? ""}
-                  onChange={(e) => set("closeDateTo", e.target.value)}
+                  value={draft.dateTo ?? ""}
+                  onChange={(e) => set("dateTo", e.target.value)}
                 />
               </div>
             )}
@@ -824,8 +857,8 @@ function VendidoFiltersPanel({
               size="sm"
               className="h-8"
               onClick={() => {
-                setDraft({ ...VENDIDO_DEFAULTS });
-                onApply({ ...VENDIDO_DEFAULTS });
+                setDraft({ ...defaults });
+                onApply({ ...defaults });
               }}
             >
               <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Restaurar padrões
@@ -844,6 +877,76 @@ function VendidoFiltersPanel({
     </div>
   );
 }
+
+/** Reusable panel wrapping OppTable with filters + vendedor dropdown. */
+function OppTabPanel({
+  filters,
+  defaults,
+  onFiltersChange,
+  vendedor,
+  onVendedorChange,
+  records,
+  loading,
+  error,
+  search,
+  dateField,
+}: {
+  filters: OppFilters;
+  defaults: OppFilters;
+  onFiltersChange: (next: OppFilters) => void;
+  vendedor: string;
+  onVendedorChange: (next: string) => void;
+  records: SalesforceOppRow[];
+  loading: boolean;
+  error: unknown;
+  search: string;
+  dateField: "createdDate" | "closeDate";
+}) {
+  const vendedores = useMemo(
+    () => Array.from(new Set(records.map((r) => r.owner).filter((v): v is string => !!v)))
+      .sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [records],
+  );
+  const filteredByVendedor =
+    vendedor === "__all__" ? records : records.filter((r) => (r.owner ?? "") === vendedor);
+
+  return (
+    <div className="space-y-3">
+      <OppFiltersPanel value={filters} defaults={defaults} onApply={onFiltersChange} />
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
+        <Select value={vendedor} onValueChange={onVendedorChange}>
+          <SelectTrigger className="w-[260px] h-9">
+            <SelectValue placeholder="Todos os vendedores" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Todos os vendedores</SelectItem>
+            {vendedores.map((v) => (
+              <SelectItem key={v} value={v}>{v}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {vendedor !== "__all__" && (
+          <button
+            type="button"
+            onClick={() => onVendedorChange("__all__")}
+            className="text-xs text-muted-foreground hover:text-foreground underline"
+          >
+            limpar
+          </button>
+        )}
+      </div>
+      <OppTable
+        records={filteredByVendedor}
+        loading={loading}
+        error={error}
+        search={search}
+        dateField={dateField}
+      />
+    </div>
+  );
+}
+
 
 function TabelasPage() {
   const { hasRole } = useAuth();
