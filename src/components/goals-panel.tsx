@@ -272,11 +272,6 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     };
   }, [curVendasQ.data, prevVendasQ.data, ownerSet]);
 
-  const novosAbMeta = useMemo(() => {
-    let total = 0;
-    for (const g of newAbGoalsQ.data?.records ?? []) total += g.goal;
-    return total;
-  }, [newAbGoalsQ.data]);
 
   const retencaoMeta = useMemo(() => {
     const configured = (retentionGoalsQ.data?.records ?? []).reduce((a, r) => a + r.goal, 0);
