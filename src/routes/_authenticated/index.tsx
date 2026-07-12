@@ -665,7 +665,7 @@ function HomePage() {
                     Portal 2P — visão geral
                   </h1>
                   <p className="text-sm text-muted-foreground mt-2">
-                    {atlasRadarInsights.length} sinal(is) do Atlas · {sfTasks.length} tarefa(s) na agenda selecionada.
+                    {sfTasks.length} tarefa(s) na agenda selecionada.
                   </p>
                 </div>
               ),
