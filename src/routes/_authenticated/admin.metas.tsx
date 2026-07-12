@@ -11,7 +11,7 @@ import {
   setQuarterGoalActive,
   type SalespersonMonthlyGoals,
 } from "@/lib/admin.functions";
-import { listNewAbGoals, setNewAbGoal, listRetentionGoals, setRetentionGoal } from "@/lib/goals.functions";
+import { listRetentionGoals, setRetentionGoal } from "@/lib/goals.functions";
 import {
   getCommissionSettings,
   setVendidoTiers,
@@ -291,62 +291,7 @@ function MetasPage() {
   );
 }
 
-function NewAbGoalsPanel({ year, quarter, quarterLabel }: { year: number; quarter: number; quarterLabel: string }) {
-  const fetchList = useServerFn(listNewAbGoals);
-  const saveGoal = useServerFn(setNewAbGoal);
-  const qc = useQueryClient();
-  const owners = [...CARTEIRA_OWNER_IDS];
 
-  const q = useQuery({
-    queryKey: ["admin-newab-goals", year, quarter, owners.join(",")],
-    queryFn: () => fetchList({ data: { year, quarter, sfUserIds: owners } }),
-    staleTime: 60_000,
-  });
-
-  const mut = useMutation({
-    mutationFn: (v: { sf_user_id: string; goal: number }) =>
-      saveGoal({ data: { sf_user_id: v.sf_user_id, year, quarter, goal: v.goal } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-newab-goals"] });
-      qc.invalidateQueries({ queryKey: ["goals-newab"] });
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar meta"),
-  });
-
-  const goalMap = new Map<string, number>();
-  for (const g of q.data?.records ?? []) goalMap.set(g.sf_user_id, g.goal);
-
-  return (
-    <div className="glass rounded-2xl overflow-hidden">
-      <div className="px-5 py-3 border-b border-border">
-        <h2 className="font-display font-semibold">Meta de Novos A+B · {quarterLabel}</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Quantidade alvo de contas que não eram A/B no trimestre anterior e passaram a comprar ≥ R$ 15k neste trimestre.
-        </p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
-              <th className="text-left px-4 py-2.5">Vendedor</th>
-              <th className="text-right px-4 py-2.5 w-40">Meta (contas)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {owners.map((id) => (
-              <NewAbGoalRow
-                key={id}
-                name={CARTEIRA_OWNER_NAMES[id] ?? id}
-                value={goalMap.get(id) ?? 0}
-                onSave={(v) => mut.mutate({ sf_user_id: id, goal: v })}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
 
 function RetentionGoalsPanel({ year, quarter, quarterLabel }: { year: number; quarter: number; quarterLabel: string }) {
   const fetchList = useServerFn(listRetentionGoals);

@@ -9,7 +9,6 @@ import {
 } from "@/lib/salesforce.functions";
 import {
   listFaturamentoGoalsForOwners,
-  listNewAbGoals,
   listRetentionGoals,
 } from "@/lib/goals.functions";
 import {
@@ -126,7 +125,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   const fetchVendas = useServerFn(getSalesforceVendas);
   const fetchSalesByAccount = useServerFn(getSalesforceSalesByAccount);
   const fetchFaturamentoGoals = useServerFn(listFaturamentoGoalsForOwners);
-  const fetchNewAbGoals = useServerFn(listNewAbGoals);
+  // (Novos A+B não tem meta — é apenas quantidade realizada)
   const fetchRetentionGoals = useServerFn(listRetentionGoals);
 
   // Vendas do trimestre atual (para faturamento por owner e Novos A+B por accountId+owner)
@@ -153,15 +152,6 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     staleTime: 60_000,
   });
 
-  // Meta trimestral de Novos A+B
-  const newAbGoalsQ = useQuery({
-    queryKey: ["goals-newab", info.year, info.quarter, owners.join(",")],
-    queryFn: () =>
-      fetchNewAbGoals({
-        data: { year: info.year, quarter: info.quarter, sfUserIds: owners },
-      }),
-    staleTime: 60_000,
-  });
 
   const retentionGoalsQ = useQuery({
     queryKey: ["goals-retention", info.year, info.quarter, owners.join(",")],
@@ -180,7 +170,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   });
 
   const loading =
-    curVendasQ.isLoading || prevVendasQ.isLoading || goalsQ.isLoading || newAbGoalsQ.isLoading || retentionGoalsQ.isLoading;
+    curVendasQ.isLoading || prevVendasQ.isLoading || goalsQ.isLoading || retentionGoalsQ.isLoading;
 
   const ownerSet = useMemo(() => new Set(owners), [owners.join(",")]);
 
@@ -282,11 +272,6 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     };
   }, [curVendasQ.data, prevVendasQ.data, ownerSet]);
 
-  const novosAbMeta = useMemo(() => {
-    let total = 0;
-    for (const g of newAbGoalsQ.data?.records ?? []) total += g.goal;
-    return total;
-  }, [newAbGoalsQ.data]);
 
   const retencaoMeta = useMemo(() => {
     const configured = (retentionGoalsQ.data?.records ?? []).reduce((a, r) => a + r.goal, 0);
@@ -380,17 +365,11 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
           hint={`base A/B tri ant.: ${abKpis.retencaoBase}`}
           loading={loading}
         />
-        <GoalCard
+        <CommissionCard
           label="Novos A+B"
           Icon={Sparkles}
-          realized={String(abKpis.novosAB)}
-          goal={String(novosAbMeta)}
-          pct={pct(abKpis.novosAB, novosAbMeta)}
-          hint={
-            novosAbMeta === 0
-              ? "defina meta em /admin/metas"
-              : `A: ${abKpis.novosA} · B: ${abKpis.novosB}`
-          }
+          value={String(abKpis.novosAB)}
+          hint={`A: ${abKpis.novosA} · B: ${abKpis.novosB}`}
           loading={loading}
         />
       </div>
