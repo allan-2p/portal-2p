@@ -23,6 +23,8 @@ function VendedoresPage() {
 
   const fetchList = useServerFn(listSalespeopleForAdmin);
   const setVisibility = useServerFn(setSalespersonVisibility);
+  const fetchTeams = useServerFn(listSfTeams);
+  const setTeamFn = useServerFn(adminSetSfTeam);
   const qc = useQueryClient();
 
   const q = useQuery({
@@ -31,6 +33,19 @@ function VendedoresPage() {
     staleTime: 60_000,
     enabled: hasRole("admin"),
   });
+
+  const teamsQ = useQuery({
+    queryKey: ["sf-teams"],
+    queryFn: () => fetchTeams(),
+    staleTime: 60_000,
+    enabled: hasRole("admin"),
+  });
+
+  const teamMap = useMemo(() => {
+    const m = new Map<string, SFTeam>();
+    for (const r of teamsQ.data?.rows ?? []) m.set(r.sf_user_id, r.team);
+    return m;
+  }, [teamsQ.data]);
 
   const mut = useMutation({
     mutationFn: (v: { sf_user_id: string; hidden: boolean }) =>
@@ -41,6 +56,17 @@ function VendedoresPage() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
   });
+
+  const teamMut = useMutation({
+    mutationFn: (v: { sf_user_id: string; team: SFTeam | null }) =>
+      setTeamFn({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sf-teams"] });
+      qc.invalidateQueries({ queryKey: ["my-scope"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar equipe"),
+  });
+
 
   const people = q.data?.records ?? [];
   const filtered = useMemo(() => {
