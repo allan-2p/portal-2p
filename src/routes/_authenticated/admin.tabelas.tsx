@@ -584,6 +584,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
       const genQuarter = genMonthly * 3;
       out.push({
         account,
+        accountOwner: ownerByAccount.get(account) ?? null,
         prevSales,
         generatedCount,
         closedCount,
