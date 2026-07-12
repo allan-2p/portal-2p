@@ -352,17 +352,6 @@ function SegmentacaoPage() {
           )}
         </div>
 
-        <div className="glass rounded-2xl p-4 flex items-start gap-3 border-primary/30">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-[oklch(0.7_0.18_280)] flex items-center justify-center shrink-0">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div className="text-sm">
-            <span className="font-semibold">Atlas: </span>
-            <span className="text-muted-foreground">
-              {visible.filter((c) => c.health < 40).length} clientes desta visão estão abaixo de 40% de saúde. Foque em A primeiro — 1 cliente A vale 4 clientes B em receita média.
-            </span>
-          </div>
-        </div>
 
         <div className="glass rounded-2xl overflow-hidden">
           <div className="px-5 py-3 border-b border-border flex items-center justify-between">
