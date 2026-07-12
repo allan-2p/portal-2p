@@ -624,6 +624,11 @@ export type OppFilters = {
   dateLiteral?: string; // e.g. THIS_MONTH or "CUSTOM"
   dateFrom?: string;    // YYYY-MM-DD (when literal = CUSTOM)
   dateTo?: string;      // YYYY-MM-DD (when literal = CUSTOM)
+  // Optional secondary date filter (applied in addition to the primary)
+  dateField2?: "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c";
+  dateLiteral2?: string;
+  dateFrom2?: string;
+  dateTo2?: string;
 };
 // Backwards-compat alias
 export type VendidoFilters = OppFilters;
@@ -670,6 +675,8 @@ export const OPP_DEFAULTS_VENDAS: OppFilters = {
   ownerNameNotIn: [],
   dateField: "Data_de_Faturamento__c",
   dateLiteral: "THIS_MONTH",
+  dateField2: "CloseDate",
+  dateLiteral2: "THIS_MONTH",
 };
 
 export const OPP_DEFAULTS_GERADO_MES: OppFilters = {
@@ -728,6 +735,20 @@ export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
       if (f.dateTo && validDate(f.dateTo)) clauses.push(`${df} <= ${f.dateTo}${suffixEnd}`);
     } else if (literal) {
       clauses.push(`${df} = ${literal}`);
+    }
+
+    // Secondary date filter (optional, ANDed with primary)
+    if (f.dateField2) {
+      const df2 = f.dateField2;
+      const suffixStart2 = df2 === "CreatedDate" ? "T00:00:00Z" : "";
+      const suffixEnd2 = df2 === "CreatedDate" ? "T23:59:59Z" : "";
+      const literal2 = (f.dateLiteral2 ?? "").trim();
+      if (literal2 === "CUSTOM") {
+        if (f.dateFrom2 && validDate(f.dateFrom2)) clauses.push(`${df2} >= ${f.dateFrom2}${suffixStart2}`);
+        if (f.dateTo2 && validDate(f.dateTo2)) clauses.push(`${df2} <= ${f.dateTo2}${suffixEnd2}`);
+      } else if (literal2) {
+        clauses.push(`${df2} = ${literal2}`);
+      }
     }
 
     const ownerClause = ownerFilterClause(

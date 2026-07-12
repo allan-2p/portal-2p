@@ -1132,6 +1132,66 @@ function OppFiltersPanel({
             )}
           </div>
 
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-muted-foreground">
+              Campo de data (secundário)
+            </div>
+            <Select
+              value={draft.dateField2 ?? "__none__"}
+              onValueChange={(v) =>
+                set("dateField2", v === "__none__" ? undefined : (v as "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c"))
+              }
+            >
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">(nenhum)</SelectItem>
+                <SelectItem value="CloseDate">CloseDate</SelectItem>
+                <SelectItem value="CreatedDate">CreatedDate</SelectItem>
+                <SelectItem value="Data_de_Faturamento__c">Data de Faturamento</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {draft.dateField2 && (
+            <div className="space-y-1.5">
+              <div className="text-xs font-medium text-muted-foreground">
+                Período ({draft.dateField2})
+              </div>
+              <Select
+                value={(draft.dateLiteral2 ?? "THIS_MONTH") || "THIS_MONTH"}
+                onValueChange={(v) => set("dateLiteral2", v)}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {OPP_DATE_LITERALS.map((l) => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  ))}
+                  <SelectItem value="CUSTOM">Personalizado…</SelectItem>
+                </SelectContent>
+              </Select>
+              {draft.dateLiteral2 === "CUSTOM" && (
+                <div className="flex gap-2 pt-1">
+                  <Input
+                    type="date"
+                    className="h-8 text-sm"
+                    value={draft.dateFrom2 ?? ""}
+                    onChange={(e) => set("dateFrom2", e.target.value)}
+                  />
+                  <Input
+                    type="date"
+                    className="h-8 text-sm"
+                    value={draft.dateTo2 ?? ""}
+                    onChange={(e) => set("dateTo2", e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           <TagListEditor
             label="Status_do_Pedido__c (IN)"
             values={draft.statusIn ?? []}
