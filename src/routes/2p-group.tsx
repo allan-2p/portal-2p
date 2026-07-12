@@ -1,17 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  Cell,
-  ReferenceLine,
-  Tooltip,
-} from "recharts";
-import { TrendingUp, TrendingDown, Wifi, WifiOff, Zap, Sun } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import solarLogoAsset from "@/assets/2p-logo-black.png.asset.json";
 
 const solarLogo = solarLogoAsset.url;
@@ -23,764 +11,827 @@ export const Route = createFileRoute("/2p-group")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: TvDashboardPage,
+  component: Dashboard2P,
 });
 
-/* ----------------------------- Design tokens ----------------------------- */
+/* ============================================================
+   GRUPO 2P — PAINEL DE PERFORMANCE (TV 1920x1080) · v5
+   ============================================================ */
 
-const COLORS = {
-  bg: "#0D0D12",
-  bgAlt: "#101018",
-  solar: "#F28A3C",
-  solarDeep: "#EF8434",
-  carreg: "#1A00B0",
-  carregSoft: "#2100B8",
-  neutral: "#3A3A3C",
-  green: "#22C55E",
-  amber: "#F59E0B",
-  red: "#EF4444",
+const T = {
+  bg0: "#232530",
+  bg1: "#2E3039",
+  bgTxt: "#F2F3F7",
+  bgFaint: "#8A8FA0",
+  card: "#F1F2F5",
+  card2: "#FAFAFC",
+  cardBorder: "#E1E3EA",
+  ink: "#1B1D25",
+  dim: "#5B5F6D",
+  faint: "#9BA0AE",
+  track: "#E2E4EB",
+  barReal: "#3B3E4A",
+  barProj: "#DDDFE7",
+  orange: "#F07E2D",
+  blue: "#4230FF",
+  green: "#0FA958",
+  amber: "#D98A06",
+  red: "#DC3E32",
 };
 
-/* ----------------------------- Mock payload ------------------------------ */
+const grad = `linear-gradient(90deg, ${T.orange}, ${T.blue})`;
 
-type DashboardPayload = {
-  atualizadoEm: string;
-  mes: { vendas: number; metaVendas: number; projetadoDia: number; faturamento: number };
-  trimestre: {
-    solar: { meta: number; realizado: number };
-    carregadores: { meta: number; realizado: number };
-    paceEsperadoPct: number;
-  };
-  semana: {
-    orcamentos: { dia: string; projetado: number; realizado: number }[];
-    vendas: { dia: string; projetado: number; realizado: number }[];
-  };
-  indicadores: {
-    clientesNovos: { metaQtd: number; realizadoQtd: number };
-    novosReativacoes: { metaQtd: number; realizadoQtd: number };
-    recorrencia: { metaQtd: number; realizadoQtd: number; pct: number };
-    retencao: { metaQtd: number; metaPct: number; realizadoQtd: number; pct: number };
-  };
+const fmtBRL = (v: number, compact = false) => {
+  if (compact) {
+    if (v >= 1_000_000)
+      return `R$ ${(v / 1_000_000).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} mi`;
+    if (v >= 1_000)
+      return `R$ ${(v / 1_000).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} mil`;
+  }
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 };
 
-const MOCK: DashboardPayload = {
-  atualizadoEm: new Date().toISOString(),
-  mes: {
-    vendas: 2_845_000,
-    metaVendas: 5_200_000,
-    projetadoDia: 2_600_000,
-    faturamento: 3_120_000,
+const fmtK = (v: number) =>
+  v >= 1000
+    ? `${(v / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi`
+    : `${Math.round(v)} mil`;
+
+const pct = (a: number, b: number) => (b > 0 ? (a / b) * 100 : 0);
+
+const semaforo = (atingidoPct: number, pacePct = 100) => {
+  const r = pacePct > 0 ? (atingidoPct / pacePct) * 100 : atingidoPct;
+  if (r >= 100) return T.green;
+  if (r >= 80) return T.amber;
+  return T.red;
+};
+
+/* ---------- count-up ---------- */
+function useCountUp(target: number, dur = 900) {
+  const [val, setVal] = useState(target);
+  const prev = useRef(target);
+  useEffect(() => {
+    const from = prev.current;
+    if (from === target) return;
+    prev.current = target;
+    const t0 = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      setVal(from + (target - from) * e);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, dur]);
+  return val;
+}
+
+/* ---------- dados mockados ---------- */
+type WeekDay = { dia: string; proj: number; real: number };
+type Kpi = {
+  label: string;
+  periodo: string;
+  metaQtd: number;
+  realQtd: number;
+  pace: number;
+  metaPct?: number;
+};
+
+const seed = {
+  mes: { vendas: 2_943_800, meta: 4_600_000, projetadoDia: 2_671_000, faturamento: 2_318_400 },
+  tri: {
+    solar: { meta: 14_000_000, real: 8_426_300 },
+    carreg: { meta: 1_800_000, real: 1_027_900 },
+    paceEsperado: 55,
   },
-  trimestre: {
-    solar: { meta: 14_000_000, realizado: 9_450_000 },
-    carregadores: { meta: 1_800_000, realizado: 1_020_000 },
-    paceEsperadoPct: 68,
-  },
-  semana: {
-    orcamentos: [
-      { dia: "Seg", projetado: 42, realizado: 48 },
-      { dia: "Ter", projetado: 42, realizado: 39 },
-      { dia: "Qua", projetado: 42, realizado: 51 },
-      { dia: "Qui", projetado: 42, realizado: 44 },
-      { dia: "Sex", projetado: 42, realizado: 22 },
-    ],
-    vendas: [
-      { dia: "Seg", projetado: 180_000, realizado: 210_000 },
-      { dia: "Ter", projetado: 180_000, realizado: 145_000 },
-      { dia: "Qua", projetado: 180_000, realizado: 240_000 },
-      { dia: "Qui", projetado: 180_000, realizado: 195_000 },
-      { dia: "Sex", projetado: 180_000, realizado: 80_000 },
-    ],
-  },
-  indicadores: {
-    clientesNovos: { metaQtd: 60, realizadoQtd: 47 },
-    novosReativacoes: { metaQtd: 90, realizadoQtd: 92 },
-    recorrencia: { metaQtd: 140, realizadoQtd: 108, pct: 77 },
-    retencao: { metaQtd: 200, metaPct: 90, realizadoQtd: 178, pct: 89 },
+  semanaOrc: [
+    { dia: "Seg", proj: 320, real: 291 },
+    { dia: "Ter", proj: 320, real: 384 },
+    { dia: "Qua", proj: 360, real: 402 },
+    { dia: "Qui", proj: 360, real: 297 },
+    { dia: "Sex", proj: 330, real: 254 },
+    { dia: "Sáb", proj: 180, real: 0 },
+  ] as WeekDay[],
+  semanaVen: [
+    { dia: "Seg", proj: 180, real: 152 },
+    { dia: "Ter", proj: 180, real: 214 },
+    { dia: "Qua", proj: 200, real: 231 },
+    { dia: "Qui", proj: 200, real: 168 },
+    { dia: "Sex", proj: 190, real: 198 },
+    { dia: "Sáb", proj: 110, real: 0 },
+  ] as WeekDay[],
+  diaAtual: "Sex",
+  kpis: {
+    clientesNovos: { label: "Clientes novos", periodo: "mensal", metaQtd: 40, realQtd: 27, pace: 68 } as Kpi,
+    novosReativ: { label: "Novos e reativações", periodo: "mensal", metaQtd: 60, realQtd: 43, pace: 68 } as Kpi,
+    recorrencia: { label: "Recorrência", periodo: "trimestral", metaQtd: 90, realQtd: 61, pace: 55 } as Kpi,
+    retencao: { label: "Retenção", periodo: "trimestral", metaQtd: 120, metaPct: 85, realQtd: 96, pace: 55 } as Kpi,
   },
 };
 
-/** Stub: substitua por WebSocket ou react-query polling. */
-function useDashboardData() {
-  const [data, setData] = useState<DashboardPayload>(MOCK);
-  const [online, setOnline] = useState(true);
-  const [updatedAt, setUpdatedAt] = useState<Date>(new Date());
+function useLiveData() {
+  const [data, setData] = useState(seed);
+  const [lastUpdate, setLastUpdate] = useState(Date.now());
+  const [ago, setAgo] = useState(0);
 
   useEffect(() => {
-    // Polling stub a cada 30s — troque por fetch real.
-    const id = setInterval(() => {
-      setData((prev) => ({
-        ...prev,
-        mes: {
-          ...prev.mes,
-          vendas: prev.mes.vendas + Math.round((Math.random() - 0.3) * 8000),
-          faturamento: prev.mes.faturamento + Math.round((Math.random() - 0.3) * 10000),
-        },
-        atualizadoEm: new Date().toISOString(),
-      }));
-      setUpdatedAt(new Date());
-    }, 30_000);
-    return () => clearInterval(id);
+    const iv = setInterval(() => {
+      setData((d) => {
+        const bump = Math.random() < 0.6 ? Math.round(1500 + Math.random() * 22000) : 0;
+        const orcBump = Math.random() < 0.35 ? Math.round(2 + Math.random() * 9) : 0;
+        const idx = 4;
+        return {
+          ...d,
+          mes: {
+            ...d.mes,
+            vendas: d.mes.vendas + bump,
+            faturamento: d.mes.faturamento + Math.round(bump * 0.72),
+          },
+          tri: {
+            ...d.tri,
+            solar: { ...d.tri.solar, real: d.tri.solar.real + Math.round(bump * 0.85) },
+            carreg: { ...d.tri.carreg, real: d.tri.carreg.real + Math.round(bump * 0.15) },
+          },
+          semanaOrc: d.semanaOrc.map((x, i) => (i === idx ? { ...x, real: x.real + orcBump } : x)),
+          semanaVen: d.semanaVen.map((x, i) =>
+            i === idx ? { ...x, real: x.real + Math.round(bump / 1000) } : x,
+          ),
+        };
+      });
+      setLastUpdate(Date.now());
+    }, 8000);
+    return () => clearInterval(iv);
   }, []);
 
-  return { data, online, setOnline, updatedAt };
+  useEffect(() => {
+    const iv = setInterval(() => setAgo(Math.floor((Date.now() - lastUpdate) / 1000)), 1000);
+    return () => clearInterval(iv);
+  }, [lastUpdate]);
+
+  return { data, ago };
 }
 
-/* -------------------------------- Helpers -------------------------------- */
+/* ---------- base ---------- */
+const Card = ({
+  children,
+  style,
+  delay = 0,
+}: {
+  children: ReactNode;
+  style?: CSSProperties;
+  delay?: number;
+}) => (
+  <div
+    style={{
+      background: T.card,
+      border: `1px solid ${T.cardBorder}`,
+      borderRadius: 22,
+      padding: 22,
+      boxShadow: "0 12px 40px -20px rgba(0,0,0,.6)",
+      animation: `fadeUp .6s ease ${delay}s both`,
+      ...style,
+    }}
+  >
+    {children}
+  </div>
+);
 
-const brl = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
+const Eyebrow = ({ children, style }: { children: ReactNode; style?: CSSProperties }) => (
+  <div
+    style={{
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: 2,
+      textTransform: "uppercase",
+      color: T.dim,
+      ...style,
+    }}
+  >
+    {children}
+  </div>
+);
 
-function fmtBRL(v: number) {
-  return brl.format(v);
-}
-function fmtBRLShort(v: number) {
-  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1).replace(".", ",")} M`;
-  if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(0)} k`;
-  return brl.format(v);
-}
-function pct(realized: number, goal: number) {
-  if (goal <= 0) return 0;
-  return (realized / goal) * 100;
-}
-function semaphore(pctVal: number) {
-  if (pctVal >= 100) return COLORS.green;
-  if (pctVal >= 80) return COLORS.amber;
-  return COLORS.red;
-}
-
-/* ----------------------------- Count-up number --------------------------- */
-
-function CountUp({
+const ProgressBar = ({
   value,
-  format,
-  className,
+  color,
+  marker,
+  height = 8,
+  shimmer = false,
+  track = T.track,
 }: {
   value: number;
-  format: (n: number) => string;
-  className?: string;
-}) {
-  const mv = useMotionValue(value);
-  const rounded = useTransform(mv, (v) => format(Math.round(v)));
-  useEffect(() => {
-    const ctrl = animate(mv, value, { duration: 0.9, ease: "easeOut" });
-    return () => ctrl.stop();
-  }, [value, mv]);
-  return <motion.span className={className}>{rounded as unknown as string}</motion.span>;
-}
+  color: string;
+  marker?: number;
+  height?: number;
+  shimmer?: boolean;
+  track?: string;
+}) => (
+  <div style={{ position: "relative", width: "100%" }}>
+    <div style={{ width: "100%", height, background: track, borderRadius: height, overflow: "hidden" }}>
+      <div
+        style={{
+          width: `${Math.min(100, value)}%`,
+          height: "100%",
+          background: color,
+          borderRadius: height,
+          position: "relative",
+          transition: "width .8s ease",
+        }}
+      >
+        {shimmer && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent)",
+              backgroundSize: "220% 100%",
+              animation: "shimmer 2.4s linear infinite",
+            }}
+          />
+        )}
+      </div>
+    </div>
+    {marker != null && (
+      <div
+        style={{
+          position: "absolute",
+          top: -3,
+          left: `${Math.min(100, marker)}%`,
+          width: 2,
+          height: height + 6,
+          background: T.ink,
+          opacity: 0.55,
+          borderRadius: 2,
+        }}
+      />
+    )}
+  </div>
+);
 
-/* -------------------------------- Page ----------------------------------- */
-
-function TvDashboardPage() {
-  const { data, online, updatedAt } = useDashboardData();
-  const [secondsAgo, setSecondsAgo] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setSecondsAgo(Math.floor((Date.now() - updatedAt.getTime()) / 1000));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [updatedAt]);
-
+/* --- header brand cards (Solar / Carregadores / Total) --- */
+const BrandStat = ({
+  label,
+  dotColor,
+  real,
+  meta,
+  invert = false,
+  gradientBar = false,
+}: {
+  label: string;
+  dotColor: string;
+  real: number;
+  meta: number;
+  invert?: boolean;
+  gradientBar?: boolean;
+}) => {
+  const p = pct(real, meta);
+  const bg = invert ? T.ink : T.card;
+  const fg = invert ? T.bgTxt : T.ink;
+  const dim = invert ? "#B7BAC7" : T.dim;
+  const track = invert ? "rgba(255,255,255,.09)" : T.track;
+  const barColor = gradientBar ? grad : invert ? T.bgTxt : T.ink;
+  const v = useCountUp(real);
   return (
     <div
-      className="fixed inset-0 overflow-hidden text-white font-sans"
       style={{
-        background: `radial-gradient(1200px 700px at 15% -10%, rgba(242,138,60,0.10), transparent 60%), radial-gradient(1000px 600px at 100% 110%, rgba(26,0,176,0.16), transparent 60%), ${COLORS.bg}`,
-        fontFamily:
-          "Inter, Manrope, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
-        fontVariantNumeric: "tabular-nums",
+        background: bg,
+        border: `1px solid ${invert ? "rgba(255,255,255,.08)" : T.cardBorder}`,
+        borderRadius: 16,
+        padding: "12px 16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        minWidth: 0,
       }}
     >
-      {/* Fit-to-screen: força 1920x1080 e escala para qualquer TV */}
-      <ScaleTo1080>
-        <div className="w-[1920px] h-[1080px] p-8 flex flex-col gap-6">
-          <Header data={data} />
-
-          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
-            {/* Centro esquerdo — protagonista */}
-            <div className="col-span-7 flex flex-col gap-6 min-h-0">
-              <VendasHero mes={data.mes} />
-              <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
-                <ChartCard
-                  title="Orçamentos da Semana"
-                  data={data.semana.orcamentos}
-                  formatValue={(v) => String(v)}
-                  color={COLORS.solar}
-                />
-                <ChartCard
-                  title="Vendas da Semana"
-                  data={data.semana.vendas}
-                  formatValue={fmtBRLShort}
-                  color={COLORS.carregSoft}
-                />
-              </div>
-            </div>
-
-            {/* Direita — meta trimestral em destaque */}
-            <div className="col-span-5 flex flex-col gap-6 min-h-0">
-              <QuarterGoals trimestre={data.trimestre} />
-              <IndicadoresGrid indicadores={data.indicadores} />
-            </div>
-          </div>
-
-          <StatusFooter online={online} secondsAgo={secondsAgo} />
-        </div>
-      </ScaleTo1080>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span
+          style={{
+            width: 7,
+            height: 7,
+            borderRadius: 999,
+            background: dotColor,
+            boxShadow: `0 0 0 3px ${dotColor}22`,
+          }}
+        />
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            color: dim,
+          }}
+        >
+          {label}
+        </span>
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+        <span
+          style={{
+            fontSize: 26,
+            fontWeight: 900,
+            fontStyle: "italic",
+            color: fg,
+            letterSpacing: -0.5,
+            lineHeight: 1,
+          }}
+        >
+          {fmtBRL(v, true)}
+        </span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: T.green }}>{p.toFixed(0)}%</span>
+        <span style={{ fontSize: 12, color: dim }}>de {fmtBRL(meta, true)}</span>
+      </div>
+      <ProgressBar
+        value={p}
+        color={barColor}
+        height={5}
+        track={track}
+        shimmer={gradientBar}
+      />
     </div>
   );
-}
+};
 
-/* --------------------------- Auto-scale to 1080p ------------------------- */
-
-function ScaleTo1080({ children }: { children: React.ReactNode }) {
-  const [scale, setScale] = useState(1);
-  useEffect(() => {
-    function compute() {
-      const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-      setScale(s);
-    }
-    compute();
-    window.addEventListener("resize", compute);
-    return () => window.removeEventListener("resize", compute);
-  }, []);
-  return (
-    <div className="w-full h-full flex items-center justify-center">
-      <div
-        style={{
-          transform: `scale(${scale})`,
-          transformOrigin: "center center",
-          width: 1920,
-          height: 1080,
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/* --------------------------------- Header -------------------------------- */
-
-function Header({ data }: { data: DashboardPayload }) {
-  const now = new Date();
-  const dateStr = now.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-  });
-  return (
-    <header className="flex items-center gap-6 h-[90px]">
-      <div
-        className="flex items-center gap-4 px-5 h-full rounded-2xl"
-        style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        <img src={solarLogo} alt="2P" className="h-11 w-auto object-contain invert" />
-        <div className="leading-tight">
-          <div className="text-[11px] uppercase tracking-[0.25em] text-white/50">
-            Grupo 2P
-          </div>
-          <div className="text-2xl font-black italic">Painel de Performance</div>
-        </div>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-white/50 text-lg capitalize">{dateStr}</div>
-      </div>
-
-      <div className="text-right">
-        <div className="text-[11px] uppercase tracking-[0.25em] text-white/50">
-          Atualizado em tempo real
-        </div>
-        <div className="text-3xl font-black">
-          {new Date(data.atualizadoEm).toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </div>
-      </div>
-    </header>
-  );
-}
-
-/* ---------------------------- Vendas do Mês HERO ------------------------- */
-
-function VendasHero({ mes }: { mes: DashboardPayload["mes"] }) {
+/* --- Vendas do mês (bloco protagonista) --- */
+const VendasDestaque = ({ mes }: { mes: typeof seed.mes }) => {
+  const vendas = useCountUp(mes.vendas);
+  const fat = useCountUp(mes.faturamento);
   const delta = mes.vendas - mes.projetadoDia;
-  const positive = delta >= 0;
-  const metaPct = pct(mes.vendas, mes.metaVendas);
-  const clampedMeta = Math.min(100, Math.max(0, metaPct));
+  const acima = delta >= 0;
+  const pMeta = pct(mes.vendas, mes.meta);
 
   return (
-    <div
-      className="rounded-3xl p-8 relative overflow-hidden"
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      {/* faixa diagonal de marca */}
+    <Card delay={0.05} style={{ padding: "28px 32px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
+        <Eyebrow>Vendas do mês</Eyebrow>
+        <span style={{ fontSize: 11, color: T.dim }}>
+          Meta {fmtBRL(mes.meta, true)} · {pMeta.toFixed(0)}% atingido
+        </span>
+      </div>
+      <div style={{ maxWidth: 420, marginBottom: 14 }}>
+        <ProgressBar value={pMeta} color={grad} height={4} shimmer />
+      </div>
+
       <div
-        className="absolute top-0 left-0 right-0 h-[3px]"
         style={{
-          background: `linear-gradient(90deg, ${COLORS.solar}, ${COLORS.carreg})`,
+          fontSize: 128,
+          fontWeight: 900,
+          fontStyle: "italic",
+          color: T.ink,
+          letterSpacing: -4,
+          lineHeight: 0.95,
+          margin: "4px 0 10px",
         }}
-      />
-      <div className="flex items-start justify-between mb-2">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">
-            Vendas do Mês
-          </div>
-          <div className="text-white/60 text-sm mt-1">
-            Meta:{" "}
-            <span className="text-white/80 font-semibold">{fmtBRLShort(mes.metaVendas)}</span>{" "}
-            · <span style={{ color: semaphore(metaPct) }}>{metaPct.toFixed(0)}%</span> atingido
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">
-            Faturamento do Mês
-          </div>
-          <div className="text-3xl font-extrabold mt-1">{fmtBRLShort(mes.faturamento)}</div>
-        </div>
+      >
+        {fmtBRL(Math.round(vendas))}
       </div>
 
-      <div className="mt-3 leading-none">
-        <CountUp
-          value={mes.vendas}
-          format={fmtBRL}
-          className="block font-black text-[150px] leading-[1] bg-clip-text text-transparent"
-        />
-        <style>{`
-          .block.font-black.text-\\[150px\\] {
-            background-image: linear-gradient(180deg, #ffffff 0%, #cfcfd6 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-          }
-        `}</style>
-      </div>
-
-      {/* progress bar */}
-      <div className="mt-6 h-2 rounded-full bg-white/8 overflow-hidden relative">
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{
-            width: `${clampedMeta}%`,
-            background: `linear-gradient(90deg, ${COLORS.solar}, ${COLORS.carregSoft})`,
-          }}
-        />
-      </div>
-
-      <div className="mt-5 flex items-center gap-6">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">
-            Projetado do dia
-          </div>
-          <div className="text-2xl font-bold mt-1">{fmtBRLShort(mes.projetadoDia)}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+        <div style={{ fontSize: 15, color: T.dim }}>
+          Projetado até hoje:{" "}
+          <span style={{ color: T.ink, fontWeight: 700 }}>{fmtBRL(mes.projetadoDia, true)}</span>
         </div>
         <div
-          className="flex items-center gap-2 px-4 py-2 rounded-xl"
           style={{
-            background: positive ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-            color: positive ? COLORS.green : COLORS.red,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "6px 12px",
+            borderRadius: 999,
+            background: acima ? "rgba(15,169,88,.12)" : "rgba(220,62,50,.12)",
+            color: acima ? T.green : T.red,
+            fontWeight: 800,
+            fontSize: 14,
           }}
         >
-          {positive ? (
-            <TrendingUp className="w-5 h-5" />
-          ) : (
-            <TrendingDown className="w-5 h-5" />
-          )}
-          <span className="font-extrabold text-xl">
-            {positive ? "+" : "-"}
-            {fmtBRLShort(Math.abs(delta))}
-          </span>
-          <span className="text-xs uppercase tracking-wider opacity-80">
-            {positive ? "acima do pace" : "abaixo do pace"}
-          </span>
+          <span>{acima ? "▲" : "▼"}</span>
+          {fmtBRL(Math.abs(delta), true)} {acima ? "acima" : "abaixo"}
         </div>
       </div>
-    </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          paddingTop: 14,
+          borderTop: `1px solid ${T.cardBorder}`,
+        }}
+      >
+        <Eyebrow>Faturamento do mês</Eyebrow>
+        <span style={{ fontSize: 26, fontWeight: 800, color: T.dim, letterSpacing: -0.5 }}>
+          {fmtBRL(Math.round(fat))}
+        </span>
+      </div>
+    </Card>
   );
-}
+};
 
-/* ---------------------------- Meta Trimestral ---------------------------- */
-
-function QuarterGoals({ trimestre }: { trimestre: DashboardPayload["trimestre"] }) {
-  const totalMeta = trimestre.solar.meta + trimestre.carregadores.meta;
-  const totalReal = trimestre.solar.realizado + trimestre.carregadores.realizado;
-  const rows = [
-    {
-      key: "solar",
-      label: "2P Solar",
-      icon: Sun,
-      meta: trimestre.solar.meta,
-      real: trimestre.solar.realizado,
-      color: COLORS.solar,
-      bar: `linear-gradient(90deg, ${COLORS.solarDeep}, ${COLORS.solar})`,
-    },
-    {
-      key: "carreg",
-      label: "2P Carregadores",
-      icon: Zap,
-      meta: trimestre.carregadores.meta,
-      real: trimestre.carregadores.realizado,
-      color: COLORS.carregSoft,
-      bar: `linear-gradient(90deg, ${COLORS.carreg}, #4a2ce8)`,
-    },
-  ];
+/* --- Gráfico semanal --- */
+const GraficoSemanal = ({
+  titulo,
+  dot,
+  dados,
+  diaAtual,
+  delay,
+}: {
+  titulo: string;
+  dot: string;
+  dados: WeekDay[];
+  diaAtual: string;
+  delay: number;
+}) => {
+  const totalProj = dados.reduce((s, d) => s + d.proj, 0);
+  const totalReal = dados.reduce((s, d) => s + d.real, 0);
+  const p = pct(totalReal, totalProj);
+  const max = Math.max(...dados.map((d) => Math.max(d.proj, d.real))) * 1.18;
 
   return (
-    <div
-      className="rounded-3xl p-6 relative overflow-hidden"
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      <div
-        className="absolute top-0 left-0 right-0 h-[3px]"
-        style={{
-          background: `linear-gradient(90deg, ${COLORS.solar}, ${COLORS.carreg})`,
-        }}
-      />
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">
-            Meta Trimestral
-          </div>
-          <div className="text-xl font-extrabold italic">Trimestre em curso</div>
+    <Card delay={delay} style={{ padding: "20px 24px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ width: 7, height: 7, borderRadius: 999, background: dot }} />
+          <Eyebrow>{titulo}</Eyebrow>
         </div>
-        <div
-          className="text-[11px] px-2 py-1 rounded-md"
-          style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)" }}
-        >
-          Pace ideal: {trimestre.paceEsperadoPct.toFixed(0)}%
+        <div style={{ fontSize: 13, color: T.dim }}>
+          <span style={{ color: T.ink, fontWeight: 800 }}>R$ {fmtK(totalReal)}</span>
+          <span> / R$ {fmtK(totalProj)} proj </span>
+          <span style={{ color: T.green, fontWeight: 800, marginLeft: 4 }}>{p.toFixed(0)}%</span>
         </div>
       </div>
 
-      <div className="mt-5 space-y-4">
-        {rows.map((r) => {
-          const p = pct(r.real, r.meta);
-          const clamped = Math.min(100, p);
-          const Icon = r.icon;
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, 1fr)`, gap: 14, height: 150, alignItems: "end" }}>
+        {dados.map((d, i) => {
+          const hoje = d.dia === diaAtual;
+          const hProj = (d.proj / max) * 100;
+          const hReal = (d.real / max) * 100;
           return (
-            <div key={r.key}>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <Icon className="w-4 h-4" style={{ color: r.color }} />
-                  <span className="text-white/80 font-semibold">{r.label}</span>
-                </div>
-                <div className="flex items-baseline gap-3">
-                  <span className="font-black text-xl">{fmtBRLShort(r.real)}</span>
-                  <span className="text-white/50">/ {fmtBRLShort(r.meta)}</span>
-                  <span style={{ color: semaphore(p) }} className="font-bold w-14 text-right">
-                    {p.toFixed(0)}%
-                  </span>
+            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%" }}>
+              <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "end", justifyContent: "center" }}>
+                {/* projetado */}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "70%",
+                    height: `${hProj}%`,
+                    background: T.barProj,
+                    borderRadius: "10px 10px 4px 4px",
+                    animation: `growUp .8s ease ${delay + i * 0.05}s both`,
+                    transformOrigin: "bottom",
+                  }}
+                />
+                {/* realizado */}
+                <div
+                  style={{
+                    position: "relative",
+                    width: "46%",
+                    height: `${hReal}%`,
+                    background: T.barReal,
+                    borderRadius: "8px 8px 3px 3px",
+                    animation: `growUp .9s ease ${delay + 0.15 + i * 0.05}s both`,
+                    transformOrigin: "bottom",
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                >
+                  {d.real > 0 &&
+                    (hoje ? (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: -26,
+                          background: T.ink,
+                          color: T.bgTxt,
+                          fontSize: 11,
+                          fontWeight: 800,
+                          padding: "3px 8px",
+                          borderRadius: 999,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        R$ {d.real}k
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: -18,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: T.dim,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {d.real}k
+                      </div>
+                    ))}
                 </div>
               </div>
-              <div className="mt-2 h-2 rounded-full bg-white/8 overflow-hidden">
-                <div
-                  className="h-full transition-all duration-700"
-                  style={{ width: `${clamped}%`, background: r.bar }}
-                />
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: hoje ? 900 : 700,
+                  color: hoje ? T.bgTxt : T.dim,
+                  background: hoje ? T.ink : "transparent",
+                  padding: hoje ? "2px 8px" : 0,
+                  borderRadius: 999,
+                  letterSpacing: 0.5,
+                }}
+              >
+                {d.dia}
               </div>
             </div>
           );
         })}
-
-        {/* Total */}
-        <div className="pt-4 mt-4 border-t border-white/8">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-white/60 uppercase tracking-[0.2em] text-[11px]">
-              Total Grupo 2P
-            </span>
-            <div className="flex items-baseline gap-3">
-              <span className="font-black text-2xl">{fmtBRLShort(totalReal)}</span>
-              <span className="text-white/50">/ {fmtBRLShort(totalMeta)}</span>
-              <span
-                className="font-bold w-14 text-right"
-                style={{ color: semaphore(pct(totalReal, totalMeta)) }}
-              >
-                {pct(totalReal, totalMeta).toFixed(0)}%
-              </span>
-            </div>
-          </div>
-          <div className="mt-2 h-3 rounded-full bg-white/8 overflow-hidden relative">
-            <div
-              className="h-full transition-all duration-700"
-              style={{
-                width: `${Math.min(100, pct(totalReal, totalMeta))}%`,
-                background: `linear-gradient(90deg, ${COLORS.solar}, ${COLORS.carreg})`,
-              }}
-            />
-            {/* Marcador de pace ideal */}
-            <div
-              className="absolute top-[-4px] bottom-[-4px] w-[3px] rounded-full"
-              style={{
-                left: `${trimestre.paceEsperadoPct}%`,
-                background: "rgba(255,255,255,0.85)",
-                boxShadow: "0 0 8px rgba(255,255,255,0.6)",
-              }}
-              title="Pace ideal"
-            />
-          </div>
-        </div>
       </div>
+    </Card>
+  );
+};
+
+/* --- KPI donut + card --- */
+const Donut = ({ value, color, size = 60 }: { value: number; color: string; size?: number }) => {
+  const r = (size - 10) / 2;
+  const c = 2 * Math.PI * r;
+  const off = c * (1 - Math.min(1, value / 100));
+  return (
+    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+      <circle cx={size / 2} cy={size / 2} r={r} stroke={T.track} strokeWidth={6} fill="none" />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        stroke={color}
+        strokeWidth={6}
+        fill="none"
+        strokeDasharray={c}
+        strokeDashoffset={off}
+        strokeLinecap="round"
+        style={{ transition: "stroke-dashoffset .8s ease" }}
+      />
+      <text
+        x="50%"
+        y="50%"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        transform={`rotate(90 ${size / 2} ${size / 2})`}
+        fontSize={13}
+        fontWeight={800}
+        fill={T.ink}
+      >
+        {Math.round(value)}%
+      </text>
+    </svg>
+  );
+};
+
+const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
+  const p = pct(k.realQtd, k.metaQtd);
+  const cor = semaforo(p, k.pace);
+  return (
+    <Card delay={delay} style={{ padding: "18px 20px", display: "flex", alignItems: "center", gap: 16 }}>
+      <Donut value={p} color={cor} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: T.ink }}>{k.label}</span>
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: 1.5,
+              textTransform: "uppercase",
+              color: T.faint,
+            }}
+          >
+            {k.periodo}
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+          <span style={{ fontSize: 30, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1 }}>
+            {k.realQtd}
+          </span>
+          <span style={{ fontSize: 14, color: T.faint }}>/ {k.metaQtd}</span>
+          {k.metaPct != null && (
+            <span style={{ fontSize: 10, color: T.dim, marginLeft: 6 }}>
+              meta {k.metaPct}% · atual <b>{p.toFixed(0)}%</b>
+            </span>
+          )}
+        </div>
+        <ProgressBar value={p} color={cor} height={5} />
+      </div>
+    </Card>
+  );
+};
+
+/* ---------- Header meta trimestral ---------- */
+const HeaderMetas = ({ tri }: { tri: typeof seed.tri }) => {
+  const totalMeta = tri.solar.meta + tri.carreg.meta;
+  const totalReal = tri.solar.real + tri.carreg.real;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.15fr", gap: 12, flex: 1 }}>
+      <BrandStat label="2P Solar" dotColor={T.orange} real={tri.solar.real} meta={tri.solar.meta} />
+      <BrandStat label="2P Carregadores" dotColor={T.blue} real={tri.carreg.real} meta={tri.carreg.meta} />
+      <BrandStat label="Total Grupo" dotColor="#fff" real={totalReal} meta={totalMeta} invert gradientBar />
     </div>
   );
-}
+};
 
-/* -------------------------------- Charts --------------------------------- */
+/* ---------- app ---------- */
+function Dashboard2P() {
+  const { data, ago } = useLiveData();
+  const [scale, setScale] = useState(1);
 
-function ChartCard({
-  title,
-  data,
-  formatValue,
-  color,
-}: {
-  title: string;
-  data: { dia: string; projetado: number; realizado: number }[];
-  formatValue: (v: number) => string;
-  color: string;
-}) {
-  const totalReal = data.reduce((a, b) => a + b.realizado, 0);
-  const totalProj = data.reduce((a, b) => a + b.projetado, 0);
-  const p = pct(totalReal, totalProj);
-  const todayIdx = useMemo(() => {
-    const dow = new Date().getDay(); // 0 dom, 1 seg…
-    return Math.min(Math.max(dow - 1, 0), data.length - 1);
-  }, [data.length]);
+  useEffect(() => {
+    const fit = () =>
+      setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
 
   return (
     <div
-      className="rounded-3xl p-5 flex flex-col relative overflow-hidden min-h-0"
       style={{
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        width: "100vw",
+        height: "100vh",
+        overflow: "hidden",
+        background: `radial-gradient(1200px 800px at 20% 0%, ${T.bg1}, ${T.bg0} 70%)`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "'Inter', system-ui, sans-serif",
+        color: T.bgTxt,
       }}
     >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;0,800;0,900;1,800;1,900&display=swap');
+        * { box-sizing: border-box; margin: 0; }
+        @keyframes shimmer { 0%{background-position:220% 0} 100%{background-position:-40% 0} }
+        @keyframes fadeUp { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
+        @keyframes growUp { from{transform:scaleY(0)} to{transform:scaleY(1)} }
+        @keyframes sweep { 0%{transform:translateX(-30%) rotate(12deg)} 100%{transform:translateX(130%) rotate(12deg)} }
+      `}</style>
+
       <div
-        className="absolute top-0 left-0 right-0 h-[3px]"
-        style={{ background: color, opacity: 0.7 }}
-      />
-      <div className="flex items-baseline justify-between mb-2">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.3em] text-white/50">
-            Semana
-          </div>
-          <div className="text-lg font-extrabold">{title}</div>
-        </div>
-        <div className="text-right">
-          <div className="text-xl font-black">{formatValue(totalReal)}</div>
-          <div className="text-[11px] text-white/50">
-            de {formatValue(totalProj)} ·{" "}
-            <span style={{ color: semaphore(p) }} className="font-bold">
-              {p.toFixed(0)}%
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 min-h-0 -ml-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} barGap={4}>
-            <XAxis
-              dataKey="dia"
-              stroke="rgba(255,255,255,0.5)"
-              tickLine={false}
-              axisLine={false}
-              fontSize={13}
-            />
-            <YAxis hide />
-            <Tooltip
-              cursor={{ fill: "rgba(255,255,255,0.03)" }}
-              contentStyle={{
-                background: "rgba(15,15,20,0.95)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 12,
-              }}
-              formatter={(v: number) => formatValue(v)}
-            />
-            <ReferenceLine
-              y={data[0]?.projetado ?? 0}
-              stroke="rgba(255,255,255,0.35)"
-              strokeDasharray="4 4"
-              label={{
-                value: "Projetado",
-                position: "insideTopRight",
-                fill: "rgba(255,255,255,0.5)",
-                fontSize: 10,
-              }}
-            />
-            <Bar dataKey="realizado" radius={[8, 8, 0, 0]}>
-              {data.map((entry, i) => {
-                const dayPct = pct(entry.realizado, entry.projetado);
-                const barColor = semaphore(dayPct);
-                return (
-                  <Cell
-                    key={i}
-                    fill={barColor}
-                    stroke={i === todayIdx ? "#fff" : "transparent"}
-                    strokeWidth={i === todayIdx ? 2 : 0}
-                  />
-                );
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------ Indicadores ------------------------------ */
-
-function IndicadoresGrid({
-  indicadores,
-}: {
-  indicadores: DashboardPayload["indicadores"];
-}) {
-  const cards = [
-    {
-      title: "Clientes Novos",
-      subtitle: "mensal",
-      real: indicadores.clientesNovos.realizadoQtd,
-      meta: indicadores.clientesNovos.metaQtd,
-    },
-    {
-      title: "Novos e Reativações",
-      subtitle: "mensal",
-      real: indicadores.novosReativacoes.realizadoQtd,
-      meta: indicadores.novosReativacoes.metaQtd,
-    },
-    {
-      title: "Recorrência",
-      subtitle: "trimestral",
-      real: indicadores.recorrencia.realizadoQtd,
-      meta: indicadores.recorrencia.metaQtd,
-    },
-    {
-      title: "Retenção",
-      subtitle: `trimestral · meta ${indicadores.retencao.metaPct}%`,
-      real: indicadores.retencao.realizadoQtd,
-      meta: indicadores.retencao.metaQtd,
-      overridePct: indicadores.retencao.pct,
-    },
-  ];
-
-  return (
-    <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
-      {cards.map((c) => {
-        const p = c.overridePct ?? pct(c.real, c.meta);
-        const color = semaphore(p);
-        const clamped = Math.min(100, p);
-        return (
-          <div
-            key={c.title}
-            className="rounded-2xl p-4 relative overflow-hidden flex flex-col justify-between"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            <div
-              className="absolute top-0 left-0 right-0 h-[2px]"
-              style={{ background: color, opacity: 0.6 }}
-            />
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.25em] text-white/50">
-                {c.subtitle}
-              </div>
-              <div className="text-sm font-bold">{c.title}</div>
-            </div>
-
-            <div className="flex items-end justify-between mt-2">
-              <div>
-                <div className="font-black text-4xl leading-none">
-                  <CountUp value={c.real} format={(v) => String(v)} />
-                </div>
-                <div className="text-[11px] text-white/50 mt-1">meta {c.meta}</div>
-              </div>
-              <Donut pct={p} color={color} />
-            </div>
-
-            <div className="mt-2 h-1.5 rounded-full bg-white/8 overflow-hidden">
-              <div
-                className="h-full transition-all duration-700"
-                style={{ width: `${clamped}%`, background: color }}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function Donut({ pct: p, color }: { pct: number; color: string }) {
-  const size = 54;
-  const stroke = 6;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const clamped = Math.min(100, Math.max(0, p));
-  const offset = c - (clamped / 100) * c;
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size}>
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke="rgba(255,255,255,0.10)"
-          strokeWidth={stroke}
-          fill="none"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={color}
-          strokeWidth={stroke}
-          fill="none"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{ transition: "stroke-dashoffset 0.7s ease" }}
-        />
-      </svg>
-      <div
-        className="absolute inset-0 flex items-center justify-center font-bold text-[11px]"
-        style={{ color }}
+        style={{
+          width: 1920,
+          height: 1080,
+          transform: `scale(${scale})`,
+          transformOrigin: "center",
+          padding: 32,
+          display: "flex",
+          flexDirection: "column",
+          gap: 18,
+          position: "relative",
+          overflow: "hidden",
+        }}
       >
-        {p.toFixed(0)}%
+        {/* textura pontilhada */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: "radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+            pointerEvents: "none",
+          }}
+        />
+        {/* painéis de vidro */}
+        <div
+          style={{
+            position: "absolute",
+            top: -100,
+            right: -200,
+            width: 900,
+            height: 600,
+            background: "linear-gradient(120deg, rgba(255,255,255,.05), transparent 60%)",
+            borderRadius: 40,
+            transform: "rotate(12deg)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: -80,
+            left: -120,
+            width: 500,
+            height: 400,
+            background: "linear-gradient(60deg, rgba(240,126,45,.06), transparent 70%)",
+            borderRadius: 40,
+            transform: "rotate(-8deg)",
+            pointerEvents: "none",
+          }}
+        />
+        {/* feixe de luz */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: 180,
+            height: "160%",
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent)",
+            animation: "sweep 12s linear infinite",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* ===== HEADER ===== */}
+        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div
+              style={{
+                width: 62,
+                height: 62,
+                borderRadius: 14,
+                background: T.card,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 8,
+              }}
+            >
+              <img src={solarLogo} alt="2P" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5 }}>Grupo 2P</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, color: T.bgFaint }}>
+                PAINEL DE PERFORMANCE
+              </div>
+            </div>
+          </div>
+          <HeaderMetas tri={data.tri} />
+        </div>
+
+        {/* ===== VENDAS DO MÊS ===== */}
+        <VendasDestaque mes={data.mes} />
+
+        {/* ===== GRÁFICOS SEMANAIS ===== */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, position: "relative" }}>
+          <GraficoSemanal
+            titulo="Geração de orçamentos · semana"
+            dot={T.orange}
+            dados={data.semanaOrc}
+            diaAtual={data.diaAtual}
+            delay={0.15}
+          />
+          <GraficoSemanal
+            titulo="Vendas · semana"
+            dot={T.blue}
+            dados={data.semanaVen}
+            diaAtual={data.diaAtual}
+            delay={0.2}
+          />
+        </div>
+
+        {/* ===== KPIs ===== */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18, position: "relative" }}>
+          <KpiCard k={data.kpis.clientesNovos} delay={0.25} />
+          <KpiCard k={data.kpis.novosReativ} delay={0.3} />
+          <KpiCard k={data.kpis.recorrencia} delay={0.35} />
+          <KpiCard k={data.kpis.retencao} delay={0.4} />
+        </div>
+
+        {/* ===== RODAPÉ ===== */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontSize: 11,
+            color: T.bgFaint,
+            marginTop: "auto",
+            position: "relative",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: 999,
+                background: T.green,
+                boxShadow: `0 0 10px ${T.green}`,
+              }}
+            />
+            Conectado · atualizado há {ago}s
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            <span>
+              <span style={{ color: T.orange }}>●</span> 2P Solar
+            </span>
+            <span>
+              <span style={{ color: T.blue }}>●</span> 2P Carregadores
+            </span>
+            <span style={{ opacity: 0.6 }}>┆ barra clara = projetado · barra grafite = realizado</span>
+          </div>
+        </div>
       </div>
     </div>
-  );
-}
-
-/* -------------------------------- Footer --------------------------------- */
-
-function StatusFooter({ online, secondsAgo }: { online: boolean; secondsAgo: number }) {
-  return (
-    <footer className="flex items-center justify-between text-[11px] uppercase tracking-[0.25em] text-white/40">
-      <div className="flex items-center gap-2">
-        <span
-          className={`inline-block w-2 h-2 rounded-full ${online ? "animate-pulse" : ""}`}
-          style={{ background: online ? COLORS.green : COLORS.red }}
-        />
-        {online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-        <span>
-          {online ? "Conectado" : "Offline"} · atualizado há {secondsAgo}s
-        </span>
-      </div>
-      <div>Grupo 2P · Painel de TV</div>
-    </footer>
   );
 }
