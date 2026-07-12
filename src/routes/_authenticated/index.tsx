@@ -850,54 +850,29 @@ function HomePage() {
             </div>
           </div>
 
-          <div className="glass rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-display font-semibold flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" /> Atlas radar
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Clientes com sinais de oportunidade ou risco</p>
+          <div className="relative glass rounded-2xl p-5 overflow-hidden min-h-[280px]">
+            <div aria-hidden className="absolute inset-0 blur-sm pointer-events-none select-none opacity-40 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="font-display font-semibold">Atlas radar</span>
               </div>
-              <span className="text-xs text-muted-foreground">
-                {atlasRadarInsights.length} sinais
-                {accountsQ.isFetching && <Loader2 className="h-3 w-3 animate-spin inline ml-1.5 align-[-2px]" />}
-              </span>
+              <div className="space-y-2 text-sm">
+                <div>• Cliente X abaixo da projeção do trimestre</div>
+                <div>• 3 oportunidades em aberto — Cliente Y</div>
+                <div>• Observação registrada — Cliente Z</div>
+              </div>
             </div>
-            <div className="space-y-3">
-              {atlasRadarInsights.length === 0 && !accountsQ.isLoading && (
-                <div className="text-xs text-muted-foreground py-4 text-center">
-                  Nenhum sinal para a carteira selecionada.
+            <div className="absolute inset-0 flex items-center justify-center px-4">
+              <div className="glass rounded-2xl px-6 py-5 max-w-sm text-center shadow-xl border border-primary/20">
+                <div className="mx-auto h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-[oklch(0.65_0.2_30)] flex items-center justify-center mb-3 shadow-md shadow-primary/30">
+                  <Clock className="h-5 w-5 text-primary-foreground" />
                 </div>
-              )}
-              {atlasRadarInsights.map((i) => {
-                const meta = i.type === "opportunity"
-                  ? { Icon: TrendingUp, color: "text-success", bg: "bg-success/15", label: "Oportunidade" }
-                  : i.type === "risk"
-                  ? { Icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/15", label: "Risco" }
-                  : i.type === "trend"
-                  ? { Icon: Info, color: "text-[color:var(--atlas)]", bg: "bg-[color:var(--atlas)]/15", label: "Observação" }
-                  : { Icon: TrendingUp, color: "text-primary", bg: "bg-primary/15", label: "Ação" };
-                const Icon = meta.Icon;
-                return (
-                  <div key={i.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className={`h-8 w-8 rounded-lg ${meta.bg} flex items-center justify-center shrink-0`}>
-                        <Icon className={`h-4 w-4 ${meta.color}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-[10px] uppercase tracking-wider font-semibold ${meta.color}`}>{meta.label}</span>
-                          {i.impact && <span className="ml-auto text-[10px] font-medium text-primary">{i.impact}</span>}
-                        </div>
-                        <div className="text-sm font-semibold leading-snug">{i.title}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{i.client}</div>
-                        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed whitespace-pre-line">{i.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
+                <div className="text-[11px] uppercase tracking-wider text-primary font-semibold">Em breve</div>
+                <h3 className="font-display font-bold text-lg mt-1">Atlas radar</h3>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  Estamos ligando o Atlas às suas contas para gerar sinais automáticos de oportunidade e risco.
+                </p>
+              </div>
             </div>
           </div>
         </div>
