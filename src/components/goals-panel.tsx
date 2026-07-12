@@ -380,17 +380,11 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
           hint={`base A/B tri ant.: ${abKpis.retencaoBase}`}
           loading={loading}
         />
-        <GoalCard
+        <CommissionCard
           label="Novos A+B"
           Icon={Sparkles}
-          realized={String(abKpis.novosAB)}
-          goal={String(novosAbMeta)}
-          pct={pct(abKpis.novosAB, novosAbMeta)}
-          hint={
-            novosAbMeta === 0
-              ? "defina meta em /admin/metas"
-              : `A: ${abKpis.novosA} · B: ${abKpis.novosB}`
-          }
+          value={String(abKpis.novosAB)}
+          hint={`A: ${abKpis.novosA} · B: ${abKpis.novosB}`}
           loading={loading}
         />
       </div>
