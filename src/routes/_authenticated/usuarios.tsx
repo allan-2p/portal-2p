@@ -15,7 +15,9 @@ import {
   syncSalesforcePhoto,
   type SFCandidate,
 } from "@/lib/users.functions";
+import { adminSetUserScope, adminSetUserSfId, type FilterScope } from "@/lib/scope.functions";
 import { toast } from "sonner";
+
 import {
   Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink,
 } from "lucide-react";
@@ -37,11 +39,19 @@ type Row = {
   avatar_url: string | null;
   sf_user_id: string | null;
   is_external: boolean;
+  filter_scope: FilterScope;
   roles: AppRole[];
 };
 
 const ROLES: AppRole[] = ["admin", "gerente", "vendedor", "diretor", "marketing"];
+const SCOPES: { id: FilterScope; label: string }[] = [
+  { id: "geral", label: "Geral" },
+  { id: "pre_vendas", label: "Pré Vendas" },
+  { id: "carteira", label: "Carteira" },
+  { id: "individual", label: "Individual" },
+];
 type Tab = "portal" | "salesforce";
+
 
 function UsuariosPage() {
   const { hasRole, loading: authLoading, user } = useAuth();
@@ -60,12 +70,14 @@ function UsuariosPage() {
   const setRoleFn = useServerFn(adminSetRole);
   const toggleFn = useServerFn(adminToggleActive);
   const deleteFn = useServerFn(adminDeleteUser);
+  const setScopeFn = useServerFn(adminSetUserScope);
+  const setSfIdFn = useServerFn(adminSetUserSfId);
 
   async function load() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id,email,full_name,cargo,equipe,ativo,avatar_url,sf_user_id,is_external")
+      .select("id,email,full_name,cargo,equipe,ativo,avatar_url,sf_user_id,is_external,filter_scope")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
     const byUser = new Map<string, AppRole[]>();
@@ -75,8 +87,9 @@ function UsuariosPage() {
       byUser.set(r.user_id, arr);
     });
     setRows(
-      (profiles ?? []).map((p) => ({
+      (profiles ?? []).map((p: any) => ({
         ...p,
+        filter_scope: (p.filter_scope ?? "individual") as FilterScope,
         roles: byUser.get(p.id) ?? [],
       })) as Row[],
     );
@@ -86,6 +99,7 @@ function UsuariosPage() {
   useEffect(() => {
     if (!authLoading) load();
   }, [authLoading]);
+
 
   if (authLoading) {
     return (
@@ -141,6 +155,27 @@ function UsuariosPage() {
       toast.error(e instanceof Error ? e.message : "Erro");
     }
   }
+
+  async function handleScopeChange(userId: string, scope: FilterScope) {
+    try {
+      await setScopeFn({ data: { user_id: userId, scope } });
+      toast.success("Escopo atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  async function handleSfIdChange(userId: string, sf_user_id: string | null) {
+    try {
+      await setSfIdFn({ data: { user_id: userId, sf_user_id } });
+      toast.success("ID Salesforce atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
 
   return (
     <AppLayout>
@@ -202,11 +237,14 @@ function UsuariosPage() {
             onToggle={handleToggle}
             onDelete={handleDelete}
             onReload={load}
+            onScopeChange={handleScopeChange}
+            onSfIdChange={handleSfIdChange}
           />
         ) : (
           <SalesforceTable onInvite={(c) => setModal({ kind: "invite-sf", candidate: c })} />
         )}
       </div>
+
 
       {modal?.kind === "create" && (
         <UserModal
@@ -248,7 +286,7 @@ function UsuariosPage() {
 }
 
 function PortalTable({
-  rows, loading, currentUserId, onRoleChange, onToggle, onDelete, onReload,
+  rows, loading, currentUserId, onRoleChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange,
 }: {
   rows: Row[];
   loading: boolean;
@@ -257,7 +295,10 @@ function PortalTable({
   onToggle: (id: string, ativo: boolean) => void;
   onDelete: (id: string) => void;
   onReload: () => void;
+  onScopeChange: (id: string, scope: FilterScope) => void;
+  onSfIdChange: (id: string, sf_user_id: string | null) => void;
 }) {
+
   const syncPhoto = useServerFn(syncSalesforcePhoto);
   async function handleSyncPhoto(userId: string) {
     try {
@@ -278,20 +319,23 @@ function PortalTable({
             <th className="text-left px-4 py-3 font-medium">E-mail</th>
             <th className="text-left px-4 py-3 font-medium">Equipe</th>
             <th className="text-left px-4 py-3 font-medium">Papel</th>
+            <th className="text-left px-4 py-3 font-medium">Escopo do filtro</th>
+            <th className="text-left px-4 py-3 font-medium">ID Salesforce</th>
             <th className="text-left px-4 py-3 font-medium">Status</th>
             <th className="px-4 py-3"></th>
           </tr>
+
         </thead>
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={7} className="text-center py-10 text-muted-foreground">
+              <td colSpan={9} className="text-center py-10 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin inline" />
               </td>
             </tr>
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={7} className="text-center py-10 text-muted-foreground">
+              <td colSpan={9} className="text-center py-10 text-muted-foreground">
                 Nenhum usuário ainda.
               </td>
             </tr>
@@ -335,6 +379,25 @@ function PortalTable({
                     ))}
                   </select>
                 </td>
+                <td className="px-4 py-3">
+                  <select
+                    value={r.filter_scope}
+                    onChange={(e) => onScopeChange(r.id, e.target.value as FilterScope)}
+                    className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                  >
+                    {SCOPES.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-3">
+                  <SfIdCell
+                    value={r.sf_user_id}
+                    onSave={(v: string | null) => onSfIdChange(r.id, v)}
+                  />
+
+                </td>
+
                 <td className="px-4 py-3">
                   <span
                     className={`text-xs px-2 py-1 rounded-full ${
@@ -765,3 +828,34 @@ function AvatarCell({ row, onUploaded }: { row: Row; onUploaded: () => void }) {
     </div>
   );
 }
+
+function SfIdCell({
+  value,
+  onSave,
+}: {
+  value: string | null;
+  onSave: (v: string | null) => void;
+}) {
+  const [v, setV] = useState<string>(value ?? "");
+  useEffect(() => setV(value ?? ""), [value]);
+  const dirty = (v.trim() || null) !== (value ?? null);
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        placeholder="005..."
+        className="w-32 px-2 py-1 rounded-md bg-background border border-border text-xs font-mono"
+      />
+      {dirty && (
+        <button
+          onClick={() => onSave(v.trim() ? v.trim() : null)}
+          className="text-[10px] px-2 py-1 rounded bg-primary text-primary-foreground font-medium"
+        >
+          Salvar
+        </button>
+      )}
+    </div>
+  );
+}
+

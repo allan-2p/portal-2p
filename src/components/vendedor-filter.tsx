@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Users as UsersIcon, Loader2, Lock } from "lucide-react";
 import { getSalesforceSalespeople } from "@/lib/salesforce.functions";
-import { useAuth } from "@/hooks/use-auth";
+import { getMyScope } from "@/lib/scope.functions";
 
 export function VendedorFilter({
   value,
@@ -12,15 +12,16 @@ export function VendedorFilter({
 }: {
   value: string;
   onChange: (v: string) => void;
+  /** Restrição adicional imposta pela tela (ex: Segmentação). Interseção com o escopo do usuário. */
   allowedIds?: string[];
 }) {
-  const { profile, roles, loading } = useAuth();
-  // Vendedor "puro": tem papel vendedor e nenhum papel elevado.
-  const isLockedVendedor =
-    !loading &&
-    roles.includes("vendedor") &&
-    !roles.some((r) => r === "admin" || r === "diretor" || r === "gerente" || r === "marketing");
-  const lockedId = isLockedVendedor ? profile?.sf_user_id ?? null : null;
+  const fetchScope = useServerFn(getMyScope);
+  const scopeQ = useQuery({
+    queryKey: ["my-scope"],
+    queryFn: () => fetchScope(),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   const fetchSalespeople = useServerFn(getSalesforceSalespeople);
   const q = useQuery({
@@ -30,21 +31,48 @@ export function VendedorFilter({
     refetchOnWindowFocus: false,
   });
 
+  const scope = scopeQ.data;
+  const isIndividual = scope?.scope === "individual";
+  const lockedId = isIndividual ? scope?.sf_user_id ?? null : null;
+
+  // Interseção: escopo do usuário ∩ allowedIds da tela
+  const effectiveAllowed: Set<string> | null = useMemo(() => {
+    const fromScope = scope?.allowed_sf_ids ?? null; // null = sem restrição
+    const fromPage = allowedIds ?? null;
+    if (!fromScope && !fromPage) return null;
+    const a = new Set(fromScope ?? []);
+    if (!fromScope) return new Set(fromPage!);
+    if (!fromPage) return a;
+    return new Set(fromPage.filter((id) => a.has(id)));
+  }, [scope, allowedIds]);
+
   // Trava o filtro no próprio vendedor
   useEffect(() => {
     if (lockedId && value !== lockedId) onChange(lockedId);
   }, [lockedId, value, onChange]);
 
-  const allowed = allowedIds ? new Set(allowedIds) : null;
-  const people = (q.data?.records ?? []).filter((p) => (allowed ? allowed.has(p.id) : true));
+  // Se "all" não é permitido (escopo restrito não-Geral), força a primeira opção válida.
+  useEffect(() => {
+    if (isIndividual) return;
+    if (!effectiveAllowed) return; // Geral e sem restrição da tela
+    if (value === "all") return;
+    if (!effectiveAllowed.has(value)) {
+      const first = effectiveAllowed.values().next().value;
+      if (first && first !== value) onChange(first);
+    }
+  }, [effectiveAllowed, value, isIndividual, onChange]);
+
+  const people = (q.data?.records ?? []).filter((p) =>
+    effectiveAllowed ? effectiveAllowed.has(p.id) : true,
+  );
 
   if (lockedId) {
     const me = people.find((p) => p.id === lockedId);
-    const label = me?.name ?? profile?.full_name ?? "Você";
+    const label = me?.name ?? "Você";
     return (
       <div
         className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border opacity-90"
-        title="Filtro fixo — vendedores visualizam apenas seus próprios dados"
+        title="Filtro fixo — escopo Individual"
       >
         <UsersIcon className="h-4 w-4 text-primary" />
         <label className="text-xs text-muted-foreground">Vendedor</label>
@@ -54,24 +82,37 @@ export function VendedorFilter({
     );
   }
 
+  // Escopo restrito (Pré Vendas / Carteira): não mostra "Todos" fora do subconjunto
+  const showAll = scope?.scope === "geral" || !effectiveAllowed;
+  const scopeLabel =
+    scope?.scope === "pre_vendas"
+      ? "Pré Vendas"
+      : scope?.scope === "carteira"
+        ? "Carteira"
+        : null;
+
   return (
     <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border">
       <UsersIcon className="h-4 w-4 text-primary" />
-      <label className="text-xs text-muted-foreground">Vendedor</label>
+      <label className="text-xs text-muted-foreground">
+        Vendedor{scopeLabel ? ` · ${scopeLabel}` : ""}
+      </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="bg-transparent text-sm font-medium outline-none pr-1 max-w-[220px]"
-        disabled={q.isLoading}
+        disabled={q.isLoading || scopeQ.isLoading}
       >
-        <option value="all">Todos</option>
+        {showAll && <option value="all">Todos</option>}
         {people.map((p) => (
           <option key={p.id} value={p.id}>
             {p.name}
           </option>
         ))}
       </select>
-      {q.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+      {(q.isFetching || scopeQ.isFetching) && (
+        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+      )}
     </div>
   );
 }

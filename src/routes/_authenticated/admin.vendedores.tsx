@@ -7,7 +7,9 @@ import { Loader2, AlertTriangle, Search, Eye, EyeOff, UserCog } from "lucide-rea
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { listSalespeopleForAdmin, setSalespersonVisibility } from "@/lib/admin.functions";
+import { listSfTeams, adminSetSfTeam, type SFTeam } from "@/lib/scope.functions";
 import { useAuth } from "@/hooks/use-auth";
+
 
 export const Route = createFileRoute("/_authenticated/admin/vendedores")({
   head: () => ({ meta: [{ title: "Vendedores — Portal 2P" }] }),
@@ -21,6 +23,8 @@ function VendedoresPage() {
 
   const fetchList = useServerFn(listSalespeopleForAdmin);
   const setVisibility = useServerFn(setSalespersonVisibility);
+  const fetchTeams = useServerFn(listSfTeams);
+  const setTeamFn = useServerFn(adminSetSfTeam);
   const qc = useQueryClient();
 
   const q = useQuery({
@@ -29,6 +33,19 @@ function VendedoresPage() {
     staleTime: 60_000,
     enabled: hasRole("admin"),
   });
+
+  const teamsQ = useQuery({
+    queryKey: ["sf-teams"],
+    queryFn: () => fetchTeams(),
+    staleTime: 60_000,
+    enabled: hasRole("admin"),
+  });
+
+  const teamMap = useMemo(() => {
+    const m = new Map<string, SFTeam>();
+    for (const r of teamsQ.data?.rows ?? []) m.set(r.sf_user_id, r.team);
+    return m;
+  }, [teamsQ.data]);
 
   const mut = useMutation({
     mutationFn: (v: { sf_user_id: string; hidden: boolean }) =>
@@ -39,6 +56,17 @@ function VendedoresPage() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
   });
+
+  const teamMut = useMutation({
+    mutationFn: (v: { sf_user_id: string; team: SFTeam | null }) =>
+      setTeamFn({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sf-teams"] });
+      qc.invalidateQueries({ queryKey: ["my-scope"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar equipe"),
+  });
+
 
   const people = q.data?.records ?? [];
   const filtered = useMemo(() => {
@@ -112,14 +140,16 @@ function VendedoresPage() {
                   <th className="text-left px-4 py-2.5">Vendedor</th>
                   <th className="text-left px-4 py-2.5">E-mail</th>
                   <th className="text-left px-4 py-2.5">Cargo</th>
+                  <th className="text-left px-4 py-2.5 w-40">Equipe</th>
                   <th className="text-center px-4 py-2.5 w-32">Status</th>
                   <th className="text-center px-4 py-2.5 w-40">Aparece no portal?</th>
                 </tr>
+
               </thead>
               <tbody>
                 {q.isLoading && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                    <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">
                       <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
                       Carregando vendedores do Salesforce…
                     </td>
@@ -133,7 +163,25 @@ function VendedoresPage() {
                       <td className="px-4 py-3 font-medium">{p.name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{p.email ?? "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{p.title ?? "—"}</td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={teamMap.get(p.id) ?? ""}
+                          onChange={(e) =>
+                            teamMut.mutate({
+                              sf_user_id: p.id,
+                              team: (e.target.value || null) as SFTeam | null,
+                            })
+                          }
+                          disabled={teamMut.isPending}
+                          className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                        >
+                          <option value="">—</option>
+                          <option value="pre_vendas">Pré Vendas</option>
+                          <option value="carteira">Carteira</option>
+                        </select>
+                      </td>
                       <td className="px-4 py-3 text-center">
+
                         {visible ? (
                           <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-success/15 text-success">
                             <Eye className="h-3 w-3" /> Visível
@@ -161,7 +209,7 @@ function VendedoresPage() {
                 })}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
                       Nenhum vendedor encontrado.
                     </td>
                   </tr>
