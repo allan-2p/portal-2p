@@ -4,246 +4,327 @@ import { type Client, type Segment } from "@/lib/mock-data";
 import { Fragment, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles, TrendingUp, TrendingDown, Minus, Eye, Trophy, Medal, Award, X, FileText, Loader2, AlertTriangle, Search, Package } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  Eye,
+  Trophy,
+  Medal,
+  Award,
+  X,
+  FileText,
+  Loader2,
+  AlertTriangle,
+  Search,
+  Package,
+  Info,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getSalesforceAccounts, getSalesforceSalespeople, getSalesforceOrcamentos, getSalesforceVendas, type SalesforceAccount, type SalesforceOppRow } from "@/lib/salesforce.functions";
-import { VendedorFilter } from "@/components/vendedor-filter";
-import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_SET } from "@/lib/salespeople";
-
+import {
+  getSalesforceAccounts,
+  getSalesforceOrcamentos,
+  getSalesforceVendas,
+  getSalesforceVendidoMesAtual,
+  OPP_DEFAULTS_VENDIDO_MES,
+  OPP_DEFAULTS_GERADO_MES,
+  type SalesforceOppRow,
+} from "@/lib/salesforce.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
   head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
   component: SegmentacaoPage,
 });
 
-const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const fmt = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 type SortKey = "rank" | "name" | "segment" | "projection" | "generation" | "sales" | "health";
 type SortDir = "asc" | "desc";
 
-// Hash determinístico só para métricas visuais (saúde/tendência/última interação)
-// enquanto não existe fonte real para elas.
-function seedFromId(id: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < id.length; i++) {
-    h ^= id.charCodeAt(i);
-    h = (h * 16777619) >>> 0;
-  }
-  return h >>> 0;
+function pad(n: number) {
+  return n < 10 ? `0${n}` : `${n}`;
 }
-function rand(seed: number, offset: number): number {
-  const x = Math.sin(seed + offset) * 10000;
-  return x - Math.floor(x);
+function fmtKey(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function pad(n: number) { return n < 10 ? `0${n}` : `${n}`; }
-function fmtKey(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
-
-function periodRange(period: "mensal" | "trimestral"): { start: string; end: string } {
+// Trimestre anterior — mesma base que a tabela "Projeção - Tri Atual".
+function previousQuarterRange(): { start: string; end: string; label: string } {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
-  if (period === "mensal") {
-    return { start: fmtKey(new Date(y, m, 1)), end: fmtKey(new Date(y, m + 1, 0)) };
+  const q = Math.floor(m / 3) + 1;
+  let qq = q - 1;
+  let yy = y;
+  if (qq < 1) {
+    qq = 4;
+    yy = y - 1;
   }
-  const qStart = Math.floor(m / 3) * 3;
-  return { start: fmtKey(new Date(y, qStart, 1)), end: fmtKey(new Date(y, qStart + 3, 0)) };
+  const start = new Date(yy, (qq - 1) * 3, 1);
+  const end = new Date(yy, qq * 3, 0);
+  return { start: fmtKey(start), end: fmtKey(end), label: `Q${qq}/${yy}` };
 }
 
-// Trimestre anterior — mesma base que a tabela "Projeções" do Portal (Admin › Tabelas).
-function previousQuarterRange(): { start: string; end: string } {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const qStart = Math.floor(m / 3) * 3 - 3;
-  const start = new Date(y, qStart, 1);
-  const end = new Date(y, qStart + 3, 0);
-  return { start: fmtKey(start), end: fmtKey(end) };
+// Segmentação por vendas do trimestre anterior — regra da Projeção - Tri Atual
+function classifyAccount(prevSales: number): Segment {
+  if (prevSales <= 0) return "D";
+  if (prevSales < 15000) return "C";
+  if (prevSales <= 30000) return "B";
+  return "A";
 }
-
-
-// Status do pedido considerados "vendas em curso" — até "Coletado", inclusive.
-const ALLOWED_ORDER_STATUS = new Set<string>([
-  "Aguardando Pagamento",
-  "Processando",
-  "Separação",
-  "Faturado",
-  "Coletado",
-]);
 
 const STATUS_COLOR: Record<string, string> = {
   "Aguardando Pagamento": "bg-emerald-500 text-white border-transparent",
-  "Processando": "bg-yellow-400 text-neutral-900 border-transparent",
-  "Separação": "bg-sky-400 text-white border-transparent",
-  "Faturado": "bg-black text-white border-transparent",
-  "Coletado": "bg-green-500 text-white border-transparent",
+  Processando: "bg-yellow-400 text-neutral-900 border-transparent",
+  Separação: "bg-sky-400 text-white border-transparent",
+  Faturado: "bg-black text-white border-transparent",
+  Coletado: "bg-green-500 text-white border-transparent",
 };
-
 
 const STATUS_DOT: Record<string, string> = {
   "Aguardando Pagamento": "bg-emerald-500",
-  "Processando": "bg-yellow-400",
-  "Separação": "bg-sky-400",
-  "Faturado": "bg-neutral-900",
-  "Coletado": "bg-green-500",
+  Processando: "bg-yellow-400",
+  Separação: "bg-sky-400",
+  Faturado: "bg-neutral-900",
+  Coletado: "bg-green-500",
 };
 
-// Segmentação considera apenas a carteira definida em `salespeople.ts`.
-const SEG_OWNER_IDS = [...CARTEIRA_OWNER_IDS];
-const SEG_OWNER_SET = CARTEIRA_OWNER_SET;
+const SEG_BADGE: Record<Segment, string> = {
+  A: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
+  B: "bg-sky-500/15 text-sky-500 border-sky-500/30",
+  C: "bg-amber-500/15 text-amber-500 border-amber-500/30",
+  D: "bg-muted text-muted-foreground border-border",
+};
 
+const SEG_CHIP_ACTIVE: Record<Segment, string> = {
+  A: "bg-emerald-500 text-white border-emerald-500",
+  B: "bg-sky-500 text-white border-sky-500",
+  C: "bg-amber-500 text-white border-amber-500",
+  D: "bg-foreground text-background border-foreground",
+};
 
-
+function SegBadge({ seg }: { seg: Segment }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold border",
+        SEG_BADGE[seg],
+      )}
+    >
+      {seg}
+    </span>
+  );
+}
 
 function SegmentacaoPage() {
-  const [period, setPeriod] = useState<"mensal" | "trimestral">("mensal");
   const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detailClient, setDetailClient] = useState<Client | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [search, setSearch] = useState("");
-  const [ownerId, setOwnerId] = useState<string>("all");
+  const [vendedor, setVendedor] = useState<string>("__all__");
+
+  const baseRange = useMemo(previousQuarterRange, []);
 
   const fetchAccounts = useServerFn(getSalesforceAccounts);
-  const fetchPeople = useServerFn(getSalesforceSalespeople);
-  const fetchOrcamentos = useServerFn(getSalesforceOrcamentos);
-  const fetchVendas = useServerFn(getSalesforceVendas);
+  const fetchOrc = useServerFn(getSalesforceOrcamentos);
+  const fetchVen = useServerFn(getSalesforceVendas);
+  const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
 
-  const { data, isLoading, error } = useQuery({
+  const accountsQ = useQuery({
     queryKey: ["salesforce", "accounts"],
     queryFn: () => fetchAccounts(),
     staleTime: 60_000,
   });
-  const peopleQ = useQuery({
-    queryKey: ["sf-salespeople"],
-    queryFn: () => fetchPeople(),
-    staleTime: 5 * 60_000,
-  });
-  const activeOwnerIds = useMemo(
-    () => new Set((peopleQ.data?.records ?? []).map((p) => p.id)),
-    [peopleQ.data],
-  );
 
-  const range = useMemo(() => periodRange(period), [period]);
-
-  const orcamentosQ = useQuery({
-    queryKey: ["sf-segmentacao-orcamentos", range.start, range.end],
-    queryFn: () => fetchOrcamentos({ data: range }),
+  const qOrc = useQuery({
+    queryKey: ["sf-orcamentos", baseRange.start, baseRange.end],
+    queryFn: () => fetchOrc({ data: { start: baseRange.start, end: baseRange.end } }),
     staleTime: 60_000,
   });
-  const vendasQ = useQuery({
-    queryKey: ["sf-segmentacao-vendas", range.start, range.end],
-    queryFn: () => fetchVendas({ data: range }),
+  const qVen = useQuery({
+    queryKey: ["sf-vendas", baseRange.start, baseRange.end],
+    queryFn: () => fetchVen({ data: { start: baseRange.start, end: baseRange.end } }),
     staleTime: 60_000,
   });
 
+  const qVendidoMes = useQuery({
+    queryKey: ["sf-vendido-mes", "seg"],
+    queryFn: () => fetchVendidoMes({ data: OPP_DEFAULTS_VENDIDO_MES }),
+    staleTime: 60_000,
+  });
+  const qGeradoMes = useQuery({
+    queryKey: ["sf-gerado-mes", "seg"],
+    queryFn: () => fetchVendidoMes({ data: OPP_DEFAULTS_GERADO_MES }),
+    staleTime: 60_000,
+  });
 
-  // Mapa accountId -> ownerId da conta (filtro de vendedor é o DONO DA CONTA).
-  const accountOwnerById = useMemo(() => {
-    const map = new Map<string, string | null>();
-    for (const a of data?.records ?? []) map.set(a.id, a.ownerId ?? null);
+  const loading =
+    qOrc.isLoading ||
+    qVen.isLoading ||
+    qVendidoMes.isLoading ||
+    qGeradoMes.isLoading ||
+    accountsQ.isLoading;
+  const anyError = qOrc.error ?? qVen.error ?? qVendidoMes.error ?? qGeradoMes.error ?? accountsQ.error;
+
+  // Observações por nome de conta (para expor no expandido/modal).
+  const notesByAccount = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of accountsQ.data?.records ?? []) {
+      const note = a.observacoes ?? a.description ?? undefined;
+      if (a.name && note) map.set(a.name, note);
+    }
     return map;
-  }, [data]);
+  }, [accountsQ.data]);
 
-  const accountOwnerMatches = (accountId: string | null) => {
-    if (ownerId === "all") return true;
-    if (!accountId) return false;
-    return accountOwnerById.get(accountId) === ownerId;
+  // ================ Base: Projeção - Tri Atual ================
+  type ProjectedRow = {
+    account: string;
+    accountOwner: string | null;
+    prevSales: number;
+    convRate: number;
+    salesMonthly: number;
+    genMonthly: number;
+    segment: Segment;
   };
 
-  const generationByAccount = useMemo(() => {
+  const projected: ProjectedRow[] = useMemo(() => {
+    const orcRecs = qOrc.data?.records ?? [];
+    const venRecs = qVen.data?.records ?? [];
+
+    const generatedByAccount = new Map<string, number>();
+    const closedByAccount = new Map<string, number>();
+    const salesByAccount = new Map<string, number>();
+    const ownerByAccount = new Map<string, string | null>();
+
+    for (const o of orcRecs) {
+      const key = o.account ?? "(sem cliente)";
+      generatedByAccount.set(key, (generatedByAccount.get(key) ?? 0) + 1);
+      if (!ownerByAccount.has(key)) ownerByAccount.set(key, o.accountOwner ?? null);
+    }
+    for (const v of venRecs) {
+      const key = v.account ?? "(sem cliente)";
+      generatedByAccount.set(key, (generatedByAccount.get(key) ?? 0) + 1);
+      closedByAccount.set(key, (closedByAccount.get(key) ?? 0) + 1);
+      salesByAccount.set(key, (salesByAccount.get(key) ?? 0) + (v.total ?? v.amount ?? 0));
+      if (!ownerByAccount.get(key)) ownerByAccount.set(key, v.accountOwner ?? ownerByAccount.get(key) ?? null);
+    }
+
+    const totalGen = orcRecs.length + venRecs.length;
+    const totalClosed = venRecs.length;
+    const globalConv = totalGen > 0 ? totalClosed / totalGen : 0;
+
+    const accounts = new Set<string>([...generatedByAccount.keys(), ...salesByAccount.keys()]);
+    const out: ProjectedRow[] = [];
+    for (const account of accounts) {
+      const prevSales = salesByAccount.get(account) ?? 0;
+      const generatedCount = generatedByAccount.get(account) ?? 0;
+      const closedCount = closedByAccount.get(account) ?? 0;
+      const convRate = generatedCount > 0 ? closedCount / generatedCount : globalConv;
+      const salesMonthly = prevSales / 3;
+      const genMonthly = convRate > 0 ? salesMonthly / convRate : 0;
+      out.push({
+        account,
+        accountOwner: ownerByAccount.get(account) ?? null,
+        prevSales,
+        convRate,
+        salesMonthly,
+        genMonthly,
+        segment: classifyAccount(prevSales),
+      });
+    }
+    return out;
+  }, [qOrc.data, qVen.data]);
+
+  // ================ Real do mês (Vendido / Gerado - Mês Atual) ================
+  const salesMesByAccount = useMemo(() => {
     const map = new Map<string, number>();
-    for (const r of orcamentosQ.data?.records ?? []) {
-      if (!r.accountId || !accountOwnerMatches(r.accountId)) continue;
-      map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
+    for (const r of qVendidoMes.data?.records ?? []) {
+      const key = r.account ?? "(sem cliente)";
+      map.set(key, (map.get(key) ?? 0) + (r.total ?? r.amount ?? 0));
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orcamentosQ.data, ownerId, accountOwnerById]);
+  }, [qVendidoMes.data]);
 
-  const salesByAccount = useMemo(() => {
+  const generationMesByAccount = useMemo(() => {
     const map = new Map<string, number>();
-    for (const r of vendasQ.data?.records ?? []) {
-      if (!r.accountId || !accountOwnerMatches(r.accountId)) continue;
-      if (!r.status || !ALLOWED_ORDER_STATUS.has(r.status)) continue;
-      map.set(r.accountId, (map.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0));
+    for (const r of qGeradoMes.data?.records ?? []) {
+      const key = r.account ?? "(sem cliente)";
+      map.set(key, (map.get(key) ?? 0) + (r.total ?? r.amount ?? 0));
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vendasQ.data, ownerId, accountOwnerById]);
+  }, [qGeradoMes.data]);
 
-  // Pedidos em curso por conta — para exibir na expansão.
+  // Pedidos em curso (Vendido - Mês) para exposição.
   const ordersByAccount = useMemo(() => {
     const map = new Map<string, SalesforceOppRow[]>();
-    for (const r of vendasQ.data?.records ?? []) {
-      if (!r.accountId || !accountOwnerMatches(r.accountId)) continue;
-      if (!r.status || !ALLOWED_ORDER_STATUS.has(r.status)) continue;
-      const list = map.get(r.accountId) ?? [];
+    for (const r of qVendidoMes.data?.records ?? []) {
+      const key = r.account ?? "(sem cliente)";
+      const list = map.get(key) ?? [];
       list.push(r);
-      map.set(r.accountId, list);
+      map.set(key, list);
     }
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vendasQ.data, ownerId, accountOwnerById]);
+  }, [qVendidoMes.data]);
 
-  function accountToClient(a: SalesforceAccount): Client {
-    const seed = seedFromId(a.id);
-    // Projeção = campo oficial da Account (Total_Vendido_Trimestre_Anterior__c).
-    // Isso garante consistência com o Salesforce e evita perder contas por
-    // teto de linhas em consultas agregadas.
-    const quarterProj = a.quarterProjection ?? 0;
-    // Segmentação = vendas do trimestre ANTERIOR (regra Estância Solar):
-    // A > 30k | B 15k-30k | C >0 e <15k | D = 0
-    const segment: Segment =
-      quarterProj > 30000 ? "A" : quarterProj >= 15000 ? "B" : quarterProj > 0 ? "C" : "D";
-    const projection = period === "mensal" ? Math.round(quarterProj / 3) : Math.round(quarterProj);
-    const generation = Math.round(generationByAccount.get(a.id) ?? 0);
-    const sales = Math.round(salesByAccount.get(a.id) ?? 0);
+  // ================ Combinação em Client[] ================
+  const clients: Client[] = useMemo(() => {
+    return projected.map((p) => {
+      const projection = Math.round(p.salesMonthly);
+      const sales = Math.round(salesMesByAccount.get(p.account) ?? 0);
+      const generation = Math.round(generationMesByAccount.get(p.account) ?? 0);
+      const denom = projection > 0 ? projection : 1;
+      const rawHealth = projection > 0 ? Math.round((sales / denom) * 100) : 0;
+      const health = Math.max(0, Math.min(100, rawHealth));
+      return {
+        id: p.account,
+        name: p.account,
+        segment: p.segment,
+        projection,
+        generation,
+        sales,
+        trend: "stable",
+        lastInteraction: "—",
+        health,
+        notes: notesByAccount.get(p.account),
+      };
+    });
+  }, [projected, salesMesByAccount, generationMesByAccount, notesByAccount]);
 
-    const denom = projection > 0 ? projection : 1;
-    const rawHealth = projection > 0 ? Math.round((sales / denom) * 100) : 0;
-    const health = Math.max(0, Math.min(100, rawHealth || Math.round(10 + rand(seed, 4) * 30)));
-    const trend: Client["trend"] = health > 70 ? "up" : health > 40 ? "stable" : "down";
-    const lastInteraction = `${Math.max(1, Math.round(rand(seed, 5) * 25))}d`;
-    return {
-      id: a.id,
-      name: a.name,
-      segment,
-      projection,
-      generation,
-      sales,
-      trend,
-      lastInteraction,
-      health,
-      notes: a.observacoes ?? a.description ?? undefined,
-    };
-  }
+  // Vendedores disponíveis (accountOwner das linhas de projeção)
+  const vendedores = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of projected) if (p.accountOwner) set.add(p.accountOwner);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [projected]);
 
-  const clients = useMemo(() => {
-    const accounts = data?.records ?? [];
-    // Segmentação restrita à carteira dos 4 vendedores definidos em SEG_OWNER_IDS.
-    const carteira = accounts.filter((a) => a.ownerId && SEG_OWNER_SET.has(a.ownerId));
-    const scoped =
-      ownerId === "all" ? carteira : carteira.filter((a) => a.ownerId === ownerId);
-    return scoped.map(accountToClient);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, ownerId, period, generationByAccount, salesByAccount]);
+  const ownerByAccount = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const p of projected) map.set(p.account, p.accountOwner);
+    return map;
+  }, [projected]);
 
-
-
-
-
-
+  const scoped = useMemo(() => {
+    if (vendedor === "__all__") return clients;
+    return clients.filter((c) => (ownerByAccount.get(c.id) ?? "") === vendedor);
+  }, [clients, vendedor, ownerByAccount]);
 
   const ranked = useMemo(
-    () => [...clients].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
-    [clients],
+    () => [...scoped].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
+    [scoped],
   );
 
   const s = search.trim().toLowerCase();
   const filtered = ranked.filter((c) => {
-    // Vazio = todos os segmentos
     if (selectedSegs.size > 0 && !selectedSegs.has(c.segment)) return false;
     if (s && !c.name.toLowerCase().includes(s)) return false;
     return true;
@@ -262,29 +343,45 @@ function SegmentacaoPage() {
   }, [filtered, sortKey, sortDir]);
 
   const totals = visible.reduce(
-    (acc, c) => ({ projection: acc.projection + c.projection, generation: acc.generation + c.generation, sales: acc.sales + c.sales }),
+    (acc, c) => ({
+      projection: acc.projection + c.projection,
+      generation: acc.generation + c.generation,
+      sales: acc.sales + c.sales,
+    }),
     { projection: 0, generation: 0, sales: 0 },
   );
 
+  // Contagens por segmento (respeitando filtro de vendedor)
+  const segCounts = useMemo(() => {
+    const c: Record<Segment, number> = { A: 0, B: 0, C: 0, D: 0 };
+    for (const r of scoped) c[r.segment] += 1;
+    return c;
+  }, [scoped]);
+
   const handleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(k); setSortDir(k === "name" || k === "segment" ? "asc" : "desc"); }
+    else {
+      setSortKey(k);
+      setSortDir(k === "name" || k === "segment" ? "asc" : "desc");
+    }
   };
 
   const toggle = (id: string) => {
     setExpanded((prev) => {
       const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
       return n;
     });
   };
 
   const allSegs: Segment[] = ["A", "B", "C", "D"];
-  const allSelected = selectedSegs.size === 0; // vazio = mostrar todos
+  const allSelected = selectedSegs.size === 0;
   const toggleSeg = (seg: Segment) => {
     setSelectedSegs((prev) => {
       const n = new Set(prev);
-      if (n.has(seg)) n.delete(seg); else n.add(seg);
+      if (n.has(seg)) n.delete(seg);
+      else n.add(seg);
       return n;
     });
   };
@@ -296,6 +393,9 @@ function SegmentacaoPage() {
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Clientes</div>
             <h1 className="text-3xl font-bold mt-1">Segmentação</h1>
+            <div className="text-xs text-muted-foreground mt-1">
+              Base: Projeção - Tri Atual · Trimestre {baseRange.label}
+            </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
@@ -307,18 +407,54 @@ function SegmentacaoPage() {
                 className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-56 focus:outline-none focus:border-primary/50"
               />
             </div>
-            <VendedorFilter value={ownerId} onChange={setOwnerId} allowedIds={SEG_OWNER_IDS} />
-            <div className="flex bg-surface rounded-lg p-1 border border-border">
-              {(["mensal", "trimestral"] as const).map((p) => (
-                <button key={p} onClick={() => setPeriod(p)}
-                  className={cn("px-3 py-1.5 rounded-md text-sm capitalize",
-                    period === p ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>{p}</button>
-              ))}
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Vendedor</label>
+              <Select value={vendedor} onValueChange={setVendedor}>
+                <SelectTrigger className="h-9 w-[220px] text-sm">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos</SelectItem>
+                  {vendedores.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {v}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex items-center gap-3 px-4 py-2 rounded-lg glass">
-              <Legend color="bg-destructive" label="Até 70%" />
-              <Legend color="bg-warning" label="70% a 99%" />
-              <Legend color="bg-success" label="100% +" />
+          </div>
+        </div>
+
+        {/* Contagens por segmento + regras/explicação */}
+        <div className="glass rounded-2xl p-4 flex flex-wrap items-start gap-6 text-sm">
+          <div className="flex items-center gap-3">
+            {allSegs.map((seg) => (
+              <div key={seg} className="flex items-center gap-1.5">
+                <SegBadge seg={seg} />
+                <span className="text-xs text-muted-foreground tabular-nums">{segCounts[seg]}</span>
+              </div>
+            ))}
+          </div>
+          <div className="h-10 w-px bg-border hidden md:block" />
+          <div className="flex-1 min-w-[280px] text-[11px] text-muted-foreground leading-relaxed flex gap-2">
+            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <div>
+              <div>
+                <b className="text-foreground">Segmentação</b> pelas vendas do trimestre anterior ({baseRange.label}):
+                {" "}<b className="text-foreground">A</b> &gt; R$ 30k ·
+                {" "}<b className="text-foreground">B</b> R$ 15k–30k ·
+                {" "}<b className="text-foreground">C</b> &lt; R$ 15k ·
+                {" "}<b className="text-foreground">D</b> sem histórico.
+              </div>
+              <div className="mt-1">
+                <b className="text-foreground">Projeção</b> = vendas do trimestre anterior ÷ 3. Geração projetada usa a
+                conversão real de cada cliente (fechados/gerados no trimestre anterior), com fallback na conversão global.
+              </div>
+              <div className="mt-1">
+                <b className="text-foreground">Geração</b> e <b className="text-foreground">Vendas</b> exibidas vêm das
+                tabelas <i>Gerado - Mês Atual</i> e <i>Vendido - Mês Atual</i>.
+              </div>
             </div>
           </div>
         </div>
@@ -327,8 +463,12 @@ function SegmentacaoPage() {
           <span className="text-xs text-muted-foreground mr-2">Segmento:</span>
           <button
             onClick={() => setSelectedSegs(new Set())}
-            className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
-              allSelected ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
+              allSelected
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-surface border-border text-muted-foreground hover:text-foreground",
+            )}
           >
             Todos
           </button>
@@ -338,10 +478,17 @@ function SegmentacaoPage() {
               <button
                 key={seg}
                 onClick={() => toggleSeg(seg)}
-                className={cn("px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors",
-                  active ? "bg-primary text-primary-foreground border-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground")}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors inline-flex items-center gap-2",
+                  active
+                    ? SEG_CHIP_ACTIVE[seg]
+                    : "bg-surface border-border text-muted-foreground hover:text-foreground",
+                )}
               >
                 {seg}
+                <span className={cn("text-[10px] tabular-nums", active ? "opacity-90" : "opacity-70")}>
+                  {segCounts[seg]}
+                </span>
               </button>
             );
           })}
@@ -352,10 +499,9 @@ function SegmentacaoPage() {
           )}
         </div>
 
-
         <div className="glass rounded-2xl overflow-hidden">
           <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-            <h2 className="font-display font-semibold">Segmentação | Visão {period === "mensal" ? "Mensal" : "Trimestral"}</h2>
+            <h2 className="font-display font-semibold">Segmentação | Mês atual</h2>
             <span className="text-xs text-muted-foreground">{visible.length} clientes</span>
           </div>
           <div className="overflow-x-auto">
@@ -366,165 +512,163 @@ function SegmentacaoPage() {
                   <SortableTh label="Rank" k="rank" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" className="w-16" />
                   <SortableTh label="Cliente" k="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="left" />
                   <SortableTh label="Seg" k="segment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" />
-                  <SortableTh label="Projeção" k="projection" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                  <SortableTh label="Projeção / mês" k="projection" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                   <SortableTh label="Geração R$" k="generation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                   <SortableTh label="Vendas R$" k="sales" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
-                  <th className="text-center px-4 py-2.5">Tendência</th>
                   <SortableTh label="Saúde" k="health" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" />
                   <th className="w-10"></th>
                 </tr>
               </thead>
               <tbody>
-                {isLoading && (
+                {loading && (
                   <tr>
-                    <td colSpan={10} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                    <td colSpan={9} className="px-4 py-16 text-center text-muted-foreground text-sm">
                       <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
-                      Carregando contas do Salesforce…
+                      Carregando dados do Salesforce…
                     </td>
                   </tr>
                 )}
-                {error && !isLoading && (
+                {anyError && !loading && (
                   <tr>
-                    <td colSpan={10} className="px-4 py-6 text-sm text-destructive">
+                    <td colSpan={9} className="px-4 py-6 text-sm text-destructive">
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 mt-0.5" />
                         <div>
-                          <div className="font-medium">Não foi possível carregar as contas do Salesforce.</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">{error instanceof Error ? error.message : String(error)}</div>
+                          <div className="font-medium">Não foi possível carregar os dados do Salesforce.</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {anyError instanceof Error ? anyError.message : String(anyError)}
+                          </div>
                         </div>
                       </div>
                     </td>
                   </tr>
                 )}
 
-                {visible.map((c) => {
-                  const isOpen = expanded.has(c.id);
-                  const denom = c.projection > 0 ? c.projection : 1;
-                  const generationPct = (c.generation / denom) * 100;
-                  const salesPct = (c.sales / denom) * 100;
+                {!loading &&
+                  visible.map((c) => {
+                    const isOpen = expanded.has(c.id);
+                    const denom = c.projection > 0 ? c.projection : 1;
+                    const generationPct = (c.generation / denom) * 100;
+                    const salesPct = (c.sales / denom) * 100;
 
-                  return (
-                    <Fragment key={c.id}>
-                      <tr onClick={() => toggle(c.id)} className="border-b border-border/40 hover:bg-surface-2/50 cursor-pointer">
-                        <td className="px-2">
-                          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
-                        </td>
-                        <td className="px-2 py-3 text-center"><RankBadge rank={c.rank} /></td>
-                        <td className="px-4 py-3 font-medium">{c.name}</td>
-                        <td className="px-2 py-3 text-center">
-                          <span className="inline-flex h-6 w-6 items-center justify-center rounded font-display font-bold text-xs bg-primary/15 text-primary">{c.segment}</span>
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">{fmt(c.projection)}</td>
-                        <td className="px-4 py-3 text-right tabular-nums">{c.generation > 0 ? fmt(c.generation) : "—"}</td>
-                        <td className="px-4 py-3 text-right tabular-nums">{c.sales > 0 ? fmt(c.sales) : "—"}</td>
-                        <td className="px-4 py-3 text-center">
-                          {c.trend === "up" && <TrendingUp className="h-4 w-4 text-success mx-auto" />}
-                          {c.trend === "down" && <TrendingDown className="h-4 w-4 text-destructive mx-auto" />}
-                          {c.trend === "stable" && <Minus className="h-4 w-4 text-muted-foreground mx-auto" />}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2 justify-center">
-                            <div className="w-20 h-1.5 rounded-full bg-surface-2 overflow-hidden">
-                              <div className={cn("h-full", c.health > 70 ? "bg-success" : c.health > 40 ? "bg-warning" : "bg-destructive")} style={{ width: `${c.health}%` }} />
-                            </div>
-                            <span className="text-xs text-muted-foreground w-6">{c.health}</span>
-                          </div>
-                        </td>
-                        <td className="px-2">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setDetailClient(c); }}
-                            className="p-1.5 rounded hover:bg-primary/15 text-muted-foreground hover:text-primary"
-                            title="Ver detalhes"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                      {isOpen && (
-                        <tr key={`${c.id}-d`} className="bg-surface-2/30 border-b border-border/40">
-                          <td colSpan={10} className="px-6 py-5">
-                            <div className="grid md:grid-cols-4 gap-4">
-                              <Detail label={period === "mensal" ? "Projeção (mês)" : "Projeção (trimestre)"} value={fmt(c.projection)} />
-                              <Detail label="Geração R$" value={fmt(c.generation)} sub={c.projection > 0 ? `${generationPct.toFixed(0)}% da projeção` : undefined} />
-                              <Detail label="Vendas R$" value={fmt(c.sales)} sub={c.projection > 0 ? `${salesPct.toFixed(0)}% da projeção` : undefined} />
-                              <Detail label="Última interação" value={c.lastInteraction} sub={`Saúde ${c.health}/100`} />
-                            </div>
-                            <div className="mt-4 p-3 rounded-lg bg-background/60 border border-border">
-                              <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                                <div className="flex items-center gap-2">
-                                  <Package className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                                    Pedidos em curso
-                                  </span>
-                                </div>
-                                <div className="flex flex-wrap gap-2 text-[10px]">
-                                  {(["Aguardando Pagamento","Processando","Separação","Faturado","Coletado"] as const).map((s) => (
-                                    <span key={s} className="inline-flex items-center gap-1 text-muted-foreground">
-                                      <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[s])} />
-                                      {s}
-                                    </span>
-                                  ))}
-                                </div>
+                    return (
+                      <Fragment key={c.id}>
+                        <tr onClick={() => toggle(c.id)} className="border-b border-border/40 hover:bg-surface-2/50 cursor-pointer">
+                          <td className="px-2">
+                            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
+                          </td>
+                          <td className="px-2 py-3 text-center"><RankBadge rank={c.rank} /></td>
+                          <td className="px-4 py-3 font-medium">{c.name}</td>
+                          <td className="px-2 py-3 text-center">
+                            <SegBadge seg={c.segment} />
+                          </td>
+                          <td className="px-4 py-3 text-right tabular-nums">{fmt(c.projection)}</td>
+                          <td className="px-4 py-3 text-right tabular-nums">{c.generation > 0 ? fmt(c.generation) : "—"}</td>
+                          <td className="px-4 py-3 text-right tabular-nums">{c.sales > 0 ? fmt(c.sales) : "—"}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2 justify-center">
+                              <div className="w-20 h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                                <div className={cn("h-full", c.health > 70 ? "bg-success" : c.health > 40 ? "bg-warning" : "bg-destructive")} style={{ width: `${c.health}%` }} />
                               </div>
-                              {(() => {
-                                const orders = ordersByAccount.get(c.id) ?? [];
-                                if (orders.length === 0) {
-                                  return <div className="text-xs text-muted-foreground">Nenhum pedido em curso no período.</div>;
-                                }
-                                return (
-                                  <div className="space-y-1.5">
-                                    {orders
-                                      .slice()
-                                      .sort((a, b) => (b.total ?? b.amount ?? 0) - (a.total ?? a.amount ?? 0))
-                                      .map((o) => (
-                                        <div key={o.id} className="flex items-center gap-3 text-xs">
-                                          <span className={cn(
-                                            "px-2 py-0.5 rounded-md border font-medium whitespace-nowrap",
-                                            (o.status && STATUS_COLOR[o.status]) || "bg-surface-2 text-muted-foreground border-border",
-                                          )}>
-                                            {o.status ?? "—"}
-                                          </span>
-                                          <span className="truncate flex-1">{o.name}</span>
-                                          {o.owner && <span className="text-muted-foreground truncate">{o.owner}</span>}
-                                          {o.closeDate && (
-                                            <span className="text-muted-foreground tabular-nums">
-                                              {new Date(o.closeDate + "T00:00:00").toLocaleDateString("pt-BR")}
-                                            </span>
-                                          )}
-                                          <span className="font-display font-semibold tabular-nums w-28 text-right">
-                                            {fmt(o.total ?? o.amount ?? 0)}
-                                          </span>
-                                        </div>
-                                      ))}
-                                  </div>
-                                );
-                              })()}
+                              <span className="text-xs text-muted-foreground w-6">{c.health}</span>
                             </div>
-                            <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border">
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <FileText className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Observações (Salesforce)</span>
-                              </div>
-                              <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
-                                {c.notes ?? "Sem observações registradas no Salesforce."}
-                              </p>
-                            </div>
-
+                          </td>
+                          <td className="px-2">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setDetailClient(c); }}
+                              className="p-1.5 rounded hover:bg-primary/15 text-muted-foreground hover:text-primary"
+                              title="Ver detalhes"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
                           </td>
                         </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-                <tr className="bg-surface-2 font-display font-bold border-t-2 border-primary/40">
-                  <td colSpan={2}></td>
-                  <td className="px-4 py-3">Total ({visible.length})</td>
-                  <td></td>
-                  <td className="px-4 py-3 text-right tabular-nums">{fmt(totals.projection)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-success">{fmt(totals.generation)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-primary">{fmt(totals.sales)}</td>
-                  <td colSpan={3}></td>
-                </tr>
+                        {isOpen && (
+                          <tr key={`${c.id}-d`} className="bg-surface-2/30 border-b border-border/40">
+                            <td colSpan={9} className="px-6 py-5">
+                              <div className="grid md:grid-cols-4 gap-4">
+                                <Detail label="Projeção (mês)" value={fmt(c.projection)} />
+                                <Detail label="Geração R$" value={fmt(c.generation)} sub={c.projection > 0 ? `${generationPct.toFixed(0)}% da projeção` : undefined} />
+                                <Detail label="Vendas R$" value={fmt(c.sales)} sub={c.projection > 0 ? `${salesPct.toFixed(0)}% da projeção` : undefined} />
+                                <Detail label="Saúde" value={`${c.health}/100`} />
+                              </div>
+                              <div className="mt-4 p-3 rounded-lg bg-background/60 border border-border">
+                                <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                                  <div className="flex items-center gap-2">
+                                    <Package className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                                      Pedidos do mês (Vendido - Mês Atual)
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-2 text-[10px]">
+                                    {(["Aguardando Pagamento","Processando","Separação","Faturado","Coletado"] as const).map((s) => (
+                                      <span key={s} className="inline-flex items-center gap-1 text-muted-foreground">
+                                        <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[s])} />
+                                        {s}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                                {(() => {
+                                  const orders = ordersByAccount.get(c.id) ?? [];
+                                  if (orders.length === 0) {
+                                    return <div className="text-xs text-muted-foreground">Nenhum pedido no mês.</div>;
+                                  }
+                                  return (
+                                    <div className="space-y-1.5">
+                                      {orders
+                                        .slice()
+                                        .sort((a, b) => (b.total ?? b.amount ?? 0) - (a.total ?? a.amount ?? 0))
+                                        .map((o) => (
+                                          <div key={o.id} className="flex items-center gap-3 text-xs">
+                                            <span className={cn(
+                                              "px-2 py-0.5 rounded-md border font-medium whitespace-nowrap",
+                                              (o.status && STATUS_COLOR[o.status]) || "bg-surface-2 text-muted-foreground border-border",
+                                            )}>
+                                              {o.status ?? "—"}
+                                            </span>
+                                            <span className="truncate flex-1">{o.name}</span>
+                                            {o.owner && <span className="text-muted-foreground truncate">{o.owner}</span>}
+                                            {o.closeDate && (
+                                              <span className="text-muted-foreground tabular-nums">
+                                                {new Date(o.closeDate + "T00:00:00").toLocaleDateString("pt-BR")}
+                                              </span>
+                                            )}
+                                            <span className="font-display font-semibold tabular-nums w-28 text-right">
+                                              {fmt(o.total ?? o.amount ?? 0)}
+                                            </span>
+                                          </div>
+                                        ))}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                              <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Observações (Salesforce)</span>
+                                </div>
+                                <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
+                                  {c.notes ?? "Sem observações registradas no Salesforce."}
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                {!loading && (
+                  <tr className="bg-surface-2 font-display font-bold border-t-2 border-primary/40">
+                    <td colSpan={2}></td>
+                    <td className="px-4 py-3">Total ({visible.length})</td>
+                    <td></td>
+                    <td className="px-4 py-3 text-right tabular-nums">{fmt(totals.projection)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-success">{fmt(totals.generation)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-primary">{fmt(totals.sales)}</td>
+                    <td colSpan={2}></td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -560,15 +704,6 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="text-xs text-muted-foreground tabular-nums">#{rank}</span>;
 }
 
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
-      <span className="text-xs text-muted-foreground">{label}</span>
-    </div>
-  );
-}
-
 function Detail({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div>
@@ -580,8 +715,8 @@ function Detail({ label, value, sub }: { label: string; value: string; sub?: str
 }
 
 function ClientDetailModal({ client, onClose }: { client: Client & { rank?: number }; onClose: () => void }) {
-  const conversion = ((client.sales / client.projection) * 100).toFixed(0);
-  const generationPct = ((client.generation / client.projection) * 100).toFixed(0);
+  const conversion = client.projection > 0 ? ((client.sales / client.projection) * 100).toFixed(0) : "0";
+  const generationPct = client.projection > 0 ? ((client.generation / client.projection) * 100).toFixed(0) : "0";
   return (
     <>
       <div className="fixed inset-0 bg-background/70 backdrop-blur-sm z-50" onClick={onClose} />
@@ -591,10 +726,11 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 {client.rank && <RankBadge rank={client.rank} />}
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-bold">Seg {client.segment}</span>
+                <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-bold border", SEG_BADGE[client.segment])}>
+                  Seg {client.segment}
+                </span>
               </div>
               <h2 className="font-display font-bold text-xl truncate">{client.name}</h2>
-              <div className="text-xs text-muted-foreground mt-0.5">Última interação há {client.lastInteraction}</div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-surface-2 rounded-lg shrink-0">
               <X className="h-4 w-4" />
@@ -615,7 +751,6 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
                 <div className={cn("h-full", client.health > 70 ? "bg-success" : client.health > 40 ? "bg-warning" : "bg-destructive")} style={{ width: `${client.health}%` }} />
               </div>
             </div>
-
 
             <div className="rounded-xl bg-surface-2 border border-border p-4">
               <div className="flex items-center gap-2 mb-2">
