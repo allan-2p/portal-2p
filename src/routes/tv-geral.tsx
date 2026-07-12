@@ -31,27 +31,30 @@ export const Route = createFileRoute("/tv-geral")({
    ============================================================ */
 
 const T = {
-  bg0: "#232530",
-  bg1: "#2E3039",
+  bg0: "#07080F",
+  bg1: "#0E1120",
+  bg2: "#141A2E",
   bgTxt: "#F2F3F7",
   bgFaint: "#8A8FA0",
-  card: "#F1F2F5",
-  card2: "#FAFAFC",
-  cardBorder: "#E1E3EA",
-  ink: "#1B1D25",
-  dim: "#5B5F6D",
-  faint: "#9BA0AE",
-  track: "#E2E4EB",
-  barReal: "#3B3E4A",
-  barProj: "#DDDFE7",
-  orange: "#F07E2D",
-  blue: "#4230FF",
-  green: "#0FA958",
-  amber: "#D98A06",
-  red: "#DC3E32",
+  card: "rgba(255,255,255,0.045)",
+  card2: "rgba(255,255,255,0.07)",
+  cardBorder: "rgba(255,255,255,0.10)",
+  ink: "#F5F7FF",
+  dim: "#B7BDD1",
+  faint: "#8A90A6",
+  track: "rgba(255,255,255,0.08)",
+  barReal: "#F5F7FF",
+  barProj: "rgba(255,255,255,0.18)",
+  orange: "#FF8A3D",
+  blue: "#6B5BFF",
+  cyan: "#5CC8FF",
+  green: "#22D68F",
+  amber: "#F4B430",
+  red: "#FF5A4E",
 };
 
 const grad = `linear-gradient(90deg, ${T.orange}, ${T.blue})`;
+const gradGlow = `linear-gradient(120deg, ${T.orange} 0%, #FF3D9A 45%, ${T.blue} 100%)`;
 
 const fmtBRL = (v: number, compact = false) => {
   if (compact) {
