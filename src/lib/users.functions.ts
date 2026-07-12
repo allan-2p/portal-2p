@@ -5,10 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const RoleEnum = z.enum(["admin", "gerente", "vendedor", "diretor", "marketing"]);
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
-  const { data, error } = await ctx.supabase.rpc("has_role", {
-    _user_id: ctx.userId,
-    _role: "admin",
-  });
+  const { data, error } = await ctx.supabase.rpc("is_admin");
   if (error || !data) throw new Error("Forbidden: admin role required");
 }
 
@@ -429,4 +426,43 @@ export const syncSalesforcePhoto = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, reason: error.message };
     return { ok: true as const, path };
   });
+
+export const syncAllSalesforcePhotos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profiles, error: pErr } = await supabaseAdmin
+      .from("profiles")
+      .select("id, sf_user_id")
+      .not("sf_user_id", "is", null);
+    if (pErr) throw new Error(pErr.message);
+    const linked = (profiles ?? []).filter((p) => !!p.sf_user_id) as Array<{ id: string; sf_user_id: string }>;
+
+    const sfUsers = await sfFetchAllUsers();
+    const bySf = new Map(sfUsers.map((u) => [u.id, u]));
+
+    let updated = 0;
+    let skipped = 0;
+    let failed = 0;
+    for (const p of linked) {
+      const sf = bySf.get(p.sf_user_id);
+      const url = sf?.smallPhotoUrl ?? sf?.fullPhotoUrl ?? null;
+      if (!sf || !url) { skipped++; continue; }
+      try {
+        const path = await downloadSFPhotoToStorage(sf.id, url);
+        if (!path) { skipped++; continue; }
+        const { error } = await supabaseAdmin
+          .from("profiles")
+          .update({ avatar_url: path })
+          .eq("id", p.id);
+        if (error) { failed++; continue; }
+        updated++;
+      } catch {
+        failed++;
+      }
+    }
+    return { ok: true as const, total: linked.length, updated, skipped, failed };
+  });
+
 

@@ -14,6 +14,7 @@ import {
   listSalesforceCandidates,
   inviteSalesforceUser,
   syncSalesforcePhoto,
+  syncAllSalesforcePhotos,
   type SFCandidate,
 } from "@/lib/users.functions";
 import { adminSetUserScope, adminSetUserSfId, type FilterScope } from "@/lib/scope.functions";
@@ -535,12 +536,15 @@ function SalesforceTable({ onInvite }: { onInvite: (c: SFCandidate) => void }) {
             </button>
           ))}
         </div>
-        <button
-          onClick={load}
-          className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm"
-        >
-          <RefreshCw className="h-3.5 w-3.5" /> Atualizar
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <SyncAllPhotosButton />
+          <button
+            onClick={load}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Atualizar
+          </button>
+        </div>
       </div>
 
       {err && (
@@ -607,6 +611,38 @@ function SalesforceTable({ onInvite }: { onInvite: (c: SFCandidate) => void }) {
     </div>
   );
 }
+
+function SyncAllPhotosButton() {
+  const syncAll = useServerFn(syncAllSalesforcePhotos);
+  const [busy, setBusy] = useState(false);
+  async function run() {
+    setBusy(true);
+    try {
+      const r = await syncAll();
+      toast.success(
+        `Fotos sincronizadas: ${r.updated}/${r.total} atualizadas` +
+          (r.skipped ? ` · ${r.skipped} sem foto` : "") +
+          (r.failed ? ` · ${r.failed} falharam` : ""),
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao sincronizar fotos");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button
+      onClick={run}
+      disabled={busy}
+      className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm disabled:opacity-60"
+      title="Sincroniza a foto de perfil (do Salesforce) para todos os usuários vinculados"
+    >
+      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+      Sincronizar fotos
+    </button>
+  );
+}
+
 
 function StatusBadge({ status }: { status: SFCandidate["status"] }) {
   const map = {
