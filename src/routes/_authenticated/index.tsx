@@ -36,6 +36,7 @@ import {
   getSalesforceOrcamentos,
   getSalesforceAccounts,
   OPP_DEFAULTS_VENDIDO_MES,
+  OPP_DEFAULTS_GERADO_MES,
   completeSalesforceTask,
   createSalesforceTask,
   logSalesforceInteraction,
@@ -47,6 +48,8 @@ import {
 } from "@/lib/salesforce.functions";
 
 import { getMonthGoalTotal } from "@/lib/admin.functions";
+import { listRetentionGoals } from "@/lib/goals.functions";
+import { CARTEIRA_OWNER_IDS } from "@/lib/salespeople";
 import { businessDaysOfMonth } from "@/lib/business-days";
 
 type TaskInteractionState = { contacted: "yes" | "no"; type?: string; note?: string; ts: number };
