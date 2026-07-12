@@ -51,6 +51,7 @@ const T = {
   green: "#22D68F",
   amber: "#F4B430",
   red: "#FF5A4E",
+  chip: "#0A0D1A",
 };
 
 const grad = `linear-gradient(90deg, ${T.orange}, ${T.blue})`;
