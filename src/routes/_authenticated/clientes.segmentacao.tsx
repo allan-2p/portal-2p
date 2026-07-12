@@ -140,6 +140,7 @@ function SegmentacaoPage() {
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
   const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
+  const fetchPedidos = useServerFn(getSalesforcePedidos);
 
   const accountsQ = useQuery({
     queryKey: ["salesforce", "accounts"],
