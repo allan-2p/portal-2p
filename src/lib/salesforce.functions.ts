@@ -632,4 +632,72 @@ export const getSalesforceSalesByAccount = createServerFn({ method: "GET" })
   });
 
 
+// ------- Relatório Salesforce por nome (Analytics API) -------
+
+export type SalesforceReportColumn = {
+  label: string;
+  apiName: string;
+  dataType: string;
+};
+
+export type SalesforceReportRow = Record<string, string | number | null>;
+
+export type SalesforceReportResult = {
+  reportId: string;
+  name: string;
+  columns: SalesforceReportColumn[];
+  rows: SalesforceReportRow[];
+};
+
+export const getSalesforceReportByName = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { name: string }) => {
+    if (!input?.name || typeof input.name !== "string") {
+      throw new Error("Nome do relatório é obrigatório.");
+    }
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const reportName = data.name;
+    const soql = `SELECT Id, Name FROM Report WHERE Name = '${reportName.replace(/'/g, "\\'")}' LIMIT 1`;
+    const lookup = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    const rec = lookup?.records?.[0];
+    if (!rec?.Id) {
+      throw new Error(`Relatório "${reportName}" não encontrado no Salesforce.`);
+    }
+    const reportId: string = rec.Id;
+
+    const report = await sfFetch(
+      `/analytics/reports/${reportId}?includeDetails=true`,
+    );
+
+    const detailColumns: string[] = report?.reportMetadata?.detailColumns ?? [];
+    const colInfo: Record<string, { label: string; dataType: string }> =
+      report?.reportExtendedMetadata?.detailColumnInfo ?? {};
+
+    const columns: SalesforceReportColumn[] = detailColumns.map((apiName) => ({
+      apiName,
+      label: colInfo[apiName]?.label ?? apiName,
+      dataType: colInfo[apiName]?.dataType ?? "string",
+    }));
+
+    const rowsRaw = report?.factMap?.["T!T"]?.rows ?? [];
+    const rows: SalesforceReportRow[] = rowsRaw.map((row: any) => {
+      const cells: any[] = row?.dataCells ?? [];
+      const out: SalesforceReportRow = {};
+      detailColumns.forEach((apiName, i) => {
+        const cell = cells[i];
+        if (!cell) { out[apiName] = null; return; }
+        const dt = colInfo[apiName]?.dataType ?? "string";
+        if (dt === "currency" || dt === "double" || dt === "int" || dt === "percent") {
+          out[apiName] = typeof cell.value === "number" ? cell.value : (cell.label ?? null);
+        } else {
+          out[apiName] = cell.label ?? (cell.value != null ? String(cell.value) : null);
+        }
+      });
+      return out;
+    });
+
+    return { reportId, name: rec.Name ?? reportName, columns, rows } satisfies SalesforceReportResult;
+  });
 
