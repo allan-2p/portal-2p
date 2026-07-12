@@ -19,13 +19,20 @@ export type NovosValuesConfig = {
   carteira: { A: number; B: number };
 };
 
+export type RetencaoTiersConfig = {
+  tiers: VendidoTier[];
+  values: number[]; // R$ fixo por faixa
+};
+
 export type SalespersonEquipeConfig = Record<string, Equipe>;
 
 export type CommissionSettings = {
   vendido: VendidoTiersConfig;
   novos: NovosValuesConfig;
+  retencao: RetencaoTiersConfig;
   equipe: SalespersonEquipeConfig;
 };
+
 
 const DEFAULT_VENDIDO: VendidoTiersConfig = {
   tiers: [
@@ -44,6 +51,15 @@ const DEFAULT_NOVOS: NovosValuesConfig = {
   carteira: { A: 200, B: 100 },
 };
 
+const DEFAULT_RETENCAO: RetencaoTiersConfig = {
+  tiers: [
+    { min: 70, max: 80 },
+    { min: 80, max: 90 },
+    { min: 90, max: null },
+  ],
+  values: [500, 1000, 1500],
+};
+
 // ---- Server functions ---- //
 
 export const getCommissionSettings = createServerFn({ method: "GET" })
@@ -58,9 +74,11 @@ export const getCommissionSettings = createServerFn({ method: "GET" })
     return {
       vendido: (map.get("vendido_tiers") as VendidoTiersConfig) ?? DEFAULT_VENDIDO,
       novos: (map.get("novos_values") as NovosValuesConfig) ?? DEFAULT_NOVOS,
+      retencao: (map.get("retencao_tiers") as RetencaoTiersConfig) ?? DEFAULT_RETENCAO,
       equipe: (map.get("salesperson_equipe") as SalespersonEquipeConfig) ?? {},
     };
   });
+
 
 const VendidoInput = z.object({
   tiers: z
@@ -102,6 +120,33 @@ export const setNovosValues = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("commission_settings")
       .upsert({ id: "novos_values", config: data, updated_at: new Date().toISOString() });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const RetencaoInput = z.object({
+  tiers: z
+    .array(
+      z.object({
+        min: z.number().min(0).max(500),
+        max: z.number().min(0).max(1000).nullable(),
+      }),
+    )
+    .min(1)
+    .max(20),
+  values: z.array(z.number().min(0).max(1_000_000)).min(1).max(20),
+});
+
+export const setRetencaoTiers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => RetencaoInput.parse(d))
+  .handler(async ({ data, context }) => {
+    if (data.values.length !== data.tiers.length) {
+      throw new Error("Quantidade de valores não bate com as faixas.");
+    }
+    const { error } = await context.supabase
+      .from("commission_settings")
+      .upsert({ id: "retencao_tiers", config: data, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -164,4 +209,22 @@ export function calcNovosCommission(
 ): number {
   const v = equipe === "pre_vendas" ? cfg.pre_vendas : cfg.carteira;
   return countA * (v.A ?? 0) + countB * (v.B ?? 0);
+}
+
+/** Comissão de Retenção: valor fixo em R$ da faixa que contém o % de atingimento. */
+export function calcRetencaoCommission(
+  ativos: number,
+  meta: number,
+  cfg: RetencaoTiersConfig,
+): number {
+  if (meta <= 0) return 0;
+  const pct = (ativos / meta) * 100;
+  for (let i = cfg.tiers.length - 1; i >= 0; i--) {
+    const t = cfg.tiers[i];
+    const lo = t.min;
+    const hi = t.max ?? Infinity;
+    if (pct >= lo && pct < hi) return cfg.values[i] ?? 0;
+    if (t.max === null && pct >= lo) return cfg.values[i] ?? 0;
+  }
+  return 0;
 }
