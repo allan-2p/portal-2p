@@ -1398,13 +1398,15 @@ function CompleteTaskDialog({
 
   const submit = async () => {
     if (!task) return;
-    if (!contacted) {
-      toast.error("Selecione se conseguiu falar com o cliente.");
-      return;
-    }
-    if (!interactionAlreadyLogged && !interactionType) {
-      toast.error("Selecione o tipo de interação.");
-      return;
+    if (!interactionAlreadyLogged) {
+      if (!contacted) {
+        toast.error("Selecione se conseguiu falar com o cliente.");
+        return;
+      }
+      if (!interactionType) {
+        toast.error("Selecione o tipo de interação.");
+        return;
+      }
     }
     if (createNext) {
       if (!subject.trim()) { toast.error("Assunto da nova tarefa é obrigatório."); return; }
