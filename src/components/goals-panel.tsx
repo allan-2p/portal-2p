@@ -152,15 +152,6 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     staleTime: 60_000,
   });
 
-  // Meta trimestral de Novos A+B
-  const newAbGoalsQ = useQuery({
-    queryKey: ["goals-newab", info.year, info.quarter, owners.join(",")],
-    queryFn: () =>
-      fetchNewAbGoals({
-        data: { year: info.year, quarter: info.quarter, sfUserIds: owners },
-      }),
-    staleTime: 60_000,
-  });
 
   const retentionGoalsQ = useQuery({
     queryKey: ["goals-retention", info.year, info.quarter, owners.join(",")],
