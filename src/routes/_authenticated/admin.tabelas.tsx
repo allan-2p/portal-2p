@@ -1424,15 +1424,47 @@ function OppTabPanel({
 }
 
 
+const FILTER_STORAGE_PREFIX = "tabelas:opp-filters:";
+function loadStoredFilters(key: string, fallback: OppFilters): OppFilters {
+  if (typeof window === "undefined") return { ...fallback };
+  try {
+    const raw = window.localStorage.getItem(FILTER_STORAGE_PREFIX + key);
+    if (!raw) return { ...fallback };
+    const parsed = JSON.parse(raw) as OppFilters;
+    return { ...fallback, ...parsed };
+  } catch {
+    return { ...fallback };
+  }
+}
+function saveStoredFilters(key: string, filters: OppFilters) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(FILTER_STORAGE_PREFIX + key, JSON.stringify(filters));
+  } catch {
+    // ignore quota / privacy errors
+  }
+}
+
 function TabelasPage() {
   const { hasRole } = useAuth();
   type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "gerado-mes";
   const [tab, setTab] = useState<TabId>("orcamentos");
 
-  const [orcFilters, setOrcFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_ORCAMENTOS });
-  const [venFilters, setVenFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDAS });
-  const [vendidoFilters, setVendidoFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDIDO_MES });
-  const [geradoFilters, setGeradoFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_GERADO_MES });
+  const [orcDefaults, setOrcDefaults] = useState<OppFilters>(() => loadStoredFilters("orcamentos", OPP_DEFAULTS_ORCAMENTOS));
+  const [venDefaults, setVenDefaults] = useState<OppFilters>(() => loadStoredFilters("vendas", OPP_DEFAULTS_VENDAS));
+  const [vendidoDefaults, setVendidoDefaults] = useState<OppFilters>(() => loadStoredFilters("vendido-mes", OPP_DEFAULTS_VENDIDO_MES));
+  const [geradoDefaults, setGeradoDefaults] = useState<OppFilters>(() => loadStoredFilters("gerado-mes", OPP_DEFAULTS_GERADO_MES));
+
+  const [orcFilters, setOrcFilters] = useState<OppFilters>(() => ({ ...orcDefaults }));
+  const [venFilters, setVenFilters] = useState<OppFilters>(() => ({ ...venDefaults }));
+  const [vendidoFilters, setVendidoFilters] = useState<OppFilters>(() => ({ ...vendidoDefaults }));
+  const [geradoFilters, setGeradoFilters] = useState<OppFilters>(() => ({ ...geradoDefaults }));
+
+  const saveOrcAsDefault = (f: OppFilters) => { saveStoredFilters("orcamentos", f); setOrcDefaults(f); };
+  const saveVenAsDefault = (f: OppFilters) => { saveStoredFilters("vendas", f); setVenDefaults(f); };
+  const saveVendidoAsDefault = (f: OppFilters) => { saveStoredFilters("vendido-mes", f); setVendidoDefaults(f); };
+  const saveGeradoAsDefault = (f: OppFilters) => { saveStoredFilters("gerado-mes", f); setGeradoDefaults(f); };
+
 
   const [vendedorOrc, setVendedorOrc] = useState<string>("__all__");
   const [vendedorVen, setVendedorVen] = useState<string>("__all__");
