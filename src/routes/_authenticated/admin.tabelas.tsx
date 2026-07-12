@@ -951,16 +951,18 @@ function OppTabPanel({
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  type TabId = "orcamentos" | "vendas" | "projecoes" | "semanas" | "vendido-mes";
+  type TabId = "orcamentos" | "vendas" | "projecoes" | "semanas" | "vendido-mes" | "gerado-mes";
   const [tab, setTab] = useState<TabId>("orcamentos");
 
   const [orcFilters, setOrcFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_ORCAMENTOS });
   const [venFilters, setVenFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDAS });
   const [vendidoFilters, setVendidoFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDIDO_MES });
+  const [geradoFilters, setGeradoFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_GERADO_MES });
 
   const [vendedorOrc, setVendedorOrc] = useState<string>("__all__");
   const [vendedorVen, setVendedorVen] = useState<string>("__all__");
   const [vendedorMes, setVendedorMes] = useState<string>("__all__");
+  const [vendedorGer, setVendedorGer] = useState<string>("__all__");
 
   const [search, setSearch] = useState("");
 
