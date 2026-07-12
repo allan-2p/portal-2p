@@ -27,10 +27,12 @@ import {
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
   getSalesforcePedidos,
+  getSalesforceSalespeople,
   OPP_DEFAULTS_VENDIDO_MES,
   OPP_DEFAULTS_GERADO_MES,
   type SalesforceOppRow,
 } from "@/lib/salesforce.functions";
+import { useSellerScope } from "@/hooks/use-seller-scope";
 import {
   Select,
   SelectContent,
@@ -38,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
   head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
