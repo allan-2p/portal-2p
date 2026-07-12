@@ -827,3 +827,34 @@ function AvatarCell({ row, onUploaded }: { row: Row; onUploaded: () => void }) {
     </div>
   );
 }
+
+function SfIdCell({
+  value,
+  onSave,
+}: {
+  value: string | null;
+  onSave: (v: string | null) => void;
+}) {
+  const [v, setV] = useState<string>(value ?? "");
+  useEffect(() => setV(value ?? ""), [value]);
+  const dirty = (v.trim() || null) !== (value ?? null);
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        placeholder="005..."
+        className="w-32 px-2 py-1 rounded-md bg-background border border-border text-xs font-mono"
+      />
+      {dirty && (
+        <button
+          onClick={() => onSave(v.trim() ? v.trim() : null)}
+          className="text-[10px] px-2 py-1 rounded bg-primary text-primary-foreground font-medium"
+        >
+          Salvar
+        </button>
+      )}
+    </div>
+  );
+}
+
