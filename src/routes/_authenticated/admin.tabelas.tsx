@@ -420,7 +420,22 @@ function ProjectionsPanel({ search }: { search: string }) {
             );
           })}
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 ml-auto"
+          disabled={qOrc.isFetching || qVen.isFetching}
+          onClick={() => { qOrc.refetch(); qVen.refetch(); }}
+        >
+          {(qOrc.isFetching || qVen.isFetching) ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RotateCcw className="h-3.5 w-3.5" />
+          )}
+          Atualizar do Salesforce
+        </Button>
       </div>
+
 
       <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-4 text-sm">
         <div>
@@ -750,7 +765,22 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
           <div className="flex items-center gap-1.5">{classBadge("C")}<span className="text-xs text-muted-foreground">{totals.C}</span></div>
           <div className="flex items-center gap-1.5">{classBadge("D")}<span className="text-xs text-muted-foreground">{totals.D}</span></div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 ml-auto"
+          disabled={qOrc.isFetching || qVen.isFetching || qOrcCur.isFetching || qVenCur.isFetching}
+          onClick={() => { qOrc.refetch(); qVen.refetch(); qOrcCur.refetch(); qVenCur.refetch(); }}
+        >
+          {(qOrc.isFetching || qVen.isFetching || qOrcCur.isFetching || qVenCur.isFetching) ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RotateCcw className="h-3.5 w-3.5" />
+          )}
+          Atualizar do Salesforce
+        </Button>
       </div>
+
 
       <div className="glass rounded-2xl p-3 text-[11px] text-muted-foreground leading-relaxed">
         Classificação por vendas no trimestre anterior: <b className="text-foreground">A</b> &gt; R$ 30k ·
