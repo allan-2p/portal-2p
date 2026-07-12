@@ -575,22 +575,23 @@ export const getSalesforceOrcamentos = createServerFn({ method: "GET" })
 
 export const getSalesforceVendas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { start?: string | null; end?: string | null; ownerId?: string | null }) => input ?? {})
+  .inputValidator((input: { ownerId?: string | null }) => input ?? {})
   .handler(async ({ data, context }) => {
     const clauses: string[] = [
-      `StageName = 'Pedido Concluído'`,
+      `Status_do_Pedido__c IN ('Faturado','Coletado','Entregue')`,
+      `Owner.Name != 'Caroline Gimenez'`,
+      `Data_de_Faturamento__c = THIS_MONTH`,
       `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
     ];
-    if (validDate(data.start)) clauses.push(`CloseDate >= ${data.start}`);
-    if (validDate(data.end)) clauses.push(`CloseDate <= ${data.end}`);
     const ownerClause = ownerFilterClause(
       await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
     );
     const soql =
       `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
-      `${ownerClause} ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+      `${ownerClause} ORDER BY Data_de_Faturamento__c DESC NULLS LAST LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+  });
   });
 
 
