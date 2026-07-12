@@ -288,7 +288,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   // ---- Comissões por owner (usa equipe do commission settings) ---- //
   const comissao = useMemo(() => {
     const cfg = commissionQ.data;
-    if (!cfg) return { vendido: 0, novos: 0 };
+    if (!cfg) return { vendido: 0, novos: 0, retencao: 0 };
 
     // vendido por owner
     const vendidoByOwner: Record<string, number> = {};
@@ -303,9 +303,15 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
       if (!g.active) continue;
       metaByOwner[g.sf_user_id] = (metaByOwner[g.sf_user_id] ?? 0) + g.monthly_goal;
     }
+    // meta de retenção por owner (fallback = 90% da base)
+    const retMetaByOwner: Record<string, number> = {};
+    for (const g of retentionGoalsQ.data?.records ?? []) {
+      retMetaByOwner[g.sf_user_id] = g.goal;
+    }
 
     let totalVendido = 0;
     let totalNovos = 0;
+    let totalRetencao = 0;
     for (const owner of owners) {
       const equipe: Equipe = (cfg.equipe?.[owner] ?? "carteira") as Equipe;
       totalVendido += calcVendidoCommission(
@@ -320,9 +326,17 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
         equipe,
         cfg.novos,
       );
+      const rMeta =
+        retMetaByOwner[owner] ??
+        Math.round((abKpis.retencaoBaseByOwner[owner] ?? 0) * 0.9);
+      totalRetencao += calcRetencaoCommission(
+        abKpis.retencaoAtivosByOwner[owner] ?? 0,
+        rMeta,
+        cfg.retencao,
+      );
     }
-    return { vendido: totalVendido, novos: totalNovos };
-  }, [commissionQ.data, curVendasQ.data, goalsQ.data, ownerSet, owners.join(","), abKpis]);
+    return { vendido: totalVendido, novos: totalNovos, retencao: totalRetencao };
+  }, [commissionQ.data, curVendasQ.data, goalsQ.data, retentionGoalsQ.data, ownerSet, owners.join(","), abKpis]);
 
   const pct = (real: number, meta: number) => (meta > 0 ? (real / meta) * 100 : null);
 
