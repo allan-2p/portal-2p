@@ -1471,18 +1471,31 @@ function CompleteTaskDialog({
               <div className="text-sm font-semibold flex items-center gap-2">
                 <MessageSquare className="h-3.5 w-3.5 text-primary" /> Interação
               </div>
-              {interactionAlreadyLogged && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-success/15 text-success font-medium flex items-center gap-1">
-                  <Check className="h-2.5 w-2.5" /> Já registrada
-                </span>
-              )}
+              {interactionAlreadyLogged ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInteractionAlreadyLogged(false);
+                    setContacted(null);
+                    setInteractionType("Ligação");
+                    setInteractionNote("");
+                  }}
+                  className="text-[11px] px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary flex items-center gap-1"
+                >
+                  <Plus className="h-3 w-3" /> Nova interação
+                </button>
+              ) : null}
             </div>
-            <div>
-              <Label className="text-xs mb-1.5 block">Conseguiu falar com o cliente? <span className="text-destructive">*</span></Label>
-              <ContactedToggle value={contacted} onChange={(v) => { setContacted(v); setInteractionAlreadyLogged(false); }} />
-            </div>
-            {!interactionAlreadyLogged && (
+            {interactionAlreadyLogged ? (
+              <div className="text-xs text-success flex items-center gap-1.5">
+                <Check className="h-3 w-3" /> Interação já registrada para esta tarefa.
+              </div>
+            ) : (
               <>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Conseguiu falar com o cliente? <span className="text-destructive">*</span></Label>
+                  <ContactedToggle value={contacted} onChange={setContacted} />
+                </div>
                 <div>
                   <Label className="text-xs mb-1.5 block">Tipo de interação <span className="text-destructive">*</span></Label>
                   <Select value={interactionType} onValueChange={setInteractionType}>
@@ -1499,6 +1512,7 @@ function CompleteTaskDialog({
               </>
             )}
           </div>
+
 
           <div className="rounded-lg border border-border p-3 space-y-2">
             <div className="flex items-center justify-between">
