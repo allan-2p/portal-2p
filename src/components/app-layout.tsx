@@ -317,6 +317,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   Tornar-me admin
                 </button>
               )}
+              <Link
+                to="/2p-group"
+                target="_blank"
+                title="Painel de TV — 2P Group"
+                className="h-9 w-9 rounded-lg border border-border bg-gradient-to-br from-[#F28A3C]/20 to-[#1A00B0]/20 hover:from-[#F28A3C]/35 hover:to-[#1A00B0]/35 flex items-center justify-center transition-colors"
+              >
+                <Tv className="h-4 w-4" />
+              </Link>
               <InstanceSwitcher />
               {instance === "marketing" && <MarketingUnitSwitch />}
               <ViewAsSwitcher currentScreen={currentScreenKey(pathname)} />

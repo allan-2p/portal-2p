@@ -22,6 +22,7 @@ import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenti
 import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authenticated/dashboards'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/atlas'
+import { Route as Authenticated2pGroupRouteImport } from './routes/_authenticated/2p-group'
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
 import { Route as AuthenticatedMarketingTrafegoRouteImport } from './routes/_authenticated/marketing.trafego'
 import { Route as AuthenticatedMarketingSocialRouteImport } from './routes/_authenticated/marketing.social'
@@ -100,6 +101,11 @@ const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
 const AuthenticatedAtlasRoute = AuthenticatedAtlasRouteImport.update({
   id: '/atlas',
   path: '/atlas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const Authenticated2pGroupRoute = Authenticated2pGroupRouteImport.update({
+  id: '/2p-group',
+  path: '/2p-group',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMarketingIndexRoute =
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/2p-group': typeof Authenticated2pGroupRoute
   '/atlas': typeof AuthenticatedAtlasRoute
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
@@ -217,6 +224,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/2p-group': typeof Authenticated2pGroupRoute
   '/atlas': typeof AuthenticatedAtlasRoute
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/2p-group': typeof Authenticated2pGroupRoute
   '/_authenticated/atlas': typeof AuthenticatedAtlasRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/2p-group'
     | '/atlas'
     | '/clientes'
     | '/dashboards'
@@ -304,6 +314,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/reset-password'
+    | '/2p-group'
     | '/atlas'
     | '/clientes'
     | '/dashboards'
@@ -332,6 +343,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/2p-group'
     | '/_authenticated/atlas'
     | '/_authenticated/clientes'
     | '/_authenticated/dashboards'
@@ -455,6 +467,13 @@ declare module '@tanstack/react-router' {
       path: '/atlas'
       fullPath: '/atlas'
       preLoaderRoute: typeof AuthenticatedAtlasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/2p-group': {
+      id: '/_authenticated/2p-group'
+      path: '/2p-group'
+      fullPath: '/2p-group'
+      preLoaderRoute: typeof Authenticated2pGroupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/marketing/': {
@@ -610,6 +629,7 @@ const AuthenticatedMarketingRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  Authenticated2pGroupRoute: typeof Authenticated2pGroupRoute
   AuthenticatedAtlasRoute: typeof AuthenticatedAtlasRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRouteWithChildren
   AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRouteWithChildren
@@ -629,6 +649,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  Authenticated2pGroupRoute: Authenticated2pGroupRoute,
   AuthenticatedAtlasRoute: AuthenticatedAtlasRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRouteWithChildren,
   AuthenticatedDashboardsRoute: AuthenticatedDashboardsRouteWithChildren,
