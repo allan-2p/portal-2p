@@ -6,7 +6,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { NotificationsDropdown } from "./notifications-dropdown";
 import { InstanceSwitcher } from "./instance-switcher";
 import { MarketingUnitSwitch } from "./marketing-unit-switch";
-import { ViewAsSwitcher } from "./view-as-switcher";
+
 import { useInstance } from "./instance-provider";
 import { INSTANCES, type FeatureKey } from "@/lib/instances";
 import { SCREENS, type ScreenKey } from "@/lib/view-screens";
@@ -327,7 +327,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </Link>
               <InstanceSwitcher />
               {instance === "marketing" && <MarketingUnitSwitch />}
-              <ViewAsSwitcher currentScreen={currentScreenKey(pathname)} />
+              
               <ThemeToggle />
               <NotificationsDropdown />
 
@@ -360,13 +360,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                           className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 border-t border-border"
                         >
                           <KeyRound className="h-4 w-4" /> Permissões de Usuários
-                        </Link>
-                        <Link
-                          to="/admin/visualizacoes"
-                          onClick={() => setAdminMenuOpen(false)}
-                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 border-t border-border"
-                        >
-                          <Eye className="h-4 w-4" /> Versões de Tela
                         </Link>
                       </div>
                     </>
