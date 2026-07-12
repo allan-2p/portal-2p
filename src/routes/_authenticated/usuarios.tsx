@@ -14,6 +14,7 @@ import {
   listSalesforceCandidates,
   inviteSalesforceUser,
   syncSalesforcePhoto,
+  syncAllSalesforcePhotos,
   type SFCandidate,
 } from "@/lib/users.functions";
 import { adminSetUserScope, adminSetUserSfId, type FilterScope } from "@/lib/scope.functions";
