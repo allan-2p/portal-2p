@@ -163,7 +163,25 @@ function VendedoresPage() {
                       <td className="px-4 py-3 font-medium">{p.name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{p.email ?? "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{p.title ?? "—"}</td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={teamMap.get(p.id) ?? ""}
+                          onChange={(e) =>
+                            teamMut.mutate({
+                              sf_user_id: p.id,
+                              team: (e.target.value || null) as SFTeam | null,
+                            })
+                          }
+                          disabled={teamMut.isPending}
+                          className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                        >
+                          <option value="">—</option>
+                          <option value="pre_vendas">Pré Vendas</option>
+                          <option value="carteira">Carteira</option>
+                        </select>
+                      </td>
                       <td className="px-4 py-3 text-center">
+
                         {visible ? (
                           <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-success/15 text-success">
                             <Eye className="h-3 w-3" /> Visível
