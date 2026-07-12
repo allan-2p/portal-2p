@@ -575,7 +575,7 @@ export const getSalesforceOrcamentos = createServerFn({ method: "GET" })
 
 export const getSalesforceVendas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { ownerId?: string | null }) => input ?? {})
+  .inputValidator((input: { start?: string | null; end?: string | null; ownerId?: string | null }) => input ?? {})
   .handler(async ({ data, context }) => {
     const clauses: string[] = [
       `Status_do_Pedido__c IN ('Faturado','Coletado','Entregue')`,
