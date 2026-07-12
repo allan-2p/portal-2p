@@ -914,9 +914,15 @@ function HomePage() {
                       <div className="flex gap-1.5 mt-2.5">
                         <button
                           onClick={() => setInteractionTask(t)}
-                          className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1"
+                          className={cn(
+                            "text-[11px] px-2 py-1 rounded flex items-center gap-1",
+                            inter
+                              ? "bg-success/15 text-success hover:bg-success/25"
+                              : "bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground",
+                          )}
                         >
-                          <MessageSquare className="h-3 w-3" /> Interação
+                          {inter ? <Check className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
+                          {inter ? "Nova interação" : "Interação"}
                         </button>
                         <button
                           onClick={() => setCompleteTask(t)}
