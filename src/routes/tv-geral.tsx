@@ -172,49 +172,67 @@ function useTvData(): { data: TvData; loading: boolean } {
   const fetchMonthGoal = useServerFn(getPublicMonthGoalTotal);
   const fetchKpiGoals = useServerFn(getPublicGroupKpiGoals);
 
+  // Polling agressivo para "tempo real" em TV — mantém refetch mesmo com aba em background.
+  const FAST = 30_000;
+  const MED = 2 * 60_000;
+  const SLOW = 10 * 60_000;
+  const commonFast = {
+    refetchInterval: FAST,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 15_000,
+  } as const;
+
   const vendidoMesQ = useQuery({
     queryKey: ["tv-vendido-mes"],
     queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDIDO_MES } }),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    ...commonFast,
   });
   const geradoMesQ = useQuery({
     queryKey: ["tv-gerado-mes"],
     queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_GERADO_MES } }),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    ...commonFast,
   });
   const faturamentoMesQ = useQuery({
     queryKey: ["tv-faturamento-mes"],
     queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDAS } }),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    ...commonFast,
   });
   const monthGoalQ = useQuery({
     queryKey: ["tv-month-goal", y, m + 1],
     queryFn: () => fetchMonthGoal({ data: { year: y, month: m + 1 } }),
-    staleTime: 5 * 60_000,
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
+    staleTime: 60_000,
   });
   const kpiGoalsQ = useQuery({
     queryKey: ["tv-group-kpi-goals"],
     queryFn: () => fetchKpiGoals(),
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
     staleTime: 60_000,
   });
   const vendasTriQ = useQuery({
     queryKey: ["tv-vendas-tri", curQStart, curQEnd],
     queryFn: () => fetchVendas({ data: { start: curQStart, end: curQEnd } }),
-    refetchInterval: 5 * 60_000,
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
     staleTime: 60_000,
   });
   const vendasTriPrevQ = useQuery({
     queryKey: ["tv-vendas-tri-prev", prevQStart, prevQEnd],
     queryFn: () => fetchVendas({ data: { start: prevQStart, end: prevQEnd } }),
-    staleTime: 10 * 60_000,
+    refetchInterval: SLOW,
+    refetchIntervalInBackground: true,
+    staleTime: 5 * 60_000,
   });
   const vendas12mQ = useQuery({
     queryKey: ["tv-vendas-12m", yearBackStart, monthEnd],
     queryFn: () => fetchVendas({ data: { start: yearBackStart, end: monthEnd } }),
-    staleTime: 10 * 60_000,
+    refetchInterval: SLOW,
+    refetchIntervalInBackground: true,
+    staleTime: 5 * 60_000,
   });
 
   const loading =
