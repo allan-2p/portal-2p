@@ -318,9 +318,18 @@ function SegmentacaoPage() {
     return clients.filter((c) => (ownerByAccount.get(c.id) ?? "") === vendedor);
   }, [clients, vendedor, ownerByAccount]);
 
+  const prevSalesByAccount = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of projected) map.set(p.account, p.prevSales);
+    return map;
+  }, [projected]);
+
   const ranked = useMemo(
-    () => [...scoped].sort((a, b) => b.sales - a.sales).map((c, i) => ({ ...c, rank: i + 1 })),
-    [scoped],
+    () =>
+      [...scoped]
+        .sort((a, b) => (prevSalesByAccount.get(b.id) ?? 0) - (prevSalesByAccount.get(a.id) ?? 0))
+        .map((c, i) => ({ ...c, rank: i + 1 })),
+    [scoped, prevSalesByAccount],
   );
 
   const s = search.trim().toLowerCase();
