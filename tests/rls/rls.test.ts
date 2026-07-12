@@ -241,10 +241,11 @@ d("RLS regression suite", () => {
 
       const ufp = await vendA.client
         .from("user_feature_permissions")
-        .insert({ user_id: vendB.id, feature: "dashboards", allowed: true });
+        .insert({ user_id: vendB.id, instance_id: "solar", feature_key: "dashboards", allowed: true });
       expect(isPermissionError(ufp.error)).toBe(true);
     });
   });
+
 
   // ───────────────────────────────────────────── salesperson_*_goals (scope)
   describe.each([
@@ -274,14 +275,18 @@ d("RLS regression suite", () => {
     });
 
     it("non-admin cannot insert/update/delete", async () => {
-      const ins = await vendA.client
-        .from(table)
-        .insert({ sf_user_id: SF_A, month: "2026-08-01", target_amount: 1 });
+      const insPayload =
+        table === "salesperson_goals"
+          ? { sf_user_id: SF_A, year: 2026, month: 8, monthly_goal: 1 }
+          : { sf_user_id: SF_A, year: 2026, quarter: 4, goal: 1 };
+      const ins = await vendA.client.from(table).insert(insPayload);
       expect(isPermissionError(ins.error)).toBe(true);
 
+      const updPatch =
+        table === "salesperson_goals" ? { monthly_goal: 999 } : { goal: 999 };
       const upd = await gerente.client
         .from(table)
-        .update({ target_amount: 999 })
+        .update(updPatch)
         .eq("sf_user_id", SF_A)
         .select();
       expect(isPermissionError(upd.error) || (upd.data ?? []).length === 0).toBe(true);
@@ -295,20 +300,21 @@ d("RLS regression suite", () => {
     });
 
     it("anon cannot read", async () => {
-      const { data } = await anon.from(table).select("id");
+      const { data } = await anon.from(table).select("sf_user_id");
       expect(data ?? []).toHaveLength(0);
     });
   });
 
+
   // ────────────────────────────────────────────────────── hidden_salespeople
   describe("hidden_salespeople", () => {
     it("vendedor cannot read", async () => {
-      const { data } = await vendA.client.from("hidden_salespeople").select("id");
+      const { data } = await vendA.client.from("hidden_salespeople").select("sf_user_id");
       expect(data ?? []).toHaveLength(0);
     });
     it("gerente/diretor/admin can read", async () => {
       for (const u of [gerente, diretor, adminUser]) {
-        const { data } = await u.client.from("hidden_salespeople").select("id");
+        const { data } = await u.client.from("hidden_salespeople").select("sf_user_id");
         expect((data ?? []).length).toBeGreaterThan(0);
       }
     });
@@ -323,20 +329,22 @@ d("RLS regression suite", () => {
   // ──────────────────────────────────────────────── salesforce_team_members
   describe("salesforce_team_members", () => {
     it("any authenticated reads", async () => {
-      const { data } = await vendA.client.from("salesforce_team_members").select("id");
+      const { data } = await vendA.client.from("salesforce_team_members").select("sf_user_id");
       expect((data ?? []).length).toBeGreaterThan(0);
     });
     it("anon cannot read", async () => {
-      const { data } = await anon.from("salesforce_team_members").select("id");
+      const { data } = await anon.from("salesforce_team_members").select("sf_user_id");
       expect(data ?? []).toHaveLength(0);
     });
     it("non-admin cannot write", async () => {
       const denied = await gerente.client
         .from("salesforce_team_members")
-        .insert({ sf_user_id: `${SF_B}-x`, equipe: "carteira" });
+        .insert({ sf_user_id: `${SF_B}-x`, team: "carteira" });
       expect(isPermissionError(denied.error)).toBe(true);
     });
   });
+
+
 
   // ────────────────────────────────────────────────────── user_view_preferences
   describe("user_view_preferences", () => {
