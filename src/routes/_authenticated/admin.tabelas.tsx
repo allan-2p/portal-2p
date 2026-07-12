@@ -16,6 +16,7 @@ import {
   Filter,
   X as XIcon,
   RotateCcw,
+  BookmarkCheck,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
