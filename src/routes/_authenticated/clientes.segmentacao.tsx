@@ -628,7 +628,7 @@ function SegmentacaoPage() {
                                 {(() => {
                                   const orders = ordersByAccount.get(c.id) ?? [];
                                   if (orders.length === 0) {
-                                    return <div className="text-xs text-muted-foreground">Nenhum pedido no mês.</div>;
+                                    return <div className="text-xs text-muted-foreground">Nenhum pedido em andamento.</div>;
                                   }
                                   return (
                                     <div className="space-y-1.5">
