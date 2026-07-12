@@ -14,6 +14,7 @@ export interface Profile {
   avatar_url: string | null;
   meta_mensal: number | null;
   ativo: boolean;
+  sf_user_id: string | null;
 }
 
 interface AuthState {
