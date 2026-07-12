@@ -356,19 +356,26 @@ export const syncSalesforcePhoto = createServerFn({ method: "POST" })
       .select("sf_user_id")
       .eq("id", data.user_id)
       .maybeSingle();
-    if (!profile?.sf_user_id) throw new Error("Usuário não está vinculado ao Salesforce.");
+    if (!profile?.sf_user_id) {
+      return { ok: false as const, reason: "Usuário não está vinculado ao Salesforce." };
+    }
     const users = await sfFetchAllUsers();
     const sfUser = users.find((u) => u.id === profile.sf_user_id);
-    if (!sfUser) throw new Error("Usuário do Salesforce não encontrado.");
+    if (!sfUser) {
+      return { ok: false as const, reason: "Usuário do Salesforce não encontrado." };
+    }
     const path = await downloadSFPhotoToStorage(
       sfUser.id,
       sfUser.smallPhotoUrl ?? sfUser.fullPhotoUrl,
     );
-    if (!path) throw new Error("Não foi possível baixar a foto do Salesforce.");
+    if (!path) {
+      return { ok: false as const, reason: "Este usuário não tem foto no Salesforce." };
+    }
     const { error } = await supabaseAdmin
       .from("profiles")
       .update({ avatar_url: path })
       .eq("id", data.user_id);
-    if (error) throw new Error(error.message);
-    return { ok: true, path };
+    if (error) return { ok: false as const, reason: error.message };
+    return { ok: true as const, path };
   });
+
