@@ -140,9 +140,11 @@ function VendedoresPage() {
                   <th className="text-left px-4 py-2.5">Vendedor</th>
                   <th className="text-left px-4 py-2.5">E-mail</th>
                   <th className="text-left px-4 py-2.5">Cargo</th>
+                  <th className="text-left px-4 py-2.5 w-40">Equipe</th>
                   <th className="text-center px-4 py-2.5 w-32">Status</th>
                   <th className="text-center px-4 py-2.5 w-40">Aparece no portal?</th>
                 </tr>
+
               </thead>
               <tbody>
                 {q.isLoading && (
