@@ -499,6 +499,7 @@ export type SalesforceOppRow = {
   accountId: string | null;
   owner: string | null;
   ownerId: string | null;
+  accountOwner: string | null;
 };
 
 export const PEDIDO_STATUS = [
