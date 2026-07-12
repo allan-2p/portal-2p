@@ -563,6 +563,7 @@ const BrandStat = ({
   meta,
   invert = false,
   gradientBar = false,
+  embedded = false,
 }: {
   label: string;
   dotColor: string;
@@ -570,11 +571,14 @@ const BrandStat = ({
   meta: number;
   invert?: boolean;
   gradientBar?: boolean;
+  embedded?: boolean;
 }) => {
   const p = pct(real, meta);
   const bg = invert
     ? "linear-gradient(135deg, #1B1F3A 0%, #2A1F55 60%, #3B2A7A 100%)"
-    : "linear-gradient(140deg, #F7F8FC 0%, #ECEEF6 55%, #E4E5F1 100%)";
+    : embedded
+      ? "transparent"
+      : "linear-gradient(140deg, #F7F8FC 0%, #ECEEF6 55%, #E4E5F1 100%)";
   const fg = invert ? "#FFFFFF" : T.ink;
   const dim = invert ? "rgba(255,255,255,.72)" : T.dim;
   const track = invert ? "rgba(255,255,255,.14)" : T.track;
@@ -584,7 +588,11 @@ const BrandStat = ({
     <div
       style={{
         background: bg,
-        border: `1px solid ${invert ? "rgba(255,255,255,.08)" : T.cardBorder}`,
+        border: invert
+          ? "1px solid rgba(255,255,255,.08)"
+          : embedded
+            ? "none"
+            : `1px solid ${T.cardBorder}`,
         borderRadius: 16,
         padding: "12px 16px",
         display: "flex",
