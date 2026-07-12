@@ -16,6 +16,7 @@ import {
   Filter,
   X as XIcon,
   RotateCcw,
+  BookmarkCheck,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -1078,10 +1079,12 @@ function OppFiltersPanel({
   value,
   defaults,
   onApply,
+  onSaveAsDefault,
 }: {
   value: OppFilters;
   defaults: OppFilters;
   onApply: (next: OppFilters) => void;
+  onSaveAsDefault?: (next: OppFilters) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<OppFilters>(value);
@@ -1300,7 +1303,7 @@ function OppFiltersPanel({
             placeholder="Ex.: Sem interesse"
           />
 
-          <div className="md:col-span-2 flex items-center justify-end gap-2 pt-1">
+          <div className="md:col-span-2 flex items-center justify-end gap-2 pt-1 flex-wrap">
             <Button
               type="button"
               variant="ghost"
@@ -1313,6 +1316,21 @@ function OppFiltersPanel({
             >
               <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Restaurar padrões
             </Button>
+            {onSaveAsDefault && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => {
+                  onSaveAsDefault(draft);
+                  onApply(draft);
+                }}
+                title="Salva os filtros atuais como padrão para esta tabela neste navegador"
+              >
+                <BookmarkCheck className="h-3.5 w-3.5 mr-1.5" /> Definir como padrão
+              </Button>
+            )}
             <Button
               type="button"
               size="sm"
@@ -1333,6 +1351,7 @@ function OppTabPanel({
   filters,
   defaults,
   onFiltersChange,
+  onSaveAsDefault,
   vendedor,
   onVendedorChange,
   records,
@@ -1346,6 +1365,7 @@ function OppTabPanel({
   filters: OppFilters;
   defaults: OppFilters;
   onFiltersChange: (next: OppFilters) => void;
+  onSaveAsDefault?: (next: OppFilters) => void;
   vendedor: string;
   onVendedorChange: (next: string) => void;
   records: SalesforceOppRow[];
@@ -1366,7 +1386,7 @@ function OppTabPanel({
 
   return (
     <div className="space-y-3">
-      <OppFiltersPanel value={filters} defaults={defaults} onApply={onFiltersChange} />
+      <OppFiltersPanel value={filters} defaults={defaults} onApply={onFiltersChange} onSaveAsDefault={onSaveAsDefault} />
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
         <Select value={vendedor} onValueChange={onVendedorChange}>
@@ -1404,15 +1424,47 @@ function OppTabPanel({
 }
 
 
+const FILTER_STORAGE_PREFIX = "tabelas:opp-filters:";
+function loadStoredFilters(key: string, fallback: OppFilters): OppFilters {
+  if (typeof window === "undefined") return { ...fallback };
+  try {
+    const raw = window.localStorage.getItem(FILTER_STORAGE_PREFIX + key);
+    if (!raw) return { ...fallback };
+    const parsed = JSON.parse(raw) as OppFilters;
+    return { ...fallback, ...parsed };
+  } catch {
+    return { ...fallback };
+  }
+}
+function saveStoredFilters(key: string, filters: OppFilters) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(FILTER_STORAGE_PREFIX + key, JSON.stringify(filters));
+  } catch {
+    // ignore quota / privacy errors
+  }
+}
+
 function TabelasPage() {
   const { hasRole } = useAuth();
   type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "gerado-mes";
   const [tab, setTab] = useState<TabId>("orcamentos");
 
-  const [orcFilters, setOrcFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_ORCAMENTOS });
-  const [venFilters, setVenFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDAS });
-  const [vendidoFilters, setVendidoFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDIDO_MES });
-  const [geradoFilters, setGeradoFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_GERADO_MES });
+  const [orcDefaults, setOrcDefaults] = useState<OppFilters>(() => loadStoredFilters("orcamentos", OPP_DEFAULTS_ORCAMENTOS));
+  const [venDefaults, setVenDefaults] = useState<OppFilters>(() => loadStoredFilters("vendas", OPP_DEFAULTS_VENDAS));
+  const [vendidoDefaults, setVendidoDefaults] = useState<OppFilters>(() => loadStoredFilters("vendido-mes", OPP_DEFAULTS_VENDIDO_MES));
+  const [geradoDefaults, setGeradoDefaults] = useState<OppFilters>(() => loadStoredFilters("gerado-mes", OPP_DEFAULTS_GERADO_MES));
+
+  const [orcFilters, setOrcFilters] = useState<OppFilters>(() => ({ ...orcDefaults }));
+  const [venFilters, setVenFilters] = useState<OppFilters>(() => ({ ...venDefaults }));
+  const [vendidoFilters, setVendidoFilters] = useState<OppFilters>(() => ({ ...vendidoDefaults }));
+  const [geradoFilters, setGeradoFilters] = useState<OppFilters>(() => ({ ...geradoDefaults }));
+
+  const saveOrcAsDefault = (f: OppFilters) => { saveStoredFilters("orcamentos", f); setOrcDefaults(f); };
+  const saveVenAsDefault = (f: OppFilters) => { saveStoredFilters("vendas", f); setVenDefaults(f); };
+  const saveVendidoAsDefault = (f: OppFilters) => { saveStoredFilters("vendido-mes", f); setVendidoDefaults(f); };
+  const saveGeradoAsDefault = (f: OppFilters) => { saveStoredFilters("gerado-mes", f); setGeradoDefaults(f); };
+
 
   const [vendedorOrc, setVendedorOrc] = useState<string>("__all__");
   const [vendedorVen, setVendedorVen] = useState<string>("__all__");
@@ -1517,8 +1569,9 @@ function TabelasPage() {
           <TabsContent value="orcamentos" className="mt-4">
             <OppTabPanel
               filters={orcFilters}
-              defaults={OPP_DEFAULTS_ORCAMENTOS}
+              defaults={orcDefaults}
               onFiltersChange={setOrcFilters}
+              onSaveAsDefault={saveOrcAsDefault}
               vendedor={vendedorOrc}
               onVendedorChange={setVendedorOrc}
               records={qOrc.data?.records ?? []}
@@ -1531,8 +1584,9 @@ function TabelasPage() {
           <TabsContent value="vendas" className="mt-4">
             <OppTabPanel
               filters={venFilters}
-              defaults={OPP_DEFAULTS_VENDAS}
+              defaults={venDefaults}
               onFiltersChange={setVenFilters}
+              onSaveAsDefault={saveVenAsDefault}
               vendedor={vendedorVen}
               onVendedorChange={setVendedorVen}
               records={qVen.data?.records ?? []}
@@ -1547,8 +1601,9 @@ function TabelasPage() {
           <TabsContent value="vendido-mes" className="mt-4">
             <OppTabPanel
               filters={vendidoFilters}
-              defaults={OPP_DEFAULTS_VENDIDO_MES}
+              defaults={vendidoDefaults}
               onFiltersChange={setVendidoFilters}
+              onSaveAsDefault={saveVendidoAsDefault}
               vendedor={vendedorMes}
               onVendedorChange={setVendedorMes}
               records={qVendidoMes.data?.records ?? []}
@@ -1561,8 +1616,9 @@ function TabelasPage() {
           <TabsContent value="gerado-mes" className="mt-4">
             <OppTabPanel
               filters={geradoFilters}
-              defaults={OPP_DEFAULTS_GERADO_MES}
+              defaults={geradoDefaults}
               onFiltersChange={setGeradoFilters}
+              onSaveAsDefault={saveGeradoAsDefault}
               vendedor={vendedorGer}
               onVendedorChange={setVendedorGer}
               records={qGeradoMes.data?.records ?? []}
