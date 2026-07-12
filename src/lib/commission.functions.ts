@@ -19,13 +19,20 @@ export type NovosValuesConfig = {
   carteira: { A: number; B: number };
 };
 
+export type RetencaoTiersConfig = {
+  tiers: VendidoTier[];
+  values: number[]; // R$ fixo por faixa
+};
+
 export type SalespersonEquipeConfig = Record<string, Equipe>;
 
 export type CommissionSettings = {
   vendido: VendidoTiersConfig;
   novos: NovosValuesConfig;
+  retencao: RetencaoTiersConfig;
   equipe: SalespersonEquipeConfig;
 };
+
 
 const DEFAULT_VENDIDO: VendidoTiersConfig = {
   tiers: [
