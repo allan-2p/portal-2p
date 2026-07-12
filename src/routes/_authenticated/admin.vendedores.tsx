@@ -7,7 +7,9 @@ import { Loader2, AlertTriangle, Search, Eye, EyeOff, UserCog } from "lucide-rea
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { listSalespeopleForAdmin, setSalespersonVisibility } from "@/lib/admin.functions";
+import { listSfTeams, adminSetSfTeam, type SFTeam } from "@/lib/scope.functions";
 import { useAuth } from "@/hooks/use-auth";
+
 
 export const Route = createFileRoute("/_authenticated/admin/vendedores")({
   head: () => ({ meta: [{ title: "Vendedores — Portal 2P" }] }),
