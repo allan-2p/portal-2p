@@ -70,12 +70,14 @@ function UsuariosPage() {
   const setRoleFn = useServerFn(adminSetRole);
   const toggleFn = useServerFn(adminToggleActive);
   const deleteFn = useServerFn(adminDeleteUser);
+  const setScopeFn = useServerFn(adminSetUserScope);
+  const setSfIdFn = useServerFn(adminSetUserSfId);
 
   async function load() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id,email,full_name,cargo,equipe,ativo,avatar_url,sf_user_id,is_external")
+      .select("id,email,full_name,cargo,equipe,ativo,avatar_url,sf_user_id,is_external,filter_scope")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
     const byUser = new Map<string, AppRole[]>();
@@ -85,8 +87,9 @@ function UsuariosPage() {
       byUser.set(r.user_id, arr);
     });
     setRows(
-      (profiles ?? []).map((p) => ({
+      (profiles ?? []).map((p: any) => ({
         ...p,
+        filter_scope: (p.filter_scope ?? "individual") as FilterScope,
         roles: byUser.get(p.id) ?? [],
       })) as Row[],
     );
@@ -96,6 +99,7 @@ function UsuariosPage() {
   useEffect(() => {
     if (!authLoading) load();
   }, [authLoading]);
+
 
   if (authLoading) {
     return (
