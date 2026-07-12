@@ -49,44 +49,55 @@ d("RLS regression suite", () => {
     ]);
 
     // Seed goals for each vendedor as service_role (admin RLS bypass).
-    const seed = async (table: string, sf: string) => {
+    const seedMonthly = async (sf: string) => {
+      const { data, error } = await admin
+        .from("salesperson_goals")
+        .insert({ sf_user_id: sf, year: 2026, month: 7, monthly_goal: 100 })
+        .select("sf_user_id, year, month")
+        .single();
+      if (error) throw new Error(`seed salesperson_goals: ${error.message}`);
+      seededGoalIds.push({
+        table: "salesperson_goals",
+        id: `${(data as { sf_user_id: string }).sf_user_id}|2026|7`,
+      });
+    };
+    const seedQuarterly = async (table: string, sf: string) => {
       const { data, error } = await admin
         .from(table)
-        .insert({ sf_user_id: sf, month: "2026-07-01", target_amount: 100 })
-        .select("id")
+        .insert({ sf_user_id: sf, year: 2026, quarter: 3, goal: 10 })
+        .select("sf_user_id, year, quarter")
         .single();
       if (error) throw new Error(`seed ${table}: ${error.message}`);
-      seededGoalIds.push({ table, id: (data as { id: string }).id });
+      seededGoalIds.push({
+        table,
+        id: `${(data as { sf_user_id: string }).sf_user_id}|2026|3`,
+      });
     };
     for (const sf of [SF_A, SF_B]) {
-      await seed("salesperson_goals", sf);
-      await seed("salesperson_new_ab_goals", sf);
-      await seed("salesperson_retention_goals", sf);
+      await seedMonthly(sf);
+      await seedQuarterly("salesperson_new_ab_goals", sf);
+      await seedQuarterly("salesperson_retention_goals", sf);
     }
 
     // Seed a hidden salesperson, team member and view variant.
     {
-      const { data, error } = await admin
+      const { error } = await admin
         .from("hidden_salespeople")
-        .insert({ sf_user_id: SF_A })
-        .select("id")
-        .single();
+        .insert({ sf_user_id: SF_A });
       if (error) throw error;
-      seededHiddenIds.push((data as { id: string }).id);
+      seededHiddenIds.push(SF_A);
     }
     {
-      const { data, error } = await admin
+      const { error } = await admin
         .from("salesforce_team_members")
-        .insert({ sf_user_id: SF_A, equipe: "pre_vendas" })
-        .select("id")
-        .single();
+        .insert({ sf_user_id: SF_A, team: "pre_vendas" });
       if (error) throw error;
-      seededTeamIds.push((data as { id: string }).id);
+      seededTeamIds.push(SF_A);
     }
     {
       const { data, error } = await admin
         .from("view_variants")
-        .insert({ screen: "home", variant_key: "rls-test", label: "RLS test" })
+        .insert({ screen: "home", variant_key: `rls-test-${Date.now()}`, label: "RLS test" })
         .select("id")
         .single();
       if (error) throw error;
@@ -95,14 +106,20 @@ d("RLS regression suite", () => {
   });
 
   afterAll(async () => {
-    for (const g of seededGoalIds) await admin.from(g.table).delete().eq("id", g.id);
-    for (const id of seededHiddenIds) await admin.from("hidden_salespeople").delete().eq("id", id);
-    for (const id of seededTeamIds) await admin.from("salesforce_team_members").delete().eq("id", id);
+    for (const g of seededGoalIds) {
+      const [sf, year, m] = g.id.split("|");
+      const q = admin.from(g.table).delete().eq("sf_user_id", sf).eq("year", Number(year));
+      if (g.table === "salesperson_goals") await q.eq("month", Number(m));
+      else await q.eq("quarter", Number(m));
+    }
+    for (const sf of seededHiddenIds) await admin.from("hidden_salespeople").delete().eq("sf_user_id", sf);
+    for (const sf of seededTeamIds) await admin.from("salesforce_team_members").delete().eq("sf_user_id", sf);
     for (const id of seededVariantIds) await admin.from("view_variants").delete().eq("id", id);
     for (const u of [adminUser, gerente, diretor, vendA, vendB]) {
       if (u) await deleteUser(admin, u.id);
     }
   });
+
 
   // ────────────────────────────────────────────────────────────── profiles
   describe("profiles", () => {
