@@ -221,6 +221,9 @@ type TaskPayload = {
   whatId?: string | null;
   whoId?: string | null;
   ownerId?: string | null;
+  tipoInteracao?: string | null;
+  conseguiuFalar?: "Sim" | "Não" | null;
+  comments?: string | null;
 };
 
 function buildTaskBody(p: TaskPayload) {
@@ -234,6 +237,9 @@ function buildTaskBody(p: TaskPayload) {
   if (validId(p.whatId)) body.WhatId = p.whatId;
   if (validId(p.whoId)) body.WhoId = p.whoId;
   if (validId(p.ownerId)) body.OwnerId = p.ownerId;
+  if (p.tipoInteracao) body.Tipo_de_Interacao__c = p.tipoInteracao;
+  if (p.conseguiuFalar) body.Conseguiu_falar_com_o_cliente__c = p.conseguiuFalar;
+  if (p.comments) body.Coments__c = p.comments;
   return body;
 }
 

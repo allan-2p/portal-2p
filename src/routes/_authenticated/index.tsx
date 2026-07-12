@@ -888,12 +888,7 @@ function HomePage() {
                             {inter && (
                               <span
                                 title={`${inter.type ?? "Interação"} — ${inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}`}
-                                className={cn(
-                                  "inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                                  inter.contacted === "yes"
-                                    ? "bg-success/15 text-success"
-                                    : "bg-warning/20 text-[color:var(--warning)]",
-                                )}
+                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-success/15 text-success"
                               >
                                 <Check className="h-2.5 w-2.5" />
                                 {inter.type ? `${inter.type} · ` : ""}{inter.contacted === "yes" ? "Falou" : "Não falou"}
@@ -919,9 +914,15 @@ function HomePage() {
                       <div className="flex gap-1.5 mt-2.5">
                         <button
                           onClick={() => setInteractionTask(t)}
-                          className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground flex items-center gap-1"
+                          className={cn(
+                            "text-[11px] px-2 py-1 rounded flex items-center gap-1",
+                            inter
+                              ? "bg-success/15 text-success hover:bg-success/25"
+                              : "bg-surface-2 hover:bg-primary/15 hover:text-primary text-muted-foreground",
+                          )}
                         >
-                          <MessageSquare className="h-3 w-3" /> Interação
+                          {inter ? <Check className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
+                          {inter ? "Nova interação" : "Interação"}
                         </button>
                         <button
                           onClick={() => setCompleteTask(t)}
@@ -1295,6 +1296,9 @@ function InteractionQuickDialog({
           whatId: task.whatId,
           whoId: task.whoId,
           ownerId: task.ownerId,
+          tipoInteracao: interactionType,
+          conseguiuFalar: contacted === "yes" ? "Sim" : "Não",
+          comments: note,
         },
       });
       toast.success("Interação registrada no Salesforce.");
@@ -1395,13 +1399,15 @@ function CompleteTaskDialog({
 
   const submit = async () => {
     if (!task) return;
-    if (!contacted) {
-      toast.error("Selecione se conseguiu falar com o cliente.");
-      return;
-    }
-    if (!interactionAlreadyLogged && !interactionType) {
-      toast.error("Selecione o tipo de interação.");
-      return;
+    if (!interactionAlreadyLogged) {
+      if (!contacted) {
+        toast.error("Selecione se conseguiu falar com o cliente.");
+        return;
+      }
+      if (!interactionType) {
+        toast.error("Selecione o tipo de interação.");
+        return;
+      }
     }
     if (createNext) {
       if (!subject.trim()) { toast.error("Assunto da nova tarefa é obrigatório."); return; }
@@ -1419,9 +1425,12 @@ function CompleteTaskDialog({
             whatId: task.whatId,
             whoId: task.whoId,
             ownerId: task.ownerId,
+            tipoInteracao: interactionType,
+            conseguiuFalar: contacted === "yes" ? "Sim" : "Não",
+            comments: interactionNote,
           },
         });
-        onSaveInteraction({ contacted, type: interactionType, note: interactionNote, ts: Date.now() });
+        onSaveInteraction({ contacted: contacted!, type: interactionType, note: interactionNote, ts: Date.now() });
       }
       await completeFn({ data: { taskId: task.id } });
       if (createNext) {
@@ -1465,18 +1474,31 @@ function CompleteTaskDialog({
               <div className="text-sm font-semibold flex items-center gap-2">
                 <MessageSquare className="h-3.5 w-3.5 text-primary" /> Interação
               </div>
-              {interactionAlreadyLogged && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-success/15 text-success font-medium flex items-center gap-1">
-                  <Check className="h-2.5 w-2.5" /> Já registrada
-                </span>
-              )}
+              {interactionAlreadyLogged ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInteractionAlreadyLogged(false);
+                    setContacted(null);
+                    setInteractionType("Ligação");
+                    setInteractionNote("");
+                  }}
+                  className="text-[11px] px-2 py-1 rounded bg-primary/10 hover:bg-primary/20 text-primary flex items-center gap-1"
+                >
+                  <Plus className="h-3 w-3" /> Nova interação
+                </button>
+              ) : null}
             </div>
-            <div>
-              <Label className="text-xs mb-1.5 block">Conseguiu falar com o cliente? <span className="text-destructive">*</span></Label>
-              <ContactedToggle value={contacted} onChange={(v) => { setContacted(v); setInteractionAlreadyLogged(false); }} />
-            </div>
-            {!interactionAlreadyLogged && (
+            {interactionAlreadyLogged ? (
+              <div className="text-xs text-success flex items-center gap-1.5">
+                <Check className="h-3 w-3" /> Interação já registrada para esta tarefa.
+              </div>
+            ) : (
               <>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Conseguiu falar com o cliente? <span className="text-destructive">*</span></Label>
+                  <ContactedToggle value={contacted} onChange={setContacted} />
+                </div>
                 <div>
                   <Label className="text-xs mb-1.5 block">Tipo de interação <span className="text-destructive">*</span></Label>
                   <Select value={interactionType} onValueChange={setInteractionType}>
@@ -1493,6 +1515,7 @@ function CompleteTaskDialog({
               </>
             )}
           </div>
+
 
           <div className="rounded-lg border border-border p-3 space-y-2">
             <div className="flex items-center justify-between">
