@@ -580,6 +580,9 @@ export const getSalesforceVendas = createServerFn({ method: "GET" })
       `${ownerClause} ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+  });
+
+
 
 export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
