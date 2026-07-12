@@ -271,17 +271,17 @@ function SegmentacaoPage() {
     return map;
   }, [qGeradoMes.data]);
 
-  // Pedidos em curso (Vendido - Mês) para exposição.
+  // Pedidos em andamento (getSalesforcePedidos — status até "Coletado").
   const ordersByAccount = useMemo(() => {
     const map = new Map<string, SalesforceOppRow[]>();
-    for (const r of qVendidoMes.data?.records ?? []) {
+    for (const r of qPedidos.data?.records ?? []) {
       const key = r.account ?? "(sem cliente)";
       const list = map.get(key) ?? [];
       list.push(r);
       map.set(key, list);
     }
     return map;
-  }, [qVendidoMes.data]);
+  }, [qPedidos.data]);
 
   // ================ Combinação em Client[] ================
   const clients: Client[] = useMemo(() => {
