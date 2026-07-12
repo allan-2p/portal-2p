@@ -1569,8 +1569,9 @@ function TabelasPage() {
           <TabsContent value="orcamentos" className="mt-4">
             <OppTabPanel
               filters={orcFilters}
-              defaults={OPP_DEFAULTS_ORCAMENTOS}
+              defaults={orcDefaults}
               onFiltersChange={setOrcFilters}
+              onSaveAsDefault={saveOrcAsDefault}
               vendedor={vendedorOrc}
               onVendedorChange={setVendedorOrc}
               records={qOrc.data?.records ?? []}
@@ -1583,8 +1584,9 @@ function TabelasPage() {
           <TabsContent value="vendas" className="mt-4">
             <OppTabPanel
               filters={venFilters}
-              defaults={OPP_DEFAULTS_VENDAS}
+              defaults={venDefaults}
               onFiltersChange={setVenFilters}
+              onSaveAsDefault={saveVenAsDefault}
               vendedor={vendedorVen}
               onVendedorChange={setVendedorVen}
               records={qVen.data?.records ?? []}
@@ -1599,8 +1601,9 @@ function TabelasPage() {
           <TabsContent value="vendido-mes" className="mt-4">
             <OppTabPanel
               filters={vendidoFilters}
-              defaults={OPP_DEFAULTS_VENDIDO_MES}
+              defaults={vendidoDefaults}
               onFiltersChange={setVendidoFilters}
+              onSaveAsDefault={saveVendidoAsDefault}
               vendedor={vendedorMes}
               onVendedorChange={setVendedorMes}
               records={qVendidoMes.data?.records ?? []}
@@ -1613,8 +1616,9 @@ function TabelasPage() {
           <TabsContent value="gerado-mes" className="mt-4">
             <OppTabPanel
               filters={geradoFilters}
-              defaults={OPP_DEFAULTS_GERADO_MES}
+              defaults={geradoDefaults}
               onFiltersChange={setGeradoFilters}
+              onSaveAsDefault={saveGeradoAsDefault}
               vendedor={vendedorGer}
               onVendedorChange={setVendedorGer}
               records={qGeradoMes.data?.records ?? []}
