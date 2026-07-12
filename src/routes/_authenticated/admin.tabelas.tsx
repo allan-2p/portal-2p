@@ -523,6 +523,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
   const cur = useMemo(currentQuarter, []);
   const baseRange = useMemo(() => quarterRange(cur.year, cur.q - 1), [cur.year, cur.q]);
   const targetLabel = useMemo(() => quarterRange(cur.year, cur.q).label, [cur.year, cur.q]);
+  const [vendedor, setVendedor] = useState<string>("__all__");
 
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
