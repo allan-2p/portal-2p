@@ -462,6 +462,27 @@ function HomePage() {
     staleTime: 60_000,
   });
 
+  // Meta trimestral de Retenção (Regras de Metas)
+  const currentQuarter = Math.floor(today.getMonth() / 3) + 1;
+  const retentionOwners = ownerParam ? [ownerParam] : [...CARTEIRA_OWNER_IDS];
+  const fetchRetentionGoals = useServerFn(listRetentionGoals);
+  const retentionGoalsQ = useQuery({
+    queryKey: ["home-retention-goals", today.getFullYear(), currentQuarter, retentionOwners.join(",")],
+    queryFn: () =>
+      fetchRetentionGoals({
+        data: {
+          year: today.getFullYear(),
+          quarter: currentQuarter,
+          sfUserIds: retentionOwners,
+        },
+      }),
+    enabled: dataEnabled && retentionOwners.length > 0,
+    staleTime: 60_000,
+  });
+  const configuredRetentionGoal = useMemo(() => {
+    return (retentionGoalsQ.data?.records ?? []).reduce((a, r) => a + (r.goal ?? 0), 0);
+  }, [retentionGoalsQ.data]);
+
   const retentionKpis = useMemo(() => {
     const AB_THRESHOLD = 15000;
     const prevStartT = quarterRange.prevStart.getTime();
@@ -493,34 +514,37 @@ function HomePage() {
     let newRecurring = 0;
     for (const id of curAB) if (!prevAB.has(id)) newRecurring++;
     const retentionBase = prevAB.size;
-    const retentionGoal = Math.round(retentionBase * 0.9);
-    const retentionPct = retentionBase > 0 ? (retained / retentionBase) * 100 : 0;
-    const recurrencePct = retentionBase > 0 ? (curAB.size / retentionBase) * 100 : 0;
+    const retentionGoal =
+      configuredRetentionGoal > 0 ? configuredRetentionGoal : Math.round(retentionBase * 0.9);
+    const retentionPct = retentionGoal > 0 ? (retained / retentionGoal) * 100 : 0;
     return {
       retentionBase,
       retentionGoal,
       retentionActive: retained,
       retentionPct,
-      recurrenceBase: retentionBase,
-      recurrenceCount: curAB.size,
-      recurrencePct,
       newRecurring,
     };
-  }, [vendasQuarterQ.data, ownerParam, quarterRange]);
+  }, [vendasQuarterQ.data, ownerParam, quarterRange, configuredRetentionGoal]);
 
   const fmtPct = (n: number) =>
     `${(n * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
   const trendPct = (cur: number, base: number) =>
     base > 0 ? ((cur - base) / base) * 100 : undefined;
 
-  // ---- Série diária: Geração — Projetado × Realizado (mês atual) ----
-  // Projetado = venda projetada / taxa de conversão (R$). Usa 3M como base estável.
+  // ---- Meta / Projetado de Geração — deriva da meta de vendas via taxa de conversão R$ (3M). ----
+  const conversionRate = conversionKpis.convR3 || conversionKpis.convRCur || 0;
+  const generationGoal = conversionRate > 0 ? Math.round(dbGoal / conversionRate) : 0;
+  const generationProjected = conversionRate > 0 ? Math.round(projected / conversionRate) : 0;
+  const generationPct = generationGoal > 0 ? (generated / generationGoal) * 100 : 0;
+  const generationProjectedPct =
+    generationGoal > 0 ? (generationProjected / generationGoal) * 100 : 0;
+
+  // ---- Série diária: Geração — Projetado × Realizado (mês atual, usa "Gerado - Mês Atual") ----
   const genChartSeries = useMemo(() => {
     const y = today.getFullYear();
     const m = today.getMonth();
-    const rate = conversionKpis.convR3 || conversionKpis.convRCur || 0;
     const genByDay = new Map<number, number>();
-    for (const r of orcQ.data?.records ?? []) {
+    for (const r of geradoMesQ.data?.records ?? []) {
       if (ownerParam && r.ownerId !== ownerParam) continue;
       if (!r.createdDate) continue;
       const [yr, mo, dd] = r.createdDate.split("-").map(Number);
@@ -534,11 +558,11 @@ function HomePage() {
       cumGen += genByDay.get(d) ?? 0;
       return {
         day: row.day,
-        projected: rate > 0 ? Math.round(row.projected / rate) : 0,
+        projected: conversionRate > 0 ? Math.round(row.projected / conversionRate) : 0,
         generated: d <= todayDay ? Math.round(cumGen) : null,
       };
     });
-  }, [salesChartSeries, orcQ.data, ownerParam, conversionKpis, today]);
+  }, [salesChartSeries, geradoMesQ.data, ownerParam, conversionRate, today]);
 
   return (
     <AppLayout>
