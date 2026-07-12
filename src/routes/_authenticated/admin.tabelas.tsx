@@ -14,7 +14,11 @@ import {
   TrendingUp,
   CalendarDays,
   ShoppingBag,
+  Filter,
+  X as XIcon,
+  RotateCcw,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -26,6 +30,9 @@ import {
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
   getSalesforceReportByName,
+  VENDIDO_DATE_LITERALS,
+  VENDIDO_DEFAULTS,
+  type VendidoFilters,
   type SalesforceOppRow,
   type SalesforceReportRow,
 } from "@/lib/salesforce.functions";
@@ -803,10 +810,213 @@ function ComprasEfetuadasTable({ search }: { search: string }) {
   );
 }
 
+function TagListEditor({
+  label,
+  values,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  values: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const add = () => {
+    const v = draft.trim();
+    if (!v) return;
+    if (values.includes(v)) { setDraft(""); return; }
+    onChange([...values, v]);
+    setDraft("");
+  };
+  return (
+    <div className="space-y-1.5">
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <div className="flex flex-wrap gap-1.5">
+        {values.map((v) => (
+          <span key={v} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-surface-2 border border-border">
+            {v}
+            <button
+              type="button"
+              onClick={() => onChange(values.filter((x) => x !== v))}
+              className="hover:text-destructive"
+              aria-label={`Remover ${v}`}
+            >
+              <XIcon className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+        {values.length === 0 && (
+          <span className="text-xs text-muted-foreground italic">nenhum</span>
+        )}
+      </div>
+      <div className="flex gap-1.5">
+        <Input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); add(); }
+          }}
+          placeholder={placeholder ?? "Adicionar valor…"}
+          className="h-8 text-sm"
+        />
+        <Button type="button" size="sm" variant="outline" className="h-8" onClick={add}>Adicionar</Button>
+      </div>
+    </div>
+  );
+}
+
+function VendidoFiltersPanel({
+  value,
+  onApply,
+}: {
+  value: VendidoFilters;
+  onApply: (next: VendidoFilters) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<VendidoFilters>(value);
+
+  // Sync draft when applied value changes externally (e.g. reset).
+  useMemo(() => setDraft(value), [value]);
+
+  const set = <K extends keyof VendidoFilters>(k: K, v: VendidoFilters[K]) =>
+    setDraft((d) => ({ ...d, [k]: v }));
+
+  const literal = draft.closeDateLiteral ?? VENDIDO_DEFAULTS.closeDateLiteral;
+
+  return (
+    <div className="glass rounded-2xl border border-border overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-2/50 transition"
+      >
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <Filter className="h-4 w-4" />
+          Filtros do Salesforce
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {open ? "Recolher" : "Expandir para editar"}
+        </span>
+      </button>
+      {open && (
+        <div className="border-t border-border p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-muted-foreground">
+              StageName (igual a)
+            </div>
+            <Input
+              className="h-8 text-sm"
+              value={draft.stageEquals ?? ""}
+              onChange={(e) => set("stageEquals", e.target.value)}
+              placeholder="Pedido Concluído"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-muted-foreground">
+              CloseDate (período)
+            </div>
+            <Select
+              value={literal}
+              onValueChange={(v) => set("closeDateLiteral", v)}
+            >
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {VENDIDO_DATE_LITERALS.map((l) => (
+                  <SelectItem key={l} value={l}>{l}</SelectItem>
+                ))}
+                <SelectItem value="CUSTOM">Personalizado…</SelectItem>
+              </SelectContent>
+            </Select>
+            {literal === "CUSTOM" && (
+              <div className="flex gap-2 pt-1">
+                <Input
+                  type="date"
+                  className="h-8 text-sm"
+                  value={draft.closeDateFrom ?? ""}
+                  onChange={(e) => set("closeDateFrom", e.target.value)}
+                />
+                <Input
+                  type="date"
+                  className="h-8 text-sm"
+                  value={draft.closeDateTo ?? ""}
+                  onChange={(e) => set("closeDateTo", e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+
+          <TagListEditor
+            label="Status_do_Pedido__c (IN)"
+            values={draft.statusIn ?? []}
+            onChange={(v) => set("statusIn", v)}
+            placeholder="Ex.: Faturado"
+          />
+
+          <TagListEditor
+            label="Org_Oportunidade__c (IN)"
+            values={draft.orgIn ?? []}
+            onChange={(v) => set("orgIn", v)}
+            placeholder="Ex.: Acessórios 2P"
+          />
+
+          <TagListEditor
+            label="Tipo_de_NF__c (diferente de)"
+            values={draft.tipoNfNotIn ?? []}
+            onChange={(v) => set("tipoNfNotIn", v)}
+            placeholder="Ex.: Bonificação"
+          />
+
+          <TagListEditor
+            label="Account.Name (diferente de)"
+            values={draft.accountNameNotIn ?? []}
+            onChange={(v) => set("accountNameNotIn", v)}
+            placeholder="Ex.: 2P ACESSORIOS LTDA"
+          />
+
+          <TagListEditor
+            label="Owner.Name (diferente de)"
+            values={draft.ownerNameNotIn ?? []}
+            onChange={(v) => set("ownerNameNotIn", v)}
+            placeholder="Ex.: Caroline Gimenez"
+          />
+
+          <div className="md:col-span-2 flex items-center justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8"
+              onClick={() => {
+                setDraft({ ...VENDIDO_DEFAULTS });
+                onApply({ ...VENDIDO_DEFAULTS });
+              }}
+            >
+              <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Restaurar padrões
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="h-8"
+              onClick={() => onApply(draft)}
+            >
+              Aplicar filtros
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TabelasPage() {
   const { hasRole } = useAuth();
   const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas" | "vendido-mes">("orcamentos");
   const [vendedorMes, setVendedorMes] = useState<string>("__all__");
+  const [vendidoFilters, setVendidoFilters] = useState<VendidoFilters>({ ...VENDIDO_DEFAULTS });
 
   const [search, setSearch] = useState("");
 
@@ -837,8 +1047,8 @@ function TabelasPage() {
     enabled: hasRole("admin") && (tab === "vendas" || tab === "semanas"),
   });
   const qVendidoMes = useQuery({
-    queryKey: ["sf-vendido-mes-atual"],
-    queryFn: () => fetchVendidoMes({ data: {} }),
+    queryKey: ["sf-vendido-mes-atual", vendidoFilters],
+    queryFn: () => fetchVendidoMes({ data: vendidoFilters }),
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "vendido-mes",
   });
@@ -972,6 +1182,10 @@ function TabelasPage() {
                   : allRecords.filter((r) => (r.owner ?? "") === vendedorMes);
               return (
                 <>
+                  <VendidoFiltersPanel
+                    value={vendidoFilters}
+                    onApply={setVendidoFilters}
+                  />
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
                     <Select value={vendedorMes} onValueChange={setVendedorMes}>
