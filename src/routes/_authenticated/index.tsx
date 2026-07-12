@@ -830,7 +830,7 @@ function HomePage() {
               )}
               {sfTasks.map((t) => {
                 const inter = taskInteractions[t.id] ?? null;
-                const suggestion = buildAtlasSuggestion(t, inter, todayStart);
+                
                 const dueDate = new Date(t.date + "T00:00:00");
                 const overdueDays = Math.round((todayStart.getTime() - dueDate.getTime()) / 86400000);
                 const isOverdue = overdueDays > 0;
