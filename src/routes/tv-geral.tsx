@@ -545,8 +545,8 @@ const ProgressBar = ({
           left: `${Math.min(100, marker)}%`,
           width: 2,
           height: height + 6,
-          background: T.ink,
-          opacity: 0.55,
+          background: "#fff",
+          opacity: 0.7,
           borderRadius: 2,
         }}
       />
