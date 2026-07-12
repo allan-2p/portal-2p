@@ -493,6 +493,259 @@ function ProjectionsPanel({ search }: { search: string }) {
   );
 }
 
+// ============ Projeção - Tri Atual ============
+// Copia a Projeções, mas fixa no trimestre atual e usa a taxa de
+// conversão real de cada cliente (fechados/gerados no trimestre anterior)
+// para calcular a projeção de geração. Adiciona classificação A/B/C/D.
+
+type QuarterProjectionRow = {
+  account: string;
+  prevSales: number;
+  generatedCount: number;
+  closedCount: number;
+  convRate: number;
+  salesMonthly: number;
+  salesQuarter: number;
+  genMonthly: number;
+  genQuarter: number;
+  classification: "A" | "B" | "C" | "D";
+};
+
+function classifyAccount(prevSales: number): "A" | "B" | "C" | "D" {
+  if (prevSales <= 0) return "D";
+  if (prevSales < 15000) return "C";
+  if (prevSales <= 30000) return "B";
+  return "A";
+}
+
+function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
+  const cur = useMemo(currentQuarter, []);
+  const baseRange = useMemo(() => quarterRange(cur.year, cur.q - 1), [cur.year, cur.q]);
+  const targetLabel = useMemo(() => quarterRange(cur.year, cur.q).label, [cur.year, cur.q]);
+
+  const fetchOrc = useServerFn(getSalesforceOrcamentos);
+  const fetchVen = useServerFn(getSalesforceVendas);
+
+  const qOrc = useQuery({
+    queryKey: ["sf-orcamentos", baseRange.start, baseRange.end],
+    queryFn: () => fetchOrc({ data: { start: baseRange.start, end: baseRange.end } }),
+    staleTime: 60_000,
+  });
+  const qVen = useQuery({
+    queryKey: ["sf-vendas", baseRange.start, baseRange.end],
+    queryFn: () => fetchVen({ data: { start: baseRange.start, end: baseRange.end } }),
+    staleTime: 60_000,
+  });
+
+  const loading = qOrc.isLoading || qVen.isLoading;
+  const error = qOrc.error ?? qVen.error;
+  const orcRecs = qOrc.data?.records ?? [];
+  const venRecs = qVen.data?.records ?? [];
+
+  const rows: QuarterProjectionRow[] = useMemo(() => {
+    // Agregado por Account no trimestre-base
+    const generatedByAccount = new Map<string, number>();
+    const closedByAccount = new Map<string, number>();
+    const salesByAccount = new Map<string, number>();
+
+    // "Gerados" = orçamentos + vendas (todo pedido nasce como orçamento)
+    for (const o of orcRecs) {
+      const key = o.account ?? "(sem cliente)";
+      generatedByAccount.set(key, (generatedByAccount.get(key) ?? 0) + 1);
+    }
+    for (const v of venRecs) {
+      const key = v.account ?? "(sem cliente)";
+      generatedByAccount.set(key, (generatedByAccount.get(key) ?? 0) + 1);
+      closedByAccount.set(key, (closedByAccount.get(key) ?? 0) + 1);
+      salesByAccount.set(key, (salesByAccount.get(key) ?? 0) + (v.total ?? v.amount ?? 0));
+    }
+
+    // Fallback global (para clientes sem orçamentos rastreados)
+    const totalGen = orcRecs.length + venRecs.length;
+    const totalClosed = venRecs.length;
+    const globalConv = totalGen > 0 ? totalClosed / totalGen : 0;
+
+    // Universo de contas = todas com atividade no trimestre anterior
+    const accounts = new Set<string>([...generatedByAccount.keys(), ...salesByAccount.keys()]);
+
+    const out: QuarterProjectionRow[] = [];
+    for (const account of accounts) {
+      const prevSales = salesByAccount.get(account) ?? 0;
+      const generatedCount = generatedByAccount.get(account) ?? 0;
+      const closedCount = closedByAccount.get(account) ?? 0;
+      const convRate = generatedCount > 0 ? closedCount / generatedCount : globalConv;
+      const salesMonthly = prevSales / 3;
+      const salesQuarter = salesMonthly * 3;
+      const genMonthly = convRate > 0 ? salesMonthly / convRate : 0;
+      const genQuarter = genMonthly * 3;
+      out.push({
+        account,
+        prevSales,
+        generatedCount,
+        closedCount,
+        convRate,
+        salesMonthly,
+        salesQuarter,
+        genMonthly,
+        genQuarter,
+        classification: classifyAccount(prevSales),
+      });
+    }
+    return out.sort((a, b) => b.prevSales - a.prevSales);
+  }, [orcRecs, venRecs]);
+
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return rows;
+    return rows.filter((r) => r.account.toLowerCase().includes(s));
+  }, [rows, search]);
+
+  const totals = useMemo(() => {
+    const acc = {
+      prevSales: 0,
+      salesMonthly: 0,
+      salesQuarter: 0,
+      genMonthly: 0,
+      genQuarter: 0,
+      A: 0,
+      B: 0,
+      C: 0,
+      D: 0,
+    };
+    for (const r of filtered) {
+      acc.prevSales += r.prevSales;
+      acc.salesMonthly += r.salesMonthly;
+      acc.salesQuarter += r.salesQuarter;
+      acc.genMonthly += r.genMonthly;
+      acc.genQuarter += r.genQuarter;
+      acc[r.classification] += 1;
+    }
+    return acc;
+  }, [filtered]);
+
+  const classBadge = (c: "A" | "B" | "C" | "D") => {
+    const styles: Record<string, string> = {
+      A: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
+      B: "bg-sky-500/15 text-sky-500 border-sky-500/30",
+      C: "bg-amber-500/15 text-amber-500 border-amber-500/30",
+      D: "bg-muted text-muted-foreground border-border",
+    };
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold border",
+          styles[c],
+        )}
+      >
+        {c}
+      </span>
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-4 text-sm">
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Projeção alvo</div>
+          <div className="font-medium">{targetLabel} (atual)</div>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Base (trimestre anterior)</div>
+          <div className="font-medium">{baseRange.label}</div>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">{classBadge("A")}<span className="text-xs text-muted-foreground">{totals.A}</span></div>
+          <div className="flex items-center gap-1.5">{classBadge("B")}<span className="text-xs text-muted-foreground">{totals.B}</span></div>
+          <div className="flex items-center gap-1.5">{classBadge("C")}<span className="text-xs text-muted-foreground">{totals.C}</span></div>
+          <div className="flex items-center gap-1.5">{classBadge("D")}<span className="text-xs text-muted-foreground">{totals.D}</span></div>
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl p-3 text-[11px] text-muted-foreground leading-relaxed">
+        Classificação por vendas no trimestre anterior: <b className="text-foreground">A</b> &gt; R$ 30k ·
+        {" "}<b className="text-foreground">B</b> R$ 15k–30k ·
+        {" "}<b className="text-foreground">C</b> &lt; R$ 15k ·
+        {" "}<b className="text-foreground">D</b> sem histórico.
+        Geração projetada usa a conversão real de cada cliente (fechados/gerados no trimestre anterior).
+      </div>
+
+      <div className="glass rounded-2xl overflow-hidden">
+        {!!error && (
+          <div className="border-b border-destructive/40 bg-destructive/10 text-destructive text-sm px-4 py-3 flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 mt-0.5" />
+            <div>{error instanceof Error ? error.message : "Erro ao carregar dados"}</div>
+          </div>
+        )}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+                <th className="text-left px-4 py-2.5">Cliente</th>
+                <th className="text-center px-2 py-2.5">Classe</th>
+                <th className="text-right px-4 py-2.5">Vendas {baseRange.label}</th>
+                <th className="text-right px-4 py-2.5">Conversão</th>
+                <th className="text-right px-4 py-2.5">Proj. Vendas / mês</th>
+                <th className="text-right px-4 py-2.5">Proj. Vendas / trim.</th>
+                <th className="text-right px-4 py-2.5">Proj. Geração / mês</th>
+                <th className="text-right px-4 py-2.5">Proj. Geração / trim.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                    <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
+                    Calculando projeções…
+                  </td>
+                </tr>
+              )}
+              {!loading &&
+                filtered.map((r) => (
+                  <tr key={r.account} className="border-b border-border/40 hover:bg-surface-2/50">
+                    <td className="px-4 py-3 font-medium">{r.account}</td>
+                    <td className="px-2 py-3 text-center">{classBadge(r.classification)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-muted-foreground">{brl(r.prevSales)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-muted-foreground">
+                      {(r.convRate * 100).toFixed(1).replace(".", ",")}%
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono">{brl(r.salesMonthly)}</td>
+                    <td className="px-4 py-3 text-right font-mono">{brl(r.salesQuarter)}</td>
+                    <td className="px-4 py-3 text-right font-mono">{brl(r.genMonthly)}</td>
+                    <td className="px-4 py-3 text-right font-mono">{brl(r.genQuarter)}</td>
+                  </tr>
+                ))}
+              {!loading && filtered.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    Nenhum cliente com atividade no trimestre anterior.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            {!loading && filtered.length > 0 && (
+              <tfoot>
+                <tr className="border-t border-border bg-surface-2/50 text-sm">
+                  <td className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]" colSpan={2}>
+                    Total ({filtered.length})
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold text-muted-foreground">{brl(totals.prevSales)}</td>
+                  <td />
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.salesMonthly)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.salesQuarter)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.genMonthly)}</td>
+                  <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.genQuarter)}</td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ----- Concentração de fechamentos por semana do mês ----- //
 
 function weekOfMonth(dateStr: string): number {
@@ -951,7 +1204,7 @@ function OppTabPanel({
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  type TabId = "orcamentos" | "vendas" | "projecoes" | "semanas" | "vendido-mes" | "gerado-mes";
+  type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "gerado-mes";
   const [tab, setTab] = useState<TabId>("orcamentos");
 
   const [orcFilters, setOrcFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_ORCAMENTOS });
@@ -1051,6 +1304,9 @@ function TabelasPage() {
             <TabsTrigger value="projecoes" className="gap-2">
               <TrendingUp className="h-4 w-4" /> Projeções
             </TabsTrigger>
+            <TabsTrigger value="projecao-tri" className="gap-2">
+              <TrendingUp className="h-4 w-4" /> Projeção - Tri Atual
+            </TabsTrigger>
             <TabsTrigger value="semanas" className="gap-2">
               <CalendarDays className="h-4 w-4" /> Semanas
             </TabsTrigger>
@@ -1114,6 +1370,9 @@ function TabelasPage() {
           </TabsContent>
           <TabsContent value="projecoes" className="mt-4">
             <ProjectionsPanel search={search} />
+          </TabsContent>
+          <TabsContent value="projecao-tri" className="mt-4">
+            <CurrentQuarterProjectionsPanel search={search} />
           </TabsContent>
           <TabsContent value="semanas" className="mt-4 space-y-6">
             <section className="space-y-3">
