@@ -510,18 +510,6 @@ function SegmentacaoPage() {
                               </p>
                             </div>
 
-                            <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border flex items-start gap-2">
-                              <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-
-                              <div className="text-xs text-muted-foreground leading-relaxed">
-                                <span className="text-foreground font-medium">Atlas sugere: </span>
-                                {c.health > 70
-                                  ? `${c.name} está bem. Bom momento para apresentar linha premium ou upsell de acessórios.`
-                                  : c.health > 40
-                                  ? `Ritmo abaixo do esperado. Faça follow-up esta semana e revise últimas cotações pendentes.`
-                                  : `Cliente em risco. Agende ligação imediata para entender bloqueios e ofereça condição especial.`}
-                              </div>
-                            </div>
                           </td>
                         </tr>
                       )}
