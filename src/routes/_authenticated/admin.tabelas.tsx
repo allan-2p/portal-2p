@@ -548,17 +548,20 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
     const generatedByAccount = new Map<string, number>();
     const closedByAccount = new Map<string, number>();
     const salesByAccount = new Map<string, number>();
+    const ownerByAccount = new Map<string, string | null>();
 
     // "Gerados" = orçamentos + vendas (todo pedido nasce como orçamento)
     for (const o of orcRecs) {
       const key = o.account ?? "(sem cliente)";
       generatedByAccount.set(key, (generatedByAccount.get(key) ?? 0) + 1);
+      if (!ownerByAccount.has(key)) ownerByAccount.set(key, o.accountOwner ?? null);
     }
     for (const v of venRecs) {
       const key = v.account ?? "(sem cliente)";
       generatedByAccount.set(key, (generatedByAccount.get(key) ?? 0) + 1);
       closedByAccount.set(key, (closedByAccount.get(key) ?? 0) + 1);
       salesByAccount.set(key, (salesByAccount.get(key) ?? 0) + (v.total ?? v.amount ?? 0));
+      if (!ownerByAccount.get(key)) ownerByAccount.set(key, v.accountOwner ?? ownerByAccount.get(key) ?? null);
     }
 
     // Fallback global (para clientes sem orçamentos rastreados)
