@@ -160,7 +160,13 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const profilePatch: Record<string, unknown> = {};
+    const profilePatch: {
+      email?: string;
+      full_name?: string;
+      cargo?: string | null;
+      equipe?: string | null;
+      is_external?: boolean;
+    } = {};
     if (data.email !== undefined) profilePatch.email = data.email;
     if (data.full_name !== undefined) profilePatch.full_name = data.full_name;
     if (data.cargo !== undefined) profilePatch.cargo = data.cargo;
