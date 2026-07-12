@@ -169,6 +169,11 @@ function SegmentacaoPage() {
     queryFn: () => fetchVendidoMes({ data: OPP_DEFAULTS_GERADO_MES }),
     staleTime: 60_000,
   });
+  const qPedidos = useQuery({
+    queryKey: ["sf-pedidos", "seg"],
+    queryFn: () => fetchPedidos({ data: {} }),
+    staleTime: 60_000,
+  });
 
   const loading =
     qOrc.isLoading ||
