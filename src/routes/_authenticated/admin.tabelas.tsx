@@ -32,6 +32,7 @@ import {
   OPP_DEFAULTS_ORCAMENTOS,
   OPP_DEFAULTS_VENDAS,
   OPP_DEFAULTS_VENDIDO_MES,
+  OPP_DEFAULTS_GERADO_MES,
   type OppFilters,
   type SalesforceOppRow,
 } from "@/lib/salesforce.functions";
