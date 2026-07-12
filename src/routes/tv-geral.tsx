@@ -445,7 +445,7 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     qStartMonth,
   ]);
 
-  return { data, loading };
+  return { data, loading, isFetching, lastUpdated };
 }
 
 /* ---------- base ---------- */
