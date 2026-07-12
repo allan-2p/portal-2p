@@ -12,6 +12,15 @@ import {
   type SalespersonMonthlyGoals,
 } from "@/lib/admin.functions";
 import { listNewAbGoals, setNewAbGoal, listRetentionGoals, setRetentionGoal } from "@/lib/goals.functions";
+import {
+  getCommissionSettings,
+  setVendidoTiers,
+  setNovosValues,
+  setSalespersonEquipe,
+  type Equipe,
+  type VendidoTiersConfig,
+  type NovosValuesConfig,
+} from "@/lib/commission.functions";
 import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_NAMES } from "@/lib/salespeople";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -271,6 +280,9 @@ function MetasPage() {
         </div>
 
         <RetentionGoalsPanel year={quarter.year} quarter={QUARTERS.findIndex((qo) => qo.id === quarterId) + 1} quarterLabel={quarter.label} />
+        <CommissionVendidoPanel />
+        <CommissionNovosPanel />
+        <SalespersonEquipePanel />
       </div>
     </AppLayout>
   );
@@ -562,6 +574,270 @@ function GoalCell({
         {status === "saved" && <Check className="h-3.5 w-3.5 text-success" />}
         {status === "invalid" && <AlertTriangle className="h-3.5 w-3.5 text-destructive" />}
       </span>
+    </div>
+  );
+}
+
+// ============================================================
+//  Comissão do Vendido — % por faixa de atingimento e equipe
+// ============================================================
+
+function CommissionVendidoPanel() {
+  const fetch = useServerFn(getCommissionSettings);
+  const save = useServerFn(setVendidoTiers);
+  const qc = useQueryClient();
+
+  const q = useQuery({
+    queryKey: ["commission-settings"],
+    queryFn: () => fetch(),
+    staleTime: 60_000,
+  });
+
+  const cfg = q.data?.vendido;
+
+  const mut = useMutation({
+    mutationFn: (v: VendidoTiersConfig) => save({ data: v }),
+    onSuccess: () => {
+      toast.success("Regras de comissão do Vendido atualizadas.");
+      qc.invalidateQueries({ queryKey: ["commission-settings"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+  });
+
+  const [draft, setDraft] = useState<VendidoTiersConfig | null>(null);
+  useEffect(() => {
+    if (cfg && !draft) setDraft(cfg);
+  }, [cfg, draft]);
+
+  const view = draft ?? cfg;
+
+  const updatePct = (equipe: Equipe, i: number, v: string) => {
+    if (!view) return;
+    const n = Number(v.replace(",", "."));
+    if (Number.isNaN(n) || n < 0) return;
+    const next: VendidoTiersConfig = {
+      ...view,
+      pre_vendas: [...view.pre_vendas],
+      carteira: [...view.carteira],
+    };
+    if (equipe === "pre_vendas") next.pre_vendas[i] = n;
+    else next.carteira[i] = n;
+    setDraft(next);
+  };
+
+  const dirty = !!(draft && cfg && JSON.stringify(draft) !== JSON.stringify(cfg));
+
+  const tierLabel = (t: { min: number; max: number | null }) =>
+    t.max === null ? `${t.min}%+` : `${t.min}%–${t.max}%`;
+
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="font-display font-semibold">Comissão do Vendido</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            % aplicada sobre o valor vendido a partir de 70% da meta (método marginal por faixa).
+          </p>
+        </div>
+        {dirty && (
+          <button
+            onClick={() => draft && mut.mutate(draft)}
+            disabled={mut.isPending}
+            className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60"
+          >
+            {mut.isPending ? "Salvando…" : "Salvar alterações"}
+          </button>
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+              <th className="text-left px-4 py-2.5">Equipe</th>
+              {view?.tiers.map((t, i) => (
+                <th key={i} className="text-right px-4 py-2.5 w-32">{tierLabel(t)}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {(["pre_vendas", "carteira"] as const).map((eq) => (
+              <tr key={eq} className="border-b border-border/40 hover:bg-surface-2/50">
+                <td className="px-4 py-3 font-medium">
+                  {eq === "pre_vendas" ? "Pré Vendas" : "Carteira"}
+                </td>
+                {view?.tiers.map((_, i) => {
+                  const val = (eq === "pre_vendas" ? view.pre_vendas[i] : view.carteira[i]) ?? 0;
+                  return (
+                    <td key={i} className="px-4 py-2">
+                      <div className="relative">
+                        <input
+                          value={String(val).replace(".", ",")}
+                          onChange={(e) => updatePct(eq, i, e.target.value)}
+                          inputMode="decimal"
+                          className="w-full pl-2 pr-6 py-1.5 rounded-md bg-surface border border-border text-right tabular-nums focus:outline-none focus:border-primary/50"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+//  Comissão de Novos — R$ fixo por conta nova A/B e equipe
+// ============================================================
+
+function CommissionNovosPanel() {
+  const fetch = useServerFn(getCommissionSettings);
+  const save = useServerFn(setNovosValues);
+  const qc = useQueryClient();
+
+  const q = useQuery({
+    queryKey: ["commission-settings"],
+    queryFn: () => fetch(),
+    staleTime: 60_000,
+  });
+
+  const cfg = q.data?.novos;
+  const [draft, setDraft] = useState<NovosValuesConfig | null>(null);
+  useEffect(() => { if (cfg && !draft) setDraft(cfg); }, [cfg, draft]);
+  const view = draft ?? cfg;
+
+  const mut = useMutation({
+    mutationFn: (v: NovosValuesConfig) => save({ data: v }),
+    onSuccess: () => {
+      toast.success("Regras de comissão de Novos atualizadas.");
+      qc.invalidateQueries({ queryKey: ["commission-settings"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+  });
+
+  const upd = (equipe: Equipe, cls: "A" | "B", v: string) => {
+    if (!view) return;
+    const n = Math.max(0, Math.floor(Number(v.replace(/[^\d]/g, "")) || 0));
+    setDraft({ ...view, [equipe]: { ...view[equipe], [cls]: n } } as NovosValuesConfig);
+  };
+  const dirty = !!(draft && cfg && JSON.stringify(draft) !== JSON.stringify(cfg));
+
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="font-display font-semibold">Comissão de Novos A/B</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Valor fixo em reais por conta nova A ou B conquistada no trimestre.
+          </p>
+        </div>
+        {dirty && (
+          <button
+            onClick={() => draft && mut.mutate(draft)}
+            disabled={mut.isPending}
+            className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60"
+          >
+            {mut.isPending ? "Salvando…" : "Salvar alterações"}
+          </button>
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+              <th className="text-left px-4 py-2.5">Equipe</th>
+              <th className="text-right px-4 py-2.5 w-40">Novo B (R$)</th>
+              <th className="text-right px-4 py-2.5 w-40">Novo A (R$)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(["pre_vendas", "carteira"] as const).map((eq) => (
+              <tr key={eq} className="border-b border-border/40 hover:bg-surface-2/50">
+                <td className="px-4 py-3 font-medium">
+                  {eq === "pre_vendas" ? "Pré Vendas" : "Carteira"}
+                </td>
+                {(["B", "A"] as const).map((cls) => (
+                  <td key={cls} className="px-4 py-2">
+                    <input
+                      value={String(view?.[eq]?.[cls] ?? 0)}
+                      onChange={(e) => upd(eq, cls, e.target.value)}
+                      inputMode="numeric"
+                      className="w-full py-1.5 px-2 rounded-md bg-surface border border-border text-right tabular-nums focus:outline-none focus:border-primary/50"
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+//  Atribuição de Equipe por vendedor
+// ============================================================
+
+function SalespersonEquipePanel() {
+  const fetch = useServerFn(getCommissionSettings);
+  const save = useServerFn(setSalespersonEquipe);
+  const qc = useQueryClient();
+
+  const q = useQuery({
+    queryKey: ["commission-settings"],
+    queryFn: () => fetch(),
+    staleTime: 60_000,
+  });
+
+  const mut = useMutation({
+    mutationFn: (v: { sf_user_id: string; equipe: Equipe }) => save({ data: v }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["commission-settings"] }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+  });
+
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-border">
+        <h2 className="font-display font-semibold">Equipe do vendedor</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Define qual tabela de comissão se aplica a cada vendedor.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+              <th className="text-left px-4 py-2.5">Vendedor</th>
+              <th className="text-right px-4 py-2.5 w-56">Equipe</th>
+            </tr>
+          </thead>
+          <tbody>
+            {CARTEIRA_OWNER_IDS.map((id) => {
+              const current = (q.data?.equipe?.[id] ?? "carteira") as Equipe;
+              return (
+                <tr key={id} className="border-b border-border/40 hover:bg-surface-2/50">
+                  <td className="px-4 py-3 font-medium">{CARTEIRA_OWNER_NAMES[id] ?? id}</td>
+                  <td className="px-4 py-2 text-right">
+                    <select
+                      value={current}
+                      onChange={(e) => mut.mutate({ sf_user_id: id, equipe: e.target.value as Equipe })}
+                      className="py-1.5 px-2 rounded-md bg-surface border border-border text-sm focus:outline-none focus:border-primary/50"
+                    >
+                      <option value="pre_vendas">Pré Vendas</option>
+                      <option value="carteira">Carteira</option>
+                    </select>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
