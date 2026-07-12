@@ -1406,6 +1406,8 @@ function TabelasPage() {
               error={qVen.error}
               search={search}
               dateField={venFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
+              showFaturamento
+              showStatus
             />
           </TabsContent>
           <TabsContent value="vendido-mes" className="mt-4">
