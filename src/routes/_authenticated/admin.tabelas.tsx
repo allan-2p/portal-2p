@@ -1204,7 +1204,7 @@ function OppTabPanel({
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  type TabId = "orcamentos" | "vendas" | "projecoes" | "semanas" | "vendido-mes" | "gerado-mes";
+  type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "gerado-mes";
   const [tab, setTab] = useState<TabId>("orcamentos");
 
   const [orcFilters, setOrcFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_ORCAMENTOS });
