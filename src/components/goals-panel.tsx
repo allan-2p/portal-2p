@@ -165,14 +165,12 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     staleTime: 60_000,
   });
 
+  const fetchCommission = useServerFn(getCommissionSettings);
   const commissionQ = useQuery({
     queryKey: ["commission-settings"],
-    queryFn: () => useServerFnRef.current(),
+    queryFn: () => fetchCommission(),
     staleTime: 60_000,
   });
-  // Guarda a referência do fetch de commission — useServerFn deve ser chamado no topo.
-  const fetchCommission = useServerFn(getCommissionSettings);
-  const useServerFnRef = useMemoRef(fetchCommission);
 
   const loading =
     curVendasQ.isLoading || prevVendasQ.isLoading || goalsQ.isLoading || newAbGoalsQ.isLoading || retentionGoalsQ.isLoading;
