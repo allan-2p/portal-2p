@@ -62,8 +62,8 @@ function initialize() {
   supabase.auth.onAuthStateChange((event, session) => {
     if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
     const u = session?.user ?? null;
-    setState({ user: u });
-    loadFor(u);
+    setState({ user: u, loading: true });
+    loadFor(u).finally(() => setState({ loading: false }));
   });
 }
 
