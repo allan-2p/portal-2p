@@ -283,6 +283,7 @@ function MetasPage() {
 
         <RetentionGoalsPanel year={quarter.year} quarter={QUARTERS.findIndex((qo) => qo.id === quarterId) + 1} quarterLabel={quarter.label} />
         <CommissionVendidoPanel />
+        <CommissionRetencaoPanel />
         <CommissionNovosPanel />
         <SalespersonEquipePanel />
       </div>
