@@ -820,6 +820,7 @@ function TabelasPage() {
 
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
+  const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
 
   const qOrc = useQuery({
     queryKey: ["sf-orcamentos", range.start, range.end],
@@ -833,6 +834,13 @@ function TabelasPage() {
     staleTime: 60_000,
     enabled: hasRole("admin") && (tab === "vendas" || tab === "semanas"),
   });
+  const qVendidoMes = useQuery({
+    queryKey: ["sf-vendido-mes-atual"],
+    queryFn: () => fetchVendidoMes({ data: {} }),
+    staleTime: 60_000,
+    enabled: hasRole("admin") && tab === "vendido-mes",
+  });
+
 
   if (!hasRole("admin")) {
     return (
