@@ -125,7 +125,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   const fetchVendas = useServerFn(getSalesforceVendas);
   const fetchSalesByAccount = useServerFn(getSalesforceSalesByAccount);
   const fetchFaturamentoGoals = useServerFn(listFaturamentoGoalsForOwners);
-  const fetchNewAbGoals = useServerFn(listNewAbGoals);
+  // (Novos A+B não tem meta — é apenas quantidade realizada)
   const fetchRetentionGoals = useServerFn(listRetentionGoals);
 
   // Vendas do trimestre atual (para faturamento por owner e Novos A+B por accountId+owner)
