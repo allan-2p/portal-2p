@@ -667,7 +667,7 @@ function HomePage() {
         </div>
 
         {/* Meta */}
-        <div className="glass rounded-2xl p-5">
+        <div className="glass rounded-2xl p-5 space-y-5">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
               <Target className="h-5 w-5 text-primary" />
@@ -687,29 +687,62 @@ function HomePage() {
               </div>
               <div className="relative h-3 mt-1.5 rounded-full bg-surface-2 overflow-hidden border border-border">
                 <div
+                  className="absolute inset-y-0 left-0 bg-primary/25 rounded-full"
+                  style={{ width: `${Math.min(projectedPct, 100)}%` }}
+                  title={`Projetado: ${projectedPct.toFixed(1)}%`}
+                />
+                <div
                   className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-[oklch(0.78_0.19_60)] rounded-full transition-all"
                   style={{ width: `${Math.min(goalPct, 100)}%` }}
                 />
               </div>
-              <button onClick={() => setMetaOpen(!metaOpen)} className="mt-3 text-xs text-primary font-medium flex items-center gap-1 hover:underline">
-                {metaOpen ? "Ocultar detalhes" : "Detalhar"}
-                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", metaOpen && "rotate-180")} />
-              </button>
             </div>
           </div>
 
+          {/* Geração do mês */}
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[oklch(0.55_0.2_250)]/15 flex items-center justify-center shrink-0">
+              <TrendingUp className="h-5 w-5 text-[oklch(0.55_0.2_250)]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="font-display font-semibold">Geração do mês</div>
+                <div className="text-sm flex items-center gap-3">
+                  <span><span className="text-muted-foreground">Gerado </span><span className="text-[oklch(0.55_0.2_250)] font-bold">{fmt(generated)}</span></span>
+                  <span className="text-muted-foreground">·</span>
+                  <span><span className="text-muted-foreground">Projetado </span><span className="font-semibold">{fmt(generationProjected)}</span></span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-3 text-xs">
+                <span className="font-semibold text-foreground">{generationPct.toFixed(1)}% alcançado</span>
+                <span className="text-muted-foreground tabular-nums">{fmt(generated)} / {fmt(generationGoal)}</span>
+              </div>
+              <div className="relative h-3 mt-1.5 rounded-full bg-surface-2 overflow-hidden border border-border">
+                <div
+                  className="absolute inset-y-0 left-0 bg-[oklch(0.55_0.2_250)]/25 rounded-full"
+                  style={{ width: `${Math.min(generationProjectedPct, 100)}%` }}
+                  title={`Projetado: ${generationProjectedPct.toFixed(1)}%`}
+                />
+                <div
+                  className="absolute inset-y-0 left-0 bg-[oklch(0.55_0.2_250)] rounded-full transition-all"
+                  style={{ width: `${Math.min(generationPct, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <button onClick={() => setMetaOpen(!metaOpen)} className="text-xs text-primary font-medium flex items-center gap-1 hover:underline">
+            {metaOpen ? "Ocultar detalhes" : "Detalhar"}
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", metaOpen && "rotate-180")} />
+          </button>
+
           {metaOpen && (
-            <div className="mt-5 pt-5 border-t border-border space-y-5">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="pt-5 border-t border-border space-y-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 <MiniKpi
                   label="Retenção"
                   value={`${retentionKpis.retentionActive} / ${retentionKpis.retentionGoal}`}
                   sub={`${retentionKpis.retentionPct.toFixed(1)}% · base A/B tri anterior: ${retentionKpis.retentionBase}`}
-                />
-                <MiniKpi
-                  label="Recorrência"
-                  value={`${retentionKpis.recurrenceCount} / ${retentionKpis.recurrenceBase}`}
-                  sub={`${retentionKpis.recurrencePct.toFixed(1)}% dos A/B do tri anterior`}
                 />
                 <MiniKpi
                   label="Novos recorrentes"
@@ -742,6 +775,7 @@ function HomePage() {
             </div>
           )}
         </div>
+
 
         {/* Seção: Operação */}
         <div>
