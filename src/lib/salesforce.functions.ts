@@ -660,6 +660,17 @@ export const OPP_DEFAULTS_VENDAS: OppFilters = {
   dateLiteral: "THIS_MONTH",
 };
 
+export const OPP_DEFAULTS_GERADO_MES: OppFilters = {
+  // Qualquer stage e qualquer status do pedido
+  tipoNfNotIn: ["Bonificação"],
+  statusIn: [],
+  orgIn: ["Acessórios 2P", "WD"],
+  accountNameNotIn: ["2P ACESSORIOS LTDA"],
+  ownerNameNotIn: ["Caroline Gimenez"],
+  dateField: "CreatedDate",
+  dateLiteral: "THIS_MONTH",
+};
+
 export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => (input ?? {}) as OppFilters)
