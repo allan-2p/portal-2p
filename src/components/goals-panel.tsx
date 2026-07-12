@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import {
   getSalesforceVendas,
   getSalesforceSalesByAccount,
+  getSalesforceVendidoMesAtual,
+  OPP_DEFAULTS_VENDIDO_MES,
 } from "@/lib/salesforce.functions";
 import {
   listFaturamentoGoalsForOwners,
