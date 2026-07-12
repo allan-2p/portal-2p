@@ -41,6 +41,8 @@ function currentQuarterInfo(now = new Date()) {
   const curEnd = new Date(y, qStart + 3, 0);
   const prevStart = new Date(y, qStart - 3, 1);
   const prevEnd = new Date(y, qStart, 0);
+  const monthStart = new Date(y, m, 1);
+  const monthEnd = new Date(y, m + 1, 0);
   return {
     year: y,
     quarter,
@@ -49,7 +51,11 @@ function currentQuarterInfo(now = new Date()) {
     curEnd: fmtKey(curEnd),
     prevStart: fmtKey(prevStart),
     prevEnd: fmtKey(prevEnd),
+    monthStart: fmtKey(monthStart),
+    monthEnd: fmtKey(monthEnd),
+    currentMonth: m + 1,
     label: `Q${quarter} ${y}`,
+    monthLabel: `${pad(m + 1)}/${y}`,
   };
 }
 
