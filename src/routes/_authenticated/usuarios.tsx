@@ -435,6 +435,13 @@ function PortalTable({
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex gap-1 justify-end">
+                    <button
+                      onClick={() => onEdit(r)}
+                      className="p-1.5 rounded hover:bg-surface-2"
+                      title="Editar informações"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
                     {r.sf_user_id && (
                       <button
                         onClick={() => handleSyncPhoto(r.id)}
