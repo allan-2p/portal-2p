@@ -12,7 +12,9 @@ import {
   Tooltip,
 } from "recharts";
 import { TrendingUp, TrendingDown, Wifi, WifiOff, Zap, Sun } from "lucide-react";
-import solarLogo from "@/assets/2p-logo-black.png";
+import solarLogoAsset from "@/assets/2p-logo-black.png.asset.json";
+
+const solarLogo = solarLogoAsset.url;
 
 export const Route = createFileRoute("/_authenticated/2p-group")({
   head: () => ({
