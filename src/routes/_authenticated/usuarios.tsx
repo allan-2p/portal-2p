@@ -15,7 +15,9 @@ import {
   syncSalesforcePhoto,
   type SFCandidate,
 } from "@/lib/users.functions";
+import { adminSetUserScope, adminSetUserSfId, type FilterScope } from "@/lib/scope.functions";
 import { toast } from "sonner";
+
 import {
   Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink,
 } from "lucide-react";
