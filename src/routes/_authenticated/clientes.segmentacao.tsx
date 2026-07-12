@@ -151,9 +151,11 @@ function SegmentacaoPage() {
   const salespeopleQ = useQuery({
     queryKey: ["sf-salespeople"],
     queryFn: () => fetchSalespeople(),
+    enabled: scopeReady,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
   });
+
 
   // Nomes permitidos pelo escopo (mapa SF id -> Name)
   const allowedOwnerNames = useMemo<Set<string> | null>(() => {
