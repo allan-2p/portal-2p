@@ -1304,6 +1304,9 @@ function TabelasPage() {
             <TabsTrigger value="projecoes" className="gap-2">
               <TrendingUp className="h-4 w-4" /> Projeções
             </TabsTrigger>
+            <TabsTrigger value="projecao-tri" className="gap-2">
+              <TrendingUp className="h-4 w-4" /> Projeção - Tri Atual
+            </TabsTrigger>
             <TabsTrigger value="semanas" className="gap-2">
               <CalendarDays className="h-4 w-4" /> Semanas
             </TabsTrigger>
