@@ -533,7 +533,7 @@ function mapOppRow(r: any): SalesforceOppRow {
     desconto: num(r.Desconto__c),
     closeDate: r.CloseDate ?? null,
     createdDate: r.CreatedDate ? String(r.CreatedDate).slice(0, 10) : null,
-    dataFaturamento: r.Data_Faturamento__c ? String(r.Data_Faturamento__c).slice(0, 10) : null,
+    dataFaturamento: r.Data_de_Faturamento__c ? String(r.Data_de_Faturamento__c).slice(0, 10) : null,
     account: r.Account?.Name ?? null,
     accountId: r.AccountId ?? null,
     owner: r.Owner?.Name ?? null,
@@ -544,7 +544,7 @@ function mapOppRow(r: any): SalesforceOppRow {
 
 const OPP_COLS =
   `Id, Name, StageName, Status_do_Pedido__c, Tipo_de_NF__c, Amount, Total__c, Valor_L_q__c, Frete__c, Desconto__c, ` +
-  `CloseDate, CreatedDate, Data_Faturamento__c, AccountId, Account.Name, Account.Owner.Name, Owner.Name, OwnerId`;
+  `CloseDate, CreatedDate, Data_de_Faturamento__c, AccountId, Account.Name, Account.Owner.Name, Owner.Name, OwnerId`;
 
 
 
