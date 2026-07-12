@@ -32,30 +32,40 @@ export function VendedorFilter({
   });
 
   const scope = scopeQ.data;
-  const isIndividual = scope?.scope === "individual";
-  const lockedId = isIndividual ? scope?.sf_user_id ?? null : null;
+  const scopeReady = !scopeQ.isLoading && !scopeQ.isError && !!scope;
+
+  // Fail-safe: enquanto o escopo não carrega OU se der erro, trata como Individual
+  // (nunca abre "Todos" antes de saber a permissão do usuário).
+  const isIndividual = !scopeReady || scope?.scope === "individual";
+  const lockedId = isIndividual
+    ? (scope?.sf_user_id ?? null)
+    : null;
 
   // Interseção: escopo do usuário ∩ allowedIds da tela
   const effectiveAllowed: Set<string> | null = useMemo(() => {
-    const fromScope = scope?.allowed_sf_ids ?? null; // null = sem restrição
+    const fromScope = scopeReady ? scope?.allowed_sf_ids ?? null : []; // enquanto carrega, restringe
     const fromPage = allowedIds ?? null;
     if (!fromScope && !fromPage) return null;
     const a = new Set(fromScope ?? []);
     if (!fromScope) return new Set(fromPage!);
     if (!fromPage) return a;
     return new Set(fromPage.filter((id) => a.has(id)));
-  }, [scope, allowedIds]);
+  }, [scope, scopeReady, allowedIds]);
 
   // Trava o filtro no próprio vendedor
   useEffect(() => {
     if (lockedId && value !== lockedId) onChange(lockedId);
   }, [lockedId, value, onChange]);
 
-  // Se "all" não é permitido (escopo restrito não-Geral), força a primeira opção válida.
+  // Se "all" não é permitido, força a primeira opção válida (ou o próprio id).
   useEffect(() => {
     if (isIndividual) return;
-    if (!effectiveAllowed) return; // Geral e sem restrição da tela
-    if (value === "all") return;
+    if (!effectiveAllowed) return;
+    if (value === "all") {
+      const first = effectiveAllowed.values().next().value;
+      if (first) onChange(first);
+      return;
+    }
     if (!effectiveAllowed.has(value)) {
       const first = effectiveAllowed.values().next().value;
       if (first && first !== value) onChange(first);
@@ -65,6 +75,20 @@ export function VendedorFilter({
   const people = (q.data?.records ?? []).filter((p) =>
     effectiveAllowed ? effectiveAllowed.has(p.id) : true,
   );
+
+  // Enquanto o escopo carrega, mostra placeholder travado (sem "Todos")
+  if (!scopeReady) {
+    return (
+      <div
+        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border opacity-80"
+        title="Carregando permissões…"
+      >
+        <UsersIcon className="h-4 w-4 text-primary" />
+        <label className="text-xs text-muted-foreground">Vendedor</label>
+        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (lockedId) {
     const me = people.find((p) => p.id === lockedId);
@@ -83,7 +107,7 @@ export function VendedorFilter({
   }
 
   // Escopo restrito (Pré Vendas / Carteira): não mostra "Todos" fora do subconjunto
-  const showAll = scope?.scope === "geral" || !effectiveAllowed;
+  const showAll = scope?.scope === "geral" && !allowedIds;
   const scopeLabel =
     scope?.scope === "pre_vendas"
       ? "Pré Vendas"
