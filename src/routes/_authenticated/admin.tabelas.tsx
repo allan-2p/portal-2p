@@ -1351,6 +1351,7 @@ function OppTabPanel({
   filters,
   defaults,
   onFiltersChange,
+  onSaveAsDefault,
   vendedor,
   onVendedorChange,
   records,
@@ -1364,6 +1365,7 @@ function OppTabPanel({
   filters: OppFilters;
   defaults: OppFilters;
   onFiltersChange: (next: OppFilters) => void;
+  onSaveAsDefault?: (next: OppFilters) => void;
   vendedor: string;
   onVendedorChange: (next: string) => void;
   records: SalesforceOppRow[];
@@ -1384,7 +1386,7 @@ function OppTabPanel({
 
   return (
     <div className="space-y-3">
-      <OppFiltersPanel value={filters} defaults={defaults} onApply={onFiltersChange} />
+      <OppFiltersPanel value={filters} defaults={defaults} onApply={onFiltersChange} onSaveAsDefault={onSaveAsDefault} />
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
         <Select value={vendedor} onValueChange={onVendedorChange}>
