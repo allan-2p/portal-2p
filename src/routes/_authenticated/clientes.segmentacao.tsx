@@ -616,19 +616,6 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
               </div>
             </div>
 
-            <div className="rounded-xl bg-primary/8 border border-primary/20 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-xs uppercase tracking-wider font-semibold text-primary">Atlas — Plano sugerido</span>
-              </div>
-              <p className="text-sm text-foreground/90 leading-relaxed">
-                {client.health > 70
-                  ? `${client.name} está em excelente forma. Apresente a linha premium e proponha um plano trimestral de recompras.`
-                  : client.health > 40
-                  ? `Cliente desacelerando. Recomendo um follow-up estruturado nos próximos 7 dias e revisar cotações pendentes.`
-                  : `Cliente em risco crítico. Agendar ligação imediata com gestor e oferecer condição comercial diferenciada para retomada.`}
-              </p>
-            </div>
 
             <div className="rounded-xl bg-surface-2 border border-border p-4">
               <div className="flex items-center gap-2 mb-2">
