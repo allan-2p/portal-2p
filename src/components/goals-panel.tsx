@@ -363,12 +363,12 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
 
       <div className="grid md:grid-cols-3 gap-4">
         <GoalCard
-          label="VENDIDO"
+          label={`VENDIDO · ${info.monthLabel}`}
           Icon={Target}
           realized={fmtBRL(faturamentoReal)}
           goal={fmtBRL(faturamentoMeta)}
           pct={pct(faturamentoReal, faturamentoMeta)}
-          hint={faturamentoMeta === 0 ? "sem meta ativa" : undefined}
+          hint={faturamentoMeta === 0 ? "sem meta do mês" : "mês atual"}
           loading={loading}
         />
         <GoalCard
