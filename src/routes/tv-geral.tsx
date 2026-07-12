@@ -16,7 +16,7 @@ import { businessDaysOfMonth, isBusinessDay } from "@/lib/business-days";
 
 const solarLogo = solarLogoAsset.url;
 
-export const Route = createFileRoute("/_authenticated/tv-geral")({
+export const Route = createFileRoute("/tv-geral")({
   head: () => ({
     meta: [
       { title: "2P Group · Painel de Performance" },
