@@ -380,6 +380,24 @@ function PortalTable({
                   </select>
                 </td>
                 <td className="px-4 py-3">
+                  <select
+                    value={r.filter_scope}
+                    onChange={(e) => onScopeChange(r.id, e.target.value as FilterScope)}
+                    className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                  >
+                    {SCOPES.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-3">
+                  <SfIdCell
+                    value={r.sf_user_id}
+                    onSave={(v) => onSfIdChange(r.id, v)}
+                  />
+                </td>
+
+                <td className="px-4 py-3">
                   <span
                     className={`text-xs px-2 py-1 rounded-full ${
                       r.ativo
