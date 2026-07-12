@@ -210,3 +210,21 @@ export function calcNovosCommission(
   const v = equipe === "pre_vendas" ? cfg.pre_vendas : cfg.carteira;
   return countA * (v.A ?? 0) + countB * (v.B ?? 0);
 }
+
+/** Comissão de Retenção: valor fixo em R$ da faixa que contém o % de atingimento. */
+export function calcRetencaoCommission(
+  ativos: number,
+  meta: number,
+  cfg: RetencaoTiersConfig,
+): number {
+  if (meta <= 0) return 0;
+  const pct = (ativos / meta) * 100;
+  for (let i = cfg.tiers.length - 1; i >= 0; i--) {
+    const t = cfg.tiers[i];
+    const lo = t.min;
+    const hi = t.max ?? Infinity;
+    if (pct >= lo && pct < hi) return cfg.values[i] ?? 0;
+    if (t.max === null && pct >= lo) return cfg.values[i] ?? 0;
+  }
+  return 0;
+}
