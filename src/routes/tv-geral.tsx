@@ -781,8 +781,9 @@ const GraficoSemanal = ({
                         style={{
                           position: "absolute",
                           top: -26,
-                          background: T.ink,
-                          color: T.bgTxt,
+                          background: `linear-gradient(135deg, ${T.orange}, ${T.blue})`,
+                          color: "#fff",
+                          boxShadow: "0 6px 18px -6px rgba(107,91,255,.7)",
                           fontSize: 11,
                           fontWeight: 800,
                           padding: "3px 8px",
