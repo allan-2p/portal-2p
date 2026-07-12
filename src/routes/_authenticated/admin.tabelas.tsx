@@ -600,15 +600,25 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
     return out.sort((a, b) => b.prevSales - a.prevSales);
   }, [orcRecs, venRecs]);
 
+  const vendedores = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) if (r.accountOwner) set.add(r.accountOwner);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return rows;
-    return rows.filter(
+    let base = rows;
+    if (vendedor !== "__all__") {
+      base = base.filter((r) => (r.accountOwner ?? "") === vendedor);
+    }
+    if (!s) return base;
+    return base.filter(
       (r) =>
         r.account.toLowerCase().includes(s) ||
         (r.accountOwner ?? "").toLowerCase().includes(s),
     );
-  }, [rows, search]);
+  }, [rows, search, vendedor]);
 
   const totals = useMemo(() => {
     const acc = {
