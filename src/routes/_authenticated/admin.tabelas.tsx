@@ -25,6 +25,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  getSalesforceOrcamentos,
+  getSalesforceVendas,
   getSalesforceVendidoMesAtual,
   OPP_DATE_LITERALS,
   OPP_DEFAULTS_ORCAMENTOS,
