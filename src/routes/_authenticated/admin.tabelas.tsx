@@ -705,7 +705,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                  <td colSpan={9} className="px-4 py-16 text-center text-muted-foreground text-sm">
                     <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
                     Calculando projeções…
                   </td>
@@ -715,6 +715,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
                 filtered.map((r) => (
                   <tr key={r.account} className="border-b border-border/40 hover:bg-surface-2/50">
                     <td className="px-4 py-3 font-medium">{r.account}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{r.accountOwner ?? "—"}</td>
                     <td className="px-2 py-3 text-center">{classBadge(r.classification)}</td>
                     <td className="px-4 py-3 text-right font-mono text-muted-foreground">{brl(r.prevSales)}</td>
                     <td className="px-4 py-3 text-right font-mono text-muted-foreground">
