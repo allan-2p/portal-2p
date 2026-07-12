@@ -1422,6 +1422,9 @@ function CompleteTaskDialog({
             whatId: task.whatId,
             whoId: task.whoId,
             ownerId: task.ownerId,
+            tipoInteracao: interactionType,
+            conseguiuFalar: contacted === "yes" ? "Sim" : "Não",
+            comments: interactionNote,
           },
         });
         onSaveInteraction({ contacted, type: interactionType, note: interactionNote, ts: Date.now() });
