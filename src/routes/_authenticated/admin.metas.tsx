@@ -844,3 +844,92 @@ function SalespersonEquipePanel() {
     </div>
   );
 }
+
+// ============================================================
+//  Comissão de Retenção — R$ fixo por faixa de atingimento
+// ============================================================
+
+function CommissionRetencaoPanel() {
+  const fetch = useServerFn(getCommissionSettings);
+  const save = useServerFn(setRetencaoTiers);
+  const qc = useQueryClient();
+
+  const q = useQuery({
+    queryKey: ["commission-settings"],
+    queryFn: () => fetch(),
+    staleTime: 60_000,
+  });
+
+  const cfg = q.data?.retencao;
+  const [draft, setDraft] = useState<RetencaoTiersConfig | null>(null);
+  useEffect(() => { if (cfg && !draft) setDraft(cfg); }, [cfg, draft]);
+  const view = draft ?? cfg;
+
+  const mut = useMutation({
+    mutationFn: (v: RetencaoTiersConfig) => save({ data: v }),
+    onSuccess: () => {
+      toast.success("Regras de comissão de Retenção atualizadas.");
+      qc.invalidateQueries({ queryKey: ["commission-settings"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+  });
+
+  const updVal = (i: number, v: string) => {
+    if (!view) return;
+    const n = Math.max(0, Math.floor(Number(v.replace(/[^\d]/g, "")) || 0));
+    const values = [...view.values];
+    values[i] = n;
+    setDraft({ ...view, values });
+  };
+  const dirty = !!(draft && cfg && JSON.stringify(draft) !== JSON.stringify(cfg));
+
+  const tierLabel = (t: { min: number; max: number | null }) =>
+    t.max === null ? `${t.min}%+` : `${t.min}%–${t.max}%`;
+
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="font-display font-semibold">Comissão de Retenção A/B</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Valor fixo em reais conforme % de atingimento da meta de retenção (abaixo de 70% = R$ 0).
+          </p>
+        </div>
+        {dirty && (
+          <button
+            onClick={() => draft && mut.mutate(draft)}
+            disabled={mut.isPending}
+            className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60"
+          >
+            {mut.isPending ? "Salvando…" : "Salvar alterações"}
+          </button>
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+              <th className="text-left px-4 py-2.5">Faixa de atingimento</th>
+              <th className="text-right px-4 py-2.5 w-48">Comissão (R$)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {view?.tiers.map((t, i) => (
+              <tr key={i} className="border-b border-border/40 hover:bg-surface-2/50">
+                <td className="px-4 py-3 font-medium">{tierLabel(t)}</td>
+                <td className="px-4 py-2">
+                  <input
+                    value={String(view.values[i] ?? 0)}
+                    onChange={(e) => updVal(i, e.target.value)}
+                    inputMode="numeric"
+                    className="w-full py-1.5 px-2 rounded-md bg-surface border border-border text-right tabular-nums focus:outline-none focus:border-primary/50"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
