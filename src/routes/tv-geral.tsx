@@ -995,6 +995,7 @@ function Dashboard2P() {
         @keyframes fadeUp { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
         @keyframes growUp { from{transform:scaleY(0)} to{transform:scaleY(1)} }
         @keyframes sweep { 0%{transform:translateX(-30%) rotate(12deg)} 100%{transform:translateX(130%) rotate(12deg)} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
       `}</style>
 
       <div
