@@ -170,7 +170,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   });
 
   const loading =
-    curVendasQ.isLoading || prevVendasQ.isLoading || goalsQ.isLoading || newAbGoalsQ.isLoading || retentionGoalsQ.isLoading;
+    curVendasQ.isLoading || prevVendasQ.isLoading || goalsQ.isLoading || retentionGoalsQ.isLoading;
 
   const ownerSet = useMemo(() => new Set(owners), [owners.join(",")]);
 
