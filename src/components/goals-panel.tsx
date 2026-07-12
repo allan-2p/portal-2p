@@ -16,6 +16,7 @@ import {
   getCommissionSettings,
   calcVendidoCommission,
   calcNovosCommission,
+  calcRetencaoCommission,
   type Equipe,
 } from "@/lib/commission.functions";
 import { CARTEIRA_OWNER_IDS } from "@/lib/salespeople";
