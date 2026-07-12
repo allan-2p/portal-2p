@@ -938,7 +938,11 @@ function TabelasPage() {
             </section>
 
           </TabsContent>
+          <TabsContent value="compras-efetuadas" className="mt-4">
+            <ComprasEfetuadasTable search={search} />
+          </TabsContent>
         </Tabs>
+
       </div>
     </AppLayout>
 
