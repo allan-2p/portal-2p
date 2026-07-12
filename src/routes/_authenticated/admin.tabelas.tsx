@@ -523,6 +523,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
   const cur = useMemo(currentQuarter, []);
   const baseRange = useMemo(() => quarterRange(cur.year, cur.q - 1), [cur.year, cur.q]);
   const targetLabel = useMemo(() => quarterRange(cur.year, cur.q).label, [cur.year, cur.q]);
+  const [vendedor, setVendedor] = useState<string>("__all__");
 
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
@@ -599,15 +600,25 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
     return out.sort((a, b) => b.prevSales - a.prevSales);
   }, [orcRecs, venRecs]);
 
+  const vendedores = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) if (r.accountOwner) set.add(r.accountOwner);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return rows;
-    return rows.filter(
+    let base = rows;
+    if (vendedor !== "__all__") {
+      base = base.filter((r) => (r.accountOwner ?? "") === vendedor);
+    }
+    if (!s) return base;
+    return base.filter(
       (r) =>
         r.account.toLowerCase().includes(s) ||
         (r.accountOwner ?? "").toLowerCase().includes(s),
     );
-  }, [rows, search]);
+  }, [rows, search, vendedor]);
 
   const totals = useMemo(() => {
     const acc = {
@@ -662,6 +673,21 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
         <div>
           <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Base (trimestre anterior)</div>
           <div className="font-medium">{baseRange.label}</div>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div className="flex items-center gap-2">
+          <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Vendedor</label>
+          <Select value={vendedor} onValueChange={setVendedor}>
+            <SelectTrigger className="h-8 w-[220px] text-sm">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos</SelectItem>
+              {vendedores.map((v) => (
+                <SelectItem key={v} value={v}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="h-8 w-px bg-border" />
         <div className="flex items-center gap-3">
