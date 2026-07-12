@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-export type FilterScope = "geral" | "pre_vendas" | "carteira" | "individual";
-export type SFTeam = "pre_vendas" | "carteira";
+import { getScopeForUser } from "./scope.server";
+export type { FilterScope, MyScope, SFTeam } from "./scope.types";
+import type { FilterScope, MyScope, SFTeam } from "./scope.types";
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("has_role", {
@@ -13,36 +13,10 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Forbidden: admin role required");
 }
 
-export type MyScope = {
-  scope: FilterScope;
-  sf_user_id: string | null;
-  /** IDs de vendedores SF que o usuário pode ver. `null` = sem restrição (Geral). */
-  allowed_sf_ids: string[] | null;
-};
-
 export const getMyScope = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<MyScope> => {
-    const { data: prof } = await context.supabase
-      .from("profiles")
-      .select("filter_scope, sf_user_id")
-      .eq("id", context.userId)
-      .maybeSingle();
-    const scope = ((prof?.filter_scope as FilterScope) ?? "individual") as FilterScope;
-    const sf_user_id = (prof?.sf_user_id as string | null) ?? null;
-
-    if (scope === "geral") return { scope, sf_user_id, allowed_sf_ids: null };
-    if (scope === "individual")
-      return { scope, sf_user_id, allowed_sf_ids: sf_user_id ? [sf_user_id] : [] };
-
-    const team: SFTeam = scope === "pre_vendas" ? "pre_vendas" : "carteira";
-    const { data: rows } = await context.supabase
-      .from("salesforce_team_members")
-      .select("sf_user_id")
-      .eq("team", team);
-    const ids = new Set<string>((rows ?? []).map((r: any) => r.sf_user_id as string));
-    if (sf_user_id) ids.add(sf_user_id); // sempre pode ver a si mesmo
-    return { scope, sf_user_id, allowed_sf_ids: Array.from(ids) };
+    return getScopeForUser(context.supabase, context.userId);
   });
 
 // ------------- Admin ------------- //

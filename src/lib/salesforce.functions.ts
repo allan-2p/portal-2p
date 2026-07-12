@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { ownerFilterClause, resolveSalesforceOwnerFilter } from "./scope.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
 
@@ -124,8 +125,10 @@ export const getSalesforceTasks = createServerFn({ method: "GET" })
     }
     return input;
   })
-  .handler(async ({ data }) => {
-    const ownerClause = validId(data.ownerId) ? ` AND OwnerId = '${data.ownerId}'` : "";
+  .handler(async ({ data, context }) => {
+    const ownerClause = ownerFilterClause(
+      await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
+    );
     const soql =
       `SELECT Id, Subject, Status, Priority, ActivityDate, Description, ` +
       `Who.Name, WhoId, What.Name, WhatId, Owner.Name, OwnerId ` +
@@ -368,13 +371,15 @@ function mapOpp(r: any): SalesforceOpportunity {
 export const getSalesforceOpportunities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { stages?: string[]; ownerId?: string | null }) => input)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const stages = (data.stages ?? [...OPPORTUNITY_STAGES]).filter((s) =>
       (OPPORTUNITY_STAGES as readonly string[]).includes(s),
     );
     if (stages.length === 0) return { records: [] as SalesforceOpportunity[] };
     const stageList = stages.map((s) => `'${esc(s)}'`).join(",");
-    const ownerClause = validId(data.ownerId) ? ` AND OwnerId = '${data.ownerId}'` : "";
+    const ownerClause = ownerFilterClause(
+      await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
+    );
     const soql =
       `SELECT Id, Name, StageName, Amount, CloseDate, Previsao_de_Fechamento__c, Probability, IsClosed, CreatedDate, ` +
       `Account.Name, Owner.Name, OwnerId ` +
@@ -389,8 +394,10 @@ export const getSalesforceOpportunities = createServerFn({ method: "GET" })
 export const getSalesforceForecasts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { ownerId?: string | null }) => input)
-  .handler(async ({ data }) => {
-    const ownerClause = validId(data.ownerId) ? ` AND OwnerId = '${data.ownerId}'` : "";
+  .handler(async ({ data, context }) => {
+    const ownerClause = ownerFilterClause(
+      await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
+    );
     const soql =
       `SELECT Id, Name, StageName, Amount, CloseDate, Previsao_de_Fechamento__c, Probability, IsClosed, CreatedDate, ` +
       `Account.Name, Owner.Name, OwnerId ` +
@@ -537,34 +544,40 @@ function validDate(v: string | null | undefined) {
 
 export const getSalesforceOrcamentos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { start?: string | null; end?: string | null }) => input ?? {})
-  .handler(async ({ data }) => {
+  .inputValidator((input: { start?: string | null; end?: string | null; ownerId?: string | null }) => input ?? {})
+  .handler(async ({ data, context }) => {
     const clauses: string[] = [
       `StageName != 'Pedido Concluído'`,
       `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
     ];
     if (validDate(data.start)) clauses.push(`CreatedDate >= ${data.start}T00:00:00Z`);
     if (validDate(data.end)) clauses.push(`CreatedDate <= ${data.end}T23:59:59Z`);
+    const ownerClause = ownerFilterClause(
+      await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
+    );
     const soql =
       `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
-      `ORDER BY CreatedDate DESC LIMIT 1000`;
+      `${ownerClause} ORDER BY CreatedDate DESC LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
 
 export const getSalesforceVendas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { start?: string | null; end?: string | null }) => input ?? {})
-  .handler(async ({ data }) => {
+  .inputValidator((input: { start?: string | null; end?: string | null; ownerId?: string | null }) => input ?? {})
+  .handler(async ({ data, context }) => {
     const clauses: string[] = [
       `StageName = 'Pedido Concluído'`,
       `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
     ];
     if (validDate(data.start)) clauses.push(`CloseDate >= ${data.start}`);
     if (validDate(data.end)) clauses.push(`CloseDate <= ${data.end}`);
+    const ownerClause = ownerFilterClause(
+      await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
+    );
     const soql =
       `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
-      `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+      `${ownerClause} ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
@@ -572,9 +585,11 @@ export const getSalesforceVendas = createServerFn({ method: "GET" })
 export const getSalesforcePedidos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { ownerId?: string | null }) => input ?? {})
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const statusList = PEDIDO_STATUS.map((s) => `'${esc(s)}'`).join(",");
-    const ownerClause = validId(data.ownerId) ? ` AND OwnerId = '${data.ownerId}'` : "";
+    const ownerClause = ownerFilterClause(
+      await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
+    );
     const clauses: string[] = [
       `Status_do_Pedido__c IN (${statusList})`,
       `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,

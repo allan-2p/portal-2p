@@ -37,7 +37,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
   useSalesforceNotifications();
-  const { instance, hasFeature, isRouteAllowed } = useInstance();
+  const { instance, hasFeature, isRouteAllowed, loading: instanceLoading } = useInstance();
   const instMeta = INSTANCES[instance];
 
   useEffect(() => {
@@ -55,12 +55,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   // Se usuário está numa rota que a instância atual não permite, redireciona para home.
   useEffect(() => {
+    if (instanceLoading) return;
     if (!isRouteAllowed(pathname)) {
       toast.info(`"${pathname}" não está disponível na instância ${instMeta.label}.`);
       navigate({ to: "/" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [instance, pathname]);
+  }, [instance, instanceLoading, pathname]);
 
   const [showBar, setShowBar] = useState(false);
   useEffect(() => {

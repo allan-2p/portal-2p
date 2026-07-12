@@ -15,6 +15,7 @@ export interface Profile {
   meta_mensal: number | null;
   ativo: boolean;
   sf_user_id: string | null;
+  filter_scope: "geral" | "pre_vendas" | "carteira" | "individual" | null;
 }
 
 interface AuthState {

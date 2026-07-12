@@ -25,6 +25,7 @@ import { VendedorFilter } from "@/components/vendedor-filter";
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useScopedOwner } from "@/hooks/use-seller-scope";
 import {
   getSalesforceTasks,
   getSalesforceSalespeople,
@@ -116,13 +117,11 @@ function HomePage() {
   const [forecastFilter, setForecastFilter] = useState<ForecastKey>("all");
   const [oppsAgeFilter, setOppsAgeFilter] = useState<AgeKey>("all");
 
-  const [ownerId, setOwnerId] = useState<string>("all");
+  const { ownerId, setOwnerId, ownerParam, dataEnabled } = useScopedOwner("all");
   const [agendaDate, setAgendaDate] = useState<Date>(() => startOfDay(new Date()));
   const [agendaOpen, setAgendaOpen] = useState(false);
 
   const [stageFilter, setStageFilter] = useState<"all" | OpportunityStage>("all");
-
-  const ownerParam = ownerId === "all" ? null : ownerId;
 
   // ---- Server data ----
   const fetchSalespeople = useServerFn(getSalesforceSalespeople);
@@ -147,6 +146,7 @@ function HomePage() {
   const tasksQ = useQuery({
     queryKey: ["sf-home-tasks", agendaRangeParams.start, agendaRangeParams.end, ownerParam],
     queryFn: () => fetchTasks({ data: { ...agendaRangeParams, ownerId: ownerParam } }),
+    enabled: dataEnabled,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -173,6 +173,7 @@ function HomePage() {
   const oppsQ = useQuery({
     queryKey: ["sf-home-opps", ownerParam],
     queryFn: () => fetchOpps({ data: { ownerId: ownerParam } }),
+    enabled: dataEnabled,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -200,6 +201,7 @@ function HomePage() {
   const forecastsQ = useQuery({
     queryKey: ["sf-home-forecasts", ownerParam],
     queryFn: () => fetchForecasts({ data: { ownerId: ownerParam } }),
+    enabled: dataEnabled,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -242,6 +244,7 @@ function HomePage() {
           ownerId: ownerParam,
         },
       }),
+    enabled: dataEnabled,
     staleTime: 60_000,
   });
   const dbGoal = monthGoalQ.data?.total ?? 0;
@@ -254,8 +257,9 @@ function HomePage() {
   }, [today]);
   const fetchVendas = useServerFn(getSalesforceVendas);
   const vendasQ = useQuery({
-    queryKey: ["sf-home-vendas", monthRange.start, monthRange.end],
-    queryFn: () => fetchVendas({ data: monthRange }),
+    queryKey: ["sf-home-vendas", monthRange.start, monthRange.end, ownerParam],
+    queryFn: () => fetchVendas({ data: { ...monthRange, ownerId: ownerParam } }),
+    enabled: dataEnabled,
     staleTime: 60_000,
   });
   const sold = useMemo(() => {
@@ -337,13 +341,15 @@ function HomePage() {
 
   const fetchOrcamentos = useServerFn(getSalesforceOrcamentos);
   const orcQ = useQuery({
-    queryKey: ["sf-home-orc-4m", rangeMulti.start, rangeMulti.end],
-    queryFn: () => fetchOrcamentos({ data: rangeMulti }),
+    queryKey: ["sf-home-orc-4m", rangeMulti.start, rangeMulti.end, ownerParam],
+    queryFn: () => fetchOrcamentos({ data: { ...rangeMulti, ownerId: ownerParam } }),
+    enabled: dataEnabled,
     staleTime: 60_000,
   });
   const vendas4Q = useQuery({
-    queryKey: ["sf-home-vendas-4m", rangeMulti.start, rangeMulti.end],
-    queryFn: () => fetchVendas({ data: rangeMulti }),
+    queryKey: ["sf-home-vendas-4m", rangeMulti.start, rangeMulti.end, ownerParam],
+    queryFn: () => fetchVendas({ data: { ...rangeMulti, ownerId: ownerParam } }),
+    enabled: dataEnabled,
     staleTime: 60_000,
   });
 
@@ -414,8 +420,9 @@ function HomePage() {
   }, [today]);
 
   const vendasQuarterQ = useQuery({
-    queryKey: ["sf-home-vendas-quarters", quarterRange.start, quarterRange.end],
-    queryFn: () => fetchVendas({ data: { start: quarterRange.start, end: quarterRange.end } }),
+    queryKey: ["sf-home-vendas-quarters", quarterRange.start, quarterRange.end, ownerParam],
+    queryFn: () => fetchVendas({ data: { start: quarterRange.start, end: quarterRange.end, ownerId: ownerParam } }),
+    enabled: dataEnabled,
     staleTime: 60_000,
   });
 
