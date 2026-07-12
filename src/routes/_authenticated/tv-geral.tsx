@@ -174,19 +174,19 @@ function useTvData(): { data: TvData; loading: boolean } {
 
   const vendidoMesQ = useQuery({
     queryKey: ["tv-vendido-mes"],
-    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDIDO_MES } }),
+    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDIDO_MES, unscoped: true } }),
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
   const geradoMesQ = useQuery({
     queryKey: ["tv-gerado-mes"],
-    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_GERADO_MES } }),
+    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_GERADO_MES, unscoped: true } }),
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
   const faturamentoMesQ = useQuery({
     queryKey: ["tv-faturamento-mes"],
-    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDAS } }),
+    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDAS, unscoped: true } }),
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
@@ -202,18 +202,18 @@ function useTvData(): { data: TvData; loading: boolean } {
   });
   const vendasTriQ = useQuery({
     queryKey: ["tv-vendas-tri", curQStart, curQEnd],
-    queryFn: () => fetchVendas({ data: { start: curQStart, end: curQEnd } }),
+    queryFn: () => fetchVendas({ data: { start: curQStart, end: curQEnd, unscoped: true } }),
     refetchInterval: 5 * 60_000,
     staleTime: 60_000,
   });
   const vendasTriPrevQ = useQuery({
     queryKey: ["tv-vendas-tri-prev", prevQStart, prevQEnd],
-    queryFn: () => fetchVendas({ data: { start: prevQStart, end: prevQEnd } }),
+    queryFn: () => fetchVendas({ data: { start: prevQStart, end: prevQEnd, unscoped: true } }),
     staleTime: 10 * 60_000,
   });
   const vendas12mQ = useQuery({
     queryKey: ["tv-vendas-12m", yearBackStart, monthEnd],
-    queryFn: () => fetchVendas({ data: { start: yearBackStart, end: monthEnd } }),
+    queryFn: () => fetchVendas({ data: { start: yearBackStart, end: monthEnd, unscoped: true } }),
     staleTime: 10 * 60_000,
   });
 

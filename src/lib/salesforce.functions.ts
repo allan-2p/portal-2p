@@ -575,7 +575,7 @@ export const getSalesforceOrcamentos = createServerFn({ method: "GET" })
 
 export const getSalesforceVendas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { start?: string | null; end?: string | null; ownerId?: string | null }) => input ?? {})
+  .inputValidator((input: { start?: string | null; end?: string | null; ownerId?: string | null; unscoped?: boolean }) => input ?? {})
   .handler(async ({ data, context }) => {
     const clauses: string[] = [
       `StageName = 'Pedido Concluído'`,
@@ -583,9 +583,11 @@ export const getSalesforceVendas = createServerFn({ method: "GET" })
     ];
     if (validDate(data.start)) clauses.push(`CloseDate >= ${data.start}`);
     if (validDate(data.end)) clauses.push(`CloseDate <= ${data.end}`);
-    const ownerClause = ownerFilterClause(
-      await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
-    );
+    const ownerClause = data.unscoped
+      ? ""
+      : ownerFilterClause(
+          await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
+        );
     const soql =
       `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
       `${ownerClause} ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
@@ -752,9 +754,11 @@ export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
       }
     }
 
-    const ownerClause = ownerFilterClause(
-      await resolveSalesforceOwnerFilter(context.supabase, context.userId, f.ownerId ?? null),
-    );
+    const ownerClause = (f as OppFilters & { unscoped?: boolean }).unscoped
+      ? ""
+      : ownerFilterClause(
+          await resolveSalesforceOwnerFilter(context.supabase, context.userId, f.ownerId ?? null),
+        );
 
     const where = clauses.length ? `WHERE ${clauses.join(" AND ")} ` : "";
     const soql =
