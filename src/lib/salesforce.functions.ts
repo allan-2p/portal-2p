@@ -584,35 +584,88 @@ export const getSalesforceVendas = createServerFn({ method: "GET" })
 
 
 
+export const VENDIDO_DATE_LITERALS = [
+  "TODAY",
+  "YESTERDAY",
+  "THIS_WEEK",
+  "LAST_WEEK",
+  "THIS_MONTH",
+  "LAST_MONTH",
+  "THIS_QUARTER",
+  "LAST_QUARTER",
+  "THIS_YEAR",
+  "LAST_YEAR",
+] as const;
+
+export type VendidoFilters = {
+  stageEquals?: string;
+  statusIn?: string[];
+  tipoNfNotIn?: string[];
+  accountNameNotIn?: string[];
+  orgIn?: string[];
+  ownerNameNotIn?: string[];
+  closeDateLiteral?: string; // e.g. THIS_MONTH
+  closeDateFrom?: string; // YYYY-MM-DD (used when literal = CUSTOM)
+  closeDateTo?: string; // YYYY-MM-DD (used when literal = CUSTOM)
+};
+
+export const VENDIDO_DEFAULTS: Required<Omit<VendidoFilters, "closeDateFrom" | "closeDateTo">> = {
+  stageEquals: "Pedido Concluído",
+  statusIn: [
+    "Aguardando Pagamento",
+    "Processamento",
+    "Separação",
+    "Faturado",
+    "Coletado",
+    "Entregue",
+    "Documentação Liberada",
+    "Finalizado",
+  ],
+  tipoNfNotIn: ["Bonificação"],
+  accountNameNotIn: ["2P ACESSORIOS LTDA"],
+  orgIn: ["Acessórios 2P", "WD"],
+  ownerNameNotIn: ["Caroline Gimenez"],
+  closeDateLiteral: "THIS_MONTH",
+};
+
 export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => (input ?? {}) as Record<string, never>)
-  .handler(async () => {
-    const statusList = [
-      "Aguardando Pagamento",
-      "Processamento",
-      "Separação",
-      "Faturado",
-      "Coletado",
-      "Entregue",
-      "Documentação Liberada",
-      "Finalizado",
-    ].map((s) => `'${esc(s)}'`).join(",");
-    const orgList = ["Acessórios 2P", "WD"].map((s) => `'${esc(s)}'`).join(",");
-    const clauses: string[] = [
-      `StageName = 'Pedido Concluído'`,
-      `Status_do_Pedido__c IN (${statusList})`,
-      `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
-      `(Account.Name = null OR Account.Name != '2P ACESSORIOS LTDA')`,
-      `Org_Oportunidade__c IN (${orgList})`,
-      `(Owner.Name = null OR Owner.Name != 'Caroline Gimenez')`,
-      `CloseDate = THIS_MONTH`,
-    ];
+  .inputValidator((input: unknown) => (input ?? {}) as VendidoFilters)
+  .handler(async ({ data }) => {
+    const f: VendidoFilters = data ?? {};
+    const stage = (f.stageEquals ?? VENDIDO_DEFAULTS.stageEquals).trim();
+    const statuses = (f.statusIn ?? VENDIDO_DEFAULTS.statusIn).filter(Boolean);
+    const tipoNfExcl = (f.tipoNfNotIn ?? VENDIDO_DEFAULTS.tipoNfNotIn).filter(Boolean);
+    const accountExcl = (f.accountNameNotIn ?? VENDIDO_DEFAULTS.accountNameNotIn).filter(Boolean);
+    const orgs = (f.orgIn ?? VENDIDO_DEFAULTS.orgIn).filter(Boolean);
+    const ownerExcl = (f.ownerNameNotIn ?? VENDIDO_DEFAULTS.ownerNameNotIn).filter(Boolean);
+    const literal = (f.closeDateLiteral ?? VENDIDO_DEFAULTS.closeDateLiteral).trim();
+
+    const clauses: string[] = [];
+    if (stage) clauses.push(`StageName = '${esc(stage)}'`);
+    if (statuses.length) {
+      clauses.push(`Status_do_Pedido__c IN (${statuses.map((s) => `'${esc(s)}'`).join(",")})`);
+    }
+    for (const v of tipoNfExcl) clauses.push(`(Tipo_de_NF__c = null OR Tipo_de_NF__c != '${esc(v)}')`);
+    for (const v of accountExcl) clauses.push(`(Account.Name = null OR Account.Name != '${esc(v)}')`);
+    if (orgs.length) {
+      clauses.push(`Org_Oportunidade__c IN (${orgs.map((s) => `'${esc(s)}'`).join(",")})`);
+    }
+    for (const v of ownerExcl) clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
+
+    if (literal === "CUSTOM") {
+      if (f.closeDateFrom && validDate(f.closeDateFrom)) clauses.push(`CloseDate >= ${f.closeDateFrom}`);
+      if (f.closeDateTo && validDate(f.closeDateTo)) clauses.push(`CloseDate <= ${f.closeDateTo}`);
+    } else if (literal) {
+      clauses.push(`CloseDate = ${literal}`);
+    }
+
+    const where = clauses.length ? `WHERE ${clauses.join(" AND ")} ` : "";
     const soql =
-      `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
+      `SELECT ${OPP_COLS} FROM Opportunity ${where}` +
       `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
-    return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+    return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[], soql };
   });
 
 
