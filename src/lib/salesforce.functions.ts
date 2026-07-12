@@ -707,6 +707,6 @@ export const getSalesforceReportByName = createServerFn({ method: "GET" })
     }
 
 
-    return { reportId, name: rec.Name ?? reportName, columns, rows } satisfies SalesforceReportResult;
+    return { reportId, name: reportName, columns, rows } satisfies SalesforceReportResult;
   });
 
