@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { ViewSlot } from "@/components/view-slot";
-import { clients, portfolio, atlasInsights, tasks as mockTasks, salesSeries } from "@/lib/mock-data";
+import { clients, portfolio, tasks as mockTasks, salesSeries } from "@/lib/mock-data";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useMemo, useState } from "react";
 import {
@@ -95,49 +95,11 @@ function startOfDay(d: Date) {
 }
 
 function buildAtlasSuggestion(
-  t: SalesforceTask,
-  inter: TaskInteractionState | null,
-  todayStart: Date,
+  _t: SalesforceTask,
+  _inter: TaskInteractionState | null,
+  _todayStart: Date,
 ): string | null {
-  const parts: string[] = [];
-
-  // Sinais do Atlas cruzados por nome de cliente/conta
-  const clientHay = `${t.what ?? ""} ${t.who ?? ""}`.toLowerCase();
-  const matchedInsight = atlasInsights.find(
-    (i) => i.client && clientHay.includes(i.client.toLowerCase()),
-  );
-  const matchedClient = clients.find(
-    (c) => c.name && clientHay.includes(c.name.toLowerCase()),
-  );
-
-  if (matchedInsight) {
-    parts.push(matchedInsight.description || matchedInsight.title);
-  }
-
-  // Atraso
-  const due = new Date(t.date + "T00:00:00");
-  const diffDays = Math.round((due.getTime() - todayStart.getTime()) / 86400000);
-  if (diffDays < 0) {
-    parts.push(`Tarefa em atraso há ${Math.abs(diffDays)}d — priorize contato hoje.`);
-  }
-
-  // Última tentativa sem contato
-  if (inter?.contacted === "no") {
-    parts.push("Última tentativa sem contato — tente novo horário ou canal (WhatsApp/E-mail).");
-  }
-
-  // Alta prioridade
-  if (t.priority?.toLowerCase().startsWith("alt") && !parts.length) {
-    parts.push("Alta prioridade — considere ligação direta agora.");
-  }
-
-  // Contexto do cliente (última interação)
-  if (matchedClient?.lastInteraction && parts.length) {
-    parts.push(`Última interação registrada: ${matchedClient.lastInteraction}.`);
-  }
-
-  if (!parts.length) return null;
-  return parts.join(" ");
+  return null;
 }
 
 
@@ -325,85 +287,6 @@ function HomePage() {
     return `${sp?.name ?? "Vendedor"} está`;
   }, [ownerId, currentUserSfId, salespeople]);
 
-  // ---- Atlas Radar: insights a partir das contas do vendedor selecionado ----
-  const fetchAccounts = useServerFn(getSalesforceAccounts);
-  const accountsQ = useQuery({
-    queryKey: ["sf-home-accounts"],
-    queryFn: () => fetchAccounts(),
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  });
-  const accounts: SalesforceAccount[] = accountsQ.data?.records ?? [];
-  const atlasRadarInsights = useMemo(() => {
-    const owned = ownerParam
-      ? accounts.filter((a) => a.ownerId === ownerParam)
-      : accounts;
-    const ownedNames = new Set(owned.map((a) => a.name));
-    // Oportunidades abertas por conta (nome), do owner selecionado
-    const openByAccount = new Map<string, { count: number; total: number }>();
-    for (const o of opps) {
-      if (o.isClosed) continue;
-      if (!o.account) continue;
-      if (!ownedNames.has(o.account)) continue;
-      const cur = openByAccount.get(o.account) ?? { count: 0, total: 0 };
-      cur.count += 1;
-      cur.total += o.amount ?? 0;
-      openByAccount.set(o.account, cur);
-    }
-    type Insight = {
-      id: string;
-      type: "opportunity" | "risk" | "trend" | "action";
-      title: string;
-      client: string;
-      description: string;
-      impact?: string;
-      priority: number;
-    };
-    const out: Insight[] = [];
-    for (const a of owned) {
-      const open = openByAccount.get(a.name);
-      const proj = a.quarterProjection ?? 0;
-      const sold = a.quarterSold ?? 0;
-      // Risco: projeção do trimestre existe mas venda no trimestre está muito abaixo
-      if (proj > 0 && sold < proj * 0.4) {
-        out.push({
-          id: `risk-${a.id}`,
-          type: "risk",
-          title: `${a.name} abaixo da projeção do trimestre`,
-          client: a.name,
-          description: `Vendido no trimestre ${fmt(sold)} vs projeção ${fmt(proj)}. Reforçar contato.`,
-          impact: fmt(proj - sold),
-          priority: 0,
-        });
-      }
-      // Oportunidade: pipeline aberto relevante
-      if (open && open.total > 0) {
-        out.push({
-          id: `opp-${a.id}`,
-          type: "opportunity",
-          title: `${open.count} oportunidade(s) em aberto — ${a.name}`,
-          client: a.name,
-          description: `Pipeline aberto de ${fmt(open.total)} para avançar.`,
-          impact: fmt(open.total),
-          priority: 1,
-        });
-      }
-      // Observações da conta
-      const obs = (a.observacoes ?? "").trim();
-      if (obs) {
-        out.push({
-          id: `obs-${a.id}`,
-          type: "trend",
-          title: `Observação — ${a.name}`,
-          client: a.name,
-          description: obs.length > 220 ? obs.slice(0, 217) + "…" : obs,
-          priority: 2,
-        });
-      }
-    }
-    out.sort((x, y) => x.priority - y.priority);
-    return out.slice(0, 12);
-  }, [accounts, opps, ownerParam]);
 
   // ---- Série diária: Vendas — Projetado × Realizado (mês atual) ----
   // Meta diária = meta do mês / dias úteis do mês (exclui sáb, dom e feriados nacionais).
@@ -628,7 +511,7 @@ function HomePage() {
                     {goalSubject} em <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta do mês
                   </h1>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Atlas identificou {atlasRadarInsights.length} sinal(is) na carteira selecionada.
+                    Visão geral da carteira selecionada.
                   </p>
                 </div>
               ),
@@ -639,7 +522,7 @@ function HomePage() {
                     Foco no fechamento: <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta
                   </h1>
                   <p className="text-sm text-muted-foreground mt-2">
-                    {filteredOpps.filter((o) => o.stage === "Em Negociação").length} oportunidade(s) em negociação · {atlasRadarInsights.length} sinal(is) do Atlas.
+                    {filteredOpps.filter((o) => o.stage === "Em Negociação").length} oportunidade(s) em negociação.
                   </p>
                 </div>
               ),
@@ -650,7 +533,7 @@ function HomePage() {
                     Sua carteira: <span className="text-foreground">{fmt(sold)}</span> no mês
                   </h1>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Priorize recompra e relacionamento — {atlasRadarInsights.length} sinal(is) na base.
+                    Priorize recompra e relacionamento com a base ativa.
                   </p>
                 </div>
               ),
@@ -703,7 +586,7 @@ function HomePage() {
                     Portal 2P — visão geral
                   </h1>
                   <p className="text-sm text-muted-foreground mt-2">
-                    {atlasRadarInsights.length} sinal(is) do Atlas · {sfTasks.length} tarefa(s) na agenda selecionada.
+                    {sfTasks.length} tarefa(s) na agenda selecionada.
                   </p>
                 </div>
               ),
@@ -868,7 +751,7 @@ function HomePage() {
               )}
               {sfTasks.map((t) => {
                 const inter = taskInteractions[t.id] ?? null;
-                const suggestion = buildAtlasSuggestion(t, inter, todayStart);
+                
                 const dueDate = new Date(t.date + "T00:00:00");
                 const overdueDays = Math.round((todayStart.getTime() - dueDate.getTime()) / 86400000);
                 const isOverdue = overdueDays > 0;
@@ -945,14 +828,7 @@ function HomePage() {
                       {t.owner && (
                         <div className="text-[11px] text-muted-foreground mt-1">Responsável: {t.owner}</div>
                       )}
-                      {suggestion && (
-                        <div className="mt-2 rounded-lg bg-[color:var(--atlas)]/10 border border-[color:var(--atlas)]/25 p-2 flex items-start gap-1.5">
-                          <Sparkles className="h-3 w-3 text-[color:var(--atlas)] mt-0.5 shrink-0" />
-                          <div className="text-[11px] text-foreground/90 leading-snug">
-                            <span className="font-semibold text-[color:var(--atlas)]">Atlas: </span>{suggestion}
-                          </div>
-                        </div>
-                      )}
+                      
                       <div className="flex gap-1.5 mt-2.5">
                         <button
                           onClick={() => setInteractionTask(t)}
@@ -974,54 +850,29 @@ function HomePage() {
             </div>
           </div>
 
-          <div className="glass rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-display font-semibold flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" /> Atlas radar
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Clientes com sinais de oportunidade ou risco</p>
+          <div className="relative glass rounded-2xl p-5 overflow-hidden min-h-[280px]">
+            <div aria-hidden className="absolute inset-0 blur-sm pointer-events-none select-none opacity-40 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="font-display font-semibold">Atlas radar</span>
               </div>
-              <span className="text-xs text-muted-foreground">
-                {atlasRadarInsights.length} sinais
-                {accountsQ.isFetching && <Loader2 className="h-3 w-3 animate-spin inline ml-1.5 align-[-2px]" />}
-              </span>
+              <div className="space-y-2 text-sm">
+                <div>• Cliente X abaixo da projeção do trimestre</div>
+                <div>• 3 oportunidades em aberto — Cliente Y</div>
+                <div>• Observação registrada — Cliente Z</div>
+              </div>
             </div>
-            <div className="space-y-3">
-              {atlasRadarInsights.length === 0 && !accountsQ.isLoading && (
-                <div className="text-xs text-muted-foreground py-4 text-center">
-                  Nenhum sinal para a carteira selecionada.
+            <div className="absolute inset-0 flex items-center justify-center px-4">
+              <div className="glass rounded-2xl px-6 py-5 max-w-sm text-center shadow-xl border border-primary/20">
+                <div className="mx-auto h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-[oklch(0.65_0.2_30)] flex items-center justify-center mb-3 shadow-md shadow-primary/30">
+                  <Clock className="h-5 w-5 text-primary-foreground" />
                 </div>
-              )}
-              {atlasRadarInsights.map((i) => {
-                const meta = i.type === "opportunity"
-                  ? { Icon: TrendingUp, color: "text-success", bg: "bg-success/15", label: "Oportunidade" }
-                  : i.type === "risk"
-                  ? { Icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/15", label: "Risco" }
-                  : i.type === "trend"
-                  ? { Icon: Info, color: "text-[color:var(--atlas)]", bg: "bg-[color:var(--atlas)]/15", label: "Observação" }
-                  : { Icon: TrendingUp, color: "text-primary", bg: "bg-primary/15", label: "Ação" };
-                const Icon = meta.Icon;
-                return (
-                  <div key={i.id} className="rounded-xl border border-border bg-surface p-3.5 hover:border-primary/40 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className={`h-8 w-8 rounded-lg ${meta.bg} flex items-center justify-center shrink-0`}>
-                        <Icon className={`h-4 w-4 ${meta.color}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-[10px] uppercase tracking-wider font-semibold ${meta.color}`}>{meta.label}</span>
-                          {i.impact && <span className="ml-auto text-[10px] font-medium text-primary">{i.impact}</span>}
-                        </div>
-                        <div className="text-sm font-semibold leading-snug">{i.title}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{i.client}</div>
-                        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed whitespace-pre-line">{i.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
+                <div className="text-[11px] uppercase tracking-wider text-primary font-semibold">Em breve</div>
+                <h3 className="font-display font-bold text-lg mt-1">Atlas radar</h3>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  Estamos ligando o Atlas às suas contas para gerar sinais automáticos de oportunidade e risco.
+                </p>
+              </div>
             </div>
           </div>
         </div>

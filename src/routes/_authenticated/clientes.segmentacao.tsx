@@ -352,17 +352,6 @@ function SegmentacaoPage() {
           )}
         </div>
 
-        <div className="glass rounded-2xl p-4 flex items-start gap-3 border-primary/30">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-[oklch(0.7_0.18_280)] flex items-center justify-center shrink-0">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div className="text-sm">
-            <span className="font-semibold">Atlas: </span>
-            <span className="text-muted-foreground">
-              {visible.filter((c) => c.health < 40).length} clientes desta visão estão abaixo de 40% de saúde. Foque em A primeiro — 1 cliente A vale 4 clientes B em receita média.
-            </span>
-          </div>
-        </div>
 
         <div className="glass rounded-2xl overflow-hidden">
           <div className="px-5 py-3 border-b border-border flex items-center justify-between">
@@ -521,18 +510,6 @@ function SegmentacaoPage() {
                               </p>
                             </div>
 
-                            <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border flex items-start gap-2">
-                              <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-
-                              <div className="text-xs text-muted-foreground leading-relaxed">
-                                <span className="text-foreground font-medium">Atlas sugere: </span>
-                                {c.health > 70
-                                  ? `${c.name} está bem. Bom momento para apresentar linha premium ou upsell de acessórios.`
-                                  : c.health > 40
-                                  ? `Ritmo abaixo do esperado. Faça follow-up esta semana e revise últimas cotações pendentes.`
-                                  : `Cliente em risco. Agende ligação imediata para entender bloqueios e ofereça condição especial.`}
-                              </div>
-                            </div>
                           </td>
                         </tr>
                       )}
@@ -639,19 +616,6 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
               </div>
             </div>
 
-            <div className="rounded-xl bg-primary/8 border border-primary/20 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-xs uppercase tracking-wider font-semibold text-primary">Atlas — Plano sugerido</span>
-              </div>
-              <p className="text-sm text-foreground/90 leading-relaxed">
-                {client.health > 70
-                  ? `${client.name} está em excelente forma. Apresente a linha premium e proponha um plano trimestral de recompras.`
-                  : client.health > 40
-                  ? `Cliente desacelerando. Recomendo um follow-up estruturado nos próximos 7 dias e revisar cotações pendentes.`
-                  : `Cliente em risco crítico. Agendar ligação imediata com gestor e oferecer condição comercial diferenciada para retomada.`}
-              </p>
-            </div>
 
             <div className="rounded-xl bg-surface-2 border border-border p-4">
               <div className="flex items-center gap-2 mb-2">

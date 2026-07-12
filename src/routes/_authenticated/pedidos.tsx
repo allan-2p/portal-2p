@@ -131,19 +131,6 @@ function PedidosPage() {
           </div>
         </div>
 
-        <div className="glass rounded-2xl p-4 flex items-start gap-3 border-primary/30">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-[oklch(0.7_0.18_280)] flex items-center justify-center shrink-0">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div className="text-sm">
-            <span className="font-semibold">Atlas: </span>
-            <span className="text-muted-foreground">
-              {pedidosQ.isLoading
-                ? "Carregando pedidos do Salesforce…"
-                : `${filtered.length} pedidos em curso do Salesforce — ${fmt(totalValue)}. ${faturados} faturados aguardam avanço para coleta.`}
-            </span>
-          </div>
-        </div>
 
         {pedidosQ.isLoading ? (
           <div className="glass rounded-2xl p-8 flex items-center justify-center gap-2 text-muted-foreground">
