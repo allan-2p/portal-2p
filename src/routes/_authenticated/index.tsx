@@ -261,12 +261,6 @@ function HomePage() {
     return { start: fmtKey(new Date(y, m, 1)), end: fmtKey(new Date(y, m + 1, 0)) };
   }, [today]);
   const fetchVendas = useServerFn(getSalesforceVendas);
-  const vendasQ = useQuery({
-    queryKey: ["sf-home-vendas", monthRange.start, monthRange.end, ownerParam],
-    queryFn: () => fetchVendas({ data: { ...monthRange, ownerId: ownerParam } }),
-    enabled: dataEnabled,
-    staleTime: 60_000,
-  });
   const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
   const vendidoMesQ = useQuery({
     queryKey: ["sf-home-vendido-mes", ownerParam],
