@@ -602,7 +602,11 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     if (!s) return rows;
-    return rows.filter((r) => r.account.toLowerCase().includes(s));
+    return rows.filter(
+      (r) =>
+        r.account.toLowerCase().includes(s) ||
+        (r.accountOwner ?? "").toLowerCase().includes(s),
+    );
   }, [rows, search]);
 
   const totals = useMemo(() => {
