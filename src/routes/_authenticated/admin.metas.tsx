@@ -16,10 +16,12 @@ import {
   getCommissionSettings,
   setVendidoTiers,
   setNovosValues,
+  setRetencaoTiers,
   setSalespersonEquipe,
   type Equipe,
   type VendidoTiersConfig,
   type NovosValuesConfig,
+  type RetencaoTiersConfig,
 } from "@/lib/commission.functions";
 import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_NAMES } from "@/lib/salespeople";
 import { useAuth } from "@/hooks/use-auth";
