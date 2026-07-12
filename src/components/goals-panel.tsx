@@ -385,12 +385,6 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   );
 }
 
-// Pequeno helper para manter uma referência estável ao serverFn sem violar regras de hooks.
-function useMemoRef<T>(v: T) {
-  const ref = useMemo(() => ({ current: v }), []);
-  ref.current = v;
-  return ref;
-}
 
 function CommissionCard({
   label,
