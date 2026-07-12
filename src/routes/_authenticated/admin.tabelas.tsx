@@ -168,12 +168,16 @@ function OppTable({
   error,
   search,
   dateField,
+  showFaturamento = false,
+  showStatus = false,
 }: {
   records: SalesforceOppRow[];
   loading: boolean;
   error: unknown;
   search: string;
   dateField: "createdDate" | "closeDate";
+  showFaturamento?: boolean;
+  showStatus?: boolean;
 }) {
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -198,6 +202,10 @@ function OppTable({
     return acc;
   }, [filtered]);
 
+  const extraCols = (showFaturamento ? 1 : 0) + (showStatus ? 1 : 0);
+  const colSpan = 10 + extraCols;
+  const totalLabelSpan = 6 + extraCols;
+
   return (
     <div className="glass rounded-2xl overflow-hidden">
       {!!error && (
@@ -214,8 +222,10 @@ function OppTable({
               <th className="text-left px-4 py-2.5">Cliente</th>
               <th className="text-left px-4 py-2.5">Vendedor</th>
               <th className="text-left px-4 py-2.5">Etapa</th>
+              {showStatus && <th className="text-left px-4 py-2.5">Status</th>}
               <th className="text-left px-4 py-2.5">Tipo NF</th>
               <th className="text-left px-4 py-2.5">Data</th>
+              {showFaturamento && <th className="text-left px-4 py-2.5">Data Faturamento</th>}
               <th className="text-right px-4 py-2.5">Valor Total</th>
               <th className="text-right px-4 py-2.5">Valor Líquido</th>
               <th className="text-right px-4 py-2.5">Frete</th>
@@ -225,7 +235,7 @@ function OppTable({
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={10} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                <td colSpan={colSpan} className="px-4 py-16 text-center text-muted-foreground text-sm">
                   <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
                   Carregando do Salesforce…
                 </td>
@@ -242,8 +252,22 @@ function OppTable({
                       {r.stage}
                     </span>
                   </td>
+                  {showStatus && (
+                    <td className="px-4 py-3">
+                      {r.status ? (
+                        <span className="text-xs px-2 py-0.5 rounded bg-surface-2 text-muted-foreground">
+                          {r.status}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-muted-foreground">{r.tipoNf ?? "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{fmtDate(r[dateField])}</td>
+                  {showFaturamento && (
+                    <td className="px-4 py-3 text-muted-foreground">{fmtDate(r.dataFaturamento)}</td>
+                  )}
                   <td className="px-4 py-3 text-right font-mono">{brl(r.total)}</td>
                   <td className="px-4 py-3 text-right font-mono">{brl(r.valorLiq)}</td>
                   <td className="px-4 py-3 text-right font-mono">{brl(r.frete)}</td>
@@ -252,7 +276,7 @@ function OppTable({
               ))}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                <td colSpan={colSpan} className="px-4 py-10 text-center text-sm text-muted-foreground">
                   Nenhum registro encontrado.
                 </td>
               </tr>
@@ -261,7 +285,7 @@ function OppTable({
           {!loading && filtered.length > 0 && (
             <tfoot>
               <tr className="border-t border-border bg-surface-2/50 text-sm">
-                <td colSpan={6} className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]">
+                <td colSpan={totalLabelSpan} className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]">
                   Total ({filtered.length} {filtered.length === 1 ? "registro" : "registros"})
                 </td>
                 <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totals.total)}</td>
@@ -276,6 +300,7 @@ function OppTable({
     </div>
   );
 }
+
 
 function quarterRange(year: number, q: number): { start: string; end: string; label: string } {
   // q is 1..4; wrap to previous year if 0
@@ -1181,6 +1206,8 @@ function OppTabPanel({
   error,
   search,
   dateField,
+  showFaturamento = false,
+  showStatus = false,
 }: {
   filters: OppFilters;
   defaults: OppFilters;
@@ -1192,6 +1219,8 @@ function OppTabPanel({
   error: unknown;
   search: string;
   dateField: "createdDate" | "closeDate";
+  showFaturamento?: boolean;
+  showStatus?: boolean;
 }) {
   const vendedores = useMemo(
     () => Array.from(new Set(records.map((r) => r.owner).filter((v): v is string => !!v)))
@@ -1233,6 +1262,8 @@ function OppTabPanel({
         error={error}
         search={search}
         dateField={dateField}
+        showFaturamento={showFaturamento}
+        showStatus={showStatus}
       />
     </div>
   );
@@ -1375,6 +1406,8 @@ function TabelasPage() {
               error={qVen.error}
               search={search}
               dateField={venFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
+              showFaturamento
+              showStatus
             />
           </TabsContent>
           <TabsContent value="vendido-mes" className="mt-4">
