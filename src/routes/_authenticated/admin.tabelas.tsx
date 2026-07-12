@@ -14,7 +14,11 @@ import {
   TrendingUp,
   CalendarDays,
   ShoppingBag,
+  Filter,
+  X as XIcon,
+  RotateCcw,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
