@@ -909,11 +909,13 @@ const HeaderMetas = ({ tri }: { tri: TvData["tri"] }) => {
   const totalMeta = tri.solar.meta + tri.carreg.meta;
   const totalReal = tri.solar.real + tri.carreg.real;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.15fr", gap: 12, flex: 1 }}>
-      <BrandStat label="2P Solar" dotColor={T.orange} real={tri.solar.real} meta={tri.solar.meta} />
-      <BrandStat label="2P Carregadores" dotColor={T.blue} real={tri.carreg.real} meta={tri.carreg.meta} />
-      <BrandStat label="Total Grupo" dotColor="#fff" real={totalReal} meta={totalMeta} invert gradientBar />
-    </div>
+    <Card style={{ flex: 1, padding: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.15fr", gap: 12 }}>
+        <BrandStat label="2P Solar" dotColor={T.orange} real={tri.solar.real} meta={tri.solar.meta} embedded />
+        <BrandStat label="2P Carregadores" dotColor={T.blue} real={tri.carreg.real} meta={tri.carreg.meta} embedded />
+        <BrandStat label="Total Grupo" dotColor="#fff" real={totalReal} meta={totalMeta} invert gradientBar />
+      </div>
+    </Card>
   );
 };
 
