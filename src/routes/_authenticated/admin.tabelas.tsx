@@ -420,7 +420,22 @@ function ProjectionsPanel({ search }: { search: string }) {
             );
           })}
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 ml-auto"
+          disabled={qOrc.isFetching || qVen.isFetching}
+          onClick={() => { qOrc.refetch(); qVen.refetch(); }}
+        >
+          {(qOrc.isFetching || qVen.isFetching) ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RotateCcw className="h-3.5 w-3.5" />
+          )}
+          Atualizar do Salesforce
+        </Button>
       </div>
+
 
       <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-4 text-sm">
         <div>
