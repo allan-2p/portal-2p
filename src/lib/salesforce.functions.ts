@@ -681,22 +681,30 @@ export const getSalesforceReportByName = createServerFn({ method: "GET" })
       dataType: colInfo[apiName]?.dataType ?? "string",
     }));
 
-    const rowsRaw = report?.factMap?.["T!T"]?.rows ?? [];
-    const rows: SalesforceReportRow[] = rowsRaw.map((row: any) => {
-      const cells: any[] = row?.dataCells ?? [];
-      const out: SalesforceReportRow = {};
-      detailColumns.forEach((apiName, i) => {
-        const cell = cells[i];
-        if (!cell) { out[apiName] = null; return; }
-        const dt = colInfo[apiName]?.dataType ?? "string";
-        if (dt === "currency" || dt === "double" || dt === "int" || dt === "percent") {
-          out[apiName] = typeof cell.value === "number" ? cell.value : (cell.label ?? null);
-        } else {
-          out[apiName] = cell.label ?? (cell.value != null ? String(cell.value) : null);
-        }
-      });
-      return out;
-    });
+    // Summary/Matrix reports colocam as linhas de detalhe em cada grouping
+    // do factMap (ex.: "0!T", "0_0!T"). Tabular usa apenas "T!T". Iteramos
+    // todas as chaves e coletamos qualquer bucket que possua `rows`.
+    const factMap: Record<string, any> = report?.factMap ?? {};
+    const rows: SalesforceReportRow[] = [];
+    for (const key of Object.keys(factMap)) {
+      const bucketRows: any[] = factMap[key]?.rows ?? [];
+      for (const row of bucketRows) {
+        const cells: any[] = row?.dataCells ?? [];
+        const out: SalesforceReportRow = {};
+        detailColumns.forEach((apiName, i) => {
+          const cell = cells[i];
+          if (!cell) { out[apiName] = null; return; }
+          const dt = colInfo[apiName]?.dataType ?? "string";
+          if (dt === "currency" || dt === "double" || dt === "int" || dt === "percent") {
+            out[apiName] = typeof cell.value === "number" ? cell.value : (cell.label ?? null);
+          } else {
+            out[apiName] = cell.label ?? (cell.value != null ? String(cell.value) : null);
+          }
+        });
+        rows.push(out);
+      }
+    }
+
 
     return { reportId, name: rec.Name ?? reportName, columns, rows } satisfies SalesforceReportResult;
   });
