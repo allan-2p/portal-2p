@@ -283,7 +283,8 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     const projetadoDia = Math.round(dailyGoal * elapsed);
 
     const solarReal = sumTotal(vendasTriQ.data?.records ?? []);
-    const solarMeta = solarReal;
+    const solarMeta = 14_000_000;
+    const carregMeta = 1_800_000;
 
     const week = currentWeekDays(now);
     const dayKeys = week.map((d) => fmtKey(d));
