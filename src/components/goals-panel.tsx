@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Target, Repeat, Sparkles, Loader2 } from "lucide-react";
+import { Target, Repeat, Sparkles, Loader2, Wallet, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getSalesforceVendas,
@@ -12,9 +12,16 @@ import {
   listNewAbGoals,
   listRetentionGoals,
 } from "@/lib/goals.functions";
+import {
+  getCommissionSettings,
+  calcVendidoCommission,
+  calcNovosCommission,
+  type Equipe,
+} from "@/lib/commission.functions";
 import { CARTEIRA_OWNER_IDS } from "@/lib/salespeople";
 
 const AB_THRESHOLD = 15_000;
+const A_THRESHOLD = 30_000;
 
 function pad(n: number) {
   return n < 10 ? `0${n}` : `${n}`;
