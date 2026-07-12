@@ -613,7 +613,7 @@ function SegmentacaoPage() {
                                   <div className="flex items-center gap-2">
                                     <Package className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                                      Pedidos do mês (Vendido - Mês Atual)
+                                      Pedidos em andamento
                                     </span>
                                   </div>
                                   <div className="flex flex-wrap gap-2 text-[10px]">
