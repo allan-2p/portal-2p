@@ -806,6 +806,7 @@ function ComprasEfetuadasTable({ search }: { search: string }) {
 function TabelasPage() {
   const { hasRole } = useAuth();
   const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas" | "vendido-mes">("orcamentos");
+  const [vendedorMes, setVendedorMes] = useState<string>("__all__");
 
   const [search, setSearch] = useState("");
 
