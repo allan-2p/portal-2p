@@ -12,6 +12,15 @@ import {
   type SalespersonMonthlyGoals,
 } from "@/lib/admin.functions";
 import { listNewAbGoals, setNewAbGoal, listRetentionGoals, setRetentionGoal } from "@/lib/goals.functions";
+import {
+  getCommissionSettings,
+  setVendidoTiers,
+  setNovosValues,
+  setSalespersonEquipe,
+  type Equipe,
+  type VendidoTiersConfig,
+  type NovosValuesConfig,
+} from "@/lib/commission.functions";
 import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_NAMES } from "@/lib/salespeople";
 import { useAuth } from "@/hooks/use-auth";
 
