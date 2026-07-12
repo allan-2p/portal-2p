@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { ViewSlot } from "@/components/view-slot";
-import { clients, portfolio, atlasInsights, tasks as mockTasks, salesSeries } from "@/lib/mock-data";
+import { clients, portfolio, tasks as mockTasks, salesSeries } from "@/lib/mock-data";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useMemo, useState } from "react";
 import {
