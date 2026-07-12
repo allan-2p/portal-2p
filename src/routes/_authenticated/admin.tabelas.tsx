@@ -633,7 +633,9 @@ function FixedRangeWeeksPanel({ start, end }: { start: string; end: string }) {
   );
 }
 
+const COMPRAS_REPORT_ID = "00ODn0000081BYoMAM";
 const COMPRAS_REPORT_NAME = "Compras Efetuadas [A-WF]";
+
 
 // Heurísticas de mapeamento de colunas do relatório Salesforce
 type ColMap = {
@@ -676,8 +678,9 @@ function buildColMap(columns: { apiName: string; label: string }[]): ColMap {
 function ComprasEfetuadasTable({ search }: { search: string }) {
   const fetchReport = useServerFn(getSalesforceReportByName);
   const q = useQuery({
-    queryKey: ["sf-report", COMPRAS_REPORT_NAME],
-    queryFn: () => fetchReport({ data: { name: COMPRAS_REPORT_NAME } }),
+    queryKey: ["sf-report", COMPRAS_REPORT_ID],
+    queryFn: () => fetchReport({ data: { reportId: COMPRAS_REPORT_ID, name: COMPRAS_REPORT_NAME } }),
+
     staleTime: 60_000,
   });
 

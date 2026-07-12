@@ -651,25 +651,25 @@ export type SalesforceReportResult = {
 
 export const getSalesforceReportByName = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { name: string }) => {
-    if (!input?.name || typeof input.name !== "string") {
-      throw new Error("Nome do relatório é obrigatório.");
-    }
-    return input;
-  })
+  .inputValidator((input: { name?: string; reportId?: string }) => input ?? {})
   .handler(async ({ data }) => {
-    const reportName = data.name;
-    const soql = `SELECT Id, Name FROM Report WHERE Name = '${reportName.replace(/'/g, "\\'")}' LIMIT 1`;
-    const lookup = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
-    const rec = lookup?.records?.[0];
-    if (!rec?.Id) {
-      throw new Error(`Relatório "${reportName}" não encontrado no Salesforce.`);
+    let reportId = data.reportId ?? "";
+    let reportName = data.name ?? "";
+
+    if (!reportId) {
+      if (!reportName) throw new Error("Informe reportId ou name do relatório.");
+      const soql = `SELECT Id, Name FROM Report WHERE Name = '${reportName.replace(/'/g, "\\'")}' LIMIT 1`;
+      const lookup = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+      const rec = lookup?.records?.[0];
+      if (!rec?.Id) throw new Error(`Relatório "${reportName}" não encontrado no Salesforce.`);
+      reportId = rec.Id;
+      reportName = rec.Name ?? reportName;
     }
-    const reportId: string = rec.Id;
 
     const report = await sfFetch(
       `/analytics/reports/${reportId}?includeDetails=true`,
     );
+    if (!reportName) reportName = report?.reportMetadata?.name ?? reportId;
 
     const detailColumns: string[] = report?.reportMetadata?.detailColumns ?? [];
     const colInfo: Record<string, { label: string; dataType: string }> =
@@ -678,6 +678,7 @@ export const getSalesforceReportByName = createServerFn({ method: "GET" })
     const columns: SalesforceReportColumn[] = detailColumns.map((apiName) => ({
       apiName,
       label: colInfo[apiName]?.label ?? apiName,
+
       dataType: colInfo[apiName]?.dataType ?? "string",
     }));
 
@@ -706,6 +707,6 @@ export const getSalesforceReportByName = createServerFn({ method: "GET" })
     }
 
 
-    return { reportId, name: rec.Name ?? reportName, columns, rows } satisfies SalesforceReportResult;
+    return { reportId, name: reportName, columns, rows } satisfies SalesforceReportResult;
   });
 
