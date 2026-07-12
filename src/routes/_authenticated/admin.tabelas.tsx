@@ -729,7 +729,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
                 ))}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     Nenhum cliente com atividade no trimestre anterior.
                   </td>
                 </tr>
