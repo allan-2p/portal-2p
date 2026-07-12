@@ -613,7 +613,7 @@ export const VENDIDO_DEFAULTS: Required<Omit<VendidoFilters, "closeDateFrom" | "
   stageEquals: "Pedido Concluído",
   statusIn: [
     "Aguardando Pagamento",
-    "Processamento",
+    "Processando",
     "Separação",
     "Faturado",
     "Coletado",
