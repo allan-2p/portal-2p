@@ -738,7 +738,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
             {!loading && filtered.length > 0 && (
               <tfoot>
                 <tr className="border-t border-border bg-surface-2/50 text-sm">
-                  <td className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]" colSpan={2}>
+                  <td className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]" colSpan={3}>
                     Total ({filtered.length})
                   </td>
                   <td className="px-4 py-2.5 text-right font-mono font-semibold text-muted-foreground">{brl(totals.prevSales)}</td>
