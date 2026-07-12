@@ -907,14 +907,7 @@ function HomePage() {
                       {t.owner && (
                         <div className="text-[11px] text-muted-foreground mt-1">Responsável: {t.owner}</div>
                       )}
-                      {suggestion && (
-                        <div className="mt-2 rounded-lg bg-[color:var(--atlas)]/10 border border-[color:var(--atlas)]/25 p-2 flex items-start gap-1.5">
-                          <Sparkles className="h-3 w-3 text-[color:var(--atlas)] mt-0.5 shrink-0" />
-                          <div className="text-[11px] text-foreground/90 leading-snug">
-                            <span className="font-semibold text-[color:var(--atlas)]">Atlas: </span>{suggestion}
-                          </div>
-                        </div>
-                      )}
+                      {false && suggestion && null}
                       <div className="flex gap-1.5 mt-2.5">
                         <button
                           onClick={() => setInteractionTask(t)}
