@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import {
   getSalesforceVendas,
   getSalesforceSalesByAccount,
+  getSalesforceVendidoMesAtual,
+  OPP_DEFAULTS_VENDIDO_MES,
 } from "@/lib/salesforce.functions";
 import {
   listFaturamentoGoalsForOwners,
@@ -124,6 +126,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
 
   const fetchVendas = useServerFn(getSalesforceVendas);
   const fetchSalesByAccount = useServerFn(getSalesforceSalesByAccount);
+  const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
   const fetchFaturamentoGoals = useServerFn(listFaturamentoGoalsForOwners);
   // (Novos A+B não tem meta — é apenas quantidade realizada)
   const fetchRetentionGoals = useServerFn(listRetentionGoals);
@@ -139,6 +142,17 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   const prevVendasQ = useQuery({
     queryKey: ["goals-prev-vendas", info.prevStart, info.prevEnd],
     queryFn: () => fetchVendas({ data: { start: info.prevStart, end: info.prevEnd } }),
+    staleTime: 60_000,
+  });
+
+  // Vendido - Mês Atual (mesma lógica de Administrador > Tabelas), respeitando filtro de vendedor
+  const vendidoOwnerParam = ownerId === "all" ? null : ownerId;
+  const vendidoMesQ = useQuery({
+    queryKey: ["goals-vendido-mes", vendidoOwnerParam ?? "all"],
+    queryFn: () =>
+      fetchVendidoMes({
+        data: { ...OPP_DEFAULTS_VENDIDO_MES, ownerId: vendidoOwnerParam ?? undefined },
+      }),
     staleTime: 60_000,
   });
 
@@ -170,21 +184,19 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   });
 
   const loading =
-    curVendasQ.isLoading || prevVendasQ.isLoading || goalsQ.isLoading || retentionGoalsQ.isLoading;
+    curVendasQ.isLoading || prevVendasQ.isLoading || vendidoMesQ.isLoading || goalsQ.isLoading || retentionGoalsQ.isLoading;
 
   const ownerSet = useMemo(() => new Set(owners), [owners.join(",")]);
 
-  // ---- Faturamento (VENDIDO): baseado no mês atual apenas ---- //
+  // ---- VENDIDO: baseado na tabela "Vendido - Mês Atual", filtrado por vendedor ---- //
   const faturamentoReal = useMemo(() => {
     let total = 0;
-    for (const r of curVendasQ.data?.records ?? []) {
+    for (const r of vendidoMesQ.data?.records ?? []) {
       if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
-      if (r.tipoNf === "Bonificação") continue;
-      if (!r.closeDate || r.closeDate < info.monthStart || r.closeDate > info.monthEnd) continue;
       total += r.total ?? r.amount ?? 0;
     }
     return total;
-  }, [curVendasQ.data, ownerSet, info.monthStart, info.monthEnd]);
+  }, [vendidoMesQ.data, ownerSet]);
 
   const faturamentoMeta = useMemo(() => {
     let total = 0;
@@ -195,6 +207,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     }
     return total;
   }, [goalsQ.data, info.currentMonth]);
+
 
   // ---- Retenção e Novos A/B (agregados + por owner p/ comissão) ---- //
   const abKpis = useMemo(() => {
@@ -283,12 +296,10 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     const cfg = commissionQ.data;
     if (!cfg) return { vendido: 0, novos: 0, retencao: 0 };
 
-    // vendido por owner — mês atual apenas
+    // vendido por owner — vindo da tabela "Vendido - Mês Atual"
     const vendidoByOwner: Record<string, number> = {};
-    for (const r of curVendasQ.data?.records ?? []) {
+    for (const r of vendidoMesQ.data?.records ?? []) {
       if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
-      if (r.tipoNf === "Bonificação") continue;
-      if (!r.closeDate || r.closeDate < info.monthStart || r.closeDate > info.monthEnd) continue;
       vendidoByOwner[r.ownerId] = (vendidoByOwner[r.ownerId] ?? 0) + (r.total ?? r.amount ?? 0);
     }
     // meta por owner — somente mês atual
@@ -331,7 +342,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
       );
     }
     return { vendido: totalVendido, novos: totalNovos, retencao: totalRetencao };
-  }, [commissionQ.data, curVendasQ.data, goalsQ.data, retentionGoalsQ.data, ownerSet, owners.join(","), abKpis, info.currentMonth, info.monthStart, info.monthEnd]);
+  }, [commissionQ.data, vendidoMesQ.data, goalsQ.data, retentionGoalsQ.data, ownerSet, owners.join(","), abKpis, info.currentMonth]);
 
   const pct = (real: number, meta: number) => (meta > 0 ? (real / meta) * 100 : null);
 
