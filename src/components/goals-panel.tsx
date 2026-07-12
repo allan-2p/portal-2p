@@ -208,16 +208,6 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   }, [goalsQ.data, info.currentMonth]);
 
 
-  const faturamentoMeta = useMemo(() => {
-    let total = 0;
-    for (const g of goalsQ.data?.records ?? []) {
-      if (!g.active) continue;
-      if (g.month !== info.currentMonth) continue;
-      total += g.monthly_goal;
-    }
-    return total;
-  }, [goalsQ.data, info.currentMonth]);
-
   // ---- Retenção e Novos A/B (agregados + por owner p/ comissão) ---- //
   const abKpis = useMemo(() => {
     const curByAcc = new Map<string, { total: number; owner: string | null }>();
