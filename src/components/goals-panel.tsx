@@ -296,12 +296,10 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     const cfg = commissionQ.data;
     if (!cfg) return { vendido: 0, novos: 0, retencao: 0 };
 
-    // vendido por owner — mês atual apenas
+    // vendido por owner — vindo da tabela "Vendido - Mês Atual"
     const vendidoByOwner: Record<string, number> = {};
-    for (const r of curVendasQ.data?.records ?? []) {
+    for (const r of vendidoMesQ.data?.records ?? []) {
       if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
-      if (r.tipoNf === "Bonificação") continue;
-      if (!r.closeDate || r.closeDate < info.monthStart || r.closeDate > info.monthEnd) continue;
       vendidoByOwner[r.ownerId] = (vendidoByOwner[r.ownerId] ?? 0) + (r.total ?? r.amount ?? 0);
     }
     // meta por owner — somente mês atual
