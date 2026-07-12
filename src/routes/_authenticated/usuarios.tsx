@@ -242,11 +242,26 @@ function UsuariosPage() {
             onReload={load}
             onScopeChange={handleScopeChange}
             onSfIdChange={handleSfIdChange}
+            onEdit={(row) => setModal({ kind: "edit", row })}
           />
         ) : (
           <SalesforceTable onInvite={(c) => setModal({ kind: "invite-sf", candidate: c })} />
         )}
       </div>
+
+
+      {modal?.kind === "edit" && (
+        <EditUserModal
+          row={modal.row}
+          onClose={() => setModal(null)}
+          onSubmit={async (data) => {
+            await updateFn({ data: { user_id: modal.row.id, ...data } });
+            toast.success("Usuário atualizado");
+            setModal(null);
+            load();
+          }}
+        />
+      )}
 
 
       {modal?.kind === "create" && (
