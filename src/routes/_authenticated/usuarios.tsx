@@ -156,6 +156,27 @@ function UsuariosPage() {
     }
   }
 
+  async function handleScopeChange(userId: string, scope: FilterScope) {
+    try {
+      await setScopeFn({ data: { user_id: userId, scope } });
+      toast.success("Escopo atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  async function handleSfIdChange(userId: string, sf_user_id: string | null) {
+    try {
+      await setSfIdFn({ data: { user_id: userId, sf_user_id } });
+      toast.success("ID Salesforce atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+
   return (
     <AppLayout>
       <div className="space-y-6">
