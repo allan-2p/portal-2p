@@ -1079,10 +1079,12 @@ function OppFiltersPanel({
   value,
   defaults,
   onApply,
+  onSaveAsDefault,
 }: {
   value: OppFilters;
   defaults: OppFilters;
   onApply: (next: OppFilters) => void;
+  onSaveAsDefault?: (next: OppFilters) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<OppFilters>(value);
