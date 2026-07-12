@@ -601,7 +601,7 @@ function HomePage() {
                     Foco no fechamento: <span className="text-foreground">{goalPct.toFixed(1)}%</span> da meta
                   </h1>
                   <p className="text-sm text-muted-foreground mt-2">
-                    {filteredOpps.filter((o) => o.stage === "Em Negociação").length} oportunidade(s) em negociação · {atlasRadarInsights.length} sinal(is) do Atlas.
+                    {filteredOpps.filter((o) => o.stage === "Em Negociação").length} oportunidade(s) em negociação.
                   </p>
                 </div>
               ),
