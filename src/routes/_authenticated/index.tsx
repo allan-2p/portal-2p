@@ -430,14 +430,14 @@ function HomePage() {
       return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : 0;
     };
     return {
-      convRCur: safeDiv(cur.venVal, cur.orcVal),
+      convRCur: safeDiv(sold, generated),
       convR3: avg((b) => safeDiv(b.venVal, b.orcVal)),
       convQCur: safeDiv(cur.venIds.size, cur.orcIds.size),
       convQ3: avg((b) => safeDiv(b.venIds.size, b.orcIds.size)),
       ticketCur: safeDiv(cur.venVal, cur.venIds.size),
       ticket3: avg((b) => safeDiv(b.venVal, b.venIds.size)),
     };
-  }, [orcQ.data, vendas4Q.data, ownerParam, today]);
+  }, [orcQ.data, vendas4Q.data, ownerParam, today, sold, generated]);
 
   // ---- Retenção / Recorrência / Novos recorrentes (por trimestre calendário) ----
   const quarterRange = useMemo(() => {
