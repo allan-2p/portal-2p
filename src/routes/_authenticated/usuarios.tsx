@@ -393,8 +393,9 @@ function PortalTable({
                 <td className="px-4 py-3">
                   <SfIdCell
                     value={r.sf_user_id}
-                    onSave={(v) => onSfIdChange(r.id, v)}
+                    onSave={(v: string | null) => onSfIdChange(r.id, v)}
                   />
+
                 </td>
 
                 <td className="px-4 py-3">
