@@ -950,35 +950,32 @@ function OppTabPanel({
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas" | "vendido-mes">("orcamentos");
+  type TabId = "orcamentos" | "vendas" | "projecoes" | "semanas" | "vendido-mes";
+  const [tab, setTab] = useState<TabId>("orcamentos");
+
+  const [orcFilters, setOrcFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_ORCAMENTOS });
+  const [venFilters, setVenFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDAS });
+  const [vendidoFilters, setVendidoFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDIDO_MES });
+
+  const [vendedorOrc, setVendedorOrc] = useState<string>("__all__");
+  const [vendedorVen, setVendedorVen] = useState<string>("__all__");
   const [vendedorMes, setVendedorMes] = useState<string>("__all__");
-  const [vendidoFilters, setVendidoFilters] = useState<VendidoFilters>({ ...VENDIDO_DEFAULTS });
 
   const [search, setSearch] = useState("");
-
-  const initial = presetRange("month")!;
-  const [from, setFrom] = useState<Date>(initial.from);
-  const [to, setTo] = useState<Date>(initial.to);
-  const [preset, setPreset] = useState<PeriodPreset>("month");
-
-  const range = useMemo(
-    () => ({ start: fmtKey(from), end: fmtKey(to) }),
-    [from, to],
-  );
 
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
   const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
 
   const qOrc = useQuery({
-    queryKey: ["sf-orcamentos", range.start, range.end],
-    queryFn: () => fetchOrc({ data: range }),
+    queryKey: ["sf-orcamentos-flt", orcFilters],
+    queryFn: () => fetchVendidoMes({ data: orcFilters }),
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "orcamentos",
   });
   const qVen = useQuery({
-    queryKey: ["sf-vendas", range.start, range.end],
-    queryFn: () => fetchVen({ data: range }),
+    queryKey: ["sf-vendas-flt", venFilters],
+    queryFn: () => fetchVendidoMes({ data: venFilters }),
     staleTime: 60_000,
     enabled: hasRole("admin") && (tab === "vendas" || tab === "semanas"),
   });
@@ -989,6 +986,8 @@ function TabelasPage() {
     enabled: hasRole("admin") && tab === "vendido-mes",
   });
 
+  // Silence unused-imports guard; kept for potential future direct calls.
+  void fetchOrc; void fetchVen;
 
   if (!hasRole("admin")) {
     return (
@@ -1026,71 +1025,83 @@ function TabelasPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas" | "vendido-mes")}>
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <TabsList>
-              <TabsTrigger value="orcamentos" className="gap-2">
-                <FileText className="h-4 w-4" /> Orçamento
-              </TabsTrigger>
-              <TabsTrigger value="vendas" className="gap-2">
-                <ShoppingCart className="h-4 w-4" /> Vendas
-              </TabsTrigger>
-              <TabsTrigger value="vendido-mes" className="gap-2">
-                <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
-              </TabsTrigger>
-              <TabsTrigger value="projecoes" className="gap-2">
-                <TrendingUp className="h-4 w-4" /> Projeções
-              </TabsTrigger>
-              <TabsTrigger value="semanas" className="gap-2">
-                <CalendarDays className="h-4 w-4" /> Semanas
-              </TabsTrigger>
-              <TabsTrigger value="compras-efetuadas" className="gap-2">
-                <ShoppingBag className="h-4 w-4" /> Compras Efetuadas [A-WF]
-              </TabsTrigger>
-            </TabsList>
-            {tab !== "projecoes" && tab !== "compras-efetuadas" && tab !== "vendido-mes" && (
-
-              <DateRangeFilter
-                from={from}
-                to={to}
-                preset={preset}
-                onChange={(v) => {
-                  setFrom(v.from);
-                  setTo(v.to);
-                  setPreset(v.preset);
-                }}
-              />
-            )}
-          </div>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)}>
+          <TabsList>
+            <TabsTrigger value="orcamentos" className="gap-2">
+              <FileText className="h-4 w-4" /> Orçamento
+            </TabsTrigger>
+            <TabsTrigger value="vendas" className="gap-2">
+              <ShoppingCart className="h-4 w-4" /> Vendas
+            </TabsTrigger>
+            <TabsTrigger value="vendido-mes" className="gap-2">
+              <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
+            </TabsTrigger>
+            <TabsTrigger value="projecoes" className="gap-2">
+              <TrendingUp className="h-4 w-4" /> Projeções
+            </TabsTrigger>
+            <TabsTrigger value="semanas" className="gap-2">
+              <CalendarDays className="h-4 w-4" /> Semanas
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="orcamentos" className="mt-4">
-            <OppTable
+            <OppTabPanel
+              filters={orcFilters}
+              defaults={OPP_DEFAULTS_ORCAMENTOS}
+              onFiltersChange={setOrcFilters}
+              vendedor={vendedorOrc}
+              onVendedorChange={setVendedorOrc}
               records={qOrc.data?.records ?? []}
               loading={qOrc.isLoading}
               error={qOrc.error}
               search={search}
-              dateField="createdDate"
+              dateField={orcFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
             />
           </TabsContent>
           <TabsContent value="vendas" className="mt-4">
-            <OppTable
+            <OppTabPanel
+              filters={venFilters}
+              defaults={OPP_DEFAULTS_VENDAS}
+              onFiltersChange={setVenFilters}
+              vendedor={vendedorVen}
+              onVendedorChange={setVendedorVen}
               records={qVen.data?.records ?? []}
               loading={qVen.isLoading}
               error={qVen.error}
               search={search}
-              dateField="closeDate"
+              dateField={venFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
+            />
+          </TabsContent>
+          <TabsContent value="vendido-mes" className="mt-4">
+            <OppTabPanel
+              filters={vendidoFilters}
+              defaults={OPP_DEFAULTS_VENDIDO_MES}
+              onFiltersChange={setVendidoFilters}
+              vendedor={vendedorMes}
+              onVendedorChange={setVendedorMes}
+              records={qVendidoMes.data?.records ?? []}
+              loading={qVendidoMes.isLoading}
+              error={qVendidoMes.error}
+              search={search}
+              dateField={vendidoFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
             />
           </TabsContent>
           <TabsContent value="projecoes" className="mt-4">
             <ProjectionsPanel search={search} />
           </TabsContent>
           <TabsContent value="semanas" className="mt-4 space-y-6">
-            <section className="space-y-2">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Período selecionado
-              </h2>
+            <section className="space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  Período selecionado (usa filtros de Vendas)
+                </h2>
+              </div>
               <WeeksPanel
-                records={qVen.data?.records ?? []}
+                records={
+                  vendedorVen === "__all__"
+                    ? (qVen.data?.records ?? [])
+                    : (qVen.data?.records ?? []).filter((r) => (r.owner ?? "") === vendedorVen)
+                }
                 loading={qVen.isLoading}
                 error={qVen.error}
               />
@@ -1101,57 +1112,10 @@ function TabelasPage() {
               </h2>
               <FixedRangeWeeksPanel start="2026-01-01" end="2026-06-30" />
             </section>
-
-          </TabsContent>
-          <TabsContent value="compras-efetuadas" className="mt-4">
-            <ComprasEfetuadasTable search={search} />
-          </TabsContent>
-          <TabsContent value="vendido-mes" className="mt-4 space-y-3">
-            {(() => {
-              const allRecords = qVendidoMes.data?.records ?? [];
-              const vendedores = Array.from(
-                new Set(allRecords.map((r) => r.owner).filter((v): v is string => !!v)),
-              ).sort((a, b) => a.localeCompare(b, "pt-BR"));
-              const filteredByVendedor =
-                vendedorMes === "__all__"
-                  ? allRecords
-                  : allRecords.filter((r) => (r.owner ?? "") === vendedorMes);
-              return (
-                <>
-                  <VendidoFiltersPanel
-                    value={vendidoFilters}
-                    onApply={setVendidoFilters}
-                  />
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
-                    <Select value={vendedorMes} onValueChange={setVendedorMes}>
-                      <SelectTrigger className="w-[260px] h-9">
-                        <SelectValue placeholder="Todos os vendedores" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__all__">Todos os vendedores</SelectItem>
-                        {vendedores.map((v) => (
-                          <SelectItem key={v} value={v}>{v}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <OppTable
-                    records={filteredByVendedor}
-                    loading={qVendidoMes.isLoading}
-                    error={qVendidoMes.error}
-                    search={search}
-                    dateField="closeDate"
-                  />
-                </>
-              );
-            })()}
           </TabsContent>
         </Tabs>
-
-
       </div>
     </AppLayout>
-
   );
 }
+
