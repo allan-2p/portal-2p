@@ -692,6 +692,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
             <thead>
               <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
                 <th className="text-left px-4 py-2.5">Cliente</th>
+                <th className="text-left px-4 py-2.5">Vendedor</th>
                 <th className="text-center px-2 py-2.5">Classe</th>
                 <th className="text-right px-4 py-2.5">Vendas {baseRange.label}</th>
                 <th className="text-right px-4 py-2.5">Conversão</th>
