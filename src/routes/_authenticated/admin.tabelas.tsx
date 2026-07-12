@@ -1303,7 +1303,7 @@ function OppFiltersPanel({
             placeholder="Ex.: Sem interesse"
           />
 
-          <div className="md:col-span-2 flex items-center justify-end gap-2 pt-1">
+          <div className="md:col-span-2 flex items-center justify-end gap-2 pt-1 flex-wrap">
             <Button
               type="button"
               variant="ghost"
@@ -1316,6 +1316,21 @@ function OppFiltersPanel({
             >
               <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Restaurar padrões
             </Button>
+            {onSaveAsDefault && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => {
+                  onSaveAsDefault(draft);
+                  onApply(draft);
+                }}
+                title="Salva os filtros atuais como padrão para esta tabela neste navegador"
+              >
+                <BookmarkCheck className="h-3.5 w-3.5 mr-1.5" /> Definir como padrão
+              </Button>
+            )}
             <Button
               type="button"
               size="sm"
