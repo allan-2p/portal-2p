@@ -536,9 +536,10 @@ function SalesforceTable({ onInvite }: { onInvite: (c: SFCandidate) => void }) {
             </button>
           ))}
         </div>
+        <SyncAllPhotosButton />
         <button
           onClick={load}
-          className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Atualizar
         </button>
