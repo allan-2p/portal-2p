@@ -845,8 +845,8 @@ function TabelasPage() {
     enabled: hasRole("admin") && (tab === "vendas" || tab === "semanas"),
   });
   const qVendidoMes = useQuery({
-    queryKey: ["sf-vendido-mes-atual"],
-    queryFn: () => fetchVendidoMes({ data: {} }),
+    queryKey: ["sf-vendido-mes-atual", vendidoFilters],
+    queryFn: () => fetchVendidoMes({ data: vendidoFilters }),
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "vendido-mes",
   });
