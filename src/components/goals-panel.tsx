@@ -342,7 +342,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
       );
     }
     return { vendido: totalVendido, novos: totalNovos, retencao: totalRetencao };
-  }, [commissionQ.data, curVendasQ.data, goalsQ.data, retentionGoalsQ.data, ownerSet, owners.join(","), abKpis, info.currentMonth, info.monthStart, info.monthEnd]);
+  }, [commissionQ.data, vendidoMesQ.data, goalsQ.data, retentionGoalsQ.data, ownerSet, owners.join(","), abKpis, info.currentMonth]);
 
   const pct = (real: number, meta: number) => (meta > 0 ? (real / meta) * 100 : null);
 
