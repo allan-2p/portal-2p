@@ -678,7 +678,7 @@ function HomePage() {
                 <div className="text-sm flex items-center gap-3">
                   <span><span className="text-muted-foreground">Vendido </span><span className="text-primary font-bold">{fmt(sold)}</span></span>
                   <span className="text-muted-foreground">·</span>
-                  <span><span className="text-muted-foreground">Projetado </span><span className="font-semibold">{fmt(projected)}</span></span>
+                  <span><span className="text-muted-foreground">Projetado/Dia{"\u00a0"}</span><span className="font-semibold">{fmt(projected)}</span></span>
                 </div>
               </div>
               <div className="flex items-center justify-between mt-3 text-xs">
@@ -710,7 +710,7 @@ function HomePage() {
                 <div className="text-sm flex items-center gap-3">
                   <span><span className="text-muted-foreground">Gerado </span><span className="text-[oklch(0.55_0.2_250)] font-bold">{fmt(generated)}</span></span>
                   <span className="text-muted-foreground">·</span>
-                  <span><span className="text-muted-foreground">Projetado </span><span className="font-semibold">{fmt(generationProjected)}</span></span>
+                  <span><span className="text-muted-foreground">Projetado/Dia{"\u00a0"}</span><span className="font-semibold">{fmt(generationProjected)}</span></span>
                 </div>
               </div>
               <div className="flex items-center justify-between mt-3 text-xs">
