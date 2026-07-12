@@ -275,13 +275,25 @@ function HomePage() {
     enabled: dataEnabled,
     staleTime: 60_000,
   });
+  const geradoMesQ = useQuery({
+    queryKey: ["sf-home-gerado-mes", ownerParam],
+    queryFn: () =>
+      fetchVendidoMes({ data: { ...OPP_DEFAULTS_GERADO_MES, ownerId: ownerParam } }),
+    enabled: dataEnabled,
+    staleTime: 60_000,
+  });
   const sold = useMemo(() => {
     const recs = vendidoMesQ.data?.records ?? [];
-    // Server já aplica ownerId; filtro client-side apenas por segurança.
     return recs
       .filter((r) => ownerParam == null || r.ownerId === ownerParam)
       .reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
   }, [vendidoMesQ.data, ownerParam]);
+  const generated = useMemo(() => {
+    const recs = geradoMesQ.data?.records ?? [];
+    return recs
+      .filter((r) => ownerParam == null || r.ownerId === ownerParam)
+      .reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
+  }, [geradoMesQ.data, ownerParam]);
 
   const goal = dbGoal;
   const achieved = sold;
@@ -297,6 +309,7 @@ function HomePage() {
     return Math.round(dailyGoal * elapsed);
   }, [dbGoal, today]);
   const goalPct = goal > 0 ? (sold / goal) * 100 : 0;
+  const projectedPct = goal > 0 ? (projected / goal) * 100 : 0;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
