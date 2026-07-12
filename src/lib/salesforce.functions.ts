@@ -621,6 +621,8 @@ export type OppFilters = {
   tipoNfNotIn?: string[];
   accountNameNotIn?: string[];
   ownerNameNotIn?: string[];
+  lossReasonIn?: string[];
+  lossReasonNotIn?: string[];
   ownerId?: string | null;
   dateField?: "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c";
   dateLiteral?: string; // e.g. THIS_MONTH or "CUSTOM"
