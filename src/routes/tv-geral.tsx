@@ -466,13 +466,13 @@ const Card = ({
   <div
     style={{
       background:
-        "linear-gradient(140deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 55%, rgba(107,91,255,0.06) 100%)",
+        "linear-gradient(140deg, #F7F8FC 0%, #ECEEF6 45%, #E4E5F1 100%)",
       border: `1px solid ${T.cardBorder}`,
       borderRadius: 22,
       padding: 22,
       boxShadow:
-        "0 24px 60px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,0.05)",
-      backdropFilter: "blur(14px) saturate(140%)",
+        "0 30px 60px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.6) inset, 0 1px 0 rgba(255,255,255,.9) inset",
+      color: T.ink,
       animation: `fadeUp .6s ease ${delay}s both`,
       position: "relative",
       overflow: "hidden",
