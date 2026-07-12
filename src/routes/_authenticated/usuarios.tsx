@@ -63,6 +63,7 @@ function UsuariosPage() {
     | { kind: "create" }
     | { kind: "invite"; external?: boolean }
     | { kind: "invite-sf"; candidate: SFCandidate }
+    | { kind: "edit"; row: Row }
     | null
   >(null);
 
