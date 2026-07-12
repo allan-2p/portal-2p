@@ -888,12 +888,7 @@ function HomePage() {
                             {inter && (
                               <span
                                 title={`${inter.type ?? "Interação"} — ${inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}`}
-                                className={cn(
-                                  "inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                                  inter.contacted === "yes"
-                                    ? "bg-success/15 text-success"
-                                    : "bg-warning/20 text-[color:var(--warning)]",
-                                )}
+                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-success/15 text-success"
                               >
                                 <Check className="h-2.5 w-2.5" />
                                 {inter.type ? `${inter.type} · ` : ""}{inter.contacted === "yes" ? "Falou" : "Não falou"}
