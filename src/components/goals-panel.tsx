@@ -165,12 +165,21 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     staleTime: 60_000,
   });
 
+  const commissionQ = useQuery({
+    queryKey: ["commission-settings"],
+    queryFn: () => useServerFnRef.current(),
+    staleTime: 60_000,
+  });
+  // Guarda a referência do fetch de commission — useServerFn deve ser chamado no topo.
+  const fetchCommission = useServerFn(getCommissionSettings);
+  const useServerFnRef = useMemoRef(fetchCommission);
+
   const loading =
     curVendasQ.isLoading || prevVendasQ.isLoading || goalsQ.isLoading || newAbGoalsQ.isLoading || retentionGoalsQ.isLoading;
 
   const ownerSet = useMemo(() => new Set(owners), [owners.join(",")]);
 
-  // ---- Faturamento: soma de vendas do owner no trimestre atual ---- //
+  // ---- Faturamento agregado ---- //
   const faturamentoReal = useMemo(() => {
     let total = 0;
     for (const r of curVendasQ.data?.records ?? []) {
@@ -190,11 +199,8 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     return total;
   }, [goalsQ.data]);
 
-  // ---- Retenção e Novos A+B: agrupar vendas por accountId em cada trimestre ---- //
+  // ---- Retenção e Novos A/B (agregados + por owner p/ comissão) ---- //
   const abKpis = useMemo(() => {
-    // Precisamos do dono da conta para atribuir corretamente ao owner selecionado.
-    // Como as vendas trazem OwnerId (do pedido), usamos o "dono predominante" da conta
-    // dentro do trimestre atual — coincide com o dono da conta na prática.
     const curByAcc = new Map<string, { total: number; owner: string | null }>();
     for (const r of curVendasQ.data?.records ?? []) {
       if (!r.accountId) continue;
@@ -215,31 +221,49 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
       if (!entry.owner) entry.owner = r.ownerId ?? null;
       prevByAcc.set(r.accountId, entry);
     }
-    const prevAB = new Map<string, string | null>(); // accountId -> owner (trimestre anterior)
+    const prevAB = new Map<string, string | null>();
     for (const [id, v] of prevByAcc) if (v.total >= AB_THRESHOLD) prevAB.set(id, v.owner);
-    const curAB = new Map<string, string | null>();
-    for (const [id, v] of curByAcc) if (v.total >= AB_THRESHOLD) curAB.set(id, v.owner);
 
     const isOwner = (o: string | null | undefined) => !!o && ownerSet.has(o);
 
-    // Retenção: base = A/B do tri anterior atribuídos ao(s) owner(s); ativos = A/B tri atual
     let retencaoBase = 0;
     let retencaoAtivos = 0;
     for (const [id, owner] of prevAB) {
       if (!isOwner(owner)) continue;
       retencaoBase++;
-      if (curAB.has(id)) retencaoAtivos++;
+      const cur = curByAcc.get(id);
+      if (cur && cur.total >= AB_THRESHOLD) retencaoAtivos++;
     }
     const retencaoMetaFallback = Math.round(retencaoBase * 0.9);
 
-    // Novos A+B: contas do owner que estão em curAB e NÃO estavam em prevAB
-    let novosAB = 0;
-    for (const [id, owner] of curAB) {
-      if (!isOwner(owner)) continue;
-      if (!prevAB.has(id)) novosAB++;
+    // Novos A/B por owner (nunca foi A/B no tri anterior; agora ≥15k)
+    const novosAperOwner: Record<string, number> = {};
+    const novosBperOwner: Record<string, number> = {};
+    let novosA = 0;
+    let novosB = 0;
+    for (const [id, cur] of curByAcc) {
+      if (cur.total < AB_THRESHOLD) continue;
+      if (prevAB.has(id)) continue; // já era A/B
+      if (!isOwner(cur.owner)) continue;
+      const owner = cur.owner as string;
+      if (cur.total > A_THRESHOLD) {
+        novosA++;
+        novosAperOwner[owner] = (novosAperOwner[owner] ?? 0) + 1;
+      } else {
+        novosB++;
+        novosBperOwner[owner] = (novosBperOwner[owner] ?? 0) + 1;
+      }
     }
-
-    return { retencaoBase, retencaoAtivos, retencaoMetaFallback, novosAB };
+    return {
+      retencaoBase,
+      retencaoAtivos,
+      retencaoMetaFallback,
+      novosAB: novosA + novosB,
+      novosA,
+      novosB,
+      novosAperOwner,
+      novosBperOwner,
+    };
   }, [curVendasQ.data, prevVendasQ.data, ownerSet]);
 
   const novosAbMeta = useMemo(() => {
@@ -253,6 +277,45 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     return configured > 0 ? configured : abKpis.retencaoMetaFallback;
   }, [retentionGoalsQ.data, abKpis.retencaoMetaFallback]);
 
+  // ---- Comissões por owner (usa equipe do commission settings) ---- //
+  const comissao = useMemo(() => {
+    const cfg = commissionQ.data;
+    if (!cfg) return { vendido: 0, novos: 0 };
+
+    // vendido por owner
+    const vendidoByOwner: Record<string, number> = {};
+    for (const r of curVendasQ.data?.records ?? []) {
+      if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
+      if (r.tipoNf === "Bonificação") continue;
+      vendidoByOwner[r.ownerId] = (vendidoByOwner[r.ownerId] ?? 0) + (r.total ?? r.amount ?? 0);
+    }
+    // meta por owner (soma dos meses ativos do trimestre)
+    const metaByOwner: Record<string, number> = {};
+    for (const g of goalsQ.data?.records ?? []) {
+      if (!g.active) continue;
+      metaByOwner[g.sf_user_id] = (metaByOwner[g.sf_user_id] ?? 0) + g.monthly_goal;
+    }
+
+    let totalVendido = 0;
+    let totalNovos = 0;
+    for (const owner of owners) {
+      const equipe: Equipe = (cfg.equipe?.[owner] ?? "carteira") as Equipe;
+      totalVendido += calcVendidoCommission(
+        vendidoByOwner[owner] ?? 0,
+        metaByOwner[owner] ?? 0,
+        equipe,
+        cfg.vendido,
+      );
+      totalNovos += calcNovosCommission(
+        abKpis.novosAperOwner[owner] ?? 0,
+        abKpis.novosBperOwner[owner] ?? 0,
+        equipe,
+        cfg.novos,
+      );
+    }
+    return { vendido: totalVendido, novos: totalNovos };
+  }, [commissionQ.data, curVendasQ.data, goalsQ.data, ownerSet, owners.join(","), abKpis]);
+
   const pct = (real: number, meta: number) => (meta > 0 ? (real / meta) * 100 : null);
 
   return (
@@ -261,7 +324,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
         <div>
           <h2 className="font-display font-semibold text-lg">Metas · {info.label}</h2>
           <p className="text-xs text-muted-foreground">
-            Faturamento, Retenção e Novos A+B do trimestre atual.
+            Faturamento, Retenção, Novos A+B e comissões do trimestre atual.
           </p>
         </div>
       </div>
@@ -291,10 +354,69 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
           realized={String(abKpis.novosAB)}
           goal={String(novosAbMeta)}
           pct={pct(abKpis.novosAB, novosAbMeta)}
-          hint={novosAbMeta === 0 ? "defina meta em /admin/metas" : "contas novas ≥ R$ 15k no tri"}
+          hint={
+            novosAbMeta === 0
+              ? "defina meta em /admin/metas"
+              : `A: ${abKpis.novosA} · B: ${abKpis.novosB}`
+          }
           loading={loading}
         />
       </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <CommissionCard
+          label="Comissão · Vendido"
+          Icon={Wallet}
+          value={fmtBRL(comissao.vendido)}
+          hint={
+            faturamentoMeta === 0
+              ? "sem meta ativa"
+              : `atingimento: ${pct(faturamentoReal, faturamentoMeta)?.toFixed(1) ?? "0"}%`
+          }
+          loading={loading || commissionQ.isLoading}
+        />
+        <CommissionCard
+          label="Comissão · Novos A/B"
+          Icon={Gift}
+          value={fmtBRL(comissao.novos)}
+          hint={`A: ${abKpis.novosA} · B: ${abKpis.novosB}`}
+          loading={loading || commissionQ.isLoading}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Pequeno helper para manter uma referência estável ao serverFn sem violar regras de hooks.
+function useMemoRef<T>(v: T) {
+  const ref = useMemo(() => ({ current: v }), []);
+  ref.current = v;
+  return ref;
+}
+
+function CommissionCard({
+  label,
+  Icon,
+  value,
+  hint,
+  loading,
+}: {
+  label: string;
+  Icon: typeof Target;
+  value: string;
+  hint?: string;
+  loading?: boolean;
+}) {
+  return (
+    <div className="glass rounded-2xl p-5">
+      <div className="flex items-center justify-between">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+        <Icon className="h-4 w-4 text-primary" />
+      </div>
+      <div className="mt-3 font-display font-bold text-3xl tabular-nums">
+        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : value}
+      </div>
+      {hint ? <div className="mt-2 text-xs text-muted-foreground">{hint}</div> : null}
     </div>
   );
 }
