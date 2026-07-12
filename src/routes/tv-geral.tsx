@@ -1037,57 +1037,9 @@ function Dashboard2P() {
           flexDirection: "column",
           gap: 18,
           position: "relative",
-          overflow: "hidden",
+          zIndex: 1,
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: "radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px)",
-            backgroundSize: "22px 22px",
-            pointerEvents: "none",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: -100,
-            right: -200,
-            width: 900,
-            height: 600,
-            background: "linear-gradient(120deg, rgba(255,255,255,.05), transparent 60%)",
-            borderRadius: 40,
-            transform: "rotate(12deg)",
-            pointerEvents: "none",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: -80,
-            left: -120,
-            width: 500,
-            height: 400,
-            background: "linear-gradient(60deg, rgba(240,126,45,.06), transparent 70%)",
-            borderRadius: 40,
-            transform: "rotate(-8deg)",
-            pointerEvents: "none",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: 180,
-            height: "160%",
-            background: "linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent)",
-            animation: "sweep 12s linear infinite",
-            pointerEvents: "none",
-          }}
-        />
-
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div
@@ -1095,14 +1047,18 @@ function Dashboard2P() {
                 width: 62,
                 height: 62,
                 borderRadius: 14,
-                background: T.card,
+                background: "linear-gradient(140deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04))",
+                border: `1px solid ${T.cardBorder}`,
+                boxShadow: "0 8px 24px -12px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,0.08)",
+                backdropFilter: "blur(10px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 8,
               }}
             >
-              <img src={solarLogo} alt="2P" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+              <img src={solarLogo} alt="2P" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+
             </div>
             <div>
               <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5 }}>Grupo 2P</div>
