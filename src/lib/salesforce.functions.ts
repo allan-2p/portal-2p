@@ -828,3 +828,83 @@ export const getSalesforceSalesByAccount = createServerFn({ method: "GET" })
   });
 
 
+// ============================================================
+// PUBLIC (no-auth) endpoints — used by the shared TV dashboard.
+// These NEVER accept an ownerId and ALWAYS run unscoped, since
+// they must render without any Supabase session (public URL).
+// ============================================================
+
+function buildOppSoqlUnscoped(f: OppFilters): string {
+  const df: "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c" =
+    f.dateField === "CreatedDate"
+      ? "CreatedDate"
+      : f.dateField === "Data_de_Faturamento__c"
+        ? "Data_de_Faturamento__c"
+        : "CloseDate";
+  const suffixStart = df === "CreatedDate" ? "T00:00:00Z" : "";
+  const suffixEnd = df === "CreatedDate" ? "T23:59:59Z" : "";
+  const clauses: string[] = [];
+
+  if (f.stageEquals && f.stageEquals.trim()) clauses.push(`StageName = '${esc(f.stageEquals.trim())}'`);
+  if (f.stageNotEquals && f.stageNotEquals.trim()) clauses.push(`StageName != '${esc(f.stageNotEquals.trim())}'`);
+  const statuses = (f.statusIn ?? []).filter(Boolean);
+  if (statuses.length) clauses.push(`Status_do_Pedido__c IN (${statuses.map((s) => `'${esc(s)}'`).join(",")})`);
+  for (const v of (f.tipoNfNotIn ?? []).filter(Boolean)) clauses.push(`(Tipo_de_NF__c = null OR Tipo_de_NF__c != '${esc(v)}')`);
+  for (const v of (f.accountNameNotIn ?? []).filter(Boolean)) clauses.push(`(Account.Name = null OR Account.Name != '${esc(v)}')`);
+  const orgs = (f.orgIn ?? []).filter(Boolean);
+  if (orgs.length) clauses.push(`Org_Oportunidade__c IN (${orgs.map((s) => `'${esc(s)}'`).join(",")})`);
+  for (const v of (f.ownerNameNotIn ?? []).filter(Boolean)) clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
+  const lossIn = (f.lossReasonIn ?? []).filter(Boolean);
+  if (lossIn.length) clauses.push(`Loss_Reason__c IN (${lossIn.map((s) => `'${esc(s)}'`).join(",")})`);
+  for (const v of (f.lossReasonNotIn ?? []).filter(Boolean)) clauses.push(`(Loss_Reason__c = null OR Loss_Reason__c != '${esc(v)}')`);
+
+  const literal = (f.dateLiteral ?? "").trim();
+  if (literal === "CUSTOM") {
+    if (f.dateFrom && validDate(f.dateFrom)) clauses.push(`${df} >= ${f.dateFrom}${suffixStart}`);
+    if (f.dateTo && validDate(f.dateTo)) clauses.push(`${df} <= ${f.dateTo}${suffixEnd}`);
+  } else if (literal) {
+    clauses.push(`${df} = ${literal}`);
+  }
+  if (f.dateField2) {
+    const df2 = f.dateField2;
+    const suffixStart2 = df2 === "CreatedDate" ? "T00:00:00Z" : "";
+    const suffixEnd2 = df2 === "CreatedDate" ? "T23:59:59Z" : "";
+    const literal2 = (f.dateLiteral2 ?? "").trim();
+    if (literal2 === "CUSTOM") {
+      if (f.dateFrom2 && validDate(f.dateFrom2)) clauses.push(`${df2} >= ${f.dateFrom2}${suffixStart2}`);
+      if (f.dateTo2 && validDate(f.dateTo2)) clauses.push(`${df2} <= ${f.dateTo2}${suffixEnd2}`);
+    } else if (literal2) {
+      clauses.push(`${df2} = ${literal2}`);
+    }
+  }
+
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")} ` : "";
+  return `SELECT ${OPP_COLS} FROM Opportunity ${where}ORDER BY ${df} DESC NULLS LAST LIMIT 1000`;
+}
+
+export const getPublicSalesforceVendidoOpp = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => (input ?? {}) as OppFilters)
+  .handler(async ({ data }) => {
+    const soql = buildOppSoqlUnscoped(data ?? {});
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+  });
+
+export const getPublicSalesforceVendas = createServerFn({ method: "GET" })
+  .inputValidator((input: { start?: string | null; end?: string | null }) => input ?? {})
+  .handler(async ({ data }) => {
+    const clauses: string[] = [
+      `StageName = 'Pedido Concluído'`,
+      `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
+    ];
+    if (validDate(data.start)) clauses.push(`CloseDate >= ${data.start}`);
+    if (validDate(data.end)) clauses.push(`CloseDate <= ${data.end}`);
+    const soql =
+      `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
+      `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+  });
+
+
+
