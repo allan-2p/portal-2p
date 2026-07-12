@@ -25,8 +25,10 @@ import {
   getSalesforceVendas,
   getSalesforceReportByName,
   type SalesforceOppRow,
+  type SalesforceReportRow,
 } from "@/lib/salesforce.functions";
 import { useAuth } from "@/hooks/use-auth";
+
 
 
 export const Route = createFileRoute("/_authenticated/admin/tabelas")({
