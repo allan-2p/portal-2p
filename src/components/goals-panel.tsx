@@ -227,11 +227,18 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
 
     let retencaoBase = 0;
     let retencaoAtivos = 0;
+    const retencaoBaseByOwner: Record<string, number> = {};
+    const retencaoAtivosByOwner: Record<string, number> = {};
     for (const [id, owner] of prevAB) {
       if (!isOwner(owner)) continue;
       retencaoBase++;
+      const o = owner as string;
+      retencaoBaseByOwner[o] = (retencaoBaseByOwner[o] ?? 0) + 1;
       const cur = curByAcc.get(id);
-      if (cur && cur.total >= AB_THRESHOLD) retencaoAtivos++;
+      if (cur && cur.total >= AB_THRESHOLD) {
+        retencaoAtivos++;
+        retencaoAtivosByOwner[o] = (retencaoAtivosByOwner[o] ?? 0) + 1;
+      }
     }
     const retencaoMetaFallback = Math.round(retencaoBase * 0.9);
 
@@ -257,6 +264,8 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
       retencaoBase,
       retencaoAtivos,
       retencaoMetaFallback,
+      retencaoBaseByOwner,
+      retencaoAtivosByOwner,
       novosAB: novosA + novosB,
       novosA,
       novosB,
