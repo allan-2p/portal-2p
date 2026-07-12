@@ -298,17 +298,19 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     const cfg = commissionQ.data;
     if (!cfg) return { vendido: 0, novos: 0, retencao: 0 };
 
-    // vendido por owner
+    // vendido por owner — mês atual apenas
     const vendidoByOwner: Record<string, number> = {};
     for (const r of curVendasQ.data?.records ?? []) {
       if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
       if (r.tipoNf === "Bonificação") continue;
+      if (!r.closeDate || r.closeDate < info.monthStart || r.closeDate > info.monthEnd) continue;
       vendidoByOwner[r.ownerId] = (vendidoByOwner[r.ownerId] ?? 0) + (r.total ?? r.amount ?? 0);
     }
-    // meta por owner (soma dos meses ativos do trimestre)
+    // meta por owner — somente mês atual
     const metaByOwner: Record<string, number> = {};
     for (const g of goalsQ.data?.records ?? []) {
       if (!g.active) continue;
+      if (g.month !== info.currentMonth) continue;
       metaByOwner[g.sf_user_id] = (metaByOwner[g.sf_user_id] ?? 0) + g.monthly_goal;
     }
     // meta de retenção por owner (fallback = 90% da base)
