@@ -530,12 +530,13 @@ function mapOppRow(r: any): SalesforceOppRow {
     accountId: r.AccountId ?? null,
     owner: r.Owner?.Name ?? null,
     ownerId: r.OwnerId ?? null,
+    accountOwner: r.Account?.Owner?.Name ?? null,
   };
 }
 
 const OPP_COLS =
   `Id, Name, StageName, Status_do_Pedido__c, Tipo_de_NF__c, Amount, Total__c, Valor_L_q__c, Frete__c, Desconto__c, ` +
-  `CloseDate, CreatedDate, AccountId, Account.Name, Owner.Name, OwnerId`;
+  `CloseDate, CreatedDate, AccountId, Account.Name, Account.Owner.Name, Owner.Name, OwnerId`;
 
 
 
