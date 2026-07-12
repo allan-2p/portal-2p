@@ -1262,6 +1262,8 @@ function OppTabPanel({
         error={error}
         search={search}
         dateField={dateField}
+        showFaturamento={showFaturamento}
+        showStatus={showStatus}
       />
     </div>
   );
