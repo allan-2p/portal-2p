@@ -463,12 +463,17 @@ const Card = ({
 }) => (
   <div
     style={{
-      background: T.card,
+      background:
+        "linear-gradient(140deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 55%, rgba(107,91,255,0.06) 100%)",
       border: `1px solid ${T.cardBorder}`,
       borderRadius: 22,
       padding: 22,
-      boxShadow: "0 12px 40px -20px rgba(0,0,0,.6)",
+      boxShadow:
+        "0 24px 60px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,0.05)",
+      backdropFilter: "blur(14px) saturate(140%)",
       animation: `fadeUp .6s ease ${delay}s both`,
+      position: "relative",
+      overflow: "hidden",
       ...style,
     }}
   >
