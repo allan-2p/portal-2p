@@ -318,7 +318,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </button>
               )}
               <Link
-                to="/2p-group"
+                to="/tv-geral"
                 target="_blank"
                 title="Painel de TV — 2P Group"
                 className="h-9 w-9 rounded-lg border border-border bg-gradient-to-br from-[#F28A3C]/20 to-[#1A00B0]/20 hover:from-[#F28A3C]/35 hover:to-[#1A00B0]/35 flex items-center justify-center transition-colors"

@@ -4,7 +4,7 @@ import solarLogoAsset from "@/assets/2p-logo-black.png.asset.json";
 
 const solarLogo = solarLogoAsset.url;
 
-export const Route = createFileRoute("/2p-group")({
+export const Route = createFileRoute("/tv-geral")({
   head: () => ({
     meta: [
       { title: "2P Group · Painel de Performance" },
