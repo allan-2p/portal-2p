@@ -10,6 +10,7 @@ import {
   adminSetRole,
   adminToggleActive,
   adminDeleteUser,
+  adminUpdateUser,
   listSalesforceCandidates,
   inviteSalesforceUser,
   syncSalesforcePhoto,
@@ -19,7 +20,7 @@ import { adminSetUserScope, adminSetUserSfId, type FilterScope } from "@/lib/sco
 import { toast } from "sonner";
 
 import {
-  Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink,
+  Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink, Pencil,
 } from "lucide-react";
 import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
