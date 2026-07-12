@@ -612,7 +612,7 @@ function HomePage() {
                     Sua carteira: <span className="text-foreground">{fmt(sold)}</span> no mês
                   </h1>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Priorize recompra e relacionamento — {atlasRadarInsights.length} sinal(is) na base.
+                    Priorize recompra e relacionamento com a base ativa.
                   </p>
                 </div>
               ),
