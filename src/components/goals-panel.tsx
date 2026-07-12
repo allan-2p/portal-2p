@@ -9,7 +9,6 @@ import {
 } from "@/lib/salesforce.functions";
 import {
   listFaturamentoGoalsForOwners,
-  listNewAbGoals,
   listRetentionGoals,
 } from "@/lib/goals.functions";
 import {
