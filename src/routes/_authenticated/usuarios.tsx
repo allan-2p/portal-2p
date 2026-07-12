@@ -237,11 +237,14 @@ function UsuariosPage() {
             onToggle={handleToggle}
             onDelete={handleDelete}
             onReload={load}
+            onScopeChange={handleScopeChange}
+            onSfIdChange={handleSfIdChange}
           />
         ) : (
           <SalesforceTable onInvite={(c) => setModal({ kind: "invite-sf", candidate: c })} />
         )}
       </div>
+
 
       {modal?.kind === "create" && (
         <UserModal
