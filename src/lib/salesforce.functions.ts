@@ -754,9 +754,11 @@ export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
       }
     }
 
-    const ownerClause = ownerFilterClause(
-      await resolveSalesforceOwnerFilter(context.supabase, context.userId, f.ownerId ?? null),
-    );
+    const ownerClause = (f as OppFilters & { unscoped?: boolean }).unscoped
+      ? ""
+      : ownerFilterClause(
+          await resolveSalesforceOwnerFilter(context.supabase, context.userId, f.ownerId ?? null),
+        );
 
     const where = clauses.length ? `WHERE ${clauses.join(" AND ")} ` : "";
     const soql =
