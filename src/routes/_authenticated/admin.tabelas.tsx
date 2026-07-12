@@ -500,6 +500,7 @@ function ProjectionsPanel({ search }: { search: string }) {
 
 type QuarterProjectionRow = {
   account: string;
+  accountOwner: string | null;
   prevSales: number;
   generatedCount: number;
   closedCount: number;
