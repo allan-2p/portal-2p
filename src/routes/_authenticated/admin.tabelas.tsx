@@ -980,6 +980,10 @@ function TabelasPage() {
                   : allRecords.filter((r) => (r.owner ?? "") === vendedorMes);
               return (
                 <>
+                  <VendidoFiltersPanel
+                    value={vendidoFilters}
+                    onApply={setVendidoFilters}
+                  />
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
                     <Select value={vendedorMes} onValueChange={setVendedorMes}>
