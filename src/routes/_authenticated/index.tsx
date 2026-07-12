@@ -907,7 +907,7 @@ function HomePage() {
                       {t.owner && (
                         <div className="text-[11px] text-muted-foreground mt-1">Responsável: {t.owner}</div>
                       )}
-                      {false && suggestion && null}
+                      
                       <div className="flex gap-1.5 mt-2.5">
                         <button
                           onClick={() => setInteractionTask(t)}
