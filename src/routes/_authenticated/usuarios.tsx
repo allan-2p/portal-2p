@@ -72,6 +72,7 @@ function UsuariosPage() {
   const setRoleFn = useServerFn(adminSetRole);
   const toggleFn = useServerFn(adminToggleActive);
   const deleteFn = useServerFn(adminDeleteUser);
+  const setScopeFn = useServerFn(adminSetUserScope);
   const setSfIdFn = useServerFn(adminSetUserSfId);
   const updateFn = useServerFn(adminUpdateUser);
 
