@@ -286,7 +286,7 @@ function UsuariosPage() {
 }
 
 function PortalTable({
-  rows, loading, currentUserId, onRoleChange, onToggle, onDelete, onReload,
+  rows, loading, currentUserId, onRoleChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange,
 }: {
   rows: Row[];
   loading: boolean;
@@ -295,7 +295,10 @@ function PortalTable({
   onToggle: (id: string, ativo: boolean) => void;
   onDelete: (id: string) => void;
   onReload: () => void;
+  onScopeChange: (id: string, scope: FilterScope) => void;
+  onSfIdChange: (id: string, sf_user_id: string | null) => void;
 }) {
+
   const syncPhoto = useServerFn(syncSalesforcePhoto);
   async function handleSyncPhoto(userId: string) {
     try {
