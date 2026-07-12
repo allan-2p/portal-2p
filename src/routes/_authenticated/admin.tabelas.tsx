@@ -1371,6 +1371,9 @@ function TabelasPage() {
           <TabsContent value="projecoes" className="mt-4">
             <ProjectionsPanel search={search} />
           </TabsContent>
+          <TabsContent value="projecao-tri" className="mt-4">
+            <CurrentQuarterProjectionsPanel search={search} />
+          </TabsContent>
           <TabsContent value="semanas" className="mt-4 space-y-6">
             <section className="space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
