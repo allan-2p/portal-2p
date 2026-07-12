@@ -242,6 +242,27 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     monthGoalQ.isLoading ||
     kpiGoalsQ.isLoading;
 
+  const isFetching =
+    vendidoMesQ.isFetching ||
+    geradoMesQ.isFetching ||
+    faturamentoMesQ.isFetching ||
+    monthGoalQ.isFetching ||
+    kpiGoalsQ.isFetching ||
+    vendasTriQ.isFetching ||
+    vendasTriPrevQ.isFetching ||
+    vendas12mQ.isFetching;
+
+  const lastUpdated = Math.max(
+    vendidoMesQ.dataUpdatedAt,
+    geradoMesQ.dataUpdatedAt,
+    faturamentoMesQ.dataUpdatedAt,
+    monthGoalQ.dataUpdatedAt,
+    kpiGoalsQ.dataUpdatedAt,
+    vendasTriQ.dataUpdatedAt,
+    vendasTriPrevQ.dataUpdatedAt,
+    vendas12mQ.dataUpdatedAt,
+  );
+
   const data = useMemo<TvData>(() => {
     const sumTotal = (recs: Array<{ total: number | null; amount: number | null }>) =>
       recs.reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
