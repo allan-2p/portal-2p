@@ -283,7 +283,8 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     const projetadoDia = Math.round(dailyGoal * elapsed);
 
     const solarReal = sumTotal(vendasTriQ.data?.records ?? []);
-    const solarMeta = solarReal;
+    const solarMeta = 14_000_000;
+    const carregMeta = 1_800_000;
 
     const week = currentWeekDays(now);
     const dayKeys = week.map((d) => fmtKey(d));
@@ -398,7 +399,7 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
       mes: { vendas, meta, projetadoDia, faturamento },
       tri: {
         solar: { meta: solarMeta, real: solarReal },
-        carreg: { meta: 0, real: 0 },
+        carreg: { meta: carregMeta, real: 0 },
         paceEsperado: paceTri,
       },
       semanaOrc,
@@ -562,6 +563,7 @@ const BrandStat = ({
   meta,
   invert = false,
   gradientBar = false,
+  embedded = false,
 }: {
   label: string;
   dotColor: string;
@@ -569,11 +571,14 @@ const BrandStat = ({
   meta: number;
   invert?: boolean;
   gradientBar?: boolean;
+  embedded?: boolean;
 }) => {
   const p = pct(real, meta);
   const bg = invert
     ? "linear-gradient(135deg, #1B1F3A 0%, #2A1F55 60%, #3B2A7A 100%)"
-    : "linear-gradient(140deg, #F7F8FC 0%, #ECEEF6 55%, #E4E5F1 100%)";
+    : embedded
+      ? "transparent"
+      : "linear-gradient(140deg, #F7F8FC 0%, #ECEEF6 55%, #E4E5F1 100%)";
   const fg = invert ? "#FFFFFF" : T.ink;
   const dim = invert ? "rgba(255,255,255,.72)" : T.dim;
   const track = invert ? "rgba(255,255,255,.14)" : T.track;
@@ -583,7 +588,11 @@ const BrandStat = ({
     <div
       style={{
         background: bg,
-        border: `1px solid ${invert ? "rgba(255,255,255,.08)" : T.cardBorder}`,
+        border: invert
+          ? "1px solid rgba(255,255,255,.08)"
+          : embedded
+            ? "none"
+            : `1px solid ${T.cardBorder}`,
         borderRadius: 16,
         padding: "12px 16px",
         display: "flex",
@@ -908,11 +917,13 @@ const HeaderMetas = ({ tri }: { tri: TvData["tri"] }) => {
   const totalMeta = tri.solar.meta + tri.carreg.meta;
   const totalReal = tri.solar.real + tri.carreg.real;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.15fr", gap: 12, flex: 1 }}>
-      <BrandStat label="2P Solar" dotColor={T.orange} real={tri.solar.real} meta={tri.solar.meta} />
-      <BrandStat label="2P Carregadores" dotColor={T.blue} real={tri.carreg.real} meta={tri.carreg.meta} />
-      <BrandStat label="Total Grupo" dotColor="#fff" real={totalReal} meta={totalMeta} invert gradientBar />
-    </div>
+    <Card style={{ flex: 1, padding: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.15fr", gap: 12 }}>
+        <BrandStat label="2P Solar" dotColor={T.orange} real={tri.solar.real} meta={tri.solar.meta} embedded />
+        <BrandStat label="2P Carregadores" dotColor={T.blue} real={tri.carreg.real} meta={tri.carreg.meta} embedded />
+        <BrandStat label="Total Grupo" dotColor="#fff" real={totalReal} meta={totalMeta} invert gradientBar />
+      </div>
+    </Card>
   );
 };
 
