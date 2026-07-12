@@ -26,6 +26,7 @@ import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
+  getSalesforcePedidos,
   OPP_DEFAULTS_VENDIDO_MES,
   OPP_DEFAULTS_GERADO_MES,
   type SalesforceOppRow,
