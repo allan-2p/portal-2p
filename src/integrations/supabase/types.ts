@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      commission_settings: {
+        Row: {
+          config: Json
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          config: Json
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hidden_salespeople: {
         Row: {
           created_at: string
