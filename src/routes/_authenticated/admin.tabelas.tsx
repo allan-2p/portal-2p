@@ -32,6 +32,7 @@ import {
   OPP_DEFAULTS_ORCAMENTOS,
   OPP_DEFAULTS_VENDAS,
   OPP_DEFAULTS_VENDIDO_MES,
+  OPP_DEFAULTS_GERADO_MES,
   type OppFilters,
   type SalesforceOppRow,
 } from "@/lib/salesforce.functions";
@@ -950,16 +951,18 @@ function OppTabPanel({
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  type TabId = "orcamentos" | "vendas" | "projecoes" | "semanas" | "vendido-mes";
+  type TabId = "orcamentos" | "vendas" | "projecoes" | "semanas" | "vendido-mes" | "gerado-mes";
   const [tab, setTab] = useState<TabId>("orcamentos");
 
   const [orcFilters, setOrcFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_ORCAMENTOS });
   const [venFilters, setVenFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDAS });
   const [vendidoFilters, setVendidoFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDIDO_MES });
+  const [geradoFilters, setGeradoFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_GERADO_MES });
 
   const [vendedorOrc, setVendedorOrc] = useState<string>("__all__");
   const [vendedorVen, setVendedorVen] = useState<string>("__all__");
   const [vendedorMes, setVendedorMes] = useState<string>("__all__");
+  const [vendedorGer, setVendedorGer] = useState<string>("__all__");
 
   const [search, setSearch] = useState("");
 
@@ -984,6 +987,12 @@ function TabelasPage() {
     queryFn: () => fetchVendidoMes({ data: vendidoFilters }),
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "vendido-mes",
+  });
+  const qGeradoMes = useQuery({
+    queryKey: ["sf-gerado-mes-atual", geradoFilters],
+    queryFn: () => fetchVendidoMes({ data: geradoFilters }),
+    staleTime: 60_000,
+    enabled: hasRole("admin") && tab === "gerado-mes",
   });
 
   // Silence unused-imports guard; kept for potential future direct calls.
@@ -1036,6 +1045,9 @@ function TabelasPage() {
             <TabsTrigger value="vendido-mes" className="gap-2">
               <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
             </TabsTrigger>
+            <TabsTrigger value="gerado-mes" className="gap-2">
+              <ShoppingCart className="h-4 w-4" /> Gerado - Mês Atual
+            </TabsTrigger>
             <TabsTrigger value="projecoes" className="gap-2">
               <TrendingUp className="h-4 w-4" /> Projeções
             </TabsTrigger>
@@ -1084,6 +1096,20 @@ function TabelasPage() {
               error={qVendidoMes.error}
               search={search}
               dateField={vendidoFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
+            />
+          </TabsContent>
+          <TabsContent value="gerado-mes" className="mt-4">
+            <OppTabPanel
+              filters={geradoFilters}
+              defaults={OPP_DEFAULTS_GERADO_MES}
+              onFiltersChange={setGeradoFilters}
+              vendedor={vendedorGer}
+              onVendedorChange={setVendedorGer}
+              records={qGeradoMes.data?.records ?? []}
+              loading={qGeradoMes.isLoading}
+              error={qGeradoMes.error}
+              search={search}
+              dateField={geradoFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
             />
           </TabsContent>
           <TabsContent value="projecoes" className="mt-4">
