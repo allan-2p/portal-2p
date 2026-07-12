@@ -813,8 +813,8 @@ const GraficoSemanal = ({
                 style={{
                   fontSize: 11,
                   fontWeight: hoje ? 900 : 700,
-                  color: hoje ? T.bgTxt : T.dim,
-                  background: hoje ? T.ink : "transparent",
+                  color: hoje ? "#fff" : T.dim,
+                  background: hoje ? `linear-gradient(135deg, ${T.orange}, ${T.blue})` : "transparent",
                   padding: hoje ? "2px 8px" : 0,
                   borderRadius: 999,
                   letterSpacing: 0.5,
