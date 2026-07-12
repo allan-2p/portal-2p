@@ -154,7 +154,7 @@ function currentWeekDays(now: Date): Date[] {
 
 const AB_THRESHOLD = 15_000;
 
-function useTvData(): { data: TvData; loading: boolean } {
+function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; lastUpdated: number } {
   const now = useMemo(() => new Date(), []);
   const y = now.getFullYear();
   const m = now.getMonth();
