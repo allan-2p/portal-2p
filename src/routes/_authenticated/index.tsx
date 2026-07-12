@@ -595,22 +595,7 @@ function HomePage() {
           />
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border">
-              <UsersIcon className="h-4 w-4 text-primary" />
-              <label className="text-xs text-muted-foreground">Vendedor</label>
-              <select
-                value={ownerId}
-                onChange={(e) => setOwnerId(e.target.value)}
-                className="bg-transparent text-sm font-medium outline-none pr-1 max-w-[220px]"
-                disabled={peopleQ.isLoading}
-              >
-                <option value="all">Todos</option>
-                {salespeople.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              {peopleQ.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-            </div>
+            <VendedorFilter value={ownerId} onChange={setOwnerId} />
           </div>
         </div>
 
