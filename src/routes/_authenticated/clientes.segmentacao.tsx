@@ -489,12 +489,14 @@ function SegmentacaoPage() {
             </div>
             <div className="flex items-center gap-2">
               <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Vendedor</label>
-              <Select value={vendedor} onValueChange={setVendedor}>
+              <Select value={vendedor} onValueChange={setVendedor} disabled={isIndividual}>
                 <SelectTrigger className="h-9 w-[220px] text-sm">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__all__">Todos</SelectItem>
+                  {scope?.scope === "geral" && (
+                    <SelectItem value="__all__">Todos</SelectItem>
+                  )}
                   {vendedores.map((v) => (
                     <SelectItem key={v} value={v}>
                       {v}
@@ -503,6 +505,7 @@ function SegmentacaoPage() {
                 </SelectContent>
               </Select>
             </div>
+
           </div>
         </div>
 
