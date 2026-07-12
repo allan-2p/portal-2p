@@ -1206,6 +1206,8 @@ function OppTabPanel({
   error,
   search,
   dateField,
+  showFaturamento = false,
+  showStatus = false,
 }: {
   filters: OppFilters;
   defaults: OppFilters;
@@ -1217,6 +1219,8 @@ function OppTabPanel({
   error: unknown;
   search: string;
   dateField: "createdDate" | "closeDate";
+  showFaturamento?: boolean;
+  showStatus?: boolean;
 }) {
   const vendedores = useMemo(
     () => Array.from(new Set(records.map((r) => r.owner).filter((v): v is string => !!v)))
