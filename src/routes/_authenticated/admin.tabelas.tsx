@@ -1286,6 +1286,20 @@ function OppFiltersPanel({
             placeholder="Ex.: Caroline Gimenez"
           />
 
+          <TagListEditor
+            label="Motivo de Perda (igual a)"
+            values={draft.lossReasonIn ?? []}
+            onChange={(v) => set("lossReasonIn", v)}
+            placeholder="Ex.: Preço"
+          />
+
+          <TagListEditor
+            label="Motivo de Perda (diferente de)"
+            values={draft.lossReasonNotIn ?? []}
+            onChange={(v) => set("lossReasonNotIn", v)}
+            placeholder="Ex.: Sem interesse"
+          />
+
           <div className="md:col-span-2 flex items-center justify-end gap-2 pt-1">
             <Button
               type="button"
