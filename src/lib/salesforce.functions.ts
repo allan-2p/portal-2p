@@ -675,6 +675,8 @@ export const OPP_DEFAULTS_VENDAS: OppFilters = {
   ownerNameNotIn: [],
   dateField: "Data_de_Faturamento__c",
   dateLiteral: "THIS_MONTH",
+  dateField2: "CloseDate",
+  dateLiteral2: "THIS_MONTH",
 };
 
 export const OPP_DEFAULTS_GERADO_MES: OppFilters = {
