@@ -41,6 +41,8 @@ function currentQuarterInfo(now = new Date()) {
   const curEnd = new Date(y, qStart + 3, 0);
   const prevStart = new Date(y, qStart - 3, 1);
   const prevEnd = new Date(y, qStart, 0);
+  const monthStart = new Date(y, m, 1);
+  const monthEnd = new Date(y, m + 1, 0);
   return {
     year: y,
     quarter,
@@ -49,7 +51,11 @@ function currentQuarterInfo(now = new Date()) {
     curEnd: fmtKey(curEnd),
     prevStart: fmtKey(prevStart),
     prevEnd: fmtKey(prevEnd),
+    monthStart: fmtKey(monthStart),
+    monthEnd: fmtKey(monthEnd),
+    currentMonth: m + 1,
     label: `Q${quarter} ${y}`,
+    monthLabel: `${pad(m + 1)}/${y}`,
   };
 }
 
@@ -178,25 +184,27 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
 
   const ownerSet = useMemo(() => new Set(owners), [owners.join(",")]);
 
-  // ---- Faturamento agregado ---- //
+  // ---- Faturamento (VENDIDO): baseado no mês atual apenas ---- //
   const faturamentoReal = useMemo(() => {
     let total = 0;
     for (const r of curVendasQ.data?.records ?? []) {
       if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
       if (r.tipoNf === "Bonificação") continue;
+      if (!r.closeDate || r.closeDate < info.monthStart || r.closeDate > info.monthEnd) continue;
       total += r.total ?? r.amount ?? 0;
     }
     return total;
-  }, [curVendasQ.data, ownerSet]);
+  }, [curVendasQ.data, ownerSet, info.monthStart, info.monthEnd]);
 
   const faturamentoMeta = useMemo(() => {
     let total = 0;
     for (const g of goalsQ.data?.records ?? []) {
       if (!g.active) continue;
+      if (g.month !== info.currentMonth) continue;
       total += g.monthly_goal;
     }
     return total;
-  }, [goalsQ.data]);
+  }, [goalsQ.data, info.currentMonth]);
 
   // ---- Retenção e Novos A/B (agregados + por owner p/ comissão) ---- //
   const abKpis = useMemo(() => {
@@ -290,17 +298,19 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     const cfg = commissionQ.data;
     if (!cfg) return { vendido: 0, novos: 0, retencao: 0 };
 
-    // vendido por owner
+    // vendido por owner — mês atual apenas
     const vendidoByOwner: Record<string, number> = {};
     for (const r of curVendasQ.data?.records ?? []) {
       if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
       if (r.tipoNf === "Bonificação") continue;
+      if (!r.closeDate || r.closeDate < info.monthStart || r.closeDate > info.monthEnd) continue;
       vendidoByOwner[r.ownerId] = (vendidoByOwner[r.ownerId] ?? 0) + (r.total ?? r.amount ?? 0);
     }
-    // meta por owner (soma dos meses ativos do trimestre)
+    // meta por owner — somente mês atual
     const metaByOwner: Record<string, number> = {};
     for (const g of goalsQ.data?.records ?? []) {
       if (!g.active) continue;
+      if (g.month !== info.currentMonth) continue;
       metaByOwner[g.sf_user_id] = (metaByOwner[g.sf_user_id] ?? 0) + g.monthly_goal;
     }
     // meta de retenção por owner (fallback = 90% da base)
@@ -336,7 +346,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
       );
     }
     return { vendido: totalVendido, novos: totalNovos, retencao: totalRetencao };
-  }, [commissionQ.data, curVendasQ.data, goalsQ.data, retentionGoalsQ.data, ownerSet, owners.join(","), abKpis]);
+  }, [commissionQ.data, curVendasQ.data, goalsQ.data, retentionGoalsQ.data, ownerSet, owners.join(","), abKpis, info.currentMonth, info.monthStart, info.monthEnd]);
 
   const pct = (real: number, meta: number) => (meta > 0 ? (real / meta) * 100 : null);
 
@@ -353,12 +363,12 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
 
       <div className="grid md:grid-cols-3 gap-4">
         <GoalCard
-          label="VENDIDO"
+          label={`VENDIDO · ${info.monthLabel}`}
           Icon={Target}
           realized={fmtBRL(faturamentoReal)}
           goal={fmtBRL(faturamentoMeta)}
           pct={pct(faturamentoReal, faturamentoMeta)}
-          hint={faturamentoMeta === 0 ? "sem meta ativa" : undefined}
+          hint={faturamentoMeta === 0 ? "sem meta do mês" : "mês atual"}
           loading={loading}
         />
         <GoalCard
