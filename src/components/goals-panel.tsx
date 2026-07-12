@@ -340,9 +340,6 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
       <div className="flex items-end justify-between flex-wrap gap-2">
         <div>
           <h2 className="font-display font-semibold text-lg">Metas · {info.label}</h2>
-          <p className="text-xs text-muted-foreground">
-            Faturamento, Retenção, Novos A+B e comissões do trimestre atual.
-          </p>
         </div>
       </div>
 
