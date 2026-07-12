@@ -624,6 +624,11 @@ export type OppFilters = {
   dateLiteral?: string; // e.g. THIS_MONTH or "CUSTOM"
   dateFrom?: string;    // YYYY-MM-DD (when literal = CUSTOM)
   dateTo?: string;      // YYYY-MM-DD (when literal = CUSTOM)
+  // Optional secondary date filter (applied in addition to the primary)
+  dateField2?: "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c";
+  dateLiteral2?: string;
+  dateFrom2?: string;
+  dateTo2?: string;
 };
 // Backwards-compat alias
 export type VendidoFilters = OppFilters;
