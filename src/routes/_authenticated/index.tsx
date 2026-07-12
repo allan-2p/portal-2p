@@ -1429,7 +1429,7 @@ function CompleteTaskDialog({
             comments: interactionNote,
           },
         });
-        onSaveInteraction({ contacted, type: interactionType, note: interactionNote, ts: Date.now() });
+        onSaveInteraction({ contacted: contacted!, type: interactionType, note: interactionNote, ts: Date.now() });
       }
       await completeFn({ data: { taskId: task.id } });
       if (createNext) {
