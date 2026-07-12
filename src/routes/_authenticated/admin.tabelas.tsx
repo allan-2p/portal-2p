@@ -547,7 +547,8 @@ function classifyAccount(prevSales: number): "A" | "B" | "C" | "D" {
 function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
   const cur = useMemo(currentQuarter, []);
   const baseRange = useMemo(() => quarterRange(cur.year, cur.q - 1), [cur.year, cur.q]);
-  const targetLabel = useMemo(() => quarterRange(cur.year, cur.q).label, [cur.year, cur.q]);
+  const currentRange = useMemo(() => quarterRange(cur.year, cur.q), [cur.year, cur.q]);
+  const targetLabel = currentRange.label;
   const [vendedor, setVendedor] = useState<string>("__all__");
 
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
@@ -563,11 +564,26 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
     queryFn: () => fetchVen({ data: { start: baseRange.start, end: baseRange.end } }),
     staleTime: 60_000,
   });
+  // Trimestre atual — usado para atualizar dono do cliente (account owner)
+  // e para incluir clientes novos (classificados como D) que não existiam
+  // no trimestre-base.
+  const qOrcCur = useQuery({
+    queryKey: ["sf-orcamentos", currentRange.start, currentRange.end],
+    queryFn: () => fetchOrc({ data: { start: currentRange.start, end: currentRange.end } }),
+    staleTime: 60_000,
+  });
+  const qVenCur = useQuery({
+    queryKey: ["sf-vendas", currentRange.start, currentRange.end],
+    queryFn: () => fetchVen({ data: { start: currentRange.start, end: currentRange.end } }),
+    staleTime: 60_000,
+  });
 
-  const loading = qOrc.isLoading || qVen.isLoading;
-  const error = qOrc.error ?? qVen.error;
+  const loading = qOrc.isLoading || qVen.isLoading || qOrcCur.isLoading || qVenCur.isLoading;
+  const error = qOrc.error ?? qVen.error ?? qOrcCur.error ?? qVenCur.error;
   const orcRecs = qOrc.data?.records ?? [];
   const venRecs = qVen.data?.records ?? [];
+  const orcCurRecs = qOrcCur.data?.records ?? [];
+  const venCurRecs = qVenCur.data?.records ?? [];
 
   const rows: QuarterProjectionRow[] = useMemo(() => {
     // Agregado por Account no trimestre-base
@@ -598,6 +614,19 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
     // Universo de contas = todas com atividade no trimestre anterior
     const accounts = new Set<string>([...generatedByAccount.keys(), ...salesByAccount.keys()]);
 
+    // Atualiza o dono do cliente com o do trimestre atual (Account Owner
+    // pode ter mudado) e adiciona clientes novos que só apareceram agora.
+    for (const o of orcCurRecs) {
+      const key = o.account ?? "(sem cliente)";
+      accounts.add(key);
+      if (o.accountOwner) ownerByAccount.set(key, o.accountOwner);
+    }
+    for (const v of venCurRecs) {
+      const key = v.account ?? "(sem cliente)";
+      accounts.add(key);
+      if (v.accountOwner) ownerByAccount.set(key, v.accountOwner);
+    }
+
     const out: QuarterProjectionRow[] = [];
     for (const account of accounts) {
       const prevSales = salesByAccount.get(account) ?? 0;
@@ -623,7 +652,7 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
       });
     }
     return out.sort((a, b) => b.prevSales - a.prevSales);
-  }, [orcRecs, venRecs]);
+  }, [orcRecs, venRecs, orcCurRecs, venCurRecs]);
 
   const vendedores = useMemo(() => {
     const set = new Set<string>();
