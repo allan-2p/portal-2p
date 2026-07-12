@@ -81,7 +81,8 @@ export const setNewAbGoal = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => NewAbSetInput.parse(d))
   .handler(async ({ data, context }) => {
     // RLS já garante que só admin pode escrever; ainda assim, checamos por clareza.
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    const { data: isAdmin } = await context.supabase.rpc("is_admin");
+    void ({
       _user_id: context.userId,
       _role: "admin",
     });
@@ -128,7 +129,8 @@ export const setRetentionGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => NewAbSetInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    const { data: isAdmin } = await context.supabase.rpc("is_admin");
+    void ({
       _user_id: context.userId,
       _role: "admin",
     });
@@ -182,7 +184,8 @@ export const setGroupKpiGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SetGroupKpiInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    const { data: isAdmin } = await context.supabase.rpc("is_admin");
+    void ({
       _user_id: context.userId,
       _role: "admin",
     });
