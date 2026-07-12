@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Users as UsersIcon, Loader2, Lock } from "lucide-react";
 import { getSalesforceSalespeople } from "@/lib/salesforce.functions";
-import { getMyScope } from "@/lib/scope.functions";
+import { useSellerScope } from "@/hooks/use-seller-scope";
 
 export function VendedorFilter({
   value,
@@ -15,13 +15,7 @@ export function VendedorFilter({
   /** Restrição adicional imposta pela tela (ex: Segmentação). Interseção com o escopo do usuário. */
   allowedIds?: string[];
 }) {
-  const fetchScope = useServerFn(getMyScope);
-  const scopeQ = useQuery({
-    queryKey: ["my-scope"],
-    queryFn: () => fetchScope(),
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
+  const { query: scopeQ, scope, ready: scopeReady } = useSellerScope();
 
   const fetchSalespeople = useServerFn(getSalesforceSalespeople);
   const q = useQuery({
@@ -30,9 +24,6 @@ export function VendedorFilter({
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
   });
-
-  const scope = scopeQ.data;
-  const scopeReady = !scopeQ.isLoading && !scopeQ.isError && !!scope;
 
   // Fail-safe: enquanto o escopo não carrega OU se der erro, trata como Individual
   // (nunca abre "Todos" antes de saber a permissão do usuário).

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getMyAccess } from "@/lib/access.functions";
+import { useAuth } from "@/hooks/use-auth";
 import {
   INSTANCES,
   type InstanceId,
@@ -40,10 +41,12 @@ function readSavedInstance(): InstanceId | null {
 }
 
 export function InstanceProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const fetchAccess = useServerFn(getMyAccess);
   const q = useQuery({
-    queryKey: ["my-access"],
+    queryKey: ["my-access", user?.id],
     queryFn: () => fetchAccess(),
+    enabled: !!user && !authLoading,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -108,7 +111,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     allowed,
     hasFeature,
     isRouteAllowed,
-    loading: q.isLoading,
+    loading: authLoading || (!!user && q.isLoading),
   };
   return <InstanceContext.Provider value={value}>{children}</InstanceContext.Provider>;
 }

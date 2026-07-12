@@ -7,6 +7,7 @@ import { AlertTriangle, KanbanSquare, List, Loader2, Search, Sparkles } from "lu
 import { cn } from "@/lib/utils";
 import { VendedorFilter } from "@/components/vendedor-filter";
 import { getSalesforcePedidos, PEDIDO_STATUS, type PedidoStatus, type SalesforceOppRow } from "@/lib/salesforce.functions";
+import { useScopedOwner } from "@/hooks/use-seller-scope";
 
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
@@ -62,12 +63,13 @@ function mapPedido(row: SalesforceOppRow): Pedido | null {
 function PedidosPage() {
   const [view, setView] = useState<"kanban" | "list">("kanban");
   const [search, setSearch] = useState("");
-  const [ownerId, setOwnerId] = useState<string>("all");
+  const { ownerId, setOwnerId, ownerParam, dataEnabled } = useScopedOwner("all");
 
   const fetchPedidos = useServerFn(getSalesforcePedidos);
   const pedidosQ = useQuery({
-    queryKey: ["salesforce", "pedidos", ownerId],
-    queryFn: () => fetchPedidos({ data: { ownerId } }),
+    queryKey: ["salesforce", "pedidos", ownerParam],
+    queryFn: () => fetchPedidos({ data: { ownerId: ownerParam } }),
+    enabled: dataEnabled,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });

@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getSalesforceTasks, type SalesforceTask } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
+import { useScopedOwner } from "@/hooks/use-seller-scope";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
   head: () => ({
@@ -75,8 +76,7 @@ function TarefasPage() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [ownerId, setOwnerId] = useState<string>("all");
-  const ownerParam = ownerId === "all" ? null : ownerId;
+  const { ownerId, setOwnerId, ownerParam, dataEnabled } = useScopedOwner("all");
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -95,6 +95,7 @@ function TarefasPage() {
   const tasksQuery = useQuery({
     queryKey: ["sf-tasks", range.start, range.end, ownerParam],
     queryFn: () => fetchTasks({ data: { ...range, ownerId: ownerParam } }),
+    enabled: dataEnabled,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
