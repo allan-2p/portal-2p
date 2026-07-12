@@ -633,7 +633,9 @@ function FixedRangeWeeksPanel({ start, end }: { start: string; end: string }) {
   );
 }
 
+const COMPRAS_REPORT_ID = "00ODn0000081BYoMAM";
 const COMPRAS_REPORT_NAME = "Compras Efetuadas [A-WF]";
+
 
 // Heurísticas de mapeamento de colunas do relatório Salesforce
 type ColMap = {
