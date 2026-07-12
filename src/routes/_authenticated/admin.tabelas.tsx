@@ -23,11 +23,13 @@ import { cn } from "@/lib/utils";
 import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
+  getSalesforceVendidoMesAtual,
   getSalesforceReportByName,
   type SalesforceOppRow,
   type SalesforceReportRow,
 } from "@/lib/salesforce.functions";
 import { useAuth } from "@/hooks/use-auth";
+
 
 
 
