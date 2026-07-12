@@ -592,7 +592,6 @@ export const getSalesforceVendas = createServerFn({ method: "GET" })
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
-  });
 
 
 
