@@ -904,10 +904,10 @@ const HeaderMetas = ({ tri }: { tri: TvData["tri"] }) => {
 };
 
 function Dashboard2P() {
-  const { data, loading } = useTvData();
+  const { data, loading, isFetching, lastUpdated } = useTvData();
   const [scale, setScale] = useState(1);
-  const [ago, setAgo] = useState(0);
-  const startedAt = useRef(Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  const [isFs, setIsFs] = useState(false);
 
   useEffect(() => {
     const fit = () =>
@@ -918,9 +918,62 @@ function Dashboard2P() {
   }, []);
 
   useEffect(() => {
-    const iv = setInterval(() => setAgo(Math.floor((Date.now() - startedAt.current) / 1000)), 1000);
+    const iv = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(iv);
   }, []);
+
+  // Wake Lock: mantém a tela acesa enquanto o painel está aberto.
+  useEffect(() => {
+    let lock: any = null;
+    let cancelled = false;
+    const nav: any = navigator;
+    async function acquire() {
+      try {
+        if (nav.wakeLock?.request) {
+          lock = await nav.wakeLock.request("screen");
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    void acquire();
+    const onVis = () => {
+      if (document.visibilityState === "visible" && !lock && !cancelled) void acquire();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVis);
+      try {
+        lock?.release?.();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const onFs = () => setIsFs(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void document.documentElement.requestFullscreen().catch(() => {});
+  };
+
+  const secsSinceUpdate = lastUpdated ? Math.max(0, Math.floor((now - lastUpdated) / 1000)) : null;
+  const updateLabel =
+    secsSinceUpdate == null
+      ? "Aguardando dados…"
+      : secsSinceUpdate < 5
+        ? "atualizado agora"
+        : secsSinceUpdate < 60
+          ? `atualizado há ${secsSinceUpdate}s`
+          : `atualizado há ${Math.floor(secsSinceUpdate / 60)}min`;
+
+
 
   return (
     <div
