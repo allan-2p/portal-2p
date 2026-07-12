@@ -1,76 +1,69 @@
-Vou dividir em 3 frentes independentes. Tudo é frontend + uma migração pequena para as novas metas trimestrais.
+## Objetivo
+Adicionar uma nova aba **"Compras Efetuadas [A-WF]"** dentro de **Administrador > Tabelas** que carrega diretamente o relatório de mesmo nome do Salesforce (via Analytics API), exibindo o relatório inteiro (sem filtro de escopo de vendedor) com as colunas principais.
 
-## 1. Atlas "em breve" (portal inteiro)
+## Onde
+- Rota existente: `src/routes/_authenticated/admin.tabelas.tsx` (já tem estrutura de `Tabs`).
+- Adicionar nova `TabsTrigger` + `TabsContent` `compras-efetuadas`, ao lado das abas atuais (Orçamento, Vendas, Projeções, Semanas).
+- Restrito a admin (guard já existe na página).
 
-- `src/routes/_authenticated/atlas.tsx`: sobrepor o conteúdo atual com um wrapper `blur-sm pointer-events-none select-none` + um card central "Em breve — estamos configurando".
-- `src/components/atlas-panel.tsx` (o botão flutuante do Atlas na barra): também exibir estado "em breve" — clique abre um popover simples "Em breve" em vez do painel de chat. Mantém o ícone visível.
-- Sem remover código — só gate visual, para reativar rápido depois.
+## Backend — nova server function
+Arquivo: `src/lib/salesforce.functions.ts`
 
-## 2. Metas trimestrais — Retenção e Novos A+B (instância Solar)
+1. `getSalesforceReportByName` — `createServerFn({ method: "GET" })` com `requireSupabaseAuth`.
+   - Passo A: Busca o Id do relatório via SOQL:
+     `GET /query?q=SELECT+Id,Name+FROM+Report+WHERE+Name='Compras Efetuadas [A-WF]'+LIMIT+1`
+   - Passo B: Executa o relatório via Analytics REST:
+     `GET /analytics/reports/{reportId}?includeDetails=true`
+   - Retorna DTO serializável:
+     ```ts
+     {
+       reportId: string;
+       name: string;
+       columns: { label: string; apiName: string; dataType: string }[];
+       rows: Array<Record<string, string | number | null>>;
+     }
+     ```
+   - Mapeia `reportMetadata.detailColumns` + `reportExtendedMetadata.detailColumnInfo` para nomes de coluna, e itera `factMap["T!T"].rows[].dataCells[]` para linhas (usa `label` como valor formatado; `value` bruto quando numérico/data).
+   - Se o relatório não for encontrado, retorna erro claro ("Relatório 'Compras Efetuadas [A-WF]' não encontrado no Salesforce").
+   - Sem filtro de escopo (é relatório inteiro conforme escolhido).
 
-Já existe `salesperson_new_ab_goals` (Novos A+B). Falta **Retenção**.
+## Frontend — nova aba na página Tabelas
+Arquivo: `src/routes/_authenticated/admin.tabelas.tsx`
 
-Migração nova:
-- `salesperson_retention_goals (sf_user_id, year, quarter, goal numeric, updated_at)` com PK composta, RLS igual à de `salesperson_new_ab_goals` (leitura para admin/gerente/diretor/próprio vendedor; escrita só admin), `GRANT` para `authenticated` e `service_role`.
+1. Novo componente `ComprasEfetuadasTable` que:
+   - Usa `useServerFn(getSalesforceReportByName)` + `useQuery` (`staleTime: 60_000`, `enabled: hasRole("admin") && tab === "compras-efetuadas"`).
+   - Renderiza um `<table>` com o mesmo visual das outras tabelas (glass/rounded), com colunas principais escolhidas:
+     - **Data** (Data de fechamento / Close Date do pedido)
+     - **Cliente / Conta**
+     - **Oportunidade / Pedido** (nome)
+     - **Produto** (quando disponível — detalhe de linha)
+     - **Vendedor** (Owner)
+     - **Etapa / Status**
+     - **Quantidade**
+     - **Valor Total** (formatado BRL, com totalizador no `<tfoot>`)
+   - Mapeamento das colunas do relatório para nossos cabeçalhos por `apiName` (heurística case-insensitive: `CloseDate|Data`, `Account|Cliente`, `Opportunity.Name|Name|Pedido`, `Product|Produto`, `Owner|Vendedor`, `Stage|Status`, `Quantity|Qtd`, `Amount|TotalPrice|Valor`).
+   - Se uma coluna esperada não existir no relatório, mostra "—".
+   - Suporta o mesmo input de busca (`search`) já existente no topo (filtra por Cliente, Oportunidade, Vendedor, Produto).
+   - **Não** usa o `DateRangeFilter` (a aba não mostra o filtro de data, pois o relatório é a fonte da verdade).
+   - Estados: loading (spinner), error (banner destrutivo), vazio ("Nenhum registro no relatório").
 
-Server functions em `src/lib/goals.functions.ts`:
-- `listRetentionGoals` (mesmo shape de `listNewAbGoals`).
-- `setRetentionGoal` (mesmo shape de `setNewAbGoal`).
+2. Registro da aba:
+   - `type Tab = "orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas"`.
+   - `TabsTrigger value="compras-efetuadas"` com ícone `ShoppingBag` (lucide) e label "Compras Efetuadas [A-WF]".
+   - `TabsContent` renderiza `<ComprasEfetuadasTable search={search} />`.
+   - Esconder `DateRangeFilter` também quando `tab === "compras-efetuadas"` (mesma lógica que `projecoes`).
 
-UI:
-- `src/components/goals-panel.tsx`: acrescentar bloco "Retenção" ao lado de "Novos A+B", com mesmo padrão (input + progresso). Não mexo em lógica de faturamento.
-- `src/routes/_authenticated/admin.metas.tsx`: adicionar coluna/tab "Retenção" para admin editar por vendedor/trimestre.
+## Considerações técnicas
+- Analytics API do Salesforce está exposta pelo gateway em `/analytics/reports/{id}` — mesma base `GATEWAY_URL` já usada em `sfFetch`.
+- Nome do relatório com `[` `]` precisa ser URL-encoded no `q=` da SOQL.
+- Se houver mais de um relatório com esse nome (folder diferente), pega o primeiro e loga aviso; documentar isso no error message caso vazio.
+- Retorno é DTO plano (strings/números/null), compatível com SSR-serializable.
 
-Nesta iteração as duas metas ficam **apenas cadastráveis + exibidas** (progresso = "—" até você me dizer a fórmula de realizado). É o "só acrescentar e depois explico melhor" que você pediu.
+## Arquivos alterados
+- `src/lib/salesforce.functions.ts` — adiciona `getSalesforceReportByName` e tipo `SalesforceReportResult`.
+- `src/routes/_authenticated/admin.tabelas.tsx` — adiciona aba, tipo, componente `ComprasEfetuadasTable`, import `ShoppingBag`.
 
-## 3. Instância Marketing — reescrita completa
-
-### 3a. Sub-switch Solar ↔ Carregadores (escopo apenas Marketing)
-
-- `src/components/instance-provider.tsx`: adicionar `marketingUnit: "solar" | "carregadores"` + setter, persistido em `localStorage` (`portal2p.marketingUnit`). Não afeta a `instance` global.
-- Novo componente `src/components/marketing-unit-switch.tsx` (pill toggle) exibido no header **só** quando `instance === "marketing"`.
-- Integrar no `src/components/app-layout.tsx` header ao lado do `InstanceSwitcher`.
-
-### 3b. Novas rotas + navegação (dentro do layout `_authenticated/marketing.tsx`)
-
-Substituir o menu de Marketing por:
-
-```
-Home           → /marketing              (marketing.index.tsx — reescrita)
-Social Media   → /marketing/social       (novo)
-Tráfego Pago   → /marketing/trafego      (novo, substitui campanhas)
-Cohort         → /marketing/cohort       (novo)
-CAC            → /marketing/cac          (novo)
-```
-
-Remover do menu: `/marketing/funil` e `/marketing/campanhas` (arquivos ficam mas fora do menu — ou apago). Atualizar `src/lib/instances.ts` (features) e o menu em `app-layout.tsx`.
-
-Todas as páginas respeitam o sub-switch: header mostra "2P Solar" ou "2P Carregadores" e os KPIs são placeholders escopados por unidade (mock hoje; wiring de dados depois).
-
-### 3c. Conteúdo de cada aba (visual estruturado, dados mock)
-
-**Home** — 3 cards de metas (Novos / MQL / Seguidores) com barra de progresso, funil horizontal Visitas→Lead→MQL→SQL→Novo com taxas de conversão, seção "Origem dos Novos" + "Origem dos Leads" (bar chart), "Faturamento dos novos" (valor + tabela top 5), "Top criativos" (Google + Facebook, com CTR/CPA/vendas), bloco "Site" (visitas, top páginas de entrada, vendas do site), bloco "Orgânico" (leads por rede + melhores posts). Layout de dashboard semanal.
-
-**Social Media** — meta de seguidores por rede + meta de MQL, evolução (linha), tabela de posts recentes, breakdown por plataforma.
-
-**Tráfego Pago** — tabela de campanhas ativas (Google/Meta) com CPM/CPC/CTR/CPA/ROAS, filtro por plataforma, mesma visão para site (analytics).
-
-**Cohort** — tabela cohort por mês de entrada do lead × meses até compra, com contagem de "ainda não compraram" e conversão por safra.
-
-**CAC** — grid dos 12 meses de 2026: cada mês já preenchido mostra CAC calculado; meses pendentes (ex.: junho) mostram botão "Preencher". Modal/form com custos (tráfego, mídia, agência, funcionários, outros) → salva localmente por enquanto (`marketing_cac` a criar depois). Nesta iteração: form + storage local (`localStorage`) para não bloquear; migração de tabela real numa próxima passada.
-
-Insights do Atlas: cada página tem card "Insights (em breve)" com o mesmo blur do item 1, para consistência.
-
-## Ordem de execução
-
-1. Atlas blur + gate.
-2. Migração retention + server fns + UI (goals-panel, admin.metas).
-3. instance-provider + sub-switch + rotas marketing novas + rewrite de conteúdo.
-4. Ajustar `instances.ts`/menu.
-
-## Fora de escopo agora (para próxima rodada quando você explicar)
-
-- Fórmulas reais de "realizado" para Retenção e Novos A+B.
-- Integração real com Google Ads / Meta / GA4 / redes sociais.
-- Tabela persistente de CAC no banco (hoje: form + localStorage).
-- Ligação Atlas real.
+## Validação
+- Rodar `tsgo` (via build automático) para garantir tipagem.
+- Abrir `/admin/tabelas` como admin → clicar aba "Compras Efetuadas [A-WF]" → conferir linhas e totalizador.
+- Testar caso o relatório não existir (mensagem clara).

@@ -13,6 +13,7 @@ import {
   CalendarIcon,
   TrendingUp,
   CalendarDays,
+  ShoppingBag,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -22,9 +23,13 @@ import { cn } from "@/lib/utils";
 import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
+  getSalesforceReportByName,
   type SalesforceOppRow,
+  type SalesforceReportRow,
 } from "@/lib/salesforce.functions";
 import { useAuth } from "@/hooks/use-auth";
+
+
 
 export const Route = createFileRoute("/_authenticated/admin/tabelas")({
   head: () => ({ meta: [{ title: "Tabelas — Portal 2P" }] }),
@@ -628,9 +633,174 @@ function FixedRangeWeeksPanel({ start, end }: { start: string; end: string }) {
   );
 }
 
+const COMPRAS_REPORT_NAME = "Compras Efetuadas [A-WF]";
+
+// Heurísticas de mapeamento de colunas do relatório Salesforce
+type ColMap = {
+  date?: string;
+  account?: string;
+  order?: string;
+  product?: string;
+  owner?: string;
+  status?: string;
+  qty?: string;
+  amount?: string;
+};
+
+function pickColumn(
+  columns: { apiName: string; label: string }[],
+  patterns: RegExp[],
+): string | undefined {
+  for (const p of patterns) {
+    const hit = columns.find(
+      (c) => p.test(c.apiName) || p.test(c.label),
+    );
+    if (hit) return hit.apiName;
+  }
+  return undefined;
+}
+
+function buildColMap(columns: { apiName: string; label: string }[]): ColMap {
+  return {
+    date: pickColumn(columns, [/close.?date/i, /^data/i, /data.*fech/i]),
+    account: pickColumn(columns, [/account/i, /cliente/i, /conta/i]),
+    order: pickColumn(columns, [/opportunity\.?name/i, /^name$/i, /pedido/i, /oportunidade/i]),
+    product: pickColumn(columns, [/product/i, /produto/i, /item/i]),
+    owner: pickColumn(columns, [/owner/i, /vendedor/i, /propriet/i]),
+    status: pickColumn(columns, [/stage/i, /status/i, /etapa/i]),
+    qty: pickColumn(columns, [/quantity/i, /qtd/i, /quant/i]),
+    amount: pickColumn(columns, [/totalprice/i, /amount/i, /total__c/i, /valor.*total/i, /^valor$/i, /total/i]),
+  };
+}
+
+function ComprasEfetuadasTable({ search }: { search: string }) {
+  const fetchReport = useServerFn(getSalesforceReportByName);
+  const q = useQuery({
+    queryKey: ["sf-report", COMPRAS_REPORT_NAME],
+    queryFn: () => fetchReport({ data: { name: COMPRAS_REPORT_NAME } }),
+    staleTime: 60_000,
+  });
+
+  const columns = q.data?.columns ?? [];
+  const rows = q.data?.rows ?? [];
+  const map = useMemo(() => buildColMap(columns), [columns]);
+
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return rows;
+    return rows.filter((r) => {
+      const bag = [
+        map.account && r[map.account],
+        map.order && r[map.order],
+        map.owner && r[map.owner],
+        map.product && r[map.product],
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return bag.includes(s);
+    });
+  }, [rows, search, map]);
+
+  const totalAmount = useMemo(() => {
+    if (!map.amount) return 0;
+    let sum = 0;
+    for (const r of filtered) {
+      const v = r[map.amount];
+      if (typeof v === "number") sum += v;
+    }
+    return sum;
+  }, [filtered, map.amount]);
+
+  const cell = (r: SalesforceReportRow, key?: string) => {
+    if (!key) return "—";
+    const v = r[key];
+    if (v == null || v === "") return "—";
+    return String(v);
+  };
+  const cellNum = (r: SalesforceReportRow, key?: string) => {
+    if (!key) return "—";
+    const v = r[key];
+    if (typeof v === "number") return brl(v);
+    if (v == null || v === "") return "—";
+    return String(v);
+  };
+
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      {!!q.error && (
+        <div className="border-b border-destructive/40 bg-destructive/10 text-destructive text-sm px-4 py-3 flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 mt-0.5" />
+          <div>{q.error instanceof Error ? q.error.message : "Erro ao carregar relatório"}</div>
+        </div>
+      )}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+              <th className="text-left px-4 py-2.5">Data</th>
+              <th className="text-left px-4 py-2.5">Cliente</th>
+              <th className="text-left px-4 py-2.5">Pedido</th>
+              <th className="text-left px-4 py-2.5">Produto</th>
+              <th className="text-left px-4 py-2.5">Vendedor</th>
+              <th className="text-left px-4 py-2.5">Status</th>
+              <th className="text-right px-4 py-2.5">Qtd.</th>
+              <th className="text-right px-4 py-2.5">Valor Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {q.isLoading && (
+              <tr>
+                <td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                  <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
+                  Carregando relatório do Salesforce…
+                </td>
+              </tr>
+            )}
+            {!q.isLoading && filtered.map((r, i) => (
+              <tr key={i} className="border-b border-border/40 hover:bg-surface-2/50">
+                <td className="px-4 py-3 text-muted-foreground">{cell(r, map.date)}</td>
+                <td className="px-4 py-3 font-medium">{cell(r, map.account)}</td>
+                <td className="px-4 py-3 text-muted-foreground">{cell(r, map.order)}</td>
+                <td className="px-4 py-3 text-muted-foreground">{cell(r, map.product)}</td>
+                <td className="px-4 py-3 text-muted-foreground">{cell(r, map.owner)}</td>
+                <td className="px-4 py-3">
+                  <span className="text-xs px-2 py-0.5 rounded bg-surface-2 text-muted-foreground">
+                    {cell(r, map.status)}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right font-mono">{cell(r, map.qty)}</td>
+                <td className="px-4 py-3 text-right font-mono">{cellNum(r, map.amount)}</td>
+              </tr>
+            ))}
+            {!q.isLoading && filtered.length === 0 && !q.error && (
+              <tr>
+                <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  Nenhum registro no relatório.
+                </td>
+              </tr>
+            )}
+          </tbody>
+          {!q.isLoading && filtered.length > 0 && map.amount && (
+            <tfoot>
+              <tr className="border-t border-border bg-surface-2/50 text-sm">
+                <td colSpan={7} className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]">
+                  Total ({filtered.length} {filtered.length === 1 ? "registro" : "registros"})
+                </td>
+                <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totalAmount)}</td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function TabelasPage() {
   const { hasRole } = useAuth();
-  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas">("orcamentos");
+  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas">("orcamentos");
+
   const [search, setSearch] = useState("");
 
   const initial = presetRange("month")!;
@@ -695,7 +865,7 @@ function TabelasPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas")}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas")}>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <TabsList>
               <TabsTrigger value="orcamentos" className="gap-2">
@@ -710,8 +880,11 @@ function TabelasPage() {
               <TabsTrigger value="semanas" className="gap-2">
                 <CalendarDays className="h-4 w-4" /> Semanas
               </TabsTrigger>
+              <TabsTrigger value="compras-efetuadas" className="gap-2">
+                <ShoppingBag className="h-4 w-4" /> Compras Efetuadas [A-WF]
+              </TabsTrigger>
             </TabsList>
-            {tab !== "projecoes" && (
+            {tab !== "projecoes" && tab !== "compras-efetuadas" && (
               <DateRangeFilter
                 from={from}
                 to={to}
@@ -724,6 +897,7 @@ function TabelasPage() {
               />
             )}
           </div>
+
           <TabsContent value="orcamentos" className="mt-4">
             <OppTable
               records={qOrc.data?.records ?? []}
@@ -764,7 +938,11 @@ function TabelasPage() {
             </section>
 
           </TabsContent>
+          <TabsContent value="compras-efetuadas" className="mt-4">
+            <ComprasEfetuadasTable search={search} />
+          </TabsContent>
         </Tabs>
+
       </div>
     </AppLayout>
 
