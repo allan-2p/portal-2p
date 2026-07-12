@@ -1,10 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import solarLogoAsset from "@/assets/2p-logo-black.png.asset.json";
+import {
+  getSalesforceVendas,
+  getSalesforceVendidoMesAtual,
+  OPP_DEFAULTS_VENDIDO_MES,
+  OPP_DEFAULTS_GERADO_MES,
+  OPP_DEFAULTS_VENDAS,
+} from "@/lib/salesforce.functions";
+import { getMonthGoalTotal } from "@/lib/admin.functions";
+import { listGroupKpiGoals } from "@/lib/goals.functions";
+import { businessDaysOfMonth, isBusinessDay } from "@/lib/business-days";
 
 const solarLogo = solarLogoAsset.url;
 
-export const Route = createFileRoute("/tv-geral")({
+export const Route = createFileRoute("/_authenticated/tv-geral")({
   head: () => ({
     meta: [
       { title: "2P Group · Painel de Performance" },
@@ -15,7 +27,7 @@ export const Route = createFileRoute("/tv-geral")({
 });
 
 /* ============================================================
-   GRUPO 2P — PAINEL DE PERFORMANCE (TV 1920x1080) · v5
+   GRUPO 2P — PAINEL DE PERFORMANCE (TV 1920x1080) · v6 (dados reais)
    ============================================================ */
 
 const T = {
@@ -87,7 +99,7 @@ function useCountUp(target: number, dur = 900) {
   return val;
 }
 
-/* ---------- dados mockados ---------- */
+/* ---------- tipos ---------- */
 type WeekDay = { dia: string; proj: number; real: number };
 type Kpi = {
   label: string;
@@ -97,79 +109,304 @@ type Kpi = {
   pace: number;
   metaPct?: number;
 };
-
-const seed = {
-  mes: { vendas: 2_943_800, meta: 4_600_000, projetadoDia: 2_671_000, faturamento: 2_318_400 },
+type TvData = {
+  mes: { vendas: number; meta: number; projetadoDia: number; faturamento: number };
   tri: {
-    solar: { meta: 14_000_000, real: 8_426_300 },
-    carreg: { meta: 1_800_000, real: 1_027_900 },
-    paceEsperado: 55,
-  },
-  semanaOrc: [
-    { dia: "Seg", proj: 320, real: 291 },
-    { dia: "Ter", proj: 320, real: 384 },
-    { dia: "Qua", proj: 360, real: 402 },
-    { dia: "Qui", proj: 360, real: 297 },
-    { dia: "Sex", proj: 330, real: 254 },
-    { dia: "Sáb", proj: 180, real: 0 },
-  ] as WeekDay[],
-  semanaVen: [
-    { dia: "Seg", proj: 180, real: 152 },
-    { dia: "Ter", proj: 180, real: 214 },
-    { dia: "Qua", proj: 200, real: 231 },
-    { dia: "Qui", proj: 200, real: 168 },
-    { dia: "Sex", proj: 190, real: 198 },
-    { dia: "Sáb", proj: 110, real: 0 },
-  ] as WeekDay[],
-  diaAtual: "Sex",
+    solar: { meta: number; real: number };
+    carreg: { meta: number; real: number };
+    paceEsperado: number;
+  };
+  semanaOrc: WeekDay[];
+  semanaVen: WeekDay[];
+  diaAtual: string;
   kpis: {
-    clientesNovos: { label: "Clientes novos", periodo: "mensal", metaQtd: 40, realQtd: 27, pace: 68 } as Kpi,
-    novosReativ: { label: "Novos e reativações", periodo: "mensal", metaQtd: 60, realQtd: 43, pace: 68 } as Kpi,
-    recorrencia: { label: "Recorrência", periodo: "trimestral", metaQtd: 90, realQtd: 61, pace: 55 } as Kpi,
-    retencao: { label: "Retenção", periodo: "trimestral", metaQtd: 120, metaPct: 85, realQtd: 96, pace: 55 } as Kpi,
-  },
+    clientesNovos: Kpi;
+    novosReativ: Kpi;
+    recorrencia: Kpi;
+    retencao: Kpi;
+  };
 };
 
-function useLiveData() {
-  const [data, setData] = useState(seed);
-  const [lastUpdate, setLastUpdate] = useState(Date.now());
-  const [ago, setAgo] = useState(0);
+const DIA_LABEL = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-  useEffect(() => {
-    const iv = setInterval(() => {
-      setData((d) => {
-        const bump = Math.random() < 0.6 ? Math.round(1500 + Math.random() * 22000) : 0;
-        const orcBump = Math.random() < 0.35 ? Math.round(2 + Math.random() * 9) : 0;
-        const idx = 4;
-        return {
-          ...d,
-          mes: {
-            ...d.mes,
-            vendas: d.mes.vendas + bump,
-            faturamento: d.mes.faturamento + Math.round(bump * 0.72),
-          },
-          tri: {
-            ...d.tri,
-            solar: { ...d.tri.solar, real: d.tri.solar.real + Math.round(bump * 0.85) },
-            carreg: { ...d.tri.carreg, real: d.tri.carreg.real + Math.round(bump * 0.15) },
-          },
-          semanaOrc: d.semanaOrc.map((x, i) => (i === idx ? { ...x, real: x.real + orcBump } : x)),
-          semanaVen: d.semanaVen.map((x, i) =>
-            i === idx ? { ...x, real: x.real + Math.round(bump / 1000) } : x,
-          ),
-        };
-      });
-      setLastUpdate(Date.now());
-    }, 8000);
-    return () => clearInterval(iv);
-  }, []);
+function fmtKey(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
-  useEffect(() => {
-    const iv = setInterval(() => setAgo(Math.floor((Date.now() - lastUpdate) / 1000)), 1000);
-    return () => clearInterval(iv);
-  }, [lastUpdate]);
+/** Semana atual: segunda até sábado (6 dias). */
+function currentWeekDays(now: Date): Date[] {
+  const dow = now.getDay(); // 0=Dom..6=Sáb
+  const diffToMonday = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(now);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(now.getDate() + diffToMonday);
+  const out: Date[] = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    out.push(d);
+  }
+  return out;
+}
 
-  return { data, ago };
+const AB_THRESHOLD = 15_000;
+
+function useTvData(): { data: TvData; loading: boolean } {
+  const now = useMemo(() => new Date(), []);
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const monthEnd = fmtKey(new Date(y, m + 1, 0));
+
+  const qStartMonth = Math.floor(m / 3) * 3;
+  const curQStart = fmtKey(new Date(y, qStartMonth, 1));
+  const curQEnd = fmtKey(new Date(y, qStartMonth + 3, 0));
+  const prevQStart = fmtKey(new Date(y, qStartMonth - 3, 1));
+  const prevQEnd = fmtKey(new Date(y, qStartMonth, 0));
+  const yearBackStart = fmtKey(new Date(y, m - 12, 1));
+
+  const fetchVendido = useServerFn(getSalesforceVendidoMesAtual);
+  const fetchVendas = useServerFn(getSalesforceVendas);
+  const fetchMonthGoal = useServerFn(getMonthGoalTotal);
+  const fetchKpiGoals = useServerFn(listGroupKpiGoals);
+
+  const vendidoMesQ = useQuery({
+    queryKey: ["tv-vendido-mes"],
+    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDIDO_MES } }),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+  const geradoMesQ = useQuery({
+    queryKey: ["tv-gerado-mes"],
+    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_GERADO_MES } }),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+  const faturamentoMesQ = useQuery({
+    queryKey: ["tv-faturamento-mes"],
+    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDAS } }),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+  const monthGoalQ = useQuery({
+    queryKey: ["tv-month-goal", y, m + 1],
+    queryFn: () => fetchMonthGoal({ data: { year: y, month: m + 1, ownerId: null } }),
+    staleTime: 5 * 60_000,
+  });
+  const kpiGoalsQ = useQuery({
+    queryKey: ["tv-group-kpi-goals"],
+    queryFn: () => fetchKpiGoals(),
+    staleTime: 60_000,
+  });
+  const vendasTriQ = useQuery({
+    queryKey: ["tv-vendas-tri", curQStart, curQEnd],
+    queryFn: () => fetchVendas({ data: { start: curQStart, end: curQEnd } }),
+    refetchInterval: 5 * 60_000,
+    staleTime: 60_000,
+  });
+  const vendasTriPrevQ = useQuery({
+    queryKey: ["tv-vendas-tri-prev", prevQStart, prevQEnd],
+    queryFn: () => fetchVendas({ data: { start: prevQStart, end: prevQEnd } }),
+    staleTime: 10 * 60_000,
+  });
+  const vendas12mQ = useQuery({
+    queryKey: ["tv-vendas-12m", yearBackStart, monthEnd],
+    queryFn: () => fetchVendas({ data: { start: yearBackStart, end: monthEnd } }),
+    staleTime: 10 * 60_000,
+  });
+
+  const loading =
+    vendidoMesQ.isLoading ||
+    geradoMesQ.isLoading ||
+    faturamentoMesQ.isLoading ||
+    monthGoalQ.isLoading ||
+    kpiGoalsQ.isLoading;
+
+  const data = useMemo<TvData>(() => {
+    const sumTotal = (recs: Array<{ total: number | null; amount: number | null }>) =>
+      recs.reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
+
+    const vendas = sumTotal(vendidoMesQ.data?.records ?? []);
+    const faturamento = sumTotal(faturamentoMesQ.data?.records ?? []);
+    const meta = monthGoalQ.data?.total ?? 0;
+
+    const bizDays = businessDaysOfMonth(y, m);
+    const dailyGoal = bizDays.length > 0 ? meta / bizDays.length : 0;
+    const todayDay = now.getDate();
+    const elapsed = bizDays.filter((d) => d <= todayDay).length;
+    const projetadoDia = Math.round(dailyGoal * elapsed);
+
+    const solarReal = sumTotal(vendasTriQ.data?.records ?? []);
+    const solarMeta = solarReal;
+
+    const week = currentWeekDays(now);
+    const dayKeys = week.map((d) => fmtKey(d));
+
+    const soldByDay = new Map<string, number>();
+    for (const r of vendidoMesQ.data?.records ?? []) {
+      if (!r.closeDate) continue;
+      soldByDay.set(r.closeDate, (soldByDay.get(r.closeDate) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+    const genByDay = new Map<string, number>();
+    for (const r of geradoMesQ.data?.records ?? []) {
+      if (!r.createdDate) continue;
+      genByDay.set(r.createdDate, (genByDay.get(r.createdDate) ?? 0) + (r.total ?? r.amount ?? 0));
+    }
+    const totalGen = sumTotal(geradoMesQ.data?.records ?? []);
+    const convRate = totalGen > 0 ? vendas / totalGen : 0;
+    const dailyGoalGen = convRate > 0 ? dailyGoal / convRate : dailyGoal * 1.5;
+
+    const semanaVen: WeekDay[] = week.map((d, i) => {
+      const key = dayKeys[i];
+      const biz = isBusinessDay(d);
+      const projK = biz ? Math.round(dailyGoal / 1000) : 0;
+      const realK = Math.round((soldByDay.get(key) ?? 0) / 1000);
+      return { dia: DIA_LABEL[d.getDay()], proj: projK, real: realK };
+    });
+    const semanaOrc: WeekDay[] = week.map((d, i) => {
+      const key = dayKeys[i];
+      const biz = isBusinessDay(d);
+      const projK = biz ? Math.round(dailyGoalGen / 1000) : 0;
+      const realK = Math.round((genByDay.get(key) ?? 0) / 1000);
+      return { dia: DIA_LABEL[d.getDay()], proj: projK, real: realK };
+    });
+
+    const diaAtual = DIA_LABEL[now.getDay()];
+
+    const kpiMap = new Map(
+      (kpiGoalsQ.data?.records ?? []).map((r) => [r.kpi_key, r]),
+    );
+    const gNovos = kpiMap.get("novos");
+    const gNovosReat = kpiMap.get("novos_reativacoes");
+    const gRec = kpiMap.get("recorrencia");
+    const gRet = kpiMap.get("retencao");
+
+    // NOVOS (mensal): contas com venda neste mês que nunca tinham comprado em 12 meses anteriores.
+    // REATIVAÇÕES: já compraram, mas não nos últimos 3 meses.
+    const currMonthAccts = new Set<string>();
+    const historicalAccts = new Set<string>();
+    const last3mAccts = new Set<string>();
+    const monthStartT = new Date(y, m, 1).getTime();
+    const threeMonthsAgoT = new Date(y, m - 3, 1).getTime();
+    for (const r of vendas12mQ.data?.records ?? []) {
+      if (!r.accountId || !r.closeDate) continue;
+      const [yy, mm, dd] = r.closeDate.split("-").map(Number);
+      const t = new Date(yy, mm - 1, dd).getTime();
+      if (t >= monthStartT) {
+        currMonthAccts.add(r.accountId);
+      } else {
+        historicalAccts.add(r.accountId);
+        if (t >= threeMonthsAgoT) last3mAccts.add(r.accountId);
+      }
+    }
+    let novosCount = 0;
+    let reativCount = 0;
+    for (const acc of currMonthAccts) {
+      if (!historicalAccts.has(acc)) novosCount += 1;
+      else if (!last3mAccts.has(acc)) reativCount += 1;
+    }
+    const novosReativCount = novosCount + reativCount;
+
+    // RECORRÊNCIA (trimestral): contas com venda no tri atual e no tri anterior
+    const curTriAccts = new Set<string>();
+    for (const r of vendasTriQ.data?.records ?? []) {
+      if (r.accountId) curTriAccts.add(r.accountId);
+    }
+    const prevTriAccts = new Set<string>();
+    const prevAcctTotals = new Map<string, number>();
+    for (const r of vendasTriPrevQ.data?.records ?? []) {
+      if (!r.accountId) continue;
+      prevTriAccts.add(r.accountId);
+      prevAcctTotals.set(
+        r.accountId,
+        (prevAcctTotals.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0),
+      );
+    }
+    let recorrenciaCount = 0;
+    for (const acc of curTriAccts) if (prevTriAccts.has(acc)) recorrenciaCount += 1;
+
+    // RETENÇÃO (trimestral): contas A/B do tri anterior que seguem A/B no atual
+    const prevAB = new Set<string>();
+    for (const [acc, v] of prevAcctTotals) if (v >= AB_THRESHOLD) prevAB.add(acc);
+    const curAcctTotals = new Map<string, number>();
+    for (const r of vendasTriQ.data?.records ?? []) {
+      if (!r.accountId) continue;
+      curAcctTotals.set(
+        r.accountId,
+        (curAcctTotals.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0),
+      );
+    }
+    let retencaoCount = 0;
+    for (const acc of prevAB) if ((curAcctTotals.get(acc) ?? 0) >= AB_THRESHOLD) retencaoCount += 1;
+
+    const paceMensal = bizDays.length > 0 ? Math.round((elapsed / bizDays.length) * 100) : 0;
+    const triStart = new Date(y, qStartMonth, 1);
+    const triEnd = new Date(y, qStartMonth + 3, 0);
+    const paceTri = Math.round(
+      ((now.getTime() - triStart.getTime()) /
+        (triEnd.getTime() - triStart.getTime() + 24 * 3600_000)) *
+        100,
+    );
+
+    return {
+      mes: { vendas, meta, projetadoDia, faturamento },
+      tri: {
+        solar: { meta: solarMeta, real: solarReal },
+        carreg: { meta: 0, real: 0 },
+        paceEsperado: paceTri,
+      },
+      semanaOrc,
+      semanaVen,
+      diaAtual,
+      kpis: {
+        clientesNovos: {
+          label: gNovos?.label ?? "Clientes novos",
+          periodo: "mensal",
+          metaQtd: gNovos?.goal ?? 40,
+          realQtd: novosCount,
+          pace: paceMensal,
+        },
+        novosReativ: {
+          label: gNovosReat?.label ?? "Novos e reativações",
+          periodo: "mensal",
+          metaQtd: gNovosReat?.goal ?? 100,
+          realQtd: novosReativCount,
+          pace: paceMensal,
+        },
+        recorrencia: {
+          label: gRec?.label ?? "Recorrência",
+          periodo: "trimestral",
+          metaQtd: gRec?.goal ?? 115,
+          realQtd: recorrenciaCount,
+          pace: paceTri,
+        },
+        retencao: {
+          label: gRet?.label ?? "Retenção",
+          periodo: "trimestral",
+          metaQtd: gRet?.goal ?? 87,
+          realQtd: retencaoCount,
+          pace: paceTri,
+        },
+      },
+    };
+  }, [
+    vendidoMesQ.data,
+    geradoMesQ.data,
+    faturamentoMesQ.data,
+    monthGoalQ.data,
+    kpiGoalsQ.data,
+    vendasTriQ.data,
+    vendasTriPrevQ.data,
+    vendas12mQ.data,
+    now,
+    y,
+    m,
+    qStartMonth,
+  ]);
+
+  return { data, loading };
 }
 
 /* ---------- base ---------- */
@@ -269,7 +506,6 @@ const ProgressBar = ({
   </div>
 );
 
-/* --- header brand cards (Solar / Carregadores / Total) --- */
 const BrandStat = ({
   label,
   dotColor,
@@ -343,19 +579,12 @@ const BrandStat = ({
         <span style={{ fontSize: 13, fontWeight: 800, color: T.green }}>{p.toFixed(0)}%</span>
         <span style={{ fontSize: 12, color: dim }}>de {fmtBRL(meta, true)}</span>
       </div>
-      <ProgressBar
-        value={p}
-        color={barColor}
-        height={5}
-        track={track}
-        shimmer={gradientBar}
-      />
+      <ProgressBar value={p} color={barColor} height={5} track={track} shimmer={gradientBar} />
     </div>
   );
 };
 
-/* --- Vendas do mês (bloco protagonista) --- */
-const VendasDestaque = ({ mes }: { mes: typeof seed.mes }) => {
+const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
   const vendas = useCountUp(mes.vendas);
   const fat = useCountUp(mes.faturamento);
   const delta = mes.vendas - mes.projetadoDia;
@@ -429,7 +658,6 @@ const VendasDestaque = ({ mes }: { mes: typeof seed.mes }) => {
   );
 };
 
-/* --- Gráfico semanal --- */
 const GraficoSemanal = ({
   titulo,
   dot,
@@ -446,7 +674,7 @@ const GraficoSemanal = ({
   const totalProj = dados.reduce((s, d) => s + d.proj, 0);
   const totalReal = dados.reduce((s, d) => s + d.real, 0);
   const p = pct(totalReal, totalProj);
-  const max = Math.max(...dados.map((d) => Math.max(d.proj, d.real))) * 1.18;
+  const max = Math.max(...dados.map((d) => Math.max(d.proj, d.real)), 1) * 1.18;
 
   return (
     <Card delay={delay} style={{ padding: "20px 24px" }}>
@@ -470,7 +698,6 @@ const GraficoSemanal = ({
           return (
             <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%" }}>
               <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", alignItems: "end", justifyContent: "center" }}>
-                {/* projetado */}
                 <div
                   style={{
                     position: "absolute",
@@ -485,7 +712,6 @@ const GraficoSemanal = ({
                     transformOrigin: "bottom",
                   }}
                 />
-                {/* realizado */}
                 <div
                   style={{
                     position: "relative",
@@ -553,7 +779,6 @@ const GraficoSemanal = ({
   );
 };
 
-/* --- KPI donut + card --- */
 const Donut = ({ value, color, size = 60 }: { value: number; color: string; size?: number }) => {
   const r = (size - 10) / 2;
   const c = 2 * Math.PI * r;
@@ -627,8 +852,7 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
   );
 };
 
-/* ---------- Header meta trimestral ---------- */
-const HeaderMetas = ({ tri }: { tri: typeof seed.tri }) => {
+const HeaderMetas = ({ tri }: { tri: TvData["tri"] }) => {
   const totalMeta = tri.solar.meta + tri.carreg.meta;
   const totalReal = tri.solar.real + tri.carreg.real;
   return (
@@ -640,10 +864,11 @@ const HeaderMetas = ({ tri }: { tri: typeof seed.tri }) => {
   );
 };
 
-/* ---------- app ---------- */
 function Dashboard2P() {
-  const { data, ago } = useLiveData();
+  const { data, loading } = useTvData();
   const [scale, setScale] = useState(1);
+  const [ago, setAgo] = useState(0);
+  const startedAt = useRef(Date.now());
 
   useEffect(() => {
     const fit = () =>
@@ -651,6 +876,11 @@ function Dashboard2P() {
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
+  }, []);
+
+  useEffect(() => {
+    const iv = setInterval(() => setAgo(Math.floor((Date.now() - startedAt.current) / 1000)), 1000);
+    return () => clearInterval(iv);
   }, []);
 
   return (
@@ -668,7 +898,6 @@ function Dashboard2P() {
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;0,800;0,900;1,800;1,900&display=swap');
         * { box-sizing: border-box; margin: 0; }
         @keyframes shimmer { 0%{background-position:220% 0} 100%{background-position:-40% 0} }
         @keyframes fadeUp { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
@@ -690,7 +919,6 @@ function Dashboard2P() {
           overflow: "hidden",
         }}
       >
-        {/* textura pontilhada */}
         <div
           style={{
             position: "absolute",
@@ -700,7 +928,6 @@ function Dashboard2P() {
             pointerEvents: "none",
           }}
         />
-        {/* painéis de vidro */}
         <div
           style={{
             position: "absolute",
@@ -727,7 +954,6 @@ function Dashboard2P() {
             pointerEvents: "none",
           }}
         />
-        {/* feixe de luz */}
         <div
           style={{
             position: "absolute",
@@ -741,7 +967,6 @@ function Dashboard2P() {
           }}
         />
 
-        {/* ===== HEADER ===== */}
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div
@@ -768,10 +993,8 @@ function Dashboard2P() {
           <HeaderMetas tri={data.tri} />
         </div>
 
-        {/* ===== VENDAS DO MÊS ===== */}
         <VendasDestaque mes={data.mes} />
 
-        {/* ===== GRÁFICOS SEMANAIS ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, position: "relative" }}>
           <GraficoSemanal
             titulo="Geração de orçamentos · semana"
@@ -789,7 +1012,6 @@ function Dashboard2P() {
           />
         </div>
 
-        {/* ===== KPIs ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18, position: "relative" }}>
           <KpiCard k={data.kpis.clientesNovos} delay={0.25} />
           <KpiCard k={data.kpis.novosReativ} delay={0.3} />
@@ -797,7 +1019,6 @@ function Dashboard2P() {
           <KpiCard k={data.kpis.retencao} delay={0.4} />
         </div>
 
-        {/* ===== RODAPÉ ===== */}
         <div
           style={{
             display: "flex",
@@ -815,19 +1036,15 @@ function Dashboard2P() {
                 width: 7,
                 height: 7,
                 borderRadius: 999,
-                background: T.green,
-                boxShadow: `0 0 10px ${T.green}`,
+                background: loading ? T.amber : T.green,
+                boxShadow: `0 0 10px ${loading ? T.amber : T.green}`,
               }}
             />
-            Conectado · atualizado há {ago}s
+            {loading ? "Carregando…" : `Conectado · em tela há ${ago}s`}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <span>
-              <span style={{ color: T.orange }}>●</span> 2P Solar
-            </span>
-            <span>
-              <span style={{ color: T.blue }}>●</span> 2P Carregadores
-            </span>
+            <span><span style={{ color: T.orange }}>●</span> 2P Solar</span>
+            <span><span style={{ color: T.blue }}>●</span> 2P Carregadores</span>
             <span style={{ opacity: 0.6 }}>┆ barra clara = projetado · barra grafite = realizado</span>
           </div>
         </div>

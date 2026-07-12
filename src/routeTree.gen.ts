@@ -9,12 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TvGeralRouteImport } from './routes/tv-geral'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
+import { Route as AuthenticatedTvGeralRouteImport } from './routes/_authenticated/tv-geral'
 import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
@@ -37,11 +37,6 @@ import { Route as AuthenticatedAdminPermissoesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
 import { Route as AuthenticatedAdminAcessosInstanciasRouteImport } from './routes/_authenticated/admin.acessos-instancias'
 
-const TvGeralRoute = TvGeralRouteImport.update({
-  id: '/tv-geral',
-  path: '/tv-geral',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -64,6 +59,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTvGeralRoute = AuthenticatedTvGeralRouteImport.update({
+  id: '/tv-geral',
+  path: '/tv-geral',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedTarefasRoute = AuthenticatedTarefasRouteImport.update({
@@ -189,7 +189,6 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/tv-geral': typeof TvGeralRoute
   '/atlas': typeof AuthenticatedAtlasRoute
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
@@ -198,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
+  '/tv-geral': typeof AuthenticatedTvGeralRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/admin/acessos-instancias': typeof AuthenticatedAdminAcessosInstanciasRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
@@ -216,7 +216,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/tv-geral': typeof TvGeralRoute
   '/atlas': typeof AuthenticatedAtlasRoute
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
@@ -224,6 +223,7 @@ export interface FileRoutesByTo {
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
+  '/tv-geral': typeof AuthenticatedTvGeralRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/acessos-instancias': typeof AuthenticatedAdminAcessosInstanciasRoute
@@ -245,7 +245,6 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/tv-geral': typeof TvGeralRoute
   '/_authenticated/atlas': typeof AuthenticatedAtlasRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
@@ -254,6 +253,7 @@ export interface FileRoutesById {
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
+  '/_authenticated/tv-geral': typeof AuthenticatedTvGeralRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/acessos-instancias': typeof AuthenticatedAdminAcessosInstanciasRoute
@@ -276,7 +276,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
-    | '/tv-geral'
     | '/atlas'
     | '/clientes'
     | '/dashboards'
@@ -285,6 +284,7 @@ export interface FileRouteTypes {
     | '/pedidos'
     | '/perfil'
     | '/tarefas'
+    | '/tv-geral'
     | '/usuarios'
     | '/admin/acessos-instancias'
     | '/admin/metas'
@@ -303,7 +303,6 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/reset-password'
-    | '/tv-geral'
     | '/atlas'
     | '/clientes'
     | '/dashboards'
@@ -311,6 +310,7 @@ export interface FileRouteTypes {
     | '/pedidos'
     | '/perfil'
     | '/tarefas'
+    | '/tv-geral'
     | '/usuarios'
     | '/'
     | '/admin/acessos-instancias'
@@ -331,7 +331,6 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
-    | '/tv-geral'
     | '/_authenticated/atlas'
     | '/_authenticated/clientes'
     | '/_authenticated/dashboards'
@@ -340,6 +339,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pedidos'
     | '/_authenticated/perfil'
     | '/_authenticated/tarefas'
+    | '/_authenticated/tv-geral'
     | '/_authenticated/usuarios'
     | '/_authenticated/'
     | '/_authenticated/admin/acessos-instancias'
@@ -361,18 +361,10 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  TvGeralRoute: typeof TvGeralRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tv-geral': {
-      id: '/tv-geral'
-      path: '/tv-geral'
-      fullPath: '/tv-geral'
-      preLoaderRoute: typeof TvGeralRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -406,6 +398,13 @@ declare module '@tanstack/react-router' {
       path: '/usuarios'
       fullPath: '/usuarios'
       preLoaderRoute: typeof AuthenticatedUsuariosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tv-geral': {
+      id: '/_authenticated/tv-geral'
+      path: '/tv-geral'
+      fullPath: '/tv-geral'
+      preLoaderRoute: typeof AuthenticatedTvGeralRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tarefas': {
@@ -618,6 +617,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedTarefasRoute: typeof AuthenticatedTarefasRoute
+  AuthenticatedTvGeralRoute: typeof AuthenticatedTvGeralRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminAcessosInstanciasRoute: typeof AuthenticatedAdminAcessosInstanciasRoute
@@ -636,6 +636,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedTarefasRoute: AuthenticatedTarefasRoute,
+  AuthenticatedTvGeralRoute: AuthenticatedTvGeralRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminAcessosInstanciasRoute:
@@ -653,7 +654,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  TvGeralRoute: TvGeralRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

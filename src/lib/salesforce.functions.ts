@@ -578,20 +578,21 @@ export const getSalesforceVendas = createServerFn({ method: "GET" })
   .inputValidator((input: { start?: string | null; end?: string | null; ownerId?: string | null }) => input ?? {})
   .handler(async ({ data, context }) => {
     const clauses: string[] = [
-      `Status_do_Pedido__c IN ('Faturado','Coletado','Entregue')`,
-      `Owner.Name != 'Caroline Gimenez'`,
-      `Data_de_Faturamento__c = THIS_MONTH`,
+      `StageName = 'Pedido Concluído'`,
       `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
     ];
+    if (validDate(data.start)) clauses.push(`CloseDate >= ${data.start}`);
+    if (validDate(data.end)) clauses.push(`CloseDate <= ${data.end}`);
     const ownerClause = ownerFilterClause(
       await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
     );
     const soql =
       `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
-      `${ownerClause} ORDER BY Data_de_Faturamento__c DESC NULLS LAST LIMIT 1000`;
+      `${ownerClause} ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
+
 
 
 
@@ -619,7 +620,7 @@ export type OppFilters = {
   accountNameNotIn?: string[];
   ownerNameNotIn?: string[];
   ownerId?: string | null;
-  dateField?: "CloseDate" | "CreatedDate";
+  dateField?: "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c";
   dateLiteral?: string; // e.g. THIS_MONTH or "CUSTOM"
   dateFrom?: string;    // YYYY-MM-DD (when literal = CUSTOM)
   dateTo?: string;      // YYYY-MM-DD (when literal = CUSTOM)
@@ -667,7 +668,7 @@ export const OPP_DEFAULTS_VENDAS: OppFilters = {
   orgIn: [],
   accountNameNotIn: [],
   ownerNameNotIn: [],
-  dateField: "CloseDate",
+  dateField: "Data_de_Faturamento__c",
   dateLiteral: "THIS_MONTH",
 };
 
@@ -687,7 +688,12 @@ export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => (input ?? {}) as OppFilters)
   .handler(async ({ data, context }) => {
     const f: OppFilters = data ?? {};
-    const df = f.dateField === "CreatedDate" ? "CreatedDate" : "CloseDate";
+    const df: "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c" =
+      f.dateField === "CreatedDate"
+        ? "CreatedDate"
+        : f.dateField === "Data_de_Faturamento__c"
+          ? "Data_de_Faturamento__c"
+          : "CloseDate";
     const suffixStart = df === "CreatedDate" ? "T00:00:00Z" : "";
     const suffixEnd = df === "CreatedDate" ? "T23:59:59Z" : "";
     const clauses: string[] = [];
