@@ -668,11 +668,12 @@ export const OPP_DEFAULTS_ORCAMENTOS: OppFilters = {
 
 export const OPP_DEFAULTS_VENDAS: OppFilters = {
   stageEquals: "Pedido Concluído",
+  stageNotEquals: "Pedido Cancelado",
   tipoNfNotIn: ["Bonificação"],
-  statusIn: [],
-  orgIn: [],
+  statusIn: ["Faturado", "Coletado", "Entregue"],
+  orgIn: ["Acessórios 2P"],
   accountNameNotIn: [],
-  ownerNameNotIn: [],
+  ownerNameNotIn: ["Caroline Gimenez"],
   dateField: "Data_de_Faturamento__c",
   dateLiteral: "THIS_MONTH",
   dateField2: "CloseDate",
