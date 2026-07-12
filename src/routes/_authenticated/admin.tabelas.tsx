@@ -26,6 +26,9 @@ import {
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
   getSalesforceReportByName,
+  VENDIDO_DATE_LITERALS,
+  VENDIDO_DEFAULTS,
+  type VendidoFilters,
   type SalesforceOppRow,
   type SalesforceReportRow,
 } from "@/lib/salesforce.functions";
