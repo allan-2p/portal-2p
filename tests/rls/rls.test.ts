@@ -351,14 +351,15 @@ d("RLS regression suite", () => {
     it("user manages own only", async () => {
       const ok = await vendA.client
         .from("user_view_preferences")
-        .upsert({ user_id: vendA.id, screen: "home", variant_key: "default" });
+        .insert({ user_id: vendA.id, screen: `rls-${Date.now()}`, variant_key: "default" });
       expect(ok.error).toBeNull();
 
       const denied = await vendA.client
         .from("user_view_preferences")
-        .insert({ user_id: vendB.id, screen: "home", variant_key: "default" });
+        .insert({ user_id: vendB.id, screen: `rls-${Date.now()}`, variant_key: "default" });
       expect(isPermissionError(denied.error)).toBe(true);
     });
+
   });
 
   // ─────────────────────────────────────────────────────────── view_variants
