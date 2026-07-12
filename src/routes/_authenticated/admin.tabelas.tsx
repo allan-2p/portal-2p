@@ -1098,6 +1098,20 @@ function TabelasPage() {
               dateField={vendidoFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
             />
           </TabsContent>
+          <TabsContent value="gerado-mes" className="mt-4">
+            <OppTabPanel
+              filters={geradoFilters}
+              defaults={OPP_DEFAULTS_GERADO_MES}
+              onFiltersChange={setGeradoFilters}
+              vendedor={vendedorGer}
+              onVendedorChange={setVendedorGer}
+              records={qGeradoMes.data?.records ?? []}
+              loading={qGeradoMes.isLoading}
+              error={qGeradoMes.error}
+              search={search}
+              dateField={geradoFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
+            />
+          </TabsContent>
           <TabsContent value="projecoes" className="mt-4">
             <ProjectionsPanel search={search} />
           </TabsContent>
