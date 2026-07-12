@@ -340,7 +340,7 @@ function HomePage() {
     const dailyGoal = bizDays.length ? dbGoal / bizDays.length : 0;
 
     const soldByDay = new Map<number, number>();
-    const recs = vendasQ.data?.records ?? [];
+    const recs = vendidoMesQ.data?.records ?? [];
     for (const r of recs) {
       if (!r.closeDate) continue;
       if (ownerParam && r.ownerId !== ownerParam) continue;
@@ -363,7 +363,7 @@ function HomePage() {
       });
     }
     return out;
-  }, [dbGoal, vendasQ.data, ownerParam, today]);
+  }, [dbGoal, vendidoMesQ.data, ownerParam, today]);
 
   // ---- Conversão / Ticket médio (mês atual x média 3M) ----
   const rangeMulti = useMemo(() => {
