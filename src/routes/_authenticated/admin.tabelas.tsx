@@ -878,7 +878,7 @@ function TabelasPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas")}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas" | "vendido-mes")}>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <TabsList>
               <TabsTrigger value="orcamentos" className="gap-2">
@@ -886,6 +886,9 @@ function TabelasPage() {
               </TabsTrigger>
               <TabsTrigger value="vendas" className="gap-2">
                 <ShoppingCart className="h-4 w-4" /> Vendas
+              </TabsTrigger>
+              <TabsTrigger value="vendido-mes" className="gap-2">
+                <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
               </TabsTrigger>
               <TabsTrigger value="projecoes" className="gap-2">
                 <TrendingUp className="h-4 w-4" /> Projeções
@@ -897,7 +900,8 @@ function TabelasPage() {
                 <ShoppingBag className="h-4 w-4" /> Compras Efetuadas [A-WF]
               </TabsTrigger>
             </TabsList>
-            {tab !== "projecoes" && tab !== "compras-efetuadas" && (
+            {tab !== "projecoes" && tab !== "compras-efetuadas" && tab !== "vendido-mes" && (
+
               <DateRangeFilter
                 from={from}
                 to={to}
