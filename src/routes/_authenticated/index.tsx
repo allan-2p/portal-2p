@@ -280,10 +280,19 @@ function HomePage() {
       .reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
   }, [vendidoMesQ.data, ownerParam]);
 
-  // ---- Mock (mantidos para projetado) ----
   const goal = dbGoal;
   const achieved = sold;
-  const projected = portfolio.projected;
+  // Projetado = meta diária × dias úteis decorridos (inclui hoje)
+  const projected = useMemo(() => {
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    const bizDays = businessDaysOfMonth(y, m);
+    if (!bizDays.length) return 0;
+    const dailyGoal = dbGoal / bizDays.length;
+    const todayDay = today.getDate();
+    const elapsed = bizDays.filter((d) => d <= todayDay).length;
+    return Math.round(dailyGoal * elapsed);
+  }, [dbGoal, today]);
   const goalPct = goal > 0 ? (sold / goal) * 100 : 0;
 
   const hour = new Date().getHours();
