@@ -988,6 +988,12 @@ function TabelasPage() {
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "vendido-mes",
   });
+  const qGeradoMes = useQuery({
+    queryKey: ["sf-gerado-mes-atual", geradoFilters],
+    queryFn: () => fetchVendidoMes({ data: geradoFilters }),
+    staleTime: 60_000,
+    enabled: hasRole("admin") && tab === "gerado-mes",
+  });
 
   // Silence unused-imports guard; kept for potential future direct calls.
   void fetchOrc; void fetchVen;
