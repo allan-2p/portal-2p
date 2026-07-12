@@ -36,21 +36,22 @@ const T = {
   bg2: "#141A2E",
   bgTxt: "#F2F3F7",
   bgFaint: "#8A8FA0",
-  card: "rgba(255,255,255,0.045)",
-  card2: "rgba(255,255,255,0.07)",
-  cardBorder: "rgba(255,255,255,0.10)",
-  ink: "#F5F7FF",
-  dim: "#B7BDD1",
-  faint: "#8A90A6",
-  track: "rgba(255,255,255,0.08)",
-  barReal: "#F5F7FF",
-  barProj: "rgba(255,255,255,0.18)",
+  // Cards claros — cinza moderno / prateado com leve toque lavanda
+  card: "#EEF0F7",
+  card2: "#F6F7FB",
+  cardBorder: "rgba(180,185,210,0.55)",
+  ink: "#1B1D2B",
+  dim: "#5A5F76",
+  faint: "#9096AE",
+  track: "#DDE1EE",
+  barReal: "#3A3F5C",
+  barProj: "#CFD4E4",
   orange: "#FF8A3D",
   blue: "#6B5BFF",
   cyan: "#5CC8FF",
-  green: "#22D68F",
-  amber: "#F4B430",
-  red: "#FF5A4E",
+  green: "#22B37A",
+  amber: "#D9930A",
+  red: "#E24A3E",
   chip: "#0A0D1A",
 };
 
@@ -465,13 +466,13 @@ const Card = ({
   <div
     style={{
       background:
-        "linear-gradient(140deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 55%, rgba(107,91,255,0.06) 100%)",
+        "linear-gradient(140deg, #F7F8FC 0%, #ECEEF6 45%, #E4E5F1 100%)",
       border: `1px solid ${T.cardBorder}`,
       borderRadius: 22,
       padding: 22,
       boxShadow:
-        "0 24px 60px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,0.05)",
-      backdropFilter: "blur(14px) saturate(140%)",
+        "0 30px 60px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.6) inset, 0 1px 0 rgba(255,255,255,.9) inset",
+      color: T.ink,
       animation: `fadeUp .6s ease ${delay}s both`,
       position: "relative",
       overflow: "hidden",
@@ -571,11 +572,11 @@ const BrandStat = ({
 }) => {
   const p = pct(real, meta);
   const bg = invert
-    ? "linear-gradient(135deg, rgba(255,138,61,.28), rgba(107,91,255,.32))"
-    : T.card;
-  const fg = T.ink;
-  const dim = invert ? "rgba(255,255,255,.75)" : T.dim;
-  const track = invert ? "rgba(255,255,255,.12)" : T.track;
+    ? "linear-gradient(135deg, #1B1F3A 0%, #2A1F55 60%, #3B2A7A 100%)"
+    : "linear-gradient(140deg, #F7F8FC 0%, #ECEEF6 55%, #E4E5F1 100%)";
+  const fg = invert ? "#FFFFFF" : T.ink;
+  const dim = invert ? "rgba(255,255,255,.72)" : T.dim;
+  const track = invert ? "rgba(255,255,255,.14)" : T.track;
   const barColor = gradientBar ? gradGlow : invert ? "#FFFFFF" : T.ink;
   const v = useCountUp(real);
   return (
@@ -1051,17 +1052,16 @@ function Dashboard2P() {
                 width: 62,
                 height: 62,
                 borderRadius: 14,
-                background: "linear-gradient(140deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04))",
+                background: "linear-gradient(140deg, #F7F8FC, #E4E5F1)",
                 border: `1px solid ${T.cardBorder}`,
-                boxShadow: "0 8px 24px -12px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,0.08)",
-                backdropFilter: "blur(10px)",
+                boxShadow: "0 10px 24px -14px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.9)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 8,
               }}
             >
-              <img src={solarLogo} alt="2P" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+              <img src={solarLogo} alt="2P" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
 
             </div>
             <div>
