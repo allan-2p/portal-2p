@@ -582,6 +582,40 @@ export const getSalesforceVendas = createServerFn({ method: "GET" })
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
 
+
+
+export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => (input ?? {}) as Record<string, never>)
+  .handler(async () => {
+    const statusList = [
+      "Aguardando Pagamento",
+      "Processamento",
+      "Separação",
+      "Faturado",
+      "Coletado",
+      "Entregue",
+      "Documentação Liberada",
+      "Finalizado",
+    ].map((s) => `'${esc(s)}'`).join(",");
+    const orgList = ["Acessórios 2P", "WD"].map((s) => `'${esc(s)}'`).join(",");
+    const clauses: string[] = [
+      `StageName = 'Pedido Concluído'`,
+      `Status_do_Pedido__c IN (${statusList})`,
+      `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
+      `(Account.Name = null OR Account.Name != '2P ACESSORIOS LTDA')`,
+      `Org_Oportunidade__c IN (${orgList})`,
+      `(Owner.Name = null OR Owner.Name != 'Caroline Gimenez')`,
+      `CloseDate = THIS_MONTH`,
+    ];
+    const soql =
+      `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
+      `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+  });
+
+
 export const getSalesforcePedidos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { ownerId?: string | null }) => input ?? {})

@@ -23,11 +23,13 @@ import { cn } from "@/lib/utils";
 import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
+  getSalesforceVendidoMesAtual,
   getSalesforceReportByName,
   type SalesforceOppRow,
   type SalesforceReportRow,
 } from "@/lib/salesforce.functions";
 import { useAuth } from "@/hooks/use-auth";
+
 
 
 
@@ -802,7 +804,7 @@ function ComprasEfetuadasTable({ search }: { search: string }) {
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas">("orcamentos");
+  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas" | "vendido-mes">("orcamentos");
 
   const [search, setSearch] = useState("");
 
@@ -818,6 +820,7 @@ function TabelasPage() {
 
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
+  const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
 
   const qOrc = useQuery({
     queryKey: ["sf-orcamentos", range.start, range.end],
@@ -831,6 +834,13 @@ function TabelasPage() {
     staleTime: 60_000,
     enabled: hasRole("admin") && (tab === "vendas" || tab === "semanas"),
   });
+  const qVendidoMes = useQuery({
+    queryKey: ["sf-vendido-mes-atual"],
+    queryFn: () => fetchVendidoMes({ data: {} }),
+    staleTime: 60_000,
+    enabled: hasRole("admin") && tab === "vendido-mes",
+  });
+
 
   if (!hasRole("admin")) {
     return (
@@ -868,7 +878,7 @@ function TabelasPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas")}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas" | "vendido-mes")}>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <TabsList>
               <TabsTrigger value="orcamentos" className="gap-2">
@@ -876,6 +886,9 @@ function TabelasPage() {
               </TabsTrigger>
               <TabsTrigger value="vendas" className="gap-2">
                 <ShoppingCart className="h-4 w-4" /> Vendas
+              </TabsTrigger>
+              <TabsTrigger value="vendido-mes" className="gap-2">
+                <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
               </TabsTrigger>
               <TabsTrigger value="projecoes" className="gap-2">
                 <TrendingUp className="h-4 w-4" /> Projeções
@@ -887,7 +900,8 @@ function TabelasPage() {
                 <ShoppingBag className="h-4 w-4" /> Compras Efetuadas [A-WF]
               </TabsTrigger>
             </TabsList>
-            {tab !== "projecoes" && tab !== "compras-efetuadas" && (
+            {tab !== "projecoes" && tab !== "compras-efetuadas" && tab !== "vendido-mes" && (
+
               <DateRangeFilter
                 from={from}
                 to={to}
@@ -944,7 +958,17 @@ function TabelasPage() {
           <TabsContent value="compras-efetuadas" className="mt-4">
             <ComprasEfetuadasTable search={search} />
           </TabsContent>
+          <TabsContent value="vendido-mes" className="mt-4">
+            <OppTable
+              records={qVendidoMes.data?.records ?? []}
+              loading={qVendidoMes.isLoading}
+              error={qVendidoMes.error}
+              search={search}
+              dateField="closeDate"
+            />
+          </TabsContent>
         </Tabs>
+
 
       </div>
     </AppLayout>
