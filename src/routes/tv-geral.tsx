@@ -1052,17 +1052,16 @@ function Dashboard2P() {
                 width: 62,
                 height: 62,
                 borderRadius: 14,
-                background: "linear-gradient(140deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04))",
+                background: "linear-gradient(140deg, #F7F8FC, #E4E5F1)",
                 border: `1px solid ${T.cardBorder}`,
-                boxShadow: "0 8px 24px -12px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,0.08)",
-                backdropFilter: "blur(10px)",
+                boxShadow: "0 10px 24px -14px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.9)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 8,
               }}
             >
-              <img src={solarLogo} alt="2P" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+              <img src={solarLogo} alt="2P" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
 
             </div>
             <div>
