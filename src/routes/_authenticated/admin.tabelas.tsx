@@ -865,7 +865,7 @@ function TabelasPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas")}>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas")}>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <TabsList>
               <TabsTrigger value="orcamentos" className="gap-2">
@@ -880,8 +880,11 @@ function TabelasPage() {
               <TabsTrigger value="semanas" className="gap-2">
                 <CalendarDays className="h-4 w-4" /> Semanas
               </TabsTrigger>
+              <TabsTrigger value="compras-efetuadas" className="gap-2">
+                <ShoppingBag className="h-4 w-4" /> Compras Efetuadas [A-WF]
+              </TabsTrigger>
             </TabsList>
-            {tab !== "projecoes" && (
+            {tab !== "projecoes" && tab !== "compras-efetuadas" && (
               <DateRangeFilter
                 from={from}
                 to={to}
@@ -894,6 +897,7 @@ function TabelasPage() {
               />
             )}
           </div>
+
           <TabsContent value="orcamentos" className="mt-4">
             <OppTable
               records={qOrc.data?.records ?? []}
