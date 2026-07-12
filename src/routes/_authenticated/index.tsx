@@ -36,6 +36,7 @@ import {
   getSalesforceOrcamentos,
   getSalesforceAccounts,
   OPP_DEFAULTS_VENDIDO_MES,
+  OPP_DEFAULTS_GERADO_MES,
   completeSalesforceTask,
   createSalesforceTask,
   logSalesforceInteraction,
@@ -47,6 +48,8 @@ import {
 } from "@/lib/salesforce.functions";
 
 import { getMonthGoalTotal } from "@/lib/admin.functions";
+import { listRetentionGoals } from "@/lib/goals.functions";
+import { CARTEIRA_OWNER_IDS } from "@/lib/salespeople";
 import { businessDaysOfMonth } from "@/lib/business-days";
 
 type TaskInteractionState = { contacted: "yes" | "no"; type?: string; note?: string; ts: number };
@@ -272,13 +275,25 @@ function HomePage() {
     enabled: dataEnabled,
     staleTime: 60_000,
   });
+  const geradoMesQ = useQuery({
+    queryKey: ["sf-home-gerado-mes", ownerParam],
+    queryFn: () =>
+      fetchVendidoMes({ data: { ...OPP_DEFAULTS_GERADO_MES, ownerId: ownerParam } }),
+    enabled: dataEnabled,
+    staleTime: 60_000,
+  });
   const sold = useMemo(() => {
     const recs = vendidoMesQ.data?.records ?? [];
-    // Server já aplica ownerId; filtro client-side apenas por segurança.
     return recs
       .filter((r) => ownerParam == null || r.ownerId === ownerParam)
       .reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
   }, [vendidoMesQ.data, ownerParam]);
+  const generated = useMemo(() => {
+    const recs = geradoMesQ.data?.records ?? [];
+    return recs
+      .filter((r) => ownerParam == null || r.ownerId === ownerParam)
+      .reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
+  }, [geradoMesQ.data, ownerParam]);
 
   const goal = dbGoal;
   const achieved = sold;
@@ -294,6 +309,7 @@ function HomePage() {
     return Math.round(dailyGoal * elapsed);
   }, [dbGoal, today]);
   const goalPct = goal > 0 ? (sold / goal) * 100 : 0;
+  const projectedPct = goal > 0 ? (projected / goal) * 100 : 0;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
@@ -446,6 +462,27 @@ function HomePage() {
     staleTime: 60_000,
   });
 
+  // Meta trimestral de Retenção (Regras de Metas)
+  const currentQuarter = Math.floor(today.getMonth() / 3) + 1;
+  const retentionOwners = ownerParam ? [ownerParam] : [...CARTEIRA_OWNER_IDS];
+  const fetchRetentionGoals = useServerFn(listRetentionGoals);
+  const retentionGoalsQ = useQuery({
+    queryKey: ["home-retention-goals", today.getFullYear(), currentQuarter, retentionOwners.join(",")],
+    queryFn: () =>
+      fetchRetentionGoals({
+        data: {
+          year: today.getFullYear(),
+          quarter: currentQuarter,
+          sfUserIds: retentionOwners,
+        },
+      }),
+    enabled: dataEnabled && retentionOwners.length > 0,
+    staleTime: 60_000,
+  });
+  const configuredRetentionGoal = useMemo(() => {
+    return (retentionGoalsQ.data?.records ?? []).reduce((a, r) => a + (r.goal ?? 0), 0);
+  }, [retentionGoalsQ.data]);
+
   const retentionKpis = useMemo(() => {
     const AB_THRESHOLD = 15000;
     const prevStartT = quarterRange.prevStart.getTime();
@@ -477,34 +514,37 @@ function HomePage() {
     let newRecurring = 0;
     for (const id of curAB) if (!prevAB.has(id)) newRecurring++;
     const retentionBase = prevAB.size;
-    const retentionGoal = Math.round(retentionBase * 0.9);
-    const retentionPct = retentionBase > 0 ? (retained / retentionBase) * 100 : 0;
-    const recurrencePct = retentionBase > 0 ? (curAB.size / retentionBase) * 100 : 0;
+    const retentionGoal =
+      configuredRetentionGoal > 0 ? configuredRetentionGoal : Math.round(retentionBase * 0.9);
+    const retentionPct = retentionGoal > 0 ? (retained / retentionGoal) * 100 : 0;
     return {
       retentionBase,
       retentionGoal,
       retentionActive: retained,
       retentionPct,
-      recurrenceBase: retentionBase,
-      recurrenceCount: curAB.size,
-      recurrencePct,
       newRecurring,
     };
-  }, [vendasQuarterQ.data, ownerParam, quarterRange]);
+  }, [vendasQuarterQ.data, ownerParam, quarterRange, configuredRetentionGoal]);
 
   const fmtPct = (n: number) =>
     `${(n * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
   const trendPct = (cur: number, base: number) =>
     base > 0 ? ((cur - base) / base) * 100 : undefined;
 
-  // ---- Série diária: Geração — Projetado × Realizado (mês atual) ----
-  // Projetado = venda projetada / taxa de conversão (R$). Usa 3M como base estável.
+  // ---- Meta / Projetado de Geração — deriva da meta de vendas via taxa de conversão R$ (3M). ----
+  const conversionRate = conversionKpis.convR3 || conversionKpis.convRCur || 0;
+  const generationGoal = conversionRate > 0 ? Math.round(dbGoal / conversionRate) : 0;
+  const generationProjected = conversionRate > 0 ? Math.round(projected / conversionRate) : 0;
+  const generationPct = generationGoal > 0 ? (generated / generationGoal) * 100 : 0;
+  const generationProjectedPct =
+    generationGoal > 0 ? (generationProjected / generationGoal) * 100 : 0;
+
+  // ---- Série diária: Geração — Projetado × Realizado (mês atual, usa "Gerado - Mês Atual") ----
   const genChartSeries = useMemo(() => {
     const y = today.getFullYear();
     const m = today.getMonth();
-    const rate = conversionKpis.convR3 || conversionKpis.convRCur || 0;
     const genByDay = new Map<number, number>();
-    for (const r of orcQ.data?.records ?? []) {
+    for (const r of geradoMesQ.data?.records ?? []) {
       if (ownerParam && r.ownerId !== ownerParam) continue;
       if (!r.createdDate) continue;
       const [yr, mo, dd] = r.createdDate.split("-").map(Number);
@@ -518,11 +558,11 @@ function HomePage() {
       cumGen += genByDay.get(d) ?? 0;
       return {
         day: row.day,
-        projected: rate > 0 ? Math.round(row.projected / rate) : 0,
+        projected: conversionRate > 0 ? Math.round(row.projected / conversionRate) : 0,
         generated: d <= todayDay ? Math.round(cumGen) : null,
       };
     });
-  }, [salesChartSeries, orcQ.data, ownerParam, conversionKpis, today]);
+  }, [salesChartSeries, geradoMesQ.data, ownerParam, conversionRate, today]);
 
   return (
     <AppLayout>
@@ -627,7 +667,7 @@ function HomePage() {
         </div>
 
         {/* Meta */}
-        <div className="glass rounded-2xl p-5">
+        <div className="glass rounded-2xl p-5 space-y-5">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
               <Target className="h-5 w-5 text-primary" />
@@ -647,29 +687,62 @@ function HomePage() {
               </div>
               <div className="relative h-3 mt-1.5 rounded-full bg-surface-2 overflow-hidden border border-border">
                 <div
+                  className="absolute inset-y-0 left-0 bg-primary/25 rounded-full"
+                  style={{ width: `${Math.min(projectedPct, 100)}%` }}
+                  title={`Projetado: ${projectedPct.toFixed(1)}%`}
+                />
+                <div
                   className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-[oklch(0.78_0.19_60)] rounded-full transition-all"
                   style={{ width: `${Math.min(goalPct, 100)}%` }}
                 />
               </div>
-              <button onClick={() => setMetaOpen(!metaOpen)} className="mt-3 text-xs text-primary font-medium flex items-center gap-1 hover:underline">
-                {metaOpen ? "Ocultar detalhes" : "Detalhar"}
-                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", metaOpen && "rotate-180")} />
-              </button>
             </div>
           </div>
 
+          {/* Geração do mês */}
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[oklch(0.55_0.2_250)]/15 flex items-center justify-center shrink-0">
+              <TrendingUp className="h-5 w-5 text-[oklch(0.55_0.2_250)]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="font-display font-semibold">Geração do mês</div>
+                <div className="text-sm flex items-center gap-3">
+                  <span><span className="text-muted-foreground">Gerado </span><span className="text-[oklch(0.55_0.2_250)] font-bold">{fmt(generated)}</span></span>
+                  <span className="text-muted-foreground">·</span>
+                  <span><span className="text-muted-foreground">Projetado </span><span className="font-semibold">{fmt(generationProjected)}</span></span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-3 text-xs">
+                <span className="font-semibold text-foreground">{generationPct.toFixed(1)}% alcançado</span>
+                <span className="text-muted-foreground tabular-nums">{fmt(generated)} / {fmt(generationGoal)}</span>
+              </div>
+              <div className="relative h-3 mt-1.5 rounded-full bg-surface-2 overflow-hidden border border-border">
+                <div
+                  className="absolute inset-y-0 left-0 bg-[oklch(0.55_0.2_250)]/25 rounded-full"
+                  style={{ width: `${Math.min(generationProjectedPct, 100)}%` }}
+                  title={`Projetado: ${generationProjectedPct.toFixed(1)}%`}
+                />
+                <div
+                  className="absolute inset-y-0 left-0 bg-[oklch(0.55_0.2_250)] rounded-full transition-all"
+                  style={{ width: `${Math.min(generationPct, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <button onClick={() => setMetaOpen(!metaOpen)} className="text-xs text-primary font-medium flex items-center gap-1 hover:underline">
+            {metaOpen ? "Ocultar detalhes" : "Detalhar"}
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", metaOpen && "rotate-180")} />
+          </button>
+
           {metaOpen && (
-            <div className="mt-5 pt-5 border-t border-border space-y-5">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="pt-5 border-t border-border space-y-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 <MiniKpi
                   label="Retenção"
                   value={`${retentionKpis.retentionActive} / ${retentionKpis.retentionGoal}`}
                   sub={`${retentionKpis.retentionPct.toFixed(1)}% · base A/B tri anterior: ${retentionKpis.retentionBase}`}
-                />
-                <MiniKpi
-                  label="Recorrência"
-                  value={`${retentionKpis.recurrenceCount} / ${retentionKpis.recurrenceBase}`}
-                  sub={`${retentionKpis.recurrencePct.toFixed(1)}% dos A/B do tri anterior`}
                 />
                 <MiniKpi
                   label="Novos recorrentes"
@@ -702,6 +775,7 @@ function HomePage() {
             </div>
           )}
         </div>
+
 
         {/* Seção: Operação */}
         <div>
