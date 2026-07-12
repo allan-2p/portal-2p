@@ -154,7 +154,7 @@ function currentWeekDays(now: Date): Date[] {
 
 const AB_THRESHOLD = 15_000;
 
-function useTvData(): { data: TvData; loading: boolean } {
+function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; lastUpdated: number } {
   const now = useMemo(() => new Date(), []);
   const y = now.getFullYear();
   const m = now.getMonth();
@@ -172,49 +172,67 @@ function useTvData(): { data: TvData; loading: boolean } {
   const fetchMonthGoal = useServerFn(getPublicMonthGoalTotal);
   const fetchKpiGoals = useServerFn(getPublicGroupKpiGoals);
 
+  // Polling agressivo para "tempo real" em TV — mantém refetch mesmo com aba em background.
+  const FAST = 30_000;
+  const MED = 2 * 60_000;
+  const SLOW = 10 * 60_000;
+  const commonFast = {
+    refetchInterval: FAST,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 15_000,
+  } as const;
+
   const vendidoMesQ = useQuery({
     queryKey: ["tv-vendido-mes"],
     queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDIDO_MES } }),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    ...commonFast,
   });
   const geradoMesQ = useQuery({
     queryKey: ["tv-gerado-mes"],
     queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_GERADO_MES } }),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    ...commonFast,
   });
   const faturamentoMesQ = useQuery({
     queryKey: ["tv-faturamento-mes"],
     queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDAS } }),
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    ...commonFast,
   });
   const monthGoalQ = useQuery({
     queryKey: ["tv-month-goal", y, m + 1],
     queryFn: () => fetchMonthGoal({ data: { year: y, month: m + 1 } }),
-    staleTime: 5 * 60_000,
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
+    staleTime: 60_000,
   });
   const kpiGoalsQ = useQuery({
     queryKey: ["tv-group-kpi-goals"],
     queryFn: () => fetchKpiGoals(),
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
     staleTime: 60_000,
   });
   const vendasTriQ = useQuery({
     queryKey: ["tv-vendas-tri", curQStart, curQEnd],
     queryFn: () => fetchVendas({ data: { start: curQStart, end: curQEnd } }),
-    refetchInterval: 5 * 60_000,
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
     staleTime: 60_000,
   });
   const vendasTriPrevQ = useQuery({
     queryKey: ["tv-vendas-tri-prev", prevQStart, prevQEnd],
     queryFn: () => fetchVendas({ data: { start: prevQStart, end: prevQEnd } }),
-    staleTime: 10 * 60_000,
+    refetchInterval: SLOW,
+    refetchIntervalInBackground: true,
+    staleTime: 5 * 60_000,
   });
   const vendas12mQ = useQuery({
     queryKey: ["tv-vendas-12m", yearBackStart, monthEnd],
     queryFn: () => fetchVendas({ data: { start: yearBackStart, end: monthEnd } }),
-    staleTime: 10 * 60_000,
+    refetchInterval: SLOW,
+    refetchIntervalInBackground: true,
+    staleTime: 5 * 60_000,
   });
 
   const loading =
@@ -223,6 +241,27 @@ function useTvData(): { data: TvData; loading: boolean } {
     faturamentoMesQ.isLoading ||
     monthGoalQ.isLoading ||
     kpiGoalsQ.isLoading;
+
+  const isFetching =
+    vendidoMesQ.isFetching ||
+    geradoMesQ.isFetching ||
+    faturamentoMesQ.isFetching ||
+    monthGoalQ.isFetching ||
+    kpiGoalsQ.isFetching ||
+    vendasTriQ.isFetching ||
+    vendasTriPrevQ.isFetching ||
+    vendas12mQ.isFetching;
+
+  const lastUpdated = Math.max(
+    vendidoMesQ.dataUpdatedAt,
+    geradoMesQ.dataUpdatedAt,
+    faturamentoMesQ.dataUpdatedAt,
+    monthGoalQ.dataUpdatedAt,
+    kpiGoalsQ.dataUpdatedAt,
+    vendasTriQ.dataUpdatedAt,
+    vendasTriPrevQ.dataUpdatedAt,
+    vendas12mQ.dataUpdatedAt,
+  );
 
   const data = useMemo<TvData>(() => {
     const sumTotal = (recs: Array<{ total: number | null; amount: number | null }>) =>
@@ -406,7 +445,7 @@ function useTvData(): { data: TvData; loading: boolean } {
     qStartMonth,
   ]);
 
-  return { data, loading };
+  return { data, loading, isFetching, lastUpdated };
 }
 
 /* ---------- base ---------- */
@@ -865,10 +904,10 @@ const HeaderMetas = ({ tri }: { tri: TvData["tri"] }) => {
 };
 
 function Dashboard2P() {
-  const { data, loading } = useTvData();
+  const { data, loading, isFetching, lastUpdated } = useTvData();
   const [scale, setScale] = useState(1);
-  const [ago, setAgo] = useState(0);
-  const startedAt = useRef(Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  const [isFs, setIsFs] = useState(false);
 
   useEffect(() => {
     const fit = () =>
@@ -879,9 +918,62 @@ function Dashboard2P() {
   }, []);
 
   useEffect(() => {
-    const iv = setInterval(() => setAgo(Math.floor((Date.now() - startedAt.current) / 1000)), 1000);
+    const iv = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(iv);
   }, []);
+
+  // Wake Lock: mantém a tela acesa enquanto o painel está aberto.
+  useEffect(() => {
+    let lock: any = null;
+    let cancelled = false;
+    const nav: any = navigator;
+    async function acquire() {
+      try {
+        if (nav.wakeLock?.request) {
+          lock = await nav.wakeLock.request("screen");
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    void acquire();
+    const onVis = () => {
+      if (document.visibilityState === "visible" && !lock && !cancelled) void acquire();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVis);
+      try {
+        lock?.release?.();
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const onFs = () => setIsFs(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void document.documentElement.requestFullscreen().catch(() => {});
+  };
+
+  const secsSinceUpdate = lastUpdated ? Math.max(0, Math.floor((now - lastUpdated) / 1000)) : null;
+  const updateLabel =
+    secsSinceUpdate == null
+      ? "Aguardando dados…"
+      : secsSinceUpdate < 5
+        ? "atualizado agora"
+        : secsSinceUpdate < 60
+          ? `atualizado há ${secsSinceUpdate}s`
+          : `atualizado há ${Math.floor(secsSinceUpdate / 60)}min`;
+
+
 
   return (
     <div
@@ -903,6 +995,7 @@ function Dashboard2P() {
         @keyframes fadeUp { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
         @keyframes growUp { from{transform:scaleY(0)} to{transform:scaleY(1)} }
         @keyframes sweep { 0%{transform:translateX(-30%) rotate(12deg)} 100%{transform:translateX(130%) rotate(12deg)} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
       `}</style>
 
       <div
@@ -1030,17 +1123,42 @@ function Dashboard2P() {
             position: "relative",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span
               style={{
-                width: 7,
-                height: 7,
+                width: 8,
+                height: 8,
                 borderRadius: 999,
-                background: loading ? T.amber : T.green,
-                boxShadow: `0 0 10px ${loading ? T.amber : T.green}`,
+                background: loading ? T.amber : isFetching ? T.blue : T.green,
+                boxShadow: `0 0 10px ${loading ? T.amber : isFetching ? T.blue : T.green}`,
+                animation: isFetching ? "pulse 1.2s ease-in-out infinite" : undefined,
               }}
             />
-            {loading ? "Carregando…" : `Conectado · em tela há ${ago}s`}
+            <span>
+              {loading
+                ? "Carregando dados…"
+                : isFetching
+                  ? "Sincronizando ao vivo…"
+                  : `Ao vivo · ${updateLabel}`}
+            </span>
+            <button
+              onClick={toggleFullscreen}
+              style={{
+                marginLeft: 12,
+                background: "rgba(255,255,255,.06)",
+                border: "1px solid rgba(255,255,255,.12)",
+                color: T.bgTxt,
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                padding: "4px 10px",
+                borderRadius: 999,
+                cursor: "pointer",
+              }}
+            >
+              {isFs ? "Sair de tela cheia" : "Tela cheia"}
+            </button>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <span><span style={{ color: T.orange }}>●</span> 2P Solar</span>
