@@ -960,14 +960,42 @@ function TabelasPage() {
           <TabsContent value="compras-efetuadas" className="mt-4">
             <ComprasEfetuadasTable search={search} />
           </TabsContent>
-          <TabsContent value="vendido-mes" className="mt-4">
-            <OppTable
-              records={qVendidoMes.data?.records ?? []}
-              loading={qVendidoMes.isLoading}
-              error={qVendidoMes.error}
-              search={search}
-              dateField="closeDate"
-            />
+          <TabsContent value="vendido-mes" className="mt-4 space-y-3">
+            {(() => {
+              const allRecords = qVendidoMes.data?.records ?? [];
+              const vendedores = Array.from(
+                new Set(allRecords.map((r) => r.owner).filter((v): v is string => !!v)),
+              ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+              const filteredByVendedor =
+                vendedorMes === "__all__"
+                  ? allRecords
+                  : allRecords.filter((r) => (r.owner ?? "") === vendedorMes);
+              return (
+                <>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
+                    <Select value={vendedorMes} onValueChange={setVendedorMes}>
+                      <SelectTrigger className="w-[260px] h-9">
+                        <SelectValue placeholder="Todos os vendedores" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">Todos os vendedores</SelectItem>
+                        {vendedores.map((v) => (
+                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <OppTable
+                    records={filteredByVendedor}
+                    loading={qVendidoMes.isLoading}
+                    error={qVendidoMes.error}
+                    search={search}
+                    dateField="closeDate"
+                  />
+                </>
+              );
+            })()}
           </TabsContent>
         </Tabs>
 
