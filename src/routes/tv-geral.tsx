@@ -399,7 +399,7 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
       mes: { vendas, meta, projetadoDia, faturamento },
       tri: {
         solar: { meta: solarMeta, real: solarReal },
-        carreg: { meta: 0, real: 0 },
+        carreg: { meta: carregMeta, real: 0 },
         paceEsperado: paceTri,
       },
       semanaOrc,
