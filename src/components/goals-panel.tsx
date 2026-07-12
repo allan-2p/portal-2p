@@ -261,7 +261,7 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
 
       <div className="grid md:grid-cols-3 gap-4">
         <GoalCard
-          label="Faturamento"
+          label="VENDIDO"
           Icon={Target}
           realized={fmtBRL(faturamentoReal)}
           goal={fmtBRL(faturamentoMeta)}
