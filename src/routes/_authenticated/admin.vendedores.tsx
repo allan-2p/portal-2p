@@ -149,7 +149,7 @@ function VendedoresPage() {
               <tbody>
                 {q.isLoading && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                    <td colSpan={6} className="px-4 py-16 text-center text-muted-foreground text-sm">
                       <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
                       Carregando vendedores do Salesforce…
                     </td>
@@ -191,7 +191,7 @@ function VendedoresPage() {
                 })}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
                       Nenhum vendedor encontrado.
                     </td>
                   </tr>
