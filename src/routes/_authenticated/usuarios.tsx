@@ -39,11 +39,19 @@ type Row = {
   avatar_url: string | null;
   sf_user_id: string | null;
   is_external: boolean;
+  filter_scope: FilterScope;
   roles: AppRole[];
 };
 
 const ROLES: AppRole[] = ["admin", "gerente", "vendedor", "diretor", "marketing"];
+const SCOPES: { id: FilterScope; label: string }[] = [
+  { id: "geral", label: "Geral" },
+  { id: "pre_vendas", label: "Pré Vendas" },
+  { id: "carteira", label: "Carteira" },
+  { id: "individual", label: "Individual" },
+];
 type Tab = "portal" | "salesforce";
+
 
 function UsuariosPage() {
   const { hasRole, loading: authLoading, user } = useAuth();
