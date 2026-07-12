@@ -182,7 +182,7 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
     }
 
     if (data.email || data.full_name) {
-      const authPatch: Record<string, unknown> = {};
+      const authPatch: { email?: string; user_metadata?: { full_name: string } } = {};
       if (data.email) authPatch.email = data.email;
       if (data.full_name) authPatch.user_metadata = { full_name: data.full_name };
       const { error } = await supabaseAdmin.auth.admin.updateUserById(
