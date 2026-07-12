@@ -139,11 +139,38 @@ function SegmentacaoPage() {
 
   const baseRange = useMemo(previousQuarterRange, []);
 
+  const { scope, ready: scopeReady } = useSellerScope();
+
   const fetchAccounts = useServerFn(getSalesforceAccounts);
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
   const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
   const fetchPedidos = useServerFn(getSalesforcePedidos);
+  const fetchSalespeople = useServerFn(getSalesforceSalespeople);
+
+  const salespeopleQ = useQuery({
+    queryKey: ["sf-salespeople"],
+    queryFn: () => fetchSalespeople(),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Nomes permitidos pelo escopo (mapa SF id -> Name)
+  const allowedOwnerNames = useMemo<Set<string> | null>(() => {
+    if (!scopeReady || !scope) return new Set(); // enquanto carrega, restringe tudo
+    if (scope.scope === "geral" || !scope.allowed_sf_ids) return null; // sem restrição
+    const nameById = new Map<string, string>();
+    for (const p of salespeopleQ.data?.records ?? []) nameById.set(p.id, p.name);
+    return new Set(scope.allowed_sf_ids.map((id) => nameById.get(id) ?? "").filter(Boolean));
+  }, [scope, scopeReady, salespeopleQ.data]);
+
+  const ownOwnerName = useMemo<string | null>(() => {
+    if (!scope?.sf_user_id) return null;
+    const p = (salespeopleQ.data?.records ?? []).find((r) => r.id === scope.sf_user_id);
+    return p?.name ?? null;
+  }, [scope, salespeopleQ.data]);
+
+
 
   const accountsQ = useQuery({
     queryKey: ["salesforce", "accounts"],
