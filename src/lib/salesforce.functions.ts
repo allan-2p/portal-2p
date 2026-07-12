@@ -621,6 +621,8 @@ export type OppFilters = {
   tipoNfNotIn?: string[];
   accountNameNotIn?: string[];
   ownerNameNotIn?: string[];
+  lossReasonIn?: string[];
+  lossReasonNotIn?: string[];
   ownerId?: string | null;
   dateField?: "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c";
   dateLiteral?: string; // e.g. THIS_MONTH or "CUSTOM"
@@ -730,6 +732,13 @@ export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
     }
     for (const v of (f.ownerNameNotIn ?? []).filter(Boolean)) {
       clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
+    }
+    const lossIn = (f.lossReasonIn ?? []).filter(Boolean);
+    if (lossIn.length) {
+      clauses.push(`Loss_Reason__c IN (${lossIn.map((s) => `'${esc(s)}'`).join(",")})`);
+    }
+    for (const v of (f.lossReasonNotIn ?? []).filter(Boolean)) {
+      clauses.push(`(Loss_Reason__c = null OR Loss_Reason__c != '${esc(v)}')`);
     }
 
     const literal = (f.dateLiteral ?? "").trim();
