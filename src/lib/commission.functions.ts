@@ -124,6 +124,33 @@ export const setNovosValues = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const RetencaoInput = z.object({
+  tiers: z
+    .array(
+      z.object({
+        min: z.number().min(0).max(500),
+        max: z.number().min(0).max(1000).nullable(),
+      }),
+    )
+    .min(1)
+    .max(20),
+  values: z.array(z.number().min(0).max(1_000_000)).min(1).max(20),
+});
+
+export const setRetencaoTiers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => RetencaoInput.parse(d))
+  .handler(async ({ data, context }) => {
+    if (data.values.length !== data.tiers.length) {
+      throw new Error("Quantidade de valores não bate com as faixas.");
+    }
+    const { error } = await context.supabase
+      .from("commission_settings")
+      .upsert({ id: "retencao_tiers", config: data, updated_at: new Date().toISOString() });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 const EquipeInput = z.object({
   sf_user_id: z.string().min(3),
   equipe: z.enum(["pre_vendas", "carteira"]),
