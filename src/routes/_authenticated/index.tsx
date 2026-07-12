@@ -32,8 +32,10 @@ import {
   getSalesforceOpportunities,
   getSalesforceForecasts,
   getSalesforceVendas,
+  getSalesforceVendidoMesAtual,
   getSalesforceOrcamentos,
   getSalesforceAccounts,
+  OPP_DEFAULTS_VENDIDO_MES,
   completeSalesforceTask,
   createSalesforceTask,
   logSalesforceInteraction,
@@ -249,7 +251,7 @@ function HomePage() {
   });
   const dbGoal = monthGoalQ.data?.total ?? 0;
 
-  // ---- Vendido do mês (Salesforce: Opportunity StageName = 'Pedido Concluído') ----
+  // ---- Vendido do mês (mesma lógica de Administrador > Tabelas > "Vendido - Mês Atual") ----
   const monthRange = useMemo(() => {
     const y = today.getFullYear();
     const m = today.getMonth();
@@ -262,12 +264,21 @@ function HomePage() {
     enabled: dataEnabled,
     staleTime: 60_000,
   });
+  const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
+  const vendidoMesQ = useQuery({
+    queryKey: ["sf-home-vendido-mes", ownerParam],
+    queryFn: () =>
+      fetchVendidoMes({ data: { ...OPP_DEFAULTS_VENDIDO_MES, ownerId: ownerParam } }),
+    enabled: dataEnabled,
+    staleTime: 60_000,
+  });
   const sold = useMemo(() => {
-    const recs = vendasQ.data?.records ?? [];
+    const recs = vendidoMesQ.data?.records ?? [];
+    // Server já aplica ownerId; filtro client-side apenas por segurança.
     return recs
       .filter((r) => ownerParam == null || r.ownerId === ownerParam)
       .reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
-  }, [vendasQ.data, ownerParam]);
+  }, [vendidoMesQ.data, ownerParam]);
 
   // ---- Mock (mantidos para projetado) ----
   const goal = dbGoal;

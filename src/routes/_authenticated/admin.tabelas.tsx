@@ -13,7 +13,6 @@ import {
   CalendarIcon,
   TrendingUp,
   CalendarDays,
-  ShoppingBag,
   Filter,
   X as XIcon,
   RotateCcw,
@@ -29,12 +28,12 @@ import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
-  getSalesforceReportByName,
-  VENDIDO_DATE_LITERALS,
-  VENDIDO_DEFAULTS,
-  type VendidoFilters,
+  OPP_DATE_LITERALS,
+  OPP_DEFAULTS_ORCAMENTOS,
+  OPP_DEFAULTS_VENDAS,
+  OPP_DEFAULTS_VENDIDO_MES,
+  type OppFilters,
   type SalesforceOppRow,
-  type SalesforceReportRow,
 } from "@/lib/salesforce.functions";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -643,172 +642,6 @@ function FixedRangeWeeksPanel({ start, end }: { start: string; end: string }) {
   );
 }
 
-const COMPRAS_REPORT_ID = "00ODn0000081BYoMAM";
-const COMPRAS_REPORT_NAME = "Compras Efetuadas [A-WF]";
-
-
-// Heurísticas de mapeamento de colunas do relatório Salesforce
-type ColMap = {
-  date?: string;
-  account?: string;
-  order?: string;
-  product?: string;
-  owner?: string;
-  status?: string;
-  qty?: string;
-  amount?: string;
-};
-
-function pickColumn(
-  columns: { apiName: string; label: string }[],
-  patterns: RegExp[],
-): string | undefined {
-  for (const p of patterns) {
-    const hit = columns.find(
-      (c) => p.test(c.apiName) || p.test(c.label),
-    );
-    if (hit) return hit.apiName;
-  }
-  return undefined;
-}
-
-function buildColMap(columns: { apiName: string; label: string }[]): ColMap {
-  return {
-    date: pickColumn(columns, [/close.?date/i, /^data/i, /data.*fech/i]),
-    account: pickColumn(columns, [/account/i, /cliente/i, /conta/i]),
-    order: pickColumn(columns, [/opportunity\.?name/i, /^name$/i, /pedido/i, /oportunidade/i]),
-    product: pickColumn(columns, [/product/i, /produto/i, /item/i]),
-    owner: pickColumn(columns, [/owner/i, /vendedor/i, /propriet/i]),
-    status: pickColumn(columns, [/stage/i, /status/i, /etapa/i]),
-    qty: pickColumn(columns, [/quantity/i, /qtd/i, /quant/i]),
-    amount: pickColumn(columns, [/totalprice/i, /amount/i, /total__c/i, /valor.*total/i, /^valor$/i, /total/i]),
-  };
-}
-
-function ComprasEfetuadasTable({ search }: { search: string }) {
-  const fetchReport = useServerFn(getSalesforceReportByName);
-  const q = useQuery({
-    queryKey: ["sf-report", COMPRAS_REPORT_ID],
-    queryFn: () => fetchReport({ data: { reportId: COMPRAS_REPORT_ID, name: COMPRAS_REPORT_NAME } }),
-
-    staleTime: 60_000,
-  });
-
-  const columns = q.data?.columns ?? [];
-  const rows = q.data?.rows ?? [];
-  const map = useMemo(() => buildColMap(columns), [columns]);
-
-  const filtered = useMemo(() => {
-    const s = search.trim().toLowerCase();
-    if (!s) return rows;
-    return rows.filter((r) => {
-      const bag = [
-        map.account && r[map.account],
-        map.order && r[map.order],
-        map.owner && r[map.owner],
-        map.product && r[map.product],
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return bag.includes(s);
-    });
-  }, [rows, search, map]);
-
-  const totalAmount = useMemo(() => {
-    if (!map.amount) return 0;
-    let sum = 0;
-    for (const r of filtered) {
-      const v = r[map.amount];
-      if (typeof v === "number") sum += v;
-    }
-    return sum;
-  }, [filtered, map.amount]);
-
-  const cell = (r: SalesforceReportRow, key?: string) => {
-    if (!key) return "—";
-    const v = r[key];
-    if (v == null || v === "") return "—";
-    return String(v);
-  };
-  const cellNum = (r: SalesforceReportRow, key?: string) => {
-    if (!key) return "—";
-    const v = r[key];
-    if (typeof v === "number") return brl(v);
-    if (v == null || v === "") return "—";
-    return String(v);
-  };
-
-  return (
-    <div className="glass rounded-2xl overflow-hidden">
-      {!!q.error && (
-        <div className="border-b border-destructive/40 bg-destructive/10 text-destructive text-sm px-4 py-3 flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 mt-0.5" />
-          <div>{q.error instanceof Error ? q.error.message : "Erro ao carregar relatório"}</div>
-        </div>
-      )}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
-              <th className="text-left px-4 py-2.5">Data</th>
-              <th className="text-left px-4 py-2.5">Cliente</th>
-              <th className="text-left px-4 py-2.5">Pedido</th>
-              <th className="text-left px-4 py-2.5">Produto</th>
-              <th className="text-left px-4 py-2.5">Vendedor</th>
-              <th className="text-left px-4 py-2.5">Status</th>
-              <th className="text-right px-4 py-2.5">Qtd.</th>
-              <th className="text-right px-4 py-2.5">Valor Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {q.isLoading && (
-              <tr>
-                <td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
-                  <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
-                  Carregando relatório do Salesforce…
-                </td>
-              </tr>
-            )}
-            {!q.isLoading && filtered.map((r, i) => (
-              <tr key={i} className="border-b border-border/40 hover:bg-surface-2/50">
-                <td className="px-4 py-3 text-muted-foreground">{cell(r, map.date)}</td>
-                <td className="px-4 py-3 font-medium">{cell(r, map.account)}</td>
-                <td className="px-4 py-3 text-muted-foreground">{cell(r, map.order)}</td>
-                <td className="px-4 py-3 text-muted-foreground">{cell(r, map.product)}</td>
-                <td className="px-4 py-3 text-muted-foreground">{cell(r, map.owner)}</td>
-                <td className="px-4 py-3">
-                  <span className="text-xs px-2 py-0.5 rounded bg-surface-2 text-muted-foreground">
-                    {cell(r, map.status)}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right font-mono">{cell(r, map.qty)}</td>
-                <td className="px-4 py-3 text-right font-mono">{cellNum(r, map.amount)}</td>
-              </tr>
-            ))}
-            {!q.isLoading && filtered.length === 0 && !q.error && (
-              <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                  Nenhum registro no relatório.
-                </td>
-              </tr>
-            )}
-          </tbody>
-          {!q.isLoading && filtered.length > 0 && map.amount && (
-            <tfoot>
-              <tr className="border-t border-border bg-surface-2/50 text-sm">
-                <td colSpan={7} className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]">
-                  Total ({filtered.length} {filtered.length === 1 ? "registro" : "registros"})
-                </td>
-                <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totalAmount)}</td>
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
-    </div>
-  );
-}
 
 function TagListEditor({
   label,
@@ -866,23 +699,26 @@ function TagListEditor({
   );
 }
 
-function VendidoFiltersPanel({
+function OppFiltersPanel({
   value,
+  defaults,
   onApply,
 }: {
-  value: VendidoFilters;
-  onApply: (next: VendidoFilters) => void;
+  value: OppFilters;
+  defaults: OppFilters;
+  onApply: (next: OppFilters) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<VendidoFilters>(value);
+  const [draft, setDraft] = useState<OppFilters>(value);
 
   // Sync draft when applied value changes externally (e.g. reset).
   useMemo(() => setDraft(value), [value]);
 
-  const set = <K extends keyof VendidoFilters>(k: K, v: VendidoFilters[K]) =>
+  const set = <K extends keyof OppFilters>(k: K, v: OppFilters[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
 
-  const literal = draft.closeDateLiteral ?? VENDIDO_DEFAULTS.closeDateLiteral;
+  const literal = draft.dateLiteral ?? defaults.dateLiteral ?? "";
+  const df = draft.dateField ?? defaults.dateField ?? "CloseDate";
 
   return (
     <div className="glass rounded-2xl border border-border overflow-hidden">
@@ -915,17 +751,47 @@ function VendidoFiltersPanel({
 
           <div className="space-y-1.5">
             <div className="text-xs font-medium text-muted-foreground">
-              CloseDate (período)
+              StageName (diferente de)
+            </div>
+            <Input
+              className="h-8 text-sm"
+              value={draft.stageNotEquals ?? ""}
+              onChange={(e) => set("stageNotEquals", e.target.value)}
+              placeholder="Ex.: Pedido Concluído"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-muted-foreground">
+              Campo de data
             </div>
             <Select
-              value={literal}
-              onValueChange={(v) => set("closeDateLiteral", v)}
+              value={df}
+              onValueChange={(v) => set("dateField", v as "CloseDate" | "CreatedDate")}
             >
               <SelectTrigger className="h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {VENDIDO_DATE_LITERALS.map((l) => (
+                <SelectItem value="CloseDate">CloseDate</SelectItem>
+                <SelectItem value="CreatedDate">CreatedDate</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-muted-foreground">
+              Período ({df})
+            </div>
+            <Select
+              value={literal || "THIS_MONTH"}
+              onValueChange={(v) => set("dateLiteral", v)}
+            >
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {OPP_DATE_LITERALS.map((l) => (
                   <SelectItem key={l} value={l}>{l}</SelectItem>
                 ))}
                 <SelectItem value="CUSTOM">Personalizado…</SelectItem>
@@ -936,14 +802,14 @@ function VendidoFiltersPanel({
                 <Input
                   type="date"
                   className="h-8 text-sm"
-                  value={draft.closeDateFrom ?? ""}
-                  onChange={(e) => set("closeDateFrom", e.target.value)}
+                  value={draft.dateFrom ?? ""}
+                  onChange={(e) => set("dateFrom", e.target.value)}
                 />
                 <Input
                   type="date"
                   className="h-8 text-sm"
-                  value={draft.closeDateTo ?? ""}
-                  onChange={(e) => set("closeDateTo", e.target.value)}
+                  value={draft.dateTo ?? ""}
+                  onChange={(e) => set("dateTo", e.target.value)}
                 />
               </div>
             )}
@@ -991,8 +857,8 @@ function VendidoFiltersPanel({
               size="sm"
               className="h-8"
               onClick={() => {
-                setDraft({ ...VENDIDO_DEFAULTS });
-                onApply({ ...VENDIDO_DEFAULTS });
+                setDraft({ ...defaults });
+                onApply({ ...defaults });
               }}
             >
               <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Restaurar padrões
@@ -1012,37 +878,104 @@ function VendidoFiltersPanel({
   );
 }
 
+/** Reusable panel wrapping OppTable with filters + vendedor dropdown. */
+function OppTabPanel({
+  filters,
+  defaults,
+  onFiltersChange,
+  vendedor,
+  onVendedorChange,
+  records,
+  loading,
+  error,
+  search,
+  dateField,
+}: {
+  filters: OppFilters;
+  defaults: OppFilters;
+  onFiltersChange: (next: OppFilters) => void;
+  vendedor: string;
+  onVendedorChange: (next: string) => void;
+  records: SalesforceOppRow[];
+  loading: boolean;
+  error: unknown;
+  search: string;
+  dateField: "createdDate" | "closeDate";
+}) {
+  const vendedores = useMemo(
+    () => Array.from(new Set(records.map((r) => r.owner).filter((v): v is string => !!v)))
+      .sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [records],
+  );
+  const filteredByVendedor =
+    vendedor === "__all__" ? records : records.filter((r) => (r.owner ?? "") === vendedor);
+
+  return (
+    <div className="space-y-3">
+      <OppFiltersPanel value={filters} defaults={defaults} onApply={onFiltersChange} />
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
+        <Select value={vendedor} onValueChange={onVendedorChange}>
+          <SelectTrigger className="w-[260px] h-9">
+            <SelectValue placeholder="Todos os vendedores" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Todos os vendedores</SelectItem>
+            {vendedores.map((v) => (
+              <SelectItem key={v} value={v}>{v}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {vendedor !== "__all__" && (
+          <button
+            type="button"
+            onClick={() => onVendedorChange("__all__")}
+            className="text-xs text-muted-foreground hover:text-foreground underline"
+          >
+            limpar
+          </button>
+        )}
+      </div>
+      <OppTable
+        records={filteredByVendedor}
+        loading={loading}
+        error={error}
+        search={search}
+        dateField={dateField}
+      />
+    </div>
+  );
+}
+
+
 function TabelasPage() {
   const { hasRole } = useAuth();
-  const [tab, setTab] = useState<"orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas" | "vendido-mes">("orcamentos");
+  type TabId = "orcamentos" | "vendas" | "projecoes" | "semanas" | "vendido-mes";
+  const [tab, setTab] = useState<TabId>("orcamentos");
+
+  const [orcFilters, setOrcFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_ORCAMENTOS });
+  const [venFilters, setVenFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDAS });
+  const [vendidoFilters, setVendidoFilters] = useState<OppFilters>({ ...OPP_DEFAULTS_VENDIDO_MES });
+
+  const [vendedorOrc, setVendedorOrc] = useState<string>("__all__");
+  const [vendedorVen, setVendedorVen] = useState<string>("__all__");
   const [vendedorMes, setVendedorMes] = useState<string>("__all__");
-  const [vendidoFilters, setVendidoFilters] = useState<VendidoFilters>({ ...VENDIDO_DEFAULTS });
 
   const [search, setSearch] = useState("");
-
-  const initial = presetRange("month")!;
-  const [from, setFrom] = useState<Date>(initial.from);
-  const [to, setTo] = useState<Date>(initial.to);
-  const [preset, setPreset] = useState<PeriodPreset>("month");
-
-  const range = useMemo(
-    () => ({ start: fmtKey(from), end: fmtKey(to) }),
-    [from, to],
-  );
 
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
   const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
 
   const qOrc = useQuery({
-    queryKey: ["sf-orcamentos", range.start, range.end],
-    queryFn: () => fetchOrc({ data: range }),
+    queryKey: ["sf-orcamentos-flt", orcFilters],
+    queryFn: () => fetchVendidoMes({ data: orcFilters }),
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "orcamentos",
   });
   const qVen = useQuery({
-    queryKey: ["sf-vendas", range.start, range.end],
-    queryFn: () => fetchVen({ data: range }),
+    queryKey: ["sf-vendas-flt", venFilters],
+    queryFn: () => fetchVendidoMes({ data: venFilters }),
     staleTime: 60_000,
     enabled: hasRole("admin") && (tab === "vendas" || tab === "semanas"),
   });
@@ -1053,6 +986,8 @@ function TabelasPage() {
     enabled: hasRole("admin") && tab === "vendido-mes",
   });
 
+  // Silence unused-imports guard; kept for potential future direct calls.
+  void fetchOrc; void fetchVen;
 
   if (!hasRole("admin")) {
     return (
@@ -1090,71 +1025,83 @@ function TabelasPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "orcamentos" | "vendas" | "projecoes" | "semanas" | "compras-efetuadas" | "vendido-mes")}>
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <TabsList>
-              <TabsTrigger value="orcamentos" className="gap-2">
-                <FileText className="h-4 w-4" /> Orçamento
-              </TabsTrigger>
-              <TabsTrigger value="vendas" className="gap-2">
-                <ShoppingCart className="h-4 w-4" /> Vendas
-              </TabsTrigger>
-              <TabsTrigger value="vendido-mes" className="gap-2">
-                <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
-              </TabsTrigger>
-              <TabsTrigger value="projecoes" className="gap-2">
-                <TrendingUp className="h-4 w-4" /> Projeções
-              </TabsTrigger>
-              <TabsTrigger value="semanas" className="gap-2">
-                <CalendarDays className="h-4 w-4" /> Semanas
-              </TabsTrigger>
-              <TabsTrigger value="compras-efetuadas" className="gap-2">
-                <ShoppingBag className="h-4 w-4" /> Compras Efetuadas [A-WF]
-              </TabsTrigger>
-            </TabsList>
-            {tab !== "projecoes" && tab !== "compras-efetuadas" && tab !== "vendido-mes" && (
-
-              <DateRangeFilter
-                from={from}
-                to={to}
-                preset={preset}
-                onChange={(v) => {
-                  setFrom(v.from);
-                  setTo(v.to);
-                  setPreset(v.preset);
-                }}
-              />
-            )}
-          </div>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)}>
+          <TabsList>
+            <TabsTrigger value="orcamentos" className="gap-2">
+              <FileText className="h-4 w-4" /> Orçamento
+            </TabsTrigger>
+            <TabsTrigger value="vendas" className="gap-2">
+              <ShoppingCart className="h-4 w-4" /> Vendas
+            </TabsTrigger>
+            <TabsTrigger value="vendido-mes" className="gap-2">
+              <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
+            </TabsTrigger>
+            <TabsTrigger value="projecoes" className="gap-2">
+              <TrendingUp className="h-4 w-4" /> Projeções
+            </TabsTrigger>
+            <TabsTrigger value="semanas" className="gap-2">
+              <CalendarDays className="h-4 w-4" /> Semanas
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="orcamentos" className="mt-4">
-            <OppTable
+            <OppTabPanel
+              filters={orcFilters}
+              defaults={OPP_DEFAULTS_ORCAMENTOS}
+              onFiltersChange={setOrcFilters}
+              vendedor={vendedorOrc}
+              onVendedorChange={setVendedorOrc}
               records={qOrc.data?.records ?? []}
               loading={qOrc.isLoading}
               error={qOrc.error}
               search={search}
-              dateField="createdDate"
+              dateField={orcFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
             />
           </TabsContent>
           <TabsContent value="vendas" className="mt-4">
-            <OppTable
+            <OppTabPanel
+              filters={venFilters}
+              defaults={OPP_DEFAULTS_VENDAS}
+              onFiltersChange={setVenFilters}
+              vendedor={vendedorVen}
+              onVendedorChange={setVendedorVen}
               records={qVen.data?.records ?? []}
               loading={qVen.isLoading}
               error={qVen.error}
               search={search}
-              dateField="closeDate"
+              dateField={venFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
+            />
+          </TabsContent>
+          <TabsContent value="vendido-mes" className="mt-4">
+            <OppTabPanel
+              filters={vendidoFilters}
+              defaults={OPP_DEFAULTS_VENDIDO_MES}
+              onFiltersChange={setVendidoFilters}
+              vendedor={vendedorMes}
+              onVendedorChange={setVendedorMes}
+              records={qVendidoMes.data?.records ?? []}
+              loading={qVendidoMes.isLoading}
+              error={qVendidoMes.error}
+              search={search}
+              dateField={vendidoFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
             />
           </TabsContent>
           <TabsContent value="projecoes" className="mt-4">
             <ProjectionsPanel search={search} />
           </TabsContent>
           <TabsContent value="semanas" className="mt-4 space-y-6">
-            <section className="space-y-2">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Período selecionado
-              </h2>
+            <section className="space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  Período selecionado (usa filtros de Vendas)
+                </h2>
+              </div>
               <WeeksPanel
-                records={qVen.data?.records ?? []}
+                records={
+                  vendedorVen === "__all__"
+                    ? (qVen.data?.records ?? [])
+                    : (qVen.data?.records ?? []).filter((r) => (r.owner ?? "") === vendedorVen)
+                }
                 loading={qVen.isLoading}
                 error={qVen.error}
               />
@@ -1165,57 +1112,10 @@ function TabelasPage() {
               </h2>
               <FixedRangeWeeksPanel start="2026-01-01" end="2026-06-30" />
             </section>
-
-          </TabsContent>
-          <TabsContent value="compras-efetuadas" className="mt-4">
-            <ComprasEfetuadasTable search={search} />
-          </TabsContent>
-          <TabsContent value="vendido-mes" className="mt-4 space-y-3">
-            {(() => {
-              const allRecords = qVendidoMes.data?.records ?? [];
-              const vendedores = Array.from(
-                new Set(allRecords.map((r) => r.owner).filter((v): v is string => !!v)),
-              ).sort((a, b) => a.localeCompare(b, "pt-BR"));
-              const filteredByVendedor =
-                vendedorMes === "__all__"
-                  ? allRecords
-                  : allRecords.filter((r) => (r.owner ?? "") === vendedorMes);
-              return (
-                <>
-                  <VendidoFiltersPanel
-                    value={vendidoFilters}
-                    onApply={setVendidoFilters}
-                  />
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
-                    <Select value={vendedorMes} onValueChange={setVendedorMes}>
-                      <SelectTrigger className="w-[260px] h-9">
-                        <SelectValue placeholder="Todos os vendedores" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__all__">Todos os vendedores</SelectItem>
-                        {vendedores.map((v) => (
-                          <SelectItem key={v} value={v}>{v}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <OppTable
-                    records={filteredByVendedor}
-                    loading={qVendidoMes.isLoading}
-                    error={qVendidoMes.error}
-                    search={search}
-                    dateField="closeDate"
-                  />
-                </>
-              );
-            })()}
           </TabsContent>
         </Tabs>
-
-
       </div>
     </AppLayout>
-
   );
 }
+

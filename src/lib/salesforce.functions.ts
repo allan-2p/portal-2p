@@ -584,7 +584,7 @@ export const getSalesforceVendas = createServerFn({ method: "GET" })
 
 
 
-export const VENDIDO_DATE_LITERALS = [
+export const OPP_DATE_LITERALS = [
   "TODAY",
   "YESTERDAY",
   "THIS_WEEK",
@@ -596,20 +596,27 @@ export const VENDIDO_DATE_LITERALS = [
   "THIS_YEAR",
   "LAST_YEAR",
 ] as const;
+// Backwards-compat alias
+export const VENDIDO_DATE_LITERALS = OPP_DATE_LITERALS;
 
-export type VendidoFilters = {
+export type OppFilters = {
   stageEquals?: string;
+  stageNotEquals?: string;
   statusIn?: string[];
+  orgIn?: string[];
   tipoNfNotIn?: string[];
   accountNameNotIn?: string[];
-  orgIn?: string[];
   ownerNameNotIn?: string[];
-  closeDateLiteral?: string; // e.g. THIS_MONTH
-  closeDateFrom?: string; // YYYY-MM-DD (used when literal = CUSTOM)
-  closeDateTo?: string; // YYYY-MM-DD (used when literal = CUSTOM)
+  ownerId?: string | null;
+  dateField?: "CloseDate" | "CreatedDate";
+  dateLiteral?: string; // e.g. THIS_MONTH or "CUSTOM"
+  dateFrom?: string;    // YYYY-MM-DD (when literal = CUSTOM)
+  dateTo?: string;      // YYYY-MM-DD (when literal = CUSTOM)
 };
+// Backwards-compat alias
+export type VendidoFilters = OppFilters;
 
-export const VENDIDO_DEFAULTS: Required<Omit<VendidoFilters, "closeDateFrom" | "closeDateTo">> = {
+export const OPP_DEFAULTS_VENDIDO_MES: OppFilters = {
   stageEquals: "Pedido Concluído",
   statusIn: [
     "Aguardando Pagamento",
@@ -625,45 +632,84 @@ export const VENDIDO_DEFAULTS: Required<Omit<VendidoFilters, "closeDateFrom" | "
   accountNameNotIn: ["2P ACESSORIOS LTDA"],
   orgIn: ["Acessórios 2P", "WD"],
   ownerNameNotIn: ["Caroline Gimenez"],
-  closeDateLiteral: "THIS_MONTH",
+  dateField: "CloseDate",
+  dateLiteral: "THIS_MONTH",
+};
+// Backwards-compat alias
+export const VENDIDO_DEFAULTS = OPP_DEFAULTS_VENDIDO_MES;
+
+export const OPP_DEFAULTS_ORCAMENTOS: OppFilters = {
+  stageNotEquals: "Pedido Concluído",
+  tipoNfNotIn: ["Bonificação"],
+  statusIn: [],
+  orgIn: [],
+  accountNameNotIn: [],
+  ownerNameNotIn: [],
+  dateField: "CreatedDate",
+  dateLiteral: "THIS_MONTH",
+};
+
+export const OPP_DEFAULTS_VENDAS: OppFilters = {
+  stageEquals: "Pedido Concluído",
+  tipoNfNotIn: ["Bonificação"],
+  statusIn: [],
+  orgIn: [],
+  accountNameNotIn: [],
+  ownerNameNotIn: [],
+  dateField: "CloseDate",
+  dateLiteral: "THIS_MONTH",
 };
 
 export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => (input ?? {}) as VendidoFilters)
-  .handler(async ({ data }) => {
-    const f: VendidoFilters = data ?? {};
-    const stage = (f.stageEquals ?? VENDIDO_DEFAULTS.stageEquals).trim();
-    const statuses = (f.statusIn ?? VENDIDO_DEFAULTS.statusIn).filter(Boolean);
-    const tipoNfExcl = (f.tipoNfNotIn ?? VENDIDO_DEFAULTS.tipoNfNotIn).filter(Boolean);
-    const accountExcl = (f.accountNameNotIn ?? VENDIDO_DEFAULTS.accountNameNotIn).filter(Boolean);
-    const orgs = (f.orgIn ?? VENDIDO_DEFAULTS.orgIn).filter(Boolean);
-    const ownerExcl = (f.ownerNameNotIn ?? VENDIDO_DEFAULTS.ownerNameNotIn).filter(Boolean);
-    const literal = (f.closeDateLiteral ?? VENDIDO_DEFAULTS.closeDateLiteral).trim();
-
+  .inputValidator((input: unknown) => (input ?? {}) as OppFilters)
+  .handler(async ({ data, context }) => {
+    const f: OppFilters = data ?? {};
+    const df = f.dateField === "CreatedDate" ? "CreatedDate" : "CloseDate";
+    const suffixStart = df === "CreatedDate" ? "T00:00:00Z" : "";
+    const suffixEnd = df === "CreatedDate" ? "T23:59:59Z" : "";
     const clauses: string[] = [];
-    if (stage) clauses.push(`StageName = '${esc(stage)}'`);
+
+    if (f.stageEquals && f.stageEquals.trim()) {
+      clauses.push(`StageName = '${esc(f.stageEquals.trim())}'`);
+    }
+    if (f.stageNotEquals && f.stageNotEquals.trim()) {
+      clauses.push(`StageName != '${esc(f.stageNotEquals.trim())}'`);
+    }
+    const statuses = (f.statusIn ?? []).filter(Boolean);
     if (statuses.length) {
       clauses.push(`Status_do_Pedido__c IN (${statuses.map((s) => `'${esc(s)}'`).join(",")})`);
     }
-    for (const v of tipoNfExcl) clauses.push(`(Tipo_de_NF__c = null OR Tipo_de_NF__c != '${esc(v)}')`);
-    for (const v of accountExcl) clauses.push(`(Account.Name = null OR Account.Name != '${esc(v)}')`);
+    for (const v of (f.tipoNfNotIn ?? []).filter(Boolean)) {
+      clauses.push(`(Tipo_de_NF__c = null OR Tipo_de_NF__c != '${esc(v)}')`);
+    }
+    for (const v of (f.accountNameNotIn ?? []).filter(Boolean)) {
+      clauses.push(`(Account.Name = null OR Account.Name != '${esc(v)}')`);
+    }
+    const orgs = (f.orgIn ?? []).filter(Boolean);
     if (orgs.length) {
       clauses.push(`Org_Oportunidade__c IN (${orgs.map((s) => `'${esc(s)}'`).join(",")})`);
     }
-    for (const v of ownerExcl) clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
-
-    if (literal === "CUSTOM") {
-      if (f.closeDateFrom && validDate(f.closeDateFrom)) clauses.push(`CloseDate >= ${f.closeDateFrom}`);
-      if (f.closeDateTo && validDate(f.closeDateTo)) clauses.push(`CloseDate <= ${f.closeDateTo}`);
-    } else if (literal) {
-      clauses.push(`CloseDate = ${literal}`);
+    for (const v of (f.ownerNameNotIn ?? []).filter(Boolean)) {
+      clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
     }
+
+    const literal = (f.dateLiteral ?? "").trim();
+    if (literal === "CUSTOM") {
+      if (f.dateFrom && validDate(f.dateFrom)) clauses.push(`${df} >= ${f.dateFrom}${suffixStart}`);
+      if (f.dateTo && validDate(f.dateTo)) clauses.push(`${df} <= ${f.dateTo}${suffixEnd}`);
+    } else if (literal) {
+      clauses.push(`${df} = ${literal}`);
+    }
+
+    const ownerClause = ownerFilterClause(
+      await resolveSalesforceOwnerFilter(context.supabase, context.userId, f.ownerId ?? null),
+    );
 
     const where = clauses.length ? `WHERE ${clauses.join(" AND ")} ` : "";
     const soql =
-      `SELECT ${OPP_COLS} FROM Opportunity ${where}` +
-      `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+      `SELECT ${OPP_COLS} FROM Opportunity ${where}${ownerClause} ` +
+      `ORDER BY ${df} DESC NULLS LAST LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[], soql };
   });
@@ -718,82 +764,4 @@ export const getSalesforceSalesByAccount = createServerFn({ method: "GET" })
     return { records };
   });
 
-
-// ------- Relatório Salesforce por nome (Analytics API) -------
-
-export type SalesforceReportColumn = {
-  label: string;
-  apiName: string;
-  dataType: string;
-};
-
-export type SalesforceReportRow = Record<string, string | number | null>;
-
-export type SalesforceReportResult = {
-  reportId: string;
-  name: string;
-  columns: SalesforceReportColumn[];
-  rows: SalesforceReportRow[];
-};
-
-export const getSalesforceReportByName = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { name?: string; reportId?: string }) => input ?? {})
-  .handler(async ({ data }) => {
-    let reportId = data.reportId ?? "";
-    let reportName = data.name ?? "";
-
-    if (!reportId) {
-      if (!reportName) throw new Error("Informe reportId ou name do relatório.");
-      const soql = `SELECT Id, Name FROM Report WHERE Name = '${reportName.replace(/'/g, "\\'")}' LIMIT 1`;
-      const lookup = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
-      const rec = lookup?.records?.[0];
-      if (!rec?.Id) throw new Error(`Relatório "${reportName}" não encontrado no Salesforce.`);
-      reportId = rec.Id;
-      reportName = rec.Name ?? reportName;
-    }
-
-    const report = await sfFetch(
-      `/analytics/reports/${reportId}?includeDetails=true`,
-    );
-    if (!reportName) reportName = report?.reportMetadata?.name ?? reportId;
-
-    const detailColumns: string[] = report?.reportMetadata?.detailColumns ?? [];
-    const colInfo: Record<string, { label: string; dataType: string }> =
-      report?.reportExtendedMetadata?.detailColumnInfo ?? {};
-
-    const columns: SalesforceReportColumn[] = detailColumns.map((apiName) => ({
-      apiName,
-      label: colInfo[apiName]?.label ?? apiName,
-
-      dataType: colInfo[apiName]?.dataType ?? "string",
-    }));
-
-    // Summary/Matrix reports colocam as linhas de detalhe em cada grouping
-    // do factMap (ex.: "0!T", "0_0!T"). Tabular usa apenas "T!T". Iteramos
-    // todas as chaves e coletamos qualquer bucket que possua `rows`.
-    const factMap: Record<string, any> = report?.factMap ?? {};
-    const rows: SalesforceReportRow[] = [];
-    for (const key of Object.keys(factMap)) {
-      const bucketRows: any[] = factMap[key]?.rows ?? [];
-      for (const row of bucketRows) {
-        const cells: any[] = row?.dataCells ?? [];
-        const out: SalesforceReportRow = {};
-        detailColumns.forEach((apiName, i) => {
-          const cell = cells[i];
-          if (!cell) { out[apiName] = null; return; }
-          const dt = colInfo[apiName]?.dataType ?? "string";
-          if (dt === "currency" || dt === "double" || dt === "int" || dt === "percent") {
-            out[apiName] = typeof cell.value === "number" ? cell.value : (cell.label ?? null);
-          } else {
-            out[apiName] = cell.label ?? (cell.value != null ? String(cell.value) : null);
-          }
-        });
-        rows.push(out);
-      }
-    }
-
-
-    return { reportId, name: reportName, columns, rows } satisfies SalesforceReportResult;
-  });
 
