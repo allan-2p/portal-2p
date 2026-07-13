@@ -157,7 +157,22 @@ function HomePage() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-  const sfTasks = tasksQ.data?.records ?? [];
+  const sfTasksRaw = tasksQ.data?.records ?? [];
+  const sfTasks = useMemo(() => {
+    const prioRank = (p: string | null | undefined) => {
+      const v = (p ?? "").toLowerCase();
+      if (v.startsWith("alt")) return 0;
+      if (v.startsWith("baix")) return 2;
+      return 1;
+    };
+    const arr = [...sfTasksRaw];
+    if (agendaSort === "priority") {
+      arr.sort((a, b) => prioRank(a.priority) - prioRank(b.priority) || a.date.localeCompare(b.date));
+    } else {
+      arr.sort((a, b) => a.date.localeCompare(b.date) || prioRank(a.priority) - prioRank(b.priority));
+    }
+    return arr;
+  }, [sfTasksRaw, agendaSort]);
 
   // Interação por tarefa (persistida localmente) — "Consegui falar" / "Não consegui falar"
   const queryClient = useQueryClient();
