@@ -96,6 +96,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "marketing.trafego",
       "marketing.cohort",
       "marketing.cac",
+      "marketing.gargalo",
       "admin.usuarios",
       "admin.integracoes",
     ],
