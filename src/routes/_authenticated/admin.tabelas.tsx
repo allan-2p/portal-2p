@@ -17,6 +17,7 @@ import {
   X as XIcon,
   RotateCcw,
   BookmarkCheck,
+  Sparkles,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -29,15 +30,18 @@ import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
+  getSalesforceClientesNovos,
   OPP_DATE_LITERALS,
   OPP_DEFAULTS_ORCAMENTOS,
   OPP_DEFAULTS_VENDAS,
   OPP_DEFAULTS_VENDIDO_MES,
   OPP_DEFAULTS_GERADO_MES,
+  OPP_DEFAULTS_CLIENTES_NOVOS,
   type OppFilters,
   type SalesforceOppRow,
 } from "@/lib/salesforce.functions";
 import { useAuth } from "@/hooks/use-auth";
+
 
 
 
