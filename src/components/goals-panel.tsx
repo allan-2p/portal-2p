@@ -185,6 +185,13 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     staleTime: 60_000,
   });
 
+  const fetchBonusGoals = useServerFn(listBonusGoals);
+  const bonusGoalsQ = useQuery({
+    queryKey: ["goals-bonus", owners.join(",")],
+    queryFn: () => fetchBonusGoals({ data: { sfUserIds: owners } }),
+    staleTime: 60_000,
+  });
+
   const loading =
     curVendasQ.isLoading || prevVendasQ.isLoading || vendidoMesQ.isLoading || goalsQ.isLoading || retentionGoalsQ.isLoading;
 
