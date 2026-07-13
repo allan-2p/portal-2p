@@ -26,7 +26,8 @@ export type FeatureKey =
   | "marketing.trafego"
   | "marketing.cohort"
   | "marketing.cac"
-  | "marketing.gargalo";
+  | "marketing.gargalo"
+  | "marketing.prevendas";
 
 export type InstanceMeta = {
   id: InstanceId;
