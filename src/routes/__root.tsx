@@ -17,6 +17,7 @@ import inter500 from "@fontsource/inter/files/inter-latin-500-normal.woff2?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { InstanceProvider } from "@/components/instance-provider";
 import { supabase } from "@/integrations/supabase/client";
+import { useIdleSignout } from "@/hooks/use-idle-signout";
 
 function NotFoundComponent() {
   return (
@@ -125,6 +126,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useIdleSignout();
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
