@@ -5,10 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import solarLogoAsset from "@/assets/2p-logo-black.png.asset.json";
 import {
   getPublicSalesforceVendas,
-  getPublicSalesforceVendidoOpp,
-  OPP_DEFAULTS_VENDIDO_MES,
-  OPP_DEFAULTS_GERADO_MES,
-  OPP_DEFAULTS_VENDAS,
+  getPublicSalesforceVendidoTv,
 } from "@/lib/salesforce.functions";
 import { getPublicMonthGoalTotal, getPublicGroupKpiGoals } from "@/lib/tv-public.functions";
 import { businessDaysOfMonth, isBusinessDay } from "@/lib/business-days";
@@ -172,7 +169,7 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
   const prevQEnd = fmtKey(new Date(y, qStartMonth, 0));
   const yearBackStart = fmtKey(new Date(y, m - 12, 1));
 
-  const fetchVendido = useServerFn(getPublicSalesforceVendidoOpp);
+  const fetchVendido = useServerFn(getPublicSalesforceVendidoTv);
   const fetchVendas = useServerFn(getPublicSalesforceVendas);
   const fetchMonthGoal = useServerFn(getPublicMonthGoalTotal);
   const fetchKpiGoals = useServerFn(getPublicGroupKpiGoals);
@@ -191,17 +188,17 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
 
   const vendidoMesQ = useQuery({
     queryKey: ["tv-vendido-mes"],
-    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDIDO_MES } }),
+    queryFn: () => fetchVendido({ data: { variant: "vendido_mes" } }),
     ...commonFast,
   });
   const geradoMesQ = useQuery({
     queryKey: ["tv-gerado-mes"],
-    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_GERADO_MES } }),
+    queryFn: () => fetchVendido({ data: { variant: "gerado_mes" } }),
     ...commonFast,
   });
   const faturamentoMesQ = useQuery({
     queryKey: ["tv-faturamento-mes"],
-    queryFn: () => fetchVendido({ data: { ...OPP_DEFAULTS_VENDAS } }),
+    queryFn: () => fetchVendido({ data: { variant: "faturamento_mes" } }),
     ...commonFast,
   });
   const monthGoalQ = useQuery({
