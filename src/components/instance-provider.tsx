@@ -60,11 +60,15 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
   const [instance, setInstanceState] = useState<InstanceId>(() => readSavedInstance() ?? "solar");
 
   // Se a instância salva não está mais liberada, cai no default.
+  // Só roda depois que o access carregou — senão o allowed inicial ["solar"]
+  // sobrescreve a instância salva (ex.: marketing) toda vez que a página monta.
   useEffect(() => {
+    if (authLoading) return;
+    if (user && (q.isLoading || !q.data)) return;
     if (!allowed.includes(instance)) {
       setInstanceState(defaultInstanceForList(allowed));
     }
-  }, [allowed, instance]);
+  }, [allowed, instance, authLoading, user, q.isLoading, q.data]);
 
   // Aplica atributo no <html> pra CSS reagir.
   useEffect(() => {
