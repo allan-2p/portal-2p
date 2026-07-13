@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logoBlack from "@/assets/2p-logo-black.png.asset.json";
+import logoBlackSm from "@/assets/2p-logo-black-sm.webp";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginSplash } from "@/components/login-splash";
 import { useServerFn } from "@tanstack/react-start";
@@ -275,7 +275,7 @@ function AuthPage() {
             <div>
               {/* 2P Logo tile */}
               <div className="w-12 h-12 bg-white dark:bg-zinc-100 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-zinc-900/10 dark:ring-white/10">
-                <img src={logoBlack.url} alt="Grupo 2P" width={158} height={98} className="h-7 w-auto" />
+                <img src={logoBlackSm} alt="Grupo 2P" width={158} height={98} className="h-7 w-auto" fetchPriority="high" decoding="async" />
               </div>
 
               <div className="mt-14">

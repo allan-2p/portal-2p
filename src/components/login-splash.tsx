@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import logo from "@/assets/2p-logo-preto.png";
+import logo from "@/assets/2p-logo-black-sm.webp";
 
 export function LoginSplash() {
   return (
