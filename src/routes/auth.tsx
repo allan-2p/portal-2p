@@ -28,7 +28,6 @@ const passwordSchema = z
 
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   head: () => ({
     meta: [
       { title: "Entrar — Portal 2P" },
