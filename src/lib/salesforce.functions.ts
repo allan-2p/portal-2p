@@ -313,9 +313,13 @@ export const logSalesforceInteraction = createServerFn({ method: "POST" })
       data.activityDate ||
       `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     const body = buildTaskBody({ ...data, status: "Completed", activityDate });
+    // Log a Call: mesmo comportamento do botão "Log a Call" no Salesforce —
+    // grava uma Task concluída com TaskSubtype = 'Call' (chamada), não uma tarefa comum.
+    (body as Record<string, unknown>).TaskSubtype = "Call";
     const res = await postTaskWithDefaults(body);
     return { id: res?.id ?? null };
   });
+
 
 export type SalesforceSalesperson = { id: string; name: string; email: string | null };
 
