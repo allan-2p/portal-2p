@@ -49,6 +49,9 @@ export function InstanceSwitcher() {
                   onClick={() => {
                     setInstance(i.id);
                     setOpen(false);
+                    if (i.id !== instance) {
+                      navigate({ to: INSTANCE_HOME[i.id] });
+                    }
                   }}
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 text-sm text-left transition-colors",
