@@ -26,6 +26,7 @@ import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
 import { Route as AuthenticatedMarketingTrafegoRouteImport } from './routes/_authenticated/marketing.trafego'
 import { Route as AuthenticatedMarketingSocialRouteImport } from './routes/_authenticated/marketing.social'
+import { Route as AuthenticatedMarketingGargaloRouteImport } from './routes/_authenticated/marketing.gargalo'
 import { Route as AuthenticatedMarketingCohortRouteImport } from './routes/_authenticated/marketing.cohort'
 import { Route as AuthenticatedMarketingCacRouteImport } from './routes/_authenticated/marketing.cac'
 import { Route as AuthenticatedDashboardsMetasRouteImport } from './routes/_authenticated/dashboards.metas'
@@ -125,6 +126,12 @@ const AuthenticatedMarketingSocialRoute =
     path: '/social',
     getParentRoute: () => AuthenticatedMarketingRoute,
   } as any)
+const AuthenticatedMarketingGargaloRoute =
+  AuthenticatedMarketingGargaloRouteImport.update({
+    id: '/gargalo',
+    path: '/gargalo',
+    getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
 const AuthenticatedMarketingCohortRoute =
   AuthenticatedMarketingCohortRouteImport.update({
     id: '/cohort',
@@ -209,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
+  '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
@@ -236,6 +244,7 @@ export interface FileRoutesByTo {
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
+  '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
@@ -266,6 +275,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/_authenticated/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/_authenticated/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
+  '/_authenticated/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
   '/_authenticated/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/dashboards/metas'
     | '/marketing/cac'
     | '/marketing/cohort'
+    | '/marketing/gargalo'
     | '/marketing/social'
     | '/marketing/trafego'
     | '/marketing/'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/dashboards/metas'
     | '/marketing/cac'
     | '/marketing/cohort'
+    | '/marketing/gargalo'
     | '/marketing/social'
     | '/marketing/trafego'
     | '/marketing'
@@ -352,6 +364,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboards/metas'
     | '/_authenticated/marketing/cac'
     | '/_authenticated/marketing/cohort'
+    | '/_authenticated/marketing/gargalo'
     | '/_authenticated/marketing/social'
     | '/_authenticated/marketing/trafego'
     | '/_authenticated/marketing/'
@@ -485,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMarketingSocialRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
     }
+    '/_authenticated/marketing/gargalo': {
+      id: '/_authenticated/marketing/gargalo'
+      path: '/gargalo'
+      fullPath: '/marketing/gargalo'
+      preLoaderRoute: typeof AuthenticatedMarketingGargaloRouteImport
+      parentRoute: typeof AuthenticatedMarketingRoute
+    }
     '/_authenticated/marketing/cohort': {
       id: '/_authenticated/marketing/cohort'
       path: '/cohort'
@@ -590,6 +610,7 @@ const AuthenticatedDashboardsRouteWithChildren =
 interface AuthenticatedMarketingRouteChildren {
   AuthenticatedMarketingCacRoute: typeof AuthenticatedMarketingCacRoute
   AuthenticatedMarketingCohortRoute: typeof AuthenticatedMarketingCohortRoute
+  AuthenticatedMarketingGargaloRoute: typeof AuthenticatedMarketingGargaloRoute
   AuthenticatedMarketingSocialRoute: typeof AuthenticatedMarketingSocialRoute
   AuthenticatedMarketingTrafegoRoute: typeof AuthenticatedMarketingTrafegoRoute
   AuthenticatedMarketingIndexRoute: typeof AuthenticatedMarketingIndexRoute
@@ -599,6 +620,7 @@ const AuthenticatedMarketingRouteChildren: AuthenticatedMarketingRouteChildren =
   {
     AuthenticatedMarketingCacRoute: AuthenticatedMarketingCacRoute,
     AuthenticatedMarketingCohortRoute: AuthenticatedMarketingCohortRoute,
+    AuthenticatedMarketingGargaloRoute: AuthenticatedMarketingGargaloRoute,
     AuthenticatedMarketingSocialRoute: AuthenticatedMarketingSocialRoute,
     AuthenticatedMarketingTrafegoRoute: AuthenticatedMarketingTrafegoRoute,
     AuthenticatedMarketingIndexRoute: AuthenticatedMarketingIndexRoute,
