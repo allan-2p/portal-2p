@@ -888,7 +888,7 @@ export const getMarketingSalesforceData = createServerFn({ method: "GET" })
     const startDT = `${data.start}T00:00:00Z`;
     const endDT = `${data.end}T23:59:59Z`;
 
-    const [byStatus, byOrigem, bySub, byOwner, daily, convertedRes] = await Promise.all([
+    const [byStatus, byOrigem, bySub, byOwner, daily, dailyConv, convertedRes] = await Promise.all([
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Status FROM Lead ` +
         `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
