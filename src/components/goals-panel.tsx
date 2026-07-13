@@ -12,7 +12,9 @@ import {
 import {
   listFaturamentoGoalsForOwners,
   listRetentionGoals,
+  listBonusGoals,
 } from "@/lib/goals.functions";
+import { CARTEIRA_OWNER_NAMES } from "@/lib/salespeople";
 import {
   getCommissionSettings,
   calcVendidoCommission,
