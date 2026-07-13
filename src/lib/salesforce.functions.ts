@@ -910,10 +910,13 @@ export const getMarketingSalesforceData = createServerFn({ method: "GET" })
         `GROUP BY Owner.Name ORDER BY COUNT(Id) DESC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
-        `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia, ` +
-        `SUM(CASE WHEN IsConverted = true THEN 1 ELSE 0 END) conv ` +
-        `FROM Lead ` +
+        `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia FROM Lead ` +
         `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) ASC`,
+      )}`),
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia FROM Lead ` +
+        `WHERE OwnerId IN (${ownerList}) AND IsConverted = true AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) ASC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
