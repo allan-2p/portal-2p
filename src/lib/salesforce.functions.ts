@@ -239,7 +239,9 @@ function buildTaskBody(p: TaskPayload) {
   if (validId(p.ownerId)) body.OwnerId = p.ownerId;
   if (p.tipoInteracao) body.Tipo_de_Interacao__c = p.tipoInteracao;
   if (p.conseguiuFalar) body.Conseguiu_falar_com_o_cliente__c = p.conseguiuFalar;
-  if (p.comments) body.Coments__c = p.comments;
+  if (p.comments) {
+    body.Description = body.Description ? `${body.Description}\n\n${p.comments}` : p.comments;
+  }
   return body;
 }
 
