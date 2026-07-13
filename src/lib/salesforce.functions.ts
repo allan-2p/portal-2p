@@ -827,6 +827,188 @@ export const getSalesforceSalesByAccount = createServerFn({ method: "GET" })
     return { records };
   });
 
+// ============================================================
+// MARKETING — dados de leads/conversões da equipe de marketing
+// ============================================================
+export const MARKETING_OWNER_IDS = [
+  "005Dn000005whg0IAA", // Fernando Lira
+  "005U400000HmVKfIAN", // Gabriel Kendi
+  "005U400000HYBs5IAH", // Erika Aiello
+  "005U400000IClATIA1", // Ygor Andreis
+  "005U400000C9Gg9IAF", // Marketing 2P
+] as const;
+
+export const MARKETING_OWNER_NAMES: Record<string, string> = {
+  "005Dn000005whg0IAA": "Fernando Lira",
+  "005U400000HmVKfIAN": "Gabriel Kendi",
+  "005U400000HYBs5IAH": "Erika Aiello",
+  "005U400000IClATIA1": "Ygor Andreis",
+  "005U400000C9Gg9IAF": "Marketing 2P",
+};
+
+export type MarketingBucket = { label: string; value: number };
+export type MarketingConvertedLead = {
+  id: string;
+  name: string;
+  convertedDate: string | null;
+  accountId: string | null;
+  origem: string | null;
+  subOrigem: string | null;
+  owner: string | null;
+  accountValue: number | null;
+};
+export type MarketingData = {
+  range: { start: string; end: string };
+  totals: {
+    leads: number;
+    convertidos: number;
+    naoConvertidos: number;
+    amadurecimento: number;
+    novasContas: number;
+    faturado: number;
+  };
+  porOrigem: MarketingBucket[];
+  porSubOrigem: MarketingBucket[];
+  porOwner: MarketingBucket[];
+  statusBreakdown: MarketingBucket[];
+  serieDiaria: { date: string; leads: number; convertidos: number }[];
+  convertidos: MarketingConvertedLead[];
+};
+
+export const getMarketingSalesforceData = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { start: string; end: string }) => {
+    if (!validDate(input.start) || !validDate(input.end)) {
+      throw new Error("Datas inválidas (YYYY-MM-DD).");
+    }
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const ownerList = MARKETING_OWNER_IDS.map((id) => `'${id}'`).join(",");
+    const startDT = `${data.start}T00:00:00Z`;
+    const endDT = `${data.end}T23:59:59Z`;
+
+    const [byStatus, byOrigem, bySub, byOwner, daily, convertedRes] = await Promise.all([
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT COUNT(Id) total, Status FROM Lead ` +
+        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY Status`,
+      )}`),
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT COUNT(Id) total, Origem__c FROM Lead ` +
+        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY Origem__c ORDER BY COUNT(Id) DESC`,
+      )}`),
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT COUNT(Id) total, Sub_Origem__c FROM Lead ` +
+        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY Sub_Origem__c ORDER BY COUNT(Id) DESC LIMIT 20`,
+      )}`),
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT COUNT(Id) total, Owner.Name ownerName FROM Lead ` +
+        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY Owner.Name ORDER BY COUNT(Id) DESC`,
+      )}`),
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia, ` +
+        `SUM(CASE WHEN IsConverted = true THEN 1 ELSE 0 END) conv ` +
+        `FROM Lead ` +
+        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) ASC`,
+      )}`),
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT Id, Name, ConvertedDate, ConvertedAccountId, Origem__c, Sub_Origem__c, Owner.Name ` +
+        `FROM Lead ` +
+        `WHERE OwnerId IN (${ownerList}) AND IsConverted = true ` +
+        `AND ConvertedDate >= ${data.start} AND ConvertedDate <= ${data.end} ` +
+        `ORDER BY ConvertedDate DESC LIMIT 500`,
+      )}`),
+    ]);
+
+    // Sum accounts + total sold for the converted accounts, in the same window
+    const convertedRecords: any[] = convertedRes?.records ?? [];
+    const accountIds = Array.from(new Set(
+      convertedRecords.map((r) => r.ConvertedAccountId).filter(validId),
+    ));
+
+    const accountValueById = new Map<string, number>();
+    if (accountIds.length) {
+      // chunk to avoid oversized SOQL
+      for (let i = 0; i < accountIds.length; i += 100) {
+        const chunk = accountIds.slice(i, i + 100);
+        const inList = chunk.map((id) => `'${id}'`).join(",");
+        const aggRes = await sfFetch(`/query?q=${encodeURIComponent(
+          `SELECT AccountId, SUM(Total__c) sumT, SUM(Amount) sumA ` +
+          `FROM Opportunity ` +
+          `WHERE AccountId IN (${inList}) AND StageName = 'Pedido Concluído' ` +
+          `AND (Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação') ` +
+          `AND CloseDate >= ${data.start} AND CloseDate <= ${data.end} ` +
+          `GROUP BY AccountId`,
+        )}`);
+        for (const r of (aggRes?.records ?? [])) {
+          const total = typeof r.sumT === "number" ? r.sumT : typeof r.sumA === "number" ? r.sumA : 0;
+          accountValueById.set(r.AccountId, total);
+        }
+      }
+    }
+
+    const asBuckets = (records: any[], labelKey: string): MarketingBucket[] =>
+      records.map((r) => ({
+        label: (r[labelKey] ?? "Sem informação") as string,
+        value: typeof r.total === "number" ? r.total : 0,
+      }));
+
+    const statusRecords: any[] = byStatus?.records ?? [];
+    let convertidos = 0, naoConvertidos = 0, amadurecimento = 0, totalLeads = 0;
+    for (const r of statusRecords) {
+      const t = typeof r.total === "number" ? r.total : 0;
+      totalLeads += t;
+      const s = (r.Status ?? "").toString();
+      if (s === "Convertido") convertidos += t;
+      else if (s === "Não Convertido") naoConvertidos += t;
+      else if (s === "Amadurecimento") amadurecimento += t;
+    }
+
+    const converted: MarketingConvertedLead[] = convertedRecords.map((r) => ({
+      id: r.Id,
+      name: r.Name ?? "(sem nome)",
+      convertedDate: r.ConvertedDate ?? null,
+      accountId: r.ConvertedAccountId ?? null,
+      origem: r.Origem__c ?? null,
+      subOrigem: r.Sub_Origem__c ?? null,
+      owner: r.Owner?.Name ?? null,
+      accountValue: r.ConvertedAccountId ? accountValueById.get(r.ConvertedAccountId) ?? 0 : null,
+    }));
+
+    const novasContas = new Set(convertedRecords.map((r) => r.ConvertedAccountId).filter(Boolean)).size;
+    const faturado = Array.from(accountValueById.values()).reduce((a, b) => a + b, 0);
+
+    const serieDiaria = (daily?.records ?? []).map((r: any) => ({
+      date: r.dia,
+      leads: typeof r.total === "number" ? r.total : 0,
+      convertidos: typeof r.conv === "number" ? r.conv : 0,
+    }));
+
+    const result: MarketingData = {
+      range: { start: data.start, end: data.end },
+      totals: {
+        leads: totalLeads,
+        convertidos,
+        naoConvertidos,
+        amadurecimento,
+        novasContas,
+        faturado,
+      },
+      porOrigem: asBuckets(byOrigem?.records ?? [], "Origem__c"),
+      porSubOrigem: asBuckets(bySub?.records ?? [], "Sub_Origem__c"),
+      porOwner: asBuckets(byOwner?.records ?? [], "ownerName"),
+      statusBreakdown: asBuckets(statusRecords, "Status"),
+      serieDiaria,
+      convertidos: converted,
+    };
+    return result;
+  });
+
 
 // ============================================================
 // PUBLIC (no-auth) endpoints — used by the shared TV dashboard.
