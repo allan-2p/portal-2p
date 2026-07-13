@@ -1451,35 +1451,40 @@ function saveStoredFilters(key: string, filters: OppFilters) {
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "gerado-mes";
+  type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "gerado-mes" | "clientes-novos";
   const [tab, setTab] = useState<TabId>("orcamentos");
 
   const [orcDefaults, setOrcDefaults] = useState<OppFilters>(() => loadStoredFilters("orcamentos", OPP_DEFAULTS_ORCAMENTOS));
   const [venDefaults, setVenDefaults] = useState<OppFilters>(() => loadStoredFilters("vendas", OPP_DEFAULTS_VENDAS));
   const [vendidoDefaults, setVendidoDefaults] = useState<OppFilters>(() => loadStoredFilters("vendido-mes", OPP_DEFAULTS_VENDIDO_MES));
   const [geradoDefaults, setGeradoDefaults] = useState<OppFilters>(() => loadStoredFilters("gerado-mes", OPP_DEFAULTS_GERADO_MES));
+  const [novosDefaults, setNovosDefaults] = useState<OppFilters>(() => loadStoredFilters("clientes-novos", OPP_DEFAULTS_CLIENTES_NOVOS));
 
   const [orcFilters, setOrcFilters] = useState<OppFilters>(() => ({ ...orcDefaults }));
   const [venFilters, setVenFilters] = useState<OppFilters>(() => ({ ...venDefaults }));
   const [vendidoFilters, setVendidoFilters] = useState<OppFilters>(() => ({ ...vendidoDefaults }));
   const [geradoFilters, setGeradoFilters] = useState<OppFilters>(() => ({ ...geradoDefaults }));
+  const [novosFilters, setNovosFilters] = useState<OppFilters>(() => ({ ...novosDefaults }));
 
   const saveOrcAsDefault = (f: OppFilters) => { saveStoredFilters("orcamentos", f); setOrcDefaults(f); };
   const saveVenAsDefault = (f: OppFilters) => { saveStoredFilters("vendas", f); setVenDefaults(f); };
   const saveVendidoAsDefault = (f: OppFilters) => { saveStoredFilters("vendido-mes", f); setVendidoDefaults(f); };
   const saveGeradoAsDefault = (f: OppFilters) => { saveStoredFilters("gerado-mes", f); setGeradoDefaults(f); };
+  const saveNovosAsDefault = (f: OppFilters) => { saveStoredFilters("clientes-novos", f); setNovosDefaults(f); };
 
 
   const [vendedorOrc, setVendedorOrc] = useState<string>("__all__");
   const [vendedorVen, setVendedorVen] = useState<string>("__all__");
   const [vendedorMes, setVendedorMes] = useState<string>("__all__");
   const [vendedorGer, setVendedorGer] = useState<string>("__all__");
+  const [vendedorNov, setVendedorNov] = useState<string>("__all__");
 
   const [search, setSearch] = useState("");
 
   const fetchOrc = useServerFn(getSalesforceOrcamentos);
   const fetchVen = useServerFn(getSalesforceVendas);
   const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
+  const fetchClientesNovos = useServerFn(getSalesforceClientesNovos);
 
   const qOrc = useQuery({
     queryKey: ["sf-orcamentos-flt", orcFilters],
@@ -1505,9 +1510,16 @@ function TabelasPage() {
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "gerado-mes",
   });
+  const qClientesNovos = useQuery({
+    queryKey: ["sf-clientes-novos", novosFilters],
+    queryFn: () => fetchClientesNovos({ data: novosFilters }),
+    staleTime: 60_000,
+    enabled: hasRole("admin") && tab === "clientes-novos",
+  });
 
   // Silence unused-imports guard; kept for potential future direct calls.
   void fetchOrc; void fetchVen;
+
 
   if (!hasRole("admin")) {
     return (
