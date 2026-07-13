@@ -986,10 +986,14 @@ export const getMarketingSalesforceData = createServerFn({ method: "GET" })
     const novasContas = new Set(convertedRecords.map((r) => r.ConvertedAccountId).filter(Boolean)).size;
     const faturado = Array.from(accountValueById.values()).reduce((a, b) => a + b, 0);
 
+    const convByDay = new Map<string, number>();
+    for (const r of (dailyConv?.records ?? [])) {
+      convByDay.set(r.dia, typeof r.total === "number" ? r.total : 0);
+    }
     const serieDiaria = (daily?.records ?? []).map((r: any) => ({
       date: r.dia,
       leads: typeof r.total === "number" ? r.total : 0,
-      convertidos: typeof r.conv === "number" ? r.conv : 0,
+      convertidos: convByDay.get(r.dia) ?? 0,
     }));
 
     const result: MarketingData = {
