@@ -284,6 +284,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 {show("marketing.gargalo") && (
                   <NavLink item={{ to: "/marketing/gargalo", label: "Mapa de Gargalo", icon: Filter }} active={pathname.startsWith("/marketing/gargalo")} collapsed={false} />
                 )}
+                {show("marketing.prevendas") && (
+                  <NavLink item={{ to: "/marketing/pre-vendas", label: "Home Pré-Vendas", icon: ClipboardList }} active={pathname.startsWith("/marketing/pre-vendas")} collapsed={false} />
+                )}
               </div>
             )
           )}
