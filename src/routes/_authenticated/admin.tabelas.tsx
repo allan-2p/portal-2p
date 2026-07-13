@@ -1678,7 +1678,35 @@ function TabelasPage() {
               <FixedRangeWeeksPanel start="2026-01-01" end="2026-06-30" />
             </section>
           </TabsContent>
+          <TabsContent value="clientes-novos" className="mt-4 space-y-3">
+            <div className="glass rounded-2xl p-3 text-[11px] text-muted-foreground leading-relaxed">
+              Mostra apenas clientes cuja <b className="text-foreground">primeira venda concluída</b>
+              {" "}(StageName = <i>Pedido Concluído</i>) ocorreu dentro do período filtrado. Contas com
+              qualquer venda concluída anterior ao início do período são excluídas. Filtre por
+              CloseDate para ajustar o recorte.
+              {typeof qClientesNovos.data?.newAccountsCount === "number" && (
+                <span className="ml-1">
+                  <b className="text-foreground">{qClientesNovos.data.newAccountsCount}</b> cliente(s) novo(s) no período.
+                </span>
+              )}
+            </div>
+            <OppTabPanel
+              filters={novosFilters}
+              defaults={novosDefaults}
+              onFiltersChange={setNovosFilters}
+              onSaveAsDefault={saveNovosAsDefault}
+              vendedor={vendedorNov}
+              onVendedorChange={setVendedorNov}
+              records={qClientesNovos.data?.records ?? []}
+              loading={qClientesNovos.isLoading}
+              error={qClientesNovos.error}
+              search={search}
+              dateField="closeDate"
+              showStatus
+            />
+          </TabsContent>
         </Tabs>
+
       </div>
     </AppLayout>
   );
