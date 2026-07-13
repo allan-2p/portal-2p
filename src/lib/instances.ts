@@ -143,6 +143,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "marketing.trafego": "Marketing • Tráfego Pago",
   "marketing.cohort": "Marketing • Cohort",
   "marketing.cac": "Marketing • CAC",
+  "marketing.gargalo": "Marketing • Mapa de Gargalo",
 };
 
 export const ALL_FEATURES: FeatureKey[] = Object.keys(FEATURE_LABELS) as FeatureKey[];
