@@ -10,7 +10,7 @@ import {
   ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, Clock,
   TrendingUp, CheckCircle2, Calendar, Info, ChevronDown,
   FileText, CalendarClock, Gift, Lock, Users as UsersIcon, Loader2,
-  CalendarIcon, MessageSquare, Check, Plus,
+  CalendarIcon, MessageSquare, Check, Plus, ArrowUpDown,
 } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
@@ -125,6 +125,8 @@ function HomePage() {
   const { ownerId, setOwnerId, ownerParam, dataEnabled } = useScopedOwner("all");
   const [agendaDate, setAgendaDate] = useState<Date>(() => startOfDay(new Date()));
   const [agendaOpen, setAgendaOpen] = useState(false);
+  const [agendaSort, setAgendaSort] = useState<"priority" | "date">("date");
+  const [agendaSortOpen, setAgendaSortOpen] = useState(false);
 
   const [stageFilter, setStageFilter] = useState<"all" | OpportunityStage>("all");
 
@@ -155,7 +157,22 @@ function HomePage() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-  const sfTasks = tasksQ.data?.records ?? [];
+  const sfTasksRaw = tasksQ.data?.records ?? [];
+  const sfTasks = useMemo(() => {
+    const prioRank = (p: string | null | undefined) => {
+      const v = (p ?? "").toLowerCase();
+      if (v.startsWith("alt")) return 0;
+      if (v.startsWith("baix")) return 2;
+      return 1;
+    };
+    const arr = [...sfTasksRaw];
+    if (agendaSort === "priority") {
+      arr.sort((a, b) => prioRank(a.priority) - prioRank(b.priority) || a.date.localeCompare(b.date));
+    } else {
+      arr.sort((a, b) => a.date.localeCompare(b.date) || prioRank(a.priority) - prioRank(b.priority));
+    }
+    return arr;
+  }, [sfTasksRaw, agendaSort]);
 
   // Interação por tarefa (persistida localmente) — "Consegui falar" / "Não consegui falar"
   const queryClient = useQueryClient();
@@ -817,6 +834,34 @@ function HomePage() {
                     disabled={{ before: startOfDay(today) }}
                     className={cn("p-3 pointer-events-auto")}
                   />
+                </PopoverContent>
+              </Popover>
+              <Popover open={agendaSortOpen} onOpenChange={setAgendaSortOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2" title="Ordenar">
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                    {agendaSort === "priority" ? "Prioridade" : "Data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-44 p-1">
+                  <button
+                    onClick={() => { setAgendaSort("date"); setAgendaSortOpen(false); }}
+                    className={cn(
+                      "w-full text-left text-sm px-2 py-1.5 rounded hover:bg-surface-2 flex items-center justify-between",
+                      agendaSort === "date" && "font-semibold text-primary",
+                    )}
+                  >
+                    Data {agendaSort === "date" && <Check className="h-3.5 w-3.5" />}
+                  </button>
+                  <button
+                    onClick={() => { setAgendaSort("priority"); setAgendaSortOpen(false); }}
+                    className={cn(
+                      "w-full text-left text-sm px-2 py-1.5 rounded hover:bg-surface-2 flex items-center justify-between",
+                      agendaSort === "priority" && "font-semibold text-primary",
+                    )}
+                  >
+                    Prioridade {agendaSort === "priority" && <Check className="h-3.5 w-3.5" />}
+                  </button>
                 </PopoverContent>
               </Popover>
 
