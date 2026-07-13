@@ -11,7 +11,7 @@ import {
   setQuarterGoalActive,
   type SalespersonMonthlyGoals,
 } from "@/lib/admin.functions";
-import { listRetentionGoals, setRetentionGoal, listGroupKpiGoals, setGroupKpiGoal } from "@/lib/goals.functions";
+import { listRetentionGoals, setRetentionGoal, listGroupKpiGoals, setGroupKpiGoal, listBonusGoals, setBonusGoal } from "@/lib/goals.functions";
 import {
   getCommissionSettings,
   setVendidoTiers,
@@ -282,6 +282,7 @@ function MetasPage() {
         </div>
 
         <RetentionGoalsPanel year={quarter.year} quarter={QUARTERS.findIndex((qo) => qo.id === quarterId) + 1} quarterLabel={quarter.label} />
+        <BonusGoalsPanel />
         <GroupKpiGoalsPanel />
         <CommissionVendidoPanel />
         <CommissionRetencaoPanel />
@@ -965,5 +966,95 @@ function CommissionRetencaoPanel() {
         </table>
       </div>
     </div>
+  );
+}
+
+// ============================================================
+//  Meta Bônus — texto livre por vendedor
+// ============================================================
+
+function BonusGoalsPanel() {
+  const fetchList = useServerFn(listBonusGoals);
+  const saveBonus = useServerFn(setBonusGoal);
+  const qc = useQueryClient();
+  const owners = [...CARTEIRA_OWNER_IDS];
+
+  const q = useQuery({
+    queryKey: ["admin-bonus-goals", owners.join(",")],
+    queryFn: () => fetchList({ data: { sfUserIds: owners } }),
+    staleTime: 60_000,
+  });
+
+  const mut = useMutation({
+    mutationFn: (v: { sf_user_id: string; bonus_text: string }) => saveBonus({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-bonus-goals"] });
+      qc.invalidateQueries({ queryKey: ["goals-bonus"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar meta bônus"),
+  });
+
+  const byOwner = new Map<string, string>();
+  for (const r of q.data?.records ?? []) byOwner.set(r.sf_user_id, r.bonus_text);
+
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-border">
+        <h2 className="font-display font-semibold">Meta Bônus por Vendedor</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Texto livre — descreva a meta bônus (ex.: "Fechar 3 contas &gt; R$ 50k no trimestre"). Deixe em branco para remover.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+              <th className="text-left px-4 py-2.5 w-48">Vendedor</th>
+              <th className="text-left px-4 py-2.5">Meta bônus</th>
+            </tr>
+          </thead>
+          <tbody>
+            {owners.map((id) => (
+              <BonusGoalRow
+                key={id}
+                name={CARTEIRA_OWNER_NAMES[id] ?? id}
+                value={byOwner.get(id) ?? ""}
+                onSave={(v) => mut.mutate({ sf_user_id: id, bonus_text: v })}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function BonusGoalRow({ name, value, onSave }: { name: string; value: string; onSave: (v: string) => void }) {
+  const [text, setText] = useState<string>(value);
+  const initial = useRef<string>(value);
+  useEffect(() => {
+    setText(value);
+    initial.current = value;
+  }, [value]);
+  const commit = () => {
+    const next = text.trim();
+    if (next === initial.current.trim()) return;
+    onSave(next);
+    initial.current = next;
+  };
+  return (
+    <tr className="border-b border-border/40 hover:bg-surface-2/50">
+      <td className="px-4 py-3 font-medium align-top">{name}</td>
+      <td className="px-4 py-2">
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={commit}
+          placeholder="Ex.: Fechar 3 contas premium no trimestre…"
+          rows={2}
+          className="w-full py-1.5 px-2 rounded-md bg-surface border border-border focus:outline-none focus:border-primary/50 resize-y min-h-[42px]"
+        />
+      </td>
+    </tr>
   );
 }

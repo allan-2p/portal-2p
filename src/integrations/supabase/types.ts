@@ -170,6 +170,30 @@ export type Database = {
         }
         Relationships: []
       }
+      salesperson_bonus_goals: {
+        Row: {
+          bonus_text: string
+          created_at: string
+          sf_user_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bonus_text?: string
+          created_at?: string
+          sf_user_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bonus_text?: string
+          created_at?: string
+          sf_user_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       salesperson_goals: {
         Row: {
           active: boolean

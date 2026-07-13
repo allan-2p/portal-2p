@@ -12,7 +12,9 @@ import {
 import {
   listFaturamentoGoalsForOwners,
   listRetentionGoals,
+  listBonusGoals,
 } from "@/lib/goals.functions";
+
 import {
   getCommissionSettings,
   calcVendidoCommission,
@@ -20,7 +22,7 @@ import {
   calcRetencaoCommission,
   type Equipe,
 } from "@/lib/commission.functions";
-import { CARTEIRA_OWNER_IDS } from "@/lib/salespeople";
+import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_NAMES } from "@/lib/salespeople";
 
 const AB_THRESHOLD = 15_000;
 const A_THRESHOLD = 30_000;
@@ -180,6 +182,13 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   const commissionQ = useQuery({
     queryKey: ["commission-settings"],
     queryFn: () => fetchCommission(),
+    staleTime: 60_000,
+  });
+
+  const fetchBonusGoals = useServerFn(listBonusGoals);
+  const bonusGoalsQ = useQuery({
+    queryKey: ["goals-bonus", owners.join(",")],
+    queryFn: () => fetchBonusGoals({ data: { sfUserIds: owners } }),
     staleTime: 60_000,
   });
 
@@ -413,6 +422,44 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
           loading={loading || commissionQ.isLoading}
         />
       </div>
+
+      {(() => {
+        const bonuses = (bonusGoalsQ.data?.records ?? []).filter(
+          (b) => b.bonus_text && b.bonus_text.trim() && ownerSet.has(b.sf_user_id),
+        );
+        if (bonuses.length === 0) return null;
+        return (
+          <div className="mt-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Gift className="h-4 w-4 text-primary" />
+              <h3 className="font-display font-semibold text-base">Meta Bônus</h3>
+              <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                Bônus
+              </span>
+            </div>
+            <div className="grid md:grid-cols-2 gap-3">
+              {bonuses.map((b) => (
+                <div
+                  key={b.sf_user_id}
+                  className="glass rounded-2xl p-4 border border-primary/30 bg-gradient-to-br from-primary/5 to-transparent"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                      {CARTEIRA_OWNER_NAMES[b.sf_user_id] ?? b.sf_user_id}
+                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                      Meta Bônus
+                    </span>
+                  </div>
+                  <div className="mt-2 text-sm whitespace-pre-wrap leading-relaxed">
+                    {b.bonus_text}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
