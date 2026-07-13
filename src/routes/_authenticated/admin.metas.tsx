@@ -11,7 +11,7 @@ import {
   setQuarterGoalActive,
   type SalespersonMonthlyGoals,
 } from "@/lib/admin.functions";
-import { listRetentionGoals, setRetentionGoal, listGroupKpiGoals, setGroupKpiGoal } from "@/lib/goals.functions";
+import { listRetentionGoals, setRetentionGoal, listGroupKpiGoals, setGroupKpiGoal, listBonusGoals, setBonusGoal } from "@/lib/goals.functions";
 import {
   getCommissionSettings,
   setVendidoTiers,
