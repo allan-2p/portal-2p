@@ -275,7 +275,7 @@ function AuthPage() {
             <div>
               {/* 2P Logo tile */}
               <div className="w-12 h-12 bg-white dark:bg-zinc-100 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-zinc-900/10 dark:ring-white/10">
-                <img src={logoBlack.url} alt="Grupo 2P" className="h-7 w-auto" />
+                <img src={logoBlack.url} alt="Grupo 2P" width={158} height={98} className="h-7 w-auto" />
               </div>
 
               <div className="mt-14">
@@ -321,7 +321,7 @@ function AuthPage() {
                             className="h-8 w-8 rounded-full border-2 border-white dark:border-zinc-900 bg-zinc-200 dark:bg-zinc-800 overflow-hidden flex items-center justify-center text-[10px] font-medium text-zinc-600 dark:text-zinc-300"
                           >
                             {u.avatarUrl ? (
-                              <img src={u.avatarUrl} alt={u.name} className="h-full w-full object-cover" />
+                              <img src={u.avatarUrl} alt={u.name} width={32} height={32} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                             ) : (
                               initials || "·"
                             )}

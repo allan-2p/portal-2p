@@ -15,7 +15,9 @@ export async function resolveAvatarUrl(path: string | null | undefined): Promise
   if (cached && cached.exp > now) return cached.url;
   const { data, error } = await supabase.storage
     .from("avatars")
-    .createSignedUrl(path, 60 * 60);
+    .createSignedUrl(path, 60 * 60, {
+      transform: { width: 128, height: 128, resize: "cover", quality: 80 },
+    });
   if (error || !data?.signedUrl) return null;
   urlCache.set(path, { url: data.signedUrl, exp: now + 50 * 60 * 1000 });
   return data.signedUrl;

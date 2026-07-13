@@ -376,7 +376,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   onClick={() => setMenuOpen((v) => !v)}
                   className="h-9 w-9 rounded-full overflow-hidden bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center font-semibold text-sm text-primary-foreground ring-2 ring-background"
                 >
-                  {avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" /> : initials}
+                  {avatarUrl ? <img src={avatarUrl} alt="" width={32} height={32} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials}
                 </button>
                 {menuOpen && (
                   <>

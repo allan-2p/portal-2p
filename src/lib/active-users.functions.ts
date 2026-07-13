@@ -52,7 +52,9 @@ export const getActiveUsersToday = createServerFn({ method: "GET" }).handler(
           } else {
             const { data } = await supabaseAdmin.storage
               .from("avatars")
-              .createSignedUrl(path, 60 * 60);
+              .createSignedUrl(path, 60 * 60, {
+                transform: { width: 128, height: 128, resize: "cover", quality: 80 },
+              });
             avatarUrl = data?.signedUrl ?? null;
           }
         }
