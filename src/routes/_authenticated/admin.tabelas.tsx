@@ -1580,7 +1580,11 @@ function TabelasPage() {
             <TabsTrigger value="semanas" className="gap-2">
               <CalendarDays className="h-4 w-4" /> Semanas
             </TabsTrigger>
+            <TabsTrigger value="clientes-novos" className="gap-2">
+              <Sparkles className="h-4 w-4" /> Clientes Novos
+            </TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="orcamentos" className="mt-4">
             <OppTabPanel
