@@ -422,6 +422,44 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
           loading={loading || commissionQ.isLoading}
         />
       </div>
+
+      {(() => {
+        const bonuses = (bonusGoalsQ.data?.records ?? []).filter(
+          (b) => b.bonus_text && b.bonus_text.trim() && ownerSet.has(b.sf_user_id),
+        );
+        if (bonuses.length === 0) return null;
+        return (
+          <div className="mt-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Gift className="h-4 w-4 text-primary" />
+              <h3 className="font-display font-semibold text-base">Meta Bônus</h3>
+              <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                Bônus
+              </span>
+            </div>
+            <div className="grid md:grid-cols-2 gap-3">
+              {bonuses.map((b) => (
+                <div
+                  key={b.sf_user_id}
+                  className="glass rounded-2xl p-4 border border-primary/30 bg-gradient-to-br from-primary/5 to-transparent"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                      {CARTEIRA_OWNER_NAMES[b.sf_user_id] ?? b.sf_user_id}
+                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+                      Meta Bônus
+                    </span>
+                  </div>
+                  <div className="mt-2 text-sm whitespace-pre-wrap leading-relaxed">
+                    {b.bonus_text}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
