@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { useMarketingUnit } from "@/components/instance-provider";
-import {
-  Megaphone, Users, Target, TrendingUp, DollarSign, Facebook, Search,
-  Globe, Instagram, Clock, ArrowUpRight, ArrowDownRight,
-} from "lucide-react";
+import { Megaphone, Users, Target, TrendingUp, Clock, Loader2, Calendar } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getMarketingSalesforceData, MARKETING_OWNER_NAMES } from "@/lib/salesforce.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/marketing/")({
@@ -12,308 +12,87 @@ export const Route = createFileRoute("/_authenticated/marketing/")({
   component: MarketingHome,
 });
 
-const UNIT_LABEL = { solar: "2P Solar", carregadores: "2P Carregadores" } as const;
-const UNIT_ACCENT = { solar: "oklch(0.68 0.2 47)", carregadores: "oklch(0.5 0.19 265)" } as const;
-
-// Mocks por unidade — valores realistas de exemplo, trocáveis quando ligarmos APIs.
-const DATA = {
-  solar: {
-    goalNovos: { real: 28, meta: 40 },
-    goalMql: { real: 187, meta: 250 },
-    goalSeg: { real: 12840, meta: 15000 },
-    funnel: [
-      { label: "Visitas", value: 18420 },
-      { label: "Leads", value: 942 },
-      { label: "MQL", value: 187 },
-      { label: "SQL", value: 88 },
-      { label: "Novos", value: 28 },
-    ],
-    origensNovos: [
-      { label: "Google Ads", value: 12 }, { label: "Meta Ads", value: 8 },
-      { label: "Orgânico", value: 5 }, { label: "Indicação", value: 3 },
-    ],
-    origensLeads: [
-      { label: "Google Ads", value: 412 }, { label: "Meta Ads", value: 258 },
-      { label: "Instagram", value: 138 }, { label: "Site orgânico", value: 92 }, { label: "Outros", value: 42 },
-    ],
-    faturado: 1_284_500,
-    topNovos: [
-      { name: "Cipriani Engenharia", value: 184_000 },
-      { name: "Vertice Construtora", value: 142_500 },
-      { name: "Solaron Franquias", value: 128_900 },
-      { name: "JN Construções", value: 96_400 },
-      { name: "Economy Solar", value: 82_100 },
-    ],
-    criativos: [
-      { platform: "Meta", name: "Vídeo · Depoimento Cliente A", ctr: 4.8, cpa: 82, vendas: 6 },
-      { platform: "Google", name: "Search · Kit Solar Residencial", ctr: 6.1, cpa: 128, vendas: 5 },
-      { platform: "Meta", name: "Carrossel · Economia 90%", ctr: 3.9, cpa: 74, vendas: 4 },
-      { platform: "Google", name: "PMax · Financiamento", ctr: 5.4, cpa: 155, vendas: 3 },
-    ],
-    site: { visitas: 18420, top: [
-      { path: "/kit-residencial", views: 4820 },
-      { path: "/simulador", views: 3910 },
-      { path: "/", views: 3180 },
-      { path: "/carregadores", views: 1240 },
-    ], vendas: 8 },
-    organico: {
-      leadsPorRede: [
-        { rede: "Instagram", leads: 82 }, { rede: "LinkedIn", leads: 34 },
-        { rede: "TikTok", leads: 18 }, { rede: "YouTube", leads: 4 },
-      ],
-      topPosts: [
-        { rede: "Instagram", titulo: "Antes/depois — usina 40kWp", eng: 4820 },
-        { rede: "LinkedIn", titulo: "Estudo de caso · Vertice", eng: 1240 },
-        { rede: "TikTok", titulo: "Como funciona a compensação", eng: 8210 },
-      ],
-    },
-  },
-  carregadores: {
-    goalNovos: { real: 9, meta: 20 },
-    goalMql: { real: 68, meta: 120 },
-    goalSeg: { real: 4820, meta: 6000 },
-    funnel: [
-      { label: "Visitas", value: 6840 },
-      { label: "Leads", value: 412 },
-      { label: "MQL", value: 68 },
-      { label: "SQL", value: 24 },
-      { label: "Novos", value: 9 },
-    ],
-    origensNovos: [
-      { label: "Google Ads", value: 4 }, { label: "Meta Ads", value: 2 },
-      { label: "Orgânico", value: 2 }, { label: "Indicação", value: 1 },
-    ],
-    origensLeads: [
-      { label: "Google Ads", value: 182 }, { label: "Meta Ads", value: 98 },
-      { label: "Instagram", value: 62 }, { label: "Site orgânico", value: 48 }, { label: "Outros", value: 22 },
-    ],
-    faturado: 328_400,
-    topNovos: [
-      { name: "Frota Log SP", value: 84_200 },
-      { name: "Condomínio Alphaville", value: 62_400 },
-      { name: "Rede Auto Posto", value: 48_900 },
-      { name: "Grupo Movida", value: 36_100 },
-      { name: "EcoDrive", value: 21_800 },
-    ],
-    criativos: [
-      { platform: "Google", name: "Search · Carregador Wallbox", ctr: 5.8, cpa: 210, vendas: 3 },
-      { platform: "Meta", name: "Vídeo · Instalação frota", ctr: 4.1, cpa: 168, vendas: 2 },
-      { platform: "Google", name: "PMax · Comercial", ctr: 4.9, cpa: 245, vendas: 2 },
-      { platform: "Meta", name: "Carrossel · Modelos 11kW/22kW", ctr: 3.2, cpa: 142, vendas: 1 },
-    ],
-    site: { visitas: 6840, top: [
-      { path: "/carregadores", views: 2410 },
-      { path: "/wallbox", views: 1820 },
-      { path: "/", views: 1240 },
-      { path: "/orcamento", views: 640 },
-    ], vendas: 3 },
-    organico: {
-      leadsPorRede: [
-        { rede: "Instagram", leads: 38 }, { rede: "LinkedIn", leads: 22 },
-        { rede: "YouTube", leads: 8 }, { rede: "TikTok", leads: 2 },
-      ],
-      topPosts: [
-        { rede: "LinkedIn", titulo: "Guia · escolha do wallbox", eng: 1420 },
-        { rede: "Instagram", titulo: "Reels · instalação em 4h", eng: 3120 },
-        { rede: "YouTube", titulo: "Comparativo 7kW × 22kW", eng: 4820 },
-      ],
-    },
-  },
-};
-
 const fmt = (n: number) => n.toLocaleString("pt-BR");
-const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const fmtBRL = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+function pad(n: number) { return String(n).padStart(2, "0"); }
+function ymd(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+
+type Preset = "7d" | "30d" | "90d" | "mtd" | "qtd" | "ytd" | "custom";
+
+function computeRange(preset: Preset): { start: string; end: string } {
+  const now = new Date();
+  const end = ymd(now);
+  const start = new Date(now);
+  switch (preset) {
+    case "7d": start.setDate(now.getDate() - 6); break;
+    case "30d": start.setDate(now.getDate() - 29); break;
+    case "90d": start.setDate(now.getDate() - 89); break;
+    case "mtd": start.setDate(1); break;
+    case "qtd": {
+      const q = Math.floor(now.getMonth() / 3);
+      start.setMonth(q * 3, 1); break;
+    }
+    case "ytd": start.setMonth(0, 1); break;
+    default: start.setDate(now.getDate() - 29);
+  }
+  return { start: ymd(start), end };
+}
 
 function MarketingHome() {
-  const { marketingUnit } = useMarketingUnit();
-  const d = DATA[marketingUnit];
-  const accent = UNIT_ACCENT[marketingUnit];
+  const [preset, setPreset] = useState<Preset>("30d");
+  const [customStart, setCustomStart] = useState(() => computeRange("30d").start);
+  const [customEnd, setCustomEnd] = useState(() => computeRange("30d").end);
+  const range = preset === "custom"
+    ? { start: customStart, end: customEnd }
+    : computeRange(preset);
 
-  const funnelMax = d.funnel[0].value;
-  const funnelWithRates = d.funnel.map((s, i, arr) => ({
-    ...s,
-    rate: i === 0 ? null : (s.value / arr[i - 1].value) * 100,
-  }));
+  const fetchData = useServerFn(getMarketingSalesforceData);
+  const q = useQuery({
+    queryKey: ["marketing-sf", range.start, range.end],
+    queryFn: () => fetchData({ data: range }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-6">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              Marketing
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
-              <span style={{ color: accent }}>{UNIT_LABEL[marketingUnit]}</span>
-            </div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Marketing</div>
             <h1 className="text-3xl font-bold mt-1 flex items-center gap-2">
-              <Megaphone className="h-6 w-6" style={{ color: accent }} /> Home
+              <Megaphone className="h-6 w-6 text-primary" /> Home
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Resumo semanal — trocar entre 2P Solar e 2P Carregadores no topo.
+              Leads, conversões, origens e novos clientes — dados do Salesforce da equipe de marketing.
             </p>
           </div>
+          <DateFilter
+            preset={preset}
+            setPreset={setPreset}
+            customStart={customStart}
+            customEnd={customEnd}
+            setCustomStart={setCustomStart}
+            setCustomEnd={setCustomEnd}
+            range={range}
+          />
         </div>
 
-        {/* KPIs de meta */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <GoalCard label="Novos clientes (mês)" icon={Target} accent={accent} real={d.goalNovos.real} meta={d.goalNovos.meta} unit="" />
-          <GoalCard label="Leads qualificados (MQL)" icon={Users} accent={accent} real={d.goalMql.real} meta={d.goalMql.meta} unit="" />
-          <GoalCard label="Seguidores (rede social)" icon={TrendingUp} accent={accent} real={d.goalSeg.real} meta={d.goalSeg.meta} unit="" />
-        </div>
+        <OwnersBadge />
 
-        {/* Funil */}
-        <div className="glass rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Funil</div>
-              <h2 className="font-display font-semibold text-lg">Visitas → Novos</h2>
-            </div>
-            <div className="text-xs text-muted-foreground">Últimos 30 dias</div>
+        {q.isLoading ? (
+          <div className="glass rounded-2xl p-10 flex items-center justify-center text-muted-foreground gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando dados do Salesforce…
           </div>
-          <div className="space-y-2">
-            {funnelWithRates.map((s) => {
-              const pct = (s.value / funnelMax) * 100;
-              return (
-                <div key={s.label} className="flex items-center gap-3">
-                  <div className="w-24 text-xs text-muted-foreground uppercase tracking-wider shrink-0">{s.label}</div>
-                  <div className="flex-1 h-8 bg-surface-2 rounded-md overflow-hidden relative">
-                    <div
-                      className="h-full transition-all"
-                      style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${accent}, ${accent}80)` }}
-                    />
-                    <div className="absolute inset-0 px-3 flex items-center justify-between text-xs font-semibold">
-                      <span>{fmt(s.value)}</span>
-                      {s.rate !== null && (
-                        <span className="text-muted-foreground">
-                          {s.rate.toFixed(1)}% conv.
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        ) : q.isError ? (
+          <div className="glass rounded-2xl p-6 text-sm text-destructive">
+            Erro ao carregar Salesforce: {q.error instanceof Error ? q.error.message : "desconhecido"}
           </div>
-        </div>
-
-        {/* Origens */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <OriginBlock title="Origem dos novos clientes" data={d.origensNovos} accent={accent} suffix=" clientes" />
-          <OriginBlock title="Origem dos leads" data={d.origensLeads} accent={accent} suffix=" leads" />
-        </div>
-
-        {/* Faturado + top novos */}
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="glass rounded-2xl p-5 md:col-span-1">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Faturado (novos clientes)</div>
-            <div className="mt-3 font-display font-bold text-3xl">{fmtBRL(d.faturado)}</div>
-            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-              <ArrowUpRight className="h-3 w-3 text-success" /> +18% vs mês anterior
-            </div>
-          </div>
-          <div className="glass rounded-2xl p-5 md:col-span-2">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Top 5 novos por valor</div>
-            <div className="space-y-1.5">
-              {d.topNovos.map((c) => (
-                <div key={c.name} className="flex items-center justify-between text-sm">
-                  <span className="truncate">{c.name}</span>
-                  <span className="tabular-nums font-semibold">{fmtBRL(c.value)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Criativos */}
-        <div className="glass rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Tráfego pago</div>
-              <h2 className="font-display font-semibold text-lg">Top criativos (Google + Meta)</h2>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
-                  <th className="text-left py-2 pr-3">Plataforma</th>
-                  <th className="text-left py-2 pr-3">Criativo</th>
-                  <th className="text-right py-2 px-3">CTR</th>
-                  <th className="text-right py-2 px-3">CPA</th>
-                  <th className="text-right py-2 pl-3">Vendas</th>
-                </tr>
-              </thead>
-              <tbody>
-                {d.criativos.map((c) => (
-                  <tr key={c.name} className="border-b border-border/40">
-                    <td className="py-2 pr-3">
-                      <span className="inline-flex items-center gap-1.5 text-xs">
-                        {c.platform === "Meta" ? <Facebook className="h-3 w-3" /> : <Search className="h-3 w-3" />}
-                        {c.platform}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-3">{c.name}</td>
-                    <td className="py-2 px-3 text-right tabular-nums">{c.ctr}%</td>
-                    <td className="py-2 px-3 text-right tabular-nums">{fmtBRL(c.cpa)}</td>
-                    <td className="py-2 pl-3 text-right tabular-nums font-semibold">{c.vendas}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Site + Orgânico */}
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="glass rounded-2xl p-5">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Globe className="h-3.5 w-3.5" /> Site
-            </div>
-            <h2 className="font-display font-semibold text-lg mt-1">Visitas & vendas</h2>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div>
-                <div className="text-[11px] text-muted-foreground">Visitas</div>
-                <div className="font-display font-bold text-2xl">{fmt(d.site.visitas)}</div>
-              </div>
-              <div>
-                <div className="text-[11px] text-muted-foreground">Vendas do site</div>
-                <div className="font-display font-bold text-2xl">{d.site.vendas}</div>
-              </div>
-            </div>
-            <div className="mt-4 text-[11px] uppercase tracking-wider text-muted-foreground">Páginas de entrada</div>
-            <div className="mt-2 space-y-1">
-              {d.site.top.map((p) => (
-                <div key={p.path} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground truncate">{p.path}</span>
-                  <span className="tabular-nums">{fmt(p.views)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="glass rounded-2xl p-5">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Instagram className="h-3.5 w-3.5" /> Orgânico
-            </div>
-            <h2 className="font-display font-semibold text-lg mt-1">Leads por rede social</h2>
-            <div className="mt-3 space-y-1.5">
-              {d.organico.leadsPorRede.map((r) => (
-                <div key={r.rede} className="flex justify-between text-sm">
-                  <span>{r.rede}</span>
-                  <span className="tabular-nums font-semibold">{r.leads}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 text-[11px] uppercase tracking-wider text-muted-foreground">Melhores posts</div>
-            <div className="mt-2 space-y-1">
-              {d.organico.topPosts.map((p) => (
-                <div key={p.titulo} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground truncate">{p.rede} · {p.titulo}</span>
-                  <span className="tabular-nums">{fmt(p.eng)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        ) : q.data ? (
+          <MarketingDashboard data={q.data} />
+        ) : null}
 
         <AtlasSoonCard />
       </div>
@@ -321,50 +100,226 @@ function MarketingHome() {
   );
 }
 
-function GoalCard({ label, icon: Icon, real, meta, accent, unit }: { label: string; icon: typeof Target; real: number; meta: number; accent: string; unit: string }) {
-  const pct = meta > 0 ? (real / meta) * 100 : 0;
-  const clamped = Math.max(0, Math.min(100, pct));
+function OwnersBadge() {
+  const names = Object.values(MARKETING_OWNER_NAMES);
   return (
-    <div className="glass rounded-2xl p-5">
+    <div className="glass rounded-xl px-4 py-2.5 flex items-center gap-2 flex-wrap text-xs">
+      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+      <span className="text-muted-foreground uppercase tracking-wider">Owners:</span>
+      {names.map((n) => (
+        <span key={n} className="px-2 py-0.5 rounded-md bg-surface-2 border border-border">
+          {n}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function DateFilter({
+  preset, setPreset, customStart, customEnd, setCustomStart, setCustomEnd, range,
+}: {
+  preset: Preset; setPreset: (p: Preset) => void;
+  customStart: string; customEnd: string;
+  setCustomStart: (s: string) => void; setCustomEnd: (s: string) => void;
+  range: { start: string; end: string };
+}) {
+  const presets: { id: Preset; label: string }[] = [
+    { id: "7d", label: "7d" },
+    { id: "30d", label: "30d" },
+    { id: "90d", label: "90d" },
+    { id: "mtd", label: "Mês" },
+    { id: "qtd", label: "Trim." },
+    { id: "ytd", label: "Ano" },
+    { id: "custom", label: "Personalizado" },
+  ];
+  return (
+    <div className="flex flex-col items-end gap-2">
+      <div className="flex items-center gap-1.5 bg-surface-2 rounded-lg p-0.5 border border-border">
+        {presets.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setPreset(p.id)}
+            className={cn(
+              "px-2.5 h-8 rounded-md text-xs font-medium transition-colors",
+              preset === p.id
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      {preset === "custom" ? (
+        <div className="flex items-center gap-2 text-xs">
+          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            type="date"
+            value={customStart}
+            onChange={(e) => setCustomStart(e.target.value)}
+            className="bg-surface-2 border border-border rounded-md px-2 h-8"
+          />
+          <span className="text-muted-foreground">até</span>
+          <input
+            type="date"
+            value={customEnd}
+            onChange={(e) => setCustomEnd(e.target.value)}
+            className="bg-surface-2 border border-border rounded-md px-2 h-8"
+          />
+        </div>
+      ) : (
+        <div className="text-[11px] text-muted-foreground tabular-nums">
+          {range.start} → {range.end}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MarketingDashboard({ data }: { data: Awaited<ReturnType<typeof getMarketingSalesforceData>> }) {
+  const t = data.totals;
+  const convRate = t.leads > 0 ? (t.convertidos / t.leads) * 100 : 0;
+
+  const dailyMax = useMemo(
+    () => data.serieDiaria.reduce((m, d) => Math.max(m, d.leads), 0),
+    [data.serieDiaria],
+  );
+
+  return (
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <KPI label="Leads" value={fmt(t.leads)} icon={Users} />
+        <KPI label="Convertidos" value={fmt(t.convertidos)} icon={Target} accent="oklch(0.7 0.16 145)" />
+        <KPI label="Taxa de conv." value={`${convRate.toFixed(1)}%`} icon={TrendingUp} />
+        <KPI label="Amadurecimento" value={fmt(t.amadurecimento)} />
+        <KPI label="Novas contas" value={fmt(t.novasContas)} />
+        <KPI label="Faturado (novas)" value={fmtBRL(t.faturado)} accent="oklch(0.68 0.2 47)" />
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <BucketBlock title="Origem dos leads" data={data.porOrigem} suffix=" leads" />
+        <BucketBlock title="Sub-origem" data={data.porSubOrigem.slice(0, 10)} suffix=" leads" />
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <BucketBlock title="Leads por owner (marketing)" data={data.porOwner} suffix=" leads" />
+        <BucketBlock title="Status dos leads" data={data.statusBreakdown} suffix=" leads" />
+      </div>
+
+      <div className="glass rounded-2xl p-5">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">
+          Série diária — leads x convertidos
+        </div>
+        {data.serieDiaria.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Sem leads no período.</div>
+        ) : (
+          <div className="flex items-end gap-1 h-40">
+            {data.serieDiaria.map((d) => {
+              const h = dailyMax > 0 ? (d.leads / dailyMax) * 100 : 0;
+              const hc = d.leads > 0 ? (d.convertidos / d.leads) * 100 : 0;
+              return (
+                <div key={d.date} className="flex-1 flex flex-col justify-end group relative">
+                  <div className="w-full bg-primary/30 rounded-t-sm relative" style={{ height: `${h}%` }}>
+                    <div
+                      className="absolute bottom-0 inset-x-0 bg-primary rounded-t-sm"
+                      style={{ height: `${hc}%` }}
+                    />
+                  </div>
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] bg-surface-2 border border-border rounded px-1.5 py-0.5 whitespace-nowrap z-10">
+                    {d.date} · {d.leads}L / {d.convertidos}C
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/30" /> Leads</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary" /> Convertidos</span>
+        </div>
+      </div>
+
+      <div className="glass rounded-2xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+          <h2 className="font-display font-semibold">Leads convertidos ({data.convertidos.length})</h2>
+          <span className="text-[11px] text-muted-foreground">Faturamento por conta apenas dentro do período selecionado</span>
+        </div>
+        <div className="overflow-x-auto max-h-[520px]">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-surface">
+              <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
+                <th className="text-left px-4 py-2.5">Data</th>
+                <th className="text-left px-4 py-2.5">Lead</th>
+                <th className="text-left px-4 py-2.5">Owner</th>
+                <th className="text-left px-4 py-2.5">Origem</th>
+                <th className="text-left px-4 py-2.5">Sub-origem</th>
+                <th className="text-right px-4 py-2.5">Faturado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.convertidos.length === 0 ? (
+                <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Nenhuma conversão no período.</td></tr>
+              ) : data.convertidos.map((c) => (
+                <tr key={c.id} className="border-b border-border/40 hover:bg-surface-2/50">
+                  <td className="px-4 py-2 tabular-nums">{c.convertedDate ?? "—"}</td>
+                  <td className="px-4 py-2">{c.name}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{c.owner ?? "—"}</td>
+                  <td className="px-4 py-2">{c.origem ?? "—"}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{c.subOrigem ?? "—"}</td>
+                  <td className="px-4 py-2 text-right tabular-nums font-semibold">
+                    {c.accountValue && c.accountValue > 0 ? fmtBRL(c.accountValue) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function KPI({ label, value, icon: Icon, accent }: { label: string; value: string; icon?: typeof Users; accent?: string }) {
+  return (
+    <div className="glass rounded-xl p-3.5">
       <div className="flex items-center justify-between">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-        <Icon className="h-4 w-4" style={{ color: accent }} />
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
+        {Icon ? <Icon className="h-3.5 w-3.5" style={{ color: accent ?? undefined }} /> : null}
       </div>
-      <div className="mt-3 flex items-baseline gap-2">
-        <div className="font-display font-bold text-3xl tabular-nums">{fmt(real)}{unit}</div>
-        <div className="text-sm text-muted-foreground">/ {fmt(meta)}{unit}</div>
-      </div>
-      <div className="mt-3 h-2 rounded-full bg-surface-2 overflow-hidden">
-        <div className="h-full transition-all" style={{ width: `${clamped}%`, background: accent }} />
-      </div>
-      <div className="mt-2 text-xs font-semibold" style={{ color: accent }}>
-        {pct.toFixed(1)}%
+      <div className="font-display font-bold text-2xl tabular-nums mt-1" style={{ color: accent ?? undefined }}>
+        {value}
       </div>
     </div>
   );
 }
 
-function OriginBlock({ title, data, accent, suffix }: { title: string; data: { label: string; value: number }[]; accent: string; suffix: string }) {
+function BucketBlock({ title, data, suffix }: { title: string; data: { label: string; value: number }[]; suffix: string }) {
   const total = data.reduce((a, b) => a + b.value, 0);
   return (
     <div className="glass rounded-2xl p-5">
       <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">{title}</div>
-      <div className="space-y-2">
-        {data.map((o) => {
-          const pct = total > 0 ? (o.value / total) * 100 : 0;
-          return (
-            <div key={o.label}>
-              <div className="flex justify-between text-sm">
-                <span>{o.label}</span>
-                <span className="tabular-nums text-muted-foreground">{fmt(o.value)}{suffix} · {pct.toFixed(0)}%</span>
+      {data.length === 0 ? (
+        <div className="text-sm text-muted-foreground">Sem dados no período.</div>
+      ) : (
+        <div className="space-y-2">
+          {data.map((o) => {
+            const pct = total > 0 ? (o.value / total) * 100 : 0;
+            return (
+              <div key={o.label}>
+                <div className="flex justify-between text-sm">
+                  <span className="truncate pr-2">{o.label}</span>
+                  <span className="tabular-nums text-muted-foreground shrink-0">
+                    {fmt(o.value)}{suffix} · {pct.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden mt-1">
+                  <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                </div>
               </div>
-              <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden mt-1">
-                <div className="h-full" style={{ width: `${pct}%`, background: accent }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
