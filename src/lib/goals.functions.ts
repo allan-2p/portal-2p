@@ -185,3 +185,60 @@ export const setGroupKpiGoal = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---- Meta Bônus (texto livre por vendedor) ---- //
+
+export type BonusGoalRow = { sf_user_id: string; bonus_text: string };
+
+const BonusListInput = z.object({
+  sfUserIds: z.array(z.string().min(3)).min(1).max(50),
+});
+
+export const listBonusGoals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => BonusListInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("salesperson_bonus_goals")
+      .select("sf_user_id, bonus_text")
+      .in("sf_user_id", data.sfUserIds);
+    if (error) throw new Error(error.message);
+    const records: BonusGoalRow[] = (rows ?? []).map((r: any) => ({
+      sf_user_id: r.sf_user_id,
+      bonus_text: r.bonus_text ?? "",
+    }));
+    return { records };
+  });
+
+const BonusSetInput = z.object({
+  sf_user_id: z.string().min(3),
+  bonus_text: z.string().max(2000),
+});
+
+export const setBonusGoal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => BonusSetInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("is_admin");
+    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    const trimmed = data.bonus_text.trim();
+    if (!trimmed) {
+      const { error } = await context.supabase
+        .from("salesperson_bonus_goals")
+        .delete()
+        .eq("sf_user_id", data.sf_user_id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+    const { error } = await context.supabase.from("salesperson_bonus_goals").upsert(
+      {
+        sf_user_id: data.sf_user_id,
+        bonus_text: trimmed,
+        updated_by: context.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "sf_user_id" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
