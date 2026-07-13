@@ -22,7 +22,7 @@ import {
   calcRetencaoCommission,
   type Equipe,
 } from "@/lib/commission.functions";
-import { CARTEIRA_OWNER_IDS } from "@/lib/salespeople";
+import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_NAMES } from "@/lib/salespeople";
 
 const AB_THRESHOLD = 15_000;
 const A_THRESHOLD = 30_000;
