@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { Check, ChevronDown, LayoutGrid } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { useInstance } from "./instance-provider";
 import { INSTANCES, type InstanceId } from "@/lib/instances";
 import { cn } from "@/lib/utils";
 
+const INSTANCE_HOME: Record<InstanceId, string> = {
+  solar: "/",
+  carregadores: "/",
+  marketing: "/marketing",
+};
+
 export function InstanceSwitcher() {
   const { instance, setInstance, allowed } = useInstance();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const meta = INSTANCES[instance];
 
