@@ -1018,12 +1018,55 @@ export const getMarketingSalesforceData = createServerFn({ method: "GET" })
 
 
 // ============================================================
-// PUBLIC (no-auth) endpoints — used by the shared TV dashboard.
-// These NEVER accept an ownerId and ALWAYS run unscoped, since
-// they must render without any Supabase session (public URL).
+// PUBLIC (no-auth) endpoints — used ONLY by the shared TV dashboard.
+// Design constraints (security):
+//   • No client-supplied filter object. Callers pick a fixed server-side
+//     preset from a small allow-list. This prevents an attacker from
+//     issuing arbitrary SOQL over the pipeline (e.g. LAST_YEAR, empty
+//     statusIn) via these unauthenticated endpoints.
+//   • Response is stripped of PII (customer names, sales-rep names,
+//     opportunity name) so it cannot be scraped as a sales roster.
+//     Only aggregation-relevant fields ship: id, amount, total,
+//     closeDate, createdDate, accountId (opaque SF ID).
+//   • Vendas range is capped to ~400 days to limit bulk historical
+//     exfiltration.
 // ============================================================
 
-function buildOppSoqlUnscoped(f: OppFilters): string {
+export type PublicOppRow = {
+  id: string;
+  amount: number | null;
+  total: number | null;
+  closeDate: string | null;
+  createdDate: string | null;
+  accountId: string | null;
+};
+
+function mapPublicOppRow(r: any): PublicOppRow {
+  const num = (v: any) => (typeof v === "number" ? v : null);
+  return {
+    id: r.Id,
+    amount: num(r.Amount),
+    total: num(r.Total__c),
+    closeDate: r.CloseDate ?? null,
+    createdDate: r.CreatedDate ? String(r.CreatedDate).slice(0, 10) : null,
+    accountId: r.AccountId ?? null,
+  };
+}
+
+const PUBLIC_OPP_COLS =
+  `Id, Amount, Total__c, CloseDate, CreatedDate, AccountId`;
+
+const PUBLIC_TV_PRESETS = {
+  vendido_mes: OPP_DEFAULTS_VENDIDO_MES,
+  gerado_mes: OPP_DEFAULTS_GERADO_MES,
+  faturamento_mes: OPP_DEFAULTS_VENDAS,
+} as const;
+
+export type PublicTvVariant = keyof typeof PUBLIC_TV_PRESETS;
+
+function buildPublicSoql(f: OppFilters): string {
+  // Reuses the same SOQL construction as the private endpoint, but with the
+  // reduced PUBLIC_OPP_COLS projection.
   const df: "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c" =
     f.dateField === "CreatedDate"
       ? "CreatedDate"
@@ -1043,57 +1086,65 @@ function buildOppSoqlUnscoped(f: OppFilters): string {
   const orgs = (f.orgIn ?? []).filter(Boolean);
   if (orgs.length) clauses.push(`Org_Oportunidade__c IN (${orgs.map((s) => `'${esc(s)}'`).join(",")})`);
   for (const v of (f.ownerNameNotIn ?? []).filter(Boolean)) clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
-  const lossIn = (f.lossReasonIn ?? []).filter(Boolean);
-  if (lossIn.length) clauses.push(`Loss_Reason__c IN (${lossIn.map((s) => `'${esc(s)}'`).join(",")})`);
-  for (const v of (f.lossReasonNotIn ?? []).filter(Boolean)) clauses.push(`(Loss_Reason__c = null OR Loss_Reason__c != '${esc(v)}')`);
 
   const literal = (f.dateLiteral ?? "").trim();
-  if (literal === "CUSTOM") {
-    if (f.dateFrom && validDate(f.dateFrom)) clauses.push(`${df} >= ${f.dateFrom}${suffixStart}`);
-    if (f.dateTo && validDate(f.dateTo)) clauses.push(`${df} <= ${f.dateTo}${suffixEnd}`);
-  } else if (literal) {
-    clauses.push(`${df} = ${literal}`);
-  }
+  if (literal && literal !== "CUSTOM") clauses.push(`${df} = ${literal}`);
+  else if (f.dateFrom && validDate(f.dateFrom)) clauses.push(`${df} >= ${f.dateFrom}${suffixStart}`);
+  if (literal === "CUSTOM" && f.dateTo && validDate(f.dateTo)) clauses.push(`${df} <= ${f.dateTo}${suffixEnd}`);
+
   if (f.dateField2) {
     const df2 = f.dateField2;
-    const suffixStart2 = df2 === "CreatedDate" ? "T00:00:00Z" : "";
-    const suffixEnd2 = df2 === "CreatedDate" ? "T23:59:59Z" : "";
     const literal2 = (f.dateLiteral2 ?? "").trim();
-    if (literal2 === "CUSTOM") {
-      if (f.dateFrom2 && validDate(f.dateFrom2)) clauses.push(`${df2} >= ${f.dateFrom2}${suffixStart2}`);
-      if (f.dateTo2 && validDate(f.dateTo2)) clauses.push(`${df2} <= ${f.dateTo2}${suffixEnd2}`);
-    } else if (literal2) {
-      clauses.push(`${df2} = ${literal2}`);
-    }
+    if (literal2 && literal2 !== "CUSTOM") clauses.push(`${df2} = ${literal2}`);
   }
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")} ` : "";
-  return `SELECT ${OPP_COLS} FROM Opportunity ${where}ORDER BY ${df} DESC NULLS LAST LIMIT 1000`;
+  return `SELECT ${PUBLIC_OPP_COLS} FROM Opportunity ${where}ORDER BY ${df} DESC NULLS LAST LIMIT 1000`;
 }
 
-export const getPublicSalesforceVendidoOpp = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => (input ?? {}) as OppFilters)
+export const getPublicSalesforceVendidoTv = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => {
+    const v = (input as { variant?: unknown } | null)?.variant;
+    if (typeof v !== "string" || !(v in PUBLIC_TV_PRESETS)) {
+      throw new Error("variant inválido");
+    }
+    return { variant: v as PublicTvVariant };
+  })
   .handler(async ({ data }) => {
-    const soql = buildOppSoqlUnscoped(data ?? {});
+    const soql = buildPublicSoql(PUBLIC_TV_PRESETS[data.variant]);
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
-    return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+    return { records: (res?.records ?? []).map(mapPublicOppRow) as PublicOppRow[] };
   });
 
+const MAX_PUBLIC_RANGE_DAYS = 400;
+
 export const getPublicSalesforceVendas = createServerFn({ method: "GET" })
-  .inputValidator((input: { start?: string | null; end?: string | null }) => input ?? {})
+  .inputValidator((input: { start?: string | null; end?: string | null } | null) => {
+    const start = input?.start ?? null;
+    const end = input?.end ?? null;
+    if (!validDate(start) || !validDate(end)) {
+      throw new Error("Datas obrigatórias (YYYY-MM-DD).");
+    }
+    const spanMs = new Date(end!).getTime() - new Date(start!).getTime();
+    if (spanMs < 0 || spanMs > MAX_PUBLIC_RANGE_DAYS * 86_400_000) {
+      throw new Error("Intervalo fora do permitido.");
+    }
+    return { start: start as string, end: end as string };
+  })
   .handler(async ({ data }) => {
     const clauses: string[] = [
       `StageName = 'Pedido Concluído'`,
       `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
+      `CloseDate >= ${data.start}`,
+      `CloseDate <= ${data.end}`,
     ];
-    if (validDate(data.start)) clauses.push(`CloseDate >= ${data.start}`);
-    if (validDate(data.end)) clauses.push(`CloseDate <= ${data.end}`);
     const soql =
-      `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
+      `SELECT ${PUBLIC_OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
       `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
-    return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
+    return { records: (res?.records ?? []).map(mapPublicOppRow) as PublicOppRow[] };
   });
+
 
 
 
