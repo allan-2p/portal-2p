@@ -5,10 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import solarLogoAsset from "@/assets/2p-logo-black.png.asset.json";
 import {
   getPublicSalesforceVendas,
-  getPublicSalesforceVendidoOpp,
-  OPP_DEFAULTS_VENDIDO_MES,
-  OPP_DEFAULTS_GERADO_MES,
-  OPP_DEFAULTS_VENDAS,
+  getPublicSalesforceVendidoTv,
 } from "@/lib/salesforce.functions";
 import { getPublicMonthGoalTotal, getPublicGroupKpiGoals } from "@/lib/tv-public.functions";
 import { businessDaysOfMonth, isBusinessDay } from "@/lib/business-days";
