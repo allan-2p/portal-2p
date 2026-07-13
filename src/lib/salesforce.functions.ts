@@ -1153,4 +1153,186 @@ export const getPublicSalesforceVendas = createServerFn({ method: "GET" })
 
 
 
+// =============================================================
+// Clientes Novos — oportunidades cujos clientes não possuem
+// nenhuma venda concluída (StageName = 'Pedido Concluído') com
+// CloseDate anterior ao início do período filtrado.
+// =============================================================
+
+export const OPP_DEFAULTS_CLIENTES_NOVOS: OppFilters = {
+  stageEquals: "Pedido Concluído",
+  statusIn: [
+    "Aguardando Pagamento",
+    "Processando",
+    "Separação",
+    "Faturado",
+    "Coletado",
+    "Entregue",
+    "Documentação Liberada",
+    "Finalizado",
+  ],
+  tipoNfNotIn: ["Bonificação"],
+  accountNameNotIn: ["2P ACESSORIOS LTDA"],
+  orgIn: ["Acessórios 2P", "WD"],
+  ownerNameNotIn: ["Caroline Gimenez"],
+  dateField: "CloseDate",
+  dateLiteral: "THIS_MONTH",
+};
+
+function resolveLiteralStartISO(literal: string, dateFrom?: string): string | null {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  const iso = (dt: Date) =>
+    `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+  switch ((literal || "").trim()) {
+    case "TODAY": return iso(new Date(y, m, d));
+    case "YESTERDAY": return iso(new Date(y, m, d - 1));
+    case "THIS_WEEK": return iso(new Date(y, m, d - now.getDay()));
+    case "LAST_WEEK": return iso(new Date(y, m, d - now.getDay() - 7));
+    case "THIS_MONTH": return iso(new Date(y, m, 1));
+    case "LAST_MONTH": return iso(new Date(y, m - 1, 1));
+    case "THIS_QUARTER": return iso(new Date(y, Math.floor(m / 3) * 3, 1));
+    case "LAST_QUARTER": return iso(new Date(y, (Math.floor(m / 3) - 1) * 3, 1));
+    case "THIS_YEAR": return iso(new Date(y, 0, 1));
+    case "LAST_YEAR": return iso(new Date(y - 1, 0, 1));
+    case "CUSTOM": return validDate(dateFrom) ? (dateFrom as string) : null;
+    default: return null;
+  }
+}
+
+export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => (input ?? {}) as OppFilters)
+  .handler(async ({ data, context }) => {
+    const f: OppFilters = data ?? {};
+    const df: "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c" =
+      f.dateField === "CreatedDate"
+        ? "CreatedDate"
+        : f.dateField === "Data_de_Faturamento__c"
+          ? "Data_de_Faturamento__c"
+          : "CloseDate";
+    const suffixStart = df === "CreatedDate" ? "T00:00:00Z" : "";
+    const suffixEnd = df === "CreatedDate" ? "T23:59:59Z" : "";
+    const clauses: string[] = [];
+
+    if (f.stageEquals && f.stageEquals.trim())
+      clauses.push(`StageName = '${esc(f.stageEquals.trim())}'`);
+    if (f.stageNotEquals && f.stageNotEquals.trim())
+      clauses.push(`StageName != '${esc(f.stageNotEquals.trim())}'`);
+    const statuses = (f.statusIn ?? []).filter(Boolean);
+    if (statuses.length)
+      clauses.push(`Status_do_Pedido__c IN (${statuses.map((s) => `'${esc(s)}'`).join(",")})`);
+    for (const v of (f.tipoNfNotIn ?? []).filter(Boolean))
+      clauses.push(`(Tipo_de_NF__c = null OR Tipo_de_NF__c != '${esc(v)}')`);
+    for (const v of (f.accountNameNotIn ?? []).filter(Boolean))
+      clauses.push(`(Account.Name = null OR Account.Name != '${esc(v)}')`);
+    const orgs = (f.orgIn ?? []).filter(Boolean);
+    if (orgs.length)
+      clauses.push(`Org_Oportunidade__c IN (${orgs.map((s) => `'${esc(s)}'`).join(",")})`);
+    for (const v of (f.ownerNameNotIn ?? []).filter(Boolean))
+      clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
+    const lossIn = (f.lossReasonIn ?? []).filter(Boolean);
+    if (lossIn.length)
+      clauses.push(`Loss_Reason__c IN (${lossIn.map((s) => `'${esc(s)}'`).join(",")})`);
+    for (const v of (f.lossReasonNotIn ?? []).filter(Boolean))
+      clauses.push(`(Loss_Reason__c = null OR Loss_Reason__c != '${esc(v)}')`);
+
+    const literal = (f.dateLiteral ?? "").trim();
+    if (literal === "CUSTOM") {
+      if (f.dateFrom && validDate(f.dateFrom)) clauses.push(`${df} >= ${f.dateFrom}${suffixStart}`);
+      if (f.dateTo && validDate(f.dateTo)) clauses.push(`${df} <= ${f.dateTo}${suffixEnd}`);
+    } else if (literal) {
+      clauses.push(`${df} = ${literal}`);
+    }
+    if (f.dateField2) {
+      const df2 = f.dateField2;
+      const s2 = df2 === "CreatedDate" ? "T00:00:00Z" : "";
+      const e2 = df2 === "CreatedDate" ? "T23:59:59Z" : "";
+      const l2 = (f.dateLiteral2 ?? "").trim();
+      if (l2 === "CUSTOM") {
+        if (f.dateFrom2 && validDate(f.dateFrom2)) clauses.push(`${df2} >= ${f.dateFrom2}${s2}`);
+        if (f.dateTo2 && validDate(f.dateTo2)) clauses.push(`${df2} <= ${f.dateTo2}${e2}`);
+      } else if (l2) {
+        clauses.push(`${df2} = ${l2}`);
+      }
+    }
+
+    const ownerClause = (f as OppFilters & { unscoped?: boolean }).unscoped
+      ? ""
+      : ownerFilterClause(
+          await resolveSalesforceOwnerFilter(context.supabase, context.userId, f.ownerId ?? null),
+        );
+
+    const where = clauses.length ? `WHERE ${clauses.join(" AND ")} ` : "";
+    const soql =
+      `SELECT ${OPP_COLS} FROM Opportunity ${where}${ownerClause} ` +
+      `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    const rows: SalesforceOppRow[] = (res?.records ?? []).map(mapOppRow);
+
+    // Início do período — usado para detectar histórico anterior.
+    let rangeStart = resolveLiteralStartISO(literal, f.dateFrom);
+    if (!rangeStart && f.dateField2) {
+      rangeStart = resolveLiteralStartISO((f.dateLiteral2 ?? "").trim(), f.dateFrom2);
+    }
+    if (!rangeStart) {
+      // Fallback: menor CloseDate dentro do próprio resultado
+      for (const r of rows) {
+        if (r.closeDate && (!rangeStart || r.closeDate < rangeStart)) rangeStart = r.closeDate;
+      }
+    }
+    if (!rangeStart) {
+      return { records: [] as SalesforceOppRow[], newAccountsCount: 0, rangeStart: null };
+    }
+
+    const accountIds = Array.from(
+      new Set(rows.map((r) => r.accountId).filter((v): v is string => !!v)),
+    );
+    if (accountIds.length === 0) {
+      return { records: [] as SalesforceOppRow[], newAccountsCount: 0, rangeStart };
+    }
+
+    // Contas com histórico anterior de vendas concluídas.
+    const historyAccounts = new Set<string>();
+    const CHUNK = 200;
+    for (let i = 0; i < accountIds.length; i += CHUNK) {
+      const chunk = accountIds.slice(i, i + CHUNK);
+      const histSoql =
+        `SELECT AccountId FROM Opportunity ` +
+        `WHERE StageName = 'Pedido Concluído' AND CloseDate < ${rangeStart} ` +
+        `AND AccountId IN (${chunk.map((id) => `'${esc(id)}'`).join(",")}) LIMIT 2000`;
+      const hres = await sfFetch(`/query?q=${encodeURIComponent(histSoql)}`);
+      for (const rec of hres?.records ?? []) {
+        if (rec.AccountId) historyAccounts.add(rec.AccountId);
+      }
+    }
+
+    // Mantém apenas oportunidades cujo cliente não possui histórico anterior.
+    const newRows = rows.filter((r) => r.accountId && !historyAccounts.has(r.accountId));
+    // Para cada cliente novo, mostrar apenas a primeira venda dentro do período.
+    const firstByAccount = new Map<string, SalesforceOppRow>();
+    for (const r of newRows) {
+      if (!r.accountId) continue;
+      const cur = firstByAccount.get(r.accountId);
+      if (!cur) {
+        firstByAccount.set(r.accountId, r);
+        continue;
+      }
+      const a = r.closeDate ?? "";
+      const b = cur.closeDate ?? "";
+      if (a && (!b || a < b)) firstByAccount.set(r.accountId, r);
+    }
+    const uniqueNewRows = Array.from(firstByAccount.values()).sort((a, b) => {
+      const ad = a.closeDate ?? "";
+      const bd = b.closeDate ?? "";
+      return bd.localeCompare(ad);
+    });
+    return {
+      records: uniqueNewRows,
+      newAccountsCount: uniqueNewRows.length,
+      rangeStart,
+    };
+  });
 
