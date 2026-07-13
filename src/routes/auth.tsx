@@ -300,44 +300,19 @@ function AuthPage() {
                   <span className="text-xs text-zinc-500 dark:text-zinc-500 flex items-center gap-2">
                     <Loader2 className="h-3 w-3 animate-spin" /> carregando atividade…
                   </span>
-                ) : activeUsers.length === 0 ? (
+                ) : activeTotal === 0 ? (
                   <span className="text-xs text-zinc-500 dark:text-zinc-500">
                     Nenhum usuário ativo no Portal hoje ainda.
                   </span>
                 ) : (
-                  <>
-                    <div className="flex -space-x-2">
-                      {activeUsers.slice(0, 5).map((u) => {
-                        const initials = u.name
-                          .split(/\s+/)
-                          .map((s) => s[0])
-                          .filter(Boolean)
-                          .slice(0, 2)
-                          .join("")
-                          .toUpperCase();
-                        return (
-                          <div
-                            key={u.id}
-                            title={u.name}
-                            className="h-8 w-8 rounded-full border-2 border-white dark:border-zinc-900 bg-zinc-200 dark:bg-zinc-800 overflow-hidden flex items-center justify-center text-[10px] font-medium text-zinc-600 dark:text-zinc-300"
-                          >
-                            {u.avatarUrl ? (
-                              <img src={u.avatarUrl} alt={u.name} width={32} height={32} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                            ) : (
-                              initials || "·"
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                      {activeUsers.length === 1
-                        ? "1 usuário ativo no Portal hoje"
-                        : `${activeUsers.length} usuários ativos no Portal hoje`}
-                    </span>
-                  </>
+                  <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                    {activeTotal === 1
+                      ? "1 usuário ativo no Portal hoje"
+                      : `${activeTotal} usuários ativos no Portal hoje`}
+                  </span>
                 )}
               </div>
+
 
               <blockquote className="border-l-2 border-zinc-300 dark:border-zinc-700 pl-4 py-1 max-w-md">
                 <p className="text-sm italic text-zinc-500 dark:text-zinc-500 leading-relaxed">
