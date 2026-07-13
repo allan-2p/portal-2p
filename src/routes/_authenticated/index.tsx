@@ -125,6 +125,8 @@ function HomePage() {
   const { ownerId, setOwnerId, ownerParam, dataEnabled } = useScopedOwner("all");
   const [agendaDate, setAgendaDate] = useState<Date>(() => startOfDay(new Date()));
   const [agendaOpen, setAgendaOpen] = useState(false);
+  const [agendaSort, setAgendaSort] = useState<"priority" | "date">("date");
+  const [agendaSortOpen, setAgendaSortOpen] = useState(false);
 
   const [stageFilter, setStageFilter] = useState<"all" | OpportunityStage>("all");
 
