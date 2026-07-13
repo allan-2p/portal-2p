@@ -836,6 +836,34 @@ function HomePage() {
                   />
                 </PopoverContent>
               </Popover>
+              <Popover open={agendaSortOpen} onOpenChange={setAgendaSortOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2" title="Ordenar">
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                    {agendaSort === "priority" ? "Prioridade" : "Data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-44 p-1">
+                  <button
+                    onClick={() => { setAgendaSort("date"); setAgendaSortOpen(false); }}
+                    className={cn(
+                      "w-full text-left text-sm px-2 py-1.5 rounded hover:bg-surface-2 flex items-center justify-between",
+                      agendaSort === "date" && "font-semibold text-primary",
+                    )}
+                  >
+                    Data {agendaSort === "date" && <Check className="h-3.5 w-3.5" />}
+                  </button>
+                  <button
+                    onClick={() => { setAgendaSort("priority"); setAgendaSortOpen(false); }}
+                    className={cn(
+                      "w-full text-left text-sm px-2 py-1.5 rounded hover:bg-surface-2 flex items-center justify-between",
+                      agendaSort === "priority" && "font-semibold text-primary",
+                    )}
+                  >
+                    Prioridade {agendaSort === "priority" && <Check className="h-3.5 w-3.5" />}
+                  </button>
+                </PopoverContent>
+              </Popover>
 
             </div>
             <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
