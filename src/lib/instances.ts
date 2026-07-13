@@ -26,7 +26,8 @@ export type FeatureKey =
   | "marketing.trafego"
   | "marketing.cohort"
   | "marketing.cac"
-  | "marketing.gargalo";
+  | "marketing.gargalo"
+  | "marketing.prevendas";
 
 export type InstanceMeta = {
   id: InstanceId;
@@ -97,6 +98,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "marketing.cohort",
       "marketing.cac",
       "marketing.gargalo",
+      "marketing.prevendas",
       "admin.usuarios",
       "admin.integracoes",
     ],
@@ -123,6 +125,7 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/marketing/cohort": "marketing.cohort",
   "/marketing/cac": "marketing.cac",
   "/marketing/gargalo": "marketing.gargalo",
+  "/marketing/pre-vendas": "marketing.prevendas",
 };
 
 export const FEATURE_LABELS: Record<FeatureKey, string> = {
@@ -144,6 +147,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "marketing.cohort": "Marketing • Cohort",
   "marketing.cac": "Marketing • CAC",
   "marketing.gargalo": "Marketing • Mapa de Gargalo",
+  "marketing.prevendas": "Marketing • Home Pré-Vendas",
 };
 
 export const ALL_FEATURES: FeatureKey[] = Object.keys(FEATURE_LABELS) as FeatureKey[];
