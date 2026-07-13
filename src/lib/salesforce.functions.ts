@@ -888,7 +888,7 @@ export const getMarketingSalesforceData = createServerFn({ method: "GET" })
     const startDT = `${data.start}T00:00:00Z`;
     const endDT = `${data.end}T23:59:59Z`;
 
-    const [byStatus, byOrigem, bySub, byOwner, daily, convertedRes] = await Promise.all([
+    const [byStatus, byOrigem, bySub, byOwner, daily, dailyConv, convertedRes] = await Promise.all([
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Status FROM Lead ` +
         `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
@@ -910,10 +910,13 @@ export const getMarketingSalesforceData = createServerFn({ method: "GET" })
         `GROUP BY Owner.Name ORDER BY COUNT(Id) DESC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
-        `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia, ` +
-        `SUM(CASE WHEN IsConverted = true THEN 1 ELSE 0 END) conv ` +
-        `FROM Lead ` +
+        `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia FROM Lead ` +
         `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) ASC`,
+      )}`),
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia FROM Lead ` +
+        `WHERE OwnerId IN (${ownerList}) AND IsConverted = true AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) ASC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
@@ -983,10 +986,14 @@ export const getMarketingSalesforceData = createServerFn({ method: "GET" })
     const novasContas = new Set(convertedRecords.map((r) => r.ConvertedAccountId).filter(Boolean)).size;
     const faturado = Array.from(accountValueById.values()).reduce((a, b) => a + b, 0);
 
+    const convByDay = new Map<string, number>();
+    for (const r of (dailyConv?.records ?? [])) {
+      convByDay.set(r.dia, typeof r.total === "number" ? r.total : 0);
+    }
     const serieDiaria = (daily?.records ?? []).map((r: any) => ({
       date: r.dia,
       leads: typeof r.total === "number" ? r.total : 0,
-      convertidos: typeof r.conv === "number" ? r.conv : 0,
+      convertidos: convByDay.get(r.dia) ?? 0,
     }));
 
     const result: MarketingData = {
