@@ -23,23 +23,26 @@ import {
  *  - fallback determinístico por role+cargo+instance.
  */
 export function useViewVariant(screen: ScreenKey, available: VariantKey[]) {
-  const { profile, roles, loading } = useAuth();
+  const { user, profile, roles, loading } = useAuth();
   const { instance } = useInstance();
   const fetchPrefs = useServerFn(getMyViewPreferences);
   const fetchRoutings = useServerFn(listVariantRoutings);
+
+  const authed = !loading && !!user;
 
   const prefsQ = useQuery({
     queryKey: ["view-prefs"],
     queryFn: () => fetchPrefs(),
     staleTime: 60_000,
-    enabled: !loading,
+    enabled: authed,
   });
   const routingsQ = useQuery({
     queryKey: ["view-routings"],
     queryFn: () => fetchRoutings(),
     staleTime: 60_000,
-    enabled: !loading,
+    enabled: authed,
   });
+
 
   const ctx: ResolveContext = {
     role: roles[0] ?? null,
