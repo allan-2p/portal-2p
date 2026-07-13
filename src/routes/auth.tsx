@@ -58,7 +58,6 @@ function AuthPage() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-  const activeUsers = activeQ.data?.records ?? [];
   const activeTotal = activeQ.data?.total ?? 0;
 
   const emailError = useMemo(() => {
