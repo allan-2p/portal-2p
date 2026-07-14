@@ -874,7 +874,7 @@ const Donut = ({ value, color, size = 78 }: { value: number; color: string; size
         textAnchor="middle"
         dominantBaseline="middle"
         transform={`rotate(90 ${size / 2} ${size / 2})`}
-        fontSize={13}
+        fontSize={16}
         fontWeight={800}
         fill={T.ink}
       >
