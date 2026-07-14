@@ -410,10 +410,10 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
           pace: paceMensal,
         },
         novosReativ: {
-          label: gNovosReat?.label ?? "Novos e reativações",
+          label: gNovosReat?.label ?? "Reativações",
           periodo: "mensal",
           metaQtd: gNovosReat?.goal ?? 100,
-          realQtd: novosReativCount,
+          realQtd: reativCount,
           pace: paceMensal,
         },
         recorrencia: {
