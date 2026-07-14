@@ -1710,6 +1710,7 @@ function TabelasPage() {
   const [geradoDefaults, setGeradoDefaults] = useState<OppFilters>(() => loadStoredFilters("gerado-mes", OPP_DEFAULTS_GERADO_MES));
   const [novosDefaults, setNovosDefaults] = useState<OppFilters>(() => loadStoredFilters("clientes-novos", OPP_DEFAULTS_CLIENTES_NOVOS));
   const [carregDefaults, setCarregDefaults] = useState<OppFilters>(() => loadStoredFilters("carregadores-tri", OPP_DEFAULTS_CARREGADORES_TRI));
+  const [vendidoTriDefaults, setVendidoTriDefaults] = useState<OppFilters>(() => loadStoredFilters("vendido-tri", OPP_DEFAULTS_VENDIDO_TRI));
 
   const [orcFilters, setOrcFilters] = useState<OppFilters>(() => ({ ...orcDefaults }));
   const [venFilters, setVenFilters] = useState<OppFilters>(() => ({ ...venDefaults }));
