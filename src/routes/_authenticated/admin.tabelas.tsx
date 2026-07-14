@@ -1839,12 +1839,6 @@ function TabelasPage() {
             <TabsTrigger value="vendido-mes" className="gap-2">
               <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
             </TabsTrigger>
-            <TabsTrigger value="gerado-mes" className="gap-2">
-              <ShoppingCart className="h-4 w-4" /> Gerado - Mês Atual
-            </TabsTrigger>
-            <TabsTrigger value="vendido-mes" className="gap-2">
-              <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
-            </TabsTrigger>
             <TabsTrigger value="vendido-tri" className="gap-2">
               <ShoppingCart className="h-4 w-4" /> Vendido - Tri Atual
             </TabsTrigger>
