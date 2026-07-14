@@ -1141,30 +1141,32 @@ export function Dashboard2P({
           <HeaderMetas tri={data.tri} />
         </div>
 
-        <VendasDestaque mes={data.mes} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 18, position: "relative", minHeight: 0 }}>
+          <VendasDestaque mes={data.mes} />
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, position: "relative" }}>
-          <GraficoSemanal
-            titulo="Geração de orçamentos · semana"
-            dot={T.orange}
-            dados={data.semanaOrc}
-            diaAtual={data.diaAtual}
-            delay={0.15}
-          />
-          <GraficoSemanal
-            titulo="Vendas · semana"
-            dot={T.blue}
-            dados={data.semanaVen}
-            diaAtual={data.diaAtual}
-            delay={0.2}
-          />
-        </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, position: "relative" }}>
+            <GraficoSemanal
+              titulo="Geração de orçamentos · semana"
+              dot={T.orange}
+              dados={data.semanaOrc}
+              diaAtual={data.diaAtual}
+              delay={0.15}
+            />
+            <GraficoSemanal
+              titulo="Vendas · semana"
+              dot={T.blue}
+              dados={data.semanaVen}
+              diaAtual={data.diaAtual}
+              delay={0.2}
+            />
+          </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18, position: "relative" }}>
-          <KpiCard k={data.kpis.clientesNovos} delay={0.25} />
-          <KpiCard k={data.kpis.novosReativ} delay={0.3} />
-          <KpiCard k={data.kpis.recorrencia} delay={0.35} />
-          <KpiCard k={data.kpis.retencao} delay={0.4} />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18, position: "relative" }}>
+            <KpiCard k={data.kpis.clientesNovos} delay={0.25} />
+            <KpiCard k={data.kpis.novosReativ} delay={0.3} />
+            <KpiCard k={data.kpis.recorrencia} delay={0.35} />
+            <KpiCard k={data.kpis.retencao} delay={0.4} />
+          </div>
         </div>
 
         <div
