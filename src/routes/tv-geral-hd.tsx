@@ -9,5 +9,5 @@ export const Route = createFileRoute("/tv-geral-hd")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: () => <Dashboard2P canvasPadding={4} fill overscan={24} stretchTolerance={0.08} />,,
+  component: () => <Dashboard2P canvasPadding={4} fill overscan={24} stretchTolerance={0.08} />,
 });
