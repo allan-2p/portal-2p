@@ -743,6 +743,10 @@ export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
     for (const v of (f.ownerNameNotIn ?? []).filter(Boolean)) {
       clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
     }
+    const ownersIn = (f.ownerNameIn ?? []).filter(Boolean);
+    if (ownersIn.length) {
+      clauses.push(`Owner.Name IN (${ownersIn.map((s) => `'${esc(s)}'`).join(",")})`);
+    }
     const lossIn = (f.lossReasonIn ?? []).filter(Boolean);
     if (lossIn.length) {
       clauses.push(`Loss_Reason__c IN (${lossIn.map((s) => `'${esc(s)}'`).join(",")})`);
