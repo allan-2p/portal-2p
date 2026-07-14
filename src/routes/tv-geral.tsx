@@ -1075,12 +1075,13 @@ export function Dashboard2P({
         style={{
           width: 1920,
           height: 1080,
-          transform: `scale(${scale})`,
+          transform: `scale(${scale.x}, ${scale.y})`,
           transformOrigin: "center",
           padding: canvasPadding,
           display: "flex",
           flexDirection: "column",
           gap: 18,
+
           position: "relative",
           zIndex: 1,
         }}
