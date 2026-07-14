@@ -630,6 +630,7 @@ export type OppFilters = {
   tipoNfNotIn?: string[];
   accountNameNotIn?: string[];
   ownerNameNotIn?: string[];
+  ownerNameIn?: string[];
   lossReasonIn?: string[];
   lossReasonNotIn?: string[];
   ownerId?: string | null;
