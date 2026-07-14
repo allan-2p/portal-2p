@@ -1294,29 +1294,41 @@ export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
       new Set(rows.map((r) => r.accountId).filter((v): v is string => !!v)),
     );
     if (accountIds.length === 0) {
-      return { records: [] as SalesforceOppRow[], newAccountsCount: 0, rangeStart };
+      return {
+        records: [] as SalesforceOppRow[],
+        newAccountsCount: 0,
+        reactivationCount: 0,
+        carteiraCount: 0,
+        rangeStart,
+      };
     }
 
-    // Contas com histórico anterior de vendas concluídas.
-    const historyAccounts = new Set<string>();
+    // Última venda concluída anterior ao início do período por conta.
+    const lastByAccount = new Map<string, string>();
     const CHUNK = 200;
     for (let i = 0; i < accountIds.length; i += CHUNK) {
       const chunk = accountIds.slice(i, i + CHUNK);
       const histSoql =
-        `SELECT AccountId FROM Opportunity ` +
+        `SELECT AccountId, MAX(CloseDate) maxClose FROM Opportunity ` +
         `WHERE StageName = 'Pedido Concluído' AND CloseDate < ${rangeStart} ` +
-        `AND AccountId IN (${chunk.map((id) => `'${esc(id)}'`).join(",")}) LIMIT 2000`;
+        `AND AccountId IN (${chunk.map((id) => `'${esc(id)}'`).join(",")}) ` +
+        `GROUP BY AccountId LIMIT 2000`;
       const hres = await sfFetch(`/query?q=${encodeURIComponent(histSoql)}`);
       for (const rec of hres?.records ?? []) {
-        if (rec.AccountId) historyAccounts.add(rec.AccountId);
+        if (rec.AccountId && rec.maxClose) {
+          lastByAccount.set(rec.AccountId, String(rec.maxClose).slice(0, 10));
+        }
       }
     }
 
-    // Mantém apenas oportunidades cujo cliente não possui histórico anterior.
-    const newRows = rows.filter((r) => r.accountId && !historyAccounts.has(r.accountId));
-    // Para cada cliente novo, mostrar apenas a primeira venda dentro do período.
+    // Data-limite para reativação: 3 meses antes do início do período.
+    const [ry, rm, rd] = rangeStart.split("-").map((n) => parseInt(n, 10));
+    const cutoff = new Date(ry, rm - 1 - 3, rd);
+    const cutoffIso = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, "0")}-${String(cutoff.getDate()).padStart(2, "0")}`;
+
+    // Primeira oportunidade dentro do período por conta.
     const firstByAccount = new Map<string, SalesforceOppRow>();
-    for (const r of newRows) {
+    for (const r of rows) {
       if (!r.accountId) continue;
       const cur = firstByAccount.get(r.accountId);
       if (!cur) {
@@ -1327,15 +1339,196 @@ export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
       const b = cur.closeDate ?? "";
       if (a && (!b || a < b)) firstByAccount.set(r.accountId, r);
     }
-    const uniqueNewRows = Array.from(firstByAccount.values()).sort((a, b) => {
-      const ad = a.closeDate ?? "";
-      const bd = b.closeDate ?? "";
-      return bd.localeCompare(ad);
+
+    let novoCount = 0;
+    let reativCount = 0;
+    let carteiraCount = 0;
+    const classified: SalesforceOppRow[] = Array.from(firstByAccount.values()).map((r) => {
+      const last = r.accountId ? lastByAccount.get(r.accountId) ?? null : null;
+      let classification: "novo" | "reativacao" | "carteira";
+      if (!last) {
+        classification = "novo";
+        novoCount++;
+      } else if (last < cutoffIso) {
+        classification = "reativacao";
+        reativCount++;
+      } else {
+        classification = "carteira";
+        carteiraCount++;
+      }
+      return { ...r, classification, lastPurchaseBefore: last };
     });
+
+    classified.sort((a, b) => (b.closeDate ?? "").localeCompare(a.closeDate ?? ""));
+
     return {
-      records: uniqueNewRows,
-      newAccountsCount: uniqueNewRows.length,
+      records: classified,
+      newAccountsCount: novoCount,
+      reactivationCount: reativCount,
+      carteiraCount,
       rangeStart,
     };
   });
+
+// =============================================================
+// Recorrência / Retenção — contas que compraram > R$ 15.000
+// (Pedido Concluído, excluindo Bonificação) em um trimestre.
+// =============================================================
+
+const RECURRENCE_THRESHOLD = 15000;
+
+function quarterRangeIso(year: number, quarter: number): { start: string; end: string } {
+  let y = year;
+  let q = quarter;
+  if (q < 1) { q = 4; y = year - 1; }
+  if (q > 4) { q = 1; y = year + 1; }
+  const start = new Date(y, (q - 1) * 3, 1);
+  const end = new Date(y, q * 3, 0);
+  const iso = (dt: Date) =>
+    `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+  return { start: iso(start), end: iso(end) };
+}
+
+export type RecurrenceAccountRow = {
+  accountId: string;
+  accountName: string | null;
+  owner: string | null;
+  ownerId: string | null;
+  total: number;
+  orders: number;
+};
+
+async function aggregateByAccount(
+  start: string,
+  end: string,
+  ownerClause: string,
+): Promise<Map<string, { total: number; orders: number; name: string | null; owner: string | null; ownerId: string | null }>> {
+  // Agregação usando SOQL GROUP BY (sem risco do teto de 1000 linhas).
+  const clauses = [
+    `StageName = 'Pedido Concluído'`,
+    `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
+    `CloseDate >= ${start}`,
+    `CloseDate <= ${end}`,
+    `AccountId != null`,
+  ];
+  const soql =
+    `SELECT AccountId, Account.Name accName, Owner.Name ownerName, OwnerId, ` +
+    `SUM(Total__c) sumT, SUM(Amount) sumA, COUNT(Id) cnt ` +
+    `FROM Opportunity WHERE ${clauses.join(" AND ")}${ownerClause} ` +
+    `GROUP BY AccountId, Account.Name, Owner.Name, OwnerId LIMIT 5000`;
+  const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+  const map = new Map<string, { total: number; orders: number; name: string | null; owner: string | null; ownerId: string | null }>();
+  for (const r of res?.records ?? []) {
+    const total = typeof r.sumT === "number" ? r.sumT : typeof r.sumA === "number" ? r.sumA : 0;
+    const existing = map.get(r.AccountId);
+    if (existing) {
+      existing.total += total;
+      existing.orders += typeof r.cnt === "number" ? r.cnt : 0;
+    } else {
+      map.set(r.AccountId, {
+        total,
+        orders: typeof r.cnt === "number" ? r.cnt : 0,
+        name: r.accName ?? null,
+        owner: r.ownerName ?? null,
+        ownerId: r.OwnerId ?? null,
+      });
+    }
+  }
+  return map;
+}
+
+export const getSalesforceRecorrencia = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { year: number; quarter: number; ownerId?: string | null }) => {
+    if (!Number.isInteger(input.year) || input.year < 2000 || input.year > 3000) {
+      throw new Error("Ano inválido.");
+    }
+    if (!Number.isInteger(input.quarter) || input.quarter < 1 || input.quarter > 4) {
+      throw new Error("Trimestre inválido.");
+    }
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { start, end } = quarterRangeIso(data.year, data.quarter);
+    const ownerClause = ownerFilterClause(
+      await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId ?? null),
+    );
+    const agg = await aggregateByAccount(start, end, ownerClause);
+    const records: RecurrenceAccountRow[] = [];
+    for (const [accountId, v] of agg) {
+      if (v.total > RECURRENCE_THRESHOLD) {
+        records.push({
+          accountId,
+          accountName: v.name,
+          owner: v.owner,
+          ownerId: v.ownerId,
+          total: v.total,
+          orders: v.orders,
+        });
+      }
+    }
+    records.sort((a, b) => b.total - a.total);
+    return {
+      records,
+      threshold: RECURRENCE_THRESHOLD,
+      range: { start, end },
+    };
+  });
+
+export type RetentionAccountRow = RecurrenceAccountRow & { previousTotal: number };
+
+export const getSalesforceRetencao = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { year: number; quarter: number; ownerId?: string | null }) => {
+    if (!Number.isInteger(input.year) || input.year < 2000 || input.year > 3000) {
+      throw new Error("Ano inválido.");
+    }
+    if (!Number.isInteger(input.quarter) || input.quarter < 1 || input.quarter > 4) {
+      throw new Error("Trimestre inválido.");
+    }
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const cur = quarterRangeIso(data.year, data.quarter);
+    const prev = quarterRangeIso(data.year, data.quarter - 1);
+    const ownerClause = ownerFilterClause(
+      await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId ?? null),
+    );
+    const [curAgg, prevAgg] = await Promise.all([
+      aggregateByAccount(cur.start, cur.end, ownerClause),
+      aggregateByAccount(prev.start, prev.end, ownerClause),
+    ]);
+    const prevQualified = new Set<string>();
+    let prevQualifiedCount = 0;
+    for (const [accId, v] of prevAgg) {
+      if (v.total > RECURRENCE_THRESHOLD) {
+        prevQualified.add(accId);
+        prevQualifiedCount++;
+      }
+    }
+    const records: RetentionAccountRow[] = [];
+    for (const accId of prevQualified) {
+      const c = curAgg.get(accId);
+      if (c && c.total > RECURRENCE_THRESHOLD) {
+        records.push({
+          accountId: accId,
+          accountName: c.name,
+          owner: c.owner,
+          ownerId: c.ownerId,
+          total: c.total,
+          orders: c.orders,
+          previousTotal: prevAgg.get(accId)?.total ?? 0,
+        });
+      }
+    }
+    records.sort((a, b) => b.total - a.total);
+    return {
+      records,
+      threshold: RECURRENCE_THRESHOLD,
+      previousQualifiedCount: prevQualifiedCount,
+      retentionRate: prevQualifiedCount > 0 ? records.length / prevQualifiedCount : 0,
+      range: { current: cur, previous: prev },
+    };
+  });
+
 
