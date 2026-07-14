@@ -54,16 +54,27 @@ async function loadFor(u: User | null) {
 function initialize() {
   if (initialized) return;
   initialized = true;
-  supabase.auth.getUser().then(async ({ data }) => {
-    setState({ user: data.user });
-    await loadFor(data.user);
+  // getSession() reads the stored session synchronously from localStorage, avoiding
+  // a round-trip on first paint. onAuthStateChange still fires immediately after
+  // subscribing, so token validation happens without blocking the initial render.
+  supabase.auth.getSession().then(async ({ data }) => {
+    const u = data.session?.user ?? null;
+    setState({ user: u });
+    await loadFor(u);
     setState({ loading: false });
   });
+  let inflight: Promise<void> | null = null;
   supabase.auth.onAuthStateChange((event, session) => {
     if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
     const u = session?.user ?? null;
+    // Skip redundant reloads: TOKEN_REFRESH-style SIGNED_IN events on the same user
+    // don't need a profile+roles refetch.
+    if (event === "SIGNED_IN" && state.user?.id === u?.id && state.profile) return;
     setState({ user: u, loading: true });
-    loadFor(u).finally(() => setState({ loading: false }));
+    const run = loadFor(u).finally(() => {
+      if (inflight === run) setState({ loading: false });
+    });
+    inflight = run;
   });
 }
 
