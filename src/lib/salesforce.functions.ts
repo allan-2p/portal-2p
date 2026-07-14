@@ -705,6 +705,24 @@ export const OPP_DEFAULTS_GERADO_MES: OppFilters = {
   dateLiteral: "THIS_MONTH",
 };
 
+export const OPP_DEFAULTS_CARREGADORES_TRI: OppFilters = {
+  stageEquals: "Pedido Concluído",
+  statusIn: [
+    "Aguardando Pagamento",
+    "Processando",
+    "Separação",
+    "Faturado",
+    "Coletado",
+    "Entregue",
+    "Documentação Liberada",
+    "Finalizado",
+  ],
+  tipoNfNotIn: ["Bonificação"],
+  ownerNameIn: ["Caroline Gimenez"],
+  dateField: "CloseDate",
+  dateLiteral: "THIS_QUARTER",
+};
+
 export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => (input ?? {}) as OppFilters)
