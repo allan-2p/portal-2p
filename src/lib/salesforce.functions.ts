@@ -513,6 +513,8 @@ export type SalesforceOppRow = {
   owner: string | null;
   ownerId: string | null;
   accountOwner: string | null;
+  classification?: "novo" | "reativacao" | "carteira" | null;
+  lastPurchaseBefore?: string | null;
 };
 
 export const PEDIDO_STATUS = [
@@ -547,6 +549,7 @@ function mapOppRow(r: any): SalesforceOppRow {
     accountOwner: r.Account?.Owner?.Name ?? null,
   };
 }
+
 
 const OPP_COLS =
   `Id, Name, StageName, Status_do_Pedido__c, Tipo_de_NF__c, Amount, Total__c, Valor_L_q__c, Frete__c, Desconto__c, ` +
