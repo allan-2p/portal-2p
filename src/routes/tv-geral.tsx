@@ -1066,7 +1066,7 @@ export function Dashboard2P({ canvasPadding = 32 }: { canvasPadding?: number } =
           height: 1080,
           transform: `scale(${scale})`,
           transformOrigin: "center",
-          padding: 32,
+          padding: canvasPadding,
           display: "flex",
           flexDirection: "column",
           gap: 18,
