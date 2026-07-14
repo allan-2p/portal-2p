@@ -1453,6 +1453,229 @@ function OppTabPanel({
 }
 
 
+function QuarterPicker({
+  year, quarter, onChange,
+}: { year: number; quarter: number; onChange: (v: { year: number; quarter: number }) => void }) {
+  const cur = useMemo(currentQuarter, []);
+  const years = Array.from(new Set([cur.year - 1, cur.year, cur.year + 1, year])).sort((a, b) => a - b);
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-xs uppercase tracking-wider text-muted-foreground">Trimestre</span>
+      <Select value={String(year)} onValueChange={(v) => onChange({ year: parseInt(v, 10), quarter })}>
+        <SelectTrigger className="w-[100px] h-9"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          {years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
+        {[1, 2, 3, 4].map((q) => {
+          const active = q === quarter;
+          const isCurrent = year === cur.year && q === cur.q;
+          return (
+            <button
+              key={q}
+              onClick={() => onChange({ year, quarter: q })}
+              className={cn(
+                "px-3 py-1 rounded-md transition-colors",
+                active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
+            >Q{q}{isCurrent ? " • atual" : ""}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RecorrenciaPanel({ search }: { search: string }) {
+  const cur = useMemo(currentQuarter, []);
+  const [{ year, quarter }, setYQ] = useState(cur);
+  const [vendedor, setVendedor] = useState<string>("__all__");
+  const fetchFn = useServerFn(getSalesforceRecorrencia);
+  const q = useQuery({
+    queryKey: ["sf-recorrencia", year, quarter],
+    queryFn: () => fetchFn({ data: { year, quarter } }),
+    staleTime: 60_000,
+  });
+  const records: RecurrenceAccountRow[] = q.data?.records ?? [];
+  const vendedores = useMemo(
+    () => Array.from(new Set(records.map((r) => r.owner).filter((v): v is string => !!v)))
+      .sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [records],
+  );
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    let out = vendedor === "__all__" ? records : records.filter((r) => (r.owner ?? "") === vendedor);
+    if (s) out = out.filter((r) => (r.accountName ?? "").toLowerCase().includes(s) || (r.owner ?? "").toLowerCase().includes(s));
+    return out;
+  }, [records, vendedor, search]);
+  const totalSum = filtered.reduce((a, b) => a + b.total, 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <QuarterPicker year={year} quarter={quarter} onChange={setYQ} />
+        <div className="flex items-center gap-2">
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
+          <Select value={vendedor} onValueChange={setVendedor}>
+            <SelectTrigger className="w-[240px] h-9"><SelectValue placeholder="Todos" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos os vendedores</SelectItem>
+              {vendedores.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="glass rounded-2xl p-3 text-[11px] text-muted-foreground leading-relaxed">
+        Contas com faturamento acima de <b className="text-foreground">{brl(q.data?.threshold ?? 15000)}</b> no
+        trimestre selecionado (Pedido Concluído, excluindo Bonificação).
+      </div>
+      <AccountTotalsTable
+        records={filtered}
+        totalSum={totalSum}
+        loading={q.isLoading}
+        error={q.error}
+      />
+    </div>
+  );
+}
+
+function RetencaoPanel({ search }: { search: string }) {
+  const cur = useMemo(currentQuarter, []);
+  const [{ year, quarter }, setYQ] = useState(cur);
+  const [vendedor, setVendedor] = useState<string>("__all__");
+  const fetchFn = useServerFn(getSalesforceRetencao);
+  const q = useQuery({
+    queryKey: ["sf-retencao", year, quarter],
+    queryFn: () => fetchFn({ data: { year, quarter } }),
+    staleTime: 60_000,
+  });
+  const records: RetentionAccountRow[] = q.data?.records ?? [];
+  const vendedores = useMemo(
+    () => Array.from(new Set(records.map((r) => r.owner).filter((v): v is string => !!v)))
+      .sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [records],
+  );
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    let out = vendedor === "__all__" ? records : records.filter((r) => (r.owner ?? "") === vendedor);
+    if (s) out = out.filter((r) => (r.accountName ?? "").toLowerCase().includes(s) || (r.owner ?? "").toLowerCase().includes(s));
+    return out;
+  }, [records, vendedor, search]);
+  const totalSum = filtered.reduce((a, b) => a + b.total, 0);
+  const rate = q.data?.retentionRate ?? 0;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <QuarterPicker year={year} quarter={quarter} onChange={setYQ} />
+        <div className="flex items-center gap-2">
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
+          <Select value={vendedor} onValueChange={setVendedor}>
+            <SelectTrigger className="w-[240px] h-9"><SelectValue placeholder="Todos" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos os vendedores</SelectItem>
+              {vendedores.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-6 text-sm">
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Qualificados no trimestre anterior</div>
+          <div className="font-medium">{q.data?.previousQualifiedCount ?? 0}</div>
+        </div>
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Retidos neste trimestre</div>
+          <div className="font-medium">{records.length}</div>
+        </div>
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Taxa de retenção</div>
+          <div className="font-medium">{(rate * 100).toFixed(1).replace(".", ",")}%</div>
+        </div>
+      </div>
+      <div className="glass rounded-2xl p-3 text-[11px] text-muted-foreground leading-relaxed">
+        Contas que faturaram acima de <b className="text-foreground">{brl(q.data?.threshold ?? 15000)}</b> no
+        trimestre anterior <b>e também</b> no trimestre atual selecionado.
+      </div>
+      <AccountTotalsTable
+        records={filtered}
+        totalSum={totalSum}
+        loading={q.isLoading}
+        error={q.error}
+        showPrevious
+      />
+    </div>
+  );
+}
+
+function AccountTotalsTable({
+  records, totalSum, loading, error, showPrevious = false,
+}: {
+  records: (RecurrenceAccountRow & { previousTotal?: number })[];
+  totalSum: number;
+  loading: boolean;
+  error: unknown;
+  showPrevious?: boolean;
+}) {
+  const colSpan = showPrevious ? 5 : 4;
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      {!!error && (
+        <div className="border-b border-destructive/40 bg-destructive/10 text-destructive text-sm px-4 py-3 flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 mt-0.5" />
+          <div>{error instanceof Error ? error.message : "Erro ao carregar dados"}</div>
+        </div>
+      )}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+              <th className="text-left px-4 py-2.5">Cliente</th>
+              <th className="text-left px-4 py-2.5">Vendedor</th>
+              <th className="text-right px-4 py-2.5">Pedidos</th>
+              {showPrevious && <th className="text-right px-4 py-2.5">Total (tri. anterior)</th>}
+              <th className="text-right px-4 py-2.5">Total (tri. atual)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && (
+              <tr><td colSpan={colSpan} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />Carregando do Salesforce…
+              </td></tr>
+            )}
+            {!loading && records.map((r) => (
+              <tr key={r.accountId} className="border-b border-border/40 hover:bg-surface-2/50">
+                <td className="px-4 py-3 font-medium">{r.accountName ?? "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground">{r.owner ?? "—"}</td>
+                <td className="px-4 py-3 text-right font-mono">{r.orders}</td>
+                {showPrevious && <td className="px-4 py-3 text-right font-mono text-muted-foreground">{brl(r.previousTotal ?? 0)}</td>}
+                <td className="px-4 py-3 text-right font-mono">{brl(r.total)}</td>
+              </tr>
+            ))}
+            {!loading && records.length === 0 && (
+              <tr><td colSpan={colSpan} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                Nenhum registro encontrado.
+              </td></tr>
+            )}
+          </tbody>
+          {!loading && records.length > 0 && (
+            <tfoot>
+              <tr className="border-t border-border bg-surface-2/50 text-sm">
+                <td colSpan={colSpan - 1} className="px-4 py-2.5 text-right text-muted-foreground uppercase tracking-wider text-[11px]">
+                  Total ({records.length} {records.length === 1 ? "conta" : "contas"})
+                </td>
+                <td className="px-4 py-2.5 text-right font-mono font-semibold">{brl(totalSum)}</td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
 const FILTER_STORAGE_PREFIX = "tabelas:opp-filters:";
 function loadStoredFilters(key: string, fallback: OppFilters): OppFilters {
   if (typeof window === "undefined") return { ...fallback };
