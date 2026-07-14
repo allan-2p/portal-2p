@@ -1735,6 +1735,7 @@ function TabelasPage() {
   const [vendedorGer, setVendedorGer] = useState<string>("__all__");
   const [vendedorNov, setVendedorNov] = useState<string>("__all__");
   const [vendedorCarreg, setVendedorCarreg] = useState<string>("__all__");
+  const [vendedorVendidoTri, setVendedorVendidoTri] = useState<string>("__all__");
   const [classifNov, setClassifNov] = useState<"all" | "novo" | "reativacao" | "carteira">("all");
 
   const [search, setSearch] = useState("");
