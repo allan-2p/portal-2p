@@ -1205,11 +1205,7 @@ function resolveLiteralStartISO(literal: string, dateFrom?: string): string | nu
   }
 }
 
-export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => (input ?? {}) as OppFilters)
-  .handler(async ({ data, context }) => {
-    const f: OppFilters = data ?? {};
+async function runClientesNovos(f: OppFilters, ownerClause: string) {
     const df: "CloseDate" | "CreatedDate" | "Data_de_Faturamento__c" =
       f.dateField === "CreatedDate"
         ? "CreatedDate"
@@ -1262,12 +1258,6 @@ export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
       }
     }
 
-    const ownerClause = (f as OppFilters & { unscoped?: boolean }).unscoped
-      ? ""
-      : ownerFilterClause(
-          await resolveSalesforceOwnerFilter(context.supabase, context.userId, f.ownerId ?? null),
-        );
-
     const where = clauses.length ? `WHERE ${clauses.join(" AND ")} ` : "";
     const soql =
       `SELECT ${OPP_COLS} FROM Opportunity ${where}${ownerClause} ` +
@@ -1275,19 +1265,17 @@ export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     const rows: SalesforceOppRow[] = (res?.records ?? []).map(mapOppRow);
 
-    // Início do período — usado para detectar histórico anterior.
     let rangeStart = resolveLiteralStartISO(literal, f.dateFrom);
     if (!rangeStart && f.dateField2) {
       rangeStart = resolveLiteralStartISO((f.dateLiteral2 ?? "").trim(), f.dateFrom2);
     }
     if (!rangeStart) {
-      // Fallback: menor CloseDate dentro do próprio resultado
       for (const r of rows) {
         if (r.closeDate && (!rangeStart || r.closeDate < rangeStart)) rangeStart = r.closeDate;
       }
     }
     if (!rangeStart) {
-      return { records: [] as SalesforceOppRow[], newAccountsCount: 0, rangeStart: null };
+      return { records: [] as SalesforceOppRow[], newAccountsCount: 0, reactivationCount: 0, carteiraCount: 0, rangeStart: null };
     }
 
     const accountIds = Array.from(
@@ -1303,7 +1291,6 @@ export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
       };
     }
 
-    // Última venda concluída anterior ao início do período por conta.
     const lastByAccount = new Map<string, string>();
     const CHUNK = 200;
     for (let i = 0; i < accountIds.length; i += CHUNK) {
@@ -1321,20 +1308,15 @@ export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
       }
     }
 
-    // Data-limite para reativação: 3 meses antes do início do período.
     const [ry, rm, rd] = rangeStart.split("-").map((n) => parseInt(n, 10));
     const cutoff = new Date(ry, rm - 1 - 3, rd);
     const cutoffIso = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, "0")}-${String(cutoff.getDate()).padStart(2, "0")}`;
 
-    // Primeira oportunidade dentro do período por conta.
     const firstByAccount = new Map<string, SalesforceOppRow>();
     for (const r of rows) {
       if (!r.accountId) continue;
       const cur = firstByAccount.get(r.accountId);
-      if (!cur) {
-        firstByAccount.set(r.accountId, r);
-        continue;
-      }
+      if (!cur) { firstByAccount.set(r.accountId, r); continue; }
       const a = r.closeDate ?? "";
       const b = cur.closeDate ?? "";
       if (a && (!b || a < b)) firstByAccount.set(r.accountId, r);
@@ -1346,16 +1328,9 @@ export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
     const classified: SalesforceOppRow[] = Array.from(firstByAccount.values()).map((r) => {
       const last = r.accountId ? lastByAccount.get(r.accountId) ?? null : null;
       let classification: "novo" | "reativacao" | "carteira";
-      if (!last) {
-        classification = "novo";
-        novoCount++;
-      } else if (last < cutoffIso) {
-        classification = "reativacao";
-        reativCount++;
-      } else {
-        classification = "carteira";
-        carteiraCount++;
-      }
+      if (!last) { classification = "novo"; novoCount++; }
+      else if (last < cutoffIso) { classification = "reativacao"; reativCount++; }
+      else { classification = "carteira"; carteiraCount++; }
       return { ...r, classification, lastPurchaseBefore: last };
     });
 
@@ -1368,7 +1343,29 @@ export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
       carteiraCount,
       rangeStart,
     };
+}
+
+export const getSalesforceClientesNovos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => (input ?? {}) as OppFilters)
+  .handler(async ({ data, context }) => {
+    const f: OppFilters = data ?? {};
+    const ownerClause = (f as OppFilters & { unscoped?: boolean }).unscoped
+      ? ""
+      : ownerFilterClause(
+          await resolveSalesforceOwnerFilter(context.supabase, context.userId, f.ownerId ?? null),
+        );
+    return runClientesNovos(f, ownerClause);
   });
+
+export const getPublicClientesNovosTv = createServerFn({ method: "GET" }).handler(async () => {
+  const r = await runClientesNovos(OPP_DEFAULTS_CLIENTES_NOVOS, "");
+  return {
+    novos: r.newAccountsCount ?? 0,
+    reativacoes: r.reactivationCount ?? 0,
+    carteira: r.carteiraCount ?? 0,
+  };
+});
 
 // =============================================================
 // Recorrência / Retenção — contas que compraram > R$ 15.000
