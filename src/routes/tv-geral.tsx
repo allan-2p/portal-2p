@@ -888,11 +888,11 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
   const p = pct(k.realQtd, k.metaQtd);
   const cor = semaforo(p, k.pace);
   return (
-    <Card delay={delay} style={{ padding: "18px 20px", display: "flex", alignItems: "center", gap: 16 }}>
+    <Card delay={delay} style={{ padding: "22px 26px", display: "flex", alignItems: "center", gap: 20 }}>
       <Donut value={p} color={cor} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: T.ink }}>{k.label}</span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: T.ink }}>{k.label}</span>
           <span
             style={{
               fontSize: 9,
@@ -905,12 +905,12 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
             {k.periodo}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 30, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 36, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
             {k.realQtd}
           </span>
-          <span style={{ fontSize: 14, color: T.faint }}>/ {k.metaQtd}</span>
-          <span style={{ fontSize: 13, fontWeight: 800, color: cor, marginLeft: 4 }}>
+          <span style={{ fontSize: 16, color: T.faint }}>/ {k.metaQtd}</span>
+          <span style={{ fontSize: 15, fontWeight: 800, color: cor, marginLeft: 4 }}>
             {p.toFixed(0)}%
           </span>
           {k.metaPct != null && (
@@ -919,7 +919,7 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
             </span>
           )}
         </div>
-        <ProgressBar value={p} color={cor} height={5} />
+        <ProgressBar value={p} color={cor} height={6} />
       </div>
     </Card>
   );
