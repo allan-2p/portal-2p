@@ -250,7 +250,26 @@ function OppTable({
               filtered.map((r) => (
                 <tr key={r.id} className="border-b border-border/40 hover:bg-surface-2/50">
                   <td className="px-4 py-3 font-medium">{r.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{r.account ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {r.account ?? "—"}
+                    {r.classification && (
+                      <span
+                        className={cn(
+                          "ml-2 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border",
+                          r.classification === "novo" && "bg-emerald-500/10 text-emerald-500 border-emerald-500/30",
+                          r.classification === "reativacao" && "bg-amber-500/10 text-amber-500 border-amber-500/30",
+                          r.classification === "carteira" && "bg-sky-500/10 text-sky-500 border-sky-500/30",
+                        )}
+                        title={
+                          r.classification === "reativacao" && r.lastPurchaseBefore
+                            ? `Última compra em ${fmtDate(r.lastPurchaseBefore)}`
+                            : undefined
+                        }
+                      >
+                        {r.classification === "novo" ? "Novo" : r.classification === "reativacao" ? "Reativação" : "Carteira"}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{r.owner ?? "—"}</td>
                   <td className="px-4 py-3">
                     <span className="text-xs px-2 py-0.5 rounded bg-surface-2 text-muted-foreground">
