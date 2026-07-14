@@ -212,6 +212,11 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     queryFn: () => fetchVendido({ data: { variant: "carregadores_tri" } }),
     ...commonFast,
   });
+  const vendidoTriQ = useQuery({
+    queryKey: ["tv-vendido-tri"],
+    queryFn: () => fetchVendido({ data: { variant: "vendido_tri" } }),
+    ...commonFast,
+  });
   const monthGoalQ = useQuery({
     queryKey: ["tv-month-goal", y, m + 1],
     queryFn: () => fetchMonthGoal({ data: { year: y, month: m + 1 } }),
