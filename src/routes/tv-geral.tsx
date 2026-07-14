@@ -1100,15 +1100,15 @@ export function Dashboard2P({
         style={{
           width: 1920,
           height: 1080,
-          transform: `translate(${scale.offsetX}px, ${scale.offsetY}px) scale(${scale.x}, ${scale.y})`,
-          transformOrigin: "top left",
+          transform: `translate(-50%, -50%) scale(${scale.x}, ${scale.y})`,
+          transformOrigin: "center center",
           padding: canvasPadding,
           display: "flex",
           flexDirection: "column",
           gap: 18,
           position: "absolute",
-          top: 0,
-          left: 0,
+          top: "50%",
+          left: "50%",
           zIndex: 1,
         }}
       >
