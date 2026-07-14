@@ -910,9 +910,6 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
             {k.realQtd}
           </span>
           <span style={{ fontSize: 16, color: T.faint }}>/ {k.metaQtd}</span>
-          <span style={{ fontSize: 15, fontWeight: 800, color: cor, marginLeft: 4 }}>
-            {p.toFixed(0)}%
-          </span>
           {k.metaPct != null && (
             <span style={{ fontSize: 10, color: T.dim, marginLeft: 6 }}>
               meta {k.metaPct}%
