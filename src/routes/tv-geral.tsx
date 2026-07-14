@@ -1086,7 +1086,7 @@ export function Dashboard2P({
         style={{
           width: 1920,
           height: 1080,
-          transform: `scale(${scale.x}, ${scale.y})`,
+          transform: `translate(${scale.offsetX}px, ${scale.offsetY}px) scale(${scale.x}, ${scale.y})`,
           transformOrigin: "top left",
           padding: canvasPadding,
           display: "flex",
