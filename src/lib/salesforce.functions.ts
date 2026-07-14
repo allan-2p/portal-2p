@@ -1100,6 +1100,8 @@ function buildPublicSoql(f: OppFilters): string {
   const orgs = (f.orgIn ?? []).filter(Boolean);
   if (orgs.length) clauses.push(`Org_Oportunidade__c IN (${orgs.map((s) => `'${esc(s)}'`).join(",")})`);
   for (const v of (f.ownerNameNotIn ?? []).filter(Boolean)) clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
+  const ownersIn = (f.ownerNameIn ?? []).filter(Boolean);
+  if (ownersIn.length) clauses.push(`Owner.Name IN (${ownersIn.map((s) => `'${esc(s)}'`).join(",")})`);
 
   const literal = (f.dateLiteral ?? "").trim();
   if (literal && literal !== "CUSTOM") clauses.push(`${df} = ${literal}`);
