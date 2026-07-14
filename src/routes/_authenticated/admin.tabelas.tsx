@@ -18,6 +18,8 @@ import {
   RotateCcw,
   BookmarkCheck,
   Sparkles,
+  Repeat,
+  ShieldCheck,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
