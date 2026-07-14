@@ -1934,13 +1934,15 @@ function TabelasPage() {
           </TabsContent>
           <TabsContent value="clientes-novos" className="mt-4 space-y-3">
             <div className="glass rounded-2xl p-3 text-[11px] text-muted-foreground leading-relaxed">
-              Mostra apenas clientes cuja <b className="text-foreground">primeira venda concluída</b>
-              {" "}(StageName = <i>Pedido Concluído</i>) ocorreu dentro do período filtrado. Contas com
-              qualquer venda concluída anterior ao início do período são excluídas. Filtre por
-              CloseDate para ajustar o recorte.
-              {typeof qClientesNovos.data?.newAccountsCount === "number" && (
+              Classifica cada conta que teve venda concluída no período:
+              {" "}<span className="text-emerald-500 font-semibold">Novo</span> (nunca comprou antes),
+              {" "}<span className="text-amber-500 font-semibold">Reativação</span> (última compra há mais de 3 meses do início do período)
+              {" "}e <span className="text-sky-500 font-semibold">Carteira</span> (comprou nos últimos 3 meses).
+              {qClientesNovos.data && (
                 <span className="ml-1">
-                  <b className="text-foreground">{qClientesNovos.data.newAccountsCount}</b> cliente(s) novo(s) no período.
+                  {" "}<b className="text-foreground">{qClientesNovos.data.newAccountsCount ?? 0}</b> novo(s),
+                  {" "}<b className="text-foreground">{qClientesNovos.data.reactivationCount ?? 0}</b> reativação(ões),
+                  {" "}<b className="text-foreground">{qClientesNovos.data.carteiraCount ?? 0}</b> carteira.
                 </span>
               )}
             </div>
@@ -1958,6 +1960,12 @@ function TabelasPage() {
               dateField="closeDate"
               showStatus
             />
+          </TabsContent>
+          <TabsContent value="recorrencia" className="mt-4">
+            <RecorrenciaPanel search={search} />
+          </TabsContent>
+          <TabsContent value="retencao" className="mt-4">
+            <RetencaoPanel search={search} />
           </TabsContent>
         </Tabs>
 
