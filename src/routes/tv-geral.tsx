@@ -849,7 +849,7 @@ const GraficoSemanal = ({
   );
 };
 
-const Donut = ({ value, color, size = 60 }: { value: number; color: string; size?: number }) => {
+const Donut = ({ value, color, size = 78 }: { value: number; color: string; size?: number }) => {
   const r = (size - 10) / 2;
   const c = 2 * Math.PI * r;
   const off = c * (1 - Math.min(1, value / 100));
