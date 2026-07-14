@@ -1947,6 +1947,20 @@ function TabelasPage() {
                 </span>
               )}
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Classificação</span>
+              <Select value={classifNov} onValueChange={(v) => setClassifNov(v as typeof classifNov)}>
+                <SelectTrigger className="h-8 w-[200px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="novo">Novos</SelectItem>
+                  <SelectItem value="reativacao">Reativações</SelectItem>
+                  <SelectItem value="carteira">Recorrente (Carteira)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <OppTabPanel
               filters={novosFilters}
               defaults={novosDefaults}
@@ -1954,7 +1968,11 @@ function TabelasPage() {
               onSaveAsDefault={saveNovosAsDefault}
               vendedor={vendedorNov}
               onVendedorChange={setVendedorNov}
-              records={qClientesNovos.data?.records ?? []}
+              records={
+                classifNov === "all"
+                  ? (qClientesNovos.data?.records ?? [])
+                  : (qClientesNovos.data?.records ?? []).filter((r) => r.classification === classifNov)
+              }
               loading={qClientesNovos.isLoading}
               error={qClientesNovos.error}
               search={search}
