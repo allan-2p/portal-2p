@@ -176,6 +176,9 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
   const fetchVendas = useServerFn(getPublicSalesforceVendas);
   const fetchMonthGoal = useServerFn(getPublicMonthGoalTotal);
   const fetchKpiGoals = useServerFn(getPublicGroupKpiGoals);
+  const fetchClientesNovos = useServerFn(getPublicClientesNovosTv);
+  const fetchRecorrencia = useServerFn(getPublicRecorrenciaTv);
+  const fetchRetencao = useServerFn(getPublicRetencaoTv);
 
   // Polling agressivo para "tempo real" em TV — mantém refetch mesmo com aba em background.
   const FAST = 30_000;
