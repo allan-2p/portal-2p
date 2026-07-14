@@ -1715,6 +1715,7 @@ function TabelasPage() {
   const [vendidoFilters, setVendidoFilters] = useState<OppFilters>(() => ({ ...vendidoDefaults }));
   const [geradoFilters, setGeradoFilters] = useState<OppFilters>(() => ({ ...geradoDefaults }));
   const [novosFilters, setNovosFilters] = useState<OppFilters>(() => ({ ...novosDefaults }));
+  const [carregFilters, setCarregFilters] = useState<OppFilters>(() => ({ ...carregDefaults }));
 
   const saveOrcAsDefault = (f: OppFilters) => { saveStoredFilters("orcamentos", f); setOrcDefaults(f); };
   const saveVenAsDefault = (f: OppFilters) => { saveStoredFilters("vendas", f); setVenDefaults(f); };
