@@ -941,7 +941,12 @@ export function Dashboard2P({
   fill = false,
 }: { canvasPadding?: number; fill?: boolean } = {}) {
   const { data, loading, isFetching, lastUpdated } = useTvData();
-  const [scale, setScale] = useState<{ x: number; y: number }>({ x: 1, y: 1 });
+  const [scale, setScale] = useState<{ x: number; y: number; offsetX: number; offsetY: number }>({
+    x: 1,
+    y: 1,
+    offsetX: 0,
+    offsetY: 0,
+  });
   const [now, setNow] = useState(() => Date.now());
   const [isFs, setIsFs] = useState(false);
 
@@ -949,16 +954,22 @@ export function Dashboard2P({
     const fit = () => {
       const sx = window.innerWidth / 1920;
       const sy = window.innerHeight / 1080;
-      if (fill) setScale({ x: sx, y: sy });
-      else {
+      if (fill) {
+        // Uniform scale preserving 16:9 — centered (letterbox on non-16:9 screens).
         const s = Math.min(sx, sy);
-        setScale({ x: s, y: s });
+        const offsetX = (window.innerWidth - 1920 * s) / 2;
+        const offsetY = (window.innerHeight - 1080 * s) / 2;
+        setScale({ x: s, y: s, offsetX, offsetY });
+      } else {
+        const s = Math.min(sx, sy);
+        setScale({ x: s, y: s, offsetX: 0, offsetY: 0 });
       }
     };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
   }, [fill]);
+
 
 
   useEffect(() => {
