@@ -1722,6 +1722,7 @@ function TabelasPage() {
   const saveVendidoAsDefault = (f: OppFilters) => { saveStoredFilters("vendido-mes", f); setVendidoDefaults(f); };
   const saveGeradoAsDefault = (f: OppFilters) => { saveStoredFilters("gerado-mes", f); setGeradoDefaults(f); };
   const saveNovosAsDefault = (f: OppFilters) => { saveStoredFilters("clientes-novos", f); setNovosDefaults(f); };
+  const saveCarregAsDefault = (f: OppFilters) => { saveStoredFilters("carregadores-tri", f); setCarregDefaults(f); };
 
 
   const [vendedorOrc, setVendedorOrc] = useState<string>("__all__");
