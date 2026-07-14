@@ -939,7 +939,8 @@ const HeaderMetas = ({ tri }: { tri: TvData["tri"] }) => {
 export function Dashboard2P({
   canvasPadding = 32,
   fill = false,
-}: { canvasPadding?: number; fill?: boolean } = {}) {
+  overscan = 0,
+}: { canvasPadding?: number; fill?: boolean; overscan?: number } = {}) {
   const { data, loading, isFetching, lastUpdated } = useTvData();
   const [scale, setScale] = useState<{ x: number; y: number; offsetX: number; offsetY: number }>({
     x: 1,
@@ -952,23 +953,30 @@ export function Dashboard2P({
 
   useEffect(() => {
     const fit = () => {
-      const sx = window.innerWidth / 1920;
-      const sy = window.innerHeight / 1080;
+      // Overscan: shrink safe area equally on all four sides so nothing gets
+      // clipped by the TV bezel/overscan region.
+      const availW = Math.max(1, window.innerWidth - overscan * 2);
+      const availH = Math.max(1, window.innerHeight - overscan * 2);
+      const sx = availW / 1920;
+      const sy = availH / 1080;
       if (fill) {
-        // Uniform scale preserving 16:9 — centered (letterbox on non-16:9 screens).
+        // Uniform scale preserving 16:9 — centered inside the safe area.
         const s = Math.min(sx, sy);
-        const offsetX = (window.innerWidth - 1920 * s) / 2;
-        const offsetY = (window.innerHeight - 1080 * s) / 2;
+        const offsetX = overscan + (availW - 1920 * s) / 2;
+        const offsetY = overscan + (availH - 1080 * s) / 2;
         setScale({ x: s, y: s, offsetX, offsetY });
       } else {
         const s = Math.min(sx, sy);
-        setScale({ x: s, y: s, offsetX: 0, offsetY: 0 });
+        const offsetX = overscan + (availW - 1920 * s) / 2;
+        const offsetY = overscan + (availH - 1080 * s) / 2;
+        setScale({ x: s, y: s, offsetX, offsetY });
       }
     };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, [fill]);
+  }, [fill, overscan]);
+
 
 
 
