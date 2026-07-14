@@ -6,6 +6,9 @@ import solarLogoAsset from "@/assets/2p-logo-black.png.asset.json";
 import {
   getPublicSalesforceVendas,
   getPublicSalesforceVendidoTv,
+  getPublicClientesNovosTv,
+  getPublicRecorrenciaTv,
+  getPublicRetencaoTv,
 } from "@/lib/salesforce.functions";
 import { getPublicMonthGoalTotal, getPublicGroupKpiGoals } from "@/lib/tv-public.functions";
 import { businessDaysOfMonth, isBusinessDay } from "@/lib/business-days";
@@ -173,6 +176,9 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
   const fetchVendas = useServerFn(getPublicSalesforceVendas);
   const fetchMonthGoal = useServerFn(getPublicMonthGoalTotal);
   const fetchKpiGoals = useServerFn(getPublicGroupKpiGoals);
+  const fetchClientesNovos = useServerFn(getPublicClientesNovosTv);
+  const fetchRecorrencia = useServerFn(getPublicRecorrenciaTv);
+  const fetchRetencao = useServerFn(getPublicRetencaoTv);
 
   // Polling agressivo para "tempo real" em TV — mantém refetch mesmo com aba em background.
   const FAST = 30_000;
@@ -235,6 +241,27 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     refetchInterval: SLOW,
     refetchIntervalInBackground: true,
     staleTime: 5 * 60_000,
+  });
+  const clientesNovosQ = useQuery({
+    queryKey: ["tv-clientes-novos"],
+    queryFn: () => fetchClientesNovos(),
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
+    staleTime: 60_000,
+  });
+  const recorrenciaQ = useQuery({
+    queryKey: ["tv-recorrencia"],
+    queryFn: () => fetchRecorrencia(),
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
+    staleTime: 60_000,
+  });
+  const retencaoQ = useQuery({
+    queryKey: ["tv-retencao"],
+    queryFn: () => fetchRetencao(),
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
+    staleTime: 60_000,
   });
 
   const loading =
@@ -325,62 +352,15 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     const gRec = kpiMap.get("recorrencia");
     const gRet = kpiMap.get("retencao");
 
-    // NOVOS (mensal): contas com venda neste mês que nunca tinham comprado em 12 meses anteriores.
-    // REATIVAÇÕES: já compraram, mas não nos últimos 3 meses.
-    const currMonthAccts = new Set<string>();
-    const historicalAccts = new Set<string>();
-    const last3mAccts = new Set<string>();
-    const monthStartT = new Date(y, m, 1).getTime();
-    const threeMonthsAgoT = new Date(y, m - 3, 1).getTime();
-    for (const r of vendas12mQ.data?.records ?? []) {
-      if (!r.accountId || !r.closeDate) continue;
-      const [yy, mm, dd] = r.closeDate.split("-").map(Number);
-      const t = new Date(yy, mm - 1, dd).getTime();
-      if (t >= monthStartT) {
-        currMonthAccts.add(r.accountId);
-      } else {
-        historicalAccts.add(r.accountId);
-        if (t >= threeMonthsAgoT) last3mAccts.add(r.accountId);
-      }
-    }
-    let novosCount = 0;
-    let reativCount = 0;
-    for (const acc of currMonthAccts) {
-      if (!historicalAccts.has(acc)) novosCount += 1;
-      else if (!last3mAccts.has(acc)) reativCount += 1;
-    }
+    // NOVOS / REATIVAÇÕES vêm da tabela Clientes Novos (mesmos filtros).
+    const novosCount = clientesNovosQ.data?.novos ?? 0;
+    const reativCount = clientesNovosQ.data?.reativacoes ?? 0;
 
-    // RECORRÊNCIA (trimestral): contas com venda no tri atual e no tri anterior
-    const curTriAccts = new Set<string>();
-    for (const r of vendasTriQ.data?.records ?? []) {
-      if (r.accountId) curTriAccts.add(r.accountId);
-    }
-    const prevTriAccts = new Set<string>();
-    const prevAcctTotals = new Map<string, number>();
-    for (const r of vendasTriPrevQ.data?.records ?? []) {
-      if (!r.accountId) continue;
-      prevTriAccts.add(r.accountId);
-      prevAcctTotals.set(
-        r.accountId,
-        (prevAcctTotals.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0),
-      );
-    }
-    let recorrenciaCount = 0;
-    for (const acc of curTriAccts) if (prevTriAccts.has(acc)) recorrenciaCount += 1;
+    // RECORRÊNCIA vem da tabela de Recorrência (trimestre atual, contas > R$ 15k).
+    const recorrenciaCount = recorrenciaQ.data?.count ?? 0;
 
-    // RETENÇÃO (trimestral): contas A/B do tri anterior que seguem A/B no atual
-    const prevAB = new Set<string>();
-    for (const [acc, v] of prevAcctTotals) if (v >= AB_THRESHOLD) prevAB.add(acc);
-    const curAcctTotals = new Map<string, number>();
-    for (const r of vendasTriQ.data?.records ?? []) {
-      if (!r.accountId) continue;
-      curAcctTotals.set(
-        r.accountId,
-        (curAcctTotals.get(r.accountId) ?? 0) + (r.total ?? r.amount ?? 0),
-      );
-    }
-    let retencaoCount = 0;
-    for (const acc of prevAB) if ((curAcctTotals.get(acc) ?? 0) >= AB_THRESHOLD) retencaoCount += 1;
+    // RETENÇÃO vem da tabela de Retenção (trimestre atual vs anterior).
+    const retencaoCount = retencaoQ.data?.count ?? 0;
 
     const paceMensal = bizDays.length > 0 ? Math.round((elapsed / bizDays.length) * 100) : 0;
     const triStart = new Date(y, qStartMonth, 1);
@@ -441,6 +421,9 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     vendasTriQ.data,
     vendasTriPrevQ.data,
     vendas12mQ.data,
+    clientesNovosQ.data,
+    recorrenciaQ.data,
+    retencaoQ.data,
     now,
     y,
     m,
