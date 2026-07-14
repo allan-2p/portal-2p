@@ -630,6 +630,7 @@ export type OppFilters = {
   tipoNfNotIn?: string[];
   accountNameNotIn?: string[];
   ownerNameNotIn?: string[];
+  ownerNameIn?: string[];
   lossReasonIn?: string[];
   lossReasonNotIn?: string[];
   ownerId?: string | null;
@@ -704,6 +705,24 @@ export const OPP_DEFAULTS_GERADO_MES: OppFilters = {
   dateLiteral: "THIS_MONTH",
 };
 
+export const OPP_DEFAULTS_CARREGADORES_TRI: OppFilters = {
+  stageEquals: "Pedido Concluído",
+  statusIn: [
+    "Aguardando Pagamento",
+    "Processando",
+    "Separação",
+    "Faturado",
+    "Coletado",
+    "Entregue",
+    "Documentação Liberada",
+    "Finalizado",
+  ],
+  tipoNfNotIn: ["Bonificação"],
+  ownerNameIn: ["Caroline Gimenez"],
+  dateField: "CloseDate",
+  dateLiteral: "THIS_QUARTER",
+};
+
 export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => (input ?? {}) as OppFilters)
@@ -741,6 +760,10 @@ export const getSalesforceVendidoMesAtual = createServerFn({ method: "GET" })
     }
     for (const v of (f.ownerNameNotIn ?? []).filter(Boolean)) {
       clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
+    }
+    const ownersIn = (f.ownerNameIn ?? []).filter(Boolean);
+    if (ownersIn.length) {
+      clauses.push(`Owner.Name IN (${ownersIn.map((s) => `'${esc(s)}'`).join(",")})`);
     }
     const lossIn = (f.lossReasonIn ?? []).filter(Boolean);
     if (lossIn.length) {
@@ -1069,6 +1092,7 @@ const PUBLIC_TV_PRESETS = {
   vendido_mes: OPP_DEFAULTS_VENDIDO_MES,
   gerado_mes: OPP_DEFAULTS_GERADO_MES,
   faturamento_mes: OPP_DEFAULTS_VENDAS,
+  carregadores_tri: OPP_DEFAULTS_CARREGADORES_TRI,
 } as const;
 
 export type PublicTvVariant = keyof typeof PUBLIC_TV_PRESETS;
@@ -1095,6 +1119,8 @@ function buildPublicSoql(f: OppFilters): string {
   const orgs = (f.orgIn ?? []).filter(Boolean);
   if (orgs.length) clauses.push(`Org_Oportunidade__c IN (${orgs.map((s) => `'${esc(s)}'`).join(",")})`);
   for (const v of (f.ownerNameNotIn ?? []).filter(Boolean)) clauses.push(`(Owner.Name = null OR Owner.Name != '${esc(v)}')`);
+  const ownersIn = (f.ownerNameIn ?? []).filter(Boolean);
+  if (ownersIn.length) clauses.push(`Owner.Name IN (${ownersIn.map((s) => `'${esc(s)}'`).join(",")})`);
 
   const literal = (f.dateLiteral ?? "").trim();
   if (literal && literal !== "CUSTOM") clauses.push(`${df} = ${literal}`);
