@@ -33,6 +33,8 @@ import {
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
   getSalesforceClientesNovos,
+  getSalesforceRecorrencia,
+  getSalesforceRetencao,
   OPP_DATE_LITERALS,
   OPP_DEFAULTS_ORCAMENTOS,
   OPP_DEFAULTS_VENDAS,
@@ -41,6 +43,8 @@ import {
   OPP_DEFAULTS_CLIENTES_NOVOS,
   type OppFilters,
   type SalesforceOppRow,
+  type RecurrenceAccountRow,
+  type RetentionAccountRow,
 } from "@/lib/salesforce.functions";
 import { useAuth } from "@/hooks/use-auth";
 
