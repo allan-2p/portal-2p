@@ -936,19 +936,30 @@ const HeaderMetas = ({ tri }: { tri: TvData["tri"] }) => {
   );
 };
 
-export function Dashboard2P({ canvasPadding = 32 }: { canvasPadding?: number } = {}) {
+export function Dashboard2P({
+  canvasPadding = 32,
+  fill = false,
+}: { canvasPadding?: number; fill?: boolean } = {}) {
   const { data, loading, isFetching, lastUpdated } = useTvData();
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState<{ x: number; y: number }>({ x: 1, y: 1 });
   const [now, setNow] = useState(() => Date.now());
   const [isFs, setIsFs] = useState(false);
 
   useEffect(() => {
-    const fit = () =>
-      setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    const fit = () => {
+      const sx = window.innerWidth / 1920;
+      const sy = window.innerHeight / 1080;
+      if (fill) setScale({ x: sx, y: sy });
+      else {
+        const s = Math.min(sx, sy);
+        setScale({ x: s, y: s });
+      }
+    };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, []);
+  }, [fill]);
+
 
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
@@ -1064,12 +1075,13 @@ export function Dashboard2P({ canvasPadding = 32 }: { canvasPadding?: number } =
         style={{
           width: 1920,
           height: 1080,
-          transform: `scale(${scale})`,
+          transform: `scale(${scale.x}, ${scale.y})`,
           transformOrigin: "center",
           padding: canvasPadding,
           display: "flex",
           flexDirection: "column",
           gap: 18,
+
           position: "relative",
           zIndex: 1,
         }}
