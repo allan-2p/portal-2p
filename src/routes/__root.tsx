@@ -129,9 +129,16 @@ function RootComponent() {
   useIdleSignout();
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      queryClient.clear();
+    let lastUserId: string | null = null;
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      const uid = session?.user?.id ?? null;
+      // Only nuke the cache on real identity boundaries: sign-out, or a different user
+      // taking the session. SIGNED_IN and USER_UPDATED fire on ordinary token refreshes
+      // and tab focus — clearing then would invalidate every fresh query for no reason.
+      if (event === "SIGNED_OUT" || (event === "SIGNED_IN" && lastUserId !== null && lastUserId !== uid)) {
+        queryClient.clear();
+      }
+      lastUserId = uid;
     });
     return () => data.subscription.unsubscribe();
   }, [queryClient]);

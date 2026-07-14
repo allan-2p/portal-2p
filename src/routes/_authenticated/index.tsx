@@ -3,9 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { ViewSlot } from "@/components/view-slot";
-import { clients, portfolio, tasks as mockTasks, salesSeries } from "@/lib/mock-data";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
+
+// Lazy-load recharts (~90KB gz) so it doesn't block the home dashboard's initial paint.
+const HomeAreaChart = lazy(() => import("@/components/home-area-chart"));
 import {
   ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, Clock,
   TrendingUp, CheckCircle2, Calendar, Info, ChevronDown,
@@ -1686,25 +1687,17 @@ function ChartCard({ title, series, valueKey, valueColor, valueLabel }: {
         </div>
       </div>
       <div className="h-56">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={series} margin={{ left: 0, right: 8, top: 6, bottom: 0 }}>
-            <defs>
-              <linearGradient id={`g-${valueKey}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={valueColor} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={valueColor} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke={C.grid} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="day" stroke={C.axis} fontSize={10} tickLine={false} axisLine={false} interval={4} />
-            <YAxis stroke={C.axis} fontSize={10} tickLine={false} axisLine={false} width={50} tickFormatter={(v) => fmtShort(v as number)} />
-            <Tooltip
-              contentStyle={{ background: "var(--chart-tooltip-bg)", border: "1px solid var(--chart-tooltip-border)", borderRadius: 10, fontSize: 12, color: "var(--foreground)" }}
-              formatter={(v: number) => (v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }))}
-            />
-            <Area type="monotone" dataKey="projected" name="Projetado" stroke={C.projected} strokeDasharray="4 4" fill="none" strokeWidth={1.5} />
-            <Area type="monotone" dataKey={valueKey} name={valueLabel} stroke={valueColor} fill={`url(#g-${valueKey})`} strokeWidth={2.5} />
-          </AreaChart>
-        </ResponsiveContainer>
+        <Suspense fallback={<div className="h-full w-full" />}>
+          <HomeAreaChart
+            series={series}
+            valueKey={valueKey}
+            valueColor={valueColor}
+            valueLabel={valueLabel}
+            axisColor={C.axis}
+            gridColor={C.grid}
+            projectedColor={C.projected}
+          />
+        </Suspense>
       </div>
     </div>
   );
