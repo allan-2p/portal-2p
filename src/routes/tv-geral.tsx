@@ -242,6 +242,27 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     refetchIntervalInBackground: true,
     staleTime: 5 * 60_000,
   });
+  const clientesNovosQ = useQuery({
+    queryKey: ["tv-clientes-novos"],
+    queryFn: () => fetchClientesNovos(),
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
+    staleTime: 60_000,
+  });
+  const recorrenciaQ = useQuery({
+    queryKey: ["tv-recorrencia"],
+    queryFn: () => fetchRecorrencia(),
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
+    staleTime: 60_000,
+  });
+  const retencaoQ = useQuery({
+    queryKey: ["tv-retencao"],
+    queryFn: () => fetchRetencao(),
+    refetchInterval: MED,
+    refetchIntervalInBackground: true,
+    staleTime: 60_000,
+  });
 
   const loading =
     vendidoMesQ.isLoading ||
