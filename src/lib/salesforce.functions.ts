@@ -1528,4 +1528,40 @@ export const getSalesforceRetencao = createServerFn({ method: "GET" })
     };
   });
 
+function currentQuarterInfo(): { year: number; quarter: number } {
+  const now = new Date();
+  return { year: now.getFullYear(), quarter: Math.floor(now.getMonth() / 3) + 1 };
+}
+
+export const getPublicRecorrenciaTv = createServerFn({ method: "GET" }).handler(async () => {
+  const { year, quarter } = currentQuarterInfo();
+  const { start, end } = quarterRangeIso(year, quarter);
+  const agg = await aggregateByAccount(start, end, "");
+  let count = 0;
+  for (const [, v] of agg) if (v.total > RECURRENCE_THRESHOLD) count++;
+  return { count, threshold: RECURRENCE_THRESHOLD };
+});
+
+export const getPublicRetencaoTv = createServerFn({ method: "GET" }).handler(async () => {
+  const { year, quarter } = currentQuarterInfo();
+  const cur = quarterRangeIso(year, quarter);
+  const prev = quarterRangeIso(year, quarter - 1);
+  const [curAgg, prevAgg] = await Promise.all([
+    aggregateByAccount(cur.start, cur.end, ""),
+    aggregateByAccount(prev.start, prev.end, ""),
+  ]);
+  let previousQualifiedCount = 0;
+  const prevQualified = new Set<string>();
+  for (const [accId, v] of prevAgg) {
+    if (v.total > RECURRENCE_THRESHOLD) { prevQualified.add(accId); previousQualifiedCount++; }
+  }
+  let count = 0;
+  for (const accId of prevQualified) {
+    const c = curAgg.get(accId);
+    if (c && c.total > RECURRENCE_THRESHOLD) count++;
+  }
+  return { count, previousQualifiedCount, threshold: RECURRENCE_THRESHOLD };
+});
+
+
 
