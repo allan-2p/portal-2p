@@ -643,67 +643,85 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
   const pMeta = pct(mes.vendas, mes.meta);
 
   return (
-    <Card delay={0.05} style={{ padding: "28px 32px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
-        <Eyebrow>Vendas do mês</Eyebrow>
-        <span style={{ fontSize: 11, color: T.dim }}>
-          Meta {fmtBRL(mes.meta, true)} · {pMeta.toFixed(0)}% atingido
-        </span>
-      </div>
-      <div style={{ maxWidth: 420, marginBottom: 14 }}>
-        <ProgressBar value={pMeta} color={grad} height={4} shimmer />
-      </div>
-
-      <div
-        style={{
-          fontSize: 128,
-          fontWeight: 900,
-          fontStyle: "italic",
-          color: T.ink,
-          letterSpacing: -4,
-          lineHeight: 0.95,
-          margin: "4px 0 10px",
-        }}
-      >
-        {fmtBRL(Math.round(vendas))}
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-        <div style={{ fontSize: 15, color: T.dim }}>
-          Projetado até hoje:{" "}
-          <span style={{ color: T.ink, fontWeight: 700 }}>{fmtBRL(mes.projetadoDia, true)}</span>
+    <Card delay={0.05} style={{ padding: "32px 44px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.35fr 1fr", gap: 40, alignItems: "center" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
+            <Eyebrow>Vendas do mês</Eyebrow>
+            <span style={{ fontSize: 12, color: T.dim }}>
+              Meta {fmtBRL(mes.meta, true)} · {pMeta.toFixed(0)}% atingido
+            </span>
+          </div>
+          <div style={{ maxWidth: 520, marginBottom: 14 }}>
+            <ProgressBar value={pMeta} color={grad} height={5} shimmer />
+          </div>
+          <div
+            style={{
+              fontSize: 132,
+              fontWeight: 900,
+              fontStyle: "italic",
+              color: T.ink,
+              letterSpacing: -4,
+              lineHeight: 0.95,
+              margin: "4px 0 14px",
+            }}
+          >
+            {fmtBRL(Math.round(vendas))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 15, color: T.dim }}>
+              Projetado até hoje:{" "}
+              <span style={{ color: T.ink, fontWeight: 700 }}>{fmtBRL(mes.projetadoDia, true)}</span>
+            </div>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 14px",
+                borderRadius: 999,
+                background: acima ? "rgba(15,169,88,.12)" : "rgba(220,62,50,.12)",
+                color: acima ? T.green : T.red,
+                fontWeight: 800,
+                fontSize: 14,
+              }}
+            >
+              <span>{acima ? "▲" : "▼"}</span>
+              {fmtBRL(Math.abs(delta), true)} {acima ? "acima" : "abaixo"}
+            </div>
+          </div>
         </div>
+
         <div
           style={{
-            display: "inline-flex",
+            display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            gap: 6,
-            padding: "6px 12px",
-            borderRadius: 999,
-            background: acima ? "rgba(15,169,88,.12)" : "rgba(220,62,50,.12)",
-            color: acima ? T.green : T.red,
-            fontWeight: 800,
-            fontSize: 14,
+            justifyContent: "center",
+            gap: 10,
+            padding: "24px 20px",
+            borderLeft: `1px solid ${T.cardBorder}`,
+            height: "100%",
           }}
         >
-          <span>{acima ? "▲" : "▼"}</span>
-          {fmtBRL(Math.abs(delta), true)} {acima ? "acima" : "abaixo"}
+          <Eyebrow>Faturamento do mês</Eyebrow>
+          <div
+            style={{
+              fontSize: 68,
+              fontWeight: 900,
+              fontStyle: "italic",
+              color: T.ink,
+              letterSpacing: -2,
+              lineHeight: 1,
+              textAlign: "center",
+            }}
+          >
+            {fmtBRL(Math.round(fat))}
+          </div>
+          <div style={{ fontSize: 12, color: T.faint, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700 }}>
+            realizado no mês
+          </div>
         </div>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          paddingTop: 14,
-          borderTop: `1px solid ${T.cardBorder}`,
-        }}
-      >
-        <Eyebrow>Faturamento do mês</Eyebrow>
-        <span style={{ fontSize: 26, fontWeight: 800, color: T.dim, letterSpacing: -0.5 }}>
-          {fmtBRL(Math.round(fat))}
-        </span>
       </div>
     </Card>
   );
@@ -831,7 +849,7 @@ const GraficoSemanal = ({
   );
 };
 
-const Donut = ({ value, color, size = 60 }: { value: number; color: string; size?: number }) => {
+const Donut = ({ value, color, size = 78 }: { value: number; color: string; size?: number }) => {
   const r = (size - 10) / 2;
   const c = 2 * Math.PI * r;
   const off = c * (1 - Math.min(1, value / 100));
@@ -856,7 +874,7 @@ const Donut = ({ value, color, size = 60 }: { value: number; color: string; size
         textAnchor="middle"
         dominantBaseline="middle"
         transform={`rotate(90 ${size / 2} ${size / 2})`}
-        fontSize={13}
+        fontSize={16}
         fontWeight={800}
         fill={T.ink}
       >
@@ -870,11 +888,11 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
   const p = pct(k.realQtd, k.metaQtd);
   const cor = semaforo(p, k.pace);
   return (
-    <Card delay={delay} style={{ padding: "18px 20px", display: "flex", alignItems: "center", gap: 16 }}>
+    <Card delay={delay} style={{ padding: "22px 26px", display: "flex", alignItems: "center", gap: 20 }}>
       <Donut value={p} color={cor} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: T.ink }}>{k.label}</span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: T.ink }}>{k.label}</span>
           <span
             style={{
               fontSize: 9,
@@ -887,12 +905,12 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
             {k.periodo}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 30, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 36, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
             {k.realQtd}
           </span>
-          <span style={{ fontSize: 14, color: T.faint }}>/ {k.metaQtd}</span>
-          <span style={{ fontSize: 13, fontWeight: 800, color: cor, marginLeft: 4 }}>
+          <span style={{ fontSize: 16, color: T.faint }}>/ {k.metaQtd}</span>
+          <span style={{ fontSize: 15, fontWeight: 800, color: cor, marginLeft: 4 }}>
             {p.toFixed(0)}%
           </span>
           {k.metaPct != null && (
@@ -901,7 +919,7 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
             </span>
           )}
         </div>
-        <ProgressBar value={p} color={cor} height={5} />
+        <ProgressBar value={p} color={cor} height={6} />
       </div>
     </Card>
   );
