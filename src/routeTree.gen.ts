@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TvGeralHdRouteImport } from './routes/tv-geral-hd'
 import { Route as TvGeralRouteImport } from './routes/tv-geral'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -39,6 +40,11 @@ import { Route as AuthenticatedAdminPermissoesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
 import { Route as AuthenticatedAdminAcessosInstanciasRouteImport } from './routes/_authenticated/admin.acessos-instancias'
 
+const TvGeralHdRoute = TvGeralHdRouteImport.update({
+  id: '/tv-geral-hd',
+  path: '/tv-geral-hd',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TvGeralRoute = TvGeralRouteImport.update({
   id: '/tv-geral',
   path: '/tv-geral',
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/tv-geral': typeof TvGeralRoute
+  '/tv-geral-hd': typeof TvGeralHdRoute
   '/atlas': typeof AuthenticatedAtlasRoute
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/tv-geral': typeof TvGeralRoute
+  '/tv-geral-hd': typeof TvGeralHdRoute
   '/atlas': typeof AuthenticatedAtlasRoute
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
@@ -264,6 +272,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/tv-geral': typeof TvGeralRoute
+  '/tv-geral-hd': typeof TvGeralHdRoute
   '/_authenticated/atlas': typeof AuthenticatedAtlasRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
@@ -297,6 +306,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/tv-geral'
+    | '/tv-geral-hd'
     | '/atlas'
     | '/clientes'
     | '/dashboards'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/tv-geral'
+    | '/tv-geral-hd'
     | '/atlas'
     | '/clientes'
     | '/dashboards'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/tv-geral'
+    | '/tv-geral-hd'
     | '/_authenticated/atlas'
     | '/_authenticated/clientes'
     | '/_authenticated/dashboards'
@@ -388,10 +400,18 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TvGeralRoute: typeof TvGeralRoute
+  TvGeralHdRoute: typeof TvGeralHdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tv-geral-hd': {
+      id: '/tv-geral-hd'
+      path: '/tv-geral-hd'
+      fullPath: '/tv-geral-hd'
+      preLoaderRoute: typeof TvGeralHdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tv-geral': {
       id: '/tv-geral'
       path: '/tv-geral'
@@ -698,6 +718,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TvGeralRoute: TvGeralRoute,
+  TvGeralHdRoute: TvGeralHdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
