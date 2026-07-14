@@ -316,7 +316,7 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     const elapsed = bizDays.filter((d) => d <= todayDay).length;
     const projetadoDia = Math.round(dailyGoal * elapsed);
 
-    const solarReal = sumTotal(vendasTriQ.data?.records ?? []);
+    const solarReal = sumTotal(vendidoTriQ.data?.records ?? []);
     const solarMeta = 14_000_000;
     const carregMeta = 1_800_000;
 
