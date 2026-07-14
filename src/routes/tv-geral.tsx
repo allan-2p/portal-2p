@@ -349,7 +349,6 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
       if (!historicalAccts.has(acc)) novosCount += 1;
       else if (!last3mAccts.has(acc)) reativCount += 1;
     }
-    const novosReativCount = novosCount + reativCount;
 
     // RECORRÊNCIA (trimestral): contas com venda no tri atual e no tri anterior
     const curTriAccts = new Set<string>();
@@ -411,10 +410,10 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
           pace: paceMensal,
         },
         novosReativ: {
-          label: gNovosReat?.label ?? "Novos e reativações",
+          label: gNovosReat?.label ?? "Reativações",
           periodo: "mensal",
           metaQtd: gNovosReat?.goal ?? 100,
-          realQtd: novosReativCount,
+          realQtd: reativCount,
           pace: paceMensal,
         },
         recorrencia: {
