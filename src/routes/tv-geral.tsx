@@ -429,6 +429,7 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     clientesNovosQ.data,
     recorrenciaQ.data,
     retencaoQ.data,
+    carregTriQ.data,
     now,
     y,
     m,
