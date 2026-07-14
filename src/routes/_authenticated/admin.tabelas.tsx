@@ -42,6 +42,7 @@ import {
   OPP_DEFAULTS_GERADO_MES,
   OPP_DEFAULTS_CLIENTES_NOVOS,
   OPP_DEFAULTS_CARREGADORES_TRI,
+  OPP_DEFAULTS_VENDIDO_TRI,
   type OppFilters,
   type SalesforceOppRow,
   type RecurrenceAccountRow,
