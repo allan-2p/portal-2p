@@ -1770,6 +1770,12 @@ function TabelasPage() {
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "clientes-novos",
   });
+  const qCarreg = useQuery({
+    queryKey: ["sf-carregadores-tri", carregFilters],
+    queryFn: () => fetchVendidoMes({ data: carregFilters }),
+    staleTime: 60_000,
+    enabled: hasRole("admin") && tab === "carregadores",
+  });
 
   // Silence unused-imports guard; kept for potential future direct calls.
   void fetchOrc; void fetchVen;
