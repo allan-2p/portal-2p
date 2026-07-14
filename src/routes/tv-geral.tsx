@@ -1028,25 +1028,34 @@ function Dashboard2P() {
         @keyframes shimmer { 0%{background-position:220% 0} 100%{background-position:-40% 0} }
         @keyframes fadeUp { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
         @keyframes growUp { from{transform:scaleY(0)} to{transform:scaleY(1)} }
-        @keyframes sweep { 0%{transform:translateX(-30%) rotate(12deg)} 100%{transform:translateX(130%) rotate(12deg)} }
+        @keyframes sweep { 0%{transform:translateX(-40%) rotate(12deg); opacity:0} 15%{opacity:1} 85%{opacity:1} 100%{transform:translateX(140%) rotate(12deg); opacity:0} }
+        @keyframes sweepBack { 0%{transform:translateX(140%) rotate(-14deg); opacity:0} 20%{opacity:.9} 80%{opacity:.9} 100%{transform:translateX(-40%) rotate(-14deg); opacity:0} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
-        @keyframes floatOrb1 { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(60px,-40px,0) scale(1.08)} }
-        @keyframes floatOrb2 { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(-80px,50px,0) scale(1.12)} }
-        @keyframes floatOrb3 { 0%,100%{transform:translate3d(0,0,0) scale(1)} 50%{transform:translate3d(40px,60px,0) scale(0.95)} }
-        @keyframes gridDrift { from{background-position:0 0, 0 0} to{background-position:60px 60px, 60px 60px} }
-        @keyframes scanline { 0%{transform:translateY(-10%); opacity:0} 10%{opacity:.6} 90%{opacity:.6} 100%{transform:translateY(110%); opacity:0} }
-        @keyframes hueShift { 0%,100%{filter:hue-rotate(0deg)} 50%{filter:hue-rotate(24deg)} }
+        @keyframes floatOrb1 { 0%{transform:translate3d(0,0,0) scale(1)} 33%{transform:translate3d(180px,-120px,0) scale(1.25)} 66%{transform:translate3d(-90px,80px,0) scale(0.9)} 100%{transform:translate3d(0,0,0) scale(1)} }
+        @keyframes floatOrb2 { 0%{transform:translate3d(0,0,0) scale(1)} 40%{transform:translate3d(-220px,140px,0) scale(1.3)} 75%{transform:translate3d(120px,-60px,0) scale(0.85)} 100%{transform:translate3d(0,0,0) scale(1)} }
+        @keyframes floatOrb3 { 0%{transform:translate3d(0,0,0) scale(1) rotate(0deg)} 50%{transform:translate3d(140px,180px,0) scale(1.2) rotate(180deg)} 100%{transform:translate3d(0,0,0) scale(1) rotate(360deg)} }
+        @keyframes floatOrb4 { 0%,100%{transform:translate3d(0,0,0) scale(1); opacity:.35} 50%{transform:translate3d(-180px,-100px,0) scale(1.4); opacity:.9} }
+        @keyframes gridDrift { from{background-position:0 0, 0 0} to{background-position:120px 120px, 120px 120px} }
+        @keyframes scanline { 0%{transform:translateY(-10%); opacity:0} 8%{opacity:1} 92%{opacity:1} 100%{transform:translateY(110%); opacity:0} }
+        @keyframes scanlineH { 0%{transform:translateX(-10%); opacity:0} 10%{opacity:.8} 90%{opacity:.8} 100%{transform:translateX(110%); opacity:0} }
+        @keyframes hueShift { 0%{filter:hue-rotate(0deg)} 50%{filter:hue-rotate(50deg)} 100%{filter:hue-rotate(0deg)} }
+        @keyframes ringSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes twinkle { 0%,100%{opacity:.15} 50%{opacity:.7} }
       `}</style>
 
       {/* ---------- FUTURISTIC BACKDROP (fills the entire screen) ---------- */}
-      <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", animation: "hueShift 22s ease-in-out infinite" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(107,91,255,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(107,91,255,.10) 1px, transparent 1px)", backgroundSize: "60px 60px, 60px 60px", maskImage: "radial-gradient(ellipse at 50% 40%, black 40%, transparent 85%)", WebkitMaskImage: "radial-gradient(ellipse at 50% 40%, black 40%, transparent 85%)", animation: "gridDrift 24s linear infinite", opacity: 0.6 }} />
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px)", backgroundSize: "26px 26px", opacity: 0.5 }} />
-        <div style={{ position: "absolute", top: "-14%", left: "-8%", width: 900, height: 900, borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, rgba(255,138,61,.55), rgba(255,138,61,0) 60%)", filter: "blur(60px)", animation: "floatOrb1 18s ease-in-out infinite" }} />
-        <div style={{ position: "absolute", bottom: "-18%", right: "-10%", width: 1000, height: 1000, borderRadius: "50%", background: "radial-gradient(circle at 50% 50%, rgba(107,91,255,.55), rgba(107,91,255,0) 65%)", filter: "blur(70px)", animation: "floatOrb2 22s ease-in-out infinite" }} />
-        <div style={{ position: "absolute", top: "35%", left: "40%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle at 50% 50%, rgba(92,200,255,.28), rgba(92,200,255,0) 70%)", filter: "blur(80px)", animation: "floatOrb3 26s ease-in-out infinite" }} />
-        <div style={{ position: "absolute", top: 0, left: 0, width: 220, height: "160%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,.07), transparent)", animation: "sweep 14s linear infinite" }} />
-        <div style={{ position: "absolute", left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, rgba(92,200,255,.55), transparent)", boxShadow: "0 0 24px rgba(92,200,255,.55)", animation: "scanline 9s linear infinite" }} />
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", animation: "hueShift 14s ease-in-out infinite" }}>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(107,91,255,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(107,91,255,.16) 1px, transparent 1px)", backgroundSize: "60px 60px, 60px 60px", maskImage: "radial-gradient(ellipse at 50% 40%, black 40%, transparent 85%)", WebkitMaskImage: "radial-gradient(ellipse at 50% 40%, black 40%, transparent 85%)", animation: "gridDrift 10s linear infinite", opacity: 0.85 }} />
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px)", backgroundSize: "26px 26px", opacity: 0.6, animation: "twinkle 4s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", top: "-14%", left: "-8%", width: 900, height: 900, borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, rgba(255,138,61,.75), rgba(255,138,61,0) 60%)", filter: "blur(50px)", animation: "floatOrb1 12s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", bottom: "-18%", right: "-10%", width: 1000, height: 1000, borderRadius: "50%", background: "radial-gradient(circle at 50% 50%, rgba(107,91,255,.75), rgba(107,91,255,0) 65%)", filter: "blur(60px)", animation: "floatOrb2 15s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", top: "35%", left: "40%", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle at 50% 50%, rgba(92,200,255,.5), rgba(92,200,255,0) 70%)", filter: "blur(70px)", animation: "floatOrb3 18s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", top: "20%", right: "20%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle at 50% 50%, rgba(236,72,153,.55), rgba(236,72,153,0) 70%)", filter: "blur(80px)", animation: "floatOrb4 20s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", top: "50%", left: "50%", width: 1200, height: 1200, marginLeft: -600, marginTop: -600, borderRadius: "50%", background: "conic-gradient(from 0deg, transparent 0deg, rgba(107,91,255,.18) 60deg, transparent 120deg, transparent 240deg, rgba(92,200,255,.18) 300deg, transparent 360deg)", filter: "blur(40px)", animation: "ringSpin 30s linear infinite", opacity: 0.7 }} />
+        <div style={{ position: "absolute", top: 0, left: 0, width: 280, height: "160%", background: "linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent)", animation: "sweep 8s linear infinite" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, width: 220, height: "160%", background: "linear-gradient(90deg, transparent, rgba(107,91,255,.18), transparent)", animation: "sweepBack 11s linear infinite" }} />
+        <div style={{ position: "absolute", left: 0, right: 0, height: 3, background: "linear-gradient(90deg, transparent, rgba(92,200,255,.9), transparent)", boxShadow: "0 0 32px rgba(92,200,255,.9)", animation: "scanline 6s linear infinite" }} />
+        <div style={{ position: "absolute", top: 0, bottom: 0, width: 3, background: "linear-gradient(180deg, transparent, rgba(255,138,61,.75), transparent)", boxShadow: "0 0 28px rgba(255,138,61,.75)", animation: "scanlineH 13s linear infinite" }} />
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%)" }} />
       </div>
 
