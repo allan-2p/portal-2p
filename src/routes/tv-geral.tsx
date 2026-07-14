@@ -936,7 +936,7 @@ const HeaderMetas = ({ tri }: { tri: TvData["tri"] }) => {
   );
 };
 
-function Dashboard2P() {
+export function Dashboard2P({ canvasPadding = 32 }: { canvasPadding?: number } = {}) {
   const { data, loading, isFetching, lastUpdated } = useTvData();
   const [scale, setScale] = useState(1);
   const [now, setNow] = useState(() => Date.now());
