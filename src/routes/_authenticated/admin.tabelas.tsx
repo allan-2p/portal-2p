@@ -1916,6 +1916,21 @@ function TabelasPage() {
               dateField={vendidoFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
             />
           </TabsContent>
+          <TabsContent value="vendido-tri" className="mt-4">
+            <OppTabPanel
+              filters={vendidoTriFilters}
+              defaults={vendidoTriDefaults}
+              onFiltersChange={setVendidoTriFilters}
+              onSaveAsDefault={saveVendidoTriAsDefault}
+              vendedor={vendedorVendidoTri}
+              onVendedorChange={setVendedorVendidoTri}
+              records={qVendidoTri.data?.records ?? []}
+              loading={qVendidoTri.isLoading}
+              error={qVendidoTri.error}
+              search={search}
+              dateField={vendidoTriFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
+            />
+          </TabsContent>
           <TabsContent value="gerado-mes" className="mt-4">
             <OppTabPanel
               filters={geradoFilters}
