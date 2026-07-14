@@ -1489,7 +1489,7 @@ function QuarterPicker({
 
 function RecorrenciaPanel({ search }: { search: string }) {
   const cur = useMemo(currentQuarter, []);
-  const [{ year, quarter }, setYQ] = useState(cur);
+  const [{ year, quarter }, setYQ] = useState({ year: cur.year, quarter: cur.q });
   const [vendedor, setVendedor] = useState<string>("__all__");
   const fetchFn = useServerFn(getSalesforceRecorrencia);
   const q = useQuery({
@@ -1542,7 +1542,7 @@ function RecorrenciaPanel({ search }: { search: string }) {
 
 function RetencaoPanel({ search }: { search: string }) {
   const cur = useMemo(currentQuarter, []);
-  const [{ year, quarter }, setYQ] = useState(cur);
+  const [{ year, quarter }, setYQ] = useState({ year: cur.year, quarter: cur.q });
   const [vendedor, setVendedor] = useState<string>("__all__");
   const fetchFn = useServerFn(getSalesforceRetencao);
   const q = useQuery({
