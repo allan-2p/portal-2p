@@ -887,14 +887,17 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
             {k.periodo}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 30, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1 }}>
             {k.realQtd}
           </span>
           <span style={{ fontSize: 14, color: T.faint }}>/ {k.metaQtd}</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: cor, marginLeft: 4 }}>
+            {p.toFixed(0)}%
+          </span>
           {k.metaPct != null && (
             <span style={{ fontSize: 10, color: T.dim, marginLeft: 6 }}>
-              meta {k.metaPct}% · atual <b>{p.toFixed(0)}%</b>
+              meta {k.metaPct}%
             </span>
           )}
         </div>
