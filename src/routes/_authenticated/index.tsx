@@ -126,6 +126,7 @@ function HomePage() {
   const [agendaDate, setAgendaDate] = useState<Date>(() => startOfDay(new Date()));
   const [agendaOpen, setAgendaOpen] = useState(false);
   const [agendaSort, setAgendaSort] = useState<"priority" | "date">("date");
+  const [agendaSortDir, setAgendaSortDir] = useState<"asc" | "desc">("asc");
   const [agendaSortOpen, setAgendaSortOpen] = useState(false);
 
   const [stageFilter, setStageFilter] = useState<"all" | OpportunityStage>("all");
