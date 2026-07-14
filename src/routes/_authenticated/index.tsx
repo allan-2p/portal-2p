@@ -172,8 +172,9 @@ function HomePage() {
     } else {
       arr.sort((a, b) => a.date.localeCompare(b.date) || prioRank(a.priority) - prioRank(b.priority));
     }
+    if (agendaSortDir === "desc") arr.reverse();
     return arr;
-  }, [sfTasksRaw, agendaSort]);
+  }, [sfTasksRaw, agendaSort, agendaSortDir]);
 
   // Interação por tarefa (persistida localmente) — "Consegui falar" / "Não consegui falar"
   const queryClient = useQueryClient();
