@@ -42,6 +42,7 @@ import {
   OPP_DEFAULTS_GERADO_MES,
   OPP_DEFAULTS_CLIENTES_NOVOS,
   OPP_DEFAULTS_CARREGADORES_TRI,
+  OPP_DEFAULTS_VENDIDO_TRI,
   type OppFilters,
   type SalesforceOppRow,
   type RecurrenceAccountRow,
@@ -1700,7 +1701,7 @@ function saveStoredFilters(key: string, filters: OppFilters) {
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "gerado-mes" | "carregadores" | "clientes-novos" | "recorrencia" | "retencao";
+  type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "vendido-tri" | "gerado-mes" | "carregadores" | "clientes-novos" | "recorrencia" | "retencao";
   const [tab, setTab] = useState<TabId>("orcamentos");
 
   const [orcDefaults, setOrcDefaults] = useState<OppFilters>(() => loadStoredFilters("orcamentos", OPP_DEFAULTS_ORCAMENTOS));
@@ -1709,6 +1710,7 @@ function TabelasPage() {
   const [geradoDefaults, setGeradoDefaults] = useState<OppFilters>(() => loadStoredFilters("gerado-mes", OPP_DEFAULTS_GERADO_MES));
   const [novosDefaults, setNovosDefaults] = useState<OppFilters>(() => loadStoredFilters("clientes-novos", OPP_DEFAULTS_CLIENTES_NOVOS));
   const [carregDefaults, setCarregDefaults] = useState<OppFilters>(() => loadStoredFilters("carregadores-tri", OPP_DEFAULTS_CARREGADORES_TRI));
+  const [vendidoTriDefaults, setVendidoTriDefaults] = useState<OppFilters>(() => loadStoredFilters("vendido-tri", OPP_DEFAULTS_VENDIDO_TRI));
 
   const [orcFilters, setOrcFilters] = useState<OppFilters>(() => ({ ...orcDefaults }));
   const [venFilters, setVenFilters] = useState<OppFilters>(() => ({ ...venDefaults }));
@@ -1716,6 +1718,7 @@ function TabelasPage() {
   const [geradoFilters, setGeradoFilters] = useState<OppFilters>(() => ({ ...geradoDefaults }));
   const [novosFilters, setNovosFilters] = useState<OppFilters>(() => ({ ...novosDefaults }));
   const [carregFilters, setCarregFilters] = useState<OppFilters>(() => ({ ...carregDefaults }));
+  const [vendidoTriFilters, setVendidoTriFilters] = useState<OppFilters>(() => ({ ...vendidoTriDefaults }));
 
   const saveOrcAsDefault = (f: OppFilters) => { saveStoredFilters("orcamentos", f); setOrcDefaults(f); };
   const saveVenAsDefault = (f: OppFilters) => { saveStoredFilters("vendas", f); setVenDefaults(f); };
@@ -1723,6 +1726,7 @@ function TabelasPage() {
   const saveGeradoAsDefault = (f: OppFilters) => { saveStoredFilters("gerado-mes", f); setGeradoDefaults(f); };
   const saveNovosAsDefault = (f: OppFilters) => { saveStoredFilters("clientes-novos", f); setNovosDefaults(f); };
   const saveCarregAsDefault = (f: OppFilters) => { saveStoredFilters("carregadores-tri", f); setCarregDefaults(f); };
+  const saveVendidoTriAsDefault = (f: OppFilters) => { saveStoredFilters("vendido-tri", f); setVendidoTriDefaults(f); };
 
 
   const [vendedorOrc, setVendedorOrc] = useState<string>("__all__");
@@ -1731,6 +1735,7 @@ function TabelasPage() {
   const [vendedorGer, setVendedorGer] = useState<string>("__all__");
   const [vendedorNov, setVendedorNov] = useState<string>("__all__");
   const [vendedorCarreg, setVendedorCarreg] = useState<string>("__all__");
+  const [vendedorVendidoTri, setVendedorVendidoTri] = useState<string>("__all__");
   const [classifNov, setClassifNov] = useState<"all" | "novo" | "reativacao" | "carteira">("all");
 
   const [search, setSearch] = useState("");
@@ -1775,6 +1780,12 @@ function TabelasPage() {
     queryFn: () => fetchVendidoMes({ data: carregFilters }),
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "carregadores",
+  });
+  const qVendidoTri = useQuery({
+    queryKey: ["sf-vendido-tri-atual", vendidoTriFilters],
+    queryFn: () => fetchVendidoMes({ data: vendidoTriFilters }),
+    staleTime: 60_000,
+    enabled: hasRole("admin") && tab === "vendido-tri",
   });
 
   // Silence unused-imports guard; kept for potential future direct calls.
@@ -1827,6 +1838,9 @@ function TabelasPage() {
             </TabsTrigger>
             <TabsTrigger value="vendido-mes" className="gap-2">
               <ShoppingCart className="h-4 w-4" /> Vendido - Mês Atual
+            </TabsTrigger>
+            <TabsTrigger value="vendido-tri" className="gap-2">
+              <ShoppingCart className="h-4 w-4" /> Vendido - Tri Atual
             </TabsTrigger>
             <TabsTrigger value="gerado-mes" className="gap-2">
               <ShoppingCart className="h-4 w-4" /> Gerado - Mês Atual
@@ -1900,6 +1914,21 @@ function TabelasPage() {
               error={qVendidoMes.error}
               search={search}
               dateField={vendidoFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
+            />
+          </TabsContent>
+          <TabsContent value="vendido-tri" className="mt-4">
+            <OppTabPanel
+              filters={vendidoTriFilters}
+              defaults={vendidoTriDefaults}
+              onFiltersChange={setVendidoTriFilters}
+              onSaveAsDefault={saveVendidoTriAsDefault}
+              vendedor={vendedorVendidoTri}
+              onVendedorChange={setVendedorVendidoTri}
+              records={qVendidoTri.data?.records ?? []}
+              loading={qVendidoTri.isLoading}
+              error={qVendidoTri.error}
+              search={search}
+              dateField={vendidoTriFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
             />
           </TabsContent>
           <TabsContent value="gerado-mes" className="mt-4">

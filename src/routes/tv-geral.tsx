@@ -212,6 +212,11 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     queryFn: () => fetchVendido({ data: { variant: "carregadores_tri" } }),
     ...commonFast,
   });
+  const vendidoTriQ = useQuery({
+    queryKey: ["tv-vendido-tri"],
+    queryFn: () => fetchVendido({ data: { variant: "vendido_tri" } }),
+    ...commonFast,
+  });
   const monthGoalQ = useQuery({
     queryKey: ["tv-month-goal", y, m + 1],
     queryFn: () => fetchMonthGoal({ data: { year: y, month: m + 1 } }),
@@ -311,7 +316,7 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     const elapsed = bizDays.filter((d) => d <= todayDay).length;
     const projetadoDia = Math.round(dailyGoal * elapsed);
 
-    const solarReal = sumTotal(vendasTriQ.data?.records ?? []);
+    const solarReal = sumTotal(vendidoTriQ.data?.records ?? []);
     const solarMeta = 14_000_000;
     const carregMeta = 1_800_000;
 
@@ -430,6 +435,7 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     recorrenciaQ.data,
     retencaoQ.data,
     carregTriQ.data,
+    vendidoTriQ.data,
     now,
     y,
     m,

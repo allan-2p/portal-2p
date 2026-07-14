@@ -669,6 +669,11 @@ export const OPP_DEFAULTS_VENDIDO_MES: OppFilters = {
 // Backwards-compat alias
 export const VENDIDO_DEFAULTS = OPP_DEFAULTS_VENDIDO_MES;
 
+export const OPP_DEFAULTS_VENDIDO_TRI: OppFilters = {
+  ...OPP_DEFAULTS_VENDIDO_MES,
+  dateLiteral: "THIS_QUARTER",
+};
+
 export const OPP_DEFAULTS_ORCAMENTOS: OppFilters = {
   stageNotEquals: "Pedido Concluído",
   tipoNfNotIn: ["Bonificação"],
@@ -1090,6 +1095,7 @@ const PUBLIC_OPP_COLS =
 
 const PUBLIC_TV_PRESETS = {
   vendido_mes: OPP_DEFAULTS_VENDIDO_MES,
+  vendido_tri: OPP_DEFAULTS_VENDIDO_TRI,
   gerado_mes: OPP_DEFAULTS_GERADO_MES,
   faturamento_mes: OPP_DEFAULTS_VENDAS,
   carregadores_tri: OPP_DEFAULTS_CARREGADORES_TRI,
