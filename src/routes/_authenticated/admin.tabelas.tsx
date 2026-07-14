@@ -1781,6 +1781,12 @@ function TabelasPage() {
     staleTime: 60_000,
     enabled: hasRole("admin") && tab === "carregadores",
   });
+  const qVendidoTri = useQuery({
+    queryKey: ["sf-vendido-tri-atual", vendidoTriFilters],
+    queryFn: () => fetchVendidoMes({ data: vendidoTriFilters }),
+    staleTime: 60_000,
+    enabled: hasRole("admin") && tab === "vendido-tri",
+  });
 
   // Silence unused-imports guard; kept for potential future direct calls.
   void fetchOrc; void fetchVen;
