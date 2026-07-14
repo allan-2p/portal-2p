@@ -940,7 +940,15 @@ export function Dashboard2P({
   canvasPadding = 32,
   fill = false,
   overscan = 0,
-}: { canvasPadding?: number; fill?: boolean; overscan?: number } = {}) {
+  stretchTolerance = 0,
+}: {
+  canvasPadding?: number;
+  fill?: boolean;
+  overscan?: number;
+  /** 0 = escala uniforme estrita (letterbox). 0.08 = permite até 8% de distorção
+   *  no eixo menor para preencher mais tela sem visível deformação. */
+  stretchTolerance?: number;
+} = {}) {
   const { data, loading, isFetching, lastUpdated } = useTvData();
   const [scale, setScale] = useState<{ x: number; y: number; offsetX: number; offsetY: number }>({
     x: 1,
@@ -953,29 +961,27 @@ export function Dashboard2P({
 
   useEffect(() => {
     const fit = () => {
-      // Overscan: shrink safe area equally on all four sides so nothing gets
-      // clipped by the TV bezel/overscan region.
+      // Safe area (overscan) igual nos 4 lados.
       const availW = Math.max(1, window.innerWidth - overscan * 2);
       const availH = Math.max(1, window.innerHeight - overscan * 2);
       const sx = availW / 1920;
       const sy = availH / 1080;
-      if (fill) {
-        // Uniform scale preserving 16:9 — centered inside the safe area.
-        const s = Math.min(sx, sy);
-        const offsetX = overscan + (availW - 1920 * s) / 2;
-        const offsetY = overscan + (availH - 1080 * s) / 2;
-        setScale({ x: s, y: s, offsetX, offsetY });
-      } else {
-        const s = Math.min(sx, sy);
-        const offsetX = overscan + (availW - 1920 * s) / 2;
-        const offsetY = overscan + (availH - 1080 * s) / 2;
-        setScale({ x: s, y: s, offsetX, offsetY });
-      }
+      const base = Math.min(sx, sy);
+      // Responsividade: cards crescem junto com a viewport. Quando `fill` está
+      // ativo, cada eixo pode crescer até `base * (1 + stretchTolerance)` para
+      // preencher mais tela sem distorção visível.
+      const maxAxis = base * (1 + Math.max(0, stretchTolerance));
+      const finalX = fill ? Math.min(sx, maxAxis) : base;
+      const finalY = fill ? Math.min(sy, maxAxis) : base;
+      const offsetX = overscan + (availW - 1920 * finalX) / 2;
+      const offsetY = overscan + (availH - 1080 * finalY) / 2;
+      setScale({ x: finalX, y: finalY, offsetX, offsetY });
     };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, [fill, overscan]);
+  }, [fill, overscan, stretchTolerance]);
+
 
 
 
