@@ -1917,6 +1917,21 @@ function TabelasPage() {
               dateField={geradoFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
             />
           </TabsContent>
+          <TabsContent value="carregadores" className="mt-4">
+            <OppTabPanel
+              filters={carregFilters}
+              defaults={carregDefaults}
+              onFiltersChange={setCarregFilters}
+              onSaveAsDefault={saveCarregAsDefault}
+              vendedor={vendedorCarreg}
+              onVendedorChange={setVendedorCarreg}
+              records={qCarreg.data?.records ?? []}
+              loading={qCarreg.isLoading}
+              error={qCarreg.error}
+              search={search}
+              dateField={carregFilters.dateField === "CreatedDate" ? "createdDate" : "closeDate"}
+            />
+          </TabsContent>
           <TabsContent value="projecoes" className="mt-4">
             <ProjectionsPanel search={search} />
           </TabsContent>
