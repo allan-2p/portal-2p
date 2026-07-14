@@ -6,6 +6,9 @@ import solarLogoAsset from "@/assets/2p-logo-black.png.asset.json";
 import {
   getPublicSalesforceVendas,
   getPublicSalesforceVendidoTv,
+  getPublicClientesNovosTv,
+  getPublicRecorrenciaTv,
+  getPublicRetencaoTv,
 } from "@/lib/salesforce.functions";
 import { getPublicMonthGoalTotal, getPublicGroupKpiGoals } from "@/lib/tv-public.functions";
 import { businessDaysOfMonth, isBusinessDay } from "@/lib/business-days";
