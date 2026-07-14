@@ -435,6 +435,7 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     recorrenciaQ.data,
     retencaoQ.data,
     carregTriQ.data,
+    vendidoTriQ.data,
     now,
     y,
     m,
