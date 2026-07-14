@@ -10,6 +10,12 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
     if (error != null && typeof error === "object" && "statusCode" in error) {
       throw error;
     }
+    // Let auth errors bubble through untouched so the client receives the
+    // failed RPC (and the _authenticated gate can redirect to /auth) instead
+    // of an HTML 500 page that blanks the screen.
+    if (error instanceof Error && error.message.startsWith("Unauthorized")) {
+      throw error;
+    }
     console.error(error);
     return new Response(renderErrorPage(), {
       status: 500,
