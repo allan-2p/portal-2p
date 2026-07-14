@@ -813,59 +813,85 @@ function HomePage() {
                   Tarefas em aberto do Salesforce
                 </p>
               </div>
-              <Popover open={agendaOpen} onOpenChange={setAgendaOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <CalendarIcon className="h-3.5 w-3.5" />
-                    {fmtKey(agendaDate) === fmtKey(today)
-                      ? "Hoje"
-                      : agendaDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <CalendarPicker
-                    mode="single"
-                    selected={agendaDate}
-                    defaultMonth={agendaDate}
-                    onSelect={(d) => {
-                      if (d) {
-                        setAgendaDate(startOfDay(d));
-                        setAgendaOpen(false);
-                      }
-                    }}
-                    disabled={{ before: startOfDay(today) }}
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Popover open={agendaSortOpen} onOpenChange={setAgendaSortOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2" title="Ordenar">
-                    <ArrowUpDown className="h-3.5 w-3.5" />
-                    {agendaSort === "priority" ? "Prioridade" : "Data"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-44 p-1">
-                  <button
-                    onClick={() => { setAgendaSort("date"); setAgendaSortOpen(false); }}
-                    className={cn(
-                      "w-full text-left text-sm px-2 py-1.5 rounded hover:bg-surface-2 flex items-center justify-between",
-                      agendaSort === "date" && "font-semibold text-primary",
-                    )}
-                  >
-                    Data {agendaSort === "date" && <Check className="h-3.5 w-3.5" />}
-                  </button>
-                  <button
-                    onClick={() => { setAgendaSort("priority"); setAgendaSortOpen(false); }}
-                    className={cn(
-                      "w-full text-left text-sm px-2 py-1.5 rounded hover:bg-surface-2 flex items-center justify-between",
-                      agendaSort === "priority" && "font-semibold text-primary",
-                    )}
-                  >
-                    Prioridade {agendaSort === "priority" && <Check className="h-3.5 w-3.5" />}
-                  </button>
-                </PopoverContent>
-              </Popover>
+              <div className="flex items-center gap-2">
+                <Popover open={agendaSortOpen} onOpenChange={setAgendaSortOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2" title="Ordenar">
+                      <ArrowUpDown className="h-3.5 w-3.5" />
+                      {agendaSort === "priority" ? "Prioridade" : "Data"}
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {agendaSortDir === "asc" ? "asc" : "desc"}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-56 p-1">
+                    <div className="px-2 pt-1 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Data</div>
+                    <button
+                      onClick={() => { setAgendaSort("date"); setAgendaSortDir("asc"); setAgendaSortOpen(false); }}
+                      className={cn(
+                        "w-full text-left text-sm px-2 py-1.5 rounded hover:bg-surface-2 flex items-center justify-between",
+                        agendaSort === "date" && agendaSortDir === "asc" && "font-semibold text-primary",
+                      )}
+                    >
+                      Data (mais antiga) {agendaSort === "date" && agendaSortDir === "asc" && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => { setAgendaSort("date"); setAgendaSortDir("desc"); setAgendaSortOpen(false); }}
+                      className={cn(
+                        "w-full text-left text-sm px-2 py-1.5 rounded hover:bg-surface-2 flex items-center justify-between",
+                        agendaSort === "date" && agendaSortDir === "desc" && "font-semibold text-primary",
+                      )}
+                    >
+                      Data (mais recente) {agendaSort === "date" && agendaSortDir === "desc" && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                    <div className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Prioridade</div>
+                    <button
+                      onClick={() => { setAgendaSort("priority"); setAgendaSortDir("asc"); setAgendaSortOpen(false); }}
+                      className={cn(
+                        "w-full text-left text-sm px-2 py-1.5 rounded hover:bg-surface-2 flex items-center justify-between",
+                        agendaSort === "priority" && agendaSortDir === "asc" && "font-semibold text-primary",
+                      )}
+                    >
+                      Prioridade (alta → baixa) {agendaSort === "priority" && agendaSortDir === "asc" && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => { setAgendaSort("priority"); setAgendaSortDir("desc"); setAgendaSortOpen(false); }}
+                      className={cn(
+                        "w-full text-left text-sm px-2 py-1.5 rounded hover:bg-surface-2 flex items-center justify-between",
+                        agendaSort === "priority" && agendaSortDir === "desc" && "font-semibold text-primary",
+                      )}
+                    >
+                      Prioridade (baixa → alta) {agendaSort === "priority" && agendaSortDir === "desc" && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                  </PopoverContent>
+                </Popover>
+                <Popover open={agendaOpen} onOpenChange={setAgendaOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      {fmtKey(agendaDate) === fmtKey(today)
+                        ? "Hoje"
+                        : agendaDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <CalendarPicker
+                      mode="single"
+                      selected={agendaDate}
+                      defaultMonth={agendaDate}
+                      onSelect={(d) => {
+                        if (d) {
+                          setAgendaDate(startOfDay(d));
+                          setAgendaOpen(false);
+                        }
+                      }}
+                      disabled={{ before: startOfDay(today) }}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
 
             </div>
             <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
