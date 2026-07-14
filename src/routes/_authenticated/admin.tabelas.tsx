@@ -1701,7 +1701,7 @@ function saveStoredFilters(key: string, filters: OppFilters) {
 
 function TabelasPage() {
   const { hasRole } = useAuth();
-  type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "gerado-mes" | "carregadores" | "clientes-novos" | "recorrencia" | "retencao";
+  type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "vendido-tri" | "gerado-mes" | "carregadores" | "clientes-novos" | "recorrencia" | "retencao";
   const [tab, setTab] = useState<TabId>("orcamentos");
 
   const [orcDefaults, setOrcDefaults] = useState<OppFilters>(() => loadStoredFilters("orcamentos", OPP_DEFAULTS_ORCAMENTOS));
