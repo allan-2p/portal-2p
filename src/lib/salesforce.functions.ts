@@ -1095,6 +1095,7 @@ const PUBLIC_OPP_COLS =
 
 const PUBLIC_TV_PRESETS = {
   vendido_mes: OPP_DEFAULTS_VENDIDO_MES,
+  vendido_tri: OPP_DEFAULTS_VENDIDO_TRI,
   gerado_mes: OPP_DEFAULTS_GERADO_MES,
   faturamento_mes: OPP_DEFAULTS_VENDAS,
   carregadores_tri: OPP_DEFAULTS_CARREGADORES_TRI,
