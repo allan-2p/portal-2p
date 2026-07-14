@@ -1831,6 +1831,12 @@ function TabelasPage() {
             <TabsTrigger value="clientes-novos" className="gap-2">
               <Sparkles className="h-4 w-4" /> Clientes Novos
             </TabsTrigger>
+            <TabsTrigger value="recorrencia" className="gap-2">
+              <Repeat className="h-4 w-4" /> Recorrência
+            </TabsTrigger>
+            <TabsTrigger value="retencao" className="gap-2">
+              <ShieldCheck className="h-4 w-4" /> Retenção
+            </TabsTrigger>
           </TabsList>
 
 
