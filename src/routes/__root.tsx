@@ -97,11 +97,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "preload", href: spaceGrotesk500, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
-      { rel: "preload", href: spaceGrotesk600, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+      // Preload only the two font files needed above the fold on first paint.
+      // The remaining weights load via the CSS @font-face rules (font-display: swap).
       { rel: "preload", href: inter400, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
-      { rel: "preload", href: inter500, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", href: spaceGrotesk600, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
     ],
+
   }),
 
   shellComponent: RootShell,
