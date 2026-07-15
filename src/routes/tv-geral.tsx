@@ -1152,11 +1152,8 @@ export function Dashboard2P({
 
             </div>
             <div>
-              <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -0.5 }}>Grupo 2P</div>
-              <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 3, color: T.bgFaint }}>
-                PAINEL DE PERFORMANCE
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, fontSize: 15, color: T.bgFaint }}>
+              <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1 }}>Grupo 2P</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, fontSize: 15, color: T.bgFaint }}>
                 <span
                   style={{
                     width: 7,
@@ -1176,6 +1173,7 @@ export function Dashboard2P({
                 </span>
               </div>
             </div>
+
 
           </div>
           <HeaderMetas tri={data.tri} />
