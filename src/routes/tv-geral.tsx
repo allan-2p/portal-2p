@@ -1174,7 +1174,7 @@ export function Dashboard2P({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            fontSize: 14,
+            fontSize: 17,
             color: T.bgFaint,
             marginTop: "auto",
             position: "relative",
