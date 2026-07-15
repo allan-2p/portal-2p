@@ -831,14 +831,33 @@ const GraficoSemanal = ({
           <span style={{ width: 7, height: 7, borderRadius: 999, background: dot }} />
           <Eyebrow>{titulo}</Eyebrow>
         </div>
-        <div style={{ fontSize: 22, color: T.dim }}>
-          <span style={{ color: T.ink, fontWeight: 800 }}>R$ {fmtK(totalReal)}</span>
-          <span> / R$ {fmtK(totalProj)} proj </span>
-          <span style={{ color: T.green, fontWeight: 800, marginLeft: 4 }}>{p.toFixed(0)}%</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 22, color: T.dim }}>
+          <span><span style={{ color: T.ink, fontWeight: 800 }}>R$ {fmtK(totalReal)}</span> / R$ {fmtK(totalProj)} proj</span>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: 62,
+              height: 30,
+              padding: "0 12px",
+              borderRadius: 999,
+              background: "rgba(34,179,122,.15)",
+              border: "1px solid rgba(34,179,122,.4)",
+              color: T.green,
+              fontWeight: 900,
+              fontStyle: "italic",
+              fontSize: 20,
+              letterSpacing: -0.3,
+            }}
+          >
+            {p.toFixed(0)}%
+          </span>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, 1fr)`, gap: 6, height: 150, alignItems: "end", width: "100%", padding: "0 4px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, minmax(0, 92px))`, gap: 16, height: 150, alignItems: "end", width: "100%", justifyContent: "center", padding: "0 8px" }}>
+
         {dados.map((d, i) => {
           const hoje = d.dia === diaAtual;
           const hProj = (d.proj / max) * 100;
