@@ -449,7 +449,7 @@ function AuthPage() {
               </p>
             </div>
           </div>
-        </motion.div>
+        </div>
       </main>
 
       <footer className="relative z-10 px-6 md:px-12 py-5 text-[10px] uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600 flex justify-between">
