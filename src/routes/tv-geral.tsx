@@ -1156,7 +1156,27 @@ export function Dashboard2P({
               <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 3, color: T.bgFaint }}>
                 PAINEL DE PERFORMANCE
               </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, fontSize: 15, color: T.bgFaint }}>
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: 999,
+                    background: loading ? T.amber : isFetching ? T.blue : T.green,
+                    boxShadow: `0 0 8px ${loading ? T.amber : isFetching ? T.blue : T.green}`,
+                    animation: isFetching ? "pulse 1.2s ease-in-out infinite" : undefined,
+                  }}
+                />
+                <span>
+                  {loading
+                    ? "Carregando dados…"
+                    : isFetching
+                      ? "Sincronizando ao vivo…"
+                      : `Ao vivo · ${updateLabel}`}
+                </span>
+              </div>
             </div>
+
           </div>
           <HeaderMetas tri={data.tri} />
         </div>
@@ -1189,60 +1209,29 @@ export function Dashboard2P({
           </div>
         </div>
 
-        <div
+        <button
+          onClick={toggleFullscreen}
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            fontSize: 19,
-            color: T.bgFaint,
-            marginTop: "auto",
-            position: "relative",
+            position: "absolute",
+            top: 12,
+            right: 12,
+            background: "rgba(255,255,255,.06)",
+            border: "1px solid rgba(255,255,255,.12)",
+            color: T.bgTxt,
+            fontSize: 13,
+            fontWeight: 700,
+            letterSpacing: 1,
+            textTransform: "uppercase",
+            padding: "4px 10px",
+            borderRadius: 999,
+            cursor: "pointer",
+            opacity: 0.55,
+            zIndex: 2,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                background: loading ? T.amber : isFetching ? T.blue : T.green,
-                boxShadow: `0 0 10px ${loading ? T.amber : isFetching ? T.blue : T.green}`,
-                animation: isFetching ? "pulse 1.2s ease-in-out infinite" : undefined,
-              }}
-            />
-            <span>
-              {loading
-                ? "Carregando dados…"
-                : isFetching
-                  ? "Sincronizando ao vivo…"
-                  : `Ao vivo · ${updateLabel}`}
-            </span>
-            <button
-              onClick={toggleFullscreen}
-              style={{
-                marginLeft: 12,
-                background: "rgba(255,255,255,.06)",
-                border: "1px solid rgba(255,255,255,.12)",
-                color: T.bgTxt,
-                fontSize: 16,
-                fontWeight: 700,
-                letterSpacing: 1,
-                textTransform: "uppercase",
-                padding: "4px 10px",
-                borderRadius: 999,
-                cursor: "pointer",
-              }}
-            >
-              {isFs ? "Sair de tela cheia" : "Tela cheia"}
-            </button>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <span><span style={{ color: T.orange }}>●</span> 2P Solar</span>
-            <span><span style={{ color: T.blue }}>●</span> 2P Carregadores</span>
-            <span style={{ opacity: 0.6 }}>┆ barra clara = projetado · barra grafite = realizado</span>
-          </div>
-        </div>
+          {isFs ? "Sair" : "Tela cheia"}
+        </button>
+
       </div>
     </div>
   );
