@@ -988,21 +988,20 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
   return (
     <Card delay={delay} style={{ padding: "22px 26px", display: "flex", alignItems: "center", gap: 20 }}>
       <Donut value={p} color={cor} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
-          <span style={{ fontSize: 28, fontWeight: 800, color: T.ink }}>{k.label}</span>
-          <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "baseline", gap: 6 }}>
-            <span style={{ fontSize: 46, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
-              {k.realQtd}
-            </span>
-            <span style={{ fontSize: 24, color: T.faint }}>/ {k.metaQtd}</span>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+        <span style={{ fontSize: 26, fontWeight: 800, color: T.ink, marginBottom: 6 }}>{k.label}</span>
+        <div style={{ display: "inline-flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+          <span style={{ fontSize: 52, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
+            {k.realQtd}
           </span>
+          <span style={{ fontSize: 26, color: T.faint }}>/ {k.metaQtd}</span>
         </div>
         {k.metaPct != null && (
-          <div style={{ textAlign: "right", fontSize: 16, color: T.dim, marginBottom: 8 }}>
+          <div style={{ fontSize: 15, color: T.dim, marginBottom: 8 }}>
             meta {k.metaPct}%
           </div>
         )}
+
         <ProgressBar value={p} color={cor} height={6} />
       </div>
     </Card>
