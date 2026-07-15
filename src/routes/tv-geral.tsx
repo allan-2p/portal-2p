@@ -849,19 +849,19 @@ const GraficoSemanal = ({
   );
 };
 
-const Donut = ({ value, color, size = 78 }: { value: number; color: string; size?: number }) => {
+const Donut = ({ value, color, size = 92 }: { value: number; color: string; size?: number }) => {
   const r = (size - 10) / 2;
   const c = 2 * Math.PI * r;
   const off = c * (1 - Math.min(1, value / 100));
   return (
     <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-      <circle cx={size / 2} cy={size / 2} r={r} stroke={T.track} strokeWidth={6} fill="none" />
+      <circle cx={size / 2} cy={size / 2} r={r} stroke={T.track} strokeWidth={7} fill="none" />
       <circle
         cx={size / 2}
         cy={size / 2}
         r={r}
         stroke={color}
-        strokeWidth={6}
+        strokeWidth={7}
         fill="none"
         strokeDasharray={c}
         strokeDashoffset={off}
@@ -874,7 +874,7 @@ const Donut = ({ value, color, size = 78 }: { value: number; color: string; size
         textAnchor="middle"
         dominantBaseline="middle"
         transform={`rotate(90 ${size / 2} ${size / 2})`}
-        fontSize={16}
+        fontSize={20}
         fontWeight={800}
         fill={T.ink}
       >
