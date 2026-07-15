@@ -1156,7 +1156,27 @@ export function Dashboard2P({
               <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 3, color: T.bgFaint }}>
                 PAINEL DE PERFORMANCE
               </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, fontSize: 15, color: T.bgFaint }}>
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: 999,
+                    background: loading ? T.amber : isFetching ? T.blue : T.green,
+                    boxShadow: `0 0 8px ${loading ? T.amber : isFetching ? T.blue : T.green}`,
+                    animation: isFetching ? "pulse 1.2s ease-in-out infinite" : undefined,
+                  }}
+                />
+                <span>
+                  {loading
+                    ? "Carregando dados…"
+                    : isFetching
+                      ? "Sincronizando ao vivo…"
+                      : `Ao vivo · ${updateLabel}`}
+                </span>
+              </div>
             </div>
+
           </div>
           <HeaderMetas tri={data.tri} />
         </div>
