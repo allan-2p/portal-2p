@@ -478,7 +478,7 @@ const Card = ({
 const Eyebrow = ({ children, style }: { children: ReactNode; style?: CSSProperties }) => (
   <div
     style={{
-      fontSize: 11,
+      fontSize: 15,
       fontWeight: 700,
       letterSpacing: 2,
       textTransform: "uppercase",
