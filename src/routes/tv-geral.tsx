@@ -942,37 +942,25 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
     <Card delay={delay} style={{ padding: "22px 26px", display: "flex", alignItems: "center", gap: 20 }}>
       <Donut value={p} color={cor} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
           <span style={{ fontSize: 28, fontWeight: 800, color: T.ink }}>{k.label}</span>
-          <span
-            style={{
-              marginLeft: "auto",
-              fontSize: 17,
-              fontWeight: 700,
-              letterSpacing: 1.5,
-              textTransform: "uppercase",
-              color: T.faint,
-            }}
-          >
-            {k.periodo === "mensal" ? "MÊS" : k.periodo === "trimestral" ? "TRI" : k.periodo}
-          </span>
-
-        </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 63, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
-            {k.realQtd}
-          </span>
-          <span style={{ fontSize: 28, color: T.faint }}>/ {k.metaQtd}</span>
-          {k.metaPct != null && (
-            <span style={{ fontSize: 18, color: T.dim, marginLeft: 6 }}>
-              meta {k.metaPct}%
+          <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "baseline", gap: 6 }}>
+            <span style={{ fontSize: 46, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
+              {k.realQtd}
             </span>
-          )}
+            <span style={{ fontSize: 24, color: T.faint }}>/ {k.metaQtd}</span>
+          </span>
         </div>
+        {k.metaPct != null && (
+          <div style={{ textAlign: "right", fontSize: 16, color: T.dim, marginBottom: 8 }}>
+            meta {k.metaPct}%
+          </div>
+        )}
         <ProgressBar value={p} color={cor} height={6} />
       </div>
     </Card>
   );
+
 };
 
 const HeaderMetas = ({ tri }: { tri: TvData["tri"] }) => {
