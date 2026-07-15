@@ -645,15 +645,18 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
   return (
     <Card delay={0.05} style={{ padding: "24px 44px 26px" }}>
       {/* Cabeçalho */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
-        <Eyebrow>Vendas do mês</Eyebrow>
-        <span style={{ fontSize: 22, color: T.dim }}>
-          {pMeta.toFixed(0)}% da meta atingido
-        </span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <Eyebrow>Vendas do mês</Eyebrow>
+          <span style={{ fontSize: 22, color: T.dim }}>
+            {pMeta.toFixed(0)}% da meta atingido
+          </span>
+        </div>
+        <Eyebrow>Faturamento do mês</Eyebrow>
       </div>
 
-      {/* Hero: vendas gigante + faturamento discreto ao lado */}
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 28, flexWrap: "wrap", marginBottom: 16 }}>
+      {/* Hero: vendas gigante à esquerda + faturamento à direita */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 28, flexWrap: "wrap", marginBottom: 16 }}>
         <div
           style={{
             fontSize: 130,
@@ -666,31 +669,19 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         >
           {fmtBRL(Math.round(vendas))}
         </div>
-        <div style={{ paddingBottom: 12 }}>
-          <div
-            style={{
-              fontSize: 13,
-              color: T.faint,
-              letterSpacing: 1.5,
-              textTransform: "uppercase",
-              fontWeight: 700,
-              marginBottom: 2,
-            }}
-          >
-            Faturamento do mês
-          </div>
-          <div
-            style={{
-              fontSize: 34,
-              fontWeight: 700,
-              fontStyle: "italic",
-              color: T.dim,
-              letterSpacing: -0.5,
-              lineHeight: 1,
-            }}
-          >
-            {fmtBRL(Math.round(fat))}
-          </div>
+        <div
+          style={{
+            fontSize: 48,
+            fontWeight: 700,
+            fontStyle: "italic",
+            color: T.dim,
+            letterSpacing: -0.8,
+            lineHeight: 1,
+            paddingBottom: 12,
+            textAlign: "right",
+          }}
+        >
+          {fmtBRL(Math.round(fat))}
         </div>
       </div>
 
@@ -709,16 +700,16 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         }}
       >
         <div style={{ padding: "4px 20px 4px 0" }}>
-          <Eyebrow style={{ fontSize: 14 }}>Meta do mês</Eyebrow>
+          <Eyebrow style={{ fontSize: 16 }}>Meta do mês</Eyebrow>
           <div
             style={{
-              fontSize: 30,
+              fontSize: 42,
               fontWeight: 800,
               fontStyle: "italic",
               color: T.ink,
-              letterSpacing: -0.5,
+              letterSpacing: -0.8,
               lineHeight: 1.1,
-              marginTop: 4,
+              marginTop: 6,
             }}
           >
             {fmtBRL(mes.meta, true)}
@@ -726,16 +717,16 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         </div>
 
         <div style={{ padding: "4px 20px", borderLeft: `1px solid ${T.cardBorder}` }}>
-          <Eyebrow style={{ fontSize: 14 }}>Projetado até hoje</Eyebrow>
+          <Eyebrow style={{ fontSize: 16 }}>Projetado até hoje</Eyebrow>
           <div
             style={{
-              fontSize: 30,
+              fontSize: 42,
               fontWeight: 800,
               fontStyle: "italic",
               color: T.ink,
-              letterSpacing: -0.5,
+              letterSpacing: -0.8,
               lineHeight: 1.1,
-              marginTop: 4,
+              marginTop: 6,
             }}
           >
             {fmtBRL(mes.projetadoDia, true)}
@@ -743,7 +734,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         </div>
 
         <div style={{ padding: "4px 0 4px 20px", borderLeft: `1px solid ${T.cardBorder}` }}>
-          <Eyebrow style={{ fontSize: 14 }}>
+          <Eyebrow style={{ fontSize: 16 }}>
             Saldo — {acima ? "acima do projetado" : "abaixo do projetado"}
           </Eyebrow>
           <div
@@ -751,20 +742,21 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
               display: "inline-flex",
               alignItems: "center",
               gap: 8,
-              marginTop: 4,
+              marginTop: 6,
               color: acima ? T.green : T.red,
               fontWeight: 900,
               fontStyle: "italic",
-              fontSize: 30,
-              letterSpacing: -0.5,
+              fontSize: 42,
+              letterSpacing: -0.8,
               lineHeight: 1.1,
             }}
           >
-            <span style={{ fontSize: 24 }}>{acima ? "▲" : "▼"}</span>
+            <span style={{ fontSize: 32 }}>{acima ? "▲" : "▼"}</span>
             {fmtBRL(Math.abs(delta), true)}
           </div>
         </div>
       </div>
+
     </Card>
   );
 };
