@@ -643,7 +643,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
   const pMeta = pct(mes.vendas, mes.meta);
 
   return (
-    <Card delay={0.05} style={{ padding: "32px 44px" }}>
+    <Card delay={0.05} style={{ padding: "24px 44px 34px" }}>
       <div style={{ display: "grid", gridTemplateColumns: "1.35fr 1fr", gap: 40, alignItems: "center" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
