@@ -1132,8 +1132,8 @@ export function Dashboard2P({
 
             </div>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5 }}>Grupo 2P</div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, color: T.bgFaint }}>
+              <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.5 }}>Grupo 2P</div>
+              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 3, color: T.bgFaint }}>
                 PAINEL DE PERFORMANCE
               </div>
             </div>
