@@ -663,7 +663,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
               color: T.ink,
               letterSpacing: -4,
               lineHeight: 0.95,
-              margin: "4px 0 14px",
+              margin: "0 0 14px",
             }}
           >
             {fmtBRL(Math.round(vendas))}
