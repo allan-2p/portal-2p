@@ -135,28 +135,24 @@ function AuthPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(203,213,225,0.4),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_bottom,rgba(24,24,27,0.6),transparent_55%)]" />
 
         {/* Slowly rotating chrome conic — the "sheen" */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140vmax] h-[140vmax] opacity-[0.35] dark:opacity-[0.18]"
+        <div
+          className="auth-conic absolute top-1/2 left-1/2 w-[140vmax] h-[140vmax] opacity-[0.35] dark:opacity-[0.18]"
           style={{
             background:
               "conic-gradient(from 0deg at 50% 50%, rgba(148,163,184,0), rgba(226,232,240,0.55), rgba(148,163,184,0), rgba(203,213,225,0.5), rgba(148,163,184,0), rgba(241,245,249,0.6), rgba(148,163,184,0))",
             filter: "blur(60px)",
+            transform: "translate(-50%, -50%)",
           }}
         />
 
         {/* Silver orbs */}
-        <motion.div
-          animate={{ y: [0, -30, 0], x: [0, 20, 0] }}
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[8%] left-[6%] w-[38vw] h-[38vw] rounded-full blur-[100px] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.9),rgba(203,213,225,0.35)_45%,transparent_70%)] dark:bg-[radial-gradient(circle_at_30%_30%,rgba(212,212,216,0.28),rgba(63,63,70,0.2)_45%,transparent_70%)]"
+        <div
+          className="auth-orb-a absolute top-[8%] left-[6%] w-[38vw] h-[38vw] rounded-full blur-[100px] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.9),rgba(203,213,225,0.35)_45%,transparent_70%)] dark:bg-[radial-gradient(circle_at_30%_30%,rgba(212,212,216,0.28),rgba(63,63,70,0.2)_45%,transparent_70%)]"
         />
-        <motion.div
-          animate={{ y: [0, 30, 0], x: [0, -20, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[6%] right-[4%] w-[42vw] h-[42vw] rounded-full blur-[110px] bg-[radial-gradient(circle_at_70%_70%,rgba(226,232,240,0.75),rgba(148,163,184,0.25)_45%,transparent_70%)] dark:bg-[radial-gradient(circle_at_70%_70%,rgba(161,161,170,0.22),rgba(24,24,27,0.15)_45%,transparent_70%)]"
+        <div
+          className="auth-orb-b absolute bottom-[6%] right-[4%] w-[42vw] h-[42vw] rounded-full blur-[110px] bg-[radial-gradient(circle_at_70%_70%,rgba(226,232,240,0.75),rgba(148,163,184,0.25)_45%,transparent_70%)] dark:bg-[radial-gradient(circle_at_70%_70%,rgba(161,161,170,0.22),rgba(24,24,27,0.15)_45%,transparent_70%)]"
         />
+
 
         {/* Faint precision grid */}
         <div
