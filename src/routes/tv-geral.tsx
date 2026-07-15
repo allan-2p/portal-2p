@@ -856,7 +856,7 @@ const GraficoSemanal = ({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, minmax(0, 92px))`, gap: 16, height: 150, alignItems: "end", width: "100%", justifyContent: "center", padding: "0 8px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, minmax(0, 1fr))`, gap: 24, height: 150, alignItems: "end", width: "100%", maxWidth: 720, margin: "0 auto", justifyContent: "center", padding: "0 12px" }}>
 
         {dados.map((d, i) => {
           const hoje = d.dia === diaAtual;
