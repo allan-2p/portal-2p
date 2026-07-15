@@ -1002,7 +1002,10 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
           </div>
         )}
 
-        <ProgressBar value={p} color={cor} height={6} />
+        <div style={{ width: "100%" }}>
+          <ProgressBar value={p} color={cor} height={6} />
+        </div>
+
       </div>
     </Card>
   );
