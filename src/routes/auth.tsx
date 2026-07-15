@@ -128,119 +128,16 @@ function AuthPage() {
     <div className="relative min-h-screen w-full flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-hidden transition-colors duration-300">
       {splash && <LoginSplash />}
 
-      {/* Futuristic silver atmosphere */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Base metallic wash */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(226,232,240,0.55),transparent_60%)] dark:bg-[radial-gradient(ellipse_at_top,rgba(63,63,70,0.35),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(203,213,225,0.4),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_bottom,rgba(24,24,27,0.6),transparent_55%)]" />
+      {/* Minimal static background — one radial wash, zero animations, zero SVG.
+          Kept intentionally tiny for LCP: fewer DOM nodes, no compositing layers. */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at top, color-mix(in oklab, var(--foreground) 6%, transparent), transparent 60%), radial-gradient(ellipse at bottom, color-mix(in oklab, var(--foreground) 4%, transparent), transparent 55%)",
+        }}
+      />
 
-        {/* Slowly rotating chrome conic — the "sheen" */}
-        <div
-          className="auth-conic absolute top-1/2 left-1/2 w-[140vmax] h-[140vmax] opacity-[0.35] dark:opacity-[0.18]"
-          style={{
-            background:
-              "conic-gradient(from 0deg at 50% 50%, rgba(148,163,184,0), rgba(226,232,240,0.55), rgba(148,163,184,0), rgba(203,213,225,0.5), rgba(148,163,184,0), rgba(241,245,249,0.6), rgba(148,163,184,0))",
-            filter: "blur(60px)",
-            transform: "translate(-50%, -50%)",
-          }}
-        />
-
-        {/* Silver orbs */}
-        <div
-          className="auth-orb-a absolute top-[8%] left-[6%] w-[38vw] h-[38vw] rounded-full blur-[100px] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.9),rgba(203,213,225,0.35)_45%,transparent_70%)] dark:bg-[radial-gradient(circle_at_30%_30%,rgba(212,212,216,0.28),rgba(63,63,70,0.2)_45%,transparent_70%)]"
-        />
-        <div
-          className="auth-orb-b absolute bottom-[6%] right-[4%] w-[42vw] h-[42vw] rounded-full blur-[110px] bg-[radial-gradient(circle_at_70%_70%,rgba(226,232,240,0.75),rgba(148,163,184,0.25)_45%,transparent_70%)] dark:bg-[radial-gradient(circle_at_70%_70%,rgba(161,161,170,0.22),rgba(24,24,27,0.15)_45%,transparent_70%)]"
-        />
-
-
-        {/* Faint precision grid */}
-        <div
-          className="absolute inset-0 opacity-[0.35] dark:opacity-[0.12]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, rgba(120,120,130,0.10) 1px, transparent 1px), linear-gradient(to bottom, rgba(120,120,130,0.10) 1px, transparent 1px)",
-            backgroundSize: "56px 56px",
-            maskImage: "radial-gradient(ellipse at center, rgba(0,0,0,0.9), transparent 70%)",
-            WebkitMaskImage: "radial-gradient(ellipse at center, rgba(0,0,0,0.9), transparent 70%)",
-          }}
-        />
-
-        {/* Concentric radar rings */}
-        <svg
-          className="absolute -bottom-[35vmin] -right-[35vmin] w-[90vmin] h-[90vmin] opacity-40 dark:opacity-25"
-          viewBox="0 0 400 400"
-          fill="none"
-        >
-          <defs>
-            <radialGradient id="ringGrad" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(148,163,184,0.5)" />
-              <stop offset="100%" stopColor="rgba(148,163,184,0)" />
-            </radialGradient>
-          </defs>
-          {[60, 110, 160, 210, 260].map((r) => (
-            <circle key={r} cx="200" cy="200" r={r} stroke="url(#ringGrad)" strokeWidth="0.6" />
-          ))}
-          <circle cx="200" cy="200" r="4" fill="rgba(226,232,240,0.9)" />
-        </svg>
-
-        <svg
-          className="absolute -top-[30vmin] -left-[30vmin] w-[80vmin] h-[80vmin] opacity-30 dark:opacity-20"
-          viewBox="0 0 400 400"
-          fill="none"
-        >
-          {[50, 95, 140, 185, 230].map((r) => (
-            <circle key={r} cx="200" cy="200" r={r} stroke="rgba(148,163,184,0.35)" strokeWidth="0.5" strokeDasharray="2 6" />
-          ))}
-        </svg>
-
-        {/* Crosshair guides */}
-        <div className="absolute inset-y-0 left-1/2 w-px bg-gradient-to-b from-transparent via-slate-400/20 dark:via-zinc-500/15 to-transparent" />
-        <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-transparent via-slate-400/20 dark:via-zinc-500/15 to-transparent" />
-
-        {/* Scanline shimmer */}
-        <div
-          className="auth-scan absolute inset-x-0 h-[40vh] bg-gradient-to-b from-transparent via-white/25 dark:via-zinc-300/[0.04] to-transparent blur-2xl"
-        />
-
-
-        {/* Corner brackets */}
-        <div className="absolute top-6 left-6 w-6 h-6 border-l border-t border-slate-400/40 dark:border-zinc-600/40" />
-        <div className="absolute top-6 right-6 w-6 h-6 border-r border-t border-slate-400/40 dark:border-zinc-600/40" />
-        <div className="absolute bottom-6 left-6 w-6 h-6 border-l border-b border-slate-400/40 dark:border-zinc-600/40" />
-        <div className="absolute bottom-6 right-6 w-6 h-6 border-r border-b border-slate-400/40 dark:border-zinc-600/40" />
-
-        {/* Subtle depth gradients */}
-        <div className="absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-white/50 via-white/10 to-transparent dark:from-zinc-100/[0.04] dark:via-zinc-100/[0.01] dark:to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-slate-300/30 via-slate-200/10 to-transparent dark:from-black/60 dark:via-black/20 dark:to-transparent" />
-        <div className="absolute inset-y-0 left-0 w-[30%] bg-gradient-to-r from-slate-200/25 to-transparent dark:from-black/40 dark:to-transparent" />
-        <div className="absolute inset-y-0 right-0 w-[30%] bg-gradient-to-l from-slate-200/25 to-transparent dark:from-black/40 dark:to-transparent" />
-
-        {/* Vignette */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, transparent 40%, rgba(15,23,42,0.18) 100%)",
-          }}
-        />
-        <div
-          className="absolute inset-0 hidden dark:block"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.65) 100%)",
-          }}
-        />
-
-        {/* Grain */}
-        <div
-          className="absolute inset-0 opacity-[0.08] dark:opacity-[0.06] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>\")",
-          }}
-        />
-      </div>
 
       {/* Top-right theme toggle */}
       <div className="absolute z-20 top-6 right-6 md:top-8 md:right-10">
