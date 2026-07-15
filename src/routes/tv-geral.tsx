@@ -643,46 +643,45 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
   const pMeta = pct(mes.vendas, mes.meta);
 
   return (
-    <Card delay={0.05} style={{ padding: "24px 44px 30px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr", gap: 40, alignItems: "center" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
-            <Eyebrow>Vendas do mês</Eyebrow>
-            <span style={{ fontSize: 22, color: T.dim }}>
-              Meta {fmtBRL(mes.meta, true)} · {pMeta.toFixed(0)}% atingido
-            </span>
-          </div>
-          <div style={{ maxWidth: 520, marginBottom: 14 }}>
-            <ProgressBar value={pMeta} color={grad} height={5} shimmer />
-          </div>
+    <Card delay={0.05} style={{ padding: "24px 44px 26px" }}>
+      {/* Cabeçalho */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
+        <Eyebrow>Vendas do mês</Eyebrow>
+        <span style={{ fontSize: 22, color: T.dim }}>
+          {pMeta.toFixed(0)}% da meta atingido
+        </span>
+      </div>
+
+      {/* Hero: vendas gigante + faturamento discreto ao lado */}
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 28, flexWrap: "wrap", marginBottom: 16 }}>
+        <div
+          style={{
+            fontSize: 130,
+            fontWeight: 900,
+            fontStyle: "italic",
+            color: T.ink,
+            letterSpacing: -3,
+            lineHeight: 0.9,
+          }}
+        >
+          {fmtBRL(Math.round(vendas))}
+        </div>
+        <div style={{ paddingBottom: 12 }}>
           <div
             style={{
-              fontSize: 120,
-              fontWeight: 900,
-              fontStyle: "italic",
-              color: T.ink,
-              letterSpacing: -3,
-              lineHeight: 0.95,
-              margin: "0 0 8px",
-            }}
-          >
-            {fmtBRL(Math.round(vendas))}
-          </div>
-          <div
-            style={{
-              fontSize: 14,
+              fontSize: 13,
               color: T.faint,
               letterSpacing: 1.5,
               textTransform: "uppercase",
               fontWeight: 700,
-              marginBottom: 4,
+              marginBottom: 2,
             }}
           >
             Faturamento do mês
           </div>
           <div
             style={{
-              fontSize: 40,
+              fontSize: 34,
               fontWeight: 700,
               fontStyle: "italic",
               color: T.dim,
@@ -693,58 +692,76 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
             {fmtBRL(Math.round(fat))}
           </div>
         </div>
+      </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            gap: 22,
-            padding: "10px 6px 10px 32px",
-            borderLeft: `1px solid ${T.cardBorder}`,
-            height: "100%",
-          }}
-        >
-          <div>
-            <Eyebrow style={{ fontSize: 18 }}>Projetado até hoje</Eyebrow>
-            <div
-              style={{
-                fontSize: 62,
-                fontWeight: 900,
-                fontStyle: "italic",
-                color: T.ink,
-                letterSpacing: -1.5,
-                lineHeight: 1,
-                marginTop: 6,
-              }}
-            >
-              {fmtBRL(mes.projetadoDia, true)}
-            </div>
+      {/* Barra de progresso */}
+      <div style={{ marginBottom: 18 }}>
+        <ProgressBar value={pMeta} color={grad} height={5} shimmer />
+      </div>
+
+      {/* Linha de métricas: Meta • Projetado • Saldo */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 0,
+          alignItems: "center",
+        }}
+      >
+        <div style={{ padding: "4px 20px 4px 0" }}>
+          <Eyebrow style={{ fontSize: 14 }}>Meta do mês</Eyebrow>
+          <div
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              fontStyle: "italic",
+              color: T.ink,
+              letterSpacing: -0.5,
+              lineHeight: 1.1,
+              marginTop: 4,
+            }}
+          >
+            {fmtBRL(mes.meta, true)}
           </div>
-          <div>
-            <Eyebrow style={{ fontSize: 18 }}>
-              Saldo — {acima ? "acima do projetado" : "abaixo do projetado"}
-            </Eyebrow>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 10,
-                marginTop: 8,
-                padding: "10px 22px",
-                borderRadius: 999,
-                background: acima ? "rgba(15,169,88,.14)" : "rgba(220,62,50,.14)",
-                color: acima ? T.green : T.red,
-                fontWeight: 900,
-                fontStyle: "italic",
-                fontSize: 52,
-                letterSpacing: -1,
-                lineHeight: 1,
-              }}
-            >
-              <span style={{ fontSize: 40 }}>{acima ? "▲" : "▼"}</span>
-              {fmtBRL(Math.abs(delta), true)}
-            </div>
+        </div>
+
+        <div style={{ padding: "4px 20px", borderLeft: `1px solid ${T.cardBorder}` }}>
+          <Eyebrow style={{ fontSize: 14 }}>Projetado até hoje</Eyebrow>
+          <div
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              fontStyle: "italic",
+              color: T.ink,
+              letterSpacing: -0.5,
+              lineHeight: 1.1,
+              marginTop: 4,
+            }}
+          >
+            {fmtBRL(mes.projetadoDia, true)}
+          </div>
+        </div>
+
+        <div style={{ padding: "4px 0 4px 20px", borderLeft: `1px solid ${T.cardBorder}` }}>
+          <Eyebrow style={{ fontSize: 14 }}>
+            Saldo — {acima ? "acima do projetado" : "abaixo do projetado"}
+          </Eyebrow>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              marginTop: 4,
+              color: acima ? T.green : T.red,
+              fontWeight: 900,
+              fontStyle: "italic",
+              fontSize: 30,
+              letterSpacing: -0.5,
+              lineHeight: 1.1,
+            }}
+          >
+            <span style={{ fontSize: 24 }}>{acima ? "▲" : "▼"}</span>
+            {fmtBRL(Math.abs(delta), true)}
           </div>
         </div>
       </div>
