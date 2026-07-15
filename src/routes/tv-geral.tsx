@@ -646,17 +646,20 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
     <Card delay={0.05} style={{ padding: "24px 44px 26px" }}>
       {/* Cabeçalho */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, marginBottom: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <Eyebrow>Vendas do mês</Eyebrow>
-          <span style={{ fontSize: 22, color: T.dim }}>
-            {pMeta.toFixed(0)}% da meta atingido
-          </span>
-        </div>
-        <Eyebrow>Faturamento do mês</Eyebrow>
+        <Eyebrow>Vendas do mês</Eyebrow>
+        <span
+          style={{
+            width: 12,
+            height: 12,
+            borderRadius: 999,
+            background: `linear-gradient(135deg, ${T.orange}, ${T.blue})`,
+            boxShadow: "0 0 10px rgba(107,91,255,.6)",
+          }}
+        />
       </div>
 
-      {/* Hero: vendas gigante à esquerda + faturamento à direita */}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 28, flexWrap: "wrap", marginBottom: 16 }}>
+      {/* Hero: vendas centralizado + saldo como indicador ao lado */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24, flexWrap: "wrap", marginBottom: 16 }}>
         <div
           style={{
             fontSize: 130,
@@ -671,17 +674,35 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         </div>
         <div
           style={{
-            fontSize: 48,
-            fontWeight: 700,
-            fontStyle: "italic",
-            color: T.dim,
-            letterSpacing: -0.8,
-            lineHeight: 1,
-            paddingBottom: 12,
-            textAlign: "right",
+            display: "inline-flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            gap: 2,
+            padding: "8px 14px",
+            borderRadius: 12,
+            background: acima ? "rgba(34,197,94,.12)" : "rgba(239,68,68,.12)",
+            border: `1px solid ${acima ? "rgba(34,197,94,.35)" : "rgba(239,68,68,.35)"}`,
           }}
         >
-          {fmtBRL(Math.round(fat))}
+          <span style={{ fontSize: 13, color: T.dim, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>
+            {acima ? "Acima do projetado" : "Abaixo do projetado"}
+          </span>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              color: acima ? T.green : T.red,
+              fontWeight: 900,
+              fontStyle: "italic",
+              fontSize: 30,
+              letterSpacing: -0.5,
+              lineHeight: 1,
+            }}
+          >
+            <span style={{ fontSize: 22 }}>{acima ? "▲" : "▼"}</span>
+            {fmtBRL(Math.abs(delta), true)}
+          </span>
         </div>
       </div>
 
@@ -690,7 +711,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         <ProgressBar value={pMeta} color={grad} height={5} shimmer />
       </div>
 
-      {/* Linha de métricas: Meta • Projetado • Saldo */}
+      {/* Linha de métricas: Meta • Projetado • Faturamento */}
       <div
         style={{
           display: "grid",
@@ -734,25 +755,19 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         </div>
 
         <div style={{ padding: "4px 0 4px 20px", borderLeft: `1px solid ${T.cardBorder}` }}>
-          <Eyebrow style={{ fontSize: 16 }}>
-            Saldo — {acima ? "acima do projetado" : "abaixo do projetado"}
-          </Eyebrow>
+          <Eyebrow style={{ fontSize: 16 }}>Faturamento do mês</Eyebrow>
           <div
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 6,
-              color: acima ? T.green : T.red,
-              fontWeight: 900,
-              fontStyle: "italic",
               fontSize: 42,
+              fontWeight: 800,
+              fontStyle: "italic",
+              color: T.ink,
               letterSpacing: -0.8,
               lineHeight: 1.1,
+              marginTop: 6,
             }}
           >
-            <span style={{ fontSize: 32 }}>{acima ? "▲" : "▼"}</span>
-            {fmtBRL(Math.abs(delta), true)}
+            {fmtBRL(Math.round(fat), true)}
           </div>
         </div>
       </div>
@@ -760,6 +775,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
     </Card>
   );
 };
+
 
 const GraficoSemanal = ({
   titulo,
@@ -793,7 +809,7 @@ const GraficoSemanal = ({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, 1fr)`, gap: 12, height: 150, alignItems: "end", justifyContent: "stretch", width: "100%" }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, 1fr)`, gap: 6, height: 150, alignItems: "end", width: "100%", padding: "0 4px" }}>
         {dados.map((d, i) => {
           const hoje = d.dia === diaAtual;
           const hProj = (d.proj / max) * 100;
