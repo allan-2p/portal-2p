@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -12,6 +11,7 @@ import { LoginSplash } from "@/components/login-splash";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getActiveUsersToday } from "@/lib/active-users.functions";
+
 
 const emailSchema = z
   .string()
@@ -135,28 +135,24 @@ function AuthPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(203,213,225,0.4),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_bottom,rgba(24,24,27,0.6),transparent_55%)]" />
 
         {/* Slowly rotating chrome conic — the "sheen" */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140vmax] h-[140vmax] opacity-[0.35] dark:opacity-[0.18]"
+        <div
+          className="auth-conic absolute top-1/2 left-1/2 w-[140vmax] h-[140vmax] opacity-[0.35] dark:opacity-[0.18]"
           style={{
             background:
               "conic-gradient(from 0deg at 50% 50%, rgba(148,163,184,0), rgba(226,232,240,0.55), rgba(148,163,184,0), rgba(203,213,225,0.5), rgba(148,163,184,0), rgba(241,245,249,0.6), rgba(148,163,184,0))",
             filter: "blur(60px)",
+            transform: "translate(-50%, -50%)",
           }}
         />
 
         {/* Silver orbs */}
-        <motion.div
-          animate={{ y: [0, -30, 0], x: [0, 20, 0] }}
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[8%] left-[6%] w-[38vw] h-[38vw] rounded-full blur-[100px] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.9),rgba(203,213,225,0.35)_45%,transparent_70%)] dark:bg-[radial-gradient(circle_at_30%_30%,rgba(212,212,216,0.28),rgba(63,63,70,0.2)_45%,transparent_70%)]"
+        <div
+          className="auth-orb-a absolute top-[8%] left-[6%] w-[38vw] h-[38vw] rounded-full blur-[100px] bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.9),rgba(203,213,225,0.35)_45%,transparent_70%)] dark:bg-[radial-gradient(circle_at_30%_30%,rgba(212,212,216,0.28),rgba(63,63,70,0.2)_45%,transparent_70%)]"
         />
-        <motion.div
-          animate={{ y: [0, 30, 0], x: [0, -20, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[6%] right-[4%] w-[42vw] h-[42vw] rounded-full blur-[110px] bg-[radial-gradient(circle_at_70%_70%,rgba(226,232,240,0.75),rgba(148,163,184,0.25)_45%,transparent_70%)] dark:bg-[radial-gradient(circle_at_70%_70%,rgba(161,161,170,0.22),rgba(24,24,27,0.15)_45%,transparent_70%)]"
+        <div
+          className="auth-orb-b absolute bottom-[6%] right-[4%] w-[42vw] h-[42vw] rounded-full blur-[110px] bg-[radial-gradient(circle_at_70%_70%,rgba(226,232,240,0.75),rgba(148,163,184,0.25)_45%,transparent_70%)] dark:bg-[radial-gradient(circle_at_70%_70%,rgba(161,161,170,0.22),rgba(24,24,27,0.15)_45%,transparent_70%)]"
         />
+
 
         {/* Faint precision grid */}
         <div
@@ -203,11 +199,10 @@ function AuthPage() {
         <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-transparent via-slate-400/20 dark:via-zinc-500/15 to-transparent" />
 
         {/* Scanline shimmer */}
-        <motion.div
-          animate={{ y: ["-20%", "120%"] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-x-0 h-[40vh] bg-gradient-to-b from-transparent via-white/25 dark:via-zinc-300/[0.04] to-transparent blur-2xl"
+        <div
+          className="auth-scan absolute inset-x-0 h-[40vh] bg-gradient-to-b from-transparent via-white/25 dark:via-zinc-300/[0.04] to-transparent blur-2xl"
         />
+
 
         {/* Corner brackets */}
         <div className="absolute top-6 left-6 w-6 h-6 border-l border-t border-slate-400/40 dark:border-zinc-600/40" />
@@ -254,17 +249,14 @@ function AuthPage() {
 
       {/* Content */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-16 md:py-24">
-        <motion.div
+        <div
           key={shake}
-          initial={{ opacity: 0, y: 14 }}
-          animate={
-            shake
-              ? { x: [0, -6, 6, -4, 4, 0], opacity: 1, y: 0 }
-              : { opacity: 1, y: 0 }
-          }
-          transition={{ duration: shake ? 0.4 : 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="relative w-full max-w-5xl flex flex-col md:flex-row bg-white/80 dark:bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-[0_30px_80px_-30px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)]"
+          className={cn(
+            "relative w-full max-w-5xl flex flex-col md:flex-row bg-white/80 dark:bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-[0_30px_80px_-30px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)]",
+            shake ? "auth-shake" : "auth-rise",
+          )}
         >
+
           {/* Chrome hairline highlight */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-zinc-400/40 dark:via-zinc-500/20 to-transparent" />
@@ -457,7 +449,7 @@ function AuthPage() {
               </p>
             </div>
           </div>
-        </motion.div>
+        </div>
       </main>
 
       <footer className="relative z-10 px-6 md:px-12 py-5 text-[10px] uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600 flex justify-between">

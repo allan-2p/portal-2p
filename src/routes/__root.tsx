@@ -10,10 +10,9 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import spaceGrotesk500 from "@fontsource/space-grotesk/files/space-grotesk-latin-500-normal.woff2?url";
 import spaceGrotesk600 from "@fontsource/space-grotesk/files/space-grotesk-latin-600-normal.woff2?url";
 import inter400 from "@fontsource/inter/files/inter-latin-400-normal.woff2?url";
-import inter500 from "@fontsource/inter/files/inter-latin-500-normal.woff2?url";
+
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { InstanceProvider } from "@/components/instance-provider";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,11 +96,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "preload", href: spaceGrotesk500, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
-      { rel: "preload", href: spaceGrotesk600, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+      // Preload only the two font files needed above the fold on first paint.
+      // The remaining weights load via the CSS @font-face rules (font-display: swap).
       { rel: "preload", href: inter400, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
-      { rel: "preload", href: inter500, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", href: spaceGrotesk600, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
     ],
+
   }),
 
   shellComponent: RootShell,
