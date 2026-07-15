@@ -991,6 +991,26 @@ export function Dashboard2P({
     return () => clearInterval(iv);
   }, []);
 
+  // Recarrega a página (F5) automaticamente às 00h, 05h, 12h e 19h.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const RELOAD_HOURS = [0, 5, 12, 19];
+    function msUntilNextReload() {
+      const now = new Date();
+      let next: Date | null = null;
+      for (const h of RELOAD_HOURS) {
+        const cand = new Date(now);
+        cand.setHours(h, 0, 0, 0);
+        if (cand.getTime() <= now.getTime() + 500) cand.setDate(cand.getDate() + 1);
+        if (!next || cand < next) next = cand;
+      }
+      return Math.max(1000, next!.getTime() - now.getTime());
+    }
+    const t = setTimeout(() => window.location.reload(), msUntilNextReload());
+    return () => clearTimeout(t);
+  }, []);
+
+
   // Wake Lock: mantém a tela acesa enquanto o painel está aberto.
   useEffect(() => {
     let lock: any = null;
