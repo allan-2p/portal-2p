@@ -752,7 +752,7 @@ const GraficoSemanal = ({
           <span style={{ width: 7, height: 7, borderRadius: 999, background: dot }} />
           <Eyebrow>{titulo}</Eyebrow>
         </div>
-        <div style={{ fontSize: 13, color: T.dim }}>
+        <div style={{ fontSize: 16, color: T.dim }}>
           <span style={{ color: T.ink, fontWeight: 800 }}>R$ {fmtK(totalReal)}</span>
           <span> / R$ {fmtK(totalProj)} proj </span>
           <span style={{ color: T.green, fontWeight: 800, marginLeft: 4 }}>{p.toFixed(0)}%</span>
