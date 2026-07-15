@@ -717,8 +717,8 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
             left: `${Math.min(100, Math.max(0, pMeta))}%`,
             top: "50%",
             transform: "translate(-50%, -50%)",
-            width: 46,
-            height: 46,
+            width: 58,
+            height: 58,
             borderRadius: 999,
             background: gradGlow,
             boxShadow: "0 6px 18px -6px rgba(107,91,255,.75)",
@@ -726,7 +726,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
             alignItems: "center",
             justifyContent: "center",
             color: "#fff",
-            fontSize: 15,
+            fontSize: 18,
             fontWeight: 900,
             fontStyle: "italic",
             letterSpacing: -0.3,
@@ -736,6 +736,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         >
           {Math.round(pMeta)}%
         </div>
+
       </div>
 
       {/* Linha de métricas: Meta • Projetado • Faturamento — cada um centralizado */}
@@ -830,14 +831,33 @@ const GraficoSemanal = ({
           <span style={{ width: 7, height: 7, borderRadius: 999, background: dot }} />
           <Eyebrow>{titulo}</Eyebrow>
         </div>
-        <div style={{ fontSize: 22, color: T.dim }}>
-          <span style={{ color: T.ink, fontWeight: 800 }}>R$ {fmtK(totalReal)}</span>
-          <span> / R$ {fmtK(totalProj)} proj </span>
-          <span style={{ color: T.green, fontWeight: 800, marginLeft: 4 }}>{p.toFixed(0)}%</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 22, color: T.dim }}>
+          <span><span style={{ color: T.ink, fontWeight: 800 }}>R$ {fmtK(totalReal)}</span> / R$ {fmtK(totalProj)} proj</span>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: 62,
+              height: 30,
+              padding: "0 12px",
+              borderRadius: 999,
+              background: "rgba(34,179,122,.15)",
+              border: "1px solid rgba(34,179,122,.4)",
+              color: T.green,
+              fontWeight: 900,
+              fontStyle: "italic",
+              fontSize: 20,
+              letterSpacing: -0.3,
+            }}
+          >
+            {p.toFixed(0)}%
+          </span>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, 1fr)`, gap: 6, height: 150, alignItems: "end", width: "100%", padding: "0 4px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, minmax(0, 92px))`, gap: 16, height: 150, alignItems: "end", width: "100%", justifyContent: "center", padding: "0 8px" }}>
+
         {dados.map((d, i) => {
           const hoje = d.dia === diaAtual;
           const hProj = (d.proj / max) * 100;
@@ -968,22 +988,24 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
   return (
     <Card delay={delay} style={{ padding: "22px 26px", display: "flex", alignItems: "center", gap: 20 }}>
       <Donut value={p} color={cor} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
-          <span style={{ fontSize: 28, fontWeight: 800, color: T.ink }}>{k.label}</span>
-          <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "baseline", gap: 6 }}>
-            <span style={{ fontSize: 46, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
-              {k.realQtd}
-            </span>
-            <span style={{ fontSize: 24, color: T.faint }}>/ {k.metaQtd}</span>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+        <span style={{ fontSize: 26, fontWeight: 800, color: T.ink, marginBottom: 6 }}>{k.label}</span>
+        <div style={{ display: "inline-flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+          <span style={{ fontSize: 52, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
+            {k.realQtd}
           </span>
+          <span style={{ fontSize: 26, color: T.faint }}>/ {k.metaQtd}</span>
         </div>
         {k.metaPct != null && (
-          <div style={{ textAlign: "right", fontSize: 16, color: T.dim, marginBottom: 8 }}>
+          <div style={{ fontSize: 15, color: T.dim, marginBottom: 8 }}>
             meta {k.metaPct}%
           </div>
         )}
-        <ProgressBar value={p} color={cor} height={6} />
+
+        <div style={{ width: "100%" }}>
+          <ProgressBar value={p} color={cor} height={6} />
+        </div>
+
       </div>
     </Card>
   );
