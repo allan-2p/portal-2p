@@ -648,7 +648,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
             <Eyebrow>Vendas do mês</Eyebrow>
-            <span style={{ fontSize: 16, color: T.dim }}>
+            <span style={{ fontSize: 20, color: T.dim }}>
               Meta {fmtBRL(mes.meta, true)} · {pMeta.toFixed(0)}% atingido
             </span>
           </div>
@@ -657,7 +657,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
           </div>
           <div
             style={{
-              fontSize: 132,
+              fontSize: 156,
               fontWeight: 900,
               fontStyle: "italic",
               color: T.ink,
@@ -669,7 +669,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
             {fmtBRL(Math.round(vendas))}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 19, color: T.dim }}>
+            <div style={{ fontSize: 23, color: T.dim }}>
               Projetado até hoje:{" "}
               <span style={{ color: T.ink, fontWeight: 700 }}>{fmtBRL(mes.projetadoDia, true)}</span>
             </div>
@@ -683,7 +683,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
                 background: acima ? "rgba(15,169,88,.12)" : "rgba(220,62,50,.12)",
                 color: acima ? T.green : T.red,
                 fontWeight: 800,
-                fontSize: 18,
+                fontSize: 22,
               }}
             >
               <span>{acima ? "▲" : "▼"}</span>
@@ -707,7 +707,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
           <Eyebrow>Faturamento do mês</Eyebrow>
           <div
             style={{
-              fontSize: 74,
+              fontSize: 88,
               fontWeight: 900,
               fontStyle: "italic",
               color: T.ink,
@@ -718,7 +718,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
           >
             {fmtBRL(Math.round(fat))}
           </div>
-          <div style={{ fontSize: 15, color: T.faint, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700 }}>
+          <div style={{ fontSize: 18, color: T.faint, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700 }}>
             realizado no mês
           </div>
         </div>
