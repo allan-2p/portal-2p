@@ -249,17 +249,14 @@ function AuthPage() {
 
       {/* Content */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-16 md:py-24">
-        <motion.div
+        <div
           key={shake}
-          initial={{ opacity: 0, y: 14 }}
-          animate={
-            shake
-              ? { x: [0, -6, 6, -4, 4, 0], opacity: 1, y: 0 }
-              : { opacity: 1, y: 0 }
-          }
-          transition={{ duration: shake ? 0.4 : 0.65, ease: [0.22, 1, 0.36, 1] }}
-          className="relative w-full max-w-5xl flex flex-col md:flex-row bg-white/80 dark:bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-[0_30px_80px_-30px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)]"
+          className={cn(
+            "relative w-full max-w-5xl flex flex-col md:flex-row bg-white/80 dark:bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-[0_30px_80px_-30px_rgba(0,0,0,0.25)] dark:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)]",
+            shake ? "auth-shake" : "auth-rise",
+          )}
         >
+
           {/* Chrome hairline highlight */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-zinc-400/40 dark:via-zinc-500/20 to-transparent" />
