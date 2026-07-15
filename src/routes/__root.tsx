@@ -96,11 +96,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      // Warm up the TLS connection to Supabase — first auth check happens right after hydration.
+      { rel: "preconnect", href: "https://zleqqrcvcwipgvudtlde.supabase.co", crossOrigin: "anonymous" },
+      { rel: "dns-prefetch", href: "https://zleqqrcvcwipgvudtlde.supabase.co" },
       // Preload only the two font files needed above the fold on first paint.
       // The remaining weights load via the CSS @font-face rules (font-display: swap).
       { rel: "preload", href: inter400, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "preload", href: spaceGrotesk600, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
     ],
+
 
   }),
 
