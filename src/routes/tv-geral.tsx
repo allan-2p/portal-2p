@@ -799,13 +799,13 @@ const GraficoSemanal = ({
                       <div
                         style={{
                           position: "absolute",
-                          top: -30,
+                          top: -34,
                           background: `linear-gradient(135deg, ${T.orange}, ${T.blue})`,
                           color: "#fff",
                           boxShadow: "0 6px 18px -6px rgba(107,91,255,.7)",
-                          fontSize: 14,
+                          fontSize: 17,
                           fontWeight: 800,
-                          padding: "3px 8px",
+                          padding: "3px 10px",
                           borderRadius: 999,
                           whiteSpace: "nowrap",
                         }}
@@ -816,8 +816,8 @@ const GraficoSemanal = ({
                       <div
                         style={{
                           position: "absolute",
-                          top: -22,
-                          fontSize: 14,
+                          top: -26,
+                          fontSize: 17,
                           fontWeight: 700,
                           color: T.dim,
                           whiteSpace: "nowrap",
@@ -830,7 +830,7 @@ const GraficoSemanal = ({
               </div>
               <div
                 style={{
-                  fontSize: 14,
+                  fontSize: 17,
                   fontWeight: hoje ? 900 : 700,
                   color: hoje ? "#fff" : T.dim,
                   background: hoje ? `linear-gradient(135deg, ${T.orange}, ${T.blue})` : "transparent",
