@@ -1205,7 +1205,7 @@ export function Dashboard2P({
                 background: "rgba(255,255,255,.06)",
                 border: "1px solid rgba(255,255,255,.12)",
                 color: T.bgTxt,
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: 700,
                 letterSpacing: 1,
                 textTransform: "uppercase",
