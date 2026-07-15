@@ -902,7 +902,7 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
               color: T.faint,
             }}
           >
-            {k.periodo}
+            {k.periodo === "mensal" ? "MÊS" : k.periodo === "trimestral" ? "TRI" : k.periodo}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
