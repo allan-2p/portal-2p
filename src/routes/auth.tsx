@@ -199,11 +199,10 @@ function AuthPage() {
         <div className="absolute inset-x-0 top-1/2 h-px bg-gradient-to-r from-transparent via-slate-400/20 dark:via-zinc-500/15 to-transparent" />
 
         {/* Scanline shimmer */}
-        <motion.div
-          animate={{ y: ["-20%", "120%"] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
-          className="absolute inset-x-0 h-[40vh] bg-gradient-to-b from-transparent via-white/25 dark:via-zinc-300/[0.04] to-transparent blur-2xl"
+        <div
+          className="auth-scan absolute inset-x-0 h-[40vh] bg-gradient-to-b from-transparent via-white/25 dark:via-zinc-300/[0.04] to-transparent blur-2xl"
         />
+
 
         {/* Corner brackets */}
         <div className="absolute top-6 left-6 w-6 h-6 border-l border-t border-slate-400/40 dark:border-zinc-600/40" />
