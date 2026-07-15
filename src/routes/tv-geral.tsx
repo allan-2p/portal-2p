@@ -141,7 +141,7 @@ function fmtKey(d: Date) {
   return `${y}-${m}-${day}`;
 }
 
-/** Semana atual: segunda até sábado (6 dias). */
+/** Semana atual: segunda até sexta (5 dias). */
 function currentWeekDays(now: Date): Date[] {
   const dow = now.getDay(); // 0=Dom..6=Sáb
   const diffToMonday = dow === 0 ? -6 : 1 - dow;
@@ -149,7 +149,7 @@ function currentWeekDays(now: Date): Date[] {
   monday.setHours(0, 0, 0, 0);
   monday.setDate(now.getDate() + diffToMonday);
   const out: Date[] = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 5; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     out.push(d);
