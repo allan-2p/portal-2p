@@ -478,7 +478,7 @@ const Card = ({
 const Eyebrow = ({ children, style }: { children: ReactNode; style?: CSSProperties }) => (
   <div
     style={{
-      fontSize: 11,
+      fontSize: 15,
       fontWeight: 700,
       letterSpacing: 2,
       textTransform: "uppercase",
@@ -604,7 +604,7 @@ const BrandStat = ({
         />
         <span
           style={{
-            fontSize: 10,
+            fontSize: 13,
             fontWeight: 800,
             letterSpacing: 2,
             textTransform: "uppercase",
@@ -617,7 +617,7 @@ const BrandStat = ({
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
         <span
           style={{
-            fontSize: 26,
+            fontSize: 32,
             fontWeight: 900,
             fontStyle: "italic",
             color: fg,
@@ -627,8 +627,8 @@ const BrandStat = ({
         >
           {fmtBRL(v, true)}
         </span>
-        <span style={{ fontSize: 13, fontWeight: 800, color: T.green }}>{p.toFixed(0)}%</span>
-        <span style={{ fontSize: 12, color: dim }}>de {fmtBRL(meta, true)}</span>
+        <span style={{ fontSize: 17, fontWeight: 800, color: T.green }}>{p.toFixed(0)}%</span>
+        <span style={{ fontSize: 15, color: dim }}>de {fmtBRL(meta, true)}</span>
       </div>
       <ProgressBar value={p} color={barColor} height={5} track={track} shimmer={gradientBar} />
     </div>
@@ -648,7 +648,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
             <Eyebrow>Vendas do mês</Eyebrow>
-            <span style={{ fontSize: 12, color: T.dim }}>
+            <span style={{ fontSize: 16, color: T.dim }}>
               Meta {fmtBRL(mes.meta, true)} · {pMeta.toFixed(0)}% atingido
             </span>
           </div>
@@ -669,7 +669,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
             {fmtBRL(Math.round(vendas))}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 15, color: T.dim }}>
+            <div style={{ fontSize: 19, color: T.dim }}>
               Projetado até hoje:{" "}
               <span style={{ color: T.ink, fontWeight: 700 }}>{fmtBRL(mes.projetadoDia, true)}</span>
             </div>
@@ -683,7 +683,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
                 background: acima ? "rgba(15,169,88,.12)" : "rgba(220,62,50,.12)",
                 color: acima ? T.green : T.red,
                 fontWeight: 800,
-                fontSize: 14,
+                fontSize: 18,
               }}
             >
               <span>{acima ? "▲" : "▼"}</span>
@@ -707,7 +707,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
           <Eyebrow>Faturamento do mês</Eyebrow>
           <div
             style={{
-              fontSize: 68,
+              fontSize: 74,
               fontWeight: 900,
               fontStyle: "italic",
               color: T.ink,
@@ -718,7 +718,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
           >
             {fmtBRL(Math.round(fat))}
           </div>
-          <div style={{ fontSize: 12, color: T.faint, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700 }}>
+          <div style={{ fontSize: 15, color: T.faint, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700 }}>
             realizado no mês
           </div>
         </div>
@@ -752,7 +752,7 @@ const GraficoSemanal = ({
           <span style={{ width: 7, height: 7, borderRadius: 999, background: dot }} />
           <Eyebrow>{titulo}</Eyebrow>
         </div>
-        <div style={{ fontSize: 13, color: T.dim }}>
+        <div style={{ fontSize: 16, color: T.dim }}>
           <span style={{ color: T.ink, fontWeight: 800 }}>R$ {fmtK(totalReal)}</span>
           <span> / R$ {fmtK(totalProj)} proj </span>
           <span style={{ color: T.green, fontWeight: 800, marginLeft: 4 }}>{p.toFixed(0)}%</span>
@@ -799,11 +799,11 @@ const GraficoSemanal = ({
                       <div
                         style={{
                           position: "absolute",
-                          top: -26,
+                          top: -30,
                           background: `linear-gradient(135deg, ${T.orange}, ${T.blue})`,
                           color: "#fff",
                           boxShadow: "0 6px 18px -6px rgba(107,91,255,.7)",
-                          fontSize: 11,
+                          fontSize: 14,
                           fontWeight: 800,
                           padding: "3px 8px",
                           borderRadius: 999,
@@ -816,8 +816,8 @@ const GraficoSemanal = ({
                       <div
                         style={{
                           position: "absolute",
-                          top: -18,
-                          fontSize: 11,
+                          top: -22,
+                          fontSize: 14,
                           fontWeight: 700,
                           color: T.dim,
                           whiteSpace: "nowrap",
@@ -830,7 +830,7 @@ const GraficoSemanal = ({
               </div>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: 14,
                   fontWeight: hoje ? 900 : 700,
                   color: hoje ? "#fff" : T.dim,
                   background: hoje ? `linear-gradient(135deg, ${T.orange}, ${T.blue})` : "transparent",
@@ -849,19 +849,19 @@ const GraficoSemanal = ({
   );
 };
 
-const Donut = ({ value, color, size = 78 }: { value: number; color: string; size?: number }) => {
+const Donut = ({ value, color, size = 92 }: { value: number; color: string; size?: number }) => {
   const r = (size - 10) / 2;
   const c = 2 * Math.PI * r;
   const off = c * (1 - Math.min(1, value / 100));
   return (
     <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-      <circle cx={size / 2} cy={size / 2} r={r} stroke={T.track} strokeWidth={6} fill="none" />
+      <circle cx={size / 2} cy={size / 2} r={r} stroke={T.track} strokeWidth={7} fill="none" />
       <circle
         cx={size / 2}
         cy={size / 2}
         r={r}
         stroke={color}
-        strokeWidth={6}
+        strokeWidth={7}
         fill="none"
         strokeDasharray={c}
         strokeDashoffset={off}
@@ -874,7 +874,7 @@ const Donut = ({ value, color, size = 78 }: { value: number; color: string; size
         textAnchor="middle"
         dominantBaseline="middle"
         transform={`rotate(90 ${size / 2} ${size / 2})`}
-        fontSize={16}
+        fontSize={20}
         fontWeight={800}
         fill={T.ink}
       >
@@ -892,10 +892,10 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
       <Donut value={p} color={cor} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
-          <span style={{ fontSize: 16, fontWeight: 800, color: T.ink }}>{k.label}</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: T.ink }}>{k.label}</span>
           <span
             style={{
-              fontSize: 9,
+              fontSize: 12,
               fontWeight: 700,
               letterSpacing: 1.5,
               textTransform: "uppercase",
@@ -906,12 +906,12 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 36, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
+          <span style={{ fontSize: 44, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
             {k.realQtd}
           </span>
-          <span style={{ fontSize: 16, color: T.faint }}>/ {k.metaQtd}</span>
+          <span style={{ fontSize: 20, color: T.faint }}>/ {k.metaQtd}</span>
           {k.metaPct != null && (
-            <span style={{ fontSize: 10, color: T.dim, marginLeft: 6 }}>
+            <span style={{ fontSize: 13, color: T.dim, marginLeft: 6 }}>
               meta {k.metaPct}%
             </span>
           )}
@@ -1132,8 +1132,8 @@ export function Dashboard2P({
 
             </div>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5 }}>Grupo 2P</div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, color: T.bgFaint }}>
+              <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.5 }}>Grupo 2P</div>
+              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 3, color: T.bgFaint }}>
                 PAINEL DE PERFORMANCE
               </div>
             </div>
@@ -1174,7 +1174,7 @@ export function Dashboard2P({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            fontSize: 11,
+            fontSize: 14,
             color: T.bgFaint,
             marginTop: "auto",
             position: "relative",
@@ -1205,7 +1205,7 @@ export function Dashboard2P({
                 background: "rgba(255,255,255,.06)",
                 border: "1px solid rgba(255,255,255,.12)",
                 color: T.bgTxt,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: 700,
                 letterSpacing: 1,
                 textTransform: "uppercase",
