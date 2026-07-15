@@ -892,10 +892,10 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
       <Donut value={p} color={cor} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
-          <span style={{ fontSize: 16, fontWeight: 800, color: T.ink }}>{k.label}</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: T.ink }}>{k.label}</span>
           <span
             style={{
-              fontSize: 9,
+              fontSize: 12,
               fontWeight: 700,
               letterSpacing: 1.5,
               textTransform: "uppercase",
@@ -906,12 +906,12 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 36, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
+          <span style={{ fontSize: 44, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
             {k.realQtd}
           </span>
-          <span style={{ fontSize: 16, color: T.faint }}>/ {k.metaQtd}</span>
+          <span style={{ fontSize: 20, color: T.faint }}>/ {k.metaQtd}</span>
           {k.metaPct != null && (
-            <span style={{ fontSize: 10, color: T.dim, marginLeft: 6 }}>
+            <span style={{ fontSize: 13, color: T.dim, marginLeft: 6 }}>
               meta {k.metaPct}%
             </span>
           )}
