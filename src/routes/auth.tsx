@@ -317,7 +317,7 @@ function AuthPage() {
                   <button
                     type="submit"
                     disabled={loading || !canSubmit}
-                    className="group relative w-full py-3 px-4 rounded-lg font-medium text-sm bg-gradient-to-b from-zinc-800 to-black dark:from-white dark:to-zinc-200 text-white dark:text-zinc-900 border border-zinc-700/60 dark:border-white/30 shadow-lg hover:shadow-zinc-400/30 dark:hover:shadow-white/10 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="group relative w-full py-3 px-4 rounded-lg font-medium text-sm bg-gradient-to-b from-zinc-800 to-black dark:from-white dark:to-zinc-200 text-white dark:text-zinc-900 border border-zinc-700/60 dark:border-white/30 shadow-lg hover:shadow-zinc-400/30 dark:hover:shadow-white/10 transition-all active:scale-[0.99] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
