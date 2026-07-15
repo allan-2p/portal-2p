@@ -578,6 +578,7 @@ const BrandStat = ({
   return (
     <div
       style={{
+        position: "relative",
         background: bg,
         border: invert
           ? "1px solid rgba(255,255,255,.08)"
@@ -592,6 +593,32 @@ const BrandStat = ({
         minWidth: 0,
       }}
     >
+      {/* % em destaque no canto superior direito */}
+      <span
+        style={{
+          position: "absolute",
+          top: 10,
+          right: 12,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minWidth: 62,
+          height: 30,
+          padding: "0 12px",
+          borderRadius: 999,
+          background: invert ? "rgba(34,179,122,.22)" : "rgba(34,179,122,.15)",
+          border: `1px solid ${invert ? "rgba(34,179,122,.55)" : "rgba(34,179,122,.4)"}`,
+          color: T.green,
+          fontWeight: 900,
+          fontStyle: "italic",
+          fontSize: 20,
+          letterSpacing: -0.3,
+          boxShadow: invert ? "0 0 12px rgba(34,179,122,.35)" : "none",
+        }}
+      >
+        {p.toFixed(0)}%
+      </span>
+
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span
           style={{
@@ -614,7 +641,7 @@ const BrandStat = ({
           {label}
         </span>
       </div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", paddingRight: 74 }}>
         <span
           style={{
             fontSize: 45,
@@ -627,13 +654,13 @@ const BrandStat = ({
         >
           {fmtBRL(v, true)}
         </span>
-        <span style={{ fontSize: 24, fontWeight: 800, color: T.green }}>{p.toFixed(0)}%</span>
         <span style={{ fontSize: 21, color: dim }}>de {fmtBRL(meta, true)}</span>
       </div>
       <ProgressBar value={p} color={barColor} height={5} track={track} shimmer={gradientBar} />
     </div>
   );
 };
+
 
 const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
   const vendas = useCountUp(mes.vendas);
