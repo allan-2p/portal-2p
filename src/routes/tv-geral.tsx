@@ -895,6 +895,7 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
           <span style={{ fontSize: 28, fontWeight: 800, color: T.ink }}>{k.label}</span>
           <span
             style={{
+              marginLeft: "auto",
               fontSize: 17,
               fontWeight: 700,
               letterSpacing: 1.5,
@@ -904,6 +905,7 @@ const KpiCard = ({ k, delay }: { k: Kpi; delay: number }) => {
           >
             {k.periodo === "mensal" ? "MÊS" : k.periodo === "trimestral" ? "TRI" : k.periodo}
           </span>
+
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: 63, fontWeight: 900, fontStyle: "italic", color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
