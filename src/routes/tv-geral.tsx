@@ -604,7 +604,7 @@ const BrandStat = ({
         />
         <span
           style={{
-            fontSize: 10,
+            fontSize: 13,
             fontWeight: 800,
             letterSpacing: 2,
             textTransform: "uppercase",
@@ -617,7 +617,7 @@ const BrandStat = ({
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
         <span
           style={{
-            fontSize: 26,
+            fontSize: 32,
             fontWeight: 900,
             fontStyle: "italic",
             color: fg,
@@ -627,8 +627,8 @@ const BrandStat = ({
         >
           {fmtBRL(v, true)}
         </span>
-        <span style={{ fontSize: 13, fontWeight: 800, color: T.green }}>{p.toFixed(0)}%</span>
-        <span style={{ fontSize: 12, color: dim }}>de {fmtBRL(meta, true)}</span>
+        <span style={{ fontSize: 17, fontWeight: 800, color: T.green }}>{p.toFixed(0)}%</span>
+        <span style={{ fontSize: 15, color: dim }}>de {fmtBRL(meta, true)}</span>
       </div>
       <ProgressBar value={p} color={barColor} height={5} track={track} shimmer={gradientBar} />
     </div>
