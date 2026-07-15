@@ -1207,28 +1207,8 @@ export function Dashboard2P({
           </div>
         </div>
 
-        <button
-          onClick={toggleFullscreen}
-          style={{
-            position: "absolute",
-            top: 12,
-            right: 12,
-            background: "rgba(255,255,255,.06)",
-            border: "1px solid rgba(255,255,255,.12)",
-            color: T.bgTxt,
-            fontSize: 13,
-            fontWeight: 700,
-            letterSpacing: 1,
-            textTransform: "uppercase",
-            padding: "4px 10px",
-            borderRadius: 999,
-            cursor: "pointer",
-            opacity: 0.55,
-            zIndex: 2,
-          }}
-        >
-          {isFs ? "Sair" : "Tela cheia"}
-        </button>
+
+
 
       </div>
     </div>
