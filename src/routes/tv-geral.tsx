@@ -717,8 +717,8 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
             left: `${Math.min(100, Math.max(0, pMeta))}%`,
             top: "50%",
             transform: "translate(-50%, -50%)",
-            width: 46,
-            height: 46,
+            width: 58,
+            height: 58,
             borderRadius: 999,
             background: gradGlow,
             boxShadow: "0 6px 18px -6px rgba(107,91,255,.75)",
@@ -726,7 +726,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
             alignItems: "center",
             justifyContent: "center",
             color: "#fff",
-            fontSize: 15,
+            fontSize: 18,
             fontWeight: 900,
             fontStyle: "italic",
             letterSpacing: -0.3,
@@ -736,6 +736,7 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
         >
           {Math.round(pMeta)}%
         </div>
+
       </div>
 
       {/* Linha de métricas: Meta • Projetado • Faturamento — cada um centralizado */}
