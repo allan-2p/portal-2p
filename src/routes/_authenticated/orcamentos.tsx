@@ -84,7 +84,7 @@ function OrcamentosPage() {
       cliente: cliente.trim(),
       data: new Date().toLocaleDateString("pt-BR"),
       valor: Number(valor),
-      status: "Rascunho",
+      status: "Salvo",
     };
     setOrcamentos((prev) => [next, ...prev]);
     setCliente("");
@@ -156,7 +156,10 @@ function OrcamentosPage() {
                     <td className="px-4 py-3">{o.cliente}</td>
                     <td className="px-4 py-3 text-muted-foreground">{o.data}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-[11px] px-2 py-0.5 rounded font-medium ${STATUS_COLOR[o.status]}`}>{o.status}</span>
+                      <span className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded font-medium ${STATUS_STYLE[o.status].pill}`}>
+                        <span className={`h-2 w-2 rounded-full ${STATUS_STYLE[o.status].dot}`} />
+                        {o.status}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-right font-semibold">{fmt(o.valor)}</td>
                   </tr>
