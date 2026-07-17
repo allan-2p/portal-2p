@@ -34,6 +34,7 @@ import { Route as AuthenticatedMarketingCohortRouteImport } from './routes/_auth
 import { Route as AuthenticatedMarketingCacRouteImport } from './routes/_authenticated/marketing.cac'
 import { Route as AuthenticatedDashboardsMetasRouteImport } from './routes/_authenticated/dashboards.metas'
 import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
+import { Route as AuthenticatedClientesPerfilRouteImport } from './routes/_authenticated/clientes.perfil'
 import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
 import { Route as AuthenticatedAdminVendedoresRouteImport } from './routes/_authenticated/admin.vendedores'
 import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
@@ -175,6 +176,12 @@ const AuthenticatedClientesSegmentacaoRoute =
     path: '/segmentacao',
     getParentRoute: () => AuthenticatedClientesRoute,
   } as any)
+const AuthenticatedClientesPerfilRoute =
+  AuthenticatedClientesPerfilRouteImport.update({
+    id: '/perfil',
+    path: '/perfil',
+    getParentRoute: () => AuthenticatedClientesRoute,
+  } as any)
 const AuthenticatedClientesCadastrosRoute =
   AuthenticatedClientesCadastrosRouteImport.update({
     id: '/cadastros',
@@ -233,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
+  '/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
@@ -264,6 +272,7 @@ export interface FileRoutesByTo {
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
+  '/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
@@ -298,6 +307,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/_authenticated/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
+  '/_authenticated/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
   '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/_authenticated/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/_authenticated/marketing/cac': typeof AuthenticatedMarketingCacRoute
@@ -332,6 +342,7 @@ export interface FileRouteTypes {
     | '/admin/tabelas'
     | '/admin/vendedores'
     | '/clientes/cadastros'
+    | '/clientes/perfil'
     | '/clientes/segmentacao'
     | '/dashboards/metas'
     | '/marketing/cac'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/admin/tabelas'
     | '/admin/vendedores'
     | '/clientes/cadastros'
+    | '/clientes/perfil'
     | '/clientes/segmentacao'
     | '/dashboards/metas'
     | '/marketing/cac'
@@ -396,6 +408,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/tabelas'
     | '/_authenticated/admin/vendedores'
     | '/_authenticated/clientes/cadastros'
+    | '/_authenticated/clientes/perfil'
     | '/_authenticated/clientes/segmentacao'
     | '/_authenticated/dashboards/metas'
     | '/_authenticated/marketing/cac'
@@ -591,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientesSegmentacaoRouteImport
       parentRoute: typeof AuthenticatedClientesRoute
     }
+    '/_authenticated/clientes/perfil': {
+      id: '/_authenticated/clientes/perfil'
+      path: '/perfil'
+      fullPath: '/clientes/perfil'
+      preLoaderRoute: typeof AuthenticatedClientesPerfilRouteImport
+      parentRoute: typeof AuthenticatedClientesRoute
+    }
     '/_authenticated/clientes/cadastros': {
       id: '/_authenticated/clientes/cadastros'
       path: '/cadastros'
@@ -638,11 +658,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedClientesRouteChildren {
   AuthenticatedClientesCadastrosRoute: typeof AuthenticatedClientesCadastrosRoute
+  AuthenticatedClientesPerfilRoute: typeof AuthenticatedClientesPerfilRoute
   AuthenticatedClientesSegmentacaoRoute: typeof AuthenticatedClientesSegmentacaoRoute
 }
 
 const AuthenticatedClientesRouteChildren: AuthenticatedClientesRouteChildren = {
   AuthenticatedClientesCadastrosRoute: AuthenticatedClientesCadastrosRoute,
+  AuthenticatedClientesPerfilRoute: AuthenticatedClientesPerfilRoute,
   AuthenticatedClientesSegmentacaoRoute: AuthenticatedClientesSegmentacaoRoute,
 }
 
