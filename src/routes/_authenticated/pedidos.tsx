@@ -12,8 +12,8 @@ import { useScopedOwner } from "@/hooks/use-seller-scope";
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
     meta: [
-      { title: "Pedidos — Portal 2P" },
-      { name: "description", content: "Detalhamento de pedidos em Kanban ou lista." },
+      { title: "Acompanhamento de Vendas — Portal 2P" },
+      { name: "description", content: "Acompanhamento de vendas em Kanban ou lista." },
     ],
   }),
   component: PedidosPage,
