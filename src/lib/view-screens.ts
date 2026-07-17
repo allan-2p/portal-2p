@@ -34,7 +34,7 @@ export const PERSONAS: PersonaOption[] = [
 export const SCREENS: { key: ScreenKey; label: string; description: string }[] = [
   { key: "home", label: "Home", description: "Página inicial (saudação, KPIs, tarefas, pipeline)." },
   { key: "dashboards", label: "Dashboards", description: "Consolidados de vendas e metas." },
-  { key: "clientes.segmentacao", label: "Clientes · Perfil do Cliente", description: "Visão de carteira e segmentos." },
+  { key: "clientes.segmentacao", label: "Clientes · Segmentação", description: "Visão de carteira e segmentos." },
 ];
 
 export type ResolveContext = {
