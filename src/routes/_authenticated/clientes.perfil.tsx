@@ -3,7 +3,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AppLayout } from "@/components/app-layout";
-import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
+import {
+  getSalesforceAccounts,
+  getSalesforceAccountHistory,
+  type SalesforceAccount,
+  type SalesforceAccountHistory,
+} from "@/lib/salesforce.functions";
+
 import {
   Search,
   Building2,
