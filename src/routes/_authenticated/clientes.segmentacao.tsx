@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { type Client, type Segment } from "@/lib/mock-data";
 import { Fragment, useEffect, useMemo, useState } from "react";
