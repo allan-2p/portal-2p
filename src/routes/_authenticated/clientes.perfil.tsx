@@ -1,0 +1,380 @@
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { AppLayout } from "@/components/app-layout";
+import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
+import {
+  User as UserIcon,
+  Search,
+  Building2,
+  Phone,
+  Globe,
+  Calendar,
+  TrendingUp,
+  TrendingDown,
+  StickyNote,
+  Sparkles,
+  Tag,
+  ExternalLink,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type Search = { account?: string };
+
+export const Route = createFileRoute("/_authenticated/clientes/perfil")({
+  head: () => ({ meta: [{ title: "Perfil do Cliente — Portal 2P" }] }),
+  validateSearch: (s: Record<string, unknown>): Search => ({
+    account: typeof s.account === "string" ? s.account : undefined,
+  }),
+  component: PerfilPage,
+});
+
+const fmt = (n: number | null | undefined) =>
+  typeof n === "number"
+    ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
+    : "—";
+
+function noteKey(id: string) {
+  return `portal2p:client-notes:${id}`;
+}
+
+function PerfilPage() {
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const fetchAccounts = useServerFn(getSalesforceAccounts);
+  const accountsQ = useQuery({
+    queryKey: ["sf-accounts-perfil"],
+    queryFn: () => fetchAccounts(),
+    staleTime: 5 * 60_000,
+  });
+  const accounts = accountsQ.data?.records ?? [];
+
+  const [query, setQuery] = useState("");
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return accounts.slice(0, 80);
+    return accounts
+      .filter((a) => a.name.toLowerCase().includes(q) || (a.cnpj ?? "").toLowerCase().includes(q))
+      .slice(0, 80);
+  }, [accounts, query]);
+
+  const selected: SalesforceAccount | null = useMemo(
+    () => (search.account ? accounts.find((a) => a.id === search.account) ?? null : null),
+    [accounts, search.account],
+  );
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        <header className="flex items-end justify-between flex-wrap gap-4">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Clientes</div>
+            <h1 className="text-3xl font-bold mt-1">Perfil do Cliente</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Dossiê completo para alimentar o Atlas: cadastro, histórico e anotações do vendedor.
+            </p>
+          </div>
+          {selected && (
+            <Link
+              to="/clientes/sugestoes"
+              search={{ account: selected.id }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/15 text-primary hover:bg-primary/20 text-sm font-medium"
+            >
+              <Sparkles className="h-4 w-4" /> Ver sugestões do Atlas
+            </Link>
+          )}
+        </header>
+
+        <div className="grid lg:grid-cols-[320px_1fr] gap-6">
+          {/* Sidebar picker */}
+          <aside className="glass rounded-xl p-3 h-fit">
+            <div className="relative mb-2">
+              <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar cliente ou CNPJ…"
+                className="w-full pl-8 pr-3 py-2 rounded-lg bg-background border border-border text-sm focus:outline-none focus:border-primary/50"
+              />
+            </div>
+            <div className="max-h-[65vh] overflow-y-auto -mx-1 px-1">
+              {accountsQ.isLoading && (
+                <div className="p-4 text-sm text-muted-foreground">Carregando clientes…</div>
+              )}
+              {!accountsQ.isLoading && filtered.length === 0 && (
+                <div className="p-4 text-sm text-muted-foreground">Nenhum cliente encontrado.</div>
+              )}
+              {filtered.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => navigate({ to: "/clientes/perfil", search: { account: a.id } })}
+                  className={cn(
+                    "w-full text-left px-2.5 py-2 rounded-md text-sm mb-0.5 transition-colors",
+                    selected?.id === a.id
+                      ? "bg-primary/15 text-primary font-medium"
+                      : "hover:bg-surface-2",
+                  )}
+                >
+                  <div className="truncate">{a.name}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {a.segment ? `Seg. ${a.segment}` : "s/ segmentação"}
+                    {a.ownerName ? ` · ${a.ownerName}` : ""}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </aside>
+
+          {/* Dossier */}
+          {selected ? (
+            <Dossier account={selected} />
+          ) : (
+            <div className="glass rounded-xl p-10 text-center text-muted-foreground">
+              <UserIcon className="h-8 w-8 mx-auto mb-2 opacity-60" />
+              Selecione um cliente na lista ao lado para abrir o dossiê.
+            </div>
+          )}
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
+
+function Dossier({ account }: { account: SalesforceAccount }) {
+  const [notes, setNotes] = useState("");
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  // Load notes when account changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setNotes(window.localStorage.getItem(noteKey(account.id)) ?? "");
+    setSavedAt(null);
+  }, [account.id]);
+
+  // Autosave (debounced)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const t = setTimeout(() => {
+      window.localStorage.setItem(noteKey(account.id), notes);
+      setSavedAt(Date.now());
+    }, 600);
+    return () => clearTimeout(t);
+  }, [notes, account.id]);
+
+  const trend = useMemo(() => {
+    const prev = account.quarterProjection ?? 0;
+    const now = account.quarterSold ?? 0;
+    if (prev === 0 && now === 0) return { pct: null as number | null, up: false };
+    if (prev === 0) return { pct: null, up: now > 0 };
+    return { pct: ((now - prev) / prev) * 100, up: now >= prev };
+  }, [account]);
+
+  return (
+    <div className="space-y-4">
+      {/* Header card */}
+      <div className="glass rounded-xl p-5">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-2xl font-bold truncate">{account.name}</h2>
+              {account.segment && (
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
+                  Segmento {account.segment}
+                </span>
+              )}
+              {account.tubos.map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-surface-2 text-muted-foreground"
+                >
+                  <Tag className="h-3 w-3" /> {t}
+                </span>
+              ))}
+            </div>
+            <div className="text-sm text-muted-foreground mt-1">
+              {account.cnpj ?? "CNPJ não informado"}
+              {account.industry ? ` · ${account.industry}` : ""}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[11px] uppercase text-muted-foreground">Responsável</div>
+            <div className="text-sm font-medium">{account.ownerName ?? "—"}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid sm:grid-cols-3 gap-3">
+        <StatCard
+          label="Vendido tri. anterior"
+          value={fmt(account.quarterProjection)}
+          icon={Calendar}
+        />
+        <StatCard label="Vendido tri. atual" value={fmt(account.quarterSold)} icon={Calendar} />
+        <div className="glass rounded-xl p-4">
+          <div className="text-[11px] uppercase text-muted-foreground">Variação tri.</div>
+          <div className="flex items-center gap-2 mt-1">
+            {trend.up ? (
+              <TrendingUp className="h-5 w-5 text-success" />
+            ) : (
+              <TrendingDown className="h-5 w-5 text-destructive" />
+            )}
+            <div className="text-2xl font-bold">
+              {trend.pct == null ? "—" : `${trend.pct >= 0 ? "+" : ""}${trend.pct.toFixed(1)}%`}
+            </div>
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1">
+            vs. trimestre anterior
+          </div>
+        </div>
+      </div>
+
+      {/* Cadastro + contato */}
+      <div className="grid md:grid-cols-2 gap-3">
+        <div className="glass rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Building2 className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold">Cadastro</h3>
+          </div>
+          <dl className="text-sm space-y-1.5">
+            <Field label="CNPJ" value={account.cnpj} />
+            <Field label="Setor" value={account.industry} />
+            <Field
+              label="Cadastrado em"
+              value={
+                account.createdAt
+                  ? new Date(account.createdAt).toLocaleDateString("pt-BR")
+                  : null
+              }
+            />
+            <Field label="Responsável" value={account.ownerName} />
+          </dl>
+        </div>
+        <div className="glass rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Phone className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold">Contato</h3>
+          </div>
+          <dl className="text-sm space-y-1.5">
+            <Field label="Telefone" value={account.phone} />
+            <Field
+              label="Site"
+              value={
+                account.website ? (
+                  <a
+                    href={
+                      account.website.startsWith("http")
+                        ? account.website
+                        : `https://${account.website}`
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
+                  >
+                    {account.website} <ExternalLink className="h-3 w-3" />
+                  </a>
+                ) : null
+              }
+            />
+          </dl>
+          {(account.observacoes || account.description) && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="text-[11px] uppercase text-muted-foreground mb-1">
+                Observações (Salesforce)
+              </div>
+              <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                {account.observacoes ?? account.description}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Placeholders para dados que ligaremos ao SF em seguida */}
+      <div className="grid md:grid-cols-2 gap-3">
+        <PlaceholderCard
+          icon={Globe}
+          title="Interações, tarefas e visitas"
+          hint="Vamos puxar do Salesforce (Task + Event por AccountId) neste cliente."
+        />
+        <PlaceholderCard
+          icon={TrendingUp}
+          title="Vendas e oportunidades"
+          hint="Histórico completo por CloseDate — ligamos ao getSalesforceVendas filtrado."
+        />
+      </div>
+
+      {/* Anotações do vendedor */}
+      <div className="glass rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <StickyNote className="h-4 w-4 text-primary" />
+          <h3 className="font-semibold">Anotações do vendedor</h3>
+          <span className="text-[11px] text-muted-foreground ml-auto">
+            {savedAt ? "Salvo automaticamente" : "Digite para começar"}
+          </span>
+        </div>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Preferências, últimas conversas, momento do cliente, decisor, próximos passos… Tudo isso vira contexto para o Atlas."
+          className="w-full min-h-[160px] p-3 rounded-lg bg-background border border-border text-sm focus:outline-none focus:border-primary/50 resize-y"
+        />
+        <div className="text-[11px] text-muted-foreground mt-2">
+          Salvo apenas neste navegador enquanto conectamos a base do Atlas.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <dt className="text-[11px] uppercase text-muted-foreground w-24 shrink-0">{label}</dt>
+      <dd className="text-sm">{value ?? <span className="text-muted-foreground">—</span>}</dd>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon: typeof Calendar;
+}) {
+  return (
+    <div className="glass rounded-xl p-4">
+      <div className="flex items-center gap-2 text-[11px] uppercase text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </div>
+      <div className="text-2xl font-bold mt-1">{value}</div>
+    </div>
+  );
+}
+
+function PlaceholderCard({
+  icon: Icon,
+  title,
+  hint,
+}: {
+  icon: typeof Globe;
+  title: string;
+  hint: string;
+}) {
+  return (
+    <div className="glass rounded-xl p-5 border-dashed">
+      <div className="flex items-center gap-2 mb-1">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        <h3 className="font-semibold">{title}</h3>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground ml-auto">
+          Em breve
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
