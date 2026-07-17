@@ -22,7 +22,11 @@ import {
   Sparkles,
   Tag,
   ExternalLink,
+  Instagram,
+  Upload,
+  X,
 } from "lucide-react";
+
 
 type Search = { account?: string };
 
