@@ -43,7 +43,7 @@ import {
 
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
-  head: () => ({ meta: [{ title: "Perfil do Cliente — Portal 2P" }] }),
+  head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
   component: SegmentacaoPage,
 });
 
