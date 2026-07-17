@@ -15,6 +15,8 @@ export type FeatureKey =
   | "dashboards"
   | "clientes.cadastros"
   | "clientes.segmentacao"
+  | "clientes.perfil"
+  | "clientes.sugestoes"
   | "atlas"
   | "admin.usuarios"
   | "admin.vendedores"
