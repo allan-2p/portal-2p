@@ -3,7 +3,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AppLayout } from "@/components/app-layout";
-import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
+import {
+  getSalesforceAccounts,
+  getSalesforceAccountHistory,
+  type SalesforceAccount,
+  type SalesforceAccountHistory,
+} from "@/lib/salesforce.functions";
+
 import {
   Search,
   Building2,
@@ -245,13 +251,23 @@ function Dossier({ account }: { account: SalesforceAccount }) {
     return () => clearTimeout(t);
   }, [notes, account.id]);
 
+  const fetchHistory = useServerFn(getSalesforceAccountHistory);
+  const historyQ = useQuery({
+    queryKey: ["sf-account-history", account.id],
+    queryFn: () => fetchHistory({ data: { accountId: account.id } }),
+    staleTime: 5 * 60_000,
+  });
+  const history = historyQ.data;
+
   const trend = useMemo(() => {
-    const prev = account.quarterProjection ?? 0;
-    const now = account.quarterSold ?? 0;
+    const qs = history?.quarters ?? [];
+    const now = qs[qs.length - 1]?.total ?? 0;
+    const prev = qs[qs.length - 2]?.total ?? 0;
     if (prev === 0 && now === 0) return { pct: null as number | null, up: false };
     if (prev === 0) return { pct: null, up: now > 0 };
     return { pct: ((now - prev) / prev) * 100, up: now >= prev };
-  }, [account]);
+  }, [history]);
+
 
   return (
     <div className="space-y-4">
@@ -287,14 +303,20 @@ function Dossier({ account }: { account: SalesforceAccount }) {
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid sm:grid-cols-3 gap-3">
+      {/* KPIs (trimestre) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard
+          label="Vendido tri. atual"
+          value={fmt(history?.quarters.at(-1)?.total ?? 0)}
+          icon={Calendar}
+          hint={history?.quarters.at(-1)?.label}
+        />
         <StatCard
           label="Vendido tri. anterior"
-          value={fmt(account.quarterProjection)}
+          value={fmt(history?.quarters.at(-2)?.total ?? 0)}
           icon={Calendar}
+          hint={history?.quarters.at(-2)?.label}
         />
-        <StatCard label="Vendido tri. atual" value={fmt(account.quarterSold)} icon={Calendar} />
         <div className="glass rounded-xl p-4">
           <div className="text-[11px] uppercase text-muted-foreground">Variação tri.</div>
           <div className="flex items-center gap-2 mt-1">
@@ -307,9 +329,46 @@ function Dossier({ account }: { account: SalesforceAccount }) {
               {trend.pct == null ? "—" : `${trend.pct >= 0 ? "+" : ""}${trend.pct.toFixed(1)}%`}
             </div>
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1">
-            vs. trimestre anterior
+          <div className="text-[11px] text-muted-foreground mt-1">vs. trimestre anterior</div>
+        </div>
+        <StatCard
+          label="Ticket médio (2a)"
+          value={fmt(history?.avgTicket ?? 0)}
+          icon={TrendingUp}
+          hint={history ? `${history.totalCount} pedido${history.totalCount === 1 ? "" : "s"}` : undefined}
+        />
+      </div>
+
+      {/* Gráfico trimestral + funil */}
+      <div className="grid lg:grid-cols-3 gap-3">
+        <div className="glass rounded-xl p-5 lg:col-span-2">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold">Vendas por trimestre</h3>
+            <span className="text-[11px] text-muted-foreground ml-auto">
+              últimos 8 trimestres
+            </span>
           </div>
+          {historyQ.isLoading ? (
+            <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+              Carregando histórico…
+            </div>
+          ) : (
+            <QuarterBars quarters={history?.quarters ?? []} />
+          )}
+        </div>
+        <div className="glass rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Globe className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold">Oportunidades por status</h3>
+          </div>
+          {historyQ.isLoading ? (
+            <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+              Carregando…
+            </div>
+          ) : (
+            <StageBreakdown history={history} />
+          )}
         </div>
       </div>
 
@@ -332,6 +391,26 @@ function Dossier({ account }: { account: SalesforceAccount }) {
               }
             />
             <Field label="Responsável" value={account.ownerName} />
+            <Field
+              label="Última compra"
+              value={
+                history?.lastPurchase
+                  ? new Date(history.lastPurchase).toLocaleDateString("pt-BR")
+                  : null
+              }
+            />
+            <Field
+              label="Primeira compra"
+              value={
+                history?.firstPurchase
+                  ? new Date(history.firstPurchase).toLocaleDateString("pt-BR")
+                  : null
+              }
+            />
+            <Field
+              label="Taxa de fechamento"
+              value={history ? `${(history.wonRate * 100).toFixed(0)}%` : null}
+            />
           </dl>
         </div>
         <div className="glass rounded-xl p-5">
@@ -374,19 +453,6 @@ function Dossier({ account }: { account: SalesforceAccount }) {
         </div>
       </div>
 
-      {/* Placeholders para dados que ligaremos ao SF em seguida */}
-      <div className="grid md:grid-cols-2 gap-3">
-        <PlaceholderCard
-          icon={Globe}
-          title="Interações, tarefas e visitas"
-          hint="Vamos puxar do Salesforce (Task + Event por AccountId) neste cliente."
-        />
-        <PlaceholderCard
-          icon={TrendingUp}
-          title="Vendas e oportunidades"
-          hint="Histórico completo por CloseDate — ligamos ao getSalesforceVendas filtrado."
-        />
-      </div>
 
       {/* Anotações do vendedor */}
       <div className="glass rounded-xl p-5">
@@ -424,10 +490,12 @@ function StatCard({
   label,
   value,
   icon: Icon,
+  hint,
 }: {
   label: string;
   value: string;
   icon: typeof Calendar;
+  hint?: string;
 }) {
   return (
     <div className="glass rounded-xl p-4">
@@ -435,29 +503,120 @@ function StatCard({
         <Icon className="h-3.5 w-3.5" /> {label}
       </div>
       <div className="text-2xl font-bold mt-1">{value}</div>
+      {hint && <div className="text-[11px] text-muted-foreground mt-1">{hint}</div>}
     </div>
   );
 }
 
-function PlaceholderCard({
-  icon: Icon,
-  title,
-  hint,
+function QuarterBars({
+  quarters,
 }: {
-  icon: typeof Globe;
-  title: string;
-  hint: string;
+  quarters: SalesforceAccountHistory["quarters"];
 }) {
+  const max = Math.max(1, ...quarters.map((q) => q.total));
+  const anyData = quarters.some((q) => q.total > 0);
   return (
-    <div className="glass rounded-xl p-5 border-dashed">
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-        <h3 className="font-semibold">{title}</h3>
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground ml-auto">
-          Em breve
-        </span>
+    <div>
+      <div className="flex items-end gap-2 h-48 pt-4">
+        {quarters.map((q, i) => {
+          const h = q.total > 0 ? Math.max(4, Math.round((q.total / max) * 100)) : 0;
+          const isCurrent = i === quarters.length - 1;
+          return (
+            <div key={q.key} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+              <div
+                className="text-[10px] tabular-nums text-muted-foreground truncate w-full text-center"
+                title={fmt(q.total)}
+              >
+                {q.total > 0
+                  ? q.total >= 1000
+                    ? `${(q.total / 1000).toFixed(0)}k`
+                    : q.total.toFixed(0)
+                  : ""}
+              </div>
+              <div
+                className={cn(
+                  "w-full rounded-t-md transition-all",
+                  isCurrent ? "bg-primary" : "bg-primary/40",
+                )}
+                style={{ height: `${h}%` }}
+              />
+            </div>
+          );
+        })}
       </div>
-      <p className="text-sm text-muted-foreground">{hint}</p>
+      <div className="flex gap-2 mt-2">
+        {quarters.map((q, i) => (
+          <div
+            key={q.key}
+            className={cn(
+              "flex-1 text-[10px] text-center",
+              i === quarters.length - 1 ? "text-primary font-semibold" : "text-muted-foreground",
+            )}
+          >
+            {q.label}
+          </div>
+        ))}
+      </div>
+      {!anyData && (
+        <div className="text-center text-xs text-muted-foreground mt-3">
+          Sem vendas concluídas nos últimos 2 anos.
+        </div>
+      )}
     </div>
   );
 }
+
+function cn(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
+}
+
+function StageBreakdown({ history }: { history: SalesforceAccountHistory | undefined }) {
+  if (!history) return null;
+  const stages = history.stages;
+  if (stages.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground text-center py-8">
+        Nenhuma oportunidade nos últimos 2 anos.
+      </div>
+    );
+  }
+  const maxCount = Math.max(1, ...stages.map((s) => s.count));
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <MiniKpi label="Abertas" value={history.openCount} sub={fmt(history.openValue)} />
+        <MiniKpi label="Concluídas" value={history.totalCount} sub={fmt(history.totalLifetime)} />
+        <MiniKpi label="Perdidas" value={history.lostCount} sub={`${(history.wonRate * 100).toFixed(0)}% win`} />
+      </div>
+      <ul className="space-y-1.5 pt-2">
+        {stages.map((s) => (
+          <li key={s.stage}>
+            <div className="flex items-baseline justify-between text-xs mb-0.5">
+              <span className="truncate mr-2">{s.stage}</span>
+              <span className="tabular-nums text-muted-foreground">
+                {s.count} · {fmt(s.total)}
+              </span>
+            </div>
+            <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary/70 rounded-full"
+                style={{ width: `${(s.count / maxCount) * 100}%` }}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MiniKpi({ label, value, sub }: { label: string; value: number; sub: string }) {
+  return (
+    <div className="bg-surface-2/40 rounded-lg p-2">
+      <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
+      <div className="text-lg font-bold tabular-nums">{value}</div>
+      <div className="text-[10px] text-muted-foreground truncate">{sub}</div>
+    </div>
+  );
+}
+
