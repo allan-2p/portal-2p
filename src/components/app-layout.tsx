@@ -213,7 +213,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       <SubLink to="/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/clientes/cadastros")} />
                     )}
                     {show("clientes.segmentacao") && (
-                      <SubLink to="/clientes/segmentacao" label="Segmentação" icon={Layers} active={pathname.startsWith("/clientes/segmentacao")} />
+                      <SubLink to="/clientes/segmentacao" label="Perfil do Cliente" icon={Layers} active={pathname.startsWith("/clientes/segmentacao")} />
                     )}
                   </div>
                 )}
