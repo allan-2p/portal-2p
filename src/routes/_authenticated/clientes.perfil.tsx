@@ -490,10 +490,12 @@ function StatCard({
   label,
   value,
   icon: Icon,
+  hint,
 }: {
   label: string;
   value: string;
   icon: typeof Calendar;
+  hint?: string;
 }) {
   return (
     <div className="glass rounded-xl p-4">
@@ -501,29 +503,120 @@ function StatCard({
         <Icon className="h-3.5 w-3.5" /> {label}
       </div>
       <div className="text-2xl font-bold mt-1">{value}</div>
+      {hint && <div className="text-[11px] text-muted-foreground mt-1">{hint}</div>}
     </div>
   );
 }
 
-function PlaceholderCard({
-  icon: Icon,
-  title,
-  hint,
+function QuarterBars({
+  quarters,
 }: {
-  icon: typeof Globe;
-  title: string;
-  hint: string;
+  quarters: SalesforceAccountHistory["quarters"];
 }) {
+  const max = Math.max(1, ...quarters.map((q) => q.total));
+  const anyData = quarters.some((q) => q.total > 0);
   return (
-    <div className="glass rounded-xl p-5 border-dashed">
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-        <h3 className="font-semibold">{title}</h3>
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground ml-auto">
-          Em breve
-        </span>
+    <div>
+      <div className="flex items-end gap-2 h-48 pt-4">
+        {quarters.map((q, i) => {
+          const h = q.total > 0 ? Math.max(4, Math.round((q.total / max) * 100)) : 0;
+          const isCurrent = i === quarters.length - 1;
+          return (
+            <div key={q.key} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+              <div
+                className="text-[10px] tabular-nums text-muted-foreground truncate w-full text-center"
+                title={fmt(q.total)}
+              >
+                {q.total > 0
+                  ? q.total >= 1000
+                    ? `${(q.total / 1000).toFixed(0)}k`
+                    : q.total.toFixed(0)
+                  : ""}
+              </div>
+              <div
+                className={cn(
+                  "w-full rounded-t-md transition-all",
+                  isCurrent ? "bg-primary" : "bg-primary/40",
+                )}
+                style={{ height: `${h}%` }}
+              />
+            </div>
+          );
+        })}
       </div>
-      <p className="text-sm text-muted-foreground">{hint}</p>
+      <div className="flex gap-2 mt-2">
+        {quarters.map((q, i) => (
+          <div
+            key={q.key}
+            className={cn(
+              "flex-1 text-[10px] text-center",
+              i === quarters.length - 1 ? "text-primary font-semibold" : "text-muted-foreground",
+            )}
+          >
+            {q.label}
+          </div>
+        ))}
+      </div>
+      {!anyData && (
+        <div className="text-center text-xs text-muted-foreground mt-3">
+          Sem vendas concluídas nos últimos 2 anos.
+        </div>
+      )}
     </div>
   );
 }
+
+function cn(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
+}
+
+function StageBreakdown({ history }: { history: SalesforceAccountHistory | undefined }) {
+  if (!history) return null;
+  const stages = history.stages;
+  if (stages.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground text-center py-8">
+        Nenhuma oportunidade nos últimos 2 anos.
+      </div>
+    );
+  }
+  const maxCount = Math.max(1, ...stages.map((s) => s.count));
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <MiniKpi label="Abertas" value={history.openCount} sub={fmt(history.openValue)} />
+        <MiniKpi label="Concluídas" value={history.totalCount} sub={fmt(history.totalLifetime)} />
+        <MiniKpi label="Perdidas" value={history.lostCount} sub={`${(history.wonRate * 100).toFixed(0)}% win`} />
+      </div>
+      <ul className="space-y-1.5 pt-2">
+        {stages.map((s) => (
+          <li key={s.stage}>
+            <div className="flex items-baseline justify-between text-xs mb-0.5">
+              <span className="truncate mr-2">{s.stage}</span>
+              <span className="tabular-nums text-muted-foreground">
+                {s.count} · {fmt(s.total)}
+              </span>
+            </div>
+            <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary/70 rounded-full"
+                style={{ width: `${(s.count / maxCount) * 100}%` }}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MiniKpi({ label, value, sub }: { label: string; value: number; sub: string }) {
+  return (
+    <div className="bg-surface-2/40 rounded-lg p-2">
+      <div className="text-[10px] uppercase text-muted-foreground">{label}</div>
+      <div className="text-lg font-bold tabular-nums">{value}</div>
+      <div className="text-[10px] text-muted-foreground truncate">{sub}</div>
+    </div>
+  );
+}
+
