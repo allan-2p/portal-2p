@@ -318,8 +318,12 @@ function Dossier({ account }: { account: SalesforceAccount }) {
         </div>
       </div>
 
+      {/* Identidade */}
+      <IdentityCard account={account} />
+
       {/* KPIs (trimestre) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+
         <StatCard
           label="Vendido tri. atual"
           value={fmt(history?.quarters.at(-1)?.total ?? 0)}
@@ -387,10 +391,9 @@ function Dossier({ account }: { account: SalesforceAccount }) {
         </div>
       </div>
 
-      {/* Identidade */}
-      <IdentityCard account={account} />
-
       {/* Cadastro + contato */}
+
+
 
       <div className="grid md:grid-cols-2 gap-3">
         <div className="glass rounded-xl p-5">
