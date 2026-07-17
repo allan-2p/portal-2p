@@ -33,6 +33,7 @@ import { Route as AuthenticatedMarketingGargaloRouteImport } from './routes/_aut
 import { Route as AuthenticatedMarketingCohortRouteImport } from './routes/_authenticated/marketing.cohort'
 import { Route as AuthenticatedMarketingCacRouteImport } from './routes/_authenticated/marketing.cac'
 import { Route as AuthenticatedDashboardsMetasRouteImport } from './routes/_authenticated/dashboards.metas'
+import { Route as AuthenticatedClientesSugestoesRouteImport } from './routes/_authenticated/clientes.sugestoes'
 import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
 import { Route as AuthenticatedClientesPerfilRouteImport } from './routes/_authenticated/clientes.perfil'
 import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
@@ -170,6 +171,12 @@ const AuthenticatedDashboardsMetasRoute =
     path: '/metas',
     getParentRoute: () => AuthenticatedDashboardsRoute,
   } as any)
+const AuthenticatedClientesSugestoesRoute =
+  AuthenticatedClientesSugestoesRouteImport.update({
+    id: '/sugestoes',
+    path: '/sugestoes',
+    getParentRoute: () => AuthenticatedClientesRoute,
+  } as any)
 const AuthenticatedClientesSegmentacaoRoute =
   AuthenticatedClientesSegmentacaoRouteImport.update({
     id: '/segmentacao',
@@ -242,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
+  '/clientes/sugestoes': typeof AuthenticatedClientesSugestoesRoute
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
@@ -274,6 +282,7 @@ export interface FileRoutesByTo {
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
+  '/clientes/sugestoes': typeof AuthenticatedClientesSugestoesRoute
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
@@ -309,6 +318,7 @@ export interface FileRoutesById {
   '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/_authenticated/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
   '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
+  '/_authenticated/clientes/sugestoes': typeof AuthenticatedClientesSugestoesRoute
   '/_authenticated/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
   '/_authenticated/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/_authenticated/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
@@ -344,6 +354,7 @@ export interface FileRouteTypes {
     | '/clientes/cadastros'
     | '/clientes/perfil'
     | '/clientes/segmentacao'
+    | '/clientes/sugestoes'
     | '/dashboards/metas'
     | '/marketing/cac'
     | '/marketing/cohort'
@@ -376,6 +387,7 @@ export interface FileRouteTypes {
     | '/clientes/cadastros'
     | '/clientes/perfil'
     | '/clientes/segmentacao'
+    | '/clientes/sugestoes'
     | '/dashboards/metas'
     | '/marketing/cac'
     | '/marketing/cohort'
@@ -410,6 +422,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clientes/cadastros'
     | '/_authenticated/clientes/perfil'
     | '/_authenticated/clientes/segmentacao'
+    | '/_authenticated/clientes/sugestoes'
     | '/_authenticated/dashboards/metas'
     | '/_authenticated/marketing/cac'
     | '/_authenticated/marketing/cohort'
@@ -597,6 +610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardsMetasRouteImport
       parentRoute: typeof AuthenticatedDashboardsRoute
     }
+    '/_authenticated/clientes/sugestoes': {
+      id: '/_authenticated/clientes/sugestoes'
+      path: '/sugestoes'
+      fullPath: '/clientes/sugestoes'
+      preLoaderRoute: typeof AuthenticatedClientesSugestoesRouteImport
+      parentRoute: typeof AuthenticatedClientesRoute
+    }
     '/_authenticated/clientes/segmentacao': {
       id: '/_authenticated/clientes/segmentacao'
       path: '/segmentacao'
@@ -660,12 +680,14 @@ interface AuthenticatedClientesRouteChildren {
   AuthenticatedClientesCadastrosRoute: typeof AuthenticatedClientesCadastrosRoute
   AuthenticatedClientesPerfilRoute: typeof AuthenticatedClientesPerfilRoute
   AuthenticatedClientesSegmentacaoRoute: typeof AuthenticatedClientesSegmentacaoRoute
+  AuthenticatedClientesSugestoesRoute: typeof AuthenticatedClientesSugestoesRoute
 }
 
 const AuthenticatedClientesRouteChildren: AuthenticatedClientesRouteChildren = {
   AuthenticatedClientesCadastrosRoute: AuthenticatedClientesCadastrosRoute,
   AuthenticatedClientesPerfilRoute: AuthenticatedClientesPerfilRoute,
   AuthenticatedClientesSegmentacaoRoute: AuthenticatedClientesSegmentacaoRoute,
+  AuthenticatedClientesSugestoesRoute: AuthenticatedClientesSugestoesRoute,
 }
 
 const AuthenticatedClientesRouteWithChildren =
