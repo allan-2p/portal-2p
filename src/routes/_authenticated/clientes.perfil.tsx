@@ -387,7 +387,11 @@ function Dossier({ account }: { account: SalesforceAccount }) {
         </div>
       </div>
 
+      {/* Identidade */}
+      <IdentityCard account={account} />
+
       {/* Cadastro + contato */}
+
       <div className="grid md:grid-cols-2 gap-3">
         <div className="glass rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
