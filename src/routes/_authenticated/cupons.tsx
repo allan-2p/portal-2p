@@ -178,10 +178,14 @@ function CuponsPage() {
                   <div className="flex gap-2">
                     <Input
                       value={codigo}
-                      onChange={(e) => setCodigo(e.target.value)}
+                      onChange={(e) => {
+                        setCodigo(e.target.value);
+                        setErrors((er) => ({ ...er, codigo: undefined }));
+                      }}
                       placeholder={aleatorio ? "" : "Ex: PROMO10"}
                       disabled={aleatorio}
-                      className="font-mono tracking-wider"
+                      className={cn("font-mono tracking-wider", errors.codigo && "border-destructive focus-visible:ring-destructive")}
+                      aria-invalid={!!errors.codigo}
                     />
                     {aleatorio && (
                       <Button type="button" variant="outline" size="icon" onClick={() => setCodigo(gerarCodigo())} title="Gerar novo">
@@ -189,6 +193,7 @@ function CuponsPage() {
                       </Button>
                     )}
                   </div>
+                  {errors.codigo && <p className="text-xs text-destructive">{errors.codigo}</p>}
                 </div>
 
                 {/* Tipo de desconto */}
