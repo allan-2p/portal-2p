@@ -661,9 +661,12 @@ function SegmentacaoPage() {
                           </td>
                           <td className="px-2">
                             <button
-                              onClick={(e) => { e.stopPropagation(); setDetailClient(c); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate({ to: "/clientes/perfil", search: { account: c.id } });
+                              }}
                               className="p-1.5 rounded hover:bg-primary/15 text-muted-foreground hover:text-primary"
-                              title="Ver detalhes"
+                              title="Abrir perfil do cliente"
                             >
                               <Eye className="h-4 w-4" />
                             </button>
