@@ -18,6 +18,7 @@ import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
+import { Route as AuthenticatedOrcamentosRouteImport } from './routes/_authenticated/orcamentos'
 import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
 import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
 import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authenticated/dashboards'
@@ -81,6 +82,11 @@ const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
 const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
   id: '/pedidos',
   path: '/pedidos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOrcamentosRoute = AuthenticatedOrcamentosRouteImport.update({
+  id: '/orcamentos',
+  path: '/orcamentos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMarketingRoute = AuthenticatedMarketingRouteImport.update({
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
   '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/marketing': typeof AuthenticatedMarketingRouteWithChildren
+  '/orcamentos': typeof AuthenticatedOrcamentosRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
@@ -237,6 +244,7 @@ export interface FileRoutesByTo {
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
   '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
   '/integracoes': typeof AuthenticatedIntegracoesRoute
+  '/orcamentos': typeof AuthenticatedOrcamentosRoute
   '/pedidos': typeof AuthenticatedPedidosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
   '/_authenticated/integracoes': typeof AuthenticatedIntegracoesRoute
   '/_authenticated/marketing': typeof AuthenticatedMarketingRouteWithChildren
+  '/_authenticated/orcamentos': typeof AuthenticatedOrcamentosRoute
   '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
@@ -302,6 +311,7 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/integracoes'
     | '/marketing'
+    | '/orcamentos'
     | '/pedidos'
     | '/perfil'
     | '/tarefas'
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
     | '/clientes'
     | '/dashboards'
     | '/integracoes'
+    | '/orcamentos'
     | '/pedidos'
     | '/perfil'
     | '/tarefas'
@@ -361,6 +372,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboards'
     | '/_authenticated/integracoes'
     | '/_authenticated/marketing'
+    | '/_authenticated/orcamentos'
     | '/_authenticated/pedidos'
     | '/_authenticated/perfil'
     | '/_authenticated/tarefas'
@@ -453,6 +465,13 @@ declare module '@tanstack/react-router' {
       path: '/pedidos'
       fullPath: '/pedidos'
       preLoaderRoute: typeof AuthenticatedPedidosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/orcamentos': {
+      id: '/_authenticated/orcamentos'
+      path: '/orcamentos'
+      fullPath: '/orcamentos'
+      preLoaderRoute: typeof AuthenticatedOrcamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/marketing': {
@@ -659,6 +678,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRouteWithChildren
   AuthenticatedIntegracoesRoute: typeof AuthenticatedIntegracoesRoute
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRouteWithChildren
+  AuthenticatedOrcamentosRoute: typeof AuthenticatedOrcamentosRoute
   AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedTarefasRoute: typeof AuthenticatedTarefasRoute
@@ -677,6 +697,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardsRoute: AuthenticatedDashboardsRouteWithChildren,
   AuthenticatedIntegracoesRoute: AuthenticatedIntegracoesRoute,
   AuthenticatedMarketingRoute: AuthenticatedMarketingRouteWithChildren,
+  AuthenticatedOrcamentosRoute: AuthenticatedOrcamentosRoute,
   AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedTarefasRoute: AuthenticatedTarefasRoute,
