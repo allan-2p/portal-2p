@@ -22,6 +22,7 @@ import { Route as AuthenticatedOrcamentosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
 import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
 import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authenticated/dashboards'
+import { Route as AuthenticatedCuponsRouteImport } from './routes/_authenticated/cupons'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/atlas'
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
@@ -103,6 +104,11 @@ const AuthenticatedIntegracoesRoute =
 const AuthenticatedDashboardsRoute = AuthenticatedDashboardsRouteImport.update({
   id: '/dashboards',
   path: '/dashboards',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCuponsRoute = AuthenticatedCuponsRouteImport.update({
+  id: '/cupons',
+  path: '/cupons',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/tv-geral': typeof TvGeralRoute
   '/atlas': typeof AuthenticatedAtlasRoute
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
+  '/cupons': typeof AuthenticatedCuponsRoute
   '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
   '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/marketing': typeof AuthenticatedMarketingRouteWithChildren
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/tv-geral': typeof TvGeralRoute
   '/atlas': typeof AuthenticatedAtlasRoute
   '/clientes': typeof AuthenticatedClientesRouteWithChildren
+  '/cupons': typeof AuthenticatedCuponsRoute
   '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
   '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/orcamentos': typeof AuthenticatedOrcamentosRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/tv-geral': typeof TvGeralRoute
   '/_authenticated/atlas': typeof AuthenticatedAtlasRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRouteWithChildren
+  '/_authenticated/cupons': typeof AuthenticatedCuponsRoute
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
   '/_authenticated/integracoes': typeof AuthenticatedIntegracoesRoute
   '/_authenticated/marketing': typeof AuthenticatedMarketingRouteWithChildren
@@ -308,6 +317,7 @@ export interface FileRouteTypes {
     | '/tv-geral'
     | '/atlas'
     | '/clientes'
+    | '/cupons'
     | '/dashboards'
     | '/integracoes'
     | '/marketing'
@@ -338,6 +348,7 @@ export interface FileRouteTypes {
     | '/tv-geral'
     | '/atlas'
     | '/clientes'
+    | '/cupons'
     | '/dashboards'
     | '/integracoes'
     | '/orcamentos'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/tv-geral'
     | '/_authenticated/atlas'
     | '/_authenticated/clientes'
+    | '/_authenticated/cupons'
     | '/_authenticated/dashboards'
     | '/_authenticated/integracoes'
     | '/_authenticated/marketing'
@@ -493,6 +505,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboards'
       fullPath: '/dashboards'
       preLoaderRoute: typeof AuthenticatedDashboardsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cupons': {
+      id: '/_authenticated/cupons'
+      path: '/cupons'
+      fullPath: '/cupons'
+      preLoaderRoute: typeof AuthenticatedCuponsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/clientes': {
@@ -675,6 +694,7 @@ const AuthenticatedMarketingRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAtlasRoute: typeof AuthenticatedAtlasRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRouteWithChildren
+  AuthenticatedCuponsRoute: typeof AuthenticatedCuponsRoute
   AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRouteWithChildren
   AuthenticatedIntegracoesRoute: typeof AuthenticatedIntegracoesRoute
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRouteWithChildren
@@ -694,6 +714,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAtlasRoute: AuthenticatedAtlasRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRouteWithChildren,
+  AuthenticatedCuponsRoute: AuthenticatedCuponsRoute,
   AuthenticatedDashboardsRoute: AuthenticatedDashboardsRouteWithChildren,
   AuthenticatedIntegracoesRoute: AuthenticatedIntegracoesRoute,
   AuthenticatedMarketingRoute: AuthenticatedMarketingRouteWithChildren,
