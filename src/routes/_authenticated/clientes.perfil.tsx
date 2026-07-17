@@ -47,6 +47,17 @@ function noteKey(id: string) {
   return `portal2p:client-notes:${id}`;
 }
 
+function identityKey(id: string) {
+  return `portal2p:client-identity:${id}`;
+}
+
+type ClientIdentity = {
+  logo?: string | null;
+  website?: string | null;
+  instagram?: string | null;
+};
+
+
 const PAGE_SIZE = 10;
 
 function PerfilPage() {
