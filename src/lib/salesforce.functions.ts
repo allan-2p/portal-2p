@@ -604,6 +604,147 @@ export const getSalesforceVendas = createServerFn({ method: "GET" })
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
 
+export type AccountHistoryQuarter = {
+  key: string;   // e.g. "2025-Q3"
+  year: number;
+  quarter: number; // 1..4
+  label: string;   // "Q3/25"
+  total: number;
+  count: number;
+};
+
+export type AccountStageBreakdown = {
+  stage: string;
+  count: number;
+  total: number;
+};
+
+export type SalesforceAccountHistory = {
+  quarters: AccountHistoryQuarter[];
+  stages: AccountStageBreakdown[];
+  totalLifetime: number;
+  totalCount: number;
+  avgTicket: number;
+  openCount: number;
+  openValue: number;
+  lostCount: number;
+  lastPurchase: string | null;
+  firstPurchase: string | null;
+  wonRate: number; // 0..1
+};
+
+function quarterOf(dateStr: string): { year: number; q: number } {
+  const d = new Date(dateStr);
+  return { year: d.getUTCFullYear(), q: Math.floor(d.getUTCMonth() / 3) + 1 };
+}
+
+export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { accountId: string }) => input)
+  .handler(async ({ data }) => {
+    const accountId = String(data.accountId ?? "").trim();
+    if (!accountId || !/^[a-zA-Z0-9]{15,18}$/.test(accountId)) {
+      throw new Error("accountId inválido");
+    }
+    // ~2 years window
+    const cutoff = new Date();
+    cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 2);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+    const soql =
+      `SELECT Id, Amount, Total__c, StageName, CloseDate ` +
+      `FROM Opportunity ` +
+      `WHERE AccountId = '${esc(accountId)}' ` +
+      `AND (Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação') ` +
+      `AND CloseDate >= ${cutoffStr} ` +
+      `ORDER BY CloseDate DESC NULLS LAST LIMIT 1000`;
+
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    const rows = (res?.records ?? []) as Array<{
+      Id: string;
+      Amount: number | null;
+      Total__c: number | null;
+      StageName: string | null;
+      CloseDate: string | null;
+    }>;
+
+    // Build quarter buckets covering the last 8 quarters (including current).
+    const now = new Date();
+    const curY = now.getUTCFullYear();
+    const curQ = Math.floor(now.getUTCMonth() / 3) + 1;
+    const quarters: AccountHistoryQuarter[] = [];
+    for (let i = 7; i >= 0; i--) {
+      let y = curY;
+      let q = curQ - i;
+      while (q <= 0) { q += 4; y -= 1; }
+      quarters.push({
+        key: `${y}-Q${q}`,
+        year: y,
+        quarter: q,
+        label: `Q${q}/${String(y).slice(-2)}`,
+        total: 0,
+        count: 0,
+      });
+    }
+    const qIndex = new Map(quarters.map((q, i) => [q.key, i] as const));
+
+    const stageMap = new Map<string, AccountStageBreakdown>();
+    let totalLifetime = 0;
+    let totalCount = 0;
+    let openCount = 0;
+    let openValue = 0;
+    let lostCount = 0;
+    let lastPurchase: string | null = null;
+    let firstPurchase: string | null = null;
+
+    for (const r of rows) {
+      const stage = r.StageName ?? "—";
+      const val = (typeof r.Total__c === "number" ? r.Total__c : r.Amount) ?? 0;
+
+      const s = stageMap.get(stage) ?? { stage, count: 0, total: 0 };
+      s.count += 1;
+      s.total += val;
+      stageMap.set(stage, s);
+
+      if (stage === "Pedido Concluído") {
+        totalLifetime += val;
+        totalCount += 1;
+        if (r.CloseDate) {
+          if (!lastPurchase || r.CloseDate > lastPurchase) lastPurchase = r.CloseDate;
+          if (!firstPurchase || r.CloseDate < firstPurchase) firstPurchase = r.CloseDate;
+          const { year, q } = quarterOf(r.CloseDate);
+          const idx = qIndex.get(`${year}-Q${q}`);
+          if (idx != null) {
+            quarters[idx].total += val;
+            quarters[idx].count += 1;
+          }
+        }
+      } else if (stage === "Perdido" || stage === "Cancelado" || /perd/i.test(stage) || /cancel/i.test(stage)) {
+        lostCount += 1;
+      } else {
+        openCount += 1;
+        openValue += val;
+      }
+    }
+
+    const stages = [...stageMap.values()].sort((a, b) => b.total - a.total);
+    const decided = totalCount + lostCount;
+    return {
+      quarters,
+      stages,
+      totalLifetime,
+      totalCount,
+      avgTicket: totalCount ? totalLifetime / totalCount : 0,
+      openCount,
+      openValue,
+      lostCount,
+      lastPurchase,
+      firstPurchase,
+      wonRate: decided ? totalCount / decided : 0,
+    } as SalesforceAccountHistory;
+  });
+
+
 
 
 
