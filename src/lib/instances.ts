@@ -15,6 +15,8 @@ export type FeatureKey =
   | "dashboards"
   | "clientes.cadastros"
   | "clientes.segmentacao"
+  | "clientes.perfil"
+  | "clientes.sugestoes"
   | "atlas"
   | "admin.usuarios"
   | "admin.vendedores"
@@ -54,6 +56,8 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "dashboards",
       "clientes.cadastros",
       "clientes.segmentacao",
+      "clientes.perfil",
+      "clientes.sugestoes",
       "atlas",
       "admin.usuarios",
       "admin.vendedores",
@@ -76,6 +80,8 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "dashboards",
       "clientes.cadastros",
       "clientes.segmentacao",
+      "clientes.perfil",
+      "clientes.sugestoes",
       "atlas",
       "admin.usuarios",
       "admin.vendedores",
@@ -113,6 +119,8 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/dashboards": "dashboards",
   "/clientes/cadastros": "clientes.cadastros",
   "/clientes/segmentacao": "clientes.segmentacao",
+  "/clientes/perfil": "clientes.perfil",
+  "/clientes/sugestoes": "clientes.sugestoes",
   "/atlas": "atlas",
   "/usuarios": "admin.usuarios",
   "/admin/vendedores": "admin.vendedores",
@@ -135,6 +143,8 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   dashboards: "Dashboards",
   "clientes.cadastros": "Clientes • Cadastros",
   "clientes.segmentacao": "Clientes • Segmentação",
+  "clientes.perfil": "Clientes • Perfil do Cliente",
+  "clientes.sugestoes": "Clientes • Sugestões do Atlas",
   atlas: "Atlas (AI)",
   "admin.usuarios": "Admin • Usuários",
   "admin.vendedores": "Admin • Vendedores",

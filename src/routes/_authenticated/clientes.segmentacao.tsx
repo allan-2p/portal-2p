@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { type Client, type Segment } from "@/lib/mock-data";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -43,7 +43,7 @@ import {
 
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
-  head: () => ({ meta: [{ title: "Perfil do Cliente — Portal 2P" }] }),
+  head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
   component: SegmentacaoPage,
 });
 
@@ -129,6 +129,7 @@ function SegBadge({ seg }: { seg: Segment }) {
 }
 
 function SegmentacaoPage() {
+  const navigate = useNavigate();
   const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detailClient, setDetailClient] = useState<Client | null>(null);
@@ -474,7 +475,7 @@ function SegmentacaoPage() {
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Clientes</div>
-            <h1 className="text-3xl font-bold mt-1">Perfil do Cliente</h1>
+            <h1 className="text-3xl font-bold mt-1">Segmentação</h1>
             <div className="text-xs text-muted-foreground mt-1">
               Base: Projeção - Tri Atual · Trimestre {baseRange.label}
             </div>
@@ -660,9 +661,12 @@ function SegmentacaoPage() {
                           </td>
                           <td className="px-2">
                             <button
-                              onClick={(e) => { e.stopPropagation(); setDetailClient(c); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate({ to: "/clientes/perfil", search: { account: c.id } });
+                              }}
                               className="p-1.5 rounded hover:bg-primary/15 text-muted-foreground hover:text-primary"
-                              title="Ver detalhes"
+                              title="Abrir perfil do cliente"
                             >
                               <Eye className="h-4 w-4" />
                             </button>
