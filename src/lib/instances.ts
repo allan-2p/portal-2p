@@ -80,6 +80,8 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "dashboards",
       "clientes.cadastros",
       "clientes.segmentacao",
+      "clientes.perfil",
+      "clientes.sugestoes",
       "atlas",
       "admin.usuarios",
       "admin.vendedores",
