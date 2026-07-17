@@ -303,14 +303,20 @@ function Dossier({ account }: { account: SalesforceAccount }) {
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid sm:grid-cols-3 gap-3">
+      {/* KPIs (trimestre) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard
+          label="Vendido tri. atual"
+          value={fmt(history?.quarters.at(-1)?.total ?? 0)}
+          icon={Calendar}
+          hint={history?.quarters.at(-1)?.label}
+        />
         <StatCard
           label="Vendido tri. anterior"
-          value={fmt(account.quarterProjection)}
+          value={fmt(history?.quarters.at(-2)?.total ?? 0)}
           icon={Calendar}
+          hint={history?.quarters.at(-2)?.label}
         />
-        <StatCard label="Vendido tri. atual" value={fmt(account.quarterSold)} icon={Calendar} />
         <div className="glass rounded-xl p-4">
           <div className="text-[11px] uppercase text-muted-foreground">Variação tri.</div>
           <div className="flex items-center gap-2 mt-1">
@@ -323,9 +329,46 @@ function Dossier({ account }: { account: SalesforceAccount }) {
               {trend.pct == null ? "—" : `${trend.pct >= 0 ? "+" : ""}${trend.pct.toFixed(1)}%`}
             </div>
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1">
-            vs. trimestre anterior
+          <div className="text-[11px] text-muted-foreground mt-1">vs. trimestre anterior</div>
+        </div>
+        <StatCard
+          label="Ticket médio (2a)"
+          value={fmt(history?.avgTicket ?? 0)}
+          icon={TrendingUp}
+          hint={history ? `${history.totalCount} pedido${history.totalCount === 1 ? "" : "s"}` : undefined}
+        />
+      </div>
+
+      {/* Gráfico trimestral + funil */}
+      <div className="grid lg:grid-cols-3 gap-3">
+        <div className="glass rounded-xl p-5 lg:col-span-2">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold">Vendas por trimestre</h3>
+            <span className="text-[11px] text-muted-foreground ml-auto">
+              últimos 8 trimestres
+            </span>
           </div>
+          {historyQ.isLoading ? (
+            <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+              Carregando histórico…
+            </div>
+          ) : (
+            <QuarterBars quarters={history?.quarters ?? []} />
+          )}
+        </div>
+        <div className="glass rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Globe className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold">Oportunidades por status</h3>
+          </div>
+          {historyQ.isLoading ? (
+            <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+              Carregando…
+            </div>
+          ) : (
+            <StageBreakdown history={history} />
+          )}
         </div>
       </div>
 
@@ -348,6 +391,26 @@ function Dossier({ account }: { account: SalesforceAccount }) {
               }
             />
             <Field label="Responsável" value={account.ownerName} />
+            <Field
+              label="Última compra"
+              value={
+                history?.lastPurchase
+                  ? new Date(history.lastPurchase).toLocaleDateString("pt-BR")
+                  : null
+              }
+            />
+            <Field
+              label="Primeira compra"
+              value={
+                history?.firstPurchase
+                  ? new Date(history.firstPurchase).toLocaleDateString("pt-BR")
+                  : null
+              }
+            />
+            <Field
+              label="Taxa de fechamento"
+              value={history ? `${(history.wonRate * 100).toFixed(0)}%` : null}
+            />
           </dl>
         </div>
         <div className="glass rounded-xl p-5">
@@ -390,19 +453,6 @@ function Dossier({ account }: { account: SalesforceAccount }) {
         </div>
       </div>
 
-      {/* Placeholders para dados que ligaremos ao SF em seguida */}
-      <div className="grid md:grid-cols-2 gap-3">
-        <PlaceholderCard
-          icon={Globe}
-          title="Interações, tarefas e visitas"
-          hint="Vamos puxar do Salesforce (Task + Event por AccountId) neste cliente."
-        />
-        <PlaceholderCard
-          icon={TrendingUp}
-          title="Vendas e oportunidades"
-          hint="Histórico completo por CloseDate — ligamos ao getSalesforceVendas filtrado."
-        />
-      </div>
 
       {/* Anotações do vendedor */}
       <div className="glass rounded-xl p-5">
