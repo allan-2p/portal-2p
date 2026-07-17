@@ -119,6 +119,8 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/dashboards": "dashboards",
   "/clientes/cadastros": "clientes.cadastros",
   "/clientes/segmentacao": "clientes.segmentacao",
+  "/clientes/perfil": "clientes.perfil",
+  "/clientes/sugestoes": "clientes.sugestoes",
   "/atlas": "atlas",
   "/usuarios": "admin.usuarios",
   "/admin/vendedores": "admin.vendedores",
