@@ -71,8 +71,18 @@ function CuponsPage() {
   const [reutilizavel, setReutilizavel] = useState(false);
   const [cliente, setCliente] = useState("");
 
+  type Errors = {
+    codigo?: string;
+    tipos?: string;
+    valor?: string;
+    percentual?: string;
+    validade?: string;
+  };
+  const [errors, setErrors] = useState<Errors>({});
+
   const toggleTipo = (t: TipoCupom) => {
     setTipos((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+    setErrors((e) => ({ ...e, tipos: undefined }));
   };
 
   const resetForm = () => {
@@ -84,15 +94,23 @@ function CuponsPage() {
     setValidade(undefined);
     setReutilizavel(false);
     setCliente("");
+    setErrors({});
   };
 
   const handleCreate = () => {
     const codeFinal = aleatorio ? codigo : codigo.trim();
-    if (!codeFinal) return toast.error("Informe o código do cupom.");
-    if (tipos.length === 0) return toast.error("Selecione ao menos um tipo de desconto.");
-    if (!validade) return toast.error("Data de validade é obrigatória.");
-    if (tipos.includes("valor") && !valor) return toast.error("Informe o valor em R$.");
-    if (tipos.includes("percentual") && !percentual) return toast.error("Informe o percentual.");
+    const next: Errors = {};
+    if (!codeFinal) next.codigo = "Informe o código do cupom.";
+    if (tipos.length === 0) next.tipos = "Selecione ao menos um tipo de desconto.";
+    if (tipos.includes("valor") && !valor) next.valor = "Informe o valor em R$.";
+    if (tipos.includes("percentual") && !percentual) next.percentual = "Informe o percentual.";
+    if (!validade) next.validade = "Data de validade é obrigatória.";
+
+    if (Object.keys(next).length > 0) {
+      setErrors(next);
+      toast.error("Preencha os campos obrigatórios.");
+      return;
+    }
 
     const novo: Cupom = {
       id: crypto.randomUUID(),
@@ -100,7 +118,7 @@ function CuponsPage() {
       tipos,
       valor: tipos.includes("valor") ? Number(valor) : undefined,
       percentual: tipos.includes("percentual") ? Number(percentual) : undefined,
-      validade: format(validade, "dd/MM/yyyy"),
+      validade: format(validade!, "dd/MM/yyyy"),
       reutilizavel,
       cliente: cliente.trim() || undefined,
       criadoEm: new Date().toLocaleDateString("pt-BR"),
