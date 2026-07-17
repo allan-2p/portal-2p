@@ -71,8 +71,18 @@ function CuponsPage() {
   const [reutilizavel, setReutilizavel] = useState(false);
   const [cliente, setCliente] = useState("");
 
+  type Errors = {
+    codigo?: string;
+    tipos?: string;
+    valor?: string;
+    percentual?: string;
+    validade?: string;
+  };
+  const [errors, setErrors] = useState<Errors>({});
+
   const toggleTipo = (t: TipoCupom) => {
     setTipos((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+    setErrors((e) => ({ ...e, tipos: undefined }));
   };
 
   const resetForm = () => {
@@ -84,15 +94,23 @@ function CuponsPage() {
     setValidade(undefined);
     setReutilizavel(false);
     setCliente("");
+    setErrors({});
   };
 
   const handleCreate = () => {
     const codeFinal = aleatorio ? codigo : codigo.trim();
-    if (!codeFinal) return toast.error("Informe o código do cupom.");
-    if (tipos.length === 0) return toast.error("Selecione ao menos um tipo de desconto.");
-    if (!validade) return toast.error("Data de validade é obrigatória.");
-    if (tipos.includes("valor") && !valor) return toast.error("Informe o valor em R$.");
-    if (tipos.includes("percentual") && !percentual) return toast.error("Informe o percentual.");
+    const next: Errors = {};
+    if (!codeFinal) next.codigo = "Informe o código do cupom.";
+    if (tipos.length === 0) next.tipos = "Selecione ao menos um tipo de desconto.";
+    if (tipos.includes("valor") && !valor) next.valor = "Informe o valor em R$.";
+    if (tipos.includes("percentual") && !percentual) next.percentual = "Informe o percentual.";
+    if (!validade) next.validade = "Data de validade é obrigatória.";
+
+    if (Object.keys(next).length > 0) {
+      setErrors(next);
+      toast.error("Preencha os campos obrigatórios.");
+      return;
+    }
 
     const novo: Cupom = {
       id: crypto.randomUUID(),
@@ -100,7 +118,7 @@ function CuponsPage() {
       tipos,
       valor: tipos.includes("valor") ? Number(valor) : undefined,
       percentual: tipos.includes("percentual") ? Number(percentual) : undefined,
-      validade: format(validade, "dd/MM/yyyy"),
+      validade: format(validade!, "dd/MM/yyyy"),
       reutilizavel,
       cliente: cliente.trim() || undefined,
       criadoEm: new Date().toLocaleDateString("pt-BR"),
@@ -160,10 +178,14 @@ function CuponsPage() {
                   <div className="flex gap-2">
                     <Input
                       value={codigo}
-                      onChange={(e) => setCodigo(e.target.value)}
+                      onChange={(e) => {
+                        setCodigo(e.target.value);
+                        setErrors((er) => ({ ...er, codigo: undefined }));
+                      }}
                       placeholder={aleatorio ? "" : "Ex: PROMO10"}
                       disabled={aleatorio}
-                      className="font-mono tracking-wider"
+                      className={cn("font-mono tracking-wider", errors.codigo && "border-destructive focus-visible:ring-destructive")}
+                      aria-invalid={!!errors.codigo}
                     />
                     {aleatorio && (
                       <Button type="button" variant="outline" size="icon" onClick={() => setCodigo(gerarCodigo())} title="Gerar novo">
@@ -171,6 +193,7 @@ function CuponsPage() {
                       </Button>
                     )}
                   </div>
+                  {errors.codigo && <p className="text-xs text-destructive">{errors.codigo}</p>}
                 </div>
 
                 {/* Tipo de desconto */}
@@ -190,17 +213,45 @@ function CuponsPage() {
                       <span className="text-sm">Frete grátis</span>
                     </label>
                   </div>
+                  {errors.tipos && <p className="text-xs text-destructive">{errors.tipos}</p>}
                   <div className="grid grid-cols-2 gap-2">
                     {tipos.includes("valor") && (
                       <div className="space-y-1">
                         <Label htmlFor="v-valor" className="text-xs">Valor R$</Label>
-                        <Input id="v-valor" type="number" min="0" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" />
+                        <Input
+                          id="v-valor"
+                          type="number"
+                          min="0"
+                          value={valor}
+                          onChange={(e) => {
+                            setValor(e.target.value);
+                            setErrors((er) => ({ ...er, valor: undefined }));
+                          }}
+                          placeholder="0,00"
+                          className={cn(errors.valor && "border-destructive focus-visible:ring-destructive")}
+                          aria-invalid={!!errors.valor}
+                        />
+                        {errors.valor && <p className="text-xs text-destructive">{errors.valor}</p>}
                       </div>
                     )}
                     {tipos.includes("percentual") && (
                       <div className="space-y-1">
                         <Label htmlFor="v-perc" className="text-xs">Percentual %</Label>
-                        <Input id="v-perc" type="number" min="0" max="100" value={percentual} onChange={(e) => setPercentual(e.target.value)} placeholder="0" />
+                        <Input
+                          id="v-perc"
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={percentual}
+                          onChange={(e) => {
+                            setPercentual(e.target.value);
+                            setErrors((er) => ({ ...er, percentual: undefined }));
+                          }}
+                          placeholder="0"
+                          className={cn(errors.percentual && "border-destructive focus-visible:ring-destructive")}
+                          aria-invalid={!!errors.percentual}
+                        />
+                        {errors.percentual && <p className="text-xs text-destructive">{errors.percentual}</p>}
                       </div>
                     )}
                   </div>
@@ -211,15 +262,33 @@ function CuponsPage() {
                   <Label>Data de validade *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !validade && "text-muted-foreground")}>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !validade && "text-muted-foreground",
+                          errors.validade && "border-destructive"
+                        )}
+                      >
                         <CalendarIcon className="h-4 w-4 mr-2" />
                         {validade ? format(validade, "dd/MM/yyyy") : <span>Selecione uma data</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={validade} onSelect={setValidade} initialFocus className={cn("p-3 pointer-events-auto")} disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))} />
+                      <Calendar
+                        mode="single"
+                        selected={validade}
+                        onSelect={(d) => {
+                          setValidade(d);
+                          setErrors((er) => ({ ...er, validade: undefined }));
+                        }}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                        disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                      />
                     </PopoverContent>
                   </Popover>
+                  {errors.validade && <p className="text-xs text-destructive">{errors.validade}</p>}
                 </div>
 
                 {/* Reutilizável */}
