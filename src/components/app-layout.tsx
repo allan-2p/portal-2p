@@ -181,10 +181,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
 
           {/* Clientes — grupo expansível */}
-          {(show("clientes.cadastros") || show("clientes.segmentacao")) && (
+          {(show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.sugestoes")) && (
             collapsed ? (
               <Link
-                to={show("clientes.segmentacao") ? "/clientes/segmentacao" : "/clientes/cadastros"}
+                to={show("clientes.segmentacao") ? "/clientes/segmentacao" : show("clientes.perfil") ? "/clientes/perfil" : "/clientes/cadastros"}
                 preload="intent"
                 title="Clientes"
                 className={cn(
@@ -213,7 +213,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       <SubLink to="/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/clientes/cadastros")} />
                     )}
                     {show("clientes.segmentacao") && (
-                      <SubLink to="/clientes/segmentacao" label="Perfil do Cliente" icon={Layers} active={pathname.startsWith("/clientes/segmentacao")} />
+                      <SubLink to="/clientes/segmentacao" label="Segmentação" icon={Layers} active={pathname.startsWith("/clientes/segmentacao")} />
+                    )}
+                    {show("clientes.perfil") && (
+                      <SubLink to="/clientes/perfil" label="Perfil do Cliente" icon={UserIcon} active={pathname.startsWith("/clientes/perfil")} />
+                    )}
+                    {show("clientes.sugestoes") && (
+                      <SubLink to="/clientes/sugestoes" label="Sugestões do Atlas" icon={Sparkles} active={pathname.startsWith("/clientes/sugestoes")} />
                     )}
                   </div>
                 )}
