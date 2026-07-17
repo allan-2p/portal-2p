@@ -328,7 +328,7 @@ function Dossier({ account }: { account: SalesforceAccount }) {
   );
 }
 
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
+function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-baseline gap-2">
       <dt className="text-[11px] uppercase text-muted-foreground w-24 shrink-0">{label}</dt>
