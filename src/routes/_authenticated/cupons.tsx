@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CalendarIcon, KeyRound, Plus, RefreshCw, Tag } from "lucide-react";
+import { CalendarIcon, Copy, Plus, RefreshCw, Tag } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -259,8 +259,27 @@ function CuponsPage() {
               <tbody>
                 {cupons.map((c) => (
                   <tr key={c.id} className="border-b border-border/50 hover:bg-surface-2">
-                    <td className="px-4 py-3 font-mono font-semibold flex items-center gap-2">
-                      <KeyRound className="h-4 w-4 text-muted-foreground" /> {c.codigo}
+                    <td className="px-4 py-3 font-mono font-semibold">
+                      <div className="flex items-center gap-2">
+                        <span>{c.codigo}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          title="Copiar código"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(c.codigo);
+                              toast.success("Código copiado.");
+                            } catch {
+                              toast.error("Não foi possível copiar.");
+                            }
+                          }}
+                        >
+                          <Copy className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
