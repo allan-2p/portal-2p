@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
 import {
-  User as UserIcon,
   Search,
   Building2,
   Phone,
@@ -18,7 +17,6 @@ import {
   Tag,
   ExternalLink,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 type Search = { account?: string };
 
