@@ -27,27 +27,43 @@ export const Route = createFileRoute("/_authenticated/orcamentos")({
   component: OrcamentosPage,
 });
 
+type Status =
+  | "Salvo"
+  | "Aguardando Pagamento"
+  | "Processando"
+  | "Separação"
+  | "Faturado"
+  | "Coletado"
+  | "Entregue"
+  | "Cancelado";
+
 type Orcamento = {
   id: string;
   code: string;
   cliente: string;
   data: string;
   valor: number;
-  status: "Rascunho" | "Enviado" | "Aprovado";
+  status: Status;
 };
 
 const MOCK: Orcamento[] = [
-  { id: "1", code: "ORC-1042", cliente: "Solar Prime Ltda", data: "12/07/2026", valor: 48750, status: "Enviado" },
-  { id: "2", code: "ORC-1041", cliente: "Energia Verde SA", data: "10/07/2026", valor: 12300, status: "Aprovado" },
-  { id: "3", code: "ORC-1040", cliente: "Casa & Cia Engenharia", data: "08/07/2026", valor: 27890, status: "Rascunho" },
+  { id: "1", code: "ORC-1042", cliente: "Solar Prime Ltda", data: "12/07/2026", valor: 48750, status: "Aguardando Pagamento" },
+  { id: "2", code: "ORC-1041", cliente: "Energia Verde SA", data: "10/07/2026", valor: 12300, status: "Entregue" },
+  { id: "3", code: "ORC-1040", cliente: "Casa & Cia Engenharia", data: "08/07/2026", valor: 27890, status: "Salvo" },
 ];
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const STATUS_COLOR: Record<Orcamento["status"], string> = {
-  Rascunho: "bg-muted text-muted-foreground",
-  Enviado: "bg-blue-500/15 text-blue-500",
-  Aprovado: "bg-emerald-500/15 text-emerald-500",
+// Dot color + label pill background/text for each status
+const STATUS_STYLE: Record<Status, { dot: string; pill: string }> = {
+  "Salvo":                { dot: "bg-orange-500",  pill: "bg-orange-500/15 text-orange-500" },
+  "Aguardando Pagamento": { dot: "bg-indigo-700",  pill: "bg-indigo-700/15 text-indigo-400" },
+  "Processando":          { dot: "bg-yellow-400",  pill: "bg-yellow-400/15 text-yellow-500" },
+  "Separação":            { dot: "bg-sky-400",     pill: "bg-sky-400/15 text-sky-400" },
+  "Faturado":             { dot: "bg-black dark:bg-white", pill: "bg-foreground/10 text-foreground" },
+  "Coletado":             { dot: "bg-emerald-500", pill: "bg-emerald-500/15 text-emerald-500" },
+  "Entregue":             { dot: "bg-gray-500",    pill: "bg-gray-500/15 text-gray-400" },
+  "Cancelado":            { dot: "bg-red-500",     pill: "bg-red-500/15 text-red-500" },
 };
 
 function OrcamentosPage() {
