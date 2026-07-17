@@ -251,13 +251,23 @@ function Dossier({ account }: { account: SalesforceAccount }) {
     return () => clearTimeout(t);
   }, [notes, account.id]);
 
+  const fetchHistory = useServerFn(getSalesforceAccountHistory);
+  const historyQ = useQuery({
+    queryKey: ["sf-account-history", account.id],
+    queryFn: () => fetchHistory({ data: { accountId: account.id } }),
+    staleTime: 5 * 60_000,
+  });
+  const history = historyQ.data;
+
   const trend = useMemo(() => {
-    const prev = account.quarterProjection ?? 0;
-    const now = account.quarterSold ?? 0;
+    const qs = history?.quarters ?? [];
+    const now = qs[qs.length - 1]?.total ?? 0;
+    const prev = qs[qs.length - 2]?.total ?? 0;
     if (prev === 0 && now === 0) return { pct: null as number | null, up: false };
     if (prev === 0) return { pct: null, up: now > 0 };
     return { pct: ((now - prev) / prev) * 100, up: now >= prev };
-  }, [account]);
+  }, [history]);
+
 
   return (
     <div className="space-y-4">
