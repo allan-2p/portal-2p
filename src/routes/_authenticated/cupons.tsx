@@ -213,17 +213,45 @@ function CuponsPage() {
                       <span className="text-sm">Frete grátis</span>
                     </label>
                   </div>
+                  {errors.tipos && <p className="text-xs text-destructive">{errors.tipos}</p>}
                   <div className="grid grid-cols-2 gap-2">
                     {tipos.includes("valor") && (
                       <div className="space-y-1">
                         <Label htmlFor="v-valor" className="text-xs">Valor R$</Label>
-                        <Input id="v-valor" type="number" min="0" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" />
+                        <Input
+                          id="v-valor"
+                          type="number"
+                          min="0"
+                          value={valor}
+                          onChange={(e) => {
+                            setValor(e.target.value);
+                            setErrors((er) => ({ ...er, valor: undefined }));
+                          }}
+                          placeholder="0,00"
+                          className={cn(errors.valor && "border-destructive focus-visible:ring-destructive")}
+                          aria-invalid={!!errors.valor}
+                        />
+                        {errors.valor && <p className="text-xs text-destructive">{errors.valor}</p>}
                       </div>
                     )}
                     {tipos.includes("percentual") && (
                       <div className="space-y-1">
                         <Label htmlFor="v-perc" className="text-xs">Percentual %</Label>
-                        <Input id="v-perc" type="number" min="0" max="100" value={percentual} onChange={(e) => setPercentual(e.target.value)} placeholder="0" />
+                        <Input
+                          id="v-perc"
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={percentual}
+                          onChange={(e) => {
+                            setPercentual(e.target.value);
+                            setErrors((er) => ({ ...er, percentual: undefined }));
+                          }}
+                          placeholder="0"
+                          className={cn(errors.percentual && "border-destructive focus-visible:ring-destructive")}
+                          aria-invalid={!!errors.percentual}
+                        />
+                        {errors.percentual && <p className="text-xs text-destructive">{errors.percentual}</p>}
                       </div>
                     )}
                   </div>
@@ -234,15 +262,33 @@ function CuponsPage() {
                   <Label>Data de validade *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !validade && "text-muted-foreground")}>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !validade && "text-muted-foreground",
+                          errors.validade && "border-destructive"
+                        )}
+                      >
                         <CalendarIcon className="h-4 w-4 mr-2" />
                         {validade ? format(validade, "dd/MM/yyyy") : <span>Selecione uma data</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={validade} onSelect={setValidade} initialFocus className={cn("p-3 pointer-events-auto")} disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))} />
+                      <Calendar
+                        mode="single"
+                        selected={validade}
+                        onSelect={(d) => {
+                          setValidade(d);
+                          setErrors((er) => ({ ...er, validade: undefined }));
+                        }}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                        disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                      />
                     </PopoverContent>
                   </Popover>
+                  {errors.validade && <p className="text-xs text-destructive">{errors.validade}</p>}
                 </div>
 
                 {/* Reutilizável */}
