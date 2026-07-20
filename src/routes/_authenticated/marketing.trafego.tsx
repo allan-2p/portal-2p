@@ -132,8 +132,8 @@ function TrafegoPage() {
 
         {/* Metas em destaque */}
         <div className="grid md:grid-cols-2 gap-4">
-          <BigGoal label={mql?.label ?? "MQL (Tráfego Pago)"} real={mql?.real_value ?? 0} meta={mql?.goal ?? 250} icon={TargetIcon} accent="oklch(0.6 0.18 240)" />
-          <BigGoal label={novos?.label ?? "Novos (Tráfego Pago)"} real={novos?.real_value ?? 0} meta={novos?.goal ?? 30} icon={Users} accent="oklch(0.7 0.16 145)" />
+          <BigGoal label={mql?.label ?? "MQL (Tráfego Pago)"} real={mqlDisplay} meta={mql?.goal ?? 250} icon={TargetIcon} accent="oklch(0.6 0.18 240)" loading={sfQ.isLoading} />
+          <BigGoal label={novos?.label ?? "Novos (Tráfego Pago)"} real={novosDisplay} meta={novos?.goal ?? 30} icon={Users} accent="oklch(0.7 0.16 145)" loading={sfQ.isLoading} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
