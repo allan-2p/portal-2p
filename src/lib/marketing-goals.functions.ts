@@ -34,7 +34,9 @@ export const setMarketingGoal = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: isAdmin } = await context.supabase.rpc("is_admin");
     if (!isAdmin) throw new Error("Forbidden: admin role required");
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const patch: { goal?: number; real_value?: number; updated_at: string } = {
+      updated_at: new Date().toISOString(),
+    };
     if (typeof data.goal === "number") patch.goal = data.goal;
     if (typeof data.real_value === "number") patch.real_value = data.real_value;
     const { error } = await context.supabase
