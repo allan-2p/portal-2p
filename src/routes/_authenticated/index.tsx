@@ -995,6 +995,13 @@ function HomePage() {
                           {inter ? "Nova interação" : "Interação"}
                         </button>
                         <button
+                          onClick={() => setRescheduleTask(t)}
+                          title="Adiar tarefa (mudar data)"
+                          className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-warning/15 hover:text-[color:var(--warning)] text-muted-foreground flex items-center gap-1"
+                        >
+                          <CalendarPlus className="h-3 w-3" /> Adiar
+                        </button>
+                        <button
                           onClick={() => setCompleteTask(t)}
                           className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-success/15 hover:text-success text-muted-foreground flex items-center gap-1"
                         >
