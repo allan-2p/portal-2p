@@ -235,13 +235,13 @@ function MiniKPI({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BigGoal({ label, real, meta, icon: Icon, accent }: { label: string; real: number; meta: number; icon: typeof Users; accent: string }) {
+function BigGoal({ label, real, meta, icon: Icon, accent, loading }: { label: string; real: number; meta: number; icon: typeof Users; accent: string; loading?: boolean }) {
   const pct = meta > 0 ? (real / meta) * 100 : 0;
   return (
     <div className="glass rounded-2xl p-5">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Mês</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{loading ? "Mês · carregando…" : "Mês · Salesforce"}</div>
           <div className="font-display font-semibold text-lg mt-0.5">{label}</div>
         </div>
         <Icon className="h-5 w-5" style={{ color: accent }} />
