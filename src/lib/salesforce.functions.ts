@@ -1072,6 +1072,10 @@ export const getMarketingSalesforceData = createServerFn({ method: "GET" })
   })
   .handler(async ({ data }) => {
     const ownerList = MARKETING_OWNER_IDS.map((id) => `'${id}'`).join(",");
+    const extraNames = MARKETING_OWNER_NAMES_EXTRA.map((n) => `'${esc(n)}'`).join(",");
+    const ownerClause = extraNames
+      ? `(OwnerId IN (${ownerList}) OR Owner.Name IN (${extraNames}))`
+      : `OwnerId IN (${ownerList})`;
     const startDT = `${data.start}T00:00:00Z`;
     const endDT = `${data.end}T23:59:59Z`;
 
