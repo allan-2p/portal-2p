@@ -1016,6 +1016,9 @@ export const MARKETING_OWNER_IDS = [
   "005U400000C9Gg9IAF", // Marketing 2P
 ] as const;
 
+// Filtro adicional por nome (para membros ainda sem SF User ID configurado).
+export const MARKETING_OWNER_NAMES_EXTRA = ["Gabriel Sargiani"] as const;
+
 export const MARKETING_OWNER_NAMES: Record<string, string> = {
   "005Dn000005whg0IAA": "Fernando Lira",
   "005U400000HmVKfIAN": "Gabriel Kendi",
@@ -1023,6 +1026,12 @@ export const MARKETING_OWNER_NAMES: Record<string, string> = {
   "005U400000IClATIA1": "Ygor Andreis",
   "005U400000C9Gg9IAF": "Marketing 2P",
 };
+
+// Nomes de todos os owners (para exibição e filtros SOQL por nome).
+export const MARKETING_OWNER_ALL_NAMES: string[] = [
+  ...Object.values(MARKETING_OWNER_NAMES),
+  ...MARKETING_OWNER_NAMES_EXTRA,
+];
 
 export type MarketingBucket = { label: string; value: number };
 export type MarketingConvertedLead = {
@@ -1063,44 +1072,48 @@ export const getMarketingSalesforceData = createServerFn({ method: "GET" })
   })
   .handler(async ({ data }) => {
     const ownerList = MARKETING_OWNER_IDS.map((id) => `'${id}'`).join(",");
+    const extraNames = MARKETING_OWNER_NAMES_EXTRA.map((n) => `'${esc(n)}'`).join(",");
+    const ownerClause = extraNames
+      ? `(OwnerId IN (${ownerList}) OR Owner.Name IN (${extraNames}))`
+      : `OwnerId IN (${ownerList})`;
     const startDT = `${data.start}T00:00:00Z`;
     const endDT = `${data.end}T23:59:59Z`;
 
     const [byStatus, byOrigem, bySub, byOwner, daily, dailyConv, convertedRes] = await Promise.all([
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Status FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY Status`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Origem__c FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY Origem__c ORDER BY COUNT(Id) DESC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Sub_Origem__c FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY Sub_Origem__c ORDER BY COUNT(Id) DESC LIMIT 20`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Owner.Name ownerName FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY Owner.Name ORDER BY COUNT(Id) DESC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) ASC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND IsConverted = true AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND IsConverted = true AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) ASC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT Id, Name, ConvertedDate, ConvertedAccountId, Origem__c, Sub_Origem__c, Owner.Name ` +
         `FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND IsConverted = true ` +
+        `WHERE ${ownerClause} AND IsConverted = true ` +
         `AND ConvertedDate >= ${data.start} AND ConvertedDate <= ${data.end} ` +
         `ORDER BY ConvertedDate DESC LIMIT 500`,
       )}`),
@@ -1738,3 +1751,84 @@ export const getPublicRetencaoTv = createServerFn({ method: "GET" }).handler(asy
 
 
 
+
+// ============================================================
+// PRÉ-VENDAS — funil e motivos de perda para o time de Marketing
+// ============================================================
+
+export type PreVendasFunilData = {
+  range: { start: string; end: string };
+  leads: { novos: number; amadurecimento: number; convertidos: number; naoConvertidos: number; total: number };
+  motivosPerdaOpp: MarketingBucket[];
+  motivosNaoConvertido: MarketingBucket[];
+};
+
+export const getPreVendasFunilData = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { start: string; end: string }) => {
+    if (!validDate(input.start) || !validDate(input.end)) throw new Error("Datas inválidas.");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const ownerIds = MARKETING_OWNER_IDS.map((id) => `'${id}'`).join(",");
+    const extraNames = MARKETING_OWNER_NAMES_EXTRA.map((n) => `'${esc(n)}'`).join(",");
+    const startDT = `${data.start}T00:00:00Z`;
+    const endDT = `${data.end}T23:59:59Z`;
+    // Aceita owners por Id OR por Nome (para membros sem SF User Id configurado).
+    const ownerWhere = extraNames
+      ? `(OwnerId IN (${ownerIds}) OR Owner.Name IN (${extraNames}))`
+      : `OwnerId IN (${ownerIds})`;
+
+    // Motivos de perda: tenta campos comuns; se falhar, retorna vazio.
+    async function safeGroup(soql: string): Promise<MarketingBucket[]> {
+      try {
+        const r = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+        return (r?.records ?? []).map((rec: any) => {
+          const label = Object.keys(rec).find((k) => k !== "attributes" && k !== "total");
+          return {
+            label: (label ? rec[label] : null) ?? "Sem informação",
+            value: typeof rec.total === "number" ? rec.total : 0,
+          };
+        });
+      } catch { return []; }
+    }
+
+    const [byStatus, mPerdaOpp, mNaoConv] = await Promise.all([
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT COUNT(Id) total, Status FROM Lead ` +
+        `WHERE ${ownerWhere} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY Status`,
+      )}`),
+      safeGroup(
+        `SELECT COUNT(Id) total, Motivo_da_Perda__c FROM Opportunity ` +
+        `WHERE ${ownerWhere} AND StageName = 'Projeto Não Fechado' ` +
+        `AND CloseDate >= ${data.start} AND CloseDate <= ${data.end} ` +
+        `GROUP BY Motivo_da_Perda__c ORDER BY COUNT(Id) DESC LIMIT 20`,
+      ),
+      safeGroup(
+        `SELECT COUNT(Id) total, Motivo_da_N_o_Convers_o__c FROM Lead ` +
+        `WHERE ${ownerWhere} AND Status = 'Não Convertido' ` +
+        `AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY Motivo_da_N_o_Convers_o__c ORDER BY COUNT(Id) DESC LIMIT 20`,
+      ),
+    ]);
+
+    let novos = 0, amadurecimento = 0, convertidos = 0, naoConvertidos = 0, total = 0;
+    for (const r of (byStatus?.records ?? [])) {
+      const t = typeof r.total === "number" ? r.total : 0;
+      total += t;
+      const s = String(r.Status ?? "");
+      if (s === "Novo") novos += t;
+      else if (s === "Amadurecimento") amadurecimento += t;
+      else if (s === "Convertido") convertidos += t;
+      else if (s === "Não Convertido") naoConvertidos += t;
+    }
+
+    const result: PreVendasFunilData = {
+      range: { start: data.start, end: data.end },
+      leads: { novos, amadurecimento, convertidos, naoConvertidos, total },
+      motivosPerdaOpp: mPerdaOpp,
+      motivosNaoConvertido: mNaoConv,
+    };
+    return result;
+  });

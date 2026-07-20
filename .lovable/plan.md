@@ -1,61 +1,80 @@
-# Auditoria de Performance — Portal 2P
+## Escopo
 
-Auditoria feita com base em `package.json`, `src/routes/**`, `src/components/**`, `src/lib/**` e configuração TanStack Start/Router/Query.
+Reforma da Instância Marketing em 4 páginas + novo painel admin de metas.
 
-## Diagnóstico (o que é real e o que já está bom)
+### 1) Base — nova tabela e time expandido
 
-**Já bem-feito** (não vou mexer):
-- TanStack Router com code-splitting automático por rota (`autoCodeSplitting`).
-- Todas as `useQuery` do dashboard e da TV usam `staleTime` (60s–5min) e `refetchOnWindowFocus:false`.
-- Consultas Supabase usam colunas explícitas — não encontrei `select("*")` além de 1 caso legítimo (perfil por id) em `use-auth.ts`.
-- SOQL do Salesforce usa listas de colunas nomeadas + `LIMIT`.
-- Fontes web via `@fontsource` com preload dos .woff2 em `__root.tsx`.
-- Auth com store externo (`useSyncExternalStore`) — sem waterfalls.
+- Adicionar **Gabriel Sargiani** aos owners de Marketing em `src/lib/salesforce.functions.ts` (mantendo Erika). Time base passa a 6 pessoas: Fernando Lira, Gabriel Kendi, Gabriel Sargiani, Erika Aiello, Ygor Andreis, Marketing 2P.
+- Nova migration `marketing_goals` (KV: `key text pk, label text, unit text, period text, goal numeric, updated_at`) com RLS: SELECT authenticated / UPDATE só admin (via `is_admin`). GRANT completo. Seed com as chaves:
+  - `leads_qualificados_mes` (150 / mês, orgânico)
+  - `mql_pago_mes` (250 / mês)
+  - `novos_pago_mes` (30 / mês)
+  - `ig_solar_tri` (30000 / tri)
+  - `ig_carregadores_tri` (10000 / tri)
+  - `ig_station_tri` (3000 / tri)
+- Novo `src/lib/marketing-goals.functions.ts` com `listMarketingGoals` e `setMarketingGoal`.
 
-## Gargalos encontrados
+### 2) Novo admin — `Marketing → Metas`
 
-| # | Gargalo | Arquivo | Gravidade | Alteração | Risco | Ganho esperado |
-|---|---|---|---|---|---|---|
-| 1 | `recharts` (~90 KB gz) importado estaticamente no dashboard principal, entra no bundle inicial da rota `/` | `src/routes/_authenticated/index.tsx` (linha 7) | **Crítica** | Trocar por `React.lazy` + `Suspense` nos blocos de AreaChart; skeleton do tamanho do gráfico | Baixo — mesma API, mesmo visual | −70/90 KB gz na home; melhora LCP/TBT |
-| 2 | `framer-motion` (~40 KB gz) importado nos splash/auth (páginas raramente vistas quando logado, mas carregadas na 1ª visita) | `src/routes/auth.tsx`, `src/components/login-splash.tsx` | Alta | Manter em auth (é first paint dessa rota) mas garantir que não entra em rotas autenticadas — verificar árvore de imports; se limpar, nada a fazer | Baixo | Confirmar isolamento |
-| 3 | `getSalesforceSalespeople` refeito com `staleTime: 5min` mas key sem `ownerParam` — ok; porém `mock-data` importado no dashboard traz dados não usados em runtime real | `src/routes/_authenticated/index.tsx:6` | Média | Remover imports não utilizados de `mock-data` da home (se não usados após render real) | Baixo | −alguns KB, menos parse |
-| 4 | `admin.tabelas.tsx` com 2053 linhas e `usuarios.tsx` com 1022 linhas — rotas admin pesadas ficam no chunk da rota (ok pelo split), mas dentro delas há listas sem virtualização | `admin.tabelas.tsx`, `usuarios.tsx` | Alta | Paginação client-side já existe? Se não, adicionar limit + paginação visual (mantendo UI). Virtualização só se >200 linhas simultâneas | Médio (mudança comportamental sutil) | Menos DOM, INP menor |
-| 5 | `useAuth` faz `getUser()` + 2 queries antes de qualquer render autenticado; `onAuthStateChange` também dispara `loadFor` em cada `USER_UPDATED` | `src/hooks/use-auth.ts` | Média | Usar `getSession()` (síncrono do storage) em vez de `getUser()` (round-trip) para hidratar mais rápido; deduplicar `loadFor` concorrentes | Baixo | TTFB perceptivo do gate `_authenticated` cai |
-| 6 | `queryClient.clear()` em cada `SIGNED_IN`/`USER_UPDATED` no `__root.tsx` — inclui hidratações normais, invalidando cache válido | `src/routes/__root.tsx` (RootComponent) | Média | Só limpar em `SIGNED_OUT`; em `SIGNED_IN` só se `user.id` mudou | Baixo | Menos refetches após navegação/refresh |
-| 7 | Ícones `lucide-react` importados individualmente ✓; nenhum `import * as`. Nada a fazer. | — | — | — | — | — |
-| 8 | `recharts` também usado em `atlas-panel`, `goals-panel`, `dashboards.tsx`, várias `marketing.*` — cada uma paga o chunk. Como já split por rota, aceitável. Só otimizar a home (crítica). | — | Baixa | Nenhuma ação | — | — |
-| 9 | Imagens: verificar `<img>` sem `width/height` e sem `loading="lazy"` abaixo da dobra (avatares em listas de usuários / notificações) | `notifications-dropdown.tsx`, `usuarios.tsx`, `app-layout.tsx` | Média | Adicionar `width`, `height`, `loading="lazy"`, `decoding="async"` nas `<img>` abaixo da dobra | Nenhum | Menos CLS, menos trabalho de decode |
-| 10 | Prefetch agressivo: `defaultPreload:"intent"` com `defaultPreloadDelay:40ms` — bom, mantém |  `src/router.tsx` | — | Manter | — | — |
-| 11 | `useIdleSignout` roda no root — verificar se listeners são passivos | `src/hooks/use-idle-signout.ts` | Baixa | Confirmar `{ passive: true }` nos listeners de scroll/mouse | Baixo | INP marginal |
+- Nova rota `src/routes/_authenticated/marketing.metas.tsx` (admin-only, mesmo padrão do `admin.metas.tsx` da Solar): lista as 6 metas em cards editáveis (label + valor + unidade), com salvamento inline via `setMarketingGoal`.
+- Entrada no menu quando `instance === "marketing"` (verificar `src/lib/instances.ts` e `app-layout` — só adicionar link).
 
-## O que NÃO vou fazer (fora de escopo ou sem evidência)
+### 3) Página **Social Media** (`marketing.social.tsx`)
 
-- Não vou reescrever componentes que funcionam.
-- Não vou trocar bibliotecas (recharts, framer-motion) — apenas atrasar seu carregamento.
-- Não vou tocar em autenticação, RLS, permissões, integrações Salesforce, edge functions.
-- Não vou mudar layout, cores, fontes, animações visíveis, ou comportamento de filtros.
-- Não vou adicionar virtualização em listas < 200 linhas (custo/benefício ruim, muda semântica de rolagem).
+- Trocar mocks pelos valores das metas (via `listMarketingGoals`):
+  - Topo com 2 cards de destaque grandes:
+    - **Leads qualificados (Orgânico)** — real vs `leads_qualificados_mes` (real ainda manual/mock por enquanto).
+    - **Seguidores Instagram (Tri)** — grid de 3 (Solar / Carregadores / Station) contra as metas do tri.
+- Remover LinkedIn dos detalhes; manter YouTube e TikTok como cards secundários abaixo.
+- Instância única (não depende mais do sub-switch marketing solar/carregadores — o card de IG já mostra os 3).
 
-## Ordem de implementação (críticas → altas → médias)
+### 4) Página **Tráfego Pago** (`marketing.trafego.tsx`)
 
-1. **Lazy load do `recharts` na home** (`_authenticated/index.tsx`) — maior ganho, isolado.
-2. **Ajuste no `queryClient.clear()`** — só em SIGNED_OUT ou mudança real de usuário.
-3. **`useAuth` usar `getSession()` primeiro** para hidratar sem round-trip; manter `getUser()` como validação em background.
-4. **Remover imports de `mock-data` não usados** na home (se realmente órfãos após inspeção).
-5. **Atributos de imagem** (`width/height/loading/decoding`) em `<img>` de avatar em listas.
-6. **Confirmar listeners passivos** em `use-idle-signout`.
+- Substituir mocks pelos valores das metas:
+  - Header com 2 metas fixas: **MQL 250** e **Novos 30** (mês). Reais preenchidos manualmente por hora (mock 0).
+- Mantém tabela de campanhas mock existente abaixo.
 
-## Validação após cada alteração
+### 5) Página **CAC** (`marketing.cac.tsx`)
 
-- Rota `/auth`: fluxo de login (Google + email/senha) inalterado.
-- `_authenticated/index`: dashboard carrega com gráficos, filtros de vendedor, metas, tarefas.
-- `_authenticated/usuarios` e `admin.*`: CRUD e permissões intactos.
-- Integrações Salesforce: consultas Home, Marketing, Pedidos, Clientes retornam dados.
-- TV: `/tv-geral` continua centralizado (não vou tocar).
-- Build/typecheck limpos.
+- Adicionar dois campos editáveis por mês (persist localStorage já usado): `faturamento` e `margem_liquida_valor`.
+- Novo card comparativo destacado: **Valor investido × Margem líquida** com badge verde/vermelho conforme margem cobre o investimento e ROI simples.
 
-## Notas técnicas
+### 6) Página **Pré-Vendas** (`marketing.pre-vendas.tsx`)
 
-- Lazy do recharts será feito por um único `React.lazy(() => import('recharts'))` empacotando `AreaChart`, `Area`, `CartesianGrid`, `ResponsiveContainer`, `Tooltip`, `XAxis`, `YAxis` num sub-componente `<HomeAreaChart />`, envolvido por `<Suspense fallback={<div className="h-[...]" />}>` com skeleton do tamanho exato para evitar CLS.
-- `queryClient.clear()` será substituído por `removeQueries`/`clear` só quando `event === "SIGNED_OUT"` **ou** `session?.user?.id !== prevUserId`.
-- Nenhuma dependência nova; sem mudança de schema, RLS, ou variáveis de ambiente.
+- Renomear título "Home | Gerente de Pré-Vendas" → "Pré-Vendas".
+- Trocar os KPIs e o funil por dados reais do Salesforce (novo server fn `getPreVendasFunilData`):
+  - Reutilizar owners de Marketing (6 pessoas).
+  - Contadores: leads novos (Status=Novo), amadurecimento, não convertidos, convertidos.
+  - Motivos de perda de Oportunidades (`Motivo_Perda__c` — tentativa com fallback silencioso se não existir) e Motivos de não-conversão de Leads (`Motivo_Nao_Convertido__c` idem). Se o campo não existir na org, mostrar mensagem "campo não configurado".
+- Mantém alertas mock (não foi pedido pra trocar).
+
+### 7) Página **Home Marketing** (`marketing.index.tsx`)
+
+- Adicionar filtro de comparativo **Mês atual vs Mês anterior** (2 presets no topo).
+- Novo bloco de KPIs comparativos: Leads, MQL (Status = Qualificado/Convertido/Amadurecimento — ICP), Convertidos, Novos Orçamentos (Opp criadas no período pelos 6 owners), Novos Clientes (contas convertidas no período).
+- Adicionar breakdown de faturamento por origem/sub-origem — já temos porOrigem/porSubOrigem para leads; nova query para faturamento agregado por Opp.Lead_Source__c (com fallback).
+
+### 8) Fora de escopo (por decisão)
+
+- Integração real com Instagram/Meta Ads API (mocks + entrada manual conforme aprovado).
+- ID do Gabriel Sargiani ainda desconhecido — se você tiver, me passa que eu troco o placeholder na migration/lista.
+
+## Ordem de execução
+
+1. Migration `marketing_goals` + grants + seed.
+2. `marketing-goals.functions.ts`.
+3. Nova rota admin `marketing.metas.tsx` + link no menu.
+4. Refactor `marketing.social.tsx`.
+5. Refactor `marketing.trafego.tsx`.
+6. Adição no `marketing.cac.tsx`.
+7. Owners atualizados + `getPreVendasFunilData` + refactor `marketing.pre-vendas.tsx`.
+8. `marketing.index.tsx` com comparativo mês.
+
+## Detalhes técnicos
+
+- Todas as reads via `useSuspenseQuery` + `ensureQueryData` (padrão do projeto).
+- Server fns novos usam `requireSupabaseAuth` e `sfFetch`.
+- Metas persistidas no Supabase; reais que ainda dependem de fontes externas seguem manuais/mock por hora — reservei "TODO integração" nos pontos exatos.
+- Sem alteração no `src/integrations/supabase/*` (arquivos auto-gerados).
+
+Confirma o plano que eu executo tudo em sequência? Se quiser cortar algum item (ex.: adiar comparativo mês/anterior), me avisa.

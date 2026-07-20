@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/marketing/pre-vendas")({
   head: () => ({
     meta: [
-      { title: "Home Pré-Vendas — Portal 2P" },
+      { title: "Pré-Vendas — Portal 2P" },
       { name: "description", content: "Painel do Gerente de Pré-Vendas: funil, saúde comercial, tarefas, motivos de perda e alertas." },
     ],
   }),
@@ -103,7 +103,7 @@ function PreVendasHome() {
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Marketing · Pré-Vendas</div>
             <h1 className="text-3xl font-bold mt-1 flex items-center gap-2">
-              <ClipboardList className="h-6 w-6 text-primary" /> Home | Gerente de Pré-Vendas
+              <ClipboardList className="h-6 w-6 text-primary" /> Pré-Vendas
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Visão consolidada de marketing e vendas — funil, saúde comercial, produtividade e alertas do time.

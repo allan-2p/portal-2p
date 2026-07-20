@@ -25,6 +25,8 @@ type CacInputs = {
   ferramentas: number;
   outros: number;
   novosClientes: number;
+  faturamento?: number;
+  margemLiquida?: number;
 };
 
 type SavedCac = Record<string, CacInputs>; // key = "solar-2026-6"
@@ -79,10 +81,10 @@ function CacPage() {
   const monthsInScope = useMemo(() => Array.from({ length: 12 }, (_, i) => i), []);
   const cacByMonth = monthsInScope.map((m) => {
     const s = store[key(marketingUnit, YEAR, m)];
-    if (!s || m > CURRENT_MONTH_IDX) return { m, filled: false, cac: null as number | null, custo: 0, novos: 0 };
+    if (!s || m > CURRENT_MONTH_IDX) return { m, filled: false, cac: null as number | null, custo: 0, novos: 0, faturamento: 0, margem: 0 };
     const custo = s.trafego + s.midia + s.agencia + s.funcionarios + s.ferramentas + s.outros;
     const cac = s.novosClientes > 0 ? custo / s.novosClientes : null;
-    return { m, filled: true, cac, custo, novos: s.novosClientes };
+    return { m, filled: true, cac, custo, novos: s.novosClientes, faturamento: s.faturamento ?? 0, margem: s.margemLiquida ?? 0 };
   });
 
   const pendentes = cacByMonth.filter((c) => !c.filled && c.m <= CURRENT_MONTH_IDX);
@@ -114,6 +116,38 @@ function CacPage() {
             return b ? MESES[b.m].slice(0, 3) : "—";
           })()} />
         </div>
+
+        {/* Investimento vs Margem Líquida — verificação de saúde */}
+        {(() => {
+          const filled = cacByMonth.filter((c) => c.filled);
+          const totalCusto = filled.reduce((a, c) => a + c.custo, 0);
+          const totalFat = filled.reduce((a, c) => a + c.faturamento, 0);
+          const totalMargem = filled.reduce((a, c) => a + c.margem, 0);
+          const saldo = totalMargem - totalCusto;
+          const roi = totalCusto > 0 ? (saldo / totalCusto) * 100 : 0;
+          return (
+            <div className="glass rounded-2xl p-5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Ano · acumulado</div>
+                  <div className="font-display font-semibold text-lg">Investimento vs Margem líquida</div>
+                </div>
+                <span className={cn(
+                  "text-xs px-2 py-1 rounded font-semibold",
+                  saldo >= 0 ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive",
+                )}>
+                  {saldo >= 0 ? "Fechando a conta" : "No prejuízo"} · ROI {roi.toFixed(0)}%
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <MiniKPI label="Faturamento" value={fmtBRL(totalFat)} />
+                <MiniKPI label="Margem líquida" value={fmtBRL(totalMargem)} />
+                <MiniKPI label="Investimento MKT" value={fmtBRL(totalCusto)} />
+                <MiniKPI label="Saldo" value={fmtBRL(saldo)} accent={saldo >= 0 ? "text-success" : "text-destructive"} />
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {cacByMonth.map((c) => {
@@ -184,7 +218,7 @@ function CacForm({ month, initial, onClose, onSave }: {
   month: number; initial?: CacInputs; onClose: () => void; onSave: (v: CacInputs) => void;
 }) {
   const [v, setV] = useState<CacInputs>(
-    initial ?? { trafego: 0, midia: 0, agencia: 0, funcionarios: 0, ferramentas: 0, outros: 0, novosClientes: 0 },
+    initial ?? { trafego: 0, midia: 0, agencia: 0, funcionarios: 0, ferramentas: 0, outros: 0, novosClientes: 0, faturamento: 0, margemLiquida: 0 },
   );
   const total = v.trafego + v.midia + v.agencia + v.funcionarios + v.ferramentas + v.outros;
   const cac = v.novosClientes > 0 ? total / v.novosClientes : null;
@@ -208,6 +242,8 @@ function CacForm({ month, initial, onClose, onSave }: {
             <NumberField label="Outros" v={v.outros} onChange={(n) => upd("outros", n)} />
             <div className="h-px bg-border my-2" />
             <NumberField label="Novos clientes no mês" v={v.novosClientes} onChange={(n) => upd("novosClientes", n)} isCount />
+            <NumberField label="Faturamento no mês" v={v.faturamento ?? 0} onChange={(n) => upd("faturamento", n)} />
+            <NumberField label="Margem líquida no mês" v={v.margemLiquida ?? 0} onChange={(n) => upd("margemLiquida", n)} />
             <div className="rounded-xl bg-surface-2 p-4 flex justify-between items-center">
               <div>
                 <div className="text-[11px] uppercase tracking-wider text-muted-foreground">CAC calculado</div>
