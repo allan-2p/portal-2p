@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { Instagram, Youtube, Users, Radio } from "lucide-react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listMarketingGoals, type MarketingGoalRow } from "@/lib/marketing-goals.functions";
+import { getMarketingSalesforceData } from "@/lib/salesforce.functions";
+import { classifyOrigem } from "@/lib/marketing-origem";
 import { AtlasSoonCard } from "./marketing.index";
 
 export const Route = createFileRoute("/_authenticated/marketing/social")({
@@ -15,6 +18,14 @@ const fmt = (n: number) => n.toLocaleString("pt-BR");
 
 function findGoal(records: MarketingGoalRow[] | undefined, key: string): MarketingGoalRow | undefined {
   return records?.find((r) => r.key === key);
+}
+
+function pad(n: number) { return String(n).padStart(2, "0"); }
+function ymd(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+function currentMonthRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  return { start: ymd(start), end: ymd(now) };
 }
 
 // Detalhes de outras redes (mock por hora — real preenchido manualmente quando
