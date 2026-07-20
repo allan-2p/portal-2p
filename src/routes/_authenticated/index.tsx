@@ -1732,7 +1732,7 @@ function RescheduleTaskDialog({
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useMemo(() => {
+  useEffect(() => {
     if (task) {
       const d = new Date(); d.setDate(d.getDate() + 1);
       setDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
