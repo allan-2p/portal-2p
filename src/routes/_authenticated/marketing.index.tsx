@@ -195,6 +195,63 @@ function DateFilter({
   );
 }
 
+type MktData = Awaited<ReturnType<typeof getMarketingSalesforceData>>;
+
+function PeriodCompareStrip({
+  current, previous, prevRange, loading,
+}: { current: MktData; previous: MktData | null; prevRange: { start: string; end: string }; loading: boolean }) {
+  const metrics: { key: keyof MktData["totals"]; label: string; money?: boolean }[] = [
+    { key: "leads", label: "Leads" },
+    { key: "convertidos", label: "Convertidos" },
+    { key: "amadurecimento", label: "Amadurecimento" },
+    { key: "novasContas", label: "Novas contas" },
+    { key: "faturado", label: "Faturado", money: true },
+  ];
+  return (
+    <div className="glass rounded-2xl p-4">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          Comparativo com período anterior
+        </div>
+        <div className="text-[11px] text-muted-foreground tabular-nums">
+          anterior: {prevRange.start} → {prevRange.end}
+          {loading ? <span className="ml-2 inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> carregando…</span> : null}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {metrics.map((m) => {
+          const cur = current.totals[m.key] as number;
+          const prv = previous ? (previous.totals[m.key] as number) : 0;
+          const delta = cur - prv;
+          const pct = prv > 0 ? (delta / prv) * 100 : cur > 0 ? 100 : 0;
+          const up = delta > 0;
+          const flat = delta === 0;
+          const good = up; // more is better for all these metrics
+          const color = flat ? "text-muted-foreground" : good ? "text-[oklch(0.7_0.16_145)]" : "text-destructive";
+          const Icon = flat ? TrendingUp : up ? ArrowUpRight : ArrowDownRight;
+          return (
+            <div key={m.key} className="bg-surface-2/50 border border-border rounded-xl p-3">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{m.label}</div>
+              <div className="font-display font-bold text-xl tabular-nums mt-0.5">
+                {m.money ? fmtBRL(cur) : fmt(cur)}
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <div className="text-[10px] text-muted-foreground tabular-nums">
+                  ant.: {m.money ? fmtBRL(prv) : fmt(prv)}
+                </div>
+                <div className={cn("text-[11px] font-semibold flex items-center gap-0.5 tabular-nums", color)}>
+                  <Icon className="h-3 w-3" />
+                  {flat ? "0%" : `${up ? "+" : ""}${pct.toFixed(1)}%`}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function MarketingDashboard({ data }: { data: Awaited<ReturnType<typeof getMarketingSalesforceData>> }) {
   const t = data.totals;
   const convRate = t.leads > 0 ? (t.convertidos / t.leads) * 100 : 0;
