@@ -218,7 +218,7 @@ function CacForm({ month, initial, onClose, onSave }: {
   month: number; initial?: CacInputs; onClose: () => void; onSave: (v: CacInputs) => void;
 }) {
   const [v, setV] = useState<CacInputs>(
-    initial ?? { trafego: 0, midia: 0, agencia: 0, funcionarios: 0, ferramentas: 0, outros: 0, novosClientes: 0 },
+    initial ?? { trafego: 0, midia: 0, agencia: 0, funcionarios: 0, ferramentas: 0, outros: 0, novosClientes: 0, faturamento: 0, margemLiquida: 0 },
   );
   const total = v.trafego + v.midia + v.agencia + v.funcionarios + v.ferramentas + v.outros;
   const cac = v.novosClientes > 0 ? total / v.novosClientes : null;
