@@ -242,6 +242,8 @@ function CacForm({ month, initial, onClose, onSave }: {
             <NumberField label="Outros" v={v.outros} onChange={(n) => upd("outros", n)} />
             <div className="h-px bg-border my-2" />
             <NumberField label="Novos clientes no mês" v={v.novosClientes} onChange={(n) => upd("novosClientes", n)} isCount />
+            <NumberField label="Faturamento no mês" v={v.faturamento ?? 0} onChange={(n) => upd("faturamento", n)} />
+            <NumberField label="Margem líquida no mês" v={v.margemLiquida ?? 0} onChange={(n) => upd("margemLiquida", n)} />
             <div className="rounded-xl bg-surface-2 p-4 flex justify-between items-center">
               <div>
                 <div className="text-[11px] uppercase tracking-wider text-muted-foreground">CAC calculado</div>
