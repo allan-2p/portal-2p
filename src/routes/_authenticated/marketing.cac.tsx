@@ -117,6 +117,38 @@ function CacPage() {
           })()} />
         </div>
 
+        {/* Investimento vs Margem Líquida — verificação de saúde */}
+        {(() => {
+          const filled = cacByMonth.filter((c) => c.filled);
+          const totalCusto = filled.reduce((a, c) => a + c.custo, 0);
+          const totalFat = filled.reduce((a, c) => a + c.faturamento, 0);
+          const totalMargem = filled.reduce((a, c) => a + c.margem, 0);
+          const saldo = totalMargem - totalCusto;
+          const roi = totalCusto > 0 ? (saldo / totalCusto) * 100 : 0;
+          return (
+            <div className="glass rounded-2xl p-5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Ano · acumulado</div>
+                  <div className="font-display font-semibold text-lg">Investimento vs Margem líquida</div>
+                </div>
+                <span className={cn(
+                  "text-xs px-2 py-1 rounded font-semibold",
+                  saldo >= 0 ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive",
+                )}>
+                  {saldo >= 0 ? "Fechando a conta" : "No prejuízo"} · ROI {roi.toFixed(0)}%
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <MiniKPI label="Faturamento" value={fmtBRL(totalFat)} />
+                <MiniKPI label="Margem líquida" value={fmtBRL(totalMargem)} />
+                <MiniKPI label="Investimento MKT" value={fmtBRL(totalCusto)} />
+                <MiniKPI label="Saldo" value={fmtBRL(saldo)} accent={saldo >= 0 ? "text-success" : "text-destructive"} />
+              </div>
+            </div>
+          );
+        })()}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {cacByMonth.map((c) => {
             const isPending = !c.filled && c.m <= CURRENT_MONTH_IDX;
