@@ -835,16 +835,25 @@ const VendasDestaque = ({ mes }: { mes: TvData["mes"] }) => {
 const GraficoSemanal = ({
   titulo,
   dot,
-  dados,
+  semanas,
+  semanaAtualIdx,
   diaAtual,
   delay,
 }: {
   titulo: string;
   dot: string;
-  dados: WeekDay[];
+  semanas: WeekDay[][];
+  semanaAtualIdx: number;
   diaAtual: string;
   delay: number;
 }) => {
+  const [idx, setIdx] = useState(semanaAtualIdx);
+  useEffect(() => { setIdx(semanaAtualIdx); }, [semanaAtualIdx]);
+  const safeIdx = Math.min(Math.max(0, idx), Math.max(0, semanas.length - 1));
+  const dados = semanas[safeIdx] ?? [];
+  const isCurrentWeek = safeIdx === semanaAtualIdx;
+  const canPrev = safeIdx > 0;
+  const canNext = safeIdx < semanas.length - 1;
   const totalProj = dados.reduce((s, d) => s + d.proj, 0);
   const totalReal = dados.reduce((s, d) => s + d.real, 0);
   const p = pct(totalReal, totalProj);
