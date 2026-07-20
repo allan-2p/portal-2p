@@ -70,9 +70,38 @@ function TrafegoPage() {
   const site = SITE[marketingUnit];
 
   const fetchGoals = useServerFn(listMarketingGoals);
+  const fetchSF = useServerFn(getMarketingSalesforceData);
+  const range = useMemo(() => currentMonthRange(), []);
   const gq = useQuery({ queryKey: ["marketing-goals"], queryFn: () => fetchGoals(), staleTime: 60_000 });
+  const sfQ = useQuery({
+    queryKey: ["marketing-sf", range.start, range.end],
+    queryFn: () => fetchSF({ data: range }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
   const mql = findGoal(gq.data?.records, "mql_pago_mes");
   const novos = findGoal(gq.data?.records, "novos_pago_mes");
+
+  // Real MQL Pago = leads qualificados (Convertido + Amadurecimento) com origem paga no mês.
+  const { mqlPagoReal, novosPagoReal } = useMemo(() => {
+    const d = sfQ.data;
+    if (!d) return { mqlPagoReal: null as number | null, novosPagoReal: null as number | null };
+    const totalLeads = d.totals.leads;
+    if (totalLeads === 0) return { mqlPagoReal: 0, novosPagoReal: 0 };
+    const paidShare = d.porOrigem
+      .filter((o) => classifyOrigem(o.label) === "paid")
+      .reduce((a, b) => a + b.value, 0);
+    const qualified = d.statusBreakdown
+      .filter((s) => s.label === "Convertido" || s.label === "Amadurecimento")
+      .reduce((a, b) => a + b.value, 0);
+    const mqlPagoReal = Math.round((paidShare / totalLeads) * qualified);
+    // Novos Pago = leads convertidos com origem paga
+    const novosPagoReal = d.convertidos.filter((c) => classifyOrigem(c.origem) === "paid").length;
+    return { mqlPagoReal, novosPagoReal };
+  }, [sfQ.data]);
+
+  const mqlDisplay = mqlPagoReal ?? mql?.real_value ?? 0;
+  const novosDisplay = novosPagoReal ?? novos?.real_value ?? 0;
 
   return (
     <AppLayout>
