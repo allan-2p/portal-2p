@@ -81,10 +81,10 @@ function CacPage() {
   const monthsInScope = useMemo(() => Array.from({ length: 12 }, (_, i) => i), []);
   const cacByMonth = monthsInScope.map((m) => {
     const s = store[key(marketingUnit, YEAR, m)];
-    if (!s || m > CURRENT_MONTH_IDX) return { m, filled: false, cac: null as number | null, custo: 0, novos: 0 };
+    if (!s || m > CURRENT_MONTH_IDX) return { m, filled: false, cac: null as number | null, custo: 0, novos: 0, faturamento: 0, margem: 0 };
     const custo = s.trafego + s.midia + s.agencia + s.funcionarios + s.ferramentas + s.outros;
     const cac = s.novosClientes > 0 ? custo / s.novosClientes : null;
-    return { m, filled: true, cac, custo, novos: s.novosClientes };
+    return { m, filled: true, cac, custo, novos: s.novosClientes, faturamento: s.faturamento ?? 0, margem: s.margemLiquida ?? 0 };
   });
 
   const pendentes = cacByMonth.filter((c) => !c.filled && c.m <= CURRENT_MONTH_IDX);
