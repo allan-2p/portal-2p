@@ -11,7 +11,7 @@ import {
   ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, Clock,
   TrendingUp, CheckCircle2, Calendar, Info, ChevronDown,
   FileText, CalendarClock, Gift, Lock, Users as UsersIcon, Loader2,
-  CalendarIcon, MessageSquare, Check, Plus, ArrowUpDown,
+  CalendarIcon, MessageSquare, Check, Plus, ArrowUpDown, CalendarPlus,
 } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
