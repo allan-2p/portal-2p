@@ -95,6 +95,36 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_goals: {
+        Row: {
+          goal: number
+          key: string
+          label: string
+          period: string
+          real_value: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          goal?: number
+          key: string
+          label: string
+          period?: string
+          real_value?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          goal?: number
+          key?: string
+          label?: string
+          period?: string
+          real_value?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean
