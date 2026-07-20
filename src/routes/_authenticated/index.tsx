@@ -1286,6 +1286,15 @@ function HomePage() {
         }}
       />
 
+      <RescheduleTaskDialog
+        task={rescheduleTask}
+        onClose={() => setRescheduleTask(null)}
+        onDone={() => {
+          setRescheduleTask(null);
+          queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
+        }}
+      />
+
     </AppLayout>
   );
 }
