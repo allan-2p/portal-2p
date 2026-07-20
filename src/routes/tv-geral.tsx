@@ -322,7 +322,7 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     const carregMeta = 1_800_000;
 
     const week = currentWeekDays(now);
-    const dayKeys = week.map((d) => fmtKey(d));
+    const currentWeekKey = fmtKey(week[0]);
 
     const soldByDay = new Map<string, number>();
     for (const r of vendidoMesQ.data?.records ?? []) {
@@ -338,20 +338,44 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
     const convRate = totalGen > 0 ? vendas / totalGen : 0;
     const dailyGoalGen = convRate > 0 ? dailyGoal / convRate : dailyGoal * 1.5;
 
-    const semanaVen: WeekDay[] = week.map((d, i) => {
-      const key = dayKeys[i];
-      const biz = isBusinessDay(d);
-      const projK = biz ? Math.round(dailyGoal / 1000) : 0;
-      const realK = Math.round((soldByDay.get(key) ?? 0) / 1000);
-      return { dia: DIA_LABEL[d.getDay()], proj: projK, real: realK };
-    });
-    const semanaOrc: WeekDay[] = week.map((d, i) => {
-      const key = dayKeys[i];
-      const biz = isBusinessDay(d);
-      const projK = biz ? Math.round(dailyGoalGen / 1000) : 0;
-      const realK = Math.round((genByDay.get(key) ?? 0) / 1000);
-      return { dia: DIA_LABEL[d.getDay()], proj: projK, real: realK };
-    });
+    // Todas as semanas úteis (seg-sex) do mês atual.
+    const weeksOfMonth: Date[][] = [];
+    {
+      const first = new Date(y, m, 1);
+      const dow = first.getDay(); // 0=Dom..6=Sáb
+      const diffToMonday = dow === 0 ? -6 : 1 - dow;
+      const cursor = new Date(first);
+      cursor.setDate(first.getDate() + diffToMonday);
+      while (true) {
+        const days: Date[] = [];
+        for (let i = 0; i < 5; i++) {
+          const d = new Date(cursor);
+          d.setDate(cursor.getDate() + i);
+          days.push(d);
+        }
+        // Inclui a semana se ao menos um dia útil pertence ao mês atual.
+        if (days.some((d) => d.getMonth() === m)) weeksOfMonth.push(days);
+        // Para quando ultrapassar o mês.
+        cursor.setDate(cursor.getDate() + 7);
+        if (cursor.getMonth() !== m && cursor > new Date(y, m + 1, 0)) break;
+      }
+    }
+
+    const buildWeek = (days: Date[], byDay: Map<string, number>, projK: number): WeekDay[] =>
+      days.map((d) => {
+        const key = fmtKey(d);
+        const inMonth = d.getMonth() === m;
+        const biz = isBusinessDay(d) && inMonth;
+        return {
+          dia: DIA_LABEL[d.getDay()],
+          proj: biz ? projK : 0,
+          real: inMonth ? Math.round((byDay.get(key) ?? 0) / 1000) : 0,
+        };
+      });
+
+    const semanaVenWeeks = weeksOfMonth.map((days) => buildWeek(days, soldByDay, Math.round(dailyGoal / 1000)));
+    const semanaOrcWeeks = weeksOfMonth.map((days) => buildWeek(days, genByDay, Math.round(dailyGoalGen / 1000)));
+    const semanaAtualIdx = Math.max(0, weeksOfMonth.findIndex((days) => fmtKey(days[0]) === currentWeekKey));
 
     const diaAtual = DIA_LABEL[now.getDay()];
 
