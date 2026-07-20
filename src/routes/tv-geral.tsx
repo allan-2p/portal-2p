@@ -1300,14 +1300,16 @@ export function Dashboard2P({
             <GraficoSemanal
               titulo="Geração de orçamentos · semana"
               dot={T.orange}
-              dados={data.semanaOrc}
+              semanas={data.semanaOrcWeeks}
+              semanaAtualIdx={data.semanaAtualIdx}
               diaAtual={data.diaAtual}
               delay={0.15}
             />
             <GraficoSemanal
               titulo="Vendas · semana"
               dot={T.blue}
-              dados={data.semanaVen}
+              semanas={data.semanaVenWeeks}
+              semanaAtualIdx={data.semanaAtualIdx}
               diaAtual={data.diaAtual}
               delay={0.2}
             />
