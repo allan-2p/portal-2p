@@ -1017,6 +1017,8 @@ const GraficoSemanal = ({
             </div>
           );
         })}
+        </div>
+        {arrowBtn("next", canNext, () => setIdx((i) => Math.min(semanas.length - 1, i + 1)))}
       </div>
     </Card>
   );
