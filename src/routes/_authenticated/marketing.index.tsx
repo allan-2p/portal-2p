@@ -107,7 +107,10 @@ function MarketingHome() {
             Erro ao carregar Salesforce: {q.error instanceof Error ? q.error.message : "desconhecido"}
           </div>
         ) : q.data ? (
-          <MarketingDashboard data={q.data} />
+          <>
+            <PeriodCompareStrip current={q.data} previous={qPrev.data ?? null} prevRange={prev} loading={qPrev.isLoading} />
+            <MarketingDashboard data={q.data} />
+          </>
         ) : null}
 
         <AtlasSoonCard />
