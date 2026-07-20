@@ -413,8 +413,9 @@ function useTvData(): { data: TvData; loading: boolean; isFetching: boolean; las
         carreg: { meta: carregMeta, real: sumTotal(carregTriQ.data?.records ?? []) },
         paceEsperado: paceTri,
       },
-      semanaOrc,
-      semanaVen,
+      semanaOrcWeeks,
+      semanaVenWeeks,
+      semanaAtualIdx,
       diaAtual,
       kpis: {
         clientesNovos: {
