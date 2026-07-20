@@ -1823,7 +1823,7 @@ export const getPreVendasFunilData = createServerFn({ method: "GET" })
       } catch { return []; }
     }
 
-    const [byStatus, mPerdaOpp, mNaoConv] = await Promise.all([
+    const [byStatus, mPerdaOpp, mNaoConv, convertedRes] = await Promise.all([
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Status FROM Lead ` +
         `WHERE ${ownerWhere} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
@@ -1841,6 +1841,12 @@ export const getPreVendasFunilData = createServerFn({ method: "GET" })
         `AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY Motivo_da_N_o_Convers_o__c ORDER BY COUNT(Id) DESC LIMIT 20`,
       ),
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT Id, ConvertedAccountId, Owner.Name FROM Lead ` +
+        `WHERE ${ownerWhere} AND IsConverted = true ` +
+        `AND ConvertedDate >= ${data.start} AND ConvertedDate <= ${data.end} ` +
+        `LIMIT 1000`,
+      )}`),
     ]);
 
     let novos = 0, amadurecimento = 0, convertidos = 0, naoConvertidos = 0, total = 0;
@@ -1854,11 +1860,68 @@ export const getPreVendasFunilData = createServerFn({ method: "GET" })
       else if (s === "Não Convertido") naoConvertidos += t;
     }
 
+    // Faturamento por owner: soma Opportunity Total__c (Pedido Concluído no período) por conta,
+    // depois agrega pelos owners dos leads convertidos.
+    const convertedRecords: any[] = convertedRes?.records ?? [];
+    const accountToOwner = new Map<string, string>();
+    const ownerAccounts = new Map<string, Set<string>>();
+    const ownerLeadCount = new Map<string, number>();
+    for (const r of convertedRecords) {
+      const owner = r.Owner?.Name ?? "Sem owner";
+      ownerLeadCount.set(owner, (ownerLeadCount.get(owner) ?? 0) + 1);
+      const acc = r.ConvertedAccountId;
+      if (validId(acc)) {
+        accountToOwner.set(acc, owner);
+        if (!ownerAccounts.has(owner)) ownerAccounts.set(owner, new Set());
+        ownerAccounts.get(owner)!.add(acc);
+      }
+    }
+
+    const accountValueById = new Map<string, number>();
+    const accountIds = Array.from(accountToOwner.keys());
+    for (let i = 0; i < accountIds.length; i += 100) {
+      const chunk = accountIds.slice(i, i + 100);
+      const inList = chunk.map((id) => `'${id}'`).join(",");
+      const aggRes = await sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT AccountId, SUM(Total__c) sumT, SUM(Amount) sumA ` +
+        `FROM Opportunity ` +
+        `WHERE AccountId IN (${inList}) AND StageName = 'Pedido Concluído' ` +
+        `AND (Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação') ` +
+        `AND CloseDate >= ${data.start} AND CloseDate <= ${data.end} ` +
+        `GROUP BY AccountId`,
+      )}`);
+      for (const r of (aggRes?.records ?? [])) {
+        const v = typeof r.sumT === "number" ? r.sumT : typeof r.sumA === "number" ? r.sumA : 0;
+        accountValueById.set(r.AccountId, v);
+      }
+    }
+
+    const ownerFaturado = new Map<string, number>();
+    for (const [acc, owner] of accountToOwner.entries()) {
+      ownerFaturado.set(owner, (ownerFaturado.get(owner) ?? 0) + (accountValueById.get(acc) ?? 0));
+    }
+    // Garante que todos os owners com leads convertidos apareçam mesmo sem faturamento.
+    for (const owner of ownerLeadCount.keys()) {
+      if (!ownerFaturado.has(owner)) ownerFaturado.set(owner, 0);
+    }
+
+    const faturamentoPorOwner = Array.from(ownerFaturado.entries())
+      .map(([owner, faturado]) => ({
+        owner,
+        leadsConvertidos: ownerLeadCount.get(owner) ?? 0,
+        contas: ownerAccounts.get(owner)?.size ?? 0,
+        faturado,
+      }))
+      .sort((a, b) => b.faturado - a.faturado);
+    const faturamentoTotal = Array.from(accountValueById.values()).reduce((a, b) => a + b, 0);
+
     const result: PreVendasFunilData = {
       range: { start: data.start, end: data.end },
       leads: { novos, amadurecimento, convertidos, naoConvertidos, total },
       motivosPerdaOpp: mPerdaOpp,
       motivosNaoConvertido: mNaoConv,
+      faturamentoPorOwner,
+      faturamentoTotal,
     };
     return result;
   });
