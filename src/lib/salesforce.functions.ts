@@ -1016,6 +1016,9 @@ export const MARKETING_OWNER_IDS = [
   "005U400000C9Gg9IAF", // Marketing 2P
 ] as const;
 
+// Filtro adicional por nome (para membros ainda sem SF User ID configurado).
+export const MARKETING_OWNER_NAMES_EXTRA = ["Gabriel Sargiani"] as const;
+
 export const MARKETING_OWNER_NAMES: Record<string, string> = {
   "005Dn000005whg0IAA": "Fernando Lira",
   "005U400000HmVKfIAN": "Gabriel Kendi",
@@ -1023,6 +1026,12 @@ export const MARKETING_OWNER_NAMES: Record<string, string> = {
   "005U400000IClATIA1": "Ygor Andreis",
   "005U400000C9Gg9IAF": "Marketing 2P",
 };
+
+// Nomes de todos os owners (para exibição e filtros SOQL por nome).
+export const MARKETING_OWNER_ALL_NAMES: string[] = [
+  ...Object.values(MARKETING_OWNER_NAMES),
+  ...MARKETING_OWNER_NAMES_EXTRA,
+];
 
 export type MarketingBucket = { label: string; value: number };
 export type MarketingConvertedLead = {
