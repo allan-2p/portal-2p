@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { Instagram, Youtube, Users, Radio } from "lucide-react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listMarketingGoals, type MarketingGoalRow } from "@/lib/marketing-goals.functions";
+import { getMarketingSalesforceData } from "@/lib/salesforce.functions";
+import { classifyOrigem } from "@/lib/marketing-origem";
 import { AtlasSoonCard } from "./marketing.index";
 
 export const Route = createFileRoute("/_authenticated/marketing/social")({
@@ -17,6 +20,14 @@ function findGoal(records: MarketingGoalRow[] | undefined, key: string): Marketi
   return records?.find((r) => r.key === key);
 }
 
+function pad(n: number) { return String(n).padStart(2, "0"); }
+function ymd(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+function currentMonthRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  return { start: ymd(start), end: ymd(now) };
+}
+
 // Detalhes de outras redes (mock por hora — real preenchido manualmente quando
 // a integração Meta/Google chegar).
 const OUTRAS_REDES = [
@@ -26,10 +37,18 @@ const OUTRAS_REDES = [
 
 function SocialPage() {
   const fetchGoals = useServerFn(listMarketingGoals);
+  const fetchSF = useServerFn(getMarketingSalesforceData);
+  const range = useMemo(() => currentMonthRange(), []);
   const q = useQuery({
     queryKey: ["marketing-goals"],
     queryFn: () => fetchGoals(),
     staleTime: 60_000,
+  });
+  const sfQ = useQuery({
+    queryKey: ["marketing-sf", range.start, range.end],
+    queryFn: () => fetchSF({ data: range }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
   const recs = q.data?.records;
 
@@ -37,6 +56,29 @@ function SocialPage() {
   const igSolar = findGoal(recs, "ig_solar_tri");
   const igCarreg = findGoal(recs, "ig_carregadores_tri");
   const igStation = findGoal(recs, "ig_station_tri");
+
+  // MQL orgânico real: leads qualificados (Convertido + Amadurecimento) com origem orgânica no mês.
+  const mqlOrganicoReal = useMemo(() => {
+    const d = sfQ.data;
+    if (!d) return null;
+    const qualifiedStatuses = new Set(["Convertido", "Amadurecimento"]);
+    // Usa a lista de convertidos para pegar origem; para amadurecimento não temos lista
+    // detalhada, então aproximamos via porOrigem filtrada por status all + fração.
+    // Melhor aproximação: soma buckets porOrigem cuja origem seja orgânica, escalado
+    // pela proporção qualified/total de leads.
+    const totalLeads = d.totals.leads;
+    const qualifiedLeads = d.statusBreakdown
+      .filter((s) => qualifiedStatuses.has(s.label))
+      .reduce((a, b) => a + b.value, 0);
+    if (totalLeads === 0) return 0;
+    const organicShare = d.porOrigem
+      .filter((o) => classifyOrigem(o.label) === "organic")
+      .reduce((a, b) => a + b.value, 0);
+    // fração orgânica * qualificados
+    return Math.round((organicShare / totalLeads) * qualifiedLeads);
+  }, [sfQ.data]);
+
+  const displayReal = mqlOrganicoReal ?? leadsOrg?.real_value ?? 0;
 
   return (
     <AppLayout>
@@ -53,8 +95,8 @@ function SocialPage() {
         <div className="grid lg:grid-cols-2 gap-4">
           <BigGoal
             label={leadsOrg?.label ?? "Leads qualificados (Orgânico)"}
-            period="Mês"
-            real={leadsOrg?.real_value ?? 0}
+            period={sfQ.isLoading ? "Mês · carregando…" : "Mês · Salesforce"}
+            real={displayReal}
             meta={leadsOrg?.goal ?? 150}
             accent="oklch(0.7 0.16 145)"
             icon={Users}

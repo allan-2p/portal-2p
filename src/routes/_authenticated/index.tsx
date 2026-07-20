@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { ViewSlot } from "@/components/view-slot";
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 // Lazy-load recharts (~90KB gz) so it doesn't block the home dashboard's initial paint.
 const HomeAreaChart = lazy(() => import("@/components/home-area-chart"));
@@ -11,7 +11,7 @@ import {
   ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, Clock,
   TrendingUp, CheckCircle2, Calendar, Info, ChevronDown,
   FileText, CalendarClock, Gift, Lock, Users as UsersIcon, Loader2,
-  CalendarIcon, MessageSquare, Check, Plus, ArrowUpDown,
+  CalendarIcon, MessageSquare, Check, Plus, ArrowUpDown, CalendarPlus,
 } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
@@ -41,6 +41,7 @@ import {
   completeSalesforceTask,
   createSalesforceTask,
   logSalesforceInteraction,
+  rescheduleSalesforceTask,
   opportunityStages,
   type OpportunityStage,
   type SalesforceOpportunity,
@@ -191,6 +192,7 @@ function HomePage() {
   };
   const [interactionTask, setInteractionTask] = useState<SalesforceTask | null>(null);
   const [completeTask, setCompleteTask] = useState<SalesforceTask | null>(null);
+  const [rescheduleTask, setRescheduleTask] = useState<SalesforceTask | null>(null);
 
 
 
@@ -993,6 +995,13 @@ function HomePage() {
                           {inter ? "Nova interação" : "Interação"}
                         </button>
                         <button
+                          onClick={() => setRescheduleTask(t)}
+                          title="Adiar tarefa (mudar data)"
+                          className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-warning/15 hover:text-[color:var(--warning)] text-muted-foreground flex items-center gap-1"
+                        >
+                          <CalendarPlus className="h-3 w-3" /> Adiar
+                        </button>
+                        <button
                           onClick={() => setCompleteTask(t)}
                           className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-success/15 hover:text-success text-muted-foreground flex items-center gap-1"
                         >
@@ -1273,6 +1282,15 @@ function HomePage() {
         onDone={() => {
           if (completeTask) setTaskInteraction(completeTask.id, null);
           setCompleteTask(null);
+          queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
+        }}
+      />
+
+      <RescheduleTaskDialog
+        task={rescheduleTask}
+        onClose={() => setRescheduleTask(null)}
+        onDone={() => {
+          setRescheduleTask(null);
           queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
         }}
       />
@@ -1700,5 +1718,92 @@ function ChartCard({ title, series, valueKey, valueColor, valueLabel }: {
         </Suspense>
       </div>
     </div>
+  );
+}
+
+function RescheduleTaskDialog({
+  task, onClose, onDone,
+}: { task: SalesforceTask | null; onClose: () => void; onDone: () => void }) {
+  const rescheduleFn = useServerFn(rescheduleSalesforceTask);
+  const [date, setDate] = useState<string>(() => {
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (task) {
+      const d = new Date(); d.setDate(d.getDate() + 1);
+      setDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+      setReason("");
+    }
+  }, [task?.id]);
+
+  const REASONS = [
+    "Cliente pediu para retornar depois",
+    "Sem contato — tentar novamente",
+    "Aguardando material/proposta",
+    "Cliente em viagem/férias",
+    "Reagendado a pedido do cliente",
+    "Outro",
+  ];
+
+  const submit = async () => {
+    if (!task) return;
+    if (!date) { toast.error("Selecione a nova data."); return; }
+    setSaving(true);
+    try {
+      await rescheduleFn({ data: { taskId: task.id, newDate: date, reason: reason || null } });
+      toast.success("Tarefa adiada no Salesforce.");
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao adiar tarefa.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const todayStr = todayKey();
+
+  return (
+    <Dialog open={!!task} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarPlus className="h-4 w-4 text-[color:var(--warning)]" /> Adiar tarefa
+          </DialogTitle>
+          <DialogDescription>
+            {task?.subject} — {task?.what ?? task?.who ?? "—"}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="mb-1.5 block">Nova data</Label>
+            <Input type="date" min={todayStr} value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block">Motivo (opcional)</Label>
+            <Select value={reason} onValueChange={setReason}>
+              <SelectTrigger><SelectValue placeholder="Selecione um motivo…" /></SelectTrigger>
+              <SelectContent>
+                {REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-1.5 block">Observação (opcional)</Label>
+            <Textarea rows={3} placeholder="Detalhes adicionais…" onChange={(e) => setReason((prev) => prev && !e.target.value ? prev : (prev && e.target.value ? `${prev} — ${e.target.value}` : e.target.value))} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button onClick={submit} disabled={saving || !date}>
+            {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+            Adiar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

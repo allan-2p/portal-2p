@@ -1,13 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { Filter, Facebook, Search, Globe, Users, Target as TargetIcon } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
 import { listMarketingGoals, type MarketingGoalRow } from "@/lib/marketing-goals.functions";
+import { getMarketingSalesforceData } from "@/lib/salesforce.functions";
+import { classifyOrigem } from "@/lib/marketing-origem";
 import { AtlasSoonCard } from "./marketing.index";
 import { useMarketingUnit } from "@/components/instance-provider";
+
+function pad(n: number) { return String(n).padStart(2, "0"); }
+function ymd(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+function currentMonthRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  return { start: ymd(start), end: ymd(now) };
+}
 
 export const Route = createFileRoute("/_authenticated/marketing/trafego")({
   head: () => ({ meta: [{ title: "Tráfego Pago — Marketing — Portal 2P" }] }),
@@ -60,9 +70,38 @@ function TrafegoPage() {
   const site = SITE[marketingUnit];
 
   const fetchGoals = useServerFn(listMarketingGoals);
+  const fetchSF = useServerFn(getMarketingSalesforceData);
+  const range = useMemo(() => currentMonthRange(), []);
   const gq = useQuery({ queryKey: ["marketing-goals"], queryFn: () => fetchGoals(), staleTime: 60_000 });
+  const sfQ = useQuery({
+    queryKey: ["marketing-sf", range.start, range.end],
+    queryFn: () => fetchSF({ data: range }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
   const mql = findGoal(gq.data?.records, "mql_pago_mes");
   const novos = findGoal(gq.data?.records, "novos_pago_mes");
+
+  // Real MQL Pago = leads qualificados (Convertido + Amadurecimento) com origem paga no mês.
+  const { mqlPagoReal, novosPagoReal } = useMemo(() => {
+    const d = sfQ.data;
+    if (!d) return { mqlPagoReal: null as number | null, novosPagoReal: null as number | null };
+    const totalLeads = d.totals.leads;
+    if (totalLeads === 0) return { mqlPagoReal: 0, novosPagoReal: 0 };
+    const paidShare = d.porOrigem
+      .filter((o) => classifyOrigem(o.label) === "paid")
+      .reduce((a, b) => a + b.value, 0);
+    const qualified = d.statusBreakdown
+      .filter((s) => s.label === "Convertido" || s.label === "Amadurecimento")
+      .reduce((a, b) => a + b.value, 0);
+    const mqlPagoReal = Math.round((paidShare / totalLeads) * qualified);
+    // Novos Pago = leads convertidos com origem paga
+    const novosPagoReal = d.convertidos.filter((c) => classifyOrigem(c.origem) === "paid").length;
+    return { mqlPagoReal, novosPagoReal };
+  }, [sfQ.data]);
+
+  const mqlDisplay = mqlPagoReal ?? mql?.real_value ?? 0;
+  const novosDisplay = novosPagoReal ?? novos?.real_value ?? 0;
 
   return (
     <AppLayout>
@@ -93,8 +132,8 @@ function TrafegoPage() {
 
         {/* Metas em destaque */}
         <div className="grid md:grid-cols-2 gap-4">
-          <BigGoal label={mql?.label ?? "MQL (Tráfego Pago)"} real={mql?.real_value ?? 0} meta={mql?.goal ?? 250} icon={TargetIcon} accent="oklch(0.6 0.18 240)" />
-          <BigGoal label={novos?.label ?? "Novos (Tráfego Pago)"} real={novos?.real_value ?? 0} meta={novos?.goal ?? 30} icon={Users} accent="oklch(0.7 0.16 145)" />
+          <BigGoal label={mql?.label ?? "MQL (Tráfego Pago)"} real={mqlDisplay} meta={mql?.goal ?? 250} icon={TargetIcon} accent="oklch(0.6 0.18 240)" loading={sfQ.isLoading} />
+          <BigGoal label={novos?.label ?? "Novos (Tráfego Pago)"} real={novosDisplay} meta={novos?.goal ?? 30} icon={Users} accent="oklch(0.7 0.16 145)" loading={sfQ.isLoading} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -196,13 +235,13 @@ function MiniKPI({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BigGoal({ label, real, meta, icon: Icon, accent }: { label: string; real: number; meta: number; icon: typeof Users; accent: string }) {
+function BigGoal({ label, real, meta, icon: Icon, accent, loading }: { label: string; real: number; meta: number; icon: typeof Users; accent: string; loading?: boolean }) {
   const pct = meta > 0 ? (real / meta) * 100 : 0;
   return (
     <div className="glass rounded-2xl p-5">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Mês</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{loading ? "Mês · carregando…" : "Mês · Salesforce"}</div>
           <div className="font-display font-semibold text-lg mt-0.5">{label}</div>
         </div>
         <Icon className="h-5 w-5" style={{ color: accent }} />
