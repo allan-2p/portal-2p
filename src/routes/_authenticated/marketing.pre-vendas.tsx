@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/marketing/pre-vendas")({
   head: () => ({
     meta: [
-      { title: "Home Pré-Vendas — Portal 2P" },
+      { title: "Pré-Vendas — Portal 2P" },
       { name: "description", content: "Painel do Gerente de Pré-Vendas: funil, saúde comercial, tarefas, motivos de perda e alertas." },
     ],
   }),
