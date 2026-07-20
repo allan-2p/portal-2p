@@ -1789,6 +1789,8 @@ export type PreVendasFunilData = {
   leads: { novos: number; amadurecimento: number; convertidos: number; naoConvertidos: number; total: number };
   motivosPerdaOpp: MarketingBucket[];
   motivosNaoConvertido: MarketingBucket[];
+  faturamentoPorOwner: { owner: string; leadsConvertidos: number; contas: number; faturado: number }[];
+  faturamentoTotal: number;
 };
 
 export const getPreVendasFunilData = createServerFn({ method: "GET" })
