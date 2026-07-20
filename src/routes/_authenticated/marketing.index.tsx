@@ -40,6 +40,15 @@ function computeRange(preset: Preset): { start: string; end: string } {
   return { start: ymd(start), end };
 }
 
+function previousRange(range: { start: string; end: string }): { start: string; end: string } {
+  const s = new Date(range.start + "T00:00:00");
+  const e = new Date(range.end + "T00:00:00");
+  const days = Math.round((e.getTime() - s.getTime()) / 86_400_000) + 1;
+  const prevEnd = new Date(s); prevEnd.setDate(s.getDate() - 1);
+  const prevStart = new Date(prevEnd); prevStart.setDate(prevEnd.getDate() - (days - 1));
+  return { start: ymd(prevStart), end: ymd(prevEnd) };
+}
+
 function MarketingHome() {
   const [preset, setPreset] = useState<Preset>("30d");
   const [customStart, setCustomStart] = useState(() => computeRange("30d").start);
@@ -47,11 +56,18 @@ function MarketingHome() {
   const range = preset === "custom"
     ? { start: customStart, end: customEnd }
     : computeRange(preset);
+  const prev = useMemo(() => previousRange(range), [range.start, range.end]);
 
   const fetchData = useServerFn(getMarketingSalesforceData);
   const q = useQuery({
     queryKey: ["marketing-sf", range.start, range.end],
     queryFn: () => fetchData({ data: range }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const qPrev = useQuery({
+    queryKey: ["marketing-sf", prev.start, prev.end],
+    queryFn: () => fetchData({ data: prev }),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
