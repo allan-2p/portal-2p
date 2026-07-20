@@ -29,6 +29,7 @@ import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedMarketingTrafegoRouteImport } from './routes/_authenticated/marketing.trafego'
 import { Route as AuthenticatedMarketingSocialRouteImport } from './routes/_authenticated/marketing.social'
 import { Route as AuthenticatedMarketingPreVendasRouteImport } from './routes/_authenticated/marketing.pre-vendas'
+import { Route as AuthenticatedMarketingMetasRouteImport } from './routes/_authenticated/marketing.metas'
 import { Route as AuthenticatedMarketingGargaloRouteImport } from './routes/_authenticated/marketing.gargalo'
 import { Route as AuthenticatedMarketingCohortRouteImport } from './routes/_authenticated/marketing.cohort'
 import { Route as AuthenticatedMarketingCacRouteImport } from './routes/_authenticated/marketing.cac'
@@ -147,6 +148,12 @@ const AuthenticatedMarketingPreVendasRoute =
     path: '/pre-vendas',
     getParentRoute: () => AuthenticatedMarketingRoute,
   } as any)
+const AuthenticatedMarketingMetasRoute =
+  AuthenticatedMarketingMetasRouteImport.update({
+    id: '/metas',
+    path: '/metas',
+    getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
 const AuthenticatedMarketingGargaloRoute =
   AuthenticatedMarketingGargaloRouteImport.update({
     id: '/gargalo',
@@ -254,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
+  '/marketing/metas': typeof AuthenticatedMarketingMetasRoute
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
@@ -287,6 +295,7 @@ export interface FileRoutesByTo {
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
+  '/marketing/metas': typeof AuthenticatedMarketingMetasRoute
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
@@ -323,6 +332,7 @@ export interface FileRoutesById {
   '/_authenticated/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/_authenticated/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/_authenticated/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
+  '/_authenticated/marketing/metas': typeof AuthenticatedMarketingMetasRoute
   '/_authenticated/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/_authenticated/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
@@ -359,6 +369,7 @@ export interface FileRouteTypes {
     | '/marketing/cac'
     | '/marketing/cohort'
     | '/marketing/gargalo'
+    | '/marketing/metas'
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
@@ -392,6 +403,7 @@ export interface FileRouteTypes {
     | '/marketing/cac'
     | '/marketing/cohort'
     | '/marketing/gargalo'
+    | '/marketing/metas'
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
@@ -427,6 +439,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing/cac'
     | '/_authenticated/marketing/cohort'
     | '/_authenticated/marketing/gargalo'
+    | '/_authenticated/marketing/metas'
     | '/_authenticated/marketing/pre-vendas'
     | '/_authenticated/marketing/social'
     | '/_authenticated/marketing/trafego'
@@ -582,6 +595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMarketingPreVendasRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
     }
+    '/_authenticated/marketing/metas': {
+      id: '/_authenticated/marketing/metas'
+      path: '/metas'
+      fullPath: '/marketing/metas'
+      preLoaderRoute: typeof AuthenticatedMarketingMetasRouteImport
+      parentRoute: typeof AuthenticatedMarketingRoute
+    }
     '/_authenticated/marketing/gargalo': {
       id: '/_authenticated/marketing/gargalo'
       path: '/gargalo'
@@ -713,6 +733,7 @@ interface AuthenticatedMarketingRouteChildren {
   AuthenticatedMarketingCacRoute: typeof AuthenticatedMarketingCacRoute
   AuthenticatedMarketingCohortRoute: typeof AuthenticatedMarketingCohortRoute
   AuthenticatedMarketingGargaloRoute: typeof AuthenticatedMarketingGargaloRoute
+  AuthenticatedMarketingMetasRoute: typeof AuthenticatedMarketingMetasRoute
   AuthenticatedMarketingPreVendasRoute: typeof AuthenticatedMarketingPreVendasRoute
   AuthenticatedMarketingSocialRoute: typeof AuthenticatedMarketingSocialRoute
   AuthenticatedMarketingTrafegoRoute: typeof AuthenticatedMarketingTrafegoRoute
@@ -724,6 +745,7 @@ const AuthenticatedMarketingRouteChildren: AuthenticatedMarketingRouteChildren =
     AuthenticatedMarketingCacRoute: AuthenticatedMarketingCacRoute,
     AuthenticatedMarketingCohortRoute: AuthenticatedMarketingCohortRoute,
     AuthenticatedMarketingGargaloRoute: AuthenticatedMarketingGargaloRoute,
+    AuthenticatedMarketingMetasRoute: AuthenticatedMarketingMetasRoute,
     AuthenticatedMarketingPreVendasRoute: AuthenticatedMarketingPreVendasRoute,
     AuthenticatedMarketingSocialRoute: AuthenticatedMarketingSocialRoute,
     AuthenticatedMarketingTrafegoRoute: AuthenticatedMarketingTrafegoRoute,
