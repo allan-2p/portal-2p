@@ -234,6 +234,9 @@ function FunilDashboard({ data }: { data: Awaited<ReturnType<typeof getPreVendas
         </table>
       </div>
 
+      {/* Faturamento por owner (dados reais Salesforce) */}
+      <FaturamentoOwnerCard data={data.faturamentoPorOwner} total={data.faturamentoTotal} />
+
       {/* Motivos de perda */}
       <div className="grid lg:grid-cols-2 gap-4">
         <MotivosCard
@@ -250,6 +253,62 @@ function FunilDashboard({ data }: { data: Awaited<ReturnType<typeof getPreVendas
         />
       </div>
     </>
+  );
+}
+
+function FaturamentoOwnerCard({
+  data, total,
+}: { data: { owner: string; leadsConvertidos: number; contas: number; faturado: number }[]; total: number }) {
+  const max = data.reduce((m, d) => Math.max(m, d.faturado), 0);
+  return (
+    <div className="glass rounded-2xl overflow-hidden">
+      <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+        <div>
+          <h2 className="font-display font-semibold flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-primary" /> Faturamento por Owner
+          </h2>
+          <div className="text-[11px] text-muted-foreground mt-0.5">
+            Total faturado nas contas convertidas pelos owners no período
+          </div>
+        </div>
+        <span className="text-[11px] text-muted-foreground tabular-nums">Total: {fmtBRL(total)}</span>
+      </div>
+      {data.length === 0 ? (
+        <div className="p-6 text-sm text-muted-foreground text-center">Sem conversões no período.</div>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
+              <th className="text-left px-5 py-2.5">Owner</th>
+              <th className="text-right px-5 py-2.5">Leads Convertidos</th>
+              <th className="text-right px-5 py-2.5">Contas</th>
+              <th className="text-right px-5 py-2.5">Faturado</th>
+              <th className="text-left px-5 py-2.5 w-[35%]">Distribuição</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((r) => {
+              const w = max > 0 ? (r.faturado / max) * 100 : 0;
+              return (
+                <tr key={r.owner} className="border-b border-border/40 last:border-0 hover:bg-surface-2/50">
+                  <td className="px-5 py-3 font-medium">{r.owner}</td>
+                  <td className="px-5 py-3 text-right tabular-nums">{fmt(r.leadsConvertidos)}</td>
+                  <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">{fmt(r.contas)}</td>
+                  <td className="px-5 py-3 text-right tabular-nums font-semibold" style={{ color: "oklch(0.68 0.2 47)" }}>
+                    {fmtBRL(r.faturado)}
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${w}%`, background: "oklch(0.68 0.2 47)" }} />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 }
 
