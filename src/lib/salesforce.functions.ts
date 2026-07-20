@@ -1074,46 +1074,46 @@ export const getMarketingSalesforceData = createServerFn({ method: "GET" })
     const ownerList = MARKETING_OWNER_IDS.map((id) => `'${id}'`).join(",");
     const extraNames = MARKETING_OWNER_NAMES_EXTRA.map((n) => `'${esc(n)}'`).join(",");
     const ownerClause = extraNames
-      ? `(OwnerId IN (${ownerList}) OR Owner.Name IN (${extraNames}))`
-      : `OwnerId IN (${ownerList})`;
+      ? `(${ownerClause} OR Owner.Name IN (${extraNames}))`
+      : `${ownerClause}`;
     const startDT = `${data.start}T00:00:00Z`;
     const endDT = `${data.end}T23:59:59Z`;
 
     const [byStatus, byOrigem, bySub, byOwner, daily, dailyConv, convertedRes] = await Promise.all([
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Status FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY Status`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Origem__c FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY Origem__c ORDER BY COUNT(Id) DESC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Sub_Origem__c FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY Sub_Origem__c ORDER BY COUNT(Id) DESC LIMIT 20`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, Owner.Name ownerName FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY Owner.Name ORDER BY COUNT(Id) DESC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) ASC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT COUNT(Id) total, DAY_ONLY(CreatedDate) dia FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND IsConverted = true AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `WHERE ${ownerClause} AND IsConverted = true AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
         `GROUP BY DAY_ONLY(CreatedDate) ORDER BY DAY_ONLY(CreatedDate) ASC`,
       )}`),
       sfFetch(`/query?q=${encodeURIComponent(
         `SELECT Id, Name, ConvertedDate, ConvertedAccountId, Origem__c, Sub_Origem__c, Owner.Name ` +
         `FROM Lead ` +
-        `WHERE OwnerId IN (${ownerList}) AND IsConverted = true ` +
+        `WHERE ${ownerClause} AND IsConverted = true ` +
         `AND ConvertedDate >= ${data.start} AND ConvertedDate <= ${data.end} ` +
         `ORDER BY ConvertedDate DESC LIMIT 500`,
       )}`),
