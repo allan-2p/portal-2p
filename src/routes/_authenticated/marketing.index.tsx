@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { Megaphone, Users, Target, TrendingUp, Clock, Loader2, Calendar } from "lucide-react";
+import { Megaphone, Users, Target, TrendingUp, TrendingDown, Clock, Loader2, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -40,6 +40,15 @@ function computeRange(preset: Preset): { start: string; end: string } {
   return { start: ymd(start), end };
 }
 
+function previousRange(range: { start: string; end: string }): { start: string; end: string } {
+  const s = new Date(range.start + "T00:00:00");
+  const e = new Date(range.end + "T00:00:00");
+  const days = Math.round((e.getTime() - s.getTime()) / 86_400_000) + 1;
+  const prevEnd = new Date(s); prevEnd.setDate(s.getDate() - 1);
+  const prevStart = new Date(prevEnd); prevStart.setDate(prevEnd.getDate() - (days - 1));
+  return { start: ymd(prevStart), end: ymd(prevEnd) };
+}
+
 function MarketingHome() {
   const [preset, setPreset] = useState<Preset>("30d");
   const [customStart, setCustomStart] = useState(() => computeRange("30d").start);
@@ -47,11 +56,18 @@ function MarketingHome() {
   const range = preset === "custom"
     ? { start: customStart, end: customEnd }
     : computeRange(preset);
+  const prev = useMemo(() => previousRange(range), [range.start, range.end]);
 
   const fetchData = useServerFn(getMarketingSalesforceData);
   const q = useQuery({
     queryKey: ["marketing-sf", range.start, range.end],
     queryFn: () => fetchData({ data: range }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const qPrev = useQuery({
+    queryKey: ["marketing-sf", prev.start, prev.end],
+    queryFn: () => fetchData({ data: prev }),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -91,7 +107,10 @@ function MarketingHome() {
             Erro ao carregar Salesforce: {q.error instanceof Error ? q.error.message : "desconhecido"}
           </div>
         ) : q.data ? (
-          <MarketingDashboard data={q.data} />
+          <>
+            <PeriodCompareStrip current={q.data} previous={qPrev.data ?? null} prevRange={prev} loading={qPrev.isLoading} />
+            <MarketingDashboard data={q.data} />
+          </>
         ) : null}
 
         <AtlasSoonCard />
@@ -172,6 +191,63 @@ function DateFilter({
           {range.start} → {range.end}
         </div>
       )}
+    </div>
+  );
+}
+
+type MktData = Awaited<ReturnType<typeof getMarketingSalesforceData>>;
+
+function PeriodCompareStrip({
+  current, previous, prevRange, loading,
+}: { current: MktData; previous: MktData | null; prevRange: { start: string; end: string }; loading: boolean }) {
+  const metrics: { key: keyof MktData["totals"]; label: string; money?: boolean }[] = [
+    { key: "leads", label: "Leads" },
+    { key: "convertidos", label: "Convertidos" },
+    { key: "amadurecimento", label: "Amadurecimento" },
+    { key: "novasContas", label: "Novas contas" },
+    { key: "faturado", label: "Faturado", money: true },
+  ];
+  return (
+    <div className="glass rounded-2xl p-4">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          Comparativo com período anterior
+        </div>
+        <div className="text-[11px] text-muted-foreground tabular-nums">
+          anterior: {prevRange.start} → {prevRange.end}
+          {loading ? <span className="ml-2 inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> carregando…</span> : null}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {metrics.map((m) => {
+          const cur = current.totals[m.key] as number;
+          const prv = previous ? (previous.totals[m.key] as number) : 0;
+          const delta = cur - prv;
+          const pct = prv > 0 ? (delta / prv) * 100 : cur > 0 ? 100 : 0;
+          const up = delta > 0;
+          const flat = delta === 0;
+          const good = up; // more is better for all these metrics
+          const color = flat ? "text-muted-foreground" : good ? "text-[oklch(0.7_0.16_145)]" : "text-destructive";
+          const Icon = flat ? TrendingUp : up ? ArrowUpRight : ArrowDownRight;
+          return (
+            <div key={m.key} className="bg-surface-2/50 border border-border rounded-xl p-3">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{m.label}</div>
+              <div className="font-display font-bold text-xl tabular-nums mt-0.5">
+                {m.money ? fmtBRL(cur) : fmt(cur)}
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <div className="text-[10px] text-muted-foreground tabular-nums">
+                  ant.: {m.money ? fmtBRL(prv) : fmt(prv)}
+                </div>
+                <div className={cn("text-[11px] font-semibold flex items-center gap-0.5 tabular-nums", color)}>
+                  <Icon className="h-3 w-3" />
+                  {flat ? "0%" : `${up ? "+" : ""}${pct.toFixed(1)}%`}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
