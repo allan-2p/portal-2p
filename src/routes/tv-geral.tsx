@@ -121,8 +121,9 @@ type TvData = {
     carreg: { meta: number; real: number };
     paceEsperado: number;
   };
-  semanaOrc: WeekDay[];
-  semanaVen: WeekDay[];
+  semanaOrcWeeks: WeekDay[][];
+  semanaVenWeeks: WeekDay[][];
+  semanaAtualIdx: number;
   diaAtual: string;
   kpis: {
     clientesNovos: Kpi;
