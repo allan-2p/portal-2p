@@ -859,12 +859,50 @@ const GraficoSemanal = ({
   const p = pct(totalReal, totalProj);
   const max = Math.max(...dados.map((d) => Math.max(d.proj, d.real)), 1) * 1.18;
 
+  const arrowBtn = (dir: "prev" | "next", enabled: boolean, onClick: () => void) => (
+    <button
+      onClick={enabled ? onClick : undefined}
+      disabled={!enabled}
+      aria-label={dir === "prev" ? "Semana anterior" : "Próxima semana"}
+      style={{
+        width: 34,
+        height: 34,
+        borderRadius: 999,
+        border: `1px solid ${enabled ? "rgba(255,255,255,.25)" : "rgba(255,255,255,.08)"}`,
+        background: enabled ? "rgba(255,255,255,.05)" : "transparent",
+        color: enabled ? T.ink : T.dim,
+        cursor: enabled ? "pointer" : "not-allowed",
+        fontSize: 20,
+        lineHeight: 1,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      {dir === "prev" ? "‹" : "›"}
+    </button>
+  );
+
   return (
     <Card delay={delay} style={{ padding: "20px 24px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ width: 7, height: 7, borderRadius: 999, background: dot }} />
           <Eyebrow>{titulo}</Eyebrow>
+          <span style={{
+            marginLeft: 6,
+            fontSize: 16,
+            color: isCurrentWeek ? T.green : T.dim,
+            fontWeight: 700,
+            padding: "2px 10px",
+            borderRadius: 999,
+            border: `1px solid ${isCurrentWeek ? "rgba(34,179,122,.4)" : "rgba(255,255,255,.14)"}`,
+            background: isCurrentWeek ? "rgba(34,179,122,.12)" : "transparent",
+            letterSpacing: -0.2,
+          }}>
+            Semana {safeIdx + 1}/{semanas.length}{isCurrentWeek ? " · atual" : ""}
+          </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 22, color: T.dim }}>
           <span><span style={{ color: T.ink, fontWeight: 800 }}>R$ {fmtK(totalReal)}</span> / R$ {fmtK(totalProj)} proj</span>
@@ -891,10 +929,12 @@ const GraficoSemanal = ({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, minmax(0, 1fr))`, gap: 24, height: 150, alignItems: "end", width: "100%", maxWidth: 720, margin: "0 auto", justifyContent: "center", padding: "0 12px" }}>
+      <div style={{ display: "flex", alignItems: "stretch", gap: 12 }}>
+        {arrowBtn("prev", canPrev, () => setIdx((i) => Math.max(0, i - 1)))}
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, minmax(0, 1fr))`, gap: 24, height: 150, alignItems: "end", width: "100%", maxWidth: 720, margin: "0 auto", justifyContent: "center", padding: "0 12px", flex: 1 }}>
 
         {dados.map((d, i) => {
-          const hoje = d.dia === diaAtual;
+          const hoje = isCurrentWeek && d.dia === diaAtual;
           const hProj = (d.proj / max) * 100;
           const hReal = (d.real / max) * 100;
           return (
