@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { useMarketingUnit } from "@/components/instance-provider";
-import { Filter, Facebook, Search, Globe } from "lucide-react";
+import { Filter, Facebook, Search, Globe, Users, Target as TargetIcon } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
+import { listMarketingGoals, type MarketingGoalRow } from "@/lib/marketing-goals.functions";
 import { AtlasSoonCard } from "./marketing.index";
+import { useMarketingUnit } from "@/components/instance-provider";
 
 export const Route = createFileRoute("/_authenticated/marketing/trafego")({
   head: () => ({ meta: [{ title: "Tráfego Pago — Marketing — Portal 2P" }] }),
@@ -46,6 +49,7 @@ const SITE = {
 
 const fmt = (n: number) => n.toLocaleString("pt-BR");
 const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const findGoal = (rows: MarketingGoalRow[] | undefined, k: string) => rows?.find((r) => r.key === k);
 
 function TrafegoPage() {
   const { marketingUnit } = useMarketingUnit();
@@ -55,16 +59,21 @@ function TrafegoPage() {
   const totalConv = campanhas.reduce((a, c) => a + c.conv, 0);
   const site = SITE[marketingUnit];
 
+  const fetchGoals = useServerFn(listMarketingGoals);
+  const gq = useQuery({ queryKey: ["marketing-goals"], queryFn: () => fetchGoals(), staleTime: 60_000 });
+  const mql = findGoal(gq.data?.records, "mql_pago_mes");
+  const novos = findGoal(gq.data?.records, "novos_pago_mes");
+
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Marketing</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Marketing · Julia</div>
             <h1 className="text-3xl font-bold mt-1 flex items-center gap-2">
               <Filter className="h-6 w-6 text-primary" /> Tráfego Pago
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">Campanhas ativas + analytics do site.</p>
+            <p className="text-sm text-muted-foreground mt-1">Metas do mês, campanhas ativas e analytics do site.</p>
           </div>
           <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm">
             {(["all", "Google", "Meta"] as const).map((p) => (
@@ -80,6 +89,12 @@ function TrafegoPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Metas em destaque */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <BigGoal label={mql?.label ?? "MQL (Tráfego Pago)"} real={mql?.real_value ?? 0} meta={mql?.goal ?? 250} icon={TargetIcon} accent="oklch(0.6 0.18 240)" />
+          <BigGoal label={novos?.label ?? "Novos (Tráfego Pago)"} real={novos?.real_value ?? 0} meta={novos?.goal ?? 30} icon={Users} accent="oklch(0.7 0.16 145)" />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -177,6 +192,29 @@ function MiniKPI({ label, value }: { label: string; value: string }) {
     <div className="rounded-xl border border-border bg-surface/60 p-3">
       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="font-display font-bold text-xl tabular-nums mt-1">{value}</div>
+    </div>
+  );
+}
+
+function BigGoal({ label, real, meta, icon: Icon, accent }: { label: string; real: number; meta: number; icon: typeof Users; accent: string }) {
+  const pct = meta > 0 ? (real / meta) * 100 : 0;
+  return (
+    <div className="glass rounded-2xl p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Mês</div>
+          <div className="font-display font-semibold text-lg mt-0.5">{label}</div>
+        </div>
+        <Icon className="h-5 w-5" style={{ color: accent }} />
+      </div>
+      <div className="mt-3 flex items-baseline gap-2">
+        <div className="font-display font-bold text-4xl tabular-nums" style={{ color: accent }}>{fmt(real)}</div>
+        <div className="text-sm text-muted-foreground">/ {fmt(meta)}</div>
+      </div>
+      <div className="mt-3 h-2 bg-surface-2 rounded-full overflow-hidden">
+        <div className="h-full" style={{ width: `${Math.min(100, pct)}%`, background: accent }} />
+      </div>
+      <div className="mt-1 text-xs font-semibold" style={{ color: accent }}>{pct.toFixed(1)}% da meta</div>
     </div>
   );
 }
