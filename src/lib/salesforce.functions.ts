@@ -1747,3 +1747,84 @@ export const getPublicRetencaoTv = createServerFn({ method: "GET" }).handler(asy
 
 
 
+
+// ============================================================
+// PRÉ-VENDAS — funil e motivos de perda para o time de Marketing
+// ============================================================
+
+export type PreVendasFunilData = {
+  range: { start: string; end: string };
+  leads: { novos: number; amadurecimento: number; convertidos: number; naoConvertidos: number; total: number };
+  motivosPerdaOpp: MarketingBucket[];
+  motivosNaoConvertido: MarketingBucket[];
+};
+
+export const getPreVendasFunilData = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { start: string; end: string }) => {
+    if (!validDate(input.start) || !validDate(input.end)) throw new Error("Datas inválidas.");
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const ownerIds = MARKETING_OWNER_IDS.map((id) => `'${id}'`).join(",");
+    const extraNames = MARKETING_OWNER_NAMES_EXTRA.map((n) => `'${esc(n)}'`).join(",");
+    const startDT = `${data.start}T00:00:00Z`;
+    const endDT = `${data.end}T23:59:59Z`;
+    // Aceita owners por Id OR por Nome (para membros sem SF User Id configurado).
+    const ownerWhere = extraNames
+      ? `(OwnerId IN (${ownerIds}) OR Owner.Name IN (${extraNames}))`
+      : `OwnerId IN (${ownerIds})`;
+
+    // Motivos de perda: tenta campos comuns; se falhar, retorna vazio.
+    async function safeGroup(soql: string): Promise<MarketingBucket[]> {
+      try {
+        const r = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+        return (r?.records ?? []).map((rec: any) => {
+          const label = Object.keys(rec).find((k) => k !== "attributes" && k !== "total");
+          return {
+            label: (label ? rec[label] : null) ?? "Sem informação",
+            value: typeof rec.total === "number" ? rec.total : 0,
+          };
+        });
+      } catch { return []; }
+    }
+
+    const [byStatus, mPerdaOpp, mNaoConv] = await Promise.all([
+      sfFetch(`/query?q=${encodeURIComponent(
+        `SELECT COUNT(Id) total, Status FROM Lead ` +
+        `WHERE ${ownerWhere} AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY Status`,
+      )}`),
+      safeGroup(
+        `SELECT COUNT(Id) total, Motivo_da_Perda__c FROM Opportunity ` +
+        `WHERE ${ownerWhere} AND StageName = 'Projeto Não Fechado' ` +
+        `AND CloseDate >= ${data.start} AND CloseDate <= ${data.end} ` +
+        `GROUP BY Motivo_da_Perda__c ORDER BY COUNT(Id) DESC LIMIT 20`,
+      ),
+      safeGroup(
+        `SELECT COUNT(Id) total, Motivo_da_N_o_Convers_o__c FROM Lead ` +
+        `WHERE ${ownerWhere} AND Status = 'Não Convertido' ` +
+        `AND CreatedDate >= ${startDT} AND CreatedDate <= ${endDT} ` +
+        `GROUP BY Motivo_da_N_o_Convers_o__c ORDER BY COUNT(Id) DESC LIMIT 20`,
+      ),
+    ]);
+
+    let novos = 0, amadurecimento = 0, convertidos = 0, naoConvertidos = 0, total = 0;
+    for (const r of (byStatus?.records ?? [])) {
+      const t = typeof r.total === "number" ? r.total : 0;
+      total += t;
+      const s = String(r.Status ?? "");
+      if (s === "Novo") novos += t;
+      else if (s === "Amadurecimento") amadurecimento += t;
+      else if (s === "Convertido") convertidos += t;
+      else if (s === "Não Convertido") naoConvertidos += t;
+    }
+
+    const result: PreVendasFunilData = {
+      range: { start: data.start, end: data.end },
+      leads: { novos, amadurecimento, convertidos, naoConvertidos, total },
+      motivosPerdaOpp: mPerdaOpp,
+      motivosNaoConvertido: mNaoConv,
+    };
+    return result;
+  });
