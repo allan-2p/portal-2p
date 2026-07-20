@@ -211,6 +211,34 @@ export const completeSalesforceTask = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const rescheduleSalesforceTask = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { taskId: string; newDate: string; reason?: string | null }) => {
+    if (!validId(input.taskId)) throw new Error("ID de tarefa inválido.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.newDate)) throw new Error("Data inválida (YYYY-MM-DD).");
+    // Só permite mover para frente (data >= hoje)
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const [y, m, d] = input.newDate.split("-").map(Number);
+    const target = new Date(y, m - 1, d);
+    if (target.getTime() < today.getTime()) {
+      throw new Error("A nova data precisa ser hoje ou futura.");
+    }
+    return input;
+  })
+  .handler(async ({ data }) => {
+    const body: Record<string, unknown> = { ActivityDate: data.newDate };
+    if (data.reason && data.reason.trim()) {
+      // Anexa a justificativa na descrição para manter histórico no Salesforce.
+      const stamp = new Date().toLocaleString("pt-BR");
+      body.Description = `[Reagendado em ${stamp}] ${data.reason.trim()}`;
+    }
+    await sfFetch(`/sobjects/Task/${data.taskId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+    return { ok: true, newDate: data.newDate };
+  });
+
 type TaskPayload = {
   subject: string;
   activityDate?: string | null;
