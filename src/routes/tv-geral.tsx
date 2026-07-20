@@ -1146,11 +1146,9 @@ export function Dashboard2P({
   const updateLabel =
     secsSinceUpdate == null
       ? "Aguardando dados…"
-      : secsSinceUpdate < 5
-        ? "atualizado agora"
-        : secsSinceUpdate < 60
-          ? `atualizado há ${secsSinceUpdate}s`
-          : `atualizado há ${Math.floor(secsSinceUpdate / 60)}min`;
+      : secsSinceUpdate < 60
+        ? `${secsSinceUpdate}s`
+        : `${Math.floor(secsSinceUpdate / 60)}min`;
 
 
 
