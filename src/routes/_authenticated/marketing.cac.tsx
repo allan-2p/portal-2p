@@ -25,6 +25,8 @@ type CacInputs = {
   ferramentas: number;
   outros: number;
   novosClientes: number;
+  faturamento?: number;
+  margemLiquida?: number;
 };
 
 type SavedCac = Record<string, CacInputs>; // key = "solar-2026-6"
