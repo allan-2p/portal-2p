@@ -136,6 +136,7 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/marketing/cac": "marketing.cac",
   "/marketing/gargalo": "marketing.gargalo",
   "/marketing/pre-vendas": "marketing.prevendas",
+  "/marketing/metas": "marketing.metas",
 };
 
 export const FEATURE_LABELS: Record<FeatureKey, string> = {
