@@ -196,12 +196,9 @@ function SocialPage() {
                       {fmt(row.followers)}
                     </div>
                     <div className="text-[11px] text-muted-foreground">seguidores</div>
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
                       {row.reach != null && <MiniStat label="Alcance" value={fmt(row.reach)} />}
-                      {row.impressions != null && <MiniStat label="Impress." value={fmt(row.impressions)} />}
-                      {row.engagementRate != null && (
-                        <MiniStat label="Eng." value={`${row.engagementRate.toFixed(1)}%`} />
-                      )}
+                      {row.engaged != null && <MiniStat label="Engajados" value={fmt(row.engaged)} />}
                     </div>
                   </div>
                 );

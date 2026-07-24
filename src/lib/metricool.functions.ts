@@ -2,30 +2,36 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * Integração com a API pública do Metricool.
- * Docs: https://app.metricool.com/api/v2
- * Auth: header `X-Mc-Auth: <token>` + query `userId=<id>&blogId=<brand>`.
+ * Cliente do Metricool (API v2) para o portal 2P.
  *
- * Cada brand (blogId) do Metricool corresponde a uma organização do Marketing:
- *   - solar        → METRICOOL_BRAND_SOLAR
- *   - carregadores → METRICOOL_BRAND_CARREGADORES
- *   - station      → METRICOOL_BRAND_STATION (opcional; retorna vazio se não configurada)
+ * Autenticação: header `X-Mc-Auth: <userToken>` + query `userId=<id>&blogId=<brand>`.
+ * Docs empíricos (validados neste projeto):
+ *   - GET /v2/analytics/timelines?network=<Network>&metric=<Metric>&subject=account
+ *   - GET /v2/analytics/posts/instagram
+ *   - GET /v2/analytics/reels/instagram
+ *   - GET /v2/analytics/stories/instagram
+ *
+ * Cada brand (blogId) representa uma organização de marketing:
+ *   solar        → METRICOOL_BRAND_SOLAR
+ *   carregadores → METRICOOL_BRAND_CARREGADORES
+ *   station      → METRICOOL_BRAND_STATION (opcional)
  */
 
 export type MetricoolUnit = "solar" | "carregadores" | "station";
 
+export type NetworkKey = "instagram" | "facebook" | "youtube" | "tiktok" | "linkedin" | "twitter";
+
 export type MetricoolFollowerRow = {
-  network: "instagram" | "facebook" | "youtube" | "tiktok" | "linkedin" | "twitter";
+  network: NetworkKey;
   followers: number;
-  growth: number; // variação no período
-  engagementRate: number | null;
+  growth: number; // variação absoluta no período
   reach: number | null;
-  impressions: number | null;
+  engaged: number | null;
 };
 
 export type MetricoolPost = {
   id: string;
-  network: string;
+  network: NetworkKey;
   publishedAt: string | null;
   text: string;
   url: string | null;
@@ -33,17 +39,8 @@ export type MetricoolPost = {
   likes: number;
   comments: number;
   reach: number;
-};
-
-export type MetricoolAdsRow = {
-  platform: "facebook_ads" | "google_ads" | "tiktok_ads" | "linkedin_ads";
-  spend: number;
-  impressions: number;
-  clicks: number;
-  ctr: number;
-  cpc: number;
-  cpm: number;
-  conversions: number;
+  interactions: number;
+  engagement: number; // %
 };
 
 export type MetricoolBrandData = {
@@ -52,23 +49,18 @@ export type MetricoolBrandData = {
   range: { start: string; end: string };
   followers: MetricoolFollowerRow[];
   posts: MetricoolPost[];
-  ads: MetricoolAdsRow[];
   error: string | null;
 };
 
 const API_BASE = "https://app.metricool.com/api";
 
 function getBrandId(unit: MetricoolUnit): string | null {
-  const env = {
+  const env: Record<MetricoolUnit, string | undefined> = {
     solar: process.env.METRICOOL_BRAND_SOLAR,
     carregadores: process.env.METRICOOL_BRAND_CARREGADORES,
     station: process.env.METRICOOL_BRAND_STATION,
-  } as const;
+  };
   return env[unit] ?? null;
-}
-
-function ymdCompact(date: string) {
-  return date.replaceAll("-", "");
 }
 
 async function mcFetch(path: string, params: Record<string, string>) {
@@ -76,125 +68,143 @@ async function mcFetch(path: string, params: Record<string, string>) {
   const userId = process.env.METRICOOL_USER_ID;
   if (!token || !userId) throw new Error("Metricool não configurado (token/userId ausentes).");
   const qs = new URLSearchParams({ userId, ...params }).toString();
-  const url = `${API_BASE}${path}?${qs}`;
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE}${path}?${qs}`, {
     headers: { "X-Mc-Auth": token, Accept: "application/json" },
   });
+  const body = await res.text();
   if (!res.ok) {
-    const body = await res.text();
+    // 403 = rede desconectada nessa brand; devolve null pra deixar UI vazia sem quebrar.
+    if (res.status === 403 || res.status === 404) return null;
     throw new Error(`Metricool ${res.status}: ${body.slice(0, 240)}`);
   }
-  return res.json();
+  try { return JSON.parse(body); } catch { return null; }
 }
 
-async function safeCall<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
-  try {
-    return await fn();
-  } catch (e) {
-    console.warn("[metricool]", (e as Error).message);
-    return fallback;
-  }
+async function safe<T>(fn: () => Promise<T>, fb: T): Promise<T> {
+  try { return await fn(); } catch (e) { console.warn("[metricool]", (e as Error).message); return fb; }
 }
 
-function num(v: unknown): number {
-  if (typeof v === "number" && Number.isFinite(v)) return v;
-  if (typeof v === "string") {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
-  }
-  return 0;
+type Timeline = { data?: Array<{ metric: string; values: Array<{ dateTime: string; value: number }> }> };
+
+function latestValue(t: Timeline | null): number {
+  const values = t?.data?.[0]?.values ?? [];
+  if (!values.length) return 0;
+  // Metricool retorna a série ordenada; pegamos a mais recente por dateTime.
+  const sorted = [...values].sort((a, b) => a.dateTime.localeCompare(b.dateTime));
+  return Math.round(sorted[sorted.length - 1]?.value ?? 0);
 }
 
-async function loadFollowers(blogId: string, start: string, end: string): Promise<MetricoolFollowerRow[]> {
-  const params = { blogId, start: ymdCompact(start), end: ymdCompact(end), timezone: "America/Sao_Paulo" };
-  const networks: Array<{ key: MetricoolFollowerRow["network"]; path: string }> = [
-    { key: "instagram", path: "/stats/instagram" },
-    { key: "facebook", path: "/stats/facebook" },
-    { key: "youtube", path: "/stats/youtube" },
-    { key: "tiktok", path: "/stats/tiktok" },
-    { key: "linkedin", path: "/stats/linkedin" },
-  ];
-  const results = await Promise.all(
-    networks.map(async (n) => {
-      const data: any = await safeCall(() => mcFetch(n.path, params), null);
-      if (!data) return null;
-      // Metricool responde em formatos diferentes por rede; tentamos extrair
-      // seguidores atuais e variação. Fallbacks garantem que a UI não quebre.
-      const followers = num(
-        data?.followers ?? data?.summary?.followers ?? data?.data?.followers ?? data?.metrics?.followers,
-      );
-      const growth = num(
-        data?.followersGrowth ?? data?.summary?.followersGrowth ?? data?.data?.growth ?? 0,
-      );
-      const engagementRate = data?.engagementRate ?? data?.summary?.engagementRate ?? null;
-      const reach = data?.reach ?? data?.summary?.reach ?? null;
-      const impressions = data?.impressions ?? data?.summary?.impressions ?? null;
-      return {
-        network: n.key,
-        followers,
-        growth,
-        engagementRate: engagementRate == null ? null : num(engagementRate),
-        reach: reach == null ? null : num(reach),
-        impressions: impressions == null ? null : num(impressions),
-      } as MetricoolFollowerRow;
-    }),
+function growthValue(t: Timeline | null): number {
+  const values = t?.data?.[0]?.values ?? [];
+  if (values.length < 2) return 0;
+  const sorted = [...values].sort((a, b) => a.dateTime.localeCompare(b.dateTime));
+  return Math.round((sorted[sorted.length - 1]?.value ?? 0) - (sorted[0]?.value ?? 0));
+}
+
+function sumValues(t: Timeline | null): number {
+  const values = t?.data?.[0]?.values ?? [];
+  return Math.round(values.reduce((a, b) => a + (b.value ?? 0), 0));
+}
+
+function baseParams(blogId: string, start: string, end: string) {
+  // Metricool exige datetime ISO até segundos: yyyy-MM-ddTHH:mm:ss
+  const from = `${start}T00:00:00`;
+  const to = `${end}T23:59:59`;
+  return { blogId, from, to, timezone: "America/Sao_Paulo" } as Record<string, string>;
+}
+
+async function loadTimeline(blogId: string, start: string, end: string, network: string, metric: string) {
+  return safe<Timeline | null>(
+    () => mcFetch("/v2/analytics/timelines", { ...baseParams(blogId, start, end), network, metric, subject: "account" }) as Promise<Timeline | null>,
+    null,
   );
-  return results.filter((r): r is MetricoolFollowerRow => r != null && r.followers > 0);
 }
 
-async function loadPosts(blogId: string, start: string, end: string): Promise<MetricoolPost[]> {
-  const data: any = await safeCall(
-    () =>
-      mcFetch("/stats/posts", {
-        blogId,
-        start: ymdCompact(start),
-        end: ymdCompact(end),
-        timezone: "America/Sao_Paulo",
-      }),
-    { data: [] },
-  );
-  const rows: any[] = data?.data ?? data?.posts ?? [];
-  return rows.slice(0, 12).map((p: any) => ({
-    id: String(p.id ?? p.postId ?? p.uuid ?? Math.random()),
-    network: String(p.network ?? p.provider ?? p.type ?? "unknown"),
-    publishedAt: p.publishedAt ?? p.date ?? null,
-    text: String(p.text ?? p.caption ?? p.title ?? "").slice(0, 240),
-    url: p.url ?? p.permalink ?? null,
-    thumbnail: p.thumbnail ?? p.picture ?? p.image ?? null,
-    likes: num(p.likes ?? p.reactions),
-    comments: num(p.comments),
-    reach: num(p.reach ?? p.impressions),
-  }));
+async function loadInstagram(blogId: string, start: string, end: string): Promise<MetricoolFollowerRow | null> {
+  const [followers, reach, engaged] = await Promise.all([
+    loadTimeline(blogId, start, end, "Instagram", "Followers"),
+    loadTimeline(blogId, start, end, "Instagram", "reach"),
+    loadTimeline(blogId, start, end, "Instagram", "accounts_engaged"),
+  ]);
+  const current = latestValue(followers);
+  if (!current) return null;
+  return {
+    network: "instagram",
+    followers: current,
+    growth: growthValue(followers),
+    reach: sumValues(reach) || null,
+    engaged: sumValues(engaged) || null,
+  };
 }
 
-async function loadAds(blogId: string, start: string, end: string): Promise<MetricoolAdsRow[]> {
-  const params = { blogId, start: ymdCompact(start), end: ymdCompact(end), timezone: "America/Sao_Paulo" };
-  const platforms: Array<{ key: MetricoolAdsRow["platform"]; path: string }> = [
-    { key: "facebook_ads", path: "/stats/facebookAds" },
-    { key: "google_ads", path: "/stats/adwords" },
-    { key: "tiktok_ads", path: "/stats/tiktokAds" },
-    { key: "linkedin_ads", path: "/stats/linkedinAds" },
-  ];
-  const rows = await Promise.all(
-    platforms.map(async (p) => {
-      const data: any = await safeCall(() => mcFetch(p.path, params), null);
-      if (!data) return null;
-      const s = data?.summary ?? data;
-      const spend = num(s?.spend ?? s?.cost);
-      if (spend === 0 && !s?.impressions) return null;
-      return {
-        platform: p.key,
-        spend,
-        impressions: num(s?.impressions),
-        clicks: num(s?.clicks),
-        ctr: num(s?.ctr),
-        cpc: num(s?.cpc),
-        cpm: num(s?.cpm),
-        conversions: num(s?.conversions ?? s?.results),
-      } as MetricoolAdsRow;
-    }),
+async function loadFacebook(blogId: string, start: string, end: string): Promise<MetricoolFollowerRow | null> {
+  const [followers, reach] = await Promise.all([
+    loadTimeline(blogId, start, end, "Facebook", "pageFollows"),
+    loadTimeline(blogId, start, end, "Facebook", "pageImpressions"),
+  ]);
+  const current = latestValue(followers);
+  if (!current) return null;
+  return {
+    network: "facebook",
+    followers: current,
+    growth: growthValue(followers),
+    reach: sumValues(reach) || null,
+    engaged: null,
+  };
+}
+
+async function loadYoutube(blogId: string, start: string, end: string): Promise<MetricoolFollowerRow | null> {
+  const [subs, views] = await Promise.all([
+    loadTimeline(blogId, start, end, "Youtube", "totalSubscribers"),
+    loadTimeline(blogId, start, end, "Youtube", "views"),
+  ]);
+  const current = latestValue(subs);
+  if (!current) return null;
+  return {
+    network: "youtube",
+    followers: current,
+    growth: growthValue(subs),
+    reach: sumValues(views) || null,
+    engaged: null,
+  };
+}
+
+async function loadTiktok(blogId: string, start: string, end: string): Promise<MetricoolFollowerRow | null> {
+  const t = await loadTimeline(blogId, start, end, "Tiktok", "followers");
+  const current = latestValue(t);
+  if (!current) return null;
+  return { network: "tiktok", followers: current, growth: growthValue(t), reach: null, engaged: null };
+}
+
+async function loadLinkedin(blogId: string, start: string, end: string): Promise<MetricoolFollowerRow | null> {
+  const t = await loadTimeline(blogId, start, end, "Linkedin", "followers");
+  const current = latestValue(t);
+  if (!current) return null;
+  return { network: "linkedin", followers: current, growth: growthValue(t), reach: null, engaged: null };
+}
+
+async function loadInstagramPosts(blogId: string, start: string, end: string): Promise<MetricoolPost[]> {
+  const data: any = await safe(
+    () => mcFetch("/v2/analytics/posts/instagram", baseParams(blogId, start, end)),
+    null,
   );
-  return rows.filter((r): r is MetricoolAdsRow => r != null);
+  const rows: any[] = data?.data ?? [];
+  return rows
+    .map((p) => ({
+      id: String(p.postId ?? Math.random()),
+      network: "instagram" as const,
+      publishedAt: p.publishedAt?.dateTime ?? null,
+      text: String(p.content ?? "").slice(0, 240),
+      url: p.url ?? null,
+      thumbnail: p.imageUrl ?? null,
+      likes: Number(p.likes ?? 0),
+      comments: Number(p.comments ?? 0),
+      reach: Number(p.reach ?? 0),
+      interactions: Number(p.interactions ?? 0),
+      engagement: Number(p.engagement ?? 0),
+    }))
+    .sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""))
+    .slice(0, 12);
 }
 
 export const getMetricoolBrandData = createServerFn({ method: "GET" })
@@ -214,19 +224,22 @@ export const getMetricoolBrandData = createServerFn({ method: "GET" })
       range: { start: data.start, end: data.end },
       followers: [],
       posts: [],
-      ads: [],
       error: null,
     };
     if (!blogId) {
       return { ...empty, error: `Brand ${data.unit} ainda não cadastrada no Metricool.` };
     }
     try {
-      const [followers, posts, ads] = await Promise.all([
-        loadFollowers(blogId, data.start, data.end),
-        loadPosts(blogId, data.start, data.end),
-        loadAds(blogId, data.start, data.end),
+      const [ig, fb, yt, tt, li, posts] = await Promise.all([
+        loadInstagram(blogId, data.start, data.end),
+        loadFacebook(blogId, data.start, data.end),
+        loadYoutube(blogId, data.start, data.end),
+        loadTiktok(blogId, data.start, data.end),
+        loadLinkedin(blogId, data.start, data.end),
+        loadInstagramPosts(blogId, data.start, data.end),
       ]);
-      return { ...empty, followers, posts, ads };
+      const followers = [ig, fb, yt, tt, li].filter((r): r is MetricoolFollowerRow => r != null);
+      return { ...empty, followers, posts };
     } catch (e) {
       return { ...empty, error: (e as Error).message };
     }
