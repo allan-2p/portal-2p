@@ -104,66 +104,6 @@ function OwnersBadge() {
   );
 }
 
-function DateFilter({
-  preset, setPreset, customStart, customEnd, setCustomStart, setCustomEnd, range,
-}: {
-  preset: Preset; setPreset: (p: Preset) => void;
-  customStart: string; customEnd: string;
-  setCustomStart: (s: string) => void; setCustomEnd: (s: string) => void;
-  range: { start: string; end: string };
-}) {
-  const presets: { id: Preset; label: string }[] = [
-    { id: "7d", label: "7d" },
-    { id: "30d", label: "30d" },
-    { id: "90d", label: "90d" },
-    { id: "mtd", label: "Mês" },
-    { id: "qtd", label: "Trim." },
-    { id: "ytd", label: "Ano" },
-    { id: "custom", label: "Personalizado" },
-  ];
-  return (
-    <div className="flex flex-col items-end gap-2">
-      <div className="flex items-center gap-1.5 bg-surface-2 rounded-lg p-0.5 border border-border">
-        {presets.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setPreset(p.id)}
-            className={cn(
-              "px-2.5 h-8 rounded-md text-xs font-medium transition-colors",
-              preset === p.id
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-      {preset === "custom" ? (
-        <div className="flex items-center gap-2 text-xs">
-          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-          <input
-            type="date"
-            value={customStart}
-            onChange={(e) => setCustomStart(e.target.value)}
-            className="bg-surface-2 border border-border rounded-md px-2 h-8"
-          />
-          <span className="text-muted-foreground">até</span>
-          <input
-            type="date"
-            value={customEnd}
-            onChange={(e) => setCustomEnd(e.target.value)}
-            className="bg-surface-2 border border-border rounded-md px-2 h-8"
-          />
-        </div>
-      ) : (
-        <div className="text-[11px] text-muted-foreground tabular-nums">
-          {range.start} → {range.end}
-        </div>
-      )}
-    </div>
-  );
-}
 
 type MktData = Awaited<ReturnType<typeof getMarketingSalesforceData>>;
 
