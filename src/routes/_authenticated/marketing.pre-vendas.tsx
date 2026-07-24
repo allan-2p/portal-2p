@@ -12,7 +12,6 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPreVendasFunilData, MARKETING_OWNER_NAMES } from "@/lib/salesforce.functions";
-import { cn } from "@/lib/utils";
 import { DateRangePicker, defaultRange, type DateRangeValue } from "@/components/date-range-picker";
 
 const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
