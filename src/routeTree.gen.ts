@@ -26,7 +26,6 @@ import { Route as AuthenticatedCuponsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/atlas'
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
-import { Route as ApiPublicMetricoolDebugRouteImport } from './routes/api/public/metricool-debug'
 import { Route as AuthenticatedMarketingTrafegoRouteImport } from './routes/_authenticated/marketing.trafego'
 import { Route as AuthenticatedMarketingSocialRouteImport } from './routes/_authenticated/marketing.social'
 import { Route as AuthenticatedMarketingPreVendasRouteImport } from './routes/_authenticated/marketing.pre-vendas'
@@ -131,11 +130,6 @@ const AuthenticatedMarketingIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedMarketingRoute,
   } as any)
-const ApiPublicMetricoolDebugRoute = ApiPublicMetricoolDebugRouteImport.update({
-  id: '/api/public/metricool-debug',
-  path: '/api/public/metricool-debug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedMarketingTrafegoRoute =
   AuthenticatedMarketingTrafegoRouteImport.update({
     id: '/trafego',
@@ -271,7 +265,6 @@ export interface FileRoutesByFullPath {
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
-  '/api/public/metricool-debug': typeof ApiPublicMetricoolDebugRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
 }
 export interface FileRoutesByTo {
@@ -306,7 +299,6 @@ export interface FileRoutesByTo {
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
-  '/api/public/metricool-debug': typeof ApiPublicMetricoolDebugRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
 }
 export interface FileRoutesById {
@@ -344,7 +336,6 @@ export interface FileRoutesById {
   '/_authenticated/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/_authenticated/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
-  '/api/public/metricool-debug': typeof ApiPublicMetricoolDebugRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
 }
 export interface FileRouteTypes {
@@ -382,7 +373,6 @@ export interface FileRouteTypes {
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
-    | '/api/public/metricool-debug'
     | '/marketing/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -417,7 +407,6 @@ export interface FileRouteTypes {
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
-    | '/api/public/metricool-debug'
     | '/marketing'
   id:
     | '__root__'
@@ -454,7 +443,6 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing/pre-vendas'
     | '/_authenticated/marketing/social'
     | '/_authenticated/marketing/trafego'
-    | '/api/public/metricool-debug'
     | '/_authenticated/marketing/'
   fileRoutesById: FileRoutesById
 }
@@ -463,7 +451,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TvGeralRoute: typeof TvGeralRoute
-  ApiPublicMetricoolDebugRoute: typeof ApiPublicMetricoolDebugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -586,13 +573,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/marketing/'
       preLoaderRoute: typeof AuthenticatedMarketingIndexRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
-    }
-    '/api/public/metricool-debug': {
-      id: '/api/public/metricool-debug'
-      path: '/api/public/metricool-debug'
-      fullPath: '/api/public/metricool-debug'
-      preLoaderRoute: typeof ApiPublicMetricoolDebugRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/marketing/trafego': {
       id: '/_authenticated/marketing/trafego'
@@ -826,7 +806,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TvGeralRoute: TvGeralRoute,
-  ApiPublicMetricoolDebugRoute: ApiPublicMetricoolDebugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
