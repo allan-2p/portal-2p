@@ -220,7 +220,7 @@ function MidiaPagaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paidMetrics.origins.slice(0, 15).map((o) => {
+                  {paidMetrics.origins.slice(0, 15).map((o: { label: string; value: number }) => {
                     const pct = paidMetrics.leadsPaid > 0 ? (o.value / paidMetrics.leadsPaid) * 100 : 0;
                     return (
                       <tr key={o.label} className="border-b border-border/40 hover:bg-surface-2/30">
