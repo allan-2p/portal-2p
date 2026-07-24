@@ -22,7 +22,7 @@ export const Route = createFileRoute("/api/public/metricool-debug")({
         }
         const end = new Date();
         const start = new Date(); start.setDate(end.getDate() - days);
-        const fmt = (d: Date) => d.toISOString().slice(0, 10);
+        const fmt = (d: Date) => d.toISOString().slice(0, 19);
         const network = url.searchParams.get("network");
         const params: Record<string, string> = {
           userId, blogId,
