@@ -22,8 +22,16 @@ export const Route = createFileRoute("/api/public/metricool-debug")({
         }
         const end = new Date();
         const start = new Date(); start.setDate(end.getDate() - days);
-        const fmt = (d: Date) => d.toISOString().slice(0, 10).replaceAll("-", "");
-        const qs = new URLSearchParams({ userId, blogId, start: fmt(start), end: fmt(end), timezone: "America/Sao_Paulo" });
+        const fmt = (d: Date) => d.toISOString().slice(0, 10);
+        const network = url.searchParams.get("network");
+        const params: Record<string, string> = {
+          userId, blogId,
+          from: fmt(start), to: fmt(end),
+          start: fmt(start).replaceAll("-", ""), end: fmt(end).replaceAll("-", ""),
+          timezone: "America/Sao_Paulo",
+        };
+        if (network) params.network = network;
+        const qs = new URLSearchParams(params);
         const full = `https://app.metricool.com/api${path}?${qs}`;
         const res = await fetch(full, { headers: { "X-Mc-Auth": token, Accept: "application/json" } });
         const body = await res.text();
