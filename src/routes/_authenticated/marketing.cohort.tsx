@@ -31,9 +31,19 @@ const COHORTS = {
     { safra: "Jun/26", leads: 240, m0: 10, m1: 0, m2: 0, m3plus: 0, semCompra: 230 },
     { safra: "Jul/26", leads: 268, m0: 0, m1: 0, m2: 0, m3plus: 0, semCompra: 268 },
   ],
+  station: [
+    { safra: "Jan/26", leads: 30, m0: 1, m1: 2, m2: 1, m3plus: 2, semCompra: 24 },
+    { safra: "Fev/26", leads: 42, m0: 1, m1: 3, m2: 2, m3plus: 1, semCompra: 35 },
+    { safra: "Mar/26", leads: 48, m0: 2, m1: 3, m2: 2, m3plus: 1, semCompra: 40 },
+    { safra: "Abr/26", leads: 55, m0: 2, m1: 4, m2: 2, m3plus: 0, semCompra: 47 },
+    { safra: "Mai/26", leads: 62, m0: 2, m1: 5, m2: 0, m3plus: 0, semCompra: 55 },
+    { safra: "Jun/26", leads: 72, m0: 3, m1: 0, m2: 0, m3plus: 0, semCompra: 69 },
+    { safra: "Jul/26", leads: 80, m0: 0, m1: 0, m2: 0, m3plus: 0, semCompra: 80 },
+  ],
 };
 
-const UNIT_LABEL = { solar: "2P Solar", carregadores: "2P Carregadores" } as const;
+const UNIT_LABEL = { solar: "2P Solar", carregadores: "2P Carregadores", station: "2P Station" } as const;
+
 
 function CohortPage() {
   const { marketingUnit } = useMarketingUnit();
