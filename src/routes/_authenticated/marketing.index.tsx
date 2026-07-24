@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { Megaphone, Users, Target, TrendingUp, TrendingDown, Clock, Loader2, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Megaphone, Users, Target, TrendingUp, Loader2, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMarketingSalesforceData, MARKETING_OWNER_NAMES } from "@/lib/salesforce.functions";
 import { cn } from "@/lib/utils";
+import { DateRangePicker, defaultRange, ymd, type DateRangeValue } from "@/components/date-range-picker";
+
 
 export const Route = createFileRoute("/_authenticated/marketing/")({
   head: () => ({ meta: [{ title: "Marketing — Portal 2P" }] }),
