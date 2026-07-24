@@ -156,7 +156,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.integracoes": "Admin • Integrações",
   "marketing.home": "Marketing • Home",
   "marketing.social": "Marketing • Social Media",
-  "marketing.trafego": "Marketing • Tráfego Pago",
+  "marketing.trafego": "Marketing • Mídia Paga",
   "marketing.cohort": "Marketing • Cohort",
   "marketing.cac": "Marketing • CAC",
   "marketing.gargalo": "Marketing • Mapa de Gargalo",
