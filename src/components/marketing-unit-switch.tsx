@@ -2,37 +2,36 @@ import { useMarketingUnit } from "./instance-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * Sub-switch que aparece apenas dentro da instância Marketing para alternar
- * a visão entre 2P Solar e 2P Carregadores. Não afeta a instância global.
+ * Switch de organização dentro do Marketing: Solar, Carregadores e Station.
+ * Solar fica isolado à esquerda; Carregadores e Station ficam agrupados à direita
+ * porque compartilham o mesmo conjunto de brands/relatórios de veículos.
  */
 export function MarketingUnitSwitch() {
   const { marketingUnit, setMarketingUnit } = useMarketingUnit();
+  const Btn = ({ id, label, color }: { id: "solar" | "carregadores" | "station"; label: string; color: string }) => (
+    <button
+      onClick={() => setMarketingUnit(id)}
+      className={cn(
+        "px-3 h-8 rounded-md font-medium transition-colors flex items-center gap-1.5",
+        marketingUnit === id
+          ? "text-white shadow-sm"
+          : "text-muted-foreground hover:text-foreground",
+      )}
+      style={marketingUnit === id ? { background: color } : undefined}
+    >
+      <span className="h-2 w-2 rounded-sm" style={{ background: color }} />
+      {label}
+    </button>
+  );
   return (
-    <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs h-9 items-center">
-      <button
-        onClick={() => setMarketingUnit("solar")}
-        className={cn(
-          "px-3 h-8 rounded-md font-medium transition-colors flex items-center gap-1.5",
-          marketingUnit === "solar"
-            ? "bg-[oklch(0.68_0.2_47)] text-white shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        <span className="h-2 w-2 rounded-sm bg-[oklch(0.68_0.2_47)]" />
-        2P Solar
-      </button>
-      <button
-        onClick={() => setMarketingUnit("carregadores")}
-        className={cn(
-          "px-3 h-8 rounded-md font-medium transition-colors flex items-center gap-1.5",
-          marketingUnit === "carregadores"
-            ? "bg-[oklch(0.5_0.19_265)] text-white shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        <span className="h-2 w-2 rounded-sm bg-[oklch(0.5_0.19_265)]" />
-        2P Carregadores
-      </button>
+    <div className="flex items-center gap-1">
+      <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs h-9 items-center">
+        <Btn id="solar" label="2P Solar" color="oklch(0.68 0.2 47)" />
+      </div>
+      <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs h-9 items-center">
+        <Btn id="carregadores" label="2P Carregadores" color="oklch(0.5 0.19 265)" />
+        <Btn id="station" label="Station" color="oklch(0.78 0.14 90)" />
+      </div>
     </div>
   );
 }
