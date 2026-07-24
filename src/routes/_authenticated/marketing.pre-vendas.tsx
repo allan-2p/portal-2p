@@ -28,37 +28,13 @@ export const Route = createFileRoute("/_authenticated/marketing/pre-vendas")({
 
 const fmt = (n: number) => n.toLocaleString("pt-BR");
 
-function pad(n: number) { return String(n).padStart(2, "0"); }
-function ymd(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
-
-type Preset = "7d" | "30d" | "mtd" | "qtd" | "ytd" | "custom";
-function computeRange(preset: Preset): { start: string; end: string } {
-  const now = new Date();
-  const end = ymd(now);
-  const start = new Date(now);
-  switch (preset) {
-    case "7d": start.setDate(now.getDate() - 6); break;
-    case "30d": start.setDate(now.getDate() - 29); break;
-    case "mtd": start.setDate(1); break;
-    case "qtd": { const q = Math.floor(now.getMonth() / 3); start.setMonth(q * 3, 1); break; }
-    case "ytd": start.setMonth(0, 1); break;
-    default: start.setDate(1);
-  }
-  return { start: ymd(start), end };
-}
-
 function PreVendasHome() {
-  const [preset, setPreset] = useState<Preset>("mtd");
-  const [customStart, setCustomStart] = useState(() => computeRange("mtd").start);
-  const [customEnd, setCustomEnd] = useState(() => computeRange("mtd").end);
-  const range = preset === "custom"
-    ? { start: customStart, end: customEnd }
-    : computeRange(preset);
+  const [range, setRange] = useState<DateRangeValue>(() => defaultRange());
 
   const fetchData = useServerFn(getPreVendasFunilData);
   const q = useQuery({
     queryKey: ["pre-vendas-funil", range.start, range.end],
-    queryFn: () => fetchData({ data: range }),
+    queryFn: () => fetchData({ data: { start: range.start, end: range.end } }),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -76,13 +52,9 @@ function PreVendasHome() {
               Funil de leads e motivos de perda do time de pré-vendas — dados do Salesforce.
             </p>
           </div>
-          <DateFilter
-            preset={preset} setPreset={setPreset}
-            customStart={customStart} customEnd={customEnd}
-            setCustomStart={setCustomStart} setCustomEnd={setCustomEnd}
-            range={range}
-          />
+          <DateRangePicker value={range} onChange={setRange} />
         </div>
+
 
         <OwnersBadge />
 
