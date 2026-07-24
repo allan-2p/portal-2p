@@ -62,15 +62,8 @@ function MarketingHome() {
               Leads, conversões, origens e novos clientes — dados do Salesforce da equipe de marketing.
             </p>
           </div>
-          <DateFilter
-            preset={preset}
-            setPreset={setPreset}
-            customStart={customStart}
-            customEnd={customEnd}
-            setCustomStart={setCustomStart}
-            setCustomEnd={setCustomEnd}
-            range={range}
-          />
+          <DateRangePicker value={range} onChange={setRange} />
+
         </div>
 
         <OwnersBadge />
