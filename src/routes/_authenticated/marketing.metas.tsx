@@ -44,7 +44,7 @@ function MarketingMetasPage() {
             <Target className="h-6 w-6 text-primary" /> Metas de Marketing
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure metas e valores realizados que aparecem nas páginas de Social Media e Tráfego Pago.
+            Configure metas e valores realizados que aparecem nas páginas de Social Media e Mídia Paga.
             {!isAdmin && <span className="ml-1 text-warning">Apenas administradores podem editar.</span>}
           </p>
         </div>
