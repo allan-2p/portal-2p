@@ -283,7 +283,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   <NavLink item={{ to: "/marketing/social", label: "Social Media", icon: Users }} active={pathname.startsWith("/marketing/social")} collapsed={false} />
                 )}
                 {show("marketing.trafego") && (
-                  <NavLink item={{ to: "/marketing/trafego", label: "Tráfego Pago", icon: Filter }} active={pathname.startsWith("/marketing/trafego")} collapsed={false} />
+                  <NavLink item={{ to: "/marketing/trafego", label: "Mídia Paga", icon: Filter }} active={pathname.startsWith("/marketing/trafego")} collapsed={false} />
                 )}
                 {show("marketing.cohort") && (
                   <NavLink item={{ to: "/marketing/cohort", label: "Análise Cohort", icon: LineChart }} active={pathname.startsWith("/marketing/cohort")} collapsed={false} />
