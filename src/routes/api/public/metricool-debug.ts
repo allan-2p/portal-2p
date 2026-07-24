@@ -30,7 +30,10 @@ export const Route = createFileRoute("/api/public/metricool-debug")({
           start: fmt(start).replaceAll("-", ""), end: fmt(end).replaceAll("-", ""),
           timezone: "America/Sao_Paulo",
         };
-        if (network) params.network = network;
+        for (const [k, v] of url.searchParams.entries()) {
+          if (k === "brand" || k === "path" || k === "days") continue;
+          params[k] = v;
+        }
         const qs = new URLSearchParams(params);
         const full = `https://app.metricool.com/api${path}?${qs}`;
         const res = await fetch(full, { headers: { "X-Mc-Auth": token, Accept: "application/json" } });
