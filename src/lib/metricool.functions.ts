@@ -43,12 +43,21 @@ export type MetricoolPost = {
   engagement: number; // %
 };
 
+export type MetricoolDailyPoint = { date: string; value: number };
+
+export type MetricoolInstagramSeries = {
+  followers: MetricoolDailyPoint[];
+  reach: MetricoolDailyPoint[];
+  engaged: MetricoolDailyPoint[];
+};
+
 export type MetricoolBrandData = {
   unit: MetricoolUnit;
   blogId: string | null;
   range: { start: string; end: string };
   followers: MetricoolFollowerRow[];
   posts: MetricoolPost[];
+  igSeries: MetricoolInstagramSeries;
   error: string | null;
 };
 
