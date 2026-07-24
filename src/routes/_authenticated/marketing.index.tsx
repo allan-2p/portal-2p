@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { Megaphone, Users, Target, TrendingUp, Loader2, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Megaphone, Users, Target, TrendingUp, Loader2, Clock, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
