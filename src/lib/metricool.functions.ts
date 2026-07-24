@@ -43,12 +43,21 @@ export type MetricoolPost = {
   engagement: number; // %
 };
 
+export type MetricoolDailyPoint = { date: string; value: number };
+
+export type MetricoolInstagramSeries = {
+  followers: MetricoolDailyPoint[];
+  reach: MetricoolDailyPoint[];
+  engaged: MetricoolDailyPoint[];
+};
+
 export type MetricoolBrandData = {
   unit: MetricoolUnit;
   blogId: string | null;
   range: { start: string; end: string };
   followers: MetricoolFollowerRow[];
   posts: MetricoolPost[];
+  igSeries: MetricoolInstagramSeries;
   error: string | null;
 };
 
@@ -218,28 +227,44 @@ export const getMetricoolBrandData = createServerFn({ method: "GET" })
   })
   .handler(async ({ data }): Promise<MetricoolBrandData> => {
     const blogId = getBrandId(data.unit);
+    const emptySeries: MetricoolInstagramSeries = { followers: [], reach: [], engaged: [] };
     const empty: MetricoolBrandData = {
       unit: data.unit,
       blogId,
       range: { start: data.start, end: data.end },
       followers: [],
       posts: [],
+      igSeries: emptySeries,
       error: null,
     };
     if (!blogId) {
       return { ...empty, error: `Brand ${data.unit} ainda não cadastrada no Metricool.` };
     }
     try {
-      const [ig, fb, yt, tt, li, posts] = await Promise.all([
+      const [ig, fb, yt, tt, li, posts, igFollowersT, igReachT, igEngagedT] = await Promise.all([
         loadInstagram(blogId, data.start, data.end),
         loadFacebook(blogId, data.start, data.end),
         loadYoutube(blogId, data.start, data.end),
         loadTiktok(blogId, data.start, data.end),
         loadLinkedin(blogId, data.start, data.end),
         loadInstagramPosts(blogId, data.start, data.end),
+        loadTimeline(blogId, data.start, data.end, "Instagram", "Followers"),
+        loadTimeline(blogId, data.start, data.end, "Instagram", "reach"),
+        loadTimeline(blogId, data.start, data.end, "Instagram", "accounts_engaged"),
       ]);
       const followers = [ig, fb, yt, tt, li].filter((r): r is MetricoolFollowerRow => r != null);
-      return { ...empty, followers, posts };
+      const toDaily = (t: Timeline | null): MetricoolDailyPoint[] => {
+        const values = t?.data?.[0]?.values ?? [];
+        return [...values]
+          .sort((a, b) => a.dateTime.localeCompare(b.dateTime))
+          .map((v) => ({ date: v.dateTime.slice(0, 10), value: Math.round(v.value ?? 0) }));
+      };
+      const igSeries: MetricoolInstagramSeries = {
+        followers: toDaily(igFollowersT),
+        reach: toDaily(igReachT),
+        engaged: toDaily(igEngagedT),
+      };
+      return { ...empty, followers, posts, igSeries };
     } catch (e) {
       return { ...empty, error: (e as Error).message };
     }

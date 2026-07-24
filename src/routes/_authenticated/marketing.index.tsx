@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { Megaphone, Users, Target, TrendingUp, TrendingDown, Clock, Loader2, Calendar, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Megaphone, Users, Target, TrendingUp, Loader2, Clock, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMarketingSalesforceData, MARKETING_OWNER_NAMES } from "@/lib/salesforce.functions";
 import { cn } from "@/lib/utils";
+import { DateRangePicker, defaultRange, ymd, type DateRangeValue } from "@/components/date-range-picker";
+
 
 export const Route = createFileRoute("/_authenticated/marketing/")({
   head: () => ({ meta: [{ title: "Marketing — Portal 2P" }] }),
@@ -17,28 +19,6 @@ const fmtBRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
-function ymd(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
-
-type Preset = "7d" | "30d" | "90d" | "mtd" | "qtd" | "ytd" | "custom";
-
-function computeRange(preset: Preset): { start: string; end: string } {
-  const now = new Date();
-  const end = ymd(now);
-  const start = new Date(now);
-  switch (preset) {
-    case "7d": start.setDate(now.getDate() - 6); break;
-    case "30d": start.setDate(now.getDate() - 29); break;
-    case "90d": start.setDate(now.getDate() - 89); break;
-    case "mtd": start.setDate(1); break;
-    case "qtd": {
-      const q = Math.floor(now.getMonth() / 3);
-      start.setMonth(q * 3, 1); break;
-    }
-    case "ytd": start.setMonth(0, 1); break;
-    default: start.setDate(now.getDate() - 29);
-  }
-  return { start: ymd(start), end };
-}
 
 function previousRange(range: { start: string; end: string }): { start: string; end: string } {
   const s = new Date(range.start + "T00:00:00");
@@ -50,18 +30,13 @@ function previousRange(range: { start: string; end: string }): { start: string; 
 }
 
 function MarketingHome() {
-  const [preset, setPreset] = useState<Preset>("30d");
-  const [customStart, setCustomStart] = useState(() => computeRange("30d").start);
-  const [customEnd, setCustomEnd] = useState(() => computeRange("30d").end);
-  const range = preset === "custom"
-    ? { start: customStart, end: customEnd }
-    : computeRange(preset);
+  const [range, setRange] = useState<DateRangeValue>(() => defaultRange());
   const prev = useMemo(() => previousRange(range), [range.start, range.end]);
 
   const fetchData = useServerFn(getMarketingSalesforceData);
   const q = useQuery({
     queryKey: ["marketing-sf", range.start, range.end],
-    queryFn: () => fetchData({ data: range }),
+    queryFn: () => fetchData({ data: { start: range.start, end: range.end } }),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -71,6 +46,8 @@ function MarketingHome() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
+
+
 
   return (
     <AppLayout>
@@ -85,15 +62,8 @@ function MarketingHome() {
               Leads, conversões, origens e novos clientes — dados do Salesforce da equipe de marketing.
             </p>
           </div>
-          <DateFilter
-            preset={preset}
-            setPreset={setPreset}
-            customStart={customStart}
-            customEnd={customEnd}
-            setCustomStart={setCustomStart}
-            setCustomEnd={setCustomEnd}
-            range={range}
-          />
+          <DateRangePicker value={range} onChange={setRange} />
+
         </div>
 
         <OwnersBadge />
@@ -134,66 +104,6 @@ function OwnersBadge() {
   );
 }
 
-function DateFilter({
-  preset, setPreset, customStart, customEnd, setCustomStart, setCustomEnd, range,
-}: {
-  preset: Preset; setPreset: (p: Preset) => void;
-  customStart: string; customEnd: string;
-  setCustomStart: (s: string) => void; setCustomEnd: (s: string) => void;
-  range: { start: string; end: string };
-}) {
-  const presets: { id: Preset; label: string }[] = [
-    { id: "7d", label: "7d" },
-    { id: "30d", label: "30d" },
-    { id: "90d", label: "90d" },
-    { id: "mtd", label: "Mês" },
-    { id: "qtd", label: "Trim." },
-    { id: "ytd", label: "Ano" },
-    { id: "custom", label: "Personalizado" },
-  ];
-  return (
-    <div className="flex flex-col items-end gap-2">
-      <div className="flex items-center gap-1.5 bg-surface-2 rounded-lg p-0.5 border border-border">
-        {presets.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setPreset(p.id)}
-            className={cn(
-              "px-2.5 h-8 rounded-md text-xs font-medium transition-colors",
-              preset === p.id
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-      {preset === "custom" ? (
-        <div className="flex items-center gap-2 text-xs">
-          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-          <input
-            type="date"
-            value={customStart}
-            onChange={(e) => setCustomStart(e.target.value)}
-            className="bg-surface-2 border border-border rounded-md px-2 h-8"
-          />
-          <span className="text-muted-foreground">até</span>
-          <input
-            type="date"
-            value={customEnd}
-            onChange={(e) => setCustomEnd(e.target.value)}
-            className="bg-surface-2 border border-border rounded-md px-2 h-8"
-          />
-        </div>
-      ) : (
-        <div className="text-[11px] text-muted-foreground tabular-nums">
-          {range.start} → {range.end}
-        </div>
-      )}
-    </div>
-  );
-}
 
 type MktData = Awaited<ReturnType<typeof getMarketingSalesforceData>>;
 
