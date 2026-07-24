@@ -38,6 +38,9 @@ const CAMPANHAS = {
     { plat: "Meta", nome: "Vídeo · Instalação frota", status: "Ativa", cpm: 19.6, cpc: 2.4, ctr: 4.1, cpa: 168, roas: 4.1, gasto: 2810, conv: 4 },
     { plat: "Meta", nome: "Carrossel · Modelos 11kW/22kW", status: "Ativa", cpm: 16.8, cpc: 2.1, ctr: 3.2, cpa: 142, roas: 3.8, gasto: 1620, conv: 3 },
   ],
+  station: [
+    { plat: "Meta", nome: "Vídeo · Station Lançamento", status: "Ativa", cpm: 20.4, cpc: 2.8, ctr: 3.8, cpa: 190, roas: 3.2, gasto: 1240, conv: 2 },
+  ],
 };
 
 const SITE = {
@@ -55,7 +58,14 @@ const SITE = {
     { fonte: "Direto", pct: 14 },
     { fonte: "Indicação", pct: 4 },
   ]},
+  station: { sessoes: 1240, bounce: 52, mediaTempo: "1m 32s", conv: 0.8, principaisFontes: [
+    { fonte: "Meta Ads", pct: 42 },
+    { fonte: "Google Ads", pct: 28 },
+    { fonte: "Direto", pct: 20 },
+    { fonte: "Google Orgânico", pct: 10 },
+  ]},
 };
+
 
 const fmt = (n: number) => n.toLocaleString("pt-BR");
 const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });

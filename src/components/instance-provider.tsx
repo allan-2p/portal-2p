@@ -14,13 +14,15 @@ import {
 const STORAGE_KEY = "portal2p-instance";
 const MKT_UNIT_KEY = "portal2p-marketing-unit";
 
-export type MarketingUnit = "solar" | "carregadores";
+export type MarketingUnit = "solar" | "carregadores" | "station";
 
 function readMarketingUnit(): MarketingUnit {
   if (typeof window === "undefined") return "solar";
   const v = window.localStorage.getItem(MKT_UNIT_KEY);
-  return v === "carregadores" ? "carregadores" : "solar";
+  if (v === "carregadores" || v === "station" || v === "solar") return v;
+  return "solar";
 }
+
 
 type Ctx = {
   instance: InstanceId;

@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { Instagram, Youtube, Users, Radio } from "lucide-react";
+import { Instagram, Youtube, Users, Radio, Facebook, Linkedin, AlertCircle, TrendingUp, Heart, MessageCircle, Eye } from "lucide-react";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listMarketingGoals, type MarketingGoalRow } from "@/lib/marketing-goals.functions";
 import { getMarketingSalesforceData } from "@/lib/salesforce.functions";
 import { classifyOrigem } from "@/lib/marketing-origem";
+import { getMetricoolBrandData } from "@/lib/metricool.functions";
+import { useMarketingUnit } from "@/components/instance-provider";
 import { AtlasSoonCard } from "./marketing.index";
 
 export const Route = createFileRoute("/_authenticated/marketing/social")({
@@ -15,10 +17,8 @@ export const Route = createFileRoute("/_authenticated/marketing/social")({
 });
 
 const fmt = (n: number) => n.toLocaleString("pt-BR");
-
-function findGoal(records: MarketingGoalRow[] | undefined, key: string): MarketingGoalRow | undefined {
-  return records?.find((r) => r.key === key);
-}
+const findGoal = (rows: MarketingGoalRow[] | undefined, key: string) =>
+  rows?.find((r) => r.key === key);
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
 function ymd(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
@@ -28,17 +28,28 @@ function currentMonthRange() {
   return { start: ymd(start), end: ymd(now) };
 }
 
-// Detalhes de outras redes (mock por hora — real preenchido manualmente quando
-// a integração Meta/Google chegar).
-const OUTRAS_REDES = [
-  { nome: "YouTube", icon: Youtube, seguidores: 1180, novos30d: 62, cor: "oklch(0.55 0.22 25)" },
-  { nome: "TikTok", icon: Radio, seguidores: 400, novos30d: 32, cor: "oklch(0.4 0.05 250)" },
-];
+const UNIT_META = {
+  solar: { label: "2P Solar", color: "oklch(0.68 0.2 47)" },
+  carregadores: { label: "2P Carregadores", color: "oklch(0.5 0.19 265)" },
+  station: { label: "2P Station", color: "oklch(0.78 0.14 90)" },
+} as const;
+
+const NET_ICON: Record<string, typeof Instagram> = {
+  instagram: Instagram,
+  facebook: Facebook,
+  youtube: Youtube,
+  tiktok: Radio,
+  linkedin: Linkedin,
+};
 
 function SocialPage() {
+  const { marketingUnit } = useMarketingUnit();
+  const meta = UNIT_META[marketingUnit];
   const fetchGoals = useServerFn(listMarketingGoals);
   const fetchSF = useServerFn(getMarketingSalesforceData);
+  const fetchMC = useServerFn(getMetricoolBrandData);
   const range = useMemo(() => currentMonthRange(), []);
+
   const q = useQuery({
     queryKey: ["marketing-goals"],
     queryFn: () => fetchGoals(),
@@ -50,22 +61,30 @@ function SocialPage() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
+  const mcQ = useQuery({
+    queryKey: ["metricool", marketingUnit, range.start, range.end],
+    queryFn: () => fetchMC({ data: { unit: marketingUnit, start: range.start, end: range.end } }),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
   const recs = q.data?.records;
-
   const leadsOrg = findGoal(recs, "leads_qualificados_mes");
-  const igSolar = findGoal(recs, "ig_solar_tri");
-  const igCarreg = findGoal(recs, "ig_carregadores_tri");
-  const igStation = findGoal(recs, "ig_station_tri");
 
-  // MQL orgânico real: leads qualificados (Convertido + Amadurecimento) com origem orgânica no mês.
+  // Meta de seguidores Instagram por unidade
+  const igGoalKey =
+    marketingUnit === "solar"
+      ? "ig_solar_tri"
+      : marketingUnit === "carregadores"
+        ? "ig_carregadores_tri"
+        : "ig_station_tri";
+  const igGoal = findGoal(recs, igGoalKey);
+
+  // MQL orgânico real: fração orgânica dos leads qualificados no mês
   const mqlOrganicoReal = useMemo(() => {
     const d = sfQ.data;
     if (!d) return null;
     const qualifiedStatuses = new Set(["Convertido", "Amadurecimento"]);
-    // Usa a lista de convertidos para pegar origem; para amadurecimento não temos lista
-    // detalhada, então aproximamos via porOrigem filtrada por status all + fração.
-    // Melhor aproximação: soma buckets porOrigem cuja origem seja orgânica, escalado
-    // pela proporção qualified/total de leads.
     const totalLeads = d.totals.leads;
     const qualifiedLeads = d.statusBreakdown
       .filter((s) => qualifiedStatuses.has(s.label))
@@ -74,22 +93,33 @@ function SocialPage() {
     const organicShare = d.porOrigem
       .filter((o) => classifyOrigem(o.label) === "organic")
       .reduce((a, b) => a + b.value, 0);
-    // fração orgânica * qualificados
     return Math.round((organicShare / totalLeads) * qualifiedLeads);
   }, [sfQ.data]);
 
   const displayReal = mqlOrganicoReal ?? leadsOrg?.real_value ?? 0;
 
+  const ig = mcQ.data?.followers.find((f) => f.network === "instagram");
+  const igReal = ig?.followers ?? 0;
+
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-5">
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Marketing · Ingrid</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Marketing · {meta.label} · Ingrid
+          </div>
           <h1 className="text-3xl font-bold mt-1">Social Media</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Leads qualificados orgânicos e crescimento de seguidores por unidade.
+            Leads qualificados orgânicos e crescimento de seguidores da unidade.
           </p>
         </div>
+
+        {mcQ.data?.error && (
+          <div className="glass rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-amber-500">
+            <AlertCircle className="h-4 w-4" />
+            Metricool: {mcQ.data.error}
+          </div>
+        )}
 
         {/* Destaques principais */}
         <div className="grid lg:grid-cols-2 gap-4">
@@ -104,37 +134,126 @@ function SocialPage() {
           <div className="glass rounded-2xl p-5">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Trimestre</div>
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Trimestre · {meta.label}
+                </div>
                 <div className="font-display font-semibold text-lg mt-0.5">Seguidores Instagram</div>
               </div>
               <Instagram className="h-5 w-5" style={{ color: "oklch(0.65 0.2 350)" }} />
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              <IgUnit label="Solar" real={igSolar?.real_value ?? 0} meta={igSolar?.goal ?? 30000} color="oklch(0.68 0.2 47)" />
-              <IgUnit label="Carregadores" real={igCarreg?.real_value ?? 0} meta={igCarreg?.goal ?? 10000} color="oklch(0.5 0.19 265)" />
-              <IgUnit label="Station" real={igStation?.real_value ?? 0} meta={igStation?.goal ?? 3000} color="oklch(0.78 0.14 90)" />
+            <div className="mt-4 flex items-baseline gap-2">
+              <div className="font-display font-bold text-4xl tabular-nums" style={{ color: meta.color }}>
+                {mcQ.isLoading ? "…" : fmt(igReal)}
+              </div>
+              <div className="text-sm text-muted-foreground">/ {fmt(igGoal?.goal ?? 0)}</div>
+              {ig && ig.growth !== 0 && (
+                <span className="ml-auto text-xs flex items-center gap-1 text-emerald-500">
+                  <TrendingUp className="h-3.5 w-3.5" /> +{fmt(ig.growth)} no período
+                </span>
+              )}
+            </div>
+            <div className="mt-3 h-2 bg-surface-2 rounded-full overflow-hidden">
+              <div
+                className="h-full"
+                style={{
+                  width: `${Math.min(100, igGoal?.goal ? (igReal / igGoal.goal) * 100 : 0)}%`,
+                  background: meta.color,
+                }}
+              />
             </div>
           </div>
         </div>
 
-        {/* Outras redes */}
+        {/* Todas as redes vindas do Metricool */}
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Outras redes</div>
-          <div className="grid md:grid-cols-2 gap-4">
-            {OUTRAS_REDES.map((r) => (
-              <div key={r.nome} className="glass rounded-2xl p-5">
-                <div className="flex items-center gap-2">
-                  <r.icon className="h-4 w-4" style={{ color: r.cor }} />
-                  <span className="font-semibold">{r.nome}</span>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                  <Stat label="Seguidores" value={fmt(r.seguidores)} />
-                  <Stat label="Novos 30d" value={`+${fmt(r.novos30d)}`} />
-                </div>
-              </div>
-            ))}
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            Redes sociais · {meta.label}
           </div>
+          {mcQ.isLoading ? (
+            <div className="glass rounded-2xl p-6 text-sm text-muted-foreground">
+              Carregando dados do Metricool…
+            </div>
+          ) : mcQ.data && mcQ.data.followers.length === 0 ? (
+            <div className="glass rounded-2xl p-6 text-sm text-muted-foreground">
+              Nenhuma rede social conectada no Metricool para esta brand ainda.
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {mcQ.data?.followers.map((row) => {
+                const Icon = NET_ICON[row.network] ?? Radio;
+                return (
+                  <div key={row.network} className="glass rounded-2xl p-5">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" style={{ color: meta.color }} />
+                      <span className="font-semibold capitalize">{row.network}</span>
+                      {row.growth !== 0 && (
+                        <span className="ml-auto text-xs text-emerald-500 flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3" />+{fmt(row.growth)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-display font-bold text-3xl tabular-nums mt-2">
+                      {fmt(row.followers)}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">seguidores</div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+                      {row.reach != null && <MiniStat label="Alcance" value={fmt(row.reach)} />}
+                      {row.impressions != null && <MiniStat label="Impress." value={fmt(row.impressions)} />}
+                      {row.engagementRate != null && (
+                        <MiniStat label="Eng." value={`${row.engagementRate.toFixed(1)}%`} />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {/* Posts recentes */}
+        {mcQ.data && mcQ.data.posts.length > 0 && (
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              Posts recentes
+            </div>
+            <div className="glass rounded-2xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
+                    <th className="text-left px-4 py-2.5">Rede</th>
+                    <th className="text-left px-4 py-2.5">Data</th>
+                    <th className="text-left px-4 py-2.5">Conteúdo</th>
+                    <th className="text-right px-4 py-2.5"><Heart className="inline h-3 w-3" /></th>
+                    <th className="text-right px-4 py-2.5"><MessageCircle className="inline h-3 w-3" /></th>
+                    <th className="text-right px-4 py-2.5"><Eye className="inline h-3 w-3" /></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mcQ.data.posts.map((p) => (
+                    <tr key={p.id} className="border-b border-border/40 hover:bg-surface-2/50">
+                      <td className="px-4 py-2.5 capitalize">{p.network}</td>
+                      <td className="px-4 py-2.5 text-muted-foreground">
+                        {p.publishedAt ? new Date(p.publishedAt).toLocaleDateString("pt-BR") : "—"}
+                      </td>
+                      <td className="px-4 py-2.5 max-w-md truncate">
+                        {p.url ? (
+                          <a href={p.url} target="_blank" rel="noreferrer" className="hover:underline">
+                            {p.text || "(sem texto)"}
+                          </a>
+                        ) : (
+                          p.text || "(sem texto)"
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-right tabular-nums">{fmt(p.likes)}</td>
+                      <td className="px-4 py-2.5 text-right tabular-nums">{fmt(p.comments)}</td>
+                      <td className="px-4 py-2.5 text-right tabular-nums">{fmt(p.reach)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         <AtlasSoonCard />
       </div>
@@ -142,29 +261,11 @@ function SocialPage() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="font-display font-bold text-lg tabular-nums">{value}</div>
-    </div>
-  );
-}
-
-function IgUnit({ label, real, meta, color }: { label: string; real: number; meta: number; color: string }) {
-  const pct = meta > 0 ? Math.min(100, (real / meta) * 100) : 0;
-  return (
-    <div className="rounded-xl border border-border bg-surface/60 p-3">
-      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
-        <span className="h-2 w-2 rounded-sm" style={{ background: color }} />
-        {label}
-      </div>
-      <div className="font-display font-bold text-xl tabular-nums mt-1">{fmt(real)}</div>
-      <div className="text-[11px] text-muted-foreground">/ {fmt(meta)}</div>
-      <div className="mt-2 h-1.5 bg-surface-2 rounded-full overflow-hidden">
-        <div className="h-full" style={{ width: `${pct}%`, background: color }} />
-      </div>
-      <div className="mt-1 text-[10px] font-semibold" style={{ color }}>{pct.toFixed(0)}%</div>
+    <div className="rounded-md border border-border/60 bg-surface/40 px-2 py-1">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="font-semibold tabular-nums">{value}</div>
     </div>
   );
 }
