@@ -19,28 +19,6 @@ const fmtBRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
-function ymd(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
-
-type Preset = "7d" | "30d" | "90d" | "mtd" | "qtd" | "ytd" | "custom";
-
-function computeRange(preset: Preset): { start: string; end: string } {
-  const now = new Date();
-  const end = ymd(now);
-  const start = new Date(now);
-  switch (preset) {
-    case "7d": start.setDate(now.getDate() - 6); break;
-    case "30d": start.setDate(now.getDate() - 29); break;
-    case "90d": start.setDate(now.getDate() - 89); break;
-    case "mtd": start.setDate(1); break;
-    case "qtd": {
-      const q = Math.floor(now.getMonth() / 3);
-      start.setMonth(q * 3, 1); break;
-    }
-    case "ytd": start.setMonth(0, 1); break;
-    default: start.setDate(now.getDate() - 29);
-  }
-  return { start: ymd(start), end };
-}
 
 function previousRange(range: { start: string; end: string }): { start: string; end: string } {
   const s = new Date(range.start + "T00:00:00");
@@ -52,18 +30,13 @@ function previousRange(range: { start: string; end: string }): { start: string; 
 }
 
 function MarketingHome() {
-  const [preset, setPreset] = useState<Preset>("30d");
-  const [customStart, setCustomStart] = useState(() => computeRange("30d").start);
-  const [customEnd, setCustomEnd] = useState(() => computeRange("30d").end);
-  const range = preset === "custom"
-    ? { start: customStart, end: customEnd }
-    : computeRange(preset);
+  const [range, setRange] = useState<DateRangeValue>(() => defaultRange());
   const prev = useMemo(() => previousRange(range), [range.start, range.end]);
 
   const fetchData = useServerFn(getMarketingSalesforceData);
   const q = useQuery({
     queryKey: ["marketing-sf", range.start, range.end],
-    queryFn: () => fetchData({ data: range }),
+    queryFn: () => fetchData({ data: { start: range.start, end: range.end } }),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
@@ -73,6 +46,8 @@ function MarketingHome() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
+
+
 
   return (
     <AppLayout>
