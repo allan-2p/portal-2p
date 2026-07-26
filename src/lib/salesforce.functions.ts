@@ -772,6 +772,99 @@ export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
     } as SalesforceAccountHistory;
   });
 
+export type SalesforceContact = {
+  id: string;
+  name: string;
+  title: string | null;
+  email: string | null;
+  phone: string | null;
+  mobile: string | null;
+  department: string | null;
+  description: string | null;
+};
+
+export const getSalesforceAccountContacts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { accountId: string }) => input)
+  .handler(async ({ data }) => {
+    const accountId = String(data.accountId ?? "").trim();
+    if (!validId(accountId)) throw new Error("accountId inválido");
+    const soql =
+      `SELECT Id, Name, Title, Email, Phone, MobilePhone, Department, Description ` +
+      `FROM Contact WHERE AccountId = '${esc(accountId)}' ORDER BY Name ASC LIMIT 200`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    const records: SalesforceContact[] = (res?.records ?? []).map((r: any) => ({
+      id: r.Id,
+      name: r.Name ?? "(sem nome)",
+      title: r.Title ?? null,
+      email: r.Email ?? null,
+      phone: r.Phone ?? null,
+      mobile: r.MobilePhone ?? null,
+      department: r.Department ?? null,
+      description: r.Description ?? null,
+    }));
+    return { records };
+  });
+
+export type SalesforceActivity = {
+  id: string;
+  kind: "task" | "event";
+  date: string | null;
+  subject: string;
+  status: string | null;
+  priority: string | null;
+  description: string | null;
+  owner: string | null;
+};
+
+export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { accountId: string }) => input)
+  .handler(async ({ data }) => {
+    const accountId = String(data.accountId ?? "").trim();
+    if (!validId(accountId)) throw new Error("accountId inválido");
+    const taskSoql =
+      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Owner.Name ` +
+      `FROM Task WHERE WhatId = '${esc(accountId)}' ` +
+      `ORDER BY ActivityDate DESC NULLS LAST LIMIT 200`;
+    const eventSoql =
+      `SELECT Id, Subject, ActivityDate, Description, Owner.Name ` +
+      `FROM Event WHERE WhatId = '${esc(accountId)}' ` +
+      `ORDER BY ActivityDate DESC NULLS LAST LIMIT 100`;
+    const [tRes, eRes] = await Promise.all([
+      sfFetch(`/query?q=${encodeURIComponent(taskSoql)}`).catch(() => ({ records: [] })),
+      sfFetch(`/query?q=${encodeURIComponent(eventSoql)}`).catch(() => ({ records: [] })),
+    ]);
+    const tasks: SalesforceActivity[] = (tRes?.records ?? []).map((r: any) => ({
+      id: r.Id,
+      kind: "task" as const,
+      date: r.ActivityDate ?? null,
+      subject: r.Subject ?? "(sem assunto)",
+      status: r.Status ?? null,
+      priority: r.Priority ?? null,
+      description: r.Description ?? null,
+      owner: r.Owner?.Name ?? null,
+    }));
+    const events: SalesforceActivity[] = (eRes?.records ?? []).map((r: any) => ({
+      id: r.Id,
+      kind: "event" as const,
+      date: r.ActivityDate ?? null,
+      subject: r.Subject ?? "(sem assunto)",
+      status: null,
+      priority: null,
+      description: r.Description ?? null,
+      owner: r.Owner?.Name ?? null,
+    }));
+    const records = [...tasks, ...events].sort((a, b) => {
+      const da = a.date ?? "";
+      const db = b.date ?? "";
+      return db.localeCompare(da);
+    });
+    return { records };
+  });
+
+
+
 
 
 

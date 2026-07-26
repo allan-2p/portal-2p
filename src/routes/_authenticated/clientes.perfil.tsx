@@ -6,9 +6,14 @@ import { AppLayout } from "@/components/app-layout";
 import {
   getSalesforceAccounts,
   getSalesforceAccountHistory,
+  getSalesforceAccountContacts,
+  getSalesforceAccountActivities,
   type SalesforceAccount,
   type SalesforceAccountHistory,
+  type SalesforceContact,
+  type SalesforceActivity,
 } from "@/lib/salesforce.functions";
+
 
 import {
   Search,
@@ -25,7 +30,15 @@ import {
   Instagram,
   Upload,
   X,
+  Users,
+  Mail,
+  Smartphone,
+  History,
+  CheckCircle2,
+  Circle,
+  CalendarClock,
 } from "lucide-react";
+
 
 
 type Search = { account?: string };
@@ -391,7 +404,14 @@ function Dossier({ account }: { account: SalesforceAccount }) {
         </div>
       </div>
 
+      {/* Histórico de atividades + Contatos */}
+      <div className="grid lg:grid-cols-2 gap-3">
+        <ActivitiesCard accountId={account.id} />
+        <ContactsCard accountId={account.id} />
+      </div>
+
       {/* Cadastro + contato */}
+
 
 
 
@@ -809,3 +829,189 @@ function MiniKpi({ label, value, sub }: { label: string; value: number; sub: str
   );
 }
 
+
+function ContactsCard({ accountId }: { accountId: string }) {
+  const fetchContacts = useServerFn(getSalesforceAccountContacts);
+  const q = useQuery({
+    queryKey: ["sf-account-contacts", accountId],
+    queryFn: () => fetchContacts({ data: { accountId } }),
+    staleTime: 5 * 60_000,
+  });
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const contacts: SalesforceContact[] = q.data?.records ?? [];
+
+  return (
+    <div className="glass rounded-xl p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Users className="h-4 w-4 text-primary" />
+        <h3 className="font-semibold">Contatos</h3>
+        <span className="text-[11px] text-muted-foreground ml-auto">
+          {q.isLoading ? "Carregando…" : `${contacts.length} contato${contacts.length === 1 ? "" : "s"}`}
+        </span>
+      </div>
+      {q.isLoading ? (
+        <div className="h-32 flex items-center justify-center text-muted-foreground text-sm">
+          Carregando contatos…
+        </div>
+      ) : contacts.length === 0 ? (
+        <div className="text-sm text-muted-foreground text-center py-8">
+          Nenhum contato cadastrado no Salesforce.
+        </div>
+      ) : (
+        <ul className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+          {contacts.map((c) => {
+            const open = expanded === c.id;
+            return (
+              <li key={c.id} className="rounded-lg border border-border bg-background/40">
+                <button
+                  onClick={() => setExpanded(open ? null : c.id)}
+                  className="w-full text-left p-3 flex items-start gap-3 hover:bg-surface-2/40 rounded-lg"
+                >
+                  <div className="h-9 w-9 shrink-0 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-semibold">
+                    {c.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium truncate">{c.name}</div>
+                    <div className="text-[11px] text-muted-foreground truncate">
+                      {c.title ?? "—"}
+                      {c.department ? ` · ${c.department}` : ""}
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[11px] text-muted-foreground">
+                      {c.email && (
+                        <span className="inline-flex items-center gap-1">
+                          <Mail className="h-3 w-3" /> {c.email}
+                        </span>
+                      )}
+                      {c.phone && (
+                        <span className="inline-flex items-center gap-1">
+                          <Phone className="h-3 w-3" /> {c.phone}
+                        </span>
+                      )}
+                      {c.mobile && (
+                        <span className="inline-flex items-center gap-1">
+                          <Smartphone className="h-3 w-3" /> {c.mobile}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+                {open && c.description && (
+                  <div className="px-3 pb-3 -mt-1 text-xs text-muted-foreground whitespace-pre-wrap">
+                    {c.description}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ActivitiesCard({ accountId }: { accountId: string }) {
+  const fetchActivities = useServerFn(getSalesforceAccountActivities);
+  const q = useQuery({
+    queryKey: ["sf-account-activities", accountId],
+    queryFn: () => fetchActivities({ data: { accountId } }),
+    staleTime: 2 * 60_000,
+  });
+  const [filter, setFilter] = useState<"all" | "task" | "event" | "open">("all");
+  const activities: SalesforceActivity[] = q.data?.records ?? [];
+  const filtered = activities.filter((a) => {
+    if (filter === "all") return true;
+    if (filter === "open") return a.kind === "task" && a.status !== "Completed";
+    return a.kind === filter;
+  });
+
+  return (
+    <div className="glass rounded-xl p-5">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <History className="h-4 w-4 text-primary" />
+        <h3 className="font-semibold">Histórico de atividades</h3>
+        <div className="ml-auto flex items-center gap-1">
+          {(["all", "open", "task", "event"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={
+                "text-[11px] px-2 py-1 rounded-md " +
+                (filter === f
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-surface-2 text-muted-foreground hover:bg-surface")
+              }
+            >
+              {f === "all" ? "Tudo" : f === "open" ? "Abertas" : f === "task" ? "Tarefas" : "Reuniões"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {q.isLoading ? (
+        <div className="h-32 flex items-center justify-center text-muted-foreground text-sm">
+          Carregando atividades…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-sm text-muted-foreground text-center py-8">
+          Nenhuma atividade registrada.
+        </div>
+      ) : (
+        <ol className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+          {filtered.map((a) => {
+            const done = a.kind === "task" && a.status === "Completed";
+            const Icon = a.kind === "event" ? CalendarClock : done ? CheckCircle2 : Circle;
+            return (
+              <li key={a.id} className="flex gap-3">
+                <div className="mt-0.5">
+                  <Icon
+                    className={
+                      "h-4 w-4 " +
+                      (done ? "text-success" : a.kind === "event" ? "text-primary" : "text-muted-foreground")
+                    }
+                  />
+                </div>
+                <div className="flex-1 min-w-0 border-b border-border pb-3">
+                  <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                    <div className="text-sm font-medium truncate">{a.subject}</div>
+                    <div className="text-[11px] text-muted-foreground tabular-nums shrink-0">
+                      {a.date ? new Date(a.date).toLocaleDateString("pt-BR") : "—"}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-muted-foreground uppercase tracking-wider">
+                      {a.kind === "event" ? "Reunião" : "Tarefa"}
+                    </span>
+                    {a.status && (
+                      <span
+                        className={
+                          "text-[10px] px-1.5 py-0.5 rounded " +
+                          (done
+                            ? "bg-success/15 text-success"
+                            : "bg-primary/15 text-primary")
+                        }
+                      >
+                        {a.status}
+                      </span>
+                    )}
+                    {a.priority && a.priority !== "Normal" && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/15 text-destructive">
+                        {a.priority}
+                      </span>
+                    )}
+                    {a.owner && (
+                      <span className="text-[10px] text-muted-foreground">· {a.owner}</span>
+                    )}
+                  </div>
+                  {a.description && (
+                    <p className="text-xs text-muted-foreground mt-1.5 line-clamp-3 whitespace-pre-wrap">
+                      {a.description}
+                    </p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
+  );
+}
