@@ -405,10 +405,17 @@ function Dossier({ account }: { account: SalesforceAccount }) {
   );
 }
 
-function IdentityCard({ account }: { account: SalesforceAccount }) {
+function BannerHeader({
+  account,
+  history,
+}: {
+  account: SalesforceAccount;
+  history: SalesforceAccountHistory | undefined;
+}) {
   const [identity, setIdentity] = useState<ClientIdentity>({});
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -416,6 +423,7 @@ function IdentityCard({ account }: { account: SalesforceAccount }) {
     setIdentity(raw ? (JSON.parse(raw) as ClientIdentity) : {});
     setSavedAt(null);
     setError(null);
+    setEditing(false);
   }, [account.id]);
 
   useEffect(() => {
@@ -450,18 +458,29 @@ function IdentityCard({ account }: { account: SalesforceAccount }) {
     reader.readAsDataURL(file);
   };
 
+  const createdLabel = account.createdAt
+    ? new Date(account.createdAt).toLocaleDateString("pt-BR")
+    : null;
+  const lastPurchaseLabel = history?.lastPurchase
+    ? new Date(history.lastPurchase).toLocaleDateString("pt-BR")
+    : null;
+  const firstPurchaseLabel = history?.firstPurchase
+    ? new Date(history.firstPurchase).toLocaleDateString("pt-BR")
+    : null;
+  const wonRateLabel = history ? `${(history.wonRate * 100).toFixed(0)}%` : null;
+
+  const websiteHref = displayWebsite
+    ? displayWebsite.startsWith("http")
+      ? displayWebsite
+      : `https://${displayWebsite}`
+    : null;
+
   return (
     <div className="glass rounded-xl p-5">
-      <div className="flex items-center gap-2 mb-4">
-        <Sparkles className="h-4 w-4 text-primary" />
-        <h3 className="font-semibold">Identidade</h3>
-        <span className="text-[11px] text-muted-foreground ml-auto">
-          {savedAt ? "Salvo automaticamente" : "Preencha para enriquecer o dossiê"}
-        </span>
-      </div>
-      <div className="grid md:grid-cols-[160px_1fr] gap-5 items-start">
-        <div>
-          <div className="relative w-[160px] h-[160px] rounded-xl border border-border bg-background/50 flex items-center justify-center overflow-hidden">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-5 items-start">
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-1.5">
+          <div className="relative w-24 h-24 rounded-xl border border-border bg-background/50 flex items-center justify-center overflow-hidden">
             {identity.logo ? (
               <>
                 <img
@@ -469,105 +488,185 @@ function IdentityCard({ account }: { account: SalesforceAccount }) {
                   alt={`Logo ${account.name}`}
                   className="w-full h-full object-contain"
                 />
-                <button
-                  type="button"
-                  onClick={() => setIdentity((p) => ({ ...p, logo: null }))}
-                  className="absolute top-1 right-1 p-1 rounded-md bg-background/80 border border-border hover:bg-background"
-                  aria-label="Remover logo"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                {editing && (
+                  <button
+                    type="button"
+                    onClick={() => setIdentity((p) => ({ ...p, logo: null }))}
+                    className="absolute top-1 right-1 p-1 rounded-md bg-background/80 border border-border hover:bg-background"
+                    aria-label="Remover logo"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </>
             ) : (
-              <div className="text-center text-muted-foreground text-xs px-3">
-                <Upload className="h-6 w-6 mx-auto mb-1 opacity-60" />
+              <div className="text-center text-muted-foreground text-[10px] px-2">
+                <Building2 className="h-6 w-6 mx-auto mb-0.5 opacity-60" />
                 Sem logo
               </div>
             )}
           </div>
-          <label className="mt-2 inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border hover:bg-accent cursor-pointer w-full justify-center">
-            <Upload className="h-3.5 w-3.5" />
-            {identity.logo ? "Trocar logo" : "Enviar logo"}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleLogoFile(f);
-                e.target.value = "";
-              }}
-            />
-          </label>
-          {error && <div className="text-[11px] text-destructive mt-1">{error}</div>}
+          {editing && (
+            <label className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border border-border hover:bg-accent cursor-pointer">
+              <Upload className="h-3 w-3" />
+              {identity.logo ? "Trocar" : "Enviar"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleLogoFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          )}
         </div>
 
-        <div className="space-y-3">
-          <div>
-            <label className="text-[11px] uppercase text-muted-foreground flex items-center gap-1.5 mb-1">
-              <Globe className="h-3 w-3" /> Site
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={displayWebsite}
-                onChange={(e) => setIdentity((p) => ({ ...p, website: e.target.value }))}
-                placeholder="exemplo.com.br"
-                className="flex-1 px-3 py-2 rounded-lg bg-background border border-border text-sm focus:outline-none focus:border-primary/50"
-              />
-              {displayWebsite && (
-                <a
-                  href={displayWebsite.startsWith("http") ? displayWebsite : `https://${displayWebsite}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-2 rounded-lg border border-border text-sm hover:bg-accent inline-flex items-center gap-1"
-                >
-                  Abrir <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
+        {/* Info */}
+        <div className="min-w-0">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-2xl font-bold truncate">{account.name}</h2>
+                {account.segment && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium">
+                    Segmento {account.segment}
+                  </span>
+                )}
+                {account.tubos.map((t) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-surface-2 text-muted-foreground"
+                  >
+                    <Tag className="h-3 w-3" /> {t}
+                  </span>
+                ))}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {account.cnpj ?? "CNPJ não informado"}
+                {account.industry ? ` · ${account.industry}` : ""}
+                {createdLabel ? ` · Desde ${createdLabel}` : ""}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <div className="text-[10px] uppercase text-muted-foreground">Responsável</div>
+                <div className="text-sm font-medium">{account.ownerName ?? "—"}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditing((v) => !v)}
+                className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-accent"
+              >
+                {editing ? "Concluir" : "Editar"}
+              </button>
             </div>
           </div>
 
-          <div>
-            <label className="text-[11px] uppercase text-muted-foreground flex items-center gap-1.5 mb-1">
-              <Instagram className="h-3 w-3" /> Instagram
-            </label>
-            <div className="flex gap-2">
-              <div className="flex-1 flex items-center rounded-lg bg-background border border-border focus-within:border-primary/50">
-                <span className="pl-3 text-sm text-muted-foreground">@</span>
+          {/* Chips: contato + métricas resumidas */}
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            {account.phone && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 text-foreground">
+                <Phone className="h-3 w-3 text-primary" /> {account.phone}
+              </span>
+            )}
+            {websiteHref && !editing && (
+              <a
+                href={websiteHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 hover:bg-surface text-foreground"
+              >
+                <Globe className="h-3 w-3 text-primary" /> {displayWebsite}
+                <ExternalLink className="h-3 w-3 opacity-60" />
+              </a>
+            )}
+            {instagramUrl && !editing && (
+              <a
+                href={instagramUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 hover:bg-surface text-foreground"
+              >
+                <Instagram className="h-3 w-3 text-primary" /> @{instagramHandle}
+              </a>
+            )}
+            {lastPurchaseLabel && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 text-muted-foreground">
+                <Calendar className="h-3 w-3" /> Última compra: {lastPurchaseLabel}
+              </span>
+            )}
+            {firstPurchaseLabel && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 text-muted-foreground">
+                <Calendar className="h-3 w-3" /> Primeira compra: {firstPurchaseLabel}
+              </span>
+            )}
+            {wonRateLabel && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-2 text-muted-foreground">
+                <TrendingUp className="h-3 w-3" /> Fechamento {wonRateLabel}
+              </span>
+            )}
+          </div>
+
+          {editing && (
+            <div className="mt-3 grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase text-muted-foreground flex items-center gap-1.5 mb-1">
+                  <Globe className="h-3 w-3" /> Site
+                </label>
                 <input
                   type="text"
-                  value={instagramHandle}
-                  onChange={(e) =>
-                    setIdentity((p) => ({
-                      ...p,
-                      instagram: e.target.value.replace(/^@/, ""),
-                    }))
-                  }
-                  placeholder="usuario"
-                  className="flex-1 px-2 py-2 bg-transparent text-sm focus:outline-none"
+                  value={displayWebsite}
+                  onChange={(e) => setIdentity((p) => ({ ...p, website: e.target.value }))}
+                  placeholder="exemplo.com.br"
+                  className="w-full px-3 py-1.5 rounded-lg bg-background border border-border text-sm focus:outline-none focus:border-primary/50"
                 />
               </div>
-              {instagramUrl && (
-                <a
-                  href={instagramUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-2 rounded-lg border border-border text-sm hover:bg-accent inline-flex items-center gap-1"
-                >
-                  Abrir <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
+              <div>
+                <label className="text-[10px] uppercase text-muted-foreground flex items-center gap-1.5 mb-1">
+                  <Instagram className="h-3 w-3" /> Instagram
+                </label>
+                <div className="flex items-center rounded-lg bg-background border border-border focus-within:border-primary/50">
+                  <span className="pl-3 text-sm text-muted-foreground">@</span>
+                  <input
+                    type="text"
+                    value={instagramHandle}
+                    onChange={(e) =>
+                      setIdentity((p) => ({
+                        ...p,
+                        instagram: e.target.value.replace(/^@/, ""),
+                      }))
+                    }
+                    placeholder="usuario"
+                    className="flex-1 px-2 py-1.5 bg-transparent text-sm focus:outline-none"
+                  />
+                </div>
+              </div>
+              {error && <div className="text-[11px] text-destructive sm:col-span-2">{error}</div>}
+              <div className="text-[10px] text-muted-foreground sm:col-span-2">
+                {savedAt ? "Identidade salva automaticamente neste navegador." : "Preencha para enriquecer o dossiê."}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="text-[11px] text-muted-foreground">
-            Salvo apenas neste navegador enquanto conectamos a base do Atlas.
-          </div>
+          {(account.observacoes || account.description) && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="text-[10px] uppercase text-muted-foreground mb-1">
+                Observações (Salesforce)
+              </div>
+              <p className="text-xs whitespace-pre-wrap text-muted-foreground line-clamp-3">
+                {account.observacoes ?? account.description}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
+}
+
 }
 
 
