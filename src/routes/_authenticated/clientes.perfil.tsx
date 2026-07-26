@@ -671,14 +671,6 @@ function BannerHeader({
 
 
 
-function Field({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-baseline gap-2">
-      <dt className="text-[11px] uppercase text-muted-foreground w-24 shrink-0">{label}</dt>
-      <dd className="text-sm">{value ?? <span className="text-muted-foreground">—</span>}</dd>
-    </div>
-  );
-}
 
 function StatCard({
   label,
