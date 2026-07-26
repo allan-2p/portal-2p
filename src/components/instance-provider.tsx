@@ -59,6 +59,12 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     return filt.length ? filt : ["solar"];
   }, [q.data]);
 
+  const denied = q.data?.denied ?? [];
+  const deniedSet = useMemo(
+    () => new Set(denied.map((d) => `${d.instance_id}::${d.feature_key}`)),
+    [denied],
+  );
+
   const [instance, setInstanceState] = useState<InstanceId>(() => readSavedInstance() ?? "solar");
 
   // Se a instância salva não está mais liberada, cai no default.
