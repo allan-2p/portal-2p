@@ -30,6 +30,7 @@ type Ctx = {
   allowed: InstanceId[];
   hasFeature: (key: FeatureKey) => boolean;
   isRouteAllowed: (path: string) => boolean;
+  defaultRoute: string;
   loading: boolean;
 };
 
