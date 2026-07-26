@@ -37,7 +37,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
   useSalesforceNotifications();
-  const { instance, hasFeature, isRouteAllowed, loading: instanceLoading } = useInstance();
+  const { instance, hasFeature, isRouteAllowed, defaultRoute, loading: instanceLoading } = useInstance();
   const instMeta = INSTANCES[instance];
 
   useEffect(() => {
