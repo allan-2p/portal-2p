@@ -89,12 +89,6 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, id);
   }, []);
 
-  const denied = q.data?.denied ?? [];
-  const deniedSet = useMemo(
-    () => new Set(denied.map((d) => `${d.instance_id}::${d.feature_key}`)),
-    [denied],
-  );
-
   const hasFeature = useCallback(
     (key: FeatureKey) => {
       const meta = INSTANCES[instance];
