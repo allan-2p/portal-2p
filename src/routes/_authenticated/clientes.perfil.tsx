@@ -404,7 +404,14 @@ function Dossier({ account }: { account: SalesforceAccount }) {
         </div>
       </div>
 
+      {/* Histórico de atividades + Contatos */}
+      <div className="grid lg:grid-cols-2 gap-3">
+        <ActivitiesCard accountId={account.id} />
+        <ContactsCard accountId={account.id} />
+      </div>
+
       {/* Cadastro + contato */}
+
 
 
 
