@@ -6,9 +6,14 @@ import { AppLayout } from "@/components/app-layout";
 import {
   getSalesforceAccounts,
   getSalesforceAccountHistory,
+  getSalesforceAccountContacts,
+  getSalesforceAccountActivities,
   type SalesforceAccount,
   type SalesforceAccountHistory,
+  type SalesforceContact,
+  type SalesforceActivity,
 } from "@/lib/salesforce.functions";
+
 
 import {
   Search,
