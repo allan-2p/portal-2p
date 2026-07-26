@@ -30,7 +30,15 @@ import {
   Instagram,
   Upload,
   X,
+  Users,
+  Mail,
+  Smartphone,
+  History,
+  CheckCircle2,
+  Circle,
+  CalendarClock,
 } from "lucide-react";
+
 
 
 type Search = { account?: string };
