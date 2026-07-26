@@ -118,6 +118,8 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/": "home",
   "/tarefas": "tarefas",
   "/pedidos": "pedidos",
+  "/orcamentos": "pedidos",
+  "/cupons": "pedidos",
   "/dashboards": "dashboards",
   "/clientes/cadastros": "clientes.cadastros",
   "/clientes/segmentacao": "clientes.segmentacao",

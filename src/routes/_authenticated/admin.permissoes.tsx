@@ -40,7 +40,7 @@ const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
       "admin.integracoes",
     ],
   },
-  { label: "Marketing", keys: ["marketing.home", "marketing.social", "marketing.trafego", "marketing.cohort", "marketing.cac"] },
+  { label: "Marketing", keys: ["marketing.home", "marketing.social", "marketing.trafego", "marketing.cohort", "marketing.cac", "marketing.gargalo", "marketing.prevendas", "marketing.metas"] },
 ];
 
 function PermissoesPage() {

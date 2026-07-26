@@ -37,7 +37,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
   useSalesforceNotifications();
-  const { instance, hasFeature, isRouteAllowed, loading: instanceLoading } = useInstance();
+  const { instance, hasFeature, isRouteAllowed, defaultRoute, loading: instanceLoading } = useInstance();
   const instMeta = INSTANCES[instance];
 
   useEffect(() => {
@@ -53,15 +53,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (pathname.startsWith("/dashboards")) setDashboardsOpen(true);
   }, [pathname]);
 
-  // Se usuário está numa rota que a instância atual não permite, redireciona para home.
+  // Se usuário está numa rota que a instância atual não permite, redireciona
+  // para a primeira rota válida da instância (evita loop quando "/" também é bloqueada).
   useEffect(() => {
     if (instanceLoading) return;
-    if (!isRouteAllowed(pathname)) {
+    if (!isRouteAllowed(pathname) && pathname !== defaultRoute) {
       toast.info(`"${pathname}" não está disponível na instância ${instMeta.label}.`);
-      navigate({ to: "/" });
+      navigate({ to: defaultRoute });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [instance, instanceLoading, pathname]);
+  }, [instance, instanceLoading, pathname, defaultRoute]);
 
   const [showBar, setShowBar] = useState(false);
   useEffect(() => {

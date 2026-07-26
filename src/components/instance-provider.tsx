@@ -30,6 +30,7 @@ type Ctx = {
   allowed: InstanceId[];
   hasFeature: (key: FeatureKey) => boolean;
   isRouteAllowed: (path: string) => boolean;
+  defaultRoute: string;
   loading: boolean;
 };
 
@@ -59,6 +60,12 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     return filt.length ? filt : ["solar"];
   }, [q.data]);
 
+  const denied = q.data?.denied ?? [];
+  const deniedSet = useMemo(
+    () => new Set(denied.map((d) => `${d.instance_id}::${d.feature_key}`)),
+    [denied],
+  );
+
   const [instance, setInstanceState] = useState<InstanceId>(() => readSavedInstance() ?? "solar");
 
   // Se a instância salva não está mais liberada, cai no default.
@@ -83,12 +90,6 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, id);
   }, []);
 
-  const denied = q.data?.denied ?? [];
-  const deniedSet = useMemo(
-    () => new Set(denied.map((d) => `${d.instance_id}::${d.feature_key}`)),
-    [denied],
-  );
-
   const hasFeature = useCallback(
     (key: FeatureKey) => {
       const meta = INSTANCES[instance];
@@ -111,12 +112,25 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     [hasFeature],
   );
 
+  // Rota inicial válida da instância — usada para redirecionar
+  // quando o usuário está numa rota que a instância não permite.
+  const defaultRoute = useMemo(() => {
+    const meta = INSTANCES[instance];
+    const first = meta.routes.find(
+      (k) => !deniedSet.has(`${instance}::${k}`),
+    );
+    if (!first) return "/perfil";
+    const entry = Object.entries(ROUTE_FEATURE).find(([, v]) => v === first);
+    return entry?.[0] ?? "/perfil";
+  }, [instance, deniedSet]);
+
   const value: Ctx = {
     instance,
     setInstance,
     allowed,
     hasFeature,
     isRouteAllowed,
+    defaultRoute,
     loading: authLoading || (!!user && q.isLoading),
   };
   return <InstanceContext.Provider value={value}>{children}</InstanceContext.Provider>;
@@ -132,6 +146,7 @@ export function useInstance(): Ctx {
       allowed: ["solar"],
       hasFeature: () => true,
       isRouteAllowed: () => true,
+      defaultRoute: "/",
       loading: false,
     };
   }
