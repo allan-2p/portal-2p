@@ -146,6 +146,7 @@ export function useInstance(): Ctx {
       allowed: ["solar"],
       hasFeature: () => true,
       isRouteAllowed: () => true,
+      defaultRoute: "/",
       loading: false,
     };
   }
