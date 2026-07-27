@@ -15,6 +15,8 @@ import { useMarketingUnit } from "@/components/instance-provider";
 import { AtlasSoonCard } from "./marketing.index";
 import { DateRangePicker, defaultRange, ymd, type DateRangeValue } from "@/components/date-range-picker";
 import { cn } from "@/lib/utils";
+import { NotionCalendarCard } from "@/components/notion-calendar-card";
+
 
 export const Route = createFileRoute("/_authenticated/marketing/social")({
   head: () => ({ meta: [{ title: "Social Mídia — Marketing — Portal 2P" }] }),
@@ -306,7 +308,10 @@ function SocialPage() {
           </div>
         )}
 
+        <NotionCalendarCard start={range.start} end={range.end} unit={marketingUnit} accent={meta.color} />
+
         <AtlasSoonCard />
+
       </div>
     </AppLayout>
   );
