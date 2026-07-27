@@ -306,7 +306,10 @@ function SocialPage() {
           </div>
         )}
 
+        <NotionCalendarCard start={range.start} end={range.end} unit={marketingUnit} accent={meta.color} />
+
         <AtlasSoonCard />
+
       </div>
     </AppLayout>
   );
