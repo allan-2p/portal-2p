@@ -17,7 +17,7 @@ import { DateRangePicker, defaultRange, ymd, type DateRangeValue } from "@/compo
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/marketing/social")({
-  head: () => ({ meta: [{ title: "Social Media — Marketing — Portal 2P" }] }),
+  head: () => ({ meta: [{ title: "Social Mídia — Marketing — Portal 2P" }] }),
   component: SocialPage,
 });
 
