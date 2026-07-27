@@ -116,7 +116,7 @@ function SocialPage() {
             <div className="text-xs uppercase tracking-wider text-muted-foreground">
               Marketing · {meta.label} · Ingrid
             </div>
-            <h1 className="text-3xl font-bold mt-1">Social Media</h1>
+            <h1 className="text-3xl font-bold mt-1">Social Mídia</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Metricool + Salesforce · {range.label} · vs {prev.start.slice(5)} → {prev.end.slice(5)}
             </p>
