@@ -281,7 +281,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="mb-1 space-y-0.5">
                 <NavLink item={{ to: "/marketing", label: "Home", icon: Megaphone }} active={pathname === "/marketing"} collapsed={false} />
                 {show("marketing.social") && (
-                  <NavLink item={{ to: "/marketing/social", label: "Social Media", icon: Users }} active={pathname.startsWith("/marketing/social")} collapsed={false} />
+                  <NavLink item={{ to: "/marketing/social", label: "Social Mídia", icon: Users }} active={pathname.startsWith("/marketing/social")} collapsed={false} />
                 )}
                 {show("marketing.trafego") && (
                   <NavLink item={{ to: "/marketing/trafego", label: "Mídia Paga", icon: Filter }} active={pathname.startsWith("/marketing/trafego")} collapsed={false} />
