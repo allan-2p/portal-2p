@@ -111,8 +111,9 @@ function RankingPage() {
       const iCount = idx("contagem");
       const map = new Map<string, Row>();
       for (const r of body) {
-        const name = (r[iName] ?? "").trim();
+        const name = normalizeName(r[iName] ?? "");
         if (!name) continue;
+
         const valor = parseMoney(r[iValor] ?? "");
         const key = name.toLowerCase();
         const prev = map.get(key);
