@@ -240,9 +240,9 @@ function RankingPage() {
             onChange={(e) => setLimit(Number(e.target.value))}
             className="px-3 py-2 rounded-lg bg-surface border border-border focus:outline-none focus:border-primary/50"
           >
-            {[20, 50, 100, 500, 100000].map((n) => (
+            {[10, 20, 50].map((n) => (
               <option key={n} value={n}>
-                {n >= 100000 ? "Todos" : `Top ${n}`}
+                Top {n}
               </option>
             ))}
           </select>
