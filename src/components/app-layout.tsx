@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound, Eye, LineChart, Tv } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound, Eye, LineChart, Tv, Trophy } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ThemeToggle } from "./theme-toggle";
@@ -182,7 +182,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
 
           {/* Clientes — grupo expansível */}
-          {(show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.sugestoes")) && (
+          {(show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.sugestoes") || show("clientes.ranking")) && (
             collapsed ? (
               <Link
                 to={show("clientes.segmentacao") ? "/clientes/segmentacao" : show("clientes.perfil") ? "/clientes/perfil" : "/clientes/cadastros"}
@@ -221,6 +221,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     )}
                     {show("clientes.sugestoes") && (
                       <SubLink to="/clientes/sugestoes" label="Sugestões do Atlas" icon={Sparkles} active={pathname.startsWith("/clientes/sugestoes")} />
+                    )}
+                    {show("clientes.ranking") && (
+                      <SubLink to="/clientes/ranking" label="Ranking" icon={Trophy} active={pathname.startsWith("/clientes/ranking")} />
                     )}
                   </div>
                 )}
