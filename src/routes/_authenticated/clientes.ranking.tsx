@@ -30,6 +30,16 @@ type Row = {
   count: number;
 };
 
+/** Regras fixas de normalização de contas */
+function normalizeName(raw: string): string | null {
+  const n = raw.trim();
+  const u = n.toUpperCase();
+  if (/\bESOL\b|ESOL/.test(u)) return null; // ESOL desconsiderada
+  if (u.includes("SOLTURI")) return "SOLTURI";
+  if (/\bNAP\b|NAP\s|^NAP/.test(u) || u.includes("NAP ")) return "NAP";
+  return n;
+}
+
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let field = "";
