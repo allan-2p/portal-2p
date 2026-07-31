@@ -349,7 +349,7 @@ function RankingPage() {
               </table>
               {filtered.length > shown.length && (
                 <div className="px-4 py-3 text-center text-xs text-muted-foreground border-t border-border">
-                  Exibindo {shown.length} de {filtered.length.toLocaleString("pt-BR")} clientes.
+                  Exibindo apenas os {shown.length} maiores clientes.
                 </div>
               )}
             </div>
