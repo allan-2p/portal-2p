@@ -235,12 +235,6 @@ function RankingPage() {
               </option>
             ))}
           </select>
-          <input
-            value={minValor}
-            onChange={(e) => setMinValor(e.target.value)}
-            placeholder="Valor mínimo (R$)"
-            className="px-3 py-2 rounded-lg bg-surface border border-border w-44 focus:outline-none focus:border-primary/50"
-          />
           <select
             value={limit}
             onChange={(e) => setLimit(Number(e.target.value))}
@@ -252,12 +246,11 @@ function RankingPage() {
               </option>
             ))}
           </select>
-          {(seller !== "all" || uf !== "all" || minValor || search) && (
+          {(seller !== "all" || uf !== "all" || search) && (
             <button
               onClick={() => {
                 setSeller("all");
                 setUf("all");
-                setMinValor("");
                 setSearch("");
               }}
               className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground"
