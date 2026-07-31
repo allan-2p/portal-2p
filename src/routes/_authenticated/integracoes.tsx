@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { CheckCircle2, XCircle, RefreshCw, ExternalLink, Cloud, Loader2, ArrowLeft } from "lucide-react";
+import { useRef, useState } from "react";
+import { CheckCircle2, XCircle, RefreshCw, ExternalLink, Cloud, Loader2, ArrowLeft, Upload, FileSpreadsheet, Download, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { getSalesforceStatus, getSalesforceSample } from "@/lib/salesforce.functions";
+
 
 export const Route = createFileRoute("/_authenticated/integracoes")({
   head: () => ({ meta: [{ title: "Integrações · Portal 2P" }] }),
