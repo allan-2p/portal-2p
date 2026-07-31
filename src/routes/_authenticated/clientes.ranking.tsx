@@ -92,7 +92,7 @@ function RankingPage() {
   const [seller, setSeller] = useState("all");
   const [uf, setUf] = useState("all");
   
-  const [limit, setLimit] = useState(100);
+  const [limit, setLimit] = useState(50);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["top20-ranking"],
