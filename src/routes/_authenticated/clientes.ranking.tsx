@@ -155,13 +155,13 @@ function RankingPage() {
     });
   }, [all, search, seller, uf]);
 
-  const total = filtered.reduce((a, r) => a + r.valor, 0);
-  const shown = filtered.slice(0, limit);
+  const shown = filtered.slice(0, Math.min(limit, 50));
+  const total = shown.reduce((a, r) => a + r.valor, 0);
 
   function exportCsv() {
     const lines = [
       "Posicao,Cliente,Valor,Vendedor,UF",
-      ...filtered.map((r, i) =>
+      ...shown.map((r, i) =>
         [i + 1, `"${r.name.replace(/"/g, '""')}"`, r.valor.toFixed(2), `"${r.seller}"`, r.uf].join(","),
       ),
     ];
