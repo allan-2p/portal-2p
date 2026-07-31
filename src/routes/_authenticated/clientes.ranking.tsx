@@ -91,7 +91,7 @@ function RankingPage() {
   const [search, setSearch] = useState("");
   const [seller, setSeller] = useState("all");
   const [uf, setUf] = useState("all");
-  const [minValor, setMinValor] = useState("");
+  
   const [limit, setLimit] = useState(100);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
