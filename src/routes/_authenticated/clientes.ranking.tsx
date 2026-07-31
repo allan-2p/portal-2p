@@ -30,6 +30,16 @@ type Row = {
   count: number;
 };
 
+/** Regras fixas de normalização de contas */
+function normalizeName(raw: string): string | null {
+  const n = raw.trim();
+  const u = n.toUpperCase();
+  if (/\bESOL\b|ESOL/.test(u)) return null; // ESOL desconsiderada
+  if (u.includes("SOLTURI")) return "SOLTURI";
+  if (/\bNAP\b|NAP\s|^NAP/.test(u) || u.includes("NAP ")) return "NAP";
+  return n;
+}
+
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let field = "";
@@ -81,7 +91,7 @@ function RankingPage() {
   const [search, setSearch] = useState("");
   const [seller, setSeller] = useState("all");
   const [uf, setUf] = useState("all");
-  const [minValor, setMinValor] = useState("");
+  
   const [limit, setLimit] = useState(100);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
@@ -101,8 +111,9 @@ function RankingPage() {
       const iCount = idx("contagem");
       const map = new Map<string, Row>();
       for (const r of body) {
-        const name = (r[iName] ?? "").trim();
+        const name = normalizeName(r[iName] ?? "");
         if (!name) continue;
+
         const valor = parseMoney(r[iValor] ?? "");
         const key = name.toLowerCase();
         const prev = map.get(key);
@@ -136,24 +147,22 @@ function RankingPage() {
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    const min = parseMoney(minValor);
     return all.filter((r) => {
       if (seller !== "all" && r.seller !== seller) return false;
       if (uf !== "all" && r.uf !== uf) return false;
-      if (min > 0 && r.valor < min) return false;
       if (s && !r.name.toLowerCase().includes(s) && !r.seller.toLowerCase().includes(s)) return false;
       return true;
     });
-  }, [all, search, seller, uf, minValor]);
+  }, [all, search, seller, uf]);
 
   const total = filtered.reduce((a, r) => a + r.valor, 0);
   const shown = filtered.slice(0, limit);
 
   function exportCsv() {
     const lines = [
-      "Posicao,Cliente,Valor,Vendedor,UF,Pedidos",
+      "Posicao,Cliente,Valor,Vendedor,UF",
       ...filtered.map((r, i) =>
-        [i + 1, `"${r.name.replace(/"/g, '""')}"`, r.valor.toFixed(2), `"${r.seller}"`, r.uf, r.count].join(","),
+        [i + 1, `"${r.name.replace(/"/g, '""')}"`, r.valor.toFixed(2), `"${r.seller}"`, r.uf].join(","),
       ),
     ];
     const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
@@ -226,12 +235,6 @@ function RankingPage() {
               </option>
             ))}
           </select>
-          <input
-            value={minValor}
-            onChange={(e) => setMinValor(e.target.value)}
-            placeholder="Valor mínimo (R$)"
-            className="px-3 py-2 rounded-lg bg-surface border border-border w-44 focus:outline-none focus:border-primary/50"
-          />
           <select
             value={limit}
             onChange={(e) => setLimit(Number(e.target.value))}
@@ -243,12 +246,11 @@ function RankingPage() {
               </option>
             ))}
           </select>
-          {(seller !== "all" || uf !== "all" || minValor || search) && (
+          {(seller !== "all" || uf !== "all" || search) && (
             <button
               onClick={() => {
                 setSeller("all");
                 setUf("all");
-                setMinValor("");
                 setSearch("");
               }}
               className="px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground"
@@ -283,31 +285,66 @@ function RankingPage() {
                     <th className="text-right font-medium px-4 py-3">Valor total</th>
                     <th className="text-left font-medium px-4 py-3">Vendedor</th>
                     <th className="text-left font-medium px-4 py-3 w-20">UF</th>
-                    <th className="text-right font-medium px-4 py-3 w-24">Pedidos</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {shown.map((r, i) => (
-                    <tr key={r.name + i} className="hover:bg-surface-2/40">
-                      <td className="px-4 py-2.5">
-                        <span
+                  {shown.map((r, i) => {
+                    const tier = i < 3 ? 3 : i < 10 ? 10 : i < 20 ? 20 : 0;
+                    const rowCls =
+                      tier === 3
+                        ? "bg-primary/10 hover:bg-primary/15 border-l-4 border-l-primary"
+                        : tier === 10
+                          ? "bg-primary/[0.06] hover:bg-primary/10 border-l-4 border-l-primary/50"
+                          : tier === 20
+                            ? "bg-primary/[0.03] hover:bg-primary/[0.07] border-l-4 border-l-primary/25"
+                            : "hover:bg-surface-2/40";
+                    return (
+                      <tr key={r.name + i} className={rowCls}>
+                        <td className="px-4 py-2.5">
+                          <span
+                            className={
+                              tier === 3
+                                ? "inline-flex items-center gap-1 font-bold text-primary text-base"
+                                : tier === 10
+                                  ? "font-semibold text-primary"
+                                  : tier === 20
+                                    ? "font-medium text-primary/70"
+                                    : "text-muted-foreground"
+                            }
+                          >
+                            {tier === 3 && <Trophy className="h-4 w-4" />}
+                            {i + 1}
+                          </span>
+                        </td>
+                        <td
                           className={
-                            i < 3
-                              ? "inline-flex items-center gap-1 font-semibold text-primary"
-                              : "text-muted-foreground"
+                            "px-4 py-2.5 " +
+                            (tier === 3
+                              ? "font-bold text-base"
+                              : tier === 10
+                                ? "font-semibold"
+                                : "font-medium")
                           }
                         >
-                          {i < 3 && <Trophy className="h-3.5 w-3.5" />}
-                          {i + 1}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 font-medium">{r.name}</td>
-                      <td className="px-4 py-2.5 text-right font-semibold tabular-nums">{brl(r.valor)}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground">{r.seller}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground">{r.uf}</td>
-                      <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{r.count}</td>
-                    </tr>
-                  ))}
+                          {r.name}
+                        </td>
+                        <td
+                          className={
+                            "px-4 py-2.5 text-right tabular-nums " +
+                            (tier === 3
+                              ? "font-bold text-base text-primary"
+                              : tier === 10
+                                ? "font-semibold text-primary/90"
+                                : "font-semibold")
+                          }
+                        >
+                          {brl(r.valor)}
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{r.seller}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{r.uf}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               {filtered.length > shown.length && (
