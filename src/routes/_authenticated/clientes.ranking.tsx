@@ -285,31 +285,66 @@ function RankingPage() {
                     <th className="text-right font-medium px-4 py-3">Valor total</th>
                     <th className="text-left font-medium px-4 py-3">Vendedor</th>
                     <th className="text-left font-medium px-4 py-3 w-20">UF</th>
-                    <th className="text-right font-medium px-4 py-3 w-24">Pedidos</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {shown.map((r, i) => (
-                    <tr key={r.name + i} className="hover:bg-surface-2/40">
-                      <td className="px-4 py-2.5">
-                        <span
+                  {shown.map((r, i) => {
+                    const tier = i < 3 ? 3 : i < 10 ? 10 : i < 20 ? 20 : 0;
+                    const rowCls =
+                      tier === 3
+                        ? "bg-primary/10 hover:bg-primary/15 border-l-4 border-l-primary"
+                        : tier === 10
+                          ? "bg-primary/[0.06] hover:bg-primary/10 border-l-4 border-l-primary/50"
+                          : tier === 20
+                            ? "bg-primary/[0.03] hover:bg-primary/[0.07] border-l-4 border-l-primary/25"
+                            : "hover:bg-surface-2/40";
+                    return (
+                      <tr key={r.name + i} className={rowCls}>
+                        <td className="px-4 py-2.5">
+                          <span
+                            className={
+                              tier === 3
+                                ? "inline-flex items-center gap-1 font-bold text-primary text-base"
+                                : tier === 10
+                                  ? "font-semibold text-primary"
+                                  : tier === 20
+                                    ? "font-medium text-primary/70"
+                                    : "text-muted-foreground"
+                            }
+                          >
+                            {tier === 3 && <Trophy className="h-4 w-4" />}
+                            {i + 1}
+                          </span>
+                        </td>
+                        <td
                           className={
-                            i < 3
-                              ? "inline-flex items-center gap-1 font-semibold text-primary"
-                              : "text-muted-foreground"
+                            "px-4 py-2.5 " +
+                            (tier === 3
+                              ? "font-bold text-base"
+                              : tier === 10
+                                ? "font-semibold"
+                                : "font-medium")
                           }
                         >
-                          {i < 3 && <Trophy className="h-3.5 w-3.5" />}
-                          {i + 1}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 font-medium">{r.name}</td>
-                      <td className="px-4 py-2.5 text-right font-semibold tabular-nums">{brl(r.valor)}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground">{r.seller}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground">{r.uf}</td>
-                      <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{r.count}</td>
-                    </tr>
-                  ))}
+                          {r.name}
+                        </td>
+                        <td
+                          className={
+                            "px-4 py-2.5 text-right tabular-nums " +
+                            (tier === 3
+                              ? "font-bold text-base text-primary"
+                              : tier === 10
+                                ? "font-semibold text-primary/90"
+                                : "font-semibold")
+                          }
+                        >
+                          {brl(r.valor)}
+                        </td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{r.seller}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{r.uf}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               {filtered.length > shown.length && (
