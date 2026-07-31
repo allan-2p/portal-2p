@@ -180,33 +180,6 @@ function RankingPage() {
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Clientes</div>
             <h1 className="text-3xl font-bold mt-1">Ranking</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Clientes ordenados pelo valor total (base Top 20 enviada em Integrações).
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar cliente ou vendedor…"
-                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-64 focus:outline-none focus:border-primary/50"
-              />
-            </div>
-            <button
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="px-3.5 py-2 rounded-lg border border-border text-sm hover:bg-surface-2 disabled:opacity-60"
-            >
-              {isFetching ? "Atualizando…" : "Atualizar"}
-            </button>
-            <button
-              onClick={exportCsv}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg border border-border text-sm hover:bg-surface-2"
-            >
-              <Download className="h-4 w-4" /> Exportar
-            </button>
           </div>
         </div>
 
