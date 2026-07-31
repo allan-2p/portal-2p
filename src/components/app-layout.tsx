@@ -182,7 +182,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
 
           {/* Clientes — grupo expansível */}
-          {(show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.sugestoes")) && (
+          {(show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.sugestoes") || show("clientes.ranking")) && (
             collapsed ? (
               <Link
                 to={show("clientes.segmentacao") ? "/clientes/segmentacao" : show("clientes.perfil") ? "/clientes/perfil" : "/clientes/cadastros"}
@@ -221,6 +221,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     )}
                     {show("clientes.sugestoes") && (
                       <SubLink to="/clientes/sugestoes" label="Sugestões do Atlas" icon={Sparkles} active={pathname.startsWith("/clientes/sugestoes")} />
+                    )}
+                    {show("clientes.ranking") && (
+                      <SubLink to="/clientes/ranking" label="Ranking" icon={Trophy} active={pathname.startsWith("/clientes/ranking")} />
                     )}
                   </div>
                 )}

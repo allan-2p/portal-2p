@@ -17,6 +17,7 @@ export type FeatureKey =
   | "clientes.segmentacao"
   | "clientes.perfil"
   | "clientes.sugestoes"
+  | "clientes.ranking"
   | "atlas"
   | "admin.usuarios"
   | "admin.vendedores"
@@ -59,6 +60,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "clientes.segmentacao",
       "clientes.perfil",
       "clientes.sugestoes",
+      "clientes.ranking",
       "atlas",
       "admin.usuarios",
       "admin.vendedores",
@@ -83,6 +85,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "clientes.segmentacao",
       "clientes.perfil",
       "clientes.sugestoes",
+      "clientes.ranking",
       "atlas",
       "admin.usuarios",
       "admin.vendedores",
@@ -125,6 +128,7 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/clientes/segmentacao": "clientes.segmentacao",
   "/clientes/perfil": "clientes.perfil",
   "/clientes/sugestoes": "clientes.sugestoes",
+  "/clientes/ranking": "clientes.ranking",
   "/atlas": "atlas",
   "/usuarios": "admin.usuarios",
   "/admin/vendedores": "admin.vendedores",
@@ -150,6 +154,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "clientes.segmentacao": "Clientes • Segmentação",
   "clientes.perfil": "Clientes • Perfil do Cliente",
   "clientes.sugestoes": "Clientes • Sugestões do Atlas",
+  "clientes.ranking": "Clientes • Ranking",
   atlas: "Atlas (AI)",
   "admin.usuarios": "Admin • Usuários",
   "admin.vendedores": "Admin • Vendedores",
