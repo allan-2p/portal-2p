@@ -147,24 +147,22 @@ function RankingPage() {
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    const min = parseMoney(minValor);
     return all.filter((r) => {
       if (seller !== "all" && r.seller !== seller) return false;
       if (uf !== "all" && r.uf !== uf) return false;
-      if (min > 0 && r.valor < min) return false;
       if (s && !r.name.toLowerCase().includes(s) && !r.seller.toLowerCase().includes(s)) return false;
       return true;
     });
-  }, [all, search, seller, uf, minValor]);
+  }, [all, search, seller, uf]);
 
   const total = filtered.reduce((a, r) => a + r.valor, 0);
   const shown = filtered.slice(0, limit);
 
   function exportCsv() {
     const lines = [
-      "Posicao,Cliente,Valor,Vendedor,UF,Pedidos",
+      "Posicao,Cliente,Valor,Vendedor,UF",
       ...filtered.map((r, i) =>
-        [i + 1, `"${r.name.replace(/"/g, '""')}"`, r.valor.toFixed(2), `"${r.seller}"`, r.uf, r.count].join(","),
+        [i + 1, `"${r.name.replace(/"/g, '""')}"`, r.valor.toFixed(2), `"${r.seller}"`, r.uf].join(","),
       ),
     ];
     const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
