@@ -259,7 +259,7 @@ function RankingPage() {
             </button>
           )}
           <div className="ml-auto text-muted-foreground">
-            {filtered.length.toLocaleString("pt-BR")} clientes · Total {brl(total)}
+            Top {shown.length} · Total {brl(total)}
           </div>
         </div>
 
