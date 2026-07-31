@@ -92,7 +92,7 @@ function RankingPage() {
   const [seller, setSeller] = useState("all");
   const [uf, setUf] = useState("all");
   
-  const [limit, setLimit] = useState(100);
+  const [limit, setLimit] = useState(50);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["top20-ranking"],
@@ -155,13 +155,13 @@ function RankingPage() {
     });
   }, [all, search, seller, uf]);
 
-  const total = filtered.reduce((a, r) => a + r.valor, 0);
-  const shown = filtered.slice(0, limit);
+  const shown = filtered.slice(0, Math.min(limit, 50));
+  const total = shown.reduce((a, r) => a + r.valor, 0);
 
   function exportCsv() {
     const lines = [
       "Posicao,Cliente,Valor,Vendedor,UF",
-      ...filtered.map((r, i) =>
+      ...shown.map((r, i) =>
         [i + 1, `"${r.name.replace(/"/g, '""')}"`, r.valor.toFixed(2), `"${r.seller}"`, r.uf].join(","),
       ),
     ];
@@ -240,9 +240,9 @@ function RankingPage() {
             onChange={(e) => setLimit(Number(e.target.value))}
             className="px-3 py-2 rounded-lg bg-surface border border-border focus:outline-none focus:border-primary/50"
           >
-            {[20, 50, 100, 500, 100000].map((n) => (
+            {[10, 20, 50].map((n) => (
               <option key={n} value={n}>
-                {n >= 100000 ? "Todos" : `Top ${n}`}
+                Top {n}
               </option>
             ))}
           </select>
@@ -259,7 +259,7 @@ function RankingPage() {
             </button>
           )}
           <div className="ml-auto text-muted-foreground">
-            {filtered.length.toLocaleString("pt-BR")} clientes · Total {brl(total)}
+            Top {shown.length} · Total {brl(total)}
           </div>
         </div>
 
@@ -349,7 +349,7 @@ function RankingPage() {
               </table>
               {filtered.length > shown.length && (
                 <div className="px-4 py-3 text-center text-xs text-muted-foreground border-t border-border">
-                  Exibindo {shown.length} de {filtered.length.toLocaleString("pt-BR")} clientes.
+                  Exibindo apenas os {shown.length} maiores clientes.
                 </div>
               )}
             </div>
