@@ -281,15 +281,15 @@ function HomePage() {
     .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
 
 
-  // ---- Meta do mês atual (do banco) ----
+  // ---- Meta do mês selecionado (do banco) ----
   const fetchMonthGoal = useServerFn(getMonthGoalTotal);
   const monthGoalQ = useQuery({
-    queryKey: ["month-goal", today.getFullYear(), today.getMonth() + 1, ownerParam],
+    queryKey: ["month-goal", metaY, metaM + 1, ownerParam],
     queryFn: () =>
       fetchMonthGoal({
         data: {
-          year: today.getFullYear(),
-          month: today.getMonth() + 1,
+          year: metaY,
+          month: metaM + 1,
           ownerId: ownerParam,
         },
       }),
@@ -299,27 +299,31 @@ function HomePage() {
   const dbGoal = monthGoalQ.data?.total ?? 0;
 
   // ---- Vendido do mês (mesma lógica de Administrador > Tabelas > "Vendido - Mês Atual") ----
-  const monthRange = useMemo(() => {
-    const y = today.getFullYear();
-    const m = today.getMonth();
-    return { start: fmtKey(new Date(y, m, 1)), end: fmtKey(new Date(y, m + 1, 0)) };
-  }, [today]);
+  const monthRange = useMemo(
+    () => ({ start: metaRange.dateFrom, end: metaRange.dateTo }),
+    [metaRange],
+  );
   const fetchVendas = useServerFn(getSalesforceVendas);
   const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
   const vendidoMesQ = useQuery({
-    queryKey: ["sf-home-vendido-mes", ownerParam],
+    queryKey: ["sf-home-vendido-mes", ownerParam, metaRange.dateFrom, metaRange.dateTo],
     queryFn: () =>
-      fetchVendidoMes({ data: { ...OPP_DEFAULTS_VENDIDO_MES, ownerId: ownerParam } }),
+      fetchVendidoMes({
+        data: { ...OPP_DEFAULTS_VENDIDO_MES, ...metaRange, ownerId: ownerParam },
+      }),
     enabled: dataEnabled,
     staleTime: 60_000,
   });
   const geradoMesQ = useQuery({
-    queryKey: ["sf-home-gerado-mes", ownerParam],
+    queryKey: ["sf-home-gerado-mes", ownerParam, metaRange.dateFrom, metaRange.dateTo],
     queryFn: () =>
-      fetchVendidoMes({ data: { ...OPP_DEFAULTS_GERADO_MES, ownerId: ownerParam } }),
+      fetchVendidoMes({
+        data: { ...OPP_DEFAULTS_GERADO_MES, ...metaRange, ownerId: ownerParam },
+      }),
     enabled: dataEnabled,
     staleTime: 60_000,
   });
+
   const sold = useMemo(() => {
     const recs = vendidoMesQ.data?.records ?? [];
     return recs
