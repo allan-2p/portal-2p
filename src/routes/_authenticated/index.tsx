@@ -363,14 +363,16 @@ function HomePage() {
 
   const goal = dbGoal;
   const achieved = sold;
-  // Projetado = meta diária × dias úteis decorridos (inclui hoje)
-  const projected = useMemo(() => {
-    const bizDays = businessDaysOfMonth(metaY, metaM);
-    if (!bizDays.length) return 0;
-    const dailyGoal = dbGoal / bizDays.length;
-    const elapsed = bizDays.filter((d) => d <= metaElapsedDay).length;
-    return Math.round(dailyGoal * elapsed);
-  }, [dbGoal, metaY, metaM, metaElapsedDay]);
+  // Projetado = soma, por mês selecionado, da meta diária × dias úteis decorridos
+  const projected = Math.round(
+    metaMonthParts.reduce((acc, p) => {
+      const bizDays = businessDaysOfMonth(p.y, p.m);
+      if (!bizDays.length) return acc;
+      const dailyGoal = (goalByMonth[p.key] ?? 0) / bizDays.length;
+      const elapsed = bizDays.filter((d) => d <= elapsedDayFor(p.y, p.m)).length;
+      return acc + dailyGoal * elapsed;
+    }, 0),
+  );
   const goalPct = goal > 0 ? (sold / goal) * 100 : 0;
   const projectedPct = goal > 0 ? (projected / goal) * 100 : 0;
 
@@ -392,41 +394,41 @@ function HomePage() {
   }, [ownerId, currentUserSfId, salespeople]);
 
 
-  // ---- Série diária: Vendas — Projetado × Realizado (mês atual) ----
+  // ---- Série diária: Vendas — Projetado × Realizado (meses selecionados) ----
   // Meta diária = meta do mês / dias úteis do mês (exclui sáb, dom e feriados nacionais).
   const salesChartSeries = useMemo(() => {
-    const y = metaY;
-    const m = metaM;
-    const daysInMonth = new Date(y, m + 1, 0).getDate();
-    const bizDays = businessDaysOfMonth(y, m);
-    const bizSet = new Set(bizDays);
-    const dailyGoal = bizDays.length ? dbGoal / bizDays.length : 0;
-
-    const soldByDay = new Map<number, number>();
+    const soldByKey = new Map<string, number>();
     const recs = vendidoMesQ.data?.records ?? [];
     for (const r of recs) {
       if (!r.closeDate) continue;
       if (ownerParam && r.ownerId !== ownerParam) continue;
       const [yr, mo, dd] = r.closeDate.split("-").map(Number);
-      if (yr !== y || mo !== m + 1) continue;
-      soldByDay.set(dd, (soldByDay.get(dd) ?? 0) + (r.total ?? r.amount ?? 0));
+      const k = `${yr}-${mo}-${dd}`;
+      soldByKey.set(k, (soldByKey.get(k) ?? 0) + (r.total ?? r.amount ?? 0));
     }
 
-    const todayDay = metaElapsedDay;
     let cumProjected = 0;
     let cumSold = 0;
     const out: Array<{ day: string; projected: number; sold: number | null }> = [];
-    for (let d = 1; d <= daysInMonth; d++) {
-      if (bizSet.has(d)) cumProjected += dailyGoal;
-      cumSold += soldByDay.get(d) ?? 0;
-      out.push({
-        day: `${String(d).padStart(2, "0")}/${String(m + 1).padStart(2, "0")}`,
-        projected: Math.round(cumProjected),
-        sold: d <= todayDay ? Math.round(cumSold) : null,
-      });
+    for (const p of metaMonthParts) {
+      const daysInMonth = new Date(p.y, p.m + 1, 0).getDate();
+      const bizDays = businessDaysOfMonth(p.y, p.m);
+      const bizSet = new Set(bizDays);
+      const dailyGoal = bizDays.length ? (goalByMonth[p.key] ?? 0) / bizDays.length : 0;
+      const todayDay = elapsedDayFor(p.y, p.m);
+      for (let d = 1; d <= daysInMonth; d++) {
+        if (bizSet.has(d)) cumProjected += dailyGoal;
+        cumSold += soldByKey.get(`${p.y}-${p.m + 1}-${d}`) ?? 0;
+        out.push({
+          day: `${String(d).padStart(2, "0")}/${String(p.m + 1).padStart(2, "0")}`,
+          projected: Math.round(cumProjected),
+          sold: d <= todayDay ? Math.round(cumSold) : null,
+        });
+      }
     }
     return out;
-  }, [dbGoal, vendidoMesQ.data, ownerParam, metaY, metaM, metaElapsedDay]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendidoMesQ.data, ownerParam, metaMonthParts, JSON.stringify(goalByMonth)]);
 
   // ---- Conversão / Ticket médio (mês atual x média 3M) ----
   const rangeMulti = useMemo(() => {
