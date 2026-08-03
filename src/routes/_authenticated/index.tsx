@@ -145,6 +145,28 @@ function HomePage() {
 
   const fetchTasks = useServerFn(getSalesforceTasks);
   const today = useMemo(() => new Date(), []);
+
+  // ---- Filtro de mês/ano das metas (Meta do mês / Geração do mês) ----
+  const [metaY, setMetaY] = useState<number>(() => new Date().getFullYear());
+  const [metaM, setMetaM] = useState<number>(() => new Date().getMonth()); // 0-11
+  const isCurrentMetaMonth = metaY === today.getFullYear() && metaM === today.getMonth();
+  const isFutureMetaMonth =
+    metaY > today.getFullYear() || (metaY === today.getFullYear() && metaM > today.getMonth());
+  const metaRange = useMemo(
+    () => ({
+      dateLiteral: "CUSTOM" as const,
+      dateFrom: fmtKey(new Date(metaY, metaM, 1)),
+      dateTo: fmtKey(new Date(metaY, metaM + 1, 0)),
+    }),
+    [metaY, metaM],
+  );
+  /** Último dia considerado "decorrido" no mês selecionado */
+  const metaElapsedDay = isCurrentMetaMonth
+    ? today.getDate()
+    : isFutureMetaMonth
+      ? 0
+      : new Date(metaY, metaM + 1, 0).getDate();
+
   const agendaRangeParams = useMemo(() => {
     const key = fmtKey(agendaDate);
     const isToday = key === fmtKey(today);
