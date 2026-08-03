@@ -777,7 +777,9 @@ function HomePage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="font-display font-semibold">Geração do mês</div>
+                <div className="font-display font-semibold">
+                  Geração do mês{!isCurrentMetaMonth ? ` · ${MONTH_NAMES[metaM]}/${metaY}` : ""}
+                </div>
                 <div className="text-sm flex items-center gap-3">
                   <span><span className="text-muted-foreground">Gerado </span><span className="text-[oklch(0.55_0.2_250)] font-bold">{fmt(generated)}</span></span>
                   <span className="text-muted-foreground">·</span>
