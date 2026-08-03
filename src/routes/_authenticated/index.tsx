@@ -728,30 +728,54 @@ function HomePage() {
 
           <div className="flex items-center gap-2">
             <VendedorFilter value={ownerId} onChange={setOwnerId} />
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border">
-              <CalendarIcon className="h-4 w-4 text-primary" />
-              <label className="text-xs text-muted-foreground">Período</label>
-              <select
-                value={metaM}
-                onChange={(e) => setMetaM(Number(e.target.value))}
-                className="bg-transparent text-sm font-medium outline-none"
-                aria-label="Mês das metas"
-              >
-                {MONTH_NAMES.map((n, i) => (
-                  <option key={n} value={i}>{n}</option>
-                ))}
-              </select>
-              <select
-                value={metaY}
-                onChange={(e) => setMetaY(Number(e.target.value))}
-                className="bg-transparent text-sm font-medium outline-none"
-                aria-label="Ano das metas"
-              >
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border text-sm font-medium hover:bg-surface-2 transition-colors"
+                  aria-label="Meses das metas"
+                >
+                  <CalendarIcon className="h-4 w-4 text-primary" />
+                  <span className="max-w-[220px] truncate">{metaLabel}</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[300px] p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Selecione um ou mais meses</span>
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => setMetaMonths([currentMonthKey])}
+                  >
+                    Mês atual
+                  </button>
+                </div>
                 {META_YEARS.map((y) => (
-                  <option key={y} value={y}>{y}</option>
+                  <div key={y}>
+                    <div className="text-xs font-semibold text-muted-foreground mb-1">{y}</div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {MONTH_NAMES.map((n, i) => {
+                        const k = `${y}-${String(i + 1).padStart(2, "0")}`;
+                        const on = metaMonths.includes(k);
+                        return (
+                          <button
+                            key={k}
+                            onClick={() => toggleMetaMonth(k)}
+                            className={cn(
+                              "text-xs px-2 py-1.5 rounded-md border transition-colors",
+                              on
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "border-border text-muted-foreground hover:bg-surface-2",
+                            )}
+                          >
+                            {n.slice(0, 3)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ))}
-              </select>
-            </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
