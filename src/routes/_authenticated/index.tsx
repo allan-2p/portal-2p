@@ -371,8 +371,8 @@ function HomePage() {
   // ---- Série diária: Vendas — Projetado × Realizado (mês atual) ----
   // Meta diária = meta do mês / dias úteis do mês (exclui sáb, dom e feriados nacionais).
   const salesChartSeries = useMemo(() => {
-    const y = today.getFullYear();
-    const m = today.getMonth();
+    const y = metaY;
+    const m = metaM;
     const daysInMonth = new Date(y, m + 1, 0).getDate();
     const bizDays = businessDaysOfMonth(y, m);
     const bizSet = new Set(bizDays);
@@ -388,7 +388,7 @@ function HomePage() {
       soldByDay.set(dd, (soldByDay.get(dd) ?? 0) + (r.total ?? r.amount ?? 0));
     }
 
-    const todayDay = today.getDate();
+    const todayDay = metaElapsedDay;
     let cumProjected = 0;
     let cumSold = 0;
     const out: Array<{ day: string; projected: number; sold: number | null }> = [];
@@ -402,7 +402,7 @@ function HomePage() {
       });
     }
     return out;
-  }, [dbGoal, vendidoMesQ.data, ownerParam, today]);
+  }, [dbGoal, vendidoMesQ.data, ownerParam, metaY, metaM, metaElapsedDay]);
 
   // ---- Conversão / Ticket médio (mês atual x média 3M) ----
   const rangeMulti = useMemo(() => {
