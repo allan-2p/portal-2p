@@ -702,6 +702,30 @@ function HomePage() {
 
           <div className="flex items-center gap-2">
             <VendedorFilter value={ownerId} onChange={setOwnerId} />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border">
+              <CalendarIcon className="h-4 w-4 text-primary" />
+              <label className="text-xs text-muted-foreground">Período</label>
+              <select
+                value={metaM}
+                onChange={(e) => setMetaM(Number(e.target.value))}
+                className="bg-transparent text-sm font-medium outline-none"
+                aria-label="Mês das metas"
+              >
+                {MONTH_NAMES.map((n, i) => (
+                  <option key={n} value={i}>{n}</option>
+                ))}
+              </select>
+              <select
+                value={metaY}
+                onChange={(e) => setMetaY(Number(e.target.value))}
+                className="bg-transparent text-sm font-medium outline-none"
+                aria-label="Ano das metas"
+              >
+                {META_YEARS.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
