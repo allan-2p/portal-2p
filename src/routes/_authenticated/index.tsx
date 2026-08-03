@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { ViewSlot } from "@/components/view-slot";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -152,26 +152,44 @@ function HomePage() {
   const fetchTasks = useServerFn(getSalesforceTasks);
   const today = useMemo(() => new Date(), []);
 
-  // ---- Filtro de mês/ano das metas (Meta do mês / Geração do mês) ----
-  const [metaY, setMetaY] = useState<number>(() => new Date().getFullYear());
-  const [metaM, setMetaM] = useState<number>(() => new Date().getMonth()); // 0-11
-  const isCurrentMetaMonth = metaY === today.getFullYear() && metaM === today.getMonth();
-  const isFutureMetaMonth =
-    metaY > today.getFullYear() || (metaY === today.getFullYear() && metaM > today.getMonth());
-  const metaRange = useMemo(
-    () => ({
-      dateLiteral: "CUSTOM" as const,
-      dateFrom: fmtKey(new Date(metaY, metaM, 1)),
-      dateTo: fmtKey(new Date(metaY, metaM + 1, 0)),
-    }),
-    [metaY, metaM],
+  // ---- Filtro de meses das metas (múltipla seleção, mês + ano juntos) ----
+  const monthKey = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, "0")}`;
+  const [metaMonths, setMetaMonths] = useState<string[]>(() => {
+    const n = new Date();
+    return [`${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`];
+  });
+  const metaMonthParts = useMemo(
+    () =>
+      [...metaMonths].sort().map((k) => {
+        const [y, m] = k.split("-").map(Number);
+        return { key: k, y, m: m - 1 };
+      }),
+    [metaMonths],
   );
-  /** Último dia considerado "decorrido" no mês selecionado */
-  const metaElapsedDay = isCurrentMetaMonth
-    ? today.getDate()
-    : isFutureMetaMonth
-      ? 0
-      : new Date(metaY, metaM + 1, 0).getDate();
+  const currentMonthKey = monthKey(today.getFullYear(), today.getMonth());
+  const isCurrentMetaMonth = metaMonthParts.length === 1 && metaMonthParts[0].key === currentMonthKey;
+  const metaLabel = metaMonthParts.length
+    ? metaMonthParts.map((p) => `${MONTH_NAMES[p.m].slice(0, 3)}/${p.y}`).join(", ")
+    : "Selecionar meses";
+  const toggleMetaMonth = (k: string) =>
+    setMetaMonths((prev) =>
+      prev.includes(k) ? (prev.length > 1 ? prev.filter((x) => x !== k) : prev) : [...prev, k],
+    );
+  const metaRange = useMemo(() => {
+    const first = metaMonthParts[0] ?? { y: today.getFullYear(), m: today.getMonth() };
+    const last = metaMonthParts[metaMonthParts.length - 1] ?? first;
+    return {
+      dateLiteral: "CUSTOM" as const,
+      dateFrom: fmtKey(new Date(first.y, first.m, 1)),
+      dateTo: fmtKey(new Date(last.y, last.m + 1, 0)),
+    };
+  }, [metaMonthParts, today]);
+  /** Último dia considerado "decorrido" em um mês */
+  const elapsedDayFor = (y: number, m: number) => {
+    if (y === today.getFullYear() && m === today.getMonth()) return today.getDate();
+    if (y > today.getFullYear() || (y === today.getFullYear() && m > today.getMonth())) return 0;
+    return new Date(y, m + 1, 0).getDate();
+  };
 
   const agendaRangeParams = useMemo(() => {
     const key = fmtKey(agendaDate);
@@ -287,22 +305,22 @@ function HomePage() {
     .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
 
 
-  // ---- Meta do mês selecionado (do banco) ----
+  // ---- Meta dos meses selecionados (do banco) ----
   const fetchMonthGoal = useServerFn(getMonthGoalTotal);
-  const monthGoalQ = useQuery({
-    queryKey: ["month-goal", metaY, metaM + 1, ownerParam],
-    queryFn: () =>
-      fetchMonthGoal({
-        data: {
-          year: metaY,
-          month: metaM + 1,
-          ownerId: ownerParam,
-        },
-      }),
-    enabled: dataEnabled,
-    staleTime: 60_000,
+  const monthGoalQs = useQueries({
+    queries: metaMonthParts.map((p) => ({
+      queryKey: ["month-goal", p.y, p.m + 1, ownerParam],
+      queryFn: () =>
+        fetchMonthGoal({ data: { year: p.y, month: p.m + 1, ownerId: ownerParam } }),
+      enabled: dataEnabled,
+      staleTime: 60_000,
+    })),
   });
-  const dbGoal = monthGoalQ.data?.total ?? 0;
+  const goalByMonth: Record<string, number> = {};
+  metaMonthParts.forEach((p, i) => {
+    goalByMonth[p.key] = monthGoalQs[i]?.data?.total ?? 0;
+  });
+  const dbGoal = metaMonthParts.reduce((a, p) => a + (goalByMonth[p.key] ?? 0), 0);
 
   // ---- Vendido do mês (mesma lógica de Administrador > Tabelas > "Vendido - Mês Atual") ----
   const monthRange = useMemo(
@@ -345,14 +363,16 @@ function HomePage() {
 
   const goal = dbGoal;
   const achieved = sold;
-  // Projetado = meta diária × dias úteis decorridos (inclui hoje)
-  const projected = useMemo(() => {
-    const bizDays = businessDaysOfMonth(metaY, metaM);
-    if (!bizDays.length) return 0;
-    const dailyGoal = dbGoal / bizDays.length;
-    const elapsed = bizDays.filter((d) => d <= metaElapsedDay).length;
-    return Math.round(dailyGoal * elapsed);
-  }, [dbGoal, metaY, metaM, metaElapsedDay]);
+  // Projetado = soma, por mês selecionado, da meta diária × dias úteis decorridos
+  const projected = Math.round(
+    metaMonthParts.reduce((acc, p) => {
+      const bizDays = businessDaysOfMonth(p.y, p.m);
+      if (!bizDays.length) return acc;
+      const dailyGoal = (goalByMonth[p.key] ?? 0) / bizDays.length;
+      const elapsed = bizDays.filter((d) => d <= elapsedDayFor(p.y, p.m)).length;
+      return acc + dailyGoal * elapsed;
+    }, 0),
+  );
   const goalPct = goal > 0 ? (sold / goal) * 100 : 0;
   const projectedPct = goal > 0 ? (projected / goal) * 100 : 0;
 
@@ -374,41 +394,41 @@ function HomePage() {
   }, [ownerId, currentUserSfId, salespeople]);
 
 
-  // ---- Série diária: Vendas — Projetado × Realizado (mês atual) ----
+  // ---- Série diária: Vendas — Projetado × Realizado (meses selecionados) ----
   // Meta diária = meta do mês / dias úteis do mês (exclui sáb, dom e feriados nacionais).
   const salesChartSeries = useMemo(() => {
-    const y = metaY;
-    const m = metaM;
-    const daysInMonth = new Date(y, m + 1, 0).getDate();
-    const bizDays = businessDaysOfMonth(y, m);
-    const bizSet = new Set(bizDays);
-    const dailyGoal = bizDays.length ? dbGoal / bizDays.length : 0;
-
-    const soldByDay = new Map<number, number>();
+    const soldByKey = new Map<string, number>();
     const recs = vendidoMesQ.data?.records ?? [];
     for (const r of recs) {
       if (!r.closeDate) continue;
       if (ownerParam && r.ownerId !== ownerParam) continue;
       const [yr, mo, dd] = r.closeDate.split("-").map(Number);
-      if (yr !== y || mo !== m + 1) continue;
-      soldByDay.set(dd, (soldByDay.get(dd) ?? 0) + (r.total ?? r.amount ?? 0));
+      const k = `${yr}-${mo}-${dd}`;
+      soldByKey.set(k, (soldByKey.get(k) ?? 0) + (r.total ?? r.amount ?? 0));
     }
 
-    const todayDay = metaElapsedDay;
     let cumProjected = 0;
     let cumSold = 0;
     const out: Array<{ day: string; projected: number; sold: number | null }> = [];
-    for (let d = 1; d <= daysInMonth; d++) {
-      if (bizSet.has(d)) cumProjected += dailyGoal;
-      cumSold += soldByDay.get(d) ?? 0;
-      out.push({
-        day: `${String(d).padStart(2, "0")}/${String(m + 1).padStart(2, "0")}`,
-        projected: Math.round(cumProjected),
-        sold: d <= todayDay ? Math.round(cumSold) : null,
-      });
+    for (const p of metaMonthParts) {
+      const daysInMonth = new Date(p.y, p.m + 1, 0).getDate();
+      const bizDays = businessDaysOfMonth(p.y, p.m);
+      const bizSet = new Set(bizDays);
+      const dailyGoal = bizDays.length ? (goalByMonth[p.key] ?? 0) / bizDays.length : 0;
+      const todayDay = elapsedDayFor(p.y, p.m);
+      for (let d = 1; d <= daysInMonth; d++) {
+        if (bizSet.has(d)) cumProjected += dailyGoal;
+        cumSold += soldByKey.get(`${p.y}-${p.m + 1}-${d}`) ?? 0;
+        out.push({
+          day: `${String(d).padStart(2, "0")}/${String(p.m + 1).padStart(2, "0")}`,
+          projected: Math.round(cumProjected),
+          sold: d <= todayDay ? Math.round(cumSold) : null,
+        });
+      }
     }
     return out;
-  }, [dbGoal, vendidoMesQ.data, ownerParam, metaY, metaM, metaElapsedDay]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendidoMesQ.data, ownerParam, metaMonthParts, JSON.stringify(goalByMonth)]);
 
   // ---- Conversão / Ticket médio (mês atual x média 3M) ----
   const rangeMulti = useMemo(() => {
@@ -708,30 +728,54 @@ function HomePage() {
 
           <div className="flex items-center gap-2">
             <VendedorFilter value={ownerId} onChange={setOwnerId} />
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border">
-              <CalendarIcon className="h-4 w-4 text-primary" />
-              <label className="text-xs text-muted-foreground">Período</label>
-              <select
-                value={metaM}
-                onChange={(e) => setMetaM(Number(e.target.value))}
-                className="bg-transparent text-sm font-medium outline-none"
-                aria-label="Mês das metas"
-              >
-                {MONTH_NAMES.map((n, i) => (
-                  <option key={n} value={i}>{n}</option>
-                ))}
-              </select>
-              <select
-                value={metaY}
-                onChange={(e) => setMetaY(Number(e.target.value))}
-                className="bg-transparent text-sm font-medium outline-none"
-                aria-label="Ano das metas"
-              >
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border text-sm font-medium hover:bg-surface-2 transition-colors"
+                  aria-label="Meses das metas"
+                >
+                  <CalendarIcon className="h-4 w-4 text-primary" />
+                  <span className="max-w-[220px] truncate">{metaLabel}</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[300px] p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Selecione um ou mais meses</span>
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => setMetaMonths([currentMonthKey])}
+                  >
+                    Mês atual
+                  </button>
+                </div>
                 {META_YEARS.map((y) => (
-                  <option key={y} value={y}>{y}</option>
+                  <div key={y}>
+                    <div className="text-xs font-semibold text-muted-foreground mb-1">{y}</div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {MONTH_NAMES.map((n, i) => {
+                        const k = `${y}-${String(i + 1).padStart(2, "0")}`;
+                        const on = metaMonths.includes(k);
+                        return (
+                          <button
+                            key={k}
+                            onClick={() => toggleMetaMonth(k)}
+                            className={cn(
+                              "text-xs px-2 py-1.5 rounded-md border transition-colors",
+                              on
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "border-border text-muted-foreground hover:bg-surface-2",
+                            )}
+                          >
+                            {n.slice(0, 3)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ))}
-              </select>
-            </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
@@ -744,7 +788,7 @@ function HomePage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="font-display font-semibold">
-                  Meta do mês{!isCurrentMetaMonth ? ` · ${MONTH_NAMES[metaM]}/${metaY}` : ""}
+                  Meta do mês{!isCurrentMetaMonth ? ` · ${metaLabel}` : ""}
                 </div>
                 <div className="text-sm flex items-center gap-3">
                   <span><span className="text-muted-foreground">Vendido </span><span className="text-primary font-bold">{fmt(sold)}</span></span>
@@ -778,7 +822,7 @@ function HomePage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="font-display font-semibold">
-                  Geração do mês{!isCurrentMetaMonth ? ` · ${MONTH_NAMES[metaM]}/${metaY}` : ""}
+                  Geração do mês{!isCurrentMetaMonth ? ` · ${metaLabel}` : ""}
                 </div>
                 <div className="text-sm flex items-center gap-3">
                   <span><span className="text-muted-foreground">Gerado </span><span className="text-[oklch(0.55_0.2_250)] font-bold">{fmt(generated)}</span></span>
