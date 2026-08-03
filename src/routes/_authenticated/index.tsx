@@ -740,7 +740,7 @@ function HomePage() {
                 </button>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-[300px] p-3 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-muted-foreground">Selecione um ou mais meses</span>
                   <button
                     className="text-xs text-primary hover:underline"
@@ -749,31 +749,72 @@ function HomePage() {
                     Mês atual
                   </button>
                 </div>
-                {META_YEARS.map((y) => (
-                  <div key={y}>
-                    <div className="text-xs font-semibold text-muted-foreground mb-1">{y}</div>
-                    <div className="grid grid-cols-3 gap-1">
-                      {MONTH_NAMES.map((n, i) => {
-                        const k = `${y}-${String(i + 1).padStart(2, "0")}`;
-                        const on = metaMonths.includes(k);
-                        return (
-                          <button
-                            key={k}
-                            onClick={() => toggleMetaMonth(k)}
-                            className={cn(
-                              "text-xs px-2 py-1.5 rounded-md border transition-colors",
-                              on
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "border-border text-muted-foreground hover:bg-surface-2",
-                            )}
-                          >
-                            {n.slice(0, 3)}
-                          </button>
-                        );
-                      })}
+                <div className="flex items-center gap-1">
+                  <button
+                    className="flex-1 text-xs px-2 py-1.5 rounded-md border border-border text-muted-foreground hover:bg-surface-2 transition-colors"
+                    onClick={() =>
+                      setMetaMonths(
+                        META_YEARS.flatMap((y) =>
+                          MONTH_NAMES.map((_, i) => `${y}-${String(i + 1).padStart(2, "0")}`),
+                        ),
+                      )
+                    }
+                  >
+                    Selecionar tudo
+                  </button>
+                  <button
+                    className="flex-1 text-xs px-2 py-1.5 rounded-md border border-border text-muted-foreground hover:bg-surface-2 transition-colors"
+                    onClick={() => setMetaMonths([])}
+                  >
+                    Limpar tudo
+                  </button>
+                </div>
+                {META_YEARS.map((y) => {
+                  const yearKeys = MONTH_NAMES.map(
+                    (_, i) => `${y}-${String(i + 1).padStart(2, "0")}`,
+                  );
+                  const allOn = yearKeys.every((k) => metaMonths.includes(k));
+                  return (
+                    <div key={y}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-xs font-semibold text-muted-foreground">{y}</div>
+                        <button
+                          className="text-xs text-primary hover:underline"
+                          onClick={() =>
+                            setMetaMonths((prev) =>
+                              allOn
+                                ? prev.filter((k) => !yearKeys.includes(k))
+                                : Array.from(new Set([...prev, ...yearKeys])),
+                            )
+                          }
+                        >
+                          {allOn ? "Limpar ano" : "Ano inteiro"}
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        {MONTH_NAMES.map((n, i) => {
+                          const k = `${y}-${String(i + 1).padStart(2, "0")}`;
+                          const on = metaMonths.includes(k);
+                          return (
+                            <button
+                              key={k}
+                              onClick={() => toggleMetaMonth(k)}
+                              className={cn(
+                                "text-xs px-2 py-1.5 rounded-md border transition-colors",
+                                on
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "border-border text-muted-foreground hover:bg-surface-2",
+                              )}
+                            >
+                              {n.slice(0, 3)}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+
               </PopoverContent>
             </Popover>
           </div>
