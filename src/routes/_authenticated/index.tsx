@@ -305,22 +305,22 @@ function HomePage() {
     .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
 
 
-  // ---- Meta do mês selecionado (do banco) ----
+  // ---- Meta dos meses selecionados (do banco) ----
   const fetchMonthGoal = useServerFn(getMonthGoalTotal);
-  const monthGoalQ = useQuery({
-    queryKey: ["month-goal", metaY, metaM + 1, ownerParam],
-    queryFn: () =>
-      fetchMonthGoal({
-        data: {
-          year: metaY,
-          month: metaM + 1,
-          ownerId: ownerParam,
-        },
-      }),
-    enabled: dataEnabled,
-    staleTime: 60_000,
+  const monthGoalQs = useQueries({
+    queries: metaMonthParts.map((p) => ({
+      queryKey: ["month-goal", p.y, p.m + 1, ownerParam],
+      queryFn: () =>
+        fetchMonthGoal({ data: { year: p.y, month: p.m + 1, ownerId: ownerParam } }),
+      enabled: dataEnabled,
+      staleTime: 60_000,
+    })),
   });
-  const dbGoal = monthGoalQ.data?.total ?? 0;
+  const goalByMonth: Record<string, number> = {};
+  metaMonthParts.forEach((p, i) => {
+    goalByMonth[p.key] = monthGoalQs[i]?.data?.total ?? 0;
+  });
+  const dbGoal = metaMonthParts.reduce((a, p) => a + (goalByMonth[p.key] ?? 0), 0);
 
   // ---- Vendido do mês (mesma lógica de Administrador > Tabelas > "Vendido - Mês Atual") ----
   const monthRange = useMemo(
