@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { ViewSlot } from "@/components/view-slot";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -152,26 +152,44 @@ function HomePage() {
   const fetchTasks = useServerFn(getSalesforceTasks);
   const today = useMemo(() => new Date(), []);
 
-  // ---- Filtro de mês/ano das metas (Meta do mês / Geração do mês) ----
-  const [metaY, setMetaY] = useState<number>(() => new Date().getFullYear());
-  const [metaM, setMetaM] = useState<number>(() => new Date().getMonth()); // 0-11
-  const isCurrentMetaMonth = metaY === today.getFullYear() && metaM === today.getMonth();
-  const isFutureMetaMonth =
-    metaY > today.getFullYear() || (metaY === today.getFullYear() && metaM > today.getMonth());
-  const metaRange = useMemo(
-    () => ({
-      dateLiteral: "CUSTOM" as const,
-      dateFrom: fmtKey(new Date(metaY, metaM, 1)),
-      dateTo: fmtKey(new Date(metaY, metaM + 1, 0)),
-    }),
-    [metaY, metaM],
+  // ---- Filtro de meses das metas (múltipla seleção, mês + ano juntos) ----
+  const monthKey = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, "0")}`;
+  const [metaMonths, setMetaMonths] = useState<string[]>(() => {
+    const n = new Date();
+    return [`${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`];
+  });
+  const metaMonthParts = useMemo(
+    () =>
+      [...metaMonths].sort().map((k) => {
+        const [y, m] = k.split("-").map(Number);
+        return { key: k, y, m: m - 1 };
+      }),
+    [metaMonths],
   );
-  /** Último dia considerado "decorrido" no mês selecionado */
-  const metaElapsedDay = isCurrentMetaMonth
-    ? today.getDate()
-    : isFutureMetaMonth
-      ? 0
-      : new Date(metaY, metaM + 1, 0).getDate();
+  const currentMonthKey = monthKey(today.getFullYear(), today.getMonth());
+  const isCurrentMetaMonth = metaMonthParts.length === 1 && metaMonthParts[0].key === currentMonthKey;
+  const metaLabel = metaMonthParts.length
+    ? metaMonthParts.map((p) => `${MONTH_NAMES[p.m].slice(0, 3)}/${p.y}`).join(", ")
+    : "Selecionar meses";
+  const toggleMetaMonth = (k: string) =>
+    setMetaMonths((prev) =>
+      prev.includes(k) ? (prev.length > 1 ? prev.filter((x) => x !== k) : prev) : [...prev, k],
+    );
+  const metaRange = useMemo(() => {
+    const first = metaMonthParts[0] ?? { y: today.getFullYear(), m: today.getMonth() };
+    const last = metaMonthParts[metaMonthParts.length - 1] ?? first;
+    return {
+      dateLiteral: "CUSTOM" as const,
+      dateFrom: fmtKey(new Date(first.y, first.m, 1)),
+      dateTo: fmtKey(new Date(last.y, last.m + 1, 0)),
+    };
+  }, [metaMonthParts, today]);
+  /** Último dia considerado "decorrido" em um mês */
+  const elapsedDayFor = (y: number, m: number) => {
+    if (y === today.getFullYear() && m === today.getMonth()) return today.getDate();
+    if (y > today.getFullYear() || (y === today.getFullYear() && m > today.getMonth())) return 0;
+    return new Date(y, m + 1, 0).getDate();
+  };
 
   const agendaRangeParams = useMemo(() => {
     const key = fmtKey(agendaDate);
