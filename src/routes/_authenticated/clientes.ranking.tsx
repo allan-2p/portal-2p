@@ -35,6 +35,8 @@ function normalizeName(raw: string): string | null {
   const n = raw.trim();
   const u = n.toUpperCase();
   if (/\bESOL\b|ESOL/.test(u)) return null; // ESOL desconsiderada
+  if (u.includes("RUDNIK")) return null; // excluída
+  if (u.includes("VERTICE") || u.includes("VÉRTICE")) return null; // excluída
   if (u.includes("SOLTURI")) return "SOLTURI";
   if (/\bNAP\b|NAP\s|^NAP/.test(u) || u.includes("NAP ")) return "NAP";
   return n;
