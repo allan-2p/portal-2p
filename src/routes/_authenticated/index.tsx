@@ -341,15 +341,12 @@ function HomePage() {
   const achieved = sold;
   // Projetado = meta diária × dias úteis decorridos (inclui hoje)
   const projected = useMemo(() => {
-    const y = today.getFullYear();
-    const m = today.getMonth();
-    const bizDays = businessDaysOfMonth(y, m);
+    const bizDays = businessDaysOfMonth(metaY, metaM);
     if (!bizDays.length) return 0;
     const dailyGoal = dbGoal / bizDays.length;
-    const todayDay = today.getDate();
-    const elapsed = bizDays.filter((d) => d <= todayDay).length;
+    const elapsed = bizDays.filter((d) => d <= metaElapsedDay).length;
     return Math.round(dailyGoal * elapsed);
-  }, [dbGoal, today]);
+  }, [dbGoal, metaY, metaM, metaElapsedDay]);
   const goalPct = goal > 0 ? (sold / goal) * 100 : 0;
   const projectedPct = goal > 0 ? (projected / goal) * 100 : 0;
 
