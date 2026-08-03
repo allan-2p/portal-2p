@@ -743,7 +743,9 @@ function HomePage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="font-display font-semibold">Meta do mês</div>
+                <div className="font-display font-semibold">
+                  Meta do mês{!isCurrentMetaMonth ? ` · ${MONTH_NAMES[metaM]}/${metaY}` : ""}
+                </div>
                 <div className="text-sm flex items-center gap-3">
                   <span><span className="text-muted-foreground">Vendido </span><span className="text-primary font-bold">{fmt(sold)}</span></span>
                   <span className="text-muted-foreground">·</span>
