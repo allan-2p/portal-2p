@@ -95,6 +95,12 @@ const STAGE_COLOR: Record<OpportunityStage, string> = {
   "Em Negociação": "bg-warning/20 text-[color:var(--warning)]",
 };
 
+const MONTH_NAMES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+const META_YEARS = [2025, 2026, 2027];
+
 function fmtKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
