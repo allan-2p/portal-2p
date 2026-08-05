@@ -138,6 +138,7 @@ function OrcamentosPage() {
   const handleFinish = (r: NovaPropostaResult) => {
     const next: Orcamento = {
       id: crypto.randomUUID(),
+      numero: `PROP-${String(orcamentos.length + 1).padStart(4, "0")}`,
       cliente: r.cliente,
       projeto: r.projeto,
       vendido: r.vendido === "sim" ? "S" : r.vendido === "estoque" ? "E" : "N",
