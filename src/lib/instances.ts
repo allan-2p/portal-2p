@@ -12,6 +12,7 @@ export type FeatureKey =
   | "home"
   | "tarefas"
   | "pedidos"
+  | "cupons"
   | "dashboards"
   | "clientes.cadastros"
   | "clientes.segmentacao"
@@ -19,6 +20,9 @@ export type FeatureKey =
   | "clientes.sugestoes"
   | "clientes.ranking"
   | "atlas"
+  | "cpo.propostas"
+  | "cpo.historico"
+  | "cpo.produtos"
   | "admin.usuarios"
   | "admin.vendedores"
   | "admin.metas"
@@ -32,6 +36,7 @@ export type FeatureKey =
   | "marketing.gargalo"
   | "marketing.prevendas"
   | "marketing.metas";
+
 
 export type InstanceMeta = {
   id: InstanceId;
