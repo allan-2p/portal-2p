@@ -95,15 +95,15 @@ const MOCK: Orcamento[] = [
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 // Cor por status — mantém o significado semântico de cada etapa do pedido.
-const STATUS_STYLE: Record<Status, { dot: string; text: string }> = {
-  "Salvo": { dot: "bg-orange-500", text: "text-orange-500" },
-  "Aguardando Pagamento": { dot: "bg-indigo-500", text: "text-indigo-400" },
-  "Processando": { dot: "bg-yellow-400", text: "text-yellow-500" },
-  "Separação": { dot: "bg-sky-400", text: "text-sky-400" },
-  "Faturado": { dot: "bg-foreground", text: "text-foreground" },
-  "Coletado": { dot: "bg-emerald-500", text: "text-emerald-500" },
-  "Entregue": { dot: "bg-gray-500", text: "text-gray-400" },
-  "Cancelado": { dot: "bg-red-500", text: "text-red-500" },
+const STATUS_STYLE: Record<Status, { dot: string; text: string; chip: string }> = {
+  "Salvo": { dot: "bg-orange-500", text: "text-orange-500", chip: "bg-orange-500 text-background" },
+  "Aguardando Pagamento": { dot: "bg-indigo-500", text: "text-indigo-400", chip: "bg-indigo-500 text-background" },
+  "Processando": { dot: "bg-yellow-400", text: "text-yellow-500", chip: "bg-yellow-400 text-background" },
+  "Separação": { dot: "bg-sky-400", text: "text-sky-400", chip: "bg-sky-400 text-background" },
+  "Faturado": { dot: "bg-foreground", text: "text-foreground", chip: "bg-foreground text-background" },
+  "Coletado": { dot: "bg-emerald-500", text: "text-emerald-500", chip: "bg-emerald-500 text-background" },
+  "Entregue": { dot: "bg-gray-500", text: "text-gray-400", chip: "bg-gray-500 text-background" },
+  "Cancelado": { dot: "bg-red-500", text: "text-red-500", chip: "bg-red-500 text-background" },
 };
 
 const STATUS_ORDER = Object.keys(STATUS_STYLE) as Status[];
@@ -112,12 +112,6 @@ const VENDIDO_LABEL: Record<Vendido, string> = {
   S: "Vendido ao cliente final",
   N: "Não vendido",
   E: "Estoque",
-};
-
-const VENDIDO_STYLE: Record<Vendido, string> = {
-  S: "bg-emerald-500/15 text-emerald-500",
-  N: "bg-muted text-muted-foreground",
-  E: "bg-sky-500/15 text-sky-400",
 };
 
 function StatusDot({ status }: { status: Status }) {
@@ -131,7 +125,7 @@ function StatusDot({ status }: { status: Status }) {
           role="img"
         />
       </TooltipTrigger>
-      <TooltipContent>{status}</TooltipContent>
+      <TooltipContent className={`${s.chip} border-0 font-medium`}>{status}</TooltipContent>
     </Tooltip>
   );
 }
