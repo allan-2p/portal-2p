@@ -377,20 +377,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
                           Administração
                         </div>
-                        <Link
-                          to="/admin/acessos-instancias"
-                          onClick={() => setAdminMenuOpen(false)}
-                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2"
-                        >
-                          <Shield className="h-4 w-4" /> Acessos por Instância
-                        </Link>
-                        <Link
-                          to="/admin/permissoes"
-                          onClick={() => setAdminMenuOpen(false)}
-                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 border-t border-border"
-                        >
-                          <KeyRound className="h-4 w-4" /> Permissões de Usuários
-                        </Link>
+                        {show("admin.usuarios") && (
+                          <AdminMenuLink to="/usuarios" label="Usuários" icon={Users} onClick={() => setAdminMenuOpen(false)} />
+                        )}
+                        {show("admin.vendedores") && (
+                          <AdminMenuLink to="/admin/vendedores" label="Vendedores" icon={UserCog} onClick={() => setAdminMenuOpen(false)} />
+                        )}
+                        {show("admin.metas") && (
+                          <AdminMenuLink to="/admin/metas" label="Regras de Metas" icon={Target} onClick={() => setAdminMenuOpen(false)} />
+                        )}
+                        {show("admin.tabelas") && (
+                          <AdminMenuLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} onClick={() => setAdminMenuOpen(false)} />
+                        )}
+                        {show("admin.integracoes") && (
+                          <AdminMenuLink to="/integracoes" label="Integrações" icon={Plug} onClick={() => setAdminMenuOpen(false)} />
+                        )}
+                        <div className="h-px bg-border" />
+                        <AdminMenuLink to="/admin/acessos-instancias" label="Acessos por Instância" icon={Shield} onClick={() => setAdminMenuOpen(false)} />
+                        <AdminMenuLink to="/admin/permissoes" label="Permissões de Usuários" icon={KeyRound} onClick={() => setAdminMenuOpen(false)} />
                       </div>
                     </>
                   )}
