@@ -163,6 +163,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   </>
                 )}
               </Link>
+              {show("clientes.sugestoes") && !collapsed && (
+                <div className="mb-2 ml-3 pl-3 border-l border-border">
+                  <SubLink
+                    to="/clientes/sugestoes"
+                    label="Sugestões do Atlas"
+                    icon={Sparkles}
+                    active={pathname.startsWith("/clientes/sugestoes")}
+                  />
+                </div>
+              )}
               <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
             </>
           )}
