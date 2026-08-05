@@ -17,6 +17,7 @@ import { toast } from "sonner";
 export type NovaPropostaResult = {
   cliente: string;
   projeto: string;
+  vendido: "sim" | "nao" | "estoque" | "";
   metodo: Metodo;
 };
 
