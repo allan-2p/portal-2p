@@ -193,8 +193,8 @@ function OrcamentosPage() {
               <thead>
                 <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-4 py-3">Cliente</th>
-                  <th className="text-left px-4 py-3">Projeto</th>
-                  <th className="text-center px-4 py-3">Vendido</th>
+                  <th className="text-left px-4 py-3">Nº Proposta</th>
+                  <th className="text-left px-4 py-3">Proposta</th>
                   <th className="text-right px-4 py-3">Valor</th>
                   <th className="text-center px-4 py-3">Status</th>
                   <th className="text-left px-4 py-3">Nº SAP</th>
@@ -208,19 +208,8 @@ function OrcamentosPage() {
                 {orcamentos.map((o) => (
                   <tr key={o.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 font-medium">{o.cliente}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{o.numero}</td>
                     <td className="px-4 py-3">{o.projeto || "—"}</td>
-                    <td className="px-4 py-3 text-center">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span
-                            className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${VENDIDO_STYLE[o.vendido]}`}
-                          >
-                            {o.vendido}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>{VENDIDO_LABEL[o.vendido]}</TooltipContent>
-                      </Tooltip>
-                    </td>
                     <td className="px-4 py-3 text-right font-semibold">{fmt(o.valor)}</td>
                     <td className="px-4 py-3 text-center">
                       <StatusDot status={o.status} />
