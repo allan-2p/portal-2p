@@ -163,6 +163,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   </>
                 )}
               </Link>
+              {show("clientes.sugestoes") && !collapsed && (
+                <div className="mb-2 ml-3 pl-3 border-l border-border">
+                  <SubLink
+                    to="/clientes/sugestoes"
+                    label="Sugestões do Atlas"
+                    icon={Sparkles}
+                    active={pathname.startsWith("/clientes/sugestoes")}
+                  />
+                </div>
+              )}
               <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
             </>
           )}
@@ -213,14 +223,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     {show("clientes.cadastros") && (
                       <SubLink to="/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/clientes/cadastros")} />
                     )}
-                    {show("clientes.segmentacao") && (
-                      <SubLink to="/clientes/segmentacao" label="Segmentação" icon={Layers} active={pathname.startsWith("/clientes/segmentacao")} />
-                    )}
-                    {show("clientes.perfil") && (
-                      <SubLink to="/clientes/perfil" label="Perfil do Cliente" icon={UserIcon} active={pathname.startsWith("/clientes/perfil")} />
-                    )}
-                    {show("clientes.sugestoes") && (
-                      <SubLink to="/clientes/sugestoes" label="Sugestões do Atlas" icon={Sparkles} active={pathname.startsWith("/clientes/sugestoes")} />
+                    {(show("clientes.segmentacao") || show("clientes.perfil")) && (
+                      <SubLink
+                        to={show("clientes.segmentacao") ? "/clientes/segmentacao" : "/clientes/perfil"}
+                        label="Perfil de Cliente"
+                        icon={UserIcon}
+                        active={pathname.startsWith("/clientes/segmentacao") || pathname.startsWith("/clientes/perfil")}
+                      />
                     )}
                     {show("clientes.ranking") && (
                       <SubLink to="/clientes/ranking" label="Ranking" icon={Trophy} active={pathname.startsWith("/clientes/ranking")} />
@@ -308,9 +317,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )
           )}
 
-          {hasRole("admin") && (
-            <AdminGroup pathname={pathname} collapsed={collapsed} show={show} />
-          )}
         </nav>
 
         <button
@@ -371,20 +377,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
                           Administração
                         </div>
-                        <Link
-                          to="/admin/acessos-instancias"
-                          onClick={() => setAdminMenuOpen(false)}
-                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2"
-                        >
-                          <Shield className="h-4 w-4" /> Acessos por Instância
-                        </Link>
-                        <Link
-                          to="/admin/permissoes"
-                          onClick={() => setAdminMenuOpen(false)}
-                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 border-t border-border"
-                        >
-                          <KeyRound className="h-4 w-4" /> Permissões de Usuários
-                        </Link>
+                        {show("admin.usuarios") && (
+                          <AdminMenuLink to="/usuarios" label="Usuários" icon={Users} onClick={() => setAdminMenuOpen(false)} />
+                        )}
+                        {show("admin.vendedores") && (
+                          <AdminMenuLink to="/admin/vendedores" label="Vendedores" icon={UserCog} onClick={() => setAdminMenuOpen(false)} />
+                        )}
+                        {show("admin.metas") && (
+                          <AdminMenuLink to="/admin/metas" label="Regras de Metas" icon={Target} onClick={() => setAdminMenuOpen(false)} />
+                        )}
+                        {show("admin.tabelas") && (
+                          <AdminMenuLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} onClick={() => setAdminMenuOpen(false)} />
+                        )}
+                        {show("admin.integracoes") && (
+                          <AdminMenuLink to="/integracoes" label="Integrações" icon={Plug} onClick={() => setAdminMenuOpen(false)} />
+                        )}
+                        <div className="h-px bg-border" />
+                        <AdminMenuLink to="/admin/acessos-instancias" label="Acessos por Instância" icon={Shield} onClick={() => setAdminMenuOpen(false)} />
+                        <AdminMenuLink to="/admin/permissoes" label="Permissões de Usuários" icon={KeyRound} onClick={() => setAdminMenuOpen(false)} />
                       </div>
                     </>
                   )}
@@ -480,64 +490,17 @@ function SubLink({ to, label, icon: Icon, active }: { to: string; label: string;
   );
 }
 
-const ADMIN_OPEN_KEY = "portal2p-admin-open";
-
-function AdminGroup({ pathname, collapsed, show }: { pathname: string; collapsed: boolean; show: (k: FeatureKey) => boolean }) {
-  const active = pathname.startsWith("/admin") || pathname.startsWith("/usuarios") || pathname.startsWith("/integracoes");
-  const [open, setOpen] = useState(active);
-  useEffect(() => {
-    const saved = localStorage.getItem(ADMIN_OPEN_KEY);
-    if (saved !== null) setOpen(saved === "1");
-  }, []);
-  useEffect(() => { if (active) setOpen(true); }, [active]);
-  const toggle = () => setOpen((v) => { localStorage.setItem(ADMIN_OPEN_KEY, !v ? "1" : "0"); return !v; });
-
-  const showUsers = show("admin.usuarios");
-  const showVend = show("admin.vendedores");
-  const showMetas = show("admin.metas");
-  const showTab = show("admin.tabelas");
-  const showInt = show("admin.integracoes");
-  const anyChild = showUsers || showVend || showMetas || showTab || showInt;
-  if (!anyChild) return null;
-
-  if (collapsed) {
-    return (
-      <Link
-        to={showInt ? "/integracoes" : showUsers ? "/usuarios" : "/admin/metas"}
-        preload="intent"
-        title="Administrador"
-        className={cn(
-          "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
-          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-        )}
-      >
-        <Shield className="h-4 w-4" />
-      </Link>
-    );
-  }
+function AdminMenuLink({
+  to, label, icon: Icon, onClick,
+}: { to: string; label: string; icon: typeof Home; onClick: () => void }) {
   return (
-    <div className="mb-1">
-      <button
-        onClick={toggle}
-        className={cn(
-          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-          active ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-        )}
-      >
-        <Shield className="h-4 w-4 shrink-0" />
-        <span className="truncate">Administrador</span>
-        <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !open && "-rotate-90")} />
-      </button>
-      {open && (
-        <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-          {showUsers && <SubLink to="/usuarios" label="Usuários" icon={Users} active={pathname.startsWith("/usuarios")} />}
-          {showVend && <SubLink to="/admin/vendedores" label="Vendedores" icon={UserCog} active={pathname.startsWith("/admin/vendedores")} />}
-          {showMetas && <SubLink to="/admin/metas" label="Regras de Metas" icon={Target} active={pathname.startsWith("/admin/metas")} />}
-          {showTab && <SubLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} active={pathname.startsWith("/admin/tabelas")} />}
-          {showInt && <SubLink to="/integracoes" label="Integrações" icon={Plug} active={pathname.startsWith("/integracoes")} />}
-        </div>
-      )}
-    </div>
+    <Link
+      to={to}
+      onClick={onClick}
+      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2"
+    >
+      <Icon className="h-4 w-4" /> {label}
+    </Link>
   );
 }
 

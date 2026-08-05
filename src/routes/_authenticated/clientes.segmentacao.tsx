@@ -43,7 +43,7 @@ import {
 
 
 export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
-  head: () => ({ meta: [{ title: "Segmentação — Portal 2P" }] }),
+  head: () => ({ meta: [{ title: "Perfil de Cliente — Portal 2P" }] }),
   component: SegmentacaoPage,
 });
 
@@ -475,7 +475,7 @@ function SegmentacaoPage() {
         <div className="flex items-end justify-between flex-wrap gap-4">
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Clientes</div>
-            <h1 className="text-3xl font-bold mt-1">Segmentação</h1>
+            <h1 className="text-3xl font-bold mt-1">Perfil de Cliente</h1>
             <div className="text-xs text-muted-foreground mt-1">
               Base: Projeção - Tri Atual · Trimestre {baseRange.label}
             </div>
