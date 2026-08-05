@@ -1,0 +1,291 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { AppLayout } from "@/components/app-layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Eye, Search, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { fmtBRL, fmtPct } from "@/lib/cpo";
+import { cn } from "@/lib/utils";
+
+export const Route = createFileRoute("/_authenticated/carregadores/historico")({
+  head: () => ({
+    meta: [
+      { title: "Histórico de Propostas CPO — Portal 2P Carregadores" },
+      { name: "description", content: "Todas as propostas CPO emitidas, com margem, impostos e status." },
+      { property: "og:title", content: "Histórico de Propostas CPO — Portal 2P Carregadores" },
+      { property: "og:description", content: "Consulte propostas CPO por cliente, estado e status." },
+    ],
+  }),
+  component: HistoricoCpoPage,
+});
+
+type Row = {
+  id: string;
+  numero: string | null;
+  cliente_nome: string;
+  cliente_telefone: string | null;
+  cliente_email: string | null;
+  uf: string;
+  contribuinte: boolean;
+  frete_mod: string;
+  frete_valor: number;
+  itens: { nome?: string; qtd?: number; valor?: number }[];
+  totais: Record<string, number>;
+  status: string;
+  created_at: string;
+};
+
+const STATUS = ["Salvo", "Enviada", "Aprovada", "Perdida"] as const;
+
+const STATUS_CLS: Record<string, string> = {
+  Salvo: "bg-muted text-muted-foreground",
+  Enviada: "bg-primary/15 text-primary",
+  Aprovada: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  Perdida: "bg-destructive/15 text-destructive",
+};
+
+function HistoricoCpoPage() {
+  const [busca, setBusca] = useState("");
+  const [status, setStatus] = useState("todos");
+  const [uf, setUf] = useState("todos");
+  const [detalhe, setDetalhe] = useState<Row | null>(null);
+
+  const q = useQuery({
+    queryKey: ["cpo-proposals"],
+    queryFn: async (): Promise<Row[]> => {
+      const { data, error } = await supabase
+        .from("cpo_proposals")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        ...r,
+        frete_valor: Number(r.frete_valor),
+        itens: (r.itens as Row["itens"]) ?? [],
+        totais: (r.totais as Record<string, number>) ?? {},
+      })) as Row[];
+    },
+    staleTime: 30_000,
+  });
+
+  const rows = q.data ?? [];
+  const ufs = useMemo(() => Array.from(new Set(rows.map((r) => r.uf))).sort(), [rows]);
+
+  const filtered = rows.filter((r) => {
+    if (status !== "todos" && r.status !== status) return false;
+    if (uf !== "todos" && r.uf !== uf) return false;
+    const t = busca.trim().toLowerCase();
+    if (t && !`${r.cliente_nome} ${r.numero ?? ""}`.toLowerCase().includes(t)) return false;
+    return true;
+  });
+
+  const totalValor = filtered.reduce((s, r) => s + (r.totais.valorTotal ?? 0), 0);
+  const totalMb = filtered.reduce((s, r) => s + (r.totais.mb ?? 0), 0);
+
+  async function alterarStatus(id: string, novo: string) {
+    const { error } = await supabase.from("cpo_proposals").update({ status: novo }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Status atualizado.");
+    q.refetch();
+  }
+
+  async function excluir(id: string) {
+    const { error } = await supabase.from("cpo_proposals").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Proposta excluída.");
+    q.refetch();
+  }
+
+  return (
+    <AppLayout>
+      <div className="max-w-[1700px] mx-auto space-y-5">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-primary font-semibold">Propostas CPO</div>
+          <h1 className="text-3xl font-bold mt-1">Histórico</h1>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Stat label="Propostas" value={String(filtered.length)} />
+          <Stat label="Valor total" value={fmtBRL(totalValor)} />
+          <Stat label="Margem bruta acumulada" value={fmtBRL(totalMb)} />
+        </div>
+
+        <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Buscar por cliente ou número"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </div>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              {STATUS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={uf} onValueChange={setUf}>
+            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas as UFs</SelectItem>
+              {ufs.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="glass rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[1000px]">
+              <thead>
+                <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
+                  <th className="text-left px-4 py-3">Nº</th>
+                  <th className="text-left px-4 py-3">Cliente</th>
+                  <th className="text-left px-4 py-3">UF</th>
+                  <th className="text-left px-4 py-3">Contribuinte</th>
+                  <th className="text-right px-4 py-3">Valor</th>
+                  <th className="text-right px-4 py-3">MB</th>
+                  <th className="text-right px-4 py-3">MB%</th>
+                  <th className="text-left px-4 py-3">Data</th>
+                  <th className="text-left px-4 py-3">Status</th>
+                  <th className="text-right px-4 py-3">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r) => (
+                  <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
+                    <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
+                    <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
+                    <td className="px-4 py-3">{r.uf}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{r.contribuinte ? "Sim" : "Não"}</td>
+                    <td className="px-4 py-3 text-right font-semibold">{fmtBRL(r.totais.valorTotal ?? 0)}</td>
+                    <td className="px-4 py-3 text-right">{fmtBRL(r.totais.mb ?? 0)}</td>
+                    <td className="px-4 py-3 text-right">{fmtPct(r.totais.mbPct ?? 0)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Select value={r.status} onValueChange={(v) => alterarStatus(r.id, v)}>
+                        <SelectTrigger className={cn("h-7 w-[130px] border-0 text-xs font-semibold", STATUS_CLS[r.status])}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" aria-label="Detalhar" onClick={() => setDetalhe(r)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => excluir(r.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
+                      {q.isLoading ? "Carregando…" : "Nenhuma proposta encontrada."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <Dialog open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{detalhe?.cliente_nome}</DialogTitle>
+            <DialogDescription>
+              {detalhe?.numero} · {detalhe?.uf} · {detalhe?.contribuinte ? "Contribuinte" : "Não contribuinte"}
+            </DialogDescription>
+          </DialogHeader>
+          {detalhe && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                <Info label="Valor total" value={fmtBRL(detalhe.totais.valorTotal ?? 0)} />
+                <Info label="ICMS" value={fmtBRL(detalhe.totais.icms ?? 0)} />
+                <Info label="PIS/COFINS" value={fmtBRL(detalhe.totais.pisCofins ?? 0)} />
+                <Info label="Receita líquida" value={fmtBRL(detalhe.totais.rl ?? 0)} />
+                <Info label="Custo" value={fmtBRL(detalhe.totais.custo ?? 0)} />
+                <Info
+                  label="Margem bruta"
+                  value={`${fmtBRL(detalhe.totais.mb ?? 0)} (${fmtPct(detalhe.totais.mbPct ?? 0)})`}
+                />
+                <Info label="Comissão" value={fmtBRL(detalhe.totais.comissao ?? 0)} />
+                <Info label="Frete" value={`${detalhe.frete_mod} · ${fmtBRL(detalhe.frete_valor)}`} />
+                <Info label="Contato" value={detalhe.cliente_telefone || detalhe.cliente_email || "—"} />
+              </div>
+              <div className="rounded-xl border border-border overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs text-muted-foreground uppercase border-b border-border">
+                      <th className="text-left px-3 py-2">Produto</th>
+                      <th className="text-right px-3 py-2">Qtd</th>
+                      <th className="text-right px-3 py-2">Valor un.</th>
+                      <th className="text-right px-3 py-2">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detalhe.itens.map((i, idx) => (
+                      <tr key={idx} className="border-b border-border/50 last:border-0">
+                        <td className="px-3 py-2">{i.nome || "—"}</td>
+                        <td className="px-3 py-2 text-right">{i.qtd ?? 0}</td>
+                        <td className="px-3 py-2 text-right">{fmtBRL(i.valor ?? 0)}</td>
+                        <td className="px-3 py-2 text-right font-medium">{fmtBRL((i.valor ?? 0) * (i.qtd ?? 0))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </AppLayout>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="glass rounded-2xl p-4">
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="text-2xl font-bold mt-1">{value}</div>
+    </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-medium">{value}</div>
+    </div>
+  );
+}

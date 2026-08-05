@@ -32,6 +32,162 @@ export type Database = {
         }
         Relationships: []
       }
+      cpo_config: {
+        Row: {
+          aliq_inter: number
+          comissao_base: string
+          comissao_pct: number
+          id: number
+          ipi: number
+          majoracao_sem_ie: number
+          mb_atencao: number
+          pis_cofins: number
+          politica_mb_min: number
+          updated_at: string
+        }
+        Insert: {
+          aliq_inter?: number
+          comissao_base?: string
+          comissao_pct?: number
+          id?: number
+          ipi?: number
+          majoracao_sem_ie?: number
+          mb_atencao?: number
+          pis_cofins?: number
+          politica_mb_min?: number
+          updated_at?: string
+        }
+        Update: {
+          aliq_inter?: number
+          comissao_base?: string
+          comissao_pct?: number
+          id?: number
+          ipi?: number
+          majoracao_sem_ie?: number
+          mb_atencao?: number
+          pis_cofins?: number
+          politica_mb_min?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cpo_products: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          custo: number
+          id: string
+          nome: string
+          potencia: string | null
+          preco_sugerido: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          custo?: number
+          id?: string
+          nome: string
+          potencia?: string | null
+          preco_sugerido?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          custo?: number
+          id?: string
+          nome?: string
+          potencia?: string | null
+          preco_sugerido?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cpo_proposals: {
+        Row: {
+          cliente_doc: string | null
+          cliente_email: string | null
+          cliente_ie: string | null
+          cliente_nome: string
+          cliente_telefone: string | null
+          contribuinte: boolean
+          created_at: string
+          created_by: string | null
+          frete_mod: string
+          frete_valor: number
+          id: string
+          itens: Json
+          numero: string | null
+          status: string
+          totais: Json
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_doc?: string | null
+          cliente_email?: string | null
+          cliente_ie?: string | null
+          cliente_nome: string
+          cliente_telefone?: string | null
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string | null
+          frete_mod?: string
+          frete_valor?: number
+          id?: string
+          itens?: Json
+          numero?: string | null
+          status?: string
+          totais?: Json
+          uf?: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_doc?: string | null
+          cliente_email?: string | null
+          cliente_ie?: string | null
+          cliente_nome?: string
+          cliente_telefone?: string | null
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string | null
+          frete_mod?: string
+          frete_valor?: number
+          id?: string
+          itens?: Json
+          numero?: string | null
+          status?: string
+          totais?: Json
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cpo_uf_rates: {
+        Row: {
+          aliq_interna: number
+          fcp: number
+          nome: string
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          aliq_interna?: number
+          fcp?: number
+          nome: string
+          uf: string
+          updated_at?: string
+        }
+        Update: {
+          aliq_interna?: number
+          fcp?: number
+          nome?: string
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       group_kpi_goals: {
         Row: {
           goal: number

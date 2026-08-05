@@ -12,6 +12,7 @@ export type FeatureKey =
   | "home"
   | "tarefas"
   | "pedidos"
+  | "cupons"
   | "dashboards"
   | "clientes.cadastros"
   | "clientes.segmentacao"
@@ -19,6 +20,9 @@ export type FeatureKey =
   | "clientes.sugestoes"
   | "clientes.ranking"
   | "atlas"
+  | "cpo.propostas"
+  | "cpo.historico"
+  | "cpo.produtos"
   | "admin.usuarios"
   | "admin.vendedores"
   | "admin.metas"
@@ -32,6 +36,7 @@ export type FeatureKey =
   | "marketing.gargalo"
   | "marketing.prevendas"
   | "marketing.metas";
+
 
 export type InstanceMeta = {
   id: InstanceId;
@@ -61,6 +66,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "clientes.perfil",
       "clientes.sugestoes",
       "clientes.ranking",
+      "cupons",
       "atlas",
       "admin.usuarios",
       "admin.vendedores",
@@ -80,12 +86,14 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "home",
       "tarefas",
       "pedidos",
+      "cpo.propostas",
+      "cpo.historico",
+      "cpo.produtos",
       "dashboards",
       "clientes.cadastros",
       "clientes.segmentacao",
       "clientes.perfil",
       "clientes.sugestoes",
-      "clientes.ranking",
       "atlas",
       "admin.usuarios",
       "admin.vendedores",
@@ -93,6 +101,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "admin.tabelas",
       "admin.integracoes",
     ],
+
   },
   marketing: {
     id: "marketing",
@@ -122,7 +131,7 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/tarefas": "tarefas",
   "/pedidos": "pedidos",
   "/orcamentos": "pedidos",
-  "/cupons": "pedidos",
+  "/cupons": "cupons",
   "/dashboards": "dashboards",
   "/clientes/cadastros": "clientes.cadastros",
   "/clientes/segmentacao": "clientes.segmentacao",
@@ -130,6 +139,9 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/clientes/sugestoes": "clientes.sugestoes",
   "/clientes/ranking": "clientes.ranking",
   "/atlas": "atlas",
+  "/carregadores/propostas": "cpo.propostas",
+  "/carregadores/historico": "cpo.historico",
+  "/carregadores/produtos": "cpo.produtos",
   "/usuarios": "admin.usuarios",
   "/admin/vendedores": "admin.vendedores",
   "/admin/metas": "admin.metas",
@@ -149,6 +161,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   home: "Home",
   tarefas: "Tarefas",
   pedidos: "Pedidos",
+  cupons: "Cupons",
   dashboards: "Dashboards",
   "clientes.cadastros": "Clientes • Cadastros",
   "clientes.segmentacao": "Clientes • Segmentação",
@@ -156,6 +169,9 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "clientes.sugestoes": "Clientes • Sugestões do Atlas",
   "clientes.ranking": "Clientes • Ranking",
   atlas: "Atlas (AI)",
+  "cpo.propostas": "CPO • Nova Proposta",
+  "cpo.historico": "CPO • Histórico",
+  "cpo.produtos": "CPO • Produtos e Alíquotas",
   "admin.usuarios": "Admin • Usuários",
   "admin.vendedores": "Admin • Vendedores",
   "admin.metas": "Admin • Metas",

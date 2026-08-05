@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound, Eye, LineChart, Tv, Trophy } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ThemeToggle } from "./theme-toggle";
@@ -187,9 +187,34 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <>
               <NavLink item={{ to: "/orcamentos", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/orcamentos")} collapsed={collapsed} />
               <NavLink item={{ to: "/pedidos", label: "Pedidos", icon: KanbanSquare }} active={pathname.startsWith("/pedidos")} collapsed={collapsed} />
-              <NavLink item={{ to: "/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/cupons")} collapsed={collapsed} />
             </>
           )}
+          {show("cupons") && (
+            <NavLink item={{ to: "/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/cupons")} collapsed={collapsed} />
+          )}
+
+          {/* Módulo CPO — exclusivo da instância Carregadores */}
+          {(show("cpo.propostas") || show("cpo.historico") || show("cpo.produtos")) && (
+            <>
+              <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
+              {!collapsed && (
+                <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Carregadores
+                </div>
+              )}
+              {show("cpo.propostas") && (
+                <NavLink item={{ to: "/carregadores/propostas", label: "Nova Proposta", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
+              )}
+              {show("cpo.historico") && (
+                <NavLink item={{ to: "/carregadores/historico", label: "Histórico", icon: HistoryIcon }} active={pathname.startsWith("/carregadores/historico")} collapsed={collapsed} />
+              )}
+              {show("cpo.produtos") && (
+                <NavLink item={{ to: "/carregadores/produtos", label: "Produtos e Alíquotas", icon: Package }} active={pathname.startsWith("/carregadores/produtos")} collapsed={collapsed} />
+              )}
+              <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
+            </>
+          )}
+
 
           {/* Clientes — grupo expansível */}
           {(show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.sugestoes") || show("clientes.ranking")) && (
