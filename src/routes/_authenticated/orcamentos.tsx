@@ -38,6 +38,7 @@ type Vendido = "S" | "N" | "E";
 
 type Orcamento = {
   id: string;
+  numero: string;
   cliente: string;
   projeto: string;
   vendido: Vendido;
@@ -52,6 +53,7 @@ type Orcamento = {
 const MOCK: Orcamento[] = [
   {
     id: "1",
+    numero: "PROP-0001",
     cliente: "Solar Prime Ltda",
     projeto: "Usina Rural Cascavel",
     vendido: "S",
@@ -64,6 +66,7 @@ const MOCK: Orcamento[] = [
   },
   {
     id: "2",
+    numero: "PROP-0002",
     cliente: "Energia Verde SA",
     projeto: "Telhado Metálico Galpão 3",
     vendido: "N",
@@ -76,6 +79,7 @@ const MOCK: Orcamento[] = [
   },
   {
     id: "3",
+    numero: "PROP-0003",
     cliente: "Casa & Cia Engenharia",
     projeto: "Residencial Alto da Glória",
     vendido: "E",
@@ -91,15 +95,15 @@ const MOCK: Orcamento[] = [
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 // Cor por status — mantém o significado semântico de cada etapa do pedido.
-const STATUS_STYLE: Record<Status, { dot: string; text: string }> = {
-  "Salvo": { dot: "bg-orange-500", text: "text-orange-500" },
-  "Aguardando Pagamento": { dot: "bg-indigo-500", text: "text-indigo-400" },
-  "Processando": { dot: "bg-yellow-400", text: "text-yellow-500" },
-  "Separação": { dot: "bg-sky-400", text: "text-sky-400" },
-  "Faturado": { dot: "bg-foreground", text: "text-foreground" },
-  "Coletado": { dot: "bg-emerald-500", text: "text-emerald-500" },
-  "Entregue": { dot: "bg-gray-500", text: "text-gray-400" },
-  "Cancelado": { dot: "bg-red-500", text: "text-red-500" },
+const STATUS_STYLE: Record<Status, { dot: string; text: string; chip: string }> = {
+  "Salvo": { dot: "bg-orange-500", text: "text-orange-500", chip: "bg-orange-500 text-background" },
+  "Aguardando Pagamento": { dot: "bg-indigo-500", text: "text-indigo-400", chip: "bg-indigo-500 text-background" },
+  "Processando": { dot: "bg-yellow-400", text: "text-yellow-500", chip: "bg-yellow-400 text-background" },
+  "Separação": { dot: "bg-sky-400", text: "text-sky-400", chip: "bg-sky-400 text-background" },
+  "Faturado": { dot: "bg-foreground", text: "text-foreground", chip: "bg-foreground text-background" },
+  "Coletado": { dot: "bg-emerald-500", text: "text-emerald-500", chip: "bg-emerald-500 text-background" },
+  "Entregue": { dot: "bg-gray-500", text: "text-gray-400", chip: "bg-gray-500 text-background" },
+  "Cancelado": { dot: "bg-red-500", text: "text-red-500", chip: "bg-red-500 text-background" },
 };
 
 const STATUS_ORDER = Object.keys(STATUS_STYLE) as Status[];
@@ -108,12 +112,6 @@ const VENDIDO_LABEL: Record<Vendido, string> = {
   S: "Vendido ao cliente final",
   N: "Não vendido",
   E: "Estoque",
-};
-
-const VENDIDO_STYLE: Record<Vendido, string> = {
-  S: "bg-emerald-500/15 text-emerald-500",
-  N: "bg-muted text-muted-foreground",
-  E: "bg-sky-500/15 text-sky-400",
 };
 
 function StatusDot({ status }: { status: Status }) {
@@ -127,7 +125,7 @@ function StatusDot({ status }: { status: Status }) {
           role="img"
         />
       </TooltipTrigger>
-      <TooltipContent>{status}</TooltipContent>
+      <TooltipContent className={`${s.chip} border-0 font-medium`}>{status}</TooltipContent>
     </Tooltip>
   );
 }
@@ -140,6 +138,7 @@ function OrcamentosPage() {
   const handleFinish = (r: NovaPropostaResult) => {
     const next: Orcamento = {
       id: crypto.randomUUID(),
+      numero: `PROP-${String(orcamentos.length + 1).padStart(4, "0")}`,
       cliente: r.cliente,
       projeto: r.projeto,
       vendido: r.vendido === "sim" ? "S" : r.vendido === "estoque" ? "E" : "N",
@@ -195,8 +194,8 @@ function OrcamentosPage() {
               <thead>
                 <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-4 py-3">Cliente</th>
-                  <th className="text-left px-4 py-3">Projeto</th>
-                  <th className="text-center px-4 py-3">Vendido</th>
+                  <th className="text-left px-4 py-3">Nº Proposta</th>
+                  <th className="text-left px-4 py-3">Proposta</th>
                   <th className="text-right px-4 py-3">Valor</th>
                   <th className="text-center px-4 py-3">Status</th>
                   <th className="text-left px-4 py-3">Nº SAP</th>
@@ -210,19 +209,8 @@ function OrcamentosPage() {
                 {orcamentos.map((o) => (
                   <tr key={o.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 font-medium">{o.cliente}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{o.numero}</td>
                     <td className="px-4 py-3">{o.projeto || "—"}</td>
-                    <td className="px-4 py-3 text-center">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span
-                            className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold ${VENDIDO_STYLE[o.vendido]}`}
-                          >
-                            {o.vendido}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>{VENDIDO_LABEL[o.vendido]}</TooltipContent>
-                      </Tooltip>
-                    </td>
                     <td className="px-4 py-3 text-right font-semibold">{fmt(o.valor)}</td>
                     <td className="px-4 py-3 text-center">
                       <StatusDot status={o.status} />
