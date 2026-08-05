@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { FilePlus, Eye, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
@@ -167,6 +167,7 @@ function OrcamentosPage() {
 
   return (
     <AppLayout>
+      <TooltipProvider>
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -284,6 +285,7 @@ function OrcamentosPage() {
           )}
         </DialogContent>
       </Dialog>
+      </TooltipProvider>
     </AppLayout>
   );
 }
