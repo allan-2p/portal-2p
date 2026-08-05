@@ -85,12 +85,14 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "home",
       "tarefas",
       "pedidos",
+      "cpo.propostas",
+      "cpo.historico",
+      "cpo.produtos",
       "dashboards",
       "clientes.cadastros",
       "clientes.segmentacao",
       "clientes.perfil",
       "clientes.sugestoes",
-      "clientes.ranking",
       "atlas",
       "admin.usuarios",
       "admin.vendedores",
@@ -98,6 +100,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "admin.tabelas",
       "admin.integracoes",
     ],
+
   },
   marketing: {
     id: "marketing",
