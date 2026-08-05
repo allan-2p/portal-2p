@@ -285,6 +285,7 @@ function OrcamentosPage() {
           )}
         </DialogContent>
       </Dialog>
+      </TooltipProvider>
     </AppLayout>
   );
 }
