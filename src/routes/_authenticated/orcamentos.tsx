@@ -38,6 +38,7 @@ type Vendido = "S" | "N" | "E";
 
 type Orcamento = {
   id: string;
+  numero: string;
   cliente: string;
   projeto: string;
   vendido: Vendido;
@@ -52,6 +53,7 @@ type Orcamento = {
 const MOCK: Orcamento[] = [
   {
     id: "1",
+    numero: "PROP-0001",
     cliente: "Solar Prime Ltda",
     projeto: "Usina Rural Cascavel",
     vendido: "S",
@@ -64,6 +66,7 @@ const MOCK: Orcamento[] = [
   },
   {
     id: "2",
+    numero: "PROP-0002",
     cliente: "Energia Verde SA",
     projeto: "Telhado Metálico Galpão 3",
     vendido: "N",
@@ -76,6 +79,7 @@ const MOCK: Orcamento[] = [
   },
   {
     id: "3",
+    numero: "PROP-0003",
     cliente: "Casa & Cia Engenharia",
     projeto: "Residencial Alto da Glória",
     vendido: "E",
