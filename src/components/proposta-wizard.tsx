@@ -138,7 +138,7 @@ export function PropostaWizard({
       return;
     }
     if (step === 3) return setStep(4);
-    onFinish({ cliente: cliente.trim(), projeto: projeto.trim(), metodo });
+    onFinish({ cliente: cliente.trim(), projeto: projeto.trim(), vendido, metodo });
   };
 
   const goBack = () => {
