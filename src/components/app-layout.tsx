@@ -490,64 +490,17 @@ function SubLink({ to, label, icon: Icon, active }: { to: string; label: string;
   );
 }
 
-const ADMIN_OPEN_KEY = "portal2p-admin-open";
-
-function AdminGroup({ pathname, collapsed, show }: { pathname: string; collapsed: boolean; show: (k: FeatureKey) => boolean }) {
-  const active = pathname.startsWith("/admin") || pathname.startsWith("/usuarios") || pathname.startsWith("/integracoes");
-  const [open, setOpen] = useState(active);
-  useEffect(() => {
-    const saved = localStorage.getItem(ADMIN_OPEN_KEY);
-    if (saved !== null) setOpen(saved === "1");
-  }, []);
-  useEffect(() => { if (active) setOpen(true); }, [active]);
-  const toggle = () => setOpen((v) => { localStorage.setItem(ADMIN_OPEN_KEY, !v ? "1" : "0"); return !v; });
-
-  const showUsers = show("admin.usuarios");
-  const showVend = show("admin.vendedores");
-  const showMetas = show("admin.metas");
-  const showTab = show("admin.tabelas");
-  const showInt = show("admin.integracoes");
-  const anyChild = showUsers || showVend || showMetas || showTab || showInt;
-  if (!anyChild) return null;
-
-  if (collapsed) {
-    return (
-      <Link
-        to={showInt ? "/integracoes" : showUsers ? "/usuarios" : "/admin/metas"}
-        preload="intent"
-        title="Administrador"
-        className={cn(
-          "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
-          active ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-        )}
-      >
-        <Shield className="h-4 w-4" />
-      </Link>
-    );
-  }
+function AdminMenuLink({
+  to, label, icon: Icon, onClick,
+}: { to: string; label: string; icon: typeof Home; onClick: () => void }) {
   return (
-    <div className="mb-1">
-      <button
-        onClick={toggle}
-        className={cn(
-          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-          active ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-        )}
-      >
-        <Shield className="h-4 w-4 shrink-0" />
-        <span className="truncate">Administrador</span>
-        <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !open && "-rotate-90")} />
-      </button>
-      {open && (
-        <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-          {showUsers && <SubLink to="/usuarios" label="Usuários" icon={Users} active={pathname.startsWith("/usuarios")} />}
-          {showVend && <SubLink to="/admin/vendedores" label="Vendedores" icon={UserCog} active={pathname.startsWith("/admin/vendedores")} />}
-          {showMetas && <SubLink to="/admin/metas" label="Regras de Metas" icon={Target} active={pathname.startsWith("/admin/metas")} />}
-          {showTab && <SubLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} active={pathname.startsWith("/admin/tabelas")} />}
-          {showInt && <SubLink to="/integracoes" label="Integrações" icon={Plug} active={pathname.startsWith("/integracoes")} />}
-        </div>
-      )}
-    </div>
+    <Link
+      to={to}
+      onClick={onClick}
+      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2"
+    >
+      <Icon className="h-4 w-4" /> {label}
+    </Link>
   );
 }
 
