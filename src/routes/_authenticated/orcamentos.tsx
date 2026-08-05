@@ -2,18 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { PropostaWizard, type NovaPropostaResult } from "@/components/proposta-wizard";
 import { FilePlus, FileText } from "lucide-react";
 import { toast } from "sonner";
 
@@ -68,31 +57,31 @@ const STATUS_STYLE: Record<Status, { dot: string; pill: string }> = {
 
 function OrcamentosPage() {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>(MOCK);
-  const [open, setOpen] = useState(false);
-  const [cliente, setCliente] = useState("");
-  const [valor, setValor] = useState("");
-  const [obs, setObs] = useState("");
+  const [wizard, setWizard] = useState(false);
 
-  const handleCreate = () => {
-    if (!cliente.trim() || !valor) {
-      toast.error("Informe cliente e valor.");
-      return;
-    }
+  const handleFinish = (r: NovaPropostaResult) => {
     const next: Orcamento = {
       id: crypto.randomUUID(),
       code: `ORC-${1043 + orcamentos.length - MOCK.length}`,
-      cliente: cliente.trim(),
+      cliente: r.cliente,
       data: new Date().toLocaleDateString("pt-BR"),
-      valor: Number(valor),
+      valor: 0,
       status: "Salvo",
     };
     setOrcamentos((prev) => [next, ...prev]);
-    setCliente("");
-    setValor("");
-    setObs("");
-    setOpen(false);
-    toast.success("Orçamento criado.");
+    setWizard(false);
+    toast.success("Proposta salva.");
   };
+
+  if (wizard) {
+    return (
+      <AppLayout>
+        <div className="max-w-[1700px] mx-auto">
+          <PropostaWizard onCancel={() => setWizard(false)} onFinish={handleFinish} />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -102,38 +91,11 @@ function OrcamentosPage() {
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Carteira</div>
             <h1 className="text-3xl font-bold mt-1">Propostas</h1>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <FilePlus className="h-4 w-4" /> Realizar orçamento
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Novo orçamento</DialogTitle>
-                <DialogDescription>Preencha as informações para gerar um orçamento.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cliente">Cliente</Label>
-                  <Input id="cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Nome do cliente" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="valor">Valor (R$)</Label>
-                  <Input id="valor" type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0,00" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="obs">Observações</Label>
-                  <Textarea id="obs" value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Detalhes do orçamento…" />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button onClick={handleCreate}>Criar orçamento</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button className="gap-2" onClick={() => setWizard(true)}>
+            <FilePlus className="h-4 w-4" /> Nova proposta
+          </Button>
         </div>
+
 
         <div className="glass rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
