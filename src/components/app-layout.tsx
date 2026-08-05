@@ -185,8 +185,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
           {show("pedidos") && (
             <>
-              <NavLink item={{ to: "/pedidos", label: "Acompanhamento de Vendas", icon: KanbanSquare }} active={pathname.startsWith("/pedidos")} collapsed={collapsed} />
-              <NavLink item={{ to: "/orcamentos", label: "Orçamentos", icon: ClipboardList }} active={pathname.startsWith("/orcamentos")} collapsed={collapsed} />
+              <NavLink item={{ to: "/orcamentos", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/orcamentos")} collapsed={collapsed} />
+              <NavLink item={{ to: "/pedidos", label: "Pedidos", icon: KanbanSquare }} active={pathname.startsWith("/pedidos")} collapsed={collapsed} />
               <NavLink item={{ to: "/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/cupons")} collapsed={collapsed} />
             </>
           )}
