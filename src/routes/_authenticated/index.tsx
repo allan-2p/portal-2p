@@ -239,6 +239,7 @@ function HomePage() {
   const [interactionTask, setInteractionTask] = useState<SalesforceTask | null>(null);
   const [completeTask, setCompleteTask] = useState<SalesforceTask | null>(null);
   const [rescheduleTask, setRescheduleTask] = useState<SalesforceTask | null>(null);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
 
 
