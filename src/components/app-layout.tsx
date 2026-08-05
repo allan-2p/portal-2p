@@ -206,7 +206,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <NavLink item={{ to: "/carregadores/propostas", label: "Nova Proposta", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
               )}
               {show("cpo.historico") && (
-                <NavLink item={{ to: "/carregadores/historico", label: "Histórico", icon: History }} active={pathname.startsWith("/carregadores/historico")} collapsed={collapsed} />
+                <NavLink item={{ to: "/carregadores/historico", label: "Histórico", icon: HistoryIcon }} active={pathname.startsWith("/carregadores/historico")} collapsed={collapsed} />
               )}
               {show("cpo.produtos") && (
                 <NavLink item={{ to: "/carregadores/produtos", label: "Produtos e Alíquotas", icon: Package }} active={pathname.startsWith("/carregadores/produtos")} collapsed={collapsed} />
