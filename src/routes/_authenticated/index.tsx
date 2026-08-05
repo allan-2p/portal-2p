@@ -239,6 +239,7 @@ function HomePage() {
   const [interactionTask, setInteractionTask] = useState<SalesforceTask | null>(null);
   const [completeTask, setCompleteTask] = useState<SalesforceTask | null>(null);
   const [rescheduleTask, setRescheduleTask] = useState<SalesforceTask | null>(null);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
 
 
@@ -1039,7 +1040,7 @@ function HomePage() {
 
 
             </div>
-            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
+            <div className="divide-y divide-border rounded-xl border border-border overflow-hidden max-h-[520px] overflow-y-auto">
               {tasksQ.isLoading && (
                 <div className="text-center text-sm text-muted-foreground py-8">Carregando…</div>
               )}
@@ -1050,80 +1051,90 @@ function HomePage() {
               )}
               {sfTasks.map((t) => {
                 const inter = taskInteractions[t.id] ?? null;
-                
+
                 const dueDate = new Date(t.date + "T00:00:00");
                 const overdueDays = Math.round((todayStart.getTime() - dueDate.getTime()) / 86400000);
                 const isOverdue = overdueDays > 0;
+                const expanded = expandedTaskId === t.id;
                 return (
                 <div key={t.id} className={cn(
-                  "rounded-xl border p-3.5 transition-colors",
-                  isOverdue
-                    ? "border-destructive/50 bg-destructive/5 hover:border-destructive"
-                    : "border-border bg-surface hover:border-primary/40",
+                  "transition-colors",
+                  isOverdue ? "bg-destructive/5" : "bg-surface",
+                  expanded && "bg-surface-2/40",
                 )}>
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-center gap-3 px-3 py-2.5">
                     <button
                       onClick={() => setCompleteTask(t)}
                       title="Concluir tarefa"
                       className={cn(
-                        "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 group",
+                        "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 group",
                         isOverdue ? "border-destructive/60 hover:border-destructive" : "border-border hover:border-primary",
                       )}
                     >
                       <CheckCircle2 className={cn("h-3 w-3 opacity-0 group-hover:opacity-80", isOverdue ? "text-destructive" : "text-primary")} />
                     </button>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          {t.what && (
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <FileText className="h-3 w-3 text-[color:var(--atlas)] shrink-0" />
-                              <span className="text-[11px] uppercase tracking-wider font-semibold text-[color:var(--atlas)] truncate">
-                                {t.what}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <UsersIcon className="h-3 w-3 text-primary shrink-0" />
-                            <span className="text-sm font-bold text-foreground truncate">
-                              {t.who ?? (t.what ? "—" : "Sem cliente vinculado")}
+
+                    <button
+                      onClick={() => setExpandedTaskId(expanded ? null : t.id)}
+                      className="flex-1 min-w-0 text-left flex items-center gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <UsersIcon className="h-3 w-3 text-primary shrink-0" />
+                          <span className="text-sm font-semibold text-foreground truncate">
+                            {t.who ?? (t.what ? "—" : "Sem cliente vinculado")}
+                          </span>
+                          {isOverdue && (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-destructive/15 text-destructive shrink-0">
+                              <AlertTriangle className="h-2.5 w-2.5" />
+                              {overdueDays}d
                             </span>
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
-                            {t.subject}
-                            {isOverdue && (
-                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-destructive/15 text-destructive">
-                                <AlertTriangle className="h-2.5 w-2.5" />
-                                Atrasada {overdueDays}d
-                              </span>
-                            )}
-                            {inter && (
-                              <span
-                                title={`${inter.type ?? "Interação"} — ${inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}`}
-                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-success/15 text-success"
-                              >
-                                <Check className="h-2.5 w-2.5" />
-                                {inter.type ? `${inter.type} · ` : ""}{inter.contacted === "yes" ? "Falou" : "Não falou"}
-                              </span>
-                            )}
-                          </div>
+                          )}
+                          {inter && (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-success/15 text-success shrink-0">
+                              <Check className="h-2.5 w-2.5" />
+                              {inter.contacted === "yes" ? "Falou" : "Não falou"}
+                            </span>
+                          )}
                         </div>
-                        <span className={cn(
-                          "text-[10px] px-2 py-0.5 rounded shrink-0 flex items-center gap-1",
-                          isOverdue ? "bg-destructive/15 text-destructive font-semibold" :
-                          t.priority?.toLowerCase().startsWith("alt") ? "bg-destructive/15 text-destructive" :
-                          t.priority?.toLowerCase().startsWith("baix") ? "bg-surface-2 text-muted-foreground" :
-                          "bg-warning/20 text-[color:var(--warning)]",
-                        )}>
-                          <Clock className="h-2.5 w-2.5" />
-                          {dueDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-                        </span>
+                        <div className="text-xs text-muted-foreground truncate">{t.subject}</div>
                       </div>
-                      {t.owner && (
-                        <div className="text-[11px] text-muted-foreground mt-1">Responsável: {t.owner}</div>
+
+                      <span className={cn(
+                        "text-[10px] px-2 py-0.5 rounded shrink-0 flex items-center gap-1",
+                        isOverdue ? "bg-destructive/15 text-destructive font-semibold" :
+                        t.priority?.toLowerCase().startsWith("alt") ? "bg-destructive/15 text-destructive" :
+                        t.priority?.toLowerCase().startsWith("baix") ? "bg-surface-2 text-muted-foreground" :
+                        "bg-warning/20 text-[color:var(--warning)]",
+                      )}>
+                        <Clock className="h-2.5 w-2.5" />
+                        {dueDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                      </span>
+                      <ChevronDown className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform", expanded && "rotate-180")} />
+                    </button>
+                  </div>
+
+                  {expanded && (
+                    <div className="px-3 pb-3 pl-11 space-y-2">
+                      {t.what && (
+                        <div className="flex items-center gap-1.5">
+                          <FileText className="h-3 w-3 text-[color:var(--atlas)] shrink-0" />
+                          <span className="text-[11px] uppercase tracking-wider font-semibold text-[color:var(--atlas)] truncate">
+                            {t.what}
+                          </span>
+                        </div>
                       )}
-                      
-                      <div className="flex gap-1.5 mt-2.5">
+                      <div className="text-xs text-muted-foreground">{t.subject}</div>
+                      {t.owner && (
+                        <div className="text-[11px] text-muted-foreground">Responsável: {t.owner}</div>
+                      )}
+                      {inter && (
+                        <div className="text-[11px] text-success">
+                          Última interação: {inter.type ? `${inter.type} · ` : ""}
+                          {inter.contacted === "yes" ? "Falou com o cliente" : "Não conseguiu falar"}
+                        </div>
+                      )}
+                      <div className="flex gap-1.5 pt-1">
                         <button
                           onClick={() => setInteractionTask(t)}
                           className={cn(
@@ -1143,18 +1154,13 @@ function HomePage() {
                         >
                           <CalendarPlus className="h-3 w-3" /> Adiar
                         </button>
-                        <button
-                          onClick={() => setCompleteTask(t)}
-                          className="text-[11px] px-2 py-1 rounded bg-surface-2 hover:bg-success/15 hover:text-success text-muted-foreground flex items-center gap-1"
-                        >
-                          <Check className="h-3 w-3" /> Concluir
-                        </button>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               );})}
             </div>
+
           </div>
 
           <div className="relative glass rounded-2xl p-5 overflow-hidden min-h-[280px]">
