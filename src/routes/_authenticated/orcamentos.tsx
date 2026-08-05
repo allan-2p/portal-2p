@@ -167,6 +167,7 @@ function OrcamentosPage() {
 
   return (
     <AppLayout>
+      <TooltipProvider>
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
