@@ -317,9 +317,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )
           )}
 
-          {hasRole("admin") && (
-            <AdminGroup pathname={pathname} collapsed={collapsed} show={show} />
-          )}
         </nav>
 
         <button
