@@ -12,8 +12,8 @@ import { useScopedOwner } from "@/hooks/use-seller-scope";
 export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
     meta: [
-      { title: "Acompanhamento de Vendas — Portal 2P" },
-      { name: "description", content: "Acompanhamento de vendas em Kanban ou lista." },
+      { title: "Pedidos — Portal 2P" },
+      { name: "description", content: "Acompanhamento de pedidos em Kanban ou lista." },
     ],
   }),
   component: PedidosPage,
@@ -101,7 +101,7 @@ function PedidosPage() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Carteira</div>
-            <h1 className="text-3xl font-bold mt-1">Acompanhamento de Vendas</h1>
+            <h1 className="text-3xl font-bold mt-1">Pedidos</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">

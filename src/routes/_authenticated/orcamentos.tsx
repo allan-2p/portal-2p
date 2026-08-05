@@ -20,8 +20,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/orcamentos")({
   head: () => ({
     meta: [
-      { title: "Orçamentos — Portal 2P" },
-      { name: "description", content: "Orçamentos criados e emissão de novos orçamentos." },
+      { title: "Propostas — Portal 2P" },
+      { name: "description", content: "Propostas criadas e emissão de novas propostas." },
     ],
   }),
   component: OrcamentosPage,
@@ -100,7 +100,7 @@ function OrcamentosPage() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Carteira</div>
-            <h1 className="text-3xl font-bold mt-1">Orçamentos</h1>
+            <h1 className="text-3xl font-bold mt-1">Propostas</h1>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
