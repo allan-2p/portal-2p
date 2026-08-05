@@ -213,14 +213,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     {show("clientes.cadastros") && (
                       <SubLink to="/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/clientes/cadastros")} />
                     )}
-                    {show("clientes.segmentacao") && (
-                      <SubLink to="/clientes/segmentacao" label="Segmentação" icon={Layers} active={pathname.startsWith("/clientes/segmentacao")} />
-                    )}
-                    {show("clientes.perfil") && (
-                      <SubLink to="/clientes/perfil" label="Perfil do Cliente" icon={UserIcon} active={pathname.startsWith("/clientes/perfil")} />
-                    )}
-                    {show("clientes.sugestoes") && (
-                      <SubLink to="/clientes/sugestoes" label="Sugestões do Atlas" icon={Sparkles} active={pathname.startsWith("/clientes/sugestoes")} />
+                    {(show("clientes.segmentacao") || show("clientes.perfil")) && (
+                      <SubLink
+                        to={show("clientes.segmentacao") ? "/clientes/segmentacao" : "/clientes/perfil"}
+                        label="Perfil de Cliente"
+                        icon={UserIcon}
+                        active={pathname.startsWith("/clientes/segmentacao") || pathname.startsWith("/clientes/perfil")}
+                      />
                     )}
                     {show("clientes.ranking") && (
                       <SubLink to="/clientes/ranking" label="Ranking" icon={Trophy} active={pathname.startsWith("/clientes/ranking")} />
