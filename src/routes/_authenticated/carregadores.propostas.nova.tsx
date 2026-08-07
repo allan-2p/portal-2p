@@ -476,8 +476,20 @@ function PropostaCpoPage() {
               {state.itens.map((it) => {
                 const prod = produtos.find((p) => p.id === it.produtoId);
                 const sug = precoSugerido(prod, state.contribuinte, config);
+                const semValor = !!it.produtoId && !(it.valor > 0);
+                const abaixoSug = !!it.produtoId && sug > 0 && it.valor > 0 && it.valor < sug - 0.005;
                 return (
-                  <div key={it.key} className="rounded-xl border border-border p-3 space-y-3 bg-surface/40">
+                  <div
+                    key={it.key}
+                    className={cn(
+                      "rounded-xl border p-3 space-y-3 bg-surface/40",
+                      semValor
+                        ? "border-destructive/60 ring-1 ring-destructive/25"
+                        : abaixoSug
+                          ? "border-amber-500/60 ring-1 ring-amber-500/20"
+                          : "border-border",
+                    )}
+                  >
                     <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_.5fr] gap-3">
                       <Field label="Produto">
                         <Select
