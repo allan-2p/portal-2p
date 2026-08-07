@@ -439,6 +439,12 @@ function PropostaCpoPage() {
                 />
               </Field>
             </div>
+            </>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                Etapa 1: selecione o cliente para liberar produtos, frete e o cálculo fiscal da proposta.
+              </div>
+            )}
           </div>
 
           {/* PAINEL / DRE */}
