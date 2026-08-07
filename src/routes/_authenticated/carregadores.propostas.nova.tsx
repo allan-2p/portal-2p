@@ -282,6 +282,7 @@ function PropostaCpoPage() {
 
   function irParaEtapa2() {
     if (!clienteOk) {
+      setTentouAvancar(true);
       toast.error(errosCliente[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
       return;
     }
