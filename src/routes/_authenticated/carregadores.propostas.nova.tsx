@@ -510,7 +510,7 @@ function PropostaCpoPage() {
           ipi: d.ipiValor,
           pisCofins: d.pisCofins,
           rl: d.rl,
-          custo: d.custoTotal,
+          custo: 0,
           mb: d.mb,
           mbPct: d.mbPct,
           comissao: d.comValor,
