@@ -86,7 +86,7 @@ function UsuariosPage() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id,email,full_name,cargo,equipe,ativo,avatar_url,sf_user_id,is_external,filter_scope")
+      .select("id,email,full_name,cargo,equipe,regime_contratacao,ativo,avatar_url,sf_user_id,is_external,filter_scope")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
     const byUser = new Map<string, AppRole[]>();
