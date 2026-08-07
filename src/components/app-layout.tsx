@@ -256,6 +256,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         {show("cpo.comissoes") && (
                           <SubLink to="/carregadores/comissoes" label="Comissões" icon={Percent} active={pathname.startsWith("/carregadores/comissoes")} />
                         )}
+                        {(show("cpo.produtos") || show("cpo.comissoes")) && (
+                          <SubLink to="/carregadores/regras" label="Regras" icon={BookOpen} active={pathname.startsWith("/carregadores/regras")} />
+                        )}
+
                       </div>
                     )}
                   </div>
