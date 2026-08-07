@@ -118,7 +118,7 @@ function HistoricoCpoPage() {
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Módulo CPO</div>
+            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Carregadores</div>
             <h1 className="text-3xl font-bold mt-1">Propostas</h1>
           </div>
           <Button asChild className="gap-2">
