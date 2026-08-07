@@ -1041,7 +1041,7 @@ function PropostaCpoPage() {
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => salvar()} disabled={saving || !podeSalvar} className="gap-2 flex-1 min-w-[160px]">
+                <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2 flex-1 min-w-[160px]">
                   <Save className="h-4 w-4" /> Salvar proposta
                 </Button>
                 <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar} className="gap-2 flex-1 min-w-[160px]">
@@ -1049,8 +1049,8 @@ function PropostaCpoPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={concluirPedido}
-                  disabled={saving || !podeFechar}
+                  onClick={() => pedirRevisao("concluir")}
+                  disabled={saving}
                   className="gap-2 flex-1 min-w-[160px]"
                 >
                   <CheckCircle2 className="h-4 w-4" /> Concluir pedido
