@@ -444,8 +444,9 @@ function PropostaCpoPage() {
           </button>
           <div className="h-px w-6 bg-border" />
           <button
-            onClick={() => clienteOk && setEtapa(2)}
+            onClick={irParaEtapa2}
             disabled={!clienteOk}
+
             className={cn(
               "px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50",
               etapa === 2 ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground",
