@@ -41,12 +41,14 @@ import { Route as AuthenticatedClientesPerfilRouteImport } from './routes/_authe
 import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
 import { Route as AuthenticatedCarregadoresPropostasRouteImport } from './routes/_authenticated/carregadores.propostas'
 import { Route as AuthenticatedCarregadoresProdutosRouteImport } from './routes/_authenticated/carregadores.produtos'
-import { Route as AuthenticatedCarregadoresHistoricoRouteImport } from './routes/_authenticated/carregadores.historico'
+import { Route as AuthenticatedCarregadoresComissoesRouteImport } from './routes/_authenticated/carregadores.comissoes'
 import { Route as AuthenticatedAdminVendedoresRouteImport } from './routes/_authenticated/admin.vendedores'
 import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
 import { Route as AuthenticatedAdminPermissoesRouteImport } from './routes/_authenticated/admin.permissoes'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
 import { Route as AuthenticatedAdminAcessosInstanciasRouteImport } from './routes/_authenticated/admin.acessos-instancias'
+import { Route as AuthenticatedCarregadoresPropostasIndexRouteImport } from './routes/_authenticated/carregadores.propostas.index'
+import { Route as AuthenticatedCarregadoresPropostasNovaRouteImport } from './routes/_authenticated/carregadores.propostas.nova'
 
 const TvGeralRoute = TvGeralRouteImport.update({
   id: '/tv-geral',
@@ -224,10 +226,10 @@ const AuthenticatedCarregadoresProdutosRoute =
     path: '/carregadores/produtos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedCarregadoresHistoricoRoute =
-  AuthenticatedCarregadoresHistoricoRouteImport.update({
-    id: '/carregadores/historico',
-    path: '/carregadores/historico',
+const AuthenticatedCarregadoresComissoesRoute =
+  AuthenticatedCarregadoresComissoesRouteImport.update({
+    id: '/carregadores/comissoes',
+    path: '/carregadores/comissoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminVendedoresRoute =
@@ -259,6 +261,18 @@ const AuthenticatedAdminAcessosInstanciasRoute =
     path: '/admin/acessos-instancias',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCarregadoresPropostasIndexRoute =
+  AuthenticatedCarregadoresPropostasIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedCarregadoresPropostasRoute,
+  } as any)
+const AuthenticatedCarregadoresPropostasNovaRoute =
+  AuthenticatedCarregadoresPropostasNovaRouteImport.update({
+    id: '/nova',
+    path: '/nova',
+    getParentRoute: () => AuthenticatedCarregadoresPropostasRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -281,9 +295,9 @@ export interface FileRoutesByFullPath {
   '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
-  '/carregadores/historico': typeof AuthenticatedCarregadoresHistoricoRoute
+  '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
-  '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRoute
+  '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
   '/clientes/ranking': typeof AuthenticatedClientesRankingRoute
@@ -298,6 +312,8 @@ export interface FileRoutesByFullPath {
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
+  '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
+  '/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -319,9 +335,8 @@ export interface FileRoutesByTo {
   '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
-  '/carregadores/historico': typeof AuthenticatedCarregadoresHistoricoRoute
+  '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
-  '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
   '/clientes/ranking': typeof AuthenticatedClientesRankingRoute
@@ -336,6 +351,8 @@ export interface FileRoutesByTo {
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
+  '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
+  '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -360,9 +377,9 @@ export interface FileRoutesById {
   '/_authenticated/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/_authenticated/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
-  '/_authenticated/carregadores/historico': typeof AuthenticatedCarregadoresHistoricoRoute
+  '/_authenticated/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/_authenticated/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
-  '/_authenticated/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRoute
+  '/_authenticated/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
   '/_authenticated/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
   '/_authenticated/clientes/ranking': typeof AuthenticatedClientesRankingRoute
@@ -377,6 +394,8 @@ export interface FileRoutesById {
   '/_authenticated/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
+  '/_authenticated/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
+  '/_authenticated/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -401,7 +420,7 @@ export interface FileRouteTypes {
     | '/admin/permissoes'
     | '/admin/tabelas'
     | '/admin/vendedores'
-    | '/carregadores/historico'
+    | '/carregadores/comissoes'
     | '/carregadores/produtos'
     | '/carregadores/propostas'
     | '/clientes/cadastros'
@@ -418,6 +437,8 @@ export interface FileRouteTypes {
     | '/marketing/social'
     | '/marketing/trafego'
     | '/marketing/'
+    | '/carregadores/propostas/nova'
+    | '/carregadores/propostas/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -439,9 +460,8 @@ export interface FileRouteTypes {
     | '/admin/permissoes'
     | '/admin/tabelas'
     | '/admin/vendedores'
-    | '/carregadores/historico'
+    | '/carregadores/comissoes'
     | '/carregadores/produtos'
-    | '/carregadores/propostas'
     | '/clientes/cadastros'
     | '/clientes/perfil'
     | '/clientes/ranking'
@@ -456,6 +476,8 @@ export interface FileRouteTypes {
     | '/marketing/social'
     | '/marketing/trafego'
     | '/marketing'
+    | '/carregadores/propostas/nova'
+    | '/carregadores/propostas'
   id:
     | '__root__'
     | '/_authenticated'
@@ -479,7 +501,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/permissoes'
     | '/_authenticated/admin/tabelas'
     | '/_authenticated/admin/vendedores'
-    | '/_authenticated/carregadores/historico'
+    | '/_authenticated/carregadores/comissoes'
     | '/_authenticated/carregadores/produtos'
     | '/_authenticated/carregadores/propostas'
     | '/_authenticated/clientes/cadastros'
@@ -496,6 +518,8 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing/social'
     | '/_authenticated/marketing/trafego'
     | '/_authenticated/marketing/'
+    | '/_authenticated/carregadores/propostas/nova'
+    | '/_authenticated/carregadores/propostas/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -731,11 +755,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarregadoresProdutosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/carregadores/historico': {
-      id: '/_authenticated/carregadores/historico'
-      path: '/carregadores/historico'
-      fullPath: '/carregadores/historico'
-      preLoaderRoute: typeof AuthenticatedCarregadoresHistoricoRouteImport
+    '/_authenticated/carregadores/comissoes': {
+      id: '/_authenticated/carregadores/comissoes'
+      path: '/carregadores/comissoes'
+      fullPath: '/carregadores/comissoes'
+      preLoaderRoute: typeof AuthenticatedCarregadoresComissoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/vendedores': {
@@ -772,6 +796,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/acessos-instancias'
       preLoaderRoute: typeof AuthenticatedAdminAcessosInstanciasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/carregadores/propostas/': {
+      id: '/_authenticated/carregadores/propostas/'
+      path: '/'
+      fullPath: '/carregadores/propostas/'
+      preLoaderRoute: typeof AuthenticatedCarregadoresPropostasIndexRouteImport
+      parentRoute: typeof AuthenticatedCarregadoresPropostasRoute
+    }
+    '/_authenticated/carregadores/propostas/nova': {
+      id: '/_authenticated/carregadores/propostas/nova'
+      path: '/nova'
+      fullPath: '/carregadores/propostas/nova'
+      preLoaderRoute: typeof AuthenticatedCarregadoresPropostasNovaRouteImport
+      parentRoute: typeof AuthenticatedCarregadoresPropostasRoute
     }
   }
 }
@@ -839,6 +877,24 @@ const AuthenticatedMarketingRouteWithChildren =
     AuthenticatedMarketingRouteChildren,
   )
 
+interface AuthenticatedCarregadoresPropostasRouteChildren {
+  AuthenticatedCarregadoresPropostasNovaRoute: typeof AuthenticatedCarregadoresPropostasNovaRoute
+  AuthenticatedCarregadoresPropostasIndexRoute: typeof AuthenticatedCarregadoresPropostasIndexRoute
+}
+
+const AuthenticatedCarregadoresPropostasRouteChildren: AuthenticatedCarregadoresPropostasRouteChildren =
+  {
+    AuthenticatedCarregadoresPropostasNovaRoute:
+      AuthenticatedCarregadoresPropostasNovaRoute,
+    AuthenticatedCarregadoresPropostasIndexRoute:
+      AuthenticatedCarregadoresPropostasIndexRoute,
+  }
+
+const AuthenticatedCarregadoresPropostasRouteWithChildren =
+  AuthenticatedCarregadoresPropostasRoute._addFileChildren(
+    AuthenticatedCarregadoresPropostasRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAtlasRoute: typeof AuthenticatedAtlasRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRouteWithChildren
@@ -857,9 +913,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminPermissoesRoute: typeof AuthenticatedAdminPermissoesRoute
   AuthenticatedAdminTabelasRoute: typeof AuthenticatedAdminTabelasRoute
   AuthenticatedAdminVendedoresRoute: typeof AuthenticatedAdminVendedoresRoute
-  AuthenticatedCarregadoresHistoricoRoute: typeof AuthenticatedCarregadoresHistoricoRoute
+  AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
   AuthenticatedCarregadoresProdutosRoute: typeof AuthenticatedCarregadoresProdutosRoute
-  AuthenticatedCarregadoresPropostasRoute: typeof AuthenticatedCarregadoresPropostasRoute
+  AuthenticatedCarregadoresPropostasRoute: typeof AuthenticatedCarregadoresPropostasRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -881,12 +937,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminPermissoesRoute: AuthenticatedAdminPermissoesRoute,
   AuthenticatedAdminTabelasRoute: AuthenticatedAdminTabelasRoute,
   AuthenticatedAdminVendedoresRoute: AuthenticatedAdminVendedoresRoute,
-  AuthenticatedCarregadoresHistoricoRoute:
-    AuthenticatedCarregadoresHistoricoRoute,
+  AuthenticatedCarregadoresComissoesRoute:
+    AuthenticatedCarregadoresComissoesRoute,
   AuthenticatedCarregadoresProdutosRoute:
     AuthenticatedCarregadoresProdutosRoute,
   AuthenticatedCarregadoresPropostasRoute:
-    AuthenticatedCarregadoresPropostasRoute,
+    AuthenticatedCarregadoresPropostasRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -901,13 +957,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
