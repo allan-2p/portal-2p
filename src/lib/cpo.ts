@@ -5,7 +5,7 @@
 //   ICMS efetivo (contribuinte)     = origem  (DIFAL por conta do destinatário)
 //   PIS/COFINS  = (ValorItem - ICMS) * 9,25%
 //   Receita Líq = ValorItem - ICMS - PIS/COFINS
-//   Margem Bruta = RL - custo dos equipamentos ; MB% = MB / Valor
+//   Margem Bruta = RL (baseada no Valor informado) ; MB% = MB / Valor
 
 export type CpoProduct = {
   id: string;
@@ -115,7 +115,7 @@ export function novoEstado(): CpoState {
 
 export function calcularCpo(
   state: CpoState,
-  produtos: CpoProduct[],
+  _produtos: CpoProduct[],
   ufs: CpoUf[],
   config: CpoConfig,
 ): CpoResult {
