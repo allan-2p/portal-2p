@@ -1003,8 +1003,10 @@ function EditUserModal({
     full_name: row.full_name ?? "",
     cargo: row.cargo ?? "",
     equipe: row.equipe ?? "",
+    regime_contratacao: row.regime_contratacao ?? "CLT",
     is_external: row.is_external,
   });
+
   const [submitting, setSubmitting] = useState(false);
 
   return (
