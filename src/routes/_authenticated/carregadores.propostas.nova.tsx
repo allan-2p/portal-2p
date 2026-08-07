@@ -274,8 +274,9 @@ function PropostaCpoPage() {
                 </PopoverContent>
               </Popover>
               <p className="text-[11px] text-muted-foreground mt-1">
-                Ao selecionar, os dados do cadastro são preenchidos automaticamente — você ainda pode editar abaixo.
+                Os dados fiscais vêm direto do cadastro do cliente.
               </p>
+
             </Field>
 
             <Banner level={st.level} text={st.msg} />
