@@ -334,6 +334,7 @@ export type Database = {
           id: string
           is_external: boolean
           meta_mensal: number | null
+          regime_contratacao: string
           sf_user_id: string | null
           telefone: string | null
           updated_at: string
@@ -351,6 +352,7 @@ export type Database = {
           id: string
           is_external?: boolean
           meta_mensal?: number | null
+          regime_contratacao?: string
           sf_user_id?: string | null
           telefone?: string | null
           updated_at?: string
@@ -368,6 +370,7 @@ export type Database = {
           id?: string
           is_external?: boolean
           meta_mensal?: number | null
+          regime_contratacao?: string
           sf_user_id?: string | null
           telefone?: string | null
           updated_at?: string
@@ -576,6 +579,7 @@ export type Database = {
           id: string
           invited_by: string | null
           is_external: boolean
+          regime_contratacao: string
           role: Database["public"]["Enums"]["app_role"]
           sf_user_id: string | null
         }
@@ -590,6 +594,7 @@ export type Database = {
           id?: string
           invited_by?: string | null
           is_external?: boolean
+          regime_contratacao?: string
           role?: Database["public"]["Enums"]["app_role"]
           sf_user_id?: string | null
         }
@@ -604,6 +609,7 @@ export type Database = {
           id?: string
           invited_by?: string | null
           is_external?: boolean
+          regime_contratacao?: string
           role?: Database["public"]["Enums"]["app_role"]
           sf_user_id?: string | null
         }
