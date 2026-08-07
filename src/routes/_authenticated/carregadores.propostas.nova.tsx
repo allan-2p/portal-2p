@@ -406,25 +406,22 @@ function PropostaCpoPage() {
               <DreRow k="Custo dos equipamentos" v={`- ${fmtBRL(d.custoTotal)}`} tone="sub" />
               <DreRow k="Margem bruta" sub={`MB% = ${fmtPct(d.mbPct)}`} v={fmtBRL(d.mb)} tone="add" />
 
-              {completa && (
-                <>
-                  <div className="h-px bg-border my-3" />
-                  <DreRow k={`IPI destacado (${fmtPct(config.ipi)})`} v={fmtBRL(d.ipiValor)} tone="neutral" />
-                  <DreRow k="ICMS de origem (interestadual)" v={fmtBRL(d.origem)} tone="neutral" />
-                  <DreRow
-                    k={state.contribuinte ? "DIFAL estimado do destinatário" : "DIFAL absorvido pela 2P"}
-                    v={fmtBRL(state.contribuinte ? d.difalEstimado : d.difalAbs)}
-                    tone="neutral"
-                  />
-                  <DreRow
-                    k="Alíquota interna da UF (+FCP)"
-                    sub={uf ? `${uf.nome} — interna ${fmtPct(uf.aliq_interna)} · FCP ${fmtPct(uf.fcp)}` : undefined}
-                    v={fmtPct(d.aliqInterna)}
-                    tone="neutral"
-                  />
-                  <DreRow k="Frete" sub={`Modalidade ${state.freteMod} — fora da base de margem`} v={fmtBRL(state.freteValor)} tone="neutral" />
-                </>
-              )}
+              <div className="h-px bg-border my-3" />
+              <DreRow k={`IPI destacado (${fmtPct(config.ipi)})`} v={fmtBRL(d.ipiValor)} tone="neutral" />
+              <DreRow k="ICMS de origem (interestadual)" v={fmtBRL(d.origem)} tone="neutral" />
+              <DreRow
+                k={state.contribuinte ? "DIFAL estimado do destinatário" : "DIFAL absorvido pela 2P"}
+                v={fmtBRL(state.contribuinte ? d.difalEstimado : d.difalAbs)}
+                tone="neutral"
+              />
+              <DreRow
+                k="Alíquota interna da UF (+FCP)"
+                sub={uf ? `${uf.nome} — interna ${fmtPct(uf.aliq_interna)} · FCP ${fmtPct(uf.fcp)}` : undefined}
+                v={fmtPct(d.aliqInterna)}
+                tone="neutral"
+              />
+              <DreRow k="Frete" sub={`Modalidade ${state.freteMod} — fora da base de margem`} v={fmtBRL(state.freteValor)} tone="neutral" />
+
             </div>
           </div>
         </div>
