@@ -8,7 +8,7 @@ import { InstanceSwitcher } from "./instance-switcher";
 import { MarketingUnitSwitch } from "./marketing-unit-switch";
 
 import { useInstance } from "./instance-provider";
-import { INSTANCES, type FeatureKey } from "@/lib/instances";
+import { INSTANCES, featureForPath, instanceForFeature, type FeatureKey } from "@/lib/instances";
 import { SCREENS, type ScreenKey } from "@/lib/view-screens";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
