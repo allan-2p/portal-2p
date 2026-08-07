@@ -58,7 +58,9 @@ const InviteInput = z.object({
   full_name: z.string().min(1),
   cargo: z.string().optional().nullable(),
   equipe: z.string().optional().nullable(),
+  regime_contratacao: RegimeEnum.optional().default("CLT"),
   role: RoleEnum,
+
   is_external: z.boolean().optional().default(false),
   sf_user_id: z.string().optional().nullable(),
   avatar_url: z.string().optional().nullable(),
