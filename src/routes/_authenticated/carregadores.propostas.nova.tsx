@@ -215,19 +215,47 @@ function PropostaCpoPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <Button onClick={salvar} disabled={saving || abaixoPolitica || !clienteOk} className="gap-2">
-              <Save className="h-4 w-4" /> Salvar proposta
-            </Button>
+            {etapa === 2 && (
+              <Button onClick={salvar} disabled={saving || abaixoPolitica} className="gap-2">
+                <Save className="h-4 w-4" /> Salvar proposta
+              </Button>
+            )}
           </div>
 
+        </div>
+
+        <div className="flex items-center gap-2 text-sm">
+          <button
+            onClick={() => setEtapa(1)}
+            className={cn(
+              "px-3 py-1.5 rounded-full border transition-colors",
+              etapa === 1 ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground",
+            )}
+          >
+            1. Cliente
+          </button>
+          <div className="h-px w-6 bg-border" />
+          <button
+            onClick={() => clienteOk && setEtapa(2)}
+            disabled={!clienteOk}
+            className={cn(
+              "px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50",
+              etapa === 2 ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground",
+            )}
+          >
+            2. Produtos, frete e margem
+          </button>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-5 items-start">
           {/* ENTRADAS */}
           <div className="glass rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold">Entradas da proposta</h2>
+              <h2 className="font-semibold">
+                {etapa === 1 ? "Etapa 1 — Cliente" : "Etapa 2 — Produtos, frete e margem"}
+              </h2>
             </div>
+
 
             <Field label="Cliente já cadastrado">
               <Popover open={openCli} onOpenChange={setOpenCli}>
