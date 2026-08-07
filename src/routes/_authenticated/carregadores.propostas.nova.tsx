@@ -480,7 +480,7 @@ function PropostaCpoPage() {
             ) : (
               <div className="space-y-3">
                 <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                  Etapa 1: selecione o cliente. Produtos, frete e margem bruta ficam na etapa 2.
+                  Etapa 1: selecione o cliente. Produtos, frete e impostos ficam na etapa 2.
                 </div>
                 <Button className="w-full gap-2" disabled={!clienteOk} onClick={() => setEtapa(2)}>
                   Continuar para produtos
