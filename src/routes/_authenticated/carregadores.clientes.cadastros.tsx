@@ -144,7 +144,7 @@ function CadastrosPage() {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
   });
 
-  const rows = useMemo(() => {
+  const filtrados = useMemo(() => {
     const t = q.trim().toLowerCase();
     const tDoc = soDigitos(q);
     return clientes.filter((c) => {
@@ -162,12 +162,44 @@ function CadastrosPage() {
     });
   }, [clientes, q, fClasse, fUf, fStatus, fFiscal]);
 
+  const ordenados = useMemo(() => {
+    const val = (c: Cliente) => {
+      switch (ordem) {
+        case "classificacao": return c.classificacao || "C";
+        case "doc": return soDigitos(c.doc ?? "");
+        case "fiscal": return c.contribuinte ? "1" : "0";
+        case "cidade": return `${c.uf} ${c.cidade ?? ""}`;
+        case "contato": return (c.contato_nome || c.email || "").toLowerCase();
+        default: return c.razao_social.toLowerCase();
+      }
+    };
+    return [...filtrados].sort((a, b) => {
+      const r = val(a).localeCompare(val(b), "pt-BR", { numeric: true });
+      return dir === "asc" ? r : -r;
+    });
+  }, [filtrados, ordem, dir]);
+
+  const totalPaginas = Math.max(1, Math.ceil(ordenados.length / porPagina));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const rows = useMemo(
+    () => ordenados.slice((paginaAtual - 1) * porPagina, paginaAtual * porPagina),
+    [ordenados, paginaAtual, porPagina],
+  );
+
+  useEffect(() => { setPagina(1); }, [q, fClasse, fUf, fStatus, fFiscal, porPagina, ordem, dir]);
+
   const ufsDisponiveis = useMemo(
     () => Array.from(new Set(clientes.map((c) => c.uf).filter(Boolean))).sort(),
     [clientes],
   );
   const filtrosAtivos = fClasse !== "todas" || fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || q.trim() !== "";
   const limparFiltros = () => { setQ(""); setFClasse("todas"); setFUf("todas"); setFStatus("ativos"); setFFiscal("todos"); };
+
+  const ordenarPor = (k: OrdemKey) => {
+    if (ordem === k) setDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setOrdem(k); setDir("asc"); }
+  };
+
 
 
   const abrirNovo = () => { setEditId(null); setForm(vazio()); setOpen(true); };
