@@ -299,7 +299,7 @@ function PropostaCpoPage() {
 
   const itensSemValor = state.itens.filter((i) => i.produtoId && !(i.valor > 0));
   const itensSemQtd = state.itens.filter((i) => i.produtoId && !(i.qtd > 0));
-  const itensSemProduto = state.itens.filter((i) => !i.produtoId && (i.valor > 0 || i.qtd > 0));
+  const itensSemProduto = state.itens.filter((i) => !i.produtoId && i.valor > 0);
 
   // ---- Bloqueios de fechamento (exportar PDF / concluir pedido) ----
   const errosFechamento: string[] = [];
@@ -315,7 +315,7 @@ function PropostaCpoPage() {
     errosFechamento.push("Frete CIF sem valor informado — necessário para fechar os totais.");
   if (temProduto && !(d.valorTotalProposta > 0))
     errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
-  if (abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+  if (temProduto && abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
   const podeFechar = errosFechamento.length === 0;
 
   // ---- Bloqueios de salvamento ----
@@ -323,7 +323,7 @@ function PropostaCpoPage() {
   errosCliente.forEach((e) => errosSalvar.push(e.msg));
   if (!temProduto) errosSalvar.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length) errosSalvar.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
-  if (abaixoPolitica) errosSalvar.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+  if (temProduto && abaixoPolitica) errosSalvar.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
 
 
 
@@ -607,7 +607,12 @@ function PropostaCpoPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-5 items-start">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-5 items-start",
+            etapa === 2 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
+          )}
+        >
           {/* ENTRADAS */}
           <div className="glass rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -724,7 +729,7 @@ function PropostaCpoPage() {
 
             {etapa === 2 ? (
               <>
-            <Banner level={st.level} text={st.msg} />
+            {temProduto ? <Banner level={st.level} text={st.msg} /> : null}
 
 
 
@@ -766,7 +771,7 @@ function PropostaCpoPage() {
               {state.itens.map((it) => {
                 const semValor = !!it.produtoId && !(it.valor > 0);
                 const semQtd = !!it.produtoId && !(it.qtd > 0);
-                const semProduto = !it.produtoId && (it.valor > 0 || it.qtd > 0);
+                const semProduto = !it.produtoId && it.valor > 0;
                 const bloqueado = semValor || semQtd || semProduto;
                 return (
                   <div
@@ -1008,6 +1013,11 @@ function PropostaCpoPage() {
                 {fmtPct(d.comPct)} sobre {config.comissao_base === "VALOR" ? "o valor da venda" : "a margem bruta (MB)"}
                 {" — "}
                 comissão = base × percentual.
+                {!d.comPct ? (
+                  <span className="block mt-1 text-amber-600 dark:text-amber-400">
+                    Percentual de comissão ainda não configurado — defina em Moderação › Comissões.
+                  </span>
+                ) : null}
               </div>
 
               <div className="divide-y rounded-xl border">
