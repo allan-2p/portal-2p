@@ -113,16 +113,6 @@ export function novoEstado(): CpoState {
   };
 }
 
-export function precoSugerido(
-  produto: CpoProduct | undefined,
-  contribuinte: boolean,
-  config: CpoConfig,
-) {
-  if (!produto) return 0;
-  return contribuinte
-    ? produto.preco_sugerido
-    : produto.preco_sugerido * (1 + config.majoracao_sem_ie);
-}
 
 export function calcularCpo(
   state: CpoState,
