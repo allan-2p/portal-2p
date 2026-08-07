@@ -92,6 +92,8 @@ function CadastrosPage() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Cliente, "id">>(vazio());
+  const [detalhe, setDetalhe] = useState<Cliente | null>(null);
+
 
   const set = <K extends keyof Omit<Cliente, "id">>(k: K, v: Omit<Cliente, "id">[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
