@@ -59,9 +59,12 @@ function CarregadoresHome() {
     },
   });
 
+  const valorProposta = (p: Prop) =>
+    Number(p.totais?.["valorTotal"] ?? p.totais?.["total"] ?? p.totais?.["valor"] ?? 0);
+
   const kpis = useMemo(() => {
     const total = props.length;
-    const valor = props.reduce((s, p) => s + Number(p.totais?.["total"] ?? p.totais?.["receita"] ?? 0), 0);
+    const valor = props.reduce((s, p) => s + valorProposta(p), 0);
     const clientes = new Set(props.map((p) => p.cliente_nome.trim().toUpperCase())).size;
     const aprovadas = props.filter((p) => p.status === "Aprovada").length;
     return { total, valor, clientes, aprovadas };
