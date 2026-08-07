@@ -201,6 +201,8 @@ function PropostaCpoPage() {
     }
   }
 
+  const clienteOk = !!state.nome;
+
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
