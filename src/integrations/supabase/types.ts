@@ -32,6 +32,102 @@ export type Database = {
         }
         Relationships: []
       }
+      cpo_clientes: {
+        Row: {
+          ativo: boolean
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
+          condicao_pagamento: string | null
+          contato_cargo: string | null
+          contato_email: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
+          contribuinte: boolean
+          created_at: string
+          created_by: string | null
+          doc: string | null
+          email: string | null
+          id: string
+          ie: string | null
+          im: string | null
+          logradouro: string | null
+          nome_fantasia: string | null
+          numero: string | null
+          observacoes: string | null
+          razao_social: string
+          regime_tributario: string | null
+          site: string | null
+          telefone: string | null
+          transportadora: string | null
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          condicao_pagamento?: string | null
+          contato_cargo?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string | null
+          doc?: string | null
+          email?: string | null
+          id?: string
+          ie?: string | null
+          im?: string | null
+          logradouro?: string | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          razao_social: string
+          regime_tributario?: string | null
+          site?: string | null
+          telefone?: string | null
+          transportadora?: string | null
+          uf?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          condicao_pagamento?: string | null
+          contato_cargo?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string | null
+          doc?: string | null
+          email?: string | null
+          id?: string
+          ie?: string | null
+          im?: string | null
+          logradouro?: string | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          razao_social?: string
+          regime_tributario?: string | null
+          site?: string | null
+          telefone?: string | null
+          transportadora?: string | null
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cpo_config: {
         Row: {
           aliq_inter: number
