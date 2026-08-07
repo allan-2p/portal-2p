@@ -54,6 +54,7 @@ import { Route as AuthenticatedAdminAcessosInstanciasRouteImport } from './route
 import { Route as AuthenticatedCarregadoresPropostasIndexRouteImport } from './routes/_authenticated/carregadores.propostas.index'
 import { Route as AuthenticatedCarregadoresClientesIndexRouteImport } from './routes/_authenticated/carregadores.clientes.index'
 import { Route as AuthenticatedCarregadoresPropostasNovaRouteImport } from './routes/_authenticated/carregadores.propostas.nova'
+import { Route as AuthenticatedCarregadoresClientesCadastrosRouteImport } from './routes/_authenticated/carregadores.clientes.cadastros'
 
 const TvGeralRoute = TvGeralRouteImport.update({
   id: '/tv-geral',
@@ -308,6 +309,12 @@ const AuthenticatedCarregadoresPropostasNovaRoute =
     path: '/nova',
     getParentRoute: () => AuthenticatedCarregadoresPropostasRoute,
   } as any)
+const AuthenticatedCarregadoresClientesCadastrosRoute =
+  AuthenticatedCarregadoresClientesCadastrosRouteImport.update({
+    id: '/cadastros',
+    path: '/cadastros',
+    getParentRoute: () => AuthenticatedCarregadoresClientesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -351,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
+  '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/carregadores/clientes/': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
@@ -394,6 +402,7 @@ export interface FileRoutesByTo {
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/carregadores': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
+  '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasIndexRoute
@@ -442,6 +451,7 @@ export interface FileRoutesById {
   '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/_authenticated/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
+  '/_authenticated/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/_authenticated/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/_authenticated/carregadores/clientes/': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/_authenticated/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
@@ -490,6 +500,7 @@ export interface FileRouteTypes {
     | '/marketing/trafego'
     | '/carregadores/'
     | '/marketing/'
+    | '/carregadores/clientes/cadastros'
     | '/carregadores/propostas/nova'
     | '/carregadores/clientes/'
     | '/carregadores/propostas/'
@@ -533,6 +544,7 @@ export interface FileRouteTypes {
     | '/marketing/trafego'
     | '/carregadores'
     | '/marketing'
+    | '/carregadores/clientes/cadastros'
     | '/carregadores/propostas/nova'
     | '/carregadores/clientes'
     | '/carregadores/propostas'
@@ -580,6 +592,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing/trafego'
     | '/_authenticated/carregadores/'
     | '/_authenticated/marketing/'
+    | '/_authenticated/carregadores/clientes/cadastros'
     | '/_authenticated/carregadores/propostas/nova'
     | '/_authenticated/carregadores/clientes/'
     | '/_authenticated/carregadores/propostas/'
@@ -909,6 +922,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarregadoresPropostasNovaRouteImport
       parentRoute: typeof AuthenticatedCarregadoresPropostasRoute
     }
+    '/_authenticated/carregadores/clientes/cadastros': {
+      id: '/_authenticated/carregadores/clientes/cadastros'
+      path: '/cadastros'
+      fullPath: '/carregadores/clientes/cadastros'
+      preLoaderRoute: typeof AuthenticatedCarregadoresClientesCadastrosRouteImport
+      parentRoute: typeof AuthenticatedCarregadoresClientesRoute
+    }
   }
 }
 
@@ -976,11 +996,14 @@ const AuthenticatedMarketingRouteWithChildren =
   )
 
 interface AuthenticatedCarregadoresClientesRouteChildren {
+  AuthenticatedCarregadoresClientesCadastrosRoute: typeof AuthenticatedCarregadoresClientesCadastrosRoute
   AuthenticatedCarregadoresClientesIndexRoute: typeof AuthenticatedCarregadoresClientesIndexRoute
 }
 
 const AuthenticatedCarregadoresClientesRouteChildren: AuthenticatedCarregadoresClientesRouteChildren =
   {
+    AuthenticatedCarregadoresClientesCadastrosRoute:
+      AuthenticatedCarregadoresClientesCadastrosRoute,
     AuthenticatedCarregadoresClientesIndexRoute:
       AuthenticatedCarregadoresClientesIndexRoute,
   }
