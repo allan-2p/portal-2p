@@ -824,12 +824,13 @@ function PropostaCpoPage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <Field label="Valor unitário (com IPI)">
-                        <Input
-                          value={it.valor ? fmtBRL(it.valor) : ""}
+                        <MoneyInput
+                          value={it.valor}
                           placeholder="R$ 0,00"
                           className={cn(semValor && "border-destructive focus-visible:ring-destructive")}
-                          onChange={(e) => setItem(it.key, { valor: parseMoeda(e.target.value), valorManual: true })}
+                          onValueChange={(n) => setItem(it.key, { valor: n, valorManual: true })}
                         />
+
                         {semValor ? (
                           <p className="text-[11px] text-destructive mt-1">Informe o valor unitário deste item.</p>
                         ) : null}
