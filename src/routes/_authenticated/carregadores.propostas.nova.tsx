@@ -292,11 +292,7 @@ function PropostaCpoPage() {
 
 
   // ---- Alertas automáticos de política ----
-  const itensAbaixoSugerido = state.itens.filter((i) => {
-    if (!i.produtoId) return false;
-    const sug = precoSugerido(produtos.find((p) => p.id === i.produtoId), state.contribuinte, config);
-    return sug > 0 && i.valor > 0 && i.valor < sug - 0.005;
-  });
+
   const itensSemValor = state.itens.filter((i) => i.produtoId && !(i.valor > 0));
   const itensSemQtd = state.itens.filter((i) => i.produtoId && !(i.qtd > 0));
   const itensSemProduto = state.itens.filter((i) => !i.produtoId && (i.valor > 0 || i.qtd > 0));
