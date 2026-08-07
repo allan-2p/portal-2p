@@ -369,14 +369,30 @@ function CadastrosPage() {
             <table className="w-full text-sm">
               <thead className="bg-surface-2/60 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="text-left px-4 py-2">Cliente</th>
-                  <th className="text-left px-4 py-2">Classe</th>
-                  <th className="text-left px-4 py-2">CNPJ / CPF</th>
-                  <th className="text-left px-4 py-2">Fiscal</th>
-                  <th className="text-left px-4 py-2">Cidade / UF</th>
-                  <th className="text-left px-4 py-2">Contato</th>
+                  {([
+                    ["cliente", "Cliente"],
+                    ["classificacao", "Classe"],
+                    ["doc", "CNPJ / CPF"],
+                    ["fiscal", "Fiscal"],
+                    ["cidade", "Cidade / UF"],
+                    ["contato", "Contato"],
+                  ] as [OrdemKey, string][]).map(([k, label]) => (
+                    <th key={k} className="text-left px-4 py-2">
+                      <button
+                        type="button"
+                        onClick={() => ordenarPor(k)}
+                        className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground transition-colors"
+                      >
+                        {label}
+                        {ordem === k
+                          ? (dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)
+                          : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                      </button>
+                    </th>
+                  ))}
                   <th className="text-right px-4 py-2">Ações</th>
                 </tr>
+
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
