@@ -1003,63 +1003,8 @@ function PropostaCpoPage() {
               )}
             </div>
 
-            {/* QUEBRA DETALHADA DA COMISSÃO */}
-            <div className="glass rounded-2xl p-5 space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold">Quebra da comissão estimada</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Regra, base de cálculo e impacto no resultado da proposta.
-                </p>
-              </div>
 
-              <div className="rounded-xl border bg-muted/30 px-4 py-3 text-xs leading-relaxed">
-                <span className="font-medium">Regra aplicada: </span>
-                {fmtPct(d.comPct)} sobre {config.comissao_base === "VALOR" ? "o valor da venda" : "a margem bruta (MB)"}
-                {" — "}
-                comissão = base × percentual.
-                {!d.comPct ? (
-                  <span className="block mt-1 text-amber-600 dark:text-amber-400">
-                    Percentual de comissão ainda não configurado — defina em Moderação › Comissões.
-                  </span>
-                ) : null}
-              </div>
 
-              <div className="divide-y rounded-xl border">
-                <ComRow
-                  k="Percentual da regra"
-                  sub={config.comissao_base === "VALOR" ? "Incide sobre a venda" : "Incide sobre a MB"}
-                  v={fmtPct(d.comPct)}
-                />
-                <ComRow
-                  k="Base de cálculo"
-                  sub={config.comissao_base === "VALOR" ? "Valor da venda (sem frete)" : "Margem bruta da proposta"}
-                  v={fmtBRL(config.comissao_base === "VALOR" ? d.valor : d.mb)}
-                />
-                <ComRow k="Comissão estimada" sub="Base × percentual" v={fmtBRL(d.comValor)} strong />
-                <ComRow
-                  k="Impacto sobre o valor da venda"
-                  sub="Comissão ÷ valor da venda"
-                  v={fmtPct(d.valor > 0 ? d.comValor / d.valor : 0)}
-                />
-                <ComRow
-                  k="Impacto sobre a margem bruta"
-                  sub="Comissão ÷ MB"
-                  v={fmtPct(d.mb > 0 ? d.comValor / d.mb : 0)}
-                />
-                <ComRow
-                  k="Margem após comissão"
-                  sub={`MB ${fmtBRL(d.mb)} − comissão ${fmtBRL(d.comValor)}`}
-                  v={`${fmtBRL(d.mb - d.comValor)} · ${fmtPct(d.valor > 0 ? (d.mb - d.comValor) / d.valor : 0)}`}
-                  strong
-                />
-              </div>
-
-              {d.comPct === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Nenhum percentual de comissão configurado em Moderação › Comissões — o valor estimado fica zerado.
-                </p>
-              ) : null}
-            </div>
 
 
 
