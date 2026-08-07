@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
       { title: "Produtos e Alíquotas CPO — Portal 2P Carregadores" },
       { name: "description", content: "Catálogo de carregadores, alíquotas por UF e política de margem." },
       { property: "og:title", content: "Produtos e Alíquotas CPO — Portal 2P Carregadores" },
-      { property: "og:description", content: "Gerencie custos, preços sugeridos, ICMS/FCP por estado e regras de margem." },
+      { property: "og:description", content: "Gerencie custos, ICMS/FCP por estado e regras de margem." },
     ],
   }),
   component: ProdutosCpoPage,
@@ -183,7 +183,7 @@ function ProdutosTab() {
               ))}
               {filtrados.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
                     {isLoading ? "Carregando…" : "Nenhum produto cadastrado."}
                   </td>
                 </tr>
