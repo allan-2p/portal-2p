@@ -829,9 +829,11 @@ function PropostaCpoPage() {
                         <MoneyInput
                           value={it.valor}
                           placeholder="R$ 0,00"
+                          maxValue={10000000}
                           className={cn(semValor && "border-destructive focus-visible:ring-destructive")}
                           onValueChange={(n: number) => setItem(it.key, { valor: n, valorManual: true })}
                         />
+
 
                         {semValor ? (
                           <p className="text-[11px] text-destructive mt-1">Informe o valor unitário deste item.</p>
@@ -880,6 +882,7 @@ function PropostaCpoPage() {
                 <MoneyInput
                   value={state.freteValor}
                   placeholder="R$ 0,00"
+                  maxValue={1000000}
                   className={cn(
                     state.freteMod === "CIF" &&
                       !(state.freteValor > 0) &&
@@ -887,6 +890,7 @@ function PropostaCpoPage() {
                   )}
                   onValueChange={(n: number) => set("freteValor", n)}
                 />
+
 
                 {state.freteMod === "CIF" && !(state.freteValor > 0) ? (
                   <p className="text-[11px] text-amber-600 mt-1">Frete CIF é absorvido pela 2P — informe o valor.</p>
