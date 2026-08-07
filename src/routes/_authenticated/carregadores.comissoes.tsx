@@ -34,6 +34,8 @@ function ComissoesCpoPage() {
           <h2 className="font-semibold mb-2">Parâmetros tributários</h2>
           <CpoConfigTab />
         </div>
+      </div>
+
 
     </AppLayout>
   );
