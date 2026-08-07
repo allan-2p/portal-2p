@@ -1013,6 +1013,11 @@ function PropostaCpoPage() {
                 {fmtPct(d.comPct)} sobre {config.comissao_base === "VALOR" ? "o valor da venda" : "a margem bruta (MB)"}
                 {" — "}
                 comissão = base × percentual.
+                {!d.comPct ? (
+                  <span className="block mt-1 text-amber-600 dark:text-amber-400">
+                    Percentual de comissão ainda não configurado — defina em Moderação › Comissões.
+                  </span>
+                ) : null}
               </div>
 
               <div className="divide-y rounded-xl border">
