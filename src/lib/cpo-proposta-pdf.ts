@@ -30,6 +30,13 @@ export type PropostaPdfData = {
   };
   totalNf: number;
   valorTotal: number;
+  valor?: number;
+  interno?: {
+    mb: number;
+    mbPct: number;
+    comissao: number;
+    comissaoPct: number;
+  };
   consultor?: string;
   validadeDias?: number;
 };
