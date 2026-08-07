@@ -431,6 +431,18 @@ function PortalTable({
                 </td>
                 <td className="px-4 py-3">
                   <select
+                    value={r.regime_contratacao}
+                    onChange={(e) => onRegimeChange(r.id, e.target.value as Regime)}
+                    className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                  >
+                    {REGIMES.map((rg) => (
+                      <option key={rg} value={rg}>{rg}</option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-3">
+
+                  <select
                     value={r.filter_scope}
                     onChange={(e) => onScopeChange(r.id, e.target.value as FilterScope)}
                     className="px-2 py-1 rounded-md bg-background border border-border text-xs"
