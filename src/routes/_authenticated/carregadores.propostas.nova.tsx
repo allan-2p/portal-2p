@@ -492,14 +492,6 @@ function PropostaCpoPage() {
           {/* PAINEL / DRE */}
           {etapa === 2 ? (
           <div className="space-y-4">
-            <div className="rounded-2xl p-5 text-white bg-gradient-to-br from-[oklch(0.3_0.13_265)] via-[oklch(0.45_0.19_265)] to-[oklch(0.6_0.17_265)] shadow-lg">
-              <div className="text-[11px] uppercase tracking-widest opacity-80">Valor total da proposta</div>
-              <div className="text-4xl font-extrabold mt-1">{fmtBRL(d.valorTotalProposta)}</div>
-              <div className="text-xs opacity-80 mt-1">
-                Itens {fmtBRL(d.valorItens)} · Frete {fmtBRL(state.freteValor)}
-              </div>
-            </div>
-
             <div className="glass rounded-2xl p-5 space-y-1.5">
               <h2 className="font-semibold mb-3">Impostos da proposta</h2>
               <DreRow k="Valor dos itens (com IPI)" v={fmtBRL(d.valorItens)} tone="neutral" />
@@ -543,11 +535,35 @@ function PropostaCpoPage() {
 
 
             </div>
+
+            {/* RESUMO FINAL DESTACADO */}
+            <div className="rounded-2xl p-5 text-white bg-gradient-to-br from-[oklch(0.3_0.13_265)] via-[oklch(0.45_0.19_265)] to-[oklch(0.6_0.17_265)] shadow-lg space-y-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-widest opacity-80">Valor total da proposta</div>
+                <div className="text-4xl font-extrabold mt-1">{fmtBRL(d.valorTotalProposta)}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <SumItem label="Valor" value={fmtBRL(d.valor)} />
+                <SumItem label="Valor com frete" value={fmtBRL(d.valorItens + state.freteValor)} />
+                <SumItem label="Total NF" value={fmtBRL(d.valorItens + state.freteValor)} />
+                <SumItem label="Margem bruta" value={`${fmtBRL(d.mb)} · ${fmtPct(d.mbPct)}`} />
+                <SumItem label="Comissão estimada" value={`${fmtBRL(d.comValor)} · ${fmtPct(d.comPct)}`} />
+              </div>
+            </div>
           </div>
           ) : null}
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+function SumItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[10px] uppercase tracking-widest opacity-75">{label}</div>
+      <div className="text-base font-bold truncate">{value}</div>
+    </div>
   );
 }
 
