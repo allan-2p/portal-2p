@@ -465,6 +465,21 @@ function PropostaCpoPage() {
               </h2>
             </div>
 
+            {etapa === 1 && errosCliente.length > 0 ? (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                <p className="font-semibold text-destructive mb-1">
+                  Complete os campos obrigatórios para avançar
+                </p>
+                <ul className="list-disc pl-5 space-y-0.5 text-destructive/90">
+                  {errosCliente.map((e) => (
+                    <li key={e.campo + e.msg}>{e.msg}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+
+
 
             <Field label="Cliente já cadastrado">
               <Popover open={openCli} onOpenChange={setOpenCli}>
