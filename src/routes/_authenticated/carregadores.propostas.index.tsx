@@ -97,7 +97,6 @@ function HistoricoCpoPage() {
   });
 
   const totalValor = filtered.reduce((s, r) => s + (r.totais.valorTotal ?? 0), 0);
-  const totalMb = filtered.reduce((s, r) => s + (r.totais.mb ?? 0), 0);
 
   async function alterarStatus(id: string, novo: string) {
     const { error } = await supabase.from("cpo_proposals").update({ status: novo }).eq("id", id);
@@ -167,8 +166,6 @@ function HistoricoCpoPage() {
                   <th className="text-left px-4 py-3">UF</th>
                   <th className="text-left px-4 py-3">Contribuinte</th>
                   <th className="text-right px-4 py-3">Valor</th>
-                  <th className="text-right px-4 py-3">MB</th>
-                  <th className="text-right px-4 py-3">MB%</th>
                   <th className="text-left px-4 py-3">Data</th>
                   <th className="text-left px-4 py-3">Status</th>
                   <th className="text-right px-4 py-3">Ações</th>
@@ -182,8 +179,6 @@ function HistoricoCpoPage() {
                     <td className="px-4 py-3">{r.uf}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.contribuinte ? "Sim" : "Não"}</td>
                     <td className="px-4 py-3 text-right font-semibold">{fmtBRL(r.totais.valorTotal ?? 0)}</td>
-                    <td className="px-4 py-3 text-right">{fmtBRL(r.totais.mb ?? 0)}</td>
-                    <td className="px-4 py-3 text-right">{fmtPct(r.totais.mbPct ?? 0)}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("pt-BR")}
                     </td>
@@ -238,10 +233,6 @@ function HistoricoCpoPage() {
                 <Info label="PIS/COFINS" value={fmtBRL(detalhe.totais.pisCofins ?? 0)} />
                 <Info label="Receita líquida" value={fmtBRL(detalhe.totais.rl ?? 0)} />
                 <Info label="Custo" value={fmtBRL(detalhe.totais.custo ?? 0)} />
-                <Info
-                  label="Margem bruta"
-                  value={`${fmtBRL(detalhe.totais.mb ?? 0)} (${fmtPct(detalhe.totais.mbPct ?? 0)})`}
-                />
                 <Info label="Comissão" value={fmtBRL(detalhe.totais.comissao ?? 0)} />
                 <Info label="Frete" value={`${detalhe.frete_mod} · ${fmtBRL(detalhe.frete_valor)}`} />
                 <Info label="Contato" value={detalhe.cliente_telefone || detalhe.cliente_email || "—"} />
