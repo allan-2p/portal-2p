@@ -204,9 +204,35 @@ function PropostaCpoPage() {
   const st = statusMB(d.mbPct, config);
   const uf = ufs.find((u) => u.uf === state.uf);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
-  const clienteOk = !!state.nome;
+  // ---- Validação da etapa 1 (dados obrigatórios do cliente) ----
+  const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
+  const errosCliente: { campo: string; msg: string }[] = [];
+  if (!state.nome.trim()) errosCliente.push({ campo: "nome", msg: "Selecione um cliente." });
+  const docDigits = soDigitos(state.doc);
+  if (!docDigits) errosCliente.push({ campo: "doc", msg: "CNPJ/CPF não informado no cadastro do cliente." });
+  else if (docDigits.length !== 11 && docDigits.length !== 14)
+    errosCliente.push({ campo: "doc", msg: "CNPJ/CPF inválido (11 ou 14 dígitos)." });
+  if (!state.uf) errosCliente.push({ campo: "uf", msg: "UF de destino não informada." });
+  else if (!ufs.some((u) => u.uf === state.uf))
+    errosCliente.push({ campo: "uf", msg: "UF sem alíquota cadastrada." });
+  if (state.contribuinte && !state.ie.trim())
+    errosCliente.push({ campo: "ie", msg: "Cliente contribuinte precisa de Inscrição Estadual." });
+  if (state.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(state.email.trim()))
+    errosCliente.push({ campo: "email", msg: "E-mail do cliente é inválido." });
+
+  const clienteOk = errosCliente.length === 0;
+  const campoInvalido = (c: string) => errosCliente.some((e) => e.campo === c);
   const temProduto = state.itens.some((i) => i.produtoId);
   const podeSalvar = clienteOk && temProduto && !abaixoPolitica;
+
+  function irParaEtapa2() {
+    if (!clienteOk) {
+      toast.error(errosCliente[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
+      return;
+    }
+    setEtapa(2);
+  }
+
 
   // ---- Alertas automáticos de política ----
   const itensAbaixoSugerido = state.itens.filter((i) => {
