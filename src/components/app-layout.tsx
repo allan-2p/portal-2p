@@ -8,7 +8,7 @@ import { InstanceSwitcher } from "./instance-switcher";
 import { MarketingUnitSwitch } from "./marketing-unit-switch";
 
 import { useInstance } from "./instance-provider";
-import { INSTANCES, type FeatureKey } from "@/lib/instances";
+import { INSTANCES, featureForPath, instanceForFeature, type FeatureKey } from "@/lib/instances";
 import { SCREENS, type ScreenKey } from "@/lib/view-screens";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +39,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
   useSalesforceNotifications();
-  const { instance, hasFeature, isRouteAllowed, defaultRoute, loading: instanceLoading } = useInstance();
+  const { instance, setInstance, allowed, hasFeature, isRouteAllowed, defaultRoute, loading: instanceLoading } = useInstance();
   const instMeta = INSTANCES[instance];
 
   useEffect(() => {
@@ -55,16 +55,24 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (pathname.startsWith("/dashboards")) setDashboardsOpen(true);
   }, [pathname]);
 
-  // Se usuário está numa rota que a instância atual não permite, redireciona
-  // para a primeira rota válida da instância (evita loop quando "/" também é bloqueada).
+  // Se usuário está numa rota que a instância atual não permite:
+  // 1) se outra instância liberada tiver essa rota, troca de instância (link direto);
+  // 2) senão, redireciona para a primeira rota válida da instância.
   useEffect(() => {
     if (instanceLoading) return;
-    if (!isRouteAllowed(pathname) && pathname !== defaultRoute) {
+    if (isRouteAllowed(pathname)) return;
+    const feat = featureForPath(pathname);
+    const target = feat ? instanceForFeature(feat, allowed) : null;
+    if (target && target !== instance) {
+      setInstance(target);
+      return;
+    }
+    if (pathname !== defaultRoute) {
       toast.info(`"${pathname}" não está disponível na instância ${instMeta.label}.`);
       navigate({ to: defaultRoute });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [instance, instanceLoading, pathname, defaultRoute]);
+  }, [instance, instanceLoading, pathname, defaultRoute, allowed]);
 
   const [showBar, setShowBar] = useState(false);
   useEffect(() => {

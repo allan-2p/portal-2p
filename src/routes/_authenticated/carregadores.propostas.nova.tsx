@@ -118,6 +118,7 @@ function PropostaCpoPage() {
   );
   const [openCli, setOpenCli] = useState(false);
   const [etapa, setEtapa] = useState<1 | 2>(() => (carregandoExistente ? 1 : lerRascunho()?.etapa ?? 1));
+  const [tentouAvancar, setTentouAvancar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
@@ -282,6 +283,7 @@ function PropostaCpoPage() {
 
   function irParaEtapa2() {
     if (!clienteOk) {
+      setTentouAvancar(true);
       toast.error(errosCliente[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
       return;
     }
@@ -504,7 +506,7 @@ function PropostaCpoPage() {
             <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
               Voltar
             </Button>
-            <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2 || !clienteOk} className="gap-2">
+            <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2} className="gap-2">
               Próximo
             </Button>
             <Button onClick={() => salvar()} disabled={saving || !podeSalvar} className="gap-2">
@@ -527,7 +529,8 @@ function PropostaCpoPage() {
           <div className="h-px w-6 bg-border" />
           <button
             onClick={irParaEtapa2}
-            disabled={!clienteOk}
+
+
 
             className={cn(
               "px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50",
@@ -547,7 +550,7 @@ function PropostaCpoPage() {
               </h2>
             </div>
 
-            {etapa === 1 && errosCliente.length > 0 ? (
+            {etapa === 1 && errosCliente.length > 0 && (state.nome.trim() || tentouAvancar) ? (
               <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
                 <p className="font-semibold text-destructive mb-1">
                   Complete os campos obrigatórios para avançar
@@ -557,6 +560,14 @@ function PropostaCpoPage() {
                     <li key={e.campo + e.msg}>{e.msg}</li>
                   ))}
                 </ul>
+                <p className="text-xs text-destructive/80 mt-2">
+                  Dados fiscais incompletos? Ajuste em Clientes › Cadastros.
+                </p>
+              </div>
+            ) : etapa === 1 && !state.nome.trim() ? (
+              <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm text-muted-foreground">
+                Comece escolhendo o cliente. Os dados fiscais (CNPJ, IE, UF e contribuinte) são
+                puxados automaticamente do cadastro e definem os impostos da proposta.
               </div>
             ) : null}
 
@@ -579,7 +590,18 @@ function PropostaCpoPage() {
                     <CommandInput placeholder="Buscar cliente..." />
                     <CommandList>
                       <CommandEmpty>
-                        {clientesQ.isLoading ? "Carregando..." : "Nenhum cliente em Clientes > Cadastros."}
+                        <div className="px-3 py-4 text-center text-sm text-muted-foreground space-y-2">
+                          <p>{clientesQ.isLoading ? "Carregando..." : "Nenhum cliente encontrado."}</p>
+                          {!clientesQ.isLoading ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { window.location.href = "/carregadores/clientes/cadastros"; }}
+                            >
+                              Cadastrar cliente
+                            </Button>
+                          ) : null}
+                        </div>
                       </CommandEmpty>
                       <CommandGroup>
                         {(clientesQ.data ?? []).map((c) => (

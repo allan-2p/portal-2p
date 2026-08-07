@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
-import { Zap, Users, CalendarClock, Plus } from "lucide-react";
+import { Zap, Users, CalendarClock, Plus, Building2, ShoppingCart, BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/carregadores/")({
   head: () => ({
@@ -59,9 +59,12 @@ function CarregadoresHome() {
     },
   });
 
+  const valorProposta = (p: Prop) =>
+    Number(p.totais?.["valorTotal"] ?? p.totais?.["total"] ?? p.totais?.["valor"] ?? 0);
+
   const kpis = useMemo(() => {
     const total = props.length;
-    const valor = props.reduce((s, p) => s + Number(p.totais?.["total"] ?? p.totais?.["receita"] ?? 0), 0);
+    const valor = props.reduce((s, p) => s + valorProposta(p), 0);
     const clientes = new Set(props.map((p) => p.cliente_nome.trim().toUpperCase())).size;
     const aprovadas = props.filter((p) => p.status === "Aprovada").length;
     return { total, valor, clientes, aprovadas };
@@ -89,6 +92,21 @@ function CarregadoresHome() {
           <Kpi label="Clientes" value={String(kpis.clientes)} icon={<Users className="h-4 w-4" />} />
         </div>
 
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to="/carregadores/clientes/cadastros"><Building2 className="h-4 w-4" /> Cadastrar cliente</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to="/carregadores/propostas"><Zap className="h-4 w-4" /> Minhas propostas</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to="/carregadores/pedidos"><ShoppingCart className="h-4 w-4" /> Pedidos em curso</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to="/carregadores/regras"><BookOpen className="h-4 w-4" /> Regras comerciais</Link>
+          </Button>
+        </div>
+
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader className="pb-3">
@@ -108,7 +126,7 @@ function CarregadoresHome() {
                     </div>
                   </div>
                   <div className="text-sm font-semibold shrink-0">
-                    {fmtBRL(Number(p.totais?.["total"] ?? p.totais?.["receita"] ?? 0))}
+                    {fmtBRL(valorProposta(p))}
                   </div>
                 </div>
               ))}
