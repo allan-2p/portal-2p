@@ -583,8 +583,16 @@ function PropostaCpoPage() {
                 <Input
                   value={state.freteValor ? fmtBRL(state.freteValor) : ""}
                   placeholder="R$ 0,00"
+                  className={cn(
+                    state.freteMod === "CIF" &&
+                      !(state.freteValor > 0) &&
+                      "border-amber-500 focus-visible:ring-amber-500",
+                  )}
                   onChange={(e) => set("freteValor", parseMoeda(e.target.value))}
                 />
+                {state.freteMod === "CIF" && !(state.freteValor > 0) ? (
+                  <p className="text-[11px] text-amber-600 mt-1">Frete CIF é absorvido pela 2P — informe o valor.</p>
+                ) : null}
               </Field>
             </div>
             </>
