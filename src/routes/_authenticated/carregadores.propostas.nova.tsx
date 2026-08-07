@@ -396,8 +396,7 @@ function PropostaCpoPage() {
                     <b className="text-foreground">Não contribuinte.</b> Carga efetiva = ICMS origem {fmtPct(d.inter)} +
                     DIFAL absorvido de {fmtBRL(d.difalAbs)} sobre o valor sem IPI, seguindo a carga interna de{" "}
                     {uf?.nome ?? state.uf}
-                    {uf?.fcp ? ` (inclui FCP de ${fmtPct(uf.fcp)})` : ""}. Preço sugerido majorado em{" "}
-                    {fmtPct(config.majoracao_sem_ie)}.
+                    {uf?.fcp ? ` (inclui FCP de ${fmtPct(uf.fcp)})` : ""}.
                   </>
                 )}
               </div>
@@ -464,16 +463,7 @@ function PropostaCpoPage() {
                       </Field>
                       <div className="flex items-end justify-between gap-2">
                         <div className="text-xs text-muted-foreground">
-                          Sugerido: <b className="text-foreground">{fmtBRL(sug)}</b>
-                          {it.valorManual && (
-                            <button
-                              className="ml-2 text-primary hover:underline"
-                              onClick={() => setItem(it.key, { valor: sug, valorManual: false })}
-                            >
-                              usar sugerido
-                            </button>
-                          )}
-                          <div className="mt-1">Total item: <b className="text-foreground">{fmtBRL(it.valor * it.qtd)}</b></div>
+                          Total item: <b className="text-foreground">{fmtBRL(it.valor * it.qtd)}</b>
                         </div>
                         <Button
                           variant="ghost"
