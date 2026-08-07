@@ -201,6 +201,8 @@ function PropostaCpoPage() {
     }
   }
 
+  const clienteOk = !!state.nome;
+
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
@@ -213,7 +215,7 @@ function PropostaCpoPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <Button onClick={salvar} disabled={saving || abaixoPolitica} className="gap-2">
+            <Button onClick={salvar} disabled={saving || abaixoPolitica || !clienteOk} className="gap-2">
               <Save className="h-4 w-4" /> Salvar proposta
             </Button>
           </div>
@@ -274,9 +276,6 @@ function PropostaCpoPage() {
 
             </Field>
 
-            <Banner level={st.level} text={st.msg} />
-
-
             {state.nome ? (
               <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
@@ -299,6 +298,11 @@ function PropostaCpoPage() {
                 </div>
               </div>
             ) : null}
+
+            {clienteOk ? (
+              <>
+            <Banner level={st.level} text={st.msg} />
+
 
 
             <div className="flex gap-2 items-start rounded-xl border border-border bg-surface-2 px-4 py-3 text-xs text-muted-foreground">
@@ -437,9 +441,16 @@ function PropostaCpoPage() {
                 />
               </Field>
             </div>
+            </>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                Etapa 1: selecione o cliente para liberar produtos, frete e o cálculo fiscal da proposta.
+              </div>
+            )}
           </div>
 
           {/* PAINEL / DRE */}
+          {clienteOk ? (
           <div className="space-y-4">
             <div className="rounded-2xl p-5 text-white bg-gradient-to-br from-[oklch(0.3_0.13_265)] via-[oklch(0.45_0.19_265)] to-[oklch(0.6_0.17_265)] shadow-lg">
               <div className="text-[11px] uppercase tracking-widest opacity-80">Valor total da proposta</div>
@@ -511,6 +522,7 @@ function PropostaCpoPage() {
 
             </div>
           </div>
+          ) : null}
         </div>
       </div>
     </AppLayout>
