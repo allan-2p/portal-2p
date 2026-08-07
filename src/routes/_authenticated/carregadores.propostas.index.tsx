@@ -116,9 +116,16 @@ function HistoricoCpoPage() {
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-primary font-semibold">Propostas CPO</div>
-          <h1 className="text-3xl font-bold mt-1">Histórico</h1>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Módulo CPO</div>
+            <h1 className="text-3xl font-bold mt-1">Propostas</h1>
+          </div>
+          <Button asChild className="gap-2">
+            <Link to="/carregadores/propostas/nova">
+              <Plus className="h-4 w-4" /> Nova proposta
+            </Link>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
