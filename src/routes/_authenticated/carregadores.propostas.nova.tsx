@@ -356,13 +356,6 @@ function PropostaCpoPage() {
       motivo: "Há linhas preenchidas sem produto selecionado.",
       corrigir: "Selecione o produto ou remova a linha.",
     });
-  if (itensAbaixoSugerido.length)
-    alertas.push({
-      level: "warn",
-      titulo: `${itensAbaixoSugerido.length} item(ns) abaixo do preço de referência`,
-      motivo: "O valor informado está abaixo do preço calculado pela política de majoração.",
-      corrigir: "Ajuste o campo Valor unitário dos itens destacados.",
-    });
   if (state.freteMod === "CIF" && !(state.freteValor > 0))
     alertas.push({
       level: "warn",
