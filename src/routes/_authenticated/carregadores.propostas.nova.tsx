@@ -405,8 +405,8 @@ function PropostaCpoPage() {
     setSaving(true);
     try {
       const { data: userRes } = await supabase.auth.getUser();
-      const numero = `CPO-${Date.now().toString().slice(-6)}`;
-      const { error } = await supabase.from("cpo_proposals").insert({
+      const numero = numeroAtual ?? `CPO-${Date.now().toString().slice(-6)}`;
+      const payload = {
         numero,
         cliente_nome: state.nome,
         cliente_telefone: state.telefone,
@@ -437,8 +437,24 @@ function PropostaCpoPage() {
           mbPct: d.mbPct,
           comissao: d.comValor,
         },
-        created_by: userRes.user?.id ?? null,
-      });
+      };
+
+      if (propostaId) {
+        const { error } = await supabase.from("cpo_proposals").update(payload).eq("id", propostaId);
+        if (error) throw error;
+        toast.success(status === "Salvo" ? `Proposta ${numero} atualizada.` : `Pedido ${numero} concluído.`);
+        setNumeroAtual(numero);
+        invalidate();
+        limparRascunho();
+        setAutosaveAt(null);
+        return;
+      }
+
+      const { data: inserida, error } = await supabase
+        .from("cpo_proposals")
+        .insert({ ...payload, created_by: userRes.user?.id ?? null })
+        .select("id")
+        .single();
       if (error) throw error;
       toast.success(
         status === "Salvo" ? `Proposta ${numero} salva.` : `Pedido ${numero} concluído.`,
@@ -446,14 +462,21 @@ function PropostaCpoPage() {
       invalidate();
       limparRascunho();
       setAutosaveAt(null);
-      setState(novoEstado());
-      setEtapa(1);
+      if (status === "Salvo" && inserida?.id) {
+        // segue editando a mesma proposta em vez de duplicar ao salvar de novo
+        setPropostaId(inserida.id);
+        setNumeroAtual(numero);
+      } else {
+        setState(novoEstado());
+        setEtapa(1);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar proposta.");
     } finally {
       setSaving(false);
     }
   }
+
 
 
   return (
