@@ -39,6 +39,7 @@ import {
   type CpoItem,
   type CpoState,
 } from "@/lib/cpo";
+import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
