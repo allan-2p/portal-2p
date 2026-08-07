@@ -367,6 +367,8 @@ function PortalTable({
             <th className="text-left px-4 py-3 font-medium">E-mail</th>
             <th className="text-left px-4 py-3 font-medium">Equipe</th>
             <th className="text-left px-4 py-3 font-medium">Papel</th>
+            <th className="text-left px-4 py-3 font-medium">Regime de contratação</th>
+
             <th className="text-left px-4 py-3 font-medium">Escopo do filtro</th>
             <th className="text-left px-4 py-3 font-medium">ID Salesforce</th>
             <th className="text-left px-4 py-3 font-medium">Status</th>
