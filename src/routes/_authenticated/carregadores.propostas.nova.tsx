@@ -239,6 +239,13 @@ function PropostaCpoPage() {
       },
       totalNf: d.valorItens + state.freteValor,
       valorTotal: d.valorTotalProposta,
+      valor: d.valor,
+      interno: {
+        mb: d.mb,
+        mbPct: d.mbPct,
+        comissao: d.comValor,
+        comissaoPct: d.comPct,
+      },
     });
     const w = window.open("", "_blank");
     if (!w) return toast.error("Permita pop-ups para exportar o PDF.");
