@@ -342,6 +342,20 @@ function PropostaCpoPage() {
       motivo: "Itens sem preço não entram no cálculo fiscal nem na margem.",
       corrigir: "Preencha o campo Valor unitário (com IPI) dos itens destacados.",
     });
+  if (itensSemQtd.length)
+    alertas.push({
+      level: "err",
+      titulo: `${itensSemQtd.length} item(ns) sem quantidade`,
+      motivo: "Sem quantidade não é possível fechar os totais da proposta.",
+      corrigir: "Informe a quantidade (mínimo 1) dos itens destacados.",
+    });
+  if (itensSemProduto.length)
+    alertas.push({
+      level: "err",
+      titulo: `${itensSemProduto.length} linha(ns) sem produto`,
+      motivo: "Há linhas preenchidas sem produto selecionado.",
+      corrigir: "Selecione o produto ou remova a linha.",
+    });
   if (itensAbaixoSugerido.length)
     alertas.push({
       level: "warn",
