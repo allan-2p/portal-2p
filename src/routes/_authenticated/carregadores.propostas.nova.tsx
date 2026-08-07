@@ -43,6 +43,10 @@ import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    id: typeof s.id === "string" ? s.id : undefined,
+    dup: typeof s.dup === "string" ? s.dup : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Nova Proposta CPO — Portal 2P Carregadores" },
@@ -59,6 +63,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/nov
   }),
   component: PropostaCpoPage,
 });
+
 
 type ClienteCadastro = {
   cliente_nome: string;
@@ -97,6 +102,8 @@ function limparRascunho() {
 
 
 function PropostaCpoPage() {
+  const { id: editId, dup: dupId } = Route.useSearch();
+  const carregandoExistente = !!(editId || dupId);
   const produtosQ = useCpoProducts();
   const ufsQ = useCpoUfs();
   const configQ = useCpoConfig();
@@ -106,24 +113,72 @@ function PropostaCpoPage() {
   const ufs = ufsQ.data ?? [];
   const config = configQ.data ?? CPO_CONFIG_FALLBACK;
 
-  const [state, setState] = useState<CpoState>(() => lerRascunho()?.state ?? novoEstado());
+  const [state, setState] = useState<CpoState>(() =>
+    carregandoExistente ? novoEstado() : lerRascunho()?.state ?? novoEstado(),
+  );
   const [openCli, setOpenCli] = useState(false);
-  const [etapa, setEtapa] = useState<1 | 2>(() => lerRascunho()?.etapa ?? 1);
+  const [etapa, setEtapa] = useState<1 | 2>(() => (carregandoExistente ? 1 : lerRascunho()?.etapa ?? 1));
   const [saving, setSaving] = useState(false);
+  const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
+  const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(() =>
-    lerRascunho()?.ts ? new Date(lerRascunho()!.ts) : null,
+    !carregandoExistente && lerRascunho()?.ts ? new Date(lerRascunho()!.ts) : null,
   );
   const rascunhoRestaurado = useRef(false);
+  const carregado = useRef(false);
 
   // Aviso único quando um rascunho é restaurado
   useEffect(() => {
-    if (rascunhoRestaurado.current) return;
+    if (carregandoExistente || rascunhoRestaurado.current) return;
     rascunhoRestaurado.current = true;
     const r = lerRascunho();
     if (r?.state?.nome || r?.state?.itens?.some((i) => i.produtoId)) {
       toast.info("Rascunho restaurado automaticamente.");
     }
-  }, []);
+  }, [carregandoExistente]);
+
+  // Carrega uma proposta salva para continuar a edição ou duplicar
+  useEffect(() => {
+    const alvo = editId ?? dupId;
+    if (!alvo || carregado.current) return;
+    carregado.current = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("cpo_proposals")
+        .select("*")
+        .eq("id", alvo)
+        .maybeSingle();
+      if (error || !data) {
+        toast.error("Não foi possível carregar a proposta.");
+        return;
+      }
+      const itens = ((data.itens as { produtoId?: string; qtd?: number; valor?: number }[]) ?? [])
+        .filter((i) => i.produtoId)
+        .map((i) => ({
+          key: Math.random().toString(36).slice(2),
+          produtoId: i.produtoId as string,
+          qtd: Number(i.qtd ?? 1),
+          valor: Number(i.valor ?? 0),
+          valorManual: true,
+        }));
+      setState({
+        nome: dupId ? `${data.cliente_nome}` : data.cliente_nome,
+        telefone: data.cliente_telefone ?? "",
+        email: data.cliente_email ?? "",
+        doc: data.cliente_doc ?? "",
+        ie: data.cliente_ie ?? "",
+        uf: data.uf,
+        contribuinte: data.contribuinte,
+        freteMod: (data.frete_mod === "CIF" ? "CIF" : "FOB") as CpoState["freteMod"],
+        freteValor: Number(data.frete_valor ?? 0),
+        itens: itens.length ? itens : [novoItem()],
+      });
+      setNumeroAtual(editId ? data.numero : null);
+      setEtapa(2);
+      toast.success(editId ? `Proposta ${data.numero ?? ""} carregada.` : "Proposta duplicada — salve para gerar um novo número.");
+    })();
+  }, [editId, dupId]);
+
 
   // Autosave local enquanto o usuário avança nas etapas
   useEffect(() => {
@@ -350,8 +405,8 @@ function PropostaCpoPage() {
     setSaving(true);
     try {
       const { data: userRes } = await supabase.auth.getUser();
-      const numero = `CPO-${Date.now().toString().slice(-6)}`;
-      const { error } = await supabase.from("cpo_proposals").insert({
+      const numero = numeroAtual ?? `CPO-${Date.now().toString().slice(-6)}`;
+      const payload = {
         numero,
         cliente_nome: state.nome,
         cliente_telefone: state.telefone,
@@ -382,8 +437,24 @@ function PropostaCpoPage() {
           mbPct: d.mbPct,
           comissao: d.comValor,
         },
-        created_by: userRes.user?.id ?? null,
-      });
+      };
+
+      if (propostaId) {
+        const { error } = await supabase.from("cpo_proposals").update(payload).eq("id", propostaId);
+        if (error) throw error;
+        toast.success(status === "Salvo" ? `Proposta ${numero} atualizada.` : `Pedido ${numero} concluído.`);
+        setNumeroAtual(numero);
+        invalidate();
+        limparRascunho();
+        setAutosaveAt(null);
+        return;
+      }
+
+      const { data: inserida, error } = await supabase
+        .from("cpo_proposals")
+        .insert({ ...payload, created_by: userRes.user?.id ?? null })
+        .select("id")
+        .single();
       if (error) throw error;
       toast.success(
         status === "Salvo" ? `Proposta ${numero} salva.` : `Pedido ${numero} concluído.`,
@@ -391,8 +462,14 @@ function PropostaCpoPage() {
       invalidate();
       limparRascunho();
       setAutosaveAt(null);
-      setState(novoEstado());
-      setEtapa(1);
+      if (status === "Salvo" && inserida?.id) {
+        // segue editando a mesma proposta em vez de duplicar ao salvar de novo
+        setPropostaId(inserida.id);
+        setNumeroAtual(numero);
+      } else {
+        setState(novoEstado());
+        setEtapa(1);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar proposta.");
     } finally {
@@ -401,16 +478,20 @@ function PropostaCpoPage() {
   }
 
 
+
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">Propostas</div>
-            <h1 className="text-3xl font-bold mt-1">Nova proposta</h1>
+            <h1 className="text-3xl font-bold mt-1">
+              {propostaId ? `Editar proposta${numeroAtual ? ` ${numeroAtual}` : ""}` : "Nova proposta"}
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Cálculo fiscal completo da proposta em tempo real.
             </p>
+
             {autosaveAt ? (
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
