@@ -211,32 +211,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <NavLink item={{ to: "/carregadores/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/carregadores/tarefas")} collapsed={collapsed} />
               )}
               {show("cpo.clientes") && (
-                collapsed ? (
-                  <NavLink item={{ to: "/carregadores/clientes", label: "Clientes", icon: Users }} active={pathname.startsWith("/carregadores/clientes")} collapsed={collapsed} />
-                ) : (
-                  <div className="mb-1">
-                    <button
-                      onClick={() => setCpoClientesOpen((v) => !v)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                        pathname.startsWith("/carregadores/clientes")
-                          ? "text-primary font-medium"
-                          : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                      )}
-                    >
-                      <Users className="h-4 w-4 shrink-0" />
-                      <span className="truncate">Clientes</span>
-                      <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !cpoClientesOpen && "-rotate-90")} />
-                    </button>
-                    {cpoClientesOpen && (
-                      <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-                        <SubLink to="/carregadores/clientes" label="Carteira" icon={Users} active={pathname === "/carregadores/clientes"} />
-                        <SubLink to="/carregadores/clientes/cadastros" label="Cadastros" icon={Building2} active={pathname.startsWith("/carregadores/clientes/cadastros")} />
-                      </div>
-                    )}
-                  </div>
-                )
+                <NavLink item={{ to: "/carregadores/clientes/cadastros", label: "Clientes", icon: Users }} active={pathname.startsWith("/carregadores/clientes")} collapsed={collapsed} />
               )}
+
 
               {show("cpo.propostas") && (
                 <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
