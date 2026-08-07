@@ -534,10 +534,11 @@ function PropostaCpoPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                   <ReadField label="Nome do cliente" value={state.nome} />
                   <ReadField label="Telefone" value={state.telefone} />
-                  <ReadField label="E-mail" value={state.email} />
-                  <ReadField label="CNPJ / CPF" value={state.doc} />
-                  <ReadField label="Estado (UF) de destino" value={uf ? `${uf.uf} — ${uf.nome}` : state.uf} />
-                  <ReadField label="Inscrição Estadual" value={state.ie || "Cliente sem IE"} />
+                  <ReadField label="E-mail" value={state.email} invalid={campoInvalido("email")} />
+                  <ReadField label="CNPJ / CPF" value={state.doc} invalid={campoInvalido("doc")} />
+                  <ReadField label="Estado (UF) de destino" value={uf ? `${uf.uf} — ${uf.nome}` : state.uf} invalid={campoInvalido("uf")} />
+                  <ReadField label="Inscrição Estadual" value={state.ie || "Cliente sem IE"} invalid={campoInvalido("ie")} />
+
                 </div>
                 <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs">
                   <b className="text-foreground">
