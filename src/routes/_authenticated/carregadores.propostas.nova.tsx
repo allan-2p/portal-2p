@@ -607,7 +607,12 @@ function PropostaCpoPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-5 items-start">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-5 items-start",
+            etapa === 2 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
+          )}
+        >
           {/* ENTRADAS */}
           <div className="glass rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
