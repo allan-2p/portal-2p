@@ -147,6 +147,59 @@ function PropostaCpoPage() {
   const temProduto = state.itens.some((i) => i.produtoId);
   const podeSalvar = clienteOk && temProduto && !abaixoPolitica;
 
+  // ---- Alertas automáticos de política ----
+  const itensAbaixoSugerido = state.itens.filter((i) => {
+    if (!i.produtoId) return false;
+    const sug = precoSugerido(produtos.find((p) => p.id === i.produtoId), state.contribuinte, config);
+    return sug > 0 && i.valor > 0 && i.valor < sug - 0.005;
+  });
+  const itensSemValor = state.itens.filter((i) => i.produtoId && !(i.valor > 0));
+
+  type Alerta = { level: "err" | "warn"; titulo: string; motivo: string; corrigir: string };
+  const alertas: Alerta[] = [];
+  if (temProduto && abaixoPolitica)
+    alertas.push({
+      level: "err",
+      titulo: `Fora da política — MB ${fmtPct(d.mbPct)}`,
+      motivo: `A margem bruta está abaixo do mínimo de ${fmtPct(config.politica_mb_min)} exigido pela política comercial.`,
+      corrigir: "Aumente o valor unitário dos produtos ou reduza o frete absorvido (CIF).",
+    });
+  else if (temProduto && d.mbPct < config.mb_atencao)
+    alertas.push({
+      level: "warn",
+      titulo: `Margem em atenção — ${fmtPct(d.mbPct)}`,
+      motivo: `Abaixo do patamar de conforto de ${fmtPct(config.mb_atencao)}.`,
+      corrigir: "Revise o valor unitário dos produtos antes de concluir o pedido.",
+    });
+  if (itensSemValor.length)
+    alertas.push({
+      level: "err",
+      titulo: `${itensSemValor.length} item(ns) sem valor unitário`,
+      motivo: "Itens sem preço não entram no cálculo fiscal nem na margem.",
+      corrigir: "Preencha o campo Valor unitário (com IPI) dos itens destacados.",
+    });
+  if (itensAbaixoSugerido.length)
+    alertas.push({
+      level: "warn",
+      titulo: `${itensAbaixoSugerido.length} item(ns) abaixo do preço de referência`,
+      motivo: "O valor informado está abaixo do preço calculado pela política de majoração.",
+      corrigir: "Ajuste o campo Valor unitário dos itens destacados.",
+    });
+  if (state.freteMod === "CIF" && !(state.freteValor > 0))
+    alertas.push({
+      level: "warn",
+      titulo: "Frete CIF sem valor informado",
+      motivo: "No CIF a 2P absorve o frete; sem valor a margem fica superestimada.",
+      corrigir: "Preencha o campo Valor do frete.",
+    });
+  if (!state.contribuinte && d.difalAbs > 0 && d.mbPct < config.mb_atencao)
+    alertas.push({
+      level: "warn",
+      titulo: "DIFAL absorvido pressionando a margem",
+      motivo: `Cliente não contribuinte em ${uf?.nome ?? state.uf}: ${fmtBRL(d.difalAbs)} de DIFAL por conta da 2P.`,
+      corrigir: "Considere majorar o valor unitário para repassar o DIFAL.",
+    });
+
   const ReadField = ({ label, value }: { label: string; value: string }) => (
     <div className="min-w-0">
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
@@ -423,8 +476,20 @@ function PropostaCpoPage() {
               {state.itens.map((it) => {
                 const prod = produtos.find((p) => p.id === it.produtoId);
                 const sug = precoSugerido(prod, state.contribuinte, config);
+                const semValor = !!it.produtoId && !(it.valor > 0);
+                const abaixoSug = !!it.produtoId && sug > 0 && it.valor > 0 && it.valor < sug - 0.005;
                 return (
-                  <div key={it.key} className="rounded-xl border border-border p-3 space-y-3 bg-surface/40">
+                  <div
+                    key={it.key}
+                    className={cn(
+                      "rounded-xl border p-3 space-y-3 bg-surface/40",
+                      semValor
+                        ? "border-destructive/60 ring-1 ring-destructive/25"
+                        : abaixoSug
+                          ? "border-amber-500/60 ring-1 ring-amber-500/20"
+                          : "border-border",
+                    )}
+                  >
                     <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_.5fr] gap-3">
                       <Field label="Produto">
                         <Select
@@ -462,8 +527,19 @@ function PropostaCpoPage() {
                         <Input
                           value={it.valor ? fmtBRL(it.valor) : ""}
                           placeholder={sug ? fmtBRL(sug) : "R$ 0,00"}
+                          className={cn(
+                            semValor && "border-destructive focus-visible:ring-destructive",
+                            abaixoSug && "border-amber-500 focus-visible:ring-amber-500",
+                          )}
                           onChange={(e) => setItem(it.key, { valor: parseMoeda(e.target.value), valorManual: true })}
                         />
+                        {semValor ? (
+                          <p className="text-[11px] text-destructive mt-1">Informe o valor unitário deste item.</p>
+                        ) : abaixoSug ? (
+                          <p className="text-[11px] text-amber-600 mt-1">
+                            Abaixo da referência de {fmtBRL(sug)}.
+                          </p>
+                        ) : null}
                       </Field>
                       <div className="flex items-end justify-between gap-2">
                         <div className="text-xs text-muted-foreground">
@@ -507,8 +583,16 @@ function PropostaCpoPage() {
                 <Input
                   value={state.freteValor ? fmtBRL(state.freteValor) : ""}
                   placeholder="R$ 0,00"
+                  className={cn(
+                    state.freteMod === "CIF" &&
+                      !(state.freteValor > 0) &&
+                      "border-amber-500 focus-visible:ring-amber-500",
+                  )}
                   onChange={(e) => set("freteValor", parseMoeda(e.target.value))}
                 />
+                {state.freteMod === "CIF" && !(state.freteValor > 0) ? (
+                  <p className="text-[11px] text-amber-600 mt-1">Frete CIF é absorvido pela 2P — informe o valor.</p>
+                ) : null}
               </Field>
             </div>
             </>
@@ -586,6 +670,43 @@ function PropostaCpoPage() {
                   className="sm:col-span-2"
                 />
               </div>
+
+              {/* ALERTAS AUTOMÁTICOS DE POLÍTICA */}
+              {alertas.length ? (
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] opacity-80">
+                    <TriangleAlert className="h-3.5 w-3.5" />
+                    {abaixoPolitica ? "Proposta fora da política" : "Pontos de atenção"}
+                  </div>
+                  {alertas.map((a, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "rounded-xl border px-4 py-3 bg-white/10 backdrop-blur-sm",
+                        a.level === "err" ? "border-red-300/70" : "border-amber-200/60",
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                            a.level === "err" ? "bg-red-500 text-white" : "bg-amber-400 text-amber-950",
+                          )}
+                        >
+                          {a.level === "err" ? "Bloqueio" : "Atenção"}
+                        </span>
+                        <span className="text-sm font-semibold">{a.titulo}</span>
+                      </div>
+                      <p className="text-xs opacity-90 mt-1.5">{a.motivo}</p>
+                      <p className="text-xs font-medium mt-1">Corrigir: {a.corrigir}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-medium">
+                  <CheckCircle2 className="h-4 w-4" /> Proposta dentro da política comercial.
+                </div>
+              )}
             </div>
 
             <div className="glass rounded-2xl p-4 flex flex-wrap gap-2">
