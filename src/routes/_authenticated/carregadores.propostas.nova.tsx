@@ -31,7 +31,7 @@ import {
 } from "@/lib/cpo";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/carregadores/propostas")({
+export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
   head: () => ({
     meta: [
       { title: "Nova Proposta CPO — Portal 2P Carregadores" },

@@ -24,7 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL, fmtPct } from "@/lib/cpo";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/carregadores/historico")({
+export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
   head: () => ({
     meta: [
       { title: "Histórico de Propostas CPO — Portal 2P Carregadores" },
