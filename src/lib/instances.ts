@@ -21,8 +21,8 @@ export type FeatureKey =
   | "clientes.ranking"
   | "atlas"
   | "cpo.propostas"
-  | "cpo.historico"
   | "cpo.produtos"
+  | "cpo.comissoes"
   | "admin.usuarios"
   | "admin.vendedores"
   | "admin.metas"
@@ -87,8 +87,8 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "tarefas",
       "pedidos",
       "cpo.propostas",
-      "cpo.historico",
       "cpo.produtos",
+      "cpo.comissoes",
       "dashboards",
       "clientes.cadastros",
       "clientes.segmentacao",
@@ -140,8 +140,8 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/clientes/ranking": "clientes.ranking",
   "/atlas": "atlas",
   "/carregadores/propostas": "cpo.propostas",
-  "/carregadores/historico": "cpo.historico",
   "/carregadores/produtos": "cpo.produtos",
+  "/carregadores/comissoes": "cpo.comissoes",
   "/usuarios": "admin.usuarios",
   "/admin/vendedores": "admin.vendedores",
   "/admin/metas": "admin.metas",
@@ -169,9 +169,9 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "clientes.sugestoes": "Clientes • Sugestões do Atlas",
   "clientes.ranking": "Clientes • Ranking",
   atlas: "Atlas (AI)",
-  "cpo.propostas": "CPO • Nova Proposta",
-  "cpo.historico": "CPO • Histórico",
-  "cpo.produtos": "CPO • Produtos e Alíquotas",
+  "cpo.propostas": "CPO • Propostas",
+  "cpo.produtos": "Moderação • Produtos e Alíquotas",
+  "cpo.comissoes": "Moderação • Comissões",
   "admin.usuarios": "Admin • Usuários",
   "admin.vendedores": "Admin • Vendedores",
   "admin.metas": "Admin • Metas",
