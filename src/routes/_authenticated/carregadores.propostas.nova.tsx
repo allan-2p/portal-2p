@@ -299,7 +299,7 @@ function PropostaCpoPage() {
               </div>
             ) : null}
 
-            {clienteOk ? (
+            {etapa === 2 ? (
               <>
             <Banner level={st.level} text={st.msg} />
 
