@@ -101,9 +101,12 @@ export function MoneyInput({
   decimals = 2,
   maxValue,
   onValidityChange,
+  mask,
   className,
   ...rest
 }: Props) {
+  const [globalMask] = useMoneyMask();
+  const masked = mask ?? globalMask;
   const [raw, setRaw] = React.useState<string | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
 
@@ -122,6 +125,17 @@ export function MoneyInput({
     return { clean, n, msg };
   };
 
+  /** Modo máscara: dígitos entram pelos centavos, formatando em R$ a cada tecla. */
+  const evaluateMasked = (text: string) => {
+    const digits = text.replace(/\D/g, "").slice(0, 15);
+    const n = digits ? Number(digits) / Math.pow(10, decimals) : 0;
+    let msg: string | null = null;
+    if (maxValue !== undefined && n > maxValue) {
+      msg = `Valor acima do limite permitido (${fmtBRL(maxValue)}).`;
+    }
+    return { clean: digits ? fmtBRL(n) : "", n, msg };
+  };
+
   return (
     <>
       <Input
@@ -132,24 +146,25 @@ export function MoneyInput({
         value={raw !== null ? raw : value ? fmtBRL(value) : ""}
         onFocus={(e) => {
           // mostra o número exato armazenado, sem arredondar
-          setRaw(value ? String(value).replace(".", ",") : "");
+          setRaw(masked ? (value ? fmtBRL(value) : "") : value ? String(value).replace(".", ",") : "");
           onFocus?.(e);
           requestAnimationFrame(() => e.target.select?.());
         }}
         onChange={(e) => {
-          const { clean, n, msg } = evaluate(e.target.value);
+          const { clean, n, msg } = masked ? evaluateMasked(e.target.value) : evaluate(e.target.value);
           setRaw(clean);
           report(msg);
           onValueChange(n);
         }}
         onBlur={(e) => {
-          const { n, msg } = evaluate(e.target.value);
+          const { n, msg } = masked ? evaluateMasked(e.target.value) : evaluate(e.target.value);
           setRaw(null);
           report(msg);
           onValueChange(n);
           onBlur?.(e);
         }}
       />
+
       {erro ? <p className="text-[11px] text-destructive mt-1">{erro}</p> : null}
     </>
   );
