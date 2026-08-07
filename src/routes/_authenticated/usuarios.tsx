@@ -99,6 +99,8 @@ function UsuariosPage() {
       (profiles ?? []).map((p: any) => ({
         ...p,
         filter_scope: (p.filter_scope ?? "individual") as FilterScope,
+        regime_contratacao: (p.regime_contratacao ?? "CLT") as Regime,
+
         roles: byUser.get(p.id) ?? [],
       })) as Row[],
     );
