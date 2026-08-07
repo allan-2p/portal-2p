@@ -209,6 +209,12 @@ function CadastrosPage() {
                   </F>
                   <F label="Inscrição Estadual"><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
                   <F label="Inscrição Municipal"><Input value={form.im ?? ""} onChange={(e) => set("im", e.target.value)} /></F>
+                  <F label="Classificação">
+                    <Select value={form.classificacao || "C"} onValueChange={(v) => set("classificacao", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{CLASSES.map((c) => <SelectItem key={c} value={c}>{CLASSE_INFO[c].label}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </F>
                   <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                     <div>
                       <div className="text-sm font-semibold">Cliente contribuinte do ICMS</div>
