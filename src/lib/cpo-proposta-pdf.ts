@@ -1,0 +1,257 @@
+import { fmtBRL, fmtPct } from "@/lib/cpo";
+
+export type PropostaPdfItem = {
+  nome: string;
+  qtd: number;
+  valor: number;
+};
+
+export type PropostaPdfData = {
+  numero?: string;
+  cliente: {
+    nome: string;
+    doc?: string;
+    ie?: string;
+    email?: string;
+    telefone?: string;
+    uf: string;
+    contribuinte: boolean;
+  };
+  itens: PropostaPdfItem[];
+  freteMod: string;
+  freteValor: number;
+  impostos: {
+    ipiRate: number;
+    ipiValor: number;
+    icmsRate: number;
+    icms: number;
+    pisCofinsRate: number;
+    pisCofins: number;
+  };
+  totalNf: number;
+  valorTotal: number;
+  consultor?: string;
+  validadeDias?: number;
+};
+
+const esc = (v: unknown) =>
+  String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+export function buildPropostaPdfHtml(p: PropostaPdfData) {
+  const hoje = new Date();
+  const dataStr = hoje.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  const validade = new Date(hoje.getTime() + (p.validadeDias ?? 15) * 86400000).toLocaleDateString("pt-BR");
+  const numero = p.numero ?? `CPO-${hoje.getTime().toString().slice(-6)}`;
+
+  const linhas = p.itens
+    .map(
+      (i, idx) => `
+      <tr>
+        <td class="idx">${String(idx + 1).padStart(2, "0")}</td>
+        <td class="prod"><span class="pname">${esc(i.nome)}</span></td>
+        <td class="c">${i.qtd}</td>
+        <td class="r">${fmtBRL(i.valor)}</td>
+        <td class="r strong">${fmtBRL(i.valor * i.qtd)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  const qtdTotal = p.itens.reduce((a, i) => a + i.qtd, 0);
+
+  return `<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<title>Proposta ${esc(numero)} — ${esc(p.cliente.nome)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root{
+    --ink:#0B0F14; --ink-2:#1a2129; --muted:#7A8794; --line:#E6EAEF;
+    --accent:#00D07A; --soft:#F6F8FA;
+  }
+  html,body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ font-family:'Inter',Arial,Helvetica,sans-serif; color:var(--ink); background:#fff; font-size:10.5px; }
+  .page{ width:210mm; min-height:297mm; margin:0 auto; padding:0 0 22mm; position:relative; display:flex; flex-direction:column; }
+
+  /* HEADER */
+  .hero{ background:var(--ink); color:#fff; padding:16mm 15mm 13mm; position:relative; overflow:hidden; }
+  .hero:after{ content:""; position:absolute; right:-40mm; top:-40mm; width:90mm; height:90mm; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, rgba(0,208,122,.35), rgba(0,208,122,0) 65%); }
+  .brand{ display:flex; align-items:center; gap:9px; }
+  .mark{ width:26px; height:26px; border-radius:7px; background:var(--accent); color:#04140D; font-weight:800;
+    display:flex; align-items:center; justify-content:center; font-size:12px; letter-spacing:-.5px; }
+  .brandname{ font-size:12.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+  .brandsub{ font-size:8.5px; letter-spacing:.28em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-top:2px; }
+  .hero-main{ display:flex; justify-content:space-between; align-items:flex-end; margin-top:14mm; position:relative; z-index:1; }
+  .htitle{ font-size:31px; font-weight:800; letter-spacing:-1.1px; line-height:1; }
+  .hkicker{ font-size:8.5px; letter-spacing:.32em; text-transform:uppercase; color:var(--accent); margin-bottom:7px; font-weight:600; }
+  .hmeta{ text-align:right; font-size:9px; color:rgba(255,255,255,.62); line-height:1.75; }
+  .hmeta b{ color:#fff; font-weight:600; }
+  .accentbar{ height:3px; background:linear-gradient(90deg,var(--accent),rgba(0,208,122,.15)); }
+
+  .body{ padding:11mm 15mm 0; flex:1; }
+
+  /* SECTIONS */
+  .sec{ margin-top:9mm; }
+  .sec:first-child{ margin-top:0; }
+  .sech{ display:flex; align-items:center; gap:8px; margin-bottom:4.5mm; }
+  .sech span{ font-size:8.5px; letter-spacing:.26em; text-transform:uppercase; color:var(--muted); font-weight:600; white-space:nowrap; }
+  .sech:before{ content:""; width:14px; height:2px; background:var(--accent); border-radius:2px; }
+  .sech:after{ content:""; flex:1; height:1px; background:var(--line); }
+
+  /* CLIENT CARD */
+  .client{ border:1px solid var(--line); border-radius:10px; padding:6mm 7mm; background:var(--soft); }
+  .cname{ font-size:15px; font-weight:700; letter-spacing:-.3px; }
+  .tags{ display:flex; gap:6px; margin-top:5px; }
+  .tag{ font-size:8px; letter-spacing:.1em; text-transform:uppercase; font-weight:600; padding:3px 8px; border-radius:20px;
+    background:#fff; border:1px solid var(--line); color:var(--ink-2); }
+  .tag.on{ background:rgba(0,208,122,.12); border-color:rgba(0,208,122,.4); color:#046B42; }
+  .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:5mm; margin-top:6mm; }
+  .f label{ display:block; font-size:7.6px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; font-weight:600; }
+  .f div{ font-size:10.5px; font-weight:500; word-break:break-word; }
+
+  /* TABLE */
+  table{ width:100%; border-collapse:collapse; }
+  thead th{ font-size:7.8px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); font-weight:600;
+    text-align:left; padding:0 6px 6px; border-bottom:1px solid var(--ink); }
+  tbody td{ padding:8px 6px; border-bottom:1px solid var(--line); font-size:10.5px; vertical-align:middle; }
+  tbody tr:nth-child(even){ background:#FBFCFD; }
+  .c{ text-align:center } .r{ text-align:right } .strong{ font-weight:700 }
+  .idx{ color:var(--muted); font-size:9px; width:22px; font-variant-numeric:tabular-nums; }
+  .pname{ font-weight:600; }
+  tfoot td{ padding:9px 6px; font-size:9.5px; color:var(--muted); }
+
+  /* TWO COL */
+  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:8mm; margin-top:9mm; }
+  .panel{ border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .panel h4{ font-size:8.2px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-weight:600;
+    padding:4.5mm 5mm; border-bottom:1px solid var(--line); background:var(--soft); }
+  .rows{ padding:2mm 5mm 4mm; }
+  .row{ display:flex; justify-content:space-between; align-items:baseline; padding:5px 0; border-bottom:1px dashed var(--line); font-size:10px; }
+  .row:last-child{ border-bottom:0 }
+  .row span{ color:var(--ink-2) } .row b{ font-weight:600; font-variant-numeric:tabular-nums }
+  .rate{ font-size:8px; color:var(--muted); margin-left:4px; }
+
+  /* TOTAL */
+  .total{ margin-top:8mm; background:var(--ink); color:#fff; border-radius:12px; padding:7mm 8mm;
+    display:flex; justify-content:space-between; align-items:center; position:relative; overflow:hidden; }
+  .total:after{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent); }
+  .total .lbl{ font-size:8.2px; letter-spacing:.28em; text-transform:uppercase; color:rgba(255,255,255,.55); font-weight:600; }
+  .total .nf{ font-size:11px; color:rgba(255,255,255,.75); margin-top:4px; }
+  .total .val{ font-size:27px; font-weight:800; letter-spacing:-1px; text-align:right; }
+  .total .val small{ display:block; font-size:8px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin-bottom:3px; }
+
+  /* CONDITIONS */
+  .cond{ margin-top:8mm; display:grid; grid-template-columns:repeat(3,1fr); gap:5mm; }
+  .cond div{ border-left:2px solid var(--line); padding-left:4mm; }
+  .cond label{ display:block; font-size:7.6px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:3px; }
+  .cond p{ font-size:9.5px; line-height:1.5; }
+
+  /* FOOTER */
+  .foot{ position:absolute; left:0; right:0; bottom:0; padding:6mm 15mm; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center; font-size:8px; color:var(--muted); letter-spacing:.05em; }
+  .foot b{ color:var(--ink); font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
+  @media print{ .page{ margin:0 } }
+</style></head>
+<body>
+<div class="page">
+  <div class="hero">
+    <div class="brand">
+      <div class="mark">2P</div>
+      <div>
+        <div class="brandname">2P Carregadores</div>
+        <div class="brandsub">Infraestrutura de recarga</div>
+      </div>
+    </div>
+    <div class="hero-main">
+      <div>
+        <div class="hkicker">Proposta comercial</div>
+        <div class="htitle">${esc(numero)}</div>
+      </div>
+      <div class="hmeta">
+        Emissão <b>${esc(dataStr)}</b><br>
+        Validade <b>${esc(validade)}</b><br>
+        ${p.consultor ? `Consultor <b>${esc(p.consultor)}</b>` : ""}
+      </div>
+    </div>
+  </div>
+  <div class="accentbar"></div>
+
+  <div class="body">
+    <div class="sec">
+      <div class="sech"><span>Cliente</span></div>
+      <div class="client">
+        <div class="cname">${esc(p.cliente.nome)}</div>
+        <div class="tags">
+          <div class="tag">UF ${esc(p.cliente.uf)}</div>
+          <div class="tag ${p.cliente.contribuinte ? "on" : ""}">${p.cliente.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}</div>
+        </div>
+        <div class="grid">
+          <div class="f"><label>CNPJ / CPF</label><div>${esc(p.cliente.doc) || "—"}</div></div>
+          <div class="f"><label>Inscrição estadual</label><div>${esc(p.cliente.ie) || "—"}</div></div>
+          <div class="f"><label>E-mail</label><div>${esc(p.cliente.email) || "—"}</div></div>
+          <div class="f"><label>Telefone</label><div>${esc(p.cliente.telefone) || "—"}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sech"><span>Escopo de fornecimento</span></div>
+      <table>
+        <thead><tr>
+          <th></th><th>Produto</th><th class="c">Qtd</th><th class="r">Valor unit.</th><th class="r">Total</th>
+        </tr></thead>
+        <tbody>${linhas}</tbody>
+        <tfoot><tr>
+          <td colspan="2">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
+          <td colspan="3" class="r">Frete ${esc(p.freteMod)} · <b style="color:var(--ink)">${fmtBRL(p.freteValor)}</b></td>
+        </tr></tfoot>
+      </table>
+    </div>
+
+    <div class="cols">
+      <div class="panel">
+        <h4>Composição fiscal</h4>
+        <div class="rows">
+          <div class="row"><span>IPI<i class="rate">${fmtPct(p.impostos.ipiRate)}</i></span><b>${fmtBRL(p.impostos.ipiValor)}</b></div>
+          <div class="row"><span>ICMS efetivo<i class="rate">${fmtPct(p.impostos.icmsRate)}</i></span><b>${fmtBRL(p.impostos.icms)}</b></div>
+          <div class="row"><span>PIS / COFINS<i class="rate">${fmtPct(p.impostos.pisCofinsRate)}</i></span><b>${fmtBRL(p.impostos.pisCofins)}</b></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h4>Resumo</h4>
+        <div class="rows">
+          <div class="row"><span>Equipamentos</span><b>${fmtBRL(p.totalNf - p.freteValor)}</b></div>
+          <div class="row"><span>Frete (${esc(p.freteMod)})</span><b>${fmtBRL(p.freteValor)}</b></div>
+          <div class="row"><span>Total da nota fiscal</span><b>${fmtBRL(p.totalNf)}</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="total">
+      <div>
+        <div class="lbl">Investimento total</div>
+        <div class="nf">Total NF ${fmtBRL(p.totalNf)} · impostos inclusos</div>
+      </div>
+      <div class="val"><small>Valor da proposta</small>${fmtBRL(p.valorTotal)}</div>
+    </div>
+
+    <div class="cond">
+      <div><label>Validade</label><p>Proposta válida até ${esc(validade)}, sujeita a disponibilidade de estoque.</p></div>
+      <div><label>Prazo de entrega</label><p>A confirmar na aprovação do pedido, conforme modalidade de frete ${esc(p.freteMod)}.</p></div>
+      <div><label>Condições</label><p>Valores em reais, impostos conforme legislação vigente na UF ${esc(p.cliente.uf)}.</p></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div><b>2P Carregadores</b> · Eletropostos e infraestrutura de recarga</div>
+    <div>${esc(numero)} · ${esc(hoje.toLocaleDateString("pt-BR"))}</div>
+  </div>
+</div>
+</body></html>`;
+}
