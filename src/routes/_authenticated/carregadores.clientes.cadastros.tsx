@@ -347,6 +347,11 @@ function CadastrosPage() {
                       <div className="font-medium">{c.razao_social}</div>
                       {c.nome_fantasia && <div className="text-xs text-muted-foreground">{c.nome_fantasia}</div>}
                     </td>
+                    <td className="px-4 py-2">
+                      <Badge variant="outline" className={`text-[10px] font-bold ${CLASSE_INFO[c.classificacao || "C"]?.cls ?? ""}`}>
+                        {c.classificacao || "C"}
+                      </Badge>
+                    </td>
                     <td className="px-4 py-2 text-muted-foreground">{c.doc || "—"}</td>
                     <td className="px-4 py-2">
                       <div className="flex flex-wrap gap-1">
