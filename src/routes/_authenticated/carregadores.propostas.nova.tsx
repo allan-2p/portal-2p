@@ -252,8 +252,8 @@ function PropostaCpoPage() {
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Propostas CPO</div>
-            <h1 className="text-3xl font-bold mt-1">Nova proposta CPO</h1>
+            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Propostas</div>
+            <h1 className="text-3xl font-bold mt-1">Nova proposta</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Cálculo fiscal completo da proposta em tempo real.
             </p>
