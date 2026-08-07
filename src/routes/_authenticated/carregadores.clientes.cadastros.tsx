@@ -90,6 +90,10 @@ function CadastrosPage() {
   const [fUf, setFUf] = useState<string>("todas");
   const [fStatus, setFStatus] = useState<string>("ativos");
   const [fFiscal, setFFiscal] = useState<string>("todos");
+  const [ordem, setOrdem] = useState<OrdemKey>("cliente");
+  const [dir, setDir] = useState<"asc" | "desc">("asc");
+  const [pagina, setPagina] = useState(1);
+  const [porPagina, setPorPagina] = useState(25);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Cliente, "id">>(vazio());
