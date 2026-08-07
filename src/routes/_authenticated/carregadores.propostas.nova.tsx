@@ -387,8 +387,13 @@ function PropostaCpoPage() {
 
 
 
+  function concluirPedido() {
+    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de concluir o pedido.");
+    void salvar("Aguardando Pagamento");
+  }
+
   function exportarPdf() {
-    if (!podeSalvar) return toast.error("Selecione o cliente e ao menos um produto.");
+    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de exportar o PDF.");
     const html = buildPropostaPdfHtml({
       cliente: {
         nome: state.nome,
