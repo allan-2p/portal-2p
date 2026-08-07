@@ -782,7 +782,9 @@ function UserModal({
     cargo: "",
     equipe: "",
     password: "",
+    regime_contratacao: "CLT" as Regime,
     role: "vendedor" as AppRole,
+
   });
   const [submitting, setSubmitting] = useState(false);
 
