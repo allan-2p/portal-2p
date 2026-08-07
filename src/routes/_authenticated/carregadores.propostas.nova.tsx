@@ -876,8 +876,9 @@ function PropostaCpoPage() {
               })}
 
               <div className="text-xs text-muted-foreground">
-                Soma dos custos líquidos dos itens = <b className="text-foreground">{fmtBRL(d.custoTotal)}</b>
+                Soma dos valores dos itens = <b className="text-foreground">{fmtBRL(d.valorItens)}</b>
               </div>
+
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
