@@ -166,8 +166,54 @@ function PropostaCpoPage() {
               <h2 className="font-semibold">Entradas da proposta</h2>
             </div>
 
+            <Field label="Cliente já cadastrado">
+              <Popover open={openCli} onOpenChange={setOpenCli}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                    <span className="flex items-center gap-2 truncate">
+                      <Users className="h-4 w-4 text-primary shrink-0" />
+                      {state.nome ? state.nome : "Selecionar cliente do cadastro"}
+                    </span>
+                    <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar cliente..." />
+                    <CommandList>
+                      <CommandEmpty>
+                        {clientesQ.isLoading ? "Carregando..." : "Nenhum cliente cadastrado."}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {(clientesQ.data ?? []).map((c) => (
+                          <CommandItem
+                            key={c.cliente_nome}
+                            value={c.cliente_nome}
+                            onSelect={() => {
+                              aplicarCliente(c);
+                              setOpenCli(false);
+                            }}
+                          >
+                            <div className="min-w-0">
+                              <div className="truncate font-medium">{c.cliente_nome}</div>
+                              <div className="text-xs text-muted-foreground truncate">
+                                {[c.cliente_doc, c.uf, c.cliente_email].filter(Boolean).join(" · ") || "Sem dados adicionais"}
+                              </div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Ao selecionar, os dados do cadastro são preenchidos automaticamente — você ainda pode editar abaixo.
+              </p>
+            </Field>
 
             <Banner level={st.level} text={st.msg} />
+
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Nome do cliente">
