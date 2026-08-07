@@ -226,24 +226,17 @@ function PropostaCpoPage() {
 
 
   const aplicarCliente = (c: ClienteCadastro) =>
-    setState((s) => {
-      const contribuinte = c.contribuinte ?? s.contribuinte;
-      return {
-        ...s,
-        nome: c.cliente_nome,
-        telefone: c.cliente_telefone ?? "",
-        email: c.cliente_email ?? "",
-        doc: c.cliente_doc ?? "",
-        ie: c.cliente_ie ?? "",
-        uf: c.uf || s.uf,
-        contribuinte,
-        itens: s.itens.map((i) =>
-          i.valorManual
-            ? i
-            : { ...i, valor: precoSugerido(produtos.find((p) => p.id === i.produtoId), contribuinte, config) },
-        ),
-      };
-    });
+    setState((s) => ({
+      ...s,
+      nome: c.cliente_nome,
+      telefone: c.cliente_telefone ?? "",
+      email: c.cliente_email ?? "",
+      doc: c.cliente_doc ?? "",
+      ie: c.cliente_ie ?? "",
+      uf: c.uf || s.uf,
+      contribuinte: c.contribuinte ?? s.contribuinte,
+    }));
+
 
 
 
