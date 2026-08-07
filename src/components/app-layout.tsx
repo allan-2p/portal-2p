@@ -194,7 +194,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
 
           {/* Módulo CPO — exclusivo da instância Carregadores */}
-          {(show("cpo.propostas") || show("cpo.historico") || show("cpo.produtos")) && (
+          {(show("cpo.propostas") || show("cpo.produtos") || show("cpo.comissoes")) && (
             <>
               <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
               {!collapsed && (
@@ -203,13 +203,46 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </div>
               )}
               {show("cpo.propostas") && (
-                <NavLink item={{ to: "/carregadores/propostas", label: "Nova Proposta", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
+                <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
               )}
-              {show("cpo.historico") && (
-                <NavLink item={{ to: "/carregadores/historico", label: "Histórico", icon: HistoryIcon }} active={pathname.startsWith("/carregadores/historico")} collapsed={collapsed} />
-              )}
-              {show("cpo.produtos") && (
-                <NavLink item={{ to: "/carregadores/produtos", label: "Produtos e Alíquotas", icon: Package }} active={pathname.startsWith("/carregadores/produtos")} collapsed={collapsed} />
+              {(show("cpo.produtos") || show("cpo.comissoes")) && (
+                collapsed ? (
+                  <Link
+                    to={show("cpo.produtos") ? "/carregadores/produtos" : "/carregadores/comissoes"}
+                    preload="intent"
+                    title="Moderação"
+                    className={cn(
+                      "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
+                      moderacaoActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                    )}
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <div className="mb-1">
+                    <button
+                      onClick={() => setModeracaoOpen((v) => !v)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                        moderacaoActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                      )}
+                    >
+                      <SlidersHorizontal className="h-4 w-4 shrink-0" />
+                      <span className="truncate">Moderação</span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !moderacaoOpen && "-rotate-90")} />
+                    </button>
+                    {moderacaoOpen && (
+                      <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
+                        {show("cpo.produtos") && (
+                          <SubLink to="/carregadores/produtos" label="Produtos e Alíquotas" icon={Package} active={pathname.startsWith("/carregadores/produtos")} />
+                        )}
+                        {show("cpo.comissoes") && (
+                          <SubLink to="/carregadores/comissoes" label="Comissões" icon={Percent} active={pathname.startsWith("/carregadores/comissoes")} />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
               )}
               <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
             </>
