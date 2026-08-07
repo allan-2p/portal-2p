@@ -273,6 +273,51 @@ function CadastrosPage() {
         </div>
 
         <Card>
+          <CardContent className="p-3 flex flex-wrap items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={fClasse} onValueChange={setFClasse}>
+              <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as classificações</SelectItem>
+                {CLASSES.map((c) => <SelectItem key={c} value={c}>{CLASSE_INFO[c].label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={fUf} onValueChange={setFUf}>
+              <SelectTrigger className="w-[130px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as UFs</SelectItem>
+                {ufsDisponiveis.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={fFiscal} onValueChange={setFFiscal}>
+              <SelectTrigger className="w-[170px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos (fiscal)</SelectItem>
+                <SelectItem value="contribuinte">Contribuinte ICMS</SelectItem>
+                <SelectItem value="nao">Não contribuinte</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={fStatus} onValueChange={setFStatus}>
+              <SelectTrigger className="w-[130px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ativos">Ativos</SelectItem>
+                <SelectItem value="inativos">Inativos</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
+              </SelectContent>
+            </Select>
+            {filtrosAtivos && (
+              <Button variant="ghost" size="sm" className="gap-1" onClick={limparFiltros}>
+                <X className="h-3.5 w-3.5" /> Limpar
+              </Button>
+            )}
+            <span className="ml-auto text-xs text-muted-foreground">
+              {rows.length} de {clientes.length} cadastro(s)
+            </span>
+          </CardContent>
+        </Card>
+
+
+        <Card>
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-surface-2/60 text-xs uppercase tracking-wider text-muted-foreground">
