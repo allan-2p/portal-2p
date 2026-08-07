@@ -27,10 +27,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
   head: () => ({
     meta: [
-      { title: "Histórico de Propostas CPO — Portal 2P Carregadores" },
-      { name: "description", content: "Todas as propostas CPO emitidas, com margem, impostos e status." },
-      { property: "og:title", content: "Histórico de Propostas CPO — Portal 2P Carregadores" },
-      { property: "og:description", content: "Consulte propostas CPO por cliente, estado e status." },
+      { title: "Propostas — Portal 2P Carregadores" },
+      { name: "description", content: "Todas as propostas emitidas, com valores, impostos e status." },
+      { property: "og:title", content: "Propostas — Portal 2P Carregadores" },
+      { property: "og:description", content: "Consulte propostas por cliente, estado e status." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: HistoricoCpoPage,
@@ -116,7 +118,7 @@ function HistoricoCpoPage() {
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Módulo CPO</div>
+            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Carregadores</div>
             <h1 className="text-3xl font-bold mt-1">Propostas</h1>
           </div>
           <Button asChild className="gap-2">

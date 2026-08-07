@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -49,16 +49,18 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/nov
   }),
   head: () => ({
     meta: [
-      { title: "Nova Proposta CPO — Portal 2P Carregadores" },
+      { title: "Nova proposta — Portal 2P Carregadores" },
       {
         name: "description",
-        content: "Monte propostas CPO com cálculo de ICMS, DIFAL, impostos e margem bruta em tempo real.",
+        content: "Monte uma nova proposta com cálculo de ICMS, DIFAL, impostos e margem bruta em tempo real.",
       },
-      { property: "og:title", content: "Nova Proposta CPO — Portal 2P Carregadores" },
+      { property: "og:title", content: "Nova proposta — Portal 2P Carregadores" },
       {
         property: "og:description",
-        content: "Motor de precificação CPO com DRE, DIFAL e política de margem da 2P Carregadores.",
+        content: "Nova proposta com DRE, DIFAL e política de margem da 2P Carregadores.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PropostaCpoPage,
@@ -507,7 +509,11 @@ function PropostaCpoPage() {
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Propostas</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+              <Link to="/carregadores/propostas" className="text-primary hover:underline">Propostas</Link>
+              <span>/</span>
+              <span>{propostaId ? "Editar proposta" : "Nova proposta"}</span>
+            </div>
             <h1 className="text-3xl font-bold mt-1">
               {propostaId ? `Editar proposta${numeroAtual ? ` ${numeroAtual}` : ""}` : "Nova proposta"}
             </h1>
