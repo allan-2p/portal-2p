@@ -358,7 +358,7 @@ function CadastrosPage() {
               </Button>
             )}
             <span className="ml-auto text-xs text-muted-foreground">
-              {rows.length} de {clientes.length} cadastro(s)
+              {ordenados.length} de {clientes.length} cadastro(s)
             </span>
           </CardContent>
         </Card>
