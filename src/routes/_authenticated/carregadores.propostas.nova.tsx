@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +70,32 @@ type ClienteCadastro = {
   contribuinte: boolean;
 };
 
+const DRAFT_KEY = "cpo-proposta-rascunho";
+
+type Rascunho = { state: CpoState; etapa: 1 | 2; ts: number };
+
+function lerRascunho(): Rascunho | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Rascunho;
+    if (!parsed?.state || !Array.isArray(parsed.state.itens)) return null;
+    return { ...parsed, etapa: parsed.etapa === 2 ? 2 : 1 };
+  } catch {
+    return null;
+  }
+}
+
+function limparRascunho() {
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    /* storage indisponível */
+  }
+}
+
+
 function PropostaCpoPage() {
   const produtosQ = useCpoProducts();
   const ufsQ = useCpoUfs();
@@ -80,10 +106,45 @@ function PropostaCpoPage() {
   const ufs = ufsQ.data ?? [];
   const config = configQ.data ?? CPO_CONFIG_FALLBACK;
 
-  const [state, setState] = useState<CpoState>(() => novoEstado());
+  const [state, setState] = useState<CpoState>(() => lerRascunho()?.state ?? novoEstado());
   const [openCli, setOpenCli] = useState(false);
-  const [etapa, setEtapa] = useState<1 | 2>(1);
+  const [etapa, setEtapa] = useState<1 | 2>(() => lerRascunho()?.etapa ?? 1);
   const [saving, setSaving] = useState(false);
+  const [autosaveAt, setAutosaveAt] = useState<Date | null>(() =>
+    lerRascunho()?.ts ? new Date(lerRascunho()!.ts) : null,
+  );
+  const rascunhoRestaurado = useRef(false);
+
+  // Aviso único quando um rascunho é restaurado
+  useEffect(() => {
+    if (rascunhoRestaurado.current) return;
+    rascunhoRestaurado.current = true;
+    const r = lerRascunho();
+    if (r?.state?.nome || r?.state?.itens?.some((i) => i.produtoId)) {
+      toast.info("Rascunho restaurado automaticamente.");
+    }
+  }, []);
+
+  // Autosave local enquanto o usuário avança nas etapas
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const vazio = !state.nome.trim() && !state.itens.some((i) => i.produtoId);
+      if (vazio) {
+        limparRascunho();
+        setAutosaveAt(null);
+        return;
+      }
+      const ts = Date.now();
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ state, etapa, ts }));
+        setAutosaveAt(new Date(ts));
+      } catch {
+        /* storage indisponível */
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [state, etapa]);
+
 
   // Clientes vindos do cadastro completo (Clientes > Cadastros)
   const clientesQ = useQuery({
@@ -301,6 +362,8 @@ function PropostaCpoPage() {
         status === "Salvo" ? `Proposta ${numero} salva.` : `Pedido ${numero} concluído.`,
       );
       invalidate();
+      limparRascunho();
+      setAutosaveAt(null);
       setState(novoEstado());
       setEtapa(1);
     } catch (e) {
@@ -321,6 +384,13 @@ function PropostaCpoPage() {
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Cálculo fiscal completo da proposta em tempo real.
             </p>
+            {autosaveAt ? (
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Rascunho salvo automaticamente às{" "}
+                {autosaveAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </p>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
