@@ -80,10 +80,45 @@ function PropostaCpoPage() {
   const ufs = ufsQ.data ?? [];
   const config = configQ.data ?? CPO_CONFIG_FALLBACK;
 
-  const [state, setState] = useState<CpoState>(() => novoEstado());
+  const [state, setState] = useState<CpoState>(() => lerRascunho()?.state ?? novoEstado());
   const [openCli, setOpenCli] = useState(false);
-  const [etapa, setEtapa] = useState<1 | 2>(1);
+  const [etapa, setEtapa] = useState<1 | 2>(() => lerRascunho()?.etapa ?? 1);
   const [saving, setSaving] = useState(false);
+  const [autosaveAt, setAutosaveAt] = useState<Date | null>(() =>
+    lerRascunho()?.ts ? new Date(lerRascunho()!.ts) : null,
+  );
+  const rascunhoRestaurado = useRef(false);
+
+  // Aviso único quando um rascunho é restaurado
+  useEffect(() => {
+    if (rascunhoRestaurado.current) return;
+    rascunhoRestaurado.current = true;
+    const r = lerRascunho();
+    if (r?.state?.nome || r?.state?.itens?.some((i) => i.produtoId)) {
+      toast.info("Rascunho restaurado automaticamente.");
+    }
+  }, []);
+
+  // Autosave local enquanto o usuário avança nas etapas
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const vazio = !state.nome.trim() && !state.itens.some((i) => i.produtoId);
+      if (vazio) {
+        limparRascunho();
+        setAutosaveAt(null);
+        return;
+      }
+      const ts = Date.now();
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ state, etapa, ts }));
+        setAutosaveAt(new Date(ts));
+      } catch {
+        /* storage indisponível */
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [state, etapa]);
+
 
   // Clientes vindos do cadastro completo (Clientes > Cadastros)
   const clientesQ = useQuery({
