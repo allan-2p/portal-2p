@@ -239,6 +239,13 @@ function PropostaCpoPage() {
       },
       totalNf: d.valorItens + state.freteValor,
       valorTotal: d.valorTotalProposta,
+      valor: d.valor,
+      interno: {
+        mb: d.mb,
+        mbPct: d.mbPct,
+        comissao: d.comValor,
+        comissaoPct: d.comPct,
+      },
     });
     const w = window.open("", "_blank");
     if (!w) return toast.error("Permita pop-ups para exportar o PDF.");
@@ -714,7 +721,7 @@ function PropostaCpoPage() {
                 <Save className="h-4 w-4" /> Salvar proposta
               </Button>
               <Button variant="outline" onClick={exportarPdf} disabled={!podeSalvar} className="gap-2 flex-1 min-w-[160px]">
-                <FileDown className="h-4 w-4" /> Exportar PDF
+                <FileDown className="h-4 w-4" /> Baixar PDF
               </Button>
               <Button
                 variant="outline"
