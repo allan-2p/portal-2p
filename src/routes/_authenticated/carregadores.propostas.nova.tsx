@@ -287,12 +287,13 @@ function PropostaCpoPage() {
       corrigir: "Considere majorar o valor unitário para repassar o DIFAL.",
     });
 
-  const ReadField = ({ label, value }: { label: string; value: string }) => (
-    <div className="min-w-0">
+  const ReadField = ({ label, value, invalid }: { label: string; value: string; invalid?: boolean }) => (
+    <div className={cn("min-w-0 rounded-md", invalid && "border border-destructive/50 bg-destructive/5 px-2 py-1")}>
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="text-sm font-medium truncate">{value || "—"}</div>
+      <div className={cn("text-sm font-medium truncate", invalid && "text-destructive")}>{value || "—"}</div>
     </div>
   );
+
 
 
   function exportarPdf() {
