@@ -148,19 +148,15 @@ function PropostaCpoPage() {
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">Propostas CPO</div>
             <h1 className="text-3xl font-bold mt-1">Nova proposta CPO</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Visão resumida para a operação comercial, visão completa para a análise fiscal detalhada.
+              Cálculo fiscal completo da proposta em tempo real.
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <span className={cn(!completa && "font-semibold")}>Resumida</span>
-              <Switch checked={completa} onCheckedChange={setCompleta} />
-              <span className={cn(completa && "font-semibold")}>Completa</span>
-            </div>
             <Button onClick={salvar} disabled={saving || abaixoPolitica} className="gap-2">
               <Save className="h-4 w-4" /> Salvar proposta
             </Button>
           </div>
+
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-5 items-start">
