@@ -882,6 +882,7 @@ function PropostaCpoPage() {
                 <MoneyInput
                   value={state.freteValor}
                   placeholder="R$ 0,00"
+                  maxValue={1000000}
                   className={cn(
                     state.freteMod === "CIF" &&
                       !(state.freteValor > 0) &&
@@ -889,6 +890,7 @@ function PropostaCpoPage() {
                   )}
                   onValueChange={(n: number) => set("freteValor", n)}
                 />
+
 
                 {state.freteMod === "CIF" && !(state.freteValor > 0) ? (
                   <p className="text-[11px] text-amber-600 mt-1">Frete CIF é absorvido pela 2P — informe o valor.</p>
