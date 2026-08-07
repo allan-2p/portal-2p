@@ -179,7 +179,7 @@ function PropostaCpoPage() {
           key: Math.random().toString(36).slice(2),
           produtoId: i.produtoId as string,
           qtd: Number(i.qtd ?? 1),
-          valor: Number(i.valor ?? 0),
+          valor: money2(i.valor ?? 0),
           valorManual: true,
         }));
       setState({
@@ -191,7 +191,7 @@ function PropostaCpoPage() {
         uf: data.uf,
         contribuinte: data.contribuinte,
         freteMod: (data.frete_mod === "CIF" ? "CIF" : "FOB") as CpoState["freteMod"],
-        freteValor: Number(data.frete_valor ?? 0),
+        freteValor: money2(data.frete_valor ?? 0),
         itens: itens.length ? itens : [novoItem()],
       });
       setNumeroAtual(editId ? data.numero : null);
@@ -494,12 +494,12 @@ function PropostaCpoPage() {
         uf: state.uf,
         contribuinte: state.contribuinte,
         frete_mod: state.freteMod,
-        frete_valor: state.freteValor,
+        frete_valor: money2(state.freteValor),
         itens: state.itens.map((i) => ({
           produtoId: i.produtoId,
           nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
           qtd: i.qtd,
-          valor: i.valor,
+          valor: money2(i.valor),
         })),
         totais: {
           valorTotal: d.valorTotalProposta,
