@@ -21,6 +21,54 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCpoUfs } from "@/hooks/use-cpo";
 
+/** Destaca o trecho correspondente à busca (texto ou dígitos de CNPJ/CPF). */
+function Marca({ texto, termo }: { texto?: string | null; termo: string }) {
+  const valor = texto ?? "";
+  const t = termo.trim();
+  if (!valor || !t) return <>{valor}</>;
+
+  const alvo = valor.toLowerCase();
+  const busca = t.toLowerCase();
+  const partes: Array<{ s: string; hit: boolean }> = [];
+
+  let i = alvo.indexOf(busca);
+  if (i >= 0) {
+    let pos = 0;
+    while (i >= 0) {
+      if (i > pos) partes.push({ s: valor.slice(pos, i), hit: false });
+      partes.push({ s: valor.slice(i, i + busca.length), hit: true });
+      pos = i + busca.length;
+      i = alvo.indexOf(busca, pos);
+    }
+    if (pos < valor.length) partes.push({ s: valor.slice(pos), hit: false });
+  } else {
+    const digitos = t.replace(/\D/g, "");
+    if (digitos.length < 3) return <>{valor}</>;
+    const idx: number[] = [];
+    let seq = "";
+    for (let k = 0; k < valor.length; k++) {
+      if (/\d/.test(valor[k]!)) { seq += valor[k]; idx.push(k); }
+    }
+    const at = seq.indexOf(digitos);
+    if (at < 0) return <>{valor}</>;
+    const ini = idx[at]!;
+    const fim = idx[at + digitos.length - 1]! + 1;
+    if (ini > 0) partes.push({ s: valor.slice(0, ini), hit: false });
+    partes.push({ s: valor.slice(ini, fim), hit: true });
+    if (fim < valor.length) partes.push({ s: valor.slice(fim), hit: false });
+  }
+
+  return (
+    <>
+      {partes.map((p, k) =>
+        p.hit
+          ? <mark key={k} className="rounded-sm bg-primary/25 text-foreground px-0.5">{p.s}</mark>
+          : <span key={k}>{p.s}</span>,
+      )}
+    </>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/carregadores/clientes/cadastros")({
   head: () => ({
     meta: [
