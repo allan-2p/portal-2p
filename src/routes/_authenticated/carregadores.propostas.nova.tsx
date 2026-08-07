@@ -60,7 +60,7 @@ function PropostaCpoPage() {
   const config = configQ.data ?? CPO_CONFIG_FALLBACK;
 
   const [state, setState] = useState<CpoState>(() => novoEstado());
-  const [completa, setCompleta] = useState(false);
+  
   const [saving, setSaving] = useState(false);
 
   const set = <K extends keyof CpoState>(k: K, v: CpoState[K]) =>
@@ -148,19 +148,15 @@ function PropostaCpoPage() {
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">Propostas CPO</div>
             <h1 className="text-3xl font-bold mt-1">Nova proposta CPO</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Visão resumida para a operação comercial, visão completa para a análise fiscal detalhada.
+              Cálculo fiscal completo da proposta em tempo real.
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <span className={cn(!completa && "font-semibold")}>Resumida</span>
-              <Switch checked={completa} onCheckedChange={setCompleta} />
-              <span className={cn(completa && "font-semibold")}>Completa</span>
-            </div>
             <Button onClick={salvar} disabled={saving || abaixoPolitica} className="gap-2">
               <Save className="h-4 w-4" /> Salvar proposta
             </Button>
           </div>
+
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-5 items-start">
@@ -168,10 +164,8 @@ function PropostaCpoPage() {
           <div className="glass rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">Entradas da proposta</h2>
-              <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium">
-                {completa ? "Visão completa" : "Visão resumida"}
-              </span>
             </div>
+
 
             <Banner level={st.level} text={st.msg} />
 
@@ -412,25 +406,22 @@ function PropostaCpoPage() {
               <DreRow k="Custo dos equipamentos" v={`- ${fmtBRL(d.custoTotal)}`} tone="sub" />
               <DreRow k="Margem bruta" sub={`MB% = ${fmtPct(d.mbPct)}`} v={fmtBRL(d.mb)} tone="add" />
 
-              {completa && (
-                <>
-                  <div className="h-px bg-border my-3" />
-                  <DreRow k={`IPI destacado (${fmtPct(config.ipi)})`} v={fmtBRL(d.ipiValor)} tone="neutral" />
-                  <DreRow k="ICMS de origem (interestadual)" v={fmtBRL(d.origem)} tone="neutral" />
-                  <DreRow
-                    k={state.contribuinte ? "DIFAL estimado do destinatário" : "DIFAL absorvido pela 2P"}
-                    v={fmtBRL(state.contribuinte ? d.difalEstimado : d.difalAbs)}
-                    tone="neutral"
-                  />
-                  <DreRow
-                    k="Alíquota interna da UF (+FCP)"
-                    sub={uf ? `${uf.nome} — interna ${fmtPct(uf.aliq_interna)} · FCP ${fmtPct(uf.fcp)}` : undefined}
-                    v={fmtPct(d.aliqInterna)}
-                    tone="neutral"
-                  />
-                  <DreRow k="Frete" sub={`Modalidade ${state.freteMod} — fora da base de margem`} v={fmtBRL(state.freteValor)} tone="neutral" />
-                </>
-              )}
+              <div className="h-px bg-border my-3" />
+              <DreRow k={`IPI destacado (${fmtPct(config.ipi)})`} v={fmtBRL(d.ipiValor)} tone="neutral" />
+              <DreRow k="ICMS de origem (interestadual)" v={fmtBRL(d.origem)} tone="neutral" />
+              <DreRow
+                k={state.contribuinte ? "DIFAL estimado do destinatário" : "DIFAL absorvido pela 2P"}
+                v={fmtBRL(state.contribuinte ? d.difalEstimado : d.difalAbs)}
+                tone="neutral"
+              />
+              <DreRow
+                k="Alíquota interna da UF (+FCP)"
+                sub={uf ? `${uf.nome} — interna ${fmtPct(uf.aliq_interna)} · FCP ${fmtPct(uf.fcp)}` : undefined}
+                v={fmtPct(d.aliqInterna)}
+                tone="neutral"
+              />
+              <DreRow k="Frete" sub={`Modalidade ${state.freteMod} — fora da base de margem`} v={fmtBRL(state.freteValor)} tone="neutral" />
+
             </div>
           </div>
         </div>
