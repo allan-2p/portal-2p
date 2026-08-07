@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Eye, Plus, Search, Trash2 } from "lucide-react";
+import { Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
