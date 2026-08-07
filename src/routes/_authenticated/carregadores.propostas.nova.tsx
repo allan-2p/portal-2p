@@ -4,7 +4,6 @@ import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -113,16 +112,25 @@ function PropostaCpoPage() {
   });
 
   const aplicarCliente = (c: ClienteCadastro) =>
-    setState((s) => ({
-      ...s,
-      nome: c.cliente_nome,
-      telefone: c.cliente_telefone ?? "",
-      email: c.cliente_email ?? "",
-      doc: c.cliente_doc ?? "",
-      ie: c.cliente_ie ?? "",
-      uf: c.uf || s.uf,
-      contribuinte: c.contribuinte ?? s.contribuinte,
-    }));
+    setState((s) => {
+      const contribuinte = c.contribuinte ?? s.contribuinte;
+      return {
+        ...s,
+        nome: c.cliente_nome,
+        telefone: c.cliente_telefone ?? "",
+        email: c.cliente_email ?? "",
+        doc: c.cliente_doc ?? "",
+        ie: c.cliente_ie ?? "",
+        uf: c.uf || s.uf,
+        contribuinte,
+        itens: s.itens.map((i) =>
+          i.valorManual
+            ? i
+            : { ...i, valor: precoSugerido(produtos.find((p) => p.id === i.produtoId), contribuinte, config) },
+        ),
+      };
+    });
+
 
 
   const set = <K extends keyof CpoState>(k: K, v: CpoState[K]) =>
@@ -139,17 +147,13 @@ function PropostaCpoPage() {
   const uf = ufs.find((u) => u.uf === state.uf);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
 
-  // Ao trocar contribuinte, valores não editados manualmente voltam ao sugerido.
-  const setContribuinte = (v: boolean) =>
-    setState((s) => ({
-      ...s,
-      contribuinte: v,
-      itens: s.itens.map((i) =>
-        i.valorManual
-          ? i
-          : { ...i, valor: precoSugerido(produtos.find((p) => p.id === i.produtoId), v, config) },
-      ),
-    }));
+  const ReadField = ({ label, value }: { label: string; value: string }) => (
+    <div className="min-w-0">
+      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-sm font-medium truncate">{value || "—"}</div>
+    </div>
+  );
+
 
   async function salvar() {
     if (!state.nome.trim()) return toast.error("Informe o nome do cliente.");
@@ -270,57 +274,37 @@ function PropostaCpoPage() {
                 </PopoverContent>
               </Popover>
               <p className="text-[11px] text-muted-foreground mt-1">
-                Ao selecionar, os dados do cadastro são preenchidos automaticamente — você ainda pode editar abaixo.
+                Os dados fiscais vêm direto do cadastro do cliente.
               </p>
+
             </Field>
 
             <Banner level={st.level} text={st.msg} />
 
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Nome do cliente">
-                <Input value={state.nome} onChange={(e) => set("nome", e.target.value)} placeholder="Nome do cliente" />
-              </Field>
-              <Field label="Telefone">
-                <Input value={state.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="(00) 00000-0000" />
-              </Field>
-              <Field label="E-mail">
-                <Input value={state.email} onChange={(e) => set("email", e.target.value)} placeholder="cliente@email.com" />
-              </Field>
-              <Field label="CNPJ / CPF">
-                <Input value={state.doc} onChange={(e) => set("doc", e.target.value)} placeholder="00.000.000/0000-00" />
-              </Field>
-              <Field label="Estado (UF) de destino">
-                <Select value={state.uf} onValueChange={(v) => set("uf", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ufs.map((u) => (
-                      <SelectItem key={u.uf} value={u.uf}>
-                        {u.uf} — {u.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field label="Inscrição Estadual">
-                <Input
-                  value={state.ie}
-                  onChange={(e) => set("ie", e.target.value)}
-                  disabled={!state.contribuinte}
-                  placeholder={state.contribuinte ? "IE do cliente" : "Cliente sem IE"}
-                />
-              </Field>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
-              <div>
-                <div className="font-semibold text-sm">Cliente contribuinte do ICMS</div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  Contribuinte: DIFAL por conta do destinatário. Não contribuinte: DIFAL absorvido na venda.
+            {state.nome ? (
+              <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                  <ReadField label="Nome do cliente" value={state.nome} />
+                  <ReadField label="Telefone" value={state.telefone} />
+                  <ReadField label="E-mail" value={state.email} />
+                  <ReadField label="CNPJ / CPF" value={state.doc} />
+                  <ReadField label="Estado (UF) de destino" value={uf ? `${uf.uf} — ${uf.nome}` : state.uf} />
+                  <ReadField label="Inscrição Estadual" value={state.ie || "Cliente sem IE"} />
+                </div>
+                <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs">
+                  <b className="text-foreground">
+                    {state.contribuinte ? "Cliente contribuinte do ICMS" : "Cliente não contribuinte do ICMS"}
+                  </b>{" "}
+                  <span className="text-muted-foreground">
+                    {state.contribuinte
+                      ? "DIFAL por conta do destinatário."
+                      : "DIFAL absorvido na venda."}
+                  </span>
                 </div>
               </div>
-              <Switch checked={state.contribuinte} onCheckedChange={setContribuinte} />
-            </div>
+            ) : null}
+
 
             <div className="flex gap-2 items-start rounded-xl border border-border bg-surface-2 px-4 py-3 text-xs text-muted-foreground">
               <Info className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
