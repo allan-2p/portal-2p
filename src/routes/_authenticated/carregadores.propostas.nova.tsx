@@ -298,6 +298,26 @@ function PropostaCpoPage() {
     return sug > 0 && i.valor > 0 && i.valor < sug - 0.005;
   });
   const itensSemValor = state.itens.filter((i) => i.produtoId && !(i.valor > 0));
+  const itensSemQtd = state.itens.filter((i) => i.produtoId && !(i.qtd > 0));
+  const itensSemProduto = state.itens.filter((i) => !i.produtoId && (i.valor > 0 || i.qtd > 0));
+
+  // ---- Bloqueios de fechamento (exportar PDF / concluir pedido) ----
+  const errosFechamento: string[] = [];
+  if (!clienteOk) errosFechamento.push(errosCliente[0]?.msg ?? "Complete os dados do cliente.");
+  if (!temProduto) errosFechamento.push("Adicione ao menos um produto à proposta.");
+  if (itensSemProduto.length)
+    errosFechamento.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
+  if (itensSemValor.length)
+    errosFechamento.push(`${itensSemValor.length} item(ns) sem valor unitário.`);
+  if (itensSemQtd.length)
+    errosFechamento.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
+  if (state.freteMod === "CIF" && !(state.freteValor > 0))
+    errosFechamento.push("Frete CIF sem valor informado — necessário para fechar os totais.");
+  if (temProduto && !(d.valorTotalProposta > 0))
+    errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
+  if (abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+  const podeFechar = errosFechamento.length === 0;
+
 
   type Alerta = { level: "err" | "warn"; titulo: string; motivo: string; corrigir: string };
   const alertas: Alerta[] = [];
@@ -321,6 +341,20 @@ function PropostaCpoPage() {
       titulo: `${itensSemValor.length} item(ns) sem valor unitário`,
       motivo: "Itens sem preço não entram no cálculo fiscal nem na margem.",
       corrigir: "Preencha o campo Valor unitário (com IPI) dos itens destacados.",
+    });
+  if (itensSemQtd.length)
+    alertas.push({
+      level: "err",
+      titulo: `${itensSemQtd.length} item(ns) sem quantidade`,
+      motivo: "Sem quantidade não é possível fechar os totais da proposta.",
+      corrigir: "Informe a quantidade (mínimo 1) dos itens destacados.",
+    });
+  if (itensSemProduto.length)
+    alertas.push({
+      level: "err",
+      titulo: `${itensSemProduto.length} linha(ns) sem produto`,
+      motivo: "Há linhas preenchidas sem produto selecionado.",
+      corrigir: "Selecione o produto ou remova a linha.",
     });
   if (itensAbaixoSugerido.length)
     alertas.push({
@@ -353,8 +387,13 @@ function PropostaCpoPage() {
 
 
 
+  function concluirPedido() {
+    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de concluir o pedido.");
+    void salvar("Aguardando Pagamento");
+  }
+
   function exportarPdf() {
-    if (!podeSalvar) return toast.error("Selecione o cliente e ao menos um produto.");
+    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de exportar o PDF.");
     const html = buildPropostaPdfHtml({
       cliente: {
         nome: state.nome,
@@ -701,13 +740,16 @@ function PropostaCpoPage() {
                 const prod = produtos.find((p) => p.id === it.produtoId);
                 const sug = precoSugerido(prod, state.contribuinte, config);
                 const semValor = !!it.produtoId && !(it.valor > 0);
+                const semQtd = !!it.produtoId && !(it.qtd > 0);
+                const semProduto = !it.produtoId && (it.valor > 0 || it.qtd > 0);
+                const bloqueado = semValor || semQtd || semProduto;
                 const abaixoSug = !!it.produtoId && sug > 0 && it.valor > 0 && it.valor < sug - 0.005;
                 return (
                   <div
                     key={it.key}
                     className={cn(
                       "rounded-xl border p-3 space-y-3 bg-surface/40",
-                      semValor
+                      bloqueado
                         ? "border-destructive/60 ring-1 ring-destructive/25"
                         : abaixoSug
                           ? "border-amber-500/60 ring-1 ring-amber-500/20"
@@ -726,7 +768,11 @@ function PropostaCpoPage() {
                             });
                           }}
                         >
-                          <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
+                          <SelectTrigger
+                            className={cn(semProduto && "border-destructive focus-visible:ring-destructive")}
+                          >
+                            <SelectValue placeholder="Selecione o produto" />
+                          </SelectTrigger>
                           <SelectContent>
                             {produtos.map((p) => (
                               <SelectItem key={p.id} value={p.id}>
@@ -736,14 +782,21 @@ function PropostaCpoPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        {semProduto ? (
+                          <p className="text-[11px] text-destructive mt-1">Selecione o produto ou remova a linha.</p>
+                        ) : null}
                       </Field>
                       <Field label="Quantidade">
                         <Input
                           type="number"
                           min={1}
-                          value={it.qtd}
-                          onChange={(e) => setItem(it.key, { qtd: Math.max(1, Number(e.target.value) || 1) })}
+                          value={it.qtd === 0 ? "" : it.qtd}
+                          className={cn(semQtd && "border-destructive focus-visible:ring-destructive")}
+                          onChange={(e) => setItem(it.key, { qtd: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
                         />
+                        {semQtd ? (
+                          <p className="text-[11px] text-destructive mt-1">Informe a quantidade (mínimo 1).</p>
+                        ) : null}
                       </Field>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -988,21 +1041,35 @@ function PropostaCpoPage() {
 
 
 
-            <div className="glass rounded-2xl p-4 flex flex-wrap gap-2">
-              <Button onClick={() => salvar()} disabled={saving || !podeSalvar} className="gap-2 flex-1 min-w-[160px]">
-                <Save className="h-4 w-4" /> Salvar proposta
-              </Button>
-              <Button variant="outline" onClick={exportarPdf} disabled={!podeSalvar} className="gap-2 flex-1 min-w-[160px]">
-                <FileDown className="h-4 w-4" /> Baixar PDF
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => salvar("Aguardando Pagamento")}
-                disabled={saving || !podeSalvar}
-                className="gap-2 flex-1 min-w-[160px]"
-              >
-                <CheckCircle2 className="h-4 w-4" /> Concluir pedido
-              </Button>
+            <div className="glass rounded-2xl p-4 space-y-3">
+              {!podeFechar ? (
+                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3">
+                  <p className="text-sm font-semibold text-destructive">
+                    Corrija antes de exportar ou concluir o pedido
+                  </p>
+                  <ul className="mt-1 list-disc pl-5 text-xs text-destructive space-y-0.5">
+                    {errosFechamento.map((e, i) => (
+                      <li key={i}>{e}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => salvar()} disabled={saving || !podeSalvar} className="gap-2 flex-1 min-w-[160px]">
+                  <Save className="h-4 w-4" /> Salvar proposta
+                </Button>
+                <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar} className="gap-2 flex-1 min-w-[160px]">
+                  <FileDown className="h-4 w-4" /> Baixar PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={concluirPedido}
+                  disabled={saving || !podeFechar}
+                  className="gap-2 flex-1 min-w-[160px]"
+                >
+                  <CheckCircle2 className="h-4 w-4" /> Concluir pedido
+                </Button>
+              </div>
             </div>
           </div>
           ) : null}
