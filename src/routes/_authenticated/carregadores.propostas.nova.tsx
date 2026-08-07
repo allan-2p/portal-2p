@@ -549,7 +549,7 @@ function PropostaCpoPage() {
               </h2>
             </div>
 
-            {etapa === 1 && errosCliente.length > 0 ? (
+            {etapa === 1 && errosCliente.length > 0 && (state.nome.trim() || tentouAvancar) ? (
               <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
                 <p className="font-semibold text-destructive mb-1">
                   Complete os campos obrigatórios para avançar
@@ -559,6 +559,14 @@ function PropostaCpoPage() {
                     <li key={e.campo + e.msg}>{e.msg}</li>
                   ))}
                 </ul>
+                <p className="text-xs text-destructive/80 mt-2">
+                  Dados fiscais incompletos? Ajuste em Clientes › Cadastros.
+                </p>
+              </div>
+            ) : etapa === 1 && !state.nome.trim() ? (
+              <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm text-muted-foreground">
+                Comece escolhendo o cliente. Os dados fiscais (CNPJ, IE, UF e contribuinte) são
+                puxados automaticamente do cadastro e definem os impostos da proposta.
               </div>
             ) : null}
 
