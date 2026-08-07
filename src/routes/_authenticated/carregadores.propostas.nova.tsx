@@ -60,7 +60,7 @@ function PropostaCpoPage() {
   const config = configQ.data ?? CPO_CONFIG_FALLBACK;
 
   const [state, setState] = useState<CpoState>(() => novoEstado());
-  const [completa, setCompleta] = useState(false);
+  
   const [saving, setSaving] = useState(false);
 
   const set = <K extends keyof CpoState>(k: K, v: CpoState[K]) =>
