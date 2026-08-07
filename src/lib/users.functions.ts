@@ -36,7 +36,9 @@ export const adminCreateUser = createServerFn({ method: "POST" })
         full_name: data.full_name,
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
+        regime_contratacao: data.regime_contratacao ?? "CLT",
         invited_by: context.userId,
+
       },
       { onConflict: "email" },
     );
