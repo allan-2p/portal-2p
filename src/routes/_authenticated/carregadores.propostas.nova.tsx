@@ -904,7 +904,22 @@ function PropostaCpoPage() {
                 ) : null}
               </Field>
             </div>
+
+            {/* TOTAIS AO VIVO — recalculam a cada mudança de preço/quantidade/frete */}
+            <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-background/90 backdrop-blur px-4 py-3 shadow-lg">
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Totais ao vivo</span>
+                <span className="text-[11px] text-emerald-600">atualiza automaticamente</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <LiveTotal label="Itens" value={fmtBRL(d.valorItens)} />
+                <LiveTotal label={`Frete (${state.freteMod})`} value={fmtBRL(state.freteValor)} />
+                <LiveTotal label="Total da proposta" value={fmtBRL(d.valorTotalProposta)} strong />
+                <LiveTotal label="Comissão estimada" value={fmtBRL(d.comValor)} hint={fmtPct(d.comPct)} />
+              </div>
+            </div>
             </>
+
             ) : (
               <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
                 Etapa 1: selecione o cliente. Produtos, frete e impostos ficam na etapa 2.
