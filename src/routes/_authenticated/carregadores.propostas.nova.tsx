@@ -83,33 +83,28 @@ function PropostaCpoPage() {
   const [openCli, setOpenCli] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Clientes já cadastrados (último registro de cada cliente nas propostas CPO)
+  // Clientes vindos do cadastro completo (Clientes > Cadastros)
   const clientesQ = useQuery({
     queryKey: ["cpo-clientes-cadastro"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("cpo_proposals")
-        .select("cliente_nome,cliente_telefone,cliente_email,cliente_doc,cliente_ie,uf,contribuinte,created_at")
-        .order("created_at", { ascending: false })
-        .limit(500);
+        .from("cpo_clientes")
+        .select("razao_social,nome_fantasia,telefone,email,doc,ie,uf,contribuinte")
+        .eq("ativo", true)
+        .order("razao_social");
       if (error) throw error;
-      const map = new Map<string, ClienteCadastro>();
-      for (const p of data ?? []) {
-        const key = (p.cliente_nome ?? "").trim().toUpperCase();
-        if (!key || map.has(key)) continue;
-        map.set(key, {
-          cliente_nome: (p.cliente_nome ?? "").trim(),
-          cliente_telefone: p.cliente_telefone,
-          cliente_email: p.cliente_email,
-          cliente_doc: p.cliente_doc,
-          cliente_ie: p.cliente_ie,
-          uf: p.uf,
-          contribuinte: p.contribuinte,
-        });
-      }
-      return [...map.values()].sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome));
+      return (data ?? []).map((c) => ({
+        cliente_nome: c.nome_fantasia?.trim() || c.razao_social,
+        cliente_telefone: c.telefone,
+        cliente_email: c.email,
+        cliente_doc: c.doc,
+        cliente_ie: c.ie,
+        uf: c.uf,
+        contribuinte: c.contribuinte,
+      })) as ClienteCadastro[];
     },
   });
+
 
   const aplicarCliente = (c: ClienteCadastro) =>
     setState((s) => {
