@@ -594,8 +594,12 @@ function PropostaCpoPage() {
                         <div className="px-3 py-4 text-center text-sm text-muted-foreground space-y-2">
                           <p>{clientesQ.isLoading ? "Carregando..." : "Nenhum cliente encontrado."}</p>
                           {!clientesQ.isLoading ? (
-                            <Button asChild variant="outline" size="sm">
-                              <Link to="/carregadores/clientes/cadastros">Cadastrar cliente</Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { window.location.href = "/carregadores/clientes/cadastros"; }}
+                            >
+                              Cadastrar cliente
                             </Button>
                           ) : null}
                         </div>
