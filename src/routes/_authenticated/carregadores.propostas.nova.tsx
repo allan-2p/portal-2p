@@ -118,6 +118,7 @@ function PropostaCpoPage() {
   );
   const [openCli, setOpenCli] = useState(false);
   const [etapa, setEtapa] = useState<1 | 2>(() => (carregandoExistente ? 1 : lerRascunho()?.etapa ?? 1));
+  const [tentouAvancar, setTentouAvancar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
