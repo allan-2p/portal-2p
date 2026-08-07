@@ -527,8 +527,19 @@ function PropostaCpoPage() {
                         <Input
                           value={it.valor ? fmtBRL(it.valor) : ""}
                           placeholder={sug ? fmtBRL(sug) : "R$ 0,00"}
+                          className={cn(
+                            semValor && "border-destructive focus-visible:ring-destructive",
+                            abaixoSug && "border-amber-500 focus-visible:ring-amber-500",
+                          )}
                           onChange={(e) => setItem(it.key, { valor: parseMoeda(e.target.value), valorManual: true })}
                         />
+                        {semValor ? (
+                          <p className="text-[11px] text-destructive mt-1">Informe o valor unitário deste item.</p>
+                        ) : abaixoSug ? (
+                          <p className="text-[11px] text-amber-600 mt-1">
+                            Abaixo da referência de {fmtBRL(sug)}.
+                          </p>
+                        ) : null}
                       </Field>
                       <div className="flex items-end justify-between gap-2">
                         <div className="text-xs text-muted-foreground">
