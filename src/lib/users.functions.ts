@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const RoleEnum = z.enum(["admin", "gerente", "vendedor", "diretor", "marketing"]);
+const RegimeEnum = z.enum(["CLT", "PJ"]);
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("is_admin");
@@ -15,8 +16,10 @@ const CreateInput = z.object({
   full_name: z.string().min(1),
   cargo: z.string().optional().nullable(),
   equipe: z.string().optional().nullable(),
+  regime_contratacao: RegimeEnum.optional().default("CLT"),
   role: RoleEnum,
 });
+
 
 export const adminCreateUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
