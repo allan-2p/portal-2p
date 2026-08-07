@@ -830,7 +830,7 @@ function PropostaCpoPage() {
                           value={it.valor}
                           placeholder="R$ 0,00"
                           className={cn(semValor && "border-destructive focus-visible:ring-destructive")}
-                          onValueChange={(n) => setItem(it.key, { valor: n, valorManual: true })}
+                          onValueChange={(n: number) => setItem(it.key, { valor: n, valorManual: true })}
                         />
 
                         {semValor ? (
