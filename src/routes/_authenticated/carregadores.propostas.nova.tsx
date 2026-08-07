@@ -540,9 +540,6 @@ function PropostaCpoPage() {
                 v={`- ${fmtBRL(d.pisCofins)}`}
                 tone="sub"
               />
-              <DreRow k="Receita líquida" v={fmtBRL(d.rl)} tone="eq" />
-              <DreRow k="Custo dos equipamentos" v={`- ${fmtBRL(d.custoTotal)}`} tone="sub" />
-              <DreRow k="Margem bruta" sub={`MB% = ${fmtPct(d.mbPct)}`} v={fmtBRL(d.mb)} tone="add" />
 
               <div className="h-px bg-border my-3" />
               <DreRow k={`IPI destacado (${fmtPct(config.ipi)})`} v={fmtBRL(d.ipiValor)} tone="neutral" />
