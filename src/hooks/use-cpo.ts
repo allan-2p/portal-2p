@@ -90,6 +90,7 @@ export function useCpoInvalidate() {
   const qc = useQueryClient();
   return () => {
     qc.invalidateQueries({ queryKey: ["cpo-products"] });
+    qc.invalidateQueries({ queryKey: ["cpo-products-admin"] });
     qc.invalidateQueries({ queryKey: ["cpo-ufs"] });
     qc.invalidateQueries({ queryKey: ["cpo-config"] });
     qc.invalidateQueries({ queryKey: ["cpo-proposals"] });
