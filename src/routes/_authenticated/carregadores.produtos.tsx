@@ -70,11 +70,10 @@ type Draft = {
   nome: string;
   potencia: string;
   custo: string;
-  preco_sugerido: string;
   ativo: boolean;
 };
 
-const EMPTY: Draft = { nome: "", potencia: "", custo: "", preco_sugerido: "", ativo: true };
+const EMPTY: Draft = { nome: "", potencia: "", custo: "", ativo: true };
 
 function ProdutosTab() {
   const { data: produtos = [], isLoading } = useCpoProducts();
@@ -94,9 +93,10 @@ function ProdutosTab() {
       nome: draft.nome.trim(),
       potencia: draft.potencia.trim() || null,
       custo: Number(draft.custo) || 0,
-      preco_sugerido: Number(draft.preco_sugerido) || 0,
+      preco_sugerido: 0,
       ativo: draft.ativo,
     };
+
     setSaving(true);
     const { error } = draft.id
       ? await supabase.from("cpo_products").update(payload).eq("id", draft.id)
@@ -141,11 +141,10 @@ function ProdutosTab() {
                 <th className="text-left px-4 py-3">Produto</th>
                 <th className="text-left px-4 py-3">Potência</th>
                 <th className="text-right px-4 py-3">Custo</th>
-                <th className="text-right px-4 py-3">Preço sugerido</th>
-                <th className="text-right px-4 py-3">Markup</th>
                 <th className="text-center px-4 py-3">Ativo</th>
                 <th className="text-right px-4 py-3">Ações</th>
               </tr>
+
             </thead>
             <tbody>
               {filtrados.map((p) => (
@@ -153,10 +152,6 @@ function ProdutosTab() {
                   <td className="px-4 py-3 font-medium">{p.nome}</td>
                   <td className="px-4 py-3 text-muted-foreground">{p.potencia || "—"}</td>
                   <td className="px-4 py-3 text-right">{fmtBRL(p.custo)}</td>
-                  <td className="px-4 py-3 text-right font-semibold">{fmtBRL(p.preco_sugerido)}</td>
-                  <td className="px-4 py-3 text-right text-muted-foreground">
-                    {p.custo > 0 ? `${(((p.preco_sugerido - p.custo) / p.custo) * 100).toFixed(0)}%` : "—"}
-                  </td>
                   <td className="px-4 py-3 text-center">
                     <Switch checked={p.ativo} onCheckedChange={() => toggleAtivo(p)} />
                   </td>
@@ -172,11 +167,11 @@ function ProdutosTab() {
                             nome: p.nome,
                             potencia: p.potencia ?? "",
                             custo: String(p.custo),
-                            preco_sugerido: String(p.preco_sugerido),
                             ativo: p.ativo,
                           })
                         }
                       >
+
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" aria-label="Excluir produto" onClick={() => excluir(p)}>
