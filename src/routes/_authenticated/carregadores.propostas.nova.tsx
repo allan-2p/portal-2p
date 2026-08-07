@@ -317,6 +317,14 @@ function PropostaCpoPage() {
   if (abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
   const podeFechar = errosFechamento.length === 0;
 
+  // ---- Bloqueios de salvamento ----
+  const errosSalvar: string[] = [];
+  errosCliente.forEach((e) => errosSalvar.push(e.msg));
+  if (!temProduto) errosSalvar.push("Adicione ao menos um produto à proposta.");
+  if (itensSemProduto.length) errosSalvar.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
+  if (abaixoPolitica) errosSalvar.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+
+
 
   type Alerta = { level: "err" | "warn"; titulo: string; motivo: string; corrigir: string };
   const alertas: Alerta[] = [];
