@@ -81,6 +81,7 @@ function PropostaCpoPage() {
 
   const [state, setState] = useState<CpoState>(() => novoEstado());
   const [openCli, setOpenCli] = useState(false);
+  const [etapa, setEtapa] = useState<1 | 2>(1);
   const [saving, setSaving] = useState(false);
 
   // Clientes vindos do cadastro completo (Clientes > Cadastros)
