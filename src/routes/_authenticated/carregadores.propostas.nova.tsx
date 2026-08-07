@@ -612,11 +612,24 @@ function PropostaCpoPage() {
   );
 }
 
-function SumItem({ label, value }: { label: string; value: string }) {
+function SumItem({
+  label,
+  value,
+  hint,
+  className,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  className?: string;
+}) {
   return (
-    <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-widest opacity-75">{label}</div>
-      <div className="text-base font-bold truncate">{value}</div>
+    <div className={cn("min-w-0 rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm", className)}>
+      <div className="text-[10px] uppercase tracking-[0.18em] opacity-80">{label}</div>
+      <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+        <span className="text-xl font-bold tabular-nums">{value}</span>
+        {hint ? <span className="text-xs font-semibold opacity-85">{hint}</span> : null}
+      </div>
     </div>
   );
 }
