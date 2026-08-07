@@ -48,6 +48,8 @@ import {
   type CpoState,
 } from "@/lib/cpo";
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
+import { MoneyInput } from "@/components/money-input";
+
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
@@ -824,12 +826,13 @@ function PropostaCpoPage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <Field label="Valor unitário (com IPI)">
-                        <Input
-                          value={it.valor ? fmtBRL(it.valor) : ""}
+                        <MoneyInput
+                          value={it.valor}
                           placeholder="R$ 0,00"
                           className={cn(semValor && "border-destructive focus-visible:ring-destructive")}
-                          onChange={(e) => setItem(it.key, { valor: parseMoeda(e.target.value), valorManual: true })}
+                          onValueChange={(n: number) => setItem(it.key, { valor: n, valorManual: true })}
                         />
+
                         {semValor ? (
                           <p className="text-[11px] text-destructive mt-1">Informe o valor unitário deste item.</p>
                         ) : null}
@@ -874,16 +877,17 @@ function PropostaCpoPage() {
                 </Select>
               </Field>
               <Field label="Valor do frete">
-                <Input
-                  value={state.freteValor ? fmtBRL(state.freteValor) : ""}
+                <MoneyInput
+                  value={state.freteValor}
                   placeholder="R$ 0,00"
                   className={cn(
                     state.freteMod === "CIF" &&
                       !(state.freteValor > 0) &&
                       "border-amber-500 focus-visible:ring-amber-500",
                   )}
-                  onChange={(e) => set("freteValor", parseMoeda(e.target.value))}
+                  onValueChange={(n: number) => set("freteValor", n)}
                 />
+
                 {state.freteMod === "CIF" && !(state.freteValor > 0) ? (
                   <p className="text-[11px] text-amber-600 mt-1">Frete CIF é absorvido pela 2P — informe o valor.</p>
                 ) : null}
