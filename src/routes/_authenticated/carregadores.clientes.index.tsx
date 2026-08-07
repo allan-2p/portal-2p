@@ -8,7 +8,7 @@ import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
 
-export const Route = createFileRoute("/_authenticated/carregadores/clientes")({
+export const Route = createFileRoute("/_authenticated/carregadores/clientes/")({
   head: () => ({
     meta: [
       { title: "Clientes — Portal 2P Carregadores" },
