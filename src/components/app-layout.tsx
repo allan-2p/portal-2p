@@ -215,6 +215,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
               {show("cpo.propostas") && (
                 <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
               )}
+              {show("cpo.propostas") && (
+                <NavLink item={{ to: "/carregadores/pedidos", label: "Pedidos", icon: ShoppingCart }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
+              )}
+
               {(show("cpo.produtos") || show("cpo.comissoes")) && (
                 collapsed ? (
                   <Link
