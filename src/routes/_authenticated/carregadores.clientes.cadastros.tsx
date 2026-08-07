@@ -13,7 +13,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, Building2, Filter, X } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCpoUfs } from "@/hooks/use-cpo";
@@ -401,8 +402,93 @@ function CadastrosPage() {
             </table>
           </CardContent>
         </Card>
+        <Sheet open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)}>
+          <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+            {detalhe && (
+              <>
+                <SheetHeader className="text-left">
+                  <SheetTitle className="pr-6">{detalhe.razao_social}</SheetTitle>
+                  <SheetDescription>{detalhe.nome_fantasia || "Resumo do cadastro"}</SheetDescription>
+                </SheetHeader>
+
+                <div className="mt-4 space-y-5">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className={`font-bold ${CLASSE_INFO[detalhe.classificacao || "C"]?.cls ?? ""}`}>
+                      {CLASSE_INFO[detalhe.classificacao || "C"]?.label ?? detalhe.classificacao}
+                    </Badge>
+                    <Badge variant={detalhe.contribuinte ? "default" : "secondary"}>
+                      {detalhe.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}
+                    </Badge>
+                    <Badge variant={detalhe.ativo ? "outline" : "destructive"}>
+                      {detalhe.ativo ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
+
+                  <Bloco titulo="Situação fiscal">
+                    <Linha rot="CNPJ / CPF" val={detalhe.doc} />
+                    <Linha rot="Inscrição Estadual" val={detalhe.contribuinte ? detalhe.ie : "Isento / não contribuinte"} />
+                    <Linha rot="Inscrição Municipal" val={detalhe.im} />
+                    <Linha rot="Regime tributário" val={detalhe.regime_tributario} />
+                    <Linha rot="UF de destino" val={detalhe.uf} />
+                  </Bloco>
+
+                  <Bloco titulo="Contato">
+                    <Linha rot="Responsável" val={[detalhe.contato_nome, detalhe.contato_cargo].filter(Boolean).join(" · ")} />
+                    <Linha rot="E-mail" val={detalhe.contato_email || detalhe.email} />
+                    <Linha rot="Telefone" val={detalhe.contato_telefone || detalhe.telefone} />
+                    <Linha rot="Site" val={detalhe.site} />
+                  </Bloco>
+
+                  <Bloco titulo="Endereço">
+                    <Linha
+                      rot="Logradouro"
+                      val={[detalhe.logradouro, detalhe.numero, detalhe.complemento].filter(Boolean).join(", ")}
+                    />
+                    <Linha rot="Bairro" val={detalhe.bairro} />
+                    <Linha rot="Cidade / UF" val={[detalhe.cidade, detalhe.uf].filter(Boolean).join(" / ")} />
+                    <Linha rot="CEP" val={detalhe.cep} />
+                  </Bloco>
+
+                  <Bloco titulo="Comercial">
+                    <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
+                    <Linha rot="Transportadora" val={detalhe.transportadora} />
+                    <Linha rot="Observações" val={detalhe.observacoes} />
+                  </Bloco>
+
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      className="flex-1 gap-2"
+                      onClick={() => { const c = detalhe; setDetalhe(null); abrirEdicao(c); }}
+                    >
+                      <Pencil className="h-4 w-4" /> Editar cadastro
+                    </Button>
+                    <Button variant="outline" onClick={() => setDetalhe(null)}>Fechar</Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
     </AppLayout>
+  );
+}
+
+function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border bg-surface/40 p-3 space-y-2">
+      <div className="text-[11px] font-bold uppercase tracking-wider text-primary">{titulo}</div>
+      <div className="space-y-1.5">{children}</div>
+    </div>
+  );
+}
+
+function Linha({ rot, val }: { rot: string; val?: string | null }) {
+  return (
+    <div className="flex items-start justify-between gap-3 text-sm">
+      <span className="text-muted-foreground shrink-0">{rot}</span>
+      <span className="text-right font-medium break-words">{val && val.trim() ? val : "—"}</span>
+    </div>
   );
 }
 
