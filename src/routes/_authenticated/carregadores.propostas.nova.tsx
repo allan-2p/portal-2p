@@ -204,9 +204,35 @@ function PropostaCpoPage() {
   const st = statusMB(d.mbPct, config);
   const uf = ufs.find((u) => u.uf === state.uf);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
-  const clienteOk = !!state.nome;
+  // ---- Validação da etapa 1 (dados obrigatórios do cliente) ----
+  const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
+  const errosCliente: { campo: string; msg: string }[] = [];
+  if (!state.nome.trim()) errosCliente.push({ campo: "nome", msg: "Selecione um cliente." });
+  const docDigits = soDigitos(state.doc);
+  if (!docDigits) errosCliente.push({ campo: "doc", msg: "CNPJ/CPF não informado no cadastro do cliente." });
+  else if (docDigits.length !== 11 && docDigits.length !== 14)
+    errosCliente.push({ campo: "doc", msg: "CNPJ/CPF inválido (11 ou 14 dígitos)." });
+  if (!state.uf) errosCliente.push({ campo: "uf", msg: "UF de destino não informada." });
+  else if (!ufs.some((u) => u.uf === state.uf))
+    errosCliente.push({ campo: "uf", msg: "UF sem alíquota cadastrada." });
+  if (state.contribuinte && !state.ie.trim())
+    errosCliente.push({ campo: "ie", msg: "Cliente contribuinte precisa de Inscrição Estadual." });
+  if (state.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(state.email.trim()))
+    errosCliente.push({ campo: "email", msg: "E-mail do cliente é inválido." });
+
+  const clienteOk = errosCliente.length === 0;
+  const campoInvalido = (c: string) => errosCliente.some((e) => e.campo === c);
   const temProduto = state.itens.some((i) => i.produtoId);
   const podeSalvar = clienteOk && temProduto && !abaixoPolitica;
+
+  function irParaEtapa2() {
+    if (!clienteOk) {
+      toast.error(errosCliente[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
+      return;
+    }
+    setEtapa(2);
+  }
+
 
   // ---- Alertas automáticos de política ----
   const itensAbaixoSugerido = state.itens.filter((i) => {
@@ -261,12 +287,13 @@ function PropostaCpoPage() {
       corrigir: "Considere majorar o valor unitário para repassar o DIFAL.",
     });
 
-  const ReadField = ({ label, value }: { label: string; value: string }) => (
-    <div className="min-w-0">
+  const ReadField = ({ label, value, invalid }: { label: string; value: string; invalid?: boolean }) => (
+    <div className={cn("min-w-0 rounded-md", invalid && "border border-destructive/50 bg-destructive/5 px-2 py-1")}>
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="text-sm font-medium truncate">{value || "—"}</div>
+      <div className={cn("text-sm font-medium truncate", invalid && "text-destructive")}>{value || "—"}</div>
     </div>
   );
+
 
 
   function exportarPdf() {
@@ -396,7 +423,7 @@ function PropostaCpoPage() {
             <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
               Voltar
             </Button>
-            <Button variant="outline" onClick={() => setEtapa(2)} disabled={etapa === 2 || !clienteOk} className="gap-2">
+            <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2 || !clienteOk} className="gap-2">
               Próximo
             </Button>
             <Button onClick={() => salvar()} disabled={saving || !podeSalvar} className="gap-2">
@@ -418,8 +445,9 @@ function PropostaCpoPage() {
           </button>
           <div className="h-px w-6 bg-border" />
           <button
-            onClick={() => clienteOk && setEtapa(2)}
+            onClick={irParaEtapa2}
             disabled={!clienteOk}
+
             className={cn(
               "px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50",
               etapa === 2 ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground",
@@ -437,6 +465,21 @@ function PropostaCpoPage() {
                 {etapa === 1 ? "Etapa 1 — Cliente" : "Etapa 2 — Produtos, frete e margem"}
               </h2>
             </div>
+
+            {etapa === 1 && errosCliente.length > 0 ? (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                <p className="font-semibold text-destructive mb-1">
+                  Complete os campos obrigatórios para avançar
+                </p>
+                <ul className="list-disc pl-5 space-y-0.5 text-destructive/90">
+                  {errosCliente.map((e) => (
+                    <li key={e.campo + e.msg}>{e.msg}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+
 
 
             <Field label="Cliente já cadastrado">
@@ -491,10 +534,11 @@ function PropostaCpoPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
                   <ReadField label="Nome do cliente" value={state.nome} />
                   <ReadField label="Telefone" value={state.telefone} />
-                  <ReadField label="E-mail" value={state.email} />
-                  <ReadField label="CNPJ / CPF" value={state.doc} />
-                  <ReadField label="Estado (UF) de destino" value={uf ? `${uf.uf} — ${uf.nome}` : state.uf} />
-                  <ReadField label="Inscrição Estadual" value={state.ie || "Cliente sem IE"} />
+                  <ReadField label="E-mail" value={state.email} invalid={campoInvalido("email")} />
+                  <ReadField label="CNPJ / CPF" value={state.doc} invalid={campoInvalido("doc")} />
+                  <ReadField label="Estado (UF) de destino" value={uf ? `${uf.uf} — ${uf.nome}` : state.uf} invalid={campoInvalido("uf")} />
+                  <ReadField label="Inscrição Estadual" value={state.ie || "Cliente sem IE"} invalid={campoInvalido("ie")} />
+
                 </div>
                 <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs">
                   <b className="text-foreground">
