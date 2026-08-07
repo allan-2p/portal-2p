@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const RoleEnum = z.enum(["admin", "gerente", "vendedor", "diretor", "marketing"]);
+const RegimeEnum = z.enum(["CLT", "PJ"]);
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("is_admin");
@@ -15,8 +16,10 @@ const CreateInput = z.object({
   full_name: z.string().min(1),
   cargo: z.string().optional().nullable(),
   equipe: z.string().optional().nullable(),
+  regime_contratacao: RegimeEnum.optional().default("CLT"),
   role: RoleEnum,
 });
+
 
 export const adminCreateUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -33,7 +36,9 @@ export const adminCreateUser = createServerFn({ method: "POST" })
         full_name: data.full_name,
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
+        regime_contratacao: data.regime_contratacao ?? "CLT",
         invited_by: context.userId,
+
       },
       { onConflict: "email" },
     );
@@ -53,7 +58,9 @@ const InviteInput = z.object({
   full_name: z.string().min(1),
   cargo: z.string().optional().nullable(),
   equipe: z.string().optional().nullable(),
+  regime_contratacao: RegimeEnum.optional().default("CLT"),
   role: RoleEnum,
+
   is_external: z.boolean().optional().default(false),
   sf_user_id: z.string().optional().nullable(),
   avatar_url: z.string().optional().nullable(),
@@ -73,7 +80,9 @@ export const adminInviteUser = createServerFn({ method: "POST" })
         full_name: data.full_name,
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
+        regime_contratacao: data.regime_contratacao ?? "CLT",
         invited_by: context.userId,
+
         is_external: data.is_external ?? false,
         sf_user_id: data.sf_user_id ?? null,
         avatar_url: data.avatar_url ?? null,
@@ -147,6 +156,7 @@ const UpdateInput = z.object({
   full_name: z.string().min(1).optional(),
   cargo: z.string().optional().nullable(),
   equipe: z.string().optional().nullable(),
+  regime_contratacao: RegimeEnum.optional(),
   is_external: z.boolean().optional(),
 });
 
@@ -162,13 +172,16 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
       full_name?: string;
       cargo?: string | null;
       equipe?: string | null;
+      regime_contratacao?: string;
       is_external?: boolean;
     } = {};
     if (data.email !== undefined) profilePatch.email = data.email;
     if (data.full_name !== undefined) profilePatch.full_name = data.full_name;
     if (data.cargo !== undefined) profilePatch.cargo = data.cargo;
     if (data.equipe !== undefined) profilePatch.equipe = data.equipe;
+    if (data.regime_contratacao !== undefined) profilePatch.regime_contratacao = data.regime_contratacao;
     if (data.is_external !== undefined) profilePatch.is_external = data.is_external;
+
 
     if (Object.keys(profilePatch).length > 0) {
       const { error } = await supabaseAdmin

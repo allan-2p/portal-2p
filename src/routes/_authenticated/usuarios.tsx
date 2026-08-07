@@ -31,12 +31,15 @@ export const Route = createFileRoute("/_authenticated/usuarios")({
   component: UsuariosPage,
 });
 
+type Regime = "CLT" | "PJ";
+
 type Row = {
   id: string;
   email: string;
   full_name: string | null;
   cargo: string | null;
   equipe: string | null;
+  regime_contratacao: Regime;
   ativo: boolean;
   avatar_url: string | null;
   sf_user_id: string | null;
@@ -46,12 +49,14 @@ type Row = {
 };
 
 const ROLES: AppRole[] = ["admin", "gerente", "vendedor", "diretor", "marketing"];
+const REGIMES: Regime[] = ["CLT", "PJ"];
 const SCOPES: { id: FilterScope; label: string }[] = [
   { id: "geral", label: "Geral" },
   { id: "pre_vendas", label: "Pré Vendas" },
   { id: "carteira", label: "Carteira" },
   { id: "individual", label: "Individual" },
 ];
+
 type Tab = "portal" | "salesforce";
 
 
@@ -81,7 +86,7 @@ function UsuariosPage() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id,email,full_name,cargo,equipe,ativo,avatar_url,sf_user_id,is_external,filter_scope")
+      .select("id,email,full_name,cargo,equipe,regime_contratacao,ativo,avatar_url,sf_user_id,is_external,filter_scope")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
     const byUser = new Map<string, AppRole[]>();
@@ -94,6 +99,8 @@ function UsuariosPage() {
       (profiles ?? []).map((p: any) => ({
         ...p,
         filter_scope: (p.filter_scope ?? "individual") as FilterScope,
+        regime_contratacao: (p.regime_contratacao ?? "CLT") as Regime,
+
         roles: byUser.get(p.id) ?? [],
       })) as Row[],
     );
@@ -180,6 +187,18 @@ function UsuariosPage() {
     }
   }
 
+  async function handleRegimeChange(userId: string, regime: Regime) {
+    try {
+      await updateFn({ data: { user_id: userId, regime_contratacao: regime } });
+      toast.success("Regime de contratação atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+
+
 
   return (
     <AppLayout>
@@ -243,6 +262,8 @@ function UsuariosPage() {
             onReload={load}
             onScopeChange={handleScopeChange}
             onSfIdChange={handleSfIdChange}
+            onRegimeChange={handleRegimeChange}
+
             onEdit={(row) => setModal({ kind: "edit", row })}
           />
         ) : (
@@ -305,7 +326,7 @@ function UsuariosPage() {
 }
 
 function PortalTable({
-  rows, loading, currentUserId, onRoleChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onEdit,
+  rows, loading, currentUserId, onRoleChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit,
 }: {
   rows: Row[];
   loading: boolean;
@@ -316,8 +337,10 @@ function PortalTable({
   onReload: () => void;
   onScopeChange: (id: string, scope: FilterScope) => void;
   onSfIdChange: (id: string, sf_user_id: string | null) => void;
+  onRegimeChange: (id: string, regime: Regime) => void;
   onEdit: (row: Row) => void;
 }) {
+
 
   const syncPhoto = useServerFn(syncSalesforcePhoto);
   async function handleSyncPhoto(userId: string) {
@@ -344,6 +367,8 @@ function PortalTable({
             <th className="text-left px-4 py-3 font-medium">E-mail</th>
             <th className="text-left px-4 py-3 font-medium">Equipe</th>
             <th className="text-left px-4 py-3 font-medium">Papel</th>
+            <th className="text-left px-4 py-3 font-medium">Regime de contratação</th>
+
             <th className="text-left px-4 py-3 font-medium">Escopo do filtro</th>
             <th className="text-left px-4 py-3 font-medium">ID Salesforce</th>
             <th className="text-left px-4 py-3 font-medium">Status</th>
@@ -354,13 +379,13 @@ function PortalTable({
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={9} className="text-center py-10 text-muted-foreground">
+              <td colSpan={10} className="text-center py-10 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin inline" />
               </td>
             </tr>
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={9} className="text-center py-10 text-muted-foreground">
+              <td colSpan={10} className="text-center py-10 text-muted-foreground">
                 Nenhum usuário ainda.
               </td>
             </tr>
@@ -405,6 +430,18 @@ function PortalTable({
                   </select>
                 </td>
                 <td className="px-4 py-3">
+                  <select
+                    value={r.regime_contratacao}
+                    onChange={(e) => onRegimeChange(r.id, e.target.value as Regime)}
+                    className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                  >
+                    {REGIMES.map((rg) => (
+                      <option key={rg} value={rg}>{rg}</option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-3">
+
                   <select
                     value={r.filter_scope}
                     onChange={(e) => onScopeChange(r.id, e.target.value as FilterScope)}
@@ -745,7 +782,9 @@ function UserModal({
     cargo: "",
     equipe: "",
     password: "",
+    regime_contratacao: "CLT" as Regime,
     role: "vendedor" as AppRole,
+
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -764,7 +803,9 @@ function UserModal({
                     full_name: form.full_name,
                     cargo: form.cargo || null,
                     equipe: form.equipe || null,
+                    regime_contratacao: form.regime_contratacao,
                     role: form.role,
+
                   };
             await onSubmit(payload);
           } catch (e) {
@@ -817,6 +858,18 @@ function UserModal({
             ))}
           </select>
         </Field>
+        <Field label="Regime de contratação">
+          <select
+            value={form.regime_contratacao}
+            onChange={(e) => setForm({ ...form, regime_contratacao: e.target.value as Regime })}
+            className="input"
+          >
+            {REGIMES.map((rg) => (
+              <option key={rg} value={rg}>{rg}</option>
+            ))}
+          </select>
+        </Field>
+
 
         <div className="flex gap-2 pt-2">
           <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2">
@@ -931,7 +984,9 @@ type EditPayload = {
   full_name: string;
   cargo: string | null;
   equipe: string | null;
+  regime_contratacao: Regime;
   is_external: boolean;
+
 };
 
 function EditUserModal({
@@ -948,8 +1003,10 @@ function EditUserModal({
     full_name: row.full_name ?? "",
     cargo: row.cargo ?? "",
     equipe: row.equipe ?? "",
+    regime_contratacao: row.regime_contratacao ?? "CLT",
     is_external: row.is_external,
   });
+
   const [submitting, setSubmitting] = useState(false);
 
   return (
@@ -964,7 +1021,9 @@ function EditUserModal({
               full_name: form.full_name,
               cargo: form.cargo || null,
               equipe: form.equipe || null,
+              regime_contratacao: form.regime_contratacao,
               is_external: form.is_external,
+
             });
           } catch (err) {
             toast.error(err instanceof Error ? err.message : "Erro");
@@ -989,6 +1048,18 @@ function EditUserModal({
             <input value={form.equipe} onChange={(e) => setForm({ ...form, equipe: e.target.value })} className="input" />
           </Field>
         </div>
+        <Field label="Regime de contratação">
+          <select
+            value={form.regime_contratacao}
+            onChange={(e) => setForm({ ...form, regime_contratacao: e.target.value as Regime })}
+            className="input"
+          >
+            {REGIMES.map((rg) => (
+              <option key={rg} value={rg}>{rg}</option>
+            ))}
+          </select>
+        </Field>
+
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
