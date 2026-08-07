@@ -85,6 +85,10 @@ function CadastrosPage() {
   const qc = useQueryClient();
   const ufs = useCpoUfs().data ?? [];
   const [q, setQ] = useState("");
+  const [fClasse, setFClasse] = useState<string>("todas");
+  const [fUf, setFUf] = useState<string>("todas");
+  const [fStatus, setFStatus] = useState<string>("ativos");
+  const [fFiscal, setFFiscal] = useState<string>("todos");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Cliente, "id">>(vazio());
