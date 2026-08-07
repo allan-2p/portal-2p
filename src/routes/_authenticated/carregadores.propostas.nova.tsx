@@ -142,6 +142,7 @@ function PropostaCpoPage() {
   const st = statusMB(d.mbPct, config);
   const uf = ufs.find((u) => u.uf === state.uf);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
+  const clienteOk = !!state.nome;
   const temProduto = state.itens.some((i) => i.produtoId);
   const podeSalvar = clienteOk && temProduto && !abaixoPolitica;
 
@@ -205,7 +206,6 @@ function PropostaCpoPage() {
     }
   }
 
-  const clienteOk = !!state.nome;
 
   return (
     <AppLayout>
