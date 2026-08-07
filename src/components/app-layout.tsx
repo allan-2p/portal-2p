@@ -195,14 +195,22 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <NavLink item={{ to: "/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/cupons")} collapsed={collapsed} />
           )}
 
-          {/* Módulo CPO — exclusivo da instância Carregadores */}
-          {(show("cpo.propostas") || show("cpo.produtos") || show("cpo.comissoes")) && (
+          {/* Módulo Carregadores — navegação exclusiva da instância */}
+          {(show("cpo.home") || show("cpo.tarefas") || show("cpo.clientes") || show("cpo.propostas") || show("cpo.produtos") || show("cpo.comissoes")) && (
             <>
-              <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
               {!collapsed && (
                 <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   Carregadores
                 </div>
+              )}
+              {show("cpo.home") && (
+                <NavLink item={{ to: "/carregadores", label: "Home", icon: Home }} active={pathname === "/carregadores"} collapsed={collapsed} />
+              )}
+              {show("cpo.tarefas") && (
+                <NavLink item={{ to: "/carregadores/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/carregadores/tarefas")} collapsed={collapsed} />
+              )}
+              {show("cpo.clientes") && (
+                <NavLink item={{ to: "/carregadores/clientes", label: "Clientes", icon: Users }} active={pathname.startsWith("/carregadores/clientes")} collapsed={collapsed} />
               )}
               {show("cpo.propostas") && (
                 <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
