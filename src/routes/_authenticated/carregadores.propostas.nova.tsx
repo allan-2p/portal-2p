@@ -53,10 +53,11 @@ import { MoneyInput } from "@/components/money-input";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    id: typeof s.id === "string" ? s.id : undefined,
-    dup: typeof s.dup === "string" ? s.dup : undefined,
+  validateSearch: (s: Record<string, unknown>): { id?: string; dup?: string } => ({
+    ...(typeof s.id === "string" ? { id: s.id } : {}),
+    ...(typeof s.dup === "string" ? { dup: s.dup } : {}),
   }),
+
   head: () => ({
     meta: [
       { title: "Nova proposta — Portal 2P Carregadores" },
