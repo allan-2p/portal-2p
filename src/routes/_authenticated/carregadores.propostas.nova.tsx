@@ -21,7 +21,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle2, ChevronsUpDown, Info, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronsUpDown, FileDown, Info, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
