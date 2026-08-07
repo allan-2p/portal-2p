@@ -89,6 +89,13 @@ type ClienteCadastro = {
 
 const DRAFT_KEY = "cpo-proposta-rascunho";
 
+/** Arredonda para centavos exatos, evitando resíduo de ponto flutuante ao salvar/reabrir. */
+const money2 = (n: unknown) => {
+  const v = Number(n);
+  return Number.isFinite(v) ? Math.round(v * 100) / 100 : 0;
+};
+
+
 type Rascunho = { state: CpoState; etapa: 1 | 2; ts: number };
 
 function lerRascunho(): Rascunho | null {
