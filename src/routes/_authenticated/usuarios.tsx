@@ -803,7 +803,9 @@ function UserModal({
                     full_name: form.full_name,
                     cargo: form.cargo || null,
                     equipe: form.equipe || null,
+                    regime_contratacao: form.regime_contratacao,
                     role: form.role,
+
                   };
             await onSubmit(payload);
           } catch (e) {
