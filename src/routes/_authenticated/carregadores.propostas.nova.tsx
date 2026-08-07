@@ -299,7 +299,7 @@ function PropostaCpoPage() {
 
   const itensSemValor = state.itens.filter((i) => i.produtoId && !(i.valor > 0));
   const itensSemQtd = state.itens.filter((i) => i.produtoId && !(i.qtd > 0));
-  const itensSemProduto = state.itens.filter((i) => !i.produtoId && (i.valor > 0 || i.qtd > 0));
+  const itensSemProduto = state.itens.filter((i) => !i.produtoId && i.valor > 0);
 
   // ---- Bloqueios de fechamento (exportar PDF / concluir pedido) ----
   const errosFechamento: string[] = [];
