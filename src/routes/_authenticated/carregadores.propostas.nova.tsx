@@ -1153,13 +1153,19 @@ function SumItem({
   className?: string;
 }) {
   return (
-    <div className={cn("min-w-0 rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm", className)}>
-      <div className="text-[10px] uppercase tracking-[0.18em] opacity-80">{label}</div>
-      <div className="mt-1 flex items-baseline gap-2 flex-wrap">
-        <span className="text-xl font-bold tabular-nums">{value}</span>
-        {hint ? <span className="text-xs font-semibold opacity-85">{hint}</span> : null}
+    <div
+      className={cn(
+        "flex h-full min-w-0 flex-col justify-between rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm",
+        className,
+      )}
+    >
+      <div className="text-[10px] uppercase tracking-[0.18em] opacity-80 truncate">{label}</div>
+      <div className="mt-2 flex items-baseline gap-2">
+        <span className="text-xl font-bold tabular-nums truncate">{value}</span>
+        {hint ? <span className="text-xs font-semibold opacity-85 shrink-0">{hint}</span> : null}
       </div>
     </div>
+
   );
 }
 
