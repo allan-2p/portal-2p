@@ -450,7 +450,7 @@ function PropostaCpoPage() {
           </div>
 
           {/* PAINEL / DRE */}
-          {clienteOk ? (
+          {etapa === 2 ? (
           <div className="space-y-4">
             <div className="rounded-2xl p-5 text-white bg-gradient-to-br from-[oklch(0.3_0.13_265)] via-[oklch(0.45_0.19_265)] to-[oklch(0.6_0.17_265)] shadow-lg">
               <div className="text-[11px] uppercase tracking-widest opacity-80">Valor total da proposta</div>
