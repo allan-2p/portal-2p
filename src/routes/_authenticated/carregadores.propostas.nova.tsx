@@ -771,7 +771,7 @@ function PropostaCpoPage() {
               {state.itens.map((it) => {
                 const semValor = !!it.produtoId && !(it.valor > 0);
                 const semQtd = !!it.produtoId && !(it.qtd > 0);
-                const semProduto = !it.produtoId && (it.valor > 0 || it.qtd > 0);
+                const semProduto = !it.produtoId && it.valor > 0;
                 const bloqueado = semValor || semQtd || semProduto;
                 return (
                   <div
