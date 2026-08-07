@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+type OrdemKey = "cliente" | "classificacao" | "doc" | "fiscal" | "cidade" | "contato";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +15,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,6 +92,10 @@ function CadastrosPage() {
   const [fUf, setFUf] = useState<string>("todas");
   const [fStatus, setFStatus] = useState<string>("ativos");
   const [fFiscal, setFFiscal] = useState<string>("todos");
+  const [ordem, setOrdem] = useState<OrdemKey>("cliente");
+  const [dir, setDir] = useState<"asc" | "desc">("asc");
+  const [pagina, setPagina] = useState(1);
+  const [porPagina, setPorPagina] = useState(25);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Cliente, "id">>(vazio());
@@ -144,7 +150,7 @@ function CadastrosPage() {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
   });
 
-  const rows = useMemo(() => {
+  const filtrados = useMemo(() => {
     const t = q.trim().toLowerCase();
     const tDoc = soDigitos(q);
     return clientes.filter((c) => {
@@ -162,12 +168,44 @@ function CadastrosPage() {
     });
   }, [clientes, q, fClasse, fUf, fStatus, fFiscal]);
 
+  const ordenados = useMemo(() => {
+    const val = (c: Cliente) => {
+      switch (ordem) {
+        case "classificacao": return c.classificacao || "C";
+        case "doc": return soDigitos(c.doc ?? "");
+        case "fiscal": return c.contribuinte ? "1" : "0";
+        case "cidade": return `${c.uf} ${c.cidade ?? ""}`;
+        case "contato": return (c.contato_nome || c.email || "").toLowerCase();
+        default: return c.razao_social.toLowerCase();
+      }
+    };
+    return [...filtrados].sort((a, b) => {
+      const r = val(a).localeCompare(val(b), "pt-BR", { numeric: true });
+      return dir === "asc" ? r : -r;
+    });
+  }, [filtrados, ordem, dir]);
+
+  const totalPaginas = Math.max(1, Math.ceil(ordenados.length / porPagina));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const rows = useMemo(
+    () => ordenados.slice((paginaAtual - 1) * porPagina, paginaAtual * porPagina),
+    [ordenados, paginaAtual, porPagina],
+  );
+
+  useEffect(() => { setPagina(1); }, [q, fClasse, fUf, fStatus, fFiscal, porPagina, ordem, dir]);
+
   const ufsDisponiveis = useMemo(
     () => Array.from(new Set(clientes.map((c) => c.uf).filter(Boolean))).sort(),
     [clientes],
   );
   const filtrosAtivos = fClasse !== "todas" || fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || q.trim() !== "";
   const limparFiltros = () => { setQ(""); setFClasse("todas"); setFUf("todas"); setFStatus("ativos"); setFFiscal("todos"); };
+
+  const ordenarPor = (k: OrdemKey) => {
+    if (ordem === k) setDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setOrdem(k); setDir("asc"); }
+  };
+
 
 
   const abrirNovo = () => { setEditId(null); setForm(vazio()); setOpen(true); };
@@ -320,7 +358,7 @@ function CadastrosPage() {
               </Button>
             )}
             <span className="ml-auto text-xs text-muted-foreground">
-              {rows.length} de {clientes.length} cadastro(s)
+              {ordenados.length} de {clientes.length} cadastro(s)
             </span>
           </CardContent>
         </Card>
@@ -331,14 +369,30 @@ function CadastrosPage() {
             <table className="w-full text-sm">
               <thead className="bg-surface-2/60 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="text-left px-4 py-2">Cliente</th>
-                  <th className="text-left px-4 py-2">Classe</th>
-                  <th className="text-left px-4 py-2">CNPJ / CPF</th>
-                  <th className="text-left px-4 py-2">Fiscal</th>
-                  <th className="text-left px-4 py-2">Cidade / UF</th>
-                  <th className="text-left px-4 py-2">Contato</th>
+                  {([
+                    ["cliente", "Cliente"],
+                    ["classificacao", "Classe"],
+                    ["doc", "CNPJ / CPF"],
+                    ["fiscal", "Fiscal"],
+                    ["cidade", "Cidade / UF"],
+                    ["contato", "Contato"],
+                  ] as [OrdemKey, string][]).map(([k, label]) => (
+                    <th key={k} className="text-left px-4 py-2">
+                      <button
+                        type="button"
+                        onClick={() => ordenarPor(k)}
+                        className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground transition-colors"
+                      >
+                        {label}
+                        {ordem === k
+                          ? (dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)
+                          : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                      </button>
+                    </th>
+                  ))}
                   <th className="text-right px-4 py-2">Ações</th>
                 </tr>
+
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
@@ -401,7 +455,35 @@ function CadastrosPage() {
               </tbody>
             </table>
           </CardContent>
+          {ordenados.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span>Por página</span>
+                <Select value={String(porPagina)} onValueChange={(v) => setPorPagina(Number(v))}>
+                  <SelectTrigger className="h-8 w-[80px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[10, 25, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <span className="ml-auto">
+                {(paginaAtual - 1) * porPagina + 1}–{Math.min(paginaAtual * porPagina, ordenados.length)} de {ordenados.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Página anterior"
+                  disabled={paginaAtual <= 1} onClick={() => setPagina((p) => Math.max(1, p - 1))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2">{paginaAtual} / {totalPaginas}</span>
+                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Próxima página"
+                  disabled={paginaAtual >= totalPaginas} onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
+
         <Sheet open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)}>
           <SheetContent className="w-full sm:max-w-md overflow-y-auto">
             {detalhe && (
