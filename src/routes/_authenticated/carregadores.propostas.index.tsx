@@ -244,7 +244,7 @@ function HistoricoCpoPage() {
                 <Info label="ICMS" value={fmtBRL(detalhe.totais.icms ?? 0)} />
                 <Info label="PIS/COFINS" value={fmtBRL(detalhe.totais.pisCofins ?? 0)} />
                 <Info label="Receita líquida" value={fmtBRL(detalhe.totais.rl ?? 0)} />
-                <Info label="Custo" value={fmtBRL(detalhe.totais.custo ?? 0)} />
+                <Info label="Valor dos itens" value={fmtBRL(detalhe.totais.valor ?? 0)} />
                 <Info label="Comissão" value={fmtBRL(detalhe.totais.comissao ?? 0)} />
                 <Info label="Frete" value={`${detalhe.frete_mod} · ${fmtBRL(detalhe.frete_valor)}`} />
                 <Info label="Contato" value={detalhe.cliente_telefone || detalhe.cliente_email || "—"} />

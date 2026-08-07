@@ -5,7 +5,7 @@
 //   ICMS efetivo (contribuinte)     = origem  (DIFAL por conta do destinatário)
 //   PIS/COFINS  = (ValorItem - ICMS) * 9,25%
 //   Receita Líq = ValorItem - ICMS - PIS/COFINS
-//   Margem Bruta = RL - custo dos equipamentos ; MB% = MB / Valor
+//   Margem Bruta = RL (baseada no Valor informado) ; MB% = MB / Valor
 
 export type CpoProduct = {
   id: string;
@@ -115,7 +115,7 @@ export function novoEstado(): CpoState {
 
 export function calcularCpo(
   state: CpoState,
-  produtos: CpoProduct[],
+  _produtos: CpoProduct[],
   ufs: CpoUf[],
   config: CpoConfig,
 ): CpoResult {
@@ -126,13 +126,14 @@ export function calcularCpo(
 
   let valorItens = 0;
   let valorItemBase = 0;
-  let custoTotal = 0;
+  // A margem é calculada a partir do VALOR informado na proposta (receita
+  // líquida após impostos). O custo cadastrado do produto não entra na conta.
+  const custoTotal = 0;
   for (const it of state.itens) {
-    const p = produtos.find((x) => x.id === it.produtoId);
     valorItens += (it.valor || 0) * (it.qtd || 0);
     valorItemBase += ((it.valor || 0) / (1 + ipi)) * (it.qtd || 0);
-    custoTotal += (p?.custo ?? 0) * (it.qtd || 0);
   }
+
 
   const frete = state.freteValor || 0;
   const valorTotalProposta = valorItens + frete;
