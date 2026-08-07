@@ -135,6 +135,7 @@ function PropostaCpoPage() {
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(() =>
     !carregandoExistente && lerRascunho()?.ts ? new Date(lerRascunho()!.ts) : null,
   );
+  const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
   const rascunhoRestaurado = useRef(false);
   const carregado = useRef(false);
 
