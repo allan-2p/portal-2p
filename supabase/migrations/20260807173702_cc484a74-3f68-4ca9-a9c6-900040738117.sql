@@ -1,0 +1,1 @@
+ALTER TABLE public.cpo_clientes ADD COLUMN IF NOT EXISTS classificacao text NOT NULL DEFAULT 'C';

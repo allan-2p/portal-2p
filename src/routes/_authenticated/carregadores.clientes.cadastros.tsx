@@ -13,7 +13,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, Building2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Building2, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCpoUfs } from "@/hooks/use-cpo";
@@ -59,6 +59,7 @@ type Cliente = {
   transportadora: string | null;
   observacoes: string | null;
   ativo: boolean;
+  classificacao: string;
 };
 
 const vazio = (): Omit<Cliente, "id"> => ({
@@ -67,15 +68,27 @@ const vazio = (): Omit<Cliente, "id"> => ({
   contato_nome: "", contato_cargo: "", contato_email: "", contato_telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "",
   uf: "SP", condicao_pagamento: "",
-  transportadora: "", observacoes: "", ativo: true,
+  transportadora: "", observacoes: "", ativo: true, classificacao: "C",
 } as Omit<Cliente, "id">);
 
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
+const CLASSES = ["A", "B", "C", "D"] as const;
+const CLASSE_INFO: Record<string, { label: string; cls: string }> = {
+  A: { label: "A — Estratégico", cls: "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" },
+  B: { label: "B — Relevante", cls: "bg-sky-500/10 text-sky-500 border-sky-500/30" },
+  C: { label: "C — Regular", cls: "bg-amber-500/10 text-amber-500 border-amber-500/30" },
+  D: { label: "D — Eventual", cls: "bg-muted text-muted-foreground border-border" },
+};
+const soDigitos = (v: string) => v.replace(/\D/g, "");
 
 function CadastrosPage() {
   const qc = useQueryClient();
   const ufs = useCpoUfs().data ?? [];
   const [q, setQ] = useState("");
+  const [fClasse, setFClasse] = useState<string>("todas");
+  const [fUf, setFUf] = useState<string>("todas");
+  const [fStatus, setFStatus] = useState<string>("ativos");
+  const [fFiscal, setFFiscal] = useState<string>("todos");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Cliente, "id">>(vazio());
@@ -130,11 +143,29 @@ function CadastrosPage() {
 
   const rows = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return clientes;
-    return clientes.filter((c) =>
-      [c.razao_social, c.nome_fantasia, c.doc, c.cidade, c.uf].some((v) => (v ?? "").toLowerCase().includes(t)),
-    );
-  }, [clientes, q]);
+    const tDoc = soDigitos(q);
+    return clientes.filter((c) => {
+      if (fClasse !== "todas" && (c.classificacao || "C") !== fClasse) return false;
+      if (fUf !== "todas" && c.uf !== fUf) return false;
+      if (fStatus === "ativos" && !c.ativo) return false;
+      if (fStatus === "inativos" && c.ativo) return false;
+      if (fFiscal === "contribuinte" && !c.contribuinte) return false;
+      if (fFiscal === "nao" && c.contribuinte) return false;
+      if (!t) return true;
+      const texto = [c.razao_social, c.nome_fantasia, c.doc, c.cidade, c.uf, c.email, c.contato_nome]
+        .some((v) => (v ?? "").toLowerCase().includes(t));
+      const doc = tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc);
+      return texto || doc;
+    });
+  }, [clientes, q, fClasse, fUf, fStatus, fFiscal]);
+
+  const ufsDisponiveis = useMemo(
+    () => Array.from(new Set(clientes.map((c) => c.uf).filter(Boolean))).sort(),
+    [clientes],
+  );
+  const filtrosAtivos = fClasse !== "todas" || fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || q.trim() !== "";
+  const limparFiltros = () => { setQ(""); setFClasse("todas"); setFUf("todas"); setFStatus("ativos"); setFFiscal("todos"); };
+
 
   const abrirNovo = () => { setEditId(null); setForm(vazio()); setOpen(true); };
   const abrirEdicao = (c: Cliente) => {
@@ -153,9 +184,9 @@ function CadastrosPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="relative w-64">
+            <div className="relative w-72">
               <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-8" placeholder="Buscar cadastro…" value={q} onChange={(e) => setQ(e.target.value)} />
+              <Input className="pl-8" placeholder="Buscar por nome, CNPJ, cidade…" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
             <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditId(null); setForm(vazio()); } }}>
               <DialogTrigger asChild>
@@ -178,6 +209,12 @@ function CadastrosPage() {
                   </F>
                   <F label="Inscrição Estadual"><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
                   <F label="Inscrição Municipal"><Input value={form.im ?? ""} onChange={(e) => set("im", e.target.value)} /></F>
+                  <F label="Classificação">
+                    <Select value={form.classificacao || "C"} onValueChange={(v) => set("classificacao", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{CLASSES.map((c) => <SelectItem key={c} value={c}>{CLASSE_INFO[c].label}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </F>
                   <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                     <div>
                       <div className="text-sm font-semibold">Cliente contribuinte do ICMS</div>
@@ -242,11 +279,57 @@ function CadastrosPage() {
         </div>
 
         <Card>
+          <CardContent className="p-3 flex flex-wrap items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={fClasse} onValueChange={setFClasse}>
+              <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as classificações</SelectItem>
+                {CLASSES.map((c) => <SelectItem key={c} value={c}>{CLASSE_INFO[c].label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={fUf} onValueChange={setFUf}>
+              <SelectTrigger className="w-[130px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as UFs</SelectItem>
+                {ufsDisponiveis.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={fFiscal} onValueChange={setFFiscal}>
+              <SelectTrigger className="w-[170px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos (fiscal)</SelectItem>
+                <SelectItem value="contribuinte">Contribuinte ICMS</SelectItem>
+                <SelectItem value="nao">Não contribuinte</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={fStatus} onValueChange={setFStatus}>
+              <SelectTrigger className="w-[130px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ativos">Ativos</SelectItem>
+                <SelectItem value="inativos">Inativos</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
+              </SelectContent>
+            </Select>
+            {filtrosAtivos && (
+              <Button variant="ghost" size="sm" className="gap-1" onClick={limparFiltros}>
+                <X className="h-3.5 w-3.5" /> Limpar
+              </Button>
+            )}
+            <span className="ml-auto text-xs text-muted-foreground">
+              {rows.length} de {clientes.length} cadastro(s)
+            </span>
+          </CardContent>
+        </Card>
+
+
+        <Card>
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-surface-2/60 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="text-left px-4 py-2">Cliente</th>
+                  <th className="text-left px-4 py-2">Classe</th>
                   <th className="text-left px-4 py-2">CNPJ / CPF</th>
                   <th className="text-left px-4 py-2">Fiscal</th>
                   <th className="text-left px-4 py-2">Cidade / UF</th>
@@ -255,11 +338,13 @@ function CadastrosPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
+                {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
                 {!isLoading && rows.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                     <Building2 className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                    Nenhum cadastro ainda — clique em “Novo cadastro”.
+                    {clientes.length === 0
+                      ? "Nenhum cadastro ainda — clique em “Novo cadastro”."
+                      : "Nenhum cadastro encontrado com esses filtros."}
                   </td></tr>
                 )}
                 {rows.map((c) => (
@@ -267,6 +352,11 @@ function CadastrosPage() {
                     <td className="px-4 py-2">
                       <div className="font-medium">{c.razao_social}</div>
                       {c.nome_fantasia && <div className="text-xs text-muted-foreground">{c.nome_fantasia}</div>}
+                    </td>
+                    <td className="px-4 py-2">
+                      <Badge variant="outline" className={`text-[10px] font-bold ${CLASSE_INFO[c.classificacao || "C"]?.cls ?? ""}`}>
+                        {c.classificacao || "C"}
+                      </Badge>
                     </td>
                     <td className="px-4 py-2 text-muted-foreground">{c.doc || "—"}</td>
                     <td className="px-4 py-2">
