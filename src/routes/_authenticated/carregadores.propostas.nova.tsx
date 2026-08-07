@@ -441,10 +441,20 @@ function PropostaCpoPage() {
                 />
               </Field>
             </div>
+            <div className="flex justify-start">
+              <Button variant="outline" onClick={() => setEtapa(1)} className="gap-2">
+                Voltar para o cliente
+              </Button>
+            </div>
             </>
             ) : (
-              <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Etapa 1: selecione o cliente para liberar produtos, frete e o cálculo fiscal da proposta.
+              <div className="space-y-3">
+                <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                  Etapa 1: selecione o cliente. Produtos, frete e margem bruta ficam na etapa 2.
+                </div>
+                <Button className="w-full gap-2" disabled={!clienteOk} onClick={() => setEtapa(2)}>
+                  Continuar para produtos
+                </Button>
               </div>
             )}
           </div>
