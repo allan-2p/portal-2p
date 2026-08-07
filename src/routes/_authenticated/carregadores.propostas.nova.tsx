@@ -362,6 +362,8 @@ function PropostaCpoPage() {
         status === "Salvo" ? `Proposta ${numero} salva.` : `Pedido ${numero} concluído.`,
       );
       invalidate();
+      limparRascunho();
+      setAutosaveAt(null);
       setState(novoEstado());
       setEtapa(1);
     } catch (e) {
