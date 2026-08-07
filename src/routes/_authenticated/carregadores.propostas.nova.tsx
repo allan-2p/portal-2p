@@ -1082,6 +1082,100 @@ function PropostaCpoPage() {
           </div>
           ) : null}
         </div>
+
+        {/* Revisão final antes de salvar / concluir */}
+        <Dialog open={revisao !== null} onOpenChange={(o) => !o && setRevisao(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>
+                {revisao === "concluir" ? "Revisar e concluir pedido" : "Revisar e salvar proposta"}
+              </DialogTitle>
+              <DialogDescription>
+                Confira os dados abaixo antes de {revisao === "concluir" ? "enviar o pedido" : "salvar a proposta"}.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 text-sm max-h-[55vh] overflow-y-auto pr-1">
+              <div className="rounded-xl border border-border p-3 space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Cliente</p>
+                <p className="font-semibold">{state.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  {state.doc} · {state.uf} · {state.contribuinte ? "Contribuinte" : "Não contribuinte"}
+                  {state.email ? ` · ${state.email}` : ""}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border p-3 space-y-1.5">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Itens ({state.itens.filter((i) => i.produtoId).length})
+                </p>
+                {state.itens
+                  .filter((i) => i.produtoId)
+                  .map((i) => (
+                    <div key={i.key} className="flex items-center justify-between gap-3">
+                      <span className="truncate">
+                        {produtos.find((p) => p.id === i.produtoId)?.nome ?? "—"} × {i.qtd}
+                      </span>
+                      <span className="tabular-nums font-medium">{fmtBRL(i.qtd * i.valor)}</span>
+                    </div>
+                  ))}
+                <div className="flex items-center justify-between gap-3 pt-1 border-t border-border">
+                  <span className="text-muted-foreground">Frete ({state.freteMod})</span>
+                  <span className="tabular-nums">{fmtBRL(state.freteValor)}</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border p-3 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Valor da proposta</span>
+                  <span className="tabular-nums font-semibold">{fmtBRL(d.valorTotalProposta)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Total NF (com frete)</span>
+                  <span className="tabular-nums">{fmtBRL(d.valorItens + state.freteValor)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Margem bruta</span>
+                  <span className="tabular-nums">
+                    {fmtBRL(d.mb)} ({fmtPct(d.mbPct)})
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Comissão estimada</span>
+                  <span className="tabular-nums">{fmtBRL(d.comValor)}</span>
+                </div>
+              </div>
+
+              {alertas.length ? (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
+                  <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">Atenção</p>
+                  <ul className="mt-1 list-disc pl-5 text-xs space-y-0.5">
+                    {alertas.map((a, i) => (
+                      <li key={i}>{a.titulo}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRevisao(null)}>
+                Voltar e editar
+              </Button>
+              <Button onClick={confirmarRevisao} disabled={saving} className="gap-2">
+                {revisao === "concluir" ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" /> Confirmar pedido
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" /> Confirmar e salvar
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
