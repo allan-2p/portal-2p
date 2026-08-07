@@ -26,6 +26,7 @@ import { Route as AuthenticatedCuponsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/atlas'
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
+import { Route as AuthenticatedCarregadoresIndexRouteImport } from './routes/_authenticated/carregadores.index'
 import { Route as AuthenticatedMarketingTrafegoRouteImport } from './routes/_authenticated/marketing.trafego'
 import { Route as AuthenticatedMarketingSocialRouteImport } from './routes/_authenticated/marketing.social'
 import { Route as AuthenticatedMarketingPreVendasRouteImport } from './routes/_authenticated/marketing.pre-vendas'
@@ -135,6 +136,12 @@ const AuthenticatedMarketingIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
+const AuthenticatedCarregadoresIndexRoute =
+  AuthenticatedCarregadoresIndexRouteImport.update({
+    id: '/carregadores/',
+    path: '/carregadores/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedMarketingTrafegoRoute =
   AuthenticatedMarketingTrafegoRouteImport.update({
@@ -311,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
+  '/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
@@ -350,6 +358,7 @@ export interface FileRoutesByTo {
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
+  '/carregadores': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasIndexRoute
@@ -393,6 +402,7 @@ export interface FileRoutesById {
   '/_authenticated/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/_authenticated/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
+  '/_authenticated/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/_authenticated/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/_authenticated/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
@@ -436,6 +446,7 @@ export interface FileRouteTypes {
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
+    | '/carregadores/'
     | '/marketing/'
     | '/carregadores/propostas/nova'
     | '/carregadores/propostas/'
@@ -475,6 +486,7 @@ export interface FileRouteTypes {
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
+    | '/carregadores'
     | '/marketing'
     | '/carregadores/propostas/nova'
     | '/carregadores/propostas'
@@ -517,6 +529,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing/pre-vendas'
     | '/_authenticated/marketing/social'
     | '/_authenticated/marketing/trafego'
+    | '/_authenticated/carregadores/'
     | '/_authenticated/marketing/'
     | '/_authenticated/carregadores/propostas/nova'
     | '/_authenticated/carregadores/propostas/'
@@ -649,6 +662,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/marketing/'
       preLoaderRoute: typeof AuthenticatedMarketingIndexRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
+    }
+    '/_authenticated/carregadores/': {
+      id: '/_authenticated/carregadores/'
+      path: '/carregadores'
+      fullPath: '/carregadores/'
+      preLoaderRoute: typeof AuthenticatedCarregadoresIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/marketing/trafego': {
       id: '/_authenticated/marketing/trafego'
@@ -916,6 +936,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
   AuthenticatedCarregadoresProdutosRoute: typeof AuthenticatedCarregadoresProdutosRoute
   AuthenticatedCarregadoresPropostasRoute: typeof AuthenticatedCarregadoresPropostasRouteWithChildren
+  AuthenticatedCarregadoresIndexRoute: typeof AuthenticatedCarregadoresIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -943,6 +964,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCarregadoresProdutosRoute,
   AuthenticatedCarregadoresPropostasRoute:
     AuthenticatedCarregadoresPropostasRouteWithChildren,
+  AuthenticatedCarregadoresIndexRoute: AuthenticatedCarregadoresIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
