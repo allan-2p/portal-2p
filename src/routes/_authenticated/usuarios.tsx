@@ -1048,6 +1048,18 @@ function EditUserModal({
             <input value={form.equipe} onChange={(e) => setForm({ ...form, equipe: e.target.value })} className="input" />
           </Field>
         </div>
+        <Field label="Regime de contratação">
+          <select
+            value={form.regime_contratacao}
+            onChange={(e) => setForm({ ...form, regime_contratacao: e.target.value as Regime })}
+            className="input"
+          >
+            {REGIMES.map((rg) => (
+              <option key={rg} value={rg}>{rg}</option>
+            ))}
+          </select>
+        </Field>
+
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
