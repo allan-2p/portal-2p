@@ -984,7 +984,9 @@ type EditPayload = {
   full_name: string;
   cargo: string | null;
   equipe: string | null;
+  regime_contratacao: Regime;
   is_external: boolean;
+
 };
 
 function EditUserModal({
