@@ -276,9 +276,6 @@ function PropostaCpoPage() {
 
             </Field>
 
-            <Banner level={st.level} text={st.msg} />
-
-
             {state.nome ? (
               <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
@@ -301,6 +298,11 @@ function PropostaCpoPage() {
                 </div>
               </div>
             ) : null}
+
+            {clienteOk ? (
+              <>
+            <Banner level={st.level} text={st.msg} />
+
 
 
             <div className="flex gap-2 items-start rounded-xl border border-border bg-surface-2 px-4 py-3 text-xs text-muted-foreground">
