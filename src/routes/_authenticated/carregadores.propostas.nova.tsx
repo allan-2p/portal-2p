@@ -102,6 +102,8 @@ function limparRascunho() {
 
 
 function PropostaCpoPage() {
+  const { id: editId, dup: dupId } = Route.useSearch();
+  const carregandoExistente = !!(editId || dupId);
   const produtosQ = useCpoProducts();
   const ufsQ = useCpoUfs();
   const configQ = useCpoConfig();
@@ -111,24 +113,72 @@ function PropostaCpoPage() {
   const ufs = ufsQ.data ?? [];
   const config = configQ.data ?? CPO_CONFIG_FALLBACK;
 
-  const [state, setState] = useState<CpoState>(() => lerRascunho()?.state ?? novoEstado());
+  const [state, setState] = useState<CpoState>(() =>
+    carregandoExistente ? novoEstado() : lerRascunho()?.state ?? novoEstado(),
+  );
   const [openCli, setOpenCli] = useState(false);
-  const [etapa, setEtapa] = useState<1 | 2>(() => lerRascunho()?.etapa ?? 1);
+  const [etapa, setEtapa] = useState<1 | 2>(() => (carregandoExistente ? 1 : lerRascunho()?.etapa ?? 1));
   const [saving, setSaving] = useState(false);
+  const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
+  const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(() =>
-    lerRascunho()?.ts ? new Date(lerRascunho()!.ts) : null,
+    !carregandoExistente && lerRascunho()?.ts ? new Date(lerRascunho()!.ts) : null,
   );
   const rascunhoRestaurado = useRef(false);
+  const carregado = useRef(false);
 
   // Aviso único quando um rascunho é restaurado
   useEffect(() => {
-    if (rascunhoRestaurado.current) return;
+    if (carregandoExistente || rascunhoRestaurado.current) return;
     rascunhoRestaurado.current = true;
     const r = lerRascunho();
     if (r?.state?.nome || r?.state?.itens?.some((i) => i.produtoId)) {
       toast.info("Rascunho restaurado automaticamente.");
     }
-  }, []);
+  }, [carregandoExistente]);
+
+  // Carrega uma proposta salva para continuar a edição ou duplicar
+  useEffect(() => {
+    const alvo = editId ?? dupId;
+    if (!alvo || carregado.current) return;
+    carregado.current = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("cpo_proposals")
+        .select("*")
+        .eq("id", alvo)
+        .maybeSingle();
+      if (error || !data) {
+        toast.error("Não foi possível carregar a proposta.");
+        return;
+      }
+      const itens = ((data.itens as { produtoId?: string; qtd?: number; valor?: number }[]) ?? [])
+        .filter((i) => i.produtoId)
+        .map((i) => ({
+          key: Math.random().toString(36).slice(2),
+          produtoId: i.produtoId as string,
+          qtd: Number(i.qtd ?? 1),
+          valor: Number(i.valor ?? 0),
+          valorManual: true,
+        }));
+      setState({
+        nome: dupId ? `${data.cliente_nome}` : data.cliente_nome,
+        telefone: data.cliente_telefone ?? "",
+        email: data.cliente_email ?? "",
+        doc: data.cliente_doc ?? "",
+        ie: data.cliente_ie ?? "",
+        uf: data.uf,
+        contribuinte: data.contribuinte,
+        freteMod: (data.frete_mod === "CIF" ? "CIF" : "FOB") as CpoState["freteMod"],
+        freteValor: Number(data.frete_valor ?? 0),
+        itens: itens.length ? itens : [novoItem()],
+      });
+      setNumeroAtual(editId ? data.numero : null);
+      setEtapa(2);
+      toast.success(editId ? `Proposta ${data.numero ?? ""} carregada.` : "Proposta duplicada — salve para gerar um novo número.");
+    })();
+  }, [editId, dupId]);
+
 
   // Autosave local enquanto o usuário avança nas etapas
   useEffect(() => {
