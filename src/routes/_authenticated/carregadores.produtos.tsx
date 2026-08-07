@@ -23,7 +23,7 @@ import {
 import { Plus, Pencil, Trash2, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useCpoConfig, useCpoInvalidate, useCpoProducts, useCpoUfs } from "@/hooks/use-cpo";
+import { useCpoConfig, useCpoInvalidate, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
 import { fmtBRL, type CpoConfig, type CpoProduct } from "@/lib/cpo";
 
 export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
@@ -76,7 +76,7 @@ type Draft = {
 const EMPTY: Draft = { nome: "", potencia: "", custo: "", ativo: true };
 
 function ProdutosTab() {
-  const { data: produtos = [], isLoading } = useCpoProducts();
+  const { data: produtos = [], isLoading } = useCpoProductsAdmin();
   const invalidate = useCpoInvalidate();
   const [busca, setBusca] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);

@@ -1,5 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { adminListCpoProducts } from "@/lib/cpo-products.functions";
 import { CPO_CONFIG_FALLBACK, type CpoConfig, type CpoProduct, type CpoUf } from "@/lib/cpo";
 
 export function useCpoProducts() {
@@ -8,20 +10,35 @@ export function useCpoProducts() {
     queryFn: async (): Promise<CpoProduct[]> => {
       const { data, error } = await supabase
         .from("cpo_products")
-        .select("id, nome, potencia, custo, ativo")
+        .select("id, nome, potencia, ativo")
         .order("nome");
       if (error) throw error;
       return (data ?? []).map((p) => ({
         id: p.id,
         nome: p.nome,
         potencia: p.potencia,
-        custo: Number(p.custo),
+        // custo é dado interno restrito a administradores
+        custo: 0,
         ativo: p.ativo,
       }));
     },
     staleTime: 60_000,
   });
 }
+
+/** Produtos com custo — apenas administradores (validado no servidor). */
+export function useCpoProductsAdmin() {
+  const list = useServerFn(adminListCpoProducts);
+  return useQuery({
+    queryKey: ["cpo-products-admin"],
+    queryFn: async (): Promise<CpoProduct[]> => {
+      const res = await list();
+      return res.products;
+    },
+    staleTime: 60_000,
+  });
+}
+
 
 export function useCpoUfs() {
   return useQuery({
@@ -73,6 +90,7 @@ export function useCpoInvalidate() {
   const qc = useQueryClient();
   return () => {
     qc.invalidateQueries({ queryKey: ["cpo-products"] });
+    qc.invalidateQueries({ queryKey: ["cpo-products-admin"] });
     qc.invalidateQueries({ queryKey: ["cpo-ufs"] });
     qc.invalidateQueries({ queryKey: ["cpo-config"] });
     qc.invalidateQueries({ queryKey: ["cpo-proposals"] });
