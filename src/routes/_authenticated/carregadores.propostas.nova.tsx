@@ -34,7 +34,7 @@ import {
   novoEstado,
   novoItem,
   parseMoeda,
-  precoSugerido,
+  
   statusMB,
   type CpoItem,
   type CpoState,
