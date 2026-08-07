@@ -80,7 +80,9 @@ export const adminInviteUser = createServerFn({ method: "POST" })
         full_name: data.full_name,
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
+        regime_contratacao: data.regime_contratacao ?? "CLT",
         invited_by: context.userId,
+
         is_external: data.is_external ?? false,
         sf_user_id: data.sf_user_id ?? null,
         avatar_url: data.avatar_url ?? null,
