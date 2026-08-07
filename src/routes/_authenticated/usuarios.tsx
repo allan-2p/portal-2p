@@ -31,12 +31,15 @@ export const Route = createFileRoute("/_authenticated/usuarios")({
   component: UsuariosPage,
 });
 
+type Regime = "CLT" | "PJ";
+
 type Row = {
   id: string;
   email: string;
   full_name: string | null;
   cargo: string | null;
   equipe: string | null;
+  regime_contratacao: Regime;
   ativo: boolean;
   avatar_url: string | null;
   sf_user_id: string | null;
@@ -46,12 +49,14 @@ type Row = {
 };
 
 const ROLES: AppRole[] = ["admin", "gerente", "vendedor", "diretor", "marketing"];
+const REGIMES: Regime[] = ["CLT", "PJ"];
 const SCOPES: { id: FilterScope; label: string }[] = [
   { id: "geral", label: "Geral" },
   { id: "pre_vendas", label: "Pré Vendas" },
   { id: "carteira", label: "Carteira" },
   { id: "individual", label: "Individual" },
 ];
+
 type Tab = "portal" | "salesforce";
 
 
