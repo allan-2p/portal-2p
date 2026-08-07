@@ -952,18 +952,19 @@ function PropostaCpoPage() {
                   {fmtBRL(d.valorTotalProposta)}
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <SumItem label="Valor" value={fmtBRL(d.valor)} />
                 <SumItem label="Valor com frete" value={fmtBRL(d.valorItens + state.freteValor)} />
                 <SumItem label="Total NF" value={fmtBRL(d.valorItens + state.freteValor)} />
                 <SumItem label="Margem bruta" value={fmtBRL(d.mb)} hint={fmtPct(d.mbPct)} />
+                <SumItem label="Comissão estimada" value={fmtBRL(d.comValor)} hint={fmtPct(d.comPct)} />
                 <SumItem
-                  label="Comissão estimada"
-                  value={fmtBRL(d.comValor)}
-                  hint={fmtPct(d.comPct)}
-                  className="sm:col-span-2"
+                  label="Margem após comissão"
+                  value={fmtBRL(d.mb - d.comValor)}
+                  hint={fmtPct(d.valor > 0 ? (d.mb - d.comValor) / d.valor : 0)}
                 />
               </div>
+
 
               {/* ALERTAS AUTOMÁTICOS DE POLÍTICA */}
               {alertas.length ? (
@@ -1003,63 +1004,8 @@ function PropostaCpoPage() {
               )}
             </div>
 
-            {/* QUEBRA DETALHADA DA COMISSÃO */}
-            <div className="glass rounded-2xl p-5 space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold">Quebra da comissão estimada</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Regra, base de cálculo e impacto no resultado da proposta.
-                </p>
-              </div>
 
-              <div className="rounded-xl border bg-muted/30 px-4 py-3 text-xs leading-relaxed">
-                <span className="font-medium">Regra aplicada: </span>
-                {fmtPct(d.comPct)} sobre {config.comissao_base === "VALOR" ? "o valor da venda" : "a margem bruta (MB)"}
-                {" — "}
-                comissão = base × percentual.
-                {!d.comPct ? (
-                  <span className="block mt-1 text-amber-600 dark:text-amber-400">
-                    Percentual de comissão ainda não configurado — defina em Moderação › Comissões.
-                  </span>
-                ) : null}
-              </div>
 
-              <div className="divide-y rounded-xl border">
-                <ComRow
-                  k="Percentual da regra"
-                  sub={config.comissao_base === "VALOR" ? "Incide sobre a venda" : "Incide sobre a MB"}
-                  v={fmtPct(d.comPct)}
-                />
-                <ComRow
-                  k="Base de cálculo"
-                  sub={config.comissao_base === "VALOR" ? "Valor da venda (sem frete)" : "Margem bruta da proposta"}
-                  v={fmtBRL(config.comissao_base === "VALOR" ? d.valor : d.mb)}
-                />
-                <ComRow k="Comissão estimada" sub="Base × percentual" v={fmtBRL(d.comValor)} strong />
-                <ComRow
-                  k="Impacto sobre o valor da venda"
-                  sub="Comissão ÷ valor da venda"
-                  v={fmtPct(d.valor > 0 ? d.comValor / d.valor : 0)}
-                />
-                <ComRow
-                  k="Impacto sobre a margem bruta"
-                  sub="Comissão ÷ MB"
-                  v={fmtPct(d.mb > 0 ? d.comValor / d.mb : 0)}
-                />
-                <ComRow
-                  k="Margem após comissão"
-                  sub={`MB ${fmtBRL(d.mb)} − comissão ${fmtBRL(d.comValor)}`}
-                  v={`${fmtBRL(d.mb - d.comValor)} · ${fmtPct(d.valor > 0 ? (d.mb - d.comValor) / d.valor : 0)}`}
-                  strong
-                />
-              </div>
-
-              {d.comPct === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Nenhum percentual de comissão configurado em Moderação › Comissões — o valor estimado fica zerado.
-                </p>
-              ) : null}
-            </div>
 
 
 
@@ -1207,13 +1153,19 @@ function SumItem({
   className?: string;
 }) {
   return (
-    <div className={cn("min-w-0 rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm", className)}>
-      <div className="text-[10px] uppercase tracking-[0.18em] opacity-80">{label}</div>
-      <div className="mt-1 flex items-baseline gap-2 flex-wrap">
-        <span className="text-xl font-bold tabular-nums">{value}</span>
-        {hint ? <span className="text-xs font-semibold opacity-85">{hint}</span> : null}
+    <div
+      className={cn(
+        "flex h-full min-w-0 flex-col justify-between rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm",
+        className,
+      )}
+    >
+      <div className="text-[10px] uppercase tracking-[0.18em] opacity-80 truncate">{label}</div>
+      <div className="mt-2 flex items-baseline gap-2">
+        <span className="text-xl font-bold tabular-nums truncate">{value}</span>
+        {hint ? <span className="text-xs font-semibold opacity-85 shrink-0">{hint}</span> : null}
       </div>
     </div>
+
   );
 }
 
@@ -1293,20 +1245,6 @@ function DreRow({
         {sub && <div className="text-[11px] text-muted-foreground mt-0.5 max-w-[340px]">{sub}</div>}
       </div>
       <div className="font-bold whitespace-nowrap">{v}</div>
-    </div>
-  );
-}
-
-function ComRow({ k, sub, v, strong }: { k: string; sub?: string; v: string; strong?: boolean }) {
-  return (
-    <div className="flex items-start justify-between gap-3 px-4 py-3">
-      <div>
-        <div className={cn("text-sm", strong ? "font-semibold" : "font-medium")}>{k}</div>
-        {sub && <div className="text-[11px] text-muted-foreground mt-0.5 max-w-[340px]">{sub}</div>}
-      </div>
-      <div className={cn("whitespace-nowrap tabular-nums", strong ? "text-base font-bold" : "text-sm font-semibold")}>
-        {v}
-      </div>
     </div>
   );
 }
