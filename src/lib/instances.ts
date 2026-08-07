@@ -197,3 +197,17 @@ export function defaultInstanceForList(allowed: InstanceId[]): InstanceId {
   if (allowed.includes("solar")) return "solar";
   return allowed[0] ?? "solar";
 }
+
+// Resolve a feature key a partir do pathname (match exato ou prefixo mais longo).
+export function featureForPath(path: string): FeatureKey | null {
+  const keys = Object.keys(ROUTE_FEATURE).sort((a, b) => b.length - a.length);
+  const match = keys.find((k) => path === k || path.startsWith(k + "/"));
+  return match ? ROUTE_FEATURE[match] : null;
+}
+
+// Primeira instância permitida que contém a feature — usada para trocar de
+// instância automaticamente quando o usuário abre um link direto (ex.: /carregadores/propostas).
+export function instanceForFeature(feature: FeatureKey, allowed: InstanceId[]): InstanceId | null {
+  return allowed.find((i) => INSTANCES[i].routes.includes(feature)) ?? null;
+}
+
