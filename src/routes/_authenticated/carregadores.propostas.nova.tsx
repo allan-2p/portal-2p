@@ -896,3 +896,17 @@ function DreRow({
     </div>
   );
 }
+
+function ComRow({ k, sub, v, strong }: { k: string; sub?: string; v: string; strong?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3 px-4 py-3">
+      <div>
+        <div className={cn("text-sm", strong ? "font-semibold" : "font-medium")}>{k}</div>
+        {sub && <div className="text-[11px] text-muted-foreground mt-0.5 max-w-[340px]">{sub}</div>}
+      </div>
+      <div className={cn("whitespace-nowrap tabular-nums", strong ? "text-base font-bold" : "text-sm font-semibold")}>
+        {v}
+      </div>
+    </div>
+  );
+}
