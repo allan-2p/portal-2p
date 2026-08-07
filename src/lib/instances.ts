@@ -137,6 +137,7 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/carregadores": "cpo.home",
   "/carregadores/tarefas": "cpo.tarefas",
   "/carregadores/clientes": "cpo.clientes",
+  "/carregadores/clientes/cadastros": "cpo.clientes",
   "/carregadores/propostas": "cpo.propostas",
   "/carregadores/produtos": "cpo.produtos",
   "/carregadores/comissoes": "cpo.comissoes",
