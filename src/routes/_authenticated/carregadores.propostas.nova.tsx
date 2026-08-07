@@ -233,7 +233,11 @@ function PropostaCpoPage() {
         contribuinte: c.contribuinte,
       })) as ClienteCadastro[];
     },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
+
 
 
   const aplicarCliente = (c: ClienteCadastro) =>
@@ -678,7 +682,7 @@ function PropostaCpoPage() {
                         {(clientesQ.data ?? []).map((c) => (
                           <CommandItem
                             key={c.cliente_nome}
-                            value={c.cliente_nome}
+                            value={[c.cliente_nome, c.cliente_doc, c.uf].filter(Boolean).join(" ")}
                             onSelect={() => {
                               aplicarCliente(c);
                               setOpenCli(false);
