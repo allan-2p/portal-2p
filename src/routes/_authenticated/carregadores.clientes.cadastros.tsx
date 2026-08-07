@@ -59,6 +59,7 @@ type Cliente = {
   transportadora: string | null;
   observacoes: string | null;
   ativo: boolean;
+  classificacao: string;
 };
 
 const vazio = (): Omit<Cliente, "id"> => ({
@@ -67,10 +68,18 @@ const vazio = (): Omit<Cliente, "id"> => ({
   contato_nome: "", contato_cargo: "", contato_email: "", contato_telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "",
   uf: "SP", condicao_pagamento: "",
-  transportadora: "", observacoes: "", ativo: true,
+  transportadora: "", observacoes: "", ativo: true, classificacao: "C",
 } as Omit<Cliente, "id">);
 
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
+const CLASSES = ["A", "B", "C", "D"] as const;
+const CLASSE_INFO: Record<string, { label: string; cls: string }> = {
+  A: { label: "A — Estratégico", cls: "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" },
+  B: { label: "B — Relevante", cls: "bg-sky-500/10 text-sky-500 border-sky-500/30" },
+  C: { label: "C — Regular", cls: "bg-amber-500/10 text-amber-500 border-amber-500/30" },
+  D: { label: "D — Eventual", cls: "bg-muted text-muted-foreground border-border" },
+};
+const soDigitos = (v: string) => v.replace(/\D/g, "");
 
 function CadastrosPage() {
   const qc = useQueryClient();
