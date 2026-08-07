@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { CpoConfigTab } from "@/components/cpo-config-tab";
+import { CpoComissaoRegras } from "@/components/cpo-comissao-regras";
+
 
 export const Route = createFileRoute("/_authenticated/carregadores/comissoes")({
   head: () => ({
@@ -24,11 +26,17 @@ function ComissoesCpoPage() {
           <div className="text-xs uppercase tracking-wider text-primary font-semibold">Moderação</div>
           <h1 className="text-3xl font-bold mt-1">Comissões</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Base de comissão, percentual e parâmetros tributários usados no DRE das propostas.
+            Regras de comissão por regime (CLT e PJ) e parâmetros tributários usados no DRE das propostas.
           </p>
         </div>
-        <CpoConfigTab />
+        <CpoComissaoRegras />
+        <div>
+          <h2 className="font-semibold mb-2">Parâmetros tributários</h2>
+          <CpoConfigTab />
+        </div>
       </div>
+
+
     </AppLayout>
   );
 }
