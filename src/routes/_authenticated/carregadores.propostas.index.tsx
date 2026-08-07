@@ -196,11 +196,22 @@ function HistoricoCpoPage() {
                         <Button variant="ghost" size="icon" aria-label="Detalhar" onClick={() => setDetalhe(r)}>
                           <Eye className="h-4 w-4" />
                         </Button>
+                        <Button variant="ghost" size="icon" aria-label="Continuar proposta" asChild>
+                          <Link to="/carregadores/propostas/nova" search={{ id: r.id }}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label="Duplicar proposta" asChild>
+                          <Link to="/carregadores/propostas/nova" search={{ dup: r.id }}>
+                            <Copy className="h-4 w-4" />
+                          </Link>
+                        </Button>
                         <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => excluir(r.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     </td>
+
                   </tr>
                 ))}
                 {filtered.length === 0 && (
