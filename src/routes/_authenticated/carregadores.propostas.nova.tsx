@@ -81,6 +81,7 @@ function PropostaCpoPage() {
 
   const [state, setState] = useState<CpoState>(() => novoEstado());
   const [openCli, setOpenCli] = useState(false);
+  const [etapa, setEtapa] = useState<1 | 2>(1);
   const [saving, setSaving] = useState(false);
 
   // Clientes vindos do cadastro completo (Clientes > Cadastros)
@@ -194,6 +195,7 @@ function PropostaCpoPage() {
       toast.success(`Proposta ${numero} salva.`);
       invalidate();
       setState(novoEstado());
+      setEtapa(1);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar proposta.");
     } finally {
@@ -215,19 +217,47 @@ function PropostaCpoPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <Button onClick={salvar} disabled={saving || abaixoPolitica || !clienteOk} className="gap-2">
-              <Save className="h-4 w-4" /> Salvar proposta
-            </Button>
+            {etapa === 2 && (
+              <Button onClick={salvar} disabled={saving || abaixoPolitica} className="gap-2">
+                <Save className="h-4 w-4" /> Salvar proposta
+              </Button>
+            )}
           </div>
 
+        </div>
+
+        <div className="flex items-center gap-2 text-sm">
+          <button
+            onClick={() => setEtapa(1)}
+            className={cn(
+              "px-3 py-1.5 rounded-full border transition-colors",
+              etapa === 1 ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground",
+            )}
+          >
+            1. Cliente
+          </button>
+          <div className="h-px w-6 bg-border" />
+          <button
+            onClick={() => clienteOk && setEtapa(2)}
+            disabled={!clienteOk}
+            className={cn(
+              "px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50",
+              etapa === 2 ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground",
+            )}
+          >
+            2. Produtos, frete e margem
+          </button>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-5 items-start">
           {/* ENTRADAS */}
           <div className="glass rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold">Entradas da proposta</h2>
+              <h2 className="font-semibold">
+                {etapa === 1 ? "Etapa 1 — Cliente" : "Etapa 2 — Produtos, frete e margem"}
+              </h2>
             </div>
+
 
             <Field label="Cliente já cadastrado">
               <Popover open={openCli} onOpenChange={setOpenCli}>
@@ -299,7 +329,7 @@ function PropostaCpoPage() {
               </div>
             ) : null}
 
-            {clienteOk ? (
+            {etapa === 2 ? (
               <>
             <Banner level={st.level} text={st.msg} />
 
@@ -441,16 +471,26 @@ function PropostaCpoPage() {
                 />
               </Field>
             </div>
+            <div className="flex justify-start">
+              <Button variant="outline" onClick={() => setEtapa(1)} className="gap-2">
+                Voltar para o cliente
+              </Button>
+            </div>
             </>
             ) : (
-              <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Etapa 1: selecione o cliente para liberar produtos, frete e o cálculo fiscal da proposta.
+              <div className="space-y-3">
+                <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                  Etapa 1: selecione o cliente. Produtos, frete e margem bruta ficam na etapa 2.
+                </div>
+                <Button className="w-full gap-2" disabled={!clienteOk} onClick={() => setEtapa(2)}>
+                  Continuar para produtos
+                </Button>
               </div>
             )}
           </div>
 
           {/* PAINEL / DRE */}
-          {clienteOk ? (
+          {etapa === 2 ? (
           <div className="space-y-4">
             <div className="rounded-2xl p-5 text-white bg-gradient-to-br from-[oklch(0.3_0.13_265)] via-[oklch(0.45_0.19_265)] to-[oklch(0.6_0.17_265)] shadow-lg">
               <div className="text-[11px] uppercase tracking-widest opacity-80">Valor total da proposta</div>
