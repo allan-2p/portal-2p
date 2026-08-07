@@ -422,7 +422,7 @@ function PropostaCpoPage() {
             <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
               Voltar
             </Button>
-            <Button variant="outline" onClick={() => setEtapa(2)} disabled={etapa === 2 || !clienteOk} className="gap-2">
+            <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2 || !clienteOk} className="gap-2">
               Próximo
             </Button>
             <Button onClick={() => salvar()} disabled={saving || !podeSalvar} className="gap-2">
