@@ -506,7 +506,7 @@ function PropostaCpoPage() {
             <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
               Voltar
             </Button>
-            <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2 || !clienteOk} className="gap-2">
+            <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2} className="gap-2">
               Próximo
             </Button>
             <Button onClick={() => salvar()} disabled={saving || !podeSalvar} className="gap-2">
@@ -529,7 +529,8 @@ function PropostaCpoPage() {
           <div className="h-px w-6 bg-border" />
           <button
             onClick={irParaEtapa2}
-            disabled={!clienteOk}
+
+
 
             className={cn(
               "px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50",
