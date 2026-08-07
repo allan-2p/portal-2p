@@ -393,6 +393,28 @@ function PropostaCpoPage() {
     void salvar("Aguardando Pagamento");
   }
 
+  // Abre a revisão final antes de salvar/enviar; bloqueia com mensagens se houver pendências
+  function pedirRevisao(acao: "salvar" | "concluir") {
+    const erros = acao === "salvar" ? errosSalvar : errosFechamento;
+    if (erros.length) {
+      setTentouAvancar(true);
+      if (etapa === 1 && !clienteOk) setEtapa(1);
+      toast.error(erros[0], {
+        description: erros.length > 1 ? `+ ${erros.length - 1} pendência(s) a corrigir.` : undefined,
+      });
+      return;
+    }
+    setRevisao(acao);
+  }
+
+  function confirmarRevisao() {
+    const acao = revisao;
+    setRevisao(null);
+    if (acao === "concluir") concluirPedido();
+    else void salvar();
+  }
+
+
   function exportarPdf() {
     if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de exportar o PDF.");
     const html = buildPropostaPdfHtml({
