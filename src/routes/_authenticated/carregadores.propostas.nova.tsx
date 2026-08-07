@@ -286,50 +286,29 @@ function PropostaCpoPage() {
             <Banner level={st.level} text={st.msg} />
 
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Nome do cliente">
-                <Input value={state.nome} onChange={(e) => set("nome", e.target.value)} placeholder="Nome do cliente" />
-              </Field>
-              <Field label="Telefone">
-                <Input value={state.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="(00) 00000-0000" />
-              </Field>
-              <Field label="E-mail">
-                <Input value={state.email} onChange={(e) => set("email", e.target.value)} placeholder="cliente@email.com" />
-              </Field>
-              <Field label="CNPJ / CPF">
-                <Input value={state.doc} onChange={(e) => set("doc", e.target.value)} placeholder="00.000.000/0000-00" />
-              </Field>
-              <Field label="Estado (UF) de destino">
-                <Select value={state.uf} onValueChange={(v) => set("uf", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ufs.map((u) => (
-                      <SelectItem key={u.uf} value={u.uf}>
-                        {u.uf} — {u.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field label="Inscrição Estadual">
-                <Input
-                  value={state.ie}
-                  onChange={(e) => set("ie", e.target.value)}
-                  disabled={!state.contribuinte}
-                  placeholder={state.contribuinte ? "IE do cliente" : "Cliente sem IE"}
-                />
-              </Field>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
-              <div>
-                <div className="font-semibold text-sm">Cliente contribuinte do ICMS</div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  Contribuinte: DIFAL por conta do destinatário. Não contribuinte: DIFAL absorvido na venda.
+            {state.nome ? (
+              <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                  <ReadField label="Nome do cliente" value={state.nome} />
+                  <ReadField label="Telefone" value={state.telefone} />
+                  <ReadField label="E-mail" value={state.email} />
+                  <ReadField label="CNPJ / CPF" value={state.doc} />
+                  <ReadField label="Estado (UF) de destino" value={uf ? `${uf.uf} — ${uf.nome}` : state.uf} />
+                  <ReadField label="Inscrição Estadual" value={state.ie || "Cliente sem IE"} />
+                </div>
+                <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs">
+                  <b className="text-foreground">
+                    {state.contribuinte ? "Cliente contribuinte do ICMS" : "Cliente não contribuinte do ICMS"}
+                  </b>{" "}
+                  <span className="text-muted-foreground">
+                    {state.contribuinte
+                      ? "DIFAL por conta do destinatário."
+                      : "DIFAL absorvido na venda."}
+                  </span>
                 </div>
               </div>
-              <Switch checked={state.contribuinte} onCheckedChange={setContribuinte} />
-            </div>
+            ) : null}
+
 
             <div className="flex gap-2 items-start rounded-xl border border-border bg-surface-2 px-4 py-3 text-xs text-muted-foreground">
               <Info className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
