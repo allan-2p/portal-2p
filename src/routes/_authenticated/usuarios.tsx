@@ -187,6 +187,18 @@ function UsuariosPage() {
     }
   }
 
+  async function handleRegimeChange(userId: string, regime: Regime) {
+    try {
+      await updateFn({ data: { user_id: userId, regime_contratacao: regime } });
+      toast.success("Regime de contratação atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+
+
 
   return (
     <AppLayout>
