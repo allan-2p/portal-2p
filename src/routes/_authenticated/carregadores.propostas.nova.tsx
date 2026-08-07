@@ -384,6 +384,13 @@ function PropostaCpoPage() {
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Cálculo fiscal completo da proposta em tempo real.
             </p>
+            {autosaveAt ? (
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Rascunho salvo automaticamente às{" "}
+                {autosaveAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </p>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
