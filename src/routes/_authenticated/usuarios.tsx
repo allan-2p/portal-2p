@@ -1021,7 +1021,9 @@ function EditUserModal({
               full_name: form.full_name,
               cargo: form.cargo || null,
               equipe: form.equipe || null,
+              regime_contratacao: form.regime_contratacao,
               is_external: form.is_external,
+
             });
           } catch (err) {
             toast.error(err instanceof Error ? err.message : "Erro");
