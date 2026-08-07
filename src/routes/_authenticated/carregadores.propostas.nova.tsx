@@ -243,7 +243,7 @@ function PropostaCpoPage() {
                     <CommandInput placeholder="Buscar cliente..." />
                     <CommandList>
                       <CommandEmpty>
-                        {clientesQ.isLoading ? "Carregando..." : "Nenhum cliente cadastrado."}
+                        {clientesQ.isLoading ? "Carregando..." : "Nenhum cliente em Clientes > Cadastros."}
                       </CommandEmpty>
                       <CommandGroup>
                         {(clientesQ.data ?? []).map((c) => (
