@@ -148,17 +148,13 @@ function PropostaCpoPage() {
   const uf = ufs.find((u) => u.uf === state.uf);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
 
-  // Ao trocar contribuinte, valores não editados manualmente voltam ao sugerido.
-  const setContribuinte = (v: boolean) =>
-    setState((s) => ({
-      ...s,
-      contribuinte: v,
-      itens: s.itens.map((i) =>
-        i.valorManual
-          ? i
-          : { ...i, valor: precoSugerido(produtos.find((p) => p.id === i.produtoId), v, config) },
-      ),
-    }));
+  const ReadField = ({ label, value }: { label: string; value: string }) => (
+    <div className="min-w-0">
+      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-sm font-medium truncate">{value || "—"}</div>
+    </div>
+  );
+
 
   async function salvar() {
     if (!state.nome.trim()) return toast.error("Informe o nome do cliente.");
