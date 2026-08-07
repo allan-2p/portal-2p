@@ -147,6 +147,59 @@ function PropostaCpoPage() {
   const temProduto = state.itens.some((i) => i.produtoId);
   const podeSalvar = clienteOk && temProduto && !abaixoPolitica;
 
+  // ---- Alertas automáticos de política ----
+  const itensAbaixoSugerido = state.itens.filter((i) => {
+    if (!i.produtoId) return false;
+    const sug = precoSugerido(produtos.find((p) => p.id === i.produtoId), state.contribuinte, config);
+    return sug > 0 && i.valor > 0 && i.valor < sug - 0.005;
+  });
+  const itensSemValor = state.itens.filter((i) => i.produtoId && !(i.valor > 0));
+
+  type Alerta = { level: "err" | "warn"; titulo: string; motivo: string; corrigir: string };
+  const alertas: Alerta[] = [];
+  if (temProduto && abaixoPolitica)
+    alertas.push({
+      level: "err",
+      titulo: `Fora da política — MB ${fmtPct(d.mbPct)}`,
+      motivo: `A margem bruta está abaixo do mínimo de ${fmtPct(config.politica_mb_min)} exigido pela política comercial.`,
+      corrigir: "Aumente o valor unitário dos produtos ou reduza o frete absorvido (CIF).",
+    });
+  else if (temProduto && d.mbPct < config.mb_atencao)
+    alertas.push({
+      level: "warn",
+      titulo: `Margem em atenção — ${fmtPct(d.mbPct)}`,
+      motivo: `Abaixo do patamar de conforto de ${fmtPct(config.mb_atencao)}.`,
+      corrigir: "Revise o valor unitário dos produtos antes de concluir o pedido.",
+    });
+  if (itensSemValor.length)
+    alertas.push({
+      level: "err",
+      titulo: `${itensSemValor.length} item(ns) sem valor unitário`,
+      motivo: "Itens sem preço não entram no cálculo fiscal nem na margem.",
+      corrigir: "Preencha o campo Valor unitário (com IPI) dos itens destacados.",
+    });
+  if (itensAbaixoSugerido.length)
+    alertas.push({
+      level: "warn",
+      titulo: `${itensAbaixoSugerido.length} item(ns) abaixo do preço de referência`,
+      motivo: "O valor informado está abaixo do preço calculado pela política de majoração.",
+      corrigir: "Ajuste o campo Valor unitário dos itens destacados.",
+    });
+  if (state.freteMod === "CIF" && !(state.freteValor > 0))
+    alertas.push({
+      level: "warn",
+      titulo: "Frete CIF sem valor informado",
+      motivo: "No CIF a 2P absorve o frete; sem valor a margem fica superestimada.",
+      corrigir: "Preencha o campo Valor do frete.",
+    });
+  if (!state.contribuinte && d.difalAbs > 0 && d.mbPct < config.mb_atencao)
+    alertas.push({
+      level: "warn",
+      titulo: "DIFAL absorvido pressionando a margem",
+      motivo: `Cliente não contribuinte em ${uf?.nome ?? state.uf}: ${fmtBRL(d.difalAbs)} de DIFAL por conta da 2P.`,
+      corrigir: "Considere majorar o valor unitário para repassar o DIFAL.",
+    });
+
   const ReadField = ({ label, value }: { label: string; value: string }) => (
     <div className="min-w-0">
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
