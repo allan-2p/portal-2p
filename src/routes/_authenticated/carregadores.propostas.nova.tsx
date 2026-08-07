@@ -142,6 +142,8 @@ function PropostaCpoPage() {
   const st = statusMB(d.mbPct, config);
   const uf = ufs.find((u) => u.uf === state.uf);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
+  const temProduto = state.itens.some((i) => i.produtoId);
+  const podeSalvar = clienteOk && temProduto && !abaixoPolitica;
 
   const ReadField = ({ label, value }: { label: string; value: string }) => (
     <div className="min-w-0">
@@ -216,12 +218,16 @@ function PropostaCpoPage() {
               Cálculo fiscal completo da proposta em tempo real.
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            {etapa === 2 && (
-              <Button onClick={salvar} disabled={saving || abaixoPolitica} className="gap-2">
-                <Save className="h-4 w-4" /> Salvar proposta
-              </Button>
-            )}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
+              Voltar
+            </Button>
+            <Button variant="outline" onClick={() => setEtapa(2)} disabled={etapa === 2 || !clienteOk} className="gap-2">
+              Próximo
+            </Button>
+            <Button onClick={salvar} disabled={saving || !podeSalvar} className="gap-2">
+              <Save className="h-4 w-4" /> Salvar proposta
+            </Button>
           </div>
 
         </div>
@@ -471,20 +477,10 @@ function PropostaCpoPage() {
                 />
               </Field>
             </div>
-            <div className="flex justify-start">
-              <Button variant="outline" onClick={() => setEtapa(1)} className="gap-2">
-                Voltar para o cliente
-              </Button>
-            </div>
             </>
             ) : (
-              <div className="space-y-3">
-                <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                  Etapa 1: selecione o cliente. Produtos, frete e impostos ficam na etapa 2.
-                </div>
-                <Button className="w-full gap-2" disabled={!clienteOk} onClick={() => setEtapa(2)}>
-                  Continuar para produtos
-                </Button>
+              <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                Etapa 1: selecione o cliente. Produtos, frete e impostos ficam na etapa 2.
               </div>
             )}
           </div>
