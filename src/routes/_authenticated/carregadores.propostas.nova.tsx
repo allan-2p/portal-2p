@@ -298,6 +298,26 @@ function PropostaCpoPage() {
     return sug > 0 && i.valor > 0 && i.valor < sug - 0.005;
   });
   const itensSemValor = state.itens.filter((i) => i.produtoId && !(i.valor > 0));
+  const itensSemQtd = state.itens.filter((i) => i.produtoId && !(i.qtd > 0));
+  const itensSemProduto = state.itens.filter((i) => !i.produtoId && (i.valor > 0 || i.qtd > 0));
+
+  // ---- Bloqueios de fechamento (exportar PDF / concluir pedido) ----
+  const errosFechamento: string[] = [];
+  if (!clienteOk) errosFechamento.push(errosCliente[0]?.msg ?? "Complete os dados do cliente.");
+  if (!temProduto) errosFechamento.push("Adicione ao menos um produto à proposta.");
+  if (itensSemProduto.length)
+    errosFechamento.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
+  if (itensSemValor.length)
+    errosFechamento.push(`${itensSemValor.length} item(ns) sem valor unitário.`);
+  if (itensSemQtd.length)
+    errosFechamento.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
+  if (state.freteMod === "CIF" && !(state.freteValor > 0))
+    errosFechamento.push("Frete CIF sem valor informado — necessário para fechar os totais.");
+  if (temProduto && !(d.valorTotal > 0))
+    errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
+  if (abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+  const podeFechar = errosFechamento.length === 0;
+
 
   type Alerta = { level: "err" | "warn"; titulo: string; motivo: string; corrigir: string };
   const alertas: Alerta[] = [];
