@@ -509,7 +509,11 @@ function PropostaCpoPage() {
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Propostas</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+              <Link to="/carregadores/propostas" className="text-primary hover:underline">Propostas</Link>
+              <span>/</span>
+              <span>{propostaId ? "Editar proposta" : "Nova proposta"}</span>
+            </div>
             <h1 className="text-3xl font-bold mt-1">
               {propostaId ? `Editar proposta${numeroAtual ? ` ${numeroAtual}` : ""}` : "Nova proposta"}
             </h1>
