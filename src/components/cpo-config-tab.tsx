@@ -52,9 +52,6 @@ export function CpoConfigTab() {
         <Field label="Alíquota interestadual de origem (%)">
           <Input type="number" step="0.01" value={pct("aliq_inter")} onChange={(e) => setPct("aliq_inter", e.target.value)} />
         </Field>
-        <Field label="Majoração sem IE (%)">
-          <Input type="number" step="0.01" value={pct("majoracao_sem_ie")} onChange={(e) => setPct("majoracao_sem_ie", e.target.value)} />
-        </Field>
         <Field label="MB mínima de política (%)">
           <Input type="number" step="0.01" value={pct("politica_mb_min")} onChange={(e) => setPct("politica_mb_min", e.target.value)} />
         </Field>

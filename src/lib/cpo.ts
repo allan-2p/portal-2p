@@ -12,7 +12,6 @@ export type CpoProduct = {
   nome: string;
   potencia: string | null;
   custo: number;
-  preco_sugerido: number;
   ativo: boolean;
 };
 

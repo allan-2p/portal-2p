@@ -8,7 +8,7 @@ export function useCpoProducts() {
     queryFn: async (): Promise<CpoProduct[]> => {
       const { data, error } = await supabase
         .from("cpo_products")
-        .select("id, nome, potencia, custo, preco_sugerido, ativo")
+        .select("id, nome, potencia, custo, ativo")
         .order("nome");
       if (error) throw error;
       return (data ?? []).map((p) => ({
@@ -16,7 +16,6 @@ export function useCpoProducts() {
         nome: p.nome,
         potencia: p.potencia,
         custo: Number(p.custo),
-        preco_sugerido: Number(p.preco_sugerido),
         ativo: p.ativo,
       }));
     },
