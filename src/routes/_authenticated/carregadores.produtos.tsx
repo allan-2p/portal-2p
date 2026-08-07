@@ -211,24 +211,15 @@ function ProdutosTab() {
               <Field label="Potência (ex.: 7,4 kW)">
                 <Input value={draft.potencia} onChange={(e) => setDraft({ ...draft, potencia: e.target.value })} />
               </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Custo (R$)">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={draft.custo}
-                    onChange={(e) => setDraft({ ...draft, custo: e.target.value })}
-                  />
-                </Field>
-                <Field label="Preço sugerido (R$)">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={draft.preco_sugerido}
-                    onChange={(e) => setDraft({ ...draft, preco_sugerido: e.target.value })}
-                  />
-                </Field>
-              </div>
+              <Field label="Custo (R$)">
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={draft.custo}
+                  onChange={(e) => setDraft({ ...draft, custo: e.target.value })}
+                />
+              </Field>
+
               <div className="flex items-center gap-3">
                 <Switch checked={draft.ativo} onCheckedChange={(v) => setDraft({ ...draft, ativo: v })} />
                 <span className="text-sm">Disponível para propostas</span>
