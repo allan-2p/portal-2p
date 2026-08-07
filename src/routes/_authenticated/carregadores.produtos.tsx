@@ -54,11 +54,9 @@ function ProdutosCpoPage() {
           <TabsList>
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
             <TabsTrigger value="ufs">Alíquotas por UF</TabsTrigger>
-            <TabsTrigger value="config">Política tributária</TabsTrigger>
           </TabsList>
           <TabsContent value="produtos" className="mt-4"><ProdutosTab /></TabsContent>
           <TabsContent value="ufs" className="mt-4"><UfsTab /></TabsContent>
-          <TabsContent value="config" className="mt-4"><ConfigTab /></TabsContent>
         </Tabs>
       </div>
     </AppLayout>
