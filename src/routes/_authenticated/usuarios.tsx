@@ -858,6 +858,18 @@ function UserModal({
             ))}
           </select>
         </Field>
+        <Field label="Regime de contratação">
+          <select
+            value={form.regime_contratacao}
+            onChange={(e) => setForm({ ...form, regime_contratacao: e.target.value as Regime })}
+            className="input"
+          >
+            {REGIMES.map((rg) => (
+              <option key={rg} value={rg}>{rg}</option>
+            ))}
+          </select>
+        </Field>
+
 
         <div className="flex gap-2 pt-2">
           <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2">
