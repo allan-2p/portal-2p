@@ -43,6 +43,10 @@ import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    id: typeof s.id === "string" ? s.id : undefined,
+    dup: typeof s.dup === "string" ? s.dup : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Nova Proposta CPO — Portal 2P Carregadores" },
@@ -59,6 +63,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/nov
   }),
   component: PropostaCpoPage,
 });
+
 
 type ClienteCadastro = {
   cliente_nome: string;
