@@ -681,6 +681,7 @@ function PropostaCpoPage() {
                       <CommandGroup>
                         {(clientesQ.data ?? []).map((c) => (
                           <CommandItem
+                            key={c.cliente_nome}
                             value={[c.cliente_nome, c.cliente_doc, c.uf].filter(Boolean).join(" ")}
                             onSelect={() => {
                               aplicarCliente(c);
