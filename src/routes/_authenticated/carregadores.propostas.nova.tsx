@@ -567,17 +567,24 @@ function PropostaCpoPage() {
             </div>
 
             {/* RESUMO FINAL DESTACADO */}
-            <div className="rounded-2xl p-5 text-white bg-gradient-to-br from-[oklch(0.3_0.13_265)] via-[oklch(0.45_0.19_265)] to-[oklch(0.6_0.17_265)] shadow-lg space-y-4">
-              <div>
-                <div className="text-[11px] uppercase tracking-widest opacity-80">Valor total da proposta</div>
-                <div className="text-4xl font-extrabold mt-1">{fmtBRL(d.valorTotalProposta)}</div>
+            <div className="rounded-2xl p-6 text-white bg-gradient-to-br from-[oklch(0.28_0.12_265)] via-[oklch(0.42_0.18_265)] to-[oklch(0.58_0.17_265)] shadow-xl space-y-5">
+              <div className="border-b border-white/20 pb-4">
+                <div className="text-[11px] uppercase tracking-[0.2em] opacity-75">Valor total da proposta</div>
+                <div className="text-[2.6rem] leading-none font-extrabold mt-2 tabular-nums">
+                  {fmtBRL(d.valorTotalProposta)}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <SumItem label="Valor" value={fmtBRL(d.valor)} />
                 <SumItem label="Valor com frete" value={fmtBRL(d.valorItens + state.freteValor)} />
                 <SumItem label="Total NF" value={fmtBRL(d.valorItens + state.freteValor)} />
-                <SumItem label="Margem bruta" value={`${fmtBRL(d.mb)} · ${fmtPct(d.mbPct)}`} />
-                <SumItem label="Comissão estimada" value={`${fmtBRL(d.comValor)} · ${fmtPct(d.comPct)}`} />
+                <SumItem label="Margem bruta" value={fmtBRL(d.mb)} hint={fmtPct(d.mbPct)} />
+                <SumItem
+                  label="Comissão estimada"
+                  value={fmtBRL(d.comValor)}
+                  hint={fmtPct(d.comPct)}
+                  className="sm:col-span-2"
+                />
               </div>
             </div>
 
