@@ -164,10 +164,8 @@ function PropostaCpoPage() {
           <div className="glass rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">Entradas da proposta</h2>
-              <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium">
-                {completa ? "Visão completa" : "Visão resumida"}
-              </span>
             </div>
+
 
             <Banner level={st.level} text={st.msg} />
 
