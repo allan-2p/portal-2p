@@ -34,7 +34,7 @@ import {
   novoEstado,
   novoItem,
   parseMoeda,
-  precoSugerido,
+  
   statusMB,
   type CpoItem,
   type CpoState,
@@ -226,24 +226,17 @@ function PropostaCpoPage() {
 
 
   const aplicarCliente = (c: ClienteCadastro) =>
-    setState((s) => {
-      const contribuinte = c.contribuinte ?? s.contribuinte;
-      return {
-        ...s,
-        nome: c.cliente_nome,
-        telefone: c.cliente_telefone ?? "",
-        email: c.cliente_email ?? "",
-        doc: c.cliente_doc ?? "",
-        ie: c.cliente_ie ?? "",
-        uf: c.uf || s.uf,
-        contribuinte,
-        itens: s.itens.map((i) =>
-          i.valorManual
-            ? i
-            : { ...i, valor: precoSugerido(produtos.find((p) => p.id === i.produtoId), contribuinte, config) },
-        ),
-      };
-    });
+    setState((s) => ({
+      ...s,
+      nome: c.cliente_nome,
+      telefone: c.cliente_telefone ?? "",
+      email: c.cliente_email ?? "",
+      doc: c.cliente_doc ?? "",
+      ie: c.cliente_ie ?? "",
+      uf: c.uf || s.uf,
+      contribuinte: c.contribuinte ?? s.contribuinte,
+    }));
+
 
 
 
@@ -292,11 +285,7 @@ function PropostaCpoPage() {
 
 
   // ---- Alertas automáticos de política ----
-  const itensAbaixoSugerido = state.itens.filter((i) => {
-    if (!i.produtoId) return false;
-    const sug = precoSugerido(produtos.find((p) => p.id === i.produtoId), state.contribuinte, config);
-    return sug > 0 && i.valor > 0 && i.valor < sug - 0.005;
-  });
+
   const itensSemValor = state.itens.filter((i) => i.produtoId && !(i.valor > 0));
   const itensSemQtd = state.itens.filter((i) => i.produtoId && !(i.qtd > 0));
   const itensSemProduto = state.itens.filter((i) => !i.produtoId && (i.valor > 0 || i.qtd > 0));
@@ -355,13 +344,6 @@ function PropostaCpoPage() {
       titulo: `${itensSemProduto.length} linha(ns) sem produto`,
       motivo: "Há linhas preenchidas sem produto selecionado.",
       corrigir: "Selecione o produto ou remova a linha.",
-    });
-  if (itensAbaixoSugerido.length)
-    alertas.push({
-      level: "warn",
-      titulo: `${itensAbaixoSugerido.length} item(ns) abaixo do preço de referência`,
-      motivo: "O valor informado está abaixo do preço calculado pela política de majoração.",
-      corrigir: "Ajuste o campo Valor unitário dos itens destacados.",
     });
   if (state.freteMod === "CIF" && !(state.freteValor > 0))
     alertas.push({
@@ -737,36 +719,23 @@ function PropostaCpoPage() {
               </div>
 
               {state.itens.map((it) => {
-                const prod = produtos.find((p) => p.id === it.produtoId);
-                const sug = precoSugerido(prod, state.contribuinte, config);
                 const semValor = !!it.produtoId && !(it.valor > 0);
                 const semQtd = !!it.produtoId && !(it.qtd > 0);
                 const semProduto = !it.produtoId && (it.valor > 0 || it.qtd > 0);
                 const bloqueado = semValor || semQtd || semProduto;
-                const abaixoSug = !!it.produtoId && sug > 0 && it.valor > 0 && it.valor < sug - 0.005;
                 return (
                   <div
                     key={it.key}
                     className={cn(
                       "rounded-xl border p-3 space-y-3 bg-surface/40",
-                      bloqueado
-                        ? "border-destructive/60 ring-1 ring-destructive/25"
-                        : abaixoSug
-                          ? "border-amber-500/60 ring-1 ring-amber-500/20"
-                          : "border-border",
+                      bloqueado ? "border-destructive/60 ring-1 ring-destructive/25" : "border-border",
                     )}
                   >
                     <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_.5fr] gap-3">
                       <Field label="Produto">
                         <Select
                           value={it.produtoId}
-                          onValueChange={(v) => {
-                            const p = produtos.find((x) => x.id === v);
-                            setItem(it.key, {
-                              produtoId: v,
-                              valor: it.valorManual ? it.valor : precoSugerido(p, state.contribuinte, config),
-                            });
-                          }}
+                          onValueChange={(v) => setItem(it.key, { produtoId: v })}
                         >
                           <SelectTrigger
                             className={cn(semProduto && "border-destructive focus-visible:ring-destructive")}
@@ -803,21 +772,15 @@ function PropostaCpoPage() {
                       <Field label="Valor unitário (com IPI)">
                         <Input
                           value={it.valor ? fmtBRL(it.valor) : ""}
-                          placeholder={sug ? fmtBRL(sug) : "R$ 0,00"}
-                          className={cn(
-                            semValor && "border-destructive focus-visible:ring-destructive",
-                            abaixoSug && "border-amber-500 focus-visible:ring-amber-500",
-                          )}
+                          placeholder="R$ 0,00"
+                          className={cn(semValor && "border-destructive focus-visible:ring-destructive")}
                           onChange={(e) => setItem(it.key, { valor: parseMoeda(e.target.value), valorManual: true })}
                         />
                         {semValor ? (
                           <p className="text-[11px] text-destructive mt-1">Informe o valor unitário deste item.</p>
-                        ) : abaixoSug ? (
-                          <p className="text-[11px] text-amber-600 mt-1">
-                            Abaixo da referência de {fmtBRL(sug)}.
-                          </p>
                         ) : null}
                       </Field>
+
                       <div className="flex items-end justify-between gap-2">
                         <div className="text-xs text-muted-foreground">
                           Total item: <b className="text-foreground">{fmtBRL(it.valor * it.qtd)}</b>

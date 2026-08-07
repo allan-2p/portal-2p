@@ -78,11 +78,11 @@ function RegrasPage() {
               <tbody>
                 <Campo nome="Cliente (nome, CNPJ/CPF, contato, endereço)" origem="Clientes › Cadastros. Ao selecionar o cliente, os dados são apenas exibidos — não são editáveis na proposta." />
                 <Campo nome="UF de destino" origem="Cadastro do cliente. Define a alíquota interna e o FCP usados no DIFAL." />
-                <Campo nome="Contribuinte de ICMS" origem="Cadastro do cliente (Inscrição Estadual). Define quem absorve o DIFAL e se há majoração de preço." />
-                <Campo nome="Produto, custo e preço sugerido" origem="Moderação › Produtos e Alíquotas (tabela de produtos)." />
+                <Campo nome="Contribuinte de ICMS" origem="Cadastro do cliente (Inscrição Estadual). Define quem absorve o DIFAL ." />
+                <Campo nome="Produto e custo" origem="Moderação › Produtos e Alíquotas (tabela de produtos)." />
                 <Campo nome="Alíquota interna e FCP por Estado" origem="Moderação › Produtos e Alíquotas (tabela de UFs)." />
-                <Campo nome="IPI, PIS/COFINS, alíquota interestadual, majoração sem IE, MB mínima" origem="Moderação › Comissões › Parâmetros tributários." />
-                <Campo nome="Valor unitário de venda" origem="Preenchido pelo vendedor. Inicia no preço sugerido e pode ser alterado (passa a ser valor manual)." />
+                <Campo nome="IPI, PIS/COFINS, alíquota interestadual, MB mínima" origem="Moderação › Comissões › Parâmetros tributários." />
+                <Campo nome="Valor unitário de venda" origem="Preenchido pelo vendedor em cada proposta. Não há preço de tabela sugerido — o valor é sempre negociado." />
                 <Campo nome="Frete" origem="Preenchido na proposta (FOB ou CIF). Entra no total da proposta, mas não na base de impostos nem na margem." />
                 <Campo nome="Regras de comissão (CLT/PJ)" origem="Moderação › Comissões. O regime do beneficiário vem do cadastro do usuário (Usuários › Regime de contratação)." />
               </tbody>
@@ -90,12 +90,10 @@ function RegrasPage() {
           </div>
         </Section>
 
-        <Section title="2. Preço sugerido e majoração" subtitle="Cliente sem Inscrição Estadual absorve carga tributária maior.">
-          <Formula>{`Contribuinte      → preço sugerido = preço da tabela
-Não contribuinte  → preço sugerido = preço da tabela × (1 + ${fmtPct(cfg.majoracao_sem_ie)})`}</Formula>
+        <Section title="2. Valor unitário de venda" subtitle="O preço é sempre definido pelo consultor na proposta.">
           <p className="text-muted-foreground">
-            A majoração é apenas uma sugestão de partida: o vendedor pode alterar o valor, e todo o cálculo
-            seguinte usa o valor efetivamente digitado.
+            Não existe preço de tabela ou preço sugerido: cada item recebe o valor unitário negociado
+            (com IPI). Todo o cálculo fiscal, de margem e de comissão usa exclusivamente o valor digitado.
           </p>
         </Section>
 
@@ -186,7 +184,7 @@ Comissão total    = Margem Bruta × % Comissão total`}</Formula>
         <Section title="7. Fluxo e status da proposta" subtitle="Do rascunho ao pedido.">
           <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
             <li>Selecionar o cliente já cadastrado — dados fiscais e de contato vêm prontos.</li>
-            <li>Adicionar itens; o valor inicia no preço sugerido e pode ser ajustado.</li>
+            <li>Adicionar itens e informar o valor unitário negociado de cada um.</li>
             <li>Conferir o DRE lateral (impostos, receita líquida, margem e comissão) em tempo real.</li>
             <li>Salvar: a proposta nasce como <strong>Salvo</strong> e vai para o histórico em Propostas.</li>
             <li>O status evolui em Propostas/Pedidos conforme a negociação (Enviada, Aprovada, Perdida e etapas do pedido).</li>
