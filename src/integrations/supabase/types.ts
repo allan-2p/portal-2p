@@ -164,6 +164,45 @@ export type Database = {
         }
         Relationships: []
       }
+      cpo_tasks: {
+        Row: {
+          cliente_nome: string | null
+          created_at: string
+          descricao: string | null
+          due_date: string | null
+          id: string
+          owner_id: string
+          prioridade: string
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_nome?: string | null
+          created_at?: string
+          descricao?: string | null
+          due_date?: string | null
+          id?: string
+          owner_id?: string
+          prioridade?: string
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_nome?: string | null
+          created_at?: string
+          descricao?: string | null
+          due_date?: string | null
+          id?: string
+          owner_id?: string
+          prioridade?: string
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cpo_uf_rates: {
         Row: {
           aliq_interna: number

@@ -20,6 +20,9 @@ export type FeatureKey =
   | "clientes.sugestoes"
   | "clientes.ranking"
   | "atlas"
+  | "cpo.home"
+  | "cpo.tarefas"
+  | "cpo.clientes"
   | "cpo.propostas"
   | "cpo.produtos"
   | "cpo.comissoes"
@@ -83,22 +86,14 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
     logo: carregadoresAsset.url,
     swatch: "oklch(0.5 0.19 265)",
     routes: [
-      "home",
-      "tarefas",
-      "pedidos",
+      "cpo.home",
+      "cpo.tarefas",
+      "cpo.clientes",
       "cpo.propostas",
       "cpo.produtos",
       "cpo.comissoes",
-      "dashboards",
-      "clientes.cadastros",
-      "clientes.segmentacao",
-      "clientes.perfil",
-      "clientes.sugestoes",
-      "atlas",
       "admin.usuarios",
       "admin.vendedores",
-      "admin.metas",
-      "admin.tabelas",
       "admin.integracoes",
     ],
 
@@ -139,6 +134,9 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/clientes/sugestoes": "clientes.sugestoes",
   "/clientes/ranking": "clientes.ranking",
   "/atlas": "atlas",
+  "/carregadores": "cpo.home",
+  "/carregadores/tarefas": "cpo.tarefas",
+  "/carregadores/clientes": "cpo.clientes",
   "/carregadores/propostas": "cpo.propostas",
   "/carregadores/produtos": "cpo.produtos",
   "/carregadores/comissoes": "cpo.comissoes",
@@ -169,6 +167,9 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "clientes.sugestoes": "Clientes • Sugestões do Atlas",
   "clientes.ranking": "Clientes • Ranking",
   atlas: "Atlas (AI)",
+  "cpo.home": "Carregadores • Home",
+  "cpo.tarefas": "Carregadores • Tarefas",
+  "cpo.clientes": "Carregadores • Clientes",
   "cpo.propostas": "CPO • Propostas",
   "cpo.produtos": "Moderação • Produtos e Alíquotas",
   "cpo.comissoes": "Moderação • Comissões",
