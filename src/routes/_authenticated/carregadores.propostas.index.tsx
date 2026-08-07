@@ -128,11 +128,8 @@ function HistoricoCpoPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Stat label="Propostas" value={String(filtered.length)} />
-          <Stat label="Valor total" value={fmtBRL(totalValor)} />
-          <Stat label="Margem bruta acumulada" value={fmtBRL(totalMb)} />
-        </div>
+
+
 
         <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[220px]">
