@@ -553,7 +553,7 @@ function PropostaCpoPage() {
             <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2} className="gap-2">
               Próximo
             </Button>
-            <Button onClick={() => salvar()} disabled={saving || !podeSalvar} className="gap-2">
+            <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2">
               <Save className="h-4 w-4" /> Salvar proposta
             </Button>
           </div>
