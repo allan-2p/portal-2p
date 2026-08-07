@@ -952,18 +952,19 @@ function PropostaCpoPage() {
                   {fmtBRL(d.valorTotalProposta)}
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <SumItem label="Valor" value={fmtBRL(d.valor)} />
                 <SumItem label="Valor com frete" value={fmtBRL(d.valorItens + state.freteValor)} />
                 <SumItem label="Total NF" value={fmtBRL(d.valorItens + state.freteValor)} />
                 <SumItem label="Margem bruta" value={fmtBRL(d.mb)} hint={fmtPct(d.mbPct)} />
+                <SumItem label="Comissão estimada" value={fmtBRL(d.comValor)} hint={fmtPct(d.comPct)} />
                 <SumItem
-                  label="Comissão estimada"
-                  value={fmtBRL(d.comValor)}
-                  hint={fmtPct(d.comPct)}
-                  className="sm:col-span-2"
+                  label="Margem após comissão"
+                  value={fmtBRL(d.mb - d.comValor)}
+                  hint={fmtPct(d.valor > 0 ? (d.mb - d.comValor) / d.valor : 0)}
                 />
               </div>
+
 
               {/* ALERTAS AUTOMÁTICOS DE POLÍTICA */}
               {alertas.length ? (
