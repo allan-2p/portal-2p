@@ -48,6 +48,8 @@ import {
   type CpoState,
 } from "@/lib/cpo";
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
+import { MoneyInput } from "@/components/money-input";
+
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
