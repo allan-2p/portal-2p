@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Pencil, Trash2, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { UFS } from "@/lib/cpo";
+import { useCpoUfs } from "@/hooks/use-cpo";
 
 export const Route = createFileRoute("/_authenticated/carregadores/clientes/cadastros")({
   head: () => ({
@@ -66,7 +66,7 @@ const vazio = (): Omit<Cliente, "id"> => ({
   regime_tributario: "Simples Nacional", email: "", telefone: "", site: "",
   contato_nome: "", contato_cargo: "", contato_email: "", contato_telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "",
-  uf: "SP", condicao_pagamento: "", transactionPlaceholder: undefined as never,
+  uf: "SP", condicao_pagamento: "",
   transportadora: "", observacoes: "", ativo: true,
 } as Omit<Cliente, "id">);
 
@@ -74,6 +74,7 @@ const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pe
 
 function CadastrosPage() {
   const qc = useQueryClient();
+  const ufs = useCpoUfs().data ?? [];
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -210,7 +211,7 @@ function CadastrosPage() {
                     <Select value={form.uf} onValueChange={(v) => set("uf", v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {UFS.map((u) => <SelectItem key={u.uf} value={u.uf}>{u.uf} — {u.nome}</SelectItem>)}
+                        {ufs.map((u) => <SelectItem key={u.uf} value={u.uf}>{u.uf} — {u.nome}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </F>
