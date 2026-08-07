@@ -797,39 +797,7 @@ export type Database = {
       }
     }
     Views: {
-      cpo_products_admin: {
-        Row: {
-          ativo: boolean | null
-          created_at: string | null
-          custo: number | null
-          id: string | null
-          nome: string | null
-          potencia: string | null
-          preco_sugerido: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          ativo?: boolean | null
-          created_at?: string | null
-          custo?: number | null
-          id?: string | null
-          nome?: string | null
-          potencia?: string | null
-          preco_sugerido?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          ativo?: boolean | null
-          created_at?: string | null
-          custo?: number | null
-          id?: string | null
-          nome?: string | null
-          potencia?: string | null
-          preco_sugerido?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
