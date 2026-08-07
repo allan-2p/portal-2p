@@ -195,6 +195,7 @@ function PropostaCpoPage() {
       toast.success(`Proposta ${numero} salva.`);
       invalidate();
       setState(novoEstado());
+      setEtapa(1);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar proposta.");
     } finally {
