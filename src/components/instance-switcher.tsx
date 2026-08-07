@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const INSTANCE_HOME: Record<InstanceId, string> = {
   solar: "/",
-  carregadores: "/",
+  carregadores: "/carregadores",
   marketing: "/marketing",
 };
 
