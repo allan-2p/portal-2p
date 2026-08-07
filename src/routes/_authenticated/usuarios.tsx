@@ -262,6 +262,8 @@ function UsuariosPage() {
             onReload={load}
             onScopeChange={handleScopeChange}
             onSfIdChange={handleSfIdChange}
+            onRegimeChange={handleRegimeChange}
+
             onEdit={(row) => setModal({ kind: "edit", row })}
           />
         ) : (
