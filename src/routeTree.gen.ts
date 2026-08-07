@@ -43,6 +43,7 @@ import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_au
 import { Route as AuthenticatedCarregadoresTarefasRouteImport } from './routes/_authenticated/carregadores.tarefas'
 import { Route as AuthenticatedCarregadoresPropostasRouteImport } from './routes/_authenticated/carregadores.propostas'
 import { Route as AuthenticatedCarregadoresProdutosRouteImport } from './routes/_authenticated/carregadores.produtos'
+import { Route as AuthenticatedCarregadoresPedidosRouteImport } from './routes/_authenticated/carregadores.pedidos'
 import { Route as AuthenticatedCarregadoresComissoesRouteImport } from './routes/_authenticated/carregadores.comissoes'
 import { Route as AuthenticatedCarregadoresClientesRouteImport } from './routes/_authenticated/carregadores.clientes'
 import { Route as AuthenticatedAdminVendedoresRouteImport } from './routes/_authenticated/admin.vendedores'
@@ -241,6 +242,12 @@ const AuthenticatedCarregadoresProdutosRoute =
     path: '/carregadores/produtos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCarregadoresPedidosRoute =
+  AuthenticatedCarregadoresPedidosRouteImport.update({
+    id: '/carregadores/pedidos',
+    path: '/carregadores/pedidos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCarregadoresComissoesRoute =
   AuthenticatedCarregadoresComissoesRouteImport.update({
     id: '/carregadores/comissoes',
@@ -318,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRoute
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
   '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   '/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
@@ -361,6 +369,7 @@ export interface FileRoutesByTo {
   '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRoute
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
   '/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
   '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
@@ -406,6 +415,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/_authenticated/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRoute
   '/_authenticated/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/_authenticated/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
   '/_authenticated/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
   '/_authenticated/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   '/_authenticated/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
@@ -452,6 +462,7 @@ export interface FileRouteTypes {
     | '/admin/vendedores'
     | '/carregadores/clientes'
     | '/carregadores/comissoes'
+    | '/carregadores/pedidos'
     | '/carregadores/produtos'
     | '/carregadores/propostas'
     | '/carregadores/tarefas'
@@ -495,6 +506,7 @@ export interface FileRouteTypes {
     | '/admin/vendedores'
     | '/carregadores/clientes'
     | '/carregadores/comissoes'
+    | '/carregadores/pedidos'
     | '/carregadores/produtos'
     | '/carregadores/tarefas'
     | '/clientes/cadastros'
@@ -539,6 +551,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/vendedores'
     | '/_authenticated/carregadores/clientes'
     | '/_authenticated/carregadores/comissoes'
+    | '/_authenticated/carregadores/pedidos'
     | '/_authenticated/carregadores/produtos'
     | '/_authenticated/carregadores/propostas'
     | '/_authenticated/carregadores/tarefas'
@@ -808,6 +821,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarregadoresProdutosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/carregadores/pedidos': {
+      id: '/_authenticated/carregadores/pedidos'
+      path: '/carregadores/pedidos'
+      fullPath: '/carregadores/pedidos'
+      preLoaderRoute: typeof AuthenticatedCarregadoresPedidosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/carregadores/comissoes': {
       id: '/_authenticated/carregadores/comissoes'
       path: '/carregadores/comissoes'
@@ -975,6 +995,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminVendedoresRoute: typeof AuthenticatedAdminVendedoresRoute
   AuthenticatedCarregadoresClientesRoute: typeof AuthenticatedCarregadoresClientesRoute
   AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
+  AuthenticatedCarregadoresPedidosRoute: typeof AuthenticatedCarregadoresPedidosRoute
   AuthenticatedCarregadoresProdutosRoute: typeof AuthenticatedCarregadoresProdutosRoute
   AuthenticatedCarregadoresPropostasRoute: typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   AuthenticatedCarregadoresTarefasRoute: typeof AuthenticatedCarregadoresTarefasRoute
@@ -1004,6 +1025,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCarregadoresClientesRoute,
   AuthenticatedCarregadoresComissoesRoute:
     AuthenticatedCarregadoresComissoesRoute,
+  AuthenticatedCarregadoresPedidosRoute: AuthenticatedCarregadoresPedidosRoute,
   AuthenticatedCarregadoresProdutosRoute:
     AuthenticatedCarregadoresProdutosRoute,
   AuthenticatedCarregadoresPropostasRoute:
