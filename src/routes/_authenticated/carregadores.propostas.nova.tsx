@@ -670,6 +670,43 @@ function PropostaCpoPage() {
                   className="sm:col-span-2"
                 />
               </div>
+
+              {/* ALERTAS AUTOMÁTICOS DE POLÍTICA */}
+              {alertas.length ? (
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] opacity-80">
+                    <TriangleAlert className="h-3.5 w-3.5" />
+                    {abaixoPolitica ? "Proposta fora da política" : "Pontos de atenção"}
+                  </div>
+                  {alertas.map((a, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "rounded-xl border px-4 py-3 bg-white/10 backdrop-blur-sm",
+                        a.level === "err" ? "border-red-300/70" : "border-amber-200/60",
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                            a.level === "err" ? "bg-red-500 text-white" : "bg-amber-400 text-amber-950",
+                          )}
+                        >
+                          {a.level === "err" ? "Bloqueio" : "Atenção"}
+                        </span>
+                        <span className="text-sm font-semibold">{a.titulo}</span>
+                      </div>
+                      <p className="text-xs opacity-90 mt-1.5">{a.motivo}</p>
+                      <p className="text-xs font-medium mt-1">Corrigir: {a.corrigir}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-medium">
+                  <CheckCircle2 className="h-4 w-4" /> Proposta dentro da política comercial.
+                </div>
+              )}
             </div>
 
             <div className="glass rounded-2xl p-4 flex flex-wrap gap-2">
