@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { CpoConfigTab } from "@/components/cpo-config-tab";
+import { CpoComissaoRegras } from "@/components/cpo-comissao-regras";
+
 
 export const Route = createFileRoute("/_authenticated/carregadores/comissoes")({
   head: () => ({
