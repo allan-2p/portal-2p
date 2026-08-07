@@ -485,10 +485,13 @@ function PropostaCpoPage() {
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">Propostas</div>
-            <h1 className="text-3xl font-bold mt-1">Nova proposta</h1>
+            <h1 className="text-3xl font-bold mt-1">
+              {propostaId ? `Editar proposta${numeroAtual ? ` ${numeroAtual}` : ""}` : "Nova proposta"}
+            </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Cálculo fiscal completo da proposta em tempo real.
             </p>
+
             {autosaveAt ? (
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
