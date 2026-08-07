@@ -71,8 +71,49 @@ function PropostaCpoPage() {
   const config = configQ.data ?? CPO_CONFIG_FALLBACK;
 
   const [state, setState] = useState<CpoState>(() => novoEstado());
-  
+  const [openCli, setOpenCli] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Clientes já cadastrados (último registro de cada cliente nas propostas CPO)
+  const clientesQ = useQuery({
+    queryKey: ["cpo-clientes-cadastro"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cpo_proposals")
+        .select("cliente_nome,cliente_telefone,cliente_email,cliente_doc,cliente_ie,uf,contribuinte,created_at")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      const map = new Map<string, ClienteCadastro>();
+      for (const p of data ?? []) {
+        const key = (p.cliente_nome ?? "").trim().toUpperCase();
+        if (!key || map.has(key)) continue;
+        map.set(key, {
+          cliente_nome: (p.cliente_nome ?? "").trim(),
+          cliente_telefone: p.cliente_telefone,
+          cliente_email: p.cliente_email,
+          cliente_doc: p.cliente_doc,
+          cliente_ie: p.cliente_ie,
+          uf: p.uf,
+          contribuinte: p.contribuinte,
+        });
+      }
+      return [...map.values()].sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome));
+    },
+  });
+
+  const aplicarCliente = (c: ClienteCadastro) =>
+    setState((s) => ({
+      ...s,
+      nome: c.cliente_nome,
+      telefone: c.cliente_telefone ?? "",
+      email: c.cliente_email ?? "",
+      doc: c.cliente_doc ?? "",
+      ie: c.cliente_ie ?? "",
+      uf: c.uf || s.uf,
+      contribuinte: c.contribuinte ?? s.contribuinte,
+    }));
+
 
   const set = <K extends keyof CpoState>(k: K, v: CpoState[K]) =>
     setState((s) => ({ ...s, [k]: v }));
