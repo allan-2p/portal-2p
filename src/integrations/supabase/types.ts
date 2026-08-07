@@ -800,7 +800,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_instance_access: { Args: { _instance: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      is_internal_staff: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "gerente" | "vendedor" | "diretor" | "marketing"
