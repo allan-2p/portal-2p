@@ -60,6 +60,16 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/nov
   component: PropostaCpoPage,
 });
 
+type ClienteCadastro = {
+  cliente_nome: string;
+  cliente_telefone: string | null;
+  cliente_email: string | null;
+  cliente_doc: string | null;
+  cliente_ie: string | null;
+  uf: string;
+  contribuinte: boolean;
+};
+
 function PropostaCpoPage() {
   const produtosQ = useCpoProducts();
   const ufsQ = useCpoUfs();
