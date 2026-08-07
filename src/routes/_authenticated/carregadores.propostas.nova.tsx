@@ -315,7 +315,7 @@ function PropostaCpoPage() {
     errosFechamento.push("Frete CIF sem valor informado — necessário para fechar os totais.");
   if (temProduto && !(d.valorTotalProposta > 0))
     errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
-  if (abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+  if (temProduto && abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
   const podeFechar = errosFechamento.length === 0;
 
   // ---- Bloqueios de salvamento ----
