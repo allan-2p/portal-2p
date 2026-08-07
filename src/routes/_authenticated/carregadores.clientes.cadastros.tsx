@@ -143,11 +143,29 @@ function CadastrosPage() {
 
   const rows = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return clientes;
-    return clientes.filter((c) =>
-      [c.razao_social, c.nome_fantasia, c.doc, c.cidade, c.uf].some((v) => (v ?? "").toLowerCase().includes(t)),
-    );
-  }, [clientes, q]);
+    const tDoc = soDigitos(q);
+    return clientes.filter((c) => {
+      if (fClasse !== "todas" && (c.classificacao || "C") !== fClasse) return false;
+      if (fUf !== "todas" && c.uf !== fUf) return false;
+      if (fStatus === "ativos" && !c.ativo) return false;
+      if (fStatus === "inativos" && c.ativo) return false;
+      if (fFiscal === "contribuinte" && !c.contribuinte) return false;
+      if (fFiscal === "nao" && c.contribuinte) return false;
+      if (!t) return true;
+      const texto = [c.razao_social, c.nome_fantasia, c.doc, c.cidade, c.uf, c.email, c.contato_nome]
+        .some((v) => (v ?? "").toLowerCase().includes(t));
+      const doc = tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc);
+      return texto || doc;
+    });
+  }, [clientes, q, fClasse, fUf, fStatus, fFiscal]);
+
+  const ufsDisponiveis = useMemo(
+    () => Array.from(new Set(clientes.map((c) => c.uf).filter(Boolean))).sort(),
+    [clientes],
+  );
+  const filtrosAtivos = fClasse !== "todas" || fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || q.trim() !== "";
+  const limparFiltros = () => { setQ(""); setFClasse("todas"); setFUf("todas"); setFStatus("ativos"); setFFiscal("todos"); };
+
 
   const abrirNovo = () => { setEditId(null); setForm(vazio()); setOpen(true); };
   const abrirEdicao = (c: Cliente) => {
