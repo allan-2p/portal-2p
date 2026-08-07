@@ -21,7 +21,7 @@ import {
 import { Eye, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fmtBRL, fmtPct } from "@/lib/cpo";
+import { fmtBRL } from "@/lib/cpo";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
@@ -96,7 +96,6 @@ function HistoricoCpoPage() {
     return true;
   });
 
-  const totalValor = filtered.reduce((s, r) => s + (r.totais.valorTotal ?? 0), 0);
 
   async function alterarStatus(id: string, novo: string) {
     const { error } = await supabase.from("cpo_proposals").update({ status: novo }).eq("id", id);
@@ -264,15 +263,6 @@ function HistoricoCpoPage() {
         </DialogContent>
       </Dialog>
     </AppLayout>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="glass rounded-2xl p-4">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="text-2xl font-bold mt-1">{value}</div>
-    </div>
   );
 }
 
