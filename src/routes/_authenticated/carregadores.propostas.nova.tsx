@@ -729,7 +729,11 @@ function PropostaCpoPage() {
                             });
                           }}
                         >
-                          <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
+                          <SelectTrigger
+                            className={cn(semProduto && "border-destructive focus-visible:ring-destructive")}
+                          >
+                            <SelectValue placeholder="Selecione o produto" />
+                          </SelectTrigger>
                           <SelectContent>
                             {produtos.map((p) => (
                               <SelectItem key={p.id} value={p.id}>
@@ -739,14 +743,21 @@ function PropostaCpoPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        {semProduto ? (
+                          <p className="text-[11px] text-destructive mt-1">Selecione o produto ou remova a linha.</p>
+                        ) : null}
                       </Field>
                       <Field label="Quantidade">
                         <Input
                           type="number"
                           min={1}
-                          value={it.qtd}
-                          onChange={(e) => setItem(it.key, { qtd: Math.max(1, Number(e.target.value) || 1) })}
+                          value={it.qtd === 0 ? "" : it.qtd}
+                          className={cn(semQtd && "border-destructive focus-visible:ring-destructive")}
+                          onChange={(e) => setItem(it.key, { qtd: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
                         />
+                        {semQtd ? (
+                          <p className="text-[11px] text-destructive mt-1">Informe a quantidade (mínimo 1).</p>
+                        ) : null}
                       </Field>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
