@@ -323,6 +323,7 @@ function CadastrosPage() {
               <thead className="bg-surface-2/60 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="text-left px-4 py-2">Cliente</th>
+                  <th className="text-left px-4 py-2">Classe</th>
                   <th className="text-left px-4 py-2">CNPJ / CPF</th>
                   <th className="text-left px-4 py-2">Fiscal</th>
                   <th className="text-left px-4 py-2">Cidade / UF</th>
@@ -331,11 +332,13 @@ function CadastrosPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
+                {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
                 {!isLoading && rows.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                     <Building2 className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                    Nenhum cadastro ainda — clique em “Novo cadastro”.
+                    {clientes.length === 0
+                      ? "Nenhum cadastro ainda — clique em “Novo cadastro”."
+                      : "Nenhum cadastro encontrado com esses filtros."}
                   </td></tr>
                 )}
                 {rows.map((c) => (
