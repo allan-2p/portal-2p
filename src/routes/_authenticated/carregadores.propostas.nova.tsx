@@ -500,23 +500,8 @@ function PropostaCpoPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Kpi
-                title="Margem bruta"
-                value={fmtBRL(d.mb)}
-                sub={`MB ${fmtPct(d.mbPct)} · mínimo ${fmtPct(config.politica_mb_min)}`}
-                level={st.level}
-              />
-              <Kpi
-                title="Comissão estimada"
-                value={fmtBRL(d.comValor)}
-                sub={`${fmtPct(d.comPct)} sobre ${config.comissao_base === "MB" ? "margem bruta" : "valor da venda"}`}
-                level="info"
-              />
-            </div>
-
             <div className="glass rounded-2xl p-5 space-y-1.5">
-              <h2 className="font-semibold mb-3">DRE da proposta</h2>
+              <h2 className="font-semibold mb-3">Impostos da proposta</h2>
               <DreRow k="Valor dos itens (com IPI)" v={fmtBRL(d.valorItens)} tone="neutral" />
               <DreRow
                 k="Valor do item (sem IPI)"
@@ -555,7 +540,7 @@ function PropostaCpoPage() {
                 v={fmtPct(d.aliqInterna)}
                 tone="neutral"
               />
-              <DreRow k="Frete" sub={`Modalidade ${state.freteMod} — fora da base de margem`} v={fmtBRL(state.freteValor)} tone="neutral" />
+
 
             </div>
           </div>
