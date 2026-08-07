@@ -737,36 +737,23 @@ function PropostaCpoPage() {
               </div>
 
               {state.itens.map((it) => {
-                const prod = produtos.find((p) => p.id === it.produtoId);
-                const sug = precoSugerido(prod, state.contribuinte, config);
                 const semValor = !!it.produtoId && !(it.valor > 0);
                 const semQtd = !!it.produtoId && !(it.qtd > 0);
                 const semProduto = !it.produtoId && (it.valor > 0 || it.qtd > 0);
                 const bloqueado = semValor || semQtd || semProduto;
-                const abaixoSug = !!it.produtoId && sug > 0 && it.valor > 0 && it.valor < sug - 0.005;
                 return (
                   <div
                     key={it.key}
                     className={cn(
                       "rounded-xl border p-3 space-y-3 bg-surface/40",
-                      bloqueado
-                        ? "border-destructive/60 ring-1 ring-destructive/25"
-                        : abaixoSug
-                          ? "border-amber-500/60 ring-1 ring-amber-500/20"
-                          : "border-border",
+                      bloqueado ? "border-destructive/60 ring-1 ring-destructive/25" : "border-border",
                     )}
                   >
                     <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_.5fr] gap-3">
                       <Field label="Produto">
                         <Select
                           value={it.produtoId}
-                          onValueChange={(v) => {
-                            const p = produtos.find((x) => x.id === v);
-                            setItem(it.key, {
-                              produtoId: v,
-                              valor: it.valorManual ? it.valor : precoSugerido(p, state.contribuinte, config),
-                            });
-                          }}
+                          onValueChange={(v) => setItem(it.key, { produtoId: v })}
                         >
                           <SelectTrigger
                             className={cn(semProduto && "border-destructive focus-visible:ring-destructive")}
@@ -803,21 +790,15 @@ function PropostaCpoPage() {
                       <Field label="Valor unitário (com IPI)">
                         <Input
                           value={it.valor ? fmtBRL(it.valor) : ""}
-                          placeholder={sug ? fmtBRL(sug) : "R$ 0,00"}
-                          className={cn(
-                            semValor && "border-destructive focus-visible:ring-destructive",
-                            abaixoSug && "border-amber-500 focus-visible:ring-amber-500",
-                          )}
+                          placeholder="R$ 0,00"
+                          className={cn(semValor && "border-destructive focus-visible:ring-destructive")}
                           onChange={(e) => setItem(it.key, { valor: parseMoeda(e.target.value), valorManual: true })}
                         />
                         {semValor ? (
                           <p className="text-[11px] text-destructive mt-1">Informe o valor unitário deste item.</p>
-                        ) : abaixoSug ? (
-                          <p className="text-[11px] text-amber-600 mt-1">
-                            Abaixo da referência de {fmtBRL(sug)}.
-                          </p>
                         ) : null}
                       </Field>
+
                       <div className="flex items-end justify-between gap-2">
                         <div className="text-xs text-muted-foreground">
                           Total item: <b className="text-foreground">{fmtBRL(it.valor * it.qtd)}</b>
