@@ -455,7 +455,35 @@ function CadastrosPage() {
               </tbody>
             </table>
           </CardContent>
+          {ordenados.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span>Por página</span>
+                <Select value={String(porPagina)} onValueChange={(v) => setPorPagina(Number(v))}>
+                  <SelectTrigger className="h-8 w-[80px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[10, 25, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <span className="ml-auto">
+                {(paginaAtual - 1) * porPagina + 1}–{Math.min(paginaAtual * porPagina, ordenados.length)} de {ordenados.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Página anterior"
+                  disabled={paginaAtual <= 1} onClick={() => setPagina((p) => Math.max(1, p - 1))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2">{paginaAtual} / {totalPaginas}</span>
+                <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Próxima página"
+                  disabled={paginaAtual >= totalPaginas} onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
+
         <Sheet open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)}>
           <SheetContent className="w-full sm:max-w-md overflow-y-auto">
             {detalhe && (
