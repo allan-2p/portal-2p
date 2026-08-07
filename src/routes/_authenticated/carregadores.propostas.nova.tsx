@@ -1278,3 +1278,25 @@ function DreRow({
     </div>
   );
 }
+
+function LiveTotal({
+  label,
+  value,
+  hint,
+  strong,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  strong?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className={cn("tabular-nums", strong ? "text-lg font-bold text-primary" : "text-sm font-semibold")}>
+        {value}
+      </div>
+      {hint ? <div className="text-[10px] text-muted-foreground tabular-nums">{hint}</div> : null}
+    </div>
+  );
+}
