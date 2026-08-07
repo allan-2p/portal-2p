@@ -33,7 +33,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [clientesOpen, setClientesOpen] = useState(true);
   const [dashboardsOpen, setDashboardsOpen] = useState(true);
   const [moderacaoOpen, setModeracaoOpen] = useState(true);
-  const [cpoClientesOpen, setCpoClientesOpen] = useState<boolean>(true);
+  
 
   const { user, profile, roles, hasRole } = useAuth();
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
