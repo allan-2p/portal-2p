@@ -313,7 +313,7 @@ function PropostaCpoPage() {
     errosFechamento.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
   if (state.freteMod === "CIF" && !(state.freteValor > 0))
     errosFechamento.push("Frete CIF sem valor informado — necessário para fechar os totais.");
-  if (temProduto && !(d.valorTotal > 0))
+  if (temProduto && !(d.valorTotalProposta > 0))
     errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
   if (abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
   const podeFechar = errosFechamento.length === 0;
