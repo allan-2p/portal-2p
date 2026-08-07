@@ -215,7 +215,7 @@ function PropostaCpoPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <Button onClick={salvar} disabled={saving || abaixoPolitica} className="gap-2">
+            <Button onClick={salvar} disabled={saving || abaixoPolitica || !clienteOk} className="gap-2">
               <Save className="h-4 w-4" /> Salvar proposta
             </Button>
           </div>
