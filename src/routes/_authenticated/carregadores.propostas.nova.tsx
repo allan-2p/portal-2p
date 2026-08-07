@@ -590,7 +590,14 @@ function PropostaCpoPage() {
                     <CommandInput placeholder="Buscar cliente..." />
                     <CommandList>
                       <CommandEmpty>
-                        {clientesQ.isLoading ? "Carregando..." : "Nenhum cliente em Clientes > Cadastros."}
+                        <div className="px-3 py-4 text-center text-sm text-muted-foreground space-y-2">
+                          <p>{clientesQ.isLoading ? "Carregando..." : "Nenhum cliente encontrado."}</p>
+                          {!clientesQ.isLoading ? (
+                            <Button asChild variant="outline" size="sm">
+                              <Link to="/carregadores/clientes/cadastros">Cadastrar cliente</Link>
+                            </Button>
+                          ) : null}
+                        </div>
                       </CommandEmpty>
                       <CommandGroup>
                         {(clientesQ.data ?? []).map((c) => (
