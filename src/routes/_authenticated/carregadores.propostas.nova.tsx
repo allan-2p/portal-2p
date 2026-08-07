@@ -156,39 +156,42 @@ function PropostaCpoPage() {
 
   function exportarPdf() {
     if (!podeSalvar) return toast.error("Selecione o cliente e ao menos um produto.");
-    const linhas = state.itens
-      .filter((i) => i.produtoId)
-      .map((i) => {
-        const nome = produtos.find((p) => p.id === i.produtoId)?.nome ?? "";
-        return `<tr><td>${nome}</td><td style="text-align:center">${i.qtd}</td><td style="text-align:right">${fmtBRL(i.valor)}</td><td style="text-align:right">${fmtBRL(i.valor * i.qtd)}</td></tr>`;
-      })
-      .join("");
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Proposta CPO — ${state.nome}</title>
-      <style>body{font-family:Arial,Helvetica,sans-serif;padding:32px;color:#111}h1{font-size:20px;margin:0 0 4px}
-      h2{font-size:14px;margin:24px 0 8px;text-transform:uppercase;letter-spacing:.08em;color:#555}
-      table{width:100%;border-collapse:collapse;font-size:13px}td,th{border-bottom:1px solid #ddd;padding:7px 6px}
-      th{text-align:left;background:#f5f5f5}.tot{font-size:16px;font-weight:700;margin-top:16px}</style></head><body>
-      <h1>Proposta CPO</h1><div style="font-size:12px;color:#666">Emitida em ${new Date().toLocaleDateString("pt-BR")}</div>
-      <h2>Cliente</h2>
-      <div style="font-size:13px">${state.nome}<br>${state.doc || ""} ${state.ie ? "· IE " + state.ie : ""}<br>${state.email || ""} ${state.telefone || ""}<br>UF ${state.uf} · ${state.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}</div>
-      <h2>Produtos</h2>
-      <table><thead><tr><th>Produto</th><th style="text-align:center">Qtd</th><th style="text-align:right">Unitário</th><th style="text-align:right">Total</th></tr></thead><tbody>${linhas}</tbody></table>
-      <h2>Frete</h2><div style="font-size:13px">${state.freteMod} — ${fmtBRL(state.freteValor)}</div>
-      <h2>Impostos</h2>
-      <table><tbody>
-        <tr><td>IPI (${fmtPct(config.ipi)})</td><td style="text-align:right">${fmtBRL(d.ipiValor)}</td></tr>
-        <tr><td>ICMS efetivo (${fmtPct(d.icmsRate)})</td><td style="text-align:right">${fmtBRL(d.icms)}</td></tr>
-        <tr><td>PIS/COFINS (${fmtPct(config.pis_cofins)})</td><td style="text-align:right">${fmtBRL(d.pisCofins)}</td></tr>
-      </tbody></table>
-      <div class="tot">Total NF: ${fmtBRL(d.valorItens + state.freteValor)}</div>
-      <div class="tot">Valor total da proposta: ${fmtBRL(d.valorTotalProposta)}</div>
-      </body></html>`;
+    const html = buildPropostaPdfHtml({
+      cliente: {
+        nome: state.nome,
+        doc: state.doc,
+        ie: state.ie,
+        email: state.email,
+        telefone: state.telefone,
+        uf: state.uf,
+        contribuinte: state.contribuinte,
+      },
+      itens: state.itens
+        .filter((i) => i.produtoId)
+        .map((i) => ({
+          nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
+          qtd: i.qtd,
+          valor: i.valor,
+        })),
+      freteMod: state.freteMod,
+      freteValor: state.freteValor,
+      impostos: {
+        ipiRate: config.ipi,
+        ipiValor: d.ipiValor,
+        icmsRate: d.icmsRate,
+        icms: d.icms,
+        pisCofinsRate: config.pis_cofins,
+        pisCofins: d.pisCofins,
+      },
+      totalNf: d.valorItens + state.freteValor,
+      valorTotal: d.valorTotalProposta,
+    });
     const w = window.open("", "_blank");
     if (!w) return toast.error("Permita pop-ups para exportar o PDF.");
     w.document.write(html);
     w.document.close();
     w.focus();
-    setTimeout(() => w.print(), 300);
+    setTimeout(() => w.print(), 600);
   }
 
   async function salvar(status: string = "Salvo") {
