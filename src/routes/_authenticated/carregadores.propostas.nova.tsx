@@ -49,16 +49,18 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/nov
   }),
   head: () => ({
     meta: [
-      { title: "Nova Proposta CPO — Portal 2P Carregadores" },
+      { title: "Nova proposta — Portal 2P Carregadores" },
       {
         name: "description",
-        content: "Monte propostas CPO com cálculo de ICMS, DIFAL, impostos e margem bruta em tempo real.",
+        content: "Monte uma nova proposta com cálculo de ICMS, DIFAL, impostos e margem bruta em tempo real.",
       },
-      { property: "og:title", content: "Nova Proposta CPO — Portal 2P Carregadores" },
+      { property: "og:title", content: "Nova proposta — Portal 2P Carregadores" },
       {
         property: "og:description",
-        content: "Motor de precificação CPO com DRE, DIFAL e política de margem da 2P Carregadores.",
+        content: "Nova proposta com DRE, DIFAL e política de margem da 2P Carregadores.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PropostaCpoPage,
