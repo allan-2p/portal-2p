@@ -12,9 +12,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, CheckCircle2, Info, Plus, Save, Trash2, TriangleAlert, Zap } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, CheckCircle2, ChevronsUpDown, Info, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
 import { useCpoConfig, useCpoProducts, useCpoUfs, useCpoInvalidate } from "@/hooks/use-cpo";
 import {
   CPO_CONFIG_FALLBACK,
@@ -49,6 +60,16 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/nov
   component: PropostaCpoPage,
 });
 
+type ClienteCadastro = {
+  cliente_nome: string;
+  cliente_telefone: string | null;
+  cliente_email: string | null;
+  cliente_doc: string | null;
+  cliente_ie: string | null;
+  uf: string;
+  contribuinte: boolean;
+};
+
 function PropostaCpoPage() {
   const produtosQ = useCpoProducts();
   const ufsQ = useCpoUfs();
@@ -60,8 +81,49 @@ function PropostaCpoPage() {
   const config = configQ.data ?? CPO_CONFIG_FALLBACK;
 
   const [state, setState] = useState<CpoState>(() => novoEstado());
-  
+  const [openCli, setOpenCli] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Clientes já cadastrados (último registro de cada cliente nas propostas CPO)
+  const clientesQ = useQuery({
+    queryKey: ["cpo-clientes-cadastro"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cpo_proposals")
+        .select("cliente_nome,cliente_telefone,cliente_email,cliente_doc,cliente_ie,uf,contribuinte,created_at")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      const map = new Map<string, ClienteCadastro>();
+      for (const p of data ?? []) {
+        const key = (p.cliente_nome ?? "").trim().toUpperCase();
+        if (!key || map.has(key)) continue;
+        map.set(key, {
+          cliente_nome: (p.cliente_nome ?? "").trim(),
+          cliente_telefone: p.cliente_telefone,
+          cliente_email: p.cliente_email,
+          cliente_doc: p.cliente_doc,
+          cliente_ie: p.cliente_ie,
+          uf: p.uf,
+          contribuinte: p.contribuinte,
+        });
+      }
+      return [...map.values()].sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome));
+    },
+  });
+
+  const aplicarCliente = (c: ClienteCadastro) =>
+    setState((s) => ({
+      ...s,
+      nome: c.cliente_nome,
+      telefone: c.cliente_telefone ?? "",
+      email: c.cliente_email ?? "",
+      doc: c.cliente_doc ?? "",
+      ie: c.cliente_ie ?? "",
+      uf: c.uf || s.uf,
+      contribuinte: c.contribuinte ?? s.contribuinte,
+    }));
+
 
   const set = <K extends keyof CpoState>(k: K, v: CpoState[K]) =>
     setState((s) => ({ ...s, [k]: v }));
@@ -166,8 +228,54 @@ function PropostaCpoPage() {
               <h2 className="font-semibold">Entradas da proposta</h2>
             </div>
 
+            <Field label="Cliente já cadastrado">
+              <Popover open={openCli} onOpenChange={setOpenCli}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                    <span className="flex items-center gap-2 truncate">
+                      <Users className="h-4 w-4 text-primary shrink-0" />
+                      {state.nome ? state.nome : "Selecionar cliente do cadastro"}
+                    </span>
+                    <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar cliente..." />
+                    <CommandList>
+                      <CommandEmpty>
+                        {clientesQ.isLoading ? "Carregando..." : "Nenhum cliente cadastrado."}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {(clientesQ.data ?? []).map((c) => (
+                          <CommandItem
+                            key={c.cliente_nome}
+                            value={c.cliente_nome}
+                            onSelect={() => {
+                              aplicarCliente(c);
+                              setOpenCli(false);
+                            }}
+                          >
+                            <div className="min-w-0">
+                              <div className="truncate font-medium">{c.cliente_nome}</div>
+                              <div className="text-xs text-muted-foreground truncate">
+                                {[c.cliente_doc, c.uf, c.cliente_email].filter(Boolean).join(" · ") || "Sem dados adicionais"}
+                              </div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Ao selecionar, os dados do cadastro são preenchidos automaticamente — você ainda pode editar abaixo.
+              </p>
+            </Field>
 
             <Banner level={st.level} text={st.msg} />
+
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Nome do cliente">
