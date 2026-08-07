@@ -233,7 +233,11 @@ function PropostaCpoPage() {
         contribuinte: c.contribuinte,
       })) as ClienteCadastro[];
     },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
+
 
 
   const aplicarCliente = (c: ClienteCadastro) =>
