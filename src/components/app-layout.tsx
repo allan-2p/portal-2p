@@ -205,7 +205,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
 
           {/* Módulo Carregadores — navegação exclusiva da instância */}
-          {(show("cpo.home") || show("cpo.tarefas") || show("cpo.clientes") || show("cpo.propostas") || show("cpo.produtos") || show("cpo.comissoes")) && (
+          {(show("cpo.home") || show("cpo.tarefas") || show("cpo.clientes") || show("cpo.propostas") || show("cpo.pedidos") || show("cpo.produtos") || show("cpo.comissoes") || show("cpo.regras")) && (
             <>
               {!collapsed && (
                 <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -226,11 +226,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
               {show("cpo.propostas") && (
                 <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
               )}
-              {show("cpo.propostas") && (
+              {show("cpo.pedidos") && (
                 <NavLink item={{ to: "/carregadores/pedidos", label: "Pedidos", icon: ShoppingCart }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
               )}
 
-              {(show("cpo.produtos") || show("cpo.comissoes")) && (
+              {(show("cpo.produtos") || show("cpo.comissoes") || show("cpo.regras")) && (
                 collapsed ? (
                   <Link
                     to={show("cpo.produtos") ? "/carregadores/produtos" : "/carregadores/comissoes"}
@@ -264,7 +264,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         {show("cpo.comissoes") && (
                           <SubLink to="/carregadores/comissoes" label="Comissões" icon={Percent} active={pathname.startsWith("/carregadores/comissoes")} />
                         )}
-                        {(show("cpo.produtos") || show("cpo.comissoes")) && (
+                        {show("cpo.regras") && (
                           <SubLink to="/carregadores/regras" label="Regras" icon={BookOpen} active={pathname.startsWith("/carregadores/regras")} />
                         )}
 
