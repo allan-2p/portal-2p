@@ -28,8 +28,16 @@ export const Route = createFileRoute("/_authenticated/admin/permissoes")({
 
 // Agrupamento visual das features
 const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
-  { label: "Operação", keys: ["home", "tarefas", "pedidos", "dashboards", "atlas"] },
+  { label: "Operação", keys: ["home", "tarefas", "pedidos", "cupons", "dashboards", "atlas"] },
   { label: "Clientes", keys: ["clientes.cadastros", "clientes.segmentacao", "clientes.perfil", "clientes.sugestoes", "clientes.ranking"] },
+  {
+    label: "Carregadores",
+    keys: ["cpo.home", "cpo.tarefas", "cpo.clientes", "cpo.propostas", "cpo.pedidos"],
+  },
+  {
+    label: "Moderação",
+    keys: ["cpo.produtos", "cpo.comissoes", "cpo.regras"],
+  },
   {
     label: "Administração",
     keys: [
@@ -42,6 +50,12 @@ const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
   },
   { label: "Marketing", keys: ["marketing.home", "marketing.social", "marketing.trafego", "marketing.cohort", "marketing.cac", "marketing.gargalo", "marketing.prevendas", "marketing.metas"] },
 ];
+
+// Qualquer feature não mapeada acima ainda aparece, para nunca faltar permissão.
+const GROUPED_KEYS = new Set(FEATURE_GROUPS.flatMap((g) => g.keys));
+const UNGROUPED: FeatureKey[] = (ALL_FEATURES as FeatureKey[]).filter((k) => !GROUPED_KEYS.has(k));
+if (UNGROUPED.length > 0) FEATURE_GROUPS.push({ label: "Outros", keys: UNGROUPED });
+
 
 function PermissoesPage() {
   const { hasRole } = useAuth();
