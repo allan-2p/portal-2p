@@ -24,8 +24,10 @@ export type FeatureKey =
   | "cpo.tarefas"
   | "cpo.clientes"
   | "cpo.propostas"
+  | "cpo.pedidos"
   | "cpo.produtos"
   | "cpo.comissoes"
+  | "cpo.regras"
   | "admin.usuarios"
   | "admin.vendedores"
   | "admin.metas"
@@ -90,8 +92,10 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "cpo.tarefas",
       "cpo.clientes",
       "cpo.propostas",
+      "cpo.pedidos",
       "cpo.produtos",
       "cpo.comissoes",
+      "cpo.regras",
       "admin.usuarios",
       "admin.vendedores",
       "admin.integracoes",
@@ -140,8 +144,9 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/carregadores/clientes/cadastros": "cpo.clientes",
   "/carregadores/propostas": "cpo.propostas",
   "/carregadores/produtos": "cpo.produtos",
+  "/carregadores/pedidos": "cpo.pedidos",
   "/carregadores/comissoes": "cpo.comissoes",
-  "/carregadores/regras": "cpo.comissoes",
+  "/carregadores/regras": "cpo.regras",
 
   "/usuarios": "admin.usuarios",
   "/admin/vendedores": "admin.vendedores",
@@ -173,9 +178,11 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "cpo.home": "Carregadores • Home",
   "cpo.tarefas": "Carregadores • Tarefas",
   "cpo.clientes": "Carregadores • Clientes",
-  "cpo.propostas": "CPO • Propostas",
+  "cpo.propostas": "Carregadores • Propostas",
+  "cpo.pedidos": "Carregadores • Pedidos",
   "cpo.produtos": "Moderação • Produtos e Alíquotas",
   "cpo.comissoes": "Moderação • Comissões",
+  "cpo.regras": "Moderação • Regras",
   "admin.usuarios": "Admin • Usuários",
   "admin.vendedores": "Admin • Vendedores",
   "admin.metas": "Admin • Metas",
