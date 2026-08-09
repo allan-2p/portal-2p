@@ -227,6 +227,33 @@ function HomePage() {
     return arr;
   }, [sfTasksRaw, agendaSort, agendaSortDir]);
 
+  // Dados da conta vinculada à tarefa (Salesforce): segmentação, contato principal e orçamentos em aberto
+  const fetchAgendaInfo = useServerFn(getSalesforceAgendaAccountInfo);
+  const agendaAccountIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sfTasksRaw
+            .map((t) => t.whatId)
+            .filter((id): id is string => !!id && id.startsWith("001")),
+        ),
+      ).sort(),
+    [sfTasksRaw],
+  );
+  const agendaInfoQ = useQuery({
+    queryKey: ["sf-agenda-account-info", agendaAccountIds.join(",")],
+    queryFn: () => fetchAgendaInfo({ data: { accountIds: agendaAccountIds } }),
+    enabled: dataEnabled && agendaAccountIds.length > 0,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const agendaInfoById = useMemo(() => {
+    const m = new Map<string, AgendaAccountInfo>();
+    for (const r of agendaInfoQ.data?.records ?? []) m.set(r.accountId, r);
+    return m;
+  }, [agendaInfoQ.data]);
+
+
   // Interação por tarefa (persistida localmente) — "Consegui falar" / "Não consegui falar"
   const queryClient = useQueryClient();
   const [taskInteractions, setTaskInteractions] = useState<Record<string, TaskInteractionState>>(() => loadTaskInteractions());
