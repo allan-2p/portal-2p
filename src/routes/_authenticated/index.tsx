@@ -270,6 +270,8 @@ function HomePage() {
   const [completeTask, setCompleteTask] = useState<SalesforceTask | null>(null);
   const [rescheduleTask, setRescheduleTask] = useState<SalesforceTask | null>(null);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
+
 
 
 
