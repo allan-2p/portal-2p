@@ -1115,10 +1115,14 @@ function HomePage() {
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <UsersIcon className="h-3 w-3 text-primary shrink-0" />
                           <span className="text-sm font-semibold text-foreground truncate">
-                            {t.who ?? (t.what ? "—" : "Sem cliente vinculado")}
+                            {clienteNome}
                           </span>
+                          {info?.segment && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-primary/15 text-primary shrink-0">
+                              {info.segment}
+                            </span>
+                          )}
                           {isOverdue && (
                             <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-destructive/15 text-destructive shrink-0">
                               <AlertTriangle className="h-2.5 w-2.5" />
@@ -1151,18 +1155,43 @@ function HomePage() {
 
                   {expanded && (
                     <div className="px-3 pb-3 pl-11 space-y-2">
-                      {t.what && (
-                        <div className="flex items-center gap-1.5">
-                          <FileText className="h-3 w-3 text-[color:var(--atlas)] shrink-0" />
-                          <span className="text-[11px] uppercase tracking-wider font-semibold text-[color:var(--atlas)] truncate">
-                            {t.what}
-                          </span>
-                        </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {agendaInfoQ.isFetching && !info ? (
+                          "Carregando dados do cliente…"
+                        ) : info?.contactName ? (
+                          <>
+                            Contato: <span className="text-foreground font-medium">{info.contactName}</span>
+                            {info.contactPhone ? (
+                              <>
+                                {" · "}
+                                <a href={`tel:${info.contactPhone}`} className="text-primary hover:underline">
+                                  {info.contactPhone}
+                                </a>
+                              </>
+                            ) : (
+                              " · sem telefone"
+                            )}
+                          </>
+                        ) : (
+                          "Sem contato principal cadastrado no Salesforce."
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <FileText className="h-3 w-3 text-[color:var(--atlas)] shrink-0" />
+                        <span className="text-muted-foreground">
+                          Em aberto aguard. aprovação:{" "}
+                          <span className="text-foreground font-semibold">{fmt(info?.openAmount ?? 0)}</span>
+                          {" · "}
+                          <span className="text-foreground font-semibold">{info?.openCount ?? 0}</span>{" "}
+                          orçamento(s)
+                        </span>
+                      </div>
+
+                      {t.description && (
+                        <div className="text-[11px] text-muted-foreground line-clamp-3">{t.description}</div>
                       )}
-                      <div className="text-xs text-muted-foreground">{t.subject}</div>
-                      {t.owner && (
-                        <div className="text-[11px] text-muted-foreground">Responsável: {t.owner}</div>
-                      )}
+
                       {inter && (
                         <div className="text-[11px] text-success">
                           Última interação: {inter.type ? `${inter.type} · ` : ""}
@@ -1191,6 +1220,7 @@ function HomePage() {
                         </button>
                       </div>
                     </div>
+
                   )}
                 </div>
               );})}
