@@ -42,6 +42,9 @@ import {
   createSalesforceTask,
   logSalesforceInteraction,
   rescheduleSalesforceTask,
+  getSalesforceAgendaAccountInfo,
+  type AgendaAccountInfo,
+
   opportunityStages,
   type OpportunityStage,
   type SalesforceOpportunity,
