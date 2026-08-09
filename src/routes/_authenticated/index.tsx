@@ -1088,6 +1088,9 @@ function HomePage() {
                 const overdueDays = Math.round((todayStart.getTime() - dueDate.getTime()) / 86400000);
                 const isOverdue = overdueDays > 0;
                 const expanded = expandedTaskId === t.id;
+                const info = t.whatId ? agendaInfoById.get(t.whatId) ?? null : null;
+                const clienteNome = info?.name ?? t.what ?? t.who ?? "Sem cliente vinculado";
+
                 return (
                 <div key={t.id} className={cn(
                   "transition-colors",
