@@ -1512,6 +1512,17 @@ function HomePage() {
         }}
       />
 
+      <NewTaskDialog
+        open={newTaskOpen}
+        onClose={() => setNewTaskOpen(false)}
+        onDone={() => {
+          setNewTaskOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
+        }}
+      />
+
+
+
     </AppLayout>
   );
 }
