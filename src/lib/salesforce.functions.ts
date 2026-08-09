@@ -806,6 +806,92 @@ export const getSalesforceAccountContacts = createServerFn({ method: "GET" })
     return { records };
   });
 
+export type AgendaAccountInfo = {
+  accountId: string;
+  name: string | null;
+  segment: "A" | "B" | "C" | "D" | null;
+  contactName: string | null;
+  contactPhone: string | null;
+  openAmount: number;
+  openCount: number;
+};
+
+/** Dados de apoio da Agenda: segmentação, contato principal e orçamentos em aberto por conta. */
+export const getSalesforceAgendaAccountInfo = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { accountIds: string[] }) => input ?? { accountIds: [] })
+  .handler(async ({ data }) => {
+    const ids = Array.from(new Set((data.accountIds ?? []).filter(validId))).slice(0, 200);
+    if (ids.length === 0) return { records: [] as AgendaAccountInfo[] };
+    const inList = ids.map((i) => `'${esc(i)}'`).join(",");
+
+    const [accRes, contactRes, oppRes] = await Promise.all([
+      sfFetch(
+        `/query?q=${encodeURIComponent(
+          `SELECT Id, Name, Segmentacao_Solar__c, Phone FROM Account WHERE Id IN (${inList}) LIMIT 200`,
+        )}`,
+      ),
+      sfFetch(
+        `/query?q=${encodeURIComponent(
+          `SELECT Id, AccountId, Name, Phone, MobilePhone, Title, CreatedDate FROM Contact ` +
+            `WHERE AccountId IN (${inList}) ORDER BY CreatedDate ASC LIMIT 1000`,
+        )}`,
+      ),
+      sfFetch(
+        `/query?q=${encodeURIComponent(
+          `SELECT Id, AccountId, Amount, Total__c FROM Opportunity ` +
+            `WHERE AccountId IN (${inList}) AND IsClosed = false ` +
+            `AND StageName != 'Pedido Concluído' ` +
+            `AND (Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação') LIMIT 2000`,
+        )}`,
+      ),
+    ]);
+
+    const contactByAccount = new Map<string, { name: string; phone: string | null }>();
+    for (const c of contactRes?.records ?? []) {
+      const acc = c.AccountId as string;
+      if (!acc) continue;
+      const phone = c.MobilePhone ?? c.Phone ?? null;
+      const cur = contactByAccount.get(acc);
+      // primeiro contato criado; prioriza quem tem telefone
+      if (!cur || (!cur.phone && phone)) {
+        contactByAccount.set(acc, { name: c.Name ?? "(sem nome)", phone });
+      }
+    }
+
+    const oppByAccount = new Map<string, { amount: number; count: number }>();
+    for (const o of oppRes?.records ?? []) {
+      const acc = o.AccountId as string;
+      if (!acc) continue;
+      const v = typeof o.Total__c === "number" ? o.Total__c : typeof o.Amount === "number" ? o.Amount : 0;
+      const cur = oppByAccount.get(acc) ?? { amount: 0, count: 0 };
+      cur.amount += v;
+      cur.count += 1;
+      oppByAccount.set(acc, cur);
+    }
+
+    const records: AgendaAccountInfo[] = (accRes?.records ?? []).map((a: any) => {
+      const rawSeg = (a.Segmentacao_Solar__c ?? "").toString().trim().toUpperCase();
+      const segment = (["A", "B", "C", "D"] as const).includes(rawSeg as any)
+        ? (rawSeg as "A" | "B" | "C" | "D")
+        : null;
+      const contact = contactByAccount.get(a.Id) ?? null;
+      const opp = oppByAccount.get(a.Id) ?? { amount: 0, count: 0 };
+      return {
+        accountId: a.Id,
+        name: a.Name ?? null,
+        segment,
+        contactName: contact?.name ?? null,
+        contactPhone: contact?.phone ?? a.Phone ?? null,
+        openAmount: opp.amount,
+        openCount: opp.count,
+      };
+    });
+    return { records };
+  });
+
+
+
 export type SalesforceActivity = {
   id: string;
   kind: "task" | "event";

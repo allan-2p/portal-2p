@@ -10,7 +10,7 @@ const HomeAreaChart = lazy(() => import("@/components/home-area-chart"));
 import {
   ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, Clock,
   TrendingUp, CheckCircle2, Calendar, Info, ChevronDown,
-  FileText, CalendarClock, Gift, Lock, Users as UsersIcon, Loader2,
+  FileText, CalendarClock, Gift, Lock, Loader2,
   CalendarIcon, MessageSquare, Check, Plus, ArrowUpDown, CalendarPlus,
 } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -42,6 +42,9 @@ import {
   createSalesforceTask,
   logSalesforceInteraction,
   rescheduleSalesforceTask,
+  getSalesforceAgendaAccountInfo,
+  type AgendaAccountInfo,
+
   opportunityStages,
   type OpportunityStage,
   type SalesforceOpportunity,
@@ -224,6 +227,33 @@ function HomePage() {
     return arr;
   }, [sfTasksRaw, agendaSort, agendaSortDir]);
 
+  // Dados da conta vinculada à tarefa (Salesforce): segmentação, contato principal e orçamentos em aberto
+  const fetchAgendaInfo = useServerFn(getSalesforceAgendaAccountInfo);
+  const agendaAccountIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sfTasksRaw
+            .map((t) => t.whatId)
+            .filter((id): id is string => !!id && id.startsWith("001")),
+        ),
+      ).sort(),
+    [sfTasksRaw],
+  );
+  const agendaInfoQ = useQuery({
+    queryKey: ["sf-agenda-account-info", agendaAccountIds.join(",")],
+    queryFn: () => fetchAgendaInfo({ data: { accountIds: agendaAccountIds } }),
+    enabled: dataEnabled && agendaAccountIds.length > 0,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const agendaInfoById = useMemo(() => {
+    const m = new Map<string, AgendaAccountInfo>();
+    for (const r of agendaInfoQ.data?.records ?? []) m.set(r.accountId, r);
+    return m;
+  }, [agendaInfoQ.data]);
+
+
   // Interação por tarefa (persistida localmente) — "Consegui falar" / "Não consegui falar"
   const queryClient = useQueryClient();
   const [taskInteractions, setTaskInteractions] = useState<Record<string, TaskInteractionState>>(() => loadTaskInteractions());
@@ -240,6 +270,8 @@ function HomePage() {
   const [completeTask, setCompleteTask] = useState<SalesforceTask | null>(null);
   const [rescheduleTask, setRescheduleTask] = useState<SalesforceTask | null>(null);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
+
 
 
 
@@ -960,7 +992,11 @@ function HomePage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <Button size="sm" className="gap-2" onClick={() => setNewTaskOpen(true)}>
+                  <CalendarPlus className="h-3.5 w-3.5" /> Nova tarefa
+                </Button>
                 <Popover open={agendaSortOpen} onOpenChange={setAgendaSortOpen}>
+
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-2" title="Ordenar">
                       <ArrowUpDown className="h-3.5 w-3.5" />
@@ -1056,6 +1092,9 @@ function HomePage() {
                 const overdueDays = Math.round((todayStart.getTime() - dueDate.getTime()) / 86400000);
                 const isOverdue = overdueDays > 0;
                 const expanded = expandedTaskId === t.id;
+                const info = t.whatId ? agendaInfoById.get(t.whatId) ?? null : null;
+                const clienteNome = info?.name ?? t.what ?? t.who ?? "Sem cliente vinculado";
+
                 return (
                 <div key={t.id} className={cn(
                   "transition-colors",
@@ -1080,10 +1119,14 @@ function HomePage() {
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <UsersIcon className="h-3 w-3 text-primary shrink-0" />
                           <span className="text-sm font-semibold text-foreground truncate">
-                            {t.who ?? (t.what ? "—" : "Sem cliente vinculado")}
+                            {clienteNome}
                           </span>
+                          {info?.segment && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-primary/15 text-primary shrink-0">
+                              {info.segment}
+                            </span>
+                          )}
                           {isOverdue && (
                             <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-destructive/15 text-destructive shrink-0">
                               <AlertTriangle className="h-2.5 w-2.5" />
@@ -1116,18 +1159,43 @@ function HomePage() {
 
                   {expanded && (
                     <div className="px-3 pb-3 pl-11 space-y-2">
-                      {t.what && (
-                        <div className="flex items-center gap-1.5">
-                          <FileText className="h-3 w-3 text-[color:var(--atlas)] shrink-0" />
-                          <span className="text-[11px] uppercase tracking-wider font-semibold text-[color:var(--atlas)] truncate">
-                            {t.what}
-                          </span>
-                        </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {agendaInfoQ.isFetching && !info ? (
+                          "Carregando dados do cliente…"
+                        ) : info?.contactName ? (
+                          <>
+                            Contato: <span className="text-foreground font-medium">{info.contactName}</span>
+                            {info.contactPhone ? (
+                              <>
+                                {" · "}
+                                <a href={`tel:${info.contactPhone}`} className="text-primary hover:underline">
+                                  {info.contactPhone}
+                                </a>
+                              </>
+                            ) : (
+                              " · sem telefone"
+                            )}
+                          </>
+                        ) : (
+                          "Sem contato principal cadastrado no Salesforce."
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <FileText className="h-3 w-3 text-[color:var(--atlas)] shrink-0" />
+                        <span className="text-muted-foreground">
+                          Em aberto aguard. aprovação:{" "}
+                          <span className="text-foreground font-semibold">{fmt(info?.openAmount ?? 0)}</span>
+                          {" · "}
+                          <span className="text-foreground font-semibold">{info?.openCount ?? 0}</span>{" "}
+                          orçamento(s)
+                        </span>
+                      </div>
+
+                      {t.description && (
+                        <div className="text-[11px] text-muted-foreground line-clamp-3">{t.description}</div>
                       )}
-                      <div className="text-xs text-muted-foreground">{t.subject}</div>
-                      {t.owner && (
-                        <div className="text-[11px] text-muted-foreground">Responsável: {t.owner}</div>
-                      )}
+
                       {inter && (
                         <div className="text-[11px] text-success">
                           Última interação: {inter.type ? `${inter.type} · ` : ""}
@@ -1156,6 +1224,7 @@ function HomePage() {
                         </button>
                       </div>
                     </div>
+
                   )}
                 </div>
               );})}
@@ -1442,6 +1511,17 @@ function HomePage() {
           queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
         }}
       />
+
+      <NewTaskDialog
+        open={newTaskOpen}
+        onClose={() => setNewTaskOpen(false)}
+        onDone={() => {
+          setNewTaskOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
+        }}
+      />
+
+
 
     </AppLayout>
   );
@@ -1949,6 +2029,162 @@ function RescheduleTaskDialog({
           <Button onClick={submit} disabled={saving || !date}>
             {saving && <Loader2 className="h-3 w-3 animate-spin" />}
             Adiar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function NewTaskDialog({
+  open,
+  onClose,
+  onDone,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const createFn = useServerFn(createSalesforceTask);
+  const fetchAccounts = useServerFn(getSalesforceAccounts);
+
+  const [search, setSearch] = useState("");
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const [subject, setSubject] = useState("");
+  const [type, setType] = useState<string>("Follow-up");
+  const [priority, setPriority] = useState<string>("Normal");
+  const [date, setDate] = useState<string>(todayKey());
+  const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const accountsQ = useQuery({
+    queryKey: ["sf-accounts-newtask"],
+    queryFn: () => fetchAccounts(),
+    enabled: open,
+    staleTime: 10 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const accounts = accountsQ.data?.records ?? [];
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const base = q ? accounts.filter((a) => a.name.toLowerCase().includes(q)) : accounts;
+    return base.slice(0, 30);
+  }, [accounts, search]);
+  const selected = accounts.find((a) => a.id === accountId) ?? null;
+
+  const submit = async () => {
+    if (!accountId) { toast.error("Selecione o cliente."); return; }
+    if (!subject.trim()) { toast.error("Assunto é obrigatório."); return; }
+    if (!date) { toast.error("Vencimento é obrigatório."); return; }
+    setSaving(true);
+    try {
+      await createFn({
+        data: { subject, type, priority, activityDate: date, description, whatId: accountId },
+      });
+      toast.success("Tarefa criada no Salesforce.");
+      setSearch(""); setAccountId(null); setSubject(""); setDescription("");
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao criar tarefa.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarPlus className="h-4 w-4 text-primary" /> Nova tarefa
+          </DialogTitle>
+          <DialogDescription>
+            Cria uma tarefa em aberto no Salesforce vinculada ao cliente selecionado.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Cliente</div>
+            {selected ? (
+              <div className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
+                <span className="text-sm font-medium truncate">{selected.name}</span>
+                <Button variant="ghost" size="sm" onClick={() => setAccountId(null)}>Trocar</Button>
+              </div>
+            ) : (
+              <>
+                <Input
+                  placeholder="Buscar cliente no Salesforce…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <div className="mt-1 max-h-44 overflow-y-auto rounded-md border border-border divide-y divide-border">
+                  {accountsQ.isLoading && (
+                    <div className="p-3 text-xs text-muted-foreground">Carregando clientes…</div>
+                  )}
+                  {!accountsQ.isLoading && filtered.length === 0 && (
+                    <div className="p-3 text-xs text-muted-foreground">Nenhum cliente encontrado.</div>
+                  )}
+                  {filtered.map((a) => (
+                    <button
+                      key={a.id}
+                      onClick={() => { setAccountId(a.id); if (!subject) setSubject(`Follow-up — ${a.name}`); }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-surface-2 flex items-center justify-between gap-2"
+                    >
+                      <span className="truncate">{a.name}</span>
+                      {a.segment && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-primary/15 text-primary shrink-0">
+                          {a.segment}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Assunto</div>
+            <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Assunto da tarefa" />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Tipo</div>
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TASK_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Prioridade</div>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground mb-1">Vencimento</div>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Descrição</div>
+            <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving ? "Criando…" : "Criar tarefa"}
           </Button>
         </DialogFooter>
       </DialogContent>
