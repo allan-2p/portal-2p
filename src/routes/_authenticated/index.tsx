@@ -992,7 +992,11 @@ function HomePage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <Button size="sm" className="gap-2" onClick={() => setNewTaskOpen(true)}>
+                  <CalendarPlus className="h-3.5 w-3.5" /> Nova tarefa
+                </Button>
                 <Popover open={agendaSortOpen} onOpenChange={setAgendaSortOpen}>
+
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-2" title="Ordenar">
                       <ArrowUpDown className="h-3.5 w-3.5" />
