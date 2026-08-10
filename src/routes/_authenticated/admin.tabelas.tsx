@@ -1524,13 +1524,13 @@ function RecorrenciaPanel({ search }: { search: string }) {
         <QuarterPicker year={year} quarter={quarter} onChange={setYQ} />
         <div className="flex items-center gap-2">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
-          <Select value={vendedor} onValueChange={setVendedor}>
-            <SelectTrigger className="w-[240px] h-9"><SelectValue placeholder="Todos" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Todos os vendedores</SelectItem>
-              {vendedores.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <VendedorNamesFilter
+            value={vendedor}
+            onChange={setVendedor}
+            options={vendedores}
+            allLabel="Todos os vendedores"
+          />
+
         </div>
       </div>
       <div className="glass rounded-2xl p-3 text-[11px] text-muted-foreground leading-relaxed">
