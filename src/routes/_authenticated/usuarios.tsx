@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppLayout } from "@/components/app-layout";
+import { VendedoresPanel } from "@/components/vendedores-panel";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/hooks/use-auth";
 import {
@@ -64,7 +65,7 @@ const SCOPES: { id: FilterScope; label: string }[] = [
   { id: "individual", label: "Individual" },
 ];
 
-type Tab = "portal" | "salesforce";
+type Tab = "portal" | "salesforce" | "vendedores";
 
 
 function UsuariosPage() {
@@ -254,6 +255,7 @@ function UsuariosPage() {
           {[
             { id: "portal", label: "Usuários do portal" },
             { id: "salesforce", label: "Sincronizar com Salesforce" },
+            { id: "vendedores", label: "Vendedores" },
           ].map((t) => (
             <button
               key={t.id}
@@ -269,7 +271,9 @@ function UsuariosPage() {
           ))}
         </div>
 
-        {tab === "portal" ? (
+        {tab === "vendedores" ? (
+          <VendedoresPanel />
+        ) : tab === "portal" ? (
           <PortalTable
             rows={rows}
             loading={loading}
