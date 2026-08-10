@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Pencil, Eye, X, Building2, Calendar, User, FileText, Save, Plus, Phone, Globe, Loader2, AlertTriangle, Search } from "lucide-react";
+
 import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
 
