@@ -26,7 +26,10 @@ function resolveOwner(selected: string, scope: MyScope | undefined): string | nu
   if (!scope) return null;
   if (scope.scope === "geral") return selected;
   const allowed = scope.allowed_sf_ids ?? [];
-  if (selected !== "all" && allowed.includes(selected)) return selected;
+  if (selected !== "all") {
+    const ids = selected.split(",").map((v) => v.trim()).filter((v) => allowed.includes(v));
+    if (ids.length) return ids.join(",");
+  }
   return allowed[0] ?? null;
 }
 
