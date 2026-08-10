@@ -679,7 +679,7 @@ function SegmentacaoPage() {
                 )}
 
                 {!loading &&
-                  visible.map((c) => {
+                  pageRows.map((c) => {
                     const isOpen = expanded.has(c.id);
                     const denom = c.projection > 0 ? c.projection : 1;
                     const generationPct = (c.generation / denom) * 100;
