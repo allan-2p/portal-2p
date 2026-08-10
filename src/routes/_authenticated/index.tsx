@@ -34,8 +34,8 @@ import {
   getSalesforceForecasts,
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
-  getSalesforceOrcamentos,
   getSalesforceOppsCriadas,
+
 
   getSalesforceAccounts,
   OPP_DEFAULTS_VENDIDO_MES,
