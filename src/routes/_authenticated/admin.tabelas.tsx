@@ -715,8 +715,9 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     let base = rows;
-    if (vendedor !== "__all__") {
-      base = base.filter((r) => (r.accountOwner ?? "") === vendedor);
+    const selVend = parseVendedores(vendedor);
+    if (selVend.length) {
+      base = base.filter((r) => matchVendedor(selVend, r.accountOwner ?? ""));
     }
     if (!s) return base;
     return base.filter(
@@ -1414,7 +1415,9 @@ function OppTabPanel({
     [records],
   );
   const filteredByVendedor =
-    vendedor === "__all__" ? records : records.filter((r) => (r.owner ?? "") === vendedor);
+    parseVendedores(vendedor).length === 0
+      ? records
+      : records.filter((r) => matchVendedor(parseVendedores(vendedor), r.owner ?? ""));
 
   return (
     <div className="space-y-3">
@@ -1504,7 +1507,8 @@ function RecorrenciaPanel({ search }: { search: string }) {
   );
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    let out = vendedor === "__all__" ? records : records.filter((r) => (r.owner ?? "") === vendedor);
+    const selVend = parseVendedores(vendedor);
+    let out = selVend.length === 0 ? records : records.filter((r) => matchVendedor(selVend, r.owner ?? ""));
     if (s) out = out.filter((r) => (r.accountName ?? "").toLowerCase().includes(s) || (r.owner ?? "").toLowerCase().includes(s));
     return out;
   }, [records, vendedor, search]);
@@ -1557,7 +1561,8 @@ function RetencaoPanel({ search }: { search: string }) {
   );
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    let out = vendedor === "__all__" ? records : records.filter((r) => (r.owner ?? "") === vendedor);
+    const selVend = parseVendedores(vendedor);
+    let out = selVend.length === 0 ? records : records.filter((r) => matchVendedor(selVend, r.owner ?? ""));
     if (s) out = out.filter((r) => (r.accountName ?? "").toLowerCase().includes(s) || (r.owner ?? "").toLowerCase().includes(s));
     return out;
   }, [records, vendedor, search]);
@@ -1973,9 +1978,11 @@ function TabelasPage() {
               </div>
               <WeeksPanel
                 records={
-                  vendedorVen === "__all__"
+                  parseVendedores(vendedorVen).length === 0
                     ? (qVen.data?.records ?? [])
-                    : (qVen.data?.records ?? []).filter((r) => (r.owner ?? "") === vendedorVen)
+                    : (qVen.data?.records ?? []).filter((r) =>
+                        matchVendedor(parseVendedores(vendedorVen), r.owner ?? ""),
+                      )
                 }
                 loading={qVen.isLoading}
                 error={qVen.error}
