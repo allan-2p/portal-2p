@@ -102,6 +102,8 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
       const meta = INSTANCES[instance];
       if (!meta.routes.includes(key)) return false;
       if (isAdmin) return true;
+      // A home da instância é sempre acessível — é a página inicial de todo usuário.
+      if (HOME_FEATURE[instance] === key) return true;
       // Default deny: só libera com permissão explícita.
       return grantedSet.has(`${instance}::${key}`);
     },
