@@ -50,6 +50,7 @@ import { Route as AuthenticatedCarregadoresClientesRouteImport } from './routes/
 import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
 import { Route as AuthenticatedAdminPermissoesRouteImport } from './routes/_authenticated/admin.permissoes'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
+import { Route as AuthenticatedAdminAuditoriaRouteImport } from './routes/_authenticated/admin.auditoria'
 import { Route as AuthenticatedCarregadoresPropostasIndexRouteImport } from './routes/_authenticated/carregadores.propostas.index'
 import { Route as AuthenticatedCarregadoresClientesIndexRouteImport } from './routes/_authenticated/carregadores.clientes.index'
 import { Route as AuthenticatedCarregadoresPropostasNovaRouteImport } from './routes/_authenticated/carregadores.propostas.nova'
@@ -284,6 +285,12 @@ const AuthenticatedAdminMetasRoute = AuthenticatedAdminMetasRouteImport.update({
   path: '/admin/metas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminAuditoriaRoute =
+  AuthenticatedAdminAuditoriaRouteImport.update({
+    id: '/admin/auditoria',
+    path: '/admin/auditoria',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCarregadoresPropostasIndexRoute =
   AuthenticatedCarregadoresPropostasIndexRouteImport.update({
     id: '/',
@@ -325,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
+  '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
@@ -370,6 +378,7 @@ export interface FileRoutesByTo {
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
@@ -416,6 +425,7 @@ export interface FileRoutesById {
   '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/_authenticated/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
@@ -464,6 +474,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/tarefas'
     | '/usuarios'
+    | '/admin/auditoria'
     | '/admin/metas'
     | '/admin/permissoes'
     | '/admin/tabelas'
@@ -509,6 +520,7 @@ export interface FileRouteTypes {
     | '/tarefas'
     | '/usuarios'
     | '/'
+    | '/admin/auditoria'
     | '/admin/metas'
     | '/admin/permissoes'
     | '/admin/tabelas'
@@ -554,6 +566,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tarefas'
     | '/_authenticated/usuarios'
     | '/_authenticated/'
+    | '/_authenticated/admin/auditoria'
     | '/_authenticated/admin/metas'
     | '/_authenticated/admin/permissoes'
     | '/_authenticated/admin/tabelas'
@@ -881,6 +894,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminMetasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/auditoria': {
+      id: '/_authenticated/admin/auditoria'
+      path: '/admin/auditoria'
+      fullPath: '/admin/auditoria'
+      preLoaderRoute: typeof AuthenticatedAdminAuditoriaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/carregadores/propostas/': {
       id: '/_authenticated/carregadores/propostas/'
       path: '/'
@@ -1024,6 +1044,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTarefasRoute: typeof AuthenticatedTarefasRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAdminAuditoriaRoute: typeof AuthenticatedAdminAuditoriaRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
   AuthenticatedAdminPermissoesRoute: typeof AuthenticatedAdminPermissoesRoute
   AuthenticatedAdminTabelasRoute: typeof AuthenticatedAdminTabelasRoute
@@ -1050,6 +1071,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTarefasRoute: AuthenticatedTarefasRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAdminAuditoriaRoute: AuthenticatedAdminAuditoriaRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
   AuthenticatedAdminPermissoesRoute: AuthenticatedAdminPermissoesRoute,
   AuthenticatedAdminTabelasRoute: AuthenticatedAdminTabelasRoute,
