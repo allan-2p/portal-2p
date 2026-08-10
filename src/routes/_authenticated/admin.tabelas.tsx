@@ -1425,17 +1425,13 @@ function OppTabPanel({
       <OppFiltersPanel value={filters} defaults={defaults} onApply={onFiltersChange} onSaveAsDefault={onSaveAsDefault} />
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
-        <Select value={vendedor} onValueChange={onVendedorChange}>
-          <SelectTrigger className="w-[260px] h-9">
-            <SelectValue placeholder="Todos os vendedores" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todos os vendedores</SelectItem>
-            {vendedores.map((v) => (
-              <SelectItem key={v} value={v}>{v}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <VendedorNamesFilter
+          value={vendedor}
+          onChange={onVendedorChange}
+          options={vendedores}
+          allLabel="Todos os vendedores"
+        />
+
         {vendedor !== "__all__" && (
           <button
             type="button"
