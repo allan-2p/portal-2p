@@ -741,7 +741,125 @@ function PermissoesPage() {
             </div>
           </div>
         )}
+
+        {/* ------ Log de alterações ------ */}
+        <div className="glass rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 font-semibold">
+              <HistoryIcon className="h-4 w-4 text-primary" /> Log de alterações de permissões
+              <span className="text-xs font-normal text-muted-foreground">
+                (últimas {logs.length})
+              </span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!lastUndoable || undoMut.isPending}
+              onClick={() => lastUndoable && undoMut.mutate(lastUndoable.id)}
+            >
+              {undoMut.isPending ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Undo2 className="h-4 w-4 mr-1.5" />
+              )}
+              Desfazer última alteração
+            </Button>
+          </div>
+          {logQ.isLoading ? (
+            <div className="p-6 text-center text-muted-foreground text-sm">Carregando…</div>
+          ) : logs.length === 0 ? (
+            <div className="p-6 text-center text-muted-foreground text-sm">
+              Nenhuma alteração em massa registrada ainda.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase tracking-wider text-muted-foreground border-b border-border/60">
+                  <tr>
+                    <th className="text-left px-4 py-2 font-medium">Quando</th>
+                    <th className="text-left px-4 py-2 font-medium">Quem</th>
+                    <th className="text-left px-4 py-2 font-medium">Ação</th>
+                    <th className="text-left px-4 py-2 font-medium">Instância</th>
+                    <th className="text-left px-4 py-2 font-medium">Usuários</th>
+                    <th className="text-left px-4 py-2 font-medium">Funcionalidades</th>
+                    <th className="text-right px-4 py-2 font-medium">—</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((l) => {
+                    const names = l.user_ids
+                      .map((id) => {
+                        const u = users.find((x) => x.id === id);
+                        return u?.full_name ?? u?.email ?? id.slice(0, 8);
+                      })
+                      .slice(0, 3);
+                    const extra = l.user_ids.length - names.length;
+                    return (
+                      <tr key={l.id} className="border-b border-border/40 last:border-0">
+                        <td className="px-4 py-2 whitespace-nowrap text-muted-foreground">
+                          {new Date(l.created_at).toLocaleString("pt-BR")}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">{l.actor_email ?? "—"}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[11px]",
+                              l.action === "bulk_revoke"
+                                ? "border-destructive/40 text-destructive"
+                                : "border-primary/40 text-primary",
+                            )}
+                          >
+                            {ACTION_LABELS[l.action] ?? l.action}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          {INSTANCES[l.instance_id as InstanceId]?.label ?? l.instance_id}
+                        </td>
+                        <td className="px-4 py-2">
+                          <span title={l.user_ids.join(", ")}>
+                            {names.join(", ")}
+                            {extra > 0 ? ` +${extra}` : ""}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2">
+                          <span
+                            title={l.feature_keys
+                              .map((k) => FEATURE_LABELS[k as FeatureKey] ?? k)
+                              .join(", ")}
+                          >
+                            {l.feature_keys.length} item(ns):{" "}
+                            {l.feature_keys
+                              .slice(0, 3)
+                              .map((k) => FEATURE_LABELS[k as FeatureKey] ?? k)
+                              .join(", ")}
+                            {l.feature_keys.length > 3 ? "…" : ""}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-right whitespace-nowrap">
+                          {l.undone_at ? (
+                            <span className="text-xs text-muted-foreground">Desfeito</span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={undoMut.isPending}
+                              onClick={() => undoMut.mutate(l.id)}
+                            >
+                              <Undo2 className="h-3.5 w-3.5 mr-1" /> Desfazer
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
+
     </AppLayout>
   );
 }
