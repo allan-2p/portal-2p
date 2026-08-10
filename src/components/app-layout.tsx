@@ -467,9 +467,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         {show("admin.usuarios") && (
                           <AdminMenuLink to="/usuarios" label="Usuários" icon={Users} onClick={() => setAdminMenuOpen(false)} />
                         )}
-                        {show("admin.vendedores") && (
-                          <AdminMenuLink to="/admin/vendedores" label="Vendedores" icon={UserCog} onClick={() => setAdminMenuOpen(false)} />
-                        )}
                         {show("admin.metas") && (
                           <AdminMenuLink to="/admin/metas" label="Regras de Metas" icon={Target} onClick={() => setAdminMenuOpen(false)} />
                         )}

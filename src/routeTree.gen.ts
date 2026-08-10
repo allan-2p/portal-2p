@@ -47,7 +47,6 @@ import { Route as AuthenticatedCarregadoresProdutosRouteImport } from './routes/
 import { Route as AuthenticatedCarregadoresPedidosRouteImport } from './routes/_authenticated/carregadores.pedidos'
 import { Route as AuthenticatedCarregadoresComissoesRouteImport } from './routes/_authenticated/carregadores.comissoes'
 import { Route as AuthenticatedCarregadoresClientesRouteImport } from './routes/_authenticated/carregadores.clientes'
-import { Route as AuthenticatedAdminVendedoresRouteImport } from './routes/_authenticated/admin.vendedores'
 import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
 import { Route as AuthenticatedAdminPermissoesRouteImport } from './routes/_authenticated/admin.permissoes'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
@@ -269,12 +268,6 @@ const AuthenticatedCarregadoresClientesRoute =
     path: '/carregadores/clientes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminVendedoresRoute =
-  AuthenticatedAdminVendedoresRouteImport.update({
-    id: '/admin/vendedores',
-    path: '/admin/vendedores',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAdminTabelasRoute =
   AuthenticatedAdminTabelasRouteImport.update({
     id: '/admin/tabelas',
@@ -343,7 +336,6 @@ export interface FileRoutesByFullPath {
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
-  '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
@@ -390,7 +382,6 @@ export interface FileRoutesByTo {
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
-  '/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
@@ -438,7 +429,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/_authenticated/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
   '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
-  '/_authenticated/admin/vendedores': typeof AuthenticatedAdminVendedoresRoute
   '/_authenticated/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/_authenticated/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/_authenticated/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
@@ -488,7 +478,6 @@ export interface FileRouteTypes {
     | '/admin/metas'
     | '/admin/permissoes'
     | '/admin/tabelas'
-    | '/admin/vendedores'
     | '/carregadores/clientes'
     | '/carregadores/comissoes'
     | '/carregadores/pedidos'
@@ -535,7 +524,6 @@ export interface FileRouteTypes {
     | '/admin/metas'
     | '/admin/permissoes'
     | '/admin/tabelas'
-    | '/admin/vendedores'
     | '/carregadores/comissoes'
     | '/carregadores/pedidos'
     | '/carregadores/produtos'
@@ -582,7 +570,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/metas'
     | '/_authenticated/admin/permissoes'
     | '/_authenticated/admin/tabelas'
-    | '/_authenticated/admin/vendedores'
     | '/_authenticated/carregadores/clientes'
     | '/_authenticated/carregadores/comissoes'
     | '/_authenticated/carregadores/pedidos'
@@ -886,13 +873,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarregadoresClientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/vendedores': {
-      id: '/_authenticated/admin/vendedores'
-      path: '/admin/vendedores'
-      fullPath: '/admin/vendedores'
-      preLoaderRoute: typeof AuthenticatedAdminVendedoresRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/admin/tabelas': {
       id: '/_authenticated/admin/tabelas'
       path: '/admin/tabelas'
@@ -1068,7 +1048,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
   AuthenticatedAdminPermissoesRoute: typeof AuthenticatedAdminPermissoesRoute
   AuthenticatedAdminTabelasRoute: typeof AuthenticatedAdminTabelasRoute
-  AuthenticatedAdminVendedoresRoute: typeof AuthenticatedAdminVendedoresRoute
   AuthenticatedCarregadoresClientesRoute: typeof AuthenticatedCarregadoresClientesRouteWithChildren
   AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
   AuthenticatedCarregadoresPedidosRoute: typeof AuthenticatedCarregadoresPedidosRoute
@@ -1097,7 +1076,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
   AuthenticatedAdminPermissoesRoute: AuthenticatedAdminPermissoesRoute,
   AuthenticatedAdminTabelasRoute: AuthenticatedAdminTabelasRoute,
-  AuthenticatedAdminVendedoresRoute: AuthenticatedAdminVendedoresRoute,
   AuthenticatedCarregadoresClientesRoute:
     AuthenticatedCarregadoresClientesRouteWithChildren,
   AuthenticatedCarregadoresComissoesRoute:
@@ -1124,13 +1102,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

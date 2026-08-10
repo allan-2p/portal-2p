@@ -29,7 +29,6 @@ export type FeatureKey =
   | "cpo.comissoes"
   | "cpo.regras"
   | "admin.usuarios"
-  | "admin.vendedores"
   | "admin.metas"
   | "admin.tabelas"
   | "admin.integracoes"
@@ -74,7 +73,6 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "cupons",
       "atlas",
       "admin.usuarios",
-      "admin.vendedores",
       "admin.metas",
       "admin.tabelas",
       "admin.integracoes",
@@ -97,7 +95,6 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "cpo.comissoes",
       "cpo.regras",
       "admin.usuarios",
-      "admin.vendedores",
       "admin.integracoes",
     ],
 
@@ -149,7 +146,6 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/carregadores/regras": "cpo.regras",
 
   "/usuarios": "admin.usuarios",
-  "/admin/vendedores": "admin.vendedores",
   "/admin/metas": "admin.metas",
   "/admin/tabelas": "admin.tabelas",
   "/integracoes": "admin.integracoes",
@@ -184,7 +180,6 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "cpo.comissoes": "Moderação • Comissões",
   "cpo.regras": "Moderação • Regras",
   "admin.usuarios": "Admin • Usuários",
-  "admin.vendedores": "Admin • Vendedores",
   "admin.metas": "Admin • Metas",
   "admin.tabelas": "Admin • Tabelas",
   "admin.integracoes": "Admin • Integrações",
