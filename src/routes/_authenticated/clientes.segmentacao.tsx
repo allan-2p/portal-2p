@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
 const fmt = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
-type SortKey = "rank" | "name" | "segment" | "projection" | "generation" | "sales" | "health";
+type SortKey = "rank" | "name" | "segment" | "projection" | "generation" | "sales";
 type SortDir = "asc" | "desc";
 
 function pad(n: number) {
