@@ -161,3 +161,28 @@ export const adminSetFeaturePermission = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+// ---- Admin: ler acesso de outro usuário (modo simulador) ---- //
+
+export const adminGetUserAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<UserAccess> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: inst }, { data: perms }, { data: roles }] = await Promise.all([
+      supabaseAdmin.from("user_instance_access").select("instance_id").eq("user_id", data.user_id),
+      supabaseAdmin
+        .from("user_feature_permissions")
+        .select("instance_id, feature_key, allowed")
+        .eq("user_id", data.user_id),
+      supabaseAdmin.from("user_roles").select("role").eq("user_id", data.user_id),
+    ]);
+    return {
+      instances: (inst ?? []).map((r: any) => r.instance_id as string),
+      granted: (perms ?? [])
+        .filter((r: any) => r.allowed === true)
+        .map((r: any) => ({ instance_id: r.instance_id, feature_key: r.feature_key })),
+      is_admin: (roles ?? []).some((r: any) => r.role === "admin"),
+    };
+  });
