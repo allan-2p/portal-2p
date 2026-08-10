@@ -29,6 +29,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  VendedorNamesFilter,
+  parseVendedores,
+  matchVendedor,
+} from "@/components/vendedor-names-filter";
+import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
