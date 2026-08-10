@@ -20,7 +20,8 @@ import {
 } from "@/lib/instances";
 import { useMemo, useState } from "react";
 import { PERMISSION_PROFILES, profileFeatures } from "@/lib/permission-profiles";
-import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye, Layers, CheckSquare, Square, Unlock, Lock } from "lucide-react";
+import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye, Layers, CheckSquare, Square, Unlock, Lock, Sparkles } from "lucide-react";
+import { useNewFeatures } from "@/hooks/use-new-features";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
