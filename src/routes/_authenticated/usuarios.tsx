@@ -452,7 +452,7 @@ function PortalTable({
             <th className="text-left px-4 py-3 font-medium">Equipe de vendas</th>
             <th className="text-center px-4 py-3 font-medium">Aparece nos filtros</th>
             <th className="text-left px-4 py-3 font-medium">Status</th>
-            <th className="px-4 py-3"></th>
+            <th className="px-4 py-3 sticky right-0 bg-surface/95 backdrop-blur-sm border-l border-border"></th>
           </tr>
 
         </thead>
@@ -600,8 +600,8 @@ function PortalTable({
                     {r.ativo ? "Ativo" : "Inativo"}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex gap-1 justify-end">
+                <td className="px-4 py-3 text-right sticky right-0 bg-background/95 backdrop-blur-sm border-l border-border">
+                  <div className="flex items-center gap-1 justify-end">
                     <button
                       onClick={() => onEdit(r)}
                       className="p-1.5 rounded hover:bg-surface-2"
