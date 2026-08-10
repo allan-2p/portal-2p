@@ -12,8 +12,10 @@ export type FeatureKey =
   | "home"
   | "tarefas"
   | "pedidos"
+  | "propostas"
   | "cupons"
   | "dashboards"
+  | "dashboards.metas"
   | "clientes.cadastros"
   | "clientes.segmentacao"
   | "clientes.perfil"
@@ -31,6 +33,7 @@ export type FeatureKey =
   | "admin.usuarios"
   | "admin.metas"
   | "admin.tabelas"
+  | "admin.permissoes"
   | "admin.integracoes"
   | "marketing.home"
   | "marketing.social"
@@ -64,7 +67,9 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "home",
       "tarefas",
       "pedidos",
+      "propostas",
       "dashboards",
+      "dashboards.metas",
       "clientes.cadastros",
       "clientes.segmentacao",
       "clientes.perfil",
@@ -75,6 +80,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "admin.usuarios",
       "admin.metas",
       "admin.tabelas",
+      "admin.permissoes",
       "admin.integracoes",
     ],
   },
@@ -95,6 +101,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "cpo.comissoes",
       "cpo.regras",
       "admin.usuarios",
+      "admin.permissoes",
       "admin.integracoes",
     ],
 
@@ -116,6 +123,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "marketing.prevendas",
       "marketing.metas",
       "admin.usuarios",
+      "admin.permissoes",
       "admin.integracoes",
     ],
   },
@@ -126,9 +134,10 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/": "home",
   "/tarefas": "tarefas",
   "/pedidos": "pedidos",
-  "/orcamentos": "pedidos",
+  "/orcamentos": "propostas",
   "/cupons": "cupons",
   "/dashboards": "dashboards",
+  "/dashboards/metas": "dashboards.metas",
   "/clientes/cadastros": "clientes.cadastros",
   "/clientes/segmentacao": "clientes.segmentacao",
   "/clientes/perfil": "clientes.perfil",
@@ -148,6 +157,7 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/usuarios": "admin.usuarios",
   "/admin/metas": "admin.metas",
   "/admin/tabelas": "admin.tabelas",
+  "/admin/permissoes": "admin.permissoes",
   "/integracoes": "admin.integracoes",
   "/marketing": "marketing.home",
   "/marketing/social": "marketing.social",
@@ -163,8 +173,10 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   home: "Home",
   tarefas: "Tarefas",
   pedidos: "Pedidos",
+  propostas: "Propostas",
   cupons: "Cupons",
   dashboards: "Dashboards",
+  "dashboards.metas": "Dashboards • Metas",
   "clientes.cadastros": "Clientes • Cadastros",
   "clientes.segmentacao": "Clientes • Segmentação",
   "clientes.perfil": "Clientes • Perfil do Cliente",
@@ -182,6 +194,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.usuarios": "Admin • Usuários",
   "admin.metas": "Admin • Metas",
   "admin.tabelas": "Admin • Tabelas",
+  "admin.permissoes": "Admin • Permissões de Usuários",
   "admin.integracoes": "Admin • Integrações",
   "marketing.home": "Marketing • Home",
   "marketing.social": "Marketing • Social Mídia",

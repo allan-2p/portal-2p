@@ -11,13 +11,15 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
 
 export type UserAccess = {
   instances: string[];
-  denied: { instance_id: string; feature_key: string }[];
+  /** Features explicitamente liberadas. Sem linha = sem acesso (default deny). */
+  granted: { instance_id: string; feature_key: string }[];
+  is_admin: boolean;
 };
 
 export const getMyAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<UserAccess> => {
-    const [{ data: inst }, { data: perms }] = await Promise.all([
+    const [{ data: inst }, { data: perms }, { data: isAdmin }] = await Promise.all([
       context.supabase
         .from("user_instance_access")
         .select("instance_id")
@@ -26,12 +28,14 @@ export const getMyAccess = createServerFn({ method: "GET" })
         .from("user_feature_permissions")
         .select("instance_id, feature_key, allowed")
         .eq("user_id", context.userId),
+      context.supabase.rpc("is_admin"),
     ]);
     return {
       instances: (inst ?? []).map((r: any) => r.instance_id as string),
-      denied: (perms ?? [])
-        .filter((r: any) => r.allowed === false)
+      granted: (perms ?? [])
+        .filter((r: any) => r.allowed === true)
         .map((r: any) => ({ instance_id: r.instance_id, feature_key: r.feature_key })),
+      is_admin: !!isAdmin,
     };
   });
 
@@ -43,7 +47,7 @@ export type AdminUserRow = {
   full_name: string | null;
   is_admin: boolean;
   instances: string[]; // ids das instâncias liberadas
-  denied: { instance_id: string; feature_key: string }[];
+  granted: { instance_id: string; feature_key: string }[];
 };
 
 export const adminListAccessMatrix = createServerFn({ method: "GET" })
@@ -69,12 +73,12 @@ export const adminListAccessMatrix = createServerFn({ method: "GET" })
       arr.push((r as any).instance_id);
       instByUser.set((r as any).user_id, arr);
     }
-    const denyByUser = new Map<string, { instance_id: string; feature_key: string }[]>();
+    const grantByUser = new Map<string, { instance_id: string; feature_key: string }[]>();
     for (const r of permRows ?? []) {
-      if ((r as any).allowed !== false) continue;
-      const arr = denyByUser.get((r as any).user_id) ?? [];
+      if ((r as any).allowed !== true) continue;
+      const arr = grantByUser.get((r as any).user_id) ?? [];
       arr.push({ instance_id: (r as any).instance_id, feature_key: (r as any).feature_key });
-      denyByUser.set((r as any).user_id, arr);
+      grantByUser.set((r as any).user_id, arr);
     }
     const users: AdminUserRow[] = (profiles ?? []).map((p: any) => ({
       id: p.id,
@@ -82,7 +86,7 @@ export const adminListAccessMatrix = createServerFn({ method: "GET" })
       full_name: p.full_name,
       is_admin: adminSet.has(p.id),
       instances: instByUser.get(p.id) ?? [],
-      denied: denyByUser.get(p.id) ?? [],
+      granted: grantByUser.get(p.id) ?? [],
     }));
     return { users };
   });
@@ -119,7 +123,7 @@ export const adminSetInstanceAccess = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// ---- Admin: set feature permission (deny only; default é permitido) ---- //
+// ---- Admin: set feature permission (grant only; default é negado) ---- //
 
 const SetFeatureInput = z.object({
   user_id: z.string().uuid(),
@@ -134,25 +138,25 @@ export const adminSetFeaturePermission = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     if (data.allowed) {
-      // remove deny row → volta ao padrão (permitido)
+      const { error } = await context.supabase.from("user_feature_permissions").upsert(
+        {
+          user_id: data.user_id,
+          instance_id: data.instance_id,
+          feature_key: data.feature_key,
+          allowed: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,instance_id,feature_key" },
+      );
+      if (error) throw new Error(error.message);
+    } else {
+      // sem linha = sem acesso (default deny)
       const { error } = await context.supabase
         .from("user_feature_permissions")
         .delete()
         .eq("user_id", data.user_id)
         .eq("instance_id", data.instance_id)
         .eq("feature_key", data.feature_key);
-      if (error) throw new Error(error.message);
-    } else {
-      const { error } = await context.supabase.from("user_feature_permissions").upsert(
-        {
-          user_id: data.user_id,
-          instance_id: data.instance_id,
-          feature_key: data.feature_key,
-          allowed: false,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,instance_id,feature_key" },
-      );
       if (error) throw new Error(error.message);
     }
     return { ok: true };

@@ -33,7 +33,10 @@ export const Route = createFileRoute("/_authenticated/admin/permissoes")({
 
 // Agrupamento visual das features
 const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
-  { label: "Operação", keys: ["home", "tarefas", "pedidos", "cupons", "dashboards", "atlas"] },
+  {
+    label: "Operação",
+    keys: ["home", "tarefas", "propostas", "pedidos", "cupons", "dashboards", "dashboards.metas", "atlas"],
+  },
   { label: "Clientes", keys: ["clientes.cadastros", "clientes.segmentacao", "clientes.perfil", "clientes.sugestoes", "clientes.ranking"] },
   {
     label: "Carregadores",
@@ -49,6 +52,7 @@ const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
       "admin.usuarios",
       "admin.metas",
       "admin.tabelas",
+      "admin.permissoes",
       "admin.integracoes",
     ],
   },
@@ -109,12 +113,12 @@ function PermissoesPage() {
           ...old,
           users: old.users.map((u: any) => {
             if (u.id !== v.user_id) return u;
-            const denied = u.denied.filter(
+            const granted = u.granted.filter(
               (d: any) => !(d.instance_id === v.instance_id && d.feature_key === v.feature_key),
             );
-            if (!v.allowed)
-              denied.push({ instance_id: v.instance_id, feature_key: v.feature_key });
-            return { ...u, denied };
+            if (v.allowed)
+              granted.push({ instance_id: v.instance_id, feature_key: v.feature_key });
+            return { ...u, granted };
           }),
         };
       });
@@ -160,7 +164,7 @@ function PermissoesPage() {
   function isAllowed(featureKey: FeatureKey): boolean {
     if (!selectedUser) return false;
     if (selectedUser.is_admin) return true;
-    return !selectedUser.denied.some(
+    return selectedUser.granted.some(
       (d) => d.instance_id === activeInstance && d.feature_key === featureKey,
     );
   }
@@ -191,9 +195,9 @@ function PermissoesPage() {
     toast.success(allowed ? "Tudo liberado para esta instância" : "Tudo bloqueado nesta instância");
   }
 
-  // Contagem denial por usuário para badge na lista
+  // Contagem de features liberadas por usuário para badge na lista
   const denyCountByUser = (u: (typeof users)[number]) =>
-    u.denied.filter((d) => u.instances.includes(d.instance_id)).length;
+    u.granted.filter((d) => u.instances.includes(d.instance_id)).length;
 
   return (
     <AppLayout>
@@ -262,8 +266,12 @@ function PermissoesPage() {
                               {u.email}
                             </div>
                           </div>
-                          {denials > 0 && !u.is_admin && (
-                            <Badge variant="secondary" className="text-[10px] h-5">
+                          {!u.is_admin && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] h-5"
+                              title="Funcionalidades liberadas"
+                            >
                               {denials}
                             </Badge>
                           )}
