@@ -377,14 +377,14 @@ function SegmentacaoPage() {
       setVendedor(ownOwnerName);
       return;
     }
-    if (
-      !isIndividual &&
-      allowedOwnerNames &&
-      vendedor !== "__all__" &&
-      !allowedOwnerNames.has(vendedor)
-    ) {
-      const first = vendedores[0];
-      if (first) setVendedor(first);
+    if (!isIndividual && allowedOwnerNames && vendedor !== "__all__") {
+      const kept = parseVendedores(vendedor).filter((v) => allowedOwnerNames.has(v));
+      if (kept.length === 0) {
+        const first = vendedores[0];
+        if (first) setVendedor(first);
+      } else if (kept.length !== parseVendedores(vendedor).length) {
+        setVendedor(kept.join(","));
+      }
     }
   }, [isIndividual, ownOwnerName, vendedor, allowedOwnerNames, vendedores]);
 
@@ -403,8 +403,9 @@ function SegmentacaoPage() {
         return allowedOwnerNames.has(owner);
       });
     }
-    if (vendedor === "__all__") return base;
-    return base.filter((c) => (ownerByAccount.get(c.id) ?? "") === vendedor);
+    const sel = parseVendedores(vendedor);
+    if (sel.length === 0) return base;
+    return base.filter((c) => matchVendedor(sel, ownerByAccount.get(c.id) ?? ""));
   }, [clients, vendedor, ownerByAccount, allowedOwnerNames]);
 
 
