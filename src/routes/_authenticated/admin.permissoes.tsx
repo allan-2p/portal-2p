@@ -60,6 +60,8 @@ function PermissoesPage() {
   const { hasRole } = useAuth();
   const list = useServerFn(adminListAccessMatrix);
   const setPerm = useServerFn(adminSetFeaturePermission);
+  const setAccess = useServerFn(adminSetInstanceAccess);
+
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["admin-access-matrix"],
