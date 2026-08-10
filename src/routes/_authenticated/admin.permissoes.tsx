@@ -2,7 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminListAccessMatrix, adminSetFeaturePermission } from "@/lib/access.functions";
+import {
+  adminListAccessMatrix,
+  adminSetFeaturePermission,
+  adminSetInstanceAccess,
+} from "@/lib/access.functions";
+
 import {
   INSTANCES,
   ALL_FEATURES,
@@ -11,7 +16,7 @@ import {
   type FeatureKey,
 } from "@/lib/instances";
 import { useMemo, useState } from "react";
-import { Loader2, KeyRound, Search, ShieldCheck, Check, X, Users } from "lucide-react";
+import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -60,6 +65,8 @@ function PermissoesPage() {
   const { hasRole } = useAuth();
   const list = useServerFn(adminListAccessMatrix);
   const setPerm = useServerFn(adminSetFeaturePermission);
+  const setAccess = useServerFn(adminSetInstanceAccess);
+
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["admin-access-matrix"],
@@ -124,6 +131,18 @@ function PermissoesPage() {
       qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
     },
   });
+
+  const accessMut = useMutation({
+    mutationFn: (v: { user_id: string; instance_id: InstanceId; allowed: boolean }) =>
+      setAccess({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
+      qc.invalidateQueries({ queryKey: ["my-access"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar acesso"),
+  });
+
+
 
   if (!hasRole("admin")) {
     return (
@@ -309,6 +328,48 @@ function PermissoesPage() {
                     </div>
                   </div>
 
+                  {/* Acesso por instância */}
+                  <div className="glass rounded-xl p-4">
+                    <div className="text-sm font-semibold flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" /> Acesso às instâncias
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      Defina quais instâncias este usuário pode acessar.
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 mt-3">
+                      {(Object.values(INSTANCES) as InstanceMeta[]).map((i) => {
+                        const has = selectedUser.instances.includes(i.id);
+                        return (
+                          <label
+                            key={i.id}
+                            className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-border/60 bg-surface-2/40 cursor-pointer"
+                          >
+                            <span className="flex items-center gap-2 text-sm truncate">
+                              <span
+                                className="h-2.5 w-2.5 rounded-sm"
+                                style={{ background: i.swatch }}
+                              />
+                              {i.label}
+                            </span>
+                            <Switch
+                              checked={has}
+                              disabled={accessMut.isPending}
+                              onCheckedChange={(v) =>
+                                accessMut.mutate({
+                                  user_id: selectedUser.id,
+                                  instance_id: i.id,
+                                  allowed: v,
+                                })
+                              }
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+
+
                   {/* Cartão de permissões */}
                   <div className="glass rounded-xl overflow-hidden">
                     <div className="p-4 border-b border-border/60 flex items-center justify-between flex-wrap gap-3">
@@ -349,8 +410,8 @@ function PermissoesPage() {
                     {!userHasInstance ? (
                       <div className="p-8 text-center text-sm text-muted-foreground">
                         Este usuário não tem acesso à instância{" "}
-                        <strong>{instMeta.label}</strong>. Libere o acesso em{" "}
-                        <em>Acessos por Instância</em> antes de configurar permissões.
+                        <strong>{instMeta.label}</strong>. Libere o acesso no bloco{" "}
+                        <em>Acesso às instâncias</em> acima antes de configurar permissões.
                       </div>
                     ) : selectedUser.is_admin ? (
                       <div className="p-8 text-center text-sm text-muted-foreground">
