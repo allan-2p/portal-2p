@@ -132,6 +132,18 @@ function PermissoesPage() {
     },
   });
 
+  const accessMut = useMutation({
+    mutationFn: (v: { user_id: string; instance_id: InstanceId; allowed: boolean }) =>
+      setAccess({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
+      qc.invalidateQueries({ queryKey: ["my-access"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar acesso"),
+  });
+
+
+
   if (!hasRole("admin")) {
     return (
       <AppLayout>
