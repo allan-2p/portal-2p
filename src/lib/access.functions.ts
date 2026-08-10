@@ -202,6 +202,8 @@ export const adminApplyPermissionProfile = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ApplyProfileInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { snapshotPermissions, recordAudit } = await import("@/lib/permission-audit.server");
+    const before = await snapshotPermissions(context, [data.user_id], data.instance_id);
     if (data.grant_instance && data.feature_keys.length > 0) {
       await context.supabase
         .from("user_instance_access")
