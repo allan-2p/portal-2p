@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { useSalesforceNotifications } from "@/hooks/use-salesforce-notifications";
+import { useNewFeatures } from "@/hooks/use-new-features";
 import { bootstrapFirstAdmin } from "@/lib/users.functions";
 
 import { toast } from "sonner";
