@@ -76,6 +76,12 @@ const SCOPES: { id: FilterScope; label: string }[] = [
 ];
 
 type Tab = "portal" | "salesforce";
+type StatusFilter = "ativos" | "inativos" | "todos";
+const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
+  { id: "ativos", label: "Ativos" },
+  { id: "inativos", label: "Inativos" },
+  { id: "todos", label: "Todos" },
+];
 
 
 function UsuariosPage() {
