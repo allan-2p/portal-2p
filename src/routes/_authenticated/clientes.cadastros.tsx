@@ -181,7 +181,7 @@ function CadastrosPage() {
                   </tr>
                 )}
                 {!isLoading &&
-                  filtered.map((r) => (
+                  pageRows.map((r) => (
                     <tr key={r.id} className="border-b border-border/40 hover:bg-surface-2/50">
                       <td className="px-4 py-3 font-medium">{r.name}</td>
                       <td className="px-4 py-3 text-muted-foreground tabular-nums">{r.cnpj ?? "—"}</td>
