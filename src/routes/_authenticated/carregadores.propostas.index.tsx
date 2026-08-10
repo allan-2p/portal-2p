@@ -163,6 +163,13 @@ function HistoricoCpoPage() {
               {ufs.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
             </SelectContent>
           </Select>
+          <VendedorNamesFilter
+            value={vendedor}
+            onChange={setVendedor}
+            options={vend.names}
+            allLabel="Todos os vendedores"
+          />
+
         </div>
 
         <div className="glass rounded-2xl overflow-hidden">
