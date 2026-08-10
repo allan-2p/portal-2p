@@ -2,7 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminListAccessMatrix, adminSetFeaturePermission } from "@/lib/access.functions";
+import {
+  adminListAccessMatrix,
+  adminSetFeaturePermission,
+  adminSetInstanceAccess,
+} from "@/lib/access.functions";
+
 import {
   INSTANCES,
   ALL_FEATURES,
