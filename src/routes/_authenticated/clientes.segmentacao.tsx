@@ -656,7 +656,7 @@ function SegmentacaoPage() {
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                    <td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
                       <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
                       Carregando dados do Salesforce…
                     </td>
@@ -664,7 +664,7 @@ function SegmentacaoPage() {
                 )}
                 {anyError && !loading && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-6 text-sm text-destructive">
+                    <td colSpan={8} className="px-4 py-6 text-sm text-destructive">
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 mt-0.5" />
                         <div>
@@ -714,7 +714,7 @@ function SegmentacaoPage() {
                         </tr>
                         {isOpen && (
                           <tr key={`${c.id}-d`} className="bg-surface-2/30 border-b border-border/40">
-                            <td colSpan={9} className="px-6 py-5">
+                            <td colSpan={8} className="px-6 py-5">
                               <div className="grid md:grid-cols-4 gap-4">
                                 <Detail label={periodo === "tri" ? "Projeção (tri)" : "Projeção (mês)"} value={fmt(c.projection)} />
                                 <Detail label="Geração R$" value={fmt(c.generation)} sub={c.projection > 0 ? `${generationPct.toFixed(0)}% da projeção` : undefined} />
