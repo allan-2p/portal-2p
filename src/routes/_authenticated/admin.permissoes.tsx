@@ -285,19 +285,69 @@ function PermissoesPage() {
                     className="pl-8 h-9"
                   />
                 </div>
-                <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
-                  <Users className="h-3.5 w-3.5" /> {filteredUsers.length} usuário(s)
+                <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5" /> {filteredUsers.length} usuário(s)
+                  </span>
+                  <button
+                    onClick={() => {
+                      setBulkMode((v) => !v);
+                      setBulkUserIds([]);
+                    }}
+                    className={cn(
+                      "px-2 py-1 rounded-md border text-[11px] transition-colors",
+                      bulkMode
+                        ? "border-primary/50 bg-primary/10 text-foreground"
+                        : "border-border/60 hover:bg-surface-2/60",
+                    )}
+                  >
+                    {bulkMode ? "Sair do modo massa" : "Editar em massa"}
+                  </button>
                 </div>
+                {bulkMode && (
+                  <div className="flex items-center gap-2 mt-2 text-[11px]">
+                    <button
+                      className="underline text-muted-foreground hover:text-foreground"
+                      onClick={() =>
+                        setBulkUserIds(filteredUsers.filter((u) => !u.is_admin).map((u) => u.id))
+                      }
+                    >
+                      Selecionar todos
+                    </button>
+                    <button
+                      className="underline text-muted-foreground hover:text-foreground"
+                      onClick={() => setBulkUserIds([])}
+                    >
+                      Limpar
+                    </button>
+                    <span className="ml-auto text-muted-foreground">
+                      {bulkUserIds.length} selecionado(s)
+                    </span>
+                  </div>
+                )}
               </div>
               <ScrollArea className="h-[calc(100vh-320px)] min-h-[400px]">
                 <ul className="p-2 space-y-1">
                   {filteredUsers.map((u) => {
-                    const active = selectedUser?.id === u.id;
+                    const active = bulkMode
+                      ? bulkUserIds.includes(u.id)
+                      : selectedUser?.id === u.id;
                     const denials = denyCountByUser(u);
                     return (
                       <li key={u.id}>
                         <button
-                          onClick={() => setSelectedUserId(u.id)}
+                          onClick={() => {
+                            if (bulkMode) {
+                              if (u.is_admin) return;
+                              setBulkUserIds((prev) =>
+                                prev.includes(u.id)
+                                  ? prev.filter((x) => x !== u.id)
+                                  : [...prev, u.id],
+                              );
+                              return;
+                            }
+                            setSelectedUserId(u.id);
+                          }}
                           className={cn(
                             "w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2",
                             active
@@ -305,6 +355,14 @@ function PermissoesPage() {
                               : "hover:bg-surface-2/60 border border-transparent",
                           )}
                         >
+                          {bulkMode &&
+                            (u.is_admin ? (
+                              <Square className="h-4 w-4 shrink-0 opacity-30" />
+                            ) : bulkUserIds.includes(u.id) ? (
+                              <CheckSquare className="h-4 w-4 shrink-0 text-primary" />
+                            ) : (
+                              <Square className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            ))}
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium truncate flex items-center gap-1.5">
                               {u.full_name ?? u.email}
@@ -340,7 +398,29 @@ function PermissoesPage() {
 
             {/* ------ Painel do usuário selecionado ------ */}
             <div className="space-y-4">
-              {!selectedUser ? (
+              {bulkMode ? (
+                <BulkPanel
+                  users={users}
+                  bulkUserIds={bulkUserIds}
+                  instance={bulkInstance}
+                  setInstance={(i) => {
+                    setBulkInstance(i);
+                    setBulkFeatures([]);
+                  }}
+                  features={bulkFeatures}
+                  setFeatures={setBulkFeatures}
+                  pending={bulkMut.isPending}
+                  onApply={(allowed) =>
+                    bulkMut.mutate({
+                      user_ids: bulkUserIds,
+                      instance_id: bulkInstance,
+                      feature_keys: bulkFeatures,
+                      allowed,
+                      grant_instance: true,
+                    })
+                  }
+                />
+              ) : !selectedUser ? (
                 <div className="glass rounded-xl p-10 text-center text-muted-foreground">
                   Selecione um usuário para configurar suas permissões.
                 </div>
@@ -598,3 +678,158 @@ function PermissoesPage() {
 }
 
 type InstanceMeta = (typeof INSTANCES)[InstanceId];
+
+
+function BulkPanel({
+  users,
+  bulkUserIds,
+  instance,
+  setInstance,
+  features,
+  setFeatures,
+  pending,
+  onApply,
+}: {
+  users: { id: string; email: string; full_name: string | null; is_admin: boolean }[];
+  bulkUserIds: string[];
+  instance: InstanceId;
+  setInstance: (i: InstanceId) => void;
+  features: FeatureKey[];
+  setFeatures: (f: FeatureKey[]) => void;
+  pending: boolean;
+  onApply: (allowed: boolean) => void;
+}) {
+  const meta = INSTANCES[instance];
+  const selectedUsers = users.filter((u) => bulkUserIds.includes(u.id));
+  const instFeatures = (meta.routes as FeatureKey[]).filter((k) => ALL_FEATURES.includes(k));
+  const canApply = bulkUserIds.length > 0 && features.length > 0 && !pending;
+
+  function toggle(k: FeatureKey) {
+    setFeatures(features.includes(k) ? features.filter((x) => x !== k) : [...features, k]);
+  }
+
+  return (
+    <>
+      <div className="glass rounded-xl p-5">
+        <div className="text-lg font-semibold flex items-center gap-2">
+          <Layers className="h-5 w-5 text-primary" /> Edição em massa
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Selecione os usuários na lista à esquerda, escolha a instância e as funcionalidades, e
+          libere ou bloqueie tudo de uma vez. Administradores são ignorados (já têm acesso total).
+        </p>
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {selectedUsers.length === 0 ? (
+            <span className="text-xs text-muted-foreground">Nenhum usuário selecionado.</span>
+          ) : (
+            selectedUsers.map((u) => (
+              <Badge key={u.id} variant="secondary" className="text-[11px]">
+                {u.full_name ?? u.email}
+              </Badge>
+            ))
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 mt-4">
+          {(Object.values(INSTANCES) as InstanceMeta[]).map((i) => (
+            <button
+              key={i.id}
+              onClick={() => setInstance(i.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm border transition-all flex items-center gap-2",
+                instance === i.id
+                  ? "border-primary/50 bg-primary/10 text-foreground"
+                  : "border-border/60 hover:bg-surface-2/60 text-muted-foreground",
+              )}
+            >
+              <span className="h-2.5 w-2.5 rounded-sm" style={{ background: i.swatch }} />
+              {i.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-border/60 flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div className="text-sm font-semibold flex items-center gap-2">
+              <span className="h-3 w-3 rounded-sm" style={{ background: meta.swatch }} />
+              Funcionalidades em {meta.label}
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {features.length} de {instFeatures.length} selecionada(s)
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setFeatures(instFeatures)}>
+              <Check className="h-3.5 w-3.5 mr-1" /> Marcar todas
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setFeatures([])}>
+              <X className="h-3.5 w-3.5 mr-1" /> Limpar
+            </Button>
+          </div>
+        </div>
+        <div className="p-4 space-y-5">
+          {FEATURE_GROUPS.map((group) => {
+            const keys = group.keys.filter((k) => instFeatures.includes(k));
+            if (keys.length === 0) return null;
+            return (
+              <div key={group.label}>
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
+                  {group.label}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                  {keys.map((k) => {
+                    const on = features.includes(k);
+                    return (
+                      <button
+                        key={k}
+                        onClick={() => toggle(k)}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2.5 rounded-lg border text-left transition-colors",
+                          on
+                            ? "border-primary/50 bg-primary/10"
+                            : "border-border/60 bg-surface-2/40 hover:bg-surface-2/70",
+                        )}
+                      >
+                        {on ? (
+                          <CheckSquare className="h-4 w-4 text-primary shrink-0" />
+                        ) : (
+                          <Square className="h-4 w-4 text-muted-foreground shrink-0" />
+                        )}
+                        <span className="text-sm truncate">{FEATURE_LABELS[k]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="p-4 border-t border-border/60 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-muted-foreground">
+            Ao liberar, o acesso à instância {meta.label} também é garantido para os usuários
+            selecionados.
+          </div>
+          <div className="flex gap-2">
+            <Button disabled={!canApply} onClick={() => onApply(true)}>
+              {pending ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Unlock className="h-4 w-4 mr-1.5" />
+              )}
+              Liberar selecionadas
+            </Button>
+            <Button variant="destructive" disabled={!canApply} onClick={() => onApply(false)}>
+              {pending ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Lock className="h-4 w-4 mr-1.5" />
+              )}
+              Bloquear selecionadas
+            </Button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
