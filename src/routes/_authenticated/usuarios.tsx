@@ -281,24 +281,45 @@ function UsuariosPage() {
           </div>
         </div>
 
-        <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
-          {[
-            { id: "portal", label: "Usuários do portal" },
-            { id: "salesforce", label: "Sincronizar com Salesforce" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id as Tab)}
-              className={`px-4 py-1.5 rounded-md font-medium transition-colors ${
-                tab === t.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
+            {[
+              { id: "portal", label: "Usuários do portal" },
+              { id: "salesforce", label: "Sincronizar com Salesforce" },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id as Tab)}
+                className={`px-4 py-1.5 rounded-md font-medium transition-colors ${
+                  tab === t.id
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {tab === "portal" && (
+            <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
+              {STATUS_FILTERS.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => setStatus(s.id)}
+                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+                    status === s.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
 
         {tab === "portal" ? (
           <PortalTable
