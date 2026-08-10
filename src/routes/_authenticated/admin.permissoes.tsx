@@ -9,6 +9,8 @@ import {
   adminSetInstanceAccess,
   adminApplyPermissionProfile,
   adminBulkSetFeaturePermissions,
+  adminListPermissionAudit,
+  adminUndoPermissionChange,
 } from "@/lib/access.functions";
 
 import {
@@ -20,7 +22,7 @@ import {
 } from "@/lib/instances";
 import { useMemo, useState } from "react";
 import { PERMISSION_PROFILES, profileFeatures } from "@/lib/permission-profiles";
-import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye, Layers, CheckSquare, Square, Unlock, Lock, Sparkles } from "lucide-react";
+import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye, Layers, CheckSquare, Square, Unlock, Lock, Sparkles, History as HistoryIcon, Undo2 } from "lucide-react";
 import { useNewFeatures } from "@/hooks/use-new-features";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
@@ -30,6 +32,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+
+const ACTION_LABELS: Record<string, string> = {
+  bulk_grant: "Liberação em massa",
+  bulk_revoke: "Bloqueio em massa",
+  profile: "Perfil aplicado",
+};
 
 export const Route = createFileRoute("/_authenticated/admin/permissoes")({
   head: () => ({ meta: [{ title: "Permissões de Usuários — Portal 2P" }] }),
@@ -163,6 +171,7 @@ function PermissoesPage() {
     onSuccess: (_r, v) => {
       qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
       qc.invalidateQueries({ queryKey: ["my-access"] });
+      qc.invalidateQueries({ queryKey: ["admin-permission-audit"] });
       toast.success(`Perfil aplicado: ${v.label}`);
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao aplicar perfil"),
@@ -180,6 +189,7 @@ function PermissoesPage() {
     onSuccess: (_r, v) => {
       qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
       qc.invalidateQueries({ queryKey: ["my-access"] });
+      qc.invalidateQueries({ queryKey: ["admin-permission-audit"] });
       toast.success(
         `${v.allowed ? "Liberadas" : "Bloqueadas"} ${v.feature_keys.length} funcionalidade(s) para ${v.user_ids.length} usuário(s)`,
       );
@@ -188,6 +198,26 @@ function PermissoesPage() {
   });
 
   const { newFeatures, markSeen } = useNewFeatures();
+
+  const listAudit = useServerFn(adminListPermissionAudit);
+  const undoChange = useServerFn(adminUndoPermissionChange);
+  const logQ = useQuery({
+    queryKey: ["admin-permission-audit"],
+    queryFn: () => listAudit(),
+    staleTime: 15_000,
+  });
+  const logs = logQ.data?.logs ?? [];
+  const lastUndoable = logs.find((l) => !l.undone_at) ?? null;
+  const undoMut = useMutation({
+    mutationFn: (log_id: string) => undoChange({ data: { log_id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-permission-audit"] });
+      qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
+      qc.invalidateQueries({ queryKey: ["my-access"] });
+      toast.success("Alteração desfeita");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao desfazer"),
+  });
 
   const accessMut = useMutation({
     mutationFn: (v: { user_id: string; instance_id: InstanceId; allowed: boolean }) =>
