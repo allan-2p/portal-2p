@@ -15,6 +15,18 @@ import {
 const STORAGE_KEY = "portal2p-instance";
 const MKT_UNIT_KEY = "portal2p-marketing-unit";
 
+// Home de cada instância — página inicial padrão de qualquer usuário.
+const HOME_FEATURE: Record<InstanceId, FeatureKey> = {
+  solar: "home",
+  carregadores: "cpo.home",
+  marketing: "marketing.home",
+};
+const HOME_ROUTE: Record<InstanceId, string> = {
+  solar: "/",
+  carregadores: "/carregadores",
+  marketing: "/marketing",
+};
+
 export type MarketingUnit = "solar" | "carregadores" | "station";
 
 function readMarketingUnit(): MarketingUnit {
