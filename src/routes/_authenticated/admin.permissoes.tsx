@@ -33,7 +33,10 @@ export const Route = createFileRoute("/_authenticated/admin/permissoes")({
 
 // Agrupamento visual das features
 const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
-  { label: "Operação", keys: ["home", "tarefas", "pedidos", "cupons", "dashboards", "atlas"] },
+  {
+    label: "Operação",
+    keys: ["home", "tarefas", "propostas", "pedidos", "cupons", "dashboards", "dashboards.metas", "atlas"],
+  },
   { label: "Clientes", keys: ["clientes.cadastros", "clientes.segmentacao", "clientes.perfil", "clientes.sugestoes", "clientes.ranking"] },
   {
     label: "Carregadores",
@@ -49,6 +52,7 @@ const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
       "admin.usuarios",
       "admin.metas",
       "admin.tabelas",
+      "admin.permissoes",
       "admin.integracoes",
     ],
   },
