@@ -22,8 +22,13 @@ import {
 } from "@/lib/instances";
 import { useMemo, useState } from "react";
 import { PERMISSION_PROFILES, profileFeatures } from "@/lib/permission-profiles";
-import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye, Layers, CheckSquare, Square, Unlock, Lock, Sparkles, History as HistoryIcon, Undo2 } from "lucide-react";
+import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye, Layers, CheckSquare, Square, Unlock, Lock, Sparkles, History as HistoryIcon, Undo2, AlertTriangle, Wand2 } from "lucide-react";
 import { useNewFeatures } from "@/hooks/use-new-features";
+import {
+  detectPermissionConflicts,
+  CONFLICT_KIND_LABEL,
+  type Conflict,
+} from "@/lib/permission-conflicts";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -219,6 +224,44 @@ function PermissoesPage() {
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao desfazer"),
   });
+
+  // ---- Detecção de conflitos / sugestões automáticas ----
+  const conflicts = useMemo(() => detectPermissionConflicts(users as any), [users]);
+  const [conflictsOpen, setConflictsOpen] = useState(true);
+  const [fixing, setFixing] = useState(false);
+
+  async function applyFix(c: Conflict) {
+    if (c.fix.type === "grant_instance") {
+      await setAccess({ data: { user_id: c.user_id, instance_id: c.instance_id, allowed: true } });
+    } else {
+      await bulkFn({
+        data: {
+          user_ids: [c.user_id],
+          instance_id: c.instance_id,
+          feature_keys: c.fix.features,
+          allowed: c.fix.type === "grant_features",
+          grant_instance: false,
+        },
+      });
+    }
+  }
+
+  async function runFix(list: Conflict[]) {
+    setFixing(true);
+    try {
+      for (const c of list) await applyFix(c);
+      qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
+      qc.invalidateQueries({ queryKey: ["my-access"] });
+      qc.invalidateQueries({ queryKey: ["admin-permission-audit"] });
+      toast.success(
+        list.length === 1 ? "Sugestão aplicada" : `${list.length} sugestões aplicadas`,
+      );
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao aplicar sugestão");
+    } finally {
+      setFixing(false);
+    }
+  }
 
   const accessMut = useMutation({
     mutationFn: (v: { user_id: string; instance_id: InstanceId; allowed: boolean }) =>
@@ -770,6 +813,69 @@ function PermissoesPage() {
                 </>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ------ Conflitos e sugestões ------ */}
+        {conflicts.length > 0 && (
+          <div className="glass rounded-xl overflow-hidden border border-amber-500/30">
+            <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between gap-3 flex-wrap">
+              <button
+                onClick={() => setConflictsOpen((v) => !v)}
+                className="flex items-center gap-2 font-semibold text-left"
+              >
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                {conflicts.length} inconsistência(s) de permissão detectada(s)
+                <span className="text-xs font-normal text-muted-foreground">
+                  {conflictsOpen ? "(ocultar)" : "(mostrar)"}
+                </span>
+              </button>
+              <Button size="sm" disabled={fixing} onClick={() => runFix(conflicts)}>
+                {fixing ? (
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Wand2 className="h-4 w-4 mr-1.5" />
+                )}
+                Aplicar todas as sugestões
+              </Button>
+            </div>
+            {conflictsOpen && (
+              <ul className="divide-y divide-border/40 max-h-[420px] overflow-y-auto">
+                {conflicts.map((c) => (
+                  <li key={c.id} className="px-4 py-3 flex items-start gap-3 flex-wrap">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[11px]",
+                            c.severity === "alta"
+                              ? "border-destructive/40 text-destructive"
+                              : "border-amber-500/40 text-amber-600",
+                          )}
+                        >
+                          {CONFLICT_KIND_LABEL[c.kind]}
+                        </Badge>
+                        <span className="text-[11px] text-muted-foreground">
+                          {INSTANCES[c.instance_id]?.label}
+                        </span>
+                      </div>
+                      <div className="text-sm font-medium mt-1">{c.title}</div>
+                      <div className="text-xs text-muted-foreground">{c.detail}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={fixing}
+                      onClick={() => runFix([c])}
+                    >
+                      <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                      {c.fixLabel}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
