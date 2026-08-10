@@ -65,7 +65,7 @@ const SCOPES: { id: FilterScope; label: string }[] = [
   { id: "individual", label: "Individual" },
 ];
 
-type Tab = "portal" | "salesforce" | "vendedores";
+type Tab = "portal" | "salesforce";
 
 
 function UsuariosPage() {
