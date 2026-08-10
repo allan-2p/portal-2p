@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getMyAccess } from "@/lib/access.functions";
 import { useAuth } from "@/hooks/use-auth";
+import { useSimulation } from "@/components/simulation";
 import {
   INSTANCES,
   type InstanceId,
@@ -68,7 +69,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
   const granted = effective?.granted ?? [];
   const isAdmin = effective?.is_admin ?? false;
   const grantedSet = useMemo(
-    () => new Set(granted.map((d) => `${d.instance_id}::${d.feature_key}`)),
+    () => new Set(granted.map((d: { instance_id: string; feature_key: string }) => `${d.instance_id}::${d.feature_key}`)),
     [granted],
   );
 
