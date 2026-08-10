@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const RoleEnum = z.enum(["admin", "gerente", "vendedor", "diretor", "marketing"]);
 const RegimeEnum = z.enum(["CLT", "PJ"]);
+const OrgEnum = z.enum(["solar", "station", "carregadores"]);
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("is_admin");
@@ -17,6 +18,7 @@ const CreateInput = z.object({
   cargo: z.string().optional().nullable(),
   equipe: z.string().optional().nullable(),
   regime_contratacao: RegimeEnum.optional().default("CLT"),
+  organizacao: OrgEnum.optional().default("solar"),
   role: RoleEnum,
 });
 
@@ -37,6 +39,7 @@ export const adminCreateUser = createServerFn({ method: "POST" })
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
         regime_contratacao: data.regime_contratacao ?? "CLT",
+        organizacao: data.organizacao ?? "solar",
         invited_by: context.userId,
 
       },
@@ -59,6 +62,7 @@ const InviteInput = z.object({
   cargo: z.string().optional().nullable(),
   equipe: z.string().optional().nullable(),
   regime_contratacao: RegimeEnum.optional().default("CLT"),
+  organizacao: OrgEnum.optional().default("solar"),
   role: RoleEnum,
 
   is_external: z.boolean().optional().default(false),
@@ -81,6 +85,7 @@ export const adminInviteUser = createServerFn({ method: "POST" })
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
         regime_contratacao: data.regime_contratacao ?? "CLT",
+        organizacao: data.organizacao ?? "solar",
         invited_by: context.userId,
 
         is_external: data.is_external ?? false,
@@ -157,6 +162,7 @@ const UpdateInput = z.object({
   cargo: z.string().optional().nullable(),
   equipe: z.string().optional().nullable(),
   regime_contratacao: RegimeEnum.optional(),
+  organizacao: OrgEnum.optional(),
   is_external: z.boolean().optional(),
 });
 
@@ -173,6 +179,7 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
       cargo?: string | null;
       equipe?: string | null;
       regime_contratacao?: string;
+      organizacao?: string;
       is_external?: boolean;
     } = {};
     if (data.email !== undefined) profilePatch.email = data.email;
@@ -180,6 +187,7 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
     if (data.cargo !== undefined) profilePatch.cargo = data.cargo;
     if (data.equipe !== undefined) profilePatch.equipe = data.equipe;
     if (data.regime_contratacao !== undefined) profilePatch.regime_contratacao = data.regime_contratacao;
+    if (data.organizacao !== undefined) profilePatch.organizacao = data.organizacao;
     if (data.is_external !== undefined) profilePatch.is_external = data.is_external;
 
 
