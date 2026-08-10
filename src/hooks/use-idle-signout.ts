@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logUserActivity } from "@/lib/activity.functions";
 
 const IDLE_MS = 60 * 60 * 1000; // 1 hora
 const STORAGE_KEY = "portal2p-last-activity";
@@ -36,6 +37,7 @@ export function useIdleSignout() {
       const { data } = await supabase.auth.getSession();
       if (!data.session) return;
       if (now() - getLast() >= IDLE_MS) {
+        await logUserActivity({ data: { event: "logout", detail: "inatividade" } }).catch(() => {});
         await supabase.auth.signOut();
       }
     };
