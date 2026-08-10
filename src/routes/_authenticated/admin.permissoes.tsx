@@ -7,6 +7,7 @@ import {
   adminListAccessMatrix,
   adminSetFeaturePermission,
   adminSetInstanceAccess,
+  adminApplyPermissionProfile,
 } from "@/lib/access.functions";
 
 import {
@@ -17,7 +18,8 @@ import {
   type FeatureKey,
 } from "@/lib/instances";
 import { useMemo, useState } from "react";
-import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye } from "lucide-react";
+import { PERMISSION_PROFILES, profileFeatures } from "@/lib/permission-profiles";
+import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -137,6 +139,26 @@ function PermissoesPage() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
     },
+  });
+
+  const applyProfile = useServerFn(adminApplyPermissionProfile);
+  const profileMut = useMutation({
+    mutationFn: ({
+      label: _label,
+      ...v
+    }: {
+      user_id: string;
+      instance_id: InstanceId;
+      feature_keys: FeatureKey[];
+      grant_instance: boolean;
+      label: string;
+    }) => applyProfile({ data: v }),
+    onSuccess: (_r, v) => {
+      qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
+      qc.invalidateQueries({ queryKey: ["my-access"] });
+      toast.success(`Perfil aplicado: ${v.label}`);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao aplicar perfil"),
   });
 
   const accessMut = useMutation({
@@ -394,6 +416,64 @@ function PermissoesPage() {
                     </div>
                   </div>
 
+                  {/* Perfis de permissão */}
+                  {!selectedUser.is_admin && (
+                    <div className="glass rounded-xl p-4">
+                      <div className="text-sm font-semibold flex items-center gap-2">
+                        <Layers className="h-4 w-4 text-primary" />
+                        Perfis de permissão — {instMeta.label}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Aplica um conjunto pronto de acessos nesta instância (substitui o que
+                        estiver marcado). Depois é só ajustar as exceções abaixo.
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-3 mt-3">
+                        {PERMISSION_PROFILES.map((p) => {
+                          const keys = profileFeatures(p, activeInstance);
+                          const isCurrent =
+                            keys.length > 0 &&
+                            keys.every((k) => isAllowed(k)) &&
+                            instMeta.routes.filter((k) => isAllowed(k)).length === keys.length;
+                          return (
+                            <button
+                              key={p.id}
+                              disabled={profileMut.isPending || keys.length === 0}
+                              onClick={() =>
+                                profileMut.mutate({
+                                  user_id: selectedUser.id,
+                                  instance_id: activeInstance,
+                                  feature_keys: keys,
+                                  grant_instance: true,
+                                  label: `${p.label} — ${instMeta.label}`,
+                                })
+                              }
+                              className={cn(
+                                "text-left rounded-lg border p-3 transition-all disabled:opacity-50",
+                                isCurrent
+                                  ? "border-primary/50 bg-primary/10"
+                                  : "border-border/60 hover:bg-surface-2/60",
+                              )}
+                            >
+                              <div className="text-sm font-medium flex items-center gap-2">
+                                {p.label}
+                                {isCurrent && (
+                                  <Badge className="bg-primary/15 text-primary border-primary/30">
+                                    Atual
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {p.description}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground mt-1.5">
+                                {keys.length} funcionalidade{keys.length === 1 ? "" : "s"}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
 
                   {/* Cartão de permissões */}
