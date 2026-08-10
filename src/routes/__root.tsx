@@ -17,6 +17,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { InstanceProvider } from "@/components/instance-provider";
 import { SimulationProvider, SimulationBanner } from "@/components/simulation";
 import { supabase } from "@/integrations/supabase/client";
+import { logUserActivity } from "@/lib/activity.functions";
 import { useIdleSignout } from "@/hooks/use-idle-signout";
 
 function NotFoundComponent() {
@@ -142,6 +143,12 @@ function RootComponent() {
       // and tab focus — clearing then would invalidate every fresh query for no reason.
       if (event === "SIGNED_OUT" || (event === "SIGNED_IN" && lastUserId !== null && lastUserId !== uid)) {
         queryClient.clear();
+      }
+      if (event === "SIGNED_IN" && uid && lastUserId !== uid) {
+        void logUserActivity({ data: { event: "login" } }).catch(() => {});
+      }
+      if (event === "SIGNED_OUT" && lastUserId) {
+        void logUserActivity({ data: { event: "logout" } }).catch(() => {});
       }
       lastUserId = uid;
     });
