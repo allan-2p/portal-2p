@@ -113,7 +113,7 @@ type Cliente = {
   observacoes: string | null;
   ativo: boolean;
   classificacao: string;
-  created_by?: string | null;
+  created_by?: string;
 };
 
 const vazio = (): Omit<Cliente, "id"> => ({
