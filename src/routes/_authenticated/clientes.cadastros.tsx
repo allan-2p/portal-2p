@@ -39,21 +39,38 @@ function CadastrosPage() {
 
   const rows: Row[] = useMemo(() => {
     const base = data?.records ?? [];
-    return base.map((a) => ({ ...a, createdAtFmt: fmtDate(a.createdAt), ...(overrides[a.id] ?? {}) }));
+    return base
+      .map((a) => ({ ...a, createdAtFmt: fmtDate(a.createdAt), ...(overrides[a.id] ?? {}) }))
+      .sort((a, b) => {
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tb - ta;
+      });
   }, [data, overrides]);
 
-  const filtered = rows.filter((r) => {
-    if (segFilter === "none" && r.segment !== null) return false;
-    if (segFilter !== "all" && segFilter !== "none" && r.segment !== segFilter) return false;
-    if (ownerId !== "all" && r.ownerId !== ownerId) return false;
+  const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return true;
-    return (
-      r.name.toLowerCase().includes(s) ||
-      (r.cnpj ?? "").toLowerCase().includes(s) ||
-      (r.ownerName ?? "").toLowerCase().includes(s)
-    );
-  });
+    return rows.filter((r) => {
+      if (segFilter === "none" && r.segment !== null) return false;
+      if (segFilter !== "all" && segFilter !== "none" && r.segment !== segFilter) return false;
+      if (ownerId !== "all" && r.ownerId !== ownerId) return false;
+      if (!s) return true;
+      return (
+        r.name.toLowerCase().includes(s) ||
+        (r.cnpj ?? "").toLowerCase().includes(s) ||
+        (r.ownerName ?? "").toLowerCase().includes(s)
+      );
+    });
+  }, [rows, search, segFilter, ownerId]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageSafe = Math.min(page, totalPages);
+  const pageRows = filtered.slice((pageSafe - 1) * pageSize, pageSafe * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, segFilter, ownerId, pageSize]);
+
 
   const saveEdit = (id: string, patch: Partial<Row>) => {
     setOverrides((p) => ({ ...p, [id]: { ...(p[id] ?? {}), ...patch } }));
