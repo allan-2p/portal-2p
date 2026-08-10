@@ -475,16 +475,11 @@ function HomePage() {
     };
   }, [today]);
 
-  const fetchOrcamentos = useServerFn(getSalesforceOrcamentos);
-  const orcQ = useQuery({
-    queryKey: ["sf-home-orc-4m", rangeMulti.start, rangeMulti.end, ownerParam],
-    queryFn: () => fetchOrcamentos({ data: { ...rangeMulti, ownerId: ownerParam } }),
-    enabled: dataEnabled,
-    staleTime: 60_000,
-  });
-  const vendas4Q = useQuery({
-    queryKey: ["sf-home-vendas-4m", rangeMulti.start, rangeMulti.end, ownerParam],
-    queryFn: () => fetchVendas({ data: { ...rangeMulti, ownerId: ownerParam } }),
+  // Coorte: todas as oportunidades criadas nos últimos 4 meses, com o desfecho atual.
+  const fetchOppsCriadas = useServerFn(getSalesforceOppsCriadas);
+  const coorteQ = useQuery({
+    queryKey: ["sf-home-coorte-4m", rangeMulti.start, rangeMulti.end, ownerParam],
+    queryFn: () => fetchOppsCriadas({ data: { ...rangeMulti, ownerId: ownerParam } }),
     enabled: dataEnabled,
     staleTime: 60_000,
   });
@@ -492,40 +487,36 @@ function HomePage() {
   const conversionKpis = useMemo(() => {
     const y = today.getFullYear();
     const m = today.getMonth();
-    type Bkt = { orcVal: number; orcIds: Set<string>; venVal: number; venIds: Set<string> };
+    // Conversão = dos orçamentos GERADOS no mês, quantos viraram "Pedido Concluído".
+    // Denominador inclui abertos e perdidos; numerador é subconjunto → nunca passa de 100%.
+    type Bkt = { orcVal: number; orcQtd: number; venVal: number; venQtd: number };
     const buckets = new Map<string, Bkt>();
     const bkey = (yy: number, mm: number) => `${yy}-${mm}`;
     for (let i = -3; i <= 0; i++) {
       const d = new Date(y, m + i, 1);
-      buckets.set(bkey(d.getFullYear(), d.getMonth()), {
-        orcVal: 0, orcIds: new Set(), venVal: 0, venIds: new Set(),
-      });
+      buckets.set(bkey(d.getFullYear(), d.getMonth()), { orcVal: 0, orcQtd: 0, venVal: 0, venQtd: 0 });
     }
-    for (const r of orcQ.data?.records ?? []) {
+    const isWon = (stage: string | null | undefined) =>
+      typeof stage === "string" && stage.trim().toLowerCase() === "pedido concluído";
+    for (const r of coorteQ.data?.records ?? []) {
       if (ownerParam && r.ownerId !== ownerParam) continue;
       if (!r.createdDate) continue;
       const [yr, mo] = r.createdDate.split("-").map(Number);
       const b = buckets.get(bkey(yr, mo - 1));
       if (!b) continue;
-      b.orcVal += r.total ?? r.amount ?? 0;
-      b.orcIds.add(r.id);
-    }
-    for (const r of vendas4Q.data?.records ?? []) {
-      if (ownerParam && r.ownerId !== ownerParam) continue;
-      if (!r.closeDate) continue;
-      const [yr, mo] = r.closeDate.split("-").map(Number);
-      const b = buckets.get(bkey(yr, mo - 1));
-      if (!b) continue;
-      b.venVal += r.total ?? r.amount ?? 0;
-      b.venIds.add(r.id);
+      const val = r.total ?? r.amount ?? 0;
+      b.orcVal += val;
+      b.orcQtd += 1;
+      if (isWon(r.stage)) {
+        b.venVal += val;
+        b.venQtd += 1;
+      }
     }
     const cur = buckets.get(bkey(y, m))!;
     const prevs = [-3, -2, -1].map((i) => {
       const d = new Date(y, m + i, 1);
       return buckets.get(bkey(d.getFullYear(), d.getMonth()))!;
     });
-    // Conversão nunca pode passar de 100%: vendas do período são um subconjunto
-    // dos orçamentos gerados no período. Limitamos a razão em [0,1].
     const safeDiv = (n: number, d: number) => (d > 0 ? n / d : 0);
     const ratio = (n: number, d: number) => Math.min(1, Math.max(0, safeDiv(n, d)));
     const avg = (fn: (b: Bkt) => number) => {
@@ -535,12 +526,13 @@ function HomePage() {
     return {
       convRCur: ratio(cur.venVal, cur.orcVal),
       convR3: avg((b) => ratio(b.venVal, b.orcVal)),
-      convQCur: ratio(cur.venIds.size, cur.orcIds.size),
-      convQ3: avg((b) => ratio(b.venIds.size, b.orcIds.size)),
-      ticketCur: safeDiv(cur.venVal, cur.venIds.size),
-      ticket3: avg((b) => safeDiv(b.venVal, b.venIds.size)),
+      convQCur: ratio(cur.venQtd, cur.orcQtd),
+      convQ3: avg((b) => ratio(b.venQtd, b.orcQtd)),
+      ticketCur: safeDiv(cur.venVal, cur.venQtd),
+      ticket3: avg((b) => safeDiv(b.venVal, b.venQtd)),
     };
-  }, [orcQ.data, vendas4Q.data, ownerParam, today]);
+  }, [coorteQ.data, ownerParam, today]);
+
 
 
   // ---- Retenção / Recorrência / Novos recorrentes (por trimestre calendário) ----
