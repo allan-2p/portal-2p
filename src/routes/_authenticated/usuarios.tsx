@@ -76,6 +76,12 @@ const SCOPES: { id: FilterScope; label: string }[] = [
 ];
 
 type Tab = "portal" | "salesforce";
+type StatusFilter = "ativos" | "inativos" | "todos";
+const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
+  { id: "ativos", label: "Ativos" },
+  { id: "inativos", label: "Inativos" },
+  { id: "todos", label: "Todos" },
+];
 
 
 function UsuariosPage() {
@@ -84,6 +90,7 @@ function UsuariosPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("portal");
+  const [status, setStatus] = useState<StatusFilter>("ativos");
   const [modal, setModal] = useState<
     | { kind: "create" }
     | { kind: "invite"; external?: boolean }
@@ -133,10 +140,14 @@ function UsuariosPage() {
 
   // Cada instância mostra apenas os usuários da organização correspondente.
   const visibleRows = useMemo(() => {
-    if (instance === "solar") return rows.filter((r) => r.organizacao === "solar");
-    if (instance === "carregadores") return rows.filter((r) => r.organizacao === "carregadores");
-    return rows;
-  }, [rows, instance]);
+    let list = rows;
+    if (instance === "solar") list = list.filter((r) => r.organizacao === "solar");
+    else if (instance === "carregadores") list = list.filter((r) => r.organizacao === "carregadores");
+    if (status === "ativos") list = list.filter((r) => r.ativo);
+    else if (status === "inativos") list = list.filter((r) => !r.ativo);
+    return list;
+  }, [rows, instance, status]);
+
 
 
 
@@ -270,24 +281,45 @@ function UsuariosPage() {
           </div>
         </div>
 
-        <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
-          {[
-            { id: "portal", label: "Usuários do portal" },
-            { id: "salesforce", label: "Sincronizar com Salesforce" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id as Tab)}
-              className={`px-4 py-1.5 rounded-md font-medium transition-colors ${
-                tab === t.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
+            {[
+              { id: "portal", label: "Usuários do portal" },
+              { id: "salesforce", label: "Sincronizar com Salesforce" },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id as Tab)}
+                className={`px-4 py-1.5 rounded-md font-medium transition-colors ${
+                  tab === t.id
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {tab === "portal" && (
+            <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
+              {STATUS_FILTERS.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => setStatus(s.id)}
+                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+                    status === s.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
 
         {tab === "portal" ? (
           <PortalTable
