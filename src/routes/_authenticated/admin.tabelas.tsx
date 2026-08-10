@@ -783,17 +783,13 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
         <div className="h-8 w-px bg-border" />
         <div className="flex items-center gap-2">
           <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Vendedor</label>
-          <Select value={vendedor} onValueChange={setVendedor}>
-            <SelectTrigger className="h-8 w-[220px] text-sm">
-              <SelectValue placeholder="Todos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Todos</SelectItem>
-              {vendedores.map((v) => (
-                <SelectItem key={v} value={v}>{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <VendedorNamesFilter
+            value={vendedor}
+            onChange={setVendedor}
+            options={vendedores}
+            allLabel="Todos"
+          />
+
         </div>
         <div className="h-8 w-px bg-border" />
         <div className="flex items-center gap-3">
