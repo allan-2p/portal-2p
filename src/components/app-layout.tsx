@@ -36,6 +36,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   
 
   const { user, profile, roles, hasRole } = useAuth();
+  const { newFeatures } = useNewFeatures();
   const avatarUrl = useAvatarUrl(profile?.avatar_url);
   const bootstrap = useServerFn(bootstrapFirstAdmin);
   useSalesforceNotifications();
