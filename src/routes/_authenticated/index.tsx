@@ -1175,7 +1175,16 @@ function HomePage() {
                             {info.contactPhone ? (
                               <>
                                 {" · "}
-                                <a href={`tel:${info.contactPhone}`} className="text-primary hover:underline">
+                                <a
+                                  href={`https://wa.me/${(() => {
+                                    const d = String(info.contactPhone).replace(/\D/g, "");
+                                    if (d.startsWith("55")) return d;
+                                    return `55${d.replace(/^0+/, "")}`;
+                                  })()}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline"
+                                >
                                   {info.contactPhone}
                                 </a>
                               </>
