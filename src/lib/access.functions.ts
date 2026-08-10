@@ -261,6 +261,8 @@ export const adminBulkSetFeaturePermissions = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => BulkFeaturesInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { snapshotPermissions, recordAudit } = await import("@/lib/permission-audit.server");
+    const before = await snapshotPermissions(context, data.user_ids, data.instance_id);
     if (data.allowed) {
       if (data.grant_instance) {
         const { error: instErr } = await context.supabase
