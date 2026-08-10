@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useSimulation } from "@/components/simulation";
 import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +17,7 @@ import {
   type FeatureKey,
 } from "@/lib/instances";
 import { useMemo, useState } from "react";
-import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users } from "lucide-react";
+import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -78,6 +79,8 @@ function PermissoesPage() {
     staleTime: 30_000,
   });
 
+  const sim = useSimulation();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeInstance, setActiveInstance] = useState<InstanceId>("solar");
