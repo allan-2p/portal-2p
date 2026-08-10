@@ -29,6 +29,7 @@ import {
   type SFTeam,
 } from "@/lib/scope.functions";
 import { toast } from "sonner";
+import { useInstance } from "@/components/instance-provider";
 
 import {
   Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink, Pencil,
@@ -79,6 +80,7 @@ type Tab = "portal" | "salesforce";
 
 function UsuariosPage() {
   const { hasRole, loading: authLoading, user } = useAuth();
+  const { instance } = useInstance();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("portal");
@@ -128,6 +130,14 @@ function UsuariosPage() {
   useEffect(() => {
     if (!authLoading) load();
   }, [authLoading]);
+
+  // Cada instância mostra apenas os usuários da organização correspondente.
+  const visibleRows = useMemo(() => {
+    if (instance === "solar") return rows.filter((r) => r.organizacao === "solar");
+    if (instance === "carregadores") return rows.filter((r) => r.organizacao === "carregadores");
+    return rows;
+  }, [rows, instance]);
+
 
 
   if (authLoading) {
@@ -281,7 +291,7 @@ function UsuariosPage() {
 
         {tab === "portal" ? (
           <PortalTable
-            rows={rows}
+            rows={visibleRows}
             loading={loading}
             currentUserId={user?.id}
             onRoleChange={handleRoleChange}
