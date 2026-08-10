@@ -173,7 +173,9 @@ function CadastrosPage() {
         if (error) throw error;
       } else {
         const { data: u } = await supabase.auth.getUser();
-        const { error } = await supabase.from("cpo_clientes").insert({ ...form, created_by: u.user?.id ?? null });
+        const uid = u.user?.id;
+        if (!uid) throw new Error("Sessão expirada. Faça login novamente.");
+        const { error } = await supabase.from("cpo_clientes").insert({ ...form, created_by: uid });
         if (error) throw error;
       }
     },
