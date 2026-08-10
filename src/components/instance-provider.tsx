@@ -134,17 +134,8 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     [hasFeature],
   );
 
-  // Rota inicial válida da instância — usada para redirecionar
-  // quando o usuário está numa rota que a instância não permite.
-  const defaultRoute = useMemo(() => {
-    const meta = INSTANCES[instance];
-    const first = meta.routes.find(
-      (k) => isAdmin || grantedSet.has(`${instance}::${k}`),
-    );
-    if (!first) return "/perfil";
-    const entry = Object.entries(ROUTE_FEATURE).find(([, v]) => v === first);
-    return entry?.[0] ?? "/perfil";
-  }, [instance, grantedSet, isAdmin]);
+  // Página inicial: sempre a home da instância ativa.
+  const defaultRoute = useMemo(() => HOME_ROUTE[instance] ?? "/", [instance]);
 
   const value: Ctx = {
     instance,
