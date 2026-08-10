@@ -905,19 +905,12 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
           </div>
 
           <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <Detail label="Projeção" value={fmt(client.projection)} />
               <Detail label="Geração" value={fmt(client.generation)} sub={`${generationPct}%`} />
               <Detail label="Vendas" value={fmt(client.sales)} sub={`${conversion}%`} />
-              <Detail label="Saúde" value={`${client.health}/100`} />
             </div>
 
-            <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Saúde da relação</div>
-              <div className="h-3 rounded-full bg-surface-2 overflow-hidden">
-                <div className={cn("h-full", client.health > 70 ? "bg-success" : client.health > 40 ? "bg-warning" : "bg-destructive")} style={{ width: `${client.health}%` }} />
-              </div>
-            </div>
 
             <div className="rounded-xl bg-surface-2 border border-border p-4">
               <div className="flex items-center gap-2 mb-2">
