@@ -335,8 +335,8 @@ export const adminListPermissionAudit = createServerFn({ method: "GET" })
   });
 
 export const adminUndoPermissionChange = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ log_id: z.string().uuid() }).parse(d))
   .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ log_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { restoreSnapshot } = await import("@/lib/permission-audit.server");
