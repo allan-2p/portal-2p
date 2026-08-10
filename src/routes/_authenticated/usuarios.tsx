@@ -29,6 +29,7 @@ import {
   type SFTeam,
 } from "@/lib/scope.functions";
 import { toast } from "sonner";
+import { useInstance } from "@/components/instance-provider";
 
 import {
   Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink, Pencil,
