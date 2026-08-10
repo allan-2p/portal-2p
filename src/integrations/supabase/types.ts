@@ -419,6 +419,51 @@ export type Database = {
         }
         Relationships: []
       }
+      permission_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          before_state: Json
+          created_at: string
+          details: Json
+          feature_keys: string[]
+          id: string
+          instance_id: string
+          undone_at: string | null
+          undone_by: string | null
+          user_ids: string[]
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          before_state?: Json
+          created_at?: string
+          details?: Json
+          feature_keys?: string[]
+          id?: string
+          instance_id: string
+          undone_at?: string | null
+          undone_by?: string | null
+          user_ids?: string[]
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          before_state?: Json
+          created_at?: string
+          details?: Json
+          feature_keys?: string[]
+          id?: string
+          instance_id?: string
+          undone_at?: string | null
+          undone_by?: string | null
+          user_ids?: string[]
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean
