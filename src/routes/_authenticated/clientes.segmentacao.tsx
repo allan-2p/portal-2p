@@ -441,6 +441,14 @@ function SegmentacaoPage() {
     return arr;
   }, [filtered, sortKey, sortDir]);
 
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const pageSafe = Math.min(page, totalPages);
+  const pageRows = visible.slice((pageSafe - 1) * pageSize, pageSafe * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, selectedSegs, vendedor, periodo, pageSize, sortKey, sortDir]);
+
   const totals = visible.reduce(
     (acc, c) => ({
       projection: acc.projection + c.projection,
