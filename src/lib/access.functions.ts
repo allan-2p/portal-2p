@@ -234,3 +234,55 @@ export const adminApplyPermissionProfile = createServerFn({ method: "POST" })
     }
     return { ok: true, applied: data.feature_keys.length };
   });
+
+// ---- Admin: edição em massa (vários usuários, mesmas features) ---- //
+
+const BulkFeaturesInput = z.object({
+  user_ids: z.array(z.string().uuid()).min(1).max(200),
+  instance_id: z.enum(["solar", "carregadores", "marketing"]),
+  feature_keys: z.array(z.string().min(1).max(64)).min(1).max(200),
+  allowed: z.boolean(),
+  /** Ao liberar, também garante acesso à instância. */
+  grant_instance: z.boolean().default(true),
+});
+
+export const adminBulkSetFeaturePermissions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => BulkFeaturesInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.allowed) {
+      if (data.grant_instance) {
+        const { error: instErr } = await context.supabase
+          .from("user_instance_access")
+          .upsert(
+            data.user_ids.map((uid) => ({ user_id: uid, instance_id: data.instance_id })),
+            { onConflict: "user_id,instance_id" },
+          );
+        if (instErr) throw new Error(instErr.message);
+      }
+      const now = new Date().toISOString();
+      const rows = data.user_ids.flatMap((uid) =>
+        data.feature_keys.map((k) => ({
+          user_id: uid,
+          instance_id: data.instance_id,
+          feature_key: k,
+          allowed: true,
+          updated_at: now,
+        })),
+      );
+      const { error } = await context.supabase
+        .from("user_feature_permissions")
+        .upsert(rows, { onConflict: "user_id,instance_id,feature_key" });
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await context.supabase
+        .from("user_feature_permissions")
+        .delete()
+        .in("user_id", data.user_ids)
+        .eq("instance_id", data.instance_id)
+        .in("feature_key", data.feature_keys);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true, users: data.user_ids.length, features: data.feature_keys.length };
+  });
