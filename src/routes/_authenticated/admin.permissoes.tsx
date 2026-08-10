@@ -7,6 +7,7 @@ import {
   adminListAccessMatrix,
   adminSetFeaturePermission,
   adminSetInstanceAccess,
+  adminApplyPermissionProfile,
 } from "@/lib/access.functions";
 
 import {
@@ -17,7 +18,8 @@ import {
   type FeatureKey,
 } from "@/lib/instances";
 import { useMemo, useState } from "react";
-import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye } from "lucide-react";
+import { PERMISSION_PROFILES, profileFeatures } from "@/lib/permission-profiles";
+import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -137,6 +139,26 @@ function PermissoesPage() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
     },
+  });
+
+  const applyProfile = useServerFn(adminApplyPermissionProfile);
+  const profileMut = useMutation({
+    mutationFn: ({
+      label: _label,
+      ...v
+    }: {
+      user_id: string;
+      instance_id: InstanceId;
+      feature_keys: FeatureKey[];
+      grant_instance: boolean;
+      label: string;
+    }) => applyProfile({ data: v }),
+    onSuccess: (_r, v) => {
+      qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
+      qc.invalidateQueries({ queryKey: ["my-access"] });
+      toast.success(`Perfil aplicado: ${v.label}`);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao aplicar perfil"),
   });
 
   const accessMut = useMutation({
