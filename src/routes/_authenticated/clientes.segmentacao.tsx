@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
 const fmt = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
-type SortKey = "rank" | "name" | "segment" | "projection" | "generation" | "sales" | "health";
+type SortKey = "rank" | "name" | "segment" | "projection" | "generation" | "sales";
 type SortDir = "asc" | "desc";
 
 function pad(n: number) {
@@ -649,14 +649,14 @@ function SegmentacaoPage() {
                   <SortableTh label={periodo === "tri" ? "Projeção / tri" : "Projeção / mês"} k="projection" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                   <SortableTh label="Geração R$" k="generation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                   <SortableTh label="Vendas R$" k="sales" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
-                  <SortableTh label="Saúde" k="health" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" />
+                  
                   <th className="w-10"></th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-16 text-center text-muted-foreground text-sm">
+                    <td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
                       <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
                       Carregando dados do Salesforce…
                     </td>
@@ -664,7 +664,7 @@ function SegmentacaoPage() {
                 )}
                 {anyError && !loading && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-6 text-sm text-destructive">
+                    <td colSpan={8} className="px-4 py-6 text-sm text-destructive">
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 mt-0.5" />
                         <div>
@@ -699,14 +699,6 @@ function SegmentacaoPage() {
                           <td className="px-4 py-3 text-right tabular-nums">{fmt(c.projection)}</td>
                           <td className="px-4 py-3 text-right tabular-nums">{c.generation > 0 ? fmt(c.generation) : "—"}</td>
                           <td className="px-4 py-3 text-right tabular-nums">{c.sales > 0 ? fmt(c.sales) : "—"}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2 justify-center">
-                              <div className="w-20 h-1.5 rounded-full bg-surface-2 overflow-hidden">
-                                <div className={cn("h-full", c.health > 70 ? "bg-success" : c.health > 40 ? "bg-warning" : "bg-destructive")} style={{ width: `${c.health}%` }} />
-                              </div>
-                              <span className="text-xs text-muted-foreground w-6">{c.health}</span>
-                            </div>
-                          </td>
                           <td className="px-2">
                             <button
                               onClick={(e) => {
@@ -722,12 +714,11 @@ function SegmentacaoPage() {
                         </tr>
                         {isOpen && (
                           <tr key={`${c.id}-d`} className="bg-surface-2/30 border-b border-border/40">
-                            <td colSpan={9} className="px-6 py-5">
-                              <div className="grid md:grid-cols-4 gap-4">
+                            <td colSpan={8} className="px-6 py-5">
+                              <div className="grid md:grid-cols-3 gap-4">
                                 <Detail label={periodo === "tri" ? "Projeção (tri)" : "Projeção (mês)"} value={fmt(c.projection)} />
                                 <Detail label="Geração R$" value={fmt(c.generation)} sub={c.projection > 0 ? `${generationPct.toFixed(0)}% da projeção` : undefined} />
                                 <Detail label="Vendas R$" value={fmt(c.sales)} sub={c.projection > 0 ? `${salesPct.toFixed(0)}% da projeção` : undefined} />
-                                <Detail label="Saúde" value={`${c.health}/100`} />
                               </div>
                               <div className="mt-4 p-3 rounded-lg bg-background/60 border border-border">
                                 <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
@@ -914,19 +905,12 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
           </div>
 
           <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <Detail label="Projeção" value={fmt(client.projection)} />
               <Detail label="Geração" value={fmt(client.generation)} sub={`${generationPct}%`} />
               <Detail label="Vendas" value={fmt(client.sales)} sub={`${conversion}%`} />
-              <Detail label="Saúde" value={`${client.health}/100`} />
             </div>
 
-            <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Saúde da relação</div>
-              <div className="h-3 rounded-full bg-surface-2 overflow-hidden">
-                <div className={cn("h-full", client.health > 70 ? "bg-success" : client.health > 40 ? "bg-warning" : "bg-destructive")} style={{ width: `${client.health}%` }} />
-              </div>
-            </div>
 
             <div className="rounded-xl bg-surface-2 border border-border p-4">
               <div className="flex items-center gap-2 mb-2">
