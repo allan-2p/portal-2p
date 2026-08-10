@@ -84,6 +84,7 @@ function UsuariosPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("portal");
+  const [status, setStatus] = useState<StatusFilter>("ativos");
   const [modal, setModal] = useState<
     | { kind: "create" }
     | { kind: "invite"; external?: boolean }
