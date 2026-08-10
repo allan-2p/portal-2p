@@ -610,6 +610,36 @@ export const getSalesforceOrcamentos = createServerFn({ method: "GET" })
     return { records: (res?.records ?? []).map(mapOppRow) as SalesforceOppRow[] };
   });
 
+/**
+ * Coorte de conversão: TODAS as oportunidades criadas no período (independente do
+ * estágio atual). Serve para medir "dos orçamentos gerados no período, quantos
+ * viraram Pedido Concluído" — por isso a taxa nunca passa de 100%.
+ */
+export const getSalesforceOppsCriadas = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { start?: string | null; end?: string | null; ownerId?: string | null }) => input ?? {})
+  .handler(async ({ data, context }) => {
+    const clauses: string[] = [`(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`];
+    if (validDate(data.start)) clauses.push(`CreatedDate >= ${data.start}T00:00:00Z`);
+    if (validDate(data.end)) clauses.push(`CreatedDate <= ${data.end}T23:59:59Z`);
+    const ownerClause = ownerFilterClause(
+      await resolveSalesforceOwnerFilter(context.supabase, context.userId, data.ownerId),
+    );
+    const soql =
+      `SELECT ${OPP_COLS} FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
+      `${ownerClause} ORDER BY CreatedDate DESC LIMIT 2000`;
+    let res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    const all: any[] = [...(res?.records ?? [])];
+    let safety = 5;
+    while (res && res.done === false && res.nextRecordsUrl && safety-- > 0) {
+      const path = String(res.nextRecordsUrl).replace(/^\/services\/data\/v\d+\.\d+/, "");
+      res = await sfFetch(path);
+      all.push(...(res?.records ?? []));
+    }
+    return { records: all.map(mapOppRow) as SalesforceOppRow[] };
+  });
+
+
 export const getSalesforceVendas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { start?: string | null; end?: string | null; ownerId?: string | null; unscoped?: boolean }) => input ?? {})
