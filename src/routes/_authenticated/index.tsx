@@ -522,20 +522,24 @@ function HomePage() {
       const d = new Date(y, m + i, 1);
       return buckets.get(bkey(d.getFullYear(), d.getMonth()))!;
     });
+    // Conversão nunca pode passar de 100%: vendas do período são um subconjunto
+    // dos orçamentos gerados no período. Limitamos a razão em [0,1].
     const safeDiv = (n: number, d: number) => (d > 0 ? n / d : 0);
+    const ratio = (n: number, d: number) => Math.min(1, Math.max(0, safeDiv(n, d)));
     const avg = (fn: (b: Bkt) => number) => {
       const vs = prevs.map(fn);
       return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : 0;
     };
     return {
-      convRCur: safeDiv(sold, generated),
-      convR3: avg((b) => safeDiv(b.venVal, b.orcVal)),
-      convQCur: safeDiv(cur.venIds.size, cur.orcIds.size),
-      convQ3: avg((b) => safeDiv(b.venIds.size, b.orcIds.size)),
+      convRCur: ratio(cur.venVal, cur.orcVal),
+      convR3: avg((b) => ratio(b.venVal, b.orcVal)),
+      convQCur: ratio(cur.venIds.size, cur.orcIds.size),
+      convQ3: avg((b) => ratio(b.venIds.size, b.orcIds.size)),
       ticketCur: safeDiv(cur.venVal, cur.venIds.size),
       ticket3: avg((b) => safeDiv(b.venVal, b.venIds.size)),
     };
-  }, [orcQ.data, vendas4Q.data, ownerParam, today, sold, generated]);
+  }, [orcQ.data, vendas4Q.data, ownerParam, today]);
+
 
   // ---- Retenção / Recorrência / Novos recorrentes (por trimestre calendário) ----
   const quarterRange = useMemo(() => {
