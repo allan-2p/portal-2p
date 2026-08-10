@@ -160,7 +160,7 @@ function PermissoesPage() {
   function isAllowed(featureKey: FeatureKey): boolean {
     if (!selectedUser) return false;
     if (selectedUser.is_admin) return true;
-    return !selectedUser.denied.some(
+    return selectedUser.granted.some(
       (d) => d.instance_id === activeInstance && d.feature_key === featureKey,
     );
   }
@@ -191,9 +191,9 @@ function PermissoesPage() {
     toast.success(allowed ? "Tudo liberado para esta instância" : "Tudo bloqueado nesta instância");
   }
 
-  // Contagem denial por usuário para badge na lista
+  // Contagem de features liberadas por usuário para badge na lista
   const denyCountByUser = (u: (typeof users)[number]) =>
-    u.denied.filter((d) => u.instances.includes(d.instance_id)).length;
+    u.granted.filter((d) => u.instances.includes(d.instance_id)).length;
 
   return (
     <AppLayout>
@@ -262,8 +262,12 @@ function PermissoesPage() {
                               {u.email}
                             </div>
                           </div>
-                          {denials > 0 && !u.is_admin && (
-                            <Badge variant="secondary" className="text-[10px] h-5">
+                          {!u.is_admin && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] h-5"
+                              title="Funcionalidades liberadas"
+                            >
                               {denials}
                             </Badge>
                           )}
