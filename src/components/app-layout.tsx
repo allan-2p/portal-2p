@@ -477,7 +477,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                           <AdminMenuLink to="/integracoes" label="Integrações" icon={Plug} onClick={() => setAdminMenuOpen(false)} />
                         )}
                         <div className="h-px bg-border" />
-                        <AdminMenuLink to="/admin/acessos-instancias" label="Acessos por Instância" icon={Shield} onClick={() => setAdminMenuOpen(false)} />
                         <AdminMenuLink to="/admin/permissoes" label="Permissões de Usuários" icon={KeyRound} onClick={() => setAdminMenuOpen(false)} />
                       </div>
                     </>

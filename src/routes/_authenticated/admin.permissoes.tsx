@@ -16,7 +16,7 @@ import {
   type FeatureKey,
 } from "@/lib/instances";
 import { useMemo, useState } from "react";
-import { Loader2, KeyRound, Search, ShieldCheck, Check, X, Users } from "lucide-react";
+import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -410,8 +410,8 @@ function PermissoesPage() {
                     {!userHasInstance ? (
                       <div className="p-8 text-center text-sm text-muted-foreground">
                         Este usuário não tem acesso à instância{" "}
-                        <strong>{instMeta.label}</strong>. Libere o acesso em{" "}
-                        <em>Acessos por Instância</em> antes de configurar permissões.
+                        <strong>{instMeta.label}</strong>. Libere o acesso no bloco{" "}
+                        <em>Acesso às instâncias</em> acima antes de configurar permissões.
                       </div>
                     ) : selectedUser.is_admin ? (
                       <div className="p-8 text-center text-sm text-muted-foreground">
