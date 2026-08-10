@@ -610,10 +610,34 @@ function SegmentacaoPage() {
         </div>
 
         <div className="glass rounded-2xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-            <h2 className="font-display font-semibold">Segmentação | Mês atual</h2>
-            <span className="text-xs text-muted-foreground">{visible.length} clientes</span>
+          <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="font-display font-semibold">
+              Segmentação | {periodo === "tri" ? "Trimestre atual" : "Mês atual"}
+            </h2>
+            <div className="flex items-center gap-3">
+              <div className="inline-flex rounded-lg border border-border overflow-hidden">
+                {([
+                  { k: "mes" as const, label: "Mês" },
+                  { k: "tri" as const, label: "Trimestre" },
+                ]).map((o) => (
+                  <button
+                    key={o.k}
+                    onClick={() => setPeriodo(o.k)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-medium transition-colors",
+                      periodo === o.k
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-surface text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">{visible.length} clientes</span>
+            </div>
           </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
