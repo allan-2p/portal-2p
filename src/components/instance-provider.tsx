@@ -139,7 +139,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     hasFeature,
     isRouteAllowed,
     defaultRoute,
-    loading: authLoading || (!!user && q.isLoading),
+    loading: authLoading || (!!user && q.isLoading) || sim.loading,
   };
   return <InstanceContext.Provider value={value}>{children}</InstanceContext.Provider>;
 }
