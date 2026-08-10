@@ -30,7 +30,7 @@ function CadastrosPage() {
   const [segFilter, setSegFilter] = useState<"all" | "A" | "B" | "C" | "D" | "none">("all");
   const [ownerId, setOwnerId] = useState<string>("all");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
 
 
   const fetchAccounts = useServerFn(getSalesforceAccounts);
@@ -238,7 +238,7 @@ function CadastrosPage() {
                   onChange={(e) => setPageSize(Number(e.target.value))}
                   className="px-2 py-1.5 rounded-md bg-surface border border-border text-xs"
                 >
-                  {[25, 50, 100].map((n) => (
+                  {[10, 25, 50, 100].map((n) => (
                     <option key={n} value={n}>
                       {n} por página
                     </option>
