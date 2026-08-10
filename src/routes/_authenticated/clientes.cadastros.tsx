@@ -56,7 +56,7 @@ function CadastrosPage() {
     return rows.filter((r) => {
       if (segFilter === "none" && r.segment !== null) return false;
       if (segFilter !== "all" && segFilter !== "none" && r.segment !== segFilter) return false;
-      if (ownerId !== "all" && r.ownerId !== ownerId) return false;
+      if (ownerId !== "all" && !ownerId.split(",").includes(r.ownerId ?? "")) return false;
       if (!s) return true;
       return (
         r.name.toLowerCase().includes(s) ||

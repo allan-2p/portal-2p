@@ -1,6 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { type Client, type Segment } from "@/lib/mock-data";
+import {
+  VendedorNamesFilter,
+  parseVendedores,
+  matchVendedor,
+} from "@/components/vendedor-names-filter";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -377,14 +382,14 @@ function SegmentacaoPage() {
       setVendedor(ownOwnerName);
       return;
     }
-    if (
-      !isIndividual &&
-      allowedOwnerNames &&
-      vendedor !== "__all__" &&
-      !allowedOwnerNames.has(vendedor)
-    ) {
-      const first = vendedores[0];
-      if (first) setVendedor(first);
+    if (!isIndividual && allowedOwnerNames && vendedor !== "__all__") {
+      const kept = parseVendedores(vendedor).filter((v) => allowedOwnerNames.has(v));
+      if (kept.length === 0) {
+        const first = vendedores[0];
+        if (first) setVendedor(first);
+      } else if (kept.length !== parseVendedores(vendedor).length) {
+        setVendedor(kept.join(","));
+      }
     }
   }, [isIndividual, ownOwnerName, vendedor, allowedOwnerNames, vendedores]);
 
@@ -403,8 +408,9 @@ function SegmentacaoPage() {
         return allowedOwnerNames.has(owner);
       });
     }
-    if (vendedor === "__all__") return base;
-    return base.filter((c) => (ownerByAccount.get(c.id) ?? "") === vendedor);
+    const sel = parseVendedores(vendedor);
+    if (sel.length === 0) return base;
+    return base.filter((c) => matchVendedor(sel, ownerByAccount.get(c.id) ?? ""));
   }, [clients, vendedor, ownerByAccount, allowedOwnerNames]);
 
 
@@ -516,21 +522,14 @@ function SegmentacaoPage() {
             </div>
             <div className="flex items-center gap-2">
               <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Vendedor</label>
-              <Select value={vendedor} onValueChange={setVendedor} disabled={isIndividual}>
-                <SelectTrigger className="h-9 w-[220px] text-sm">
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  {scope?.scope === "geral" && (
-                    <SelectItem value="__all__">Todos</SelectItem>
-                  )}
-                  {vendedores.map((v) => (
-                    <SelectItem key={v} value={v}>
-                      {v}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <VendedorNamesFilter
+                value={vendedor}
+                onChange={setVendedor}
+                options={vendedores}
+                disabled={isIndividual}
+                allLabel={scope?.scope === "geral" ? "Todos" : "Meu escopo"}
+              />
+
             </div>
 
           </div>

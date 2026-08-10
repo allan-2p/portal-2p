@@ -124,7 +124,10 @@ function GoalCard({ label, Icon, realized, goal, pct, hint, loading }: GoalCardP
 
 export function GoalsPanel({ ownerId }: { ownerId: string }) {
   const info = useMemo(currentQuarterInfo, []);
-  const owners = ownerId === "all" ? [...CARTEIRA_OWNER_IDS] : [ownerId];
+  const owners =
+    ownerId === "all"
+      ? [...CARTEIRA_OWNER_IDS]
+      : ownerId.split(",").map((v) => v.trim()).filter(Boolean);
 
   const fetchVendas = useServerFn(getSalesforceVendas);
   const fetchSalesByAccount = useServerFn(getSalesforceSalesByAccount);

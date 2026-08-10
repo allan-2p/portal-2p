@@ -29,6 +29,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  VendedorNamesFilter,
+  parseVendedores,
+  matchVendedor,
+} from "@/components/vendedor-names-filter";
+import {
   getSalesforceOrcamentos,
   getSalesforceVendas,
   getSalesforceVendidoMesAtual,
@@ -710,8 +715,9 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     let base = rows;
-    if (vendedor !== "__all__") {
-      base = base.filter((r) => (r.accountOwner ?? "") === vendedor);
+    const selVend = parseVendedores(vendedor);
+    if (selVend.length) {
+      base = base.filter((r) => matchVendedor(selVend, r.accountOwner ?? ""));
     }
     if (!s) return base;
     return base.filter(
@@ -778,17 +784,13 @@ function CurrentQuarterProjectionsPanel({ search }: { search: string }) {
         <div className="h-8 w-px bg-border" />
         <div className="flex items-center gap-2">
           <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Vendedor</label>
-          <Select value={vendedor} onValueChange={setVendedor}>
-            <SelectTrigger className="h-8 w-[220px] text-sm">
-              <SelectValue placeholder="Todos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Todos</SelectItem>
-              {vendedores.map((v) => (
-                <SelectItem key={v} value={v}>{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <VendedorNamesFilter
+            value={vendedor}
+            onChange={setVendedor}
+            options={vendedores}
+            allLabel="Todos"
+          />
+
         </div>
         <div className="h-8 w-px bg-border" />
         <div className="flex items-center gap-3">
@@ -1413,24 +1415,22 @@ function OppTabPanel({
     [records],
   );
   const filteredByVendedor =
-    vendedor === "__all__" ? records : records.filter((r) => (r.owner ?? "") === vendedor);
+    parseVendedores(vendedor).length === 0
+      ? records
+      : records.filter((r) => matchVendedor(parseVendedores(vendedor), r.owner ?? ""));
 
   return (
     <div className="space-y-3">
       <OppFiltersPanel value={filters} defaults={defaults} onApply={onFiltersChange} onSaveAsDefault={onSaveAsDefault} />
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
-        <Select value={vendedor} onValueChange={onVendedorChange}>
-          <SelectTrigger className="w-[260px] h-9">
-            <SelectValue placeholder="Todos os vendedores" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todos os vendedores</SelectItem>
-            {vendedores.map((v) => (
-              <SelectItem key={v} value={v}>{v}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <VendedorNamesFilter
+          value={vendedor}
+          onChange={onVendedorChange}
+          options={vendedores}
+          allLabel="Todos os vendedores"
+        />
+
         {vendedor !== "__all__" && (
           <button
             type="button"
@@ -1507,7 +1507,8 @@ function RecorrenciaPanel({ search }: { search: string }) {
   );
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    let out = vendedor === "__all__" ? records : records.filter((r) => (r.owner ?? "") === vendedor);
+    const selVend = parseVendedores(vendedor);
+    let out = selVend.length === 0 ? records : records.filter((r) => matchVendedor(selVend, r.owner ?? ""));
     if (s) out = out.filter((r) => (r.accountName ?? "").toLowerCase().includes(s) || (r.owner ?? "").toLowerCase().includes(s));
     return out;
   }, [records, vendedor, search]);
@@ -1519,13 +1520,13 @@ function RecorrenciaPanel({ search }: { search: string }) {
         <QuarterPicker year={year} quarter={quarter} onChange={setYQ} />
         <div className="flex items-center gap-2">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
-          <Select value={vendedor} onValueChange={setVendedor}>
-            <SelectTrigger className="w-[240px] h-9"><SelectValue placeholder="Todos" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Todos os vendedores</SelectItem>
-              {vendedores.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <VendedorNamesFilter
+            value={vendedor}
+            onChange={setVendedor}
+            options={vendedores}
+            allLabel="Todos os vendedores"
+          />
+
         </div>
       </div>
       <div className="glass rounded-2xl p-3 text-[11px] text-muted-foreground leading-relaxed">
@@ -1560,7 +1561,8 @@ function RetencaoPanel({ search }: { search: string }) {
   );
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    let out = vendedor === "__all__" ? records : records.filter((r) => (r.owner ?? "") === vendedor);
+    const selVend = parseVendedores(vendedor);
+    let out = selVend.length === 0 ? records : records.filter((r) => matchVendedor(selVend, r.owner ?? ""));
     if (s) out = out.filter((r) => (r.accountName ?? "").toLowerCase().includes(s) || (r.owner ?? "").toLowerCase().includes(s));
     return out;
   }, [records, vendedor, search]);
@@ -1573,13 +1575,13 @@ function RetencaoPanel({ search }: { search: string }) {
         <QuarterPicker year={year} quarter={quarter} onChange={setYQ} />
         <div className="flex items-center gap-2">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Vendedor</span>
-          <Select value={vendedor} onValueChange={setVendedor}>
-            <SelectTrigger className="w-[240px] h-9"><SelectValue placeholder="Todos" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Todos os vendedores</SelectItem>
-              {vendedores.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <VendedorNamesFilter
+            value={vendedor}
+            onChange={setVendedor}
+            options={vendedores}
+            allLabel="Todos os vendedores"
+          />
+
         </div>
       </div>
       <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-6 text-sm">
@@ -1976,9 +1978,11 @@ function TabelasPage() {
               </div>
               <WeeksPanel
                 records={
-                  vendedorVen === "__all__"
+                  parseVendedores(vendedorVen).length === 0
                     ? (qVen.data?.records ?? [])
-                    : (qVen.data?.records ?? []).filter((r) => (r.owner ?? "") === vendedorVen)
+                    : (qVen.data?.records ?? []).filter((r) =>
+                        matchVendedor(parseVendedores(vendedorVen), r.owner ?? ""),
+                      )
                 }
                 loading={qVen.isLoading}
                 error={qVen.error}
