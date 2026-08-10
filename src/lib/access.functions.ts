@@ -202,6 +202,8 @@ export const adminApplyPermissionProfile = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ApplyProfileInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { snapshotPermissions, recordAudit } = await import("@/lib/permission-audit.server");
+    const before = await snapshotPermissions(context, [data.user_id], data.instance_id);
     if (data.grant_instance && data.feature_keys.length > 0) {
       await context.supabase
         .from("user_instance_access")
@@ -232,6 +234,14 @@ export const adminApplyPermissionProfile = createServerFn({ method: "POST" })
       );
       if (error) throw new Error(error.message);
     }
+    await recordAudit(context, {
+      action: "profile",
+      instance_id: data.instance_id,
+      user_ids: [data.user_id],
+      feature_keys: data.feature_keys,
+      details: { label: "Perfil de permissão aplicado" },
+      before,
+    });
     return { ok: true, applied: data.feature_keys.length };
   });
 
@@ -251,6 +261,8 @@ export const adminBulkSetFeaturePermissions = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => BulkFeaturesInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { snapshotPermissions, recordAudit } = await import("@/lib/permission-audit.server");
+    const before = await snapshotPermissions(context, data.user_ids, data.instance_id);
     if (data.allowed) {
       if (data.grant_instance) {
         const { error: instErr } = await context.supabase
@@ -284,5 +296,69 @@ export const adminBulkSetFeaturePermissions = createServerFn({ method: "POST" })
         .in("feature_key", data.feature_keys);
       if (error) throw new Error(error.message);
     }
+    await recordAudit(context, {
+      action: data.allowed ? "bulk_grant" : "bulk_revoke",
+      instance_id: data.instance_id,
+      user_ids: data.user_ids,
+      feature_keys: data.feature_keys,
+      details: { grant_instance: data.grant_instance },
+      before,
+    });
     return { ok: true, users: data.user_ids.length, features: data.feature_keys.length };
+  });
+
+// ---- Admin: log de auditoria de permissões + desfazer ---- //
+
+export type PermissionAuditRow = {
+  id: string;
+  actor_email: string | null;
+  action: string;
+  instance_id: string;
+  user_ids: string[];
+  feature_keys: string[];
+  details: Record<string, any>;
+  undone_at: string | null;
+  created_at: string;
+};
+
+export const adminListPermissionAudit = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ logs: PermissionAuditRow[] }> => {
+    await assertAdmin(context);
+    const { data, error } = await context.supabase
+      .from("permission_audit_log")
+      .select("id, actor_email, action, instance_id, user_ids, feature_keys, details, undone_at, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return { logs: (data ?? []) as PermissionAuditRow[] };
+  });
+
+export const adminUndoPermissionChange = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ log_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { restoreSnapshot } = await import("@/lib/permission-audit.server");
+    const { data: log, error } = await context.supabase
+      .from("permission_audit_log")
+      .select("id, instance_id, user_ids, before_state, undone_at")
+      .eq("id", data.log_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!log) throw new Error("Registro não encontrado");
+    if (log.undone_at) throw new Error("Esta alteração já foi desfeita");
+
+    await restoreSnapshot(context, {
+      instance_id: log.instance_id,
+      user_ids: log.user_ids ?? [],
+      before_state: (log.before_state ?? { perms: [], instances: [] }) as any,
+    });
+
+    const { error: updErr } = await context.supabase
+      .from("permission_audit_log")
+      .update({ undone_at: new Date().toISOString(), undone_by: context.userId })
+      .eq("id", log.id);
+    if (updErr) throw new Error(updErr.message);
+    return { ok: true };
   });
