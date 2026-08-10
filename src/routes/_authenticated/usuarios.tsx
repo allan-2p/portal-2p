@@ -552,6 +552,42 @@ function PortalTable({
                 </td>
 
                 <td className="px-4 py-3">
+                  {r.sf_user_id ? (
+                    <select
+                      value={teamMap.get(r.sf_user_id) ?? ""}
+                      onChange={(e) =>
+                        teamMut.mutate({
+                          sf_user_id: r.sf_user_id!,
+                          team: (e.target.value || null) as SFTeam | null,
+                        })
+                      }
+                      disabled={teamMut.isPending}
+                      className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                    >
+                      <option value="">—</option>
+                      <option value="pre_vendas">Pré Vendas</option>
+                      <option value="carteira">Carteira</option>
+                    </select>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  {r.sf_user_id ? (
+                    <Switch
+                      checked={!(hiddenMap.get(r.sf_user_id) ?? false)}
+                      disabled={visMut.isPending || spQ.isLoading}
+                      onCheckedChange={(v) =>
+                        visMut.mutate({ sf_user_id: r.sf_user_id!, hidden: !v })
+                      }
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
+
+
+                <td className="px-4 py-3">
                   <span
                     className={`text-xs px-2 py-1 rounded-full ${
                       r.ativo
