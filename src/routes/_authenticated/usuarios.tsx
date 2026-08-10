@@ -79,6 +79,7 @@ type Tab = "portal" | "salesforce";
 
 function UsuariosPage() {
   const { hasRole, loading: authLoading, user } = useAuth();
+  const { instance } = useInstance();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("portal");
