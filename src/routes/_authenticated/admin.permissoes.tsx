@@ -187,6 +187,8 @@ function PermissoesPage() {
     onError: (e: any) => toast.error(e?.message ?? "Erro na edição em massa"),
   });
 
+  const { newFeatures, markSeen } = useNewFeatures();
+
   const accessMut = useMutation({
     mutationFn: (v: { user_id: string; instance_id: InstanceId; allowed: boolean }) =>
       setAccess({ data: v }),
