@@ -35,6 +35,7 @@ export type FeatureKey =
   | "admin.tabelas"
   | "admin.permissoes"
   | "admin.integracoes"
+  | "admin.auditoria"
   | "marketing.home"
   | "marketing.social"
   | "marketing.trafego"
@@ -82,6 +83,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "admin.tabelas",
       "admin.permissoes",
       "admin.integracoes",
+      "admin.auditoria",
     ],
   },
   carregadores: {
@@ -103,6 +105,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "admin.usuarios",
       "admin.permissoes",
       "admin.integracoes",
+      "admin.auditoria",
     ],
 
   },
@@ -125,6 +128,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "admin.usuarios",
       "admin.permissoes",
       "admin.integracoes",
+      "admin.auditoria",
     ],
   },
 };
@@ -159,6 +163,7 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/admin/tabelas": "admin.tabelas",
   "/admin/permissoes": "admin.permissoes",
   "/integracoes": "admin.integracoes",
+  "/admin/auditoria": "admin.auditoria",
   "/marketing": "marketing.home",
   "/marketing/social": "marketing.social",
   "/marketing/trafego": "marketing.trafego",
@@ -196,6 +201,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.tabelas": "Admin • Tabelas",
   "admin.permissoes": "Admin • Permissões de Usuários",
   "admin.integracoes": "Admin • Integrações",
+  "admin.auditoria": "Admin • Auditoria de Acessos",
   "marketing.home": "Marketing • Home",
   "marketing.social": "Marketing • Social Mídia",
   "marketing.trafego": "Marketing • Mídia Paga",
