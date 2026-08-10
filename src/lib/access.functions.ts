@@ -186,3 +186,51 @@ export const adminGetUserAccess = createServerFn({ method: "GET" })
       is_admin: (roles ?? []).some((r: any) => r.role === "admin"),
     };
   });
+
+// ---- Admin: aplicar perfil de permissão (substitui grants da instância) ---- //
+
+const ApplyProfileInput = z.object({
+  user_id: z.string().uuid(),
+  instance_id: z.enum(["solar", "carregadores", "marketing"]),
+  feature_keys: z.array(z.string().min(1).max(64)).max(200),
+  /** Libera também o acesso à instância. */
+  grant_instance: z.boolean().default(true),
+});
+
+export const adminApplyPermissionProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ApplyProfileInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.grant_instance && data.feature_keys.length > 0) {
+      await context.supabase
+        .from("user_instance_access")
+        .upsert(
+          { user_id: data.user_id, instance_id: data.instance_id },
+          { onConflict: "user_id,instance_id" },
+        );
+    }
+    // Substitui todas as permissões dessa instância pelo conjunto do perfil.
+    const { error: delErr } = await context.supabase
+      .from("user_feature_permissions")
+      .delete()
+      .eq("user_id", data.user_id)
+      .eq("instance_id", data.instance_id);
+    if (delErr) throw new Error(delErr.message);
+
+    if (data.feature_keys.length) {
+      const now = new Date().toISOString();
+      const { error } = await context.supabase.from("user_feature_permissions").upsert(
+        data.feature_keys.map((k) => ({
+          user_id: data.user_id,
+          instance_id: data.instance_id,
+          feature_key: k,
+          allowed: true,
+          updated_at: now,
+        })),
+        { onConflict: "user_id,instance_id,feature_key" },
+      );
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true, applied: data.feature_keys.length };
+  });
