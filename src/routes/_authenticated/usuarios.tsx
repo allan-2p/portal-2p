@@ -387,6 +387,53 @@ function PortalTable({
     }
   }
 
+  const qc = useQueryClient();
+  const fetchTeams = useServerFn(listSfTeams);
+  const setTeamFn = useServerFn(adminSetSfTeam);
+  const fetchSalespeople = useServerFn(listSalespeopleForAdmin);
+  const setVisibility = useServerFn(setSalespersonVisibility);
+
+  const teamsQ = useQuery({
+    queryKey: ["sf-teams"],
+    queryFn: () => fetchTeams(),
+    staleTime: 60_000,
+  });
+  const spQ = useQuery({
+    queryKey: ["admin-salespeople"],
+    queryFn: () => fetchSalespeople(),
+    staleTime: 60_000,
+  });
+
+  const teamMap = useMemo(() => {
+    const m = new Map<string, SFTeam>();
+    for (const t of teamsQ.data?.rows ?? []) m.set(t.sf_user_id, t.team);
+    return m;
+  }, [teamsQ.data]);
+
+  const hiddenMap = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const p of spQ.data?.records ?? []) m.set(p.id, p.hidden);
+    return m;
+  }, [spQ.data]);
+
+  const teamMut = useMutation({
+    mutationFn: (v: { sf_user_id: string; team: SFTeam | null }) => setTeamFn({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sf-teams"] });
+      qc.invalidateQueries({ queryKey: ["my-scope"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar equipe"),
+  });
+
+  const visMut = useMutation({
+    mutationFn: (v: { sf_user_id: string; hidden: boolean }) => setVisibility({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-salespeople"] });
+      qc.invalidateQueries({ queryKey: ["sf-salespeople"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+  });
+
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       <table className="w-full text-sm">
