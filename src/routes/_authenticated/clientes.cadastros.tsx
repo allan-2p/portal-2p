@@ -29,6 +29,9 @@ function CadastrosPage() {
   const [overrides, setOverrides] = useState<Record<string, Partial<Row>>>({});
   const [segFilter, setSegFilter] = useState<"all" | "A" | "B" | "C" | "D" | "none">("all");
   const [ownerId, setOwnerId] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
 
   const fetchAccounts = useServerFn(getSalesforceAccounts);
   const { data, isLoading, error, refetch, isFetching } = useQuery({
