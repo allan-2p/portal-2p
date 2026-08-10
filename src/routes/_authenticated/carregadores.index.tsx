@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
+import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 import { AppLayout } from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -90,6 +92,7 @@ function CarregadoresHome() {
   const [agendaSortOpen, setAgendaSortOpen] = useState(false);
   const [agendaSort, setAgendaSort] = useState<"date" | "priority">("date");
   const [agendaSortDir, setAgendaSortDir] = useState<"asc" | "desc">("asc");
+  const [vendedor, setVendedor] = useState("__all__");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [ageFilter, setAgeFilter] = useState<"all" | "7d" | "15-30" | "30-60" | "60+">("all");
   const [forecastFilter, setForecastFilter] = useState<"all" | "7d" | "15-30" | "30-60" | "60+" | "atrasados">("all");
@@ -99,13 +102,14 @@ function CarregadoresHome() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cpo_proposals")
-        .select("id,numero,cliente_nome,uf,status,totais,created_at")
+        .select("id,numero,cliente_nome,uf,status,totais,created_at,created_by")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Prop[];
     },
   });
-  const props = propsQ.data ?? [];
+  const vend = useCpoVendedores();
+  const props = (propsQ.data ?? []).filter((p) => vend.matches(vendedor, (p as { created_by?: string | null }).created_by));
   const isLoading = propsQ.isLoading;
 
   const tasksQ = useQuery({
@@ -113,7 +117,7 @@ function CarregadoresHome() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cpo_tasks")
-        .select("id,titulo,descricao,cliente_nome,due_date,prioridade,status")
+        .select("id,titulo,descricao,cliente_nome,due_date,prioridade,status,owner_id")
         .eq("status", "aberta")
         .order("due_date", { ascending: true });
       if (error) throw error;
@@ -123,7 +127,9 @@ function CarregadoresHome() {
 
   const agendaTasks = useMemo(() => {
     const limit = fmtKey(agendaDate);
-    const list = (tasksQ.data ?? []).filter((t) => !t.due_date || t.due_date <= limit);
+    const list = (tasksQ.data ?? [])
+      .filter((t) => !t.due_date || t.due_date <= limit)
+      .filter((t) => vend.matches(vendedor, (t as { owner_id?: string | null }).owner_id));
     const dir = agendaSortDir === "asc" ? 1 : -1;
     return [...list].sort((a, b) => {
       if (agendaSort === "priority") {
@@ -135,7 +141,7 @@ function CarregadoresHome() {
       const db = b.due_date ?? "9999-12-31";
       return da === db ? 0 : (da < db ? -1 : 1) * dir;
     });
-  }, [tasksQ.data, agendaDate, agendaSort, agendaSortDir]);
+  }, [tasksQ.data, agendaDate, agendaSort, agendaSortDir, vendedor, vend]);
 
   const valorProposta = (p: Prop) =>
     Number(p.totais?.["valorTotal"] ?? p.totais?.["total"] ?? p.totais?.["valor"] ?? 0);
@@ -198,6 +204,14 @@ function CarregadoresHome() {
           <div>
             <h1 className="text-2xl font-display font-bold">Portal 2P Carregadores</h1>
             <p className="text-sm text-muted-foreground">Operação CPO — propostas, clientes e tarefas da unidade.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <VendedorNamesFilter
+              value={vendedor}
+              onChange={setVendedor}
+              options={vend.names}
+              allLabel="Todos os vendedores"
+            />
           </div>
           <Button asChild>
             <Link to="/carregadores/propostas/nova">
