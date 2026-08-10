@@ -137,6 +137,9 @@ function SegmentacaoPage() {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [search, setSearch] = useState("");
   const [vendedor, setVendedor] = useState<string>("__all__");
+  const [periodo, setPeriodo] = useState<"mes" | "tri">("mes");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const baseRange = useMemo(previousQuarterRange, []);
 
@@ -193,13 +196,25 @@ function SegmentacaoPage() {
   });
 
   const qVendidoMes = useQuery({
-    queryKey: ["sf-vendido-mes", "seg"],
-    queryFn: () => fetchVendidoMes({ data: OPP_DEFAULTS_VENDIDO_MES }),
+    queryKey: ["sf-vendido", "seg", periodo],
+    queryFn: () =>
+      fetchVendidoMes({
+        data: {
+          ...OPP_DEFAULTS_VENDIDO_MES,
+          dateLiteral: periodo === "tri" ? "THIS_QUARTER" : "THIS_MONTH",
+        },
+      }),
     staleTime: 60_000,
   });
   const qGeradoMes = useQuery({
-    queryKey: ["sf-gerado-mes", "seg"],
-    queryFn: () => fetchVendidoMes({ data: OPP_DEFAULTS_GERADO_MES }),
+    queryKey: ["sf-gerado", "seg", periodo],
+    queryFn: () =>
+      fetchVendidoMes({
+        data: {
+          ...OPP_DEFAULTS_GERADO_MES,
+          dateLiteral: periodo === "tri" ? "THIS_QUARTER" : "THIS_MONTH",
+        },
+      }),
     staleTime: 60_000,
   });
   const qPedidos = useQuery({
@@ -318,8 +333,9 @@ function SegmentacaoPage() {
 
   // ================ Combinação em Client[] ================
   const clients: Client[] = useMemo(() => {
+    const mult = periodo === "tri" ? 3 : 1;
     return projected.map((p) => {
-      const projection = Math.round(p.salesMonthly);
+      const projection = Math.round(p.salesMonthly * mult);
       const sales = Math.round(salesMesByAccount.get(p.account) ?? 0);
       const generation = Math.round(generationMesByAccount.get(p.account) ?? 0);
       const denom = projection > 0 ? projection : 1;
@@ -338,7 +354,7 @@ function SegmentacaoPage() {
         notes: notesByAccount.get(p.account),
       };
     });
-  }, [projected, salesMesByAccount, generationMesByAccount, notesByAccount]);
+  }, [projected, salesMesByAccount, generationMesByAccount, notesByAccount, periodo]);
 
   // Vendedores disponíveis (accountOwner das linhas de projeção),
   // filtrados pelo escopo do usuário logado.
@@ -424,6 +440,14 @@ function SegmentacaoPage() {
     });
     return arr;
   }, [filtered, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const pageSafe = Math.min(page, totalPages);
+  const pageRows = visible.slice((pageSafe - 1) * pageSize, pageSafe * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, selectedSegs, vendedor, periodo, pageSize, sortKey, sortDir]);
 
   const totals = visible.reduce(
     (acc, c) => ({
@@ -586,10 +610,34 @@ function SegmentacaoPage() {
         </div>
 
         <div className="glass rounded-2xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-            <h2 className="font-display font-semibold">Segmentação | Mês atual</h2>
-            <span className="text-xs text-muted-foreground">{visible.length} clientes</span>
+          <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="font-display font-semibold">
+              Segmentação | {periodo === "tri" ? "Trimestre atual" : "Mês atual"}
+            </h2>
+            <div className="flex items-center gap-3">
+              <div className="inline-flex rounded-lg border border-border overflow-hidden">
+                {([
+                  { k: "mes" as const, label: "Mês" },
+                  { k: "tri" as const, label: "Trimestre" },
+                ]).map((o) => (
+                  <button
+                    key={o.k}
+                    onClick={() => setPeriodo(o.k)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-medium transition-colors",
+                      periodo === o.k
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-surface text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">{visible.length} clientes</span>
+            </div>
           </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -598,7 +646,7 @@ function SegmentacaoPage() {
                   <SortableTh label="Rank" k="rank" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" className="w-16" />
                   <SortableTh label="Cliente" k="name" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="left" />
                   <SortableTh label="Seg" k="segment" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" />
-                  <SortableTh label="Projeção / mês" k="projection" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                  <SortableTh label={periodo === "tri" ? "Projeção / tri" : "Projeção / mês"} k="projection" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                   <SortableTh label="Geração R$" k="generation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                   <SortableTh label="Vendas R$" k="sales" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                   <SortableTh label="Saúde" k="health" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" />
@@ -631,7 +679,7 @@ function SegmentacaoPage() {
                 )}
 
                 {!loading &&
-                  visible.map((c) => {
+                  pageRows.map((c) => {
                     const isOpen = expanded.has(c.id);
                     const denom = c.projection > 0 ? c.projection : 1;
                     const generationPct = (c.generation / denom) * 100;
@@ -676,7 +724,7 @@ function SegmentacaoPage() {
                           <tr key={`${c.id}-d`} className="bg-surface-2/30 border-b border-border/40">
                             <td colSpan={9} className="px-6 py-5">
                               <div className="grid md:grid-cols-4 gap-4">
-                                <Detail label="Projeção (mês)" value={fmt(c.projection)} />
+                                <Detail label={periodo === "tri" ? "Projeção (tri)" : "Projeção (mês)"} value={fmt(c.projection)} />
                                 <Detail label="Geração R$" value={fmt(c.generation)} sub={c.projection > 0 ? `${generationPct.toFixed(0)}% da projeção` : undefined} />
                                 <Detail label="Vendas R$" value={fmt(c.sales)} sub={c.projection > 0 ? `${salesPct.toFixed(0)}% da projeção` : undefined} />
                                 <Detail label="Saúde" value={`${c.health}/100`} />
@@ -761,7 +809,46 @@ function SegmentacaoPage() {
               </tbody>
             </table>
           </div>
+
+          {!loading && visible.length > 0 && (
+            <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-t border-border">
+              <div className="text-xs text-muted-foreground">
+                Exibindo {(pageSafe - 1) * pageSize + 1}–{Math.min(pageSafe * pageSize, visible.length)} de {visible.length}
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="px-2 py-1.5 rounded-md bg-surface border border-border text-xs"
+                >
+                  {[25, 50, 100].map((n) => (
+                    <option key={n} value={n}>
+                      {n} por página
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={pageSafe === 1}
+                  className="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface disabled:opacity-40 text-xs font-medium"
+                >
+                  ← Anterior
+                </button>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {pageSafe} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={pageSafe === totalPages}
+                  className="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface disabled:opacity-40 text-xs font-medium"
+                >
+                  Próxima →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
       </div>
 
       {detailClient && <ClientDetailModal client={detailClient} onClose={() => setDetailClient(null)} />}
