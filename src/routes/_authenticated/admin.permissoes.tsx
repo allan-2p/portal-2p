@@ -109,12 +109,12 @@ function PermissoesPage() {
           ...old,
           users: old.users.map((u: any) => {
             if (u.id !== v.user_id) return u;
-            const denied = u.denied.filter(
+            const granted = u.granted.filter(
               (d: any) => !(d.instance_id === v.instance_id && d.feature_key === v.feature_key),
             );
-            if (!v.allowed)
-              denied.push({ instance_id: v.instance_id, feature_key: v.feature_key });
-            return { ...u, denied };
+            if (v.allowed)
+              granted.push({ instance_id: v.instance_id, feature_key: v.feature_key });
+            return { ...u, granted };
           }),
         };
       });

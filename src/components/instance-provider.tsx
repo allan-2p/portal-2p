@@ -60,10 +60,11 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     return filt.length ? filt : ["solar"];
   }, [q.data]);
 
-  const denied = q.data?.denied ?? [];
-  const deniedSet = useMemo(
-    () => new Set(denied.map((d) => `${d.instance_id}::${d.feature_key}`)),
-    [denied],
+  const granted = q.data?.granted ?? [];
+  const isAdmin = q.data?.is_admin ?? false;
+  const grantedSet = useMemo(
+    () => new Set(granted.map((d) => `${d.instance_id}::${d.feature_key}`)),
+    [granted],
   );
 
   const [instance, setInstanceState] = useState<InstanceId>(() => readSavedInstance() ?? "solar");
@@ -94,10 +95,11 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     (key: FeatureKey) => {
       const meta = INSTANCES[instance];
       if (!meta.routes.includes(key)) return false;
-      if (deniedSet.has(`${instance}::${key}`)) return false;
-      return true;
+      if (isAdmin) return true;
+      // Default deny: só libera com permissão explícita.
+      return grantedSet.has(`${instance}::${key}`);
     },
-    [instance, deniedSet],
+    [instance, grantedSet, isAdmin],
   );
 
   const isRouteAllowed = useCallback(
@@ -117,12 +119,12 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
   const defaultRoute = useMemo(() => {
     const meta = INSTANCES[instance];
     const first = meta.routes.find(
-      (k) => !deniedSet.has(`${instance}::${k}`),
+      (k) => isAdmin || grantedSet.has(`${instance}::${k}`),
     );
     if (!first) return "/perfil";
     const entry = Object.entries(ROUTE_FEATURE).find(([, v]) => v === first);
     return entry?.[0] ?? "/perfil";
-  }, [instance, deniedSet]);
+  }, [instance, grantedSet, isAdmin]);
 
   const value: Ctx = {
     instance,
