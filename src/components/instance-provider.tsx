@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getMyAccess } from "@/lib/access.functions";
 import { useAuth } from "@/hooks/use-auth";
+import { useSimulation } from "@/components/simulation";
 import {
   INSTANCES,
   type InstanceId,
@@ -54,16 +55,21 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     refetchOnWindowFocus: false,
   });
 
+  // Modo simulador: quando um admin está simulando outro usuário,
+  // todo o portal passa a enxergar as permissões desse usuário.
+  const sim = useSimulation();
+  const effective = sim.target ? sim.access : q.data;
+
   const allowed: InstanceId[] = useMemo(() => {
-    const list = (q.data?.instances ?? []) as string[];
+    const list = (effective?.instances ?? []) as string[];
     const filt = list.filter((v): v is InstanceId => v === "solar" || v === "carregadores" || v === "marketing");
     return filt.length ? filt : ["solar"];
-  }, [q.data]);
+  }, [effective]);
 
-  const granted = q.data?.granted ?? [];
-  const isAdmin = q.data?.is_admin ?? false;
+  const granted = effective?.granted ?? [];
+  const isAdmin = effective?.is_admin ?? false;
   const grantedSet = useMemo(
-    () => new Set(granted.map((d) => `${d.instance_id}::${d.feature_key}`)),
+    () => new Set(granted.map((d: { instance_id: string; feature_key: string }) => `${d.instance_id}::${d.feature_key}`)),
     [granted],
   );
 
@@ -133,7 +139,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     hasFeature,
     isRouteAllowed,
     defaultRoute,
-    loading: authLoading || (!!user && q.isLoading),
+    loading: authLoading || (!!user && q.isLoading) || sim.loading,
   };
   return <InstanceContext.Provider value={value}>{children}</InstanceContext.Provider>;
 }
