@@ -715,11 +715,10 @@ function SegmentacaoPage() {
                         {isOpen && (
                           <tr key={`${c.id}-d`} className="bg-surface-2/30 border-b border-border/40">
                             <td colSpan={8} className="px-6 py-5">
-                              <div className="grid md:grid-cols-4 gap-4">
+                              <div className="grid md:grid-cols-3 gap-4">
                                 <Detail label={periodo === "tri" ? "Projeção (tri)" : "Projeção (mês)"} value={fmt(c.projection)} />
                                 <Detail label="Geração R$" value={fmt(c.generation)} sub={c.projection > 0 ? `${generationPct.toFixed(0)}% da projeção` : undefined} />
                                 <Detail label="Vendas R$" value={fmt(c.sales)} sub={c.projection > 0 ? `${salesPct.toFixed(0)}% da projeção` : undefined} />
-                                <Detail label="Saúde" value={`${c.health}/100`} />
                               </div>
                               <div className="mt-4 p-3 rounded-lg bg-background/60 border border-border">
                                 <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
