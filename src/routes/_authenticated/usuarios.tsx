@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
-import { VendedoresPanel } from "@/components/vendedores-panel";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/hooks/use-auth";
 import {
@@ -18,7 +19,15 @@ import {
   syncAllSalesforcePhotos,
   type SFCandidate,
 } from "@/lib/users.functions";
-import { adminSetUserScope, adminSetUserSfId, type FilterScope } from "@/lib/scope.functions";
+import { listSalespeopleForAdmin, setSalespersonVisibility } from "@/lib/admin.functions";
+import {
+  adminSetUserScope,
+  adminSetUserSfId,
+  listSfTeams,
+  adminSetSfTeam,
+  type FilterScope,
+  type SFTeam,
+} from "@/lib/scope.functions";
 import { toast } from "sonner";
 
 import {
