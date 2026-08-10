@@ -54,6 +54,7 @@ type Row = {
   totais: Record<string, number>;
   status: string;
   created_at: string;
+  created_by: string | null;
 };
 
 const STATUS = ["Salvo", "Enviada", "Aprovada", "Perdida"] as const;
@@ -69,7 +70,9 @@ function HistoricoCpoPage() {
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
+  const [vendedor, setVendedor] = useState("__all__");
   const [detalhe, setDetalhe] = useState<Row | null>(null);
+  const vend = useCpoVendedores();
 
   const q = useQuery({
     queryKey: ["cpo-proposals"],
@@ -95,10 +98,13 @@ function HistoricoCpoPage() {
   const filtered = rows.filter((r) => {
     if (status !== "todos" && r.status !== status) return false;
     if (uf !== "todos" && r.uf !== uf) return false;
+    if (!vend.matches(vendedor, r.created_by)) return false;
     const t = busca.trim().toLowerCase();
     if (t && !`${r.cliente_nome} ${r.numero ?? ""}`.toLowerCase().includes(t)) return false;
     return true;
   });
+
+
 
 
   async function alterarStatus(id: string, novo: string) {
