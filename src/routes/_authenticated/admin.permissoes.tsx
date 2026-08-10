@@ -267,6 +267,72 @@ function PermissoesPage() {
           </div>
         </div>
 
+        {newFeatures.length > 0 && (
+          <div className="glass rounded-xl p-4 border border-amber-500/40 bg-amber-500/5">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex items-start gap-2">
+                <Sparkles className="h-5 w-5 text-amber-500 mt-0.5" />
+                <div>
+                  <div className="font-semibold">
+                    {newFeatures.length} nova(s) tela(s) detectada(s) — bloqueadas por padrão
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-0.5">
+                    Novas telas entram sem acesso para os usuários (exceto administradores).
+                    Libere com um clique ou ajuste individualmente abaixo.
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {newFeatures.map((f) => (
+                      <Badge
+                        key={`${f.instance}:${f.feature}`}
+                        variant="outline"
+                        className="text-[11px] border-amber-500/40"
+                      >
+                        {INSTANCES[f.instance].label} · {f.label}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  disabled={bulkMut.isPending}
+                  onClick={() => {
+                    const byInstance = new Map<InstanceId, FeatureKey[]>();
+                    for (const f of newFeatures) {
+                      byInstance.set(f.instance, [
+                        ...(byInstance.get(f.instance) ?? []),
+                        f.feature,
+                      ]);
+                    }
+                    for (const [instance_id, feature_keys] of byInstance) {
+                      const ids = users
+                        .filter((u) => !u.is_admin && u.instances.includes(instance_id))
+                        .map((u) => u.id);
+                      if (ids.length === 0) continue;
+                      bulkMut.mutate({
+                        user_ids: ids,
+                        instance_id,
+                        feature_keys,
+                        allowed: true,
+                        grant_instance: false,
+                      });
+                    }
+                    markSeen();
+                  }}
+                >
+                  <Unlock className="h-4 w-4 mr-1.5" /> Liberar para quem já tem a instância
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => markSeen()}>
+                  Marcar como visto
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+
         {q.isLoading ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando…
