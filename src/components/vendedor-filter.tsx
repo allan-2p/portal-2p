@@ -9,14 +9,14 @@ export function VendedorFilter({
   value,
   onChange,
   allowedIds,
-  multiple = false,
+  multiple = true,
 }: {
   /** Um id, "all", ou vários ids separados por vírgula quando `multiple`. */
   value: string;
   onChange: (v: string) => void;
   /** Restrição adicional imposta pela tela (ex: Segmentação). Interseção com o escopo do usuário. */
   allowedIds?: string[];
-  /** Permite selecionar vários vendedores ao mesmo tempo. */
+  /** Permite selecionar vários vendedores ao mesmo tempo (padrão). */
   multiple?: boolean;
 }) {
   const { query: scopeQ, scope, ready: scopeReady } = useSellerScope();
