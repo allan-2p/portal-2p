@@ -15,6 +15,18 @@ import {
 const STORAGE_KEY = "portal2p-instance";
 const MKT_UNIT_KEY = "portal2p-marketing-unit";
 
+// Home de cada instância — página inicial padrão de qualquer usuário.
+const HOME_FEATURE: Record<InstanceId, FeatureKey> = {
+  solar: "home",
+  carregadores: "cpo.home",
+  marketing: "marketing.home",
+};
+const HOME_ROUTE: Record<InstanceId, string> = {
+  solar: "/",
+  carregadores: "/carregadores",
+  marketing: "/marketing",
+};
+
 export type MarketingUnit = "solar" | "carregadores" | "station";
 
 function readMarketingUnit(): MarketingUnit {
@@ -102,6 +114,8 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
       const meta = INSTANCES[instance];
       if (!meta.routes.includes(key)) return false;
       if (isAdmin) return true;
+      // A home da instância é sempre acessível — é a página inicial de todo usuário.
+      if (HOME_FEATURE[instance] === key) return true;
       // Default deny: só libera com permissão explícita.
       return grantedSet.has(`${instance}::${key}`);
     },
@@ -120,17 +134,8 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     [hasFeature],
   );
 
-  // Rota inicial válida da instância — usada para redirecionar
-  // quando o usuário está numa rota que a instância não permite.
-  const defaultRoute = useMemo(() => {
-    const meta = INSTANCES[instance];
-    const first = meta.routes.find(
-      (k) => isAdmin || grantedSet.has(`${instance}::${k}`),
-    );
-    if (!first) return "/perfil";
-    const entry = Object.entries(ROUTE_FEATURE).find(([, v]) => v === first);
-    return entry?.[0] ?? "/perfil";
-  }, [instance, grantedSet, isAdmin]);
+  // Página inicial: sempre a home da instância ativa.
+  const defaultRoute = useMemo(() => HOME_ROUTE[instance] ?? "/", [instance]);
 
   const value: Ctx = {
     instance,
