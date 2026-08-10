@@ -281,7 +281,7 @@ function UsuariosPage() {
 
         {tab === "portal" ? (
           <PortalTable
-            rows={rows}
+            rows={visibleRows}
             loading={loading}
             currentUserId={user?.id}
             onRoleChange={handleRoleChange}
