@@ -255,7 +255,6 @@ function UsuariosPage() {
           {[
             { id: "portal", label: "Usuários do portal" },
             { id: "salesforce", label: "Sincronizar com Salesforce" },
-            { id: "vendedores", label: "Vendedores" },
           ].map((t) => (
             <button
               key={t.id}
