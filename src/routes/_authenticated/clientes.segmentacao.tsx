@@ -196,13 +196,25 @@ function SegmentacaoPage() {
   });
 
   const qVendidoMes = useQuery({
-    queryKey: ["sf-vendido-mes", "seg"],
-    queryFn: () => fetchVendidoMes({ data: OPP_DEFAULTS_VENDIDO_MES }),
+    queryKey: ["sf-vendido", "seg", periodo],
+    queryFn: () =>
+      fetchVendidoMes({
+        data: {
+          ...OPP_DEFAULTS_VENDIDO_MES,
+          dateLiteral: periodo === "tri" ? "THIS_QUARTER" : "THIS_MONTH",
+        },
+      }),
     staleTime: 60_000,
   });
   const qGeradoMes = useQuery({
-    queryKey: ["sf-gerado-mes", "seg"],
-    queryFn: () => fetchVendidoMes({ data: OPP_DEFAULTS_GERADO_MES }),
+    queryKey: ["sf-gerado", "seg", periodo],
+    queryFn: () =>
+      fetchVendidoMes({
+        data: {
+          ...OPP_DEFAULTS_GERADO_MES,
+          dateLiteral: periodo === "tri" ? "THIS_QUARTER" : "THIS_MONTH",
+        },
+      }),
     staleTime: 60_000,
   });
   const qPedidos = useQuery({
