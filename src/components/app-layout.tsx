@@ -452,10 +452,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <div className="relative">
                   <button
                     onClick={() => setAdminMenuOpen((v) => !v)}
-                    className="h-9 w-9 rounded-lg border border-border bg-surface hover:bg-surface-2 flex items-center justify-center"
-                    title="Configurações de administrador"
+                    className="h-9 w-9 rounded-lg border border-border bg-surface hover:bg-surface-2 flex items-center justify-center relative"
+                    title={
+                      newFeatures.length > 0
+                        ? `${newFeatures.length} nova(s) tela(s) bloqueada(s) por padrão`
+                        : "Configurações de administrador"
+                    }
                   >
                     <Settings2 className="h-4 w-4" />
+                    {newFeatures.length > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-amber-500 text-[10px] font-bold text-black flex items-center justify-center">
+                        {newFeatures.length}
+                      </span>
+                    )}
                   </button>
                   {adminMenuOpen && (
                     <>
