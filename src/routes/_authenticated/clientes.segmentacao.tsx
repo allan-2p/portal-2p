@@ -699,14 +699,6 @@ function SegmentacaoPage() {
                           <td className="px-4 py-3 text-right tabular-nums">{fmt(c.projection)}</td>
                           <td className="px-4 py-3 text-right tabular-nums">{c.generation > 0 ? fmt(c.generation) : "—"}</td>
                           <td className="px-4 py-3 text-right tabular-nums">{c.sales > 0 ? fmt(c.sales) : "—"}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2 justify-center">
-                              <div className="w-20 h-1.5 rounded-full bg-surface-2 overflow-hidden">
-                                <div className={cn("h-full", c.health > 70 ? "bg-success" : c.health > 40 ? "bg-warning" : "bg-destructive")} style={{ width: `${c.health}%` }} />
-                              </div>
-                              <span className="text-xs text-muted-foreground w-6">{c.health}</span>
-                            </div>
-                          </td>
                           <td className="px-2">
                             <button
                               onClick={(e) => {
