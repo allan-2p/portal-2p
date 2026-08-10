@@ -129,6 +129,14 @@ function UsuariosPage() {
     if (!authLoading) load();
   }, [authLoading]);
 
+  // Cada instância mostra apenas os usuários da organização correspondente.
+  const visibleRows = useMemo(() => {
+    if (instance === "solar") return rows.filter((r) => r.organizacao === "solar");
+    if (instance === "carregadores") return rows.filter((r) => r.organizacao === "carregadores");
+    return rows;
+  }, [rows, instance]);
+
+
 
   if (authLoading) {
     return (
