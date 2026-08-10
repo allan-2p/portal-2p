@@ -649,7 +649,7 @@ function SegmentacaoPage() {
                   <SortableTh label={periodo === "tri" ? "Projeção / tri" : "Projeção / mês"} k="projection" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                   <SortableTh label="Geração R$" k="generation" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
                   <SortableTh label="Vendas R$" k="sales" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
-                  <SortableTh label="Saúde" k="health" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" />
+                  
                   <th className="w-10"></th>
                 </tr>
               </thead>
