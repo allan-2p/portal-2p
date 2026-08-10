@@ -270,9 +270,7 @@ function UsuariosPage() {
           ))}
         </div>
 
-        {tab === "vendedores" ? (
-          <VendedoresPanel />
-        ) : tab === "portal" ? (
+        {tab === "portal" ? (
           <PortalTable
             rows={rows}
             loading={loading}
