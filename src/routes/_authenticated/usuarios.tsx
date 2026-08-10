@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
-import { VendedoresPanel } from "@/components/vendedores-panel";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/hooks/use-auth";
 import {
@@ -18,7 +19,15 @@ import {
   syncAllSalesforcePhotos,
   type SFCandidate,
 } from "@/lib/users.functions";
-import { adminSetUserScope, adminSetUserSfId, type FilterScope } from "@/lib/scope.functions";
+import { listSalespeopleForAdmin, setSalespersonVisibility } from "@/lib/admin.functions";
+import {
+  adminSetUserScope,
+  adminSetUserSfId,
+  listSfTeams,
+  adminSetSfTeam,
+  type FilterScope,
+  type SFTeam,
+} from "@/lib/scope.functions";
 import { toast } from "sonner";
 
 import {
@@ -65,7 +74,7 @@ const SCOPES: { id: FilterScope; label: string }[] = [
   { id: "individual", label: "Individual" },
 ];
 
-type Tab = "portal" | "salesforce" | "vendedores";
+type Tab = "portal" | "salesforce";
 
 
 function UsuariosPage() {
@@ -255,7 +264,6 @@ function UsuariosPage() {
           {[
             { id: "portal", label: "Usuários do portal" },
             { id: "salesforce", label: "Sincronizar com Salesforce" },
-            { id: "vendedores", label: "Vendedores" },
           ].map((t) => (
             <button
               key={t.id}
@@ -271,9 +279,7 @@ function UsuariosPage() {
           ))}
         </div>
 
-        {tab === "vendedores" ? (
-          <VendedoresPanel />
-        ) : tab === "portal" ? (
+        {tab === "portal" ? (
           <PortalTable
             rows={rows}
             loading={loading}
@@ -381,6 +387,53 @@ function PortalTable({
     }
   }
 
+  const qc = useQueryClient();
+  const fetchTeams = useServerFn(listSfTeams);
+  const setTeamFn = useServerFn(adminSetSfTeam);
+  const fetchSalespeople = useServerFn(listSalespeopleForAdmin);
+  const setVisibility = useServerFn(setSalespersonVisibility);
+
+  const teamsQ = useQuery({
+    queryKey: ["sf-teams"],
+    queryFn: () => fetchTeams(),
+    staleTime: 60_000,
+  });
+  const spQ = useQuery({
+    queryKey: ["admin-salespeople"],
+    queryFn: () => fetchSalespeople(),
+    staleTime: 60_000,
+  });
+
+  const teamMap = useMemo(() => {
+    const m = new Map<string, SFTeam>();
+    for (const t of teamsQ.data?.rows ?? []) m.set(t.sf_user_id, t.team);
+    return m;
+  }, [teamsQ.data]);
+
+  const hiddenMap = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const p of spQ.data?.records ?? []) m.set(p.id, p.hidden);
+    return m;
+  }, [spQ.data]);
+
+  const teamMut = useMutation({
+    mutationFn: (v: { sf_user_id: string; team: SFTeam | null }) => setTeamFn({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sf-teams"] });
+      qc.invalidateQueries({ queryKey: ["my-scope"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar equipe"),
+  });
+
+  const visMut = useMutation({
+    mutationFn: (v: { sf_user_id: string; hidden: boolean }) => setVisibility({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-salespeople"] });
+      qc.invalidateQueries({ queryKey: ["sf-salespeople"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+  });
+
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       <table className="w-full text-sm">
@@ -396,6 +449,8 @@ function PortalTable({
 
             <th className="text-left px-4 py-3 font-medium">Escopo do filtro</th>
             <th className="text-left px-4 py-3 font-medium">ID Salesforce</th>
+            <th className="text-left px-4 py-3 font-medium">Equipe de vendas</th>
+            <th className="text-center px-4 py-3 font-medium">Aparece nos filtros</th>
             <th className="text-left px-4 py-3 font-medium">Status</th>
             <th className="px-4 py-3"></th>
           </tr>
@@ -404,13 +459,13 @@ function PortalTable({
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={11} className="text-center py-10 text-muted-foreground">
+              <td colSpan={13} className="text-center py-10 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin inline" />
               </td>
             </tr>
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={11} className="text-center py-10 text-muted-foreground">
+              <td colSpan={13} className="text-center py-10 text-muted-foreground">
                 Nenhum usuário ainda.
               </td>
             </tr>
@@ -495,6 +550,42 @@ function PortalTable({
                   />
 
                 </td>
+
+                <td className="px-4 py-3">
+                  {r.sf_user_id ? (
+                    <select
+                      value={teamMap.get(r.sf_user_id) ?? ""}
+                      onChange={(e) =>
+                        teamMut.mutate({
+                          sf_user_id: r.sf_user_id!,
+                          team: (e.target.value || null) as SFTeam | null,
+                        })
+                      }
+                      disabled={teamMut.isPending}
+                      className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                    >
+                      <option value="">—</option>
+                      <option value="pre_vendas">Pré Vendas</option>
+                      <option value="carteira">Carteira</option>
+                    </select>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  {r.sf_user_id ? (
+                    <Switch
+                      checked={!(hiddenMap.get(r.sf_user_id) ?? false)}
+                      disabled={visMut.isPending || spQ.isLoading}
+                      onCheckedChange={(v) =>
+                        visMut.mutate({ sf_user_id: r.sf_user_id!, hidden: !v })
+                      }
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </td>
+
 
                 <td className="px-4 py-3">
                   <span
