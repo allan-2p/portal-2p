@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
+import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
+import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   head: () => ({
@@ -46,6 +48,7 @@ type Pedido = {
   value: number;
   status: PedidoStatus;
   uf: string;
+  created_by: string | null;
 };
 
 function datePtBr(iso: string | null) {
@@ -56,13 +59,15 @@ function datePtBr(iso: string | null) {
 function CpoPedidosPage() {
   const [view, setView] = useState<"kanban" | "list">("kanban");
   const [search, setSearch] = useState("");
+  const [vendedor, setVendedor] = useState("__all__");
+  const vend = useCpoVendedores();
 
   const q = useQuery({
     queryKey: ["cpo-pedidos"],
     queryFn: async (): Promise<Pedido[]> => {
       const { data, error } = await supabase
         .from("cpo_proposals")
-        .select("id,numero,cliente_nome,uf,status,totais,created_at")
+        .select("id,numero,cliente_nome,uf,status,totais,created_at,created_by")
         .in("status", PEDIDO_STATUS as unknown as string[])
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -77,6 +82,7 @@ function CpoPedidosPage() {
           value: Number(totais.valorTotal ?? 0),
           status: r.status as PedidoStatus,
           uf: r.uf,
+          created_by: r.created_by ?? null,
         };
       });
     },
@@ -87,6 +93,7 @@ function CpoPedidosPage() {
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     return (q.data ?? [])
+      .filter((o) => vend.matches(vendedor, o.created_by))
       .filter((o) =>
         !s ||
         o.code.toLowerCase().includes(s) ||
@@ -94,7 +101,7 @@ function CpoPedidosPage() {
         o.client.toLowerCase().includes(s),
       )
       .sort((a, b) => b.value - a.value);
-  }, [search, q.data]);
+  }, [search, q.data, vendedor, vend]);
 
   async function alterarStatus(id: string, novo: PedidoStatus) {
     const { error } = await supabase.from("cpo_proposals").update({ status: novo }).eq("id", id);
@@ -121,6 +128,12 @@ function CpoPedidosPage() {
                 className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-64 focus:outline-none focus:border-primary/50"
               />
             </div>
+            <VendedorNamesFilter
+              value={vendedor}
+              onChange={setVendedor}
+              options={vend.names}
+              allLabel="Todos os vendedores"
+            />
             <div className="flex bg-surface rounded-lg p-1 border border-border">
               <button
                 onClick={() => setView("kanban")}

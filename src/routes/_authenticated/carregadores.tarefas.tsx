@@ -17,6 +17,8 @@ import { Check, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
+import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 
 export const Route = createFileRoute("/_authenticated/carregadores/tarefas")({
   head: () => ({
@@ -40,6 +42,7 @@ type Task = {
   due_date: string | null;
   prioridade: string;
   status: string;
+  owner_id: string | null;
 };
 
 const PRIOS = [
@@ -51,6 +54,8 @@ const PRIOS = [
 function CarregadoresTarefas() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"aberta" | "concluida" | "todas">("aberta");
+  const [vendedor, setVendedor] = useState("__all__");
+  const vend = useCpoVendedores();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ titulo: "", descricao: "", cliente_nome: "", due_date: "", prioridade: "media" });
 
@@ -59,7 +64,7 @@ function CarregadoresTarefas() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cpo_tasks")
-        .select("id,titulo,descricao,cliente_nome,due_date,prioridade,status")
+        .select("id,titulo,descricao,cliente_nome,due_date,prioridade,status,owner_id")
         .order("due_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return (data ?? []) as unknown as Task[];
@@ -67,8 +72,11 @@ function CarregadoresTarefas() {
   });
 
   const rows = useMemo(
-    () => tasks.filter((t) => (filter === "todas" ? true : t.status === filter)),
-    [tasks, filter],
+    () =>
+      tasks
+        .filter((t) => (filter === "todas" ? true : t.status === filter))
+        .filter((t) => vend.matches(vendedor, t.owner_id)),
+    [tasks, filter, vendedor, vend],
   );
 
   async function create() {
@@ -112,6 +120,12 @@ function CarregadoresTarefas() {
             <p className="text-sm text-muted-foreground">Agenda própria da unidade de carregadores.</p>
           </div>
           <div className="flex items-center gap-2">
+            <VendedorNamesFilter
+              value={vendedor}
+              onChange={setVendedor}
+              options={vend.names}
+              allLabel="Todos os vendedores"
+            />
             <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
               <SelectContent>

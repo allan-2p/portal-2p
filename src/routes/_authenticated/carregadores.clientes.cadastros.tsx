@@ -15,6 +15,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
+import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 import { Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
@@ -111,6 +113,7 @@ type Cliente = {
   observacoes: string | null;
   ativo: boolean;
   classificacao: string;
+  created_by?: string;
 };
 
 const vazio = (): Omit<Cliente, "id"> => ({
@@ -135,11 +138,13 @@ const soDigitos = (v: string) => v.replace(/\D/g, "");
 function CadastrosPage() {
   const qc = useQueryClient();
   const ufs = useCpoUfs().data ?? [];
+  const vend = useCpoVendedores();
   const [q, setQ] = useState("");
   const [fClasse, setFClasse] = useState<string>("todas");
   const [fUf, setFUf] = useState<string>("todas");
   const [fStatus, setFStatus] = useState<string>("ativos");
   const [fFiscal, setFFiscal] = useState<string>("todos");
+  const [fVendedor, setFVendedor] = useState<string>("__all__");
   const [ordem, setOrdem] = useState<OrdemKey>("cliente");
   const [dir, setDir] = useState<"asc" | "desc">("asc");
   const [pagina, setPagina] = useState(1);
@@ -210,13 +215,14 @@ function CadastrosPage() {
       if (fStatus === "inativos" && c.ativo) return false;
       if (fFiscal === "contribuinte" && !c.contribuinte) return false;
       if (fFiscal === "nao" && c.contribuinte) return false;
+      if (!vend.matches(fVendedor, c.created_by)) return false;
       if (!t) return true;
       const texto = [c.razao_social, c.nome_fantasia, c.doc, c.cidade, c.uf, c.email, c.contato_nome]
         .some((v) => (v ?? "").toLowerCase().includes(t));
       const doc = tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc);
       return texto || doc;
     });
-  }, [clientes, q, fClasse, fUf, fStatus, fFiscal]);
+  }, [clientes, q, fClasse, fUf, fStatus, fFiscal, fVendedor, vend]);
 
   const ordenados = useMemo(() => {
     const val = (c: Cliente) => {
@@ -248,7 +254,7 @@ function CadastrosPage() {
     () => Array.from(new Set(clientes.map((c) => c.uf).filter(Boolean))).sort(),
     [clientes],
   );
-  const filtrosAtivos = fClasse !== "todas" || fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || q.trim() !== "";
+  const filtrosAtivos = fClasse !== "todas" || fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || fVendedor !== "__all__" || q.trim() !== "";
   const limparFiltros = () => { setQ(""); setFClasse("todas"); setFUf("todas"); setFStatus("ativos"); setFFiscal("todos"); };
 
   const ordenarPor = (k: OrdemKey) => {
@@ -402,6 +408,12 @@ function CadastrosPage() {
                 <SelectItem value="todos">Todos</SelectItem>
               </SelectContent>
             </Select>
+            <VendedorNamesFilter
+              value={fVendedor}
+              onChange={setFVendedor}
+              options={vend.names}
+              allLabel="Todos os vendedores"
+            />
             {filtrosAtivos && (
               <Button variant="ghost" size="sm" className="gap-1" onClick={limparFiltros}>
                 <X className="h-3.5 w-3.5" /> Limpar

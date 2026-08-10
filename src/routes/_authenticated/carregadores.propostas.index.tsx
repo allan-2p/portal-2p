@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
 import { cn } from "@/lib/utils";
+import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
+import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
   head: () => ({
@@ -52,6 +54,7 @@ type Row = {
   totais: Record<string, number>;
   status: string;
   created_at: string;
+  created_by: string | null;
 };
 
 const STATUS = ["Salvo", "Enviada", "Aprovada", "Perdida"] as const;
@@ -67,7 +70,9 @@ function HistoricoCpoPage() {
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
+  const [vendedor, setVendedor] = useState("__all__");
   const [detalhe, setDetalhe] = useState<Row | null>(null);
+  const vend = useCpoVendedores();
 
   const q = useQuery({
     queryKey: ["cpo-proposals"],
@@ -93,10 +98,13 @@ function HistoricoCpoPage() {
   const filtered = rows.filter((r) => {
     if (status !== "todos" && r.status !== status) return false;
     if (uf !== "todos" && r.uf !== uf) return false;
+    if (!vend.matches(vendedor, r.created_by)) return false;
     const t = busca.trim().toLowerCase();
     if (t && !`${r.cliente_nome} ${r.numero ?? ""}`.toLowerCase().includes(t)) return false;
     return true;
   });
+
+
 
 
   async function alterarStatus(id: string, novo: string) {
@@ -155,6 +163,13 @@ function HistoricoCpoPage() {
               {ufs.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
             </SelectContent>
           </Select>
+          <VendedorNamesFilter
+            value={vendedor}
+            onChange={setVendedor}
+            options={vend.names}
+            allLabel="Todos os vendedores"
+          />
+
         </div>
 
         <div className="glass rounded-2xl overflow-hidden">
