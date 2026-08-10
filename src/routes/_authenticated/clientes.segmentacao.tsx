@@ -137,6 +137,9 @@ function SegmentacaoPage() {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [search, setSearch] = useState("");
   const [vendedor, setVendedor] = useState<string>("__all__");
+  const [periodo, setPeriodo] = useState<"mes" | "tri">("mes");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const baseRange = useMemo(previousQuarterRange, []);
 
