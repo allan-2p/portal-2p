@@ -234,6 +234,14 @@ export const adminApplyPermissionProfile = createServerFn({ method: "POST" })
       );
       if (error) throw new Error(error.message);
     }
+    await recordAudit(context, {
+      action: "profile",
+      instance_id: data.instance_id,
+      user_ids: [data.user_id],
+      feature_keys: data.feature_keys,
+      details: { label: "Perfil de permissão aplicado" },
+      before,
+    });
     return { ok: true, applied: data.feature_keys.length };
   });
 
