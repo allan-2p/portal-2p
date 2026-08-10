@@ -8,6 +8,7 @@ import {
   adminSetFeaturePermission,
   adminSetInstanceAccess,
   adminApplyPermissionProfile,
+  adminBulkSetFeaturePermissions,
 } from "@/lib/access.functions";
 
 import {
@@ -19,7 +20,7 @@ import {
 } from "@/lib/instances";
 import { useMemo, useState } from "react";
 import { PERMISSION_PROFILES, profileFeatures } from "@/lib/permission-profiles";
-import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye, Layers } from "lucide-react";
+import { Loader2, KeyRound, Search, ShieldCheck, Shield, Check, X, Users, Eye, Layers, CheckSquare, Square, Unlock, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -87,6 +88,10 @@ function PermissoesPage() {
   const [search, setSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeInstance, setActiveInstance] = useState<InstanceId>("solar");
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkUserIds, setBulkUserIds] = useState<string[]>([]);
+  const [bulkFeatures, setBulkFeatures] = useState<FeatureKey[]>([]);
+  const [bulkInstance, setBulkInstance] = useState<InstanceId>("solar");
 
   const users = q.data?.users ?? [];
   const filteredUsers = useMemo(() => {
@@ -160,6 +165,25 @@ function PermissoesPage() {
       toast.success(`Perfil aplicado: ${v.label}`);
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao aplicar perfil"),
+  });
+
+  const bulkFn = useServerFn(adminBulkSetFeaturePermissions);
+  const bulkMut = useMutation({
+    mutationFn: (v: {
+      user_ids: string[];
+      instance_id: InstanceId;
+      feature_keys: FeatureKey[];
+      allowed: boolean;
+      grant_instance: boolean;
+    }) => bulkFn({ data: v }),
+    onSuccess: (_r, v) => {
+      qc.invalidateQueries({ queryKey: ["admin-access-matrix"] });
+      qc.invalidateQueries({ queryKey: ["my-access"] });
+      toast.success(
+        `${v.allowed ? "Liberadas" : "Bloqueadas"} ${v.feature_keys.length} funcionalidade(s) para ${v.user_ids.length} usuário(s)`,
+      );
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro na edição em massa"),
   });
 
   const accessMut = useMutation({
