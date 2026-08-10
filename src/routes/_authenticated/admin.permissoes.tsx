@@ -328,6 +328,48 @@ function PermissoesPage() {
                     </div>
                   </div>
 
+                  {/* Acesso por instância */}
+                  <div className="glass rounded-xl p-4">
+                    <div className="text-sm font-semibold flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" /> Acesso às instâncias
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      Defina quais instâncias este usuário pode acessar.
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 mt-3">
+                      {(Object.values(INSTANCES) as InstanceMeta[]).map((i) => {
+                        const has = selectedUser.instances.includes(i.id);
+                        return (
+                          <label
+                            key={i.id}
+                            className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-border/60 bg-surface-2/40 cursor-pointer"
+                          >
+                            <span className="flex items-center gap-2 text-sm truncate">
+                              <span
+                                className="h-2.5 w-2.5 rounded-sm"
+                                style={{ background: i.swatch }}
+                              />
+                              {i.label}
+                            </span>
+                            <Switch
+                              checked={has}
+                              disabled={accessMut.isPending}
+                              onCheckedChange={(v) =>
+                                accessMut.mutate({
+                                  user_id: selectedUser.id,
+                                  instance_id: i.id,
+                                  allowed: v,
+                                })
+                              }
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+
+
                   {/* Cartão de permissões */}
                   <div className="glass rounded-xl overflow-hidden">
                     <div className="p-4 border-b border-border/60 flex items-center justify-between flex-wrap gap-3">
