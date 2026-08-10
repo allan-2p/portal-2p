@@ -147,9 +147,6 @@ function RootComponent() {
       if (event === "SIGNED_IN" && uid && lastUserId !== uid) {
         void logUserActivity({ data: { event: "login" } }).catch(() => {});
       }
-      if (event === "SIGNED_OUT" && lastUserId) {
-        void logUserActivity({ data: { event: "logout" } }).catch(() => {});
-      }
       lastUserId = uid;
     });
     return () => data.subscription.unsubscribe();

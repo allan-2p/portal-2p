@@ -12,6 +12,7 @@ import { INSTANCES, featureForPath, instanceForFeature, type FeatureKey } from "
 import { SCREENS, type ScreenKey } from "@/lib/view-screens";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { logUserActivity } from "@/lib/activity.functions";
 import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { useSalesforceNotifications } from "@/hooks/use-salesforce-notifications";
@@ -110,6 +111,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     .split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
   async function handleSignOut() {
+    await logUserActivity({ data: { event: "logout" } }).catch(() => {});
     await supabase.auth.signOut();
     navigate({ to: "/auth" });
   }
