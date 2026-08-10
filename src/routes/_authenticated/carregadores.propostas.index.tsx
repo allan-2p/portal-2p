@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
 import { cn } from "@/lib/utils";
+import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
+import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
   head: () => ({
