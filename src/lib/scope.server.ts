@@ -40,15 +40,24 @@ export async function resolveSalesforceOwnerFilter(
   requestedOwnerId?: string | null,
 ): Promise<SalesforceOwnerFilter> {
   const scope = await getScopeForUser(supabase, userId);
-  const requested = validSalesforceId(requestedOwnerId) ? requestedOwnerId!.trim() : null;
+  // Aceita 1 id ou vários separados por vírgula (multi-seleção de vendedores).
+  const requestedIds = Array.from(
+    new Set(
+      (requestedOwnerId ?? "")
+        .split(",")
+        .map((v) => v.trim())
+        .filter((v) => validSalesforceId(v)),
+    ),
+  );
 
   if (scope.scope === "geral") {
-    return requested ? { kind: "ids", ids: [requested] } : { kind: "all" };
+    return requestedIds.length ? { kind: "ids", ids: requestedIds } : { kind: "all" };
   }
 
   const allowed = (scope.allowed_sf_ids ?? []).filter(validSalesforceId);
   if (allowed.length === 0) return { kind: "none" };
-  if (requested && allowed.includes(requested)) return { kind: "ids", ids: [requested] };
+  const inter = requestedIds.filter((id) => allowed.includes(id));
+  if (inter.length) return { kind: "ids", ids: inter };
   return { kind: "ids", ids: allowed };
 }
 
