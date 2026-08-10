@@ -472,19 +472,10 @@ function PortalTable({
           ) : (
             rows.map((r) => (
               <tr key={r.id} className="border-t border-border">
-                <td className="px-4 py-3 w-24">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onEdit(r)}
-                      className="p-1.5 rounded hover:bg-surface-2 text-muted-foreground hover:text-foreground shrink-0"
-                      title="Editar usuário"
-                      aria-label={`Editar ${r.full_name ?? r.email}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <AvatarCell row={r} onUploaded={onReload} />
-                  </div>
+                <td className="px-4 py-3 w-14">
+                  <AvatarCell row={r} onUploaded={onReload} />
                 </td>
+
 
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2 flex-wrap">
