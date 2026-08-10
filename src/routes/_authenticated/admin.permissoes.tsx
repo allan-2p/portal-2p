@@ -308,6 +308,21 @@ function PermissoesPage() {
                         )}
                       </div>
                       <div className="text-sm text-muted-foreground">{selectedUser.email}</div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-3 gap-2"
+                        onClick={() => {
+                          sim.start({
+                            id: selectedUser.id,
+                            name: selectedUser.full_name ?? selectedUser.email,
+                          });
+                          navigate({ to: "/" });
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                        Simular este usuário
+                      </Button>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {(Object.values(INSTANCES) as InstanceMeta[]).map((i) => {
