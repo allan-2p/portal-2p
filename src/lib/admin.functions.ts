@@ -217,7 +217,10 @@ export const getMonthGoalTotal = createServerFn({ method: "POST" })
       .eq("year", data.year)
       .eq("month", data.month)
       .eq("active", true);
-    if (data.ownerId) q = q.eq("sf_user_id", data.ownerId);
+    if (data.ownerId) {
+      const ids = data.ownerId.split(",").map((v) => v.trim()).filter(Boolean);
+      q = ids.length > 1 ? q.in("sf_user_id", ids) : q.eq("sf_user_id", ids[0] ?? data.ownerId);
+    }
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const total = (rows ?? []).reduce(

@@ -136,6 +136,13 @@ function HomePage() {
   const [oppsAgeFilter, setOppsAgeFilter] = useState<AgeKey>("all");
 
   const { ownerId, setOwnerId, ownerParam, dataEnabled } = useScopedOwner("all");
+  // Multi-seleção de vendedores: ownerParam pode conter vários ids separados por vírgula.
+  const ownerIdSet = useMemo(
+    () => (ownerParam ? new Set(ownerParam.split(",").filter(Boolean)) : null),
+    [ownerParam],
+  );
+  const ownerMatch = (id: string | null | undefined) =>
+    !ownerIdSet || (!!id && ownerIdSet.has(id));
   const [agendaDate, setAgendaDate] = useState<Date>(() => startOfDay(new Date()));
   const [agendaOpen, setAgendaOpen] = useState(false);
   const [agendaSort, setAgendaSort] = useState<"priority" | "date">("date");
@@ -386,13 +393,13 @@ function HomePage() {
   const sold = useMemo(() => {
     const recs = vendidoMesQ.data?.records ?? [];
     return recs
-      .filter((r) => ownerParam == null || r.ownerId === ownerParam)
+      .filter((r) => ownerMatch(r.ownerId))
       .reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
   }, [vendidoMesQ.data, ownerParam]);
   const generated = useMemo(() => {
     const recs = geradoMesQ.data?.records ?? [];
     return recs
-      .filter((r) => ownerParam == null || r.ownerId === ownerParam)
+      .filter((r) => ownerMatch(r.ownerId))
       .reduce((a, r) => a + (r.total ?? r.amount ?? 0), 0);
   }, [geradoMesQ.data, ownerParam]);
 
@@ -423,8 +430,10 @@ function HomePage() {
 
   const goalSubject = useMemo(() => {
     if (ownerId === "all") return "O time está";
-    if (currentUserSfId && ownerId === currentUserSfId) return "Você está";
-    const sp = salespeople.find((p) => p.id === ownerId);
+    const ids = ownerId.split(",").filter(Boolean);
+    if (ids.length > 1) return `${ids.length} vendedores estão`;
+    if (currentUserSfId && ids[0] === currentUserSfId) return "Você está";
+    const sp = salespeople.find((p) => p.id === ids[0]);
     return `${sp?.name ?? "Vendedor"} está`;
   }, [ownerId, currentUserSfId, salespeople]);
 
@@ -436,7 +445,7 @@ function HomePage() {
     const recs = vendidoMesQ.data?.records ?? [];
     for (const r of recs) {
       if (!r.closeDate) continue;
-      if (ownerParam && r.ownerId !== ownerParam) continue;
+      if (!ownerMatch(r.ownerId)) continue;
       const [yr, mo, dd] = r.closeDate.split("-").map(Number);
       const k = `${yr}-${mo}-${dd}`;
       soldByKey.set(k, (soldByKey.get(k) ?? 0) + (r.total ?? r.amount ?? 0));
@@ -499,7 +508,7 @@ function HomePage() {
     const isWon = (stage: string | null | undefined) =>
       typeof stage === "string" && stage.trim().toLowerCase() === "pedido concluído";
     for (const r of coorteQ.data?.records ?? []) {
-      if (ownerParam && r.ownerId !== ownerParam) continue;
+      if (!ownerMatch(r.ownerId)) continue;
       if (!r.createdDate) continue;
       const [yr, mo] = r.createdDate.split("-").map(Number);
       const b = buckets.get(bkey(yr, mo - 1));
@@ -588,7 +597,7 @@ function HomePage() {
     const prevTotals = new Map<string, number>();
     const curTotals = new Map<string, number>();
     for (const r of vendasQuarterQ.data?.records ?? []) {
-      if (ownerParam && r.ownerId !== ownerParam) continue;
+      if (!ownerMatch(r.ownerId)) continue;
       const acc = r.accountId;
       if (!acc) continue;
       if (!r.closeDate) continue;
@@ -641,7 +650,7 @@ function HomePage() {
     const m = today.getMonth();
     const genByDay = new Map<number, number>();
     for (const r of geradoMesQ.data?.records ?? []) {
-      if (ownerParam && r.ownerId !== ownerParam) continue;
+      if (!ownerMatch(r.ownerId)) continue;
       if (!r.createdDate) continue;
       const [yr, mo, dd] = r.createdDate.split("-").map(Number);
       if (yr !== y || mo !== m + 1) continue;
@@ -758,7 +767,7 @@ function HomePage() {
           />
 
           <div className="flex items-center gap-2">
-            <VendedorFilter value={ownerId} onChange={setOwnerId} />
+            <VendedorFilter value={ownerId} onChange={setOwnerId} multiple />
             <Popover>
               <PopoverTrigger asChild>
                 <button

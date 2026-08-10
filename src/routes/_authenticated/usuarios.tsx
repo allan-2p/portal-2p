@@ -32,6 +32,12 @@ export const Route = createFileRoute("/_authenticated/usuarios")({
 });
 
 type Regime = "CLT" | "PJ";
+type Org = "solar" | "station" | "carregadores";
+const ORGS: { id: Org; label: string }[] = [
+  { id: "solar", label: "2P Solar" },
+  { id: "station", label: "Station" },
+  { id: "carregadores", label: "2P Carregadores" },
+];
 
 type Row = {
   id: string;
@@ -40,6 +46,7 @@ type Row = {
   cargo: string | null;
   equipe: string | null;
   regime_contratacao: Regime;
+  organizacao: Org;
   ativo: boolean;
   avatar_url: string | null;
   sf_user_id: string | null;
@@ -86,7 +93,7 @@ function UsuariosPage() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id,email,full_name,cargo,equipe,regime_contratacao,ativo,avatar_url,sf_user_id,is_external,filter_scope")
+      .select("id,email,full_name,cargo,equipe,regime_contratacao,organizacao,ativo,avatar_url,sf_user_id,is_external,filter_scope")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
     const byUser = new Map<string, AppRole[]>();
@@ -100,6 +107,7 @@ function UsuariosPage() {
         ...p,
         filter_scope: (p.filter_scope ?? "individual") as FilterScope,
         regime_contratacao: (p.regime_contratacao ?? "CLT") as Regime,
+        organizacao: (p.organizacao ?? "solar") as Org,
 
         roles: byUser.get(p.id) ?? [],
       })) as Row[],
@@ -187,6 +195,16 @@ function UsuariosPage() {
     }
   }
 
+  async function handleOrgChange(userId: string, organizacao: Org) {
+    try {
+      await updateFn({ data: { user_id: userId, organizacao } });
+      toast.success("Organização atualizada");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
   async function handleRegimeChange(userId: string, regime: Regime) {
     try {
       await updateFn({ data: { user_id: userId, regime_contratacao: regime } });
@@ -257,6 +275,7 @@ function UsuariosPage() {
             loading={loading}
             currentUserId={user?.id}
             onRoleChange={handleRoleChange}
+            onOrgChange={handleOrgChange}
             onToggle={handleToggle}
             onDelete={handleDelete}
             onReload={load}
@@ -326,12 +345,13 @@ function UsuariosPage() {
 }
 
 function PortalTable({
-  rows, loading, currentUserId, onRoleChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit,
+  rows, loading, currentUserId, onRoleChange, onOrgChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit,
 }: {
   rows: Row[];
   loading: boolean;
   currentUserId: string | undefined;
   onRoleChange: (id: string, r: AppRole) => void;
+  onOrgChange: (id: string, o: Org) => void;
   onToggle: (id: string, ativo: boolean) => void;
   onDelete: (id: string) => void;
   onReload: () => void;
@@ -367,6 +387,7 @@ function PortalTable({
             <th className="text-left px-4 py-3 font-medium">E-mail</th>
             <th className="text-left px-4 py-3 font-medium">Equipe</th>
             <th className="text-left px-4 py-3 font-medium">Papel</th>
+            <th className="text-left px-4 py-3 font-medium">Organização</th>
             <th className="text-left px-4 py-3 font-medium">Regime de contratação</th>
 
             <th className="text-left px-4 py-3 font-medium">Escopo do filtro</th>
@@ -379,13 +400,13 @@ function PortalTable({
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={10} className="text-center py-10 text-muted-foreground">
+              <td colSpan={11} className="text-center py-10 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin inline" />
               </td>
             </tr>
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={10} className="text-center py-10 text-muted-foreground">
+              <td colSpan={11} className="text-center py-10 text-muted-foreground">
                 Nenhum usuário ainda.
               </td>
             </tr>
@@ -426,6 +447,17 @@ function PortalTable({
                       <option key={role} value={role}>
                         {ROLE_LABELS[role]}
                       </option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-3">
+                  <select
+                    value={r.organizacao}
+                    onChange={(e) => onOrgChange(r.id, e.target.value as Org)}
+                    className="px-2 py-1 rounded-md bg-background border border-border text-xs"
+                  >
+                    {ORGS.map((o) => (
+                      <option key={o.id} value={o.id}>{o.label}</option>
                     ))}
                   </select>
                 </td>
@@ -783,6 +815,7 @@ function UserModal({
     equipe: "",
     password: "",
     regime_contratacao: "CLT" as Regime,
+    organizacao: "solar" as Org,
     role: "vendedor" as AppRole,
 
   });
@@ -804,6 +837,7 @@ function UserModal({
                     cargo: form.cargo || null,
                     equipe: form.equipe || null,
                     regime_contratacao: form.regime_contratacao,
+                    organizacao: form.organizacao,
                     role: form.role,
 
                   };
@@ -855,6 +889,17 @@ function UserModal({
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as AppRole })} className="input">
             {ROLES.map((r) => (
               <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Organização">
+          <select
+            value={form.organizacao}
+            onChange={(e) => setForm({ ...form, organizacao: e.target.value as Org })}
+            className="input"
+          >
+            {ORGS.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
             ))}
           </select>
         </Field>
@@ -985,6 +1030,7 @@ type EditPayload = {
   cargo: string | null;
   equipe: string | null;
   regime_contratacao: Regime;
+  organizacao: Org;
   is_external: boolean;
 
 };
@@ -1004,6 +1050,7 @@ function EditUserModal({
     cargo: row.cargo ?? "",
     equipe: row.equipe ?? "",
     regime_contratacao: row.regime_contratacao ?? "CLT",
+    organizacao: (row.organizacao ?? "solar") as Org,
     is_external: row.is_external,
   });
 
@@ -1022,6 +1069,7 @@ function EditUserModal({
               cargo: form.cargo || null,
               equipe: form.equipe || null,
               regime_contratacao: form.regime_contratacao,
+              organizacao: form.organizacao,
               is_external: form.is_external,
 
             });
@@ -1048,6 +1096,17 @@ function EditUserModal({
             <input value={form.equipe} onChange={(e) => setForm({ ...form, equipe: e.target.value })} className="input" />
           </Field>
         </div>
+        <Field label="Organização">
+          <select
+            value={form.organizacao}
+            onChange={(e) => setForm({ ...form, organizacao: e.target.value as Org })}
+            className="input"
+          >
+            {ORGS.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </select>
+        </Field>
         <Field label="Regime de contratação">
           <select
             value={form.regime_contratacao}
