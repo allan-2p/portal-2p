@@ -226,7 +226,46 @@ function CadastrosPage() {
               </tbody>
             </table>
           </div>
+
+          {!isLoading && filtered.length > 0 && (
+            <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-t border-border">
+              <div className="text-xs text-muted-foreground">
+                Exibindo {(pageSafe - 1) * pageSize + 1}–{Math.min(pageSafe * pageSize, filtered.length)} de {filtered.length} · mais recentes primeiro
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="px-2 py-1.5 rounded-md bg-surface border border-border text-xs"
+                >
+                  {[25, 50, 100].map((n) => (
+                    <option key={n} value={n}>
+                      {n} por página
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={pageSafe === 1}
+                  className="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface disabled:opacity-40 text-xs font-medium"
+                >
+                  ← Anterior
+                </button>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {pageSafe} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={pageSafe === totalPages}
+                  className="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface disabled:opacity-40 text-xs font-medium"
+                >
+                  Próxima →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
       </div>
 
       {viewing && (
