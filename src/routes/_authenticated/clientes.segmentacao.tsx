@@ -333,8 +333,9 @@ function SegmentacaoPage() {
 
   // ================ Combinação em Client[] ================
   const clients: Client[] = useMemo(() => {
+    const mult = periodo === "tri" ? 3 : 1;
     return projected.map((p) => {
-      const projection = Math.round(p.salesMonthly);
+      const projection = Math.round(p.salesMonthly * mult);
       const sales = Math.round(salesMesByAccount.get(p.account) ?? 0);
       const generation = Math.round(generationMesByAccount.get(p.account) ?? 0);
       const denom = projection > 0 ? projection : 1;
@@ -353,7 +354,7 @@ function SegmentacaoPage() {
         notes: notesByAccount.get(p.account),
       };
     });
-  }, [projected, salesMesByAccount, generationMesByAccount, notesByAccount]);
+  }, [projected, salesMesByAccount, generationMesByAccount, notesByAccount, periodo]);
 
   // Vendedores disponíveis (accountOwner das linhas de projeção),
   // filtrados pelo escopo do usuário logado.
