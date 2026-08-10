@@ -24,30 +24,39 @@ function getSecrets() {
 
 async function sfFetch(path: string, init?: RequestInit) {
   const { lovableKey, sfKey } = getSecrets();
-  const maxAttempts = 3;
+  const maxAttempts = 5;
   let lastErr: unknown = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const res = await fetch(`${GATEWAY_URL}${path}`, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        "X-Connection-Api-Key": sfKey,
-        "Content-Type": "application/json",
-        ...(init?.headers ?? {}),
-      },
-    });
-    const text = await res.text();
-    let body: any = null;
-    try { body = text ? JSON.parse(text) : null; } catch { body = text; }
-    if (res.ok) return body;
-    const retryable = res.status === 502 || res.status === 503 || res.status === 504 || res.status === 429;
-    const msg = typeof body === "object" ? JSON.stringify(body) : String(body);
-    lastErr = new Error(`Salesforce ${res.status}: ${msg}`);
-    if (!retryable || attempt === maxAttempts) throw lastErr;
-    await new Promise((r) => setTimeout(r, 400 * attempt));
+    try {
+      const res = await fetch(`${GATEWAY_URL}${path}`, {
+        ...init,
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": sfKey,
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {}),
+        },
+      });
+      const text = await res.text();
+      let body: any = null;
+      try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+      if (res.ok) return body;
+      const retryable = res.status >= 500 || res.status === 429 || res.status === 408;
+      const msg = typeof body === "object" ? JSON.stringify(body) : String(body);
+      lastErr = new Error(`Salesforce ${res.status}: ${msg}`);
+      if (!retryable || attempt === maxAttempts) throw lastErr;
+    } catch (err) {
+      // Network-level failure (connection reset) — also retryable
+      lastErr = err;
+      if (attempt === maxAttempts) throw lastErr;
+    }
+    // exponential backoff with jitter: ~0.6s, 1.2s, 2.4s, 4.8s
+    const delay = 600 * 2 ** (attempt - 1) + Math.random() * 250;
+    await new Promise((r) => setTimeout(r, delay));
   }
   throw lastErr;
 }
+
 
 
 // Escape single quotes for SOQL string literals
