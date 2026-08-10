@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Pencil, Eye, X, Building2, Calendar, User, FileText, Save, Plus, Phone, Globe, Loader2, AlertTriangle, Search } from "lucide-react";
+
 import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
 
@@ -28,6 +29,9 @@ function CadastrosPage() {
   const [overrides, setOverrides] = useState<Record<string, Partial<Row>>>({});
   const [segFilter, setSegFilter] = useState<"all" | "A" | "B" | "C" | "D" | "none">("all");
   const [ownerId, setOwnerId] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
 
   const fetchAccounts = useServerFn(getSalesforceAccounts);
   const { data, isLoading, error, refetch, isFetching } = useQuery({
@@ -38,21 +42,38 @@ function CadastrosPage() {
 
   const rows: Row[] = useMemo(() => {
     const base = data?.records ?? [];
-    return base.map((a) => ({ ...a, createdAtFmt: fmtDate(a.createdAt), ...(overrides[a.id] ?? {}) }));
+    return base
+      .map((a) => ({ ...a, createdAtFmt: fmtDate(a.createdAt), ...(overrides[a.id] ?? {}) }))
+      .sort((a, b) => {
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tb - ta;
+      });
   }, [data, overrides]);
 
-  const filtered = rows.filter((r) => {
-    if (segFilter === "none" && r.segment !== null) return false;
-    if (segFilter !== "all" && segFilter !== "none" && r.segment !== segFilter) return false;
-    if (ownerId !== "all" && r.ownerId !== ownerId) return false;
+  const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return true;
-    return (
-      r.name.toLowerCase().includes(s) ||
-      (r.cnpj ?? "").toLowerCase().includes(s) ||
-      (r.ownerName ?? "").toLowerCase().includes(s)
-    );
-  });
+    return rows.filter((r) => {
+      if (segFilter === "none" && r.segment !== null) return false;
+      if (segFilter !== "all" && segFilter !== "none" && r.segment !== segFilter) return false;
+      if (ownerId !== "all" && r.ownerId !== ownerId) return false;
+      if (!s) return true;
+      return (
+        r.name.toLowerCase().includes(s) ||
+        (r.cnpj ?? "").toLowerCase().includes(s) ||
+        (r.ownerName ?? "").toLowerCase().includes(s)
+      );
+    });
+  }, [rows, search, segFilter, ownerId]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageSafe = Math.min(page, totalPages);
+  const pageRows = filtered.slice((pageSafe - 1) * pageSize, pageSafe * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, segFilter, ownerId, pageSize]);
+
 
   const saveEdit = (id: string, patch: Partial<Row>) => {
     setOverrides((p) => ({ ...p, [id]: { ...(p[id] ?? {}), ...patch } }));
@@ -160,7 +181,7 @@ function CadastrosPage() {
                   </tr>
                 )}
                 {!isLoading &&
-                  filtered.map((r) => (
+                  pageRows.map((r) => (
                     <tr key={r.id} className="border-b border-border/40 hover:bg-surface-2/50">
                       <td className="px-4 py-3 font-medium">{r.name}</td>
                       <td className="px-4 py-3 text-muted-foreground tabular-nums">{r.cnpj ?? "—"}</td>
@@ -205,7 +226,46 @@ function CadastrosPage() {
               </tbody>
             </table>
           </div>
+
+          {!isLoading && filtered.length > 0 && (
+            <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-t border-border">
+              <div className="text-xs text-muted-foreground">
+                Exibindo {(pageSafe - 1) * pageSize + 1}–{Math.min(pageSafe * pageSize, filtered.length)} de {filtered.length} · mais recentes primeiro
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="px-2 py-1.5 rounded-md bg-surface border border-border text-xs"
+                >
+                  {[25, 50, 100].map((n) => (
+                    <option key={n} value={n}>
+                      {n} por página
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={pageSafe === 1}
+                  className="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface disabled:opacity-40 text-xs font-medium"
+                >
+                  ← Anterior
+                </button>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {pageSafe} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={pageSafe === totalPages}
+                  className="px-3 py-1.5 rounded-md bg-surface-2 hover:bg-surface disabled:opacity-40 text-xs font-medium"
+                >
+                  Próxima →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
       </div>
 
       {viewing && (
