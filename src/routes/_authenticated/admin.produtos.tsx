@@ -362,6 +362,22 @@ function ProdutosPage() {
             </SelectContent>
           </Select>
           <Select
+            value={permissao}
+            onValueChange={(v) => {
+              setPermissao(v);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Permissão" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as permissões</SelectItem>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
             value={status}
             onValueChange={(v) => {
               setStatus(v as typeof status);
