@@ -63,6 +63,7 @@ function ProdutosPage() {
 
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState("all");
+  const [permissao, setPermissao] = useState("all");
   const [status, setStatus] = useState<"ativos" | "inativos" | "todos">("ativos");
   const [audit, setAudit] = useState(false);
   const [showRuns, setShowRuns] = useState(false);
