@@ -38,6 +38,8 @@ import {
   type SalesforceOppRow,
 } from "@/lib/salesforce.functions";
 import { useSellerScope } from "@/hooks/use-seller-scope";
+import { FORMER_OWNER_NAMES } from "@/lib/salespeople";
+
 import {
   Select,
   SelectContent,
@@ -367,11 +369,13 @@ function SegmentacaoPage() {
     const set = new Set<string>();
     for (const p of projected) {
       if (!p.accountOwner) continue;
+      if (FORMER_OWNER_NAMES.has(p.accountOwner)) continue;
       if (allowedOwnerNames && !allowedOwnerNames.has(p.accountOwner)) continue;
       set.add(p.accountOwner);
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [projected, allowedOwnerNames]);
+
 
   const isIndividual = !scopeReady || scope?.scope === "individual";
 
