@@ -1128,7 +1128,6 @@ function AvatarCell({ row, onUploaded }: { row: Row; onUploaded: () => void }) {
         className="absolute inset-0 rounded-full bg-black/55 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity disabled:opacity-100"
         aria-label="Trocar foto"
         title="Trocar foto"
-        aria-label="Trocar foto"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
       </button>
