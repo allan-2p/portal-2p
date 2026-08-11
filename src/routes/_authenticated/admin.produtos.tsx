@@ -14,8 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { listSapProdutos, syncSapProdutos } from "@/lib/sap-produtos.functions";
-import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle } from "lucide-react";
+import { listSapProdutos, listSapSyncRuns, syncSapProdutos } from "@/lib/sap-produtos.functions";
+import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2 } from "lucide-react";
 import {
   classificarDetalhado,
   validarRegras,
@@ -47,16 +47,25 @@ function fmt(d: string | null) {
   return new Date(d).toLocaleString("pt-BR");
 }
 
+function duracao(inicio: string, fim: string | null) {
+  if (!fim) return "—";
+  const ms = new Date(fim).getTime() - new Date(inicio).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "—";
+  return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`;
+}
+
 const PAGE_SIZES = [10, 25, 50, 100];
 
 function ProdutosPage() {
   const list = useServerFn(listSapProdutos);
   const sync = useServerFn(syncSapProdutos);
+  const listRuns = useServerFn(listSapSyncRuns);
 
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState("all");
   const [status, setStatus] = useState<"ativos" | "inativos" | "todos">("ativos");
   const [audit, setAudit] = useState(false);
+  const [showRuns, setShowRuns] = useState(false);
   const [soDivergentes, setSoDivergentes] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -66,15 +75,22 @@ function ProdutosPage() {
     queryFn: () => list({}),
   });
 
+  const runsQuery = useQuery({
+    queryKey: ["sap-sync-runs"],
+    queryFn: () => listRuns({}),
+  });
+
   const syncMut = useMutation({
     mutationFn: () => sync({}),
     onSuccess: (r) => {
       toast.success(`Sincronização concluída: ${r.inserted} novos, ${r.updated} atualizados.`);
       refetch();
+      runsQuery.refetch();
     },
     onError: (e: any) => {
       toast.error(String(e?.message ?? e));
       refetch();
+      runsQuery.refetch();
     },
   });
 
@@ -139,6 +155,14 @@ function ProdutosPage() {
               <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
             </Button>
             <Button
+              variant={showRuns ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowRuns((v) => !v)}
+            >
+              <History className="h-4 w-4 mr-2" />
+              Histórico
+            </Button>
+            <Button
               variant={audit ? "default" : "outline"}
               size="sm"
               onClick={() => setAudit((v) => !v)}
@@ -180,6 +204,79 @@ function ProdutosPage() {
             </>
           ) : null}
         </div>
+
+        {showRuns && (
+          <div className="border border-border rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+              <span>Histórico de sincronizações (SAP)</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => runsQuery.refetch()}
+                disabled={runsQuery.isFetching}
+                aria-label="Atualizar histórico de sincronizações"
+              >
+                <RefreshCw className={runsQuery.isFetching ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
+              </Button>
+            </div>
+            <table className="w-full text-sm">
+              <thead className="text-xs uppercase tracking-wide text-muted-foreground border-b border-border">
+                <tr>
+                  <th className="text-left px-3 py-2">Início</th>
+                  <th className="text-left px-3 py-2">Fim</th>
+                  <th className="text-left px-3 py-2">Duração</th>
+                  <th className="text-left px-3 py-2">Status</th>
+                  <th className="text-right px-3 py-2">Inseridos</th>
+                  <th className="text-right px-3 py-2">Atualizados</th>
+                  <th className="text-left px-3 py-2">Erro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {runsQuery.isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin inline" />
+                    </td>
+                  </tr>
+                ) : (runsQuery.data?.runs ?? []).length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">
+                      Nenhuma sincronização registrada ainda.
+                    </td>
+                  </tr>
+                ) : (
+                  (runsQuery.data?.runs ?? []).map((r) => (
+                    <tr key={r.id} className="border-t border-border hover:bg-muted/30 align-top">
+                      <td className="px-3 py-2 whitespace-nowrap">{fmt(r.started_at)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap">{fmt(r.finished_at)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{duracao(r.started_at, r.finished_at)}</td>
+                      <td className="px-3 py-2">
+                        {r.status === "success" ? (
+                          <Badge className="gap-1">
+                            <CheckCircle2 className="h-3 w-3" /> Sucesso
+                          </Badge>
+                        ) : r.status === "error" ? (
+                          <Badge variant="destructive" className="gap-1">
+                            <XCircle className="h-3 w-3" /> Erro
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" /> Em andamento
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">{r.inserted_count}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{r.updated_count}</td>
+                      <td className="px-3 py-2 text-xs text-destructive max-w-md break-words">
+                        {r.error_message ?? "—"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {audit && (
           <div className="border border-border rounded-lg p-4 space-y-3 bg-muted/20">
