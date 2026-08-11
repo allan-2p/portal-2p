@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /$
+Allow: /auth
+Disallow: /admin
+Disallow: /usuarios
+Disallow: /perfil
+Disallow: /clientes
+Disallow: /carregadores
+Disallow: /marketing
+Disallow: /dashboards
+Disallow: /pedidos
+Disallow: /tarefas
+Disallow: /propostas
+Disallow: /orcamentos
+Disallow: /cupons
+Disallow: /atlas
+Disallow: /integracoes
+Disallow: /tv-geral
+Disallow: /reset-password
+Disallow: /mcp
+Disallow: /api/
+
+Sitemap: https://portal.2pgroup.app/sitemap.xml
