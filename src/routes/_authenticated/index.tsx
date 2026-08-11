@@ -2081,7 +2081,17 @@ function NewTaskDialog({
     refetchOnWindowFocus: false,
   });
 
-  const accounts = accountsQ.data?.records ?? [];
+  const { scope } = useSellerScope();
+  const allAccounts = accountsQ.data?.records ?? [];
+  // Mostra somente as contas do próprio vendedor (ou do escopo permitido).
+  const accounts = useMemo(() => {
+    if (!scope || scope.scope === "geral") return allAccounts;
+    const allowed = new Set(
+      (scope.allowed_sf_ids ?? (scope.sf_user_id ? [scope.sf_user_id] : [])).filter(Boolean),
+    );
+    if (allowed.size === 0) return [];
+    return allAccounts.filter((a) => a.ownerId && allowed.has(a.ownerId));
+  }, [allAccounts, scope]);
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const base = q ? accounts.filter((a) => a.name.toLowerCase().includes(q)) : accounts;
