@@ -13,6 +13,8 @@ const MonthInput = z.object({
 export const getPublicMonthGoalTotal = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => MonthInput.parse(d))
   .handler(async ({ data }) => {
+    const { enforceRateLimit, clientIp } = await import("@/lib/rate-limit.server");
+    await enforceRateLimit(`tv_public:${clientIp()}`, 60, 60, "consultas");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("salesperson_goals")
@@ -37,6 +39,8 @@ export type PublicGroupKpiGoalRow = {
 
 export const getPublicGroupKpiGoals = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ records: PublicGroupKpiGoalRow[] }> => {
+    const { enforceRateLimit, clientIp } = await import("@/lib/rate-limit.server");
+    await enforceRateLimit(`tv_public:${clientIp()}`, 60, 60, "consultas");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("group_kpi_goals")
