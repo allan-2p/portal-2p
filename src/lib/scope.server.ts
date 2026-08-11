@@ -67,3 +67,51 @@ export function ownerFilterClause(filter: SalesforceOwnerFilter, field = "OwnerI
   if (filter.ids.length === 1) return ` AND ${field} = '${filter.ids[0]}'`;
   return ` AND ${field} IN (${filter.ids.map((id) => `'${id}'`).join(",")})`;
 }
+/**
+ * Filtra uma lista de contas (Account IDs) deixando apenas as que o usuário
+ * pode ver segundo o escopo da carteira. Escopo "geral" devolve tudo.
+ */
+export async function filterAllowedAccountIds(
+  supabase: SupabaseClient,
+  userId: string,
+  ids: string[],
+  instance: "solar" | "carregadores" = "solar",
+): Promise<string[]> {
+  const scope = await getScopeForUser(supabase, userId);
+  if (scope.scope === "geral") return ids;
+  const allowed = new Set((scope.allowed_sf_ids ?? []).filter(validSalesforceId));
+  if (allowed.size === 0) return [];
+  const { fetchAccountOwners } = await import("./accounts-db.server");
+  const owners = await fetchAccountOwners(instance, ids);
+  return ids.filter((id) => {
+    const owner = owners.get(id);
+    return !!owner && allowed.has(owner);
+  });
+}
+
+/** Lança erro quando o usuário não é dono (nem tem escopo) da conta pedida. */
+export async function assertAccountAccess(
+  supabase: SupabaseClient,
+  userId: string,
+  accountId: string,
+  instance: "solar" | "carregadores" = "solar",
+): Promise<void> {
+  const allowed = await filterAllowedAccountIds(supabase, userId, [accountId], instance);
+  if (allowed.length === 0) {
+    throw new Error("Sem permissão: esta conta não pertence à sua carteira.");
+  }
+}
+
+/** Lança erro quando a tarefa do Salesforce não pertence ao escopo do usuário. */
+export async function assertTaskOwnership(
+  supabase: SupabaseClient,
+  userId: string,
+  taskOwnerId: string | null | undefined,
+): Promise<void> {
+  const scope = await getScopeForUser(supabase, userId);
+  if (scope.scope === "geral") return;
+  const allowed = (scope.allowed_sf_ids ?? []).filter(validSalesforceId);
+  if (!taskOwnerId || !allowed.includes(taskOwnerId)) {
+    throw new Error("Sem permissão: esta tarefa não pertence à sua carteira.");
+  }
+}
