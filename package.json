@@ -104,5 +104,10 @@
   "resolutions": {
     "seroval": "^1.6.0",
     "seroval-plugins": "^1.6.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "entities": "4.5.0"
+    }
   }
 }
