@@ -52,6 +52,7 @@ import { Route as AuthenticatedCarregadoresPedidosRouteImport } from './routes/_
 import { Route as AuthenticatedCarregadoresComissoesRouteImport } from './routes/_authenticated/carregadores.comissoes'
 import { Route as AuthenticatedCarregadoresClientesRouteImport } from './routes/_authenticated/carregadores.clientes'
 import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
+import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authenticated/admin.produtos'
 import { Route as AuthenticatedAdminPermissoesRouteImport } from './routes/_authenticated/admin.permissoes'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
 import { Route as AuthenticatedAdminAuditoriaRouteImport } from './routes/_authenticated/admin.auditoria'
@@ -304,6 +305,12 @@ const AuthenticatedAdminTabelasRoute =
     path: '/admin/tabelas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminProdutosRoute =
+  AuthenticatedAdminProdutosRouteImport.update({
+    id: '/admin/produtos',
+    path: '/admin/produtos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminPermissoesRoute =
   AuthenticatedAdminPermissoesRouteImport.update({
     id: '/admin/permissoes',
@@ -395,6 +402,7 @@ export interface FileRoutesByFullPath {
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
+  '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
@@ -449,6 +457,7 @@ export interface FileRoutesByTo {
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
+  '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
@@ -504,6 +513,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/_authenticated/admin/permissoes': typeof AuthenticatedAdminPermissoesRoute
+  '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/_authenticated/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/_authenticated/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
@@ -561,6 +571,7 @@ export interface FileRouteTypes {
     | '/admin/auditoria'
     | '/admin/metas'
     | '/admin/permissoes'
+    | '/admin/produtos'
     | '/admin/tabelas'
     | '/carregadores/clientes'
     | '/carregadores/comissoes'
@@ -615,6 +626,7 @@ export interface FileRouteTypes {
     | '/admin/auditoria'
     | '/admin/metas'
     | '/admin/permissoes'
+    | '/admin/produtos'
     | '/admin/tabelas'
     | '/carregadores/comissoes'
     | '/carregadores/pedidos'
@@ -669,6 +681,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/auditoria'
     | '/_authenticated/admin/metas'
     | '/_authenticated/admin/permissoes'
+    | '/_authenticated/admin/produtos'
     | '/_authenticated/admin/tabelas'
     | '/_authenticated/carregadores/clientes'
     | '/_authenticated/carregadores/comissoes'
@@ -1016,6 +1029,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTabelasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/produtos': {
+      id: '/_authenticated/admin/produtos'
+      path: '/admin/produtos'
+      fullPath: '/admin/produtos'
+      preLoaderRoute: typeof AuthenticatedAdminProdutosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/permissoes': {
       id: '/_authenticated/admin/permissoes'
       path: '/admin/permissoes'
@@ -1212,6 +1232,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminAuditoriaRoute: typeof AuthenticatedAdminAuditoriaRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
   AuthenticatedAdminPermissoesRoute: typeof AuthenticatedAdminPermissoesRoute
+  AuthenticatedAdminProdutosRoute: typeof AuthenticatedAdminProdutosRoute
   AuthenticatedAdminTabelasRoute: typeof AuthenticatedAdminTabelasRoute
   AuthenticatedCarregadoresClientesRoute: typeof AuthenticatedCarregadoresClientesRouteWithChildren
   AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
@@ -1240,6 +1261,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminAuditoriaRoute: AuthenticatedAdminAuditoriaRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
   AuthenticatedAdminPermissoesRoute: AuthenticatedAdminPermissoesRoute,
+  AuthenticatedAdminProdutosRoute: AuthenticatedAdminProdutosRoute,
   AuthenticatedAdminTabelasRoute: AuthenticatedAdminTabelasRoute,
   AuthenticatedCarregadoresClientesRoute:
     AuthenticatedCarregadoresClientesRouteWithChildren,
