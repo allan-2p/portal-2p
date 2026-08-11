@@ -1,0 +1,2 @@
+ALTER TABLE public.sap_produtos DROP CONSTRAINT IF EXISTS sap_produtos_tipo_chk;
+ALTER TABLE public.sap_produtos ADD CONSTRAINT sap_produtos_tipo_chk CHECK (tipo IN ('trilho','trilho_reforcado','trilho_light','juncao','grampo','smart10','carregador_veicular','fixadores','acessorio'));
