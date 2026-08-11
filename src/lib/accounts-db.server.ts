@@ -36,8 +36,8 @@ const COLUMNS =
   "id,name,phone,website,industry,description,owner_id,created_date,custom_fields";
 
 /**
- * Busca todas as contas do banco espelho, paginando via Range.
- * Lança erro se a base não estiver configurada ou responder com falha.
+ * Busca todas as contas do banco espelho usando paginação por chave (keyset)
+ * em `id`. Ordenar por `name` (sem índice) estourava o statement_timeout.
  */
 export async function fetchAccountsFromDb(
   instance: AccountsInstance,
@@ -46,24 +46,24 @@ export async function fetchAccountsFromDb(
   const cfg = configFor(instance);
   if (!cfg) throw new Error(`Base de contas não configurada para ${instance}`);
   const pageSize = opts.pageSize ?? 1000;
-  const maxPages = opts.maxPages ?? 20;
+  const maxPages = opts.maxPages ?? 50;
 
   const rows: AccountDbRow[] = [];
+  let cursor: string | null = null;
   for (let page = 0; page < maxPages; page++) {
-    const from = page * pageSize;
-    const to = from + pageSize - 1;
-    const res = await fetch(
-      `${cfg.url}/rest/v1/account_sf?select=${COLUMNS}&order=name.asc`,
-      {
-        headers: {
-          apikey: cfg.key,
-          Authorization: `Bearer ${cfg.key}`,
-          Range: `${from}-${to}`,
-          "Range-Unit": "items",
-          Accept: "application/json",
-        },
+    const params = new URLSearchParams({
+      select: COLUMNS,
+      order: "id.asc",
+      limit: String(pageSize),
+    });
+    if (cursor) params.set("id", `gt.${cursor}`);
+    const res = await fetch(`${cfg.url}/rest/v1/account_sf?${params.toString()}`, {
+      headers: {
+        apikey: cfg.key,
+        Authorization: `Bearer ${cfg.key}`,
+        Accept: "application/json",
       },
-    );
+    });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(`Banco de contas ${instance} ${res.status}: ${text.slice(0, 200)}`);
@@ -71,6 +71,11 @@ export async function fetchAccountsFromDb(
     const batch = (await res.json()) as AccountDbRow[];
     rows.push(...batch);
     if (batch.length < pageSize) break;
+    cursor = batch[batch.length - 1]?.id ?? null;
+    if (!cursor) break;
   }
+  // Ordenação por nome feita na aplicação (evita sort pesado no banco).
+  rows.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "pt-BR"));
   return rows;
 }
+
