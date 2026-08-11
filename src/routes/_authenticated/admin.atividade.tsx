@@ -127,6 +127,8 @@ function AtividadePage() {
           </div>
         </header>
 
+        <ActivityDashboard days={days} />
+
         {isLoading ? (
           <div className="p-10 text-center text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin mx-auto" />
