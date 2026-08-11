@@ -157,3 +157,93 @@ export const adminListUserActivity = createServerFn({ method: "POST" })
       };
     },
   );
+
+export type ActivityDashboard = {
+  totals: { logins: number; failures: number; integrations: number; activeUsers: number };
+  trend: { bucket: string; logins: number; failures: number; integrations: number }[];
+  failures: { reason: string; count: number }[];
+  integrations: { name: string; count: number }[];
+  topActions: { action: string; count: number }[];
+};
+
+const DashInput = z.object({
+  days: z.number().int().min(1).max(365).default(30),
+  granularity: z.enum(["day", "week", "month"]).default("day"),
+});
+
+export const adminActivityDashboard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => DashInput.parse(d))
+  .handler(async ({ data, context }): Promise<ActivityDashboard> => {
+    const { data: isAdmin } = await context.supabase.rpc("is_admin");
+    if (!isAdmin) throw new Error("Forbidden: admin role required");
+
+    const since = new Date(Date.now() - data.days * 86400_000).toISOString();
+    const { data: rows, error } = await context.supabase
+      .from("user_activity_log")
+      .select("user_id, event, detail, created_at")
+      .gte("created_at", since)
+      .order("created_at", { ascending: true })
+      .limit(20000);
+    if (error) throw new Error(error.message);
+
+    const bucketOf = (iso: string) => {
+      const d = new Date(iso);
+      if (data.granularity === "month") return iso.slice(0, 7);
+      if (data.granularity === "week") {
+        const w = new Date(d);
+        w.setUTCDate(w.getUTCDate() - ((w.getUTCDay() + 6) % 7));
+        return w.toISOString().slice(0, 10);
+      }
+      return iso.slice(0, 10);
+    };
+
+    const trend = new Map<string, { logins: number; failures: number; integrations: number }>();
+    const failures = new Map<string, number>();
+    const integrations = new Map<string, number>();
+    const actions = new Map<string, number>();
+    const users = new Set<string>();
+    let logins = 0;
+    let failCount = 0;
+    let integCount = 0;
+
+    for (const r of (rows ?? []) as any[]) {
+      const b = bucketOf(r.created_at);
+      const cur = trend.get(b) ?? { logins: 0, failures: 0, integrations: 0 };
+      if (r.event === "login") {
+        cur.logins += 1;
+        logins += 1;
+        if (r.user_id) users.add(r.user_id);
+      } else if (r.event === "login_failed") {
+        cur.failures += 1;
+        failCount += 1;
+        const reason = (r.detail ?? "não informado").slice(0, 60);
+        failures.set(reason, (failures.get(reason) ?? 0) + 1);
+      } else if (r.event === "integration") {
+        cur.integrations += 1;
+        integCount += 1;
+        const parts = String(r.detail ?? "").split("•").map((s) => s.trim());
+        const name = parts[0] || "outros";
+        integrations.set(name, (integrations.get(name) ?? 0) + 1);
+        const action = parts.slice(0, 2).filter(Boolean).join(" • ") || name;
+        actions.set(action, (actions.get(action) ?? 0) + 1);
+      }
+      trend.set(b, cur);
+    }
+
+    const sorted = (m: Map<string, number>, key: "reason" | "name" | "action") =>
+      Array.from(m.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([k, count]) => ({ [key]: k, count })) as any[];
+
+    return {
+      totals: { logins, failures: failCount, integrations: integCount, activeUsers: users.size },
+      trend: Array.from(trend.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([bucket, v]) => ({ bucket, ...v })),
+      failures: sorted(failures, "reason"),
+      integrations: sorted(integrations, "name"),
+      topActions: sorted(actions, "action"),
+    };
+  });
