@@ -26,7 +26,7 @@ import { VendedorFilter } from "@/components/vendedor-filter";
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { useScopedOwner } from "@/hooks/use-seller-scope";
+import { useScopedOwner, useSellerScope } from "@/hooks/use-seller-scope";
 import {
   getSalesforceTasks,
   getSalesforceSalespeople,
@@ -2081,7 +2081,17 @@ function NewTaskDialog({
     refetchOnWindowFocus: false,
   });
 
-  const accounts = accountsQ.data?.records ?? [];
+  const { scope } = useSellerScope();
+  const allAccounts = accountsQ.data?.records ?? [];
+  // Mostra somente as contas do próprio vendedor (ou do escopo permitido).
+  const accounts = useMemo(() => {
+    if (!scope || scope.scope === "geral") return allAccounts;
+    const allowed = new Set(
+      (scope.allowed_sf_ids ?? (scope.sf_user_id ? [scope.sf_user_id] : [])).filter(Boolean),
+    );
+    if (allowed.size === 0) return [];
+    return allAccounts.filter((a) => a.ownerId && allowed.has(a.ownerId));
+  }, [allAccounts, scope]);
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const base = q ? accounts.filter((a) => a.name.toLowerCase().includes(q)) : accounts;
@@ -2131,7 +2141,7 @@ function NewTaskDialog({
             ) : (
               <>
                 <Input
-                  placeholder="Buscar cliente no Salesforce…"
+                  placeholder="Buscar entre seus clientes…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -2140,7 +2150,7 @@ function NewTaskDialog({
                     <div className="p-3 text-xs text-muted-foreground">Carregando clientes…</div>
                   )}
                   {!accountsQ.isLoading && filtered.length === 0 && (
-                    <div className="p-3 text-xs text-muted-foreground">Nenhum cliente encontrado.</div>
+                    <div className="p-3 text-xs text-muted-foreground">Nenhum cliente da sua carteira encontrado.</div>
                   )}
                   {filtered.map((a) => (
                     <button
