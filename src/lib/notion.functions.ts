@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/notion/v1";
 
@@ -84,8 +86,16 @@ function findProp(props: Record<string, any>, matchers: string[]) {
   return null;
 }
 
+const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida (YYYY-MM-DD)");
+const inputSchema = z.object({
+  start: dateStr,
+  end: dateStr,
+  unit: z.enum(["solar", "carregadores", "station"]).optional(),
+});
+
 export const getNotionCalendar = createServerFn({ method: "POST" })
-  .inputValidator((data: Input) => data)
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: Input) => inputSchema.parse(data))
   .handler(async ({ data }) => {
     // 1. Descobre databases compartilhados com a integração.
     const search = await nfetch("/search", {

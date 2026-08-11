@@ -113,7 +113,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   async function handleSignOut() {
     await logUserActivity({ data: { event: "logout" } }).catch(() => {});
     await supabase.auth.signOut();
-    navigate({ to: "/auth" });
+    navigate({ to: "/auth", search: { next: undefined } });
   }
 
   async function handlePromote() {
