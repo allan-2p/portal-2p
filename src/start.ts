@@ -1,9 +1,26 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
+import { applySecurityHeaders } from "./lib/security-headers";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
+const securityHeadersMiddleware = createMiddleware().server(async ({ next, request }) => {
+  const response = await next();
+  if (new URL(request.url).pathname.startsWith("/lovable/")) {
+    return response;
+  }
+  const result = (response as unknown as { response?: Response }).response;
+  if (result instanceof Response) {
+    (response as unknown as { response: Response }).response = applySecurityHeaders(
+      result,
+      import.meta.env.PROD,
+    );
+  }
+  return response;
+});
+
 const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
+
   if (new URL(request.url).pathname.startsWith("/lovable/")) {
     return next();
   }
