@@ -509,9 +509,60 @@ function mapAccount(r: any): SalesforceAccount {
   };
 }
 
+function mapAccountDb(r: any, ownerNames: Map<string, string>): SalesforceAccount {
+  const cf = (r.custom_fields ?? {}) as Record<string, any>;
+  const rawSeg = (cf.Segmentacao_Solar__c ?? "").toString().trim().toUpperCase();
+  const segment = (["A", "B", "C", "D"] as const).includes(rawSeg as any)
+    ? (rawSeg as "A" | "B" | "C" | "D")
+    : null;
+  const tubos = typeof cf.Segmentacao_Tubos__c === "string" && cf.Segmentacao_Tubos__c
+    ? cf.Segmentacao_Tubos__c.split(";").map((s: string) => s.trim()).filter(Boolean)
+    : [];
+  const num = (v: any) => (typeof v === "number" ? v : null);
+  return {
+    id: r.id,
+    name: r.name ?? "",
+    cnpj: formatCnpj(cf.CNPJ__c ?? null),
+    segment,
+    tubos,
+    ownerId: r.owner_id ?? null,
+    ownerName: (r.owner_id && ownerNames.get(r.owner_id)) || null,
+    createdAt: r.created_date ?? null,
+    phone: r.phone ?? cf.Telefone__c ?? cf.Telefone_Empresa__c ?? null,
+    website: r.website ?? null,
+    industry: r.industry ?? null,
+    observacoes: cf.Observacoes__c ?? null,
+    description: r.description ?? null,
+    quarterProjection: num(cf.Total_Vendido_Trimestre_Anterior__c),
+    quarterSold: num(cf.Total_Vendido_Esse_Trimestre__c),
+  };
+}
+
 export const getSalesforceAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .inputValidator((d?: { instance?: "solar" | "carregadores" }) => d ?? {})
+  .handler(async ({ data, context }) => {
+    const instance = data?.instance === "carregadores" ? "carregadores" : "solar";
+
+    // 1) Preferir o banco espelho (mais rápido que o Salesforce)
+    try {
+      const { fetchAccountsFromDb } = await import("@/lib/accounts-db.server");
+      const [rows, profilesRes] = await Promise.all([
+        fetchAccountsFromDb(instance),
+        context.supabase.from("profiles").select("sf_user_id, full_name"),
+      ]);
+      const ownerNames = new Map<string, string>();
+      for (const p of profilesRes.data ?? []) {
+        if (p.sf_user_id && p.full_name) ownerNames.set(p.sf_user_id, p.full_name);
+      }
+      if (rows.length > 0) {
+        return { records: rows.map((r) => mapAccountDb(r, ownerNames)) as SalesforceAccount[] };
+      }
+    } catch (err) {
+      console.error("[accounts] falha ao ler do banco, usando Salesforce:", err);
+    }
+
+    // 2) Fallback: Salesforce
     const soql =
       `SELECT Id, Name, CNPJ__c, Segmentacao_Solar__c, Segmentacao_Tubos__c, ` +
       `Industry, Phone, Website, OwnerId, Owner.Name, CreatedDate, ` +
@@ -528,6 +579,7 @@ export const getSalesforceAccounts = createServerFn({ method: "GET" })
     }
     return { records: all.map(mapAccount) as SalesforceAccount[] };
   });
+
 
 
 
