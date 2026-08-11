@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.2",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://zleqqrcvcwipgvudtlde.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "portal-2p",
+      "version": "0.1.0",
+      "title": "Portal 2P"
+    },
+    "tools": [
+      {
+        "name": "list_tasks",
+        "title": "Listar tarefas",
+        "description": "Lista as tarefas (cpo_tasks) visíveis para o usuário autenticado, opcionalmente filtradas por status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filtra por status exato da tarefa (ex.: aberta, concluida).",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Número máximo de tarefas retornadas (padrão 25, máximo 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_task",
+        "title": "Criar tarefa",
+        "description": "Cria uma nova tarefa (cpo_tasks) para o usuário autenticado.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "titulo": {
+              "type": "string",
+              "description": "Título da tarefa."
+            },
+            "descricao": {
+              "description": "Descrição detalhada da tarefa.",
+              "type": "string"
+            },
+            "cliente_nome": {
+              "description": "Nome do cliente relacionado.",
+              "type": "string"
+            },
+            "due_date": {
+              "description": "Data de vencimento no formato AAAA-MM-DD.",
+              "type": "string"
+            },
+            "prioridade": {
+              "description": "Prioridade da tarefa (ex.: alta, media, baixa).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "titulo"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_clientes",
+        "title": "Listar clientes",
+        "description": "Busca clientes cadastrados (cpo_clientes) por razão social, nome fantasia ou documento.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "search": {
+              "description": "Texto para buscar na razão social, nome fantasia ou CNPJ.",
+              "type": "string"
+            },
+            "classificacao": {
+              "description": "Filtra pela classificação do cliente (A, B, C ou D).",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Número máximo de clientes retornados (padrão 25, máximo 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_proposals",
+        "title": "Listar propostas",
+        "description": "Lista as propostas comerciais (cpo_proposals) visíveis para o usuário autenticado.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filtra por status da proposta (ex.: rascunho, enviada, aprovada).",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Número máximo de propostas retornadas (padrão 20, máximo 100).",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
