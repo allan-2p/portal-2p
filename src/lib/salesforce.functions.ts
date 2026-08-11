@@ -1,6 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { ownerFilterClause, resolveSalesforceOwnerFilter } from "./scope.server";
+import {
+  ownerFilterClause,
+  resolveSalesforceOwnerFilter,
+  assertAccountAccess,
+  assertTaskOwnership,
+  filterAllowedAccountIds,
+  getScopeForUser,
+} from "./scope.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
 
@@ -177,7 +184,8 @@ export type SalesforceInteraction = {
 export const getSalesforceInteractionsFor = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { whatIds?: string[]; whoIds?: string[]; sinceDays?: number }) => input ?? {})
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const ownerFilter = await resolveSalesforceOwnerFilter(context.supabase, context.userId, null);
     const whatIds = (data.whatIds ?? []).filter(validId);
     const whoIds = (data.whoIds ?? []).filter(validId);
     if (whatIds.length === 0 && whoIds.length === 0) {
@@ -189,6 +197,8 @@ export const getSalesforceInteractionsFor = createServerFn({ method: "GET" })
     if (whatIds.length) idClauses.push(`WhatId IN (${whatIds.map((i) => `'${i}'`).join(",")})`);
     if (whoIds.length) idClauses.push(`WhoId IN (${whoIds.map((i) => `'${i}'`).join(",")})`);
     clauses.push(`(${idClauses.join(" OR ")})`);
+    const scopeClause = ownerFilterClause(ownerFilter).replace(/^ AND /, "");
+    if (scopeClause) clauses.push(scopeClause);
     const soql =
       `SELECT Id, Subject, ActivityDate, Description, WhatId, WhoId, Owner.Name ` +
       `FROM Task WHERE ${clauses.join(" AND ")} ORDER BY LastModifiedDate DESC LIMIT 500`;
@@ -212,7 +222,11 @@ export const completeSalesforceTask = createServerFn({ method: "POST" })
     if (!validId(input.taskId)) throw new Error("ID de tarefa inválido.");
     return input;
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const cur = await sfFetch(
+      `/query?q=${encodeURIComponent(`SELECT Id, OwnerId FROM Task WHERE Id = '${esc(data.taskId)}' LIMIT 1`)}`,
+    );
+    await assertTaskOwnership(context.supabase, context.userId, cur?.records?.[0]?.OwnerId ?? null);
     await sfFetch(`/sobjects/Task/${data.taskId}`, {
       method: "PATCH",
       body: JSON.stringify({ Status: "Completed" }),
@@ -234,7 +248,11 @@ export const rescheduleSalesforceTask = createServerFn({ method: "POST" })
     }
     return input;
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const cur = await sfFetch(
+      `/query?q=${encodeURIComponent(`SELECT Id, OwnerId FROM Task WHERE Id = '${esc(data.taskId)}' LIMIT 1`)}`,
+    );
+    await assertTaskOwnership(context.supabase, context.userId, cur?.records?.[0]?.OwnerId ?? null);
     const body: Record<string, unknown> = { ActivityDate: data.newDate };
     if (data.reason && data.reason.trim()) {
       // Anexa a justificativa na descrição para manter histórico no Salesforce.
@@ -557,7 +575,13 @@ export const getSalesforceAccounts = createServerFn({ method: "GET" })
     for (const p of profilesRes.data ?? []) {
       if (p.sf_user_id && p.full_name) ownerNames.set(p.sf_user_id, p.full_name);
     }
-    return { records: rows.map((r) => mapAccountDb(r, ownerNames)) as SalesforceAccount[] };
+    // Escopo de carteira aplicado no servidor: vendedor só recebe as contas dele.
+    const scope = await getScopeForUser(context.supabase, context.userId);
+    const visible =
+      scope.scope === "geral"
+        ? rows
+        : rows.filter((r) => !!r.owner_id && (scope.allowed_sf_ids ?? []).includes(r.owner_id));
+    return { records: visible.map((r) => mapAccountDb(r, ownerNames)) as SalesforceAccount[] };
   });
 
 
@@ -741,11 +765,12 @@ function quarterOf(dateStr: string): { year: number; q: number } {
 export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { accountId: string }) => input)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const accountId = String(data.accountId ?? "").trim();
     if (!accountId || !/^[a-zA-Z0-9]{15,18}$/.test(accountId)) {
       throw new Error("accountId inválido");
     }
+    await assertAccountAccess(context.supabase, context.userId, accountId);
     // ~2 years window
     const cutoff = new Date();
     cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 2);
@@ -858,9 +883,10 @@ export type SalesforceContact = {
 export const getSalesforceAccountContacts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { accountId: string }) => input)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const accountId = String(data.accountId ?? "").trim();
     if (!validId(accountId)) throw new Error("accountId inválido");
+    await assertAccountAccess(context.supabase, context.userId, accountId);
     const soql =
       `SELECT Id, Name, Title, Email, Phone, MobilePhone, Department, Description ` +
       `FROM Contact WHERE AccountId = '${esc(accountId)}' ORDER BY Name ASC LIMIT 200`;
@@ -892,8 +918,9 @@ export type AgendaAccountInfo = {
 export const getSalesforceAgendaAccountInfo = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { accountIds: string[] }) => input ?? { accountIds: [] })
-  .handler(async ({ data }) => {
-    const ids = Array.from(new Set((data.accountIds ?? []).filter(validId))).slice(0, 200);
+  .handler(async ({ data, context }) => {
+    const requested = Array.from(new Set((data.accountIds ?? []).filter(validId))).slice(0, 200);
+    const ids = await filterAllowedAccountIds(context.supabase, context.userId, requested);
     if (ids.length === 0) return { records: [] as AgendaAccountInfo[] };
     const inList = ids.map((i) => `'${esc(i)}'`).join(",");
 
@@ -978,9 +1005,10 @@ export type SalesforceActivity = {
 export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { accountId: string }) => input)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const accountId = String(data.accountId ?? "").trim();
     if (!validId(accountId)) throw new Error("accountId inválido");
+    await assertAccountAccess(context.supabase, context.userId, accountId);
     const taskSoql =
       `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Owner.Name ` +
       `FROM Task WHERE WhatId = '${esc(accountId)}' ` +
@@ -1264,7 +1292,8 @@ export const getSalesforceSalesByAccount = createServerFn({ method: "GET" })
     if (!validDate(input.start) || !validDate(input.end)) throw new Error("Datas inválidas.");
     return input;
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const ownerFilter = await resolveSalesforceOwnerFilter(context.supabase, context.userId, null);
     const clauses: string[] = [
       `StageName = 'Pedido Concluído'`,
       `(Tipo_de_NF__c = null OR Tipo_de_NF__c != 'Bonificação')`,
@@ -1272,6 +1301,8 @@ export const getSalesforceSalesByAccount = createServerFn({ method: "GET" })
       `CloseDate <= ${data.end}`,
       `AccountId != null`,
     ];
+    const scopeClause = ownerFilterClause(ownerFilter).replace(/^ AND /, "");
+    if (scopeClause) clauses.push(scopeClause);
     const soql =
       `SELECT AccountId, SUM(Total__c) sumT, SUM(Amount) sumA ` +
       `FROM Opportunity WHERE ${clauses.join(" AND ")} ` +
