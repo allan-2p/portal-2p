@@ -15,7 +15,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listSapProdutos, syncSapProdutos } from "@/lib/sap-produtos.functions";
-import { Loader2, Package, RefreshCw, Search } from "lucide-react";
+import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle } from "lucide-react";
+import {
+  classificarDetalhado,
+  validarRegras,
+  TIPO_PREFIXOS,
+} from "@/lib/sap-produtos-rules";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({
   head: () => ({
@@ -51,6 +56,8 @@ function ProdutosPage() {
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState("all");
   const [status, setStatus] = useState<"ativos" | "inativos" | "todos">("ativos");
+  const [audit, setAudit] = useState(false);
+  const [soDivergentes, setSoDivergentes] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
@@ -71,7 +78,17 @@ function ProdutosPage() {
     },
   });
 
-  const produtos = data?.produtos ?? [];
+  const problemasRegras = useMemo(() => validarRegras(), []);
+  const errosRegras = problemasRegras.filter((p) => p.nivel === "erro");
+
+  const produtos = useMemo(
+    () =>
+      (data?.produtos ?? []).map((p) => {
+        const det = classificarDetalhado(p.descricao);
+        return { ...p, det, divergente: det.tipo !== p.tipo || det.fallback || det.concorrentes.length > 0 };
+      }),
+    [data],
+  );
   const tipos = useMemo(
     () => Array.from(new Set(produtos.map((p) => p.tipo))).sort(),
     [produtos],
@@ -83,6 +100,7 @@ function ProdutosPage() {
       if (tipo !== "all" && p.tipo !== tipo) return false;
       if (status === "ativos" && !p.ativo) return false;
       if (status === "inativos" && p.ativo) return false;
+      if (soDivergentes && !p.divergente) return false;
       if (!term) return true;
       return (
         p.codigo.toLowerCase().includes(term) ||
@@ -90,7 +108,7 @@ function ProdutosPage() {
         (p.lista_preco ?? "").toLowerCase().includes(term)
       );
     });
-  }, [produtos, q, tipo, status]);
+  }, [produtos, q, tipo, status, soDivergentes]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const current = Math.min(page, totalPages - 1);
@@ -120,7 +138,15 @@ function ProdutosPage() {
             >
               <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
             </Button>
-            <Button size="sm" onClick={() => syncMut.mutate()} disabled={syncMut.isPending}>
+            <Button
+              variant={audit ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAudit((v) => !v)}
+            >
+              <ShieldCheck className="h-4 w-4 mr-2" />
+              Auditoria
+            </Button>
+            <Button size="sm" onClick={() => syncMut.mutate()} disabled={syncMut.isPending || errosRegras.length > 0}>
               {syncMut.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
@@ -154,6 +180,53 @@ function ProdutosPage() {
             </>
           ) : null}
         </div>
+
+        {audit && (
+          <div className="border border-border rounded-lg p-4 space-y-3 bg-muted/20">
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <span className="font-medium">Auditoria da classificação</span>
+              <span className="text-muted-foreground">
+                {TIPO_PREFIXOS.length} regras • {produtos.filter((p) => p.det.fallback).length} sem regra
+                (“Outros”) • {produtos.filter((p) => p.det.tipo !== p.tipo).length} divergentes do valor gravado
+                • {produtos.filter((p) => p.det.concorrentes.length > 0).length} com prefixo ambíguo
+              </span>
+              <Button
+                variant={soDivergentes ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setSoDivergentes((v) => !v);
+                  setPage(0);
+                }}
+              >
+                Só itens com atenção
+              </Button>
+            </div>
+
+            {problemasRegras.length === 0 ? (
+              <p className="text-xs text-emerald-500">Nenhum conflito nas regras de prefixo.</p>
+            ) : (
+              <ul className="space-y-1 text-xs">
+                {problemasRegras.map((pr, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    {pr.nivel === "erro" ? (
+                      <XCircle className="h-3.5 w-3.5 mt-0.5 text-destructive shrink-0" />
+                    ) : (
+                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 text-amber-500 shrink-0" />
+                    )}
+                    <span>
+                      <span className="font-mono">{pr.prefixo}</span> — {pr.mensagem}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {errosRegras.length > 0 && (
+              <p className="text-xs text-destructive">
+                Sincronização bloqueada até que os erros de regra sejam corrigidos.
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-56">
@@ -215,19 +288,21 @@ function ProdutosPage() {
                 <th className="text-left px-3 py-2">Lista de preço</th>
                 <th className="text-left px-3 py-2">Permissão</th>
                 <th className="text-left px-3 py-2">Status</th>
+                {audit && <th className="text-left px-3 py-2">Regra aplicada</th>}
+                {audit && <th className="text-left px-3 py-2">Motivo</th>}
                 <th className="text-left px-3 py-2">Sincronizado</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 9 : 7} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 9 : 7} className="px-3 py-10 text-center text-muted-foreground">
                     Nenhum produto encontrado. Clique em “Sinc. SAP” para importar o catálogo.
                   </td>
                 </tr>
@@ -246,6 +321,34 @@ function ProdutosPage() {
                         {p.ativo ? "Ativo" : "Inativo"}
                       </Badge>
                     </td>
+                    {audit && (
+                      <td className="px-3 py-2 text-xs">
+                        {p.det.prefixo ? (
+                          <span className="font-mono">
+                            {p.det.prefixo} → {p.det.tipo}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">sem prefixo → Outros</span>
+                        )}
+                      </td>
+                    )}
+                    {audit && (
+                      <td className="px-3 py-2 text-xs">
+                        {p.det.tipo !== p.tipo ? (
+                          <span className="text-destructive">
+                            gravado como “{p.tipo}”, regra indica “{p.det.tipo}”
+                          </span>
+                        ) : p.det.concorrentes.length > 0 ? (
+                          <span className="text-amber-500">
+                            ambíguo com {p.det.concorrentes.join(", ")}
+                          </span>
+                        ) : p.det.fallback ? (
+                          <span className="text-muted-foreground">nenhuma regra casou</span>
+                        ) : (
+                          <span className="text-emerald-500">prefixo mais específico</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-3 py-2 text-xs text-muted-foreground">{fmt(p.last_synced_at)}</td>
                   </tr>
                 ))

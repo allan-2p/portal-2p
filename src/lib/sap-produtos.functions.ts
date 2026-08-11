@@ -43,6 +43,13 @@ export const listSapProdutos = createServerFn({ method: "GET" })
     };
   });
 
+export const validateSapRules = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { validarRegras } = await import("./sap-produtos.server");
+    return { problemas: validarRegras() };
+  });
+
 export const syncSapProdutos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ inserted: number; updated: number }> => {
@@ -50,7 +57,16 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
     if (roleError || !isAdmin) throw new Error("Forbidden: admin role required");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { classificarTipo, fetchSapMateriais } = await import("./sap-produtos.server");
+    const { classificarTipo, fetchSapMateriais, validarRegras } = await import("./sap-produtos.server");
+
+    // Trava de segurança: regras inválidas classificariam o catálogo errado.
+    const problemas = validarRegras();
+    const erros = problemas.filter((p) => p.nivel === "erro");
+    if (erros.length > 0) {
+      throw new Error(
+        `Regras de classificação inválidas: ${erros.map((e) => `${e.prefixo} — ${e.mensagem}`).join(" | ")}`,
+      );
+    }
 
     const { data: run } = await supabaseAdmin
       .from("sap_produtos_sync_runs")
