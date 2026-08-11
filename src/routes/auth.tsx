@@ -27,7 +27,14 @@ const passwordSchema = z
   .max(128, "Senha muito longa.");
 
 
+function safeNext(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  if (!value.startsWith("/") || value.startsWith("//")) return undefined;
+  return value;
+}
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>) => ({ next: safeNext(s.next) }),
   head: () => ({
     meta: [
       { title: "Entrar — Portal 2P" },
@@ -36,6 +43,7 @@ export const Route = createFileRoute("/auth")({
   }),
   component: AuthPage,
 });
+
 
 
 function AuthPage() {
