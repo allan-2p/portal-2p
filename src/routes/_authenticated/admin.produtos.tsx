@@ -20,6 +20,7 @@ import {
   classificarDetalhado,
   validarRegras,
   TIPO_PREFIXOS,
+  TIPO_LABELS,
 } from "@/lib/sap-produtos-rules";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({
@@ -290,7 +291,7 @@ function ProdutosPage() {
               <span className="font-medium">Auditoria da classificação</span>
               <span className="text-muted-foreground">
                 {TIPO_PREFIXOS.length} regras • {produtos.filter((p) => p.det.fallback).length} sem regra
-                (“Outros”) • {produtos.filter((p) => p.det.tipo !== p.tipo).length} divergentes do valor gravado
+                (“Acessórios”) • {produtos.filter((p) => p.det.tipo !== p.tipo).length} divergentes do valor gravado
                 • {produtos.filter((p) => p.det.concorrentes.length > 0).length} com prefixo ambíguo
               </span>
               <Button
@@ -358,7 +359,7 @@ function ProdutosPage() {
               <SelectItem value="all">Todos os tipos</SelectItem>
               {tipos.map((t) => (
                 <SelectItem key={t} value={t}>
-                  {t}
+                  {TIPO_LABELS[t] ?? t}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -431,7 +432,7 @@ function ProdutosPage() {
                     <td className="px-3 py-2 font-mono text-xs">{p.codigo}</td>
                     <td className="px-3 py-2">{p.descricao}</td>
                     <td className="px-3 py-2">
-                      <Badge variant="secondary">{p.tipo}</Badge>
+                      <Badge variant="secondary">{TIPO_LABELS[p.tipo] ?? p.tipo}</Badge>
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">{p.lista_preco ?? "—"}</td>
                     <td className="px-3 py-2 text-muted-foreground">{p.permissao}</td>
@@ -444,10 +445,10 @@ function ProdutosPage() {
                       <td className="px-3 py-2 text-xs">
                         {p.det.prefixo ? (
                           <span className="font-mono">
-                            {p.det.prefixo} → {p.det.tipo}
+                            {p.det.prefixo} → {p.det.tipoDescricao}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground">sem prefixo → Outros</span>
+                          <span className="text-muted-foreground">sem prefixo → Acessórios</span>
                         )}
                       </td>
                     )}
@@ -455,7 +456,7 @@ function ProdutosPage() {
                       <td className="px-3 py-2 text-xs">
                         {p.det.tipo !== p.tipo ? (
                           <span className="text-destructive">
-                            gravado como “{p.tipo}”, regra indica “{p.det.tipo}”
+                            gravado como “{TIPO_LABELS[p.tipo] ?? p.tipo}”, regra indica “{p.det.tipoDescricao}”
                           </span>
                         ) : p.det.concorrentes.length > 0 ? (
                           <span className="text-amber-500">
