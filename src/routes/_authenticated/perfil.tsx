@@ -102,6 +102,8 @@ function PerfilPage() {
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
 
+        <h1 className="font-display text-2xl font-bold">Meu perfil</h1>
+
         <div className="flex items-start gap-6 bg-card border border-border rounded-2xl p-6">
           <div className="relative group">
             <div className="h-28 w-28 rounded-full overflow-hidden bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center text-3xl font-bold text-primary-foreground ring-4 ring-background shadow-lg">

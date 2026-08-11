@@ -149,6 +149,7 @@ function TarefasPage() {
             <VendedorFilter value={ownerId} onChange={setOwnerId} />
             <button
               onClick={() => setCursor(new Date(year, month - 1, 1))}
+              aria-label="Mês anterior"
               className="p-2 rounded-lg bg-surface border border-border hover:bg-surface-2"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -158,6 +159,7 @@ function TarefasPage() {
             </div>
             <button
               onClick={() => setCursor(new Date(year, month + 1, 1))}
+              aria-label="Próximo mês"
               className="p-2 rounded-lg bg-surface border border-border hover:bg-surface-2"
             >
               <ChevronRight className="h-4 w-4" />
@@ -256,6 +258,7 @@ function TarefasPage() {
           <div
             className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40"
             onClick={() => setSelectedDay(null)}
+                aria-label="Fechar detalhes do dia"
           />
           <aside className="fixed right-0 top-0 bottom-0 w-full sm:w-[440px] bg-surface border-l border-border z-50 flex flex-col">
             <header className="px-5 py-4 border-b border-border flex items-center justify-between">
