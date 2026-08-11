@@ -63,6 +63,7 @@ function ProdutosPage() {
 
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState("all");
+  const [permissao, setPermissao] = useState("all");
   const [status, setStatus] = useState<"ativos" | "inativos" | "todos">("ativos");
   const [audit, setAudit] = useState(false);
   const [showRuns, setShowRuns] = useState(false);
@@ -114,6 +115,7 @@ function ProdutosPage() {
     const term = q.trim().toLowerCase();
     return produtos.filter((p) => {
       if (tipo !== "all" && p.tipo !== tipo) return false;
+      if (permissao !== "all" && (p.permissao ?? "").toLowerCase() !== permissao) return false;
       if (status === "ativos" && !p.ativo) return false;
       if (status === "inativos" && p.ativo) return false;
       if (soDivergentes && !p.divergente) return false;
@@ -121,10 +123,12 @@ function ProdutosPage() {
       return (
         p.codigo.toLowerCase().includes(term) ||
         p.descricao.toLowerCase().includes(term) ||
+        (p.permissao ?? "").toLowerCase().includes(term) ||
         (p.lista_preco ?? "").toLowerCase().includes(term)
       );
     });
-  }, [produtos, q, tipo, status, soDivergentes]);
+  }, [produtos, q, tipo, permissao, status, soDivergentes]);
+
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const current = Math.min(page, totalPages - 1);
@@ -355,6 +359,22 @@ function ProdutosPage() {
                   {t}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={permissao}
+            onValueChange={(v) => {
+              setPermissao(v);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Permissão" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as permissões</SelectItem>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
             </SelectContent>
           </Select>
           <Select
