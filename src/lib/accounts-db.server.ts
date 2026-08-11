@@ -8,11 +8,13 @@ type DbConfig = { url: string; key: string };
 function configFor(instance: AccountsInstance): DbConfig | null {
   const url =
     instance === "carregadores"
-      ? process.env["ACCOUNTS_CPO_SUPABASE_URL"] || "https://awvvdqdwzcnqbswxnpto.supabase.co"
+      ? process.env["ACCOUNTS_CARREGADORES_SUPABASE_URL"] ||
+        process.env["ACCOUNTS_CPO_SUPABASE_URL"] ||
+        "https://awvvdqdwzcnqbswxnpto.supabase.co"
       : process.env["ACCOUNTS_SOLAR_SUPABASE_URL"] || "https://latnvmczyediznkyncmn.supabase.co";
   const key =
     instance === "carregadores"
-      ? process.env["ACCOUNTS_CPO_SUPABASE_KEY"]
+      ? process.env["ACCOUNTS_CARREGADORES_SUPABASE_KEY"] || process.env["ACCOUNTS_CPO_SUPABASE_KEY"]
       : process.env["ACCOUNTS_SOLAR_SUPABASE_KEY"];
   if (!url || !key) return null;
   return { url: url.replace(/\/+$/, ""), key };
