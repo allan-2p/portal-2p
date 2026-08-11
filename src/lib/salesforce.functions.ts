@@ -396,8 +396,11 @@ export const getSalesforceSalespeople = createServerFn({ method: "GET" })
       context.supabase.from("hidden_salespeople").select("sf_user_id"),
     ]);
     const hidden = new Set<string>((hiddenRes.data ?? []).map((r: any) => r.sf_user_id));
+    // Vendedor com escopo restrito só enxerga os vendedores da própria carteira.
+    const scope = await getScopeForUser(context.supabase, context.userId);
+    const allowed = scope.scope === "geral" ? null : new Set(scope.allowed_sf_ids ?? []);
     const records: SalesforceSalesperson[] = (res?.records ?? [])
-      .filter((r: any) => !hidden.has(r.Id))
+      .filter((r: any) => !hidden.has(r.Id) && (!allowed || allowed.has(r.Id)))
       .map((r: any) => ({
         id: r.Id,
         name: r.Name,
