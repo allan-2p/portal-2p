@@ -84,7 +84,9 @@ function ProdutosPage() {
   const syncMut = useMutation({
     mutationFn: () => sync({}),
     onSuccess: (r) => {
-      toast.success(`Sincronização concluída: ${r.inserted} novos, ${r.updated} atualizados.`);
+      toast.success(
+        `Sincronização concluída: ${r.inserted} novos, ${r.updated} atualizados${r.deactivated ? `, ${r.deactivated} inativados` : ""}.`,
+      );
       refetch();
       runsQuery.refetch();
     },
