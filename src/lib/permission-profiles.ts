@@ -35,6 +35,7 @@ const SOLAR_GESTOR: FeatureKey[] = [
   "clientes.ranking",
   "admin.metas",
   "admin.tabelas",
+  "admin.produtos",
 ];
 
 const CPO_VENDEDOR: FeatureKey[] = [

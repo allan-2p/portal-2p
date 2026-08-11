@@ -486,6 +486,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         {show("admin.tabelas") && (
                           <AdminMenuLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} onClick={() => setAdminMenuOpen(false)} />
                         )}
+                        {show("admin.produtos") && (
+                          <AdminMenuLink to="/admin/produtos" label="Produtos (SAP)" icon={Package} onClick={() => setAdminMenuOpen(false)} />
+                        )}
                         {show("admin.integracoes") && (
                           <AdminMenuLink to="/integracoes" label="Integrações" icon={Plug} onClick={() => setAdminMenuOpen(false)} />
                         )}

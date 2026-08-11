@@ -70,6 +70,7 @@ const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
       "admin.usuarios",
       "admin.metas",
       "admin.tabelas",
+      "admin.produtos",
       "admin.permissoes",
       "admin.integracoes",
       "admin.auditoria",
