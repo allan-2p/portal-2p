@@ -101,6 +101,14 @@ export const getNotionCalendar = createServerFn({ method: "POST" })
     const { enforceRateLimit } = await import("@/lib/rate-limit.server");
     await enforceRateLimit(`notion_calendar:${context.userId}`, 30, 60, "consultas ao calendário");
 
+    const { auditIntegration } = await import("@/lib/audit.server");
+    void auditIntegration(
+      context.userId,
+      "notion",
+      "calendario",
+      `${data.start}→${data.end}${data.unit ? ` (${data.unit})` : ""}`,
+    );
+
     // 1. Descobre databases compartilhados com a integração.
 
     const search = await nfetch("/search", {

@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { adminListUserActivity } from "@/lib/activity.functions";
-import { Loader2, Activity, LogIn, LogOut, RefreshCw, Search } from "lucide-react";
+import { Loader2, Activity, LogIn, LogOut, RefreshCw, Search, ShieldAlert, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/atividade")({
@@ -41,6 +41,9 @@ const EVENT_LABEL: Record<string, string> = {
   login: "Entrou",
   logout: "Saiu",
   page_view: "Acesso",
+  login_failed: "Falha no login",
+  integration: "Integração",
+  sensitive_action: "Ação sensível",
 };
 
 function fmt(d: string | null) {
@@ -101,6 +104,9 @@ function AtividadePage() {
                 <SelectItem value="all">Todos eventos</SelectItem>
                 <SelectItem value="login">Somente entradas</SelectItem>
                 <SelectItem value="logout">Somente saídas</SelectItem>
+                <SelectItem value="login_failed">Falhas de login</SelectItem>
+                <SelectItem value="integration">Integrações (Atlas)</SelectItem>
+                <SelectItem value="sensitive_action">Ações sensíveis</SelectItem>
               </SelectContent>
             </Select>
             <Select value={String(days)} onValueChange={(v) => setDays(Number(v))}>
@@ -194,11 +200,19 @@ function AtividadePage() {
                                 "text-[11px] gap-1",
                                 r.event === "login"
                                   ? "border-primary/40 text-primary"
-                                  : "border-muted-foreground/30 text-muted-foreground",
+                                  : r.event === "login_failed"
+                                    ? "border-destructive/40 text-destructive"
+                                    : r.event === "integration"
+                                      ? "border-amber-500/40 text-amber-500"
+                                      : "border-muted-foreground/30 text-muted-foreground",
                               )}
                             >
                               {r.event === "login" ? (
                                 <LogIn className="h-3 w-3" />
+                              ) : r.event === "login_failed" ? (
+                                <ShieldAlert className="h-3 w-3" />
+                              ) : r.event === "integration" ? (
+                                <Plug className="h-3 w-3" />
                               ) : (
                                 <LogOut className="h-3 w-3" />
                               )}

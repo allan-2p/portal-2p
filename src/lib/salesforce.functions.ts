@@ -334,9 +334,11 @@ export const createSalesforceTask = createServerFn({ method: "POST" })
     }
     return input;
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const body = buildTaskBody({ status: "Open", ...data });
     const res = await postTaskWithDefaults(body);
+    const { auditIntegration } = await import("@/lib/audit.server");
+    void auditIntegration(context.userId, "salesforce", "criou tarefa", data.subject);
     return { id: res?.id ?? null };
   });
 
@@ -346,7 +348,7 @@ export const logSalesforceInteraction = createServerFn({ method: "POST" })
     if (!input.subject || !input.subject.trim()) throw new Error("Assunto é obrigatório.");
     return input;
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const today = new Date();
     const activityDate =
       data.activityDate ||
@@ -356,6 +358,8 @@ export const logSalesforceInteraction = createServerFn({ method: "POST" })
     // grava uma Task concluída com TaskSubtype = 'Call' (chamada), não uma tarefa comum.
     (body as Record<string, unknown>).TaskSubtype = "Call";
     const res = await postTaskWithDefaults(body);
+    const { auditIntegration } = await import("@/lib/audit.server");
+    void auditIntegration(context.userId, "salesforce", "registrou interação", data.subject);
     return { id: res?.id ?? null };
   });
 

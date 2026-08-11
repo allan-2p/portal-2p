@@ -225,7 +225,9 @@ export const getMetricoolBrandData = createServerFn({ method: "GET" })
     }
     return input;
   })
-  .handler(async ({ data }): Promise<MetricoolBrandData> => {
+  .handler(async ({ data, context }): Promise<MetricoolBrandData> => {
+    const { auditIntegration } = await import("@/lib/audit.server");
+    void auditIntegration(context.userId, "metricool", "social", `${data.unit} ${data.start}→${data.end}`);
     const blogId = getBrandId(data.unit);
     const emptySeries: MetricoolInstagramSeries = { followers: [], reach: [], engaged: [] };
     const empty: MetricoolBrandData = {
@@ -391,7 +393,9 @@ export const getMetricoolAdsData = createServerFn({ method: "GET" })
     }
     return input;
   })
-  .handler(async ({ data }): Promise<MetricoolAdsData> => {
+  .handler(async ({ data, context }): Promise<MetricoolAdsData> => {
+    const { auditIntegration } = await import("@/lib/audit.server");
+    void auditIntegration(context.userId, "metricool", "ads", `${data.unit} ${data.start}→${data.end}`);
     const blogId = getBrandId(data.unit);
     const empty: MetricoolAdsData = {
       unit: data.unit,
