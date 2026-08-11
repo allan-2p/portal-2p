@@ -26,7 +26,7 @@ import { VendedorFilter } from "@/components/vendedor-filter";
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
-import { useScopedOwner } from "@/hooks/use-seller-scope";
+import { useScopedOwner, useSellerScope } from "@/hooks/use-seller-scope";
 import {
   getSalesforceTasks,
   getSalesforceSalespeople,
