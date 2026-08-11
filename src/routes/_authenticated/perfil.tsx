@@ -9,7 +9,25 @@ import { uploadAvatar } from "@/lib/avatar";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/perfil")({
-  head: () => ({ meta: [{ title: "Meu perfil — Portal 2P" }] }),
+  head: () => ({
+    meta: [
+      { title: "Meu perfil — Portal 2P" },
+      {
+        name: "description",
+        content:
+          "Gerencie seus dados pessoais, foto e preferências da sua conta no Portal 2P.",
+      },
+      { property: "og:title", content: "Meu perfil — Portal 2P" },
+      {
+        property: "og:description",
+        content:
+          "Gerencie seus dados pessoais, foto e preferências da sua conta no Portal 2P.",
+      },
+      { property: "og:url", content: "/perfil" },
+    ],
+    links: [{ rel: "canonical", href: "/perfil" }],
+  }),
+
   component: PerfilPage,
 });
 
@@ -83,6 +101,8 @@ function PerfilPage() {
         <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
+
+        <h1 className="font-display text-2xl font-bold">Meu perfil</h1>
 
         <div className="flex items-start gap-6 bg-card border border-border rounded-2xl p-6">
           <div className="relative group">

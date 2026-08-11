@@ -38,7 +38,25 @@ import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
-  head: () => ({ meta: [{ title: "Usuários — Portal 2P" }] }),
+  head: () => ({
+    meta: [
+      { title: "Usuários — Portal 2P" },
+      {
+        name: "description",
+        content:
+          "Cadastre, edite e controle o acesso dos usuários do Portal 2P por organização e status.",
+      },
+      { property: "og:title", content: "Usuários — Portal 2P" },
+      {
+        property: "og:description",
+        content:
+          "Cadastre, edite e controle o acesso dos usuários do Portal 2P por organização e status.",
+      },
+      { property: "og:url", content: "/usuarios" },
+    ],
+    links: [{ rel: "canonical", href: "/usuarios" }],
+  }),
+
   component: UsuariosPage,
 });
 
@@ -648,6 +666,7 @@ function PortalTable({
                       onClick={() => onEdit(r)}
                       className="p-1.5 rounded hover:bg-surface-2"
                       title="Editar informações"
+                      aria-label="Editar informações"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -656,6 +675,7 @@ function PortalTable({
                         onClick={() => handleSyncPhoto(r.id)}
                         className="p-1.5 rounded hover:bg-surface-2"
                         title="Sincronizar foto do Salesforce"
+                      aria-label="Sincronizar foto do Salesforce"
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
                       </button>
@@ -665,6 +685,7 @@ function PortalTable({
                       disabled={r.id === currentUserId}
                       className="p-1.5 rounded hover:bg-surface-2 disabled:opacity-30"
                       title={r.ativo ? "Desativar" : "Ativar"}
+                      aria-label={r.ativo ? "Desativar usuário" : "Ativar usuário"}
                     >
                       <Power className="h-3.5 w-3.5" />
                     </button>
@@ -673,6 +694,7 @@ function PortalTable({
                       disabled={r.id === currentUserId}
                       className="p-1.5 rounded hover:bg-destructive/10 text-destructive disabled:opacity-30"
                       title="Remover"
+                      aria-label="Remover"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -844,6 +866,7 @@ function SyncAllPhotosButton() {
       disabled={busy}
       className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm disabled:opacity-60"
       title="Sincroniza a foto de perfil (do Salesforce) para todos os usuários vinculados"
+      aria-label="Sincronizar fotos de perfil de todos os usuários vinculados"
     >
       {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
       Sincronizar fotos

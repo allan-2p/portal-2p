@@ -38,9 +38,22 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Entrar — Portal 2P" },
-      { name: "description", content: "Acesse o Portal 2P." },
+      {
+        name: "description",
+        content:
+          "Acesse o Portal 2P para acompanhar carteira, pedidos, propostas e indicadores de vendas do Grupo 2P.",
+      },
+      { property: "og:title", content: "Entrar — Portal 2P" },
+      {
+        property: "og:description",
+        content:
+          "Acesse o Portal 2P para acompanhar carteira, pedidos, propostas e indicadores de vendas do Grupo 2P.",
+      },
+      { property: "og:url", content: "/auth" },
     ],
+    links: [{ rel: "canonical", href: "/auth" }],
   }),
+
   component: AuthPage,
 });
 
@@ -176,7 +189,7 @@ function AuthPage() {
             <div>
               {/* 2P Logo tile */}
               <div className="w-12 h-12 bg-white dark:bg-zinc-100 rounded-xl flex items-center justify-center shadow-lg ring-1 ring-zinc-900/10 dark:ring-white/10">
-                <img src={logoBlackSm} alt="Grupo 2P" width={80} height={50} className="h-7 w-auto" fetchPriority="high" decoding="async" />
+                <img src={logoBlackSm} alt="Logo do Grupo 2P" width={80} height={50} className="h-7 w-auto" fetchPriority="high" decoding="async" />
               </div>
 
               <div className="mt-14">

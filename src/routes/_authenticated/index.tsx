@@ -78,7 +78,25 @@ function persistTaskInteractions(map: Record<string, TaskInteractionState>) {
 
 
 export const Route = createFileRoute("/_authenticated/")({
-  head: () => ({ meta: [{ title: "Home — Portal 2P" }, { name: "description", content: "Visão da carteira, projeção vs realizado, tarefas, orçamentos e previsão." }] }),
+  head: () => ({
+    meta: [
+      { title: "Home — Portal 2P" },
+      {
+        name: "description",
+        content:
+          "Visão da carteira, projeção vs realizado, tarefas do dia, orçamentos e previsão de fechamento.",
+      },
+      { property: "og:title", content: "Home — Portal 2P" },
+      {
+        property: "og:description",
+        content:
+          "Visão da carteira, projeção vs realizado, tarefas do dia, orçamentos e previsão de fechamento.",
+      },
+      { property: "og:url", content: "/" },
+    ],
+    links: [{ rel: "canonical", href: "/" }],
+  }),
+
   component: HomePage,
 });
 
