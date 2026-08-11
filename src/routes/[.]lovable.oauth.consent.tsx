@@ -70,7 +70,7 @@ function Consent() {
     const target = data?.redirect_url ?? data?.redirect_to;
     if (!target) {
       setBusy(false);
-      setError("O servidor de autorização не retornou um redirecionamento.");
+      setError("O servidor de autorização não retornou um redirecionamento.");
       return;
     }
     window.location.href = target;
