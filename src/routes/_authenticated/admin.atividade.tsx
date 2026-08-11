@@ -16,6 +16,7 @@ import {
 import { adminListUserActivity } from "@/lib/activity.functions";
 import { ActivityDashboard } from "@/components/activity-dashboard";
 import { SecurityAlerts } from "@/components/security-alerts";
+import { LogRetention } from "@/components/log-retention";
 import { Loader2, Activity, LogIn, LogOut, RefreshCw, Search, ShieldAlert, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -131,6 +132,8 @@ function AtividadePage() {
         <SecurityAlerts />
 
         <ActivityDashboard days={days} />
+
+        <LogRetention />
 
         {isLoading ? (
           <div className="p-10 text-center text-muted-foreground">
