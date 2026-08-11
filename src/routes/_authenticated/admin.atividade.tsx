@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { adminListUserActivity } from "@/lib/activity.functions";
 import { ActivityDashboard } from "@/components/activity-dashboard";
+import { SecurityAlerts } from "@/components/security-alerts";
 import { Loader2, Activity, LogIn, LogOut, RefreshCw, Search, ShieldAlert, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -126,6 +127,8 @@ function AtividadePage() {
             </Button>
           </div>
         </header>
+
+        <SecurityAlerts />
 
         <ActivityDashboard days={days} />
 
