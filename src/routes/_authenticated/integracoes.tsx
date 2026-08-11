@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getSalesforceStatus, getSalesforceSample } from "@/lib/salesforce.functions";
+import { SyncPanel } from "@/components/sync-panel";
 
 
 export const Route = createFileRoute("/_authenticated/integracoes")({
@@ -149,6 +150,8 @@ function IntegracoesPage() {
           Ao desconectar por lá, esta página passará a exibir o Salesforce como desconectado.
         </div>
       </div>
+
+      <SyncPanel />
 
       <Top20Card />
     </div>
