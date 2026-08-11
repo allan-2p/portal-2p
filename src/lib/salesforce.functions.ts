@@ -483,7 +483,8 @@ function formatCnpj(v: string | null): string | null {
   return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12,14)}`;
 }
 
-function mapAccount(r: any): SalesforceAccount {
+// @ts-expect-error-unused
+function _mapAccountSf(r: any): SalesforceAccount {
   const rawSeg = (r.Segmentacao_Solar__c ?? "").toString().trim().toUpperCase();
   const segment = (["A","B","C","D"] as const).includes(rawSeg as any) ? (rawSeg as "A"|"B"|"C"|"D") : null;
   const tubos = typeof r.Segmentacao_Tubos__c === "string" && r.Segmentacao_Tubos__c
