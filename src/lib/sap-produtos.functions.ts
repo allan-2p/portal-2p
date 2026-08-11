@@ -43,6 +43,18 @@ export const listSapProdutos = createServerFn({ method: "GET" })
     };
   });
 
+export const listSapSyncRuns = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ runs: SapSyncRun[] }> => {
+    const { data, error } = await context.supabase
+      .from("sap_produtos_sync_runs")
+      .select("id, started_at, finished_at, status, inserted_count, updated_count, error_message")
+      .order("started_at", { ascending: false })
+      .limit(25);
+    if (error) throw new Error(error.message);
+    return { runs: (data ?? []) as SapSyncRun[] };
+  });
+
 export const validateSapRules = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
