@@ -381,3 +381,88 @@ export const adminSecurityAlerts = createServerFn({ method: "POST" })
 
     return { alerts: alerts.slice(0, 30), windowMinutes: data.windowMinutes };
   });
+
+/* ------------------------------------------------------------------ *
+ * Retenção e arquivamento de logs (compliance + performance)
+ * ------------------------------------------------------------------ */
+
+const RetentionInput = z.object({
+  hotDays: z.number().int().min(7).max(3650),
+  archiveDays: z.number().int().min(30).max(3650),
+  enabled: z.boolean(),
+});
+
+/** Lê a política atual, últimas execuções e volumetria das tabelas. */
+export const adminGetLogRetention = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const [{ data: policy }, { data: runs }] = await Promise.all([
+      context.supabase.from("log_retention_policy").select("*").eq("id", 1).maybeSingle(),
+      context.supabase
+        .from("log_retention_runs")
+        .select("*")
+        .order("ran_at", { ascending: false })
+        .limit(10),
+    ]);
+    if (!policy) throw new Error("Acesso restrito a administradores.");
+
+    const cutoff = new Date(Date.now() - policy.hot_days * 86400000).toISOString();
+    const [hot, pending, archived] = await Promise.all([
+      context.supabase.from("user_activity_log").select("id", { count: "exact", head: true }),
+      context.supabase
+        .from("user_activity_log")
+        .select("id", { count: "exact", head: true })
+        .lt("created_at", cutoff),
+      context.supabase
+        .from("user_activity_log_archive")
+        .select("id", { count: "exact", head: true }),
+    ]);
+
+    return {
+      policy: {
+        hotDays: policy.hot_days,
+        archiveDays: policy.archive_days,
+        enabled: policy.enabled,
+        updatedAt: policy.updated_at,
+      },
+      runs: runs ?? [],
+      counts: {
+        hot: hot.count ?? 0,
+        pending: pending.count ?? 0,
+        archived: archived.count ?? 0,
+      },
+    };
+  });
+
+/** Atualiza os prazos de retenção (somente admin, garantido por RLS). */
+export const adminUpdateLogRetention = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => RetentionInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("log_retention_policy")
+      .update({
+        hot_days: data.hotDays,
+        archive_days: data.archiveDays,
+        enabled: data.enabled,
+        updated_by: context.userId,
+      })
+      .eq("id", 1)
+      .select("id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Executa o arquivamento/expurgo imediatamente (somente admin). */
+export const adminRunLogRetention = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("is_admin");
+    if (!isAdmin) throw new Error("Acesso restrito a administradores.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("apply_log_retention");
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(data) ? data[0] : data;
+    return { archived: row?.archived ?? 0, purged: row?.purged ?? 0 };
+  });

@@ -476,6 +476,66 @@ export type Database = {
         }
         Relationships: []
       }
+      log_retention_policy: {
+        Row: {
+          archive_days: number
+          created_at: string
+          enabled: boolean
+          hot_days: number
+          id: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          archive_days?: number
+          created_at?: string
+          enabled?: boolean
+          hot_days?: number
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          archive_days?: number
+          created_at?: string
+          enabled?: boolean
+          hot_days?: number
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      log_retention_runs: {
+        Row: {
+          archive_days: number
+          archived_count: number
+          error_message: string | null
+          hot_days: number
+          id: string
+          purged_count: number
+          ran_at: string
+        }
+        Insert: {
+          archive_days: number
+          archived_count?: number
+          error_message?: string | null
+          hot_days: number
+          id?: string
+          purged_count?: number
+          ran_at?: string
+        }
+        Update: {
+          archive_days?: number
+          archived_count?: number
+          error_message?: string | null
+          hot_days?: number
+          id?: string
+          purged_count?: number
+          ran_at?: string
+        }
+        Relationships: []
+      }
       marketing_goals: {
         Row: {
           goal: number
@@ -893,6 +953,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_log_archive: {
+        Row: {
+          archived_at: string
+          created_at: string
+          detail: string | null
+          email: string | null
+          event: string
+          id: string
+          ip: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          archived_at?: string
+          created_at: string
+          detail?: string | null
+          email?: string | null
+          event: string
+          id: string
+          ip?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          archived_at?: string
+          created_at?: string
+          detail?: string | null
+          email?: string | null
+          event?: string
+          id?: string
+          ip?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_feature_permissions: {
         Row: {
           allowed: boolean
@@ -1088,6 +1184,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_log_retention: {
+        Args: never
+        Returns: {
+          archived: number
+          purged: number
+        }[]
+      }
       check_rate_limit: {
         Args: { _key: string; _limit: number; _window_seconds: number }
         Returns: {
