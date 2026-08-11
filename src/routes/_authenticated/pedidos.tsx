@@ -13,9 +13,22 @@ export const Route = createFileRoute("/_authenticated/pedidos")({
   head: () => ({
     meta: [
       { title: "Pedidos — Portal 2P" },
-      { name: "description", content: "Acompanhamento de pedidos em Kanban ou lista." },
+      {
+        name: "description",
+        content:
+          "Acompanhe os pedidos em Kanban ou lista, com status, valores e responsáveis por vendedor.",
+      },
+      { property: "og:title", content: "Pedidos — Portal 2P" },
+      {
+        property: "og:description",
+        content:
+          "Acompanhe os pedidos em Kanban ou lista, com status, valores e responsáveis por vendedor.",
+      },
+      { property: "og:url", content: "/pedidos" },
     ],
+    links: [{ rel: "canonical", href: "/pedidos" }],
   }),
+
   component: PedidosPage,
 });
 

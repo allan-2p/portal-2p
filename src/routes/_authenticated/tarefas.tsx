@@ -26,9 +26,22 @@ export const Route = createFileRoute("/_authenticated/tarefas")({
   head: () => ({
     meta: [
       { title: "Tarefas — Portal 2P" },
-      { name: "description", content: "Calendário de tarefas sincronizado com o Salesforce." },
+      {
+        name: "description",
+        content:
+          "Calendário de tarefas sincronizado com o Salesforce, com filtros por vendedor e prioridade.",
+      },
+      { property: "og:title", content: "Tarefas — Portal 2P" },
+      {
+        property: "og:description",
+        content:
+          "Calendário de tarefas sincronizado com o Salesforce, com filtros por vendedor e prioridade.",
+      },
+      { property: "og:url", content: "/tarefas" },
     ],
+    links: [{ rel: "canonical", href: "/tarefas" }],
   }),
+
   component: TarefasPage,
 });
 
