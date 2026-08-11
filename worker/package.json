@@ -1,0 +1,12 @@
+{
+  "name": "portal-2p-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Worker de background do Portal 2P (roda na VPS). Sincroniza Salesforce -> bases espelho Supabase.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/index.js",
+    "sync:accounts": "node src/index.js --once --job=salesforce_accounts"
+  }
+}
