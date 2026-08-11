@@ -114,6 +114,7 @@ function ProdutosPage() {
     const term = q.trim().toLowerCase();
     return produtos.filter((p) => {
       if (tipo !== "all" && p.tipo !== tipo) return false;
+      if (permissao !== "all" && (p.permissao ?? "").toLowerCase() !== permissao) return false;
       if (status === "ativos" && !p.ativo) return false;
       if (status === "inativos" && p.ativo) return false;
       if (soDivergentes && !p.divergente) return false;
@@ -121,10 +122,12 @@ function ProdutosPage() {
       return (
         p.codigo.toLowerCase().includes(term) ||
         p.descricao.toLowerCase().includes(term) ||
+        (p.permissao ?? "").toLowerCase().includes(term) ||
         (p.lista_preco ?? "").toLowerCase().includes(term)
       );
     });
-  }, [produtos, q, tipo, status, soDivergentes]);
+  }, [produtos, q, tipo, permissao, status, soDivergentes]);
+
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const current = Math.min(page, totalPages - 1);
