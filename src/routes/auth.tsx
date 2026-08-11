@@ -48,6 +48,9 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const goHome = () => (next ? window.location.replace(next) : navigate({ to: "/" }));
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,9 +89,11 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/" });
+      if (data.user) goHome();
     });
-  }, [navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, next]);
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -115,7 +120,7 @@ function AuthPage() {
         if (error) throw error;
         toast.success("Bem-vindo de volta!");
         setSplash(true);
-        setTimeout(() => navigate({ to: "/" }), 1100);
+        setTimeout(() => goHome(), 1100);
       }
     } catch (err) {
       const raw = err instanceof Error ? err.message : "Erro ao entrar";
