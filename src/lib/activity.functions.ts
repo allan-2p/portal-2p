@@ -247,3 +247,137 @@ export const adminActivityDashboard = createServerFn({ method: "POST" })
       topActions: sorted(actions, "action"),
     };
   });
+
+export type SecurityAlert = {
+  id: string;
+  severity: "alta" | "media";
+  kind: "ip_brute_force" | "email_brute_force" | "ip_multi_email" | "email_multi_ip";
+  subject: string;
+  count: number;
+  distinct: number;
+  firstAt: string;
+  lastAt: string;
+  samples: string[];
+  message: string;
+};
+
+const AlertInput = z.object({
+  windowMinutes: z.number().int().min(5).max(1440).default(60),
+  failThreshold: z.number().int().min(3).max(50).default(5),
+});
+
+/** Detecta padrões suspeitos de autenticação (brute force por IP/e-mail). */
+export const adminSecurityAlerts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => AlertInput.parse(d))
+  .handler(async ({ data, context }): Promise<{ alerts: SecurityAlert[]; windowMinutes: number }> => {
+    const { data: isAdmin } = await context.supabase.rpc("is_admin");
+    if (!isAdmin) throw new Error("Forbidden: admin role required");
+
+    const since = new Date(Date.now() - data.windowMinutes * 60_000).toISOString();
+    const { data: rows, error } = await context.supabase
+      .from("user_activity_log")
+      .select("email, ip, detail, created_at")
+      .eq("event", "login_failed")
+      .gte("created_at", since)
+      .order("created_at", { ascending: true })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+
+    type Agg = { count: number; first: string; last: string; peers: Set<string>; reasons: Set<string> };
+    const byIp = new Map<string, Agg>();
+    const byEmail = new Map<string, Agg>();
+
+    const push = (m: Map<string, Agg>, key: string, peer: string, r: any) => {
+      const a = m.get(key) ?? {
+        count: 0,
+        first: r.created_at,
+        last: r.created_at,
+        peers: new Set<string>(),
+        reasons: new Set<string>(),
+      };
+      a.count += 1;
+      a.last = r.created_at;
+      if (peer) a.peers.add(peer);
+      if (r.detail) a.reasons.add(String(r.detail).slice(0, 60));
+      m.set(key, a);
+    };
+
+    for (const r of (rows ?? []) as any[]) {
+      const ip = (r.ip ?? "").trim();
+      const email = (r.email ?? "").trim().toLowerCase();
+      if (ip) push(byIp, ip, email, r);
+      if (email) push(byEmail, email, ip, r);
+    }
+
+    const alerts: SecurityAlert[] = [];
+
+    for (const [ip, a] of byIp) {
+      if (a.count >= data.failThreshold) {
+        alerts.push({
+          id: `ip:${ip}`,
+          severity: a.count >= data.failThreshold * 2 ? "alta" : "media",
+          kind: "ip_brute_force",
+          subject: ip,
+          count: a.count,
+          distinct: a.peers.size,
+          firstAt: a.first,
+          lastAt: a.last,
+          samples: Array.from(a.peers).slice(0, 5),
+          message: `${a.count} falhas de login vindas do IP ${ip}.`,
+        });
+      }
+      if (a.peers.size >= 3) {
+        alerts.push({
+          id: `ip-multi:${ip}`,
+          severity: "alta",
+          kind: "ip_multi_email",
+          subject: ip,
+          count: a.count,
+          distinct: a.peers.size,
+          firstAt: a.first,
+          lastAt: a.last,
+          samples: Array.from(a.peers).slice(0, 5),
+          message: `IP ${ip} tentou entrar com ${a.peers.size} e-mails diferentes (possível varredura).`,
+        });
+      }
+    }
+
+    for (const [email, a] of byEmail) {
+      if (a.count >= data.failThreshold) {
+        alerts.push({
+          id: `email:${email}`,
+          severity: a.count >= data.failThreshold * 2 ? "alta" : "media",
+          kind: "email_brute_force",
+          subject: email,
+          count: a.count,
+          distinct: a.peers.size,
+          firstAt: a.first,
+          lastAt: a.last,
+          samples: Array.from(a.reasons).slice(0, 3),
+          message: `${a.count} tentativas malsucedidas na conta ${email}.`,
+        });
+      }
+      if (a.peers.size >= 3) {
+        alerts.push({
+          id: `email-multi:${email}`,
+          severity: "alta",
+          kind: "email_multi_ip",
+          subject: email,
+          count: a.count,
+          distinct: a.peers.size,
+          firstAt: a.first,
+          lastAt: a.last,
+          samples: Array.from(a.peers).slice(0, 5),
+          message: `Conta ${email} recebeu tentativas de ${a.peers.size} IPs diferentes.`,
+        });
+      }
+    }
+
+    alerts.sort(
+      (x, y) =>
+        (x.severity === y.severity ? 0 : x.severity === "alta" ? -1 : 1) || y.count - x.count,
+    );
+
+    return { alerts: alerts.slice(0, 30), windowMinutes: data.windowMinutes };
+  });
