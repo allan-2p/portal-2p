@@ -38,6 +38,8 @@ import {
   type SalesforceOppRow,
 } from "@/lib/salesforce.functions";
 import { useSellerScope } from "@/hooks/use-seller-scope";
+import { FORMER_OWNER_NAMES } from "@/lib/salespeople";
+
 import {
   Select,
   SelectContent,
