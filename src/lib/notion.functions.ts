@@ -96,8 +96,13 @@ const inputSchema = z.object({
 export const getNotionCalendar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: Input) => inputSchema.parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    // 0. Rate limit por usuário (protege a cota do conector Notion).
+    const { enforceRateLimit } = await import("@/lib/rate-limit.server");
+    await enforceRateLimit(`notion_calendar:${context.userId}`, 30, 60, "consultas ao calendário");
+
     // 1. Descobre databases compartilhados com a integração.
+
     const search = await nfetch("/search", {
       method: "POST",
       body: JSON.stringify({
