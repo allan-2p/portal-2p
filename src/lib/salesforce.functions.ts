@@ -543,42 +543,19 @@ export const getSalesforceAccounts = createServerFn({ method: "GET" })
   .inputValidator((d?: { instance?: "solar" | "carregadores" }) => d ?? {})
   .handler(async ({ data, context }) => {
     const instance = data?.instance === "carregadores" ? "carregadores" : "solar";
-
-    // 1) Preferir o banco espelho (mais rápido que o Salesforce)
-    try {
-      const { fetchAccountsFromDb } = await import("@/lib/accounts-db.server");
-      const [rows, profilesRes] = await Promise.all([
-        fetchAccountsFromDb(instance),
-        context.supabase.from("profiles").select("sf_user_id, full_name"),
-      ]);
-      const ownerNames = new Map<string, string>();
-      for (const p of profilesRes.data ?? []) {
-        if (p.sf_user_id && p.full_name) ownerNames.set(p.sf_user_id, p.full_name);
-      }
-      if (rows.length > 0) {
-        return { records: rows.map((r) => mapAccountDb(r, ownerNames)) as SalesforceAccount[] };
-      }
-    } catch (err) {
-      console.error("[accounts] falha ao ler do banco, usando Salesforce:", err);
+    // Fonte única: banco espelho (account_sf). Sem fallback para o Salesforce.
+    const { fetchAccountsFromDb } = await import("@/lib/accounts-db.server");
+    const [rows, profilesRes] = await Promise.all([
+      fetchAccountsFromDb(instance),
+      context.supabase.from("profiles").select("sf_user_id, full_name"),
+    ]);
+    const ownerNames = new Map<string, string>();
+    for (const p of profilesRes.data ?? []) {
+      if (p.sf_user_id && p.full_name) ownerNames.set(p.sf_user_id, p.full_name);
     }
-
-    // 2) Fallback: Salesforce
-    const soql =
-      `SELECT Id, Name, CNPJ__c, Segmentacao_Solar__c, Segmentacao_Tubos__c, ` +
-      `Industry, Phone, Website, OwnerId, Owner.Name, CreatedDate, ` +
-      `Observacoes__c, Description, Total_Vendido_Trimestre_Anterior__c, Total_Vendido_Esse_Trimestre__c ` +
-      `FROM Account ORDER BY Name ASC LIMIT 5000`;
-    let res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
-    const all: any[] = [...(res?.records ?? [])];
-    // SF devolve batches de ~1000 quando o payload é pesado — seguir nextRecordsUrl.
-    let safety = 10;
-    while (res && res.done === false && res.nextRecordsUrl && safety-- > 0) {
-      const path = String(res.nextRecordsUrl).replace(/^\/services\/data\/v\d+\.\d+/, "");
-      res = await sfFetch(path);
-      all.push(...(res?.records ?? []));
-    }
-    return { records: all.map(mapAccount) as SalesforceAccount[] };
+    return { records: rows.map((r) => mapAccountDb(r, ownerNames)) as SalesforceAccount[] };
   });
+
 
 
 
