@@ -65,7 +65,11 @@ function pick(r: any, ...keys: string[]) {
  */
 export async function getProducts(): Promise<SapMaterial[]> {
   const url = process.env["SAP_BRIDGE_URL"] ?? process.env["SAP_RFC_URL"];
-  const auth = process.env["SAP_BRIDGE_AUTH"];
+  const user = process.env["SAP_BRIDGE_USER"];
+  const pass = process.env["SAP_BRIDGE_PASSWORD"];
+  const auth =
+    process.env["SAP_BRIDGE_AUTH"] ??
+    (user && pass ? `Basic ${Buffer.from(`${user}:${pass}`).toString("base64")}` : undefined);
   const token = process.env["SAP_RFC_TOKEN"];
   if (!url) {
     throw new Error(
@@ -73,8 +77,11 @@ export async function getProducts(): Promise<SapMaterial[]> {
     );
   }
   if (!auth && !token) {
-    throw new Error("Integração SAP sem credencial: defina SAP_BRIDGE_AUTH (valor Basic ...).");
+    throw new Error(
+      "Integração SAP sem credencial: defina SAP_BRIDGE_AUTH (Basic ...) ou SAP_BRIDGE_USER + SAP_BRIDGE_PASSWORD.",
+    );
   }
+
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
