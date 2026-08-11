@@ -1,3 +1,5 @@
+import { getRequest } from "@tanstack/react-start/server";
+
 /**
  * Ad-hoc rate limiting backed by the database.
  *
@@ -56,5 +58,20 @@ export async function enforceRateLimit(
     throw new Error(
       `Muitas ${label} em pouco tempo. Tente novamente em ${seconds}s.`,
     );
+  }
+}
+
+/** Best-effort client IP for unauthenticated endpoints. */
+export function clientIp(): string {
+  try {
+    const req = getRequest();
+    return (
+      req.headers.get("cf-connecting-ip") ??
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown"
+    );
+  } catch {
+    return "unknown";
   }
 }
