@@ -743,6 +743,81 @@ export type Database = {
         }
         Relationships: []
       }
+      sap_produtos: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          descricao: string
+          id: string
+          last_synced_at: string | null
+          lista_preco: string | null
+          permissao: string
+          sap_raw: Json | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          descricao: string
+          id?: string
+          last_synced_at?: string | null
+          lista_preco?: string | null
+          permissao?: string
+          sap_raw?: Json | null
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          last_synced_at?: string | null
+          lista_preco?: string | null
+          permissao?: string
+          sap_raw?: Json | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sap_produtos_sync_runs: {
+        Row: {
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          inserted_count: number
+          started_at: string
+          status: string
+          triggered_by: string | null
+          updated_count: number
+        }
+        Insert: {
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          inserted_count?: number
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+          updated_count?: number
+        }
+        Update: {
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          inserted_count?: number
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+          updated_count?: number
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
