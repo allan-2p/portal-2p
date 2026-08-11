@@ -1,28 +1,4 @@
-/** Regras de classificação por prefixo da descrição (espelha o legado tbl_prj_prd_calc). */
-export const TIPO_PREFIXOS: Array<{ prefixo: string; tipo: string }> = [
-  { prefixo: "MOD", tipo: "Módulo" },
-  { prefixo: "PAINEL", tipo: "Módulo" },
-  { prefixo: "INV", tipo: "Inversor" },
-  { prefixo: "MICRO", tipo: "Microinversor" },
-  { prefixo: "EST", tipo: "Estrutura" },
-  { prefixo: "ESTRUT", tipo: "Estrutura" },
-  { prefixo: "CAB", tipo: "Cabo" },
-  { prefixo: "CONECTOR", tipo: "Conector" },
-  { prefixo: "STR", tipo: "String Box" },
-  { prefixo: "BAT", tipo: "Bateria" },
-  { prefixo: "CARR", tipo: "Carregador" },
-  { prefixo: "WALLBOX", tipo: "Carregador" },
-  { prefixo: "SERV", tipo: "Serviço" },
-  { prefixo: "FRETE", tipo: "Frete" },
-];
-
-export function classificarTipo(descricao: string): string {
-  const d = (descricao || "").trim().toUpperCase();
-  for (const { prefixo, tipo } of TIPO_PREFIXOS) {
-    if (d.startsWith(prefixo)) return tipo;
-  }
-  return "Outros";
-}
+export { classificarTipo, classificarDetalhado, validarRegras, TIPO_PREFIXOS } from "./sap-produtos-rules";
 
 export type SapMaterial = {
   codigo: string;
