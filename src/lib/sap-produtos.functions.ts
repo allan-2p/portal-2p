@@ -64,12 +64,12 @@ export const validateSapRules = createServerFn({ method: "GET" })
 
 export const syncSapProdutos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ inserted: number; updated: number }> => {
+  .handler(async ({ context }): Promise<{ inserted: number; updated: number; deactivated: number }> => {
     const { data: isAdmin, error: roleError } = await context.supabase.rpc("is_admin");
     if (roleError || !isAdmin) throw new Error("Forbidden: admin role required");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { classificarTipo, fetchSapMateriais, validarRegras } = await import("./sap-produtos.server");
+    const { classificarTipo, getProducts, validarRegras } = await import("./sap-produtos.server");
 
     // Trava de segurança: regras inválidas classificariam o catálogo errado.
     const problemas = validarRegras();
@@ -96,8 +96,12 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
     };
 
     try {
-      const materiais = await fetchSapMateriais();
-      const { data: existentes } = await supabaseAdmin.from("sap_produtos").select("codigo");
+      const materiais = await getProducts();
+      if (materiais.length === 0) {
+        throw new Error("SAP: RFC listar_material não retornou materiais — sincronização abortada.");
+      }
+
+      const { data: existentes } = await supabaseAdmin.from("sap_produtos").select("codigo, ativo");
       const known = new Set((existentes ?? []).map((r: any) => r.codigo));
 
       const now = new Date().toISOString();
@@ -118,12 +122,27 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
       }
 
+      // Merge: o que não veio mais do SAP fica inativo (sem apagar histórico).
+      const vindos = new Set(rows.map((r) => r.codigo));
+      const orfaos = (existentes ?? [])
+        .filter((r: any) => r.ativo && !vindos.has(r.codigo))
+        .map((r: any) => r.codigo as string);
+      for (let i = 0; i < orfaos.length; i += 500) {
+        const chunk = orfaos.slice(i, i + 500);
+        const { error } = await supabaseAdmin
+          .from("sap_produtos")
+          .update({ ativo: false, last_synced_at: now })
+          .in("codigo", chunk);
+        if (error) throw new Error(error.message);
+      }
+
       const inserted = rows.filter((r) => !known.has(r.codigo)).length;
       const updated = rows.length - inserted;
       await finish({ status: "success", inserted_count: inserted, updated_count: updated });
-      return { inserted, updated };
+      return { inserted, updated, deactivated: orfaos.length };
     } catch (e: any) {
       await finish({ status: "error", error_message: String(e?.message ?? e).slice(0, 500) });
       throw e;
     }
   });
+
