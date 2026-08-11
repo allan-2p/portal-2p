@@ -611,6 +611,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_hits: {
+        Row: {
+          bucket_key: string
+          hits: number
+          window_start: string
+        }
+        Insert: {
+          bucket_key: string
+          hits?: number
+          window_start: string
+        }
+        Update: {
+          bucket_key?: string
+          hits?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       salesforce_team_members: {
         Row: {
           created_at: string
@@ -1070,6 +1088,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: { _key: string; _limit: number; _window_seconds: number }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          reset_at: string
+        }[]
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
