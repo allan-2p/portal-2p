@@ -38,9 +38,22 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Entrar — Portal 2P" },
-      { name: "description", content: "Acesse o Portal 2P." },
+      {
+        name: "description",
+        content:
+          "Acesse o Portal 2P para acompanhar carteira, pedidos, propostas e indicadores de vendas do Grupo 2P.",
+      },
+      { property: "og:title", content: "Entrar — Portal 2P" },
+      {
+        property: "og:description",
+        content:
+          "Acesse o Portal 2P para acompanhar carteira, pedidos, propostas e indicadores de vendas do Grupo 2P.",
+      },
+      { property: "og:url", content: "/auth" },
     ],
+    links: [{ rel: "canonical", href: "/auth" }],
   }),
+
   component: AuthPage,
 });
 

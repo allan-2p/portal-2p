@@ -38,7 +38,25 @@ import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
-  head: () => ({ meta: [{ title: "Usuários — Portal 2P" }] }),
+  head: () => ({
+    meta: [
+      { title: "Usuários — Portal 2P" },
+      {
+        name: "description",
+        content:
+          "Cadastre, edite e controle o acesso dos usuários do Portal 2P por organização e status.",
+      },
+      { property: "og:title", content: "Usuários — Portal 2P" },
+      {
+        property: "og:description",
+        content:
+          "Cadastre, edite e controle o acesso dos usuários do Portal 2P por organização e status.",
+      },
+      { property: "og:url", content: "/usuarios" },
+    ],
+    links: [{ rel: "canonical", href: "/usuarios" }],
+  }),
+
   component: UsuariosPage,
 });
 

@@ -9,7 +9,25 @@ import { uploadAvatar } from "@/lib/avatar";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/perfil")({
-  head: () => ({ meta: [{ title: "Meu perfil — Portal 2P" }] }),
+  head: () => ({
+    meta: [
+      { title: "Meu perfil — Portal 2P" },
+      {
+        name: "description",
+        content:
+          "Gerencie seus dados pessoais, foto e preferências da sua conta no Portal 2P.",
+      },
+      { property: "og:title", content: "Meu perfil — Portal 2P" },
+      {
+        property: "og:description",
+        content:
+          "Gerencie seus dados pessoais, foto e preferências da sua conta no Portal 2P.",
+      },
+      { property: "og:url", content: "/perfil" },
+    ],
+    links: [{ rel: "canonical", href: "/perfil" }],
+  }),
+
   component: PerfilPage,
 });
 
