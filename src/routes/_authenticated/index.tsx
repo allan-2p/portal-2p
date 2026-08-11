@@ -2141,7 +2141,7 @@ function NewTaskDialog({
             ) : (
               <>
                 <Input
-                  placeholder="Buscar cliente no Salesforce…"
+                  placeholder="Buscar entre seus clientes…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -2150,7 +2150,7 @@ function NewTaskDialog({
                     <div className="p-3 text-xs text-muted-foreground">Carregando clientes…</div>
                   )}
                   {!accountsQ.isLoading && filtered.length === 0 && (
-                    <div className="p-3 text-xs text-muted-foreground">Nenhum cliente encontrado.</div>
+                    <div className="p-3 text-xs text-muted-foreground">Nenhum cliente da sua carteira encontrado.</div>
                   )}
                   {filtered.map((a) => (
                     <button
