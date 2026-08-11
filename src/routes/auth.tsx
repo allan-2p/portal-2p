@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { logAuthFailure } from "@/lib/activity.functions";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -142,6 +143,9 @@ function AuthPage() {
           ? "E-mail ou senha incorretos."
           : raw;
       setAuthError(friendly);
+      if (!resetMode) {
+        void logAuthFailure({ data: { email, reason: friendly.slice(0, 120) } }).catch(() => {});
+      }
       toast.error(friendly);
       setShake((s) => s + 1);
       setLoading(false);

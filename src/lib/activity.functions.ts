@@ -4,9 +4,39 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getRequestIP, getRequestHeader } from "@tanstack/react-start/server";
 
 const LogInput = z.object({
-  event: z.enum(["login", "logout", "page_view"]),
+  event: z.enum(["login", "logout", "page_view", "sensitive_action"]),
   detail: z.string().max(200).optional(),
 });
+
+const AuthFailInput = z.object({
+  email: z.string().email().max(200),
+  reason: z.string().max(120).optional(),
+});
+
+/**
+ * Registra tentativa de login malsucedida. Endpoint público (o usuário ainda
+ * não tem sessão), protegido por rate limit por IP e sem eco de dados.
+ */
+export const logAuthFailure = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => AuthFailInput.parse(d))
+  .handler(async ({ data }) => {
+    const { enforceRateLimit, clientIp } = await import("@/lib/rate-limit.server");
+    const { recordAudit } = await import("@/lib/audit.server");
+    await enforceRateLimit(`auth_fail:${clientIp()}`, 20, 60, "tentativas de login");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("email", data.email)
+      .maybeSingle();
+    await recordAudit({
+      userId: profile?.id ?? null,
+      email: data.email,
+      event: "login_failed",
+      detail: data.reason ?? "credenciais inválidas",
+    });
+    return { ok: true };
+  });
 
 /** Registra um evento de atividade do usuário autenticado. */
 export const logUserActivity = createServerFn({ method: "POST" })
@@ -52,7 +82,9 @@ export type ActivityUserSummary = {
 };
 
 const ListInput = z.object({
-  event: z.enum(["all", "login", "logout", "page_view"]).default("all"),
+  event: z
+    .enum(["all", "login", "logout", "login_failed", "page_view", "integration", "sensitive_action"])
+    .default("all"),
   user_id: z.string().uuid().nullable().optional(),
   days: z.number().int().min(1).max(365).default(30),
   limit: z.number().int().min(10).max(500).default(200),
