@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { adminListUserActivity } from "@/lib/activity.functions";
+import { ActivityDashboard } from "@/components/activity-dashboard";
 import { Loader2, Activity, LogIn, LogOut, RefreshCw, Search, ShieldAlert, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -125,6 +126,8 @@ function AtividadePage() {
             </Button>
           </div>
         </header>
+
+        <ActivityDashboard days={days} />
 
         {isLoading ? (
           <div className="p-10 text-center text-muted-foreground">
