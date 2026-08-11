@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS public.sync_queue; DROP TABLE IF EXISTS public.sync_runs; DROP TABLE IF EXISTS public.sync_state;
