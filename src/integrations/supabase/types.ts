@@ -611,6 +611,69 @@ export type Database = {
         }
         Relationships: []
       }
+      permission_profile_features: {
+        Row: {
+          created_at: string
+          feature_key: string
+          instance_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          feature_key: string
+          instance_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          feature_key?: string
+          instance_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_profile_features_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_profile_features_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "permission_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permission_profiles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ativo: boolean
@@ -1097,6 +1160,32 @@ export type Database = {
           sf_user_id?: string | null
         }
         Relationships: []
+      }
+      user_permission_profiles: {
+        Row: {
+          created_at: string
+          profile_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          profile_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          profile_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permission_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "permission_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
