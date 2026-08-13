@@ -95,10 +95,12 @@ function AdminGroupItems({
   items,
   pathname,
   collapsed,
+  health,
 }: {
   items: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
   pathname: string;
   collapsed: boolean;
+  health?: { map: Map<string, IntegrationHealthItem>; isLoading: boolean };
 }) {
   return (
     <div className="space-y-0.5">
