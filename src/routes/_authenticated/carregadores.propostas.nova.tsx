@@ -1446,7 +1446,7 @@ function PropostaCpoPage() {
               </div>
             </div>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => { setConfirmarConclusao(false); if (!propostaId) setStatusProposta("Salvo"); }} disabled={saving}>
+              <Button variant="outline" onClick={() => { setConfirmarConclusao(false); if (!propostaId) setStatusProposta("Salvo"); }}>
                 Cancelar
               </Button>
               <Button
@@ -1454,10 +1454,9 @@ function PropostaCpoPage() {
                   setConfirmarConclusao(false);
                   pedirRevisao("concluir");
                 }}
-                disabled={saving}
                 className="gap-2"
               >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                <CheckCircle2 className="h-4 w-4" />
                 Sim, revisar e concluir
               </Button>
             </DialogFooter>
