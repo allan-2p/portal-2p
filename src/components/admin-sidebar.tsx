@@ -4,6 +4,12 @@ import { sectionForPath } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useInstance } from "./instance-provider";
+import { IntegrationStatusDot, useIntegrationHealthMap, type IntegrationHealthItem } from "./integration-status";
+
+function slugFromTo(to: string): string | null {
+  const i = to.indexOf("#");
+  return i === -1 ? null : to.slice(i + 1);
+}
 
 /**
  * Menu lateral do ambiente de Administração. Mostra apenas os itens da seção
