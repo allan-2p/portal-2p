@@ -1372,7 +1372,6 @@ function PropostaCpoPage() {
               <Button
                 onClick={() => {
                   setStatusProposta("Aguardando Pagamento");
-                  setSaving(true);
                   setConfirmarConclusao(true);
                 }}
                 disabled={saving}
