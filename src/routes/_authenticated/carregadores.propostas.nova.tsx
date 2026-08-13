@@ -150,6 +150,8 @@ function PropostaCpoPage() {
   const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   const [previewAberto, setPreviewAberto] = useState(false);
+  const [usarLogoCliente, setUsarLogoCliente] = useState(true);
+
   const [propostaUpdatedAt, setPropostaUpdatedAt] = useState<string | null>(null);
   const [statusProposta, setStatusProposta] = useState<string>("Salvo");
   const submitLock = useRef(false);
