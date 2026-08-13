@@ -1392,9 +1392,9 @@ function PropostaCpoPage() {
           errors={errosFechamento}
           showErrors={!podeFechar && tentouAvancar}
           savedAt={autosaveAt}
-          minimal={etapa === 1}
+          minimal={etapa === 1 && !temItemComValor}
           actions={
-            etapa === 4
+            etapa === 4 && temItemComValor
               ? [
                   {
                     label: "Salvar proposta",
@@ -1413,7 +1413,7 @@ function PropostaCpoPage() {
           }
 
           primary={
-            etapa === 1
+            !temItemComValor
               ? null
               : etapa === 4
                 ? {
