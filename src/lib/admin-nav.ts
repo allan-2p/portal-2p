@@ -42,6 +42,8 @@ export type AdminSection = {
   label: string;
   icon: typeof Users;
   home: string;
+  /** Prefixos extras que pertencem à seção (ex.: a página índice de Integrações). */
+  prefixes?: string[];
   groups: AdminNavGroup[];
 };
 
@@ -75,6 +77,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     label: "Integrações",
     icon: Plug,
     home: "/integracoes",
+    prefixes: ["/integracoes"],
     groups: [
       {
         label: "CRM",
@@ -156,11 +159,16 @@ export const ADMIN_SECTIONS: AdminSection[] = [
 const ALL_ADMIN_PATHS = ADMIN_SECTIONS.flatMap((s) => s.groups.flatMap((g) => g.items.map((i) => i.to)));
 
 export function isAdminEnvPath(pathname: string): boolean {
-  return ALL_ADMIN_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`)) || pathname === "/perfil";
+  return ADMIN_SECTIONS.flatMap((s) => s.prefixes ?? []).some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  ) || ALL_ADMIN_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`)) || pathname === "/perfil";
 }
 
 export function sectionForPath(pathname: string): AdminSection | null {
   for (const s of ADMIN_SECTIONS) {
+    for (const p of s.prefixes ?? []) {
+      if (pathname === p || pathname.startsWith(`${p}/`)) return s;
+    }
     for (const g of s.groups) {
       for (const i of g.items) {
         if (pathname === i.to || pathname.startsWith(`${i.to}/`)) return s;
