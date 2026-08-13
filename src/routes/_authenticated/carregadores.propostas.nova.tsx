@@ -812,6 +812,8 @@ function PropostaCpoPage() {
             </div>
 
             {/* Itens */}
+            {etapa === 2 ? (
+            <>
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h3 className="font-semibold text-sm">Produtos</h3>
