@@ -32,8 +32,9 @@ import { toast } from "sonner";
 import { useInstance } from "@/components/instance-provider";
 
 import {
-  Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink, Pencil,
+  Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink, Pencil, Stethoscope,
 } from "lucide-react";
+import { UserDetailSheet } from "@/components/user-detail-sheet";
 import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 
@@ -117,6 +118,7 @@ function UsuariosPage() {
     | { kind: "invite"; external?: boolean }
     | { kind: "invite-sf"; candidate: SFCandidate }
     | { kind: "edit"; row: Row }
+    | { kind: "detail"; row: Row }
     | null
   >(null);
 
@@ -357,12 +359,21 @@ function UsuariosPage() {
             onRegimeChange={handleRegimeChange}
 
             onEdit={(row) => setModal({ kind: "edit", row })}
+            onDetail={(row) => setModal({ kind: "detail", row })}
           />
         ) : (
           <SalesforceTable onInvite={(c) => setModal({ kind: "invite-sf", candidate: c })} />
         )}
       </div>
 
+
+      {modal?.kind === "detail" && (
+        <UserDetailSheet
+          userId={modal.row.id}
+          onClose={() => setModal(null)}
+          onEdit={() => setModal({ kind: "edit", row: modal.row })}
+        />
+      )}
 
       {modal?.kind === "edit" && (
         <EditUserModal
@@ -418,7 +429,7 @@ function UsuariosPage() {
 }
 
 function PortalTable({
-  rows, loading, currentUserId, onRoleChange, onOrgChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit,
+  rows, loading, currentUserId, onRoleChange, onOrgChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit, onDetail,
 }: {
   rows: Row[];
   loading: boolean;
@@ -665,6 +676,14 @@ function PortalTable({
                 </td>
                 <td className="px-4 py-3 text-right sticky right-0 bg-background/95 backdrop-blur-sm border-l border-border">
                   <div className="flex items-center gap-1 justify-end">
+                    <button
+                      onClick={() => onDetail(r)}
+                      className="p-1.5 rounded hover:bg-surface-2"
+                      title="Ver detalhes e diagnóstico"
+                      aria-label="Ver detalhes e diagnóstico"
+                    >
+                      <Stethoscope className="h-3.5 w-3.5" />
+                    </button>
                     <button
                       onClick={() => onEdit(r)}
                       className="p-1.5 rounded hover:bg-surface-2"
