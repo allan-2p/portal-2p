@@ -1217,16 +1217,23 @@ function EditUserModal({
     email: row.email,
     full_name: row.full_name ?? "",
     cargo: row.cargo ?? "",
+    cargo_tipo: (row as any).cargo_tipo ?? "",
     equipe: row.equipe ?? "",
+    telefone: (row as any).telefone ?? "",
+    meta_mensal: (row as any).meta_mensal != null ? String((row as any).meta_mensal) : "",
     regime_contratacao: row.regime_contratacao ?? "CLT",
     organizacao: (row.organizacao ?? "solar") as Org,
     is_external: row.is_external,
+    filter_scope: (row.filter_scope ?? "individual") as FilterScope,
+    sf_user_id: row.sf_user_id ?? "",
+    ativo: row.ativo,
+    role: (row.roles?.[0] ?? "vendedor") as AppRole,
   });
 
   const [submitting, setSubmitting] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -1236,11 +1243,17 @@ function EditUserModal({
               email: form.email,
               full_name: form.full_name,
               cargo: form.cargo || null,
+              cargo_tipo: form.cargo_tipo || null,
               equipe: form.equipe || null,
+              telefone: form.telefone || null,
+              meta_mensal: form.meta_mensal ? Number(form.meta_mensal) : null,
               regime_contratacao: form.regime_contratacao,
               organizacao: form.organizacao,
               is_external: form.is_external,
-
+              filter_scope: form.filter_scope,
+              sf_user_id: form.sf_user_id.trim() || null,
+              ativo: form.ativo,
+              role: form.role,
             });
           } catch (err) {
             toast.error(err instanceof Error ? err.message : "Erro");
@@ -1248,57 +1261,94 @@ function EditUserModal({
             setSubmitting(false);
           }
         }}
-        className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-3"
+        className="w-full max-w-2xl bg-card border border-border rounded-2xl p-6 space-y-3 my-8"
       >
         <h2 className="font-display font-bold text-lg">Editar usuário</h2>
-        <Field label="Nome completo">
-          <input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} className="input" />
-        </Field>
-        <Field label="E-mail">
-          <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input" />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Nome completo">
+            <input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} className="input" />
+          </Field>
+          <Field label="E-mail">
+            <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input" />
+          </Field>
           <Field label="Cargo">
             <input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} className="input" />
+          </Field>
+          <Field label="Tipo de cargo">
+            <input value={form.cargo_tipo} onChange={(e) => setForm({ ...form, cargo_tipo: e.target.value })} className="input" placeholder="ex.: vendedor interno" />
           </Field>
           <Field label="Equipe">
             <input value={form.equipe} onChange={(e) => setForm({ ...form, equipe: e.target.value })} className="input" />
           </Field>
+          <Field label="Telefone">
+            <input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="input" />
+          </Field>
+          <Field label="Organização">
+            <select value={form.organizacao} onChange={(e) => setForm({ ...form, organizacao: e.target.value as Org })} className="input">
+              {ORGS.map((o) => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Regime de contratação">
+            <select value={form.regime_contratacao} onChange={(e) => setForm({ ...form, regime_contratacao: e.target.value as Regime })} className="input">
+              {REGIMES.map((rg) => (
+                <option key={rg} value={rg}>{rg}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Papel">
+            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as AppRole })} className="input">
+              {ROLES.map((r) => (
+                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Escopo de dados">
+            <select value={form.filter_scope} onChange={(e) => setForm({ ...form, filter_scope: e.target.value as FilterScope })} className="input">
+              {SCOPES.map((s) => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="ID do Salesforce">
+            <input
+              value={form.sf_user_id}
+              onChange={(e) => setForm({ ...form, sf_user_id: e.target.value })}
+              className="input font-mono"
+              placeholder="005U400000..."
+            />
+          </Field>
+          <Field label="Meta mensal (R$)">
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={form.meta_mensal}
+              onChange={(e) => setForm({ ...form, meta_mensal: e.target.value })}
+              className="input"
+            />
+          </Field>
         </div>
-        <Field label="Organização">
-          <select
-            value={form.organizacao}
-            onChange={(e) => setForm({ ...form, organizacao: e.target.value as Org })}
-            className="input"
-          >
-            {ORGS.map((o) => (
-              <option key={o.id} value={o.id}>{o.label}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Regime de contratação">
-          <select
-            value={form.regime_contratacao}
-            onChange={(e) => setForm({ ...form, regime_contratacao: e.target.value as Regime })}
-            className="input"
-          >
-            {REGIMES.map((rg) => (
-              <option key={rg} value={rg}>{rg}</option>
-            ))}
-          </select>
-        </Field>
 
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.is_external}
-            onChange={(e) => setForm({ ...form, is_external: e.target.checked })}
-          />
-          Usuário externo
-        </label>
-        <p className="text-xs text-muted-foreground">
-          Papel, escopo e ID do Salesforce são editados diretamente na tabela.
-        </p>
+        {form.filter_scope === "individual" && !form.sf_user_id.trim() && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            Escopo individual sem ID do Salesforce faz as métricas ficarem zeradas.
+          </p>
+        )}
+
+        <div className="flex items-center gap-6 pt-1">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.is_external} onChange={(e) => setForm({ ...form, is_external: e.target.checked })} />
+            Usuário externo
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.ativo} onChange={(e) => setForm({ ...form, ativo: e.target.checked })} />
+            Usuário ativo
+          </label>
+        </div>
+
         <div className="flex gap-2 pt-2">
           <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2">
             Cancelar
@@ -1317,5 +1367,6 @@ function EditUserModal({
     </div>
   );
 }
+
 
 
