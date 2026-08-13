@@ -243,12 +243,9 @@ function ProdutosTab() {
           {draft && (
             <div className="grid gap-3">
               <Field label="Código (SKU)">
-                <Input
-                  value={draft.codigo}
-                  placeholder="Ex.: CPO-7K4"
-                  onChange={(e) => setDraft({ ...draft, codigo: e.target.value })}
-                />
+                <Input value={draft.codigo} readOnly disabled />
               </Field>
+
               <Field label="Nome">
                 <Input value={draft.nome} onChange={(e) => setDraft({ ...draft, nome: e.target.value })} />
               </Field>
