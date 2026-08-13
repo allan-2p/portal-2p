@@ -1,6 +1,7 @@
 import { fmtBRL, fmtPct } from "@/lib/cpo";
 
 export type PropostaPdfItem = {
+  codigo?: string | null;
   nome: string;
   qtd: number;
   valor: number;
@@ -37,6 +38,7 @@ export type PropostaPdfData = {
     comissao: number;
     comissaoPct: number;
   };
+  observacoes?: string;
   consultor?: string;
   validadeDias?: number;
 };
@@ -58,7 +60,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       (i, idx) => `
       <tr>
         <td class="idx">${String(idx + 1).padStart(2, "0")}</td>
-        <td class="prod"><span class="pname">${esc(i.nome)}</span></td>
+        <td class="prod"><span class="pname">${i.codigo ? `${esc(i.codigo)} — ` : ""}${esc(i.nome)}</span></td>
         <td class="c">${i.qtd}</td>
         <td class="r">${fmtBRL(i.valor)}</td>
         <td class="r strong">${fmtBRL(i.valor * i.qtd)}</td>
@@ -250,6 +252,11 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       </div>
       <div class="val"><small>Valor da proposta</small>${fmtBRL(p.valorTotal)}</div>
     </div>
+
+    ${p.observacoes ? `<div class="sec">
+      <div class="sech"><span>Observações</span></div>
+      <div class="client"><div style="font-size:11px;line-height:1.5">${esc(p.observacoes)}</div></div>
+    </div>` : ""}
 
     <div class="cols">
       <div class="panel">

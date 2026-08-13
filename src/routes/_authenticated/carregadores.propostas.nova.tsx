@@ -419,12 +419,14 @@ function PropostaCpoPage() {
       itens: state.itens
         .filter((i) => i.produtoId)
         .map((i) => ({
+          codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
           nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
           qtd: i.qtd,
           valor: i.valor,
         })),
       freteMod: state.freteMod,
       freteValor: state.freteValor,
+      observacoes: state.observacoes,
       impostos: {
         ipiRate: config.ipi,
         ipiValor: d.ipiValor,
@@ -477,6 +479,7 @@ function PropostaCpoPage() {
         observacoes: state.observacoes?.trim() || null,
         itens: state.itens.map((i) => ({
           produtoId: i.produtoId,
+          codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
           nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
           qtd: i.qtd,
           valor: money2(i.valor),
