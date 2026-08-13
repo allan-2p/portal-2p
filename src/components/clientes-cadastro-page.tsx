@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   AlertCircle, Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye,
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { ClientHistoryTab } from "@/components/client-history-tab";
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
