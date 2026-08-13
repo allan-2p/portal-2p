@@ -704,6 +704,8 @@ function PropostaCpoPage() {
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar proposta.");
+      // Em caso de falha no "Concluir pedido", reverte o status para o anterior
+      if (status !== "Salvo") setStatusProposta("Salvo");
     } finally {
       submitLock.current = false;
       setSaving(false);
