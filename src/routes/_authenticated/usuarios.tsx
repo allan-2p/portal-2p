@@ -73,7 +73,10 @@ type Row = {
   email: string;
   full_name: string | null;
   cargo: string | null;
+  cargo_tipo: string | null;
   equipe: string | null;
+  telefone: string | null;
+  meta_mensal: number | null;
   regime_contratacao: Regime;
   organizacao: Org;
   ativo: boolean;
@@ -130,7 +133,7 @@ function UsuariosPage() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id,email,full_name,cargo,equipe,regime_contratacao,organizacao,ativo,avatar_url,sf_user_id,is_external,filter_scope")
+      .select("id,email,full_name,cargo,cargo_tipo,equipe,telefone,meta_mensal,regime_contratacao,organizacao,ativo,avatar_url,sf_user_id,is_external,filter_scope")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
     const byUser = new Map<string, AppRole[]>();
@@ -1217,10 +1220,10 @@ function EditUserModal({
     email: row.email,
     full_name: row.full_name ?? "",
     cargo: row.cargo ?? "",
-    cargo_tipo: (row as any).cargo_tipo ?? "",
+    cargo_tipo: row.cargo_tipo ?? "",
     equipe: row.equipe ?? "",
-    telefone: (row as any).telefone ?? "",
-    meta_mensal: (row as any).meta_mensal != null ? String((row as any).meta_mensal) : "",
+    telefone: row.telefone ?? "",
+    meta_mensal: row.meta_mensal != null ? String(row.meta_mensal) : "",
     regime_contratacao: row.regime_contratacao ?? "CLT",
     organizacao: (row.organizacao ?? "solar") as Org,
     is_external: row.is_external,
