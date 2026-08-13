@@ -162,6 +162,43 @@ function AuditoriaPage() {
 
   const carregando = propostas.isLoading || produtos.isLoading || ufs.isLoading || config.isLoading || ncms.isLoading;
 
+  const meta: ResumoFiscalMeta | null = atual
+    ? {
+        numero: atual.numero,
+        cliente: atual.cliente_nome,
+        doc: atual.cliente_doc,
+        ie: atual.cliente_ie,
+        criadoEm: atual.created_at,
+      }
+    : null;
+
+  const nomeArquivo = atual
+    ? `resumo-fiscal-ncm-${(atual.numero || atual.cliente_nome || "proposta")
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .toLowerCase()}`
+    : "resumo-fiscal-ncm";
+
+  function exportarPdf() {
+    if (!auditoria || !meta) return;
+    const w = window.open("", "_blank");
+    if (!w) return toast.error("Permita pop-ups para gerar o PDF.");
+    w.document.write(buildResumoFiscalHtml(auditoria, meta));
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 600);
+  }
+
+  function exportarCsv() {
+    if (!auditoria || !meta) return;
+    baixarCsv(`${nomeArquivo}.csv`, buildResumoFiscalCsv(auditoria, meta));
+    toast.success("CSV do resumo fiscal gerado.");
+  }
+
+  const textos = auditoria ? textosPadrao(auditoria) : null;
+
   return (
     <AppLayout>
       <div className="space-y-6">
