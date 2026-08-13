@@ -32,9 +32,9 @@ import { fmtBRL, type CpoConfig, type CpoNcm, type CpoProduct } from "@/lib/cpo"
 export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
   head: () => ({
     meta: [
-      { title: "Produtos e Alíquotas CPO — Portal 2P Carregadores" },
+      { title: "Gestão de Produtos — 2P Carregadores" },
       { name: "description", content: "Catálogo de carregadores, alíquotas por UF e política de margem." },
-      { property: "og:title", content: "Produtos e Alíquotas CPO — Portal 2P Carregadores" },
+      { property: "og:title", content: "Gestão de Produtos — 2P Carregadores" },
       { property: "og:description", content: "Gerencie custos, ICMS/FCP por estado e regras de margem." },
     ],
   }),
@@ -47,9 +47,9 @@ function ProdutosCpoPage() {
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div>
           <div className="text-xs uppercase tracking-wider text-primary font-semibold">Módulo CPO</div>
-          <h1 className="text-3xl font-bold mt-1">Produtos e Alíquotas</h1>
+          <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Base usada pelo cálculo de DRE das propostas de carregadores.
+            Catálogo único do portal (alimentado pelo SAP e por edições manuais), alíquotas por NCM e por UF. Base usada pelo cálculo de DRE das propostas de carregadores.
           </p>
         </div>
 
