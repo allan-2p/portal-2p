@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   AlertCircle, Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye,
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { ClientHistoryTab } from "@/components/client-history-tab";
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
@@ -380,6 +381,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       if (focavel instanceof HTMLInputElement || focavel instanceof HTMLTextAreaElement) {
         try { focavel.select(); } catch { /* noop */ }
       }
+      // destaque momentâneo para chamar atenção ao campo
+      const original = focavel.style.transition;
+      focavel.style.transition = "box-shadow 200ms ease, border-color 200ms ease";
+      focavel.classList.add("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background", "border-primary");
+      window.setTimeout(() => {
+        focavel.classList.remove("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background", "border-primary");
+        focavel.style.transition = original;
+      }, 1200);
     }, 320);
   };
   const tentarSalvar = () => {
@@ -513,10 +522,12 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                       <li key={campo}>
                         <button
                           type="button"
-                          className="text-left text-xs text-destructive underline-offset-2 hover:underline"
                           onClick={() => focarCampo(campo)}
+                          className="group flex w-full items-center gap-2 text-left text-xs text-destructive underline-offset-2 hover:underline"
                         >
-                          <span className="font-medium">{rotuloCampo(campo, form.contatos ?? [])}:</span> {msg}
+                          <ArrowRight className="h-3 w-3 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                          <span className="font-medium">{rotuloCampo(campo, form.contatos ?? [])}:</span>
+                          <span className="text-foreground/90">{msg}</span>
                         </button>
                       </li>
                     ))}
