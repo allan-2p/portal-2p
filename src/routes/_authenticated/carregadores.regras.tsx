@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
+import { ModerationAuditLog } from "@/components/moderation-audit-log";
 import { useCpoConfig } from "@/hooks/use-cpo";
 import { CPO_CONFIG_FALLBACK, fmtPct } from "@/lib/cpo";
 
@@ -197,6 +198,7 @@ Remuneração      = custo (PJ)   ou   custo ÷ ${cfg.fator_clt} (CLT)`}</Formul
             propostas já salvas mantêm os valores registrados no momento do salvamento.
           </p>
         </Section>
+        <ModerationAuditLog area="cpo_regras" description="alterações nos parâmetros e regras de Carregadores." />
       </div>
     </AppLayout>
   );
