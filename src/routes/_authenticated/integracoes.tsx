@@ -45,7 +45,7 @@ function IntegracoesPage() {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div id="salesforce" className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="p-6 flex items-start gap-4">
           <div className="h-12 w-12 rounded-xl bg-[#00A1E0]/15 flex items-center justify-center shrink-0">
             <Cloud className="h-6 w-6 text-[#00A1E0]" />
@@ -148,7 +148,7 @@ function IntegracoesPage() {
       </div>
 
 
-      <Top20Card />
+      <div id="top20"><Top20Card /></div>
 
       <CatalogoIntegracoes />
     </div>
@@ -157,6 +157,21 @@ function IntegracoesPage() {
 }
 
 /** Catálogo completo das integrações da plataforma. Ao criar uma nova, adicione aqui. */
+const SLUG_FOR_NAME: Record<string, string> = {
+  Salesforce: "salesforce",
+  "Lovable Cloud (banco do Portal)": "lovable-cloud",
+  "Base de Contas — Carregadores": "base-contas-carregadores",
+  "SAP — listar_material": "sap",
+  Metricool: "metricool",
+  Notion: "notion",
+  "Lovable AI (Atlas)": "lovable-ai",
+  "Serpro / CNPJá": "serpro-cnpja",
+  ViaCEP: "viacep",
+  "Storage — Top 20 / Logos": "storage",
+  "E-mails transacionais": "emails",
+  "Servidor MCP": "mcp",
+};
+
 const CATALOGO: { nome: string; area: string; desc: string; status: "Ativa" | "Interna" }[] = [
   { nome: "Salesforce", area: "CRM", desc: "Contas, oportunidades, tarefas e interações (Log a Call).", status: "Ativa" },
   { nome: "Lovable Cloud (banco do Portal)", area: "Dados", desc: "Banco principal: usuários, permissões, propostas, clientes e logs.", status: "Interna" },
@@ -183,7 +198,7 @@ function CatalogoIntegracoes() {
       </div>
       <ul className="divide-y divide-border">
         {CATALOGO.map((i) => (
-          <li key={i.nome} className="px-6 py-3 flex items-start justify-between gap-4">
+          <li id={SLUG_FOR_NAME[i.nome]} key={i.nome} className="px-6 py-3 flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="text-sm font-medium">{i.nome}</div>
               <div className="text-xs text-muted-foreground mt-0.5">{i.desc}</div>
