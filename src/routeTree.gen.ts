@@ -38,6 +38,7 @@ import { Route as AuthenticatedMarketingMetasRouteImport } from './routes/_authe
 import { Route as AuthenticatedMarketingGargaloRouteImport } from './routes/_authenticated/marketing.gargalo'
 import { Route as AuthenticatedMarketingCohortRouteImport } from './routes/_authenticated/marketing.cohort'
 import { Route as AuthenticatedMarketingCacRouteImport } from './routes/_authenticated/marketing.cac'
+import { Route as AuthenticatedIntegracoesSlugRouteImport } from './routes/_authenticated/integracoes_.$slug'
 import { Route as AuthenticatedDashboardsMetasRouteImport } from './routes/_authenticated/dashboards.metas'
 import { Route as AuthenticatedClientesSugestoesRouteImport } from './routes/_authenticated/clientes.sugestoes'
 import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
@@ -225,6 +226,12 @@ const AuthenticatedMarketingCacRoute =
     id: '/cac',
     path: '/cac',
     getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
+const AuthenticatedIntegracoesSlugRoute =
+  AuthenticatedIntegracoesSlugRouteImport.update({
+    id: '/integracoes_/$slug',
+    path: '/integracoes/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDashboardsMetasRoute =
   AuthenticatedDashboardsMetasRouteImport.update({
@@ -452,6 +459,7 @@ export interface FileRoutesByFullPath {
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/clientes/sugestoes': typeof AuthenticatedClientesSugestoesRoute
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
+  '/integracoes/$slug': typeof AuthenticatedIntegracoesSlugRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -510,6 +518,7 @@ export interface FileRoutesByTo {
   '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/clientes/sugestoes': typeof AuthenticatedClientesSugestoesRoute
   '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
+  '/integracoes/$slug': typeof AuthenticatedIntegracoesSlugRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -573,6 +582,7 @@ export interface FileRoutesById {
   '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
   '/_authenticated/clientes/sugestoes': typeof AuthenticatedClientesSugestoesRoute
   '/_authenticated/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
+  '/_authenticated/integracoes_/$slug': typeof AuthenticatedIntegracoesSlugRoute
   '/_authenticated/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/_authenticated/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/_authenticated/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -636,6 +646,7 @@ export interface FileRouteTypes {
     | '/clientes/segmentacao'
     | '/clientes/sugestoes'
     | '/dashboards/metas'
+    | '/integracoes/$slug'
     | '/marketing/cac'
     | '/marketing/cohort'
     | '/marketing/gargalo'
@@ -694,6 +705,7 @@ export interface FileRouteTypes {
     | '/clientes/segmentacao'
     | '/clientes/sugestoes'
     | '/dashboards/metas'
+    | '/integracoes/$slug'
     | '/marketing/cac'
     | '/marketing/cohort'
     | '/marketing/gargalo'
@@ -756,6 +768,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clientes/segmentacao'
     | '/_authenticated/clientes/sugestoes'
     | '/_authenticated/dashboards/metas'
+    | '/_authenticated/integracoes_/$slug'
     | '/_authenticated/marketing/cac'
     | '/_authenticated/marketing/cohort'
     | '/_authenticated/marketing/gargalo'
@@ -995,6 +1008,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/marketing/cac'
       preLoaderRoute: typeof AuthenticatedMarketingCacRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
+    }
+    '/_authenticated/integracoes_/$slug': {
+      id: '/_authenticated/integracoes_/$slug'
+      path: '/integracoes/$slug'
+      fullPath: '/integracoes/$slug'
+      preLoaderRoute: typeof AuthenticatedIntegracoesSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboards/metas': {
       id: '/_authenticated/dashboards/metas'
@@ -1346,6 +1366,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarregadoresPropostasRoute: typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   AuthenticatedCarregadoresRegrasRoute: typeof AuthenticatedCarregadoresRegrasRoute
   AuthenticatedCarregadoresTarefasRoute: typeof AuthenticatedCarregadoresTarefasRoute
+  AuthenticatedIntegracoesSlugRoute: typeof AuthenticatedIntegracoesSlugRoute
   AuthenticatedCarregadoresIndexRoute: typeof AuthenticatedCarregadoresIndexRoute
 }
 
@@ -1381,6 +1402,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCarregadoresPropostasRouteWithChildren,
   AuthenticatedCarregadoresRegrasRoute: AuthenticatedCarregadoresRegrasRoute,
   AuthenticatedCarregadoresTarefasRoute: AuthenticatedCarregadoresTarefasRoute,
+  AuthenticatedIntegracoesSlugRoute: AuthenticatedIntegracoesSlugRoute,
   AuthenticatedCarregadoresIndexRoute: AuthenticatedCarregadoresIndexRoute,
 }
 
