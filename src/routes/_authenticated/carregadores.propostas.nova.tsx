@@ -1392,40 +1392,47 @@ function PropostaCpoPage() {
           errors={errosFechamento}
           showErrors={!podeFechar && tentouAvancar}
           savedAt={autosaveAt}
-          actions={[
-            ...(etapa === 4
-              ? [
+          minimal={etapa === 1}
+          actions={
+            etapa === 1
+              ? []
+              : [
+                  ...(etapa === 4
+                    ? [
+                        {
+                          label: "Salvar proposta",
+                          onClick: () => pedirRevisao("salvar"),
+                          icon: <Save className="h-4 w-4" />,
+                          loading: saving && statusProposta !== "Aguardando Pagamento",
+                        },
+                      ]
+                    : []),
                   {
+                    label: "Proposta em PDF",
+                    onClick: abrirPreviewPdf,
+                    icon: <Eye className="h-4 w-4" />,
+                    disabled: !podeFechar || saving,
+                  },
+                ]
+          }
+          primary={
+            etapa === 1
+              ? null
+              : etapa === 4
+                ? {
+                    label: "Concluir pedido",
+                    onClick: iniciarConclusao,
+                    icon: <CheckCircle2 className="h-4 w-4" />,
+                    loading: saving && statusProposta === "Aguardando Pagamento",
+                    disabled: saving,
+                  }
+                : {
                     label: "Salvar proposta",
                     onClick: () => pedirRevisao("salvar"),
                     icon: <Save className="h-4 w-4" />,
-                    loading: saving && statusProposta !== "Aguardando Pagamento",
-                  },
-                ]
-              : []),
-            {
-              label: "Proposta em PDF",
-              onClick: abrirPreviewPdf,
-              icon: <Eye className="h-4 w-4" />,
-              disabled: !podeFechar || saving,
-            },
-          ]}
-          primary={
-            etapa === 4
-              ? {
-                  label: "Concluir pedido",
-                  onClick: iniciarConclusao,
-                  icon: <CheckCircle2 className="h-4 w-4" />,
-                  loading: saving && statusProposta === "Aguardando Pagamento",
-                  disabled: saving,
-                }
-              : {
-                  label: "Salvar proposta",
-                  onClick: () => pedirRevisao("salvar"),
-                  icon: <Save className="h-4 w-4" />,
-                  loading: saving,
-                  disabled: saving,
-                }
+                    loading: saving,
+                    disabled: saving,
+                  }
           }
         />
 
