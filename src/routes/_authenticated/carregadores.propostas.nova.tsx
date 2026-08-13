@@ -1223,7 +1223,7 @@ function PropostaCpoPage() {
                 />
                 {FRETE_ABSORVIDO.includes(state.freteMod) && !(state.freteValor > 0) ? (
                   <p className="text-[11px] text-amber-600 mt-1">
-                    Frete {state.freteMod === "DEDICADO" ? "dedicado" : "CIF"} é absorvido pela 2P — informe o valor.
+                    Informe o valor do frete absorvido pela 2P.
                   </p>
                 ) : null}
               </Field>
