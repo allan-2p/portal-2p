@@ -8,7 +8,7 @@ export type ModerationAuditRow = {
   action: string;
   target: string | null;
   summary: string;
-  details: Record<string, unknown> | null;
+  details: Record<string, string | number | boolean | null> | null;
   actor_email: string | null;
   actor_name: string | null;
   created_at: string;
