@@ -148,6 +148,62 @@ function IntegracoesPage() {
 
 
       <Top20Card />
+
+      <CatalogoIntegracoes />
+    </div>
+    </AppLayout>
+  );
+}
+
+/** Catálogo completo das integrações da plataforma. Ao criar uma nova, adicione aqui. */
+const CATALOGO: { nome: string; area: string; desc: string; status: "Ativa" | "Interna" }[] = [
+  { nome: "Salesforce", area: "CRM", desc: "Contas, oportunidades, tarefas e interações (Log a Call).", status: "Ativa" },
+  { nome: "Lovable Cloud (banco do Portal)", area: "Dados", desc: "Banco principal: usuários, permissões, propostas, clientes e logs.", status: "Interna" },
+  { nome: "Base de Contas — Carregadores", area: "Dados", desc: "Espelho de contas/leads usado na seleção de clientes das propostas.", status: "Ativa" },
+  { nome: "SAP — listar_material", area: "ERP", desc: "Sincronização do catálogo de produtos e preços (SAP Bridge).", status: "Ativa" },
+  { nome: "Metricool", area: "Marketing", desc: "Métricas de redes sociais por organização (Solar, Carregadores, Station).", status: "Ativa" },
+  { nome: "Notion", area: "Marketing", desc: "Calendário editorial de Social Mídia.", status: "Ativa" },
+  { nome: "Lovable AI (Atlas)", area: "IA", desc: "Insights, sugestões de clientes e assistente do portal.", status: "Ativa" },
+  { nome: "Serpro / CNPJá", area: "Cadastros", desc: "Enriquecimento automático de dados por CNPJ.", status: "Ativa" },
+  { nome: "ViaCEP", area: "Cadastros", desc: "Preenchimento automático de endereço por CEP.", status: "Ativa" },
+  { nome: "Storage — Top 20 / Logos", area: "Arquivos", desc: "Uploads de CSV do Top 20 e logotipos de clientes.", status: "Interna" },
+  { nome: "E-mails transacionais", area: "Comunicação", desc: "Convites, recuperação de senha e notificações do portal.", status: "Ativa" },
+  { nome: "Servidor MCP", area: "Agentes", desc: "Endpoint /mcp para agentes consultarem clientes, propostas e tarefas.", status: "Ativa" },
+];
+
+function CatalogoIntegracoes() {
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="px-6 py-4 border-b border-border">
+        <h2 className="font-semibold">Catálogo de integrações</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Serviços conectados ao Portal 2P. Novas integrações passam a aparecer nesta lista.
+        </p>
+      </div>
+      <ul className="divide-y divide-border">
+        {CATALOGO.map((i) => (
+          <li key={i.nome} className="px-6 py-3 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-sm font-medium">{i.nome}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{i.desc}</div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                {i.area}
+              </span>
+              <span
+                className={
+                  i.status === "Ativa"
+                    ? "text-[11px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium"
+                    : "text-[11px] px-2 py-0.5 rounded-full bg-surface-2 text-muted-foreground font-medium"
+                }
+              >
+                {i.status}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
