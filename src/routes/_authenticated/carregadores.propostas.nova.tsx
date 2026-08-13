@@ -31,6 +31,8 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listClientesFn } from "@/lib/clientes.functions";
+import { getClienteLogo } from "@/lib/cliente-logos.functions";
+
 
 import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
