@@ -59,6 +59,8 @@ type Row = {
   id: string;
   numero: string | null;
   cliente_nome: string;
+  cliente_doc: string | null;
+  cliente_ie: string | null;
   uf: string;
   contribuinte: boolean;
   frete_mod: string;
