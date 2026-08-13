@@ -287,11 +287,9 @@ export function PermissoesContent() {
 
   if (!hasRole("admin")) {
     return (
-      <AppLayout>
-        <div className="p-8 text-center text-muted-foreground">
-          Acesso restrito a administradores.
-        </div>
-      </AppLayout>
+      <div className="p-8 text-center text-muted-foreground">
+        Acesso restrito a administradores.
+      </div>
     );
   }
 
