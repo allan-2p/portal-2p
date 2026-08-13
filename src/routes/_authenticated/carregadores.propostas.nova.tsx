@@ -152,7 +152,7 @@ function PropostaCpoPage() {
   const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
-  const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
+  const [revisao, setRevisao] = useState<null | "concluir">(null);
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   const [previewAberto, setPreviewAberto] = useState(false);
   const [usarLogoCliente, setUsarLogoCliente] = useState(true);
