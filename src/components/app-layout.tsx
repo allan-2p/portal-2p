@@ -513,6 +513,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                           <AdminMenuLink to="/admin/atividade" label="Log de Usuários" icon={ActivityIcon} onClick={() => setAdminMenuOpen(false)} />
                         )}
                         <div className="h-px bg-border" />
+                        {show("admin.perfis") && (
+                          <AdminMenuLink to="/admin/perfis" label="Perfis de Permissão" icon={UserCog} onClick={() => setAdminMenuOpen(false)} />
+                        )}
                         <AdminMenuLink to="/admin/permissoes" label="Permissões de Usuários" icon={KeyRound} onClick={() => setAdminMenuOpen(false)} />
                       </div>
                     </>
