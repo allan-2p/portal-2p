@@ -501,6 +501,11 @@ function PropostaCpoPage() {
     void salvar("Aguardando Pagamento");
   }
 
+  function iniciarConclusao() {
+    setStatusProposta("Aguardando Pagamento");
+    setConfirmarConclusao(true);
+  }
+
   // Abre a revisão final antes de salvar/enviar; bloqueia com mensagens se houver pendências
   function pedirRevisao(acao: "salvar" | "concluir") {
     const erros = acao === "salvar" ? errosSalvar : errosFechamento;
