@@ -555,9 +555,30 @@ function PropostaCpoPage() {
       };
 
       if (propostaId) {
-        const { error } = await supabase.from("cpo_proposals").update(payload).eq("id", propostaId);
+        const concluindo = status !== "Salvo";
+        const { status: _ignore, ...dados } = payload;
+        const { error } = await supabase
+          .from("cpo_proposals")
+          .update(concluindo ? dados : payload)
+          .eq("id", propostaId);
         if (error) throw error;
-        toast.success(status === "Salvo" ? `Proposta ${numero} atualizada.` : `Pedido ${numero} concluído.`);
+
+        if (concluindo) {
+          // Lock idempotente no banco: só conclui se ainda estiver "Salvo"
+          const { data: res, error: rpcErr } = await supabase.rpc("cpo_conclude_proposal", {
+            _id: propostaId,
+            _status: status,
+          });
+          if (rpcErr) throw rpcErr;
+          const linha = Array.isArray(res) ? res[0] : res;
+          if (linha?.already_concluded) {
+            toast.info(`Pedido ${numero} já havia sido concluído (${linha.status}).`);
+            invalidate();
+            return;
+          }
+        }
+
+        toast.success(concluindo ? `Pedido ${numero} concluído.` : `Proposta ${numero} atualizada.`);
         setNumeroAtual(numero);
         invalidate();
         limparRascunho();
@@ -570,7 +591,15 @@ function PropostaCpoPage() {
         .insert({ ...payload, created_by: userRes.user?.id ?? null })
         .select("id")
         .single();
-      if (error) throw error;
+      if (error) {
+        // Índice único no número: reenvio duplicado não cria um segundo registro
+        if ((error as { code?: string }).code === "23505") {
+          toast.info(`Proposta ${numero} já registrada.`);
+          invalidate();
+          return;
+        }
+        throw error;
+      }
       toast.success(
         status === "Salvo" ? `Proposta ${numero} salva.` : `Pedido ${numero} concluído.`,
       );
@@ -582,6 +611,7 @@ function PropostaCpoPage() {
         setPropostaId(inserida.id);
         setNumeroAtual(numero);
       } else {
+        numeroRef.current = null;
         setState(novoEstado());
         setEtapa(1);
       }
