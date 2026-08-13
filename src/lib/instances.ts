@@ -240,7 +240,14 @@ export const ALL_FEATURES: FeatureKey[] = Object.keys(FEATURE_LABELS) as Feature
 // Tudo que é do Grupo 2P (Administração/Configurações) precisa estar disponível
 // igualmente em todas as instâncias para administradores. Normalizamos aqui para
 // que nenhuma instância possa divergir por esquecimento na config acima.
-export const GROUP_FEATURE_KEYS: FeatureKey[] = ALL_FEATURES.filter((k) => k.startsWith("admin."));
+export const GROUP_FEATURE_KEYS: FeatureKey[] = [
+  ...ALL_FEATURES.filter((k) => k.startsWith("admin.")),
+  // Itens de Moderação da unidade Carregadores também devem ser visíveis
+  // para administradores em qualquer instância.
+  "cpo.produtos",
+  "cpo.comissoes",
+  "cpo.regras",
+];
 for (const id of INSTANCE_IDS) {
   for (const key of GROUP_FEATURE_KEYS) {
     if (!INSTANCES[id].routes.includes(key)) INSTANCES[id].routes.push(key);

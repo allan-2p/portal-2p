@@ -1,8 +1,8 @@
 /**
  * Navegação do ambiente de Administração do Grupo 2P.
  *
- * Ao entrar em Configurações, Painel de Controle ou Moderação o portal troca
- * o menu lateral padrão por este — é um ambiente separado de configuração.
+ * Ao entrar em Configurações, Integrações ou Moderação o portal troca o menu
+ * lateral padrão por este — é um ambiente separado de configuração.
  */
 import {
   Users,
@@ -18,7 +18,6 @@ import {
   Percent,
   BookOpen,
   Settings2,
-  LayoutDashboard,
   SlidersHorizontal,
 } from "lucide-react";
 import type { FeatureKey } from "@/lib/instances";
@@ -35,6 +34,7 @@ export type AdminNavItem = {
 export type AdminNavGroup = {
   label: string | null;
   items: AdminNavItem[];
+  collapsible?: boolean;
 };
 
 export type AdminSection = {
@@ -125,6 +125,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     groups: [
       {
         label: "2P Solar",
+        collapsible: true,
         items: [
           { to: "/admin/metas", label: "Regras de Metas", icon: Target, feature: "admin.metas" },
           { to: "/admin/tabelas", label: "Tabelas", icon: TableIcon, feature: "admin.tabelas" },
@@ -133,6 +134,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       },
       {
         label: "2P Carregadores",
+        collapsible: true,
         items: [
           { to: "/carregadores/produtos", label: "Produtos e Alíquotas", icon: Package, feature: "cpo.produtos" },
           { to: "/carregadores/comissoes", label: "Comissões", icon: Percent, feature: "cpo.comissoes" },

@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { sectionForPath } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useInstance } from "./instance-provider";
 
 /**
@@ -44,38 +45,36 @@ export function AdminSidebar({ pathname, collapsed }: { pathname: string; collap
           {current.groups.map((g, gi) => {
             const items = g.items.filter((i) => !i.feature || hasFeature(i.feature));
             if (!items.length) return null;
+            const hasActiveItem = items.some((i) => pathname === i.to || pathname.startsWith(`${i.to}/`));
+
             return (
-              <div key={gi} className="mb-4">
-                {!collapsed && g.label && (
-                  <div className="px-3 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {g.label}
-                  </div>
-                )}
-                {collapsed && gi > 0 && <div className="h-px bg-border mx-1 mb-2" />}
-                <div className="space-y-0.5">
-                  {items.map((i) => {
-                    const Icon = i.icon;
-                    const active = pathname === i.to || pathname.startsWith(`${i.to}/`);
-                    return (
-                      <Link
-                        key={i.to}
-                        to={i.to}
-                        preload="intent"
-                        title={collapsed ? i.label : undefined}
-                        className={cn(
-                          "flex items-center gap-3 rounded-lg text-sm transition-colors",
-                          collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",
-                          active
-                            ? "bg-primary/15 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                        )}
+              <div key={gi} className={cn("mb-4", g.collapsible && !collapsed && "mb-2")}>
+                {g.collapsible && !collapsed ? (
+                  <Collapsible defaultOpen={hasActiveItem}>
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="group w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
                       >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        {!collapsed && <span className="truncate">{i.label}</span>}
-                      </Link>
-                    );
-                  })}
-                </div>
+                        <span className="truncate">{g.label}</span>
+                        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-data-[state=closed]:-rotate-90" />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <AdminGroupItems items={items} pathname={pathname} collapsed={collapsed} />
+                    </CollapsibleContent>
+                  </Collapsible>
+                ) : (
+                  <>
+                    {!collapsed && g.label && (
+                      <div className="px-3 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {g.label}
+                      </div>
+                    )}
+                    {collapsed && gi > 0 && <div className="h-px bg-border mx-1 mb-2" />}
+                    <AdminGroupItems items={items} pathname={pathname} collapsed={collapsed} />
+                  </>
+                )}
               </div>
             );
           })}
@@ -85,3 +84,39 @@ export function AdminSidebar({ pathname, collapsed }: { pathname: string; collap
   );
 }
 
+function AdminGroupItems({
+  items,
+  pathname,
+  collapsed,
+}: {
+  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
+  pathname: string;
+  collapsed: boolean;
+}) {
+  return (
+    <div className="space-y-0.5">
+      {items.map((i) => {
+        const Icon = i.icon;
+        const active = pathname === i.to || pathname.startsWith(`${i.to}/`);
+        return (
+          <Link
+            key={i.to}
+            to={i.to}
+            preload="intent"
+            title={collapsed ? i.label : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-lg text-sm transition-colors",
+              collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2",
+              active
+                ? "bg-primary/15 text-primary font-medium"
+                : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            {!collapsed && <span className="truncate">{i.label}</span>}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
