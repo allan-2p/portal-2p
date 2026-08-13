@@ -243,50 +243,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               {show("cpo.pedidos") && (
                 <NavLink item={{ to: "/carregadores/pedidos", label: "Pedidos", icon: ShoppingCart }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
               )}
-
-              {(show("cpo.produtos") || show("cpo.comissoes") || show("cpo.regras")) && (
-                collapsed ? (
-                  <Link
-                    to={show("cpo.produtos") ? "/carregadores/produtos" : "/carregadores/comissoes"}
-                    preload="intent"
-                    title="Moderação"
-                    className={cn(
-                      "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
-                      moderacaoActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                    )}
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                  </Link>
-                ) : (
-                  <div className="mb-1">
-                    <button
-                      onClick={() => setModeracaoOpen((v) => !v)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                        moderacaoActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                      )}
-                    >
-                      <SlidersHorizontal className="h-4 w-4 shrink-0" />
-                      <span className="truncate">Moderação</span>
-                      <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !moderacaoOpen && "-rotate-90")} />
-                    </button>
-                    {moderacaoOpen && (
-                      <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-                        {show("cpo.produtos") && (
-                          <SubLink to="/carregadores/produtos" label="Produtos e Alíquotas" icon={Package} active={pathname.startsWith("/carregadores/produtos")} />
-                        )}
-                        {show("cpo.comissoes") && (
-                          <SubLink to="/carregadores/comissoes" label="Comissões" icon={Percent} active={pathname.startsWith("/carregadores/comissoes")} />
-                        )}
-                        {show("cpo.regras") && (
-                          <SubLink to="/carregadores/regras" label="Regras" icon={BookOpen} active={pathname.startsWith("/carregadores/regras")} />
-                        )}
-
-                      </div>
-                    )}
-                  </div>
-                )
-              )}
+              {/* Moderação foi movida para o ambiente de Administração (engrenagem no topo). */}
               <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
             </>
           )}
