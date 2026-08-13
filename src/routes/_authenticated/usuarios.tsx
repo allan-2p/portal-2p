@@ -259,98 +259,16 @@ function UsuariosPage() {
 
 
 
-  return (
-    <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="font-display font-bold text-2xl">Usuários</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Administração do Grupo 2P — todos os usuários, independente da instância.
-            </p>
-          </div>
-          <button
-            onClick={() => setModal({ kind: "create" })}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
-          >
-            <UserPlus className="h-4 w-4" /> Criar usuário
-          </button>
+  if (authLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
-            {STATUS_FILTERS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setStatus(s.id)}
-                className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
-                  status === s.id
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-          <PortalTable
-            rows={visibleRows}
-            loading={loading}
-            currentUserId={user?.id}
-            onRoleChange={handleRoleChange}
-            onOrgChange={handleOrgChange}
-            onToggle={handleToggle}
-            onDelete={handleDelete}
-            onReload={load}
-            onScopeChange={handleScopeChange}
-            onSfIdChange={handleSfIdChange}
-            onRegimeChange={handleRegimeChange}
-
-            onEdit={(row) => setModal({ kind: "edit", row })}
-            onDetail={(row) => setModal({ kind: "detail", row })}
-          />
-      </div>
-
-
-      {modal?.kind === "detail" && (
-        <UserDetailSheet
-          userId={modal.row.id}
-          onClose={() => setModal(null)}
-          onEdit={() => setModal({ kind: "edit", row: modal.row })}
-        />
-      )}
-
-      {modal?.kind === "edit" && (
-        <EditUserModal
-          row={modal.row}
-          onClose={() => setModal(null)}
-          onSubmit={async (data) => {
-            await updateFn({ data: { user_id: modal.row.id, ...data } });
-            toast.success("Usuário atualizado");
-            setModal(null);
-            load();
-          }}
-        />
-      )}
-
-
-      {modal?.kind === "create" && (
-        <UserModal
-          mode="create"
-          onClose={() => setModal(null)}
-          onSubmit={async (data) => {
-            await createFn({ data: data as any });
-            toast.success("Usuário criado");
-            setModal(null);
-            load();
-          }}
-        />
-      )}
-    </AppLayout>
+      </AppLayout>
     );
   }
+
 
   if (!hasRole("admin")) {
     return (
