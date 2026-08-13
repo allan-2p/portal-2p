@@ -438,7 +438,7 @@ function CadastrosPage() {
 
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-                  <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}>
+                  <Button onClick={tentarSalvar} disabled={salvar.isPending}>
                     {salvar.isPending ? "Salvando…" : "Salvar cadastro"}
                   </Button>
                 </DialogFooter>
