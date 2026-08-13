@@ -1102,6 +1102,21 @@ function PropostaCpoPage() {
           ) : null}
         </div>
 
+        {/* Barra de ações fixa no rodapé */}
+        <div className="sticky bottom-0 z-20 mt-6 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 bg-background/95 backdrop-blur border-t border-border">
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
+              Voltar
+            </Button>
+            <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2} className="gap-2">
+              Próximo
+            </Button>
+            <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2">
+              <Save className="h-4 w-4" /> Salvar proposta
+            </Button>
+          </div>
+        </div>
+
         {/* Revisão final antes de salvar / concluir */}
         <Dialog open={revisao !== null} onOpenChange={(o) => !o && setRevisao(null)}>
           <DialogContent className="max-w-lg">
