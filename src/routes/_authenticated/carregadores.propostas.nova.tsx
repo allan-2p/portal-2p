@@ -1236,9 +1236,6 @@ function PropostaCpoPage() {
                 placeholder="Observações da proposta"
                 onChange={(e) => set("observacoes", e.target.value)}
               />
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Texto padrão incluído automaticamente — pode ser editado.
-              </p>
             </Field>
             </>
             ) : null}
