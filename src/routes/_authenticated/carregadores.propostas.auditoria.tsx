@@ -19,10 +19,18 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, ArrowLeft, Calculator } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calculator, FileDown, FileSpreadsheet } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL, fmtPct, novoEstado, type CpoState } from "@/lib/cpo";
 import { auditarProposta, type PassoCalculo, REGRAS_VERSAO } from "@/lib/cpo-auditoria";
+import {
+  baixarCsv,
+  buildResumoFiscalCsv,
+  buildResumoFiscalHtml,
+  textosPadrao,
+  type ResumoFiscalMeta,
+} from "@/lib/cpo-fiscal-export";
 import { useCpoConfig, useCpoNcms, useCpoProducts, useCpoUfs } from "@/hooks/use-cpo";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/auditoria")({
@@ -51,6 +59,8 @@ type Row = {
   id: string;
   numero: string | null;
   cliente_nome: string;
+  cliente_doc: string | null;
+  cliente_ie: string | null;
   uf: string;
   contribuinte: boolean;
   frete_mod: string;
@@ -152,6 +162,43 @@ function AuditoriaPage() {
 
   const carregando = propostas.isLoading || produtos.isLoading || ufs.isLoading || config.isLoading || ncms.isLoading;
 
+  const meta: ResumoFiscalMeta | null = atual
+    ? {
+        numero: atual.numero,
+        cliente: atual.cliente_nome,
+        doc: atual.cliente_doc,
+        ie: atual.cliente_ie,
+        criadoEm: atual.created_at,
+      }
+    : null;
+
+  const nomeArquivo = atual
+    ? `resumo-fiscal-ncm-${(atual.numero || atual.cliente_nome || "proposta")
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .toLowerCase()}`
+    : "resumo-fiscal-ncm";
+
+  function exportarPdf() {
+    if (!auditoria || !meta) return;
+    const w = window.open("", "_blank");
+    if (!w) return toast.error("Permita pop-ups para gerar o PDF.");
+    w.document.write(buildResumoFiscalHtml(auditoria, meta));
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 600);
+  }
+
+  function exportarCsv() {
+    if (!auditoria || !meta) return;
+    baixarCsv(`${nomeArquivo}.csv`, buildResumoFiscalCsv(auditoria, meta));
+    toast.success("CSV do resumo fiscal gerado.");
+  }
+
+  const textos = auditoria ? textosPadrao(auditoria) : null;
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -186,6 +233,14 @@ function AuditoriaPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!auditoria}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              CSV
+            </Button>
+            <Button size="sm" onClick={exportarPdf} disabled={!auditoria}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Resumo fiscal (PDF)
+            </Button>
           </div>
         </div>
 
@@ -310,6 +365,43 @@ function AuditoriaPage() {
                 </Table>
               </CardContent>
             </Card>
+
+            {textos && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">
+                    Texto padrão para o processo · {textos.regime}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div className="rounded-md border-l-4 border-primary bg-muted/40 p-3">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">DIFAL</p>
+                    <p className="text-justify leading-relaxed">{textos.difal}</p>
+                  </div>
+                  <div className="rounded-md border-l-4 border-primary bg-muted/40 p-3">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">ICMS-ST</p>
+                    <p className="text-justify leading-relaxed">{textos.st}</p>
+                  </div>
+                  <div className="rounded-md border-l-4 border-muted-foreground/40 bg-muted/40 p-3">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ressalva</p>
+                    <p className="text-justify leading-relaxed">{textos.ressalva}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(
+                        `${textos.difal}\n\n${textos.st}\n\n${textos.ressalva}`,
+                      );
+                      toast.success("Texto padrão copiado.");
+                    }}
+                  >
+                    Copiar texto padrão
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
 
             <Card>
               <CardHeader className="pb-3">
