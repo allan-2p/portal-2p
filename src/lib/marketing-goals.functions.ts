@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { recordModeration } from "@/lib/moderation-audit.server";
 
 export type MarketingGoalRow = {
   key: string;
@@ -44,5 +45,16 @@ export const setMarketingGoal = createServerFn({ method: "POST" })
       .update(patch)
       .eq("key", data.key);
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "marketing",
+      instanceId: "marketing",
+      action: "atualizou",
+      target: data.key,
+      summary: `Indicador de marketing "${data.key}" atualizado`,
+      details: {
+        ...(typeof data.goal === "number" ? { meta: data.goal } : {}),
+        ...(typeof data.real_value === "number" ? { realizado: data.real_value } : {}),
+      },
+    });
     return { ok: true };
   });
