@@ -255,6 +255,41 @@ function PropostaCpoPage() {
     refetchOnWindowFocus: true,
   });
 
+  // Revalida o cadastro do cliente ao abrir uma proposta existente (nunca usa dados antigos)
+  const revalidado = useRef(false);
+  useEffect(() => {
+    const alvo = editId ?? dupId;
+    if (!alvo || revalidado.current) return;
+    if (!state.doc && !state.nome) return;
+    const lista = clientesQ.data;
+    if (!lista?.length) return;
+    const soDigitos = (v?: string | null) => (v ?? "").replace(/\D/g, "");
+    const atual =
+      lista.find((c) => soDigitos(c.cliente_doc) && soDigitos(c.cliente_doc) === soDigitos(state.doc)) ??
+      lista.find((c) => c.cliente_nome.trim().toLowerCase() === state.nome.trim().toLowerCase());
+    revalidado.current = true;
+    if (!atual) return;
+    const mudou =
+      atual.cliente_nome !== state.nome ||
+      (atual.cliente_telefone ?? "") !== state.telefone ||
+      (atual.cliente_email ?? "") !== state.email ||
+      (atual.cliente_ie ?? "") !== state.ie ||
+      (atual.uf || "") !== state.uf ||
+      atual.contribuinte !== state.contribuinte;
+    if (!mudou) return;
+    setState((s) => ({
+      ...s,
+      nome: atual.cliente_nome,
+      telefone: atual.cliente_telefone ?? "",
+      email: atual.cliente_email ?? "",
+      doc: atual.cliente_doc ?? s.doc,
+      ie: atual.cliente_ie ?? "",
+      uf: atual.uf || s.uf,
+      contribuinte: atual.contribuinte,
+    }));
+    toast.info("Dados do cliente atualizados conforme o cadastro atual.");
+  }, [clientesQ.data, editId, dupId, state.doc, state.nome, state.telefone, state.email, state.ie, state.uf, state.contribuinte]);
+
 
 
 
