@@ -978,6 +978,10 @@ function EditUserModal({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          if (profileIds.size === 0) {
+            toast.error("Selecione ao menos um perfil de permissão.");
+            return;
+          }
           setSubmitting(true);
           try {
             await setUserProfilesFn({ data: { user_id: row.id, profile_ids: [...profileIds] } });
