@@ -140,6 +140,7 @@ function PropostaCpoPage() {
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
   const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
+  const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const carregado = useRef(false);
 
@@ -1188,7 +1189,7 @@ function PropostaCpoPage() {
                 <FileDown className="h-4 w-4" /> Baixar PDF
               </Button>
               <div className="hidden sm:block flex-1" />
-              <Button onClick={() => pedirRevisao("concluir")} disabled={saving} className="w-full gap-2 sm:w-auto">
+              <Button onClick={() => setConfirmarConclusao(true)} disabled={saving} className="w-full gap-2 sm:w-auto">
                 <CheckCircle2 className="h-4 w-4" /> Concluir pedido
               </Button>
             </div>
@@ -1223,6 +1224,38 @@ function PropostaCpoPage() {
                 className="gap-2"
               >
                 <FileDown className="h-4 w-4" /> Baixar PDF
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Confirmação antes de concluir o pedido */}
+        <Dialog open={confirmarConclusao} onOpenChange={(o) => !o && setConfirmarConclusao(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <TriangleAlert className="h-5 w-5 text-amber-500" />
+                Confirmar conclusão do pedido
+              </DialogTitle>
+              <DialogDescription>
+                Você está prestes a concluir este pedido. Essa ação pode gerar registros no sistema e não deve ser feita acidentalmente.
+              </DialogDescription>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Deseja continuar e revisar os dados antes de finalizar?
+            </p>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setConfirmarConclusao(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  setConfirmarConclusao(false);
+                  pedirRevisao("concluir");
+                }}
+                className="gap-2"
+              >
+                <CheckCircle2 className="h-4 w-4" /> Sim, revisar e concluir
               </Button>
             </DialogFooter>
           </DialogContent>
