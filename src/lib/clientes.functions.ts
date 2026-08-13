@@ -165,6 +165,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
+      await assertPodeAlterarCliente(context as any, data.instancia, data.id);
       const row = await db.updateCliente(data.instancia, data.id, payload);
       return { id: row?.["id"] ?? data.id };
     }
