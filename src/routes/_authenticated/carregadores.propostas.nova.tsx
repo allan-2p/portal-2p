@@ -87,6 +87,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/nov
 
 
 type ClienteCadastro = {
+  id: string;
   cliente_nome: string;
   cliente_telefone: string | null;
   cliente_email: string | null;
@@ -95,6 +96,7 @@ type ClienteCadastro = {
   uf: string;
   contribuinte: boolean;
 };
+
 
 const DRAFT_KEY = "cpo-proposta-rascunho";
 
