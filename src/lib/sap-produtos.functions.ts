@@ -91,7 +91,7 @@ export const listSapProdutos = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<{ produtos: SapProdutoRow[]; lastRun: SapSyncRun | null }> => {
     const { data, error } = await context.supabase
       .from("sap_produtos")
-      .select("id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at")
+      .select("id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id")
       .order("descricao");
     if (error) throw new Error(error.message);
 
