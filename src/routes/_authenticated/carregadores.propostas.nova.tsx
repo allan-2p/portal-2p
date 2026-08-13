@@ -1026,17 +1026,9 @@ function PropostaCpoPage() {
                   {fmtBRL(d.valorTotalProposta)}
                 </div>
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                <SumItem label="Valor" value={fmtBRL(d.valor)} />
-                <SumItem label="Valor com frete" value={fmtBRL(d.valorItens + state.freteValor)} />
-                <SumItem label="Total NF" value={fmtBRL(d.valorItens + state.freteValor)} />
+              <div className="grid grid-cols-2 gap-3">
                 <SumItem label="Margem bruta %" value={fmtPct(d.mbPct)} hint={fmtBRL(d.mb)} />
                 <SumItem label="Comissão estimada" value={fmtBRL(d.comValor)} hint={fmtPct(d.comPct)} />
-                <SumItem
-                  label="Margem após comissão %"
-                  value={fmtPct(d.valor > 0 ? (d.mb - d.comValor) / d.valor : 0)}
-                  hint={fmtBRL(d.mb - d.comValor)}
-                />
               </div>
 
 

@@ -258,33 +258,6 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="client"><div style="font-size:11px;line-height:1.5">${esc(p.observacoes)}</div></div>
     </div>` : ""}
 
-    <div class="cols">
-      <div class="panel">
-        <h4>Resumo final</h4>
-        <div class="rows">
-          <div class="row"><span>Valor</span><b>${fmtBRL(p.valor ?? p.totalNf - p.freteValor)}</b></div>
-          <div class="row"><span>Valor com frete</span><b>${fmtBRL((p.valor ?? p.totalNf - p.freteValor) + p.freteValor)}</b></div>
-          <div class="row"><span>Total NF</span><b>${fmtBRL(p.totalNf)}</b></div>
-        </div>
-      </div>
-      ${
-        p.interno
-          ? `<div class="panel">
-        <h4>Indicadores internos</h4>
-        <div class="rows">
-          <div class="row"><span>Margem bruta<i class="rate">${fmtPct(p.interno.mbPct)}</i></span><b>${fmtBRL(p.interno.mb)}</b></div>
-          <div class="row"><span>Comissão estimada<i class="rate">${fmtPct(p.interno.comissaoPct)}</i></span><b>${fmtBRL(p.interno.comissao)}</b></div>
-          <div class="row"><span>Impostos totais</span><b>${fmtBRL(p.impostos.ipiValor + p.impostos.icms + p.impostos.pisCofins)}</b></div>
-        </div>
-      </div>`
-          : `<div class="panel">
-        <h4>Impostos totais</h4>
-        <div class="rows">
-          <div class="row"><span>Carga tributária</span><b>${fmtBRL(p.impostos.ipiValor + p.impostos.icms + p.impostos.pisCofins)}</b></div>
-        </div>
-      </div>`
-      }
-    </div>
 
     <div class="cond">
       <div><label>Validade</label><p>Proposta válida até ${esc(validade)}, sujeita a disponibilidade de estoque.</p></div>
