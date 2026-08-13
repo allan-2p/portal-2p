@@ -427,6 +427,8 @@ function Dossier({ account }: { account: SalesforceAccount }) {
           Salvo apenas neste navegador enquanto conectamos a base do Atlas.
         </div>
       </div>
+      </div>
+      )}
     </div>
   );
 }
