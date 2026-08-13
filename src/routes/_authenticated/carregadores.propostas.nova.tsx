@@ -900,20 +900,20 @@ function PropostaCpoPage() {
             <div className="glass rounded-2xl p-5 space-y-1.5">
               <h2 className="font-semibold mb-3">Impostos da proposta</h2>
               <DreRow
-                k="Valor dos itens"
-                sub="Valor total dos produtos sem IPI"
-                v={fmtBRL(d.valorItem)}
+                k="Valor total da proposta"
+                sub="Itens + frete"
+                v={fmtBRL(d.valorTotalProposta)}
                 tone="neutral"
               />
               <DreRow
-                k="IPI"
-                sub="Alíquota destacada conforme NCM de cada item"
-                v={fmtPct(d.ipiValor > 0 && d.valorItem > 0 ? d.ipiValor / d.valorItem : 0)}
+                k="Frete"
+                sub={`Modalidade ${state.freteMod}`}
+                v={fmtBRL(state.freteValor)}
                 tone="neutral"
               />
               <DreRow
-                k="Valor dos itens (com IPI)"
-                sub="Base de cálculo com IPI incluído"
+                k="Valor total dos itens"
+                sub="Valor dos produtos com IPI"
                 v={fmtBRL(d.valorItens)}
                 tone="neutral"
               />
@@ -921,6 +921,12 @@ function PropostaCpoPage() {
                 k="IPI destacado"
                 sub="Valor do IPI destacado na NF"
                 v={fmtBRL(d.ipiValor)}
+                tone="neutral"
+              />
+              <DreRow
+                k="Valor total dos itens sem IPI"
+                sub="Base fiscal sem IPI"
+                v={fmtBRL(d.valorItem)}
                 tone="neutral"
               />
             </div>
