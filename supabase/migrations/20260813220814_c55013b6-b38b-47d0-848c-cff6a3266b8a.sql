@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.cpo_conclude_proposal(uuid, text, text, integer) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.cpo_conclude_proposal(uuid, text, text, integer) TO authenticated, service_role;
