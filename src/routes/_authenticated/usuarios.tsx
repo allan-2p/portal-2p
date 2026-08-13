@@ -1061,7 +1061,41 @@ function EditUserModal({
           <p className="text-xs text-amber-600 dark:text-amber-400">
             Escopo individual sem ID do Salesforce faz as métricas ficarem zeradas.
           </p>
-        )}
+)}
+
+        <div className="pt-2 space-y-2">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Perfis de permissão
+          </div>
+          {profilesLoading ? (
+            <div className="text-sm text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando perfis…
+            </div>
+          ) : permProfiles.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum perfil criado ainda.</p>
+          ) : (
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              {permProfiles.map((p) => (
+                <label
+                  key={p.id}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-surface-2 cursor-pointer text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={profileIds.has(p.id)}
+                    onChange={(e) => {
+                      const next = new Set(profileIds);
+                      if (e.target.checked) next.add(p.id);
+                      else next.delete(p.id);
+                      setProfileIds(next);
+                    }}
+                  />
+                  <span className="truncate">{p.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-6 pt-1">
           <label className="flex items-center gap-2 text-sm">
