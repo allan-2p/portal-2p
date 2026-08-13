@@ -133,7 +133,7 @@ function PropostaCpoPage() {
   // Nova proposta sempre começa vazia; só carrega dados ao editar/duplicar uma proposta salva.
   const [state, setState] = useState<CpoState>(() => novoEstado());
   const [openCli, setOpenCli] = useState(false);
-  const [etapa, setEtapa] = useState<1 | 2>(1);
+  const [etapa, setEtapa] = useState<1 | 2 | 3 | 4>(1);
   const [tentouAvancar, setTentouAvancar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
@@ -275,13 +275,28 @@ function PropostaCpoPage() {
   const temProduto = state.itens.some((i) => i.produtoId);
   const podeSalvar = clienteOk && temProduto && !abaixoPolitica && !d.cmvExcedido;
 
-  function irParaEtapa2() {
+
+  function irParaEtapa(alvo: 1 | 2 | 3 | 4) {
+    if (alvo === 1) return setEtapa(1);
     if (!clienteOk) {
       setTentouAvancar(true);
       toast.error(errosCliente[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
       return;
     }
-    setEtapa(2);
+    if (alvo >= 3 && !temProduto) {
+      setTentouAvancar(true);
+      toast.error("Adicione ao menos um produto à proposta.");
+      return;
+    }
+    setEtapa(alvo);
+  }
+
+  function avancarEtapa() {
+    if (etapa < 4) irParaEtapa((etapa + 1) as 2 | 3 | 4);
+  }
+
+  function voltarEtapa() {
+    if (etapa > 1) setEtapa((etapa - 1) as 1 | 2 | 3);
   }
 
 
@@ -578,8 +593,10 @@ function PropostaCpoPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm">
               {[
-                { n: 1 as const, label: "Cliente", go: () => setEtapa(1) },
-                { n: 2 as const, label: "Produtos, frete e margem", go: irParaEtapa2 },
+                { n: 1 as const, label: "Identificação", go: () => setEtapa(1) },
+                { n: 2 as const, label: "Produtos", go: () => irParaEtapa(2) },
+                { n: 3 as const, label: "Faturamento e frete", go: () => irParaEtapa(3) },
+                { n: 4 as const, label: "Finalização", go: () => irParaEtapa(4) },
               ].map((s, i) => {
                 const atual = etapa === s.n;
                 const concluida = etapa > s.n;
@@ -613,20 +630,20 @@ function PropostaCpoPage() {
               })}
             </div>
             <span className="text-xs font-medium text-muted-foreground shrink-0">
-              Etapa {etapa} de 2
+              Etapa {etapa} de 4
             </span>
           </div>
           <div
             className="h-1.5 rounded-full bg-surface-2 overflow-hidden"
             role="progressbar"
             aria-valuemin={1}
-            aria-valuemax={2}
+            aria-valuemax={4}
             aria-valuenow={etapa}
-            aria-label={`Etapa ${etapa} de 2`}
+            aria-label={`Etapa ${etapa} de 4`}
           >
             <div
               className="h-full bg-primary rounded-full transition-all duration-300"
-              style={{ width: `${(etapa / 2) * 100}%` }}
+              style={{ width: `${(etapa / 4) * 100}%` }}
             />
           </div>
         </div>
@@ -634,14 +651,20 @@ function PropostaCpoPage() {
         <div
           className={cn(
             "grid grid-cols-1 gap-5 items-start",
-            etapa === 2 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
+            etapa >= 2 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
           )}
         >
           {/* ENTRADAS */}
           <div className="glass rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">
-                {etapa === 1 ? "Etapa 1 — Cliente" : "Etapa 2 — Produtos, frete e margem"}
+                {etapa === 1
+                  ? "Etapa 1 — Identificação"
+                  : etapa === 2
+                    ? "Etapa 2 — Produtos"
+                    : etapa === 3
+                      ? "Etapa 3 — Faturamento e frete"
+                      : "Etapa 4 — Finalização"}
               </h2>
             </div>
 
@@ -784,7 +807,7 @@ function PropostaCpoPage() {
               </div>
             ) : null}
 
-            {etapa === 2 ? (
+            {etapa >= 2 ? (
               <>
             {temProduto ? <Banner level={st.level} text={st.msg} /> : null}
 
@@ -812,6 +835,8 @@ function PropostaCpoPage() {
             </div>
 
             {/* Itens */}
+            {etapa === 2 ? (
+            <>
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h3 className="font-semibold text-sm">Produtos</h3>
@@ -924,7 +949,11 @@ function PropostaCpoPage() {
               </div>
 
             </div>
+            </>
+            ) : null}
 
+            {etapa === 3 ? (
+            <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Modalidade de frete">
                 <Select value={state.freteMod} onValueChange={(v) => set("freteMod", v as CpoFreteMod)}>
@@ -948,8 +977,6 @@ function PropostaCpoPage() {
                   )}
                   onValueChange={(n: number) => set("freteValor", n)}
                 />
-
-
                 {FRETE_ABSORVIDO.includes(state.freteMod) && !(state.freteValor > 0) ? (
                   <p className="text-[11px] text-amber-600 mt-1">
                     Frete {state.freteMod === "DEDICADO" ? "dedicado" : "CIF"} é absorvido pela 2P — informe o valor.
@@ -969,6 +996,33 @@ function PropostaCpoPage() {
                 Texto padrão incluído automaticamente — pode ser editado.
               </p>
             </Field>
+            </>
+            ) : null}
+
+            {etapa === 4 ? (
+              <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-2 text-sm">
+                <p className="font-semibold">Revisão final</p>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Cliente</span>
+                  <b>{state.nome || "—"}</b>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Itens</span>
+                  <b>{state.itens.filter((i) => i.produtoId).length}</b>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Frete ({state.freteMod})</span>
+                  <b>{fmtBRL(state.freteValor)}</b>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Total da proposta</span>
+                  <b>{fmtBRL(d.valorTotalProposta)}</b>
+                </div>
+                <p className="text-xs text-muted-foreground pt-1">
+                  Confira os valores e finalize salvando a proposta ou concluindo o pedido.
+                </p>
+              </div>
+            ) : null}
 
             {/* TOTAIS AO VIVO — recalculam a cada mudança de preço/quantidade/frete */}
             <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-background/90 backdrop-blur px-4 py-3 shadow-lg">
@@ -987,13 +1041,13 @@ function PropostaCpoPage() {
 
             ) : (
               <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Etapa 1: selecione o cliente. Produtos, frete e impostos ficam na etapa 2.
+                Etapa 1: selecione o cliente. Produtos, faturamento e frete vêm nas próximas etapas.
               </div>
             )}
           </div>
 
           {/* PAINEL / DRE */}
-          {etapa === 2 ? (
+          {etapa >= 2 ? (
           <div className="space-y-4">
             <div className="glass rounded-2xl p-5 space-y-1.5">
               <h2 className="font-semibold mb-3">Impostos da proposta</h2>
@@ -1107,10 +1161,10 @@ function PropostaCpoPage() {
               </div>
             ) : null}
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
+              <Button variant="outline" onClick={voltarEtapa} disabled={etapa === 1} className="gap-2">
                 Voltar
               </Button>
-              <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2} className="gap-2">
+              <Button variant="outline" onClick={avancarEtapa} disabled={etapa === 4} className="gap-2">
                 Próximo
               </Button>
               <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2">

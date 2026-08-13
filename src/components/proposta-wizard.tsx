@@ -36,9 +36,8 @@ type Fileira = {
 
 const STEPS = [
   "Identificação",
-  "Estruturas",
-  "Faturamento",
-  "Quantificação",
+  "Produtos",
+  "Faturamento e frete",
   "Finalização",
 ] as const;
 
@@ -124,11 +123,12 @@ export function PropostaWizard({
     if (step === 0) {
       if (!identOk) return toast.error("Preencha cliente e nome do projeto.");
       if (!metodo) return toast.error("Selecione o modo de cálculo de estruturas.");
-      setStep(metodo === "lista" ? 2 : 1);
+      setStep(1);
       return;
     }
     if (step === 1) {
-      if (!modulo || !qtdPaineis) return toast.error("Preencha os dados do módulo e a quantidade de painéis.");
+      if (metodo !== "lista" && (!modulo || !qtdPaineis))
+        return toast.error("Preencha os dados do módulo e a quantidade de painéis.");
       setStep(2);
       return;
     }
@@ -137,13 +137,11 @@ export function PropostaWizard({
       setStep(3);
       return;
     }
-    if (step === 3) return setStep(4);
     onFinish({ cliente: cliente.trim(), projeto: projeto.trim(), vendido, metodo });
   };
 
   const goBack = () => {
     if (step === 0) return onCancel();
-    if (step === 2 && metodo === "lista") return setStep(0);
     setStep((s) => s - 1);
   };
 
@@ -233,7 +231,7 @@ export function PropostaWizard({
 
       {step === 1 && (
         <>
-          <Section title="Realizar Proposta">
+          <Section title="Produtos e estruturas">
             <div className="grid md:grid-cols-2 gap-4">
               <Field label="Kit Fotovoltaico?">
                 <Select value={kit} onValueChange={setKit}>
@@ -420,6 +418,13 @@ export function PropostaWizard({
               <Plus className="h-4 w-4" /> Adicionar Fileira
             </Button>
           </Section>
+
+          <Section title="Quantificação de estruturas">
+            <EmProducao
+              title="Em produção"
+              description="A quantificação automática das estruturas está em desenvolvimento e será liberada em breve."
+            />
+          </Section>
         </>
       )}
 
@@ -496,15 +501,6 @@ export function PropostaWizard({
       )}
 
       {step === 3 && (
-        <Section title="Quantificação de estruturas">
-          <EmProducao
-            title="Em produção"
-            description="A quantificação automática das estruturas está em desenvolvimento e será liberada em breve."
-          />
-        </Section>
-      )}
-
-      {step === 4 && (
         <Section title="Finalização do pedido">
           <EmProducao
             title="Em produção"
