@@ -68,7 +68,7 @@ export function WizardActionBar({
       className={cn(
         "sticky bottom-0 z-30 mt-6 -mx-4 sm:-mx-6 lg:-mx-8",
         "border-t border-border bg-background/80 backdrop-blur-xl",
-        "shadow-[0_-8px_24px_-16px_hsl(var(--foreground)/0.35)]",
+        "shadow-[0_-10px_30px_-20px_rgba(0,0,0,0.45)]",
         className,
       )}
     >
