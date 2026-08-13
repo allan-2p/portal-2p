@@ -124,12 +124,18 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     home: "/admin/metas",
     groups: [
       {
+        label: "Grupo 2P",
+        collapsible: true,
+        items: [
+          { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.produtos" },
+        ],
+      },
+      {
         label: "2P Solar",
         collapsible: true,
         items: [
           { to: "/admin/metas", label: "Regras de Metas", icon: Target, feature: "admin.metas" },
           { to: "/admin/tabelas", label: "Tabelas", icon: TableIcon, feature: "admin.tabelas" },
-          { to: "/admin/produtos", label: "Produtos (SAP)", icon: Package, feature: "admin.produtos" },
         ],
       },
       {
