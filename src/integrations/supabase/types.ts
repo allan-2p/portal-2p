@@ -1626,7 +1626,12 @@ export type Database = {
         }[]
       }
       cpo_conclude_proposal: {
-        Args: { _id: string; _origem?: string; _status: string }
+        Args: {
+          _etapa?: number
+          _id: string
+          _origem?: string
+          _status: string
+        }
         Returns: {
           already_concluded: boolean
           id: string
