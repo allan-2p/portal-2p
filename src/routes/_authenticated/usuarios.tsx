@@ -964,6 +964,7 @@ function EditUserModal({
           e.preventDefault();
           setSubmitting(true);
           try {
+            await setUserProfilesFn({ data: { user_id: row.id, profile_ids: [...profileIds] } });
             await onSubmit({
               email: form.email,
               full_name: form.full_name,
