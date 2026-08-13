@@ -573,25 +573,6 @@ function PropostaCpoPage() {
 
         </div>
 
-        <CpoCatalogoModelos
-          produtos={produtos}
-          onSelecionar={(produtoId) => {
-            setState((s) => {
-              const vazio = s.itens.find((i) => !i.produtoId);
-              if (vazio) {
-                return {
-                  ...s,
-                  itens: s.itens.map((i) =>
-                    i.key === vazio.key ? { ...i, produtoId, qtd: i.qtd || 1 } : i,
-                  ),
-                };
-              }
-              return { ...s, itens: [...s.itens, { ...novoItem(), produtoId, qtd: 1 }] };
-            });
-            setEtapa(2);
-            toast.success("Modelo adicionado à proposta");
-          }}
-        />
 
         {/* Indicador de progresso: etapa atual x total */}
         <div className="space-y-2">
