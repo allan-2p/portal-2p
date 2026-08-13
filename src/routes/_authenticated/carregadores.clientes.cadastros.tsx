@@ -326,7 +326,7 @@ function CadastrosPage() {
               <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-8" placeholder="Buscar por nome, CNPJ, cidade…" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditId(null); setForm(vazio()); } }}>
+            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditId(null); setForm(vazio()); setTentouSalvar(false); } }}>
               <DialogTrigger asChild>
                 <Button className="gap-2" onClick={abrirNovo}><Plus className="h-4 w-4" /> Novo cadastro</Button>
               </DialogTrigger>
@@ -335,10 +335,32 @@ function CadastrosPage() {
                   <DialogTitle>{editId ? "Editar cadastro" : "Novo cadastro de cliente"}</DialogTitle>
                 </DialogHeader>
 
+                {listaErros.length > 0 && (
+                  <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3" role="alert">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      Não foi possível salvar: {listaErros.length} campo(s) precisam de atenção
+                    </div>
+                    <ul className="mt-2 space-y-1">
+                      {listaErros.map(({ campo, msg }) => (
+                        <li key={campo}>
+                          <button
+                            type="button"
+                            className="text-left text-xs text-destructive underline-offset-2 hover:underline"
+                            onClick={() => document.getElementById(`campo-${campo}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                          >
+                            <span className="font-medium">{ROTULOS[campo]}:</span> {msg}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <Section title="Dados da empresa">
-                  <F label="Razão social *"><Input value={form.razao_social} onChange={(e) => set("razao_social", e.target.value)} /></F>
+                  <F label="Razão social *" id="campo-razao_social" error={erros.razao_social}><Input value={form.razao_social} onChange={(e) => set("razao_social", e.target.value)} /></F>
                   <F label="Nome fantasia"><Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} /></F>
-                  <F label="CNPJ / CPF *"><Input value={form.doc ?? ""} onChange={(e) => set("doc", e.target.value)} placeholder="00.000.000/0000-00" /></F>
+                  <F label="CNPJ / CPF *" id="campo-doc" error={erros.doc}><Input value={form.doc ?? ""} onChange={(e) => set("doc", e.target.value)} placeholder="00.000.000/0000-00" /></F>
                   <F label="Regime tributário">
                     <Select value={form.regime_tributario ?? ""} onValueChange={(v) => set("regime_tributario", v)}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
