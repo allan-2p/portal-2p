@@ -133,13 +133,14 @@ function AdminGroupItems({
               const alert = alerts?.get(slug);
               if (alert && alert.level !== "off") {
                 return (
+                  <span title={alert.message} className="shrink-0 inline-flex">
                   <AlertTriangle
-                    title={alert.message}
                     className={cn(
                       "h-3.5 w-3.5 shrink-0",
                       alert.level === "error" ? "text-destructive" : "text-amber-500",
                     )}
                   />
+                  </span>
                 );
               }
               return <IntegrationStatusDot item={health.map.get(slug)} loading={health.isLoading} />;
