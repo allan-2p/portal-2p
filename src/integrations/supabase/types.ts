@@ -278,6 +278,7 @@ export type Database = {
           contribuinte: boolean
           created_at: string
           created_by: string | null
+          finalidade_uso: string
           frete_mod: string
           frete_valor: number
           id: string
@@ -297,6 +298,7 @@ export type Database = {
           contribuinte?: boolean
           created_at?: string
           created_by?: string | null
+          finalidade_uso?: string
           frete_mod?: string
           frete_valor?: number
           id?: string
@@ -316,6 +318,7 @@ export type Database = {
           contribuinte?: boolean
           created_at?: string
           created_by?: string | null
+          finalidade_uso?: string
           frete_mod?: string
           frete_valor?: number
           id?: string

@@ -1,0 +1,1 @@
+alter table public.cpo_proposals add column if not exists finalidade_uso text not null default 'uso_consumo';
