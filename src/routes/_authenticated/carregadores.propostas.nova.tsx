@@ -369,6 +369,7 @@ function PropostaCpoPage() {
   const d = calcularCpo(state, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []);
   const st = statusMB(d.mbPct, config);
   const uf = ufs.find((u) => u.uf === state.uf);
+  const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
   // ---- Validação da etapa 1 (dados obrigatórios do cliente) ----
   const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
@@ -1392,9 +1393,9 @@ function PropostaCpoPage() {
           errors={errosFechamento}
           showErrors={!podeFechar && tentouAvancar}
           savedAt={autosaveAt}
-          minimal={etapa === 1}
+          minimal={etapa === 1 && !temItemComValor}
           actions={
-            etapa === 4
+            etapa === 4 && temItemComValor
               ? [
                   {
                     label: "Salvar proposta",
@@ -1413,7 +1414,7 @@ function PropostaCpoPage() {
           }
 
           primary={
-            etapa === 1
+            !temItemComValor
               ? null
               : etapa === 4
                 ? {
