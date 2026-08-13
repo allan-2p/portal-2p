@@ -522,10 +522,12 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                       <li key={campo}>
                         <button
                           type="button"
-                          className="text-left text-xs text-destructive underline-offset-2 hover:underline"
                           onClick={() => focarCampo(campo)}
+                          className="group flex w-full items-center gap-2 text-left text-xs text-destructive underline-offset-2 hover:underline"
                         >
-                          <span className="font-medium">{rotuloCampo(campo, form.contatos ?? [])}:</span> {msg}
+                          <ArrowRight className="h-3 w-3 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                          <span className="font-medium">{rotuloCampo(campo, form.contatos ?? [])}:</span>
+                          <span className="text-foreground/90">{msg}</span>
                         </button>
                       </li>
                     ))}
