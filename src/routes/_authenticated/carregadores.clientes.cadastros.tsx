@@ -409,12 +409,12 @@ function CadastrosPage() {
                       }}
                     />
                   </F>
-                  <F label="Logradouro *"><Input value={form.logradouro ?? ""} onChange={(e) => set("logradouro", e.target.value)} /></F>
-                  <F label="Número *"><Input value={form.numero ?? ""} onChange={(e) => set("numero", e.target.value)} /></F>
+                  <F label="Logradouro *" id="campo-logradouro" error={erros.logradouro}><Input value={form.logradouro ?? ""} onChange={(e) => set("logradouro", e.target.value)} /></F>
+                  <F label="Número *" id="campo-numero" error={erros.numero}><Input value={form.numero ?? ""} onChange={(e) => set("numero", e.target.value)} /></F>
                   <F label="Complemento"><Input value={form.complemento ?? ""} onChange={(e) => set("complemento", e.target.value)} /></F>
                   <F label="Bairro"><Input value={form.bairro ?? ""} onChange={(e) => set("bairro", e.target.value)} /></F>
-                  <F label="Cidade *"><Input value={form.cidade ?? ""} onChange={(e) => set("cidade", e.target.value)} /></F>
-                  <F label="UF de destino *">
+                  <F label="Cidade *" id="campo-cidade" error={erros.cidade}><Input value={form.cidade ?? ""} onChange={(e) => set("cidade", e.target.value)} /></F>
+                  <F label="UF de destino *" id="campo-uf" error={erros.uf}>
                     <Select value={form.uf} onValueChange={(v) => set("uf", v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
