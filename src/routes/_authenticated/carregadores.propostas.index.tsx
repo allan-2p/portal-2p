@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Calculator, Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
@@ -221,6 +221,11 @@ function HistoricoCpoPage() {
                         <Button variant="ghost" size="icon" aria-label="Duplicar proposta" asChild>
                           <Link to="/carregadores/propostas/nova" search={{ dup: r.id }}>
                             <Copy className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label="Auditoria de cálculo" asChild>
+                          <Link to="/carregadores/propostas/auditoria" search={{ id: r.id }}>
+                            <Calculator className="h-4 w-4" />
                           </Link>
                         </Button>
                         <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => excluir(r.id)}>
