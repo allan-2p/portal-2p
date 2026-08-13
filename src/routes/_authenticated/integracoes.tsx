@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getSalesforceStatus, getSalesforceSample } from "@/lib/salesforce.functions";
 import { IntegrationStatusBadge, formatLastSync, useIntegrationHealthMap } from "@/components/integration-status";
+import { IntegrationLogsPanel } from "@/components/integration-logs";
 
 
 export const Route = createFileRoute("/_authenticated/integracoes")({
@@ -152,6 +153,8 @@ function IntegracoesPage() {
       <div id="top20"><Top20Card /></div>
 
       <CatalogoIntegracoes />
+
+      <IntegrationLogsPanel title="Histórico geral de sincronizações e erros" />
     </div>
     </AppLayout>
   );

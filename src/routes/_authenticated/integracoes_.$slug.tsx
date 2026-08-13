@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { integrationBySlug } from "@/lib/integrations-catalog";
 import { getIntegrationConfig, testIntegration } from "@/lib/integration-config.functions";
 import { formatLastSync } from "@/components/integration-status";
+import { IntegrationLogsPanel } from "@/components/integration-logs";
 
 export const Route = createFileRoute("/_authenticated/integracoes_/$slug")({
   head: () => ({
@@ -200,6 +201,8 @@ function IntegracaoConfigPage() {
             </a>
           )}
         </section>
+
+        <IntegrationLogsPanel slug={slug} />
       </div>
     </AppLayout>
   );
