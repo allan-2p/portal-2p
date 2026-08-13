@@ -29,13 +29,13 @@ export const Route = createFileRoute("/_authenticated/admin/perfis")({
   component: PerfisPage,
   head: () => ({
     meta: [
-      { title: "Perfis de Permissão | Portal 2P" },
+      { title: "Perfis | Portal 2P" },
       {
         name: "description",
         content:
           "Crie perfis de permissão (moderador, gestor, vendedor) e associe usuários no Portal 2P.",
       },
-      { property: "og:title", content: "Perfis de Permissão | Portal 2P" },
+      { property: "og:title", content: "Perfis | Portal 2P" },
       {
         property: "og:description",
         content: "Configuração de perfis e permissões extras por usuário.",

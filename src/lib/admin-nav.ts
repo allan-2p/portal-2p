@@ -7,7 +7,6 @@
 import {
   Users,
   UserCog,
-  KeyRound,
   Activity as ActivityIcon,
   Link2,
   ShieldCheck,
