@@ -5,6 +5,28 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const instanciaSchema = z.enum(["solar", "carregadores"]);
 const docSchema = z.string().min(11).max(20);
 
+/**
+ * Garante que o usuário é dono do cadastro (created_by) ou administrador.
+ * A base de clientes é externa e acessada com chave de serviço, então a
+ * checagem de propriedade precisa acontecer aqui no servidor.
+ */
+async function assertPodeAlterarCliente(
+  context: { supabase: any; userId: string },
+  instancia: "solar" | "carregadores",
+  id: string,
+) {
+  const db = await import("./clientes-db.server");
+  const atual = await db.getClienteById(instancia, id);
+  if (!atual) throw new Error("Cadastro não encontrado.");
+  const dono = (atual["created_by"] as string | null) ?? null;
+  if (dono && dono === context.userId) return atual;
+  const { data: isAdmin } = await context.supabase.rpc("is_admin");
+  if (!isAdmin) {
+    throw new Error("Você não tem permissão para alterar este cadastro.");
+  }
+  return atual;
+}
+
 /** Consulta a tabela `clientes` da instância. */
 export const listClientesFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
