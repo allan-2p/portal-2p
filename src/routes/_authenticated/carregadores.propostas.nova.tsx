@@ -29,7 +29,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
+import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -1173,24 +1173,26 @@ function PropostaCpoPage() {
               </div>
             ) : null}
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-2">
-              <Button variant="outline" onClick={voltarEtapa} disabled={etapa === 1} className="w-full gap-2 sm:w-auto">
+              <Button variant="outline" onClick={voltarEtapa} disabled={etapa === 1 || saving} className="w-full gap-2 sm:w-auto">
                 Voltar
               </Button>
-              <Button variant="outline" onClick={avancarEtapa} disabled={etapa === 4} className="w-full gap-2 sm:w-auto">
+              <Button variant="outline" onClick={avancarEtapa} disabled={etapa === 4 || saving} className="w-full gap-2 sm:w-auto">
                 Próximo
               </Button>
               <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="w-full gap-2 sm:w-auto">
-                <Save className="h-4 w-4" /> Salvar proposta
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Salvar proposta
               </Button>
-              <Button variant="outline" onClick={abrirPreviewPdf} disabled={!podeFechar} className="w-full gap-2 sm:w-auto">
+              <Button variant="outline" onClick={abrirPreviewPdf} disabled={!podeFechar || saving} className="w-full gap-2 sm:w-auto">
                 <Eye className="h-4 w-4" /> Prévia do PDF
               </Button>
-              <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar} className="w-full gap-2 sm:w-auto">
+              <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar || saving} className="w-full gap-2 sm:w-auto">
                 <FileDown className="h-4 w-4" /> Baixar PDF
               </Button>
               <div className="hidden sm:block flex-1" />
               <Button onClick={() => setConfirmarConclusao(true)} disabled={saving} className="w-full gap-2 sm:w-auto">
-                <CheckCircle2 className="h-4 w-4" /> Concluir pedido
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                Concluir pedido
               </Button>
             </div>
           </div>
@@ -1230,7 +1232,7 @@ function PropostaCpoPage() {
         </Dialog>
 
         {/* Confirmação antes de concluir o pedido */}
-        <Dialog open={confirmarConclusao} onOpenChange={(o) => !o && setConfirmarConclusao(false)}>
+        <Dialog open={confirmarConclusao} onOpenChange={(o) => !saving && !o && setConfirmarConclusao(false)}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -1245,7 +1247,7 @@ function PropostaCpoPage() {
               Deseja continuar e revisar os dados antes de finalizar?
             </p>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setConfirmarConclusao(false)}>
+              <Button variant="outline" onClick={() => setConfirmarConclusao(false)} disabled={saving}>
                 Cancelar
               </Button>
               <Button
@@ -1253,16 +1255,18 @@ function PropostaCpoPage() {
                   setConfirmarConclusao(false);
                   pedirRevisao("concluir");
                 }}
+                disabled={saving}
                 className="gap-2"
               >
-                <CheckCircle2 className="h-4 w-4" /> Sim, revisar e concluir
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                Sim, revisar e concluir
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         {/* Revisão final antes de salvar / concluir */}
-        <Dialog open={revisao !== null} onOpenChange={(o) => !o && setRevisao(null)}>
+        <Dialog open={revisao !== null} onOpenChange={(o) => !saving && !o && setRevisao(null)}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>
@@ -1337,19 +1341,22 @@ function PropostaCpoPage() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setRevisao(null)}>
+              <Button variant="outline" onClick={() => setRevisao(null)} disabled={saving}>
                 Voltar e editar
               </Button>
               <Button onClick={confirmarRevisao} disabled={saving} className="gap-2">
-                {revisao === "concluir" ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" /> Confirmar pedido
-                  </>
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : revisao === "concluir" ? (
+                  <CheckCircle2 className="h-4 w-4" />
                 ) : (
-                  <>
-                    <Save className="h-4 w-4" /> Confirmar e salvar
-                  </>
+                  <Save className="h-4 w-4" />
                 )}
+                {saving
+                  ? "Processando..."
+                  : revisao === "concluir"
+                    ? "Confirmar pedido"
+                    : "Confirmar e salvar"}
               </Button>
             </DialogFooter>
           </DialogContent>
