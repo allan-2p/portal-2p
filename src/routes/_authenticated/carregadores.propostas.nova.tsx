@@ -1071,22 +1071,7 @@ function PropostaCpoPage() {
 
 
             <div className="glass rounded-2xl p-4 space-y-3">
-              {!podeFechar ? (
-                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3">
-                  <p className="text-sm font-semibold text-destructive">
-                    Corrija antes de exportar ou concluir o pedido
-                  </p>
-                  <ul className="mt-1 list-disc pl-5 text-xs text-destructive space-y-0.5">
-                    {errosFechamento.map((e, i) => (
-                      <li key={i}>{e}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2 flex-1 min-w-[160px]">
-                  <Save className="h-4 w-4" /> Salvar proposta
-                </Button>
                 <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar} className="gap-2 flex-1 min-w-[160px]">
                   <FileDown className="h-4 w-4" /> Baixar PDF
                 </Button>
@@ -1106,16 +1091,34 @@ function PropostaCpoPage() {
 
         {/* Barra de ações fixa no rodapé */}
         <div className="sticky bottom-0 z-20 mt-6 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 bg-background/95 backdrop-blur border-t border-border">
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
-              Voltar
-            </Button>
-            <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2} className="gap-2">
-              Próximo
-            </Button>
-            <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2">
-              <Save className="h-4 w-4" /> Salvar proposta
-            </Button>
+          <div className="flex items-center gap-3 flex-wrap justify-between">
+            {!podeFechar ? (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 max-w-xl">
+                <p className="text-sm font-semibold text-destructive">
+                  Corrija antes de exportar ou concluir o pedido
+                </p>
+                <ul className="mt-1 list-disc pl-5 text-xs text-destructive space-y-0.5">
+                  {errosFechamento.map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-medium">
+                <CheckCircle2 className="h-4 w-4" /> Proposta dentro da política comercial.
+              </div>
+            )}
+            <div className="flex items-center gap-2 ml-auto">
+              <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
+                Voltar
+              </Button>
+              <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2} className="gap-2">
+                Próximo
+              </Button>
+              <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2">
+                <Save className="h-4 w-4" /> Salvar proposta
+              </Button>
+            </div>
           </div>
         </div>
 
