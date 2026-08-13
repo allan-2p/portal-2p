@@ -1369,8 +1369,20 @@ function PropostaCpoPage() {
                 <FileDown className="h-4 w-4" /> Baixar PDF
               </Button>
               <div className="hidden sm:block flex-1" />
-              <Button onClick={() => setConfirmarConclusao(true)} disabled={saving} className="w-full gap-2 sm:w-auto">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              <Button
+                onClick={() => {
+                  setStatusProposta("Aguardando Pagamento");
+                  setSaving(true);
+                  setConfirmarConclusao(true);
+                }}
+                disabled={saving}
+                className="w-full gap-2 sm:w-auto"
+              >
+                {saving && statusProposta === "Aguardando Pagamento" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
                 Concluir pedido
               </Button>
             </div>
