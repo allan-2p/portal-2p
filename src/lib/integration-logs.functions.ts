@@ -7,7 +7,7 @@ export type IntegrationLogRow = {
   level: "info" | "warn" | "error";
   event: string;
   message: string | null;
-  detail: unknown;
+  detail: Record<string, string | number | boolean | null> | null;
   duration_ms: number | null;
   actor_email: string | null;
   created_at: string;
