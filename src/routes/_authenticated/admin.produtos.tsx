@@ -24,9 +24,9 @@ import {
 } from "@/lib/sap-produtos.functions";
 
 const VIS_LABELS: Record<string, string> = {
-  solar: "Só 2P Solar",
-  carregadores: "Só 2P Carregadores",
-  ambos: "Ambos",
+  solar: "2P Solar",
+  carregadores: "2P Carregadores",
+  ambos: "Grupo 2P",
 };
 import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download } from "lucide-react";
 import {
@@ -448,9 +448,9 @@ function ProdutosPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as visibilidades</SelectItem>
-              <SelectItem value="solar">Só 2P Solar</SelectItem>
-              <SelectItem value="carregadores">Só 2P Carregadores</SelectItem>
-              <SelectItem value="ambos">Ambos</SelectItem>
+              <SelectItem value="solar">2P Solar</SelectItem>
+              <SelectItem value="carregadores">2P Carregadores</SelectItem>
+              <SelectItem value="ambos">Grupo 2P</SelectItem>
             </SelectContent>
           </Select>
           <Select
@@ -519,9 +519,9 @@ function ProdutosPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="solar">Só 2P Solar</SelectItem>
-                          <SelectItem value="carregadores">Só 2P Carregadores</SelectItem>
-                          <SelectItem value="ambos">Ambos</SelectItem>
+                          <SelectItem value="solar">2P Solar</SelectItem>
+                          <SelectItem value="carregadores">2P Carregadores</SelectItem>
+                          <SelectItem value="ambos">Grupo 2P</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>
