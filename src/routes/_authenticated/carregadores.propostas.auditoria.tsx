@@ -139,7 +139,7 @@ function AuditoriaPage() {
       nome: atual.cliente_nome,
       uf: atual.uf,
       contribuinte: atual.contribuinte,
-      freteMod: atual.frete_mod === "CIF" ? "CIF" : "FOB",
+      freteMod: (atual.frete_mod === "CIF" || atual.frete_mod === "DEDICADO" ? atual.frete_mod : "FOB") as CpoFreteMod,
       freteValor: atual.frete_valor,
       itens: atual.itens
         .filter((i) => i.produtoId)
