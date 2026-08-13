@@ -128,23 +128,41 @@ const vazio = (): Omit<Cliente, "id"> => ({
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
 const soDigitos = (v: string) => v.replace(/\D/g, "");
 
-function validarObrigatorios(f: Omit<Cliente, "id">): string | null {
-  if (!f.razao_social?.trim()) return "Informe a razão social.";
+type CampoErro =
+  | "razao_social" | "doc" | "uf" | "ie" | "contato_nome" | "contato_email"
+  | "contato_telefone" | "cep" | "logradouro" | "numero" | "cidade";
+
+type Erros = Partial<Record<CampoErro, string>>;
+
+const ROTULOS: Record<CampoErro, string> = {
+  razao_social: "Razão social", doc: "CNPJ / CPF", uf: "UF de destino",
+  ie: "Inscrição Estadual", contato_nome: "Nome do responsável",
+  contato_email: "E-mail do responsável", contato_telefone: "Telefone do responsável",
+  cep: "CEP", logradouro: "Logradouro", numero: "Número", cidade: "Cidade",
+};
+
+function validarCampos(f: Omit<Cliente, "id">): Erros {
+  const e: Erros = {};
+  if (!f.razao_social?.trim()) e.razao_social = "Informe a razão social.";
   const doc = soDigitos(f.doc ?? "");
-  if (!doc) return "Informe o CNPJ / CPF.";
-  if (doc.length !== 11 && doc.length !== 14) return "CNPJ / CPF inválido.";
-  if (!f.uf?.trim()) return "Selecione a UF de destino.";
-  if (f.contribuinte && !f.ie?.trim()) return "Cliente contribuinte: informe a Inscrição Estadual.";
-  if (!f.contato_nome?.trim()) return "Informe o nome do responsável.";
+  if (!doc) e.doc = "Informe o CNPJ / CPF.";
+  else if (doc.length !== 11 && doc.length !== 14) e.doc = "CNPJ / CPF inválido.";
+  if (!f.uf?.trim()) e.uf = "Selecione a UF de destino.";
+  if (f.contribuinte && !f.ie?.trim()) e.ie = "Cliente contribuinte: informe a Inscrição Estadual.";
+  if (!f.contato_nome?.trim()) e.contato_nome = "Informe o nome do responsável.";
   const email = (f.contato_email ?? "").trim() || (f.email ?? "").trim();
   const fone = (f.contato_telefone ?? "").trim() || (f.telefone ?? "").trim();
-  if (!email && !fone) return "Informe ao menos um contato: e-mail ou telefone.";
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "E-mail de contato inválido.";
-  if (soDigitos(f.cep ?? "").length !== 8) return "Informe um CEP válido (8 dígitos).";
-  if (!f.logradouro?.trim()) return "Informe o logradouro.";
-  if (!f.numero?.trim()) return "Informe o número do endereço.";
-  if (!f.cidade?.trim()) return "Informe a cidade.";
-  return null;
+  if (!email && !fone) {
+    e.contato_email = "Informe ao menos um contato: e-mail ou telefone.";
+    e.contato_telefone = "Informe ao menos um contato: e-mail ou telefone.";
+  } else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    e.contato_email = "E-mail de contato inválido.";
+  }
+  if (soDigitos(f.cep ?? "").length !== 8) e.cep = "Informe um CEP válido (8 dígitos).";
+  if (!f.logradouro?.trim()) e.logradouro = "Informe o logradouro.";
+  if (!f.numero?.trim()) e.numero = "Informe o número do endereço.";
+  if (!f.cidade?.trim()) e.cidade = "Informe a cidade.";
+  return e;
 }
 
 function CadastrosPage() {
