@@ -25,6 +25,7 @@ import { Plus, Pencil, Trash2, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
+import { validateVisibilidadeChange } from "@/lib/product-visibility";
 import { useCpoConfig, useCpoInvalidate, useCpoNcms, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
 import { fmtBRL, type CpoConfig, type CpoNcm, type CpoProduct } from "@/lib/cpo";
 
@@ -98,6 +99,11 @@ function ProdutosTab() {
   async function salvar() {
     if (!draft) return;
     if (!draft.nome.trim()) return toast.error("Informe o nome do produto.");
+    const impedimento = validateVisibilidadeChange("carregadores", {
+      custo: Number(draft.custo) || 0,
+      ncm_id: draft.ncm_id || null,
+    });
+    if (impedimento) return toast.error(impedimento);
     const codigo =
       draft.codigo.trim() || `CPO-${Date.now().toString(36).toUpperCase()}`;
     const payload = {
