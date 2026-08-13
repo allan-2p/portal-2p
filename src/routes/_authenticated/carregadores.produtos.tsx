@@ -99,12 +99,13 @@ function ProdutosTab() {
   async function salvar() {
     if (!draft) return;
     if (!draft.nome.trim()) return toast.error("Informe o nome do produto.");
+    const codigo =
+      draft.codigo.trim() || `CPO-${Date.now().toString(36).toUpperCase()}`;
     const payload = {
-      codigo: draft.codigo.trim() || null,
-      nome: draft.nome.trim(),
+      codigo,
+      descricao: draft.nome.trim(),
       potencia: draft.potencia.trim() || null,
       custo: Number(draft.custo) || 0,
-      preco_sugerido: 0,
       ativo: draft.ativo,
       ncm_id: draft.ncm_id || null,
     };
@@ -112,15 +113,21 @@ function ProdutosTab() {
 
     setSaving(true);
     const { error } = draft.id
-      ? await supabase.from("cpo_products").update(payload).eq("id", draft.id)
-      : await supabase.from("cpo_products").insert(payload);
+      ? await supabase.from("sap_produtos").update(payload).eq("id", draft.id)
+      : await supabase.from("sap_produtos").insert({
+          ...payload,
+          tipo: "carregador_veicular",
+          permissao: "Todos",
+          visibilidade: "carregadores",
+          origem: "manual",
+        });
     setSaving(false);
     if (error) return toast.error(error.message);
     void logModeration({
       area: "cpo_produtos",
       action: draft.id ? "atualizou" : "criou",
-      target: payload.nome,
-      summary: `${draft.id ? "Produto atualizado" : "Produto criado"}: ${payload.nome}`,
+      target: payload.descricao,
+      summary: `${draft.id ? "Produto atualizado" : "Produto criado"}: ${payload.descricao}`,
       details: { custo: payload.custo, ativo: payload.ativo },
     });
     toast.success(draft.id ? "Produto atualizado." : "Produto criado.");
@@ -129,7 +136,7 @@ function ProdutosTab() {
   }
 
   async function excluir(p: CpoProduct) {
-    const { error } = await supabase.from("cpo_products").delete().eq("id", p.id);
+    const { error } = await supabase.from("sap_produtos").delete().eq("id", p.id);
     if (error) return toast.error(error.message);
     void logModeration({
       area: "cpo_produtos",
@@ -142,7 +149,7 @@ function ProdutosTab() {
   }
 
   async function toggleAtivo(p: CpoProduct) {
-    const { error } = await supabase.from("cpo_products").update({ ativo: !p.ativo }).eq("id", p.id);
+    const { error } = await supabase.from("sap_produtos").update({ ativo: !p.ativo }).eq("id", p.id);
     if (error) return toast.error(error.message);
     void logModeration({
       area: "cpo_produtos",
@@ -152,6 +159,7 @@ function ProdutosTab() {
     });
     invalidate();
   }
+
 
   return (
     <div className="space-y-4">
