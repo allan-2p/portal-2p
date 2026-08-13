@@ -26,6 +26,7 @@ const SCOPE_LABELS: Record<string, string> = {
 const ORG_LABELS: Record<string, string> = {
   solar: "2P Solar",
   station: "Station",
+  grupo: "Grupo 2P",
   carregadores: "2P Carregadores",
 };
 

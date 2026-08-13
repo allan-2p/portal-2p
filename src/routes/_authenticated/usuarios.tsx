@@ -8,16 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/hooks/use-auth";
 import {
   adminCreateUser,
-  adminInviteUser,
   adminSetRole,
   adminToggleActive,
   adminDeleteUser,
   adminUpdateUser,
-  listSalesforceCandidates,
-  inviteSalesforceUser,
   syncSalesforcePhoto,
-  syncAllSalesforcePhotos,
-  type SFCandidate,
 } from "@/lib/users.functions";
 import { listSalespeopleForAdmin, setSalespersonVisibility } from "@/lib/admin.functions";
 import {
@@ -29,10 +24,9 @@ import {
   type SFTeam,
 } from "@/lib/scope.functions";
 import { toast } from "sonner";
-import { useInstance } from "@/components/instance-provider";
 
 import {
-  Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink, Pencil, Stethoscope,
+  Loader2, UserPlus, Shield, Trash2, Power, Camera, RefreshCw, Cloud, Pencil, Stethoscope,
 } from "lucide-react";
 import { UserDetailSheet } from "@/components/user-detail-sheet";
 import { uploadAvatar } from "@/lib/avatar";
@@ -62,8 +56,9 @@ export const Route = createFileRoute("/_authenticated/usuarios")({
 });
 
 type Regime = "CLT" | "PJ";
-type Org = "solar" | "station" | "carregadores";
+type Org = "solar" | "station" | "carregadores" | "grupo";
 const ORGS: { id: Org; label: string }[] = [
+  { id: "grupo", label: "Grupo 2P" },
   { id: "solar", label: "2P Solar" },
   { id: "station", label: "Station" },
   { id: "carregadores", label: "2P Carregadores" },
@@ -97,7 +92,6 @@ const SCOPES: { id: FilterScope; label: string }[] = [
   { id: "individual", label: "Individual" },
 ];
 
-type Tab = "portal" | "salesforce";
 type StatusFilter = "ativos" | "inativos" | "todos";
 const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
   { id: "ativos", label: "Ativos" },
@@ -108,22 +102,17 @@ const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
 
 function UsuariosPage() {
   const { hasRole, loading: authLoading, user } = useAuth();
-  const { instance } = useInstance();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("portal");
   const [status, setStatus] = useState<StatusFilter>("ativos");
   const [modal, setModal] = useState<
     | { kind: "create" }
-    | { kind: "invite"; external?: boolean }
-    | { kind: "invite-sf"; candidate: SFCandidate }
     | { kind: "edit"; row: Row }
     | { kind: "detail"; row: Row }
     | null
   >(null);
 
   const createFn = useServerFn(adminCreateUser);
-  const inviteFn = useServerFn(adminInviteUser);
   const setRoleFn = useServerFn(adminSetRole);
   const toggleFn = useServerFn(adminToggleActive);
   const deleteFn = useServerFn(adminDeleteUser);
@@ -161,15 +150,13 @@ function UsuariosPage() {
     if (!authLoading) load();
   }, [authLoading]);
 
-  // Cada instância mostra apenas os usuários da organização correspondente.
+  // Administração é do Grupo 2P: a lista não é separada por instância.
   const visibleRows = useMemo(() => {
     let list = rows;
-    if (instance === "solar") list = list.filter((r) => r.organizacao === "solar");
-    else if (instance === "carregadores") list = list.filter((r) => r.organizacao === "carregadores");
     if (status === "ativos") list = list.filter((r) => r.ativo);
     else if (status === "inativos") list = list.filter((r) => !r.ativo);
     return list;
-  }, [rows, instance, status]);
+  }, [rows, status]);
 
 
 
@@ -272,6 +259,7 @@ function UsuariosPage() {
 
 
 
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -279,72 +267,35 @@ function UsuariosPage() {
           <div>
             <h1 className="font-display font-bold text-2xl">Usuários</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Sincronize com Salesforce, convide externos e gerencie papéis.
+              Administração do Grupo 2P — todos os usuários, independente da instância.
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => setModal({ kind: "invite", external: true })}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm font-medium"
-            >
-              <ExternalLink className="h-4 w-4" /> Convidar externo
-            </button>
-            <button
-              onClick={() => setModal({ kind: "invite" })}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm font-medium"
-            >
-              <Mail className="h-4 w-4" /> Convidar
-            </button>
-            <button
-              onClick={() => setModal({ kind: "create" })}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
-            >
-              <UserPlus className="h-4 w-4" /> Criar usuário
-            </button>
-          </div>
+          <button
+            onClick={() => setModal({ kind: "create" })}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
+          >
+            <UserPlus className="h-4 w-4" /> Criar usuário
+          </button>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
-            {[
-              { id: "portal", label: "Usuários do portal" },
-              { id: "salesforce", label: "Sincronizar com Salesforce" },
-            ].map((t) => (
+            {STATUS_FILTERS.map((s) => (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id as Tab)}
-                className={`px-4 py-1.5 rounded-md font-medium transition-colors ${
-                  tab === t.id
+                key={s.id}
+                onClick={() => setStatus(s.id)}
+                className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+                  status === s.id
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {t.label}
+                {s.label}
               </button>
             ))}
           </div>
-
-          {tab === "portal" && (
-            <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
-              {STATUS_FILTERS.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setStatus(s.id)}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
-                    status === s.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
-
-        {tab === "portal" ? (
           <PortalTable
             rows={visibleRows}
             loading={loading}
@@ -361,9 +312,6 @@ function UsuariosPage() {
             onEdit={(row) => setModal({ kind: "edit", row })}
             onDetail={(row) => setModal({ kind: "detail", row })}
           />
-        ) : (
-          <SalesforceTable onInvite={(c) => setModal({ kind: "invite-sf", candidate: c })} />
-        )}
       </div>
 
 
@@ -396,29 +344,6 @@ function UsuariosPage() {
           onSubmit={async (data) => {
             await createFn({ data: data as any });
             toast.success("Usuário criado");
-            setModal(null);
-            load();
-          }}
-        />
-      )}
-      {modal?.kind === "invite" && (
-        <UserModal
-          mode="invite"
-          external={modal.external}
-          onClose={() => setModal(null)}
-          onSubmit={async (data) => {
-            await inviteFn({ data: { ...data, is_external: !!modal.external } });
-            toast.success("Convite enviado");
-            setModal(null);
-            load();
-          }}
-        />
-      )}
-      {modal?.kind === "invite-sf" && (
-        <InviteSFModal
-          candidate={modal.candidate}
-          onClose={() => setModal(null)}
-          onDone={() => {
             setModal(null);
             load();
           }}
@@ -728,256 +653,6 @@ function PortalTable({
           )}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-function SalesforceTable({ onInvite }: { onInvite: (c: SFCandidate) => void }) {
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "invited" | "active">("pending");
-  const [search, setSearch] = useState("");
-  const fetchFn = useServerFn(listSalesforceCandidates);
-  const [data, setData] = useState<SFCandidate[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-
-  async function load() {
-    setLoading(true); setErr(null);
-    try {
-      const r = await fetchFn();
-      setData(r.records);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Erro");
-    } finally {
-      setLoading(false);
-    }
-  }
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
-
-  const filtered = (data ?? []).filter((c) => {
-    if (statusFilter !== "all" && c.status !== statusFilter) return false;
-    const s = search.trim().toLowerCase();
-    if (!s) return true;
-    return c.name.toLowerCase().includes(s) || (c.email ?? "").toLowerCase().includes(s);
-  });
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 flex-wrap">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nome ou e-mail…"
-          className="px-3 py-2 rounded-lg bg-surface border border-border text-sm w-72"
-        />
-        <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-xs">
-          {[
-            { id: "pending", label: "Pendentes" },
-            { id: "invited", label: "Convidados" },
-            { id: "active", label: "Ativos no portal" },
-            { id: "all", label: "Todos" },
-          ].map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setStatusFilter(s.id as any)}
-              className={`px-3 py-1.5 rounded-md font-medium ${
-                statusFilter === s.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <SyncAllPhotosButton />
-          <button
-            onClick={load}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm"
-          >
-            <RefreshCw className="h-3.5 w-3.5" /> Atualizar
-          </button>
-        </div>
-      </div>
-
-      {err && (
-        <div className="rounded-xl border border-destructive/40 bg-destructive/10 text-destructive text-sm px-4 py-3">
-          {err}
-        </div>
-      )}
-
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-surface/50 text-xs uppercase tracking-wide text-muted-foreground">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium">Nome</th>
-              <th className="text-left px-4 py-3 font-medium">E-mail</th>
-              <th className="text-left px-4 py-3 font-medium">Cargo</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="text-center py-10 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin inline" />
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="text-center py-10 text-muted-foreground">
-                  Nenhum usuário do Salesforce nesse filtro.
-                </td>
-              </tr>
-            ) : (
-              filtered.map((c) => (
-                <tr key={c.sf_user_id} className="border-t border-border">
-                  <td className="px-4 py-3 font-medium">{c.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{c.email ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{c.title ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={c.status} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {c.status === "pending" && c.email && (
-                      <button
-                        onClick={() => onInvite(c)}
-                        className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90"
-                      >
-                        Convidar para o portal
-                      </button>
-                    )}
-                    {c.status === "invited" && (
-                      <span className="text-xs text-muted-foreground">Aguardando aceite</span>
-                    )}
-                    {c.status === "active" && (
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400">Já no portal</span>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function SyncAllPhotosButton() {
-  const syncAll = useServerFn(syncAllSalesforcePhotos);
-  const [busy, setBusy] = useState(false);
-  async function run() {
-    setBusy(true);
-    try {
-      const r = await syncAll();
-      toast.success(
-        `Fotos sincronizadas: ${r.updated}/${r.total} atualizadas` +
-          (r.skipped ? ` · ${r.skipped} sem foto` : "") +
-          (r.failed ? ` · ${r.failed} falharam` : ""),
-      );
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao sincronizar fotos");
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <button
-      onClick={run}
-      disabled={busy}
-      className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm disabled:opacity-60"
-      title="Sincroniza a foto de perfil (do Salesforce) para todos os usuários vinculados"
-      aria-label="Sincronizar fotos de perfil de todos os usuários vinculados"
-    >
-      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-      Sincronizar fotos
-    </button>
-  );
-}
-
-
-function StatusBadge({ status }: { status: SFCandidate["status"] }) {
-  const map = {
-    pending: { label: "Pendente", cls: "bg-muted text-muted-foreground" },
-    invited: { label: "Convidado", cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-    active: { label: "Ativo", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
-  } as const;
-  const s = map[status];
-  return <span className={`text-xs px-2 py-1 rounded-full ${s.cls}`}>{s.label}</span>;
-}
-
-function InviteSFModal({
-  candidate, onClose, onDone,
-}: { candidate: SFCandidate; onClose: () => void; onDone: () => void }) {
-  const [role, setRole] = useState<AppRole>("vendedor");
-  const [equipe, setEquipe] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const inviteFn = useServerFn(inviteSalesforceUser);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setSubmitting(true);
-          try {
-            const r = await inviteFn({
-              data: {
-                sf_user_id: candidate.sf_user_id,
-                role,
-                cargo: candidate.title ?? null,
-                equipe: equipe || null,
-              },
-            });
-            toast.success(
-              r.photo_synced
-                ? "Convite enviado (foto sincronizada)"
-                : "Convite enviado (foto SF indisponível)",
-            );
-            onDone();
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Erro");
-          } finally {
-            setSubmitting(false);
-          }
-        }}
-        className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-3"
-      >
-        <h2 className="font-display font-bold text-lg">Convidar do Salesforce</h2>
-        <div className="text-sm space-y-1">
-          <div><span className="text-muted-foreground">Nome:</span> <span className="font-medium">{candidate.name}</span></div>
-          <div><span className="text-muted-foreground">E-mail:</span> {candidate.email ?? "—"}</div>
-          <div><span className="text-muted-foreground">Cargo:</span> {candidate.title ?? "—"}</div>
-        </div>
-        <Field label="Papel no portal">
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as AppRole)}
-            className="input"
-          >
-            {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-          </select>
-        </Field>
-        <Field label="Equipe (opcional)">
-          <input value={equipe} onChange={(e) => setEquipe(e.target.value)} className="input" />
-        </Field>
-        <div className="flex gap-2 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2">
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            Enviar convite
-          </button>
-        </div>
-        <style>{`.input{width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;background:hsl(var(--background));border:1px solid hsl(var(--border));font-size:0.875rem;outline:none}.input:focus{border-color:hsl(var(--primary))}`}</style>
-      </form>
     </div>
   );
 }
