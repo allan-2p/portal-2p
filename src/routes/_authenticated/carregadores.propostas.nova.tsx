@@ -99,20 +99,8 @@ const money2 = (n: unknown) => {
 };
 
 
-type Rascunho = { state: CpoState; etapa: 1 | 2; ts: number };
 
-function lerRascunho(): Rascunho | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Rascunho;
-    if (!parsed?.state || !Array.isArray(parsed.state.itens)) return null;
-    return { ...parsed, etapa: parsed.etapa === 2 ? 2 : 1 };
-  } catch {
-    return null;
-  }
-}
+
 
 function limparRascunho() {
   try {
