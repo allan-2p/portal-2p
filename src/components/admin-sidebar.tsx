@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ChevronDown } from "lucide-react";
-import { useState } from "react";
 import { sectionForPath } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
