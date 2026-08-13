@@ -32,6 +32,8 @@ import {
   type ResumoFiscalMeta,
 } from "@/lib/cpo-fiscal-export";
 import { useCpoConfig, useCpoNcms, useCpoProducts, useCpoUfs } from "@/hooks/use-cpo";
+import { ConclusaoLogCard } from "@/components/cpo/conclusao-log";
+
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/auditoria")({
   head: () => ({
