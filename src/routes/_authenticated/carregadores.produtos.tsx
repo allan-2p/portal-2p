@@ -71,6 +71,7 @@ function ProdutosCpoPage() {
 
 type Draft = {
   id?: string;
+  codigo: string;
   nome: string;
   potencia: string;
   custo: string;
@@ -78,7 +79,7 @@ type Draft = {
   ncm_id: string;
 };
 
-const EMPTY: Draft = { nome: "", potencia: "", custo: "", ativo: true, ncm_id: "" };
+const EMPTY: Draft = { codigo: "", nome: "", potencia: "", custo: "", ativo: true, ncm_id: "" };
 
 function ProdutosTab() {
   const { data: produtos = [], isLoading } = useCpoProductsAdmin();
@@ -89,13 +90,14 @@ function ProdutosTab() {
   const [saving, setSaving] = useState(false);
 
   const filtrados = produtos.filter((p) =>
-    `${p.nome} ${p.potencia ?? ""}`.toLowerCase().includes(busca.trim().toLowerCase()),
+    `${p.codigo ?? ""} ${p.nome} ${p.potencia ?? ""}`.toLowerCase().includes(busca.trim().toLowerCase()),
   );
 
   async function salvar() {
     if (!draft) return;
     if (!draft.nome.trim()) return toast.error("Informe o nome do produto.");
     const payload = {
+      codigo: draft.codigo.trim() || null,
       nome: draft.nome.trim(),
       potencia: draft.potencia.trim() || null,
       custo: Number(draft.custo) || 0,
@@ -146,6 +148,7 @@ function ProdutosTab() {
           <table className="w-full text-sm min-w-[820px]">
             <thead>
               <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
+                <th className="text-left px-4 py-3">Código (SKU)</th>
                 <th className="text-left px-4 py-3">Produto</th>
                 <th className="text-left px-4 py-3">Potência</th>
                 <th className="text-left px-4 py-3">NCM</th>
@@ -158,6 +161,7 @@ function ProdutosTab() {
             <tbody>
               {filtrados.map((p) => (
                 <tr key={p.id} className="border-b border-border/50 hover:bg-surface-2">
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.codigo || "—"}</td>
                   <td className="px-4 py-3 font-medium">{p.nome}</td>
                   <td className="px-4 py-3 text-muted-foreground">{p.potencia || "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
@@ -176,6 +180,7 @@ function ProdutosTab() {
                         onClick={() =>
                           setDraft({
                             id: p.id,
+                            codigo: p.codigo ?? "",
                             nome: p.nome,
                             potencia: p.potencia ?? "",
                             custo: String(p.custo),
@@ -197,7 +202,7 @@ function ProdutosTab() {
               ))}
               {filtrados.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                     {isLoading ? "Carregando…" : "Nenhum produto cadastrado."}
                   </td>
 
@@ -215,6 +220,13 @@ function ProdutosTab() {
           </DialogHeader>
           {draft && (
             <div className="grid gap-3">
+              <Field label="Código (SKU)">
+                <Input
+                  value={draft.codigo}
+                  placeholder="Ex.: CPO-7K4"
+                  onChange={(e) => setDraft({ ...draft, codigo: e.target.value })}
+                />
+              </Field>
               <Field label="Nome">
                 <Input value={draft.nome} onChange={(e) => setDraft({ ...draft, nome: e.target.value })} />
               </Field>
