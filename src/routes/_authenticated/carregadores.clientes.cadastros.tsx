@@ -19,6 +19,7 @@ import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 import { Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { ClientHistoryTab } from "@/components/client-history-tab";
+import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -338,7 +339,23 @@ function CadastrosPage() {
                 </Section>
 
                 <Section title="Endereço">
-                  <F label="CEP *"><Input value={form.cep ?? ""} onChange={(e) => set("cep", e.target.value)} /></F>
+                  <F label="CEP *">
+                    <CepInput
+                      value={form.cep ?? ""}
+                      onChange={(v: string) => set("cep", v)}
+                      onFound={(end: EnderecoCep) => {
+                        setForm((f) => ({
+                          ...f,
+                          cep: end.cep,
+                          logradouro: end.logradouro || f.logradouro,
+                          bairro: end.bairro || f.bairro,
+                          cidade: end.cidade || f.cidade,
+                          complemento: f.complemento || end.complemento,
+                          uf: end.uf || f.uf,
+                        }));
+                      }}
+                    />
+                  </F>
                   <F label="Logradouro *"><Input value={form.logradouro ?? ""} onChange={(e) => set("logradouro", e.target.value)} /></F>
                   <F label="Número *"><Input value={form.numero ?? ""} onChange={(e) => set("numero", e.target.value)} /></F>
                   <F label="Complemento"><Input value={form.complemento ?? ""} onChange={(e) => set("complemento", e.target.value)} /></F>
