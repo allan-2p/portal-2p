@@ -1040,10 +1040,11 @@ function PropostaCpoPage() {
                 <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Totais ao vivo</span>
                 <span className="text-[11px] text-emerald-600">atualiza automaticamente</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 <LiveTotal label="Itens" value={fmtBRL(d.valorItens)} />
                 <LiveTotal label={`Frete (${state.freteMod})`} value={fmtBRL(state.freteValor)} />
                 <LiveTotal label="Total da proposta" value={fmtBRL(d.valorTotalProposta)} strong />
+                <LiveTotal label="Margem bruta" value={fmtPct(d.mbPct)} hint={fmtBRL(d.mb)} />
                 <LiveTotal label="Comissão estimada" value={fmtBRL(d.comValor)} hint={fmtPct(d.comPct)} />
               </div>
             </div>
@@ -1444,8 +1445,24 @@ function LiveTotal({
   hint?: string;
   strong?: boolean;
 }) {
+  // Pisca discretamente sempre que o valor recalculado muda (itens, quantidade, frete...)
+  const anterior = useRef(value);
+  const [flash, setFlash] = useState(false);
+  useEffect(() => {
+    if (anterior.current === value) return;
+    anterior.current = value;
+    setFlash(true);
+    const t = setTimeout(() => setFlash(false), 600);
+    return () => clearTimeout(t);
+  }, [value]);
+
   return (
-    <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
+    <div
+      className={cn(
+        "rounded-xl border px-3 py-2 transition-colors duration-500",
+        flash ? "border-primary/60 bg-primary/10" : "border-border/60 bg-muted/30",
+      )}
+    >
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className={cn("tabular-nums", strong ? "text-lg font-bold text-primary" : "text-sm font-semibold")}>
         {value}
