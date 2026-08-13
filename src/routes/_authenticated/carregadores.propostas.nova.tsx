@@ -1217,7 +1217,7 @@ function PropostaCpoPage() {
         </div>
 
         {/* Prévia do PDF atualizado */}
-        <Dialog open={previewHtml !== null} onOpenChange={(o) => !o && setPreviewHtml(null)}>
+        <Dialog open={previewAberto} onOpenChange={setPreviewAberto}>
           <DialogContent className="max-w-5xl">
             <DialogHeader>
               <DialogTitle>Prévia do PDF da proposta</DialogTitle>
@@ -1228,17 +1228,17 @@ function PropostaCpoPage() {
             <div className="rounded-xl border border-border overflow-hidden bg-white">
               <iframe
                 title="Prévia do PDF da proposta"
-                srcDoc={previewHtml ?? ""}
+                srcDoc={pdfHtml}
                 className="w-full h-[65vh]"
               />
             </div>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setPreviewHtml(null)}>
+              <Button variant="outline" onClick={() => setPreviewAberto(false)}>
                 Continuar editando
               </Button>
               <Button
                 onClick={() => {
-                  setPreviewHtml(null);
+                  setPreviewAberto(false);
                   exportarPdf();
                 }}
                 className="gap-2"
