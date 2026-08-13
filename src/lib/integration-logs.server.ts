@@ -24,7 +24,7 @@ export async function logIntegrationEvent(entry: {
       level: entry.level,
       event: entry.event,
       message: entry.message ?? null,
-      detail: entry.detail ?? {},
+      detail: (entry.detail ?? {}) as never,
       duration_ms: entry.durationMs ?? null,
       actor_id: entry.actorId ?? null,
       actor_email: entry.actorEmail ?? null,
