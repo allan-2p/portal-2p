@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2 } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import grupo2pLogo from "@/assets/2p-logo-preto.png";
@@ -12,6 +12,8 @@ import { useInstance } from "./instance-provider";
 import { INSTANCES, featureForPath, instanceForFeature, type FeatureKey } from "@/lib/instances";
 import { SCREENS, type ScreenKey } from "@/lib/view-screens";
 import { isGroupAdminPath } from "@/lib/admin-area";
+import { ADMIN_SECTIONS } from "@/lib/admin-nav";
+import { AdminSidebar } from "./admin-sidebar";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { logUserActivity } from "@/lib/activity.functions";
@@ -161,6 +163,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
         </div>
 
+        {isAdminArea ? <AdminSidebar pathname={pathname} collapsed={collapsed} /> : (
         <nav className="px-2 py-2 flex-1 overflow-y-auto">
           {/* Atlas — só se instância permitir */}
           {show("atlas") && (
@@ -243,50 +246,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               {show("cpo.pedidos") && (
                 <NavLink item={{ to: "/carregadores/pedidos", label: "Pedidos", icon: ShoppingCart }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
               )}
-
-              {(show("cpo.produtos") || show("cpo.comissoes") || show("cpo.regras")) && (
-                collapsed ? (
-                  <Link
-                    to={show("cpo.produtos") ? "/carregadores/produtos" : "/carregadores/comissoes"}
-                    preload="intent"
-                    title="Moderação"
-                    className={cn(
-                      "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
-                      moderacaoActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                    )}
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                  </Link>
-                ) : (
-                  <div className="mb-1">
-                    <button
-                      onClick={() => setModeracaoOpen((v) => !v)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                        moderacaoActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                      )}
-                    >
-                      <SlidersHorizontal className="h-4 w-4 shrink-0" />
-                      <span className="truncate">Moderação</span>
-                      <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !moderacaoOpen && "-rotate-90")} />
-                    </button>
-                    {moderacaoOpen && (
-                      <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-                        {show("cpo.produtos") && (
-                          <SubLink to="/carregadores/produtos" label="Produtos e Alíquotas" icon={Package} active={pathname.startsWith("/carregadores/produtos")} />
-                        )}
-                        {show("cpo.comissoes") && (
-                          <SubLink to="/carregadores/comissoes" label="Comissões" icon={Percent} active={pathname.startsWith("/carregadores/comissoes")} />
-                        )}
-                        {show("cpo.regras") && (
-                          <SubLink to="/carregadores/regras" label="Regras" icon={BookOpen} active={pathname.startsWith("/carregadores/regras")} />
-                        )}
-
-                      </div>
-                    )}
-                  </div>
-                )
-              )}
+              {/* Moderação foi movida para o ambiente de Administração (engrenagem no topo). */}
               <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
             </>
           )}
@@ -419,6 +379,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
 
         </nav>
+        )}
 
         <button
           onClick={toggleCollapsed}
@@ -473,7 +434,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         : "Configurações de administrador"
                     }
                   >
-                    <Settings2 className="h-4 w-4" />
+                    <Settings className="h-4 w-4" />
                     {newFeatures.length > 0 && (
                       <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-amber-500 text-[10px] font-bold text-black flex items-center justify-center">
                         {newFeatures.length}
@@ -483,39 +444,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   {adminMenuOpen && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setAdminMenuOpen(false)} />
-                      <div className="absolute right-0 top-11 z-50 w-64 bg-card text-card-foreground border border-border rounded-lg shadow-xl overflow-hidden">
+                      <div className="absolute right-0 top-11 z-50 w-60 bg-card text-card-foreground border border-border rounded-lg shadow-xl overflow-hidden">
                         <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
                           Grupo 2P • Administração
                         </div>
-                        {show("admin.usuarios") && (
-                          <AdminMenuLink to="/usuarios" label="Usuários" icon={Users} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.metas") && (
-                          <AdminMenuLink to="/admin/metas" label="Regras de Metas" icon={Target} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.tabelas") && (
-                          <AdminMenuLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.produtos") && (
-                          <AdminMenuLink to="/admin/produtos" label="Produtos (SAP)" icon={Package} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.integracoes") && (
-                          <AdminMenuLink to="/integracoes" label="Integrações" icon={Plug} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.auditoria") && (
-                          <AdminMenuLink to="/admin/auditoria" label="Auditoria de Acessos" icon={ShieldCheck} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.vinculos") && (
-                          <AdminMenuLink to="/admin/vinculos" label="Vínculos Salesforce" icon={Link2} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.atividade") && (
-                          <AdminMenuLink to="/admin/atividade" label="Log de Usuários" icon={ActivityIcon} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        <div className="h-px bg-border" />
-                        {show("admin.perfis") && (
-                          <AdminMenuLink to="/admin/perfis" label="Perfis de Permissão" icon={UserCog} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        <AdminMenuLink to="/admin/permissoes" label="Permissões de Usuários" icon={KeyRound} onClick={() => setAdminMenuOpen(false)} />
+                        {ADMIN_SECTIONS.map((s) => (
+                          <AdminMenuLink
+                            key={s.id}
+                            to={s.home}
+                            label={s.label}
+                            icon={s.icon}
+                            onClick={() => setAdminMenuOpen(false)}
+                          />
+                        ))}
                       </div>
                     </>
                   )}
