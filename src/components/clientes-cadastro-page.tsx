@@ -24,6 +24,8 @@ import { useCpoUfs } from "@/hooks/use-cpo";
 import { docValido, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import {
   listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, excluirClienteFn,
+  migrarCpoClientesFn,
+
 } from "@/lib/clientes.functions";
 import {
   ContatosEditor, contatosPadrao, normalizarContatos, validarContatos, rotuloErroContato,
