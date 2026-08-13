@@ -17,7 +17,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
-import { Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertCircle, Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { ClientHistoryTab } from "@/components/client-history-tab";
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -128,23 +128,41 @@ const vazio = (): Omit<Cliente, "id"> => ({
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
 const soDigitos = (v: string) => v.replace(/\D/g, "");
 
-function validarObrigatorios(f: Omit<Cliente, "id">): string | null {
-  if (!f.razao_social?.trim()) return "Informe a razão social.";
+type CampoErro =
+  | "razao_social" | "doc" | "uf" | "ie" | "contato_nome" | "contato_email"
+  | "contato_telefone" | "cep" | "logradouro" | "numero" | "cidade";
+
+type Erros = Partial<Record<CampoErro, string>>;
+
+const ROTULOS: Record<CampoErro, string> = {
+  razao_social: "Razão social", doc: "CNPJ / CPF", uf: "UF de destino",
+  ie: "Inscrição Estadual", contato_nome: "Nome do responsável",
+  contato_email: "E-mail do responsável", contato_telefone: "Telefone do responsável",
+  cep: "CEP", logradouro: "Logradouro", numero: "Número", cidade: "Cidade",
+};
+
+function validarCampos(f: Omit<Cliente, "id">): Erros {
+  const e: Erros = {};
+  if (!f.razao_social?.trim()) e.razao_social = "Informe a razão social.";
   const doc = soDigitos(f.doc ?? "");
-  if (!doc) return "Informe o CNPJ / CPF.";
-  if (doc.length !== 11 && doc.length !== 14) return "CNPJ / CPF inválido.";
-  if (!f.uf?.trim()) return "Selecione a UF de destino.";
-  if (f.contribuinte && !f.ie?.trim()) return "Cliente contribuinte: informe a Inscrição Estadual.";
-  if (!f.contato_nome?.trim()) return "Informe o nome do responsável.";
+  if (!doc) e.doc = "Informe o CNPJ / CPF.";
+  else if (doc.length !== 11 && doc.length !== 14) e.doc = "CNPJ / CPF inválido.";
+  if (!f.uf?.trim()) e.uf = "Selecione a UF de destino.";
+  if (f.contribuinte && !f.ie?.trim()) e.ie = "Cliente contribuinte: informe a Inscrição Estadual.";
+  if (!f.contato_nome?.trim()) e.contato_nome = "Informe o nome do responsável.";
   const email = (f.contato_email ?? "").trim() || (f.email ?? "").trim();
   const fone = (f.contato_telefone ?? "").trim() || (f.telefone ?? "").trim();
-  if (!email && !fone) return "Informe ao menos um contato: e-mail ou telefone.";
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "E-mail de contato inválido.";
-  if (soDigitos(f.cep ?? "").length !== 8) return "Informe um CEP válido (8 dígitos).";
-  if (!f.logradouro?.trim()) return "Informe o logradouro.";
-  if (!f.numero?.trim()) return "Informe o número do endereço.";
-  if (!f.cidade?.trim()) return "Informe a cidade.";
-  return null;
+  if (!email && !fone) {
+    e.contato_email = "Informe ao menos um contato: e-mail ou telefone.";
+    e.contato_telefone = "Informe ao menos um contato: e-mail ou telefone.";
+  } else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    e.contato_email = "E-mail de contato inválido.";
+  }
+  if (soDigitos(f.cep ?? "").length !== 8) e.cep = "Informe um CEP válido (8 dígitos).";
+  if (!f.logradouro?.trim()) e.logradouro = "Informe o logradouro.";
+  if (!f.numero?.trim()) e.numero = "Informe o número do endereço.";
+  if (!f.cidade?.trim()) e.cidade = "Informe a cidade.";
+  return e;
 }
 
 function CadastrosPage() {
@@ -164,7 +182,11 @@ function CadastrosPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Cliente, "id">>(vazio());
   const [detalhe, setDetalhe] = useState<Cliente | null>(null);
+  const [tentouSalvar, setTentouSalvar] = useState(false);
 
+  const errosAtuais = useMemo(() => validarCampos(form), [form]);
+  const erros: Erros = tentouSalvar ? errosAtuais : {};
+  const listaErros = (Object.keys(erros) as CampoErro[]).map((k) => ({ campo: k, msg: erros[k]! }));
 
   const set = <K extends keyof Omit<Cliente, "id">>(k: K, v: Omit<Cliente, "id">[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -183,8 +205,6 @@ function CadastrosPage() {
 
   const salvar = useMutation({
     mutationFn: async () => {
-      const erro = validarObrigatorios(form);
-      if (erro) throw new Error(erro);
       if (editId) {
         const { error } = await supabase.from("cpo_clientes").update(form).eq("id", editId);
         if (error) throw error;
@@ -200,7 +220,7 @@ function CadastrosPage() {
       toast.success(editId ? "Cadastro atualizado." : "Cliente cadastrado.");
       qc.invalidateQueries({ queryKey: ["cpo-cadastros"] });
       qc.invalidateQueries({ queryKey: ["cpo-clientes-cadastro"] });
-      setOpen(false); setEditId(null); setForm(vazio());
+      setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao salvar."),
   });
@@ -274,10 +294,21 @@ function CadastrosPage() {
 
 
 
-  const abrirNovo = () => { setEditId(null); setForm(vazio()); setOpen(true); };
+  const abrirNovo = () => { setEditId(null); setForm(vazio()); setTentouSalvar(false); setOpen(true); };
+  const tentarSalvar = () => {
+    setTentouSalvar(true);
+    const e = validarCampos(form);
+    const chaves = Object.keys(e) as CampoErro[];
+    if (chaves.length > 0) {
+      toast.error(`Corrija ${chaves.length} campo(s) para salvar.`);
+      document.getElementById(`campo-${chaves[0]}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    salvar.mutate();
+  };
   const abrirEdicao = (c: Cliente) => {
     const { id: _id, ...rest } = c;
-    setEditId(c.id); setForm(rest); setOpen(true);
+    setEditId(c.id); setForm(rest); setTentouSalvar(false); setOpen(true);
   };
 
   return (
@@ -295,7 +326,7 @@ function CadastrosPage() {
               <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-8" placeholder="Buscar por nome, CNPJ, cidade…" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditId(null); setForm(vazio()); } }}>
+            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditId(null); setForm(vazio()); setTentouSalvar(false); } }}>
               <DialogTrigger asChild>
                 <Button className="gap-2" onClick={abrirNovo}><Plus className="h-4 w-4" /> Novo cadastro</Button>
               </DialogTrigger>
@@ -304,17 +335,39 @@ function CadastrosPage() {
                   <DialogTitle>{editId ? "Editar cadastro" : "Novo cadastro de cliente"}</DialogTitle>
                 </DialogHeader>
 
+                {listaErros.length > 0 && (
+                  <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3" role="alert">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      Não foi possível salvar: {listaErros.length} campo(s) precisam de atenção
+                    </div>
+                    <ul className="mt-2 space-y-1">
+                      {listaErros.map(({ campo, msg }) => (
+                        <li key={campo}>
+                          <button
+                            type="button"
+                            className="text-left text-xs text-destructive underline-offset-2 hover:underline"
+                            onClick={() => document.getElementById(`campo-${campo}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                          >
+                            <span className="font-medium">{ROTULOS[campo]}:</span> {msg}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <Section title="Dados da empresa">
-                  <F label="Razão social *"><Input value={form.razao_social} onChange={(e) => set("razao_social", e.target.value)} /></F>
+                  <F label="Razão social *" id="campo-razao_social" error={erros.razao_social}><Input value={form.razao_social} onChange={(e) => set("razao_social", e.target.value)} /></F>
                   <F label="Nome fantasia"><Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} /></F>
-                  <F label="CNPJ / CPF *"><Input value={form.doc ?? ""} onChange={(e) => set("doc", e.target.value)} placeholder="00.000.000/0000-00" /></F>
+                  <F label="CNPJ / CPF *" id="campo-doc" error={erros.doc}><Input value={form.doc ?? ""} onChange={(e) => set("doc", e.target.value)} placeholder="00.000.000/0000-00" /></F>
                   <F label="Regime tributário">
                     <Select value={form.regime_tributario ?? ""} onValueChange={(v) => set("regime_tributario", v)}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                       <SelectContent>{REGIMES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                     </Select>
                   </F>
-                  <F label={form.contribuinte ? "Inscrição Estadual *" : "Inscrição Estadual"}><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
+                  <F label={form.contribuinte ? "Inscrição Estadual *" : "Inscrição Estadual"} id="campo-ie" error={erros.ie}><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
                   
                   <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                     <div>
@@ -332,14 +385,14 @@ function CadastrosPage() {
                 </Section>
 
                 <Section title="Responsável">
-                  <F label="Nome *"><Input value={form.contato_nome ?? ""} onChange={(e) => set("contato_nome", e.target.value)} /></F>
+                  <F label="Nome *" id="campo-contato_nome" error={erros.contato_nome}><Input value={form.contato_nome ?? ""} onChange={(e) => set("contato_nome", e.target.value)} /></F>
                   <F label="Cargo"><Input value={form.contato_cargo ?? ""} onChange={(e) => set("contato_cargo", e.target.value)} /></F>
-                  <F label="E-mail"><Input value={form.contato_email ?? ""} onChange={(e) => set("contato_email", e.target.value)} /></F>
-                  <F label="Telefone"><Input value={form.contato_telefone ?? ""} onChange={(e) => set("contato_telefone", e.target.value)} /></F>
+                  <F label="E-mail" id="campo-contato_email" error={erros.contato_email}><Input value={form.contato_email ?? ""} onChange={(e) => set("contato_email", e.target.value)} /></F>
+                  <F label="Telefone" id="campo-contato_telefone" error={erros.contato_telefone}><Input value={form.contato_telefone ?? ""} onChange={(e) => set("contato_telefone", e.target.value)} /></F>
                 </Section>
 
                 <Section title="Endereço">
-                  <F label="CEP *">
+                  <F label="CEP *" id="campo-cep" error={erros.cep}>
                     <CepInput
                       value={form.cep ?? ""}
                       onChange={(v: string) => set("cep", v)}
@@ -356,12 +409,12 @@ function CadastrosPage() {
                       }}
                     />
                   </F>
-                  <F label="Logradouro *"><Input value={form.logradouro ?? ""} onChange={(e) => set("logradouro", e.target.value)} /></F>
-                  <F label="Número *"><Input value={form.numero ?? ""} onChange={(e) => set("numero", e.target.value)} /></F>
+                  <F label="Logradouro *" id="campo-logradouro" error={erros.logradouro}><Input value={form.logradouro ?? ""} onChange={(e) => set("logradouro", e.target.value)} /></F>
+                  <F label="Número *" id="campo-numero" error={erros.numero}><Input value={form.numero ?? ""} onChange={(e) => set("numero", e.target.value)} /></F>
                   <F label="Complemento"><Input value={form.complemento ?? ""} onChange={(e) => set("complemento", e.target.value)} /></F>
                   <F label="Bairro"><Input value={form.bairro ?? ""} onChange={(e) => set("bairro", e.target.value)} /></F>
-                  <F label="Cidade *"><Input value={form.cidade ?? ""} onChange={(e) => set("cidade", e.target.value)} /></F>
-                  <F label="UF de destino *">
+                  <F label="Cidade *" id="campo-cidade" error={erros.cidade}><Input value={form.cidade ?? ""} onChange={(e) => set("cidade", e.target.value)} /></F>
+                  <F label="UF de destino *" id="campo-uf" error={erros.uf}>
                     <Select value={form.uf} onValueChange={(v) => set("uf", v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -385,7 +438,7 @@ function CadastrosPage() {
 
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-                  <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}>
+                  <Button onClick={tentarSalvar} disabled={salvar.isPending}>
                     {salvar.isPending ? "Salvando…" : "Salvar cadastro"}
                   </Button>
                 </DialogFooter>
@@ -652,11 +705,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function F({ label, children }: { label: string; children: React.ReactNode }) {
+function F({ label, children, error, id }: { label: string; children: React.ReactNode; error?: string; id?: string }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs">{label}</Label>
-      {children}
+    <div className="space-y-1" {...(id ? { id } : {})}>
+      <Label className={`text-xs ${error ? "text-destructive" : ""}`}>{label}</Label>
+      <div className={error ? "[&_input]:border-destructive [&_button]:border-destructive [&_input]:focus-visible:ring-destructive" : ""}>
+        {children}
+      </div>
+      {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
     </div>
   );
 }
