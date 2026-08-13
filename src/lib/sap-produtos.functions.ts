@@ -160,10 +160,17 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
           .upsert(novos.slice(i, i + 500), { onConflict: "codigo" });
         if (error) throw new Error(error.message);
       }
-      for (const r of rows.filter((x) => known.has(x.codigo))) {
-        const { error } = await supabaseAdmin.from("sap_produtos").update(r).eq("codigo", r.codigo);
+      const ativoAtual = new Map((existentes ?? []).map((r: any) => [r.codigo as string, r.ativo as boolean]));
+      const atualizados = rows
+        .filter((x) => known.has(x.codigo))
+        .map((x) => ({ ...x, ativo: ativoAtual.get(x.codigo) ?? true }));
+      for (let i = 0; i < atualizados.length; i += 500) {
+        const { error } = await supabaseAdmin
+          .from("sap_produtos")
+          .upsert(atualizados.slice(i, i + 500), { onConflict: "codigo" });
         if (error) throw new Error(error.message);
       }
+
 
       // Merge: o que não veio mais do SAP fica inativo (sem apagar histórico).
       // Produtos criados manualmente no portal não são afetados.
