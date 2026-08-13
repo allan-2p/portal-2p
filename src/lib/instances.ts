@@ -219,7 +219,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.tabelas": "Admin • Tabelas",
   "admin.produtos": "Admin • Produtos (SAP)",
   "admin.permissoes": "Admin • Permissões de Usuários",
-  "admin.perfis": "Admin • Perfis de Permissão",
+  "admin.perfis": "Admin • Perfis",
   "admin.integracoes": "Admin • Integrações",
   "admin.auditoria": "Admin • Auditoria de Acessos",
   "admin.atividade": "Admin • Log de Usuários",
