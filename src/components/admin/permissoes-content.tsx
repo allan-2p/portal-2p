@@ -324,15 +324,11 @@ export function PermissoesContent() {
       <div className="max-w-[1500px] mx-auto space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">
-              Administração
-            </div>
-            <h1 className="text-3xl font-bold mt-1 flex items-center gap-2">
-              <KeyRound className="h-6 w-6 text-primary" /> Permissões de Usuários
-            </h1>
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" /> Ajustes e edição em massa
+            </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Escolha um usuário à esquerda e configure quais funcionalidades ele vê em cada
-              instância. Por padrão, tudo é liberado — desligue o switch para bloquear.
+              Exceções pontuais e edição em massa. O acesso padrão vem do perfil do usuário.
             </p>
           </div>
         </div>
