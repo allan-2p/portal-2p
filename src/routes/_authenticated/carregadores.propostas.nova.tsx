@@ -586,8 +586,10 @@ function PropostaCpoPage() {
           comissao: d.comValor,
           comissaoPct: d.comPct,
         },
+        logoCliente: usarLogoCliente ? logoCliente : null,
       }),
-    [state, produtos, config, d],
+    [state, produtos, config, d, usarLogoCliente, logoCliente],
+
   );
 
   function montarPdfHtml() {
