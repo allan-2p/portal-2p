@@ -1,0 +1,1 @@
+ALTER TABLE public.cpo_clientes DROP COLUMN IF EXISTS classificacao;

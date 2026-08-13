@@ -38,7 +38,6 @@ export type Database = {
           bairro: string | null
           cep: string | null
           cidade: string | null
-          classificacao: string
           complemento: string | null
           condicao_pagamento: string | null
           contato_cargo: string | null
@@ -70,7 +69,6 @@ export type Database = {
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
-          classificacao?: string
           complemento?: string | null
           condicao_pagamento?: string | null
           contato_cargo?: string | null
@@ -102,7 +100,6 @@ export type Database = {
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
-          classificacao?: string
           complemento?: string | null
           condicao_pagamento?: string | null
           contato_cargo?: string | null

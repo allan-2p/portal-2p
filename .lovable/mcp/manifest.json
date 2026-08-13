@@ -100,10 +100,6 @@
               "description": "Texto para buscar na razão social, nome fantasia ou CNPJ.",
               "type": "string"
             },
-            "classificacao": {
-              "description": "Filtra pela classificação do cliente (A, B, C ou D).",
-              "type": "string"
-            },
             "limit": {
               "description": "Número máximo de clientes retornados (padrão 25, máximo 100).",
               "type": "integer",

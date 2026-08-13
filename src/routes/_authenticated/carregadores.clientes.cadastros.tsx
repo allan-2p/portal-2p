@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
-type OrdemKey = "cliente" | "classificacao" | "doc" | "fiscal" | "cidade" | "contato";
+type OrdemKey = "cliente" | "doc" | "fiscal" | "cidade" | "contato";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -112,7 +112,6 @@ type Cliente = {
   transportadora: string | null;
   observacoes: string | null;
   ativo: boolean;
-  classificacao: string;
   created_by?: string;
 };
 
@@ -122,17 +121,10 @@ const vazio = (): Omit<Cliente, "id"> => ({
   contato_nome: "", contato_cargo: "", contato_email: "", contato_telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "",
   uf: "SP", condicao_pagamento: "",
-  transportadora: "", observacoes: "", ativo: true, classificacao: "C",
+  transportadora: "", observacoes: "", ativo: true,
 } as Omit<Cliente, "id">);
 
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
-const CLASSES = ["A", "B", "C", "D"] as const;
-const CLASSE_INFO: Record<string, { label: string; cls: string }> = {
-  A: { label: "A — Estratégico", cls: "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" },
-  B: { label: "B — Relevante", cls: "bg-sky-500/10 text-sky-500 border-sky-500/30" },
-  C: { label: "C — Regular", cls: "bg-amber-500/10 text-amber-500 border-amber-500/30" },
-  D: { label: "D — Eventual", cls: "bg-muted text-muted-foreground border-border" },
-};
 const soDigitos = (v: string) => v.replace(/\D/g, "");
 
 function CadastrosPage() {
@@ -140,7 +132,6 @@ function CadastrosPage() {
   const ufs = useCpoUfs().data ?? [];
   const vend = useCpoVendedores();
   const [q, setQ] = useState("");
-  const [fClasse, setFClasse] = useState<string>("todas");
   const [fUf, setFUf] = useState<string>("todas");
   const [fStatus, setFStatus] = useState<string>("ativos");
   const [fFiscal, setFFiscal] = useState<string>("todos");
@@ -209,7 +200,6 @@ function CadastrosPage() {
     const t = q.trim().toLowerCase();
     const tDoc = soDigitos(q);
     return clientes.filter((c) => {
-      if (fClasse !== "todas" && (c.classificacao || "C") !== fClasse) return false;
       if (fUf !== "todas" && c.uf !== fUf) return false;
       if (fStatus === "ativos" && !c.ativo) return false;
       if (fStatus === "inativos" && c.ativo) return false;
@@ -222,12 +212,11 @@ function CadastrosPage() {
       const doc = tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc);
       return texto || doc;
     });
-  }, [clientes, q, fClasse, fUf, fStatus, fFiscal, fVendedor, vend]);
+  }, [clientes, q, fUf, fStatus, fFiscal, fVendedor, vend]);
 
   const ordenados = useMemo(() => {
     const val = (c: Cliente) => {
       switch (ordem) {
-        case "classificacao": return c.classificacao || "C";
         case "doc": return soDigitos(c.doc ?? "");
         case "fiscal": return c.contribuinte ? "1" : "0";
         case "cidade": return `${c.uf} ${c.cidade ?? ""}`;
@@ -248,14 +237,14 @@ function CadastrosPage() {
     [ordenados, paginaAtual, porPagina],
   );
 
-  useEffect(() => { setPagina(1); }, [q, fClasse, fUf, fStatus, fFiscal, porPagina, ordem, dir]);
+  useEffect(() => { setPagina(1); }, [q, fUf, fStatus, fFiscal, porPagina, ordem, dir]);
 
   const ufsDisponiveis = useMemo(
     () => Array.from(new Set(clientes.map((c) => c.uf).filter(Boolean))).sort(),
     [clientes],
   );
-  const filtrosAtivos = fClasse !== "todas" || fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || fVendedor !== "__all__" || q.trim() !== "";
-  const limparFiltros = () => { setQ(""); setFClasse("todas"); setFUf("todas"); setFStatus("ativos"); setFFiscal("todos"); };
+  const filtrosAtivos = fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || fVendedor !== "__all__" || q.trim() !== "";
+  const limparFiltros = () => { setQ(""); setFUf("todas"); setFStatus("ativos"); setFFiscal("todos"); };
 
   const ordenarPor = (k: OrdemKey) => {
     if (ordem === k) setDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -306,12 +295,6 @@ function CadastrosPage() {
                   </F>
                   <F label="Inscrição Estadual"><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
                   <F label="Inscrição Municipal"><Input value={form.im ?? ""} onChange={(e) => set("im", e.target.value)} /></F>
-                  <F label="Classificação">
-                    <Select value={form.classificacao || "C"} onValueChange={(v) => set("classificacao", v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{CLASSES.map((c) => <SelectItem key={c} value={c}>{CLASSE_INFO[c].label}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </F>
                   <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                     <div>
                       <div className="text-sm font-semibold">Cliente contribuinte do ICMS</div>
@@ -378,13 +361,6 @@ function CadastrosPage() {
         <Card>
           <CardContent className="p-3 flex flex-wrap items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={fClasse} onValueChange={setFClasse}>
-              <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas as classificações</SelectItem>
-                {CLASSES.map((c) => <SelectItem key={c} value={c}>{CLASSE_INFO[c].label}</SelectItem>)}
-              </SelectContent>
-            </Select>
             <Select value={fUf} onValueChange={setFUf}>
               <SelectTrigger className="w-[130px] h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -431,9 +407,8 @@ function CadastrosPage() {
             <table className="w-full text-sm">
               <thead className="bg-surface-2/60 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  {([
+                {([
                     ["cliente", "Cliente"],
-                    ["classificacao", "Classe"],
                     ["doc", "CNPJ / CPF"],
                     ["fiscal", "Fiscal"],
                     ["cidade", "Cidade / UF"],
@@ -457,9 +432,9 @@ function CadastrosPage() {
 
               </thead>
               <tbody className="divide-y divide-border">
-                {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
+                {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
                 {!isLoading && rows.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     <Building2 className="h-6 w-6 mx-auto mb-2 opacity-50" />
                     {clientes.length === 0
                       ? "Nenhum cadastro ainda — clique em “Novo cadastro”."
@@ -483,11 +458,6 @@ function CadastrosPage() {
                       {c.nome_fantasia && (
                         <div className="text-xs text-muted-foreground"><Marca texto={c.nome_fantasia} termo={q} /></div>
                       )}
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge variant="outline" className={`text-[10px] font-bold ${CLASSE_INFO[c.classificacao || "C"]?.cls ?? ""}`}>
-                        {c.classificacao || "C"}
-                      </Badge>
                     </td>
                     <td className="px-4 py-2 text-muted-foreground">{c.doc ? <Marca texto={c.doc} termo={q} /> : "—"}</td>
                     <td className="px-4 py-2">
@@ -560,9 +530,6 @@ function CadastrosPage() {
 
                 <div className="mt-4 space-y-5">
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className={`font-bold ${CLASSE_INFO[detalhe.classificacao || "C"]?.cls ?? ""}`}>
-                      {CLASSE_INFO[detalhe.classificacao || "C"]?.label ?? detalhe.classificacao}
-                    </Badge>
                     <Badge variant={detalhe.contribuinte ? "default" : "secondary"}>
                       {detalhe.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}
                     </Badge>
