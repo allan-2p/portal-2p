@@ -618,6 +618,7 @@ function PropostaCpoPage() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar proposta.");
     } finally {
+      submitLock.current = false;
       setSaving(false);
     }
   }
