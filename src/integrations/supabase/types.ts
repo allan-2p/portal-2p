@@ -1526,6 +1526,14 @@ export type Database = {
           reset_at: string
         }[]
       }
+      cpo_conclude_proposal: {
+        Args: { _id: string; _status: string }
+        Returns: {
+          already_concluded: boolean
+          id: string
+          status: string
+        }[]
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
