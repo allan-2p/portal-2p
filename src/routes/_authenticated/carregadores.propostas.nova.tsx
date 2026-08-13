@@ -1404,6 +1404,7 @@ function PropostaCpoPage() {
           errors={errosFechamento}
           showErrors={!podeFechar && tentouAvancar}
           savedAt={autosaveAt}
+          savedLabel="Salvo"
           minimal={etapa === 1 && !temItemComValor}
           actions={
             etapa === 4 && temItemComValor
