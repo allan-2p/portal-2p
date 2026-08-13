@@ -147,6 +147,8 @@ function PropostaCpoPage() {
   const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   const [previewAberto, setPreviewAberto] = useState(false);
+  const submitLock = useRef(false);
+  const numeroRef = useRef<string | null>(null);
   const carregado = useRef(false);
 
   // Limpa qualquer rascunho local antigo ao abrir uma nova proposta
@@ -502,15 +504,20 @@ function PropostaCpoPage() {
   }
 
   async function salvar(status: string = "Salvo") {
+    // Lock síncrono: bloqueia envios repetidos mesmo antes do estado re-renderizar
+    if (submitLock.current) return;
     if (!state.nome.trim()) return toast.error("Informe o nome do cliente.");
     if (!state.itens.some((i) => i.produtoId)) return toast.error("Adicione ao menos um produto.");
     if (abaixoPolitica) return toast.error("MB% abaixo da política mínima.");
     if (d.cmvExcedido)
       return toast.error(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação especial da diretoria.`);
+    submitLock.current = true;
     setSaving(true);
     try {
       const { data: userRes } = await supabase.auth.getUser();
-      const numero = numeroAtual ?? `CPO-${Date.now().toString().slice(-6)}`;
+      // Número idempotente: reenvios reutilizam o mesmo número (índice único no banco)
+      if (!numeroRef.current) numeroRef.current = `CPO-${Date.now().toString().slice(-6)}`;
+      const numero = numeroAtual ?? numeroRef.current;
       const payload = {
         numero,
         cliente_nome: state.nome,
@@ -548,9 +555,30 @@ function PropostaCpoPage() {
       };
 
       if (propostaId) {
-        const { error } = await supabase.from("cpo_proposals").update(payload).eq("id", propostaId);
+        const concluindo = status !== "Salvo";
+        const { status: _ignore, ...dados } = payload;
+        const { error } = await supabase
+          .from("cpo_proposals")
+          .update(concluindo ? dados : payload)
+          .eq("id", propostaId);
         if (error) throw error;
-        toast.success(status === "Salvo" ? `Proposta ${numero} atualizada.` : `Pedido ${numero} concluído.`);
+
+        if (concluindo) {
+          // Lock idempotente no banco: só conclui se ainda estiver "Salvo"
+          const { data: res, error: rpcErr } = await supabase.rpc("cpo_conclude_proposal", {
+            _id: propostaId,
+            _status: status,
+          });
+          if (rpcErr) throw rpcErr;
+          const linha = Array.isArray(res) ? res[0] : res;
+          if (linha?.already_concluded) {
+            toast.info(`Pedido ${numero} já havia sido concluído (${linha.status}).`);
+            invalidate();
+            return;
+          }
+        }
+
+        toast.success(concluindo ? `Pedido ${numero} concluído.` : `Proposta ${numero} atualizada.`);
         setNumeroAtual(numero);
         invalidate();
         limparRascunho();
@@ -563,7 +591,15 @@ function PropostaCpoPage() {
         .insert({ ...payload, created_by: userRes.user?.id ?? null })
         .select("id")
         .single();
-      if (error) throw error;
+      if (error) {
+        // Índice único no número: reenvio duplicado não cria um segundo registro
+        if ((error as { code?: string }).code === "23505") {
+          toast.info(`Proposta ${numero} já registrada.`);
+          invalidate();
+          return;
+        }
+        throw error;
+      }
       toast.success(
         status === "Salvo" ? `Proposta ${numero} salva.` : `Pedido ${numero} concluído.`,
       );
@@ -575,12 +611,14 @@ function PropostaCpoPage() {
         setPropostaId(inserida.id);
         setNumeroAtual(numero);
       } else {
+        numeroRef.current = null;
         setState(novoEstado());
         setEtapa(1);
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar proposta.");
     } finally {
+      submitLock.current = false;
       setSaving(false);
     }
   }
