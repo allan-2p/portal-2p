@@ -814,13 +814,6 @@ function PropostaCpoPage() {
               Cálculo fiscal em tempo real.
             </p>
 
-            {autosaveAt ? (
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Rascunho salvo automaticamente às{" "}
-                {autosaveAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-              </p>
-            ) : null}
           </div>
 
         </div>

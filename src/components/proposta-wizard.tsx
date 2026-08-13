@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Minus, ArrowLeft, Construction } from "lucide-react";
+import { Plus, Minus, ArrowLeft, ArrowRight, Save, Construction } from "lucide-react";
+import { WizardActionBar } from "@/components/wizard-action-bar";
 import { toast } from "sonner";
 
 export type NovaPropostaResult = {
