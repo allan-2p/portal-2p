@@ -18,6 +18,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { ClientHistoryTab } from "@/components/client-history-tab";
+import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
+
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
