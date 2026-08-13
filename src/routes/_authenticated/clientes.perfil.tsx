@@ -329,7 +329,6 @@ function Dossier({ account }: { account: SalesforceAccount }) {
 
       {/* KPIs (trimestre) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           label="Vendido tri. atual"
           value={fmt(history?.quarters.at(-1)?.total ?? 0)}
