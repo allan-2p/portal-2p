@@ -442,39 +442,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   {adminMenuOpen && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setAdminMenuOpen(false)} />
-                      <div className="absolute right-0 top-11 z-50 w-64 bg-card text-card-foreground border border-border rounded-lg shadow-xl overflow-hidden">
+                      <div className="absolute right-0 top-11 z-50 w-60 bg-card text-card-foreground border border-border rounded-lg shadow-xl overflow-hidden">
                         <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
                           Grupo 2P • Administração
                         </div>
-                        {show("admin.usuarios") && (
-                          <AdminMenuLink to="/usuarios" label="Usuários" icon={Users} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.metas") && (
-                          <AdminMenuLink to="/admin/metas" label="Regras de Metas" icon={Target} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.tabelas") && (
-                          <AdminMenuLink to="/admin/tabelas" label="Tabelas" icon={TableIcon} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.produtos") && (
-                          <AdminMenuLink to="/admin/produtos" label="Produtos (SAP)" icon={Package} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.integracoes") && (
-                          <AdminMenuLink to="/integracoes" label="Integrações" icon={Plug} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.auditoria") && (
-                          <AdminMenuLink to="/admin/auditoria" label="Auditoria de Acessos" icon={ShieldCheck} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.vinculos") && (
-                          <AdminMenuLink to="/admin/vinculos" label="Vínculos Salesforce" icon={Link2} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        {show("admin.atividade") && (
-                          <AdminMenuLink to="/admin/atividade" label="Log de Usuários" icon={ActivityIcon} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        <div className="h-px bg-border" />
-                        {show("admin.perfis") && (
-                          <AdminMenuLink to="/admin/perfis" label="Perfis de Permissão" icon={UserCog} onClick={() => setAdminMenuOpen(false)} />
-                        )}
-                        <AdminMenuLink to="/admin/permissoes" label="Permissões de Usuários" icon={KeyRound} onClick={() => setAdminMenuOpen(false)} />
+                        {ADMIN_SECTIONS.map((s) => (
+                          <AdminMenuLink
+                            key={s.id}
+                            to={s.home}
+                            label={s.label}
+                            icon={s.icon}
+                            onClick={() => setAdminMenuOpen(false)}
+                          />
+                        ))}
                       </div>
                     </>
                   )}
