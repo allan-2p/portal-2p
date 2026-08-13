@@ -174,6 +174,7 @@ function PropostaCpoPage() {
         ie: data.cliente_ie ?? "",
         uf: data.uf,
         contribuinte: data.contribuinte,
+        finalidadeUso: ((data.finalidade_uso as CpoState["finalidadeUso"]) ?? "uso_consumo"),
         freteMod: (data.frete_mod === "CIF" ? "CIF" : "FOB") as CpoState["freteMod"],
         freteValor: money2(data.frete_valor ?? 0),
         itens: itens.length ? itens : [novoItem()],
