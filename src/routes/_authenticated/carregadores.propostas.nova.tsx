@@ -46,7 +46,9 @@ import {
   statusMB,
   type CpoItem,
   type CpoState,
+  textoDifalContribuinte,
 } from "@/lib/cpo";
+
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
 import { MoneyInput, MoneyMaskToggle } from "@/components/money-input";
 
