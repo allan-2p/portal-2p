@@ -136,11 +136,8 @@ const vazio = (): Omit<Cliente, "id"> => ({
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
 const soDigitos = (v: string) => v.replace(/\D/g, "");
 
-type CampoErro =
-  | "razao_social" | "doc" | "uf" | "ie" | "contato_nome" | "contato_email"
-  | "contato_telefone" | "cep" | "logradouro" | "numero" | "cidade";
-
 type CampoErro = string;
+
 
 type Erros = Record<string, string>;
 
