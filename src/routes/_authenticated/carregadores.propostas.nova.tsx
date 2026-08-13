@@ -467,6 +467,7 @@ function PropostaCpoPage() {
         status,
         uf: state.uf,
         contribuinte: state.contribuinte,
+        finalidade_uso: state.finalidadeUso,
         frete_mod: state.freteMod,
         frete_valor: money2(state.freteValor),
         itens: state.itens.map((i) => ({
