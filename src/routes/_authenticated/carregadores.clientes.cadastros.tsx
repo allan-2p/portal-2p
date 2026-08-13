@@ -364,7 +364,7 @@ function CadastrosPage() {
                             className="text-left text-xs text-destructive underline-offset-2 hover:underline"
                             onClick={() => document.getElementById(`campo-${campo}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
                           >
-                            <span className="font-medium">{ROTULOS[campo]}:</span> {msg}
+                            <span className="font-medium">{rotuloCampo(campo, form.contatos ?? [])}:</span> {msg}
                           </button>
                         </li>
                       ))}
