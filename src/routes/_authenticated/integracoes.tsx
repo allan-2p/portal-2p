@@ -224,7 +224,15 @@ function CatalogoIntegracoes() {
                   {i.area}
                 </span>
                 <IntegrationStatusBadge item={item} loading={health.isLoading} />
+                {slug && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/integracoes/$slug" params={{ slug }}>
+                      Configurar
+                    </Link>
+                  </Button>
+                )}
               </div>
+
             </li>
           );
         })}
