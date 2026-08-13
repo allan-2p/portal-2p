@@ -702,9 +702,11 @@ function PropostaCpoPage() {
         return;
       }
 
+      // Sempre nasce como "Salvo": a conclusão passa obrigatoriamente pela
+      // validação de etapa/completude no banco (cpo_conclude_proposal).
       const { data: inserida, error } = await supabase
         .from("cpo_proposals")
-        .insert({ ...payload, created_by: userRes.user?.id ?? null })
+        .insert({ ...payload, status: "Salvo", created_by: userRes.user?.id ?? null })
         .select("id")
         .single();
       if (error) {
@@ -720,8 +722,26 @@ function PropostaCpoPage() {
         throw error;
       }
       if (status !== "Salvo") {
-        void registrarConclusao({ propostaId: inserida?.id ?? null, numero, status, resultado: "concluida" });
+        if (!inserida?.id) throw new Error("Não foi possível concluir: proposta não localizada.");
+        const { data: res, error: rpcErr } = await supabase.rpc("cpo_conclude_proposal", {
+          _id: inserida.id,
+          _status: status,
+          _origem: "portal",
+          _etapa: etapa,
+        });
+        if (rpcErr) {
+          setPropostaId(inserida.id);
+          setNumeroAtual(numero);
+          throw rpcErr;
+        }
+        const linha = Array.isArray(res) ? res[0] : res;
+        if (linha?.already_concluded) {
+          toast.info(`Pedido ${numero} já havia sido concluído (${linha.status}).`);
+          invalidate();
+          return;
+        }
       }
+
       toast.success(
         status === "Salvo" ? `Proposta ${numero} salva.` : `Pedido ${numero} concluído.`,
       );
