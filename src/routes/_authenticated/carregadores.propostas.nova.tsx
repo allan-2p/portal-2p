@@ -235,8 +235,18 @@ function PropostaCpoPage() {
   // Sem autosave local: cada nova proposta parte do zero.
 
 
+  // Logomarca do cliente (cadastro) usada opcionalmente no PDF
+  const buscarLogoCliente = useServerFn(getClienteLogo);
+  const docLogo = (state.doc ?? "").replace(/\D/g, "");
+  const logoQ = useQuery({
+    queryKey: ["cliente-logo", docLogo],
+    queryFn: () => buscarLogoCliente({ data: { doc: docLogo } }),
+    enabled: docLogo.length >= 11,
+  });
+  const logoCliente = ((logoQ.data as any)?.data_url as string | undefined) ?? null;
 
   // Clientes vindos do cadastro universal (Clientes > Cadastros)
+
   const listClientes = useServerFn(listClientesFn);
   const clientesQ = useQuery({
     queryKey: ["cpo-clientes-cadastro"],
