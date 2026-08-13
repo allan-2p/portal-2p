@@ -7,7 +7,33 @@ export type CpoProductAdmin = {
   potencia: string | null;
   custo: number;
   ativo: boolean;
+  ncm_id?: string | null;
 };
+
+/**
+ * Produtos ativos com custo — usados no cálculo de CMV, margem e comissão da
+ * proposta. Restrito a usuários autenticados do portal.
+ */
+export const listCpoProductsForProposal = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ products: CpoProductAdmin[] }> => {
+    const { data, error } = await context.supabase
+      .from("cpo_products")
+      .select("id, nome, potencia, custo, ativo, ncm_id")
+      .order("nome");
+    if (error) throw new Error(error.message);
+    return {
+      products: (data ?? []).map((p: any) => ({
+        id: p.id,
+        nome: p.nome,
+        potencia: p.potencia,
+        custo: Number(p.custo),
+        ativo: p.ativo,
+        ncm_id: p.ncm_id ?? null,
+      })),
+    };
+  });
+
 
 /** Lista de produtos com custo — restrita a administradores. */
 export const adminListCpoProducts = createServerFn({ method: "GET" })

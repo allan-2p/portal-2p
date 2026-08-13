@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+export type SapVisibilidade = "solar" | "carregadores" | "ambos";
 
 export type SapProdutoRow = {
   id: string;
@@ -9,6 +12,7 @@ export type SapProdutoRow = {
   permissao: string;
   lista_preco: string | null;
   ativo: boolean;
+  visibilidade: SapVisibilidade;
   last_synced_at: string | null;
 };
 
@@ -22,14 +26,37 @@ export type SapSyncRun = {
   error_message: string | null;
 };
 
+/** Define em quais portais o produto aparece (propostas, catálogos, etc). */
+export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        visibilidade: z.enum(["solar", "carregadores", "ambos"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("is_admin");
+    if (!isAdmin) throw new Error("Apenas administradores podem alterar a visibilidade de produtos.");
+    const { error } = await context.supabase
+      .from("sap_produtos")
+      .update({ visibilidade: data.visibilidade })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const listSapProdutos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ produtos: SapProdutoRow[]; lastRun: SapSyncRun | null }> => {
     const { data, error } = await context.supabase
       .from("sap_produtos")
-      .select("id, codigo, descricao, tipo, permissao, lista_preco, ativo, last_synced_at")
+      .select("id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at")
       .order("descricao");
     if (error) throw new Error(error.message);
+
 
     const { data: runs } = await context.supabase
       .from("sap_produtos_sync_runs")

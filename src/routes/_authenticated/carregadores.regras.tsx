@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { useCpoConfig } from "@/hooks/use-cpo";
 import { CPO_CONFIG_FALLBACK, fmtPct } from "@/lib/cpo";
-import { REGRAS_PADRAO, FATOR_CLT } from "@/lib/cpo-comissao";
+
 
 export const Route = createFileRoute("/_authenticated/carregadores/regras")({
   head: () => ({
@@ -98,42 +98,61 @@ function RegrasPage() {
         </Section>
 
         <Section title="3. Base de cálculo dos itens" subtitle="O IPI está embutido no valor de venda e é removido para formar a base.">
-          <Formula>{`Valor Itens        = Σ (valor unitário × quantidade)
-Valor Item (base)  = Σ (valor unitário ÷ (1 + IPI)) × quantidade      IPI = ${fmtPct(cfg.ipi)}
-Valor Total        = Valor Itens + Frete
-Custo Total        = Σ (custo do produto × quantidade)`}</Formula>
+          <Formula>{`Valor Itens (venda)  = Σ (valor unitário × quantidade)          — já com IPI
+Valor NF (sem IPI)   = Valor Itens ÷ (1 + IPI)                  IPI = ${fmtPct(cfg.ipi)}
+IPI                  = Valor Itens − Valor NF
+Valor Total          = Valor Itens + Frete
+Custo Total          = Σ (custo do produto × quantidade)`}</Formula>
           <p className="text-muted-foreground">
-            O frete <strong>não</strong> compõe a base de impostos nem a margem: é repasse. A base fiscal é
-            sempre o <em>Valor Item</em> (sem IPI).
+            O frete <strong>não</strong> compõe a base de impostos nem a margem: é repasse.
           </p>
         </Section>
 
-        <Section title="4. ICMS, DIFAL e demais impostos" subtitle="Operação interestadual a partir de SP.">
-          <Formula>{`Alíquota interna destino = alíquota da UF + FCP da UF
-ICMS origem              = Valor Item × ${fmtPct(cfg.aliq_inter)}   (alíquota interestadual)
-Fator "por dentro"       = (alíquota interna − ${fmtPct(cfg.aliq_inter)}) ÷ (1 − alíquota interna)
-
-Cliente CONTRIBUINTE      → ICMS = ICMS origem
-                            DIFAL é recolhido pelo destinatário (mostrado apenas como estimativa)
-
-Cliente NÃO CONTRIBUINTE  → DIFAL absorvido = Valor Item × Fator "por dentro"
-                            ICMS = ICMS origem + DIFAL absorvido
-
-IPI          = Valor Item × ${fmtPct(cfg.ipi)}
-PIS/COFINS   = (Valor Item − ICMS) × ${fmtPct(cfg.pis_cofins)}`}</Formula>
+        <Section title="4. Bases fiscais por NCM" subtitle="As regras são cadastradas por NCM, não por produto.">
           <p className="text-muted-foreground">
-            A alíquota efetiva de ICMS é arredondada em 4 casas decimais antes de gerar o valor final, para
-            bater com a apuração fiscal.
+            Cada produto aponta para um NCM em <strong>Moderação › Produtos e Alíquotas › NCM</strong>, e é o NCM que
+            define IPI, PIS/COFINS, alíquota interestadual e se há ICMS-ST ou DIFAL. O carregador de 7,4 kW é
+            importado com NCM próprio e, por isso, tem alíquotas e regras de DIFAL/ICMS-ST distintas do carregador DC.
+          </p>
+          <Formula>{`IE informada?
+  Não  → DIFAL (comprador não contribuinte) embutido no cálculo da venda
+  Sim  → UF com convênio ST?
+           Não → venda normal
+           Sim → Industrialização  → venda normal
+                 Revenda           → cobrança de ICMS-ST
+                 Uso/consumo/ativo → cobrança de DIFAL-ST
+
+UFs com convênio ST: AC · AL · AP · MT · MG · PR · PE · RJ · SP`}</Formula>
+        </Section>
+
+        <Section title="5. ICMS e DIFAL" subtitle="Na NF o ICMS é sempre 4%. O DIFAL é um custo adicional no cabeçalho.">
+          <Formula>{`ICMS na NF   = Valor NF (sem IPI) × ${fmtPct(cfg.aliq_inter)}       ← nunca somado ao DIFAL
+PIS/COFINS   = (Valor NF − ICMS) × ${fmtPct(cfg.pis_cofins)}
+
+Base DIFAL   = Valor Itens ÷ (1 − (alíquota interna + FCP))
+DIFAL        = Base DIFAL × (alíquota interna + FCP − ${fmtPct(cfg.aliq_inter)})
+
+Cliente NÃO CONTRIBUINTE → o DIFAL é custo da 2P e entra no cabeçalho da NF
+Cliente CONTRIBUINTE     → o DIFAL é apenas estimativa informativa`}</Formula>
+          <p className="text-muted-foreground">
+            A alíquota de ICMS destacada na nota permanece em {fmtPct(cfg.aliq_inter)} em qualquer UF. Somar ICMS +
+            DIFAL numa única alíquota — como era feito antes — distorce tanto a nota quanto a margem.
           </p>
         </Section>
 
-        <Section title="5. Receita líquida e margem bruta" subtitle="Indicador que governa a aprovação da proposta.">
-          <Formula>{`Receita Líquida = Valor Item − ICMS − PIS/COFINS
+        <Section title="6. Receita líquida, CMV e margem bruta" subtitle="Indicadores que governam a aprovação da proposta.">
+          <Formula>{`Receita Líquida = Venda − IPI − ICMS − PIS/COFINS − DIFAL (quando custo da 2P)
+CMV             = Custo Total ÷ Receita Líquida
 Margem Bruta    = Receita Líquida − Custo Total
-MB %            = Margem Bruta ÷ Valor Itens`}</Formula>
+MB %            = Margem Bruta ÷ Venda`}</Formula>
           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
             <li>
-              <strong className="text-destructive">Abaixo de {fmtPct(cfg.politica_mb_min)}</strong> — fora da política mínima; a proposta precisa ser ajustada.
+              <strong className="text-destructive">CMV acima de {fmtPct(cfg.cmv_max)}</strong> — o vendedor não
+              consegue orçar; exige aprovação especial da diretoria.
+            </li>
+            <li>
+              <strong className="text-destructive">MB% abaixo de {fmtPct(cfg.politica_mb_min)}</strong> — fora da
+              política mínima; a proposta precisa ser ajustada.
             </li>
             <li>
               <strong className="text-amber-500">Entre {fmtPct(cfg.politica_mb_min)} e {fmtPct(cfg.mb_atencao)}</strong> — dentro da política, mas em faixa de atenção.
@@ -144,44 +163,28 @@ MB %            = Margem Bruta ÷ Valor Itens`}</Formula>
           </ul>
         </Section>
 
-        <Section title="6. Comissão" subtitle="Percentual variável em função do CMV, aplicado sobre a margem bruta.">
-          <Formula>{`CMV               = Custo ÷ Venda
-% Comissão total  = (2361 × CMV² − 2896,4 × CMV + 892,41) ÷ 100 (em %)
-Comissão total    = Margem Bruta × % Comissão total`}</Formula>
+        <Section title="7. Comissão" subtitle="A fórmula devolve o custo total para a empresa; o vendedor fica com o saldo.">
+          <Formula>{`% Comissão total = (4 + 7,4 ÷ (1 + e^(2,05 × (CMV% − 57,8)))) ÷ 100
+Comissão total   = Margem Bruta × % Comissão total     ← CUSTO TOTAL DA EMPRESA
+
+Custo Gerente    = Venda × ${fmtPct(cfg.pct_gerente)}      (fixo, CLT e PJ)
+Custo Indicação  = Venda × ${fmtPct(cfg.pct_indicacao)}      (fixo, CLT e PJ)
+Custo Vendedor   = Comissão total − Custo Gerente − Custo Indicação
+
+Remuneração      = custo (PJ)   ou   custo ÷ ${cfg.fator_clt} (CLT)`}</Formula>
           <p className="text-muted-foreground">
-            Quanto menor o CMV (venda mais rentável), maior o percentual de comissão. O rateio entre os
-            beneficiários segue as regras abaixo, calculadas sobre o valor da venda:
+            Quanto menor o CMV (venda mais rentável), maior o percentual de comissão. Como gerente e indicação são
+            percentuais fixos sobre a venda, a comissão do vendedor é o saldo — e portanto extremamente variável.
+            Com CMV acima de {fmtPct(cfg.cmv_max)} a comissão é zerada e a proposta fica bloqueada.
           </p>
-          <div className="rounded-xl border border-border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs uppercase text-muted-foreground border-b border-border">
-                  <th className="text-left px-3 py-2">Papel</th>
-                  <th className="text-left px-3 py-2">Regime</th>
-                  <th className="text-right px-3 py-2">% sobre a venda</th>
-                  <th className="text-right px-3 py-2">Custo empresa</th>
-                </tr>
-              </thead>
-              <tbody>
-                {REGRAS_PADRAO.map((r) => (
-                  <tr key={r.key} className="border-b border-border/50 last:border-0">
-                    <td className="px-3 py-2 font-medium">{r.papel}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{r.regime}</td>
-                    <td className="px-3 py-2 text-right">{fmtPct(r.pctRemuneracao)}</td>
-                    <td className="px-3 py-2 text-right">{fmtPct(r.pctRemuneracao * r.fatorEncargos)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
           <p className="text-muted-foreground">
-            No regime CLT a remuneração é multiplicada pelo fator de encargos <strong>{FATOR_CLT}</strong> para
-            chegar ao custo da empresa. No PJ o custo é igual à remuneração, por isso os percentuais PJ já são
-            equivalentes ao custo CLT.
+            No regime CLT o custo da empresa é a remuneração acrescida dos encargos (fator{" "}
+            <strong>{cfg.fator_clt}</strong>). No PJ o custo é igual à remuneração.
           </p>
         </Section>
 
-        <Section title="7. Fluxo e status da proposta" subtitle="Do rascunho ao pedido.">
+
+        <Section title="8. Fluxo e status da proposta" subtitle="Do rascunho ao pedido.">
           <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
             <li>Selecionar o cliente já cadastrado — dados fiscais e de contato vêm prontos.</li>
             <li>Adicionar itens e informar o valor unitário negociado de cada um.</li>

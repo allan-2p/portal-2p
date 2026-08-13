@@ -14,7 +14,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { listSapProdutos, listSapSyncRuns, syncSapProdutos } from "@/lib/sap-produtos.functions";
+import {
+  listSapProdutos,
+  listSapSyncRuns,
+  setSapProdutoVisibilidade,
+  syncSapProdutos,
+  type SapVisibilidade,
+} from "@/lib/sap-produtos.functions";
+
+const VIS_LABELS: Record<string, string> = {
+  solar: "Só 2P Solar",
+  carregadores: "Só 2P Carregadores",
+  ambos: "Ambos",
+};
 import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download } from "lucide-react";
 import {
   classificarDetalhado,
@@ -59,18 +71,30 @@ const PAGE_SIZES = [10, 25, 50, 100];
 
 function ProdutosPage() {
   const list = useServerFn(listSapProdutos);
+  const setVis = useServerFn(setSapProdutoVisibilidade);
   const sync = useServerFn(syncSapProdutos);
   const listRuns = useServerFn(listSapSyncRuns);
 
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState("all");
   const [permissao, setPermissao] = useState("all");
+  const [visibilidade, setVisibilidade] = useState("all");
   const [status, setStatus] = useState<"ativos" | "inativos" | "todos">("ativos");
   const [audit, setAudit] = useState(false);
   const [showRuns, setShowRuns] = useState(false);
   const [soDivergentes, setSoDivergentes] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+
+  const alterarVisibilidade = async (id: string, v: SapVisibilidade) => {
+    try {
+      await setVis({ data: { id, visibilidade: v } });
+      toast.success(`Visibilidade alterada para “${VIS_LABELS[v]}”.`);
+      refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao alterar visibilidade.");
+    }
+  };
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["sap-produtos"],
@@ -119,6 +143,7 @@ function ProdutosPage() {
     return produtos.filter((p) => {
       if (tipo !== "all" && p.tipo !== tipo) return false;
       if (permissao !== "all" && (p.permissao ?? "").toLowerCase() !== permissao) return false;
+      if (visibilidade !== "all" && (p.visibilidade ?? "ambos") !== visibilidade) return false;
       if (status === "ativos" && !p.ativo) return false;
       if (status === "inativos" && p.ativo) return false;
       if (soDivergentes && !p.divergente) return false;
@@ -130,7 +155,7 @@ function ProdutosPage() {
         (p.lista_preco ?? "").toLowerCase().includes(term)
       );
     });
-  }, [produtos, q, tipo, permissao, status, soDivergentes]);
+  }, [produtos, q, tipo, permissao, visibilidade, status, soDivergentes]);
 
 
   const exportXlsx = async () => {
@@ -144,6 +169,7 @@ function ProdutosPage() {
       Descrição: p.descricao,
       Tipo: TIPO_LABELS[p.tipo] ?? p.tipo,
       Permissão: p.permissao ?? "",
+      Visibilidade: VIS_LABELS[p.visibilidade ?? "ambos"],
       "Lista de preço": p.lista_preco ?? "",
       Status: p.ativo ? "Ativo" : "Inativo",
       "Última sincronização": p.last_synced_at ? new Date(p.last_synced_at).toLocaleString("pt-BR") : "",
@@ -415,6 +441,17 @@ function ProdutosPage() {
               <SelectItem value="admin">Admin</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={visibilidade} onValueChange={(v) => { setVisibilidade(v); setPage(0); }}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Visibilidade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as visibilidades</SelectItem>
+              <SelectItem value="solar">Só 2P Solar</SelectItem>
+              <SelectItem value="carregadores">Só 2P Carregadores</SelectItem>
+              <SelectItem value="ambos">Ambos</SelectItem>
+            </SelectContent>
+          </Select>
           <Select
             value={status}
             onValueChange={(v) => {
@@ -442,6 +479,7 @@ function ProdutosPage() {
                 <th className="text-left px-3 py-2">Tipo</th>
                 <th className="text-left px-3 py-2">Lista de preço</th>
                 <th className="text-left px-3 py-2">Permissão</th>
+                <th className="text-left px-3 py-2">Visibilidade</th>
                 <th className="text-left px-3 py-2">Status</th>
                 {audit && <th className="text-left px-3 py-2">Regra aplicada</th>}
                 {audit && <th className="text-left px-3 py-2">Motivo</th>}
@@ -451,13 +489,13 @@ function ProdutosPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={audit ? 9 : 7} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 10 : 8} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={audit ? 9 : 7} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 10 : 8} className="px-3 py-10 text-center text-muted-foreground">
                     Nenhum produto encontrado. Clique em “Sinc. SAP” para importar o catálogo.
                   </td>
                 </tr>
@@ -471,6 +509,21 @@ function ProdutosPage() {
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">{p.lista_preco ?? "—"}</td>
                     <td className="px-3 py-2 text-muted-foreground">{p.permissao}</td>
+                    <td className="px-3 py-2">
+                      <Select
+                        value={p.visibilidade ?? "ambos"}
+                        onValueChange={(v) => alterarVisibilidade(p.id, v as SapVisibilidade)}
+                      >
+                        <SelectTrigger className="h-8 w-[168px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="solar">Só 2P Solar</SelectItem>
+                          <SelectItem value="carregadores">Só 2P Carregadores</SelectItem>
+                          <SelectItem value="ambos">Ambos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </td>
                     <td className="px-3 py-2">
                       <Badge variant={p.ativo ? "default" : "outline"}>
                         {p.ativo ? "Ativo" : "Inativo"}

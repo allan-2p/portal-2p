@@ -23,8 +23,9 @@ import {
 import { Plus, Pencil, Trash2, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useCpoConfig, useCpoInvalidate, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
-import { fmtBRL, type CpoConfig, type CpoProduct } from "@/lib/cpo";
+import { useCpoConfig, useCpoInvalidate, useCpoNcms, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
+import { fmtBRL, type CpoConfig, type CpoNcm, type CpoProduct } from "@/lib/cpo";
+
 
 export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
   head: () => ({
@@ -53,11 +54,14 @@ function ProdutosCpoPage() {
         <Tabs defaultValue="produtos">
           <TabsList>
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
+            <TabsTrigger value="ncm">NCM</TabsTrigger>
             <TabsTrigger value="ufs">Alíquotas por UF</TabsTrigger>
           </TabsList>
           <TabsContent value="produtos" className="mt-4"><ProdutosTab /></TabsContent>
+          <TabsContent value="ncm" className="mt-4"><NcmTab /></TabsContent>
           <TabsContent value="ufs" className="mt-4"><UfsTab /></TabsContent>
         </Tabs>
+
       </div>
     </AppLayout>
   );
@@ -71,12 +75,14 @@ type Draft = {
   potencia: string;
   custo: string;
   ativo: boolean;
+  ncm_id: string;
 };
 
-const EMPTY: Draft = { nome: "", potencia: "", custo: "", ativo: true };
+const EMPTY: Draft = { nome: "", potencia: "", custo: "", ativo: true, ncm_id: "" };
 
 function ProdutosTab() {
   const { data: produtos = [], isLoading } = useCpoProductsAdmin();
+  const { data: ncms = [] } = useCpoNcms();
   const invalidate = useCpoInvalidate();
   const [busca, setBusca] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -95,7 +101,9 @@ function ProdutosTab() {
       custo: Number(draft.custo) || 0,
       preco_sugerido: 0,
       ativo: draft.ativo,
+      ncm_id: draft.ncm_id || null,
     };
+
 
     setSaving(true);
     const { error } = draft.id
@@ -140,6 +148,7 @@ function ProdutosTab() {
               <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                 <th className="text-left px-4 py-3">Produto</th>
                 <th className="text-left px-4 py-3">Potência</th>
+                <th className="text-left px-4 py-3">NCM</th>
                 <th className="text-right px-4 py-3">Custo</th>
                 <th className="text-center px-4 py-3">Ativo</th>
                 <th className="text-right px-4 py-3">Ações</th>
@@ -151,6 +160,9 @@ function ProdutosTab() {
                 <tr key={p.id} className="border-b border-border/50 hover:bg-surface-2">
                   <td className="px-4 py-3 font-medium">{p.nome}</td>
                   <td className="px-4 py-3 text-muted-foreground">{p.potencia || "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
+                    {ncms.find((n) => n.id === p.ncm_id)?.codigo ?? "—"}
+                  </td>
                   <td className="px-4 py-3 text-right">{fmtBRL(p.custo)}</td>
                   <td className="px-4 py-3 text-center">
                     <Switch checked={p.ativo} onCheckedChange={() => toggleAtivo(p)} />
@@ -168,9 +180,11 @@ function ProdutosTab() {
                             potencia: p.potencia ?? "",
                             custo: String(p.custo),
                             ativo: p.ativo,
+                            ncm_id: p.ncm_id ?? "",
                           })
                         }
                       >
+
 
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -183,9 +197,10 @@ function ProdutosTab() {
               ))}
               {filtrados.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
                     {isLoading ? "Carregando…" : "Nenhum produto cadastrado."}
                   </td>
+
                 </tr>
               )}
             </tbody>
@@ -206,6 +221,22 @@ function ProdutosTab() {
               <Field label="Potência (ex.: 7,4 kW)">
                 <Input value={draft.potencia} onChange={(e) => setDraft({ ...draft, potencia: e.target.value })} />
               </Field>
+              <Field label="NCM (define IPI, PIS/COFINS, ST e DIFAL)">
+                <Select
+                  value={draft.ncm_id || "none"}
+                  onValueChange={(v) => setDraft({ ...draft, ncm_id: v === "none" ? "" : v })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione o NCM" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem NCM (usa padrão global)</SelectItem>
+                    {ncms.map((n) => (
+                      <SelectItem key={n.id} value={n.id}>
+                        {n.codigo} — {n.descricao}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
               <Field label="Custo (R$)">
                 <Input
                   type="number"
@@ -214,6 +245,7 @@ function ProdutosTab() {
                   onChange={(e) => setDraft({ ...draft, custo: e.target.value })}
                 />
               </Field>
+
 
               <div className="flex items-center gap-3">
                 <Switch checked={draft.ativo} onCheckedChange={(v) => setDraft({ ...draft, ativo: v })} />
@@ -348,6 +380,207 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1.5">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       {children}
+    </div>
+  );
+}
+
+/* ------------------------------ NCM ------------------------------- */
+
+type NcmDraft = {
+  id?: string;
+  codigo: string;
+  descricao: string;
+  ipi: string;
+  pis_cofins: string;
+  aliq_inter: string;
+  tem_st: boolean;
+  gera_difal: boolean;
+  observacoes: string;
+  ativo: boolean;
+};
+
+const NCM_EMPTY: NcmDraft = {
+  codigo: "",
+  descricao: "",
+  ipi: "5.00",
+  pis_cofins: "9.25",
+  aliq_inter: "4.00",
+  tem_st: false,
+  gera_difal: true,
+  observacoes: "",
+  ativo: true,
+};
+
+function NcmTab() {
+  const { data: ncms = [], isLoading } = useCpoNcms();
+  const invalidate = useCpoInvalidate();
+  const [draft, setDraft] = useState<NcmDraft | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function salvar() {
+    if (!draft) return;
+    if (!draft.codigo.trim()) return toast.error("Informe o código do NCM.");
+    const payload = {
+      codigo: draft.codigo.trim(),
+      descricao: draft.descricao.trim(),
+      ipi: Number(draft.ipi) / 100,
+      pis_cofins: Number(draft.pis_cofins) / 100,
+      aliq_inter: Number(draft.aliq_inter) / 100,
+      tem_st: draft.tem_st,
+      gera_difal: draft.gera_difal,
+      observacoes: draft.observacoes.trim() || null,
+      ativo: draft.ativo,
+    };
+    setSaving(true);
+    const { error } = draft.id
+      ? await supabase.from("cpo_ncm").update(payload).eq("id", draft.id)
+      : await supabase.from("cpo_ncm").insert(payload);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success(draft.id ? "NCM atualizado." : "NCM criado.");
+    setDraft(null);
+    invalidate();
+  }
+
+  async function excluir(n: CpoNcm) {
+    const { error } = await supabase.from("cpo_ncm").delete().eq("id", n.id);
+    if (error) return toast.error(error.message);
+    toast.success("NCM removido.");
+    invalidate();
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground max-w-3xl">
+          As regras fiscais são cadastradas por NCM, e não por produto: cada NCM importado tem alíquotas próprias e
+          regras distintas de ICMS-ST e DIFAL. Vincule cada carregador ao seu NCM na aba Produtos.
+        </p>
+        <Button className="gap-2" onClick={() => setDraft({ ...NCM_EMPTY })}>
+          <Plus className="h-4 w-4" /> Novo NCM
+        </Button>
+      </div>
+
+      <div className="glass rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[900px]">
+            <thead>
+              <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
+                <th className="text-left px-4 py-3">NCM</th>
+                <th className="text-left px-4 py-3">Descrição</th>
+                <th className="text-right px-4 py-3">IPI</th>
+                <th className="text-right px-4 py-3">PIS/COFINS</th>
+                <th className="text-right px-4 py-3">ICMS inter.</th>
+                <th className="text-center px-4 py-3">ICMS-ST</th>
+                <th className="text-center px-4 py-3">DIFAL</th>
+                <th className="text-center px-4 py-3">Ativo</th>
+                <th className="text-right px-4 py-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ncms.map((n) => (
+                <tr key={n.id} className="border-b border-border/50 hover:bg-surface-2">
+                  <td className="px-4 py-3 font-mono font-semibold">{n.codigo}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{n.descricao}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{(n.ipi * 100).toFixed(2)}%</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{(n.pis_cofins * 100).toFixed(2)}%</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{(n.aliq_inter * 100).toFixed(2)}%</td>
+                  <td className="px-4 py-3 text-center">{n.tem_st ? "Sim" : "—"}</td>
+                  <td className="px-4 py-3 text-center">{n.gera_difal ? "Sim" : "—"}</td>
+                  <td className="px-4 py-3 text-center">{n.ativo ? "Sim" : "—"}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Editar NCM"
+                        onClick={() =>
+                          setDraft({
+                            id: n.id,
+                            codigo: n.codigo,
+                            descricao: n.descricao,
+                            ipi: (n.ipi * 100).toFixed(2),
+                            pis_cofins: (n.pis_cofins * 100).toFixed(2),
+                            aliq_inter: (n.aliq_inter * 100).toFixed(2),
+                            tem_st: n.tem_st,
+                            gera_difal: n.gera_difal,
+                            observacoes: n.observacoes ?? "",
+                            ativo: n.ativo,
+                          })
+                        }
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" aria-label="Excluir NCM" onClick={() => excluir(n)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {ncms.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
+                    {isLoading ? "Carregando…" : "Nenhum NCM cadastrado."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <Dialog open={!!draft} onOpenChange={(v) => !v && setDraft(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{draft?.id ? "Editar NCM" : "Novo NCM"}</DialogTitle>
+          </DialogHeader>
+          {draft && (
+            <div className="grid gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Código NCM">
+                  <Input value={draft.codigo} onChange={(e) => setDraft({ ...draft, codigo: e.target.value })} />
+                </Field>
+                <Field label="Descrição">
+                  <Input value={draft.descricao} onChange={(e) => setDraft({ ...draft, descricao: e.target.value })} />
+                </Field>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="IPI (%)">
+                  <Input type="number" step="0.01" value={draft.ipi} onChange={(e) => setDraft({ ...draft, ipi: e.target.value })} />
+                </Field>
+                <Field label="PIS/COFINS (%)">
+                  <Input type="number" step="0.01" value={draft.pis_cofins} onChange={(e) => setDraft({ ...draft, pis_cofins: e.target.value })} />
+                </Field>
+                <Field label="ICMS interestadual (%)">
+                  <Input type="number" step="0.01" value={draft.aliq_inter} onChange={(e) => setDraft({ ...draft, aliq_inter: e.target.value })} />
+                </Field>
+              </div>
+              <Field label="Observações fiscais">
+                <Input value={draft.observacoes} onChange={(e) => setDraft({ ...draft, observacoes: e.target.value })} />
+              </Field>
+              <div className="flex items-center gap-3">
+                <Switch checked={draft.tem_st} onCheckedChange={(v) => setDraft({ ...draft, tem_st: v })} />
+                <span className="text-sm">Sujeito a ICMS-ST nas UFs com convênio</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch checked={draft.gera_difal} onCheckedChange={(v) => setDraft({ ...draft, gera_difal: v })} />
+                <span className="text-sm">Gera DIFAL para não contribuinte</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch checked={draft.ativo} onCheckedChange={(v) => setDraft({ ...draft, ativo: v })} />
+                <span className="text-sm">Ativo</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDraft(null)}>Cancelar</Button>
+            <Button onClick={salvar} disabled={saving} className="gap-2">
+              <Save className="h-4 w-4" /> Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
