@@ -502,15 +502,20 @@ function PropostaCpoPage() {
   }
 
   async function salvar(status: string = "Salvo") {
+    // Lock síncrono: bloqueia envios repetidos mesmo antes do estado re-renderizar
+    if (submitLock.current) return;
     if (!state.nome.trim()) return toast.error("Informe o nome do cliente.");
     if (!state.itens.some((i) => i.produtoId)) return toast.error("Adicione ao menos um produto.");
     if (abaixoPolitica) return toast.error("MB% abaixo da política mínima.");
     if (d.cmvExcedido)
       return toast.error(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação especial da diretoria.`);
+    submitLock.current = true;
     setSaving(true);
     try {
       const { data: userRes } = await supabase.auth.getUser();
-      const numero = numeroAtual ?? `CPO-${Date.now().toString().slice(-6)}`;
+      // Número idempotente: reenvios reutilizam o mesmo número (índice único no banco)
+      if (!numeroRef.current) numeroRef.current = `CPO-${Date.now().toString().slice(-6)}`;
+      const numero = numeroAtual ?? numeroRef.current;
       const payload = {
         numero,
         cliente_nome: state.nome,
