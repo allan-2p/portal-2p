@@ -182,7 +182,11 @@ function CadastrosPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Cliente, "id">>(vazio());
   const [detalhe, setDetalhe] = useState<Cliente | null>(null);
+  const [tentouSalvar, setTentouSalvar] = useState(false);
 
+  const errosAtuais = useMemo(() => validarCampos(form), [form]);
+  const erros: Erros = tentouSalvar ? errosAtuais : {};
+  const listaErros = (Object.keys(erros) as CampoErro[]).map((k) => ({ campo: k, msg: erros[k]! }));
 
   const set = <K extends keyof Omit<Cliente, "id">>(k: K, v: Omit<Cliente, "id">[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -201,8 +205,6 @@ function CadastrosPage() {
 
   const salvar = useMutation({
     mutationFn: async () => {
-      const erro = validarObrigatorios(form);
-      if (erro) throw new Error(erro);
       if (editId) {
         const { error } = await supabase.from("cpo_clientes").update(form).eq("id", editId);
         if (error) throw error;
@@ -218,7 +220,7 @@ function CadastrosPage() {
       toast.success(editId ? "Cadastro atualizado." : "Cliente cadastrado.");
       qc.invalidateQueries({ queryKey: ["cpo-cadastros"] });
       qc.invalidateQueries({ queryKey: ["cpo-clientes-cadastro"] });
-      setOpen(false); setEditId(null); setForm(vazio());
+      setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao salvar."),
   });
