@@ -15,10 +15,11 @@ async function profileGrantsFor(client: any, userId: string) {
     .select("profile_id")
     .eq("user_id", userId);
   const ids = (links ?? []).map((r: any) => r.profile_id as string);
-  if (!ids.length) return { features: [], instances: [] } as ProfileGrants;
-  const [{ data: feats }, { data: insts }] = await Promise.all([
+  if (!ids.length) return { features: [], instances: [], full_access: false } as ProfileGrants;
+  const [{ data: feats }, { data: insts }, { data: profs }] = await Promise.all([
     client.from("permission_profile_features").select("instance_id, feature_key").in("profile_id", ids),
     client.from("permission_profile_instances").select("instance_id").in("profile_id", ids),
+    client.from("permission_profiles").select("id, is_full_access").in("id", ids),
   ]);
   return {
     features: (feats ?? []).map((r: any) => ({
@@ -26,12 +27,14 @@ async function profileGrantsFor(client: any, userId: string) {
       feature_key: r.feature_key as string,
     })),
     instances: (insts ?? []).map((r: any) => r.instance_id as string),
+    full_access: (profs ?? []).some((p: any) => p.is_full_access === true),
   };
 }
 
 type ProfileGrants = {
   features: { instance_id: string; feature_key: string }[];
   instances: string[];
+  full_access?: boolean;
 };
 
 function mergeAccess(
