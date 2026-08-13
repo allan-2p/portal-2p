@@ -1194,8 +1194,15 @@ type EditPayload = {
   regime_contratacao: Regime;
   organizacao: Org;
   is_external: boolean;
-
+  telefone: string | null;
+  cargo_tipo: string | null;
+  meta_mensal: number | null;
+  filter_scope: FilterScope;
+  sf_user_id: string | null;
+  ativo: boolean;
+  role?: AppRole;
 };
+
 
 function EditUserModal({
   row,
