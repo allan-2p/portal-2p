@@ -668,12 +668,22 @@ function CadastrosPage() {
                     <Linha rot="UF de destino" val={detalhe.uf} />
                   </Bloco>
 
-                  <Bloco titulo="Contato">
-                    <Linha rot="Responsável" val={[detalhe.contato_nome, detalhe.contato_cargo].filter(Boolean).join(" · ")} />
-                    <Linha rot="E-mail" val={detalhe.contato_email || detalhe.email} />
-                    <Linha rot="Telefone" val={detalhe.contato_telefone || detalhe.telefone} />
+                  <Bloco titulo="Contatos">
+                    {normalizarContatos(detalhe.contatos, {
+                      nome: detalhe.contato_nome, cargo: detalhe.contato_cargo,
+                      email: detalhe.contato_email, telefone: detalhe.contato_telefone,
+                    }).map((c, i) => (
+                      <div key={i} className="space-y-0.5">
+                        <Linha rot={TIPO_ROTULO[c.tipo]} val={[c.nome, c.cargo].filter(Boolean).join(" · ")} />
+                        <Linha rot="E-mail" val={c.emails.filter((v) => v.trim()).join(", ")} />
+                        <Linha rot="Telefone" val={c.telefones.filter((v) => v.trim()).join(", ")} />
+                      </div>
+                    ))}
+                    <Linha rot="E-mail da empresa" val={detalhe.email} />
+                    <Linha rot="Telefone da empresa" val={detalhe.telefone} />
                     <Linha rot="Site" val={detalhe.site} />
                   </Bloco>
+
 
                   <Bloco titulo="Endereço">
                     <Linha
