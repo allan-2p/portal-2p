@@ -57,6 +57,8 @@ import {
   type CpoState,
   textoDifalContribuinte,
 } from "@/lib/cpo";
+import { registrarConclusao } from "@/lib/cpo-conclusao-log";
+
 
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
 import { MoneyInput } from "@/components/money-input";
