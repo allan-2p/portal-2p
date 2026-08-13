@@ -135,7 +135,9 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         throw new Error("SAP: RFC listar_material não retornou materiais — sincronização abortada.");
       }
 
-      const { data: existentes } = await supabaseAdmin.from("sap_produtos").select("codigo, ativo");
+      const { data: existentes } = await supabaseAdmin
+        .from("sap_produtos")
+        .select("codigo, ativo, origem");
       const known = new Set((existentes ?? []).map((r: any) => r.codigo));
 
       const now = new Date().toISOString();
@@ -145,21 +147,29 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         tipo: classificarTipo(m.descricao),
         permissao: m.permissao,
         lista_preco: m.lista_preco,
-        ativo: true,
         sap_raw: m.raw as any,
         last_synced_at: now,
       }));
 
-      for (let i = 0; i < rows.length; i += 500) {
-        const chunk = rows.slice(i, i + 500);
-        const { error } = await supabaseAdmin.from("sap_produtos").upsert(chunk, { onConflict: "codigo" });
+      // Novos entram ativos; nos já existentes o SAP não sobrescreve o
+      // ativo/inativo definido pela moderação do portal.
+      const novos = rows.filter((r) => !known.has(r.codigo)).map((r) => ({ ...r, ativo: true, origem: "sap" }));
+      for (let i = 0; i < novos.length; i += 500) {
+        const { error } = await supabaseAdmin
+          .from("sap_produtos")
+          .upsert(novos.slice(i, i + 500), { onConflict: "codigo" });
+        if (error) throw new Error(error.message);
+      }
+      for (const r of rows.filter((x) => known.has(x.codigo))) {
+        const { error } = await supabaseAdmin.from("sap_produtos").update(r).eq("codigo", r.codigo);
         if (error) throw new Error(error.message);
       }
 
       // Merge: o que não veio mais do SAP fica inativo (sem apagar histórico).
+      // Produtos criados manualmente no portal não são afetados.
       const vindos = new Set(rows.map((r) => r.codigo));
       const orfaos = (existentes ?? [])
-        .filter((r: any) => r.ativo && !vindos.has(r.codigo))
+        .filter((r: any) => r.ativo && r.origem !== "manual" && !vindos.has(r.codigo))
         .map((r: any) => r.codigo as string);
       for (let i = 0; i < orfaos.length; i += 500) {
         const chunk = orfaos.slice(i, i + 500);
@@ -170,7 +180,8 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
       }
 
-      const inserted = rows.filter((r) => !known.has(r.codigo)).length;
+      const inserted = novos.length;
+
       const updated = rows.length - inserted;
       await finish({ status: "success", inserted_count: inserted, updated_count: updated });
       const { logIntegrationEvent } = await import("./integration-logs.server");
