@@ -200,7 +200,6 @@ function CadastrosPage() {
     const t = q.trim().toLowerCase();
     const tDoc = soDigitos(q);
     return clientes.filter((c) => {
-      if (fClasse !== "todas" && (c.classificacao || "C") !== fClasse) return false;
       if (fUf !== "todas" && c.uf !== fUf) return false;
       if (fStatus === "ativos" && !c.ativo) return false;
       if (fStatus === "inativos" && c.ativo) return false;
@@ -218,7 +217,6 @@ function CadastrosPage() {
   const ordenados = useMemo(() => {
     const val = (c: Cliente) => {
       switch (ordem) {
-        case "classificacao": return c.classificacao || "C";
         case "doc": return soDigitos(c.doc ?? "");
         case "fiscal": return c.contribuinte ? "1" : "0";
         case "cidade": return `${c.uf} ${c.cidade ?? ""}`;
@@ -239,14 +237,14 @@ function CadastrosPage() {
     [ordenados, paginaAtual, porPagina],
   );
 
-  useEffect(() => { setPagina(1); }, [q, fClasse, fUf, fStatus, fFiscal, porPagina, ordem, dir]);
+  useEffect(() => { setPagina(1); }, [q, fUf, fStatus, fFiscal, porPagina, ordem, dir]);
 
   const ufsDisponiveis = useMemo(
     () => Array.from(new Set(clientes.map((c) => c.uf).filter(Boolean))).sort(),
     [clientes],
   );
-  const filtrosAtivos = fClasse !== "todas" || fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || fVendedor !== "__all__" || q.trim() !== "";
-  const limparFiltros = () => { setQ(""); setFClasse("todas"); setFUf("todas"); setFStatus("ativos"); setFFiscal("todos"); };
+  const filtrosAtivos = fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || fVendedor !== "__all__" || q.trim() !== "";
+  const limparFiltros = () => { setQ(""); setFUf("todas"); setFStatus("ativos"); setFFiscal("todos"); };
 
   const ordenarPor = (k: OrdemKey) => {
     if (ordem === k) setDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -297,12 +295,6 @@ function CadastrosPage() {
                   </F>
                   <F label="Inscrição Estadual"><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
                   <F label="Inscrição Municipal"><Input value={form.im ?? ""} onChange={(e) => set("im", e.target.value)} /></F>
-                  <F label="Classificação">
-                    <Select value={form.classificacao || "C"} onValueChange={(v) => set("classificacao", v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{CLASSES.map((c) => <SelectItem key={c} value={c}>{CLASSE_INFO[c].label}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </F>
                   <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                     <div>
                       <div className="text-sm font-semibold">Cliente contribuinte do ICMS</div>
