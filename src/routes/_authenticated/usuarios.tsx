@@ -443,6 +443,7 @@ function PortalTable({
   onSfIdChange: (id: string, sf_user_id: string | null) => void;
   onRegimeChange: (id: string, regime: Regime) => void;
   onEdit: (row: Row) => void;
+  onDetail: (row: Row) => void;
 }) {
 
 
