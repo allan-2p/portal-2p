@@ -634,7 +634,7 @@ function PropostaCpoPage() {
         <div
           className={cn(
             "grid grid-cols-1 gap-5 items-start",
-            etapa === 2 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
+            etapa >= 2 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
           )}
         >
           {/* ENTRADAS */}
@@ -784,7 +784,7 @@ function PropostaCpoPage() {
               </div>
             ) : null}
 
-            {etapa === 2 ? (
+            {etapa >= 2 ? (
               <>
             {temProduto ? <Banner level={st.level} text={st.msg} /> : null}
 
@@ -1024,7 +1024,7 @@ function PropostaCpoPage() {
           </div>
 
           {/* PAINEL / DRE */}
-          {etapa === 2 ? (
+          {etapa >= 2 ? (
           <div className="space-y-4">
             <div className="glass rounded-2xl p-5 space-y-1.5">
               <h2 className="font-semibold mb-3">Impostos da proposta</h2>
