@@ -294,10 +294,21 @@ function CadastrosPage() {
 
 
 
-  const abrirNovo = () => { setEditId(null); setForm(vazio()); setOpen(true); };
+  const abrirNovo = () => { setEditId(null); setForm(vazio()); setTentouSalvar(false); setOpen(true); };
+  const tentarSalvar = () => {
+    setTentouSalvar(true);
+    const e = validarCampos(form);
+    const chaves = Object.keys(e) as CampoErro[];
+    if (chaves.length > 0) {
+      toast.error(`Corrija ${chaves.length} campo(s) para salvar.`);
+      document.getElementById(`campo-${chaves[0]}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    salvar.mutate();
+  };
   const abrirEdicao = (c: Cliente) => {
     const { id: _id, ...rest } = c;
-    setEditId(c.id); setForm(rest); setOpen(true);
+    setEditId(c.id); setForm(rest); setTentouSalvar(false); setOpen(true);
   };
 
   return (
