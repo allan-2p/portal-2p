@@ -435,51 +435,59 @@ function PropostaCpoPage() {
   }
 
 
+  // HTML do PDF derivado do estado atual: qualquer mudança em itens, frete,
+  // impostos, margem ou comissão reflete imediatamente na prévia e no download.
+  const pdfHtml = useMemo(
+    () =>
+      buildPropostaPdfHtml({
+        cliente: {
+          nome: state.nome,
+          doc: state.doc,
+          ie: state.ie,
+          email: state.email,
+          telefone: state.telefone,
+          uf: state.uf,
+          contribuinte: state.contribuinte,
+        },
+        itens: state.itens
+          .filter((i) => i.produtoId)
+          .map((i) => ({
+            codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
+            nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
+            qtd: i.qtd,
+            valor: i.valor,
+          })),
+        freteMod: state.freteMod,
+        freteValor: state.freteValor,
+        observacoes: state.observacoes,
+        impostos: {
+          ipiRate: config.ipi,
+          ipiValor: d.ipiValor,
+          icmsRate: d.icmsRate,
+          icms: d.icms,
+          pisCofinsRate: config.pis_cofins,
+          pisCofins: d.pisCofins,
+        },
+        totalNf: d.valorItens + state.freteValor,
+        valorTotal: d.valorTotalProposta,
+        valor: d.valor,
+        interno: {
+          mb: d.mb,
+          mbPct: d.mbPct,
+          comissao: d.comValor,
+          comissaoPct: d.comPct,
+        },
+      }),
+    [state, produtos, config, d],
+  );
+
   function montarPdfHtml() {
-    return buildPropostaPdfHtml({
-      cliente: {
-        nome: state.nome,
-        doc: state.doc,
-        ie: state.ie,
-        email: state.email,
-        telefone: state.telefone,
-        uf: state.uf,
-        contribuinte: state.contribuinte,
-      },
-      itens: state.itens
-        .filter((i) => i.produtoId)
-        .map((i) => ({
-          codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
-          nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
-          qtd: i.qtd,
-          valor: i.valor,
-        })),
-      freteMod: state.freteMod,
-      freteValor: state.freteValor,
-      observacoes: state.observacoes,
-      impostos: {
-        ipiRate: config.ipi,
-        ipiValor: d.ipiValor,
-        icmsRate: d.icmsRate,
-        icms: d.icms,
-        pisCofinsRate: config.pis_cofins,
-        pisCofins: d.pisCofins,
-      },
-      totalNf: d.valorItens + state.freteValor,
-      valorTotal: d.valorTotalProposta,
-      valor: d.valor,
-      interno: {
-        mb: d.mb,
-        mbPct: d.mbPct,
-        comissao: d.comValor,
-        comissaoPct: d.comPct,
-      },
-    });
+    return pdfHtml;
   }
 
   function abrirPreviewPdf() {
     if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de visualizar o PDF.");
-    setPreviewHtml(montarPdfHtml());
+    setPreviewAberto(true);
   }
 
   function exportarPdf() {
