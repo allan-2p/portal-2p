@@ -899,70 +899,30 @@ function PropostaCpoPage() {
           <div className="space-y-4">
             <div className="glass rounded-2xl p-5 space-y-1.5">
               <h2 className="font-semibold mb-3">Impostos da proposta</h2>
-              <DreRow k="Valor dos itens (com IPI)" v={fmtBRL(d.valorItens)} tone="neutral" />
               <DreRow
-                k="Valor do item (sem IPI)"
-                sub="Base fiscal — IPI removido conforme o NCM de cada item"
+                k="Valor dos itens"
+                sub="Valor total dos produtos sem IPI"
                 v={fmtBRL(d.valorItem)}
                 tone="neutral"
               />
               <DreRow
-                k={`ICMS na NF (${fmtPct(d.icmsRate)})`}
-                sub="Sempre a alíquota interestadual — o DIFAL nunca é somado ao ICMS"
-                v={`- ${fmtBRL(d.icms)}`}
-                tone="sub"
-              />
-              <DreRow
-                k="PIS/COFINS"
-                sub="Sobre valor do item menos ICMS"
-                v={`- ${fmtBRL(d.pisCofins)}`}
-                tone="sub"
-              />
-              {!state.contribuinte && d.difalAbs > 0 ? (
-                <DreRow
-                  k="DIFAL (custo no cabeçalho da NF)"
-                  sub={`Base ${fmtBRL(d.difalBase)} — carga interna ${fmtPct(d.aliqInterna)} menos ${fmtPct(d.inter)}`}
-                  v={`- ${fmtBRL(d.difalAbs)}`}
-                  tone="sub"
-                />
-              ) : null}
-
-              <div className="h-px bg-border my-3" />
-              <DreRow k="Receita líquida" v={fmtBRL(d.rl)} tone="neutral" />
-              <DreRow k="Custo total dos produtos" v={fmtBRL(d.custoTotal)} tone="neutral" />
-              <DreRow
-                k="CMV (custo ÷ receita líquida)"
-                sub={`Limite para orçar: ${fmtPct(config.cmv_max)}`}
-                v={fmtPct(d.cmv)}
-                tone={d.cmvExcedido ? "sub" : "neutral"}
-              />
-
-              <div className="h-px bg-border my-3" />
-              <DreRow k="IPI destacado" v={fmtBRL(d.ipiValor)} tone="neutral" />
-              <DreRow k="ICMS de origem (interestadual)" v={fmtBRL(d.origem)} tone="neutral" />
-              <DreRow
-                k={state.contribuinte ? "DIFAL estimado do destinatário" : "DIFAL absorvido pela 2P"}
-                v={fmtBRL(state.contribuinte ? d.difalEstimado : d.difalAbs)}
+                k="IPI"
+                sub="Alíquota destacada conforme NCM de cada item"
+                v={fmtPct(d.ipiValor > 0 && d.valorItem > 0 ? d.ipiValor / d.valorItem : 0)}
                 tone="neutral"
               />
               <DreRow
-                k="Alíquota interna da UF (+FCP)"
-                sub={uf ? `${uf.nome} — interna ${fmtPct(uf.aliq_interna)} · FCP ${fmtPct(uf.fcp)}` : undefined}
-                v={fmtPct(d.aliqInterna)}
+                k="Valor dos itens (com IPI)"
+                sub="Base de cálculo com IPI incluído"
+                v={fmtBRL(d.valorItens)}
                 tone="neutral"
               />
-
-              {state.contribuinte && d.difalEstimado > 0 ? (
-                <p className="text-[11px] leading-relaxed text-muted-foreground pt-3 border-t border-border mt-3">
-                  {textoDifalContribuinte({
-                    ufNome: uf?.nome ?? state.uf,
-                    aliqInterna: uf?.aliq_interna ?? 0,
-                    fcp: uf?.fcp ?? 0,
-                    valor: d.difalEstimado,
-                    temIe: !!state.ie.trim(),
-                  })}
-                </p>
-              ) : null}
+              <DreRow
+                k="IPI destacado"
+                sub="Valor do IPI destacado na NF"
+                v={fmtBRL(d.ipiValor)}
+                tone="neutral"
+              />
             </div>
 
 
