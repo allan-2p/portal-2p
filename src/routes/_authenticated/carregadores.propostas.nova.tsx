@@ -294,6 +294,30 @@ function PropostaCpoPage() {
     toast.info("Dados do cliente atualizados conforme o cadastro atual.");
   }, [clientesQ.data, editId, dupId, state.doc, state.nome, state.telefone, state.email, state.ie, state.uf, state.contribuinte]);
 
+  // Aviso visual quando o cadastro do cliente foi atualizado depois da última edição da proposta
+  const avisoClienteAtualizado = useMemo(() => {
+    if (!editId || !state.doc || !propostaUpdatedAt || !clientesQ.data?.length) return null;
+    const soDigitos = (v?: string | null) => (v ?? "").replace(/\D/g, "");
+    const atual = clientesQ.data.find(
+      (c) => soDigitos(c.cliente_doc) && soDigitos(c.cliente_doc) === soDigitos(state.doc),
+    );
+    if (!atual?.cliente_updated_at) return null;
+    const dtCliente = new Date(atual.cliente_updated_at).getTime();
+    const dtProposta = new Date(propostaUpdatedAt).getTime();
+    if (dtCliente > dtProposta) {
+      return {
+        data: atual.cliente_updated_at,
+        formatada: new Date(atual.cliente_updated_at).toLocaleString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+    }
+    return null;
+  }, [editId, state.doc, propostaUpdatedAt, clientesQ.data]);
 
 
 
