@@ -223,6 +223,11 @@ function HistoricoCpoPage() {
                             <Copy className="h-4 w-4" />
                           </Link>
                         </Button>
+                        <Button variant="ghost" size="icon" aria-label="Auditoria de cálculo" asChild>
+                          <Link to="/carregadores/propostas/auditoria" search={{ id: r.id }}>
+                            <Calculator className="h-4 w-4" />
+                          </Link>
+                        </Button>
                         <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => excluir(r.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
