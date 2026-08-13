@@ -1266,7 +1266,7 @@ function PropostaCpoPage() {
         </Dialog>
 
         {/* Revisão final antes de salvar / concluir */}
-        <Dialog open={revisao !== null} onOpenChange={(o) => !o && setRevisao(null)}>
+        <Dialog open={revisao !== null} onOpenChange={(o) => !saving && !o && setRevisao(null)}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>
@@ -1341,19 +1341,22 @@ function PropostaCpoPage() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setRevisao(null)}>
+              <Button variant="outline" onClick={() => setRevisao(null)} disabled={saving}>
                 Voltar e editar
               </Button>
               <Button onClick={confirmarRevisao} disabled={saving} className="gap-2">
-                {revisao === "concluir" ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" /> Confirmar pedido
-                  </>
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : revisao === "concluir" ? (
+                  <CheckCircle2 className="h-4 w-4" />
                 ) : (
-                  <>
-                    <Save className="h-4 w-4" /> Confirmar e salvar
-                  </>
+                  <Save className="h-4 w-4" />
                 )}
+                {saving
+                  ? "Processando..."
+                  : revisao === "concluir"
+                    ? "Confirmar pedido"
+                    : "Confirmar e salvar"}
               </Button>
             </DialogFooter>
           </DialogContent>
