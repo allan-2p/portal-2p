@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { recordModeration } from "@/lib/moderation-audit.server";
 
 // ---- Metas de Faturamento (leitura para dashboards, respeita RLS) ---- //
 
@@ -94,6 +95,14 @@ export const setNewAbGoal = createServerFn({ method: "POST" })
       { onConflict: "sf_user_id,year,quarter" },
     );
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: "atualizou",
+      target: data.sf_user_id,
+      summary: `Meta de Novos A+B do ${data.quarter}T/${data.year} definida em ${data.goal}`,
+      details: { meta: data.goal, ano: data.year, trimestre: data.quarter },
+    });
     return { ok: true };
   });
 
@@ -138,6 +147,14 @@ export const setRetentionGoal = createServerFn({ method: "POST" })
       { onConflict: "sf_user_id,year,quarter" },
     );
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: "atualizou",
+      target: data.sf_user_id,
+      summary: `Meta de Retenção do ${data.quarter}T/${data.year} definida em ${data.goal}`,
+      details: { meta: data.goal, ano: data.year, trimestre: data.quarter },
+    });
     return { ok: true };
   });
 
@@ -183,6 +200,14 @@ export const setGroupKpiGoal = createServerFn({ method: "POST" })
       .update({ goal: data.goal, updated_at: new Date().toISOString() })
       .eq("kpi_key", data.kpi_key);
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: "atualizou",
+      target: data.kpi_key,
+      summary: `Meta do grupo "${data.kpi_key}" definida em ${data.goal}`,
+      details: { meta: data.goal },
+    });
     return { ok: true };
   });
 
@@ -228,6 +253,13 @@ export const setBonusGoal = createServerFn({ method: "POST" })
         .delete()
         .eq("sf_user_id", data.sf_user_id);
       if (error) throw new Error(error.message);
+      await recordModeration(context, {
+        area: "metas",
+        instanceId: "solar",
+        action: "removeu",
+        target: data.sf_user_id,
+        summary: "Meta bônus removida",
+      });
       return { ok: true };
     }
     const { error } = await context.supabase.from("salesperson_bonus_goals").upsert(
