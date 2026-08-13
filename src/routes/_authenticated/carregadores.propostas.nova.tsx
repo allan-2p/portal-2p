@@ -1189,7 +1189,7 @@ function PropostaCpoPage() {
                 <FileDown className="h-4 w-4" /> Baixar PDF
               </Button>
               <div className="hidden sm:block flex-1" />
-              <Button onClick={() => pedirRevisao("concluir")} disabled={saving} className="w-full gap-2 sm:w-auto">
+              <Button onClick={() => setConfirmarConclusao(true)} disabled={saving} className="w-full gap-2 sm:w-auto">
                 <CheckCircle2 className="h-4 w-4" /> Concluir pedido
               </Button>
             </div>
