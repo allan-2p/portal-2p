@@ -377,6 +377,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
 
         </nav>
+        )}
 
         <button
           onClick={toggleCollapsed}
