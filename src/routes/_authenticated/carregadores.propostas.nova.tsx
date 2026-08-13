@@ -98,6 +98,7 @@ type ClienteCadastro = {
   cliente_ie: string | null;
   uf: string;
   contribuinte: boolean;
+  cliente_updated_at: string | null;
 };
 
 
@@ -147,6 +148,7 @@ function PropostaCpoPage() {
   const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   const [previewAberto, setPreviewAberto] = useState(false);
+  const [propostaUpdatedAt, setPropostaUpdatedAt] = useState<string | null>(null);
   const submitLock = useRef(false);
   const numeroRef = useRef<string | null>(null);
   const carregado = useRef(false);
@@ -217,6 +219,7 @@ function PropostaCpoPage() {
         itens: itens.length ? itens : [novoItem()],
       });
       setNumeroAtual(editId ? data.numero : null);
+      setPropostaUpdatedAt((data.updated_at as string) ?? null);
       setEtapa(2);
       toast.success(editId ? `Proposta ${data.numero ?? ""} carregada.` : "Proposta duplicada — salve para gerar um novo número.");
     })();
@@ -245,6 +248,7 @@ function PropostaCpoPage() {
           cliente_ie: (c["ie"] as string) ?? null,
           uf: (c["uf"] as string) ?? "",
           contribuinte: c["contribuinte"] !== false,
+          cliente_updated_at: (c["updated_at"] as string) ?? null,
         }));
       return lista.sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR"));
 
@@ -290,6 +294,30 @@ function PropostaCpoPage() {
     toast.info("Dados do cliente atualizados conforme o cadastro atual.");
   }, [clientesQ.data, editId, dupId, state.doc, state.nome, state.telefone, state.email, state.ie, state.uf, state.contribuinte]);
 
+  // Aviso visual quando o cadastro do cliente foi atualizado depois da última edição da proposta
+  const avisoClienteAtualizado = useMemo(() => {
+    if (!editId || !state.doc || !propostaUpdatedAt || !clientesQ.data?.length) return null;
+    const soDigitos = (v?: string | null) => (v ?? "").replace(/\D/g, "");
+    const atual = clientesQ.data.find(
+      (c) => soDigitos(c.cliente_doc) && soDigitos(c.cliente_doc) === soDigitos(state.doc),
+    );
+    if (!atual?.cliente_updated_at) return null;
+    const dtCliente = new Date(atual.cliente_updated_at).getTime();
+    const dtProposta = new Date(propostaUpdatedAt).getTime();
+    if (dtCliente > dtProposta) {
+      return {
+        data: atual.cliente_updated_at,
+        formatada: new Date(atual.cliente_updated_at).toLocaleString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+    }
+    return null;
+  }, [editId, state.doc, propostaUpdatedAt, clientesQ.data]);
 
 
 
@@ -767,6 +795,23 @@ function PropostaCpoPage() {
             />
           </div>
         </div>
+
+        {avisoClienteAtualizado ? (
+          <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm flex items-start gap-3">
+            <Info className="h-4 w-4 text-sky-600 dark:text-sky-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-sky-700 dark:text-sky-300">
+                Cadastro do cliente atualizado
+              </p>
+              <p className="text-sky-700/80 dark:text-sky-300/80">
+                Os dados deste cliente foram sincronizados automaticamente com a versão mais
+                recente do cadastro (atualizado em{" "}
+                <span className="font-medium">{avisoClienteAtualizado.formatada}</span>). Revise
+                as informações fiscais antes de finalizar.
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         <div
           className={cn(
