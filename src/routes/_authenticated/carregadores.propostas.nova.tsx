@@ -810,7 +810,7 @@ function PropostaCpoPage() {
               </span>
             </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Cálculo fiscal completo da proposta em tempo real.
+              Cálculo fiscal em tempo real.
             </p>
 
             {autosaveAt ? (
