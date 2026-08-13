@@ -24,6 +24,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCpoUfs } from "@/hooks/use-cpo";
+import {
+  ContatosEditor, contatosPadrao, normalizarContatos, validarContatos, rotuloErroContato,
+  type Contato,
+} from "@/components/contatos-editor";
+
 
 /** Destaca o trecho correspondente à busca (texto ou dígitos de CNPJ/CPF). */
 function Marca({ texto, termo }: { texto?: string | null; termo: string }) {
