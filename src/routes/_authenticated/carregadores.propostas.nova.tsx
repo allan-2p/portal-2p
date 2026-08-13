@@ -1232,7 +1232,7 @@ function PropostaCpoPage() {
         </Dialog>
 
         {/* Confirmação antes de concluir o pedido */}
-        <Dialog open={confirmarConclusao} onOpenChange={(o) => !o && setConfirmarConclusao(false)}>
+        <Dialog open={confirmarConclusao} onOpenChange={(o) => !saving && !o && setConfirmarConclusao(false)}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -1247,7 +1247,7 @@ function PropostaCpoPage() {
               Deseja continuar e revisar os dados antes de finalizar?
             </p>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setConfirmarConclusao(false)}>
+              <Button variant="outline" onClick={() => setConfirmarConclusao(false)} disabled={saving}>
                 Cancelar
               </Button>
               <Button
@@ -1255,9 +1255,11 @@ function PropostaCpoPage() {
                   setConfirmarConclusao(false);
                   pedirRevisao("concluir");
                 }}
+                disabled={saving}
                 className="gap-2"
               >
-                <CheckCircle2 className="h-4 w-4" /> Sim, revisar e concluir
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                Sim, revisar e concluir
               </Button>
             </DialogFooter>
           </DialogContent>
