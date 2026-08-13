@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listSapProdutos, listSapSyncRuns, syncSapProdutos } from "@/lib/sap-produtos.functions";
-import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2 } from "lucide-react";
+import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download } from "lucide-react";
 import {
   classificarDetalhado,
   validarRegras,
@@ -133,10 +133,35 @@ function ProdutosPage() {
   }, [produtos, q, tipo, permissao, status, soDivergentes]);
 
 
+  const exportXlsx = async () => {
+    if (filtered.length === 0) {
+      toast.error("Nenhum produto para exportar com os filtros atuais.");
+      return;
+    }
+    const XLSX = await import("xlsx");
+    const linhas = filtered.map((p) => ({
+      Código: p.codigo,
+      Descrição: p.descricao,
+      Tipo: TIPO_LABELS[p.tipo] ?? p.tipo,
+      Permissão: p.permissao ?? "",
+      "Lista de preço": p.lista_preco ?? "",
+      Status: p.ativo ? "Ativo" : "Inativo",
+      "Última sincronização": p.last_synced_at ? new Date(p.last_synced_at).toLocaleString("pt-BR") : "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(linhas);
+    ws["!cols"] = [{ wch: 14 }, { wch: 60 }, { wch: 20 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 20 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Produtos SAP");
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `produtos-sap-${stamp}.xlsx`);
+    toast.success(`${filtered.length} produto(s) exportado(s).`);
+  };
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const current = Math.min(page, totalPages - 1);
   const rows = filtered.slice(current * pageSize, current * pageSize + pageSize);
   const lastRun = data?.lastRun ?? null;
+
 
   return (
     <AppLayout>
@@ -170,6 +195,15 @@ function ProdutosPage() {
               Histórico
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={exportXlsx}
+              disabled={isLoading || filtered.length === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Excel
+            </Button>
+            <Button
               variant={audit ? "default" : "outline"}
               size="sm"
               onClick={() => setAudit((v) => !v)}
@@ -177,6 +211,7 @@ function ProdutosPage() {
               <ShieldCheck className="h-4 w-4 mr-2" />
               Auditoria
             </Button>
+
             <Button size="sm" onClick={() => syncMut.mutate()} disabled={syncMut.isPending || errosRegras.length > 0}>
               {syncMut.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
