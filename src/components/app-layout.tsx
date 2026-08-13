@@ -152,7 +152,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         )}
       >
         <div className={cn("flex items-center gap-3 py-6", collapsed ? "px-3 justify-center" : "px-5")}>
-          <img src={brand.logo} alt={brand.label} className="h-9 w-auto rounded shrink-0 object-contain" />
+          <img src={brand.logo} alt={brand.label} className={cn("h-9 w-auto rounded shrink-0 object-contain", isAdminArea && "dark:invert")} />
           {!collapsed && (
             <div className="min-w-0">
               <div className="font-display font-bold text-base leading-none truncate">Portal 2P</div>
@@ -433,7 +433,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-lg">
           <div className="flex items-center gap-4 px-6 h-16">
             <div className="md:hidden flex items-center gap-2">
-              <img src={brand.logo} alt={brand.label} className="h-7 w-auto rounded object-contain" />
+              <img src={brand.logo} alt={brand.label} className={cn("h-7 w-auto rounded object-contain", isGroupAdminPath(pathname) && "dark:invert")} />
               <span className="font-display font-bold">Portal 2P</span>
             </div>
             <div className="hidden md:flex flex-1" />
