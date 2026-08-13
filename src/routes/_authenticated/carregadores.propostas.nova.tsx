@@ -57,6 +57,7 @@ import {
 
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
 import { MoneyInput } from "@/components/money-input";
+import { CpoCatalogoModelos } from "@/components/cpo-catalogo-modelos";
 
 import { cn } from "@/lib/utils";
 
