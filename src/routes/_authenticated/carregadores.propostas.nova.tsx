@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -150,6 +150,25 @@ function PropostaCpoPage() {
   const submitLock = useRef(false);
   const numeroRef = useRef<string | null>(null);
   const carregado = useRef(false);
+
+  // Bloqueia navegação interna enquanto a proposta está sendo salva/concluída
+  useBlocker({
+    shouldBlockFn: () => saving,
+    withResolver: false,
+    enableBeforeUnload: false,
+  });
+
+  // Alerta nativo do navegador (refresh, fechar aba, voltar) durante o processamento
+  useEffect(() => {
+    if (!saving) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [saving]);
 
   // Limpa qualquer rascunho local antigo ao abrir uma nova proposta
   useEffect(() => {
