@@ -3,7 +3,15 @@
  * Nestas rotas o portal usa tema neutro (preto/branco), sem identidade de instância.
  * Fora delas, cada instância mantém seu próprio tema.
  */
-const GROUP_PREFIXES = ["/admin", "/integracoes", "/usuarios", "/perfil"];
+const GROUP_PREFIXES = [
+  "/admin",
+  "/integracoes",
+  "/usuarios",
+  "/perfil",
+  "/carregadores/produtos",
+  "/carregadores/comissoes",
+  "/carregadores/regras",
+];
 
 export function isGroupAdminPath(pathname: string): boolean {
   return GROUP_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
