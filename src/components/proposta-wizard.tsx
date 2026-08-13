@@ -536,12 +536,22 @@ export function PropostaWizard({
         </Section>
       )}
 
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={goBack}>
-          {step === 0 ? "Cancelar" : "Voltar"}
-        </Button>
-        <Button onClick={goNext}>{step === STEPS.length - 1 ? "Salvar proposta" : "Próximo"}</Button>
-      </div>
+      <WizardActionBar
+        step={step + 1}
+        totalSteps={STEPS.length}
+        stepLabel={STEPS[step]}
+        onBack={goBack}
+        primary={{
+          label: step === STEPS.length - 1 ? "Salvar proposta" : "Próximo",
+          onClick: goNext,
+          icon:
+            step === STEPS.length - 1 ? (
+              <Save className="h-4 w-4" />
+            ) : (
+              <ArrowRight className="h-4 w-4" />
+            ),
+        }}
+      />
     </div>
   );
 }
