@@ -84,6 +84,16 @@ export async function findClienteByDoc(doc: string): Promise<
   return out;
 }
 
+/** Busca um cliente pelo id na instância indicada. */
+export async function getClienteById(
+  instance: ClientesInstance,
+  id: string,
+): Promise<ClienteRow | null> {
+  const params = new URLSearchParams({ select: SELECT, id: `eq.${id}`, limit: "1" });
+  const rows = (await rest(instance, `clientes?${params}`)) ?? [];
+  return rows[0] ?? null;
+}
+
 export async function insertCliente(
   instance: ClientesInstance,
   payload: Record<string, any>,

@@ -5,6 +5,28 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const instanciaSchema = z.enum(["solar", "carregadores"]);
 const docSchema = z.string().min(11).max(20);
 
+/**
+ * Garante que o usuário é dono do cadastro (created_by) ou administrador.
+ * A base de clientes é externa e acessada com chave de serviço, então a
+ * checagem de propriedade precisa acontecer aqui no servidor.
+ */
+async function assertPodeAlterarCliente(
+  context: { supabase: any; userId: string },
+  instancia: "solar" | "carregadores",
+  id: string,
+) {
+  const db = await import("./clientes-db.server");
+  const atual = await db.getClienteById(instancia, id);
+  if (!atual) throw new Error("Cadastro não encontrado.");
+  const dono = (atual["created_by"] as string | null) ?? null;
+  if (dono && dono === context.userId) return atual;
+  const { data: isAdmin } = await context.supabase.rpc("is_admin");
+  if (!isAdmin) {
+    throw new Error("Você não tem permissão para alterar este cadastro.");
+  }
+  return atual;
+}
+
 /** Consulta a tabela `clientes` da instância. */
 export const listClientesFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -143,6 +165,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
+      await assertPodeAlterarCliente(context as any, data.instancia, data.id);
       const row = await db.updateCliente(data.instancia, data.id, payload);
       return { id: row?.["id"] ?? data.id };
     }
@@ -160,9 +183,26 @@ export const excluirClienteFn = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({ instancia: instanciaSchema, id: z.string().uuid() }).parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await import("./clientes-db.server");
+    const atual = await assertPodeAlterarCliente(context as any, data.instancia, data.id);
     await db.deleteCliente(data.instancia, data.id);
+    try {
+      const { recordModeration } = await import("./moderation-audit.server");
+      await recordModeration(
+        { supabase: context.supabase, userId: context.userId },
+        {
+          area: "clientes",
+          instanceId: data.instancia,
+          action: "delete",
+          target: String(atual?.["razao_social"] ?? data.id),
+          summary: `Cadastro de cliente excluído (${atual?.["doc"] ?? data.id})`,
+          details: { id: data.id, instancia: data.instancia },
+        },
+      );
+    } catch (err) {
+      console.error("[clientes] falha ao registrar auditoria de exclusão", err);
+    }
     return { ok: true };
   });
 
