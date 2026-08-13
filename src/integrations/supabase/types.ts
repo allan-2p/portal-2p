@@ -52,7 +52,6 @@ export type Database = {
           email: string | null
           id: string
           ie: string | null
-          im: string | null
           logradouro: string | null
           nome_fantasia: string | null
           numero: string | null
@@ -84,7 +83,6 @@ export type Database = {
           email?: string | null
           id?: string
           ie?: string | null
-          im?: string | null
           logradouro?: string | null
           nome_fantasia?: string | null
           numero?: string | null
@@ -116,7 +114,6 @@ export type Database = {
           email?: string | null
           id?: string
           ie?: string | null
-          im?: string | null
           logradouro?: string | null
           nome_fantasia?: string | null
           numero?: string | null
@@ -128,6 +125,33 @@ export type Database = {
           transportadora?: string | null
           uf?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      cpo_clientes_im_legado: {
+        Row: {
+          archived_at: string
+          cliente_id: string
+          doc: string | null
+          id: string
+          im: string
+          razao_social: string | null
+        }
+        Insert: {
+          archived_at?: string
+          cliente_id: string
+          doc?: string | null
+          id?: string
+          im: string
+          razao_social?: string | null
+        }
+        Update: {
+          archived_at?: string
+          cliente_id?: string
+          doc?: string | null
+          id?: string
+          im?: string
+          razao_social?: string | null
         }
         Relationships: []
       }
