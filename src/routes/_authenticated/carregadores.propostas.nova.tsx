@@ -275,14 +275,6 @@ function PropostaCpoPage() {
   const temProduto = state.itens.some((i) => i.produtoId);
   const podeSalvar = clienteOk && temProduto && !abaixoPolitica && !d.cmvExcedido;
 
-  function irParaEtapa2() {
-    if (!clienteOk) {
-      setTentouAvancar(true);
-      toast.error(errosCliente[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
-      return;
-    }
-    setEtapa(2);
-  }
 
   function irParaEtapa(alvo: 1 | 2 | 3 | 4) {
     if (alvo === 1) return setEtapa(1);
