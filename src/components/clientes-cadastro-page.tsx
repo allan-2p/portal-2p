@@ -156,6 +156,16 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const enriquecer = useServerFn(enriquecerCnpjFn);
   const salvarFn = useServerFn(salvarClienteFn);
   const excluirFn = useServerFn(excluirClienteFn);
+  const migrarFn = useServerFn(migrarCpoClientesFn);
+  const migrar = useMutation({
+    mutationFn: () => migrarFn(),
+    onSuccess: (r) => {
+      toast.success(`${r.migrados} cadastro(s) migrado(s) de ${r.total}.`);
+      qc.invalidateQueries({ queryKey: ["clientes", "carregadores"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha na migração."),
+  });
+
 
   const [q, setQ] = useState("");
   const [fUf, setFUf] = useState("todas");
