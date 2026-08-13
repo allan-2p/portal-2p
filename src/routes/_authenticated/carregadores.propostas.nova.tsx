@@ -598,7 +598,8 @@ function PropostaCpoPage() {
     if (d.cmvExcedido)
       return toast.error(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação especial da diretoria.`);
     submitLock.current = true;
-    setSaving(true);
+    // Quem chama concluirPedido já setou saving e status; evita piscar
+    if (!saving) setSaving(true);
     try {
       const { data: userRes } = await supabase.auth.getUser();
       // Número idempotente: reenvios reutilizam o mesmo número (índice único no banco)
