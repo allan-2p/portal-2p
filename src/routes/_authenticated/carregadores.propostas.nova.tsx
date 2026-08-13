@@ -591,17 +591,6 @@ function PropostaCpoPage() {
               </p>
             ) : null}
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
-              Voltar
-            </Button>
-            <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2} className="gap-2">
-              Próximo
-            </Button>
-            <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2">
-              <Save className="h-4 w-4" /> Salvar proposta
-            </Button>
-          </div>
 
         </div>
 
