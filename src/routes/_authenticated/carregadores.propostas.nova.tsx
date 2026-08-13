@@ -29,7 +29,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Check, CheckCircle2, ChevronsUpDown, FileDown, Info, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
+import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -140,6 +140,7 @@ function PropostaCpoPage() {
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
   const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const carregado = useRef(false);
 
   // Limpa qualquer rascunho local antigo ao abrir uma nova proposta
@@ -424,9 +425,8 @@ function PropostaCpoPage() {
   }
 
 
-  function exportarPdf() {
-    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de exportar o PDF.");
-    const html = buildPropostaPdfHtml({
+  function montarPdfHtml() {
+    return buildPropostaPdfHtml({
       cliente: {
         nome: state.nome,
         doc: state.doc,
@@ -465,6 +465,16 @@ function PropostaCpoPage() {
         comissaoPct: d.comPct,
       },
     });
+  }
+
+  function abrirPreviewPdf() {
+    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de visualizar o PDF.");
+    setPreviewHtml(montarPdfHtml());
+  }
+
+  function exportarPdf() {
+    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de exportar o PDF.");
+    const html = montarPdfHtml();
     const w = window.open("", "_blank");
     if (!w) return toast.error("Permita pop-ups para exportar o PDF.");
     w.document.write(html);
@@ -1170,6 +1180,9 @@ function PropostaCpoPage() {
               <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2">
                 <Save className="h-4 w-4" /> Salvar proposta
               </Button>
+              <Button variant="outline" onClick={abrirPreviewPdf} disabled={!podeFechar} className="gap-2">
+                <Eye className="h-4 w-4" /> Prévia do PDF
+              </Button>
               <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar} className="gap-2">
                 <FileDown className="h-4 w-4" /> Baixar PDF
               </Button>
@@ -1180,6 +1193,39 @@ function PropostaCpoPage() {
             </div>
           </div>
         </div>
+
+        {/* Prévia do PDF atualizado */}
+        <Dialog open={previewHtml !== null} onOpenChange={(o) => !o && setPreviewHtml(null)}>
+          <DialogContent className="max-w-5xl">
+            <DialogHeader>
+              <DialogTitle>Prévia do PDF da proposta</DialogTitle>
+              <DialogDescription>
+                Documento gerado com os dados atuais. Revise antes de baixar ou concluir o pedido.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="rounded-xl border border-border overflow-hidden bg-white">
+              <iframe
+                title="Prévia do PDF da proposta"
+                srcDoc={previewHtml ?? ""}
+                className="w-full h-[65vh]"
+              />
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setPreviewHtml(null)}>
+                Continuar editando
+              </Button>
+              <Button
+                onClick={() => {
+                  setPreviewHtml(null);
+                  exportarPdf();
+                }}
+                className="gap-2"
+              >
+                <FileDown className="h-4 w-4" /> Baixar PDF
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Revisão final antes de salvar / concluir */}
         <Dialog open={revisao !== null} onOpenChange={(o) => !o && setRevisao(null)}>
