@@ -53,7 +53,6 @@ export type Cliente = {
   porte: string | null;
   situacao_cadastral: string | null;
   data_abertura: string | null;
-  capital_social: number | null;
   cnae_principal_codigo: string | null;
   cnae_principal_descricao: string | null;
   cnaes_secundarios: Cnae[];
@@ -86,7 +85,7 @@ const vazio = (): Form => ({
   razao_social: "", nome_fantasia: "", doc: "", ie: "", ie_situacao: null,
   suframa: null, suframa_situacao: null, contribuinte: false,
   regime_tributario: "Simples Nacional", natureza_juridica: null, porte: null,
-  situacao_cadastral: null, data_abertura: null, capital_social: null,
+  situacao_cadastral: null, data_abertura: null,
   cnae_principal_codigo: null, cnae_principal_descricao: null, cnaes_secundarios: [],
   email: "", telefone: "", site: "",
   contatos: contatosPadrao(),
@@ -180,6 +179,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [form, setForm] = useState<Form>(vazio());
   const [detalhe, setDetalhe] = useState<Cliente | null>(null);
   const [tentouSalvar, setTentouSalvar] = useState(false);
+  const [bloqueados, setBloqueados] = useState<Set<keyof Form>>(new Set());
 
   const errosAtuais = useMemo(() => validarCampos(form), [form]);
   const erros: Erros = tentouSalvar ? errosAtuais : {};
@@ -215,7 +215,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       setDuplicado([]);
       const e = r.enriquecimento;
       const base = vazio();
-      setForm({
+      const proximo: Form = {
         ...base,
         doc: mascaraDoc(r.doc),
         ...(e
@@ -231,7 +231,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               porte: e.porte,
               situacao_cadastral: e.situacao_cadastral,
               data_abertura: e.data_abertura,
-              capital_social: e.capital_social,
               cnae_principal_codigo: e.cnae_principal?.codigo ?? null,
               cnae_principal_descricao: e.cnae_principal?.descricao ?? null,
               cnaes_secundarios: e.cnaes_secundarios ?? [],
@@ -247,7 +246,22 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               municipio_ibge: e.municipio_ibge,
             }
           : {}),
-      });
+      };
+      setForm(proximo);
+      const bloq = new Set<keyof Form>();
+      if (e?.fontes?.length) {
+        // Campos oficiais da Receita/CNPJá não devem ser editados após enriquecimento.
+        if (e.razao_social) bloq.add("razao_social");
+        if (e.nome_fantasia) bloq.add("nome_fantasia");
+        bloq.add("doc");
+        if (e.natureza_juridica) bloq.add("natureza_juridica");
+        if (e.porte) bloq.add("porte");
+        if (e.situacao_cadastral) bloq.add("situacao_cadastral");
+        if (e.data_abertura) bloq.add("data_abertura");
+        if (e.cnae_principal?.codigo) bloq.add("cnae_principal_codigo");
+        if (e.cnaes_secundarios?.length) bloq.add("cnaes_secundarios");
+      }
+      setBloqueados(bloq);
       setFontes(e?.fontes ?? []);
       setAvisos(e?.avisos ?? []);
       setEtapa("formulario");
@@ -268,7 +282,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             doc: soDigitos(p.doc),
             cnaes_secundarios: p.cnaes_secundarios ?? [],
             contatos: p.contatos ?? [],
-            capital_social: p.capital_social ?? null,
           } as never,
         },
       });
@@ -337,7 +350,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   function fechar() {
     setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
-    setFontes([]); setAvisos([]);
+    setFontes([]); setAvisos([]); setBloqueados(new Set());
   }
   const abrirNovo = () => { fechar(); setOpen(true); };
   const abrirEdicao = (c: Cliente) => {
@@ -353,7 +366,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         email: c.contato_email, telefone: c.contato_telefone,
       }),
     });
-    setTentouSalvar(false); setFontes([]); setAvisos([]);
+    setTentouSalvar(false); setFontes([]); setAvisos([]); setBloqueados(new Set());
     setEtapa("formulario"); setOpen(true);
   };
   const focarCampo = (campo: string) => {
@@ -522,13 +535,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
               <Section title="Dados da empresa">
                 <F label="Razão social *" id="campo-razao_social" error={erros.razao_social}>
-                  <Input value={form.razao_social} onChange={(e) => set("razao_social", e.target.value)} />
+                  <Input value={form.razao_social} onChange={(e) => set("razao_social", e.target.value)} disabled={bloqueados.has("razao_social")} />
                 </F>
                 <F label="Nome fantasia">
-                  <Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} />
+                  <Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} disabled={bloqueados.has("nome_fantasia")} />
                 </F>
                 <F label="CNPJ / CPF *" id="campo-doc" error={erros.doc}>
-                  <Input value={form.doc ?? ""} onChange={(e) => set("doc", mascaraDoc(e.target.value))} disabled={!editId} />
+                  <Input value={form.doc ?? ""} onChange={(e) => set("doc", mascaraDoc(e.target.value))} disabled />
                 </F>
                 <F label="Regime tributário">
                   <Select value={form.regime_tributario ?? ""} onValueChange={(v) => set("regime_tributario", v)}>
@@ -536,16 +549,10 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <SelectContent>{REGIMES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                   </Select>
                 </F>
-                <F label="Natureza jurídica"><Input value={form.natureza_juridica ?? ""} onChange={(e) => set("natureza_juridica", e.target.value)} /></F>
-                <F label="Porte"><Input value={form.porte ?? ""} onChange={(e) => set("porte", e.target.value)} /></F>
-                <F label="Situação cadastral"><Input value={form.situacao_cadastral ?? ""} onChange={(e) => set("situacao_cadastral", e.target.value)} /></F>
-                <F label="Data de abertura"><Input value={form.data_abertura ?? ""} onChange={(e) => set("data_abertura", e.target.value)} placeholder="AAAA-MM-DD" /></F>
-                <F label="Capital social">
-                  <Input
-                    value={form.capital_social == null ? "" : String(form.capital_social)}
-                    onChange={(e) => set("capital_social", e.target.value ? Number(soDigitos(e.target.value)) : null)}
-                  />
-                </F>
+                <F label="Natureza jurídica"><Input value={form.natureza_juridica ?? ""} onChange={(e) => set("natureza_juridica", e.target.value)} disabled={bloqueados.has("natureza_juridica")} /></F>
+                <F label="Porte"><Input value={form.porte ?? ""} onChange={(e) => set("porte", e.target.value)} disabled={bloqueados.has("porte")} /></F>
+                <F label="Situação cadastral"><Input value={form.situacao_cadastral ?? ""} onChange={(e) => set("situacao_cadastral", e.target.value)} disabled={bloqueados.has("situacao_cadastral")} /></F>
+                <F label="Data de abertura"><Input value={form.data_abertura ?? ""} onChange={(e) => set("data_abertura", e.target.value)} placeholder="AAAA-MM-DD" disabled={bloqueados.has("data_abertura")} /></F>
               </Section>
 
               <Section title="Situação fiscal">
