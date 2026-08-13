@@ -526,14 +526,26 @@ function PropostaCpoPage() {
     setConfirmarConclusao(true);
   }
 
-  // Abre a revisão final antes de salvar/enviar; bloqueia com mensagens se houver pendências
-  function pedirRevisao(acao: "salvar" | "concluir") {
-    const erros = acao === "salvar" ? errosSalvar : errosFechamento;
-    if (erros.length) {
+  // Salva a proposta sem pop-up: valida e dispara o salvamento direto.
+  function pedirSalvar() {
+    if (errosSalvar.length) {
       setTentouAvancar(true);
       if (etapa === 1 && !clienteOk) setEtapa(1);
-      toast.error(erros[0], {
-        description: erros.length > 1 ? `+ ${erros.length - 1} pendência(s) a corrigir.` : undefined,
+      toast.error(errosSalvar[0], {
+        description: errosSalvar.length > 1 ? `+ ${errosSalvar.length - 1} pendência(s) a corrigir.` : undefined,
+      });
+      return;
+    }
+    void salvar();
+  }
+
+  // Abre a revisão final apenas para concluir o pedido.
+  function pedirRevisao(acao: "concluir") {
+    if (errosFechamento.length) {
+      setTentouAvancar(true);
+      if (etapa === 1 && !clienteOk) setEtapa(1);
+      toast.error(errosFechamento[0], {
+        description: errosFechamento.length > 1 ? `+ ${errosFechamento.length - 1} pendência(s) a corrigir.` : undefined,
       });
       return;
     }
@@ -541,10 +553,8 @@ function PropostaCpoPage() {
   }
 
   function confirmarRevisao() {
-    const acao = revisao;
     setRevisao(null);
-    if (acao === "concluir") concluirPedido();
-    else void salvar();
+    concluirPedido();
   }
 
 
