@@ -98,6 +98,7 @@ type ClienteCadastro = {
   cliente_ie: string | null;
   uf: string;
   contribuinte: boolean;
+  cliente_updated_at: string | null;
 };
 
 
