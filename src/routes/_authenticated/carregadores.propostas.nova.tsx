@@ -710,7 +710,7 @@ function PropostaCpoPage() {
         setNumeroAtual(numero);
         invalidate();
         limparRascunho();
-        setAutosaveAt(null);
+        setAutosaveAt(status === "Salvo" ? new Date() : null);
         return;
       }
 
@@ -759,7 +759,7 @@ function PropostaCpoPage() {
       );
       invalidate();
       limparRascunho();
-      setAutosaveAt(null);
+      setAutosaveAt(status === "Salvo" ? new Date() : null);
       if (status === "Salvo" && inserida?.id) {
         // segue editando a mesma proposta em vez de duplicar ao salvar de novo
         setPropostaId(inserida.id);
