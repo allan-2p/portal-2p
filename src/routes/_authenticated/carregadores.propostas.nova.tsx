@@ -593,29 +593,62 @@ function PropostaCpoPage() {
           }}
         />
 
-        <div className="flex items-center gap-2 text-sm">
-          <button
-            onClick={() => setEtapa(1)}
-            className={cn(
-              "px-3 py-1.5 rounded-full border transition-colors",
-              etapa === 1 ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground",
-            )}
+        {/* Indicador de progresso: etapa atual x total */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm">
+              {[
+                { n: 1 as const, label: "Cliente", go: () => setEtapa(1) },
+                { n: 2 as const, label: "Produtos, frete e margem", go: irParaEtapa2 },
+              ].map((s, i) => {
+                const atual = etapa === s.n;
+                const concluida = etapa > s.n;
+                return (
+                  <div key={s.n} className="flex items-center gap-2">
+                    {i > 0 && <div className="h-px w-6 bg-border" />}
+                    <button
+                      onClick={s.go}
+                      aria-current={atual ? "step" : undefined}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors",
+                        atual
+                          ? "border-primary bg-primary/10 text-primary font-semibold"
+                          : concluida
+                            ? "border-primary/40 text-primary"
+                            : "border-border text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "h-5 w-5 rounded-full grid place-items-center text-[11px] font-bold",
+                          atual || concluida ? "bg-primary text-primary-foreground" : "bg-surface-2 text-muted-foreground",
+                        )}
+                      >
+                        {concluida ? <Check className="h-3 w-3" /> : s.n}
+                      </span>
+                      {s.label}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <span className="text-xs font-medium text-muted-foreground shrink-0">
+              Etapa {etapa} de 2
+            </span>
+          </div>
+          <div
+            className="h-1.5 rounded-full bg-surface-2 overflow-hidden"
+            role="progressbar"
+            aria-valuemin={1}
+            aria-valuemax={2}
+            aria-valuenow={etapa}
+            aria-label={`Etapa ${etapa} de 2`}
           >
-            1. Cliente
-          </button>
-          <div className="h-px w-6 bg-border" />
-          <button
-            onClick={irParaEtapa2}
-
-
-
-            className={cn(
-              "px-3 py-1.5 rounded-full border transition-colors disabled:opacity-50",
-              etapa === 2 ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border text-muted-foreground",
-            )}
-          >
-            2. Produtos, frete e margem
-          </button>
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-300"
+              style={{ width: `${(etapa / 2) * 100}%` }}
+            />
+          </div>
         </div>
 
         <div
