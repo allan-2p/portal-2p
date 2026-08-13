@@ -197,6 +197,9 @@ export function calcularCpo(
   let difalValor = 0;
   let interPonderado = 0;
 
+  const frete = state.freteValor || 0;
+  const brutoTotal = state.itens.reduce((s, it) => s + (it.valor || 0) * (it.qtd || 0), 0);
+
   for (const it of state.itens) {
     const qtd = it.qtd || 0;
     const bruto = (it.valor || 0) * qtd;
@@ -204,7 +207,10 @@ export function calcularCpo(
     const r = ncmDoItem(it.produtoId);
 
     const semIpi = bruto / (1 + r.ipi);
-    const icmsItem = semIpi * r.inter;
+    // ICMS incide sobre o valor da mercadoria + frete rateado por item.
+    const freteItem = brutoTotal > 0 ? frete * (bruto / brutoTotal) : 0;
+    const baseIcms = semIpi + freteItem;
+    const icmsItem = baseIcms * r.inter;
     const pcItem = (semIpi - icmsItem) * r.pisCofins;
 
     valorItens += bruto;
@@ -216,15 +222,15 @@ export function calcularCpo(
     interPonderado += r.inter * bruto;
 
     if (r.geraDifal) {
-      const d = calcularDifal(bruto, interna, fcp, r.inter);
+      const d = calcularDifal(bruto + freteItem, interna, fcp, r.inter);
       difalBase += d.base;
       difalValor += d.valor;
     }
   }
 
-  const frete = state.freteValor || 0;
   const valorTotalProposta = valorItens + frete;
   const valor = valorItens;
+
 
   const inter = valorItens > 0 ? interPonderado / valorItens : config.aliq_inter;
   const origem = icms;
