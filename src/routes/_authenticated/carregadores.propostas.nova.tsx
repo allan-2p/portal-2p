@@ -724,9 +724,26 @@ function PropostaCpoPage() {
               <span>/</span>
               <span>{propostaId ? "Editar proposta" : "Nova proposta"}</span>
             </div>
-            <h1 className="text-3xl font-bold mt-1">
-              {propostaId ? `Editar proposta${numeroAtual ? ` ${numeroAtual}` : ""}` : "Nova proposta"}
-            </h1>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <h1 className="text-3xl font-bold">
+                {propostaId ? `Editar proposta${numeroAtual ? ` ${numeroAtual}` : ""}` : "Nova proposta"}
+              </h1>
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border",
+                  statusProposta === "Aguardando Pagamento"
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                    : statusProposta === "Salvo"
+                      ? "bg-surface-2 text-muted-foreground border-border"
+                      : "bg-primary/10 text-primary border-primary/30",
+                )}
+              >
+                {saving && statusProposta === "Aguardando Pagamento" ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+                ) : null}
+                {statusProposta}
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Cálculo fiscal completo da proposta em tempo real.
             </p>
