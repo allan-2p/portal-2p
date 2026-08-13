@@ -181,7 +181,7 @@ function AuditoriaPage() {
             <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="h-4 w-4 mr-1.5" /> Exportar CSV
             </Button>
-            <Link to="/admin/permissoes">
+            <Link to="/admin/perfis">
               <Button size="sm">
                 <KeyRound className="h-4 w-4 mr-1.5" /> Ajustar permissões
               </Button>

@@ -34,7 +34,6 @@ export type FeatureKey =
   | "admin.metas"
   | "admin.tabelas"
   | "admin.produtos"
-  | "admin.permissoes"
   | "admin.perfis"
   | "admin.integracoes"
   | "admin.auditoria"
@@ -86,7 +85,6 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "admin.metas",
       "admin.tabelas",
       "admin.produtos",
-      "admin.permissoes",
       "admin.perfis",
       "admin.integracoes",
       "admin.auditoria",
@@ -111,7 +109,6 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "cpo.comissoes",
       "cpo.regras",
       "admin.usuarios",
-      "admin.permissoes",
       "admin.perfis",
       "admin.integracoes",
       "admin.auditoria",
@@ -137,7 +134,6 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "marketing.prevendas",
       "marketing.metas",
       "admin.usuarios",
-      "admin.permissoes",
       "admin.perfis",
       "admin.integracoes",
       "admin.auditoria",
@@ -176,7 +172,6 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/admin/metas": "admin.metas",
   "/admin/tabelas": "admin.tabelas",
   "/admin/produtos": "admin.produtos",
-  "/admin/permissoes": "admin.permissoes",
   "/admin/perfis": "admin.perfis",
   "/integracoes": "admin.integracoes",
   "/admin/auditoria": "admin.auditoria",
@@ -218,7 +213,6 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.metas": "Admin • Metas",
   "admin.tabelas": "Admin • Tabelas",
   "admin.produtos": "Admin • Produtos (SAP)",
-  "admin.permissoes": "Admin • Permissões de Usuários",
   "admin.perfis": "Admin • Perfis",
   "admin.integracoes": "Admin • Integrações",
   "admin.auditoria": "Admin • Auditoria de Acessos",
