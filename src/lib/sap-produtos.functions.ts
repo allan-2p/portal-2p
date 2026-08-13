@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { recordModeration } from "@/lib/moderation-audit.server";
 
 export type SapVisibilidade = "solar" | "carregadores" | "ambos";
 
@@ -45,6 +46,12 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
       .update({ visibilidade: data.visibilidade })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "produtos",
+      action: "atualizou",
+      target: data.id,
+      summary: `Visibilidade do produto alterada para "${data.visibilidade}"`,
+    });
     return { ok: true };
   });
 
