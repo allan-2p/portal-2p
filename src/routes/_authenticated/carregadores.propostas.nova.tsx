@@ -796,6 +796,23 @@ function PropostaCpoPage() {
           </div>
         </div>
 
+        {avisoClienteAtualizado ? (
+          <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm flex items-start gap-3">
+            <Info className="h-4 w-4 text-sky-600 dark:text-sky-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-sky-700 dark:text-sky-300">
+                Cadastro do cliente atualizado
+              </p>
+              <p className="text-sky-700/80 dark:text-sky-300/80">
+                Os dados deste cliente foram sincronizados automaticamente com a versão mais
+                recente do cadastro (atualizado em{" "}
+                <span className="font-medium">{avisoClienteAtualizado.formatada}</span>). Revise
+                as informações fiscais antes de finalizar.
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <div
           className={cn(
             "grid grid-cols-1 gap-5 items-start",
