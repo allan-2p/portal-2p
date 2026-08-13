@@ -1295,11 +1295,8 @@ function PropostaCpoPage() {
             </div>
             </>
 
-            ) : (
-              <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Etapa 1: selecione o cliente. Produtos, faturamento e frete vêm nas próximas etapas.
-              </div>
-            )}
+            ) : null}
+
           </div>
 
           {/* PAINEL / DRE */}
