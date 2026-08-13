@@ -212,7 +212,7 @@ function CadastrosPage() {
       const doc = tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc);
       return texto || doc;
     });
-  }, [clientes, q, fClasse, fUf, fStatus, fFiscal, fVendedor, vend]);
+  }, [clientes, q, fUf, fStatus, fFiscal, fVendedor, vend]);
 
   const ordenados = useMemo(() => {
     const val = (c: Cliente) => {
@@ -361,13 +361,6 @@ function CadastrosPage() {
         <Card>
           <CardContent className="p-3 flex flex-wrap items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={fClasse} onValueChange={setFClasse}>
-              <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas as classificações</SelectItem>
-                {CLASSES.map((c) => <SelectItem key={c} value={c}>{CLASSE_INFO[c].label}</SelectItem>)}
-              </SelectContent>
-            </Select>
             <Select value={fUf} onValueChange={setFUf}>
               <SelectTrigger className="w-[130px] h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -414,9 +407,8 @@ function CadastrosPage() {
             <table className="w-full text-sm">
               <thead className="bg-surface-2/60 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  {([
+                {([
                     ["cliente", "Cliente"],
-                    ["classificacao", "Classe"],
                     ["doc", "CNPJ / CPF"],
                     ["fiscal", "Fiscal"],
                     ["cidade", "Cidade / UF"],
@@ -440,9 +432,9 @@ function CadastrosPage() {
 
               </thead>
               <tbody className="divide-y divide-border">
-                {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
+                {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
                 {!isLoading && rows.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     <Building2 className="h-6 w-6 mx-auto mb-2 opacity-50" />
                     {clientes.length === 0
                       ? "Nenhum cadastro ainda — clique em “Novo cadastro”."
@@ -466,11 +458,6 @@ function CadastrosPage() {
                       {c.nome_fantasia && (
                         <div className="text-xs text-muted-foreground"><Marca texto={c.nome_fantasia} termo={q} /></div>
                       )}
-                    </td>
-                    <td className="px-4 py-2">
-                      <Badge variant="outline" className={`text-[10px] font-bold ${CLASSE_INFO[c.classificacao || "C"]?.cls ?? ""}`}>
-                        {c.classificacao || "C"}
-                      </Badge>
                     </td>
                     <td className="px-4 py-2 text-muted-foreground">{c.doc ? <Marca texto={c.doc} termo={q} /> : "—"}</td>
                     <td className="px-4 py-2">
@@ -543,9 +530,6 @@ function CadastrosPage() {
 
                 <div className="mt-4 space-y-5">
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className={`font-bold ${CLASSE_INFO[detalhe.classificacao || "C"]?.cls ?? ""}`}>
-                      {CLASSE_INFO[detalhe.classificacao || "C"]?.label ?? detalhe.classificacao}
-                    </Badge>
                     <Badge variant={detalhe.contribuinte ? "default" : "secondary"}>
                       {detalhe.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}
                     </Badge>
