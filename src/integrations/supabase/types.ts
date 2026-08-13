@@ -901,6 +901,39 @@ export type Database = {
           },
         ]
       }
+      permission_profile_instances: {
+        Row: {
+          created_at: string
+          instance_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          instance_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          instance_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_profile_instances_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_profile_instances_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "permission_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permission_profiles: {
         Row: {
           created_at: string

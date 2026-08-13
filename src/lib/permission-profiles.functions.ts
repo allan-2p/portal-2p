@@ -10,6 +10,7 @@ export type PermissionProfile = {
   description: string | null;
   is_system: boolean;
   features: { instance_id: string; feature_key: string }[];
+  instances: string[];
   user_ids: string[];
 };
 
@@ -23,11 +24,18 @@ export const adminListPermissionProfiles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ profiles: PermissionProfile[] }> => {
     await assertAdmin(context);
-    const [{ data: profs }, { data: feats }, { data: links }] = await Promise.all([
+    const [{ data: profs }, { data: feats }, { data: links }, { data: insts }] = await Promise.all([
       context.supabase.from("permission_profiles").select("*").order("name"),
       context.supabase.from("permission_profile_features").select("profile_id, instance_id, feature_key"),
       context.supabase.from("user_permission_profiles").select("profile_id, user_id"),
+      context.supabase.from("permission_profile_instances").select("profile_id, instance_id"),
     ]);
+    const instBy = new Map<string, string[]>();
+    for (const r of insts ?? []) {
+      const arr = instBy.get((r as any).profile_id) ?? [];
+      arr.push((r as any).instance_id);
+      instBy.set((r as any).profile_id, arr);
+    }
     const featBy = new Map<string, { instance_id: string; feature_key: string }[]>();
     for (const f of feats ?? []) {
       const arr = featBy.get((f as any).profile_id) ?? [];
@@ -47,6 +55,7 @@ export const adminListPermissionProfiles = createServerFn({ method: "GET" })
         description: p.description,
         is_system: p.is_system,
         features: featBy.get(p.id) ?? [],
+        instances: instBy.get(p.id) ?? [],
         user_ids: usersBy.get(p.id) ?? [],
       })),
     };
@@ -124,6 +133,33 @@ export const adminSetProfileFeatures = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
     return { ok: true, count: data.feature_keys.length };
+  });
+
+// ---- Definir instâncias do perfil ---- //
+export const adminSetProfileInstances = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        profile_id: z.string().uuid(),
+        instance_ids: z.array(InstanceEnum).max(10),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error: delErr } = await context.supabase
+      .from("permission_profile_instances")
+      .delete()
+      .eq("profile_id", data.profile_id);
+    if (delErr) throw new Error(delErr.message);
+    if (data.instance_ids.length) {
+      const { error } = await context.supabase
+        .from("permission_profile_instances")
+        .insert(data.instance_ids.map((i) => ({ profile_id: data.profile_id, instance_id: i })));
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
   });
 
 // ---- Vincular perfis a um usuário ---- //

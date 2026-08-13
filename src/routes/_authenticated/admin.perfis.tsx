@@ -10,6 +10,7 @@ import {
   adminSavePermissionProfile,
   adminDeletePermissionProfile,
   adminSetProfileFeatures,
+  adminSetProfileInstances,
   adminSetUserProfiles,
   type PermissionProfile,
 } from "@/lib/permission-profiles.functions";
@@ -50,6 +51,7 @@ function PerfisPage() {
   const saveFn = useServerFn(adminSavePermissionProfile);
   const deleteFn = useServerFn(adminDeletePermissionProfile);
   const setFeatsFn = useServerFn(adminSetProfileFeatures);
+  const setInstsFn = useServerFn(adminSetProfileInstances);
   const setUsersFn = useServerFn(adminSetUserProfiles);
   const matrixFn = useServerFn(adminListAccessMatrix);
 
@@ -61,6 +63,7 @@ function PerfisPage() {
   const [keys, setKeys] = useState<Set<FeatureKey>>(new Set());
   const [saving, setSaving] = useState(false);
   const [userSearch, setUserSearch] = useState("");
+  const [profInstances, setProfInstances] = useState<Set<InstanceId>>(new Set());
 
   async function load() {
     setLoading(true);
@@ -94,6 +97,26 @@ function PerfisPage() {
       ),
     );
   }, [selected, instance]);
+
+  useEffect(() => {
+    if (!selected) return;
+    setProfInstances(new Set(selected.instances as InstanceId[]));
+  }, [selected]);
+
+  async function toggleProfileInstance(id: InstanceId, on: boolean) {
+    if (!selected) return;
+    const next = new Set(profInstances);
+    if (on) next.add(id);
+    else next.delete(id);
+    setProfInstances(next);
+    try {
+      await setInstsFn({ data: { profile_id: selected.id, instance_ids: [...next] } });
+      toast.success("Instâncias do perfil atualizadas");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
 
   const instFeatures = useMemo(
     () => ALL_FEATURES.filter((f) => INSTANCES[instance].routes.includes(f)),
@@ -231,7 +254,8 @@ function PerfisPage() {
                 >
                   <div className="font-medium text-sm">{p.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {p.user_ids.length} usuário(s) • {p.features.length} tela(s)
+                    {p.user_ids.length} usuário(s) • {p.features.length} tela(s) •{" "}
+                    {p.instances.length} instância(s)
                   </div>
                 </button>
               ))}
@@ -268,6 +292,31 @@ function PerfisPage() {
                         </button>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                <div className="glass rounded-xl p-4 space-y-3">
+                  <div>
+                    <h3 className="font-medium text-sm">Instâncias liberadas</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Defina a quais unidades este perfil dá acesso.
+                    </p>
+                  </div>
+                  <div className="grid gap-1.5 sm:grid-cols-3">
+                    {INSTANCE_IDS.map((id) => (
+                      <label
+                        key={id}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-surface-2 cursor-pointer text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={profInstances.has(id)}
+                          onChange={(e) => toggleProfileInstance(id, e.target.checked)}
+                          className="accent-[var(--primary)]"
+                        />
+                        {INSTANCES[id].label}
+                      </label>
+                    ))}
                   </div>
                 </div>
 
