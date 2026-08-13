@@ -1,11 +1,33 @@
+// ============================================================================
 // Motor de cálculo e tipos do módulo CPO (Portal 2P Carregadores).
-// Regras portadas da plataforma app.2pcarregadores.com.br:
-//   Valor Item  = Valor / (1 + IPI)                (remove IPI embutido)
-//   ICMS efetivo (não contribuinte) = origem + DIFAL absorvido "por dentro"
-//   ICMS efetivo (contribuinte)     = origem  (DIFAL por conta do destinatário)
-//   PIS/COFINS  = (ValorItem - ICMS) * 9,25%
-//   Receita Líq = ValorItem - ICMS - PIS/COFINS
-//   Margem Bruta = RL (baseada no Valor informado) ; MB% = MB / Valor
+// Base: planilhas "Precificação Carregadores — Memória Cálculo",
+// "Tabela DIFAL — Não Contribuinte" e "Informações Fiscais".
+//
+//   Valor da venda   = valor do item COM IPI (é o que o vendedor digita)
+//   Valor sem IPI    = Venda ÷ (1 + IPI)
+//   IPI              = Venda − Valor sem IPI
+//   ICMS na NF       = Valor sem IPI × 4%   (SEMPRE 4% — nunca somar o DIFAL)
+//   PIS/COFINS       = (Valor sem IPI − ICMS) × 9,25%
+//   DIFAL            = custo adicional no cabeçalho da NF (não altera o ICMS):
+//                      base  = Venda ÷ (1 − (interna + FCP))
+//                      DIFAL = base × (interna + FCP − 4%)
+//   Receita Líquida  = Venda − IPI − ICMS − PIS/COFINS − DIFAL (quando custo da 2P)
+//   CMV              = Custo ÷ Receita Líquida
+//   Margem Bruta     = Receita Líquida − Custo   ;  MB% = MB ÷ Venda
+// ============================================================================
+
+export type CpoNcm = {
+  id: string;
+  codigo: string;
+  descricao: string;
+  ipi: number;
+  pis_cofins: number;
+  aliq_inter: number;
+  tem_st: boolean;
+  gera_difal: boolean;
+  observacoes: string | null;
+  ativo: boolean;
+};
 
 export type CpoProduct = {
   id: string;
@@ -13,6 +35,7 @@ export type CpoProduct = {
   potencia: string | null;
   custo: number;
   ativo: boolean;
+  ncm_id?: string | null;
 };
 
 export type CpoUf = {
@@ -20,6 +43,7 @@ export type CpoUf = {
   nome: string;
   aliq_interna: number;
   fcp: number;
+  convenio_st?: boolean;
 };
 
 export type CpoConfig = {
@@ -31,6 +55,14 @@ export type CpoConfig = {
   mb_atencao: number;
   comissao_base: "MB" | "VALOR";
   comissao_pct: number;
+  /** CMV máximo que o vendedor pode orçar sem aprovação da diretoria. */
+  cmv_max: number;
+  /** % fixo de gerente sobre a venda (custo empresa). */
+  pct_gerente: number;
+  /** % fixo de indicação sobre a venda (custo empresa) — vale para CLT e PJ. */
+  pct_indicacao: number;
+  /** Fator de encargos CLT (custo empresa ÷ remuneração). */
+  fator_clt: number;
 };
 
 export const CPO_CONFIG_FALLBACK: CpoConfig = {
@@ -42,6 +74,10 @@ export const CPO_CONFIG_FALLBACK: CpoConfig = {
   mb_atencao: 0.4,
   comissao_base: "MB",
   comissao_pct: 0,
+  cmv_max: 0.605,
+  pct_gerente: 0.005,
+  pct_indicacao: 0.0025,
+  fator_clt: 1.66,
 };
 
 export type CpoItem = {
@@ -71,20 +107,26 @@ export type CpoResult = {
   valor: number;
   valorItem: number;
   origem: number;
+  /** DIFAL cobrado como custo adicional no cabeçalho da NF (não contribuinte). */
   difalAbs: number;
+  /** DIFAL informativo (contribuinte) — recolhimento do destinatário. */
   difalEstimado: number;
+  difalBase: number;
   icms: number;
   icmsRate: number;
   ipiValor: number;
   pisCofins: number;
   rl: number;
   custoTotal: number;
+  cmv: number;
+  cmvExcedido: boolean;
   mb: number;
   mbPct: number;
   comPct: number;
   comValor: number;
   aliqInterna: number;
   inter: number;
+  convenioSt: boolean;
 };
 
 export function novoItem(): CpoItem {
@@ -112,59 +154,97 @@ export function novoEstado(): CpoState {
   };
 }
 
+/** DIFAL "por dentro" conforme a Tabela DIFAL — Não Contribuinte. */
+export function calcularDifal(vendaComIpi: number, aliqInterna: number, fcp: number, inter: number) {
+  const carga = aliqInterna + fcp;
+  if (!(carga > 0) || carga >= 1 || !(vendaComIpi > 0)) return { base: 0, valor: 0, pct: 0 };
+  const base = vendaComIpi / (1 - carga);
+  const valor = Math.max(0, base * (carga - inter));
+  return { base, valor, pct: valor / vendaComIpi };
+}
 
 export function calcularCpo(
   state: CpoState,
-  _produtos: CpoProduct[],
+  produtos: CpoProduct[],
   ufs: CpoUf[],
   config: CpoConfig,
+  ncms: CpoNcm[] = [],
 ): CpoResult {
   const uf = ufs.find((u) => u.uf === state.uf);
-  const aliqInterna = (uf?.aliq_interna ?? 0.18) + (uf?.fcp ?? 0);
-  const inter = config.aliq_inter;
-  const ipi = config.ipi;
+  const interna = uf?.aliq_interna ?? 0.18;
+  const fcp = uf?.fcp ?? 0;
+  const aliqInterna = interna + fcp;
+
+  // As alíquotas são regras do NCM; a config global só é fallback.
+  const ncmDoItem = (produtoId: string) => {
+    const prod = produtos.find((p) => p.id === produtoId);
+    const ncm = prod?.ncm_id ? ncms.find((n) => n.id === prod.ncm_id) : undefined;
+    return {
+      ipi: ncm?.ipi ?? config.ipi,
+      pisCofins: ncm?.pis_cofins ?? config.pis_cofins,
+      inter: ncm?.aliq_inter ?? config.aliq_inter,
+      geraDifal: ncm ? ncm.gera_difal : true,
+    };
+  };
 
   let valorItens = 0;
-  let valorItemBase = 0;
-  // A margem é calculada a partir do VALOR informado na proposta (receita
-  // líquida após impostos). O custo cadastrado do produto não entra na conta.
-  const custoTotal = 0;
-  for (const it of state.itens) {
-    valorItens += (it.valor || 0) * (it.qtd || 0);
-    valorItemBase += ((it.valor || 0) / (1 + ipi)) * (it.qtd || 0);
-  }
+  let custoTotal = 0;
+  let valorItem = 0; // base sem IPI
+  let ipiValor = 0;
+  let icms = 0;
+  let pisCofins = 0;
+  let difalBase = 0;
+  let difalValor = 0;
+  let interPonderado = 0;
 
+  for (const it of state.itens) {
+    const qtd = it.qtd || 0;
+    const bruto = (it.valor || 0) * qtd;
+    const prod = produtos.find((p) => p.id === it.produtoId);
+    const r = ncmDoItem(it.produtoId);
+
+    const semIpi = bruto / (1 + r.ipi);
+    const icmsItem = semIpi * r.inter;
+    const pcItem = (semIpi - icmsItem) * r.pisCofins;
+
+    valorItens += bruto;
+    custoTotal += (prod?.custo || 0) * qtd;
+    valorItem += semIpi;
+    ipiValor += bruto - semIpi;
+    icms += icmsItem;
+    pisCofins += pcItem;
+    interPonderado += r.inter * bruto;
+
+    if (r.geraDifal) {
+      const d = calcularDifal(bruto, interna, fcp, r.inter);
+      difalBase += d.base;
+      difalValor += d.valor;
+    }
+  }
 
   const frete = state.freteValor || 0;
   const valorTotalProposta = valorItens + frete;
   const valor = valorItens;
-  const valorItem = valorItemBase;
 
-  const origem = valorItem * inter;
-  const fatorDentro = aliqInterna < 1 ? (aliqInterna - inter) / (1 - aliqInterna) : 0;
-  let difalAbs = 0;
-  let difalEstimado = 0;
-  let icms: number;
-  if (state.contribuinte) {
-    icms = origem;
-    difalEstimado = valorItem * fatorDentro;
-  } else {
-    difalAbs = valorItem * fatorDentro;
-    icms = origem + difalAbs;
-  }
+  const inter = valorItens > 0 ? interPonderado / valorItens : config.aliq_inter;
+  const origem = icms;
+  const icmsRate = inter;
 
-  let icmsRate = valorItem > 0 ? icms / valorItem : 0;
-  icmsRate = Math.round(icmsRate * 10000) / 10000;
-  const icmsFinal = valorItem * icmsRate;
+  // DIFAL não entra no ICMS: é custo adicional no cabeçalho da NF.
+  const difal = { base: difalBase, valor: difalValor };
+  const difalAbs = state.contribuinte ? 0 : difal.valor;
+  const difalEstimado = state.contribuinte ? difal.valor : 0;
 
-  const ipiValor = valorItem * ipi;
-  const pisCofins = (valorItem - icmsFinal) * config.pis_cofins;
-  const rl = valorItem - icmsFinal - pisCofins;
+
+  const rl = valorItens - ipiValor - icms - pisCofins - difalAbs;
+  const cmv = rl > 0 ? custoTotal / rl : 0;
   const mb = rl - custoTotal;
   const mbPct = valor > 0 ? mb / valor : 0;
 
-  const comBase = config.comissao_base === "VALOR" ? valor : mb;
-  const comPct = config.comissao_pct || 0;
+  // Comissão total (custo da empresa) em função do CMV, sobre a MB.
+  const comPct = custoTotal > 0 ? pctComissaoPorCmv(cmv) : 0;
+  const cmvExcedido = custoTotal > 0 && cmv > config.cmv_max;
+  const comValor = cmvExcedido ? 0 : mb * comPct;
 
   return {
     valorItens,
@@ -174,19 +254,51 @@ export function calcularCpo(
     origem,
     difalAbs,
     difalEstimado,
-    icms: icmsFinal,
+    difalBase: difal.base,
+    icms,
     icmsRate,
     ipiValor,
     pisCofins,
     rl,
     custoTotal,
+    cmv,
+    cmvExcedido,
     mb,
     mbPct,
     comPct,
-    comValor: comBase * comPct,
+    comValor,
     aliqInterna,
     inter,
+    convenioSt: !!uf?.convenio_st,
   };
+}
+
+/**
+ * % total de comissão (custo da empresa) sobre a MB, em função do CMV.
+ * Planilha "Cálculo comissão Carregadores": (4 + 7,4 / (1 + e^(2,05·(CMV%−57,8)))) / 100
+ */
+export function pctComissaoPorCmv(cmv: number): number {
+  const x = cmv * 100;
+  return (4 + 7.4 / (1 + Math.exp(2.05 * (x - 57.8)))) / 100;
+}
+
+/** Texto padrão de DIFAL informativo para clientes contribuintes. */
+export function textoDifalContribuinte(opts: {
+  ufNome: string;
+  aliqInterna: number;
+  fcp: number;
+  valor: number;
+  temIe: boolean;
+}) {
+  return (
+    `DIFAL: Estimativa calculada de forma informativa sobre o valor do item da NF-e, considerando ICMS interno de ` +
+    `${fmtPct(opts.aliqInterna)} e adicional de pobreza de ${fmtPct(opts.fcp)} para a UF ${opts.ufNome}. ` +
+    `Este valor não é definitivo e pode variar conforme enquadramento fiscal, convênios, ICMS-ST e validação no faturamento. ` +
+    (opts.temIe
+      ? `Como há IE informada, a cobrança efetiva ainda depende da análise fiscal da operação. `
+      : `Sem IE informada, a cobrança tende a ser efetiva na operação. `) +
+    `Mas a estimativa é de ${fmtBRL(opts.valor)}.`
+  );
 }
 
 export type MbStatus = { level: "bad" | "warn" | "good"; msg: string };

@@ -134,38 +134,95 @@ export type Database = {
       cpo_config: {
         Row: {
           aliq_inter: number
+          cmv_max: number
           comissao_base: string
           comissao_pct: number
+          fator_clt: number
           id: number
           ipi: number
           majoracao_sem_ie: number
           mb_atencao: number
+          pct_gerente: number
+          pct_indicacao: number
           pis_cofins: number
           politica_mb_min: number
           updated_at: string
         }
         Insert: {
           aliq_inter?: number
+          cmv_max?: number
           comissao_base?: string
           comissao_pct?: number
+          fator_clt?: number
           id?: number
           ipi?: number
           majoracao_sem_ie?: number
           mb_atencao?: number
+          pct_gerente?: number
+          pct_indicacao?: number
           pis_cofins?: number
           politica_mb_min?: number
           updated_at?: string
         }
         Update: {
           aliq_inter?: number
+          cmv_max?: number
           comissao_base?: string
           comissao_pct?: number
+          fator_clt?: number
           id?: number
           ipi?: number
           majoracao_sem_ie?: number
           mb_atencao?: number
+          pct_gerente?: number
+          pct_indicacao?: number
           pis_cofins?: number
           politica_mb_min?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cpo_ncm: {
+        Row: {
+          aliq_inter: number
+          ativo: boolean
+          codigo: string
+          created_at: string
+          descricao: string
+          gera_difal: boolean
+          id: string
+          ipi: number
+          observacoes: string | null
+          pis_cofins: number
+          tem_st: boolean
+          updated_at: string
+        }
+        Insert: {
+          aliq_inter?: number
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          descricao: string
+          gera_difal?: boolean
+          id?: string
+          ipi?: number
+          observacoes?: string | null
+          pis_cofins?: number
+          tem_st?: boolean
+          updated_at?: string
+        }
+        Update: {
+          aliq_inter?: number
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          gera_difal?: boolean
+          id?: string
+          ipi?: number
+          observacoes?: string | null
+          pis_cofins?: number
+          tem_st?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -176,6 +233,7 @@ export type Database = {
           created_at: string
           custo: number
           id: string
+          ncm_id: string | null
           nome: string
           potencia: string | null
           preco_sugerido: number
@@ -186,6 +244,7 @@ export type Database = {
           created_at?: string
           custo?: number
           id?: string
+          ncm_id?: string | null
           nome: string
           potencia?: string | null
           preco_sugerido?: number
@@ -196,12 +255,21 @@ export type Database = {
           created_at?: string
           custo?: number
           id?: string
+          ncm_id?: string | null
           nome?: string
           potencia?: string | null
           preco_sugerido?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cpo_products_ncm_id_fkey"
+            columns: ["ncm_id"]
+            isOneToOne: false
+            referencedRelation: "cpo_ncm"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cpo_proposals: {
         Row: {
@@ -305,6 +373,7 @@ export type Database = {
       cpo_uf_rates: {
         Row: {
           aliq_interna: number
+          convenio_st: boolean
           fcp: number
           nome: string
           uf: string
@@ -312,6 +381,7 @@ export type Database = {
         }
         Insert: {
           aliq_interna?: number
+          convenio_st?: boolean
           fcp?: number
           nome: string
           uf: string
@@ -319,6 +389,7 @@ export type Database = {
         }
         Update: {
           aliq_interna?: number
+          convenio_st?: boolean
           fcp?: number
           nome?: string
           uf?: string
@@ -897,6 +968,7 @@ export type Database = {
           sap_raw: Json | null
           tipo: string
           updated_at: string
+          visibilidade: string
         }
         Insert: {
           ativo?: boolean
@@ -910,6 +982,7 @@ export type Database = {
           sap_raw?: Json | null
           tipo?: string
           updated_at?: string
+          visibilidade?: string
         }
         Update: {
           ativo?: boolean
@@ -923,6 +996,7 @@ export type Database = {
           sap_raw?: Json | null
           tipo?: string
           updated_at?: string
+          visibilidade?: string
         }
         Relationships: []
       }

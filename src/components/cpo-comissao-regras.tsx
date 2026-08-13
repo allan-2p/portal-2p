@@ -1,39 +1,45 @@
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  REGRAS_PADRAO,
-  calcularComissao,
-  calcularRegra,
-  type Regime,
-  type RegraComissao,
-} from "@/lib/cpo-comissao";
+import { useCpoConfig } from "@/hooks/use-cpo";
+import { CPO_CONFIG_FALLBACK } from "@/lib/cpo";
+import { calcularComissao, ratearComissao, type Regime } from "@/lib/cpo-comissao";
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2 });
 const pct = (v: number) => `${(v * 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
 
 export function CpoComissaoRegras() {
-  const [venda, setVenda] = useState(72000);
+  const { data: cfgData } = useCpoConfig();
+  const cfg = cfgData ?? CPO_CONFIG_FALLBACK;
+
+  const [venda, setVenda] = useState(68750);
   const [custo, setCusto] = useState(34500);
   const [icms, setIcms] = useState(4);
   const [ipi, setIpi] = useState(5);
   const [pisCofins, setPisCofins] = useState(9.25);
-  const [regras, setRegras] = useState<RegraComissao[]>(REGRAS_PADRAO);
+  const [difal, setDifal] = useState(0);
 
   const r = useMemo(
-    () => calcularComissao({ venda, custo, icms: icms / 100, ipi: ipi / 100, pisCofins: pisCofins / 100 }),
-    [venda, custo, icms, ipi, pisCofins],
+    () =>
+      calcularComissao({
+        venda,
+        custo,
+        icms: icms / 100,
+        ipi: ipi / 100,
+        pisCofins: pisCofins / 100,
+        difal,
+      }),
+    [venda, custo, icms, ipi, pisCofins, difal],
   );
 
-  const linhas = useMemo(() => regras.map((g) => calcularRegra(g, venda)), [regras, venda]);
-
-  const setPctRegra = (key: string, v: string) =>
-    setRegras((prev) =>
-      prev.map((g) => (g.key === key ? { ...g, pctRemuneracao: (Number(v) || 0) / 100 } : g)),
-    );
+  const params = {
+    cmvMax: cfg.cmv_max,
+    pctGerente: cfg.pct_gerente,
+    pctIndicacao: cfg.pct_indicacao,
+    fatorClt: cfg.fator_clt,
+  };
 
   return (
     <div className="space-y-4">
@@ -43,18 +49,19 @@ export function CpoComissaoRegras() {
           <div>
             <h2 className="font-semibold">Política comercial — cálculo da comissão</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              O vendedor altera apenas o valor da venda. O ICMS muda conforme o Estado e o custo vem da lista de
-              produtos.
+              O vendedor altera apenas o valor da venda. O ICMS da NF é sempre {pct(icms / 100)}, o DIFAL entra como
+              custo adicional no cabeçalho e o custo vem da lista de produtos.
             </p>
           </div>
           <Badge variant="outline" className="font-mono text-[11px]">
-            comissão % = (2361·CMV² − 2896,4·CMV + 892,41) / 100
+            comissão % = (4 + 7,4 / (1 + e^(2,05·(CMV%−57,8)))) / 100
           </Badge>
         </div>
 
-        <div className="grid sm:grid-cols-5 gap-3">
+        <div className="grid sm:grid-cols-6 gap-3">
           <Campo label="Venda (R$)" value={venda} onChange={setVenda} step={100} />
-          <Campo label="Custo / CMV (R$)" value={custo} onChange={setCusto} step={100} />
+          <Campo label="Custo (R$)" value={custo} onChange={setCusto} step={100} />
+          <Campo label="DIFAL (R$)" value={difal} onChange={setDifal} step={100} />
           <Campo label="ICMS (%)" value={icms} onChange={setIcms} step={0.01} />
           <Campo label="IPI (%)" value={ipi} onChange={setIpi} step={0.01} />
           <Campo label="PIS/COFINS (%)" value={pisCofins} onChange={setPisCofins} step={0.01} />
@@ -63,85 +70,108 @@ export function CpoComissaoRegras() {
         <div className="rounded-xl border border-border/60 overflow-hidden">
           <table className="w-full text-sm">
             <tbody>
-              <Linha label="Venda" valor={brl(r.venda)} />
-              <Linha label="ICMS" valor={brl(r.vIcms)} extra={pct(icms / 100)} />
+              <Linha label="Venda (com IPI)" valor={brl(r.venda)} />
+              <Linha label="Valor NF (sem IPI)" valor={brl(r.valorSemIpi)} />
               <Linha label="IPI" valor={brl(r.vIpi)} extra={pct(ipi / 100)} />
+              <Linha label="ICMS na NF" valor={brl(r.vIcms)} extra={pct(icms / 100)} />
               <Linha label="PIS/COFINS" valor={brl(r.vPisCofins)} extra={pct(pisCofins / 100)} />
-              <Linha label="Custo" valor={brl(custo)} extra={`CMV ${pct(r.cmv)}`} />
+              {difal > 0 && <Linha label="DIFAL (custo no cabeçalho)" valor={brl(r.difal)} />}
+              <Linha label="Receita líquida" valor={brl(r.rl)} destaque />
+              <Linha label="Custo" valor={brl(custo)} extra={`CMV ${pct(r.cmv)} (custo ÷ receita líquida)`} />
               <Linha label="Margem bruta (MB)" valor={brl(r.mb)} extra={pct(r.mbPct)} destaque />
               <Linha
-                label="Comissão total (sobre MB)"
-                valor={brl(r.comissaoTotal)}
+                label="Comissão total — custo da empresa"
+                valor={brl(r.cmv > params.cmvMax ? 0 : r.comissaoTotal)}
                 extra={pct(r.pctComissao)}
                 destaque
               />
             </tbody>
           </table>
         </div>
+
+        {r.cmv > params.cmvMax ? (
+          <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-xs text-destructive">
+            CMV de {pct(r.cmv)} acima do limite de {pct(params.cmvMax)}. O vendedor não consegue orçar nessa
+            condição — é necessária aprovação especial da diretoria.
+          </div>
+        ) : null}
       </div>
 
-      {/* Regras CLT x PJ */}
+      {/* Rateio CLT x PJ */}
       <Tabs defaultValue="CLT">
         <TabsList>
           <TabsTrigger value="CLT">CLT</TabsTrigger>
           <TabsTrigger value="PJ">PJ</TabsTrigger>
         </TabsList>
         {(["CLT", "PJ"] as Regime[]).map((regime) => {
-          const itens = linhas.filter((l) => l.regime === regime);
-          const totalCusto = itens.reduce((s, i) => s + i.custo, 0);
-          const totalRem = itens.reduce((s, i) => s + i.remuneracao, 0);
+          const rateio = ratearComissao({
+            venda,
+            comissaoTotal: r.comissaoTotal,
+            cmv: r.cmv,
+            regimeVendedor: regime,
+            params,
+          });
+          const totalCusto = rateio.linhas.reduce((s, i) => s + i.custo, 0);
+          const totalRem = rateio.linhas.reduce((s, i) => s + i.remuneracao, 0);
           return (
             <TabsContent key={regime} value={regime} className="mt-3">
               <div className="glass rounded-2xl p-5 space-y-3">
                 <p className="text-xs text-muted-foreground">
+                  Gerente ({pct(params.pctGerente)}) e Indicação ({pct(params.pctIndicacao)}) são fixos sobre a venda
+                  em qualquer regime. O vendedor recebe o saldo do custo total da comissão — por isso o valor é
+                  extremamente variável.
                   {regime === "CLT"
-                    ? "No CLT o custo da empresa é a remuneração acrescida dos encargos (fator 1,66)."
-                    : "No PJ o custo da empresa é igual à remuneração paga (sem encargos)."}
+                    ? ` No CLT a remuneração é o custo dividido pelo fator de encargos ${params.fatorClt}.`
+                    : " No PJ o custo da empresa é igual à remuneração paga."}
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-xs text-muted-foreground border-b border-border/60">
                         <th className="text-left py-2">Papel</th>
-                        <th className="text-right py-2">% remuneração</th>
-                        <th className="text-right py-2">Remuneração</th>
-                        <th className="text-right py-2">% custo</th>
+                        <th className="text-left py-2">Regime</th>
+                        <th className="text-right py-2">% custo s/ venda</th>
                         <th className="text-right py-2">Custo empresa</th>
+                        <th className="text-right py-2">Remuneração</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {itens.map((i) => (
+                      {rateio.linhas.map((i) => (
                         <tr key={i.key} className="border-b border-border/40 last:border-0">
-                          <td className="py-2 font-medium">{i.papel}</td>
-                          <td className="py-2 text-right">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              className="h-8 w-24 ml-auto text-right"
-                              value={(i.pctRemuneracao * 100).toFixed(2)}
-                              onChange={(e) => setPctRegra(i.key, e.target.value)}
-                            />
+                          <td className="py-2 font-medium">
+                            {i.papel}
+                            {i.fixo ? (
+                              <span className="ml-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                                fixo
+                              </span>
+                            ) : (
+                              <span className="ml-2 text-[10px] uppercase tracking-wide text-primary">saldo</span>
+                            )}
                           </td>
-                          <td className="py-2 text-right tabular-nums">{brl(i.remuneracao)}</td>
+                          <td className="py-2 text-muted-foreground">{i.regime}</td>
                           <td className="py-2 text-right tabular-nums text-muted-foreground">{pct(i.pctCusto)}</td>
-                          <td className="py-2 text-right tabular-nums font-semibold">{brl(i.custo)}</td>
+                          <td className="py-2 text-right tabular-nums">{brl(i.custo)}</td>
+                          <td className="py-2 text-right tabular-nums font-semibold">{brl(i.remuneracao)}</td>
                         </tr>
                       ))}
                       <tr className="border-t border-border/60">
                         <td className="py-2 font-semibold">Total</td>
                         <td />
-                        <td className="py-2 text-right tabular-nums font-semibold">{brl(totalRem)}</td>
                         <td />
                         <td className="py-2 text-right tabular-nums font-semibold">{brl(totalCusto)}</td>
+                        <td className="py-2 text-right tabular-nums font-semibold">{brl(totalRem)}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Comissão total permitida pela fórmula: <strong>{brl(r.comissaoTotal)}</strong> ({pct(r.pctComissao)}{" "}
-                  da MB) — custo do time {regime}: <strong>{brl(totalCusto)}</strong>
-                  {totalCusto > r.comissaoTotal ? (
-                    <span className="text-destructive"> · acima do limite</span>
+                  Comissão total permitida pela fórmula: <strong>{brl(rateio.comissaoTotal)}</strong> (
+                  {pct(r.pctComissao)} da MB). Saldo do vendedor:{" "}
+                  <strong>{brl(rateio.custoVendedor)}</strong>
+                  {rateio.bloqueado ? (
+                    <span className="text-destructive"> · bloqueado por CMV acima de {pct(params.cmvMax)}</span>
+                  ) : rateio.custoVendedor <= 0 ? (
+                    <span className="text-destructive"> · sem saldo após gerente e indicação</span>
                   ) : (
                     <span className="text-emerald-500"> · dentro do limite</span>
                   )}
@@ -167,10 +197,16 @@ function Campo({
   step: number;
 }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Input type="number" step={step} value={value} onChange={(e) => onChange(Number(e.target.value) || 0)} />
-    </div>
+    <label className="space-y-1 block">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <Input
+        type="number"
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value) || 0)}
+        className="h-9"
+      />
+    </label>
   );
 }
 
@@ -186,12 +222,10 @@ function Linha({
   destaque?: boolean;
 }) {
   return (
-    <tr className={destaque ? "bg-primary/5 font-semibold" : ""}>
-      <td className="py-2 px-3 border-b border-border/40">{label}</td>
-      <td className="py-2 px-3 border-b border-border/40 text-right tabular-nums">{valor}</td>
-      <td className="py-2 px-3 border-b border-border/40 text-right text-xs text-muted-foreground w-28">
-        {extra ?? ""}
-      </td>
+    <tr className="border-b border-border/40 last:border-0">
+      <td className={`py-2 px-3 ${destaque ? "font-semibold" : "text-muted-foreground"}`}>{label}</td>
+      <td className="py-2 px-3 text-right text-xs text-muted-foreground">{extra ?? ""}</td>
+      <td className={`py-2 px-3 text-right tabular-nums ${destaque ? "font-semibold" : ""}`}>{valor}</td>
     </tr>
   );
 }

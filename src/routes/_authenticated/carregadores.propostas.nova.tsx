@@ -33,7 +33,7 @@ import { AlertCircle, CheckCircle2, ChevronsUpDown, FileDown, Info, Plus, Save, 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-import { useCpoConfig, useCpoProducts, useCpoUfs, useCpoInvalidate } from "@/hooks/use-cpo";
+import { useCpoConfig, useCpoNcms, useCpoProducts, useCpoUfs, useCpoInvalidate } from "@/hooks/use-cpo";
 import {
   CPO_CONFIG_FALLBACK,
   calcularCpo,
@@ -46,7 +46,9 @@ import {
   statusMB,
   type CpoItem,
   type CpoState,
+  textoDifalContribuinte,
 } from "@/lib/cpo";
+
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
 import { MoneyInput, MoneyMaskToggle } from "@/components/money-input";
 
@@ -127,6 +129,7 @@ function PropostaCpoPage() {
   const produtosQ = useCpoProducts();
   const ufsQ = useCpoUfs();
   const configQ = useCpoConfig();
+  const ncmsQ = useCpoNcms();
   const invalidate = useCpoInvalidate();
 
   const produtos = useMemo(() => (produtosQ.data ?? []).filter((p) => p.ativo), [produtosQ.data]);
@@ -274,7 +277,7 @@ function PropostaCpoPage() {
       itens: s.itens.map((i) => (i.key === key ? { ...i, ...patch } : i)),
     }));
 
-  const d = calcularCpo(state, produtosQ.data ?? [], ufs, config);
+  const d = calcularCpo(state, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []);
   const st = statusMB(d.mbPct, config);
   const uf = ufs.find((u) => u.uf === state.uf);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
@@ -297,7 +300,7 @@ function PropostaCpoPage() {
   const clienteOk = errosCliente.length === 0;
   const campoInvalido = (c: string) => errosCliente.some((e) => e.campo === c);
   const temProduto = state.itens.some((i) => i.produtoId);
-  const podeSalvar = clienteOk && temProduto && !abaixoPolitica;
+  const podeSalvar = clienteOk && temProduto && !abaixoPolitica && !d.cmvExcedido;
 
   function irParaEtapa2() {
     if (!clienteOk) {
@@ -330,6 +333,8 @@ function PropostaCpoPage() {
   if (temProduto && !(d.valorTotalProposta > 0))
     errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
   if (temProduto && abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+  if (temProduto && d.cmvExcedido)
+    errosFechamento.push(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)} — exige aprovação da diretoria.`);
   const podeFechar = errosFechamento.length === 0;
 
   // ---- Bloqueios de salvamento ----
@@ -338,6 +343,8 @@ function PropostaCpoPage() {
   if (!temProduto) errosSalvar.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length) errosSalvar.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
   if (temProduto && abaixoPolitica) errosSalvar.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+  if (temProduto && d.cmvExcedido)
+    errosSalvar.push(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)} — exige aprovação da diretoria.`);
 
 
 
@@ -480,6 +487,8 @@ function PropostaCpoPage() {
     if (!state.nome.trim()) return toast.error("Informe o nome do cliente.");
     if (!state.itens.some((i) => i.produtoId)) return toast.error("Adicione ao menos um produto.");
     if (abaixoPolitica) return toast.error("MB% abaixo da política mínima.");
+    if (d.cmvExcedido)
+      return toast.error(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação especial da diretoria.`);
     setSaving(true);
     try {
       const { data: userRes } = await supabase.auth.getUser();
@@ -941,29 +950,43 @@ function PropostaCpoPage() {
               <DreRow k="Valor dos itens (com IPI)" v={fmtBRL(d.valorItens)} tone="neutral" />
               <DreRow
                 k="Valor do item (sem IPI)"
-                sub={`Base fiscal — IPI de ${fmtPct(config.ipi)} removido`}
+                sub="Base fiscal — IPI removido conforme o NCM de cada item"
                 v={fmtBRL(d.valorItem)}
                 tone="neutral"
               />
               <DreRow
-                k={`ICMS efetivo (${fmtPct(d.icmsRate)})`}
-                sub={
-                  state.contribuinte
-                    ? `Origem ${fmtPct(d.inter)} — DIFAL por conta do destinatário`
-                    : `Origem ${fmtBRL(d.origem)} + DIFAL absorvido ${fmtBRL(d.difalAbs)}`
-                }
+                k={`ICMS na NF (${fmtPct(d.icmsRate)})`}
+                sub="Sempre a alíquota interestadual — o DIFAL nunca é somado ao ICMS"
                 v={`- ${fmtBRL(d.icms)}`}
                 tone="sub"
               />
               <DreRow
-                k={`PIS/COFINS (${fmtPct(config.pis_cofins)})`}
+                k="PIS/COFINS"
                 sub="Sobre valor do item menos ICMS"
                 v={`- ${fmtBRL(d.pisCofins)}`}
                 tone="sub"
               />
+              {!state.contribuinte && d.difalAbs > 0 ? (
+                <DreRow
+                  k="DIFAL (custo no cabeçalho da NF)"
+                  sub={`Base ${fmtBRL(d.difalBase)} — carga interna ${fmtPct(d.aliqInterna)} menos ${fmtPct(d.inter)}`}
+                  v={`- ${fmtBRL(d.difalAbs)}`}
+                  tone="sub"
+                />
+              ) : null}
 
               <div className="h-px bg-border my-3" />
-              <DreRow k={`IPI destacado (${fmtPct(config.ipi)})`} v={fmtBRL(d.ipiValor)} tone="neutral" />
+              <DreRow k="Receita líquida" v={fmtBRL(d.rl)} tone="neutral" />
+              <DreRow k="Custo total dos produtos" v={fmtBRL(d.custoTotal)} tone="neutral" />
+              <DreRow
+                k="CMV (custo ÷ receita líquida)"
+                sub={`Limite para orçar: ${fmtPct(config.cmv_max)}`}
+                v={fmtPct(d.cmv)}
+                tone={d.cmvExcedido ? "sub" : "neutral"}
+              />
+
+              <div className="h-px bg-border my-3" />
+              <DreRow k="IPI destacado" v={fmtBRL(d.ipiValor)} tone="neutral" />
               <DreRow k="ICMS de origem (interestadual)" v={fmtBRL(d.origem)} tone="neutral" />
               <DreRow
                 k={state.contribuinte ? "DIFAL estimado do destinatário" : "DIFAL absorvido pela 2P"}
@@ -977,8 +1000,19 @@ function PropostaCpoPage() {
                 tone="neutral"
               />
 
-
+              {state.contribuinte && d.difalEstimado > 0 ? (
+                <p className="text-[11px] leading-relaxed text-muted-foreground pt-3 border-t border-border mt-3">
+                  {textoDifalContribuinte({
+                    ufNome: uf?.nome ?? state.uf,
+                    aliqInterna: uf?.aliq_interna ?? 0,
+                    fcp: uf?.fcp ?? 0,
+                    valor: d.difalEstimado,
+                    temIe: !!state.ie.trim(),
+                  })}
+                </p>
+              ) : null}
             </div>
+
 
             {/* RESUMO FINAL DESTACADO */}
             <div className="rounded-2xl p-6 text-white bg-gradient-to-br from-[oklch(0.28_0.12_265)] via-[oklch(0.42_0.18_265)] to-[oklch(0.58_0.17_265)] shadow-xl space-y-5">
