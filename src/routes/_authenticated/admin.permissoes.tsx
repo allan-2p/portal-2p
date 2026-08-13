@@ -75,6 +75,7 @@ const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
       "admin.integracoes",
       "admin.auditoria",
       "admin.atividade",
+      "admin.vinculos",
     ],
   },
   { label: "Marketing", keys: ["marketing.home", "marketing.social", "marketing.trafego", "marketing.cohort", "marketing.cac", "marketing.gargalo", "marketing.prevendas", "marketing.metas"] },

@@ -495,6 +495,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         {show("admin.auditoria") && (
                           <AdminMenuLink to="/admin/auditoria" label="Auditoria de Acessos" icon={ShieldCheck} onClick={() => setAdminMenuOpen(false)} />
                         )}
+                        {show("admin.vinculos") && (
+                          <AdminMenuLink to="/admin/vinculos" label="Vínculos Salesforce" icon={Link2} onClick={() => setAdminMenuOpen(false)} />
+                        )}
                         {show("admin.atividade") && (
                           <AdminMenuLink to="/admin/atividade" label="Log de Usuários" icon={ActivityIcon} onClick={() => setAdminMenuOpen(false)} />
                         )}
