@@ -140,14 +140,19 @@ type CampoErro =
   | "razao_social" | "doc" | "uf" | "ie" | "contato_nome" | "contato_email"
   | "contato_telefone" | "cep" | "logradouro" | "numero" | "cidade";
 
-type Erros = Partial<Record<CampoErro, string>>;
+type CampoErro = string;
 
-const ROTULOS: Record<CampoErro, string> = {
+type Erros = Record<string, string>;
+
+const ROTULOS: Record<string, string> = {
   razao_social: "Razão social", doc: "CNPJ / CPF", uf: "UF de destino",
-  ie: "Inscrição Estadual", contato_nome: "Nome do responsável",
-  contato_email: "E-mail do responsável", contato_telefone: "Telefone do responsável",
+  ie: "Inscrição Estadual",
   cep: "CEP", logradouro: "Logradouro", numero: "Número", cidade: "Cidade",
 };
+
+function rotuloCampo(chave: string, contatos: Contato[]): string {
+  return ROTULOS[chave] ?? rotuloErroContato(chave, contatos) ?? chave;
+}
 
 function validarCampos(f: Omit<Cliente, "id">): Erros {
   const e: Erros = {};
@@ -157,21 +162,26 @@ function validarCampos(f: Omit<Cliente, "id">): Erros {
   else if (doc.length !== 11 && doc.length !== 14) e.doc = "CNPJ / CPF inválido.";
   if (!f.uf?.trim()) e.uf = "Selecione a UF de destino.";
   if (f.contribuinte && !f.ie?.trim()) e.ie = "Cliente contribuinte: informe a Inscrição Estadual.";
-  if (!f.contato_nome?.trim()) e.contato_nome = "Informe o nome do responsável.";
-  const email = (f.contato_email ?? "").trim() || (f.email ?? "").trim();
-  const fone = (f.contato_telefone ?? "").trim() || (f.telefone ?? "").trim();
-  if (!email && !fone) {
-    e.contato_email = "Informe ao menos um contato: e-mail ou telefone.";
-    e.contato_telefone = "Informe ao menos um contato: e-mail ou telefone.";
-  } else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    e.contato_email = "E-mail de contato inválido.";
-  }
+  Object.assign(e, validarContatos(f.contatos ?? []));
   if (soDigitos(f.cep ?? "").length !== 8) e.cep = "Informe um CEP válido (8 dígitos).";
   if (!f.logradouro?.trim()) e.logradouro = "Informe o logradouro.";
   if (!f.numero?.trim()) e.numero = "Informe o número do endereço.";
   if (!f.cidade?.trim()) e.cidade = "Informe a cidade.";
   return e;
 }
+
+/** Mantém os campos legados sincronizados com o contato principal. */
+function comLegado(f: Omit<Cliente, "id">): Omit<Cliente, "id"> {
+  const principal = (f.contatos ?? []).find((c) => c.tipo === "principal");
+  return {
+    ...f,
+    contato_nome: principal?.nome?.trim() || null,
+    contato_cargo: principal?.cargo?.trim() || null,
+    contato_email: principal?.emails.find((v) => v.trim())?.trim() || null,
+    contato_telefone: principal?.telefones.find((v) => v.trim())?.trim() || null,
+  };
+}
+
 
 function CadastrosPage() {
   const qc = useQueryClient();
