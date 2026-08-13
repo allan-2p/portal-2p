@@ -342,8 +342,8 @@ function CadastrosPage() {
                   <F label="CEP *">
                     <CepInput
                       value={form.cep ?? ""}
-                      onChange={(v) => set("cep", v)}
-                      onFound={(end) => {
+                      onChange={(v: string) => set("cep", v)}
+                      onFound={(end: EnderecoCep) => {
                         setForm((f) => ({
                           ...f,
                           cep: end.cep,
