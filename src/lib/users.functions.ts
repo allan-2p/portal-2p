@@ -164,6 +164,13 @@ const UpdateInput = z.object({
   regime_contratacao: RegimeEnum.optional(),
   organizacao: OrgEnum.optional(),
   is_external: z.boolean().optional(),
+  telefone: z.string().optional().nullable(),
+  meta_mensal: z.number().nullable().optional(),
+  cargo_tipo: z.string().optional().nullable(),
+  filter_scope: z.enum(["geral", "pre_vendas", "carteira", "individual"]).optional(),
+  sf_user_id: z.string().trim().max(32).nullable().optional(),
+  ativo: z.boolean().optional(),
+  role: RoleEnum.optional(),
 });
 
 export const adminUpdateUser = createServerFn({ method: "POST" })
