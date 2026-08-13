@@ -1,6 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useSimulation } from "@/components/simulation";
-import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -44,11 +43,6 @@ const ACTION_LABELS: Record<string, string> = {
   profile: "Perfil aplicado",
 };
 
-export const Route = createFileRoute("/_authenticated/admin/permissoes")({
-  head: () => ({ meta: [{ title: "Permissões de Usuários — Portal 2P" }] }),
-  component: PermissoesPage,
-});
-
 // Agrupamento visual das features
 const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
   {
@@ -71,7 +65,6 @@ const FEATURE_GROUPS: { label: string; keys: FeatureKey[] }[] = [
       "admin.metas",
       "admin.tabelas",
       "admin.produtos",
-      "admin.permissoes",
       "admin.integracoes",
       "admin.auditoria",
       "admin.atividade",
@@ -86,14 +79,6 @@ const GROUPED_KEYS = new Set(FEATURE_GROUPS.flatMap((g) => g.keys));
 const UNGROUPED: FeatureKey[] = (ALL_FEATURES as FeatureKey[]).filter((k) => !GROUPED_KEYS.has(k));
 if (UNGROUPED.length > 0) FEATURE_GROUPS.push({ label: "Outros", keys: UNGROUPED });
 
-
-function PermissoesPage() {
-  return (
-    <AppLayout>
-      <PermissoesContent />
-    </AppLayout>
-  );
-}
 
 export function PermissoesContent() {
   const { hasRole } = useAuth();
