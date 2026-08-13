@@ -41,7 +41,10 @@ export type PropostaPdfData = {
   observacoes?: string;
   consultor?: string;
   validadeDias?: number;
+  /** Logomarca do cliente exibida no cabeçalho (data URL ou URL http). */
+  logoCliente?: string | null;
 };
+
 
 const esc = (v: unknown) =>
   String(v ?? "")
