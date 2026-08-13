@@ -60,6 +60,7 @@ function PerfisPage() {
   const [instance, setInstance] = useState<InstanceId>("solar");
   const [keys, setKeys] = useState<Set<FeatureKey>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
 
   async function load() {
     setLoading(true);
