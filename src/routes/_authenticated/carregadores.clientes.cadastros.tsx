@@ -338,7 +338,23 @@ function CadastrosPage() {
                 </Section>
 
                 <Section title="Endereço">
-                  <F label="CEP *"><Input value={form.cep ?? ""} onChange={(e) => set("cep", e.target.value)} /></F>
+                  <F label="CEP *">
+                    <CepInput
+                      value={form.cep ?? ""}
+                      onChange={(v) => set("cep", v)}
+                      onFound={(end) => {
+                        setForm((f) => ({
+                          ...f,
+                          cep: end.cep,
+                          logradouro: end.logradouro || f.logradouro,
+                          bairro: end.bairro || f.bairro,
+                          cidade: end.cidade || f.cidade,
+                          complemento: f.complemento || end.complemento,
+                          uf: end.uf || f.uf,
+                        }));
+                      }}
+                    />
+                  </F>
                   <F label="Logradouro *"><Input value={form.logradouro ?? ""} onChange={(e) => set("logradouro", e.target.value)} /></F>
                   <F label="Número *"><Input value={form.numero ?? ""} onChange={(e) => set("numero", e.target.value)} /></F>
                   <F label="Complemento"><Input value={form.complemento ?? ""} onChange={(e) => set("complemento", e.target.value)} /></F>
