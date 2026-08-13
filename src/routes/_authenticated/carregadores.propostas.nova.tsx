@@ -197,25 +197,8 @@ function PropostaCpoPage() {
   }, [editId, dupId]);
 
 
-  // Autosave local enquanto o usuário avança nas etapas
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const vazio = !state.nome.trim() && !state.itens.some((i) => i.produtoId);
-      if (vazio) {
-        limparRascunho();
-        setAutosaveAt(null);
-        return;
-      }
-      const ts = Date.now();
-      try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({ state, etapa, ts }));
-        setAutosaveAt(new Date(ts));
-      } catch {
-        /* storage indisponível */
-      }
-    }, 600);
-    return () => clearTimeout(t);
-  }, [state, etapa]);
+  // Sem autosave local: cada nova proposta parte do zero.
+
 
 
   // Clientes vindos do cadastro completo (Clientes > Cadastros)
