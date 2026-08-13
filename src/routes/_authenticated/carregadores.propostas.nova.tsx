@@ -1071,22 +1071,7 @@ function PropostaCpoPage() {
 
 
             <div className="glass rounded-2xl p-4 space-y-3">
-              {!podeFechar ? (
-                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3">
-                  <p className="text-sm font-semibold text-destructive">
-                    Corrija antes de exportar ou concluir o pedido
-                  </p>
-                  <ul className="mt-1 list-disc pl-5 text-xs text-destructive space-y-0.5">
-                    {errosFechamento.map((e, i) => (
-                      <li key={i}>{e}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2 flex-1 min-w-[160px]">
-                  <Save className="h-4 w-4" /> Salvar proposta
-                </Button>
                 <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar} className="gap-2 flex-1 min-w-[160px]">
                   <FileDown className="h-4 w-4" /> Baixar PDF
                 </Button>
