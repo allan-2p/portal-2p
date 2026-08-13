@@ -365,7 +365,7 @@ function UsuariosPage() {
 }
 
 function PortalTable({
-  rows, loading, currentUserId, onRoleChange, onOrgChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit, onDetail,
+  rows, loading, currentUserId, onRoleChange, onOrgChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit, onDetail, onSimulate,
 }: {
   rows: Row[];
   loading: boolean;
