@@ -335,7 +335,7 @@ export function PermissoesContent() {
     u.granted.filter((d) => u.instances.includes(d.instance_id)).length;
 
   return (
-    <AppLayout>
+    <>
       <div className="max-w-[1500px] mx-auto space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
