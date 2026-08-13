@@ -157,23 +157,45 @@ export function PropostaWizard({
         </div>
       </div>
 
-      {/* Stepper */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {STEPS.map((s, i) => (
-          <div
-            key={s}
-            className={`text-xs px-3 py-1.5 rounded-full border ${
-              i === step
-                ? "bg-primary text-primary-foreground border-transparent"
-                : i < step
-                  ? "bg-surface-2 text-foreground border-border"
-                  : "text-muted-foreground border-border"
-            }`}
-          >
-            {i + 1}. {s}
+      {/* Stepper + barra de andamento */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            {STEPS.map((s, i) => (
+              <div
+                key={s}
+                aria-current={i === step ? "step" : undefined}
+                className={`text-xs px-3 py-1.5 rounded-full border ${
+                  i === step
+                    ? "bg-primary text-primary-foreground border-transparent"
+                    : i < step
+                      ? "bg-surface-2 text-foreground border-border"
+                      : "text-muted-foreground border-border"
+                }`}
+              >
+                {i + 1}. {s}
+              </div>
+            ))}
           </div>
-        ))}
+          <span className="text-xs font-medium text-muted-foreground shrink-0">
+            Etapa {step + 1} de {STEPS.length}
+          </span>
+        </div>
+        <div
+          className="h-1.5 rounded-full bg-surface-2 overflow-hidden"
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={STEPS.length}
+          aria-valuenow={step + 1}
+          aria-label={`Etapa ${step + 1} de ${STEPS.length}`}
+        >
+          <div
+            className="h-full bg-primary rounded-full transition-all duration-300"
+            style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+          />
+        </div>
       </div>
+
 
       {step === 0 && (
         <>
