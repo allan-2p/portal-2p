@@ -220,9 +220,9 @@ function CadastrosPage() {
 
   const salvar = useMutation({
     mutationFn: async () => {
-      const payload = comLegado(form) as unknown as Record<string, unknown>;
+      const payload = comLegado(form);
       if (editId) {
-        const { error } = await supabase.from("cpo_clientes").update(payload).eq("id", editId);
+        const { error } = await supabase.from("cpo_clientes").update(payload as never).eq("id", editId);
         if (error) throw error;
       } else {
         const { data: u } = await supabase.auth.getUser();
