@@ -1404,11 +1404,9 @@ function PropostaCpoPage() {
                 Salvar proposta
               </Button>
               <Button variant="outline" onClick={abrirPreviewPdf} disabled={!podeFechar || saving} className="w-full gap-2 sm:w-auto">
-                <Eye className="h-4 w-4" /> Prévia do PDF
+                <Eye className="h-4 w-4" /> Proposta em PDF
               </Button>
-              <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar || saving} className="w-full gap-2 sm:w-auto">
-                <FileDown className="h-4 w-4" /> Baixar PDF
-              </Button>
+
               <div className="hidden sm:block flex-1" />
               {etapa === 4 ? (
                 <Button
