@@ -91,7 +91,7 @@ type Cliente = {
   nome_fantasia: string | null;
   doc: string | null;
   ie: string | null;
-  im: string | null;
+  
   contribuinte: boolean;
   regime_tributario: string | null;
   email: string | null;
@@ -115,7 +115,7 @@ type Cliente = {
 };
 
 const vazio = (): Omit<Cliente, "id"> => ({
-  razao_social: "", nome_fantasia: "", doc: "", ie: "", im: "", contribuinte: false,
+  razao_social: "", nome_fantasia: "", doc: "", ie: "", contribuinte: false,
   regime_tributario: "Simples Nacional", email: "", telefone: "", site: "",
   contato_nome: "", contato_cargo: "", contato_email: "", contato_telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "",
@@ -313,7 +313,7 @@ function CadastrosPage() {
                     </Select>
                   </F>
                   <F label={form.contribuinte ? "Inscrição Estadual *" : "Inscrição Estadual"}><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
-                  <F label="Inscrição Municipal"><Input value={form.im ?? ""} onChange={(e) => set("im", e.target.value)} /></F>
+                  
                   <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                     <div>
                       <div className="text-sm font-semibold">Cliente contribuinte do ICMS</div>
@@ -559,7 +559,7 @@ function CadastrosPage() {
                   <Bloco titulo="Situação fiscal">
                     <Linha rot="CNPJ / CPF" val={detalhe.doc} />
                     <Linha rot="Inscrição Estadual" val={detalhe.contribuinte ? detalhe.ie : "Isento / não contribuinte"} />
-                    <Linha rot="Inscrição Municipal" val={detalhe.im} />
+                    
                     <Linha rot="Regime tributário" val={detalhe.regime_tributario} />
                     <Linha rot="UF de destino" val={detalhe.uf} />
                   </Bloco>
