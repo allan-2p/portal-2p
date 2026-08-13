@@ -23,6 +23,10 @@ import {
   type FilterScope,
   type SFTeam,
 } from "@/lib/scope.functions";
+import {
+  adminListPermissionProfiles,
+  adminSetUserProfiles,
+} from "@/lib/permission-profiles.functions";
 import { toast } from "sonner";
 
 import {
