@@ -61,9 +61,61 @@ export function WizardActionBar({
   actions = [],
   primary,
   className,
+  minimal = false,
 }: WizardActionBarProps) {
   const pending = showErrors ? errors : [];
   const pct = Math.round((step / Math.max(totalSteps, 1)) * 100);
+
+  if (minimal) {
+    return (
+      <div
+        className={cn(
+          "sticky bottom-0 z-30 mt-6 -mx-4 sm:-mx-6 lg:-mx-8",
+          "border-t border-border bg-background/80 backdrop-blur-xl",
+          "shadow-[0_-10px_30px_-20px_rgba(0,0,0,0.45)]",
+          className,
+        )}
+      >
+        <div className="flex items-center justify-center px-4 py-4 sm:py-5">
+          <div className="inline-flex items-center rounded-full border border-border bg-muted/60 p-1 shadow-sm">
+            {onBack ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBack}
+                disabled={backDisabled}
+                className="h-9 gap-1.5 rounded-full px-4 text-sm font-medium text-foreground/80 hover:bg-background hover:text-foreground disabled:opacity-40"
+                aria-label="Etapa anterior"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Voltar
+              </Button>
+            ) : (
+              <span className="h-9 w-16" aria-hidden />
+            )}
+
+            <span className="mx-1 h-4 w-px bg-border" aria-hidden />
+
+            {onNext ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onNext}
+                disabled={nextDisabled}
+                className="h-9 gap-1.5 rounded-full px-4 text-sm font-medium text-foreground/80 hover:bg-background hover:text-foreground disabled:opacity-40"
+                aria-label="Próxima etapa"
+              >
+                Próximo
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <span className="h-9 w-16" aria-hidden />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
