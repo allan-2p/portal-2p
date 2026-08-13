@@ -23,6 +23,10 @@ import {
   type FilterScope,
   type SFTeam,
 } from "@/lib/scope.functions";
+import {
+  adminListPermissionProfiles,
+  adminSetUserProfiles,
+} from "@/lib/permission-profiles.functions";
 import { toast } from "sonner";
 
 import {
@@ -911,6 +915,28 @@ function EditUserModal({
   onClose: () => void;
   onSubmit: (data: EditPayload) => Promise<void>;
 }) {
+  const listProfilesFn = useServerFn(adminListPermissionProfiles);
+  const setUserProfilesFn = useServerFn(adminSetUserProfiles);
+  const [permProfiles, setPermProfiles] = useState<{ id: string; name: string }[]>([]);
+  const [profileIds, setProfileIds] = useState<Set<string>>(new Set());
+  const [profilesLoading, setProfilesLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    listProfilesFn()
+      .then((res) => {
+        if (!alive) return;
+        setPermProfiles(res.profiles.map((p) => ({ id: p.id, name: p.name })));
+        setProfileIds(new Set(res.profiles.filter((p) => p.user_ids.includes(row.id)).map((p) => p.id)));
+      })
+      .catch(() => {})
+      .finally(() => alive && setProfilesLoading(false));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [row.id]);
+
   const [form, setForm] = useState({
     email: row.email,
     full_name: row.full_name ?? "",
@@ -930,6 +956,7 @@ function EditUserModal({
 
   const [submitting, setSubmitting] = useState(false);
 
+
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
       <form
@@ -937,6 +964,7 @@ function EditUserModal({
           e.preventDefault();
           setSubmitting(true);
           try {
+            await setUserProfilesFn({ data: { user_id: row.id, profile_ids: [...profileIds] } });
             await onSubmit({
               email: form.email,
               full_name: form.full_name,
@@ -1034,7 +1062,41 @@ function EditUserModal({
           <p className="text-xs text-amber-600 dark:text-amber-400">
             Escopo individual sem ID do Salesforce faz as métricas ficarem zeradas.
           </p>
-        )}
+)}
+
+        <div className="pt-2 space-y-2">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Perfis de permissão
+          </div>
+          {profilesLoading ? (
+            <div className="text-sm text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando perfis…
+            </div>
+          ) : permProfiles.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum perfil criado ainda.</p>
+          ) : (
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              {permProfiles.map((p) => (
+                <label
+                  key={p.id}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-surface-2 cursor-pointer text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={profileIds.has(p.id)}
+                    onChange={(e) => {
+                      const next = new Set(profileIds);
+                      if (e.target.checked) next.add(p.id);
+                      else next.delete(p.id);
+                      setProfileIds(next);
+                    }}
+                  />
+                  <span className="truncate">{p.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-6 pt-1">
           <label className="flex items-center gap-2 text-sm">
