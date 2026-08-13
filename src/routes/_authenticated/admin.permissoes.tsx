@@ -88,6 +88,14 @@ if (UNGROUPED.length > 0) FEATURE_GROUPS.push({ label: "Outros", keys: UNGROUPED
 
 
 function PermissoesPage() {
+  return (
+    <AppLayout>
+      <PermissoesContent />
+    </AppLayout>
+  );
+}
+
+export function PermissoesContent() {
   const { hasRole } = useAuth();
   const list = useServerFn(adminListAccessMatrix);
   const setPerm = useServerFn(adminSetFeaturePermission);
@@ -279,11 +287,9 @@ function PermissoesPage() {
 
   if (!hasRole("admin")) {
     return (
-      <AppLayout>
-        <div className="p-8 text-center text-muted-foreground">
-          Acesso restrito a administradores.
-        </div>
-      </AppLayout>
+      <div className="p-8 text-center text-muted-foreground">
+        Acesso restrito a administradores.
+      </div>
     );
   }
 
@@ -329,7 +335,7 @@ function PermissoesPage() {
     u.granted.filter((d) => u.instances.includes(d.instance_id)).length;
 
   return (
-    <AppLayout>
+    <>
       <div className="max-w-[1500px] mx-auto space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
@@ -999,7 +1005,7 @@ function PermissoesPage() {
         </div>
       </div>
 
-    </AppLayout>
+    </>
   );
 }
 

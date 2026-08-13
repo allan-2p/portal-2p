@@ -7,7 +7,6 @@
 import {
   Users,
   UserCog,
-  KeyRound,
   Activity as ActivityIcon,
   Link2,
   ShieldCheck,
@@ -65,8 +64,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       {
         label: "Acessos",
         items: [
-          { to: "/admin/perfis", label: "Perfis de Permissão", icon: UserCog, feature: "admin.perfis" },
-          { to: "/admin/permissoes", label: "Permissões de Usuários", icon: KeyRound, feature: "admin.permissoes" },
+          { to: "/admin/perfis", label: "Perfis", icon: UserCog, feature: "admin.perfis" },
           { to: "/admin/auditoria", label: "Auditoria de Acessos", icon: ShieldCheck, feature: "admin.auditoria" },
         ],
       },
