@@ -1173,24 +1173,26 @@ function PropostaCpoPage() {
               </div>
             ) : null}
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-2">
-              <Button variant="outline" onClick={voltarEtapa} disabled={etapa === 1} className="w-full gap-2 sm:w-auto">
+              <Button variant="outline" onClick={voltarEtapa} disabled={etapa === 1 || saving} className="w-full gap-2 sm:w-auto">
                 Voltar
               </Button>
-              <Button variant="outline" onClick={avancarEtapa} disabled={etapa === 4} className="w-full gap-2 sm:w-auto">
+              <Button variant="outline" onClick={avancarEtapa} disabled={etapa === 4 || saving} className="w-full gap-2 sm:w-auto">
                 Próximo
               </Button>
               <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="w-full gap-2 sm:w-auto">
-                <Save className="h-4 w-4" /> Salvar proposta
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Salvar proposta
               </Button>
-              <Button variant="outline" onClick={abrirPreviewPdf} disabled={!podeFechar} className="w-full gap-2 sm:w-auto">
+              <Button variant="outline" onClick={abrirPreviewPdf} disabled={!podeFechar || saving} className="w-full gap-2 sm:w-auto">
                 <Eye className="h-4 w-4" /> Prévia do PDF
               </Button>
-              <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar} className="w-full gap-2 sm:w-auto">
+              <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar || saving} className="w-full gap-2 sm:w-auto">
                 <FileDown className="h-4 w-4" /> Baixar PDF
               </Button>
               <div className="hidden sm:block flex-1" />
               <Button onClick={() => setConfirmarConclusao(true)} disabled={saving} className="w-full gap-2 sm:w-auto">
-                <CheckCircle2 className="h-4 w-4" /> Concluir pedido
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                Concluir pedido
               </Button>
             </div>
           </div>
