@@ -85,7 +85,19 @@ export async function getProducts(): Promise<SapMaterial[]> {
 
   const parser = new XMLParser({ removeNSPrefix: true, ignoreAttributes: true });
 
-  async function chamar(): Promise<any[]> {
+  // Credenciais candidatas: a RFC devolve tabelas vazias (HTTP 200) quando o
+  // usuário não tem autorização, então tentamos as alternativas configuradas.
+  const credenciais: { nome: string; header: string }[] = [];
+  if (auth) credenciais.push({ nome: "SAP_BRIDGE_AUTH", header: auth });
+  if (user && pass) {
+    const basic = `Basic ${Buffer.from(`${user}:${pass}`).toString("base64")}`;
+    if (!credenciais.some((c) => c.header === basic)) {
+      credenciais.push({ nome: "SAP_BRIDGE_USER/PASSWORD", header: basic });
+    }
+  }
+  if (token) credenciais.push({ nome: "SAP_RFC_TOKEN", header: `Bearer ${token}` });
+
+  async function chamar(credencial: { nome: string; header: string }): Promise<any[]> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 90_000);
     let res: Response;
@@ -95,7 +107,7 @@ export async function getProducts(): Promise<SapMaterial[]> {
         headers: {
           "content-type": "application/soap+xml; charset=utf-8",
           accept: "application/soap+xml, text/xml, */*",
-          authorization: auth ?? `Bearer ${token}`,
+          authorization: credencial.header,
         },
         body: SOAP_BODY,
         signal: controller.signal,
@@ -111,6 +123,9 @@ export async function getProducts(): Promise<SapMaterial[]> {
     }
 
     const xml = await res.text();
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(`SAP: credencial ${credencial.nome} recusada (HTTP ${res.status}).`);
+    }
     if (!res.ok) throw new Error(`SAP ${res.status}: ${xml.slice(0, 300)}`);
 
     const doc = parser.parse(xml);
@@ -124,22 +139,30 @@ export async function getProducts(): Promise<SapMaterial[]> {
     if (!Array.isArray(items)) items = items ? [items] : [];
     if (items.length === 0) {
       throw new Error(
-        `SAP: resposta sem materiais (e_t_material vazio). HTTP ${res.status}, ${xml.length} bytes: ${xml
-          .replace(/\s+/g, " ")
-          .slice(0, 300)}`,
+        `SAP: resposta sem materiais (e_t_material vazio) usando ${credencial.nome}. ` +
+          `Normalmente é falta de autorização do usuário na RFC. HTTP ${res.status}, ${xml.length} bytes.`,
       );
     }
     return items as any[];
   }
 
-  let items: any[];
-  try {
-    items = await chamar();
-  } catch (e: any) {
-    // A RFC ocasionalmente devolve vazio/erro transitório: uma segunda tentativa resolve.
-    await new Promise((r) => setTimeout(r, 2_000));
-    items = await chamar();
+  let items: any[] | null = null;
+  let ultimoErro: unknown = null;
+  for (const cred of credenciais) {
+    for (let tentativa = 0; tentativa < 2 && !items; tentativa++) {
+      try {
+        items = await chamar(cred);
+      } catch (e) {
+        ultimoErro = e;
+        // Falha transitória: uma segunda tentativa com a mesma credencial resolve.
+        if (tentativa === 0) await new Promise((r) => setTimeout(r, 2_000));
+      }
+    }
+    if (items) break;
   }
+  if (!items) throw ultimoErro instanceof Error ? ultimoErro : new Error(String(ultimoErro));
+
+
 
 
   // Dedup por código: a RFC repete o material por centro/lista de preço.
