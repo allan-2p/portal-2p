@@ -1394,19 +1394,14 @@ function PropostaCpoPage() {
           savedAt={autosaveAt}
           minimal={etapa === 1}
           actions={
-            etapa === 1
-              ? []
-              : [
-                  ...(etapa === 4
-                    ? [
-                        {
-                          label: "Salvar proposta",
-                          onClick: () => pedirRevisao("salvar"),
-                          icon: <Save className="h-4 w-4" />,
-                          loading: saving && statusProposta !== "Aguardando Pagamento",
-                        },
-                      ]
-                    : []),
+            etapa === 4
+              ? [
+                  {
+                    label: "Salvar proposta",
+                    onClick: () => pedirRevisao("salvar"),
+                    icon: <Save className="h-4 w-4" />,
+                    loading: saving && statusProposta !== "Aguardando Pagamento",
+                  },
                   {
                     label: "Proposta em PDF",
                     onClick: abrirPreviewPdf,
@@ -1414,7 +1409,9 @@ function PropostaCpoPage() {
                     disabled: !podeFechar || saving,
                   },
                 ]
+              : []
           }
+
           primary={
             etapa === 1
               ? null
