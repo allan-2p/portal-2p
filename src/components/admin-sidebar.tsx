@@ -122,7 +122,12 @@ function AdminGroupItems({
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
-            {!collapsed && <span className="truncate">{i.label}</span>}
+            {!collapsed && <span className="truncate flex-1">{i.label}</span>}
+            {(() => {
+              const slug = slugFromTo(i.to);
+              if (!health || !slug) return null;
+              return <IntegrationStatusDot item={health.map.get(slug)} loading={health.isLoading} />;
+            })()}
           </Link>
         );
       })}
