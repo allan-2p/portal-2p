@@ -109,7 +109,6 @@ type Cliente = {
   cidade: string | null;
   uf: string;
   condicao_pagamento: string | null;
-  transportadora: string | null;
   observacoes: string | null;
   ativo: boolean;
   created_by?: string;
@@ -121,7 +120,7 @@ const vazio = (): Omit<Cliente, "id"> => ({
   contato_nome: "", contato_cargo: "", contato_email: "", contato_telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "",
   uf: "SP", condicao_pagamento: "",
-  transportadora: "", observacoes: "", ativo: true,
+  observacoes: "", ativo: true,
 } as Omit<Cliente, "id">);
 
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
@@ -336,7 +335,6 @@ function CadastrosPage() {
 
                 <Section title="Comercial">
                   <F label="Condição de pagamento"><Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" /></F>
-                  <F label="Transportadora"><Input value={form.transportadora ?? ""} onChange={(e) => set("transportadora", e.target.value)} /></F>
                   <div className="sm:col-span-2">
                     <Label className="text-xs">Observações</Label>
                     <Textarea rows={3} value={form.observacoes ?? ""} onChange={(e) => set("observacoes", e.target.value)} />
@@ -565,7 +563,6 @@ function CadastrosPage() {
 
                   <Bloco titulo="Comercial">
                     <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
-                    <Linha rot="Transportadora" val={detalhe.transportadora} />
                     <Linha rot="Observações" val={detalhe.observacoes} />
                   </Bloco>
 
