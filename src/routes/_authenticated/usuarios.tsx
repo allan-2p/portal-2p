@@ -911,6 +911,28 @@ function EditUserModal({
   onClose: () => void;
   onSubmit: (data: EditPayload) => Promise<void>;
 }) {
+  const listProfilesFn = useServerFn(adminListPermissionProfiles);
+  const setUserProfilesFn = useServerFn(adminSetUserProfiles);
+  const [permProfiles, setPermProfiles] = useState<{ id: string; name: string }[]>([]);
+  const [profileIds, setProfileIds] = useState<Set<string>>(new Set());
+  const [profilesLoading, setProfilesLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    listProfilesFn()
+      .then((res) => {
+        if (!alive) return;
+        setPermProfiles(res.profiles.map((p) => ({ id: p.id, name: p.name })));
+        setProfileIds(new Set(res.profiles.filter((p) => p.user_ids.includes(row.id)).map((p) => p.id)));
+      })
+      .catch(() => {})
+      .finally(() => alive && setProfilesLoading(false));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [row.id]);
+
   const [form, setForm] = useState({
     email: row.email,
     full_name: row.full_name ?? "",
@@ -929,6 +951,7 @@ function EditUserModal({
   });
 
   const [submitting, setSubmitting] = useState(false);
+
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
