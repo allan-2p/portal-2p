@@ -580,6 +580,45 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_logs: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          duration_ms: number | null
+          event: string
+          id: string
+          level: string
+          message: string | null
+          slug: string
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          duration_ms?: number | null
+          event: string
+          id?: string
+          level?: string
+          message?: string | null
+          slug: string
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          duration_ms?: number | null
+          event?: string
+          id?: string
+          level?: string
+          message?: string | null
+          slug?: string
+        }
+        Relationships: []
+      }
       log_retention_policy: {
         Row: {
           archive_days: number

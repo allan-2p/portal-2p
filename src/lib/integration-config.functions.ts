@@ -41,9 +41,22 @@ export const testIntegration = createServerFn({ method: "POST" })
     const { data: isAdmin, error } = await context.supabase.rpc("is_admin");
     if (error || !isAdmin) throw new Error("Forbidden: admin role required");
 
+    const started = Date.now();
     const { collectIntegrationsHealth } = await import("./integrations-health.server");
     const all = await collectIntegrationsHealth();
     const found = all.find((i) => i.slug === data.slug);
+
+    const { logIntegrationEvent } = await import("./integration-logs.server");
+    await logIntegrationEvent({
+      slug: data.slug,
+      level: found?.status === "error" ? "error" : found?.status === "off" ? "warn" : "info",
+      event: "test",
+      message: found?.detail ?? "Integração sem verificação automática.",
+      durationMs: Date.now() - started,
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
+    });
+
     return {
       slug: data.slug,
       status: found?.status ?? "off",

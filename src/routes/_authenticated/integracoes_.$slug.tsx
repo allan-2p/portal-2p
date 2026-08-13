@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, ExternalLink, Loader2, Lock, Plug, RefreshCw, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { integrationBySlug } from "@/lib/integrations-catalog";
 import { getIntegrationConfig, testIntegration } from "@/lib/integration-config.functions";
 import { formatLastSync } from "@/components/integration-status";
+import { IntegrationLogsPanel } from "@/components/integration-logs";
 
 export const Route = createFileRoute("/_authenticated/integracoes_/$slug")({
   head: () => ({
@@ -31,6 +32,7 @@ function IntegracaoConfigPage() {
 
   const fetchConfig = useServerFn(getIntegrationConfig);
   const runTest = useServerFn(testIntegration);
+  const qc = useQueryClient();
 
   const config = useQuery({
     queryKey: ["integration", slug, "config"],
@@ -42,6 +44,7 @@ function IntegracaoConfigPage() {
   const test = useMutation({
     mutationFn: () => runTest({ data: { slug } }),
     onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["integration-logs"] });
       if (r.status === "ok") toast.success("Conexão testada com sucesso");
       else if (r.status === "error") toast.error("Falha na conexão");
       else toast.warning("Integração não configurada");
@@ -200,6 +203,8 @@ function IntegracaoConfigPage() {
             </a>
           )}
         </section>
+
+        <IntegrationLogsPanel slug={slug} />
       </div>
     </AppLayout>
   );
