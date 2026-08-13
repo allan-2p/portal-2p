@@ -88,6 +88,14 @@ if (UNGROUPED.length > 0) FEATURE_GROUPS.push({ label: "Outros", keys: UNGROUPED
 
 
 function PermissoesPage() {
+  return (
+    <AppLayout>
+      <PermissoesContent />
+    </AppLayout>
+  );
+}
+
+export function PermissoesContent() {
   const { hasRole } = useAuth();
   const list = useServerFn(adminListAccessMatrix);
   const setPerm = useServerFn(adminSetFeaturePermission);
