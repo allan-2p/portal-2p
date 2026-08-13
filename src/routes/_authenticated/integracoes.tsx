@@ -34,17 +34,13 @@ function IntegracoesPage() {
   const connected = status.data?.connected === true;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <Link
-        to="/"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" /> Voltar
-      </Link>
+    <AppLayout>
+    <div className="max-w-5xl mx-auto space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold">Integrações</h1>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Painel de Controle</div>
+        <h1 className="font-display text-2xl font-bold mt-1">Integrações</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Conecte o Portal 2P a serviços externos. Autorizações são geridas de forma segura pela Lovable.
+          Todas as integrações usadas pela plataforma — conexões externas, bancos de dados e serviços de apoio.
         </p>
       </div>
 
