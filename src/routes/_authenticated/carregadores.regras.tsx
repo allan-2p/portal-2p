@@ -83,7 +83,7 @@ function RegrasPage() {
                 <Campo nome="Alíquota interna e FCP por Estado" origem="Moderação › Produtos e Alíquotas (tabela de UFs)." />
                 <Campo nome="IPI, PIS/COFINS, alíquota interestadual, MB mínima" origem="Moderação › Comissões › Parâmetros tributários." />
                 <Campo nome="Valor unitário de venda" origem="Preenchido pelo vendedor em cada proposta. Não há preço de tabela sugerido — o valor é sempre negociado." />
-                <Campo nome="Frete" origem="Preenchido na proposta (FOB ou CIF). Entra no total da proposta, mas não na base de impostos nem na margem." />
+                <Campo nome="Frete" origem="Preenchido na proposta (FOB, CIF ou Dedicado). Entra no total da proposta, mas não na base de impostos nem na margem." />
                 <Campo nome="Regras de comissão (CLT/PJ)" origem="Moderação › Comissões. O regime do beneficiário vem do cadastro do usuário (Usuários › Regime de contratação)." />
               </tbody>
             </table>

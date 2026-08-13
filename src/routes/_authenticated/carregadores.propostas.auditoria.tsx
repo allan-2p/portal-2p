@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertTriangle, ArrowLeft, Calculator, FileDown, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fmtBRL, fmtPct, novoEstado, type CpoState } from "@/lib/cpo";
+import { fmtBRL, fmtPct, novoEstado, type CpoFreteMod, type CpoState } from "@/lib/cpo";
 import { auditarProposta, type PassoCalculo, REGRAS_VERSAO } from "@/lib/cpo-auditoria";
 import {
   baixarCsv,
