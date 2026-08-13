@@ -31,12 +31,16 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listClientesFn } from "@/lib/clientes.functions";
+import { getClienteLogo } from "@/lib/cliente-logos.functions";
+
 
 import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+
 import { useCpoConfig, useCpoNcms, useCpoProducts, useCpoUfs, useCpoInvalidate } from "@/hooks/use-cpo";
 import {
   CPO_CONFIG_FALLBACK,
@@ -150,6 +154,8 @@ function PropostaCpoPage() {
   const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   const [previewAberto, setPreviewAberto] = useState(false);
+  const [usarLogoCliente, setUsarLogoCliente] = useState(true);
+
   const [propostaUpdatedAt, setPropostaUpdatedAt] = useState<string | null>(null);
   const [statusProposta, setStatusProposta] = useState<string>("Salvo");
   const submitLock = useRef(false);
@@ -233,8 +239,18 @@ function PropostaCpoPage() {
   // Sem autosave local: cada nova proposta parte do zero.
 
 
+  // Logomarca do cliente (cadastro) usada opcionalmente no PDF
+  const buscarLogoCliente = useServerFn(getClienteLogo);
+  const docLogo = (state.doc ?? "").replace(/\D/g, "");
+  const logoQ = useQuery({
+    queryKey: ["cliente-logo", docLogo],
+    queryFn: () => buscarLogoCliente({ data: { doc: docLogo } }),
+    enabled: docLogo.length >= 11,
+  });
+  const logoCliente = ((logoQ.data as any)?.data_url as string | undefined) ?? null;
 
   // Clientes vindos do cadastro universal (Clientes > Cadastros)
+
   const listClientes = useServerFn(listClientesFn);
   const clientesQ = useQuery({
     queryKey: ["cpo-clientes-cadastro"],
@@ -572,8 +588,10 @@ function PropostaCpoPage() {
           comissao: d.comValor,
           comissaoPct: d.comPct,
         },
+        logoCliente: usarLogoCliente ? logoCliente : null,
       }),
-    [state, produtos, config, d],
+    [state, produtos, config, d, usarLogoCliente, logoCliente],
+
   );
 
   function montarPdfHtml() {
@@ -1388,11 +1406,9 @@ function PropostaCpoPage() {
                 Salvar proposta
               </Button>
               <Button variant="outline" onClick={abrirPreviewPdf} disabled={!podeFechar || saving} className="w-full gap-2 sm:w-auto">
-                <Eye className="h-4 w-4" /> Prévia do PDF
+                <Eye className="h-4 w-4" /> Proposta em PDF
               </Button>
-              <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar || saving} className="w-full gap-2 sm:w-auto">
-                <FileDown className="h-4 w-4" /> Baixar PDF
-              </Button>
+
               <div className="hidden sm:block flex-1" />
               {etapa === 4 ? (
                 <Button
@@ -1413,22 +1429,38 @@ function PropostaCpoPage() {
           </div>
         </div>
 
-        {/* Prévia do PDF atualizado */}
+        {/* Proposta em PDF */}
         <Dialog open={previewAberto} onOpenChange={setPreviewAberto}>
           <DialogContent className="max-w-5xl">
             <DialogHeader>
-              <DialogTitle>Prévia do PDF da proposta</DialogTitle>
+              <DialogTitle>Proposta em PDF</DialogTitle>
               <DialogDescription>
                 Documento gerado com os dados atuais. Revise antes de baixar ou concluir o pedido.
               </DialogDescription>
             </DialogHeader>
+            <div className="flex items-center justify-between rounded-xl border border-border px-4 py-2.5">
+              <div>
+                <div className="text-sm font-medium">Logomarca</div>
+                <div className="text-xs text-muted-foreground">
+                  {logoCliente
+                    ? "Exibir a logomarca do cliente no cabeçalho da proposta."
+                    : "Este cliente ainda não possui logomarca no cadastro."}
+                </div>
+              </div>
+              <Switch
+                checked={usarLogoCliente && !!logoCliente}
+                disabled={!logoCliente}
+                onCheckedChange={setUsarLogoCliente}
+              />
+            </div>
             <div className="rounded-xl border border-border overflow-hidden bg-white">
               <iframe
-                title="Prévia do PDF da proposta"
+                title="Proposta em PDF"
                 srcDoc={pdfHtml}
                 className="w-full h-[65vh]"
               />
             </div>
+
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setPreviewAberto(false)}>
                 Continuar editando

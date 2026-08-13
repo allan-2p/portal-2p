@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      cliente_logos: {
+        Row: {
+          data_url: string
+          doc: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          data_url: string
+          doc: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          data_url?: string
+          doc?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       commission_settings: {
         Row: {
           config: Json

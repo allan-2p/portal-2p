@@ -41,7 +41,10 @@ export type PropostaPdfData = {
   observacoes?: string;
   consultor?: string;
   validadeDias?: number;
+  /** Logomarca do cliente exibida no cabeçalho (data URL ou URL http). */
+  logoCliente?: string | null;
 };
+
 
 const esc = (v: unknown) =>
   String(v ?? "")
@@ -98,6 +101,9 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
     display:flex; align-items:center; justify-content:center; font-size:11px; letter-spacing:-.5px; }
   .brandname{ font-size:11.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
   .brandsub{ font-size:8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(255,255,255,.5); margin-top:1px; }
+  .cliente-logo{ margin-left:auto; display:flex; align-items:center; padding-left:10px; border-left:1px solid rgba(255,255,255,.18); }
+  .cliente-logo img{ max-height:16mm; max-width:44mm; object-fit:contain; background:#fff; border-radius:6px; padding:3px 6px; }
+
   .hero-main{ display:flex; justify-content:space-between; align-items:flex-end; margin-top:8mm; position:relative; z-index:1; }
   .htitle{ font-size:26px; font-weight:800; letter-spacing:-1px; line-height:1; }
   .hkicker{ font-size:8px; letter-spacing:.32em; text-transform:uppercase; color:var(--accent-2); margin-bottom:5px; font-weight:600; }
@@ -179,7 +185,13 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
         <div class="brandname">2P Carregadores</div>
         <div class="brandsub">Infraestrutura de recarga</div>
       </div>
+      ${
+        p.logoCliente
+          ? `<div class="cliente-logo"><img src="${esc(p.logoCliente)}" alt="Logomarca do cliente"></div>`
+          : ""
+      }
     </div>
+
     <div class="hero-main">
       <div>
         <div class="hkicker">Proposta comercial</div>

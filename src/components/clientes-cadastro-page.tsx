@@ -18,6 +18,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { ClientHistoryTab } from "@/components/client-history-tab";
+import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
+
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
@@ -650,10 +652,12 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <F label="Condição de pagamento">
                   <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
                 </F>
+                <ClienteLogoUpload doc={form.doc ?? ""} />
                 <div className="sm:col-span-2">
                   <Label className="text-xs">Observações</Label>
                   <Textarea rows={3} value={form.observacoes ?? ""} onChange={(e) => set("observacoes", e.target.value)} />
                 </div>
+
                 <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-border px-4 py-3">
                   <div className="text-sm font-medium">Cadastro ativo</div>
                   <Switch checked={form.ativo} onCheckedChange={(v) => set("ativo", v)} />
