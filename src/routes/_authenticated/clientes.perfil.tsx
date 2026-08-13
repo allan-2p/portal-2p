@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { ClientHistoryTab } from "@/components/client-history-tab";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AppLayout } from "@/components/app-layout";
 import {
@@ -259,6 +260,7 @@ function PerfilPage() {
 }
 
 function Dossier({ account }: { account: SalesforceAccount }) {
+  const [aba, setAba] = useState<"visao" | "historico">("visao");
   const [notes, setNotes] = useState("");
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
@@ -296,11 +298,36 @@ function Dossier({ account }: { account: SalesforceAccount }) {
     return { pct: ((now - prev) / prev) * 100, up: now >= prev };
   }, [history]);
 
-
   return (
     <div className="space-y-4">
       {/* Banner principal — cadastro + identidade resumidos */}
       <BannerHeader account={account} history={history} />
+
+      {/* Abas */}
+      <div className="flex items-center gap-1">
+        {([
+          { key: "visao", label: "Visão geral" },
+          { key: "historico", label: "Histórico" },
+        ] as const).map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setAba(t.key)}
+            className={
+              "text-xs px-3 py-1.5 rounded-md font-medium transition-colors " +
+              (aba === t.key
+                ? "bg-primary text-primary-foreground"
+                : "bg-surface-2 text-muted-foreground hover:bg-surface")
+            }
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {aba === "historico" ? (
+        <ClientHistoryTab accountId={account.id} clienteNome={account.name} />
+      ) : (
+      <div className="space-y-4">
 
       {/* KPIs (trimestre) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -401,6 +428,8 @@ function Dossier({ account }: { account: SalesforceAccount }) {
           Salvo apenas neste navegador enquanto conectamos a base do Atlas.
         </div>
       </div>
+      </div>
+      )}
     </div>
   );
 }

@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 import { Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ClientHistoryTab } from "@/components/client-history-tab";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -585,6 +586,8 @@ function CadastrosPage() {
                     <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
                     <Linha rot="Observações" val={detalhe.observacoes} />
                   </Bloco>
+
+                  <ClientHistoryTab clienteNome={detalhe.razao_social} />
 
                   <div className="flex gap-2 pt-1">
                     <Button
