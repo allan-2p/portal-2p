@@ -259,104 +259,6 @@ function UsuariosPage() {
 
 
 
-  if (authLoading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      </AppLayout>
-    );
-  }
-
-
-  if (!hasRole("admin")) {
-    return (
-      <AppLayout>
-        <div className="max-w-md mx-auto mt-20 text-center">
-          <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-          <h1 className="font-display font-bold text-xl mb-1">Acesso restrito</h1>
-          <p className="text-sm text-muted-foreground">
-            Apenas administradores podem gerenciar usuários.
-          </p>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  async function handleRoleChange(userId: string, role: AppRole) {
-    try {
-      await setRoleFn({ data: { user_id: userId, role } });
-      toast.success("Papel atualizado");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
-  }
-
-  async function handleToggle(userId: string, ativo: boolean) {
-    try {
-      await toggleFn({ data: { user_id: userId, ativo: !ativo } });
-      toast.success(ativo ? "Usuário desativado" : "Usuário ativado");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
-  }
-
-  async function handleDelete(userId: string) {
-    if (!confirm("Remover este usuário permanentemente?")) return;
-    try {
-      await deleteFn({ data: { user_id: userId } });
-      toast.success("Usuário removido");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
-  }
-
-  async function handleScopeChange(userId: string, scope: FilterScope) {
-    try {
-      await setScopeFn({ data: { user_id: userId, scope } });
-      toast.success("Escopo atualizado");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
-  }
-
-  async function handleSfIdChange(userId: string, sf_user_id: string | null) {
-    try {
-      await setSfIdFn({ data: { user_id: userId, sf_user_id } });
-      toast.success("ID Salesforce atualizado");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
-  }
-
-  async function handleOrgChange(userId: string, organizacao: Org) {
-    try {
-      await updateFn({ data: { user_id: userId, organizacao } });
-      toast.success("Organização atualizada");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
-  }
-
-  async function handleRegimeChange(userId: string, regime: Regime) {
-    try {
-      await updateFn({ data: { user_id: userId, regime_contratacao: regime } });
-      toast.success("Regime de contratação atualizado");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
-  }
-
-
-
 
   return (
     <AppLayout>
@@ -442,29 +344,6 @@ function UsuariosPage() {
           onSubmit={async (data) => {
             await createFn({ data: data as any });
             toast.success("Usuário criado");
-            setModal(null);
-            load();
-          }}
-        />
-      )}
-      {modal?.kind === "invite" && (
-        <UserModal
-          mode="invite"
-          external={modal.external}
-          onClose={() => setModal(null)}
-          onSubmit={async (data) => {
-            await inviteFn({ data: { ...data, is_external: !!modal.external } });
-            toast.success("Convite enviado");
-            setModal(null);
-            load();
-          }}
-        />
-      )}
-      {modal?.kind === "invite-sf" && (
-        <InviteSFModal
-          candidate={modal.candidate}
-          onClose={() => setModal(null)}
-          onDone={() => {
             setModal(null);
             load();
           }}
