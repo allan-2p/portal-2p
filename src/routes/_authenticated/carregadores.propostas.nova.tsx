@@ -369,6 +369,7 @@ function PropostaCpoPage() {
   const d = calcularCpo(state, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []);
   const st = statusMB(d.mbPct, config);
   const uf = ufs.find((u) => u.uf === state.uf);
+  const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
   // ---- Validação da etapa 1 (dados obrigatórios do cliente) ----
   const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
