@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { WizardActionBar } from "@/components/wizard-action-bar";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -813,13 +814,6 @@ function PropostaCpoPage() {
               Cálculo fiscal em tempo real.
             </p>
 
-            {autosaveAt ? (
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Rascunho salvo automaticamente às{" "}
-                {autosaveAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-              </p>
-            ) : null}
           </div>
 
         </div>
@@ -1385,54 +1379,55 @@ function PropostaCpoPage() {
         </div>
 
         {/* Barra de ações fixa no rodapé */}
-        <div className="sticky bottom-0 z-20 mt-6 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 bg-background/95 backdrop-blur border-t border-border">
-          <div className="flex flex-col gap-3">
-            {!podeFechar && tentouAvancar ? (
-              <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 w-full max-w-none sm:max-w-xl">
-                <p className="text-sm font-semibold text-destructive">
-                  Corrija antes de exportar ou concluir o pedido
-                </p>
-                <ul className="mt-1 list-disc pl-5 text-xs text-destructive space-y-0.5">
-                  {errosFechamento.map((e, i) => (
-                    <li key={i}>{e}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-2">
-              <Button variant="outline" onClick={voltarEtapa} disabled={etapa === 1 || saving} className="w-full gap-2 sm:w-auto">
-                Voltar
-              </Button>
-              <Button variant="outline" onClick={avancarEtapa} disabled={etapa === 4 || saving} className="w-full gap-2 sm:w-auto">
-                Próximo
-              </Button>
-              <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="w-full gap-2 sm:w-auto">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Salvar proposta
-              </Button>
-              <Button variant="outline" onClick={abrirPreviewPdf} disabled={!podeFechar || saving} className="w-full gap-2 sm:w-auto">
-                <Eye className="h-4 w-4" /> Proposta em PDF
-              </Button>
-
-              <div className="hidden sm:block flex-1" />
-              {etapa === 4 ? (
-                <Button
-                  onClick={iniciarConclusao}
-                  disabled={saving}
-                  className="w-full gap-2 sm:w-auto"
-                >
-                  {saving && statusProposta === "Aguardando Pagamento" ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4" />
-                  )}
-                  Concluir pedido
-                </Button>
-              ) : null}
-
-            </div>
-          </div>
-        </div>
+        <WizardActionBar
+          step={etapa}
+          totalSteps={4}
+          stepLabel={
+            ["Identificação", "Produtos", "Faturamento e frete", "Finalização"][etapa - 1]
+          }
+          onBack={voltarEtapa}
+          onNext={avancarEtapa}
+          backDisabled={etapa === 1 || saving}
+          nextDisabled={etapa === 4 || saving}
+          errors={errosFechamento}
+          showErrors={!podeFechar && tentouAvancar}
+          savedAt={autosaveAt}
+          actions={[
+            ...(etapa === 4
+              ? [
+                  {
+                    label: "Salvar proposta",
+                    onClick: () => pedirRevisao("salvar"),
+                    icon: <Save className="h-4 w-4" />,
+                    loading: saving && statusProposta !== "Aguardando Pagamento",
+                  },
+                ]
+              : []),
+            {
+              label: "Proposta em PDF",
+              onClick: abrirPreviewPdf,
+              icon: <Eye className="h-4 w-4" />,
+              disabled: !podeFechar || saving,
+            },
+          ]}
+          primary={
+            etapa === 4
+              ? {
+                  label: "Concluir pedido",
+                  onClick: iniciarConclusao,
+                  icon: <CheckCircle2 className="h-4 w-4" />,
+                  loading: saving && statusProposta === "Aguardando Pagamento",
+                  disabled: saving,
+                }
+              : {
+                  label: "Salvar proposta",
+                  onClick: () => pedirRevisao("salvar"),
+                  icon: <Save className="h-4 w-4" />,
+                  loading: saving,
+                  disabled: saving,
+                }
+          }
+        />
 
         {/* Proposta em PDF */}
         <Dialog open={previewAberto} onOpenChange={setPreviewAberto}>
