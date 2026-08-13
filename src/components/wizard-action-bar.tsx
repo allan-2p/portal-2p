@@ -38,6 +38,8 @@ export type WizardActionBarProps = {
   /** Ação principal, sempre à direita. */
   primary?: WizardAction | null;
   className?: string;
+  /** Modo minimal: exibe apenas a navegação Voltar/Próximo, centralizada. */
+  minimal?: boolean;
 };
 
 /**
