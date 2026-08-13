@@ -111,6 +111,9 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
 
   const hasFeature = useCallback(
     (key: FeatureKey) => {
+      // Administração é do Grupo 2P: admin enxerga todas as telas de configuração
+      // em qualquer instância — a separação acontece dentro de cada tela.
+      if (isAdmin && key.startsWith("admin.")) return true;
       const meta = INSTANCES[instance];
       if (!meta.routes.includes(key)) return false;
       if (isAdmin) return true;
