@@ -284,6 +284,29 @@ function PropostaCpoPage() {
     setEtapa(2);
   }
 
+  function irParaEtapa(alvo: 1 | 2 | 3 | 4) {
+    if (alvo === 1) return setEtapa(1);
+    if (!clienteOk) {
+      setTentouAvancar(true);
+      toast.error(errosCliente[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
+      return;
+    }
+    if (alvo >= 3 && !temProduto) {
+      setTentouAvancar(true);
+      toast.error("Adicione ao menos um produto à proposta.");
+      return;
+    }
+    setEtapa(alvo);
+  }
+
+  function avancarEtapa() {
+    if (etapa < 4) irParaEtapa((etapa + 1) as 2 | 3 | 4);
+  }
+
+  function voltarEtapa() {
+    if (etapa > 1) setEtapa((etapa - 1) as 1 | 2 | 3);
+  }
+
 
   // ---- Alertas automáticos de política ----
 
@@ -615,20 +638,20 @@ function PropostaCpoPage() {
               })}
             </div>
             <span className="text-xs font-medium text-muted-foreground shrink-0">
-              Etapa {etapa} de 2
+              Etapa {etapa} de 4
             </span>
           </div>
           <div
             className="h-1.5 rounded-full bg-surface-2 overflow-hidden"
             role="progressbar"
             aria-valuemin={1}
-            aria-valuemax={2}
+            aria-valuemax={4}
             aria-valuenow={etapa}
-            aria-label={`Etapa ${etapa} de 2`}
+            aria-label={`Etapa ${etapa} de 4`}
           >
             <div
               className="h-full bg-primary rounded-full transition-all duration-300"
-              style={{ width: `${(etapa / 2) * 100}%` }}
+              style={{ width: `${(etapa / 4) * 100}%` }}
             />
           </div>
         </div>
@@ -643,7 +666,13 @@ function PropostaCpoPage() {
           <div className="glass rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">
-                {etapa === 1 ? "Etapa 1 — Cliente" : "Etapa 2 — Produtos, frete e margem"}
+                {etapa === 1
+                  ? "Etapa 1 — Identificação"
+                  : etapa === 2
+                    ? "Etapa 2 — Produtos"
+                    : etapa === 3
+                      ? "Etapa 3 — Faturamento e frete"
+                      : "Etapa 4 — Finalização"}
               </h2>
             </div>
 
@@ -1020,7 +1049,7 @@ function PropostaCpoPage() {
 
             ) : (
               <div className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                Etapa 1: selecione o cliente. Produtos, frete e impostos ficam na etapa 2.
+                Etapa 1: selecione o cliente. Produtos, faturamento e frete vêm nas próximas etapas.
               </div>
             )}
           </div>
@@ -1140,10 +1169,10 @@ function PropostaCpoPage() {
               </div>
             ) : null}
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              <Button variant="outline" onClick={() => setEtapa(1)} disabled={etapa === 1} className="gap-2">
+              <Button variant="outline" onClick={voltarEtapa} disabled={etapa === 1} className="gap-2">
                 Voltar
               </Button>
-              <Button variant="outline" onClick={irParaEtapa2} disabled={etapa === 2} className="gap-2">
+              <Button variant="outline" onClick={avancarEtapa} disabled={etapa === 4} className="gap-2">
                 Próximo
               </Button>
               <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2">
