@@ -2,8 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordModeration } from "@/lib/moderation-audit.server";
+import { VISIBILIDADE_LABELS, validateVisibilidadeChange, type Visibilidade } from "@/lib/product-visibility";
 
-export type SapVisibilidade = "solar" | "carregadores" | "ambos";
+export type SapVisibilidade = Visibilidade;
+
 
 export type SapProdutoRow = {
   id: string;
@@ -15,7 +17,11 @@ export type SapProdutoRow = {
   ativo: boolean;
   visibilidade: SapVisibilidade;
   last_synced_at: string | null;
+  origem: string | null;
+  custo: number | null;
+  ncm_id: string | null;
 };
+
 
 export type SapSyncRun = {
   id: string;
@@ -41,6 +47,29 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: isAdmin } = await context.supabase.rpc("is_admin");
     if (!isAdmin) throw new Error("Apenas administradores podem alterar a visibilidade de produtos.");
+
+    const { data: produto, error: readError } = await context.supabase
+      .from("sap_produtos")
+      .select("id, descricao, origem, custo, ncm_id, visibilidade")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!produto) throw new Error("Produto não encontrado.");
+
+    const { countOpenProposalsWithProduct } = await import("@/lib/product-visibility.server");
+    const propostasAbertas =
+      produto.visibilidade !== data.visibilidade && data.visibilidade === "solar"
+        ? await countOpenProposalsWithProduct(context.supabase as never, data.id)
+        : 0;
+
+    const bloqueio = validateVisibilidadeChange(data.visibilidade, {
+      origem: produto.origem,
+      custo: Number(produto.custo ?? 0),
+      ncm_id: produto.ncm_id,
+      propostasAbertas,
+    });
+    if (bloqueio) throw new Error(bloqueio);
+
     const { error } = await context.supabase
       .from("sap_produtos")
       .update({ visibilidade: data.visibilidade })
@@ -49,18 +78,20 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
     await recordModeration(context, {
       area: "produtos",
       action: "atualizou",
-      target: data.id,
-      summary: `Visibilidade do produto alterada para "${data.visibilidade}"`,
+      target: produto.descricao ?? data.id,
+      summary: `Visibilidade do produto alterada para "${VISIBILIDADE_LABELS[data.visibilidade]}"`,
+      details: { de: produto.visibilidade, para: data.visibilidade },
     });
     return { ok: true };
   });
+
 
 export const listSapProdutos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ produtos: SapProdutoRow[]; lastRun: SapSyncRun | null }> => {
     const { data, error } = await context.supabase
       .from("sap_produtos")
-      .select("id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at")
+      .select("id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id")
       .order("descricao");
     if (error) throw new Error(error.message);
 
