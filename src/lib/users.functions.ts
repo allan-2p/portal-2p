@@ -679,3 +679,366 @@ export const adminAutoMatchSfLinks = createServerFn({ method: "POST" })
     }
     return { ok: true as const, linked };
   });
+
+// ================= Diagnóstico do usuário ================= //
+
+export type UserCheck = {
+  id: string;
+  label: string;
+  status: "ok" | "warn" | "error";
+  detail: string;
+  fix?: string;
+};
+
+export type UserDiagnostics = {
+  profile: {
+    id: string;
+    email: string;
+    full_name: string | null;
+    cargo: string | null;
+    cargo_tipo: string | null;
+    equipe: string | null;
+    telefone: string | null;
+    avatar_url: string | null;
+    meta_mensal: number | null;
+    regime_contratacao: string;
+    organizacao: string;
+    ativo: boolean;
+    is_external: boolean;
+    filter_scope: string;
+    sf_user_id: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+  };
+  roles: string[];
+  auth: { last_sign_in_at: string | null; email_confirmed_at: string | null; banned: boolean };
+  salesforce: {
+    linked: boolean;
+    valid: boolean;
+    name: string | null;
+    email: string | null;
+    title: string | null;
+    duplicate_of: string | null;
+    team: string | null;
+    hidden: boolean;
+  };
+  scope: { scope: string; allowed_sf_ids: string[] | null; allowed_count: number | null };
+  access: {
+    instances: string[];
+    permissions_allowed: number;
+    permissions_denied: number;
+    by_instance: Array<{ instance_id: string; allowed: number; denied: number }>;
+  };
+  goals: { monthly: number; bonus: boolean; new_ab: number; retention: number };
+  activity: Array<{ event: string; detail: string | null; created_at: string }>;
+  checks: UserCheck[];
+};
+
+export const adminUserDiagnostics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<UserDiagnostics> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getScopeForUser } = await import("./scope.server");
+    const uid = data.user_id;
+
+    const { data: prof, error: profErr } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("id", uid)
+      .maybeSingle();
+    if (profErr) throw new Error(profErr.message);
+    if (!prof) throw new Error("Usuário não encontrado.");
+    const p = prof as any;
+
+    const sfId: string | null = p.sf_user_id ?? null;
+
+    const [
+      rolesRes,
+      instRes,
+      permRes,
+      teamRes,
+      hiddenRes,
+      goalsRes,
+      bonusRes,
+      newAbRes,
+      retRes,
+      actRes,
+      dupRes,
+      authRes,
+      sfUsers,
+      scope,
+    ] = await Promise.all([
+      supabaseAdmin.from("user_roles").select("role").eq("user_id", uid),
+      supabaseAdmin.from("user_instance_access").select("instance_id").eq("user_id", uid),
+      supabaseAdmin.from("user_feature_permissions").select("instance_id, allowed").eq("user_id", uid),
+      sfId
+        ? supabaseAdmin.from("salesforce_team_members").select("team").eq("sf_user_id", sfId).maybeSingle()
+        : Promise.resolve({ data: null } as any),
+      sfId
+        ? supabaseAdmin.from("hidden_salespeople").select("sf_user_id").eq("sf_user_id", sfId).maybeSingle()
+        : Promise.resolve({ data: null } as any),
+      sfId
+        ? supabaseAdmin.from("salesperson_goals").select("id", { count: "exact", head: true }).eq("sf_user_id", sfId)
+        : Promise.resolve({ count: 0 } as any),
+      sfId
+        ? supabaseAdmin.from("salesperson_bonus_goals").select("sf_user_id").eq("sf_user_id", sfId).maybeSingle()
+        : Promise.resolve({ data: null } as any),
+      sfId
+        ? supabaseAdmin.from("salesperson_new_ab_goals").select("sf_user_id", { count: "exact", head: true }).eq("sf_user_id", sfId)
+        : Promise.resolve({ count: 0 } as any),
+      sfId
+        ? supabaseAdmin.from("salesperson_retention_goals").select("sf_user_id", { count: "exact", head: true }).eq("sf_user_id", sfId)
+        : Promise.resolve({ count: 0 } as any),
+      supabaseAdmin
+        .from("user_activity_log")
+        .select("event, detail, created_at")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      sfId
+        ? supabaseAdmin.from("profiles").select("email").eq("sf_user_id", sfId).neq("id", uid).maybeSingle()
+        : Promise.resolve({ data: null } as any),
+      supabaseAdmin.auth.admin.getUserById(uid),
+      sfId ? sfFetchAllUsers().catch(() => null) : Promise.resolve(null),
+      getScopeForUser(supabaseAdmin as any, uid),
+    ]);
+
+    const roles = ((rolesRes.data ?? []) as any[]).map((r) => r.role as string);
+    const instances = ((instRes.data ?? []) as any[]).map((r) => r.instance_id as string);
+    const perms = (permRes.data ?? []) as Array<{ instance_id: string; allowed: boolean }>;
+    const byInstMap = new Map<string, { allowed: number; denied: number }>();
+    for (const perm of perms) {
+      const cur = byInstMap.get(perm.instance_id) ?? { allowed: 0, denied: 0 };
+      if (perm.allowed) cur.allowed++;
+      else cur.denied++;
+      byInstMap.set(perm.instance_id, cur);
+    }
+
+    const sf = sfUsers && sfId ? sfUsers.find((u) => u.id === sfId) ?? null : null;
+    const authUser = (authRes as any)?.data?.user ?? null;
+
+    const checks: UserCheck[] = [];
+    const push = (c: UserCheck) => checks.push(c);
+
+    push(
+      p.ativo
+        ? { id: "ativo", label: "Usuário ativo", status: "ok", detail: "Conta habilitada para acesso." }
+        : {
+            id: "ativo",
+            label: "Usuário inativo",
+            status: "error",
+            detail: "A conta está inativa e o acesso está bloqueado.",
+            fix: "Ative o usuário na lista ou na edição.",
+          },
+    );
+
+    if (!sfId) {
+      push({
+        id: "sf_missing",
+        label: "Sem vínculo com Salesforce",
+        status: "error",
+        detail: "O campo sf_user_id está vazio — nenhuma oportunidade, conta ou tarefa será atribuída a este usuário.",
+        fix: "Vincule o ID do Salesforce em Administrador > Vínculos Salesforce ou na edição do usuário.",
+      });
+    } else if (sfUsers && !sf) {
+      push({
+        id: "sf_invalid",
+        label: "ID do Salesforce inválido",
+        status: "error",
+        detail: `O ID ${sfId} não corresponde a nenhum usuário ativo do Salesforce.`,
+        fix: "Corrija o ID em Vínculos Salesforce.",
+      });
+    } else {
+      push({
+        id: "sf_ok",
+        label: "Vínculo com Salesforce",
+        status: "ok",
+        detail: sf ? `Vinculado a ${sf.name} (${sf.email ?? "sem e-mail"}).` : `ID ${sfId} vinculado.`,
+      });
+      if (sf?.email && p.email && sf.email.toLowerCase() !== String(p.email).toLowerCase()) {
+        push({
+          id: "sf_mismatch",
+          label: "E-mail divergente do Salesforce",
+          status: "warn",
+          detail: `Portal: ${p.email} · Salesforce: ${sf.email}.`,
+          fix: "Confirme se o vínculo é da pessoa certa.",
+        });
+      }
+    }
+
+    if ((dupRes as any)?.data) {
+      push({
+        id: "sf_dup",
+        label: "ID do Salesforce duplicado",
+        status: "error",
+        detail: `O mesmo ID também está em ${(dupRes as any).data.email}.`,
+        fix: "Remova o vínculo duplicado — dados ficam somados/incorretos.",
+      });
+    }
+
+    const allowedCount = scope.allowed_sf_ids ? scope.allowed_sf_ids.length : null;
+    if (scope.scope === "individual" && !sfId) {
+      push({
+        id: "scope_individual_no_sf",
+        label: "Escopo individual sem ID",
+        status: "error",
+        detail: "Escopo 'Individual' filtra apenas pelo próprio sf_user_id — sem ID, todas as métricas ficam zeradas.",
+        fix: "Vincule o Salesforce ou mude o escopo para Geral/Carteira/Pré Vendas.",
+      });
+    } else if (allowedCount === 0) {
+      push({
+        id: "scope_empty",
+        label: "Escopo sem vendedores",
+        status: "error",
+        detail: `Escopo '${scope.scope}' não resolveu nenhum ID do Salesforce — nada será exibido.`,
+        fix: "Adicione o vendedor à equipe (Pré Vendas / Carteira) ou ajuste o escopo.",
+      });
+    } else {
+      push({
+        id: "scope_ok",
+        label: "Escopo de dados",
+        status: "ok",
+        detail:
+          scope.scope === "geral"
+            ? "Escopo geral: vê todos os vendedores."
+            : `Escopo '${scope.scope}' com ${allowedCount} vendedor(es) visível(is).`,
+      });
+    }
+
+    if ((scope.scope === "pre_vendas" || scope.scope === "carteira") && sfId && !(teamRes as any)?.data) {
+      push({
+        id: "team_missing",
+        label: "Sem equipe no Salesforce",
+        status: "warn",
+        detail: "O usuário não está cadastrado em nenhuma equipe (Pré Vendas / Carteira).",
+        fix: "Defina a equipe na coluna 'Equipe SF' da lista de usuários.",
+      });
+    }
+
+    if ((hiddenRes as any)?.data) {
+      push({
+        id: "hidden",
+        label: "Vendedor oculto nos rankings",
+        status: "warn",
+        detail: "Este vendedor está marcado como oculto e não aparece nas listagens/rankings.",
+        fix: "Reative a visibilidade na coluna 'Visível' da lista de usuários.",
+      });
+    }
+
+    if (roles.length === 0) {
+      push({
+        id: "no_role",
+        label: "Sem papel definido",
+        status: "error",
+        detail: "O usuário não tem nenhum papel (admin/gerente/vendedor/...).",
+        fix: "Defina o papel na edição do usuário.",
+      });
+    }
+
+    if (instances.length === 0) {
+      push({
+        id: "no_instance",
+        label: "Sem acesso a instâncias",
+        status: "error",
+        detail: "Nenhuma instância liberada — o portal abre travado na tela de perfil.",
+        fix: "Libere as instâncias em Administrador > Permissões.",
+      });
+    }
+
+    const totalAllowed = perms.filter((x) => x.allowed).length;
+    if (totalAllowed === 0) {
+      push({
+        id: "no_permissions",
+        label: "Sem telas liberadas",
+        status: "error",
+        detail: "O modelo é 'bloqueado por padrão' e não há nenhuma permissão marcada como liberada.",
+        fix: "Libere as telas em Administrador > Permissões.",
+      });
+    }
+
+    const goalsCount = ((goalsRes as any)?.count ?? 0) as number;
+    if (sfId && goalsCount === 0) {
+      push({
+        id: "no_goals",
+        label: "Sem metas cadastradas",
+        status: "warn",
+        detail: "Nenhuma meta mensal encontrada — os cards de atingimento ficam em 0%.",
+        fix: "Cadastre em Administrador > Regras de Meta.",
+      });
+    }
+
+    if (!authUser?.last_sign_in_at) {
+      push({
+        id: "never_logged",
+        label: "Nunca acessou o portal",
+        status: "warn",
+        detail: "Não há registro de login para este usuário.",
+      });
+    }
+
+    return {
+      profile: {
+        id: p.id,
+        email: p.email,
+        full_name: p.full_name ?? null,
+        cargo: p.cargo ?? null,
+        cargo_tipo: p.cargo_tipo ?? null,
+        equipe: p.equipe ?? null,
+        telefone: p.telefone ?? null,
+        avatar_url: p.avatar_url ?? null,
+        meta_mensal: p.meta_mensal ?? null,
+        regime_contratacao: p.regime_contratacao,
+        organizacao: p.organizacao,
+        ativo: p.ativo,
+        is_external: p.is_external,
+        filter_scope: p.filter_scope,
+        sf_user_id: sfId,
+        created_at: p.created_at ?? null,
+        updated_at: p.updated_at ?? null,
+      },
+      roles,
+      auth: {
+        last_sign_in_at: authUser?.last_sign_in_at ?? null,
+        email_confirmed_at: authUser?.email_confirmed_at ?? null,
+        banned: !!authUser?.banned_until,
+      },
+      salesforce: {
+        linked: !!sfId,
+        valid: !!sf,
+        name: sf?.name ?? null,
+        email: sf?.email ?? null,
+        title: sf?.title ?? null,
+        duplicate_of: (dupRes as any)?.data?.email ?? null,
+        team: (teamRes as any)?.data?.team ?? null,
+        hidden: !!(hiddenRes as any)?.data,
+      },
+      scope: {
+        scope: scope.scope,
+        allowed_sf_ids: scope.allowed_sf_ids ?? null,
+        allowed_count: allowedCount,
+      },
+      access: {
+        instances,
+        permissions_allowed: totalAllowed,
+        permissions_denied: perms.length - totalAllowed,
+        by_instance: Array.from(byInstMap.entries()).map(([instance_id, v]) => ({
+          instance_id,
+          ...v,
+        })),
+      },
+      goals: {
+        monthly: goalsCount,
+        bonus: !!(bonusRes as any)?.data,
+        new_ab: ((newAbRes as any)?.count ?? 0) as number,
+        retention: ((retRes as any)?.count ?? 0) as number,
+      },
+      activity: ((actRes as any)?.data ?? []) as Array<{
+        event: string;
+        detail: string | null;
+        created_at: string;
+      }>,
+      checks,
+    };
+  });
