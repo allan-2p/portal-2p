@@ -78,41 +78,41 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     groups: [
       {
         label: "CRM",
-        items: [{ to: "/integracoes#salesforce", label: "Salesforce", icon: Plug, feature: "admin.integracoes" }],
+        items: [{ to: "/integracoes/salesforce", label: "Salesforce", icon: Plug, feature: "admin.integracoes" }],
       },
       {
         label: "ERP",
-        items: [{ to: "/integracoes#sap", label: "SAP", icon: Plug, feature: "admin.integracoes" }],
+        items: [{ to: "/integracoes/sap", label: "SAP", icon: Plug, feature: "admin.integracoes" }],
       },
       {
         label: "Marketing",
         items: [
-          { to: "/integracoes#metricool", label: "Metricool", icon: Plug, feature: "admin.integracoes" },
-          { to: "/integracoes#notion", label: "Notion", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/metricool", label: "Metricool", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/notion", label: "Notion", icon: Plug, feature: "admin.integracoes" },
         ],
       },
       {
         label: "Cadastros",
         items: [
-          { to: "/integracoes#serpro-cnpja", label: "Serpro / CNPJá", icon: Plug, feature: "admin.integracoes" },
-          { to: "/integracoes#viacep", label: "ViaCEP", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/serpro-cnpja", label: "Serpro / CNPJá", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/viacep", label: "ViaCEP", icon: Plug, feature: "admin.integracoes" },
         ],
       },
       {
         label: "Dados e Arquivos",
         items: [
-          { to: "/integracoes#base-contas-carregadores", label: "Base de Contas — Carregadores", icon: Plug, feature: "admin.integracoes" },
-          { to: "/integracoes#top20", label: "Top 20", icon: Plug, feature: "admin.integracoes" },
-          { to: "/integracoes#storage", label: "Storage — Top 20 / Logos", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/base-contas-carregadores", label: "Base de Contas — Carregadores", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/top20", label: "Top 20", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/storage", label: "Storage — Top 20 / Logos", icon: Plug, feature: "admin.integracoes" },
         ],
       },
       {
         label: "Plataforma",
         items: [
-          { to: "/integracoes#lovable-cloud", label: "Lovable Cloud", icon: Plug, feature: "admin.integracoes" },
-          { to: "/integracoes#lovable-ai", label: "Lovable AI (Atlas)", icon: Plug, feature: "admin.integracoes" },
-          { to: "/integracoes#emails", label: "E-mails transacionais", icon: Plug, feature: "admin.integracoes" },
-          { to: "/integracoes#mcp", label: "Servidor MCP", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/lovable-cloud", label: "Lovable Cloud", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/lovable-ai", label: "Lovable AI (Atlas)", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/emails", label: "E-mails transacionais", icon: Plug, feature: "admin.integracoes" },
+          { to: "/integracoes/mcp", label: "Servidor MCP", icon: Plug, feature: "admin.integracoes" },
         ],
       },
     ],

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -224,7 +224,15 @@ function CatalogoIntegracoes() {
                   {i.area}
                 </span>
                 <IntegrationStatusBadge item={item} loading={health.isLoading} />
+                {slug && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/integracoes/$slug" params={{ slug }}>
+                      Configurar
+                    </Link>
+                  </Button>
+                )}
               </div>
+
             </li>
           );
         })}
