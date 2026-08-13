@@ -133,6 +133,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // Filtragem de itens por feature.
   const show = (k: FeatureKey) => hasFeature(k);
 
+  // Área de administração (Grupo 2P) usa tema próprio: preto / azul escuro / branco.
+  const isAdminArea =
+    pathname === "/usuarios" || pathname.startsWith("/admin") || pathname.startsWith("/integracoes");
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const el = document.documentElement;
+    if (isAdminArea) el.setAttribute("data-area", "admin");
+    else el.removeAttribute("data-area");
+    return () => el.removeAttribute("data-area");
+  }, [isAdminArea]);
+
   return (
     <div className="min-h-screen flex bg-background">
       <aside
