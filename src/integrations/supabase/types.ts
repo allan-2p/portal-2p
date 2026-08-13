@@ -709,6 +709,48 @@ export type Database = {
         }
         Relationships: []
       }
+      moderation_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          actor_name: string | null
+          area: string
+          created_at: string
+          details: Json
+          id: string
+          instance_id: string
+          summary: string
+          target: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          area: string
+          created_at?: string
+          details?: Json
+          id?: string
+          instance_id?: string
+          summary: string
+          target?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          area?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          instance_id?: string
+          summary?: string
+          target?: string | null
+        }
+        Relationships: []
+      }
       permission_audit_log: {
         Row: {
           action: string

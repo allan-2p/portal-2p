@@ -12,6 +12,7 @@ import {
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { logModeration } from "@/lib/moderation-audit";
 import { useCpoConfig, useCpoInvalidate } from "@/hooks/use-cpo";
 import type { CpoConfig } from "@/lib/cpo";
 
@@ -36,6 +37,19 @@ export function CpoConfigTab() {
     const { error } = await supabase.from("cpo_config").update({ ...form }).eq("id", 1);
     setSaving(false);
     if (error) return toast.error(error.message);
+    void logModeration({
+      area: "cpo_regras",
+      action: "atualizou",
+      target: "Política tributária",
+      summary: "Política tributária e comercial atualizada",
+      details: {
+        ipi: form.ipi,
+        pis_cofins: form.pis_cofins,
+        aliq_inter: form.aliq_inter,
+        politica_mb_min: form.politica_mb_min,
+        cmv_max: form.cmv_max,
+      },
+    });
     invalidate();
     toast.success("Política tributária atualizada.");
   }

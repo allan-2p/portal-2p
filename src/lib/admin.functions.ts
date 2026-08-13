@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { recordModeration } from "@/lib/moderation-audit.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
 
@@ -82,6 +83,13 @@ export const setSalespersonVisibility = createServerFn({ method: "POST" })
         .eq("sf_user_id", data.sf_user_id);
       if (error) throw new Error(error.message);
     }
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: data.hidden ? "ocultou" : "exibiu",
+      target: data.sf_user_id,
+      summary: data.hidden ? "Vendedor ocultado das listas" : "Vendedor exibido novamente nas listas",
+    });
     return { ok: true };
   });
 
@@ -167,6 +175,14 @@ export const setSalespersonGoal = createServerFn({ method: "POST" })
       { onConflict: "sf_user_id,year,month" },
     );
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: "atualizou",
+      target: data.sf_user_id,
+      summary: `Meta mensal de ${String(data.month).padStart(2, "0")}/${data.year} definida em ${data.monthly_goal}`,
+      details: { meta: data.monthly_goal },
+    });
     return { ok: true };
   });
 
@@ -196,6 +212,13 @@ export const setQuarterGoalActive = createServerFn({ method: "POST" })
       .from("salesperson_goals")
       .upsert(rows, { onConflict: "sf_user_id,year,month" });
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: data.active ? "ativou" : "desativou",
+      target: data.sf_user_id,
+      summary: `Metas ${data.active ? "ativadas" : "desativadas"} para os meses ${data.months.join(", ")}/${data.year}`,
+    });
     return { ok: true };
   });
 

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { recordModeration } from "@/lib/moderation-audit.server";
 
 // ---- Tipos das regras de comissão ---- //
 
@@ -105,6 +106,13 @@ export const setVendidoTiers = createServerFn({ method: "POST" })
       .from("commission_settings")
       .upsert({ id: "vendido_tiers", config: data, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: "atualizou",
+      target: "vendido_tiers",
+      summary: `Faixas de comissão por Vendido atualizadas (${data.tiers.length} faixas)`,
+    });
     return { ok: true };
   });
 
@@ -121,6 +129,19 @@ export const setNovosValues = createServerFn({ method: "POST" })
       .from("commission_settings")
       .upsert({ id: "novos_values", config: data, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: "atualizou",
+      target: "novos_values",
+      summary: "Valores de comissão por Novos atualizados",
+      details: {
+        pre_vendas_A: data.pre_vendas.A,
+        pre_vendas_B: data.pre_vendas.B,
+        carteira_A: data.carteira.A,
+        carteira_B: data.carteira.B,
+      },
+    });
     return { ok: true };
   });
 
@@ -148,6 +169,13 @@ export const setRetencaoTiers = createServerFn({ method: "POST" })
       .from("commission_settings")
       .upsert({ id: "retencao_tiers", config: data, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: "atualizou",
+      target: "retencao_tiers",
+      summary: `Faixas de comissão por Retenção atualizadas (${data.tiers.length} faixas)`,
+    });
     return { ok: true };
   });
 
@@ -173,6 +201,13 @@ export const setSalespersonEquipe = createServerFn({ method: "POST" })
       .from("commission_settings")
       .upsert({ id: "salesperson_equipe", config: next, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: "atualizou",
+      target: data.sf_user_id,
+      summary: `Equipe do vendedor definida como ${data.equipe}`,
+    });
     return { ok: true };
   });
 
