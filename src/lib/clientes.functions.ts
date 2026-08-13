@@ -82,7 +82,6 @@ const clienteSchema = z.object({
   porte: z.string().trim().max(60).nullable().optional(),
   situacao_cadastral: z.string().trim().max(60).nullable().optional(),
   data_abertura: z.string().trim().max(20).nullable().optional(),
-  capital_social: z.number().nullable().optional(),
   cnae_principal_codigo: z.string().trim().max(20).nullable().optional(),
   cnae_principal_descricao: z.string().trim().max(300).nullable().optional(),
   cnaes_secundarios: z.array(z.object({ codigo: z.string(), descricao: z.string() })).default([]),

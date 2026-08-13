@@ -12,7 +12,6 @@ export type EnriquecimentoCnpj = {
   data_abertura: string | null;
   natureza_juridica: string | null;
   porte: string | null;
-  capital_social: number | null;
   cnae_principal: CnaeItem | null;
   cnaes_secundarios: CnaeItem[];
   email: string | null;
@@ -75,7 +74,7 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
   const out: EnriquecimentoCnpj = {
     doc,
     razao_social: null, nome_fantasia: null, situacao_cadastral: null, data_abertura: null,
-    natureza_juridica: null, porte: null, capital_social: null,
+    natureza_juridica: null, porte: null,
     cnae_principal: null, cnaes_secundarios: [],
     email: null, telefone: null, telefones: [],
     cep: null, logradouro: null, numero: null, complemento: null, bairro: null,
@@ -110,7 +109,6 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
         out.data_abertura = limpa(d.dataAbertura);
         out.natureza_juridica = limpa(d.naturezaJuridica?.descricao);
         out.porte = PORTE[String(d.porte ?? "")] ?? limpa(d.porte);
-        out.capital_social = typeof d.capitalSocial === "number" ? d.capitalSocial : null;
         if (d.cnaePrincipal?.codigo) {
           out.cnae_principal = {
             codigo: String(d.cnaePrincipal.codigo),
@@ -159,9 +157,6 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
         out.data_abertura ??= limpa(d.founded);
         out.natureza_juridica ??= limpa(d.company?.nature?.text);
         out.porte ??= limpa(d.company?.size?.text);
-        if (out.capital_social == null && typeof d.company?.equity === "number") {
-          out.capital_social = d.company.equity;
-        }
         if (!out.cnae_principal && d.mainActivity?.id) {
           out.cnae_principal = { codigo: String(d.mainActivity.id), descricao: String(d.mainActivity.text ?? "") };
         }
