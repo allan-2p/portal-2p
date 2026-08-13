@@ -203,30 +203,32 @@ function PropostaCpoPage() {
 
 
 
-  // Clientes vindos do cadastro completo (Clientes > Cadastros)
+  // Clientes vindos do cadastro universal (Clientes > Cadastros)
+  const listClientes = useServerFn(listClientesFn);
   const clientesQ = useQuery({
     queryKey: ["cpo-clientes-cadastro"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cpo_clientes")
-        .select("razao_social,nome_fantasia,telefone,email,doc,ie,uf,contribuinte")
-        .eq("ativo", true)
-        .order("razao_social");
-      if (error) throw error;
-      return (data ?? []).map((c) => ({
-        cliente_nome: c.nome_fantasia?.trim() || c.razao_social,
-        cliente_telefone: c.telefone,
-        cliente_email: c.email,
-        cliente_doc: c.doc,
-        cliente_ie: c.ie,
-        uf: c.uf,
-        contribuinte: c.contribuinte,
-      })) as ClienteCadastro[];
+      const res = await listClientes({ data: { instancia: "carregadores" } });
+      return (res.clientes ?? [])
+        .filter((c: Record<string, any>) => c["ativo"] !== false)
+        .map((c: Record<string, any>) => ({
+          id: String(c["id"]),
+          cliente_nome:
+            (c["nome_fantasia"] as string)?.trim() || (c["razao_social"] as string) || "—",
+          cliente_telefone: (c["telefone"] as string) ?? null,
+          cliente_email: (c["email"] as string) ?? null,
+          cliente_doc: (c["doc"] as string) ?? null,
+          cliente_ie: (c["ie"] as string) ?? null,
+          uf: (c["uf"] as string) ?? "",
+          contribuinte: c["contribuinte"] !== false,
+        }))
+        .sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR")) as ClienteCadastro[];
     },
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
+
 
 
 
