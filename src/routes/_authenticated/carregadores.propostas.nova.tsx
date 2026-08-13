@@ -705,6 +705,27 @@ function PropostaCpoPage() {
               </div>
             ) : null}
 
+            {state.nome ? (
+              <Field label="Finalidade de uso">
+                <Select
+                  value={state.finalidadeUso}
+                  onValueChange={(v) => set("finalidadeUso", v as CpoFinalidadeUso)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
+                    <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
+                    <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Define a destinação da mercadoria e pode afetar o tratamento fiscal da operação.
+                </p>
+              </Field>
+            ) : null}
+
             {etapa === 2 ? (
               <>
             {temProduto ? <Banner level={st.level} text={st.msg} /> : null}
