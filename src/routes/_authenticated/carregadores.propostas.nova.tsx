@@ -1375,10 +1375,7 @@ function PropostaCpoPage() {
               </Button>
               <div className="hidden sm:block flex-1" />
               <Button
-                onClick={() => {
-                  setStatusProposta("Aguardando Pagamento");
-                  setConfirmarConclusao(true);
-                }}
+                onClick={iniciarConclusao}
                 disabled={saving}
                 className="w-full gap-2 sm:w-auto"
               >
