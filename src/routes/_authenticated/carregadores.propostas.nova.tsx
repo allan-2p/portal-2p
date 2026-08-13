@@ -1040,9 +1040,6 @@ function PropostaCpoPage() {
                         <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Define a destinação da mercadoria e pode afetar o tratamento fiscal da operação.
-                    </p>
                   </Field>
                 ) : null}
               </>
