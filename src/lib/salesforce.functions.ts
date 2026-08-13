@@ -1327,10 +1327,11 @@ export const MARKETING_OWNER_IDS = [
   "005U400000HYBs5IAH", // Erika Aiello
   "005U400000IClATIA1", // Ygor Andreis
   "005U400000C9Gg9IAF", // Marketing 2P
+  "005U400000JmJobIAF", // Gabriel Sargiani
 ] as const;
 
 // Filtro adicional por nome (para membros ainda sem SF User ID configurado).
-export const MARKETING_OWNER_NAMES_EXTRA = ["Gabriel Sargiani"] as const;
+export const MARKETING_OWNER_NAMES_EXTRA: readonly string[] = [];
 
 export const MARKETING_OWNER_NAMES: Record<string, string> = {
   "005Dn000005whg0IAA": "Fernando Lira",
@@ -1338,6 +1339,7 @@ export const MARKETING_OWNER_NAMES: Record<string, string> = {
   "005U400000HYBs5IAH": "Erika Aiello",
   "005U400000IClATIA1": "Ygor Andreis",
   "005U400000C9Gg9IAF": "Marketing 2P",
+  "005U400000JmJobIAF": "Gabriel Sargiani",
 };
 
 // Nomes de todos os owners (para exibição e filtros SOQL por nome).
