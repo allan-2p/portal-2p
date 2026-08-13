@@ -1401,7 +1401,7 @@ function PropostaCpoPage() {
         {/* Barra de ações fixa no rodapé */}
         <div className="sticky bottom-0 z-20 mt-6 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 bg-background/95 backdrop-blur border-t border-border">
           <div className="flex flex-col gap-3">
-            {!podeFechar ? (
+            {!podeFechar && tentouAvancar ? (
               <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 w-full max-w-none sm:max-w-xl">
                 <p className="text-sm font-semibold text-destructive">
                   Corrija antes de exportar ou concluir o pedido
