@@ -2,6 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import grupo2pLogo from "@/assets/2p-logo-preto.png";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationsDropdown } from "./notifications-dropdown";
 import { InstanceSwitcher } from "./instance-switcher";
@@ -10,6 +11,7 @@ import { MarketingUnitSwitch } from "./marketing-unit-switch";
 import { useInstance } from "./instance-provider";
 import { INSTANCES, featureForPath, instanceForFeature, type FeatureKey } from "@/lib/instances";
 import { SCREENS, type ScreenKey } from "@/lib/view-screens";
+import { isGroupAdminPath } from "@/lib/admin-area";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { logUserActivity } from "@/lib/activity.functions";
@@ -44,6 +46,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   useSalesforceNotifications();
   const { instance, setInstance, allowed, hasFeature, isRouteAllowed, defaultRoute, loading: instanceLoading } = useInstance();
   const instMeta = INSTANCES[instance];
+  // Na área do Grupo 2P a marca é neutra (sem logo/identidade de instância).
+  const brand = isGroupAdminPath(pathname)
+    ? { logo: grupo2pLogo, label: "Grupo 2P" }
+    : { logo: instMeta.logo, label: instMeta.label };
 
   useEffect(() => {
     if (localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
@@ -134,15 +140,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const show = (k: FeatureKey) => hasFeature(k);
 
   // Área do Grupo 2P (admin/config): tema neutro (preto/branco), sem identidade de instância.
-  const isAdminArea =
-    pathname === "/usuarios" || pathname.startsWith("/admin") || pathname.startsWith("/integracoes");
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const el = document.documentElement;
-    if (isAdminArea) el.setAttribute("data-area", "admin");
-    else el.removeAttribute("data-area");
-    return () => el.removeAttribute("data-area");
-  }, [isAdminArea]);
+  // O atributo global é aplicado em __root (vale para todo o portal); aqui só ajustamos a marca.
+  const isAdminArea = isGroupAdminPath(pathname);
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -153,11 +152,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
         )}
       >
         <div className={cn("flex items-center gap-3 py-6", collapsed ? "px-3 justify-center" : "px-5")}>
-          <img src={instMeta.logo} alt={instMeta.label} className="h-9 w-auto rounded shrink-0 object-contain" />
+          <img src={brand.logo} alt={brand.label} className="h-9 w-auto rounded shrink-0 object-contain" />
           {!collapsed && (
             <div className="min-w-0">
               <div className="font-display font-bold text-base leading-none truncate">Portal 2P</div>
-              <div className="text-[11px] text-muted-foreground mt-1 truncate">{instMeta.label}</div>
+              <div className="text-[11px] text-muted-foreground mt-1 truncate">{brand.label}</div>
             </div>
           )}
         </div>
@@ -434,7 +433,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-lg">
           <div className="flex items-center gap-4 px-6 h-16">
             <div className="md:hidden flex items-center gap-2">
-              <img src={instMeta.logo} alt={instMeta.label} className="h-7 w-auto rounded object-contain" />
+              <img src={brand.logo} alt={brand.label} className="h-7 w-auto rounded object-contain" />
               <span className="font-display font-bold">Portal 2P</span>
             </div>
             <div className="hidden md:flex flex-1" />

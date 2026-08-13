@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
+  useRouterState,
   Link,
   createRootRouteWithContext,
   useRouter,
@@ -19,6 +20,7 @@ import { SimulationProvider, SimulationBanner } from "@/components/simulation";
 import { supabase } from "@/integrations/supabase/client";
 import { logUserActivity } from "@/lib/activity.functions";
 import { useIdleSignout } from "@/hooks/use-idle-signout";
+import { applyAreaAttribute } from "@/lib/admin-area";
 
 function NotFoundComponent() {
   return (
@@ -130,6 +132,16 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AreaThemeSync() {
+  // Tema por área, válido para todo o portal (qualquer instância):
+  // rotas do Grupo 2P (administração/configurações) usam o tema neutro preto/branco.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    applyAreaAttribute(pathname);
+  }, [pathname]);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useIdleSignout();
@@ -156,6 +168,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SimulationProvider>
         <InstanceProvider>
+          <AreaThemeSync />
           <SimulationBanner />
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
