@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, ExternalLink, Loader2, Lock, Plug, RefreshCw, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ function IntegracaoConfigPage() {
 
   const fetchConfig = useServerFn(getIntegrationConfig);
   const runTest = useServerFn(testIntegration);
+  const qc = useQueryClient();
 
   const config = useQuery({
     queryKey: ["integration", slug, "config"],
@@ -43,6 +44,7 @@ function IntegracaoConfigPage() {
   const test = useMutation({
     mutationFn: () => runTest({ data: { slug } }),
     onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["integration-logs"] });
       if (r.status === "ok") toast.success("Conexão testada com sucesso");
       else if (r.status === "error") toast.error("Falha na conexão");
       else toast.warning("Integração não configurada");
