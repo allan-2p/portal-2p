@@ -82,7 +82,6 @@ type Draft = {
   ncm_id: string;
 };
 
-const EMPTY: Draft = { codigo: "", nome: "", potencia: "", custo: "", ativo: true, ncm_id: "" };
 
 function ProdutosTab() {
   const { data: produtos = [], isLoading } = useCpoProductsAdmin();
@@ -168,9 +167,6 @@ function ProdutosTab() {
           <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Buscar produto" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
-        <Button className="gap-2" onClick={() => setDraft({ ...EMPTY })}>
-          <Plus className="h-4 w-4" /> Novo produto
-        </Button>
       </div>
 
       <div className="glass rounded-2xl overflow-hidden">
@@ -246,7 +242,7 @@ function ProdutosTab() {
       <Dialog open={!!draft} onOpenChange={(v) => !v && setDraft(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{draft?.id ? "Editar produto" : "Novo produto"}</DialogTitle>
+            <DialogTitle>Editar produto</DialogTitle>
           </DialogHeader>
           {draft && (
             <div className="grid gap-3">
