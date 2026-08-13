@@ -942,7 +942,7 @@ function PropostaCpoPage() {
                               <CommandItem
                                 key={c.id}
                                 value={[c.cliente_nome, c.cliente_doc, c.uf].filter(Boolean).join(" ")}
-
+                                className="group"
                                 onSelect={() => {
                                   aplicarCliente(c);
                                   setOpenCli(false);
@@ -950,7 +950,7 @@ function PropostaCpoPage() {
                               >
                                 <div className="min-w-0">
                                   <div className="truncate font-medium">{c.cliente_nome}</div>
-                                  <div className="text-xs text-muted-foreground truncate">
+                                  <div className="text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground truncate">
                                     {[c.cliente_doc, c.uf, c.cliente_email].filter(Boolean).join(" · ") || "Sem dados adicionais"}
                                   </div>
                                 </div>
