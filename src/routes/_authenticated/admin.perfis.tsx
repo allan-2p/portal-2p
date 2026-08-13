@@ -321,12 +321,31 @@ function PerfisPage() {
                 </div>
 
                 <div className="glass rounded-xl p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="font-medium text-sm">Usuários com este perfil</h3>
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="font-medium text-sm">
+                        Usuários com este perfil ({selected.user_ids.length})
+                      </h3>
+                    </div>
+                    <input
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      placeholder="Buscar usuário por nome ou e-mail…"
+                      className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm w-full sm:w-72 outline-none focus:border-primary"
+                    />
                   </div>
                   <div className="grid gap-1.5 sm:grid-cols-2 max-h-[420px] overflow-auto">
-                    {users.map((u) => (
+                    {users
+                      .filter((u) => {
+                        const q = userSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return (
+                          (u.full_name ?? "").toLowerCase().includes(q) ||
+                          u.email.toLowerCase().includes(q)
+                        );
+                      })
+                      .map((u) => (
                       <label
                         key={u.id}
                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-surface-2 cursor-pointer text-sm"
@@ -349,6 +368,7 @@ function PerfisPage() {
                     ))}
                   </div>
                 </div>
+
               </div>
             ) : (
               <div className="glass rounded-xl p-10 text-center text-sm text-muted-foreground">
