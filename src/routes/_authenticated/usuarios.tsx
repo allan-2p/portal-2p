@@ -1086,8 +1086,11 @@ function EditUserModal({
 
         <div className="pt-2 space-y-2">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            Perfis de permissão
+            Perfis de permissão <span className="text-destructive">*</span>
           </div>
+          {!profilesLoading && profileIds.size === 0 && (
+            <p className="text-xs text-destructive">Obrigatório: todo usuário precisa de ao menos um perfil.</p>
+          )}
           {profilesLoading ? (
             <div className="text-sm text-muted-foreground flex items-center gap-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando perfis…
