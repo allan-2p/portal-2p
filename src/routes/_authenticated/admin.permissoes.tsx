@@ -1005,7 +1005,7 @@ export function PermissoesContent() {
         </div>
       </div>
 
-    </AppLayout>
+    </>
   );
 }
 
