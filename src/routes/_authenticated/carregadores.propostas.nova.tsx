@@ -1160,7 +1160,7 @@ function PropostaCpoPage() {
         <div className="sticky bottom-0 z-20 mt-6 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 bg-background/95 backdrop-blur border-t border-border">
           <div className="flex flex-col gap-3">
             {!podeFechar ? (
-              <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 w-full max-w-xl">
+              <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 w-full max-w-none sm:max-w-xl">
                 <p className="text-sm font-semibold text-destructive">
                   Corrija antes de exportar ou concluir o pedido
                 </p>
@@ -1171,24 +1171,24 @@ function PropostaCpoPage() {
                 </ul>
               </div>
             ) : null}
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              <Button variant="outline" onClick={voltarEtapa} disabled={etapa === 1} className="gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-2">
+              <Button variant="outline" onClick={voltarEtapa} disabled={etapa === 1} className="w-full gap-2 sm:w-auto">
                 Voltar
               </Button>
-              <Button variant="outline" onClick={avancarEtapa} disabled={etapa === 4} className="gap-2">
+              <Button variant="outline" onClick={avancarEtapa} disabled={etapa === 4} className="w-full gap-2 sm:w-auto">
                 Próximo
               </Button>
-              <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="gap-2">
+              <Button onClick={() => pedirRevisao("salvar")} disabled={saving} className="w-full gap-2 sm:w-auto">
                 <Save className="h-4 w-4" /> Salvar proposta
               </Button>
-              <Button variant="outline" onClick={abrirPreviewPdf} disabled={!podeFechar} className="gap-2">
+              <Button variant="outline" onClick={abrirPreviewPdf} disabled={!podeFechar} className="w-full gap-2 sm:w-auto">
                 <Eye className="h-4 w-4" /> Prévia do PDF
               </Button>
-              <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar} className="gap-2">
+              <Button variant="outline" onClick={exportarPdf} disabled={!podeFechar} className="w-full gap-2 sm:w-auto">
                 <FileDown className="h-4 w-4" /> Baixar PDF
               </Button>
               <div className="hidden sm:block flex-1" />
-              <Button onClick={() => pedirRevisao("concluir")} disabled={saving} className="gap-2">
+              <Button onClick={() => pedirRevisao("concluir")} disabled={saving} className="w-full gap-2 sm:w-auto">
                 <CheckCircle2 className="h-4 w-4" /> Concluir pedido
               </Button>
             </div>
