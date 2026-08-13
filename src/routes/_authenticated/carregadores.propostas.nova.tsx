@@ -1066,17 +1066,13 @@ function PropostaCpoPage() {
               <div>
                 {state.contribuinte ? (
                   <>
-                    <b className="text-foreground">Contribuinte.</b> O vendedor recolhe apenas o ICMS de origem (
-                    {fmtPct(d.inter)}). DIFAL estimado do destinatário em {uf?.nome ?? state.uf}: {fmtBRL(d.difalEstimado)}{" "}
-                    (interna {fmtPct(uf?.aliq_interna ?? 0)}
-                    {uf?.fcp ? ` + FCP ${fmtPct(uf.fcp)}` : ""}).
+                    <b className="text-foreground">Contribuinte.</b> ICMS origem {fmtPct(d.inter)} · DIFAL estimado{" "}
+                    {fmtBRL(d.difalEstimado)}.
                   </>
                 ) : (
                   <>
-                    <b className="text-foreground">Não contribuinte.</b> Carga efetiva = ICMS origem {fmtPct(d.inter)} +
-                    DIFAL absorvido de {fmtBRL(d.difalAbs)} sobre o valor sem IPI, seguindo a carga interna de{" "}
-                    {uf?.nome ?? state.uf}
-                    {uf?.fcp ? ` (inclui FCP de ${fmtPct(uf.fcp)})` : ""}.
+                    <b className="text-foreground">Não contribuinte.</b> Carga efetiva: ICMS origem {fmtPct(d.inter)} +
+                    DIFAL absorvido {fmtBRL(d.difalAbs)}.
                   </>
                 )}
               </div>
