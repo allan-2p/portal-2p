@@ -2212,3 +2212,166 @@ export const getPreVendasFunilData = createServerFn({ method: "GET" })
     };
     return result;
   });
+
+// ---------------------------------------------------------------------------
+// Linha do tempo unificada do cliente (portal inteiro, sem separação de instância)
+// ---------------------------------------------------------------------------
+
+export type ClientTimelineKind = "pedido" | "interacao" | "visita" | "treinamento";
+
+export type ClientTimelineEntry = {
+  id: string;
+  kind: ClientTimelineKind;
+  date: string | null;
+  title: string;
+  description: string | null;
+  status: string | null;
+  owner: string | null;
+  amount: number | null;
+  source: "salesforce" | "carregadores";
+};
+
+/** Classifica uma atividade em visita, treinamento ou interação a partir do texto. */
+function classificarAtividade(texto: string, isEvent: boolean): ClientTimelineKind {
+  const t = texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (/(trein|capacit|workshop|onboarding|curso)/.test(t)) return "treinamento";
+  if (/(visita|presencial|in loco|visit)/.test(t)) return "visita";
+  return isEvent ? "visita" : "interacao";
+}
+
+/**
+ * Histórico consolidado do cliente: pedidos, interações, visitas e treinamentos.
+ * Reúne Salesforce (oportunidades, tarefas e reuniões) e a base de Carregadores
+ * (propostas e tarefas), sem separação por instância.
+ */
+export const getClientTimeline = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { accountId?: string; clienteNome?: string }) => input ?? {})
+  .handler(async ({ data, context }) => {
+    const accountId = String(data.accountId ?? "").trim();
+    const clienteNome = String(data.clienteNome ?? "").trim().slice(0, 200);
+    const entries: ClientTimelineEntry[] = [];
+
+    if (accountId) {
+      if (!validId(accountId)) throw new Error("accountId inválido");
+      await assertAccountAccess(context.supabase, context.userId, accountId);
+
+      const cutoff = new Date();
+      cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 3);
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+      const oppSoql =
+        `SELECT Id, Name, Amount, Total__c, StageName, CloseDate, Owner.Name ` +
+        `FROM Opportunity WHERE AccountId = '${esc(accountId)}' ` +
+        `AND CloseDate >= ${cutoffStr} ORDER BY CloseDate DESC NULLS LAST LIMIT 300`;
+      const taskSoql =
+        `SELECT Id, Subject, Status, ActivityDate, Description, Owner.Name ` +
+        `FROM Task WHERE WhatId = '${esc(accountId)}' ` +
+        `ORDER BY ActivityDate DESC NULLS LAST LIMIT 300`;
+      const eventSoql =
+        `SELECT Id, Subject, ActivityDate, Description, Owner.Name ` +
+        `FROM Event WHERE WhatId = '${esc(accountId)}' ` +
+        `ORDER BY ActivityDate DESC NULLS LAST LIMIT 200`;
+
+      const [oRes, tRes, eRes] = await Promise.all([
+        sfFetch(`/query?q=${encodeURIComponent(oppSoql)}`).catch(() => ({ records: [] })),
+        sfFetch(`/query?q=${encodeURIComponent(taskSoql)}`).catch(() => ({ records: [] })),
+        sfFetch(`/query?q=${encodeURIComponent(eventSoql)}`).catch(() => ({ records: [] })),
+      ]);
+
+      for (const r of (oRes?.records ?? []) as any[]) {
+        entries.push({
+          id: r.Id,
+          kind: "pedido",
+          date: r.CloseDate ?? null,
+          title: r.Name ?? "Oportunidade",
+          description: null,
+          status: r.StageName ?? null,
+          owner: r.Owner?.Name ?? null,
+          amount: Number(r.Total__c ?? r.Amount ?? 0) || 0,
+          source: "salesforce",
+        });
+      }
+      for (const r of (tRes?.records ?? []) as any[]) {
+        const subject = r.Subject ?? "(sem assunto)";
+        entries.push({
+          id: r.Id,
+          kind: classificarAtividade(`${subject} ${r.Description ?? ""}`, false),
+          date: r.ActivityDate ?? null,
+          title: subject,
+          description: r.Description ?? null,
+          status: r.Status ?? null,
+          owner: r.Owner?.Name ?? null,
+          amount: null,
+          source: "salesforce",
+        });
+      }
+      for (const r of (eRes?.records ?? []) as any[]) {
+        const subject = r.Subject ?? "(sem assunto)";
+        entries.push({
+          id: r.Id,
+          kind: classificarAtividade(`${subject} ${r.Description ?? ""}`, true),
+          date: r.ActivityDate ?? null,
+          title: subject,
+          description: r.Description ?? null,
+          status: null,
+          owner: r.Owner?.Name ?? null,
+          amount: null,
+          source: "salesforce",
+        });
+      }
+    }
+
+    if (clienteNome) {
+      const [props, tarefas] = await Promise.all([
+        context.supabase
+          .from("cpo_proposals")
+          .select("id, numero, cliente_nome, status, totais, created_at")
+          .ilike("cliente_nome", `%${clienteNome}%`)
+          .order("created_at", { ascending: false })
+          .limit(100),
+        context.supabase
+          .from("cpo_tasks")
+          .select("id, titulo, descricao, cliente_nome, status, due_date, created_at")
+          .ilike("cliente_nome", `%${clienteNome}%`)
+          .order("created_at", { ascending: false })
+          .limit(100),
+      ]);
+
+      for (const p of props.data ?? []) {
+        const totais = (p.totais ?? {}) as Record<string, unknown>;
+        const total = Number(totais["totalProposta"] ?? totais["receitaBruta"] ?? 0) || null;
+        entries.push({
+          id: `cpo-prop-${p.id}`,
+          kind: "pedido",
+          date: p.created_at?.slice(0, 10) ?? null,
+          title: `Proposta ${p.numero ?? ""}`.trim() + ` — ${p.cliente_nome}`,
+          description: null,
+          status: p.status ?? null,
+          owner: null,
+          amount: total,
+          source: "carregadores",
+        });
+      }
+      for (const t of tarefas.data ?? []) {
+        const texto = `${t.titulo} ${t.descricao ?? ""}`;
+        entries.push({
+          id: `cpo-task-${t.id}`,
+          kind: classificarAtividade(texto, false),
+          date: t.due_date ?? t.created_at?.slice(0, 10) ?? null,
+          title: t.titulo,
+          description: t.descricao ?? null,
+          status: t.status ?? null,
+          owner: null,
+          amount: null,
+          source: "carregadores",
+        });
+      }
+    }
+
+    entries.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+    return { entries };
+  });
