@@ -272,5 +272,12 @@ export const setBonusGoal = createServerFn({ method: "POST" })
       { onConflict: "sf_user_id" },
     );
     if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "metas",
+      instanceId: "solar",
+      action: "atualizou",
+      target: data.sf_user_id,
+      summary: `Meta bônus definida: ${trimmed.slice(0, 120)}`,
+    });
     return { ok: true };
   });
