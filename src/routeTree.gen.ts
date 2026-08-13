@@ -67,6 +67,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as AuthenticatedCarregadoresPropostasNovaRouteImport } from './routes/_authenticated/carregadores.propostas.nova'
+import { Route as AuthenticatedCarregadoresPropostasAuditoriaRouteImport } from './routes/_authenticated/carregadores.propostas.auditoria'
 import { Route as AuthenticatedCarregadoresClientesCadastrosRouteImport } from './routes/_authenticated/carregadores.clientes.cadastros'
 
 const TvGeralRoute = TvGeralRouteImport.update({
@@ -395,6 +396,12 @@ const AuthenticatedCarregadoresPropostasNovaRoute =
     path: '/nova',
     getParentRoute: () => AuthenticatedCarregadoresPropostasRoute,
   } as any)
+const AuthenticatedCarregadoresPropostasAuditoriaRoute =
+  AuthenticatedCarregadoresPropostasAuditoriaRouteImport.update({
+    id: '/auditoria',
+    path: '/auditoria',
+    getParentRoute: () => AuthenticatedCarregadoresPropostasRoute,
+  } as any)
 const AuthenticatedCarregadoresClientesCadastrosRoute =
   AuthenticatedCarregadoresClientesCadastrosRouteImport.update({
     id: '/cadastros',
@@ -455,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
+  '/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -512,6 +520,7 @@ export interface FileRoutesByTo {
   '/carregadores': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
   '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
+  '/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -574,6 +583,7 @@ export interface FileRoutesById {
   '/_authenticated/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/_authenticated/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
+  '/_authenticated/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/_authenticated/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -636,6 +646,7 @@ export interface FileRouteTypes {
     | '/carregadores/'
     | '/marketing/'
     | '/carregadores/clientes/cadastros'
+    | '/carregadores/propostas/auditoria'
     | '/carregadores/propostas/nova'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -693,6 +704,7 @@ export interface FileRouteTypes {
     | '/carregadores'
     | '/marketing'
     | '/carregadores/clientes/cadastros'
+    | '/carregadores/propostas/auditoria'
     | '/carregadores/propostas/nova'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -754,6 +766,7 @@ export interface FileRouteTypes {
     | '/_authenticated/carregadores/'
     | '/_authenticated/marketing/'
     | '/_authenticated/carregadores/clientes/cadastros'
+    | '/_authenticated/carregadores/propostas/auditoria'
     | '/_authenticated/carregadores/propostas/nova'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1186,6 +1199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarregadoresPropostasNovaRouteImport
       parentRoute: typeof AuthenticatedCarregadoresPropostasRoute
     }
+    '/_authenticated/carregadores/propostas/auditoria': {
+      id: '/_authenticated/carregadores/propostas/auditoria'
+      path: '/auditoria'
+      fullPath: '/carregadores/propostas/auditoria'
+      preLoaderRoute: typeof AuthenticatedCarregadoresPropostasAuditoriaRouteImport
+      parentRoute: typeof AuthenticatedCarregadoresPropostasRoute
+    }
     '/_authenticated/carregadores/clientes/cadastros': {
       id: '/_authenticated/carregadores/clientes/cadastros'
       path: '/cadastros'
@@ -1278,12 +1298,15 @@ const AuthenticatedCarregadoresClientesRouteWithChildren =
   )
 
 interface AuthenticatedCarregadoresPropostasRouteChildren {
+  AuthenticatedCarregadoresPropostasAuditoriaRoute: typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   AuthenticatedCarregadoresPropostasNovaRoute: typeof AuthenticatedCarregadoresPropostasNovaRoute
   AuthenticatedCarregadoresPropostasIndexRoute: typeof AuthenticatedCarregadoresPropostasIndexRoute
 }
 
 const AuthenticatedCarregadoresPropostasRouteChildren: AuthenticatedCarregadoresPropostasRouteChildren =
   {
+    AuthenticatedCarregadoresPropostasAuditoriaRoute:
+      AuthenticatedCarregadoresPropostasAuditoriaRoute,
     AuthenticatedCarregadoresPropostasNovaRoute:
       AuthenticatedCarregadoresPropostasNovaRoute,
     AuthenticatedCarregadoresPropostasIndexRoute:
