@@ -19,10 +19,18 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, ArrowLeft, Calculator } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Calculator, FileDown, FileSpreadsheet } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL, fmtPct, novoEstado, type CpoState } from "@/lib/cpo";
 import { auditarProposta, type PassoCalculo, REGRAS_VERSAO } from "@/lib/cpo-auditoria";
+import {
+  baixarCsv,
+  buildResumoFiscalCsv,
+  buildResumoFiscalHtml,
+  textosPadrao,
+  type ResumoFiscalMeta,
+} from "@/lib/cpo-fiscal-export";
 import { useCpoConfig, useCpoNcms, useCpoProducts, useCpoUfs } from "@/hooks/use-cpo";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/auditoria")({
