@@ -1,0 +1,1 @@
+UPDATE public.profiles SET sf_user_id = '005U400000JmJobIAF', updated_at = now() WHERE email = 'gabriel.sargiani@2pgroup.com.br' AND sf_user_id IS NULL;
