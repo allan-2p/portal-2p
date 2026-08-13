@@ -180,7 +180,21 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const profilePatch: Record<string, unknown> = {};
+    const profilePatch: {
+      email?: string;
+      full_name?: string;
+      cargo?: string | null;
+      equipe?: string | null;
+      regime_contratacao?: string;
+      organizacao?: string;
+      is_external?: boolean;
+      telefone?: string | null;
+      meta_mensal?: number | null;
+      cargo_tipo?: string | null;
+      filter_scope?: "geral" | "pre_vendas" | "carteira" | "individual";
+      ativo?: boolean;
+      sf_user_id?: string | null;
+    } = {};
     if (data.email !== undefined) profilePatch.email = data.email;
     if (data.full_name !== undefined) profilePatch.full_name = data.full_name;
     if (data.cargo !== undefined) profilePatch.cargo = data.cargo;
