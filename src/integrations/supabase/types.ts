@@ -227,6 +227,7 @@ export type Database = {
       cpo_products: {
         Row: {
           ativo: boolean
+          codigo: string | null
           created_at: string
           custo: number
           id: string
@@ -238,6 +239,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          codigo?: string | null
           created_at?: string
           custo?: number
           id?: string
@@ -249,6 +251,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          codigo?: string | null
           created_at?: string
           custo?: number
           id?: string
@@ -284,6 +287,7 @@ export type Database = {
           id: string
           itens: Json
           numero: string | null
+          observacoes: string | null
           status: string
           totais: Json
           uf: string
@@ -304,6 +308,7 @@ export type Database = {
           id?: string
           itens?: Json
           numero?: string | null
+          observacoes?: string | null
           status?: string
           totais?: Json
           uf?: string
@@ -324,6 +329,7 @@ export type Database = {
           id?: string
           itens?: Json
           numero?: string | null
+          observacoes?: string | null
           status?: string
           totais?: Json
           uf?: string
