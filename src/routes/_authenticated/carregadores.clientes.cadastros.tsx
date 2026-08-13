@@ -399,12 +399,20 @@ function CadastrosPage() {
                   <F label="Site"><Input value={form.site ?? ""} onChange={(e) => set("site", e.target.value)} placeholder="https://" /></F>
                 </Section>
 
-                <Section title="Responsável">
-                  <F label="Nome *" id="campo-contato_nome" error={erros.contato_nome}><Input value={form.contato_nome ?? ""} onChange={(e) => set("contato_nome", e.target.value)} /></F>
-                  <F label="Cargo"><Input value={form.contato_cargo ?? ""} onChange={(e) => set("contato_cargo", e.target.value)} /></F>
-                  <F label="E-mail" id="campo-contato_email" error={erros.contato_email}><Input value={form.contato_email ?? ""} onChange={(e) => set("contato_email", e.target.value)} /></F>
-                  <F label="Telefone" id="campo-contato_telefone" error={erros.contato_telefone}><Input value={form.contato_telefone ?? ""} onChange={(e) => set("contato_telefone", e.target.value)} /></F>
+                <Section title="Contatos">
+                  <div className="sm:col-span-2">
+                    <p className="mb-3 text-xs text-muted-foreground">
+                      O contato principal e o contato financeiro são obrigatórios. Você pode informar
+                      vários e-mails e telefones em cada contato e adicionar quantos contatos precisar.
+                    </p>
+                    <ContatosEditor
+                      contatos={form.contatos ?? []}
+                      onChange={(c) => set("contatos", c)}
+                      erros={erros}
+                    />
+                  </div>
                 </Section>
+
 
                 <Section title="Endereço">
                   <F label="CEP *" id="campo-cep" error={erros.cep}>
