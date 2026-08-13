@@ -166,9 +166,26 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       const inserted = rows.filter((r) => !known.has(r.codigo)).length;
       const updated = rows.length - inserted;
       await finish({ status: "success", inserted_count: inserted, updated_count: updated });
+      const { logIntegrationEvent } = await import("./integration-logs.server");
+      await logIntegrationEvent({
+        slug: "sap",
+        level: "info",
+        event: "sync",
+        message: `Sincronização concluída: ${inserted} novos, ${updated} atualizados, ${orfaos.length} desativados.`,
+        detail: { inserted, updated, deactivated: orfaos.length },
+        actorId: context.userId,
+      });
       return { inserted, updated, deactivated: orfaos.length };
     } catch (e: any) {
       await finish({ status: "error", error_message: String(e?.message ?? e).slice(0, 500) });
+      const { logIntegrationEvent } = await import("./integration-logs.server");
+      await logIntegrationEvent({
+        slug: "sap",
+        level: "error",
+        event: "sync",
+        message: String(e?.message ?? e).slice(0, 500),
+        actorId: context.userId,
+      });
       throw e;
     }
   });
