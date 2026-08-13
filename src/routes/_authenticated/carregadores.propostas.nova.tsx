@@ -50,7 +50,7 @@ import {
 } from "@/lib/cpo";
 
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
-import { MoneyInput, MoneyMaskToggle } from "@/components/money-input";
+import { MoneyInput } from "@/components/money-input";
 
 import { cn } from "@/lib/utils";
 
@@ -734,7 +734,7 @@ function PropostaCpoPage() {
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h3 className="font-semibold text-sm">Produtos</h3>
                 <div className="flex items-center gap-3">
-                  <MoneyMaskToggle />
+                  
                   <Button
                     variant="outline"
                     size="sm"
