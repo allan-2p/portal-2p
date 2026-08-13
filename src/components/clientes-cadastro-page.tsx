@@ -25,7 +25,6 @@ import { useCpoUfs } from "@/hooks/use-cpo";
 import { docValido, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import {
   listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, excluirClienteFn,
-  migrarCpoClientesFn,
 
 } from "@/lib/clientes.functions";
 import {
@@ -157,15 +156,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const enriquecer = useServerFn(enriquecerCnpjFn);
   const salvarFn = useServerFn(salvarClienteFn);
   const excluirFn = useServerFn(excluirClienteFn);
-  const migrarFn = useServerFn(migrarCpoClientesFn);
-  const migrar = useMutation({
-    mutationFn: () => migrarFn(),
-    onSuccess: (r) => {
-      toast.success(`${r.migrados} cadastro(s) migrado(s) de ${r.total}.`);
-      qc.invalidateQueries({ queryKey: ["clientes", "carregadores"] });
-    },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha na migração."),
-  });
 
 
   const [q, setQ] = useState("");
