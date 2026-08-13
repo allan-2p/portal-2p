@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type CpoProductAdmin = {
   id: string;
+  codigo: string | null;
   nome: string;
   potencia: string | null;
   custo: number;
@@ -19,12 +20,13 @@ export const listCpoProductsForProposal = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<{ products: CpoProductAdmin[] }> => {
     const { data, error } = await context.supabase
       .from("cpo_products")
-      .select("id, nome, potencia, custo, ativo, ncm_id")
+      .select("id, codigo, nome, potencia, custo, ativo, ncm_id")
       .order("nome");
     if (error) throw new Error(error.message);
     return {
       products: (data ?? []).map((p: any) => ({
         id: p.id,
+        codigo: p.codigo ?? null,
         nome: p.nome,
         potencia: p.potencia,
         custo: Number(p.custo),
@@ -45,13 +47,14 @@ export const adminListCpoProducts = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("cpo_products")
-      .select("id, nome, potencia, custo, ativo")
+      .select("id, codigo, nome, potencia, custo, ativo")
       .order("nome");
     if (error) throw new Error(error.message);
 
     return {
       products: (data ?? []).map((p: any) => ({
         id: p.id,
+        codigo: p.codigo ?? null,
         nome: p.nome,
         potencia: p.potencia,
         custo: Number(p.custo),

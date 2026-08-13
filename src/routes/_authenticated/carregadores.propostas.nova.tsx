@@ -33,6 +33,7 @@ import { AlertCircle, CheckCircle2, ChevronsUpDown, FileDown, Info, Plus, Save, 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+import { Textarea } from "@/components/ui/textarea";
 import { useCpoConfig, useCpoNcms, useCpoProducts, useCpoUfs, useCpoInvalidate } from "@/hooks/use-cpo";
 import {
   CPO_CONFIG_FALLBACK,
@@ -40,6 +41,7 @@ import {
   fmtBRL,
   fmtPct,
   labelFinalidadeUso,
+  OBSERVACOES_PADRAO,
   novoEstado,
   novoItem,
   parseMoeda,
@@ -178,6 +180,7 @@ function PropostaCpoPage() {
         finalidadeUso: ((data.finalidade_uso as CpoState["finalidadeUso"]) ?? "uso_consumo"),
         freteMod: (data.frete_mod === "CIF" ? "CIF" : "FOB") as CpoState["freteMod"],
         freteValor: money2(data.frete_valor ?? 0),
+        observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
         itens: itens.length ? itens : [novoItem()],
       });
       setNumeroAtual(editId ? data.numero : null);
@@ -416,12 +419,14 @@ function PropostaCpoPage() {
       itens: state.itens
         .filter((i) => i.produtoId)
         .map((i) => ({
+          codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
           nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
           qtd: i.qtd,
           valor: i.valor,
         })),
       freteMod: state.freteMod,
       freteValor: state.freteValor,
+      observacoes: state.observacoes,
       impostos: {
         ipiRate: config.ipi,
         ipiValor: d.ipiValor,
@@ -471,8 +476,10 @@ function PropostaCpoPage() {
         finalidade_uso: state.finalidadeUso,
         frete_mod: state.freteMod,
         frete_valor: money2(state.freteValor),
+        observacoes: state.observacoes?.trim() || null,
         itens: state.itens.map((i) => ({
           produtoId: i.produtoId,
+          codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
           nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
           qtd: i.qtd,
           valor: money2(i.valor),
@@ -798,6 +805,7 @@ function PropostaCpoPage() {
                           <SelectContent>
                             {produtos.map((p) => (
                               <SelectItem key={p.id} value={p.id}>
+                                {p.codigo ? `${p.codigo} — ` : ""}
                                 {p.nome}
                                 {p.potencia ? ` · ${p.potencia}` : ""}
                               </SelectItem>
@@ -895,6 +903,18 @@ function PropostaCpoPage() {
                 ) : null}
               </Field>
             </div>
+
+            <Field label="Observações">
+              <Textarea
+                rows={3}
+                value={state.observacoes}
+                placeholder="Observações da proposta"
+                onChange={(e) => set("observacoes", e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Texto padrão incluído automaticamente — pode ser editado.
+              </p>
+            </Field>
 
             {/* TOTAIS AO VIVO — recalculam a cada mudança de preço/quantidade/frete */}
             <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-background/90 backdrop-blur px-4 py-3 shadow-lg">

@@ -31,6 +31,7 @@ export type CpoNcm = {
 
 export type CpoProduct = {
   id: string;
+  codigo?: string | null;
   nome: string;
   potencia: string | null;
   custo: number;
@@ -101,8 +102,13 @@ export type CpoState = {
   finalidadeUso: CpoFinalidadeUso;
   freteMod: "FOB" | "CIF";
   freteValor: number;
+  observacoes: string;
   itens: CpoItem[];
 };
+
+/** Texto padrão de observações incluído em toda nova proposta. */
+export const OBSERVACOES_PADRAO =
+  "Valores dos itens expressos com IPI. O DIFAL não é de responsabilidade da 2P, sendo o recolhimento de responsabilidade do destinatário.";
 
 export type CpoResult = {
   valorItens: number;
@@ -154,6 +160,7 @@ export function novoEstado(): CpoState {
     finalidadeUso: "uso_consumo",
     freteMod: "FOB",
     freteValor: 0,
+    observacoes: OBSERVACOES_PADRAO,
     itens: [novoItem()],
   };
 }
