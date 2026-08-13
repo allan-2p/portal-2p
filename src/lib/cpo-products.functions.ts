@@ -11,29 +11,36 @@ export type CpoProductAdmin = {
   ncm_id?: string | null;
 };
 
+/** Colunas do catálogo único do portal (`sap_produtos`). */
+const COLS = "id, codigo, descricao, potencia, custo, ativo, ncm_id, visibilidade";
+
+function toProduct(p: any): CpoProductAdmin {
+  return {
+    id: p.id,
+    codigo: p.codigo ?? null,
+    nome: p.descricao,
+    potencia: p.potencia ?? null,
+    custo: Number(p.custo ?? 0),
+    ativo: p.ativo,
+    ncm_id: p.ncm_id ?? null,
+  };
+}
+
 /**
  * Produtos ativos com custo — usados no cálculo de CMV, margem e comissão da
- * proposta. Restrito a usuários autenticados do portal.
+ * proposta. Origem única: tabela `sap_produtos` do portal (alimentada pelo SAP
+ * e pelas edições manuais), filtrada pela visibilidade de Carregadores.
  */
 export const listCpoProductsForProposal = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ products: CpoProductAdmin[] }> => {
     const { data, error } = await context.supabase
-      .from("cpo_products")
-      .select("id, codigo, nome, potencia, custo, ativo, ncm_id")
-      .order("nome");
+      .from("sap_produtos")
+      .select(COLS)
+      .in("visibilidade", ["carregadores", "ambos"])
+      .order("descricao");
     if (error) throw new Error(error.message);
-    return {
-      products: (data ?? []).map((p: any) => ({
-        id: p.id,
-        codigo: p.codigo ?? null,
-        nome: p.nome,
-        potencia: p.potencia,
-        custo: Number(p.custo),
-        ativo: p.ativo,
-        ncm_id: p.ncm_id ?? null,
-      })),
-    };
+    return { products: (data ?? []).map(toProduct) };
   });
 
 
@@ -46,19 +53,11 @@ export const adminListCpoProducts = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
-      .from("cpo_products")
-      .select("id, codigo, nome, potencia, custo, ativo")
-      .order("nome");
+      .from("sap_produtos")
+      .select(COLS)
+      .in("visibilidade", ["carregadores", "ambos"])
+      .order("descricao");
     if (error) throw new Error(error.message);
 
-    return {
-      products: (data ?? []).map((p: any) => ({
-        id: p.id,
-        codigo: p.codigo ?? null,
-        nome: p.nome,
-        potencia: p.potencia,
-        custo: Number(p.custo),
-        ativo: p.ativo,
-      })),
-    };
+    return { products: (data ?? []).map(toProduct) };
   });
