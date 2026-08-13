@@ -146,7 +146,7 @@ function PropostaCpoPage() {
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
   const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewAberto, setPreviewAberto] = useState(false);
   const carregado = useRef(false);
 
   // Limpa qualquer rascunho local antigo ao abrir uma nova proposta
