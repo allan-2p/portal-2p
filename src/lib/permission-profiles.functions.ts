@@ -9,6 +9,7 @@ export type PermissionProfile = {
   name: string;
   description: string | null;
   is_system: boolean;
+  is_full_access: boolean;
   features: { instance_id: string; feature_key: string }[];
   instances: string[];
   user_ids: string[];
@@ -54,6 +55,7 @@ export const adminListPermissionProfiles = createServerFn({ method: "GET" })
         name: p.name,
         description: p.description,
         is_system: p.is_system,
+        is_full_access: !!p.is_full_access,
         features: featBy.get(p.id) ?? [],
         instances: instBy.get(p.id) ?? [],
         user_ids: usersBy.get(p.id) ?? [],
@@ -97,6 +99,12 @@ export const adminDeletePermissionProfile = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    const { data: prof } = await context.supabase
+      .from("permission_profiles")
+      .select("is_full_access")
+      .eq("id", data.id)
+      .maybeSingle();
+    if ((prof as any)?.is_full_access) throw new Error("O perfil Administrador do Sistema não pode ser excluído");
     const { error } = await context.supabase.from("permission_profiles").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

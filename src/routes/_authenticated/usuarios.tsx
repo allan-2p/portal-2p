@@ -978,6 +978,10 @@ function EditUserModal({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          if (profileIds.size === 0) {
+            toast.error("Selecione ao menos um perfil de permissão.");
+            return;
+          }
           setSubmitting(true);
           try {
             await setUserProfilesFn({ data: { user_id: row.id, profile_ids: [...profileIds] } });
@@ -1082,8 +1086,11 @@ function EditUserModal({
 
         <div className="pt-2 space-y-2">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            Perfis de permissão
+            Perfis de permissão <span className="text-destructive">*</span>
           </div>
+          {!profilesLoading && profileIds.size === 0 && (
+            <p className="text-xs text-destructive">Obrigatório: todo usuário precisa de ao menos um perfil.</p>
+          )}
           {profilesLoading ? (
             <div className="text-sm text-muted-foreground flex items-center gap-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando perfis…
@@ -1131,7 +1138,7 @@ function EditUserModal({
           </button>
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || profileIds.size === 0}
             className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
