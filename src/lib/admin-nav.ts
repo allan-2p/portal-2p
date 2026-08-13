@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import type { FeatureKey } from "@/lib/instances";
 
-export type AdminSectionId = "configuracoes" | "painel" | "moderacao";
+export type AdminSectionId = "configuracoes" | "integracoes" | "moderacao";
 
 export type AdminNavItem = {
   to: string;
@@ -71,9 +71,9 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     ],
   },
   {
-    id: "painel",
-    label: "Painel de Controle",
-    icon: LayoutDashboard,
+    id: "integracoes",
+    label: "Integrações",
+    icon: Plug,
     home: "/integracoes",
     groups: [
       {
@@ -107,6 +107,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     ],
   },
 ];
+
 
 const ALL_ADMIN_PATHS = ADMIN_SECTIONS.flatMap((s) => s.groups.flatMap((g) => g.items.map((i) => i.to)));
 
