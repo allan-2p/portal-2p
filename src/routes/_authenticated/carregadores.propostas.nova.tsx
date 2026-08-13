@@ -1409,7 +1409,7 @@ function PropostaCpoPage() {
               ? [
                   {
                     label: "Salvar proposta",
-                    onClick: () => pedirRevisao("salvar"),
+                    onClick: pedirSalvar,
                     icon: <Save className="h-4 w-4" />,
                     loading: saving && statusProposta !== "Aguardando Pagamento",
                   },
@@ -1436,7 +1436,7 @@ function PropostaCpoPage() {
                   }
                 : {
                     label: "Salvar proposta",
-                    onClick: () => pedirRevisao("salvar"),
+                    onClick: pedirSalvar,
                     icon: <Save className="h-4 w-4" />,
                     loading: saving,
                     disabled: saving,
