@@ -1000,9 +1000,6 @@ function PropostaCpoPage() {
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Os dados fiscais vêm direto do cadastro do cliente.
-                  </p>
                 </Field>
 
                 {state.nome ? (
