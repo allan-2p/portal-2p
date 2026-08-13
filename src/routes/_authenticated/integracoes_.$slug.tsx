@@ -11,6 +11,7 @@ import { integrationBySlug } from "@/lib/integrations-catalog";
 import { getIntegrationConfig, testIntegration } from "@/lib/integration-config.functions";
 import { formatLastSync } from "@/components/integration-status";
 import { IntegrationLogsPanel } from "@/components/integration-logs";
+import { IntegrationAlertBadge, IntegrationAlertSettingsCard, useIntegrationAlerts } from "@/components/integration-alerts";
 
 export const Route = createFileRoute("/_authenticated/integracoes_/$slug")({
   head: () => ({
@@ -30,6 +31,7 @@ function IntegracaoConfigPage() {
   const { slug } = useParams({ from: "/_authenticated/integracoes_/$slug" });
   const def = integrationBySlug(slug);
 
+  const { bySlug: alertsBySlug } = useIntegrationAlerts();
   const fetchConfig = useServerFn(getIntegrationConfig);
   const runTest = useServerFn(testIntegration);
   const qc = useQueryClient();
@@ -65,6 +67,7 @@ function IntegracaoConfigPage() {
     );
   }
 
+  const alert = alertsBySlug.get(slug);
   const states = new Map((config.data?.credentials ?? []).map((c) => [c.env, c]));
   const result = test.data;
 
@@ -83,7 +86,10 @@ function IntegracaoConfigPage() {
           </div>
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{def.category}</div>
-            <h1 className="font-display text-2xl font-bold">{def.name}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-display text-2xl font-bold">{def.name}</h1>
+              <IntegrationAlertBadge alert={alert} />
+            </div>
             <p className="text-sm text-muted-foreground mt-1">{def.description}</p>
           </div>
         </div>
@@ -203,6 +209,23 @@ function IntegracaoConfigPage() {
             </a>
           )}
         </section>
+
+        {alert && (
+          <div
+            role="alert"
+            className={
+              alert.level === "error"
+                ? "rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+                : alert.level === "stale"
+                  ? "rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-600 dark:text-amber-400"
+                  : "rounded-2xl border border-border bg-surface-2 p-4 text-sm text-muted-foreground"
+            }
+          >
+            {alert.message}
+          </div>
+        )}
+
+        <IntegrationAlertSettingsCard slug={slug} />
 
         <IntegrationLogsPanel slug={slug} />
       </div>

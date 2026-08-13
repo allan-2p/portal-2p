@@ -9,6 +9,7 @@ export const MODERATION_AREAS = [
   { key: "cpo_comissoes", label: "Comissões (Carregadores)", instance: "carregadores" },
   { key: "cpo_regras", label: "Regras (Carregadores)", instance: "carregadores" },
   { key: "marketing", label: "Marketing", instance: "marketing" },
+  { key: "integracoes", label: "Integrações", instance: "grupo" },
 ] as const;
 
 export type ModerationArea = (typeof MODERATION_AREAS)[number]["key"];

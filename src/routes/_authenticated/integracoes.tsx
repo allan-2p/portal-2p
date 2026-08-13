@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSalesforceStatus, getSalesforceSample } from "@/lib/salesforce.functions";
 import { IntegrationStatusBadge, formatLastSync, useIntegrationHealthMap } from "@/components/integration-status";
 import { IntegrationLogsPanel } from "@/components/integration-logs";
+import { IntegrationAlertsBanner } from "@/components/integration-alerts";
 
 
 export const Route = createFileRoute("/_authenticated/integracoes")({
@@ -46,6 +47,8 @@ function IntegracoesPage() {
           Todas as integrações usadas pela plataforma — conexões externas, bancos de dados e serviços de apoio.
         </p>
       </div>
+
+      <IntegrationAlertsBanner />
 
       <div id="salesforce" className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="p-6 flex items-start gap-4">

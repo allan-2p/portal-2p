@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronDown } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ChevronDown } from "lucide-react";
 import { sectionForPath } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useInstance } from "./instance-provider";
 import { IntegrationStatusDot, useIntegrationHealthMap, type IntegrationHealthItem } from "./integration-status";
+import { useIntegrationAlerts, type IntegrationAlert } from "./integration-alerts";
 
 function slugFromTo(to: string): string | null {
   const i = to.indexOf("#");
@@ -21,6 +22,7 @@ export function AdminSidebar({ pathname, collapsed }: { pathname: string; collap
   const { hasFeature, defaultRoute } = useInstance();
   const current = sectionForPath(pathname);
   const health = useIntegrationHealthMap(current?.id === "integracoes");
+  const { bySlug: alertsBySlug } = useIntegrationAlerts(current?.id === "integracoes");
 
   return (
     <nav className="px-2 py-2 flex-1 overflow-y-auto">
@@ -68,7 +70,7 @@ export function AdminSidebar({ pathname, collapsed }: { pathname: string; collap
                       </button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <AdminGroupItems items={items} pathname={pathname} collapsed={collapsed} health={health} />
+                      <AdminGroupItems items={items} pathname={pathname} collapsed={collapsed} health={health} alerts={alertsBySlug} />
                     </CollapsibleContent>
                   </Collapsible>
                 ) : (
@@ -79,7 +81,7 @@ export function AdminSidebar({ pathname, collapsed }: { pathname: string; collap
                       </div>
                     )}
                     {collapsed && gi > 0 && <div className="h-px bg-border mx-1 mb-2" />}
-                    <AdminGroupItems items={items} pathname={pathname} collapsed={collapsed} health={health} />
+                    <AdminGroupItems items={items} pathname={pathname} collapsed={collapsed} health={health} alerts={alertsBySlug} />
                   </>
                 )}
               </div>
@@ -96,11 +98,13 @@ function AdminGroupItems({
   pathname,
   collapsed,
   health,
+  alerts,
 }: {
   items: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
   pathname: string;
   collapsed: boolean;
   health?: { map: Map<string, IntegrationHealthItem>; isLoading: boolean };
+  alerts?: Map<string, IntegrationAlert>;
 }) {
   return (
     <div className="space-y-0.5">
@@ -126,6 +130,19 @@ function AdminGroupItems({
             {(() => {
               const slug = slugFromTo(i.to);
               if (!health || !slug) return null;
+              const alert = alerts?.get(slug);
+              if (alert && alert.level !== "off") {
+                return (
+                  <span title={alert.message} className="shrink-0 inline-flex">
+                  <AlertTriangle
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0",
+                      alert.level === "error" ? "text-destructive" : "text-amber-500",
+                    )}
+                  />
+                  </span>
+                );
+              }
               return <IntegrationStatusDot item={health.map.get(slug)} loading={health.isLoading} />;
             })()}
           </Link>
