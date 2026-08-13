@@ -244,7 +244,10 @@ function AuditoriaPage() {
           </div>
         </div>
 
+        <ConclusaoLogCard />
+
         {carregando && <p className="text-sm text-muted-foreground">Carregando dados de cálculo…</p>}
+
         {!carregando && !atual && (
           <p className="text-sm text-muted-foreground">Nenhuma proposta salva para auditar.</p>
         )}
