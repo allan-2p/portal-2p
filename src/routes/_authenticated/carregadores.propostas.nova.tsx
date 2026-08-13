@@ -681,7 +681,9 @@ function PropostaCpoPage() {
             _id: propostaId,
             _status: status,
             _origem: "portal",
+            _etapa: etapa,
           });
+
           if (rpcErr) throw rpcErr;
           const linha = Array.isArray(res) ? res[0] : res;
           if (linha?.already_concluded) {
