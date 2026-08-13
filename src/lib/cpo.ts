@@ -88,6 +88,8 @@ export type CpoItem = {
   valorManual: boolean;
 };
 
+export type CpoFinalidadeUso = "uso_consumo" | "revenda" | "industrializacao";
+
 export type CpoState = {
   nome: string;
   telefone: string;
@@ -96,6 +98,7 @@ export type CpoState = {
   ie: string;
   uf: string;
   contribuinte: boolean;
+  finalidadeUso: CpoFinalidadeUso;
   freteMod: "FOB" | "CIF";
   freteValor: number;
   itens: CpoItem[];
@@ -148,11 +151,18 @@ export function novoEstado(): CpoState {
     ie: "",
     uf: "SP",
     contribuinte: false,
+    finalidadeUso: "uso_consumo",
     freteMod: "FOB",
     freteValor: 0,
     itens: [novoItem()],
   };
 }
+
+export const labelFinalidadeUso: Record<CpoFinalidadeUso, string> = {
+  uso_consumo: "Uso e consumo",
+  revenda: "Revenda",
+  industrializacao: "Industrialização",
+};
 
 /** DIFAL "por dentro" conforme a Tabela DIFAL — Não Contribuinte. */
 export function calcularDifal(vendaComIpi: number, aliqInterna: number, fcp: number, inter: number) {

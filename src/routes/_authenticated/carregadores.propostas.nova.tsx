@@ -39,11 +39,12 @@ import {
   calcularCpo,
   fmtBRL,
   fmtPct,
+  labelFinalidadeUso,
   novoEstado,
   novoItem,
   parseMoeda,
-  
   statusMB,
+  type CpoFinalidadeUso,
   type CpoItem,
   type CpoState,
   textoDifalContribuinte,
@@ -174,6 +175,7 @@ function PropostaCpoPage() {
         ie: data.cliente_ie ?? "",
         uf: data.uf,
         contribuinte: data.contribuinte,
+        finalidadeUso: ((data.finalidade_uso as CpoState["finalidadeUso"]) ?? "uso_consumo"),
         freteMod: (data.frete_mod === "CIF" ? "CIF" : "FOB") as CpoState["freteMod"],
         freteValor: money2(data.frete_valor ?? 0),
         itens: itens.length ? itens : [novoItem()],
@@ -466,6 +468,7 @@ function PropostaCpoPage() {
         status,
         uf: state.uf,
         contribuinte: state.contribuinte,
+        finalidade_uso: state.finalidadeUso,
         frete_mod: state.freteMod,
         frete_valor: money2(state.freteValor),
         itens: state.itens.map((i) => ({
@@ -700,6 +703,27 @@ function PropostaCpoPage() {
                   </span>
                 </div>
               </div>
+            ) : null}
+
+            {state.nome ? (
+              <Field label="Finalidade de uso">
+                <Select
+                  value={state.finalidadeUso}
+                  onValueChange={(v) => set("finalidadeUso", v as CpoFinalidadeUso)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
+                    <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
+                    <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Define a destinação da mercadoria e pode afetar o tratamento fiscal da operação.
+                </p>
+              </Field>
             ) : null}
 
             {etapa === 2 ? (
