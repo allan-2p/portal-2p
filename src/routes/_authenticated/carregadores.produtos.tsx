@@ -23,6 +23,7 @@ import {
 import { Plus, Pencil, Trash2, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { logModeration } from "@/lib/moderation-audit";
 import { useCpoConfig, useCpoInvalidate, useCpoNcms, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
 import { fmtBRL, type CpoConfig, type CpoNcm, type CpoProduct } from "@/lib/cpo";
 
@@ -113,6 +114,13 @@ function ProdutosTab() {
       : await supabase.from("cpo_products").insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
+    void logModeration({
+      area: "cpo_produtos",
+      action: draft.id ? "atualizou" : "criou",
+      target: payload.nome,
+      summary: `${draft.id ? "Produto atualizado" : "Produto criado"}: ${payload.nome}`,
+      details: { custo: payload.custo, ativo: payload.ativo },
+    });
     toast.success(draft.id ? "Produto atualizado." : "Produto criado.");
     setDraft(null);
     invalidate();
@@ -121,6 +129,12 @@ function ProdutosTab() {
   async function excluir(p: CpoProduct) {
     const { error } = await supabase.from("cpo_products").delete().eq("id", p.id);
     if (error) return toast.error(error.message);
+    void logModeration({
+      area: "cpo_produtos",
+      action: "removeu",
+      target: p.nome,
+      summary: `Produto removido: ${p.nome}`,
+    });
     toast.success("Produto removido.");
     invalidate();
   }
@@ -128,6 +142,12 @@ function ProdutosTab() {
   async function toggleAtivo(p: CpoProduct) {
     const { error } = await supabase.from("cpo_products").update({ ativo: !p.ativo }).eq("id", p.id);
     if (error) return toast.error(error.message);
+    void logModeration({
+      area: "cpo_produtos",
+      action: p.ativo ? "desativou" : "ativou",
+      target: p.nome,
+      summary: `Produto ${p.ativo ? "desativado" : "ativado"}: ${p.nome}`,
+    });
     invalidate();
   }
 
@@ -449,6 +469,13 @@ function NcmTab() {
       : await supabase.from("cpo_ncm").insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
+    void logModeration({
+      area: "cpo_produtos",
+      action: draft.id ? "atualizou" : "criou",
+      target: payload.codigo,
+      summary: `${draft.id ? "NCM atualizado" : "NCM criado"}: ${payload.codigo}`,
+      details: { ipi: payload.ipi, aliq_inter: payload.aliq_inter, tem_st: payload.tem_st, gera_difal: payload.gera_difal },
+    });
     toast.success(draft.id ? "NCM atualizado." : "NCM criado.");
     setDraft(null);
     invalidate();
@@ -457,6 +484,12 @@ function NcmTab() {
   async function excluir(n: CpoNcm) {
     const { error } = await supabase.from("cpo_ncm").delete().eq("id", n.id);
     if (error) return toast.error(error.message);
+    void logModeration({
+      area: "cpo_produtos",
+      action: "removeu",
+      target: n.codigo,
+      summary: `NCM removido: ${n.codigo}`,
+    });
     toast.success("NCM removido.");
     invalidate();
   }
