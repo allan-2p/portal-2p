@@ -487,3 +487,148 @@ export const syncAllSalesforcePhotos = createServerFn({ method: "POST" })
   });
 
 
+
+// ---------------------------------------------------------------------------
+// Vínculos Salesforce: painel admin para vincular/corrigir sf_user_id
+// ---------------------------------------------------------------------------
+
+export type SfLinkRow = {
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  cargo: string | null;
+  organizacao: string;
+  ativo: boolean;
+  sf_user_id: string | null;
+  sf_name: string | null;
+  sf_email: string | null;
+  status: "ok" | "missing" | "invalid" | "duplicate" | "mismatch";
+};
+
+export const adminListSfLinks = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const [profilesRes, sfUsers] = await Promise.all([
+      context.supabase
+        .from("profiles")
+        .select("id, email, full_name, cargo, organizacao, ativo, sf_user_id")
+        .order("full_name", { ascending: true }),
+      sfFetchAllUsers(),
+    ]);
+    if (profilesRes.error) throw new Error(profilesRes.error.message);
+    const profiles = (profilesRes.data ?? []) as Array<{
+      id: string;
+      email: string;
+      full_name: string | null;
+      cargo: string | null;
+      organizacao: string;
+      ativo: boolean;
+      sf_user_id: string | null;
+    }>;
+
+    const bySf = new Map(sfUsers.map((u) => [u.id, u]));
+    const counts = new Map<string, number>();
+    for (const p of profiles) {
+      if (p.sf_user_id) counts.set(p.sf_user_id, (counts.get(p.sf_user_id) ?? 0) + 1);
+    }
+
+    const rows: SfLinkRow[] = profiles.map((p) => {
+      const sf = p.sf_user_id ? bySf.get(p.sf_user_id) : undefined;
+      let status: SfLinkRow["status"] = "ok";
+      if (!p.sf_user_id) status = "missing";
+      else if (!sf) status = "invalid";
+      else if ((counts.get(p.sf_user_id) ?? 0) > 1) status = "duplicate";
+      else if (
+        sf.email &&
+        p.email &&
+        sf.email.toLowerCase() !== p.email.toLowerCase()
+      )
+        status = "mismatch";
+      return {
+        user_id: p.id,
+        email: p.email,
+        full_name: p.full_name,
+        cargo: p.cargo,
+        organizacao: p.organizacao,
+        ativo: p.ativo,
+        sf_user_id: p.sf_user_id,
+        sf_name: sf?.name ?? null,
+        sf_email: sf?.email ?? null,
+        status,
+      };
+    });
+
+    const options = sfUsers
+      .map((u) => ({ id: u.id, name: u.name, email: u.email }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return { rows, options };
+  });
+
+const SetSfLinkInput = z.object({
+  user_id: z.string().uuid(),
+  sf_user_id: z.string().trim().min(15).max(18).nullable(),
+});
+
+export const adminSetSfUserId = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SetSfLinkInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (data.sf_user_id) {
+      const users = await sfFetchAllUsers();
+      const sf = users.find((u) => u.id === data.sf_user_id);
+      if (!sf) throw new Error("ID do Salesforce não encontrado ou usuário inativo.");
+      const { data: dup } = await supabaseAdmin
+        .from("profiles")
+        .select("id, email")
+        .eq("sf_user_id", data.sf_user_id)
+        .neq("id", data.user_id)
+        .maybeSingle();
+      if (dup) throw new Error(`Este ID já está vinculado a ${dup.email}.`);
+    }
+
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ sf_user_id: data.sf_user_id })
+      .eq("id", data.user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const adminAutoMatchSfLinks = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: profiles, error }, sfUsers] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id, email, sf_user_id"),
+      sfFetchAllUsers(),
+    ]);
+    if (error) throw new Error(error.message);
+
+    const taken = new Set(
+      (profiles ?? []).map((p: any) => p.sf_user_id).filter(Boolean) as string[],
+    );
+    const byEmail = new Map(
+      sfUsers.filter((u) => u.email).map((u) => [u.email!.toLowerCase(), u]),
+    );
+
+    let linked = 0;
+    for (const p of (profiles ?? []) as Array<{ id: string; email: string; sf_user_id: string | null }>) {
+      if (p.sf_user_id) continue;
+      const sf = byEmail.get((p.email ?? "").toLowerCase());
+      if (!sf || taken.has(sf.id)) continue;
+      const { error: uErr } = await supabaseAdmin
+        .from("profiles")
+        .update({ sf_user_id: sf.id })
+        .eq("id", p.id);
+      if (uErr) continue;
+      taken.add(sf.id);
+      linked++;
+    }
+    return { ok: true as const, linked };
+  });
