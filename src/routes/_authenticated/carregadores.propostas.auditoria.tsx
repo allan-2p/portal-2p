@@ -233,6 +233,14 @@ function AuditoriaPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!auditoria}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              CSV
+            </Button>
+            <Button size="sm" onClick={exportarPdf} disabled={!auditoria}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Resumo fiscal (PDF)
+            </Button>
           </div>
         </div>
 
