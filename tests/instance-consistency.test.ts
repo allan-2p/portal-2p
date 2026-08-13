@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateAdminVisibility, GROUP_FEATURES } from "./instance-consistency";
+import { validateAdminVisibility, GROUP_FEATURES } from "@/lib/instance-consistency";
 
 describe("consistência de visibilidade entre instâncias", () => {
   it("expõe as opções de grupo do Solar em todas as instâncias", () => {
