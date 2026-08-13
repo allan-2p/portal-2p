@@ -652,11 +652,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function F({ label, children }: { label: string; children: React.ReactNode }) {
+function F({ label, children, error, id }: { label: string; children: React.ReactNode; error?: string; id?: string }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs">{label}</Label>
-      {children}
+    <div className="space-y-1" {...(id ? { id } : {})}>
+      <Label className={`text-xs ${error ? "text-destructive" : ""}`}>{label}</Label>
+      <div className={error ? "[&_input]:border-destructive [&_button]:border-destructive [&_input]:focus-visible:ring-destructive" : ""}>
+        {children}
+      </div>
+      {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
     </div>
   );
 }
