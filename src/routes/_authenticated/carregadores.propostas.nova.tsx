@@ -578,8 +578,10 @@ function PropostaCpoPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm">
               {[
-                { n: 1 as const, label: "Cliente", go: () => setEtapa(1) },
-                { n: 2 as const, label: "Produtos, frete e margem", go: irParaEtapa2 },
+                { n: 1 as const, label: "Identificação", go: () => setEtapa(1) },
+                { n: 2 as const, label: "Produtos", go: () => irParaEtapa(2) },
+                { n: 3 as const, label: "Faturamento e frete", go: () => irParaEtapa(3) },
+                { n: 4 as const, label: "Finalização", go: () => irParaEtapa(4) },
               ].map((s, i) => {
                 const atual = etapa === s.n;
                 const concluida = etapa > s.n;
