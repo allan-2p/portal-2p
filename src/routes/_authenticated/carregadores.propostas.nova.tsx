@@ -810,7 +810,7 @@ function PropostaCpoPage() {
               </span>
             </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Cálculo fiscal completo da proposta em tempo real.
+              Cálculo fiscal em tempo real.
             </p>
 
             {autosaveAt ? (
@@ -938,8 +938,7 @@ function PropostaCpoPage() {
               </div>
             ) : etapa === 1 && !state.nome.trim() ? (
               <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm text-muted-foreground">
-                Comece escolhendo o cliente. Os dados fiscais (CNPJ, IE, UF e contribuinte) são
-                puxados automaticamente do cadastro e definem os impostos da proposta.
+                Escolha o cliente. Os dados fiscais vêm do cadastro.
               </div>
             ) : null}
 
@@ -1001,9 +1000,6 @@ function PropostaCpoPage() {
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Os dados fiscais vêm direto do cadastro do cliente.
-                  </p>
                 </Field>
 
                 {state.nome ? (
@@ -1044,9 +1040,6 @@ function PropostaCpoPage() {
                         <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Define a destinação da mercadoria e pode afetar o tratamento fiscal da operação.
-                    </p>
                   </Field>
                 ) : null}
               </>
@@ -1073,17 +1066,13 @@ function PropostaCpoPage() {
               <div>
                 {state.contribuinte ? (
                   <>
-                    <b className="text-foreground">Contribuinte.</b> O vendedor recolhe apenas o ICMS de origem (
-                    {fmtPct(d.inter)}). DIFAL estimado do destinatário em {uf?.nome ?? state.uf}: {fmtBRL(d.difalEstimado)}{" "}
-                    (interna {fmtPct(uf?.aliq_interna ?? 0)}
-                    {uf?.fcp ? ` + FCP ${fmtPct(uf.fcp)}` : ""}).
+                    <b className="text-foreground">Contribuinte.</b> ICMS origem {fmtPct(d.inter)} · DIFAL estimado{" "}
+                    {fmtBRL(d.difalEstimado)}.
                   </>
                 ) : (
                   <>
-                    <b className="text-foreground">Não contribuinte.</b> Carga efetiva = ICMS origem {fmtPct(d.inter)} +
-                    DIFAL absorvido de {fmtBRL(d.difalAbs)} sobre o valor sem IPI, seguindo a carga interna de{" "}
-                    {uf?.nome ?? state.uf}
-                    {uf?.fcp ? ` (inclui FCP de ${fmtPct(uf.fcp)})` : ""}.
+                    <b className="text-foreground">Não contribuinte.</b> Carga efetiva: ICMS origem {fmtPct(d.inter)} +
+                    DIFAL absorvido {fmtBRL(d.difalAbs)}.
                   </>
                 )}
               </div>
@@ -1234,7 +1223,7 @@ function PropostaCpoPage() {
                 />
                 {FRETE_ABSORVIDO.includes(state.freteMod) && !(state.freteValor > 0) ? (
                   <p className="text-[11px] text-amber-600 mt-1">
-                    Frete {state.freteMod === "DEDICADO" ? "dedicado" : "CIF"} é absorvido pela 2P — informe o valor.
+                    Informe o valor do frete absorvido pela 2P.
                   </p>
                 ) : null}
               </Field>
@@ -1247,9 +1236,6 @@ function PropostaCpoPage() {
                 placeholder="Observações da proposta"
                 onChange={(e) => set("observacoes", e.target.value)}
               />
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Texto padrão incluído automaticamente — pode ser editado.
-              </p>
             </Field>
             </>
             ) : null}
