@@ -17,7 +17,11 @@ export type SapProdutoRow = {
   ativo: boolean;
   visibilidade: SapVisibilidade;
   last_synced_at: string | null;
+  origem: string | null;
+  custo: number | null;
+  ncm_id: string | null;
 };
+
 
 export type SapSyncRun = {
   id: string;
