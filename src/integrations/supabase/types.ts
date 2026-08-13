@@ -580,6 +580,33 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_alert_settings: {
+        Row: {
+          alert_enabled: boolean
+          created_at: string
+          slug: string
+          stale_minutes: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          alert_enabled?: boolean
+          created_at?: string
+          slug: string
+          stale_minutes?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          alert_enabled?: boolean
+          created_at?: string
+          slug?: string
+          stale_minutes?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       integration_logs: {
         Row: {
           actor_email: string | null
