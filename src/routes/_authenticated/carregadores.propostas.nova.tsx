@@ -496,6 +496,8 @@ function PropostaCpoPage() {
 
   function concluirPedido() {
     if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de concluir o pedido.");
+    setStatusProposta("Aguardando Pagamento");
+    setSaving(true);
     void salvar("Aguardando Pagamento");
   }
 
