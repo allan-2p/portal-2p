@@ -1422,11 +1422,20 @@ function PropostaCpoPage() {
                 Você está prestes a concluir este pedido. Essa ação pode gerar registros no sistema e não deve ser feita acidentalmente.
               </DialogDescription>
             </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              Deseja continuar e revisar os dados antes de finalizar?
-            </p>
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">
+                Deseja continuar e revisar os dados antes de finalizar?
+              </p>
+              <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center justify-between">
+                <span className="text-muted-foreground">Status que será aplicado</span>
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                  {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : null}
+                  Aguardando Pagamento
+                </span>
+              </div>
+            </div>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setConfirmarConclusao(false)} disabled={saving}>
+              <Button variant="outline" onClick={() => { setConfirmarConclusao(false); if (!propostaId) setStatusProposta("Salvo"); }} disabled={saving}>
                 Cancelar
               </Button>
               <Button
