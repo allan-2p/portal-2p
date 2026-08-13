@@ -473,9 +473,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   {adminMenuOpen && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setAdminMenuOpen(false)} />
-                      <div className="absolute right-0 top-11 z-50 w-64 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+                      <div className="dark absolute right-0 top-11 z-50 w-64 bg-card text-card-foreground border border-border rounded-lg shadow-xl overflow-hidden">
                         <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
-                          Administração
+                          Grupo 2P • Administração
                         </div>
                         {show("admin.usuarios") && (
                           <AdminMenuLink to="/usuarios" label="Usuários" icon={Users} onClick={() => setAdminMenuOpen(false)} />

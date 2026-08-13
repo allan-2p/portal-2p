@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const RoleEnum = z.enum(["admin", "gerente", "vendedor", "diretor", "marketing"]);
 const RegimeEnum = z.enum(["CLT", "PJ"]);
-const OrgEnum = z.enum(["solar", "station", "carregadores"]);
+const OrgEnum = z.enum(["solar", "station", "carregadores", "grupo"]);
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("is_admin");
