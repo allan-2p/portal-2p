@@ -189,15 +189,17 @@ export const excluirClienteFn = createServerFn({ method: "POST" })
     await db.deleteCliente(data.instancia, data.id);
     try {
       const { recordModeration } = await import("./moderation-audit.server");
-      await recordModeration({
-        area: "clientes",
-        instanceId: data.instancia,
-        action: "delete",
-        target: String(atual?.["razao_social"] ?? data.id),
-        summary: `Cadastro de cliente excluído (${atual?.["doc"] ?? data.id})`,
-        details: { id: data.id, instancia: data.instancia },
-        actorId: context.userId,
-      });
+      await recordModeration(
+        { supabase: context.supabase, userId: context.userId },
+        {
+          area: "clientes",
+          instanceId: data.instancia,
+          action: "delete",
+          target: String(atual?.["razao_social"] ?? data.id),
+          summary: `Cadastro de cliente excluído (${atual?.["doc"] ?? data.id})`,
+          details: { id: data.id, instancia: data.instancia },
+        },
+      );
     } catch (err) {
       console.error("[clientes] falha ao registrar auditoria de exclusão", err);
     }
