@@ -924,7 +924,11 @@ function PropostaCpoPage() {
               </div>
 
             </div>
+            </>
+            ) : null}
 
+            {etapa === 3 ? (
+            <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Modalidade de frete">
                 <Select value={state.freteMod} onValueChange={(v) => set("freteMod", v as CpoFreteMod)}>
@@ -948,8 +952,6 @@ function PropostaCpoPage() {
                   )}
                   onValueChange={(n: number) => set("freteValor", n)}
                 />
-
-
                 {FRETE_ABSORVIDO.includes(state.freteMod) && !(state.freteValor > 0) ? (
                   <p className="text-[11px] text-amber-600 mt-1">
                     Frete {state.freteMod === "DEDICADO" ? "dedicado" : "CIF"} é absorvido pela 2P — informe o valor.
@@ -969,6 +971,33 @@ function PropostaCpoPage() {
                 Texto padrão incluído automaticamente — pode ser editado.
               </p>
             </Field>
+            </>
+            ) : null}
+
+            {etapa === 4 ? (
+              <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-2 text-sm">
+                <p className="font-semibold">Revisão final</p>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Cliente</span>
+                  <b>{state.nome || "—"}</b>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Itens</span>
+                  <b>{state.itens.filter((i) => i.produtoId).length}</b>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Frete ({state.freteMod})</span>
+                  <b>{fmtBRL(state.freteValor)}</b>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Total da proposta</span>
+                  <b>{fmtBRL(d.valorTotalProposta)}</b>
+                </div>
+                <p className="text-xs text-muted-foreground pt-1">
+                  Confira os valores e finalize salvando a proposta ou concluindo o pedido.
+                </p>
+              </div>
+            ) : null}
 
             {/* TOTAIS AO VIVO — recalculam a cada mudança de preço/quantidade/frete */}
             <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-background/90 backdrop-blur px-4 py-3 shadow-lg">
