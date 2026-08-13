@@ -178,6 +178,7 @@ function PropostaCpoPage() {
         finalidadeUso: ((data.finalidade_uso as CpoState["finalidadeUso"]) ?? "uso_consumo"),
         freteMod: (data.frete_mod === "CIF" ? "CIF" : "FOB") as CpoState["freteMod"],
         freteValor: money2(data.frete_valor ?? 0),
+        observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
         itens: itens.length ? itens : [novoItem()],
       });
       setNumeroAtual(editId ? data.numero : null);
@@ -471,6 +472,7 @@ function PropostaCpoPage() {
         finalidade_uso: state.finalidadeUso,
         frete_mod: state.freteMod,
         frete_valor: money2(state.freteValor),
+        observacoes: state.observacoes?.trim() || null,
         itens: state.itens.map((i) => ({
           produtoId: i.produtoId,
           nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
@@ -798,6 +800,7 @@ function PropostaCpoPage() {
                           <SelectContent>
                             {produtos.map((p) => (
                               <SelectItem key={p.id} value={p.id}>
+                                {p.codigo ? `${p.codigo} — ` : ""}
                                 {p.nome}
                                 {p.potencia ? ` · ${p.potencia}` : ""}
                               </SelectItem>
@@ -895,6 +898,18 @@ function PropostaCpoPage() {
                 ) : null}
               </Field>
             </div>
+
+            <Field label="Observações">
+              <Textarea
+                rows={3}
+                value={state.observacoes}
+                placeholder="Observações da proposta"
+                onChange={(e) => set("observacoes", e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Texto padrão incluído automaticamente — pode ser editado.
+              </p>
+            </Field>
 
             {/* TOTAIS AO VIVO — recalculam a cada mudança de preço/quantidade/frete */}
             <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-background/90 backdrop-blur px-4 py-3 shadow-lg">
