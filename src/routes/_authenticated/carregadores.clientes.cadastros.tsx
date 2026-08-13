@@ -24,6 +24,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCpoUfs } from "@/hooks/use-cpo";
+import {
+  ContatosEditor, contatosPadrao, normalizarContatos, validarContatos, rotuloErroContato,
+  TIPO_ROTULO, type Contato,
+} from "@/components/contatos-editor";
+
 
 /** Destaca o trecho correspondente à busca (texto ou dígitos de CNPJ/CPF). */
 function Marca({ texto, termo }: { texto?: string | null; termo: string }) {
@@ -103,6 +108,7 @@ type Cliente = {
   contato_cargo: string | null;
   contato_email: string | null;
   contato_telefone: string | null;
+  contatos: Contato[];
   cep: string | null;
   logradouro: string | null;
   numero: string | null;
@@ -120,26 +126,30 @@ const vazio = (): Omit<Cliente, "id"> => ({
   razao_social: "", nome_fantasia: "", doc: "", ie: "", contribuinte: false,
   regime_tributario: "Simples Nacional", email: "", telefone: "", site: "",
   contato_nome: "", contato_cargo: "", contato_email: "", contato_telefone: "",
+  contatos: contatosPadrao(),
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "",
   uf: "SP", condicao_pagamento: "",
   observacoes: "", ativo: true,
 } as Omit<Cliente, "id">);
 
+
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
 const soDigitos = (v: string) => v.replace(/\D/g, "");
 
-type CampoErro =
-  | "razao_social" | "doc" | "uf" | "ie" | "contato_nome" | "contato_email"
-  | "contato_telefone" | "cep" | "logradouro" | "numero" | "cidade";
+type CampoErro = string;
 
-type Erros = Partial<Record<CampoErro, string>>;
 
-const ROTULOS: Record<CampoErro, string> = {
+type Erros = Record<string, string>;
+
+const ROTULOS: Record<string, string> = {
   razao_social: "Razão social", doc: "CNPJ / CPF", uf: "UF de destino",
-  ie: "Inscrição Estadual", contato_nome: "Nome do responsável",
-  contato_email: "E-mail do responsável", contato_telefone: "Telefone do responsável",
+  ie: "Inscrição Estadual",
   cep: "CEP", logradouro: "Logradouro", numero: "Número", cidade: "Cidade",
 };
+
+function rotuloCampo(chave: string, contatos: Contato[]): string {
+  return ROTULOS[chave] ?? rotuloErroContato(chave, contatos) ?? chave;
+}
 
 function validarCampos(f: Omit<Cliente, "id">): Erros {
   const e: Erros = {};
@@ -149,21 +159,26 @@ function validarCampos(f: Omit<Cliente, "id">): Erros {
   else if (doc.length !== 11 && doc.length !== 14) e.doc = "CNPJ / CPF inválido.";
   if (!f.uf?.trim()) e.uf = "Selecione a UF de destino.";
   if (f.contribuinte && !f.ie?.trim()) e.ie = "Cliente contribuinte: informe a Inscrição Estadual.";
-  if (!f.contato_nome?.trim()) e.contato_nome = "Informe o nome do responsável.";
-  const email = (f.contato_email ?? "").trim() || (f.email ?? "").trim();
-  const fone = (f.contato_telefone ?? "").trim() || (f.telefone ?? "").trim();
-  if (!email && !fone) {
-    e.contato_email = "Informe ao menos um contato: e-mail ou telefone.";
-    e.contato_telefone = "Informe ao menos um contato: e-mail ou telefone.";
-  } else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    e.contato_email = "E-mail de contato inválido.";
-  }
+  Object.assign(e, validarContatos(f.contatos ?? []));
   if (soDigitos(f.cep ?? "").length !== 8) e.cep = "Informe um CEP válido (8 dígitos).";
   if (!f.logradouro?.trim()) e.logradouro = "Informe o logradouro.";
   if (!f.numero?.trim()) e.numero = "Informe o número do endereço.";
   if (!f.cidade?.trim()) e.cidade = "Informe a cidade.";
   return e;
 }
+
+/** Mantém os campos legados sincronizados com o contato principal. */
+function comLegado(f: Omit<Cliente, "id">): Omit<Cliente, "id"> {
+  const principal = (f.contatos ?? []).find((c) => c.tipo === "principal");
+  return {
+    ...f,
+    contato_nome: principal?.nome?.trim() || null,
+    contato_cargo: principal?.cargo?.trim() || null,
+    contato_email: principal?.emails.find((v) => v.trim())?.trim() || null,
+    contato_telefone: principal?.telefones.find((v) => v.trim())?.trim() || null,
+  };
+}
+
 
 function CadastrosPage() {
   const qc = useQueryClient();
@@ -205,14 +220,15 @@ function CadastrosPage() {
 
   const salvar = useMutation({
     mutationFn: async () => {
+      const payload = comLegado(form);
       if (editId) {
-        const { error } = await supabase.from("cpo_clientes").update(form).eq("id", editId);
+        const { error } = await supabase.from("cpo_clientes").update(payload as never).eq("id", editId);
         if (error) throw error;
       } else {
         const { data: u } = await supabase.auth.getUser();
         const uid = u.user?.id;
         if (!uid) throw new Error("Sessão expirada. Faça login novamente.");
-        const { error } = await supabase.from("cpo_clientes").insert({ ...form, created_by: uid });
+        const { error } = await supabase.from("cpo_clientes").insert({ ...payload, created_by: uid } as never);
         if (error) throw error;
       }
     },
@@ -308,7 +324,16 @@ function CadastrosPage() {
   };
   const abrirEdicao = (c: Cliente) => {
     const { id: _id, ...rest } = c;
-    setEditId(c.id); setForm(rest); setTentouSalvar(false); setOpen(true);
+    setEditId(c.id);
+    setForm({
+      ...rest,
+      contatos: normalizarContatos(c.contatos, {
+        nome: c.contato_nome, cargo: c.contato_cargo,
+        email: c.contato_email, telefone: c.contato_telefone,
+      }),
+    });
+    setTentouSalvar(false);
+    setOpen(true);
   };
 
   return (
@@ -349,7 +374,7 @@ function CadastrosPage() {
                             className="text-left text-xs text-destructive underline-offset-2 hover:underline"
                             onClick={() => document.getElementById(`campo-${campo}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
                           >
-                            <span className="font-medium">{ROTULOS[campo]}:</span> {msg}
+                            <span className="font-medium">{rotuloCampo(campo, form.contatos ?? [])}:</span> {msg}
                           </button>
                         </li>
                       ))}
@@ -384,12 +409,20 @@ function CadastrosPage() {
                   <F label="Site"><Input value={form.site ?? ""} onChange={(e) => set("site", e.target.value)} placeholder="https://" /></F>
                 </Section>
 
-                <Section title="Responsável">
-                  <F label="Nome *" id="campo-contato_nome" error={erros.contato_nome}><Input value={form.contato_nome ?? ""} onChange={(e) => set("contato_nome", e.target.value)} /></F>
-                  <F label="Cargo"><Input value={form.contato_cargo ?? ""} onChange={(e) => set("contato_cargo", e.target.value)} /></F>
-                  <F label="E-mail" id="campo-contato_email" error={erros.contato_email}><Input value={form.contato_email ?? ""} onChange={(e) => set("contato_email", e.target.value)} /></F>
-                  <F label="Telefone" id="campo-contato_telefone" error={erros.contato_telefone}><Input value={form.contato_telefone ?? ""} onChange={(e) => set("contato_telefone", e.target.value)} /></F>
+                <Section title="Contatos">
+                  <div className="sm:col-span-2">
+                    <p className="mb-3 text-xs text-muted-foreground">
+                      O contato principal e o contato financeiro são obrigatórios. Você pode informar
+                      vários e-mails e telefones em cada contato e adicionar quantos contatos precisar.
+                    </p>
+                    <ContatosEditor
+                      contatos={form.contatos ?? []}
+                      onChange={(c) => set("contatos", c)}
+                      erros={erros}
+                    />
+                  </div>
                 </Section>
+
 
                 <Section title="Endereço">
                   <F label="CEP *" id="campo-cep" error={erros.cep}>
@@ -635,12 +668,22 @@ function CadastrosPage() {
                     <Linha rot="UF de destino" val={detalhe.uf} />
                   </Bloco>
 
-                  <Bloco titulo="Contato">
-                    <Linha rot="Responsável" val={[detalhe.contato_nome, detalhe.contato_cargo].filter(Boolean).join(" · ")} />
-                    <Linha rot="E-mail" val={detalhe.contato_email || detalhe.email} />
-                    <Linha rot="Telefone" val={detalhe.contato_telefone || detalhe.telefone} />
+                  <Bloco titulo="Contatos">
+                    {normalizarContatos(detalhe.contatos, {
+                      nome: detalhe.contato_nome, cargo: detalhe.contato_cargo,
+                      email: detalhe.contato_email, telefone: detalhe.contato_telefone,
+                    }).map((c, i) => (
+                      <div key={i} className="space-y-0.5">
+                        <Linha rot={TIPO_ROTULO[c.tipo]} val={[c.nome, c.cargo].filter(Boolean).join(" · ")} />
+                        <Linha rot="E-mail" val={c.emails.filter((v) => v.trim()).join(", ")} />
+                        <Linha rot="Telefone" val={c.telefones.filter((v) => v.trim()).join(", ")} />
+                      </div>
+                    ))}
+                    <Linha rot="E-mail da empresa" val={detalhe.email} />
+                    <Linha rot="Telefone da empresa" val={detalhe.telefone} />
                     <Linha rot="Site" val={detalhe.site} />
                   </Bloco>
+
 
                   <Bloco titulo="Endereço">
                     <Linha

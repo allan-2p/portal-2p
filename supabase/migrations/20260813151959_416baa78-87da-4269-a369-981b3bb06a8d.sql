@@ -1,0 +1,1 @@
+ALTER TABLE public.cpo_clientes ADD COLUMN IF NOT EXISTS contatos jsonb NOT NULL DEFAULT '[]'::jsonb;
