@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertTriangle, ArrowLeft, Calculator, FileDown, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fmtBRL, fmtPct, novoEstado, type CpoState } from "@/lib/cpo";
+import { fmtBRL, fmtPct, novoEstado, type CpoFreteMod, type CpoState } from "@/lib/cpo";
 import { auditarProposta, type PassoCalculo, REGRAS_VERSAO } from "@/lib/cpo-auditoria";
 import {
   baixarCsv,
@@ -139,7 +139,7 @@ function AuditoriaPage() {
       nome: atual.cliente_nome,
       uf: atual.uf,
       contribuinte: atual.contribuinte,
-      freteMod: atual.frete_mod === "CIF" ? "CIF" : "FOB",
+      freteMod: (atual.frete_mod === "CIF" || atual.frete_mod === "DEDICADO" ? atual.frete_mod : "FOB") as CpoFreteMod,
       freteValor: atual.frete_valor,
       itens: atual.itens
         .filter((i) => i.produtoId)

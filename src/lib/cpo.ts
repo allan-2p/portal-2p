@@ -91,6 +91,17 @@ export type CpoItem = {
 
 export type CpoFinalidadeUso = "uso_consumo" | "revenda" | "industrializacao";
 
+export type CpoFreteMod = "FOB" | "CIF" | "DEDICADO";
+
+/** Modalidades em que o frete é absorvido pela 2P. */
+export const FRETE_ABSORVIDO: CpoFreteMod[] = ["CIF", "DEDICADO"];
+
+export const labelFreteMod: Record<CpoFreteMod, string> = {
+  FOB: "FOB — por conta do cliente",
+  CIF: "CIF — por conta da 2P",
+  DEDICADO: "Dedicado — veículo exclusivo por conta da 2P",
+};
+
 export type CpoState = {
   nome: string;
   telefone: string;
@@ -100,7 +111,7 @@ export type CpoState = {
   uf: string;
   contribuinte: boolean;
   finalidadeUso: CpoFinalidadeUso;
-  freteMod: "FOB" | "CIF";
+  freteMod: CpoFreteMod;
   freteValor: number;
   observacoes: string;
   itens: CpoItem[];

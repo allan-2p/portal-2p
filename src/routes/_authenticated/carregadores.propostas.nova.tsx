@@ -42,12 +42,15 @@ import {
   fmtPct,
   labelFinalidadeUso,
   OBSERVACOES_PADRAO,
+  FRETE_ABSORVIDO,
+  labelFreteMod,
   novoEstado,
   novoItem,
   parseMoeda,
   statusMB,
   type CpoFinalidadeUso,
   type CpoItem,
+  type CpoFreteMod,
   type CpoState,
   textoDifalContribuinte,
 } from "@/lib/cpo";
@@ -178,7 +181,9 @@ function PropostaCpoPage() {
         uf: data.uf,
         contribuinte: data.contribuinte,
         finalidadeUso: ((data.finalidade_uso as CpoState["finalidadeUso"]) ?? "uso_consumo"),
-        freteMod: (data.frete_mod === "CIF" ? "CIF" : "FOB") as CpoState["freteMod"],
+        freteMod: (data.frete_mod === "CIF" || data.frete_mod === "DEDICADO"
+          ? data.frete_mod
+          : "FOB") as CpoFreteMod,
         freteValor: money2(data.frete_valor ?? 0),
         observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
         itens: itens.length ? itens : [novoItem()],
@@ -296,8 +301,8 @@ function PropostaCpoPage() {
     errosFechamento.push(`${itensSemValor.length} item(ns) sem valor unitário.`);
   if (itensSemQtd.length)
     errosFechamento.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
-  if (state.freteMod === "CIF" && !(state.freteValor > 0))
-    errosFechamento.push("Frete CIF sem valor informado — necessário para fechar os totais.");
+  if (FRETE_ABSORVIDO.includes(state.freteMod) && !(state.freteValor > 0))
+    errosFechamento.push(`Frete ${state.freteMod} sem valor informado — necessário para fechar os totais.`);
   if (temProduto && !(d.valorTotalProposta > 0))
     errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
   if (temProduto && abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
@@ -323,7 +328,7 @@ function PropostaCpoPage() {
       level: "err",
       titulo: `Fora da política — MB ${fmtPct(d.mbPct)}`,
       motivo: `A margem bruta está abaixo do mínimo de ${fmtPct(config.politica_mb_min)} exigido pela política comercial.`,
-      corrigir: "Aumente o valor unitário dos produtos ou reduza o frete absorvido (CIF).",
+      corrigir: "Aumente o valor unitário dos produtos ou reduza o frete absorvido (CIF/Dedicado).",
     });
   else if (temProduto && d.mbPct < config.mb_atencao)
     alertas.push({
@@ -353,11 +358,11 @@ function PropostaCpoPage() {
       motivo: "Há linhas preenchidas sem produto selecionado.",
       corrigir: "Selecione o produto ou remova a linha.",
     });
-  if (state.freteMod === "CIF" && !(state.freteValor > 0))
+  if (FRETE_ABSORVIDO.includes(state.freteMod) && !(state.freteValor > 0))
     alertas.push({
       level: "warn",
-      titulo: "Frete CIF sem valor informado",
-      motivo: "No CIF a 2P absorve o frete; sem valor a margem fica superestimada.",
+      titulo: `Frete ${state.freteMod} sem valor informado`,
+      motivo: "Nessa modalidade a 2P absorve o frete; sem valor a margem fica superestimada.",
       corrigir: "Preencha o campo Valor do frete.",
     });
   if (!state.contribuinte && d.difalAbs > 0 && d.mbPct < config.mb_atencao)
@@ -876,11 +881,12 @@ function PropostaCpoPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Modalidade de frete">
-                <Select value={state.freteMod} onValueChange={(v) => set("freteMod", v as "FOB" | "CIF")}>
+                <Select value={state.freteMod} onValueChange={(v) => set("freteMod", v as CpoFreteMod)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="FOB">FOB — por conta do cliente</SelectItem>
-                    <SelectItem value="CIF">CIF — por conta da 2P</SelectItem>
+                    <SelectItem value="FOB">{labelFreteMod.FOB}</SelectItem>
+                    <SelectItem value="CIF">{labelFreteMod.CIF}</SelectItem>
+                    <SelectItem value="DEDICADO">{labelFreteMod.DEDICADO}</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
@@ -890,7 +896,7 @@ function PropostaCpoPage() {
                   placeholder="R$ 0,00"
                   maxValue={1000000}
                   className={cn(
-                    state.freteMod === "CIF" &&
+                    FRETE_ABSORVIDO.includes(state.freteMod) &&
                       !(state.freteValor > 0) &&
                       "border-amber-500 focus-visible:ring-amber-500",
                   )}
@@ -898,8 +904,10 @@ function PropostaCpoPage() {
                 />
 
 
-                {state.freteMod === "CIF" && !(state.freteValor > 0) ? (
-                  <p className="text-[11px] text-amber-600 mt-1">Frete CIF é absorvido pela 2P — informe o valor.</p>
+                {FRETE_ABSORVIDO.includes(state.freteMod) && !(state.freteValor > 0) ? (
+                  <p className="text-[11px] text-amber-600 mt-1">
+                    Frete {state.freteMod === "DEDICADO" ? "dedicado" : "CIF"} é absorvido pela 2P — informe o valor.
+                  </p>
                 ) : null}
               </Field>
             </div>
