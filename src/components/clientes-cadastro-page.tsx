@@ -365,17 +365,35 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     setTentouSalvar(false); setFontes([]); setAvisos([]);
     setEtapa("formulario"); setOpen(true);
   };
+  const focarCampo = (campo: string) => {
+    const alvo = document.getElementById(`campo-${campo}`);
+    if (!alvo) return;
+    alvo.scrollIntoView({ behavior: "smooth", block: "center" });
+    const focavel = alvo.matches("input, textarea, select, [contenteditable=true], button")
+      ? (alvo as HTMLElement)
+      : alvo.querySelector<HTMLElement>(
+          "input:not([type=hidden]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [role=combobox]:not([disabled]), button:not([disabled])",
+        );
+    if (!focavel) return;
+    window.setTimeout(() => {
+      focavel.focus({ preventScroll: true });
+      if (focavel instanceof HTMLInputElement || focavel instanceof HTMLTextAreaElement) {
+        try { focavel.select(); } catch { /* noop */ }
+      }
+    }, 320);
+  };
   const tentarSalvar = () => {
     setTentouSalvar(true);
     const e = validarCampos(form);
     const chaves = Object.keys(e);
     if (chaves.length > 0) {
       toast.error(`Corrija ${chaves.length} campo(s) para salvar.`);
-      document.getElementById(`campo-${chaves[0]}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      requestAnimationFrame(() => focarCampo(chaves[0]!));
       return;
     }
     salvar.mutate();
   };
+
 
   return (
     <div className="p-6 space-y-5">
