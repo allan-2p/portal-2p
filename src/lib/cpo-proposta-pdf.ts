@@ -182,7 +182,13 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
         <div class="brandname">2P Carregadores</div>
         <div class="brandsub">Infraestrutura de recarga</div>
       </div>
+      ${
+        p.logoCliente
+          ? `<div class="cliente-logo"><img src="${esc(p.logoCliente)}" alt="Logomarca do cliente"></div>`
+          : ""
+      }
     </div>
+
     <div class="hero-main">
       <div>
         <div class="hkicker">Proposta comercial</div>
