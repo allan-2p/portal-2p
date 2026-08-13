@@ -220,19 +220,46 @@ function PerfisPage() {
       <div className="space-y-6">
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-display font-bold text-2xl">Perfis de Permissão</h1>
+            <h1 className="font-display font-bold text-2xl">Perfis</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Administradores acessam tudo, sem exceção. Os demais usuários recebem acesso pelos
-              perfis abaixo — e podem ter permissões extras individuais em Permissões de Usuários.
+              perfis — e, na aba Permissões por usuário, você ajusta exceções individuais.
             </p>
           </div>
-          <button
-            onClick={createProfile}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
-          >
-            <Plus className="h-4 w-4" /> Novo perfil
-          </button>
+          {tab === "perfis" && (
+            <button
+              onClick={createProfile}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
+            >
+              <Plus className="h-4 w-4" /> Novo perfil
+            </button>
+          )}
         </div>
+
+        <div className="flex items-center gap-1 border-b border-border">
+          {([
+            { key: "perfis", label: "Perfis" },
+            { key: "permissoes", label: "Permissões por usuário" },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
+                tab === t.key
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "permissoes" ? (
+          <PermissoesContent />
+        ) : (
+        <>
+
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
