@@ -8,16 +8,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/hooks/use-auth";
 import {
   adminCreateUser,
-  adminInviteUser,
   adminSetRole,
   adminToggleActive,
   adminDeleteUser,
   adminUpdateUser,
-  listSalesforceCandidates,
-  inviteSalesforceUser,
   syncSalesforcePhoto,
-  syncAllSalesforcePhotos,
-  type SFCandidate,
 } from "@/lib/users.functions";
 import { listSalespeopleForAdmin, setSalespersonVisibility } from "@/lib/admin.functions";
 import {
@@ -29,10 +24,9 @@ import {
   type SFTeam,
 } from "@/lib/scope.functions";
 import { toast } from "sonner";
-import { useInstance } from "@/components/instance-provider";
 
 import {
-  Loader2, UserPlus, Mail, Shield, Trash2, Power, Camera, RefreshCw, Cloud, ExternalLink, Pencil, Stethoscope,
+  Loader2, UserPlus, Shield, Trash2, Power, Camera, RefreshCw, Cloud, Pencil, Stethoscope,
 } from "lucide-react";
 import { UserDetailSheet } from "@/components/user-detail-sheet";
 import { uploadAvatar } from "@/lib/avatar";
@@ -62,8 +56,9 @@ export const Route = createFileRoute("/_authenticated/usuarios")({
 });
 
 type Regime = "CLT" | "PJ";
-type Org = "solar" | "station" | "carregadores";
+type Org = "solar" | "station" | "carregadores" | "grupo";
 const ORGS: { id: Org; label: string }[] = [
+  { id: "grupo", label: "Grupo 2P" },
   { id: "solar", label: "2P Solar" },
   { id: "station", label: "Station" },
   { id: "carregadores", label: "2P Carregadores" },
@@ -97,7 +92,6 @@ const SCOPES: { id: FilterScope; label: string }[] = [
   { id: "individual", label: "Individual" },
 ];
 
-type Tab = "portal" | "salesforce";
 type StatusFilter = "ativos" | "inativos" | "todos";
 const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
   { id: "ativos", label: "Ativos" },
@@ -108,22 +102,17 @@ const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
 
 function UsuariosPage() {
   const { hasRole, loading: authLoading, user } = useAuth();
-  const { instance } = useInstance();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("portal");
   const [status, setStatus] = useState<StatusFilter>("ativos");
   const [modal, setModal] = useState<
     | { kind: "create" }
-    | { kind: "invite"; external?: boolean }
-    | { kind: "invite-sf"; candidate: SFCandidate }
     | { kind: "edit"; row: Row }
     | { kind: "detail"; row: Row }
     | null
   >(null);
 
   const createFn = useServerFn(adminCreateUser);
-  const inviteFn = useServerFn(adminInviteUser);
   const setRoleFn = useServerFn(adminSetRole);
   const toggleFn = useServerFn(adminToggleActive);
   const deleteFn = useServerFn(adminDeleteUser);
@@ -161,15 +150,13 @@ function UsuariosPage() {
     if (!authLoading) load();
   }, [authLoading]);
 
-  // Cada instância mostra apenas os usuários da organização correspondente.
+  // Administração é do Grupo 2P: a lista não é separada por instância.
   const visibleRows = useMemo(() => {
     let list = rows;
-    if (instance === "solar") list = list.filter((r) => r.organizacao === "solar");
-    else if (instance === "carregadores") list = list.filter((r) => r.organizacao === "carregadores");
     if (status === "ativos") list = list.filter((r) => r.ativo);
     else if (status === "inativos") list = list.filter((r) => !r.ativo);
     return list;
-  }, [rows, instance, status]);
+  }, [rows, status]);
 
 
 
@@ -279,72 +266,35 @@ function UsuariosPage() {
           <div>
             <h1 className="font-display font-bold text-2xl">Usuários</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Sincronize com Salesforce, convide externos e gerencie papéis.
+              Administração do Grupo 2P — todos os usuários, independente da instância.
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => setModal({ kind: "invite", external: true })}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm font-medium"
-            >
-              <ExternalLink className="h-4 w-4" /> Convidar externo
-            </button>
-            <button
-              onClick={() => setModal({ kind: "invite" })}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-surface hover:bg-surface-2 text-sm font-medium"
-            >
-              <Mail className="h-4 w-4" /> Convidar
-            </button>
-            <button
-              onClick={() => setModal({ kind: "create" })}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
-            >
-              <UserPlus className="h-4 w-4" /> Criar usuário
-            </button>
-          </div>
+          <button
+            onClick={() => setModal({ kind: "create" })}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
+          >
+            <UserPlus className="h-4 w-4" /> Criar usuário
+          </button>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
-            {[
-              { id: "portal", label: "Usuários do portal" },
-              { id: "salesforce", label: "Sincronizar com Salesforce" },
-            ].map((t) => (
+            {STATUS_FILTERS.map((s) => (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id as Tab)}
-                className={`px-4 py-1.5 rounded-md font-medium transition-colors ${
-                  tab === t.id
+                key={s.id}
+                onClick={() => setStatus(s.id)}
+                className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+                  status === s.id
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {t.label}
+                {s.label}
               </button>
             ))}
           </div>
-
-          {tab === "portal" && (
-            <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
-              {STATUS_FILTERS.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setStatus(s.id)}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
-                    status === s.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
-
-        {tab === "portal" ? (
           <PortalTable
             rows={visibleRows}
             loading={loading}
@@ -361,9 +311,187 @@ function UsuariosPage() {
             onEdit={(row) => setModal({ kind: "edit", row })}
             onDetail={(row) => setModal({ kind: "detail", row })}
           />
-        ) : (
-          <SalesforceTable onInvite={(c) => setModal({ kind: "invite-sf", candidate: c })} />
-        )}
+      </div>
+
+
+      {modal?.kind === "detail" && (
+        <UserDetailSheet
+          userId={modal.row.id}
+          onClose={() => setModal(null)}
+          onEdit={() => setModal({ kind: "edit", row: modal.row })}
+        />
+      )}
+
+      {modal?.kind === "edit" && (
+        <EditUserModal
+          row={modal.row}
+          onClose={() => setModal(null)}
+          onSubmit={async (data) => {
+            await updateFn({ data: { user_id: modal.row.id, ...data } });
+            toast.success("Usuário atualizado");
+            setModal(null);
+            load();
+          }}
+        />
+      )}
+
+
+      {modal?.kind === "create" && (
+        <UserModal
+          mode="create"
+          onClose={() => setModal(null)}
+          onSubmit={async (data) => {
+            await createFn({ data: data as any });
+            toast.success("Usuário criado");
+            setModal(null);
+            load();
+          }}
+        />
+      )}
+    </AppLayout>
+    );
+  }
+
+  if (!hasRole("admin")) {
+    return (
+      <AppLayout>
+        <div className="max-w-md mx-auto mt-20 text-center">
+          <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+          <h1 className="font-display font-bold text-xl mb-1">Acesso restrito</h1>
+          <p className="text-sm text-muted-foreground">
+            Apenas administradores podem gerenciar usuários.
+          </p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  async function handleRoleChange(userId: string, role: AppRole) {
+    try {
+      await setRoleFn({ data: { user_id: userId, role } });
+      toast.success("Papel atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  async function handleToggle(userId: string, ativo: boolean) {
+    try {
+      await toggleFn({ data: { user_id: userId, ativo: !ativo } });
+      toast.success(ativo ? "Usuário desativado" : "Usuário ativado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  async function handleDelete(userId: string) {
+    if (!confirm("Remover este usuário permanentemente?")) return;
+    try {
+      await deleteFn({ data: { user_id: userId } });
+      toast.success("Usuário removido");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  async function handleScopeChange(userId: string, scope: FilterScope) {
+    try {
+      await setScopeFn({ data: { user_id: userId, scope } });
+      toast.success("Escopo atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  async function handleSfIdChange(userId: string, sf_user_id: string | null) {
+    try {
+      await setSfIdFn({ data: { user_id: userId, sf_user_id } });
+      toast.success("ID Salesforce atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  async function handleOrgChange(userId: string, organizacao: Org) {
+    try {
+      await updateFn({ data: { user_id: userId, organizacao } });
+      toast.success("Organização atualizada");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+  async function handleRegimeChange(userId: string, regime: Regime) {
+    try {
+      await updateFn({ data: { user_id: userId, regime_contratacao: regime } });
+      toast.success("Regime de contratação atualizado");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
+
+
+
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="font-display font-bold text-2xl">Usuários</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Administração do Grupo 2P — todos os usuários, independente da instância.
+            </p>
+          </div>
+          <button
+            onClick={() => setModal({ kind: "create" })}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
+          >
+            <UserPlus className="h-4 w-4" /> Criar usuário
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
+            {STATUS_FILTERS.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setStatus(s.id)}
+                className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+                  status === s.id
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+          <PortalTable
+            rows={visibleRows}
+            loading={loading}
+            currentUserId={user?.id}
+            onRoleChange={handleRoleChange}
+            onOrgChange={handleOrgChange}
+            onToggle={handleToggle}
+            onDelete={handleDelete}
+            onReload={load}
+            onScopeChange={handleScopeChange}
+            onSfIdChange={handleSfIdChange}
+            onRegimeChange={handleRegimeChange}
+
+            onEdit={(row) => setModal({ kind: "edit", row })}
+            onDetail={(row) => setModal({ kind: "detail", row })}
+          />
       </div>
 
 
