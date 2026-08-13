@@ -140,6 +140,7 @@ function PropostaCpoPage() {
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
   const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
+  const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const carregado = useRef(false);
 
