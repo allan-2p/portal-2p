@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { ClientHistoryTab } from "@/components/client-history-tab";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AppLayout } from "@/components/app-layout";
 import {
@@ -259,6 +260,7 @@ function PerfilPage() {
 }
 
 function Dossier({ account }: { account: SalesforceAccount }) {
+  const [aba, setAba] = useState<"visao" | "historico">("visao");
   const [notes, setNotes] = useState("");
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
