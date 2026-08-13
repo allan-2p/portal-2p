@@ -98,16 +98,14 @@ function ProdutosTab() {
 
   async function salvar() {
     if (!draft) return;
+    if (!draft.id) return toast.error("Produtos só podem ser criados pela sincronização com o SAP.");
     if (!draft.nome.trim()) return toast.error("Informe o nome do produto.");
     const impedimento = validateVisibilidadeChange("carregadores", {
       custo: Number(draft.custo) || 0,
       ncm_id: draft.ncm_id || null,
     });
     if (impedimento) return toast.error(impedimento);
-    const codigo =
-      draft.codigo.trim() || `CPO-${Date.now().toString(36).toUpperCase()}`;
     const payload = {
-      codigo,
       descricao: draft.nome.trim(),
       potencia: draft.potencia.trim() || null,
       custo: Number(draft.custo) || 0,
@@ -115,30 +113,22 @@ function ProdutosTab() {
       ncm_id: draft.ncm_id || null,
     };
 
-
     setSaving(true);
-    const { error } = draft.id
-      ? await supabase.from("sap_produtos").update(payload).eq("id", draft.id)
-      : await supabase.from("sap_produtos").insert({
-          ...payload,
-          tipo: "carregador_veicular",
-          permissao: "Todos",
-          visibilidade: "carregadores",
-          origem: "manual",
-        });
+    const { error } = await supabase.from("sap_produtos").update(payload).eq("id", draft.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     void logModeration({
       area: "cpo_produtos",
-      action: draft.id ? "atualizou" : "criou",
+      action: "atualizou",
       target: payload.descricao,
-      summary: `${draft.id ? "Produto atualizado" : "Produto criado"}: ${payload.descricao}`,
+      summary: `Produto atualizado: ${payload.descricao}`,
       details: { custo: payload.custo, ativo: payload.ativo },
     });
-    toast.success(draft.id ? "Produto atualizado." : "Produto criado.");
+    toast.success("Produto atualizado.");
     setDraft(null);
     invalidate();
   }
+
 
   async function excluir(p: CpoProduct) {
     const { error } = await supabase.from("sap_produtos").delete().eq("id", p.id);
