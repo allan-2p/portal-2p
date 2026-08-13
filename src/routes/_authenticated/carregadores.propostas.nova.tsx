@@ -219,6 +219,7 @@ function PropostaCpoPage() {
         itens: itens.length ? itens : [novoItem()],
       });
       setNumeroAtual(editId ? data.numero : null);
+      setPropostaUpdatedAt((data.updated_at as string) ?? null);
       setEtapa(2);
       toast.success(editId ? `Proposta ${data.numero ?? ""} carregada.` : "Proposta duplicada — salve para gerar um novo número.");
     })();
