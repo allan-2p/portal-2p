@@ -224,8 +224,9 @@ function PropostaCpoPage() {
           cliente_ie: (c["ie"] as string) ?? null,
           uf: (c["uf"] as string) ?? "",
           contribuinte: c["contribuinte"] !== false,
-        }))
-        .sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR")) as ClienteCadastro[];
+        })) as ClienteCadastro[];
+      return lista.sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR"));
+
     },
     staleTime: 0,
     refetchOnMount: "always",
