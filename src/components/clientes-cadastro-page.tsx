@@ -25,7 +25,6 @@ import { useCpoUfs } from "@/hooks/use-cpo";
 import { docValido, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import {
   listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, excluirClienteFn,
-  migrarCpoClientesFn,
 
 } from "@/lib/clientes.functions";
 import {
@@ -157,15 +156,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const enriquecer = useServerFn(enriquecerCnpjFn);
   const salvarFn = useServerFn(salvarClienteFn);
   const excluirFn = useServerFn(excluirClienteFn);
-  const migrarFn = useServerFn(migrarCpoClientesFn);
-  const migrar = useMutation({
-    mutationFn: () => migrarFn(),
-    onSuccess: (r) => {
-      toast.success(`${r.migrados} cadastro(s) migrado(s) de ${r.total}.`);
-      qc.invalidateQueries({ queryKey: ["clientes", "carregadores"] });
-    },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha na migração."),
-  });
 
 
   const [q, setQ] = useState("");
@@ -419,11 +409,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input className="pl-8" placeholder="Buscar por nome, CNPJ, cidade…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
-          {instancia === "carregadores" && (
-            <Button variant="outline" onClick={() => migrar.mutate()} disabled={migrar.isPending}>
-              {migrar.isPending ? "Migrando…" : "Migrar cadastros antigos"}
-            </Button>
-          )}
           <Button className="gap-2" onClick={abrirNovo}><Plus className="h-4 w-4" /> Novo cadastro</Button>
 
         </div>
