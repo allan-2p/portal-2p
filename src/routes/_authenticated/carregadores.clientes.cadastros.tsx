@@ -26,7 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCpoUfs } from "@/hooks/use-cpo";
 import {
   ContatosEditor, contatosPadrao, normalizarContatos, validarContatos, rotuloErroContato,
-  type Contato,
+  TIPO_ROTULO, type Contato,
 } from "@/components/contatos-editor";
 
 
