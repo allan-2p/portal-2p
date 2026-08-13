@@ -669,107 +669,119 @@ function PropostaCpoPage() {
 
 
 
-            <Field label="Cliente já cadastrado">
-              <Popover open={openCli} onOpenChange={setOpenCli}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-                    <span className="flex items-center gap-2 truncate">
-                      <Users className="h-4 w-4 text-primary shrink-0" />
-                      {state.nome ? state.nome : "Selecionar cliente do cadastro"}
-                    </span>
-                    <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
-                  <Command>
-                    <CommandInput placeholder="Buscar cliente..." />
-                    <CommandList>
-                      <CommandEmpty>
-                        <div className="px-3 py-4 text-center text-sm text-muted-foreground space-y-2">
-                          <p>{clientesQ.isLoading ? "Carregando..." : "Nenhum cliente encontrado."}</p>
-                          {!clientesQ.isLoading ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => { window.location.href = "/carregadores/clientes/cadastros"; }}
-                            >
-                              Cadastrar cliente
-                            </Button>
-                          ) : null}
-                        </div>
-                      </CommandEmpty>
-                      <CommandGroup>
-                        {(clientesQ.data ?? []).map((c) => (
-                          <CommandItem
-                            key={c.cliente_nome}
-                            value={[c.cliente_nome, c.cliente_doc, c.uf].filter(Boolean).join(" ")}
-                            onSelect={() => {
-                              aplicarCliente(c);
-                              setOpenCli(false);
-                            }}
-                          >
-                            <div className="min-w-0">
-                              <div className="truncate font-medium">{c.cliente_nome}</div>
-                              <div className="text-xs text-muted-foreground truncate">
-                                {[c.cliente_doc, c.uf, c.cliente_email].filter(Boolean).join(" · ") || "Sem dados adicionais"}
-                              </div>
+            {etapa === 1 ? (
+              <>
+                <Field label="Cliente já cadastrado">
+                  <Popover open={openCli} onOpenChange={setOpenCli}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                        <span className="flex items-center gap-2 truncate">
+                          <Users className="h-4 w-4 text-primary shrink-0" />
+                          {state.nome ? state.nome : "Selecionar cliente do cadastro"}
+                        </span>
+                        <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar cliente..." />
+                        <CommandList>
+                          <CommandEmpty>
+                            <div className="px-3 py-4 text-center text-sm text-muted-foreground space-y-2">
+                              <p>{clientesQ.isLoading ? "Carregando..." : "Nenhum cliente encontrado."}</p>
+                              {!clientesQ.isLoading ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => { window.location.href = "/carregadores/clientes/cadastros"; }}
+                                >
+                                  Cadastrar cliente
+                                </Button>
+                              ) : null}
                             </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Os dados fiscais vêm direto do cadastro do cliente.
-              </p>
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {(clientesQ.data ?? []).map((c) => (
+                              <CommandItem
+                                key={c.cliente_nome}
+                                value={[c.cliente_nome, c.cliente_doc, c.uf].filter(Boolean).join(" ")}
+                                onSelect={() => {
+                                  aplicarCliente(c);
+                                  setOpenCli(false);
+                                }}
+                              >
+                                <div className="min-w-0">
+                                  <div className="truncate font-medium">{c.cliente_nome}</div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {[c.cliente_doc, c.uf, c.cliente_email].filter(Boolean).join(" · ") || "Sem dados adicionais"}
+                                  </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Os dados fiscais vêm direto do cadastro do cliente.
+                  </p>
+                </Field>
 
-            </Field>
+                {state.nome ? (
+                  <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                      <ReadField label="Nome do cliente" value={state.nome} />
+                      <ReadField label="Telefone" value={state.telefone} />
+                      <ReadField label="E-mail" value={state.email} invalid={campoInvalido("email")} />
+                      <ReadField label="CNPJ / CPF" value={state.doc} invalid={campoInvalido("doc")} />
+                      <ReadField label="Estado (UF) de destino" value={uf ? `${uf.uf} — ${uf.nome}` : state.uf} invalid={campoInvalido("uf")} />
+                      <ReadField label="Inscrição Estadual" value={state.ie || "Cliente sem IE"} invalid={campoInvalido("ie")} />
+                    </div>
+                    <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs">
+                      <b className="text-foreground">
+                        {state.contribuinte ? "Cliente contribuinte do ICMS" : "Cliente não contribuinte do ICMS"}
+                      </b>{" "}
+                      <span className="text-muted-foreground">
+                        {state.contribuinte
+                          ? "DIFAL por conta do destinatário."
+                          : "DIFAL absorvido na venda."}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
 
-            {state.nome ? (
-              <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                  <ReadField label="Nome do cliente" value={state.nome} />
-                  <ReadField label="Telefone" value={state.telefone} />
-                  <ReadField label="E-mail" value={state.email} invalid={campoInvalido("email")} />
-                  <ReadField label="CNPJ / CPF" value={state.doc} invalid={campoInvalido("doc")} />
-                  <ReadField label="Estado (UF) de destino" value={uf ? `${uf.uf} — ${uf.nome}` : state.uf} invalid={campoInvalido("uf")} />
-                  <ReadField label="Inscrição Estadual" value={state.ie || "Cliente sem IE"} invalid={campoInvalido("ie")} />
-
-                </div>
-                <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs">
-                  <b className="text-foreground">
-                    {state.contribuinte ? "Cliente contribuinte do ICMS" : "Cliente não contribuinte do ICMS"}
-                  </b>{" "}
-                  <span className="text-muted-foreground">
-                    {state.contribuinte
-                      ? "DIFAL por conta do destinatário."
-                      : "DIFAL absorvido na venda."}
-                  </span>
+                {state.nome ? (
+                  <Field label="Finalidade de uso">
+                    <Select
+                      value={state.finalidadeUso}
+                      onValueChange={(v) => set("finalidadeUso", v as CpoFinalidadeUso)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
+                        <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
+                        <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Define a destinação da mercadoria e pode afetar o tratamento fiscal da operação.
+                    </p>
+                  </Field>
+                ) : null}
+              </>
+            ) : state.nome ? (
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm">
+                <Users className="h-4 w-4 text-primary shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{state.nome}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {labelFinalidadeUso[state.finalidadeUso]}
+                  </p>
                 </div>
               </div>
-            ) : null}
-
-            {state.nome ? (
-              <Field label="Finalidade de uso">
-                <Select
-                  value={state.finalidadeUso}
-                  onValueChange={(v) => set("finalidadeUso", v as CpoFinalidadeUso)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
-                    <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
-                    <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Define a destinação da mercadoria e pode afetar o tratamento fiscal da operação.
-                </p>
-              </Field>
             ) : null}
 
             {etapa === 2 ? (
