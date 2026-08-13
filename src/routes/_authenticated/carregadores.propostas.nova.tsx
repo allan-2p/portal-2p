@@ -246,6 +246,7 @@ function PropostaCpoPage() {
           cliente_ie: (c["ie"] as string) ?? null,
           uf: (c["uf"] as string) ?? "",
           contribuinte: c["contribuinte"] !== false,
+          cliente_updated_at: (c["updated_at"] as string) ?? null,
         }));
       return lista.sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR"));
 
