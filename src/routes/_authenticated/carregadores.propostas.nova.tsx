@@ -300,7 +300,7 @@ function PropostaCpoPage() {
   const clienteOk = errosCliente.length === 0;
   const campoInvalido = (c: string) => errosCliente.some((e) => e.campo === c);
   const temProduto = state.itens.some((i) => i.produtoId);
-  const podeSalvar = clienteOk && temProduto && !abaixoPolitica;
+  const podeSalvar = clienteOk && temProduto && !abaixoPolitica && !d.cmvExcedido;
 
   function irParaEtapa2() {
     if (!clienteOk) {
@@ -333,6 +333,8 @@ function PropostaCpoPage() {
   if (temProduto && !(d.valorTotalProposta > 0))
     errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
   if (temProduto && abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+  if (temProduto && d.cmvExcedido)
+    errosFechamento.push(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)} — exige aprovação da diretoria.`);
   const podeFechar = errosFechamento.length === 0;
 
   // ---- Bloqueios de salvamento ----
@@ -341,6 +343,8 @@ function PropostaCpoPage() {
   if (!temProduto) errosSalvar.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length) errosSalvar.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
   if (temProduto && abaixoPolitica) errosSalvar.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+  if (temProduto && d.cmvExcedido)
+    errosSalvar.push(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)} — exige aprovação da diretoria.`);
 
 
 
@@ -483,6 +487,8 @@ function PropostaCpoPage() {
     if (!state.nome.trim()) return toast.error("Informe o nome do cliente.");
     if (!state.itens.some((i) => i.produtoId)) return toast.error("Adicione ao menos um produto.");
     if (abaixoPolitica) return toast.error("MB% abaixo da política mínima.");
+    if (d.cmvExcedido)
+      return toast.error(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação especial da diretoria.`);
     setSaving(true);
     try {
       const { data: userRes } = await supabase.auth.getUser();
