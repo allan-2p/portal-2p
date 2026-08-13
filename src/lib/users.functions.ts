@@ -180,15 +180,7 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const profilePatch: {
-      email?: string;
-      full_name?: string;
-      cargo?: string | null;
-      equipe?: string | null;
-      regime_contratacao?: string;
-      organizacao?: string;
-      is_external?: boolean;
-    } = {};
+    const profilePatch: Record<string, unknown> = {};
     if (data.email !== undefined) profilePatch.email = data.email;
     if (data.full_name !== undefined) profilePatch.full_name = data.full_name;
     if (data.cargo !== undefined) profilePatch.cargo = data.cargo;
@@ -196,7 +188,27 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
     if (data.regime_contratacao !== undefined) profilePatch.regime_contratacao = data.regime_contratacao;
     if (data.organizacao !== undefined) profilePatch.organizacao = data.organizacao;
     if (data.is_external !== undefined) profilePatch.is_external = data.is_external;
-
+    if (data.telefone !== undefined) profilePatch.telefone = data.telefone;
+    if (data.meta_mensal !== undefined) profilePatch.meta_mensal = data.meta_mensal;
+    if (data.cargo_tipo !== undefined) profilePatch.cargo_tipo = data.cargo_tipo;
+    if (data.filter_scope !== undefined) profilePatch.filter_scope = data.filter_scope;
+    if (data.ativo !== undefined) profilePatch.ativo = data.ativo;
+    if (data.sf_user_id !== undefined) {
+      const v = (data.sf_user_id ?? "").trim();
+      if (v && !/^[a-zA-Z0-9]{15,18}$/.test(v)) {
+        throw new Error("ID do Salesforce inválido (15 ou 18 caracteres).");
+      }
+      if (v) {
+        const { data: dup } = await supabaseAdmin
+          .from("profiles")
+          .select("id, email")
+          .eq("sf_user_id", v)
+          .neq("id", data.user_id)
+          .maybeSingle();
+        if (dup) throw new Error(`Este ID já está vinculado a ${dup.email}.`);
+      }
+      profilePatch.sf_user_id = v || null;
+    }
 
     if (Object.keys(profilePatch).length > 0) {
       const { error } = await supabaseAdmin
@@ -204,6 +216,20 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
         .update(profilePatch)
         .eq("id", data.user_id);
       if (error) throw new Error(error.message);
+    }
+
+    if (data.role) {
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id);
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: data.user_id, role: data.role });
+      if (error) throw new Error(error.message);
+    }
+
+    if (data.ativo !== undefined) {
+      await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+        ban_duration: data.ativo ? "none" : "876000h",
+      });
     }
 
     if (data.email || data.full_name) {
