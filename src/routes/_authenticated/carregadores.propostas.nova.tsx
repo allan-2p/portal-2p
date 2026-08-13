@@ -149,6 +149,7 @@ function PropostaCpoPage() {
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   const [previewAberto, setPreviewAberto] = useState(false);
   const [propostaUpdatedAt, setPropostaUpdatedAt] = useState<string | null>(null);
+  const [statusProposta, setStatusProposta] = useState<string>("Salvo");
   const submitLock = useRef(false);
   const numeroRef = useRef<string | null>(null);
   const carregado = useRef(false);
@@ -220,6 +221,7 @@ function PropostaCpoPage() {
       });
       setNumeroAtual(editId ? data.numero : null);
       setPropostaUpdatedAt((data.updated_at as string) ?? null);
+      setStatusProposta((data.status as string) ?? "Salvo");
       setEtapa(2);
       toast.success(editId ? `Proposta ${data.numero ?? ""} carregada.` : "Proposta duplicada — salve para gerar um novo número.");
     })();
@@ -494,7 +496,14 @@ function PropostaCpoPage() {
 
   function concluirPedido() {
     if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de concluir o pedido.");
+    setStatusProposta("Aguardando Pagamento");
+    setSaving(true);
     void salvar("Aguardando Pagamento");
+  }
+
+  function iniciarConclusao() {
+    setStatusProposta("Aguardando Pagamento");
+    setConfirmarConclusao(true);
   }
 
   // Abre a revisão final antes de salvar/enviar; bloqueia com mensagens se houver pendências
@@ -594,7 +603,8 @@ function PropostaCpoPage() {
     if (d.cmvExcedido)
       return toast.error(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação especial da diretoria.`);
     submitLock.current = true;
-    setSaving(true);
+    // Quem chama concluirPedido já setou saving e status; evita piscar
+    if (!saving) setSaving(true);
     try {
       const { data: userRes } = await supabase.auth.getUser();
       // Número idempotente: reenvios reutilizam o mesmo número (índice único no banco)
@@ -699,6 +709,8 @@ function PropostaCpoPage() {
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar proposta.");
+      // Em caso de falha no "Concluir pedido", reverte o status para o anterior
+      if (status !== "Salvo") setStatusProposta("Salvo");
     } finally {
       submitLock.current = false;
       setSaving(false);
@@ -717,9 +729,26 @@ function PropostaCpoPage() {
               <span>/</span>
               <span>{propostaId ? "Editar proposta" : "Nova proposta"}</span>
             </div>
-            <h1 className="text-3xl font-bold mt-1">
-              {propostaId ? `Editar proposta${numeroAtual ? ` ${numeroAtual}` : ""}` : "Nova proposta"}
-            </h1>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <h1 className="text-3xl font-bold">
+                {propostaId ? `Editar proposta${numeroAtual ? ` ${numeroAtual}` : ""}` : "Nova proposta"}
+              </h1>
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border",
+                  statusProposta === "Aguardando Pagamento"
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                    : statusProposta === "Salvo"
+                      ? "bg-surface-2 text-muted-foreground border-border"
+                      : "bg-primary/10 text-primary border-primary/30",
+                )}
+              >
+                {saving && statusProposta === "Aguardando Pagamento" ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+                ) : null}
+                {statusProposta}
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
               Cálculo fiscal completo da proposta em tempo real.
             </p>
@@ -1345,8 +1374,16 @@ function PropostaCpoPage() {
                 <FileDown className="h-4 w-4" /> Baixar PDF
               </Button>
               <div className="hidden sm:block flex-1" />
-              <Button onClick={() => setConfirmarConclusao(true)} disabled={saving} className="w-full gap-2 sm:w-auto">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              <Button
+                onClick={iniciarConclusao}
+                disabled={saving}
+                className="w-full gap-2 sm:w-auto"
+              >
+                {saving && statusProposta === "Aguardando Pagamento" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
                 Concluir pedido
               </Button>
             </div>
@@ -1398,11 +1435,20 @@ function PropostaCpoPage() {
                 Você está prestes a concluir este pedido. Essa ação pode gerar registros no sistema e não deve ser feita acidentalmente.
               </DialogDescription>
             </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              Deseja continuar e revisar os dados antes de finalizar?
-            </p>
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">
+                Deseja continuar e revisar os dados antes de finalizar?
+              </p>
+              <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center justify-between">
+                <span className="text-muted-foreground">Status que será aplicado</span>
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                  {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : null}
+                  Aguardando Pagamento
+                </span>
+              </div>
+            </div>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setConfirmarConclusao(false)} disabled={saving}>
+              <Button variant="outline" onClick={() => { setConfirmarConclusao(false); if (!propostaId) setStatusProposta("Salvo"); }}>
                 Cancelar
               </Button>
               <Button
@@ -1410,10 +1456,9 @@ function PropostaCpoPage() {
                   setConfirmarConclusao(false);
                   pedirRevisao("concluir");
                 }}
-                disabled={saving}
                 className="gap-2"
               >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                <CheckCircle2 className="h-4 w-4" />
                 Sim, revisar e concluir
               </Button>
             </DialogFooter>
@@ -1433,6 +1478,15 @@ function PropostaCpoPage() {
             </DialogHeader>
 
             <div className="space-y-3 text-sm max-h-[55vh] overflow-y-auto pr-1">
+              {revisao === "concluir" ? (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Status do pedido</span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                    Aguardando Pagamento
+                  </span>
+                </div>
+              ) : null}
               <div className="rounded-xl border border-border p-3 space-y-1">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Cliente</p>
                 <p className="font-semibold">{state.nome}</p>
