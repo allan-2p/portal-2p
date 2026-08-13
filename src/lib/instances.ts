@@ -236,6 +236,17 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
 
 export const ALL_FEATURES: FeatureKey[] = Object.keys(FEATURE_LABELS) as FeatureKey[];
 
+// === Consistência de grupo ===
+// Tudo que é do Grupo 2P (Administração/Configurações) precisa estar disponível
+// igualmente em todas as instâncias para administradores. Normalizamos aqui para
+// que nenhuma instância possa divergir por esquecimento na config acima.
+export const GROUP_FEATURE_KEYS: FeatureKey[] = ALL_FEATURES.filter((k) => k.startsWith("admin."));
+for (const id of INSTANCE_IDS) {
+  for (const key of GROUP_FEATURE_KEYS) {
+    if (!INSTANCES[id].routes.includes(key)) INSTANCES[id].routes.push(key);
+  }
+}
+
 export function defaultInstanceForList(allowed: InstanceId[]): InstanceId {
   if (allowed.includes("solar")) return "solar";
   return allowed[0] ?? "solar";
