@@ -15,6 +15,7 @@ import {
   type PermissionProfile,
 } from "@/lib/permission-profiles.functions";
 import { adminListAccessMatrix, type AdminUserRow } from "@/lib/access.functions";
+import { PermissoesContent } from "./admin.permissoes";
 import {
   INSTANCES,
   INSTANCE_IDS,
