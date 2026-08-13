@@ -324,7 +324,16 @@ function CadastrosPage() {
   };
   const abrirEdicao = (c: Cliente) => {
     const { id: _id, ...rest } = c;
-    setEditId(c.id); setForm(rest); setTentouSalvar(false); setOpen(true);
+    setEditId(c.id);
+    setForm({
+      ...rest,
+      contatos: normalizarContatos(c.contatos, {
+        nome: c.contato_nome, cargo: c.contato_cargo,
+        email: c.contato_email, telefone: c.contato_telefone,
+      }),
+    });
+    setTentouSalvar(false);
+    setOpen(true);
   };
 
   return (
