@@ -107,7 +107,7 @@ export const setVendidoTiers = createServerFn({ method: "POST" })
       .upsert({ id: "vendido_tiers", config: data, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
     await recordModeration(context, {
-      area: "cpo_comissoes",
+      area: "metas",
       instanceId: "solar",
       action: "atualizou",
       target: "vendido_tiers",
@@ -130,7 +130,7 @@ export const setNovosValues = createServerFn({ method: "POST" })
       .upsert({ id: "novos_values", config: data, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
     await recordModeration(context, {
-      area: "cpo_comissoes",
+      area: "metas",
       instanceId: "solar",
       action: "atualizou",
       target: "novos_values",
@@ -170,7 +170,7 @@ export const setRetencaoTiers = createServerFn({ method: "POST" })
       .upsert({ id: "retencao_tiers", config: data, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
     await recordModeration(context, {
-      area: "cpo_comissoes",
+      area: "metas",
       instanceId: "solar",
       action: "atualizou",
       target: "retencao_tiers",
@@ -202,7 +202,7 @@ export const setSalespersonEquipe = createServerFn({ method: "POST" })
       .upsert({ id: "salesperson_equipe", config: next, updated_at: new Date().toISOString() });
     if (error) throw new Error(error.message);
     await recordModeration(context, {
-      area: "cpo_comissoes",
+      area: "metas",
       instanceId: "solar",
       action: "atualizou",
       target: data.sf_user_id,
