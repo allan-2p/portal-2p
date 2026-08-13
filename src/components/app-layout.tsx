@@ -161,6 +161,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
         </div>
 
+        {isAdminArea ? <AdminSidebar pathname={pathname} collapsed={collapsed} /> : (
         <nav className="px-2 py-2 flex-1 overflow-y-auto">
           {/* Atlas — só se instância permitir */}
           {show("atlas") && (
