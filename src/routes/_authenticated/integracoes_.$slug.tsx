@@ -86,7 +86,10 @@ function IntegracaoConfigPage() {
           </div>
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{def.category}</div>
-            <h1 className="font-display text-2xl font-bold">{def.name}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-display text-2xl font-bold">{def.name}</h1>
+              <IntegrationAlertBadge alert={alert} />
+            </div>
             <p className="text-sm text-muted-foreground mt-1">{def.description}</p>
           </div>
         </div>
@@ -206,6 +209,23 @@ function IntegracaoConfigPage() {
             </a>
           )}
         </section>
+
+        {alert && (
+          <div
+            role="alert"
+            className={
+              alert.level === "error"
+                ? "rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+                : alert.level === "stale"
+                  ? "rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-600 dark:text-amber-400"
+                  : "rounded-2xl border border-border bg-surface-2 p-4 text-sm text-muted-foreground"
+            }
+          >
+            {alert.message}
+          </div>
+        )}
+
+        <IntegrationAlertSettingsCard slug={slug} />
 
         <IntegrationLogsPanel slug={slug} />
       </div>
