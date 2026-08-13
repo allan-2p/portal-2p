@@ -39,11 +39,12 @@ import {
   calcularCpo,
   fmtBRL,
   fmtPct,
+  labelFinalidadeUso,
   novoEstado,
   novoItem,
   parseMoeda,
-  
   statusMB,
+  type CpoFinalidadeUso,
   type CpoItem,
   type CpoState,
   textoDifalContribuinte,
