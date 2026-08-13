@@ -11,6 +11,7 @@ import { integrationBySlug } from "@/lib/integrations-catalog";
 import { getIntegrationConfig, testIntegration } from "@/lib/integration-config.functions";
 import { formatLastSync } from "@/components/integration-status";
 import { IntegrationLogsPanel } from "@/components/integration-logs";
+import { IntegrationAlertBadge, IntegrationAlertSettingsCard, useIntegrationAlerts } from "@/components/integration-alerts";
 
 export const Route = createFileRoute("/_authenticated/integracoes_/$slug")({
   head: () => ({
@@ -30,6 +31,7 @@ function IntegracaoConfigPage() {
   const { slug } = useParams({ from: "/_authenticated/integracoes_/$slug" });
   const def = integrationBySlug(slug);
 
+  const { bySlug: alertsBySlug } = useIntegrationAlerts();
   const fetchConfig = useServerFn(getIntegrationConfig);
   const runTest = useServerFn(testIntegration);
   const qc = useQueryClient();
@@ -65,6 +67,7 @@ function IntegracaoConfigPage() {
     );
   }
 
+  const alert = alertsBySlug.get(slug);
   const states = new Map((config.data?.credentials ?? []).map((c) => [c.env, c]));
   const result = test.data;
 
