@@ -2,8 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordModeration } from "@/lib/moderation-audit.server";
+import { VISIBILIDADE_LABELS, validateVisibilidadeChange, type Visibilidade } from "@/lib/product-visibility";
 
-export type SapVisibilidade = "solar" | "carregadores" | "ambos";
+export type SapVisibilidade = Visibilidade;
+
 
 export type SapProdutoRow = {
   id: string;
