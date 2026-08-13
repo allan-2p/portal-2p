@@ -64,6 +64,7 @@ function PerfisPage() {
   const [saving, setSaving] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [profInstances, setProfInstances] = useState<Set<InstanceId>>(new Set());
+  const [tab, setTab] = useState<"perfis" | "permissoes">("perfis");
 
   async function load() {
     setLoading(true);
