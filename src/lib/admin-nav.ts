@@ -53,19 +53,19 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     home: "/admin/perfis",
     groups: [
       {
-        label: "Acessos",
-        items: [
-          { to: "/admin/perfis", label: "Perfis de Permissão", icon: UserCog, feature: "admin.perfis" },
-          { to: "/admin/permissoes", label: "Permissões de Usuários", icon: KeyRound, feature: "admin.permissoes" },
-          { to: "/admin/auditoria", label: "Auditoria de Acessos", icon: ShieldCheck, feature: "admin.auditoria" },
-        ],
-      },
-      {
         label: "Usuários",
         items: [
           { to: "/usuarios", label: "Usuários", icon: Users, feature: "admin.usuarios" },
           { to: "/admin/atividade", label: "Log de Usuários", icon: ActivityIcon, feature: "admin.atividade" },
           { to: "/admin/vinculos", label: "Vínculos Salesforce", icon: Link2, feature: "admin.vinculos" },
+        ],
+      },
+      {
+        label: "Acessos",
+        items: [
+          { to: "/admin/perfis", label: "Perfis de Permissão", icon: UserCog, feature: "admin.perfis" },
+          { to: "/admin/permissoes", label: "Permissões de Usuários", icon: KeyRound, feature: "admin.permissoes" },
+          { to: "/admin/auditoria", label: "Auditoria de Acessos", icon: ShieldCheck, feature: "admin.auditoria" },
         ],
       },
     ],
