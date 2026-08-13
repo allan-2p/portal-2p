@@ -1101,11 +1101,16 @@ export type Database = {
           ativo: boolean
           codigo: string
           created_at: string
+          custo: number
           descricao: string
           id: string
           last_synced_at: string | null
           lista_preco: string | null
+          ncm_id: string | null
+          origem: string
           permissao: string
+          potencia: string | null
+          preco_sugerido: number
           sap_raw: Json | null
           tipo: string
           updated_at: string
@@ -1115,11 +1120,16 @@ export type Database = {
           ativo?: boolean
           codigo: string
           created_at?: string
+          custo?: number
           descricao: string
           id?: string
           last_synced_at?: string | null
           lista_preco?: string | null
+          ncm_id?: string | null
+          origem?: string
           permissao?: string
+          potencia?: string | null
+          preco_sugerido?: number
           sap_raw?: Json | null
           tipo?: string
           updated_at?: string
@@ -1129,17 +1139,30 @@ export type Database = {
           ativo?: boolean
           codigo?: string
           created_at?: string
+          custo?: number
           descricao?: string
           id?: string
           last_synced_at?: string | null
           lista_preco?: string | null
+          ncm_id?: string | null
+          origem?: string
           permissao?: string
+          potencia?: string | null
+          preco_sugerido?: number
           sap_raw?: Json | null
           tipo?: string
           updated_at?: string
           visibilidade?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sap_produtos_ncm_id_fkey"
+            columns: ["ncm_id"]
+            isOneToOne: false
+            referencedRelation: "cpo_ncm"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sap_produtos_sync_runs: {
         Row: {
