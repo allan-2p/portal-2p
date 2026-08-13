@@ -152,7 +152,7 @@ function PropostaCpoPage() {
   const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
-  const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
+  const [revisao, setRevisao] = useState<null | "concluir">(null);
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   const [previewAberto, setPreviewAberto] = useState(false);
   const [usarLogoCliente, setUsarLogoCliente] = useState(true);
@@ -230,6 +230,7 @@ function PropostaCpoPage() {
       });
       setNumeroAtual(editId ? data.numero : null);
       setPropostaUpdatedAt((data.updated_at as string) ?? null);
+      setAutosaveAt(data.updated_at ? new Date(data.updated_at as string) : null);
       setStatusProposta((data.status as string) ?? "Salvo");
       setEtapa(2);
       toast.success(editId ? `Proposta ${data.numero ?? ""} carregada.` : "Proposta duplicada — salve para gerar um novo número.");
@@ -526,14 +527,26 @@ function PropostaCpoPage() {
     setConfirmarConclusao(true);
   }
 
-  // Abre a revisão final antes de salvar/enviar; bloqueia com mensagens se houver pendências
-  function pedirRevisao(acao: "salvar" | "concluir") {
-    const erros = acao === "salvar" ? errosSalvar : errosFechamento;
-    if (erros.length) {
+  // Salva a proposta sem pop-up: valida e dispara o salvamento direto.
+  function pedirSalvar() {
+    if (errosSalvar.length) {
       setTentouAvancar(true);
       if (etapa === 1 && !clienteOk) setEtapa(1);
-      toast.error(erros[0], {
-        description: erros.length > 1 ? `+ ${erros.length - 1} pendência(s) a corrigir.` : undefined,
+      toast.error(errosSalvar[0], {
+        description: errosSalvar.length > 1 ? `+ ${errosSalvar.length - 1} pendência(s) a corrigir.` : undefined,
+      });
+      return;
+    }
+    void salvar();
+  }
+
+  // Abre a revisão final apenas para concluir o pedido.
+  function pedirRevisao(acao: "concluir") {
+    if (errosFechamento.length) {
+      setTentouAvancar(true);
+      if (etapa === 1 && !clienteOk) setEtapa(1);
+      toast.error(errosFechamento[0], {
+        description: errosFechamento.length > 1 ? `+ ${errosFechamento.length - 1} pendência(s) a corrigir.` : undefined,
       });
       return;
     }
@@ -541,10 +554,8 @@ function PropostaCpoPage() {
   }
 
   function confirmarRevisao() {
-    const acao = revisao;
     setRevisao(null);
-    if (acao === "concluir") concluirPedido();
-    else void salvar();
+    concluirPedido();
   }
 
 
@@ -700,7 +711,7 @@ function PropostaCpoPage() {
         setNumeroAtual(numero);
         invalidate();
         limparRascunho();
-        setAutosaveAt(null);
+        setAutosaveAt(status === "Salvo" ? new Date() : null);
         return;
       }
 
@@ -749,7 +760,7 @@ function PropostaCpoPage() {
       );
       invalidate();
       limparRascunho();
-      setAutosaveAt(null);
+      setAutosaveAt(status === "Salvo" ? new Date() : null);
       if (status === "Salvo" && inserida?.id) {
         // segue editando a mesma proposta em vez de duplicar ao salvar de novo
         setPropostaId(inserida.id);
@@ -1393,13 +1404,14 @@ function PropostaCpoPage() {
           errors={errosFechamento}
           showErrors={!podeFechar && tentouAvancar}
           savedAt={autosaveAt}
+          savedLabel="Salvo"
           minimal={etapa === 1 && !temItemComValor}
           actions={
             etapa === 4 && temItemComValor
               ? [
                   {
                     label: "Salvar proposta",
-                    onClick: () => pedirRevisao("salvar"),
+                    onClick: pedirSalvar,
                     icon: <Save className="h-4 w-4" />,
                     loading: saving && statusProposta !== "Aguardando Pagamento",
                   },
@@ -1426,7 +1438,7 @@ function PropostaCpoPage() {
                   }
                 : {
                     label: "Salvar proposta",
-                    onClick: () => pedirRevisao("salvar"),
+                    onClick: pedirSalvar,
                     icon: <Save className="h-4 w-4" />,
                     loading: saving,
                     disabled: saving,
@@ -1525,28 +1537,24 @@ function PropostaCpoPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Revisão final antes de salvar / concluir */}
+        {/* Revisão final antes de concluir o pedido */}
         <Dialog open={revisao !== null} onOpenChange={(o) => !saving && !o && setRevisao(null)}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>
-                {revisao === "concluir" ? "Revisar e concluir pedido" : "Revisar e salvar proposta"}
-              </DialogTitle>
+              <DialogTitle>Revisar e concluir pedido</DialogTitle>
               <DialogDescription>
-                Confira os dados abaixo antes de {revisao === "concluir" ? "enviar o pedido" : "salvar a proposta"}.
+                Confira os dados abaixo antes de enviar o pedido.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-3 text-sm max-h-[55vh] overflow-y-auto pr-1">
-              {revisao === "concluir" ? (
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between">
-                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Status do pedido</span>
-                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                    Aguardando Pagamento
-                  </span>
-                </div>
-              ) : null}
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Status do pedido</span>
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                  Aguardando Pagamento
+                </span>
+              </div>
               <div className="rounded-xl border border-border p-3 space-y-1">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Cliente</p>
                 <p className="font-semibold">{state.nome}</p>
@@ -1614,18 +1622,8 @@ function PropostaCpoPage() {
                 Voltar e editar
               </Button>
               <Button onClick={confirmarRevisao} disabled={saving} className="gap-2">
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : revisao === "concluir" ? (
-                  <CheckCircle2 className="h-4 w-4" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                {saving
-                  ? "Processando..."
-                  : revisao === "concluir"
-                    ? "Confirmar pedido"
-                    : "Confirmar e salvar"}
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {saving ? "Processando..." : "Confirmar pedido"}
               </Button>
             </DialogFooter>
           </DialogContent>

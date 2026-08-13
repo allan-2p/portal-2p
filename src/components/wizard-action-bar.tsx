@@ -57,7 +57,7 @@ export function WizardActionBar({
   errors = [],
   showErrors = false,
   savedAt,
-  savedLabel = "Rascunho salvo",
+  savedLabel = "Salvo",
   actions = [],
   primary,
   className,
