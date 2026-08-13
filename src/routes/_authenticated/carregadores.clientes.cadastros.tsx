@@ -126,6 +126,25 @@ const vazio = (): Omit<Cliente, "id"> => ({
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
 const soDigitos = (v: string) => v.replace(/\D/g, "");
 
+function validarObrigatorios(f: Omit<Cliente, "id">): string | null {
+  if (!f.razao_social?.trim()) return "Informe a razão social.";
+  const doc = soDigitos(f.doc ?? "");
+  if (!doc) return "Informe o CNPJ / CPF.";
+  if (doc.length !== 11 && doc.length !== 14) return "CNPJ / CPF inválido.";
+  if (!f.uf?.trim()) return "Selecione a UF de destino.";
+  if (f.contribuinte && !f.ie?.trim()) return "Cliente contribuinte: informe a Inscrição Estadual.";
+  if (!f.contato_nome?.trim()) return "Informe o nome do responsável.";
+  const email = (f.contato_email ?? "").trim() || (f.email ?? "").trim();
+  const fone = (f.contato_telefone ?? "").trim() || (f.telefone ?? "").trim();
+  if (!email && !fone) return "Informe ao menos um contato: e-mail ou telefone.";
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "E-mail de contato inválido.";
+  if (soDigitos(f.cep ?? "").length !== 8) return "Informe um CEP válido (8 dígitos).";
+  if (!f.logradouro?.trim()) return "Informe o logradouro.";
+  if (!f.numero?.trim()) return "Informe o número do endereço.";
+  if (!f.cidade?.trim()) return "Informe a cidade.";
+  return null;
+}
+
 function CadastrosPage() {
   const qc = useQueryClient();
   const ufs = useCpoUfs().data ?? [];
@@ -162,7 +181,8 @@ function CadastrosPage() {
 
   const salvar = useMutation({
     mutationFn: async () => {
-      if (!form.razao_social.trim()) throw new Error("Informe a razão social.");
+      const erro = validarObrigatorios(form);
+      if (erro) throw new Error(erro);
       if (editId) {
         const { error } = await supabase.from("cpo_clientes").update(form).eq("id", editId);
         if (error) throw error;
@@ -285,14 +305,14 @@ function CadastrosPage() {
                 <Section title="Dados da empresa">
                   <F label="Razão social *"><Input value={form.razao_social} onChange={(e) => set("razao_social", e.target.value)} /></F>
                   <F label="Nome fantasia"><Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} /></F>
-                  <F label="CNPJ / CPF"><Input value={form.doc ?? ""} onChange={(e) => set("doc", e.target.value)} placeholder="00.000.000/0000-00" /></F>
+                  <F label="CNPJ / CPF *"><Input value={form.doc ?? ""} onChange={(e) => set("doc", e.target.value)} placeholder="00.000.000/0000-00" /></F>
                   <F label="Regime tributário">
                     <Select value={form.regime_tributario ?? ""} onValueChange={(v) => set("regime_tributario", v)}>
                       <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                       <SelectContent>{REGIMES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                     </Select>
                   </F>
-                  <F label="Inscrição Estadual"><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
+                  <F label={form.contribuinte ? "Inscrição Estadual *" : "Inscrição Estadual"}><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
                   <F label="Inscrição Municipal"><Input value={form.im ?? ""} onChange={(e) => set("im", e.target.value)} /></F>
                   <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                     <div>
@@ -310,20 +330,20 @@ function CadastrosPage() {
                 </Section>
 
                 <Section title="Responsável">
-                  <F label="Nome"><Input value={form.contato_nome ?? ""} onChange={(e) => set("contato_nome", e.target.value)} /></F>
+                  <F label="Nome *"><Input value={form.contato_nome ?? ""} onChange={(e) => set("contato_nome", e.target.value)} /></F>
                   <F label="Cargo"><Input value={form.contato_cargo ?? ""} onChange={(e) => set("contato_cargo", e.target.value)} /></F>
                   <F label="E-mail"><Input value={form.contato_email ?? ""} onChange={(e) => set("contato_email", e.target.value)} /></F>
                   <F label="Telefone"><Input value={form.contato_telefone ?? ""} onChange={(e) => set("contato_telefone", e.target.value)} /></F>
                 </Section>
 
                 <Section title="Endereço">
-                  <F label="CEP"><Input value={form.cep ?? ""} onChange={(e) => set("cep", e.target.value)} /></F>
-                  <F label="Logradouro"><Input value={form.logradouro ?? ""} onChange={(e) => set("logradouro", e.target.value)} /></F>
-                  <F label="Número"><Input value={form.numero ?? ""} onChange={(e) => set("numero", e.target.value)} /></F>
+                  <F label="CEP *"><Input value={form.cep ?? ""} onChange={(e) => set("cep", e.target.value)} /></F>
+                  <F label="Logradouro *"><Input value={form.logradouro ?? ""} onChange={(e) => set("logradouro", e.target.value)} /></F>
+                  <F label="Número *"><Input value={form.numero ?? ""} onChange={(e) => set("numero", e.target.value)} /></F>
                   <F label="Complemento"><Input value={form.complemento ?? ""} onChange={(e) => set("complemento", e.target.value)} /></F>
                   <F label="Bairro"><Input value={form.bairro ?? ""} onChange={(e) => set("bairro", e.target.value)} /></F>
-                  <F label="Cidade"><Input value={form.cidade ?? ""} onChange={(e) => set("cidade", e.target.value)} /></F>
-                  <F label="UF de destino">
+                  <F label="Cidade *"><Input value={form.cidade ?? ""} onChange={(e) => set("cidade", e.target.value)} /></F>
+                  <F label="UF de destino *">
                     <Select value={form.uf} onValueChange={(v) => set("uf", v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
