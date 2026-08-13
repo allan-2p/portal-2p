@@ -8,11 +8,10 @@ export default defineTool({
   description: "Busca clientes cadastrados (cpo_clientes) por razão social, nome fantasia ou documento.",
   inputSchema: {
     search: z.string().optional().describe("Texto para buscar na razão social, nome fantasia ou CNPJ."),
-    classificacao: z.string().optional().describe("Filtra pela classificação do cliente (A, B, C ou D)."),
     limit: z.number().int().optional().describe("Número máximo de clientes retornados (padrão 25, máximo 100)."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ search, classificacao, limit }, ctx) => {
+  handler: async ({ search, limit }, ctx) => {
     if (!ctx.isAuthenticated()) {
       return { content: [{ type: "text", text: "Não autenticado" }], isError: true };
     }
@@ -20,10 +19,9 @@ export default defineTool({
     const supabase = supabaseForUser(ctx);
     let query = supabase
       .from("cpo_clientes")
-      .select("id, razao_social, nome_fantasia, doc, cidade, uf, classificacao, ativo, email, telefone")
+      .select("id, razao_social, nome_fantasia, doc, cidade, uf, ativo, email, telefone")
       .order("razao_social", { ascending: true })
       .limit(take);
-    if (classificacao) query = query.eq("classificacao", classificacao);
     if (search) {
       const term = search.replace(/[%,]/g, " ").trim();
       query = query.or(
