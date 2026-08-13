@@ -15,32 +15,41 @@ async function profileGrantsFor(client: any, userId: string) {
     .select("profile_id")
     .eq("user_id", userId);
   const ids = (links ?? []).map((r: any) => r.profile_id as string);
-  if (!ids.length) return [] as { instance_id: string; feature_key: string }[];
-  const { data: feats } = await client
-    .from("permission_profile_features")
-    .select("instance_id, feature_key")
-    .in("profile_id", ids);
-  return (feats ?? []).map((r: any) => ({
-    instance_id: r.instance_id as string,
-    feature_key: r.feature_key as string,
-  }));
+  if (!ids.length) return { features: [], instances: [] } as ProfileGrants;
+  const [{ data: feats }, { data: insts }] = await Promise.all([
+    client.from("permission_profile_features").select("instance_id, feature_key").in("profile_id", ids),
+    client.from("permission_profile_instances").select("instance_id").in("profile_id", ids),
+  ]);
+  return {
+    features: (feats ?? []).map((r: any) => ({
+      instance_id: r.instance_id as string,
+      feature_key: r.feature_key as string,
+    })),
+    instances: (insts ?? []).map((r: any) => r.instance_id as string),
+  };
 }
+
+type ProfileGrants = {
+  features: { instance_id: string; feature_key: string }[];
+  instances: string[];
+};
 
 function mergeAccess(
   instances: string[],
   granted: { instance_id: string; feature_key: string }[],
-  fromProfiles: { instance_id: string; feature_key: string }[],
+  fromProfiles: ProfileGrants,
 ) {
   const seen = new Set(granted.map((g) => `${g.instance_id}::${g.feature_key}`));
   const all = [...granted];
-  for (const g of fromProfiles) {
+  for (const g of fromProfiles.features) {
     const k = `${g.instance_id}::${g.feature_key}`;
     if (seen.has(k)) continue;
     seen.add(k);
     all.push(g);
   }
   const inst = new Set(instances);
-  for (const g of fromProfiles) inst.add(g.instance_id);
+  for (const g of fromProfiles.features) inst.add(g.instance_id);
+  for (const i of fromProfiles.instances) inst.add(i);
   return { instances: [...inst], granted: all };
 }
 
