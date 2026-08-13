@@ -99,20 +99,8 @@ const money2 = (n: unknown) => {
 };
 
 
-type Rascunho = { state: CpoState; etapa: 1 | 2; ts: number };
 
-function lerRascunho(): Rascunho | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Rascunho;
-    if (!parsed?.state || !Array.isArray(parsed.state.itens)) return null;
-    return { ...parsed, etapa: parsed.etapa === 2 ? 2 : 1 };
-  } catch {
-    return null;
-  }
-}
+
 
 function limparRascunho() {
   try {
@@ -136,31 +124,23 @@ function PropostaCpoPage() {
   const ufs = ufsQ.data ?? [];
   const config = configQ.data ?? CPO_CONFIG_FALLBACK;
 
-  const [state, setState] = useState<CpoState>(() =>
-    carregandoExistente ? novoEstado() : lerRascunho()?.state ?? novoEstado(),
-  );
+  // Nova proposta sempre começa vazia; só carrega dados ao editar/duplicar uma proposta salva.
+  const [state, setState] = useState<CpoState>(() => novoEstado());
   const [openCli, setOpenCli] = useState(false);
-  const [etapa, setEtapa] = useState<1 | 2>(() => (carregandoExistente ? 1 : lerRascunho()?.etapa ?? 1));
+  const [etapa, setEtapa] = useState<1 | 2>(1);
   const [tentouAvancar, setTentouAvancar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
-  const [autosaveAt, setAutosaveAt] = useState<Date | null>(() =>
-    !carregandoExistente && lerRascunho()?.ts ? new Date(lerRascunho()!.ts) : null,
-  );
+  const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
   const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
-  const rascunhoRestaurado = useRef(false);
   const carregado = useRef(false);
 
-  // Aviso único quando um rascunho é restaurado
+  // Limpa qualquer rascunho local antigo ao abrir uma nova proposta
   useEffect(() => {
-    if (carregandoExistente || rascunhoRestaurado.current) return;
-    rascunhoRestaurado.current = true;
-    const r = lerRascunho();
-    if (r?.state?.nome || r?.state?.itens?.some((i) => i.produtoId)) {
-      toast.info("Rascunho restaurado automaticamente.");
-    }
+    if (!carregandoExistente) limparRascunho();
   }, [carregandoExistente]);
+
 
   // Carrega uma proposta salva para continuar a edição ou duplicar
   useEffect(() => {
@@ -205,25 +185,8 @@ function PropostaCpoPage() {
   }, [editId, dupId]);
 
 
-  // Autosave local enquanto o usuário avança nas etapas
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const vazio = !state.nome.trim() && !state.itens.some((i) => i.produtoId);
-      if (vazio) {
-        limparRascunho();
-        setAutosaveAt(null);
-        return;
-      }
-      const ts = Date.now();
-      try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({ state, etapa, ts }));
-        setAutosaveAt(new Date(ts));
-      } catch {
-        /* storage indisponível */
-      }
-    }, 600);
-    return () => clearTimeout(t);
-  }, [state, etapa]);
+  // Sem autosave local: cada nova proposta parte do zero.
+
 
 
   // Clientes vindos do cadastro completo (Clientes > Cadastros)
