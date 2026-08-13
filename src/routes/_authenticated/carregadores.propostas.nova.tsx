@@ -29,6 +29,9 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { listClientesFn } from "@/lib/clientes.functions";
+
 import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,6 +90,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/nov
 
 
 type ClienteCadastro = {
+  id: string;
   cliente_nome: string;
   cliente_telefone: string | null;
   cliente_email: string | null;
@@ -95,6 +99,7 @@ type ClienteCadastro = {
   uf: string;
   contribuinte: boolean;
 };
+
 
 const DRAFT_KEY = "cpo-proposta-rascunho";
 
@@ -201,30 +206,34 @@ function PropostaCpoPage() {
 
 
 
-  // Clientes vindos do cadastro completo (Clientes > Cadastros)
+  // Clientes vindos do cadastro universal (Clientes > Cadastros)
+  const listClientes = useServerFn(listClientesFn);
   const clientesQ = useQuery({
     queryKey: ["cpo-clientes-cadastro"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cpo_clientes")
-        .select("razao_social,nome_fantasia,telefone,email,doc,ie,uf,contribuinte")
-        .eq("ativo", true)
-        .order("razao_social");
-      if (error) throw error;
-      return (data ?? []).map((c) => ({
-        cliente_nome: c.nome_fantasia?.trim() || c.razao_social,
-        cliente_telefone: c.telefone,
-        cliente_email: c.email,
-        cliente_doc: c.doc,
-        cliente_ie: c.ie,
-        uf: c.uf,
-        contribuinte: c.contribuinte,
-      })) as ClienteCadastro[];
+      const res = await listClientes({ data: { instancia: "carregadores" } });
+      const lista: ClienteCadastro[] = (res.clientes ?? [])
+        .filter((c: Record<string, any>) => c["ativo"] !== false)
+        .map((c: Record<string, any>) => ({
+          id: String(c["id"]),
+          cliente_nome:
+            (c["nome_fantasia"] as string)?.trim() || (c["razao_social"] as string) || "—",
+          cliente_telefone: (c["telefone"] as string) ?? null,
+          cliente_email: (c["email"] as string) ?? null,
+          cliente_doc: (c["doc"] as string) ?? null,
+          cliente_ie: (c["ie"] as string) ?? null,
+          uf: (c["uf"] as string) ?? "",
+          contribuinte: c["contribuinte"] !== false,
+        }));
+      return lista.sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR"));
+
+
     },
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
   });
+
 
 
 
@@ -735,10 +744,11 @@ function PropostaCpoPage() {
                             </div>
                           </CommandEmpty>
                           <CommandGroup>
-                            {(clientesQ.data ?? []).map((c) => (
+                            {(clientesQ.data ?? []).map((c: ClienteCadastro) => (
                               <CommandItem
-                                key={c.cliente_nome}
+                                key={c.id}
                                 value={[c.cliente_nome, c.cliente_doc, c.uf].filter(Boolean).join(" ")}
+
                                 onSelect={() => {
                                   aplicarCliente(c);
                                   setOpenCli(false);
