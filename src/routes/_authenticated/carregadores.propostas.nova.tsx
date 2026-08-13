@@ -938,8 +938,7 @@ function PropostaCpoPage() {
               </div>
             ) : etapa === 1 && !state.nome.trim() ? (
               <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm text-muted-foreground">
-                Comece escolhendo o cliente. Os dados fiscais (CNPJ, IE, UF e contribuinte) são
-                puxados automaticamente do cadastro e definem os impostos da proposta.
+                Escolha o cliente. Os dados fiscais vêm do cadastro.
               </div>
             ) : null}
 
