@@ -1229,6 +1229,38 @@ function PropostaCpoPage() {
           </DialogContent>
         </Dialog>
 
+        {/* Confirmação antes de concluir o pedido */}
+        <Dialog open={confirmarConclusao} onOpenChange={(o) => !o && setConfirmarConclusao(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <TriangleAlert className="h-5 w-5 text-amber-500" />
+                Confirmar conclusão do pedido
+              </DialogTitle>
+              <DialogDescription>
+                Você está prestes a concluir este pedido. Essa ação pode gerar registros no sistema e não deve ser feita acidentalmente.
+              </DialogDescription>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Deseja continuar e revisar os dados antes de finalizar?
+            </p>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setConfirmarConclusao(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  setConfirmarConclusao(false);
+                  pedirRevisao("concluir");
+                }}
+                className="gap-2"
+              >
+                <CheckCircle2 className="h-4 w-4" /> Sim, revisar e concluir
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Revisão final antes de salvar / concluir */}
         <Dialog open={revisao !== null} onOpenChange={(o) => !o && setRevisao(null)}>
           <DialogContent className="max-w-lg">
