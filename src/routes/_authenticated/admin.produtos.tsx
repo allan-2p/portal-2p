@@ -23,11 +23,9 @@ import {
   type SapVisibilidade,
 } from "@/lib/sap-produtos.functions";
 
-const VIS_LABELS: Record<string, string> = {
-  solar: "2P Solar",
-  carregadores: "2P Carregadores",
-  ambos: "Grupo 2P",
-};
+import { VISIBILIDADE_LABELS, VISIBILIDADE_OPTIONS, validateVisibilidadeChange } from "@/lib/product-visibility";
+
+const VIS_LABELS: Record<string, string> = VISIBILIDADE_LABELS;
 import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download } from "lucide-react";
 import {
   classificarDetalhado,
@@ -87,7 +85,11 @@ function ProdutosPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  const alterarVisibilidade = async (id: string, v: SapVisibilidade) => {
+  const alterarVisibilidade = async (id: string, v: SapVisibilidade, p?: { origem: string | null; custo: number | null; ncm_id: string | null }) => {
+    const impedimento = p
+      ? validateVisibilidadeChange(v, { origem: p.origem, custo: p.custo, ncm_id: p.ncm_id })
+      : null;
+    if (impedimento) return toast.error(impedimento);
     try {
       await setVis({ data: { id, visibilidade: v } });
       toast.success(`Visibilidade alterada para “${VIS_LABELS[v]}”.`);
@@ -513,15 +515,23 @@ function ProdutosPage() {
                     <td className="px-3 py-2">
                       <Select
                         value={p.visibilidade ?? "ambos"}
-                        onValueChange={(v) => alterarVisibilidade(p.id, v as SapVisibilidade)}
+                        onValueChange={(v) =>
+                          alterarVisibilidade(p.id, v as SapVisibilidade, {
+                            origem: p.origem ?? null,
+                            custo: p.custo ?? null,
+                            ncm_id: p.ncm_id ?? null,
+                          })
+                        }
                       >
                         <SelectTrigger className="h-8 w-[168px] text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="solar">2P Solar</SelectItem>
-                          <SelectItem value="carregadores">2P Carregadores</SelectItem>
-                          <SelectItem value="ambos">Grupo 2P</SelectItem>
+                          {VISIBILIDADE_OPTIONS.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </td>

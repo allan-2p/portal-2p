@@ -38,6 +38,7 @@ export const listCpoProductsForProposal = createServerFn({ method: "GET" })
       .from("sap_produtos")
       .select(COLS)
       .in("visibilidade", ["carregadores", "ambos"])
+      .eq("ativo", true)
       .order("descricao");
     if (error) throw new Error(error.message);
     return { products: (data ?? []).map(toProduct) };
