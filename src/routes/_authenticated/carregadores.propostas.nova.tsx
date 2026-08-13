@@ -57,6 +57,8 @@ import {
   type CpoState,
   textoDifalContribuinte,
 } from "@/lib/cpo";
+import { registrarConclusao } from "@/lib/cpo-conclusao-log";
+
 
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
 import { MoneyInput } from "@/components/money-input";
@@ -660,6 +662,7 @@ function PropostaCpoPage() {
           const { data: res, error: rpcErr } = await supabase.rpc("cpo_conclude_proposal", {
             _id: propostaId,
             _status: status,
+            _origem: "portal",
           });
           if (rpcErr) throw rpcErr;
           const linha = Array.isArray(res) ? res[0] : res;
@@ -669,6 +672,7 @@ function PropostaCpoPage() {
             return;
           }
         }
+
 
         toast.success(concluindo ? `Pedido ${numero} concluído.` : `Proposta ${numero} atualizada.`);
         setNumeroAtual(numero);
@@ -686,11 +690,17 @@ function PropostaCpoPage() {
       if (error) {
         // Índice único no número: reenvio duplicado não cria um segundo registro
         if ((error as { code?: string }).code === "23505") {
+          if (status !== "Salvo") {
+            void registrarConclusao({ numero, status, resultado: "duplicada", detalhe: "Reenvio com número já existente" });
+          }
           toast.info(`Proposta ${numero} já registrada.`);
           invalidate();
           return;
         }
         throw error;
+      }
+      if (status !== "Salvo") {
+        void registrarConclusao({ propostaId: inserida?.id ?? null, numero, status, resultado: "concluida" });
       }
       toast.success(
         status === "Salvo" ? `Proposta ${numero} salva.` : `Pedido ${numero} concluído.`,
@@ -709,9 +719,19 @@ function PropostaCpoPage() {
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar proposta.");
+      if (status !== "Salvo") {
+        void registrarConclusao({
+          propostaId,
+          numero: numeroAtual ?? numeroRef.current,
+          status,
+          resultado: "erro",
+          detalhe: e instanceof Error ? e.message : "Erro ao concluir pedido",
+        });
+      }
       // Em caso de falha no "Concluir pedido", reverte o status para o anterior
       if (status !== "Salvo") setStatusProposta("Salvo");
     } finally {
+
       submitLock.current = false;
       setSaving(false);
     }

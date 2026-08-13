@@ -298,6 +298,48 @@ export type Database = {
           },
         ]
       }
+      cpo_proposal_conclusion_log: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          actor_nome: string | null
+          created_at: string
+          detalhe: string | null
+          id: string
+          numero: string | null
+          origem: string
+          proposta_id: string | null
+          resultado: string
+          status: string | null
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_nome?: string | null
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          numero?: string | null
+          origem?: string
+          proposta_id?: string | null
+          resultado: string
+          status?: string | null
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_nome?: string | null
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          numero?: string | null
+          origem?: string
+          proposta_id?: string | null
+          resultado?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
       cpo_proposals: {
         Row: {
           cliente_doc: string | null
@@ -1527,7 +1569,7 @@ export type Database = {
         }[]
       }
       cpo_conclude_proposal: {
-        Args: { _id: string; _status: string }
+        Args: { _id: string; _origem?: string; _status: string }
         Returns: {
           already_concluded: boolean
           id: string

@@ -32,6 +32,8 @@ import {
   type ResumoFiscalMeta,
 } from "@/lib/cpo-fiscal-export";
 import { useCpoConfig, useCpoNcms, useCpoProducts, useCpoUfs } from "@/hooks/use-cpo";
+import { ConclusaoLogCard } from "@/components/cpo/conclusao-log";
+
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/auditoria")({
   head: () => ({
@@ -244,7 +246,10 @@ function AuditoriaPage() {
           </div>
         </div>
 
+        <ConclusaoLogCard />
+
         {carregando && <p className="text-sm text-muted-foreground">Carregando dados de cálculo…</p>}
+
         {!carregando && !atual && (
           <p className="text-sm text-muted-foreground">Nenhuma proposta salva para auditar.</p>
         )}
