@@ -381,6 +381,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       if (focavel instanceof HTMLInputElement || focavel instanceof HTMLTextAreaElement) {
         try { focavel.select(); } catch { /* noop */ }
       }
+      // destaque momentâneo para chamar atenção ao campo
+      const original = focavel.style.transition;
+      focavel.style.transition = "box-shadow 200ms ease, border-color 200ms ease";
+      focavel.classList.add("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background", "border-primary");
+      window.setTimeout(() => {
+        focavel.classList.remove("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background", "border-primary");
+        focavel.style.transition = original;
+      }, 1200);
     }, 320);
   };
   const tentarSalvar = () => {
