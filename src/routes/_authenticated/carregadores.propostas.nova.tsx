@@ -660,6 +660,7 @@ function PropostaCpoPage() {
           const { data: res, error: rpcErr } = await supabase.rpc("cpo_conclude_proposal", {
             _id: propostaId,
             _status: status,
+            _origem: "portal",
           });
           if (rpcErr) throw rpcErr;
           const linha = Array.isArray(res) ? res[0] : res;
@@ -669,6 +670,7 @@ function PropostaCpoPage() {
             return;
           }
         }
+
 
         toast.success(concluindo ? `Pedido ${numero} concluído.` : `Proposta ${numero} atualizada.`);
         setNumeroAtual(numero);
