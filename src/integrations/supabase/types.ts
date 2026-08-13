@@ -44,6 +44,7 @@ export type Database = {
           contato_email: string | null
           contato_nome: string | null
           contato_telefone: string | null
+          contatos: Json
           contribuinte: boolean
           created_at: string
           created_by: string
@@ -75,6 +76,7 @@ export type Database = {
           contato_email?: string | null
           contato_nome?: string | null
           contato_telefone?: string | null
+          contatos?: Json
           contribuinte?: boolean
           created_at?: string
           created_by?: string
@@ -106,6 +108,7 @@ export type Database = {
           contato_email?: string | null
           contato_nome?: string | null
           contato_telefone?: string | null
+          contatos?: Json
           contribuinte?: boolean
           created_at?: string
           created_by?: string
