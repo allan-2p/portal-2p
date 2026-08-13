@@ -366,6 +366,43 @@ function AuditoriaPage() {
               </CardContent>
             </Card>
 
+            {textos && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">
+                    Texto padrão para o processo · {textos.regime}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div className="rounded-md border-l-4 border-primary bg-muted/40 p-3">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">DIFAL</p>
+                    <p className="text-justify leading-relaxed">{textos.difal}</p>
+                  </div>
+                  <div className="rounded-md border-l-4 border-primary bg-muted/40 p-3">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">ICMS-ST</p>
+                    <p className="text-justify leading-relaxed">{textos.st}</p>
+                  </div>
+                  <div className="rounded-md border-l-4 border-muted-foreground/40 bg-muted/40 p-3">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ressalva</p>
+                    <p className="text-justify leading-relaxed">{textos.ressalva}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(
+                        `${textos.difal}\n\n${textos.st}\n\n${textos.ressalva}`,
+                      );
+                      toast.success("Texto padrão copiado.");
+                    }}
+                  >
+                    Copiar texto padrão
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Versão das regras aplicadas</CardTitle>
