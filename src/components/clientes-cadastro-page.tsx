@@ -514,7 +514,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                         <button
                           type="button"
                           className="text-left text-xs text-destructive underline-offset-2 hover:underline"
-                          onClick={() => document.getElementById(`campo-${campo}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                          onClick={() => focarCampo(campo)}
                         >
                           <span className="font-medium">{rotuloCampo(campo, form.contatos ?? [])}:</span> {msg}
                         </button>
