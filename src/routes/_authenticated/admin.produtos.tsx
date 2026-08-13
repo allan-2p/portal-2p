@@ -195,6 +195,15 @@ function ProdutosPage() {
               Histórico
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={exportXlsx}
+              disabled={isLoading || filtered.length === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Excel
+            </Button>
+            <Button
               variant={audit ? "default" : "outline"}
               size="sm"
               onClick={() => setAudit((v) => !v)}
@@ -202,6 +211,7 @@ function ProdutosPage() {
               <ShieldCheck className="h-4 w-4 mr-2" />
               Auditoria
             </Button>
+
             <Button size="sm" onClick={() => syncMut.mutate()} disabled={syncMut.isPending || errosRegras.length > 0}>
               {syncMut.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
