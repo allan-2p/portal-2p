@@ -183,9 +183,24 @@ export const excluirClienteFn = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({ instancia: instanciaSchema, id: z.string().uuid() }).parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await import("./clientes-db.server");
+    const atual = await assertPodeAlterarCliente(context as any, data.instancia, data.id);
     await db.deleteCliente(data.instancia, data.id);
+    try {
+      const { recordModeration } = await import("./moderation-audit.server");
+      await recordModeration({
+        area: "clientes",
+        instanceId: data.instancia,
+        action: "delete",
+        target: String(atual?.["razao_social"] ?? data.id),
+        summary: `Cadastro de cliente excluído (${atual?.["doc"] ?? data.id})`,
+        details: { id: data.id, instancia: data.instancia },
+        actorId: context.userId,
+      });
+    } catch (err) {
+      console.error("[clientes] falha ao registrar auditoria de exclusão", err);
+    }
     return { ok: true };
   });
 
