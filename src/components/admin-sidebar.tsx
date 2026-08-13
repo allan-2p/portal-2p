@@ -4,6 +4,12 @@ import { sectionForPath } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useInstance } from "./instance-provider";
+import { IntegrationStatusDot, useIntegrationHealthMap, type IntegrationHealthItem } from "./integration-status";
+
+function slugFromTo(to: string): string | null {
+  const i = to.indexOf("#");
+  return i === -1 ? null : to.slice(i + 1);
+}
 
 /**
  * Menu lateral do ambiente de Administração. Mostra apenas os itens da seção
@@ -14,6 +20,7 @@ export function AdminSidebar({ pathname, collapsed }: { pathname: string; collap
   const navigate = useNavigate();
   const { hasFeature, defaultRoute } = useInstance();
   const current = sectionForPath(pathname);
+  const health = useIntegrationHealthMap(current?.id === "integracoes");
 
   return (
     <nav className="px-2 py-2 flex-1 overflow-y-auto">
@@ -61,7 +68,7 @@ export function AdminSidebar({ pathname, collapsed }: { pathname: string; collap
                       </button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <AdminGroupItems items={items} pathname={pathname} collapsed={collapsed} />
+                      <AdminGroupItems items={items} pathname={pathname} collapsed={collapsed} health={health} />
                     </CollapsibleContent>
                   </Collapsible>
                 ) : (
@@ -72,7 +79,7 @@ export function AdminSidebar({ pathname, collapsed }: { pathname: string; collap
                       </div>
                     )}
                     {collapsed && gi > 0 && <div className="h-px bg-border mx-1 mb-2" />}
-                    <AdminGroupItems items={items} pathname={pathname} collapsed={collapsed} />
+                    <AdminGroupItems items={items} pathname={pathname} collapsed={collapsed} health={health} />
                   </>
                 )}
               </div>
@@ -88,10 +95,12 @@ function AdminGroupItems({
   items,
   pathname,
   collapsed,
+  health,
 }: {
   items: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
   pathname: string;
   collapsed: boolean;
+  health?: { map: Map<string, IntegrationHealthItem>; isLoading: boolean };
 }) {
   return (
     <div className="space-y-0.5">
@@ -113,7 +122,12 @@ function AdminGroupItems({
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
-            {!collapsed && <span className="truncate">{i.label}</span>}
+            {!collapsed && <span className="truncate flex-1">{i.label}</span>}
+            {(() => {
+              const slug = slugFromTo(i.to);
+              if (!health || !slug) return null;
+              return <IntegrationStatusDot item={health.map.get(slug)} loading={health.isLoading} />;
+            })()}
           </Link>
         );
       })}

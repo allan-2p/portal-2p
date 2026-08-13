@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getSalesforceStatus, getSalesforceSample } from "@/lib/salesforce.functions";
+import { IntegrationStatusBadge, formatLastSync, useIntegrationHealthMap } from "@/components/integration-status";
 
 
 export const Route = createFileRoute("/_authenticated/integracoes")({
@@ -188,37 +189,45 @@ const CATALOGO: { nome: string; area: string; desc: string; status: "Ativa" | "I
 ];
 
 function CatalogoIntegracoes() {
+  const health = useIntegrationHealthMap();
+
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="px-6 py-4 border-b border-border">
-        <h2 className="font-semibold">Catálogo de integrações</h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          Serviços conectados ao Portal 2P. Novas integrações passam a aparecer nesta lista.
-        </p>
+      <div className="px-6 py-4 border-b border-border flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-semibold">Catálogo de integrações</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Serviços conectados ao Portal 2P, com status de conexão e última sincronização.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => health.refetch()} disabled={health.isFetching}>
+          <RefreshCw className={health.isFetching ? "animate-spin" : ""} />
+          Atualizar status
+        </Button>
       </div>
       <ul className="divide-y divide-border">
-        {CATALOGO.map((i) => (
-          <li id={SLUG_FOR_NAME[i.nome]} key={i.nome} className="px-6 py-3 flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-sm font-medium">{i.nome}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">{i.desc}</div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[11px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-                {i.area}
-              </span>
-              <span
-                className={
-                  i.status === "Ativa"
-                    ? "text-[11px] px-2 py-0.5 rounded-full bg-primary/15 text-primary font-medium"
-                    : "text-[11px] px-2 py-0.5 rounded-full bg-surface-2 text-muted-foreground font-medium"
-                }
-              >
-                {i.status}
-              </span>
-            </div>
-          </li>
-        ))}
+        {CATALOGO.map((i) => {
+          const slug = SLUG_FOR_NAME[i.nome];
+          const item = slug ? health.map.get(slug) : undefined;
+          return (
+            <li id={slug} key={i.nome} className="px-6 py-3 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm font-medium">{i.nome}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{i.desc}</div>
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  Última sincronização: {formatLastSync(item?.lastSync)}
+                  {item?.detail ? ` · ${item.detail}` : ""}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-[11px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                  {i.area}
+                </span>
+                <IntegrationStatusBadge item={item} loading={health.isLoading} />
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
