@@ -83,38 +83,64 @@ export async function getProducts(): Promise<SapMaterial[]> {
   }
 
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 60_000);
-  let res: Response;
+  const parser = new XMLParser({ removeNSPrefix: true, ignoreAttributes: true });
+
+  async function chamar(): Promise<any[]> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90_000);
+    let res: Response;
+    try {
+      res = await fetch(url!, {
+        method: "POST",
+        headers: {
+          "content-type": "application/soap+xml; charset=utf-8",
+          accept: "application/soap+xml, text/xml, */*",
+          authorization: auth ?? `Bearer ${token}`,
+        },
+        body: SOAP_BODY,
+        signal: controller.signal,
+      });
+    } catch (e: any) {
+      throw new Error(
+        e?.name === "AbortError"
+          ? "SAP: tempo limite excedido ao chamar listar_material."
+          : `SAP: ${String(e?.message ?? e)}`,
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+
+    const xml = await res.text();
+    if (!res.ok) throw new Error(`SAP ${res.status}: ${xml.slice(0, 300)}`);
+
+    const doc = parser.parse(xml);
+    const fault = achar(doc, "Fault");
+    if (fault) {
+      const motivo =
+        achar(fault, "Text") ?? achar(fault, "faultstring") ?? JSON.stringify(fault).slice(0, 300);
+      throw new Error(`SAP: falha na RFC listar_material — ${String(motivo)}`);
+    }
+    let items = achar(doc, "e_t_material")?.item ?? [];
+    if (!Array.isArray(items)) items = items ? [items] : [];
+    if (items.length === 0) {
+      throw new Error(
+        `SAP: resposta sem materiais (e_t_material vazio). HTTP ${res.status}, ${xml.length} bytes: ${xml
+          .replace(/\s+/g, " ")
+          .slice(0, 300)}`,
+      );
+    }
+    return items as any[];
+  }
+
+  let items: any[];
   try {
-    res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "content-type": "application/soap+xml; charset=utf-8",
-        authorization: auth ?? `Bearer ${token}`,
-      },
-      body: SOAP_BODY,
-      signal: controller.signal,
-    });
+    items = await chamar();
   } catch (e: any) {
-    throw new Error(
-      e?.name === "AbortError"
-        ? "SAP: tempo limite excedido ao chamar listar_material."
-        : `SAP: ${String(e?.message ?? e)}`,
-    );
-  } finally {
-    clearTimeout(timer);
+    // A RFC ocasionalmente devolve vazio/erro transitório: uma segunda tentativa resolve.
+    await new Promise((r) => setTimeout(r, 2_000));
+    items = await chamar();
   }
 
-  const xml = await res.text();
-  if (!res.ok) throw new Error(`SAP ${res.status}: ${xml.slice(0, 200)}`);
-
-  const doc = new XMLParser({ removeNSPrefix: true, ignoreAttributes: true }).parse(xml);
-  let items = achar(doc, "e_t_material")?.item ?? [];
-  if (!Array.isArray(items)) items = items ? [items] : [];
-  if (items.length === 0) {
-    throw new Error("SAP: resposta sem materiais (e_t_material vazio).");
-  }
 
   // Dedup por código: a RFC repete o material por centro/lista de preço.
   const map = new Map<string, SapMaterial>();
