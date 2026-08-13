@@ -744,10 +744,11 @@ function PropostaCpoPage() {
                             </div>
                           </CommandEmpty>
                           <CommandGroup>
-                            {(clientesQ.data ?? []).map((c) => (
+                            {(clientesQ.data ?? []).map((c: ClienteCadastro) => (
                               <CommandItem
-                                key={c.cliente_nome}
+                                key={c.id}
                                 value={[c.cliente_nome, c.cliente_doc, c.uf].filter(Boolean).join(" ")}
+
                                 onSelect={() => {
                                   aplicarCliente(c);
                                   setOpenCli(false);
