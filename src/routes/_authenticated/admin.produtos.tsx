@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listSapProdutos, listSapSyncRuns, syncSapProdutos } from "@/lib/sap-produtos.functions";
-import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2 } from "lucide-react";
+import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download } from "lucide-react";
 import {
   classificarDetalhado,
   validarRegras,
