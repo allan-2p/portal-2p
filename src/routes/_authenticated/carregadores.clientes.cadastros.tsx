@@ -220,14 +220,15 @@ function CadastrosPage() {
 
   const salvar = useMutation({
     mutationFn: async () => {
+      const payload = comLegado(form) as unknown as Record<string, unknown>;
       if (editId) {
-        const { error } = await supabase.from("cpo_clientes").update(form).eq("id", editId);
+        const { error } = await supabase.from("cpo_clientes").update(payload).eq("id", editId);
         if (error) throw error;
       } else {
         const { data: u } = await supabase.auth.getUser();
         const uid = u.user?.id;
         if (!uid) throw new Error("Sessão expirada. Faça login novamente.");
-        const { error } = await supabase.from("cpo_clientes").insert({ ...form, created_by: uid });
+        const { error } = await supabase.from("cpo_clientes").insert({ ...payload, created_by: uid } as never);
         if (error) throw error;
       }
     },
