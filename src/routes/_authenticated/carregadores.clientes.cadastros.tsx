@@ -367,7 +367,7 @@ function CadastrosPage() {
                       <SelectContent>{REGIMES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                     </Select>
                   </F>
-                  <F label={form.contribuinte ? "Inscrição Estadual *" : "Inscrição Estadual"}><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
+                  <F label={form.contribuinte ? "Inscrição Estadual *" : "Inscrição Estadual"} id="campo-ie" error={erros.ie}><Input value={form.ie ?? ""} onChange={(e) => set("ie", e.target.value)} disabled={!form.contribuinte} placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"} /></F>
                   
                   <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                     <div>
@@ -385,14 +385,14 @@ function CadastrosPage() {
                 </Section>
 
                 <Section title="Responsável">
-                  <F label="Nome *"><Input value={form.contato_nome ?? ""} onChange={(e) => set("contato_nome", e.target.value)} /></F>
+                  <F label="Nome *" id="campo-contato_nome" error={erros.contato_nome}><Input value={form.contato_nome ?? ""} onChange={(e) => set("contato_nome", e.target.value)} /></F>
                   <F label="Cargo"><Input value={form.contato_cargo ?? ""} onChange={(e) => set("contato_cargo", e.target.value)} /></F>
-                  <F label="E-mail"><Input value={form.contato_email ?? ""} onChange={(e) => set("contato_email", e.target.value)} /></F>
-                  <F label="Telefone"><Input value={form.contato_telefone ?? ""} onChange={(e) => set("contato_telefone", e.target.value)} /></F>
+                  <F label="E-mail" id="campo-contato_email" error={erros.contato_email}><Input value={form.contato_email ?? ""} onChange={(e) => set("contato_email", e.target.value)} /></F>
+                  <F label="Telefone" id="campo-contato_telefone" error={erros.contato_telefone}><Input value={form.contato_telefone ?? ""} onChange={(e) => set("contato_telefone", e.target.value)} /></F>
                 </Section>
 
                 <Section title="Endereço">
-                  <F label="CEP *">
+                  <F label="CEP *" id="campo-cep" error={erros.cep}>
                     <CepInput
                       value={form.cep ?? ""}
                       onChange={(v: string) => set("cep", v)}
