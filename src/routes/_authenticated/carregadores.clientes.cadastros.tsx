@@ -19,6 +19,7 @@ import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 import { Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye, ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { ClientHistoryTab } from "@/components/client-history-tab";
+import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
