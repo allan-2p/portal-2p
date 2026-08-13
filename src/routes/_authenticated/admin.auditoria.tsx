@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { validateAdminVisibility } from "@/lib/instance-consistency";
 
 export const Route = createFileRoute("/_authenticated/admin/auditoria")({
   head: () => ({
@@ -188,6 +189,8 @@ function AuditoriaPage() {
           </div>
         </div>
 
+        <VisibilityCheck />
+
         <div className="grid gap-3 sm:grid-cols-4">
           <Stat label="Telas mapeadas" value={rows.length} />
           <Stat label="Usuários" value={users.length} icon={<Users className="h-4 w-4" />} />
@@ -328,5 +331,31 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
     >
       {children}
     </button>
+  );
+}
+
+/** Validação automática: opções do Grupo 2P visíveis igualmente em todas as instâncias. */
+function VisibilityCheck() {
+  const report = useMemo(() => validateAdminVisibility(), []);
+  return (
+    <div className={cn("rounded-xl border p-4", report.ok ? "border-border bg-surface" : "border-destructive/40 bg-destructive/5")}>
+      <div className="flex items-center gap-2 text-sm font-medium">
+        {report.ok ? <ShieldCheck className="h-4 w-4 text-success" /> : <AlertTriangle className="h-4 w-4 text-destructive" />}
+        Consistência entre instâncias
+        <Badge variant="outline" className="ml-1">{report.checked} verificações</Badge>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        {report.ok
+          ? "Todas as opções do Grupo 2P disponíveis no Solar aparecem igualmente em Carregadores e Marketing para administradores."
+          : "Divergências de visibilidade encontradas entre as instâncias:"}
+      </p>
+      {!report.ok && (
+        <ul className="mt-2 space-y-1 text-xs text-destructive">
+          {report.issues.map((i, idx) => (
+            <li key={idx}>• {i.message}</li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
