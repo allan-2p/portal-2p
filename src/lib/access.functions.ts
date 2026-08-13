@@ -7,6 +7,43 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Forbidden: admin role required");
 }
 
+
+/** Telas herdadas dos perfis de permissão vinculados ao usuário. */
+async function profileGrantsFor(client: any, userId: string) {
+  const { data: links } = await client
+    .from("user_permission_profiles")
+    .select("profile_id")
+    .eq("user_id", userId);
+  const ids = (links ?? []).map((r: any) => r.profile_id as string);
+  if (!ids.length) return [] as { instance_id: string; feature_key: string }[];
+  const { data: feats } = await client
+    .from("permission_profile_features")
+    .select("instance_id, feature_key")
+    .in("profile_id", ids);
+  return (feats ?? []).map((r: any) => ({
+    instance_id: r.instance_id as string,
+    feature_key: r.feature_key as string,
+  }));
+}
+
+function mergeAccess(
+  instances: string[],
+  granted: { instance_id: string; feature_key: string }[],
+  fromProfiles: { instance_id: string; feature_key: string }[],
+) {
+  const seen = new Set(granted.map((g) => `${g.instance_id}::${g.feature_key}`));
+  const all = [...granted];
+  for (const g of fromProfiles) {
+    const k = `${g.instance_id}::${g.feature_key}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    all.push(g);
+  }
+  const inst = new Set(instances);
+  for (const g of fromProfiles) inst.add(g.instance_id);
+  return { instances: [...inst], granted: all };
+}
+
 // ---- User self reads ---- //
 
 export type UserAccess = {
@@ -30,13 +67,15 @@ export const getMyAccess = createServerFn({ method: "GET" })
         .eq("user_id", context.userId),
       context.supabase.rpc("is_admin"),
     ]);
-    return {
-      instances: (inst ?? []).map((r: any) => r.instance_id as string),
-      granted: (perms ?? [])
+    const fromProfiles = await profileGrantsFor(context.supabase, context.userId);
+    const merged = mergeAccess(
+      (inst ?? []).map((r: any) => r.instance_id as string),
+      (perms ?? [])
         .filter((r: any) => r.allowed === true)
         .map((r: any) => ({ instance_id: r.instance_id, feature_key: r.feature_key })),
-      is_admin: !!isAdmin,
-    };
+      fromProfiles,
+    );
+    return { ...merged, is_admin: !!isAdmin };
   });
 
 // ---- Admin: listar todos usuários + acessos ---- //
@@ -178,13 +217,15 @@ export const adminGetUserAccess = createServerFn({ method: "GET" })
         .eq("user_id", data.user_id),
       supabaseAdmin.from("user_roles").select("role").eq("user_id", data.user_id),
     ]);
-    return {
-      instances: (inst ?? []).map((r: any) => r.instance_id as string),
-      granted: (perms ?? [])
+    const fromProfiles = await profileGrantsFor(supabaseAdmin, data.user_id);
+    const merged = mergeAccess(
+      (inst ?? []).map((r: any) => r.instance_id as string),
+      (perms ?? [])
         .filter((r: any) => r.allowed === true)
         .map((r: any) => ({ instance_id: r.instance_id, feature_key: r.feature_key })),
-      is_admin: (roles ?? []).some((r: any) => r.role === "admin"),
-    };
+      fromProfiles,
+    );
+    return { ...merged, is_admin: (roles ?? []).some((r: any) => r.role === "admin") };
   });
 
 // ---- Admin: aplicar perfil de permissão (substitui grants da instância) ---- //

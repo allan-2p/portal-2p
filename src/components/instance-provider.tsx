@@ -129,12 +129,14 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     (path: string) => {
       // resolve rota atual → feature key
       // tenta match exato, depois prefixo mais longo
+      // Administrador acessa todas as telas, sem exceção.
+      if (isAdmin) return true;
       const keys = Object.keys(ROUTE_FEATURE).sort((a, b) => b.length - a.length);
       const match = keys.find((k) => path === k || path.startsWith(k + "/"));
       if (!match) return true;
       return hasFeature(ROUTE_FEATURE[match]);
     },
-    [hasFeature],
+    [hasFeature, isAdmin],
   );
 
   // Página inicial: sempre a home da instância ativa.
