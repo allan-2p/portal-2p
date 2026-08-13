@@ -146,7 +146,7 @@ function PropostaCpoPage() {
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
   const [revisao, setRevisao] = useState<null | "salvar" | "concluir">(null);
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewAberto, setPreviewAberto] = useState(false);
   const carregado = useRef(false);
 
   // Limpa qualquer rascunho local antigo ao abrir uma nova proposta
@@ -435,51 +435,59 @@ function PropostaCpoPage() {
   }
 
 
+  // HTML do PDF derivado do estado atual: qualquer mudança em itens, frete,
+  // impostos, margem ou comissão reflete imediatamente na prévia e no download.
+  const pdfHtml = useMemo(
+    () =>
+      buildPropostaPdfHtml({
+        cliente: {
+          nome: state.nome,
+          doc: state.doc,
+          ie: state.ie,
+          email: state.email,
+          telefone: state.telefone,
+          uf: state.uf,
+          contribuinte: state.contribuinte,
+        },
+        itens: state.itens
+          .filter((i) => i.produtoId)
+          .map((i) => ({
+            codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
+            nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
+            qtd: i.qtd,
+            valor: i.valor,
+          })),
+        freteMod: state.freteMod,
+        freteValor: state.freteValor,
+        observacoes: state.observacoes,
+        impostos: {
+          ipiRate: config.ipi,
+          ipiValor: d.ipiValor,
+          icmsRate: d.icmsRate,
+          icms: d.icms,
+          pisCofinsRate: config.pis_cofins,
+          pisCofins: d.pisCofins,
+        },
+        totalNf: d.valorItens + state.freteValor,
+        valorTotal: d.valorTotalProposta,
+        valor: d.valor,
+        interno: {
+          mb: d.mb,
+          mbPct: d.mbPct,
+          comissao: d.comValor,
+          comissaoPct: d.comPct,
+        },
+      }),
+    [state, produtos, config, d],
+  );
+
   function montarPdfHtml() {
-    return buildPropostaPdfHtml({
-      cliente: {
-        nome: state.nome,
-        doc: state.doc,
-        ie: state.ie,
-        email: state.email,
-        telefone: state.telefone,
-        uf: state.uf,
-        contribuinte: state.contribuinte,
-      },
-      itens: state.itens
-        .filter((i) => i.produtoId)
-        .map((i) => ({
-          codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
-          nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
-          qtd: i.qtd,
-          valor: i.valor,
-        })),
-      freteMod: state.freteMod,
-      freteValor: state.freteValor,
-      observacoes: state.observacoes,
-      impostos: {
-        ipiRate: config.ipi,
-        ipiValor: d.ipiValor,
-        icmsRate: d.icmsRate,
-        icms: d.icms,
-        pisCofinsRate: config.pis_cofins,
-        pisCofins: d.pisCofins,
-      },
-      totalNf: d.valorItens + state.freteValor,
-      valorTotal: d.valorTotalProposta,
-      valor: d.valor,
-      interno: {
-        mb: d.mb,
-        mbPct: d.mbPct,
-        comissao: d.comValor,
-        comissaoPct: d.comPct,
-      },
-    });
+    return pdfHtml;
   }
 
   function abrirPreviewPdf() {
     if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de visualizar o PDF.");
-    setPreviewHtml(montarPdfHtml());
+    setPreviewAberto(true);
   }
 
   function exportarPdf() {
@@ -1209,7 +1217,7 @@ function PropostaCpoPage() {
         </div>
 
         {/* Prévia do PDF atualizado */}
-        <Dialog open={previewHtml !== null} onOpenChange={(o) => !o && setPreviewHtml(null)}>
+        <Dialog open={previewAberto} onOpenChange={setPreviewAberto}>
           <DialogContent className="max-w-5xl">
             <DialogHeader>
               <DialogTitle>Prévia do PDF da proposta</DialogTitle>
@@ -1220,17 +1228,17 @@ function PropostaCpoPage() {
             <div className="rounded-xl border border-border overflow-hidden bg-white">
               <iframe
                 title="Prévia do PDF da proposta"
-                srcDoc={previewHtml ?? ""}
+                srcDoc={pdfHtml}
                 className="w-full h-[65vh]"
               />
             </div>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setPreviewHtml(null)}>
+              <Button variant="outline" onClick={() => setPreviewAberto(false)}>
                 Continuar editando
               </Button>
               <Button
                 onClick={() => {
-                  setPreviewHtml(null);
+                  setPreviewAberto(false);
                   exportarPdf();
                 }}
                 className="gap-2"
