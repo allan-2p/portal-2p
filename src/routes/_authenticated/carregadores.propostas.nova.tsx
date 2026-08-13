@@ -1427,22 +1427,38 @@ function PropostaCpoPage() {
           </div>
         </div>
 
-        {/* Prévia do PDF atualizado */}
+        {/* Proposta em PDF */}
         <Dialog open={previewAberto} onOpenChange={setPreviewAberto}>
           <DialogContent className="max-w-5xl">
             <DialogHeader>
-              <DialogTitle>Prévia do PDF da proposta</DialogTitle>
+              <DialogTitle>Proposta em PDF</DialogTitle>
               <DialogDescription>
                 Documento gerado com os dados atuais. Revise antes de baixar ou concluir o pedido.
               </DialogDescription>
             </DialogHeader>
+            <div className="flex items-center justify-between rounded-xl border border-border px-4 py-2.5">
+              <div>
+                <div className="text-sm font-medium">Logomarca</div>
+                <div className="text-xs text-muted-foreground">
+                  {logoCliente
+                    ? "Exibir a logomarca do cliente no cabeçalho da proposta."
+                    : "Este cliente ainda não possui logomarca no cadastro."}
+                </div>
+              </div>
+              <Switch
+                checked={usarLogoCliente && !!logoCliente}
+                disabled={!logoCliente}
+                onCheckedChange={setUsarLogoCliente}
+              />
+            </div>
             <div className="rounded-xl border border-border overflow-hidden bg-white">
               <iframe
-                title="Prévia do PDF da proposta"
+                title="Proposta em PDF"
                 srcDoc={pdfHtml}
                 className="w-full h-[65vh]"
               />
             </div>
+
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setPreviewAberto(false)}>
                 Continuar editando
