@@ -103,6 +103,7 @@ type Cliente = {
   contato_cargo: string | null;
   contato_email: string | null;
   contato_telefone: string | null;
+  contatos: Contato[];
   cep: string | null;
   logradouro: string | null;
   numero: string | null;
@@ -120,10 +121,12 @@ const vazio = (): Omit<Cliente, "id"> => ({
   razao_social: "", nome_fantasia: "", doc: "", ie: "", contribuinte: false,
   regime_tributario: "Simples Nacional", email: "", telefone: "", site: "",
   contato_nome: "", contato_cargo: "", contato_email: "", contato_telefone: "",
+  contatos: contatosPadrao(),
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "",
   uf: "SP", condicao_pagamento: "",
   observacoes: "", ativo: true,
 } as Omit<Cliente, "id">);
+
 
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
 const soDigitos = (v: string) => v.replace(/\D/g, "");
