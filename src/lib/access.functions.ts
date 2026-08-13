@@ -87,7 +87,7 @@ export const getMyAccess = createServerFn({ method: "GET" })
         .map((r: any) => ({ instance_id: r.instance_id, feature_key: r.feature_key })),
       fromProfiles,
     );
-    return { ...merged, is_admin: !!isAdmin };
+    return { ...merged, is_admin: !!isAdmin || !!fromProfiles.full_access };
   });
 
 // ---- Admin: listar todos usuários + acessos ---- //
