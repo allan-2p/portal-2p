@@ -1478,6 +1478,15 @@ function PropostaCpoPage() {
             </DialogHeader>
 
             <div className="space-y-3 text-sm max-h-[55vh] overflow-y-auto pr-1">
+              {revisao === "concluir" ? (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between">
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Status do pedido</span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                    Aguardando Pagamento
+                  </span>
+                </div>
+              ) : null}
               <div className="rounded-xl border border-border p-3 space-y-1">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Cliente</p>
                 <p className="font-semibold">{state.nome}</p>
