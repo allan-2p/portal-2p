@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/app-layout";
@@ -295,9 +295,19 @@ function ProdutosPage() {
       await setVis({ data: { id, visibilidade: v } });
       toast.success(`Visibilidade alterada para “${VIS_LABELS[v]}”.`);
       refetch();
+      propagar();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao alterar visibilidade.");
     }
+  };
+
+  const qc = useQueryClient();
+  /** Propaga mudanças do SAP para as telas de Gestão de Produtos (Carregadores/Solar). */
+  const propagar = () => {
+    qc.invalidateQueries({ queryKey: ["cpo-products"] });
+    qc.invalidateQueries({ queryKey: ["cpo-products-admin"] });
+    qc.invalidateQueries({ queryKey: ["sap-catalogo-completo"] });
+    qc.invalidateQueries({ queryKey: ["produtos"] });
   };
 
   const { data, isLoading, isFetching, refetch } = useQuery({
@@ -333,6 +343,7 @@ function ProdutosPage() {
       );
       refetch();
       runsQuery.refetch();
+      propagar();
     },
     onError: (e: any) => {
       const msg = String(e?.message ?? e);
