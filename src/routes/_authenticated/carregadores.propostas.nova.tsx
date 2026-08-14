@@ -1248,7 +1248,13 @@ function PropostaCpoPage() {
                 placeholder="Observações da proposta"
                 onChange={(e) => set("observacoes", e.target.value)}
               />
+              {avisoUsoConsumo ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Este aviso será incluído automaticamente nas observações da proposta: “{avisoUsoConsumo}”
+                </p>
+              ) : null}
             </Field>
+
             </>
             ) : null}
 
