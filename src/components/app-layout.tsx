@@ -75,8 +75,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // 2) senão, redireciona para a primeira rota válida da instância.
   useEffect(() => {
     if (instanceLoading) return;
-    if (isRouteAllowed(pathname)) return;
     const feat = featureForPath(pathname);
+    // A rota pertence a outra unidade (ex.: /carregadores/metas com a Solar ativa):
+    // troca a instância para manter o menu e o tema coerentes — inclusive para admins.
+    if (feat && !INSTANCES[instance].routes.includes(feat)) {
+      const target = instanceForFeature(feat, allowed);
+      if (target && target !== instance) {
+        setInstance(target);
+        return;
+      }
+    }
+    if (isRouteAllowed(pathname)) return;
     const target = feat ? instanceForFeature(feat, allowed) : null;
     if (target && target !== instance) {
       setInstance(target);
@@ -88,6 +97,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instance, instanceLoading, pathname, defaultRoute, allowed]);
+
 
   const [showBar, setShowBar] = useState(false);
   useEffect(() => {
