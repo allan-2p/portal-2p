@@ -118,6 +118,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const initials = (profile?.full_name ?? user?.email ?? "U")
     .split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
+  // Engrenagem de administração: visível para admin OU para quem tem alguma tela
+  // de administração liberada no perfil de permissão.
+  const visibleAdminSections = ADMIN_SECTIONS.filter((s) =>
+    s.groups.some((g) => g.items.some((i) => !i.feature || hasFeature(i.feature))),
+  );
+  const canSeeAdminMenu = hasRole("admin") || visibleAdminSections.length > 0;
+
+
+
   async function handleSignOut() {
     await logUserActivity({ data: { event: "logout" } }).catch(() => {});
     await supabase.auth.signOut();
@@ -423,7 +432,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <ThemeToggle />
               <NotificationsDropdown />
 
-              {hasRole("admin") && (
+              {canSeeAdminMenu && (
                 <div className="relative">
                   <button
                     onClick={() => setAdminMenuOpen((v) => !v)}
@@ -448,10 +457,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
                           Grupo 2P • Administração
                         </div>
-                        {ADMIN_SECTIONS.map((s) => (
+                        {visibleAdminSections.map((s) => (
                           <AdminMenuLink
                             key={s.id}
-                            to={s.home}
+                            to={
+                              hasRole("admin")
+                                ? s.home
+                                : (s.groups
+                                    .flatMap((g) => g.items)
+                                    .find((i) => !i.feature || hasFeature(i.feature))?.to ?? s.home)
+                            }
                             label={s.label}
                             icon={s.icon}
                             onClick={() => setAdminMenuOpen(false)}
