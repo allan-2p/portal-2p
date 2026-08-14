@@ -668,16 +668,34 @@ function UserModal({
     password: "",
     regime_contratacao: "CLT" as Regime,
     organizacao: "solar" as Org,
-    role: "vendedor" as AppRole,
-
+    profile_id: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const listProfilesFn = useServerFn(adminListPermissionProfiles);
+  const [permProfiles, setPermProfiles] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    let alive = true;
+    listProfilesFn()
+      .then((res) => {
+        if (!alive) return;
+        setPermProfiles(res.profiles.map((p) => ({ id: p.id, name: p.name })));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          if (!form.profile_id) {
+            toast.error("Selecione o perfil do usuário.");
+            return;
+          }
           setSubmitting(true);
           try {
             const payload =
@@ -690,8 +708,7 @@ function UserModal({
                     equipe: form.equipe || null,
                     regime_contratacao: form.regime_contratacao,
                     organizacao: form.organizacao,
-                    role: form.role,
-
+                    profile_id: form.profile_id,
                   };
             await onSubmit(payload);
           } catch (e) {
@@ -737,10 +754,16 @@ function UserModal({
             <input value={form.equipe} onChange={(e) => setForm({ ...form, equipe: e.target.value })} className="input" />
           </Field>
         </div>
-        <Field label="Papel">
-          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as AppRole })} className="input">
-            {ROLES.map((r) => (
-              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+        <Field label="Perfil">
+          <select
+            required
+            value={form.profile_id}
+            onChange={(e) => setForm({ ...form, profile_id: e.target.value })}
+            className="input"
+          >
+            <option value="">Selecione o perfil…</option>
+            {permProfiles.map((p) => (
+              <option key={p.id} value={p.name ? p.id : p.id}>{p.name}</option>
             ))}
           </select>
         </Field>
