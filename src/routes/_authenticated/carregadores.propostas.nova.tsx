@@ -246,6 +246,9 @@ function PropostaCpoPage() {
         uf: data.uf,
         contribuinte: data.contribuinte,
         finalidadeUso: ((data.finalidade_uso as CpoState["finalidadeUso"]) ?? "uso_consumo"),
+        indicacao: !!(data as any).indicacao,
+        padrinhoId: ((data as any).padrinho_id as string | null) ?? null,
+        padrinhoNome: ((data as any).padrinho_nome as string | null) ?? "",
         freteMod: (data.frete_mod === "CIF" || data.frete_mod === "DEDICADO"
           ? data.frete_mod
           : "FOB") as CpoFreteMod,
@@ -776,6 +779,8 @@ function PropostaCpoPage() {
           contribuinte: state.contribuinte,
           regimeTributario: state.regimeTributario ?? null,
           finalidadeUso: state.finalidadeUso,
+          indicacao: state.indicacao,
+          padrinhoId: state.indicacao ? state.padrinhoId : null,
           freteMod: state.freteMod,
           freteValor: money2(state.freteValor),
           observacoes: observacoesFinal.trim() || null,
