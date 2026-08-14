@@ -7,6 +7,7 @@ import { AlertTriangle, KanbanSquare, List, Loader2, Search, Sparkles } from "lu
 import { cn } from "@/lib/utils";
 import { VendedorFilter } from "@/components/vendedor-filter";
 import { propostaStatusStyle } from "@/lib/proposta-status";
+import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { getSalesforcePedidos, PEDIDO_STATUS, type PedidoStatus, type SalesforceOppRow } from "@/lib/salesforce.functions";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
 
@@ -212,7 +213,13 @@ function KanbanView({ data }: { data: Pedido[] }) {
 }
 
 function ListView({ data }: { data: Pedido[] }) {
+  const counts = data.reduce<Record<string, number>>((acc, o) => {
+    acc[o.status] = (acc[o.status] ?? 0) + 1;
+    return acc;
+  }, {});
   return (
+    <div className="space-y-3">
+    <StatusLegend statuses={PEDIDO_STATUS} counts={counts} />
     <div className="glass rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -221,7 +228,7 @@ function ListView({ data }: { data: Pedido[] }) {
               <th className="text-left px-4 py-3">Código</th>
               <th className="text-left px-4 py-3">Pedido</th>
               <th className="text-left px-4 py-3">Cliente</th>
-              <th className="text-left px-4 py-3">Status</th>
+              <th className="text-center px-4 py-3">Status</th>
               <th className="text-left px-4 py-3">Vendedor</th>
               <th className="text-left px-4 py-3">Fechamento</th>
               <th className="text-right px-4 py-3">Valor</th>
@@ -233,13 +240,8 @@ function ListView({ data }: { data: Pedido[] }) {
                 <td className="px-4 py-3 font-medium">{o.code}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.title}</td>
                 <td className="px-4 py-3">{o.client}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className="text-[11px] px-2 py-0.5 rounded font-medium"
-                    style={{ backgroundColor: STATUS_STYLE[o.status].bg, color: STATUS_STYLE[o.status].fg }}
-                  >
-                    {o.status}
-                  </span>
+                <td className="px-4 py-3 text-center">
+                  <StatusDot status={o.status} />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{o.owner ?? "—"}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.closing}</td>

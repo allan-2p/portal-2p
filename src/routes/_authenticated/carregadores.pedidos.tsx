@@ -10,6 +10,7 @@ import { fmtBRL } from "@/lib/cpo";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 import { PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
+import { StatusLegend, StatusPicker } from "@/components/proposta-status-ui";
 
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   head: () => ({
@@ -212,7 +213,13 @@ function KanbanView({ data }: { data: Pedido[] }) {
 }
 
 function ListView({ data, onStatus }: { data: Pedido[]; onStatus: (id: string, s: PedidoStatus) => void }) {
+  const counts = data.reduce<Record<string, number>>((acc, o) => {
+    acc[o.status] = (acc[o.status] ?? 0) + 1;
+    return acc;
+  }, {});
   return (
+    <div className="space-y-3">
+    <StatusLegend statuses={PEDIDO_STATUS} counts={counts} />
     <div className="glass rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -221,7 +228,7 @@ function ListView({ data, onStatus }: { data: Pedido[]; onStatus: (id: string, s
               <th className="text-left px-4 py-3">Código</th>
               <th className="text-left px-4 py-3">Pedido</th>
               <th className="text-left px-4 py-3">Cliente</th>
-              <th className="text-left px-4 py-3">Status</th>
+              <th className="text-center px-4 py-3">Status</th>
               <th className="text-left px-4 py-3">UF</th>
               <th className="text-left px-4 py-3">Data</th>
               <th className="text-right px-4 py-3">Valor</th>
@@ -233,17 +240,13 @@ function ListView({ data, onStatus }: { data: Pedido[]; onStatus: (id: string, s
                 <td className="px-4 py-3 font-medium">{o.code}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.title}</td>
                 <td className="px-4 py-3">{o.client}</td>
-                <td className="px-4 py-3">
-                  <select
+                <td className="px-4 py-3 text-center">
+                  <StatusPicker
+                    compact
                     value={o.status}
-                    onChange={(e) => onStatus(o.id, e.target.value as PedidoStatus)}
-                    className="text-[11px] px-2 py-1 rounded font-medium border-0 outline-none"
-                    style={{ backgroundColor: STATUS_STYLE[o.status].bg, color: STATUS_STYLE[o.status].fg }}
-                  >
-                    {PEDIDO_STATUS.map((s) => (
-                      <option key={s} value={s} className="bg-background text-foreground">{s}</option>
-                    ))}
-                  </select>
+                    options={PEDIDO_STATUS}
+                    onChange={(v) => onStatus(o.id, v as PedidoStatus)}
+                  />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{o.uf}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.closing}</td>
