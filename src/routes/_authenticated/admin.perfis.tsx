@@ -258,7 +258,26 @@ function PerfisPage() {
           )}
         </div>
 
-
+        <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
+          {(
+            [
+              ["perfis", "Perfis e telas"],
+              ["matriz", "Matriz de permissões"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+                tab === id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
