@@ -54,12 +54,12 @@ export const PROPOSTA_STATUS_STYLE: Record<PropostaStatus, PropostaStatusStyle> 
     bg: "#1E3A8A", fg: "#EFF6FF",
   },
   "Coletado": {
-    dot: "bg-[#0F766E]", text: "text-[#0F766E]", chip: "bg-[#0F766E] text-[#ECFDF5]",
-    bg: "#0F766E", fg: "#ECFDF5",
+    dot: "bg-[#16A34A]", text: "text-[#16A34A]", chip: "bg-[#16A34A] text-[#F0FDF4]",
+    bg: "#16A34A", fg: "#F0FDF4",
   },
   "Entregue": {
-    dot: "bg-[#15803D]", text: "text-[#15803D]", chip: "bg-[#15803D] text-[#F0FDF4]",
-    bg: "#15803D", fg: "#F0FDF4",
+    dot: "bg-[#166534]", text: "text-[#166534]", chip: "bg-[#166534] text-[#F0FDF4]",
+    bg: "#166534", fg: "#F0FDF4",
   },
   "Cancelado": {
     dot: "bg-[#B91C1C]", text: "text-[#B91C1C]", chip: "bg-[#B91C1C] text-[#FEF2F2]",

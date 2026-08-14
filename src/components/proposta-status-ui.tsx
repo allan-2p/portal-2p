@@ -55,16 +55,14 @@ export function StatusDot({
   );
 }
 
-/** Legenda horizontal — opcionalmente clicável para filtrar por status. */
+/** Legenda horizontal minimalista — opcionalmente clicável para filtrar por status. */
 export function StatusLegend({
   statuses = PROPOSTA_STATUS as unknown as string[],
-  counts,
   active,
   onToggle,
   className,
 }: {
   statuses?: readonly string[];
-  counts?: Record<string, number>;
   active?: string[] | null;
   onToggle?: (status: string) => void;
   className?: string;
@@ -73,14 +71,11 @@ export function StatusLegend({
   return (
     <div
       className={cn(
-        "glass rounded-xl px-3 py-2 flex items-center gap-x-4 gap-y-2 flex-wrap text-xs",
+        "flex items-center gap-x-4 gap-y-2 flex-wrap text-xs",
         className,
       )}
       aria-label="Legenda de status"
     >
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">
-        Status
-      </span>
       {statuses.map((s) => {
         const st = propostaStatusStyle(s);
         const isActive = !active || active.length === 0 || active.includes(s);
@@ -102,11 +97,6 @@ export function StatusLegend({
               style={{ backgroundColor: st.bg }}
             />
             <span className="text-muted-foreground">{s}</span>
-            {counts?.[s] !== undefined && (
-              <span className="text-[10px] font-semibold text-foreground/70 tabular-nums">
-                {counts[s]}
-              </span>
-            )}
           </Cmp>
         );
       })}
