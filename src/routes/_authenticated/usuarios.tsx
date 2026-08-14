@@ -28,9 +28,9 @@ import {
 import { toast } from "sonner";
 
 import {
-  Loader2, UserPlus, Shield, Camera, Cloud, Pencil, Stethoscope, VenetianMask,
+  Loader2, UserPlus, Shield, Camera, Cloud, Pencil, Stethoscope, LogIn,
 } from "lucide-react";
-import { useSimulation } from "@/components/simulation";
+import { adminImpersonateUser } from "@/lib/access.functions";
 import { UserDetailSheet } from "@/components/user-detail-sheet";
 import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
