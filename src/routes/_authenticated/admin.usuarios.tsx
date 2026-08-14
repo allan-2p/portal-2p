@@ -36,7 +36,7 @@ import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
-export const Route = createFileRoute("/_authenticated/usuarios")({
+export const Route = createFileRoute("/_authenticated/admin/usuarios")({
   head: () => ({
     meta: [
       { title: "Usuários — Portal 2P" },
@@ -51,9 +51,9 @@ export const Route = createFileRoute("/_authenticated/usuarios")({
         content:
           "Cadastre, edite e controle o acesso dos usuários do Portal 2P por organização e status.",
       },
-      { property: "og:url", content: "/usuarios" },
+      { property: "og:url", content: "/admin/usuarios" },
     ],
-    links: [{ rel: "canonical", href: "/usuarios" }],
+    links: [{ rel: "canonical", href: "/admin/usuarios" }],
   }),
 
   component: () => (

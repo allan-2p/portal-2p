@@ -10,7 +10,7 @@ import { propostaStatusStyle } from "@/lib/proposta-status";
 import { getSalesforcePedidos, PEDIDO_STATUS, type PedidoStatus, type SalesforceOppRow } from "@/lib/salesforce.functions";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
 
-export const Route = createFileRoute("/_authenticated/pedidos")({
+export const Route = createFileRoute("/_authenticated/solar/pedidos")({
   head: () => ({
     meta: [
       { title: "Pedidos — Portal 2P" },
@@ -25,9 +25,9 @@ export const Route = createFileRoute("/_authenticated/pedidos")({
         content:
           "Acompanhe os pedidos em Kanban ou lista, com status, valores e responsáveis por vendedor.",
       },
-      { property: "og:url", content: "/pedidos" },
+      { property: "og:url", content: "/solar/pedidos" },
     ],
-    links: [{ rel: "canonical", href: "/pedidos" }],
+    links: [{ rel: "canonical", href: "/solar/pedidos" }],
   }),
 
   component: PedidosPage,

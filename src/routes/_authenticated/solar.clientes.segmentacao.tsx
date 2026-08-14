@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/select";
 
 
-export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
+export const Route = createFileRoute("/_authenticated/solar/clientes/segmentacao")({
   head: () => ({ meta: [{ title: "Perfil de Cliente — Portal 2P" }] }),
   component: SegmentacaoPage,
 });
@@ -706,7 +706,7 @@ function SegmentacaoPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate({ to: "/clientes/perfil", search: { account: c.id } });
+                                navigate({ to: "/solar/clientes/perfil", search: { account: c.id } });
                               }}
                               className="p-1.5 rounded hover:bg-primary/15 text-muted-foreground hover:text-primary"
                               title="Abrir perfil do cliente"

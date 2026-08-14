@@ -16,22 +16,20 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
-import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
-import { Route as AuthenticatedPedidosRouteImport } from './routes/_authenticated/pedidos'
-import { Route as AuthenticatedOrcamentosRouteImport } from './routes/_authenticated/orcamentos'
 import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
-import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
-import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authenticated/dashboards'
-import { Route as AuthenticatedCuponsRouteImport } from './routes/_authenticated/cupons'
-import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
-import { Route as AuthenticatedAtlasRouteImport } from './routes/_authenticated/atlas'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
 import { Route as AuthenticatedCarregadoresIndexRouteImport } from './routes/_authenticated/carregadores.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedSolarTarefasRouteImport } from './routes/_authenticated/solar.tarefas'
+import { Route as AuthenticatedSolarPropostasRouteImport } from './routes/_authenticated/solar.propostas'
+import { Route as AuthenticatedSolarPedidosRouteImport } from './routes/_authenticated/solar.pedidos'
+import { Route as AuthenticatedSolarDashboardsRouteImport } from './routes/_authenticated/solar.dashboards'
+import { Route as AuthenticatedSolarCuponsRouteImport } from './routes/_authenticated/solar.cupons'
+import { Route as AuthenticatedSolarClientesRouteImport } from './routes/_authenticated/solar.clientes'
+import { Route as AuthenticatedSolarAtlasRouteImport } from './routes/_authenticated/solar.atlas'
 import { Route as AuthenticatedMarketingTrafegoRouteImport } from './routes/_authenticated/marketing.trafego'
 import { Route as AuthenticatedMarketingSocialRouteImport } from './routes/_authenticated/marketing.social'
 import { Route as AuthenticatedMarketingPreVendasRouteImport } from './routes/_authenticated/marketing.pre-vendas'
@@ -39,13 +37,6 @@ import { Route as AuthenticatedMarketingMetasRouteImport } from './routes/_authe
 import { Route as AuthenticatedMarketingGargaloRouteImport } from './routes/_authenticated/marketing.gargalo'
 import { Route as AuthenticatedMarketingCohortRouteImport } from './routes/_authenticated/marketing.cohort'
 import { Route as AuthenticatedMarketingCacRouteImport } from './routes/_authenticated/marketing.cac'
-import { Route as AuthenticatedIntegracoesSlugRouteImport } from './routes/_authenticated/integracoes_.$slug'
-import { Route as AuthenticatedDashboardsMetasRouteImport } from './routes/_authenticated/dashboards.metas'
-import { Route as AuthenticatedClientesSugestoesRouteImport } from './routes/_authenticated/clientes.sugestoes'
-import { Route as AuthenticatedClientesSegmentacaoRouteImport } from './routes/_authenticated/clientes.segmentacao'
-import { Route as AuthenticatedClientesRankingRouteImport } from './routes/_authenticated/clientes.ranking'
-import { Route as AuthenticatedClientesPerfilRouteImport } from './routes/_authenticated/clientes.perfil'
-import { Route as AuthenticatedClientesCadastrosRouteImport } from './routes/_authenticated/clientes.cadastros'
 import { Route as AuthenticatedCarregadoresTarefasRouteImport } from './routes/_authenticated/carregadores.tarefas'
 import { Route as AuthenticatedCarregadoresRegrasRouteImport } from './routes/_authenticated/carregadores.regras'
 import { Route as AuthenticatedCarregadoresPropostasRouteImport } from './routes/_authenticated/carregadores.propostas'
@@ -55,6 +46,7 @@ import { Route as AuthenticatedCarregadoresMetasRouteImport } from './routes/_au
 import { Route as AuthenticatedCarregadoresComissoesRouteImport } from './routes/_authenticated/carregadores.comissoes'
 import { Route as AuthenticatedCarregadoresClientesRouteImport } from './routes/_authenticated/carregadores.clientes'
 import { Route as AuthenticatedAdminVinculosRouteImport } from './routes/_authenticated/admin.vinculos'
+import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
 import { Route as AuthenticatedAdminRegrasRouteImport } from './routes/_authenticated/admin.regras'
 import { Route as AuthenticatedAdminProdutosSolarRouteImport } from './routes/_authenticated/admin.produtos-solar'
@@ -62,6 +54,7 @@ import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminPerfisRouteImport } from './routes/_authenticated/admin.perfis'
 import { Route as AuthenticatedAdminModeracaoRouteImport } from './routes/_authenticated/admin.moderacao'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
+import { Route as AuthenticatedAdminIntegracoesRouteImport } from './routes/_authenticated/admin.integracoes'
 import { Route as AuthenticatedAdminEstoqueRouteImport } from './routes/_authenticated/admin.estoque'
 import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
 import { Route as AuthenticatedAdminComissoesRouteImport } from './routes/_authenticated/admin.comissoes'
@@ -75,12 +68,19 @@ import { Route as AuthenticatedAdminLogsIndexRouteImport } from './routes/_authe
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as AuthenticatedSolarDashboardsMetasRouteImport } from './routes/_authenticated/solar.dashboards.metas'
+import { Route as AuthenticatedSolarClientesSugestoesRouteImport } from './routes/_authenticated/solar.clientes.sugestoes'
+import { Route as AuthenticatedSolarClientesSegmentacaoRouteImport } from './routes/_authenticated/solar.clientes.segmentacao'
+import { Route as AuthenticatedSolarClientesRankingRouteImport } from './routes/_authenticated/solar.clientes.ranking'
+import { Route as AuthenticatedSolarClientesPerfilRouteImport } from './routes/_authenticated/solar.clientes.perfil'
+import { Route as AuthenticatedSolarClientesCadastrosRouteImport } from './routes/_authenticated/solar.clientes.cadastros'
 import { Route as AuthenticatedCarregadoresPropostasNovaRouteImport } from './routes/_authenticated/carregadores.propostas.nova'
 import { Route as AuthenticatedCarregadoresPropostasAuditoriaRouteImport } from './routes/_authenticated/carregadores.propostas.auditoria'
 import { Route as AuthenticatedCarregadoresClientesCadastrosRouteImport } from './routes/_authenticated/carregadores.clientes.cadastros'
 import { Route as AuthenticatedAdminLogsRetencaoRouteImport } from './routes/_authenticated/admin.logs.retencao'
 import { Route as AuthenticatedAdminLogsModeracaoRouteImport } from './routes/_authenticated/admin.logs.moderacao'
 import { Route as AuthenticatedAdminLogsIntegracoesRouteImport } from './routes/_authenticated/admin.logs.integracoes'
+import { Route as AuthenticatedAdminIntegracoesSlugRouteImport } from './routes/_authenticated/admin.integracoes_.$slug'
 
 const TvGeralRoute = TvGeralRouteImport.update({
   id: '/tv-geral',
@@ -116,60 +116,14 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
-  id: '/usuarios',
-  path: '/usuarios',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedTarefasRoute = AuthenticatedTarefasRouteImport.update({
-  id: '/tarefas',
-  path: '/tarefas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedPedidosRoute = AuthenticatedPedidosRouteImport.update({
-  id: '/pedidos',
-  path: '/pedidos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedOrcamentosRoute = AuthenticatedOrcamentosRouteImport.update({
-  id: '/orcamentos',
-  path: '/orcamentos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedMarketingRoute = AuthenticatedMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedIntegracoesRoute =
-  AuthenticatedIntegracoesRouteImport.update({
-    id: '/integracoes',
-    path: '/integracoes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedDashboardsRoute = AuthenticatedDashboardsRouteImport.update({
-  id: '/dashboards',
-  path: '/dashboards',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCuponsRoute = AuthenticatedCuponsRouteImport.update({
-  id: '/cupons',
-  path: '/cupons',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAtlasRoute = AuthenticatedAtlasRouteImport.update({
-  id: '/atlas',
-  path: '/atlas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
@@ -199,6 +153,47 @@ const AuthenticatedCarregadoresIndexRoute =
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSolarTarefasRoute =
+  AuthenticatedSolarTarefasRouteImport.update({
+    id: '/solar/tarefas',
+    path: '/solar/tarefas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSolarPropostasRoute =
+  AuthenticatedSolarPropostasRouteImport.update({
+    id: '/solar/propostas',
+    path: '/solar/propostas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSolarPedidosRoute =
+  AuthenticatedSolarPedidosRouteImport.update({
+    id: '/solar/pedidos',
+    path: '/solar/pedidos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSolarDashboardsRoute =
+  AuthenticatedSolarDashboardsRouteImport.update({
+    id: '/solar/dashboards',
+    path: '/solar/dashboards',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSolarCuponsRoute =
+  AuthenticatedSolarCuponsRouteImport.update({
+    id: '/solar/cupons',
+    path: '/solar/cupons',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSolarClientesRoute =
+  AuthenticatedSolarClientesRouteImport.update({
+    id: '/solar/clientes',
+    path: '/solar/clientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSolarAtlasRoute = AuthenticatedSolarAtlasRouteImport.update({
+  id: '/solar/atlas',
+  path: '/solar/atlas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMarketingTrafegoRoute =
@@ -242,48 +237,6 @@ const AuthenticatedMarketingCacRoute =
     id: '/cac',
     path: '/cac',
     getParentRoute: () => AuthenticatedMarketingRoute,
-  } as any)
-const AuthenticatedIntegracoesSlugRoute =
-  AuthenticatedIntegracoesSlugRouteImport.update({
-    id: '/integracoes_/$slug',
-    path: '/integracoes/$slug',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedDashboardsMetasRoute =
-  AuthenticatedDashboardsMetasRouteImport.update({
-    id: '/metas',
-    path: '/metas',
-    getParentRoute: () => AuthenticatedDashboardsRoute,
-  } as any)
-const AuthenticatedClientesSugestoesRoute =
-  AuthenticatedClientesSugestoesRouteImport.update({
-    id: '/sugestoes',
-    path: '/sugestoes',
-    getParentRoute: () => AuthenticatedClientesRoute,
-  } as any)
-const AuthenticatedClientesSegmentacaoRoute =
-  AuthenticatedClientesSegmentacaoRouteImport.update({
-    id: '/segmentacao',
-    path: '/segmentacao',
-    getParentRoute: () => AuthenticatedClientesRoute,
-  } as any)
-const AuthenticatedClientesRankingRoute =
-  AuthenticatedClientesRankingRouteImport.update({
-    id: '/ranking',
-    path: '/ranking',
-    getParentRoute: () => AuthenticatedClientesRoute,
-  } as any)
-const AuthenticatedClientesPerfilRoute =
-  AuthenticatedClientesPerfilRouteImport.update({
-    id: '/perfil',
-    path: '/perfil',
-    getParentRoute: () => AuthenticatedClientesRoute,
-  } as any)
-const AuthenticatedClientesCadastrosRoute =
-  AuthenticatedClientesCadastrosRouteImport.update({
-    id: '/cadastros',
-    path: '/cadastros',
-    getParentRoute: () => AuthenticatedClientesRoute,
   } as any)
 const AuthenticatedCarregadoresTarefasRoute =
   AuthenticatedCarregadoresTarefasRouteImport.update({
@@ -339,6 +292,12 @@ const AuthenticatedAdminVinculosRoute =
     path: '/admin/vinculos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminUsuariosRoute =
+  AuthenticatedAdminUsuariosRouteImport.update({
+    id: '/admin/usuarios',
+    path: '/admin/usuarios',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminTabelasRoute =
   AuthenticatedAdminTabelasRouteImport.update({
     id: '/admin/tabelas',
@@ -380,6 +339,12 @@ const AuthenticatedAdminMetasRoute = AuthenticatedAdminMetasRouteImport.update({
   path: '/admin/metas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminIntegracoesRoute =
+  AuthenticatedAdminIntegracoesRouteImport.update({
+    id: '/admin/integracoes',
+    path: '/admin/integracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminEstoqueRoute =
   AuthenticatedAdminEstoqueRouteImport.update({
     id: '/admin/estoque',
@@ -455,6 +420,42 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSolarDashboardsMetasRoute =
+  AuthenticatedSolarDashboardsMetasRouteImport.update({
+    id: '/metas',
+    path: '/metas',
+    getParentRoute: () => AuthenticatedSolarDashboardsRoute,
+  } as any)
+const AuthenticatedSolarClientesSugestoesRoute =
+  AuthenticatedSolarClientesSugestoesRouteImport.update({
+    id: '/sugestoes',
+    path: '/sugestoes',
+    getParentRoute: () => AuthenticatedSolarClientesRoute,
+  } as any)
+const AuthenticatedSolarClientesSegmentacaoRoute =
+  AuthenticatedSolarClientesSegmentacaoRouteImport.update({
+    id: '/segmentacao',
+    path: '/segmentacao',
+    getParentRoute: () => AuthenticatedSolarClientesRoute,
+  } as any)
+const AuthenticatedSolarClientesRankingRoute =
+  AuthenticatedSolarClientesRankingRouteImport.update({
+    id: '/ranking',
+    path: '/ranking',
+    getParentRoute: () => AuthenticatedSolarClientesRoute,
+  } as any)
+const AuthenticatedSolarClientesPerfilRoute =
+  AuthenticatedSolarClientesPerfilRouteImport.update({
+    id: '/perfil',
+    path: '/perfil',
+    getParentRoute: () => AuthenticatedSolarClientesRoute,
+  } as any)
+const AuthenticatedSolarClientesCadastrosRoute =
+  AuthenticatedSolarClientesCadastrosRouteImport.update({
+    id: '/cadastros',
+    path: '/cadastros',
+    getParentRoute: () => AuthenticatedSolarClientesRoute,
+  } as any)
 const AuthenticatedCarregadoresPropostasNovaRoute =
   AuthenticatedCarregadoresPropostasNovaRouteImport.update({
     id: '/nova',
@@ -491,6 +492,12 @@ const AuthenticatedAdminLogsIntegracoesRoute =
     path: '/admin/logs/integracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminIntegracoesSlugRoute =
+  AuthenticatedAdminIntegracoesSlugRouteImport.update({
+    id: '/admin/integracoes_/$slug',
+    path: '/admin/integracoes/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -501,17 +508,8 @@ export interface FileRoutesByFullPath {
   '/tv-geral': typeof TvGeralRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/atlas': typeof AuthenticatedAtlasRoute
-  '/clientes': typeof AuthenticatedClientesRouteWithChildren
-  '/cupons': typeof AuthenticatedCuponsRoute
-  '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
-  '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/marketing': typeof AuthenticatedMarketingRouteWithChildren
-  '/orcamentos': typeof AuthenticatedOrcamentosRoute
-  '/pedidos': typeof AuthenticatedPedidosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
-  '/tarefas': typeof AuthenticatedTarefasRoute
-  '/usuarios': typeof AuthenticatedUsuariosRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/atividade': typeof AuthenticatedAdminAtividadeRoute
@@ -519,6 +517,7 @@ export interface FileRoutesByFullPath {
   '/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
@@ -526,6 +525,7 @@ export interface FileRoutesByFullPath {
   '/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
   '/admin/regras': typeof AuthenticatedAdminRegrasRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
+  '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
@@ -535,13 +535,6 @@ export interface FileRoutesByFullPath {
   '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   '/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
-  '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
-  '/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
-  '/clientes/ranking': typeof AuthenticatedClientesRankingRoute
-  '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
-  '/clientes/sugestoes': typeof AuthenticatedClientesSugestoesRoute
-  '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
-  '/integracoes/$slug': typeof AuthenticatedIntegracoesSlugRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -549,15 +542,29 @@ export interface FileRoutesByFullPath {
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
+  '/solar/atlas': typeof AuthenticatedSolarAtlasRoute
+  '/solar/clientes': typeof AuthenticatedSolarClientesRouteWithChildren
+  '/solar/cupons': typeof AuthenticatedSolarCuponsRoute
+  '/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
+  '/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
+  '/solar/propostas': typeof AuthenticatedSolarPropostasRoute
+  '/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
+  '/admin/integracoes/$slug': typeof AuthenticatedAdminIntegracoesSlugRoute
   '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
   '/admin/logs/moderacao': typeof AuthenticatedAdminLogsModeracaoRoute
   '/admin/logs/retencao': typeof AuthenticatedAdminLogsRetencaoRoute
   '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
+  '/solar/clientes/cadastros': typeof AuthenticatedSolarClientesCadastrosRoute
+  '/solar/clientes/perfil': typeof AuthenticatedSolarClientesPerfilRoute
+  '/solar/clientes/ranking': typeof AuthenticatedSolarClientesRankingRoute
+  '/solar/clientes/segmentacao': typeof AuthenticatedSolarClientesSegmentacaoRoute
+  '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
+  '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -573,16 +580,7 @@ export interface FileRoutesByTo {
   '/tv-geral': typeof TvGeralRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/atlas': typeof AuthenticatedAtlasRoute
-  '/clientes': typeof AuthenticatedClientesRouteWithChildren
-  '/cupons': typeof AuthenticatedCuponsRoute
-  '/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
-  '/integracoes': typeof AuthenticatedIntegracoesRoute
-  '/orcamentos': typeof AuthenticatedOrcamentosRoute
-  '/pedidos': typeof AuthenticatedPedidosRoute
   '/perfil': typeof AuthenticatedPerfilRoute
-  '/tarefas': typeof AuthenticatedTarefasRoute
-  '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -591,6 +589,7 @@ export interface FileRoutesByTo {
   '/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
@@ -598,6 +597,7 @@ export interface FileRoutesByTo {
   '/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
   '/admin/regras': typeof AuthenticatedAdminRegrasRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
+  '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
@@ -605,13 +605,6 @@ export interface FileRoutesByTo {
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
   '/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
-  '/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
-  '/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
-  '/clientes/ranking': typeof AuthenticatedClientesRankingRoute
-  '/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
-  '/clientes/sugestoes': typeof AuthenticatedClientesSugestoesRoute
-  '/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
-  '/integracoes/$slug': typeof AuthenticatedIntegracoesSlugRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -619,15 +612,29 @@ export interface FileRoutesByTo {
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
+  '/solar/atlas': typeof AuthenticatedSolarAtlasRoute
+  '/solar/clientes': typeof AuthenticatedSolarClientesRouteWithChildren
+  '/solar/cupons': typeof AuthenticatedSolarCuponsRoute
+  '/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
+  '/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
+  '/solar/propostas': typeof AuthenticatedSolarPropostasRoute
+  '/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/carregadores': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
+  '/admin/integracoes/$slug': typeof AuthenticatedAdminIntegracoesSlugRoute
   '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
   '/admin/logs/moderacao': typeof AuthenticatedAdminLogsModeracaoRoute
   '/admin/logs/retencao': typeof AuthenticatedAdminLogsRetencaoRoute
   '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
+  '/solar/clientes/cadastros': typeof AuthenticatedSolarClientesCadastrosRoute
+  '/solar/clientes/perfil': typeof AuthenticatedSolarClientesPerfilRoute
+  '/solar/clientes/ranking': typeof AuthenticatedSolarClientesRankingRoute
+  '/solar/clientes/segmentacao': typeof AuthenticatedSolarClientesSegmentacaoRoute
+  '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
+  '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -645,17 +652,8 @@ export interface FileRoutesById {
   '/tv-geral': typeof TvGeralRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/_authenticated/atlas': typeof AuthenticatedAtlasRoute
-  '/_authenticated/clientes': typeof AuthenticatedClientesRouteWithChildren
-  '/_authenticated/cupons': typeof AuthenticatedCuponsRoute
-  '/_authenticated/dashboards': typeof AuthenticatedDashboardsRouteWithChildren
-  '/_authenticated/integracoes': typeof AuthenticatedIntegracoesRoute
   '/_authenticated/marketing': typeof AuthenticatedMarketingRouteWithChildren
-  '/_authenticated/orcamentos': typeof AuthenticatedOrcamentosRoute
-  '/_authenticated/pedidos': typeof AuthenticatedPedidosRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
-  '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
-  '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -664,6 +662,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/_authenticated/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/_authenticated/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/_authenticated/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/_authenticated/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/_authenticated/admin/perfis': typeof AuthenticatedAdminPerfisRoute
@@ -671,6 +670,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
   '/_authenticated/admin/regras': typeof AuthenticatedAdminRegrasRoute
   '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
+  '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/_authenticated/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/_authenticated/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
@@ -680,13 +680,6 @@ export interface FileRoutesById {
   '/_authenticated/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   '/_authenticated/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/_authenticated/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
-  '/_authenticated/clientes/cadastros': typeof AuthenticatedClientesCadastrosRoute
-  '/_authenticated/clientes/perfil': typeof AuthenticatedClientesPerfilRoute
-  '/_authenticated/clientes/ranking': typeof AuthenticatedClientesRankingRoute
-  '/_authenticated/clientes/segmentacao': typeof AuthenticatedClientesSegmentacaoRoute
-  '/_authenticated/clientes/sugestoes': typeof AuthenticatedClientesSugestoesRoute
-  '/_authenticated/dashboards/metas': typeof AuthenticatedDashboardsMetasRoute
-  '/_authenticated/integracoes_/$slug': typeof AuthenticatedIntegracoesSlugRoute
   '/_authenticated/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/_authenticated/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/_authenticated/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -694,15 +687,29 @@ export interface FileRoutesById {
   '/_authenticated/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/_authenticated/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
+  '/_authenticated/solar/atlas': typeof AuthenticatedSolarAtlasRoute
+  '/_authenticated/solar/clientes': typeof AuthenticatedSolarClientesRouteWithChildren
+  '/_authenticated/solar/cupons': typeof AuthenticatedSolarCuponsRoute
+  '/_authenticated/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
+  '/_authenticated/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
+  '/_authenticated/solar/propostas': typeof AuthenticatedSolarPropostasRoute
+  '/_authenticated/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
+  '/_authenticated/admin/integracoes_/$slug': typeof AuthenticatedAdminIntegracoesSlugRoute
   '/_authenticated/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
   '/_authenticated/admin/logs/moderacao': typeof AuthenticatedAdminLogsModeracaoRoute
   '/_authenticated/admin/logs/retencao': typeof AuthenticatedAdminLogsRetencaoRoute
   '/_authenticated/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/_authenticated/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/_authenticated/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
+  '/_authenticated/solar/clientes/cadastros': typeof AuthenticatedSolarClientesCadastrosRoute
+  '/_authenticated/solar/clientes/perfil': typeof AuthenticatedSolarClientesPerfilRoute
+  '/_authenticated/solar/clientes/ranking': typeof AuthenticatedSolarClientesRankingRoute
+  '/_authenticated/solar/clientes/segmentacao': typeof AuthenticatedSolarClientesSegmentacaoRoute
+  '/_authenticated/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
+  '/_authenticated/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -721,17 +728,8 @@ export interface FileRouteTypes {
     | '/tv-geral'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/atlas'
-    | '/clientes'
-    | '/cupons'
-    | '/dashboards'
-    | '/integracoes'
     | '/marketing'
-    | '/orcamentos'
-    | '/pedidos'
     | '/perfil'
-    | '/tarefas'
-    | '/usuarios'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/atividade'
@@ -739,6 +737,7 @@ export interface FileRouteTypes {
     | '/admin/comissoes'
     | '/admin/configuracoes'
     | '/admin/estoque'
+    | '/admin/integracoes'
     | '/admin/metas'
     | '/admin/moderacao'
     | '/admin/perfis'
@@ -746,6 +745,7 @@ export interface FileRouteTypes {
     | '/admin/produtos-solar'
     | '/admin/regras'
     | '/admin/tabelas'
+    | '/admin/usuarios'
     | '/admin/vinculos'
     | '/carregadores/clientes'
     | '/carregadores/comissoes'
@@ -755,13 +755,6 @@ export interface FileRouteTypes {
     | '/carregadores/propostas'
     | '/carregadores/regras'
     | '/carregadores/tarefas'
-    | '/clientes/cadastros'
-    | '/clientes/perfil'
-    | '/clientes/ranking'
-    | '/clientes/segmentacao'
-    | '/clientes/sugestoes'
-    | '/dashboards/metas'
-    | '/integracoes/$slug'
     | '/marketing/cac'
     | '/marketing/cohort'
     | '/marketing/gargalo'
@@ -769,15 +762,29 @@ export interface FileRouteTypes {
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
+    | '/solar/atlas'
+    | '/solar/clientes'
+    | '/solar/cupons'
+    | '/solar/dashboards'
+    | '/solar/pedidos'
+    | '/solar/propostas'
+    | '/solar/tarefas'
     | '/admin/'
     | '/carregadores/'
     | '/marketing/'
+    | '/admin/integracoes/$slug'
     | '/admin/logs/integracoes'
     | '/admin/logs/moderacao'
     | '/admin/logs/retencao'
     | '/carregadores/clientes/cadastros'
     | '/carregadores/propostas/auditoria'
     | '/carregadores/propostas/nova'
+    | '/solar/clientes/cadastros'
+    | '/solar/clientes/perfil'
+    | '/solar/clientes/ranking'
+    | '/solar/clientes/segmentacao'
+    | '/solar/clientes/sugestoes'
+    | '/solar/dashboards/metas'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -793,16 +800,7 @@ export interface FileRouteTypes {
     | '/tv-geral'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/atlas'
-    | '/clientes'
-    | '/cupons'
-    | '/dashboards'
-    | '/integracoes'
-    | '/orcamentos'
-    | '/pedidos'
     | '/perfil'
-    | '/tarefas'
-    | '/usuarios'
     | '/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -811,6 +809,7 @@ export interface FileRouteTypes {
     | '/admin/comissoes'
     | '/admin/configuracoes'
     | '/admin/estoque'
+    | '/admin/integracoes'
     | '/admin/metas'
     | '/admin/moderacao'
     | '/admin/perfis'
@@ -818,6 +817,7 @@ export interface FileRouteTypes {
     | '/admin/produtos-solar'
     | '/admin/regras'
     | '/admin/tabelas'
+    | '/admin/usuarios'
     | '/admin/vinculos'
     | '/carregadores/comissoes'
     | '/carregadores/metas'
@@ -825,13 +825,6 @@ export interface FileRouteTypes {
     | '/carregadores/produtos'
     | '/carregadores/regras'
     | '/carregadores/tarefas'
-    | '/clientes/cadastros'
-    | '/clientes/perfil'
-    | '/clientes/ranking'
-    | '/clientes/segmentacao'
-    | '/clientes/sugestoes'
-    | '/dashboards/metas'
-    | '/integracoes/$slug'
     | '/marketing/cac'
     | '/marketing/cohort'
     | '/marketing/gargalo'
@@ -839,15 +832,29 @@ export interface FileRouteTypes {
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
+    | '/solar/atlas'
+    | '/solar/clientes'
+    | '/solar/cupons'
+    | '/solar/dashboards'
+    | '/solar/pedidos'
+    | '/solar/propostas'
+    | '/solar/tarefas'
     | '/admin'
     | '/carregadores'
     | '/marketing'
+    | '/admin/integracoes/$slug'
     | '/admin/logs/integracoes'
     | '/admin/logs/moderacao'
     | '/admin/logs/retencao'
     | '/carregadores/clientes/cadastros'
     | '/carregadores/propostas/auditoria'
     | '/carregadores/propostas/nova'
+    | '/solar/clientes/cadastros'
+    | '/solar/clientes/perfil'
+    | '/solar/clientes/ranking'
+    | '/solar/clientes/segmentacao'
+    | '/solar/clientes/sugestoes'
+    | '/solar/dashboards/metas'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -864,17 +871,8 @@ export interface FileRouteTypes {
     | '/tv-geral'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/_authenticated/atlas'
-    | '/_authenticated/clientes'
-    | '/_authenticated/cupons'
-    | '/_authenticated/dashboards'
-    | '/_authenticated/integracoes'
     | '/_authenticated/marketing'
-    | '/_authenticated/orcamentos'
-    | '/_authenticated/pedidos'
     | '/_authenticated/perfil'
-    | '/_authenticated/tarefas'
-    | '/_authenticated/usuarios'
     | '/_authenticated/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -883,6 +881,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/comissoes'
     | '/_authenticated/admin/configuracoes'
     | '/_authenticated/admin/estoque'
+    | '/_authenticated/admin/integracoes'
     | '/_authenticated/admin/metas'
     | '/_authenticated/admin/moderacao'
     | '/_authenticated/admin/perfis'
@@ -890,6 +889,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/produtos-solar'
     | '/_authenticated/admin/regras'
     | '/_authenticated/admin/tabelas'
+    | '/_authenticated/admin/usuarios'
     | '/_authenticated/admin/vinculos'
     | '/_authenticated/carregadores/clientes'
     | '/_authenticated/carregadores/comissoes'
@@ -899,13 +899,6 @@ export interface FileRouteTypes {
     | '/_authenticated/carregadores/propostas'
     | '/_authenticated/carregadores/regras'
     | '/_authenticated/carregadores/tarefas'
-    | '/_authenticated/clientes/cadastros'
-    | '/_authenticated/clientes/perfil'
-    | '/_authenticated/clientes/ranking'
-    | '/_authenticated/clientes/segmentacao'
-    | '/_authenticated/clientes/sugestoes'
-    | '/_authenticated/dashboards/metas'
-    | '/_authenticated/integracoes_/$slug'
     | '/_authenticated/marketing/cac'
     | '/_authenticated/marketing/cohort'
     | '/_authenticated/marketing/gargalo'
@@ -913,15 +906,29 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing/pre-vendas'
     | '/_authenticated/marketing/social'
     | '/_authenticated/marketing/trafego'
+    | '/_authenticated/solar/atlas'
+    | '/_authenticated/solar/clientes'
+    | '/_authenticated/solar/cupons'
+    | '/_authenticated/solar/dashboards'
+    | '/_authenticated/solar/pedidos'
+    | '/_authenticated/solar/propostas'
+    | '/_authenticated/solar/tarefas'
     | '/_authenticated/admin/'
     | '/_authenticated/carregadores/'
     | '/_authenticated/marketing/'
+    | '/_authenticated/admin/integracoes_/$slug'
     | '/_authenticated/admin/logs/integracoes'
     | '/_authenticated/admin/logs/moderacao'
     | '/_authenticated/admin/logs/retencao'
     | '/_authenticated/carregadores/clientes/cadastros'
     | '/_authenticated/carregadores/propostas/auditoria'
     | '/_authenticated/carregadores/propostas/nova'
+    | '/_authenticated/solar/clientes/cadastros'
+    | '/_authenticated/solar/clientes/perfil'
+    | '/_authenticated/solar/clientes/ranking'
+    | '/_authenticated/solar/clientes/segmentacao'
+    | '/_authenticated/solar/clientes/sugestoes'
+    | '/_authenticated/solar/dashboards/metas'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -997,20 +1004,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/usuarios': {
-      id: '/_authenticated/usuarios'
-      path: '/usuarios'
-      fullPath: '/usuarios'
-      preLoaderRoute: typeof AuthenticatedUsuariosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/tarefas': {
-      id: '/_authenticated/tarefas'
-      path: '/tarefas'
-      fullPath: '/tarefas'
-      preLoaderRoute: typeof AuthenticatedTarefasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/perfil': {
       id: '/_authenticated/perfil'
       path: '/perfil'
@@ -1018,60 +1011,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPerfilRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/pedidos': {
-      id: '/_authenticated/pedidos'
-      path: '/pedidos'
-      fullPath: '/pedidos'
-      preLoaderRoute: typeof AuthenticatedPedidosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/orcamentos': {
-      id: '/_authenticated/orcamentos'
-      path: '/orcamentos'
-      fullPath: '/orcamentos'
-      preLoaderRoute: typeof AuthenticatedOrcamentosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/marketing': {
       id: '/_authenticated/marketing'
       path: '/marketing'
       fullPath: '/marketing'
       preLoaderRoute: typeof AuthenticatedMarketingRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/integracoes': {
-      id: '/_authenticated/integracoes'
-      path: '/integracoes'
-      fullPath: '/integracoes'
-      preLoaderRoute: typeof AuthenticatedIntegracoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboards': {
-      id: '/_authenticated/dashboards'
-      path: '/dashboards'
-      fullPath: '/dashboards'
-      preLoaderRoute: typeof AuthenticatedDashboardsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cupons': {
-      id: '/_authenticated/cupons'
-      path: '/cupons'
-      fullPath: '/cupons'
-      preLoaderRoute: typeof AuthenticatedCuponsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/clientes': {
-      id: '/_authenticated/clientes'
-      path: '/clientes'
-      fullPath: '/clientes'
-      preLoaderRoute: typeof AuthenticatedClientesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/atlas': {
-      id: '/_authenticated/atlas'
-      path: '/atlas'
-      fullPath: '/atlas'
-      preLoaderRoute: typeof AuthenticatedAtlasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/.well-known/oauth-protected-resource': {
@@ -1107,6 +1051,55 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/solar/tarefas': {
+      id: '/_authenticated/solar/tarefas'
+      path: '/solar/tarefas'
+      fullPath: '/solar/tarefas'
+      preLoaderRoute: typeof AuthenticatedSolarTarefasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/solar/propostas': {
+      id: '/_authenticated/solar/propostas'
+      path: '/solar/propostas'
+      fullPath: '/solar/propostas'
+      preLoaderRoute: typeof AuthenticatedSolarPropostasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/solar/pedidos': {
+      id: '/_authenticated/solar/pedidos'
+      path: '/solar/pedidos'
+      fullPath: '/solar/pedidos'
+      preLoaderRoute: typeof AuthenticatedSolarPedidosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/solar/dashboards': {
+      id: '/_authenticated/solar/dashboards'
+      path: '/solar/dashboards'
+      fullPath: '/solar/dashboards'
+      preLoaderRoute: typeof AuthenticatedSolarDashboardsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/solar/cupons': {
+      id: '/_authenticated/solar/cupons'
+      path: '/solar/cupons'
+      fullPath: '/solar/cupons'
+      preLoaderRoute: typeof AuthenticatedSolarCuponsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/solar/clientes': {
+      id: '/_authenticated/solar/clientes'
+      path: '/solar/clientes'
+      fullPath: '/solar/clientes'
+      preLoaderRoute: typeof AuthenticatedSolarClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/solar/atlas': {
+      id: '/_authenticated/solar/atlas'
+      path: '/solar/atlas'
+      fullPath: '/solar/atlas'
+      preLoaderRoute: typeof AuthenticatedSolarAtlasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/marketing/trafego': {
@@ -1157,55 +1150,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/marketing/cac'
       preLoaderRoute: typeof AuthenticatedMarketingCacRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
-    }
-    '/_authenticated/integracoes_/$slug': {
-      id: '/_authenticated/integracoes_/$slug'
-      path: '/integracoes/$slug'
-      fullPath: '/integracoes/$slug'
-      preLoaderRoute: typeof AuthenticatedIntegracoesSlugRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboards/metas': {
-      id: '/_authenticated/dashboards/metas'
-      path: '/metas'
-      fullPath: '/dashboards/metas'
-      preLoaderRoute: typeof AuthenticatedDashboardsMetasRouteImport
-      parentRoute: typeof AuthenticatedDashboardsRoute
-    }
-    '/_authenticated/clientes/sugestoes': {
-      id: '/_authenticated/clientes/sugestoes'
-      path: '/sugestoes'
-      fullPath: '/clientes/sugestoes'
-      preLoaderRoute: typeof AuthenticatedClientesSugestoesRouteImport
-      parentRoute: typeof AuthenticatedClientesRoute
-    }
-    '/_authenticated/clientes/segmentacao': {
-      id: '/_authenticated/clientes/segmentacao'
-      path: '/segmentacao'
-      fullPath: '/clientes/segmentacao'
-      preLoaderRoute: typeof AuthenticatedClientesSegmentacaoRouteImport
-      parentRoute: typeof AuthenticatedClientesRoute
-    }
-    '/_authenticated/clientes/ranking': {
-      id: '/_authenticated/clientes/ranking'
-      path: '/ranking'
-      fullPath: '/clientes/ranking'
-      preLoaderRoute: typeof AuthenticatedClientesRankingRouteImport
-      parentRoute: typeof AuthenticatedClientesRoute
-    }
-    '/_authenticated/clientes/perfil': {
-      id: '/_authenticated/clientes/perfil'
-      path: '/perfil'
-      fullPath: '/clientes/perfil'
-      preLoaderRoute: typeof AuthenticatedClientesPerfilRouteImport
-      parentRoute: typeof AuthenticatedClientesRoute
-    }
-    '/_authenticated/clientes/cadastros': {
-      id: '/_authenticated/clientes/cadastros'
-      path: '/cadastros'
-      fullPath: '/clientes/cadastros'
-      preLoaderRoute: typeof AuthenticatedClientesCadastrosRouteImport
-      parentRoute: typeof AuthenticatedClientesRoute
     }
     '/_authenticated/carregadores/tarefas': {
       id: '/_authenticated/carregadores/tarefas'
@@ -1270,6 +1214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminVinculosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/usuarios': {
+      id: '/_authenticated/admin/usuarios'
+      path: '/admin/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/tabelas': {
       id: '/_authenticated/admin/tabelas'
       path: '/admin/tabelas'
@@ -1317,6 +1268,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/metas'
       fullPath: '/admin/metas'
       preLoaderRoute: typeof AuthenticatedAdminMetasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/integracoes': {
+      id: '/_authenticated/admin/integracoes'
+      path: '/admin/integracoes'
+      fullPath: '/admin/integracoes'
+      preLoaderRoute: typeof AuthenticatedAdminIntegracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/estoque': {
@@ -1410,6 +1368,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/solar/dashboards/metas': {
+      id: '/_authenticated/solar/dashboards/metas'
+      path: '/metas'
+      fullPath: '/solar/dashboards/metas'
+      preLoaderRoute: typeof AuthenticatedSolarDashboardsMetasRouteImport
+      parentRoute: typeof AuthenticatedSolarDashboardsRoute
+    }
+    '/_authenticated/solar/clientes/sugestoes': {
+      id: '/_authenticated/solar/clientes/sugestoes'
+      path: '/sugestoes'
+      fullPath: '/solar/clientes/sugestoes'
+      preLoaderRoute: typeof AuthenticatedSolarClientesSugestoesRouteImport
+      parentRoute: typeof AuthenticatedSolarClientesRoute
+    }
+    '/_authenticated/solar/clientes/segmentacao': {
+      id: '/_authenticated/solar/clientes/segmentacao'
+      path: '/segmentacao'
+      fullPath: '/solar/clientes/segmentacao'
+      preLoaderRoute: typeof AuthenticatedSolarClientesSegmentacaoRouteImport
+      parentRoute: typeof AuthenticatedSolarClientesRoute
+    }
+    '/_authenticated/solar/clientes/ranking': {
+      id: '/_authenticated/solar/clientes/ranking'
+      path: '/ranking'
+      fullPath: '/solar/clientes/ranking'
+      preLoaderRoute: typeof AuthenticatedSolarClientesRankingRouteImport
+      parentRoute: typeof AuthenticatedSolarClientesRoute
+    }
+    '/_authenticated/solar/clientes/perfil': {
+      id: '/_authenticated/solar/clientes/perfil'
+      path: '/perfil'
+      fullPath: '/solar/clientes/perfil'
+      preLoaderRoute: typeof AuthenticatedSolarClientesPerfilRouteImport
+      parentRoute: typeof AuthenticatedSolarClientesRoute
+    }
+    '/_authenticated/solar/clientes/cadastros': {
+      id: '/_authenticated/solar/clientes/cadastros'
+      path: '/cadastros'
+      fullPath: '/solar/clientes/cadastros'
+      preLoaderRoute: typeof AuthenticatedSolarClientesCadastrosRouteImport
+      parentRoute: typeof AuthenticatedSolarClientesRoute
+    }
     '/_authenticated/carregadores/propostas/nova': {
       id: '/_authenticated/carregadores/propostas/nova'
       path: '/nova'
@@ -1452,43 +1452,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLogsIntegracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/integracoes_/$slug': {
+      id: '/_authenticated/admin/integracoes_/$slug'
+      path: '/admin/integracoes/$slug'
+      fullPath: '/admin/integracoes/$slug'
+      preLoaderRoute: typeof AuthenticatedAdminIntegracoesSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
-
-interface AuthenticatedClientesRouteChildren {
-  AuthenticatedClientesCadastrosRoute: typeof AuthenticatedClientesCadastrosRoute
-  AuthenticatedClientesPerfilRoute: typeof AuthenticatedClientesPerfilRoute
-  AuthenticatedClientesRankingRoute: typeof AuthenticatedClientesRankingRoute
-  AuthenticatedClientesSegmentacaoRoute: typeof AuthenticatedClientesSegmentacaoRoute
-  AuthenticatedClientesSugestoesRoute: typeof AuthenticatedClientesSugestoesRoute
-}
-
-const AuthenticatedClientesRouteChildren: AuthenticatedClientesRouteChildren = {
-  AuthenticatedClientesCadastrosRoute: AuthenticatedClientesCadastrosRoute,
-  AuthenticatedClientesPerfilRoute: AuthenticatedClientesPerfilRoute,
-  AuthenticatedClientesRankingRoute: AuthenticatedClientesRankingRoute,
-  AuthenticatedClientesSegmentacaoRoute: AuthenticatedClientesSegmentacaoRoute,
-  AuthenticatedClientesSugestoesRoute: AuthenticatedClientesSugestoesRoute,
-}
-
-const AuthenticatedClientesRouteWithChildren =
-  AuthenticatedClientesRoute._addFileChildren(
-    AuthenticatedClientesRouteChildren,
-  )
-
-interface AuthenticatedDashboardsRouteChildren {
-  AuthenticatedDashboardsMetasRoute: typeof AuthenticatedDashboardsMetasRoute
-}
-
-const AuthenticatedDashboardsRouteChildren: AuthenticatedDashboardsRouteChildren =
-  {
-    AuthenticatedDashboardsMetasRoute: AuthenticatedDashboardsMetasRoute,
-  }
-
-const AuthenticatedDashboardsRouteWithChildren =
-  AuthenticatedDashboardsRoute._addFileChildren(
-    AuthenticatedDashboardsRouteChildren,
-  )
 
 interface AuthenticatedMarketingRouteChildren {
   AuthenticatedMarketingCacRoute: typeof AuthenticatedMarketingCacRoute
@@ -1557,24 +1529,58 @@ const AuthenticatedCarregadoresPropostasRouteWithChildren =
     AuthenticatedCarregadoresPropostasRouteChildren,
   )
 
+interface AuthenticatedSolarClientesRouteChildren {
+  AuthenticatedSolarClientesCadastrosRoute: typeof AuthenticatedSolarClientesCadastrosRoute
+  AuthenticatedSolarClientesPerfilRoute: typeof AuthenticatedSolarClientesPerfilRoute
+  AuthenticatedSolarClientesRankingRoute: typeof AuthenticatedSolarClientesRankingRoute
+  AuthenticatedSolarClientesSegmentacaoRoute: typeof AuthenticatedSolarClientesSegmentacaoRoute
+  AuthenticatedSolarClientesSugestoesRoute: typeof AuthenticatedSolarClientesSugestoesRoute
+}
+
+const AuthenticatedSolarClientesRouteChildren: AuthenticatedSolarClientesRouteChildren =
+  {
+    AuthenticatedSolarClientesCadastrosRoute:
+      AuthenticatedSolarClientesCadastrosRoute,
+    AuthenticatedSolarClientesPerfilRoute:
+      AuthenticatedSolarClientesPerfilRoute,
+    AuthenticatedSolarClientesRankingRoute:
+      AuthenticatedSolarClientesRankingRoute,
+    AuthenticatedSolarClientesSegmentacaoRoute:
+      AuthenticatedSolarClientesSegmentacaoRoute,
+    AuthenticatedSolarClientesSugestoesRoute:
+      AuthenticatedSolarClientesSugestoesRoute,
+  }
+
+const AuthenticatedSolarClientesRouteWithChildren =
+  AuthenticatedSolarClientesRoute._addFileChildren(
+    AuthenticatedSolarClientesRouteChildren,
+  )
+
+interface AuthenticatedSolarDashboardsRouteChildren {
+  AuthenticatedSolarDashboardsMetasRoute: typeof AuthenticatedSolarDashboardsMetasRoute
+}
+
+const AuthenticatedSolarDashboardsRouteChildren: AuthenticatedSolarDashboardsRouteChildren =
+  {
+    AuthenticatedSolarDashboardsMetasRoute:
+      AuthenticatedSolarDashboardsMetasRoute,
+  }
+
+const AuthenticatedSolarDashboardsRouteWithChildren =
+  AuthenticatedSolarDashboardsRoute._addFileChildren(
+    AuthenticatedSolarDashboardsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAtlasRoute: typeof AuthenticatedAtlasRoute
-  AuthenticatedClientesRoute: typeof AuthenticatedClientesRouteWithChildren
-  AuthenticatedCuponsRoute: typeof AuthenticatedCuponsRoute
-  AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRouteWithChildren
-  AuthenticatedIntegracoesRoute: typeof AuthenticatedIntegracoesRoute
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRouteWithChildren
-  AuthenticatedOrcamentosRoute: typeof AuthenticatedOrcamentosRoute
-  AuthenticatedPedidosRoute: typeof AuthenticatedPedidosRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
-  AuthenticatedTarefasRoute: typeof AuthenticatedTarefasRoute
-  AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminAtividadeRoute: typeof AuthenticatedAdminAtividadeRoute
   AuthenticatedAdminAuditoriaRoute: typeof AuthenticatedAdminAuditoriaRoute
   AuthenticatedAdminComissoesRoute: typeof AuthenticatedAdminComissoesRoute
   AuthenticatedAdminConfiguracoesRoute: typeof AuthenticatedAdminConfiguracoesRoute
   AuthenticatedAdminEstoqueRoute: typeof AuthenticatedAdminEstoqueRoute
+  AuthenticatedAdminIntegracoesRoute: typeof AuthenticatedAdminIntegracoesRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
   AuthenticatedAdminModeracaoRoute: typeof AuthenticatedAdminModeracaoRoute
   AuthenticatedAdminPerfisRoute: typeof AuthenticatedAdminPerfisRoute
@@ -1582,6 +1588,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminProdutosSolarRoute: typeof AuthenticatedAdminProdutosSolarRoute
   AuthenticatedAdminRegrasRoute: typeof AuthenticatedAdminRegrasRoute
   AuthenticatedAdminTabelasRoute: typeof AuthenticatedAdminTabelasRoute
+  AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedAdminVinculosRoute: typeof AuthenticatedAdminVinculosRoute
   AuthenticatedCarregadoresClientesRoute: typeof AuthenticatedCarregadoresClientesRouteWithChildren
   AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
@@ -1591,9 +1598,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarregadoresPropostasRoute: typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   AuthenticatedCarregadoresRegrasRoute: typeof AuthenticatedCarregadoresRegrasRoute
   AuthenticatedCarregadoresTarefasRoute: typeof AuthenticatedCarregadoresTarefasRoute
-  AuthenticatedIntegracoesSlugRoute: typeof AuthenticatedIntegracoesSlugRoute
+  AuthenticatedSolarAtlasRoute: typeof AuthenticatedSolarAtlasRoute
+  AuthenticatedSolarClientesRoute: typeof AuthenticatedSolarClientesRouteWithChildren
+  AuthenticatedSolarCuponsRoute: typeof AuthenticatedSolarCuponsRoute
+  AuthenticatedSolarDashboardsRoute: typeof AuthenticatedSolarDashboardsRouteWithChildren
+  AuthenticatedSolarPedidosRoute: typeof AuthenticatedSolarPedidosRoute
+  AuthenticatedSolarPropostasRoute: typeof AuthenticatedSolarPropostasRoute
+  AuthenticatedSolarTarefasRoute: typeof AuthenticatedSolarTarefasRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedCarregadoresIndexRoute: typeof AuthenticatedCarregadoresIndexRoute
+  AuthenticatedAdminIntegracoesSlugRoute: typeof AuthenticatedAdminIntegracoesSlugRoute
   AuthenticatedAdminLogsIntegracoesRoute: typeof AuthenticatedAdminLogsIntegracoesRoute
   AuthenticatedAdminLogsModeracaoRoute: typeof AuthenticatedAdminLogsModeracaoRoute
   AuthenticatedAdminLogsRetencaoRoute: typeof AuthenticatedAdminLogsRetencaoRoute
@@ -1601,23 +1615,15 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAtlasRoute: AuthenticatedAtlasRoute,
-  AuthenticatedClientesRoute: AuthenticatedClientesRouteWithChildren,
-  AuthenticatedCuponsRoute: AuthenticatedCuponsRoute,
-  AuthenticatedDashboardsRoute: AuthenticatedDashboardsRouteWithChildren,
-  AuthenticatedIntegracoesRoute: AuthenticatedIntegracoesRoute,
   AuthenticatedMarketingRoute: AuthenticatedMarketingRouteWithChildren,
-  AuthenticatedOrcamentosRoute: AuthenticatedOrcamentosRoute,
-  AuthenticatedPedidosRoute: AuthenticatedPedidosRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
-  AuthenticatedTarefasRoute: AuthenticatedTarefasRoute,
-  AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminAtividadeRoute: AuthenticatedAdminAtividadeRoute,
   AuthenticatedAdminAuditoriaRoute: AuthenticatedAdminAuditoriaRoute,
   AuthenticatedAdminComissoesRoute: AuthenticatedAdminComissoesRoute,
   AuthenticatedAdminConfiguracoesRoute: AuthenticatedAdminConfiguracoesRoute,
   AuthenticatedAdminEstoqueRoute: AuthenticatedAdminEstoqueRoute,
+  AuthenticatedAdminIntegracoesRoute: AuthenticatedAdminIntegracoesRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
   AuthenticatedAdminModeracaoRoute: AuthenticatedAdminModeracaoRoute,
   AuthenticatedAdminPerfisRoute: AuthenticatedAdminPerfisRoute,
@@ -1625,6 +1631,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminProdutosSolarRoute: AuthenticatedAdminProdutosSolarRoute,
   AuthenticatedAdminRegrasRoute: AuthenticatedAdminRegrasRoute,
   AuthenticatedAdminTabelasRoute: AuthenticatedAdminTabelasRoute,
+  AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedAdminVinculosRoute: AuthenticatedAdminVinculosRoute,
   AuthenticatedCarregadoresClientesRoute:
     AuthenticatedCarregadoresClientesRouteWithChildren,
@@ -1638,9 +1645,18 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCarregadoresPropostasRouteWithChildren,
   AuthenticatedCarregadoresRegrasRoute: AuthenticatedCarregadoresRegrasRoute,
   AuthenticatedCarregadoresTarefasRoute: AuthenticatedCarregadoresTarefasRoute,
-  AuthenticatedIntegracoesSlugRoute: AuthenticatedIntegracoesSlugRoute,
+  AuthenticatedSolarAtlasRoute: AuthenticatedSolarAtlasRoute,
+  AuthenticatedSolarClientesRoute: AuthenticatedSolarClientesRouteWithChildren,
+  AuthenticatedSolarCuponsRoute: AuthenticatedSolarCuponsRoute,
+  AuthenticatedSolarDashboardsRoute:
+    AuthenticatedSolarDashboardsRouteWithChildren,
+  AuthenticatedSolarPedidosRoute: AuthenticatedSolarPedidosRoute,
+  AuthenticatedSolarPropostasRoute: AuthenticatedSolarPropostasRoute,
+  AuthenticatedSolarTarefasRoute: AuthenticatedSolarTarefasRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedCarregadoresIndexRoute: AuthenticatedCarregadoresIndexRoute,
+  AuthenticatedAdminIntegracoesSlugRoute:
+    AuthenticatedAdminIntegracoesSlugRoute,
   AuthenticatedAdminLogsIntegracoesRoute:
     AuthenticatedAdminLogsIntegracoesRoute,
   AuthenticatedAdminLogsModeracaoRoute: AuthenticatedAdminLogsModeracaoRoute,

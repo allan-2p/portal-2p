@@ -16,7 +16,7 @@ import { FilePlus, Eye, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/permission-gate";
 
-export const Route = createFileRoute("/_authenticated/orcamentos")({
+export const Route = createFileRoute("/_authenticated/solar/propostas")({
   head: () => ({
     meta: [
       { title: "Propostas — Portal 2P" },

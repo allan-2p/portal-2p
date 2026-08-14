@@ -22,7 +22,7 @@ import { getSalesforceTasks, type SalesforceTask } from "@/lib/salesforce.functi
 import { VendedorFilter } from "@/components/vendedor-filter";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
 
-export const Route = createFileRoute("/_authenticated/tarefas")({
+export const Route = createFileRoute("/_authenticated/solar/tarefas")({
   head: () => ({
     meta: [
       { title: "Tarefas — Portal 2P" },
@@ -37,9 +37,9 @@ export const Route = createFileRoute("/_authenticated/tarefas")({
         content:
           "Calendário de tarefas sincronizado com o Salesforce, com filtros por vendedor e prioridade.",
       },
-      { property: "og:url", content: "/tarefas" },
+      { property: "og:url", content: "/solar/tarefas" },
     ],
-    links: [{ rel: "canonical", href: "/tarefas" }],
+    links: [{ rel: "canonical", href: "/solar/tarefas" }],
   }),
 
   component: TarefasPage,

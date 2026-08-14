@@ -14,7 +14,7 @@ import { IntegrationAlertsBanner } from "@/components/integration-alerts";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
-export const Route = createFileRoute("/_authenticated/integracoes")({
+export const Route = createFileRoute("/_authenticated/admin/integracoes")({
   head: () => ({ meta: [{ title: "Integrações · Portal 2P" }] }),
   component: () => (
     <AdminRouteGuard feature="admin.integracoes" area="integracoes">
@@ -237,7 +237,7 @@ function CatalogoIntegracoes() {
                 <IntegrationStatusBadge item={item} loading={health.isLoading} />
                 {slug && (
                   <Button asChild variant="outline" size="sm">
-                    <Link to="/integracoes/$slug" params={{ slug }}>
+                    <Link to="/admin/integracoes/$slug" params={{ slug }}>
                       Configurar
                     </Link>
                   </Button>

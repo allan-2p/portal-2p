@@ -65,8 +65,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (pathname.startsWith("/clientes")) setClientesOpen(true);
-    if (pathname.startsWith("/dashboards")) setDashboardsOpen(true);
+    if (pathname.startsWith("/solar/clientes")) setClientesOpen(true);
+    if (pathname.startsWith("/solar/dashboards")) setDashboardsOpen(true);
   }, [pathname]);
 
   // Se usuário está numa rota que a instância atual não permite:
@@ -155,9 +155,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
     } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
   }
 
-  const atlasActive = pathname.startsWith("/atlas");
-  const clientesActive = pathname.startsWith("/clientes");
-  const dashboardsActive = pathname.startsWith("/dashboards");
+  const atlasActive = pathname.startsWith("/solar/atlas");
+  const clientesActive = pathname.startsWith("/solar/clientes");
+  const dashboardsActive = pathname.startsWith("/solar/dashboards");
   const moderacaoActive = pathname.startsWith("/carregadores/produtos") || pathname.startsWith("/carregadores/comissoes") || pathname.startsWith("/carregadores/regras");
   const marketingActive = pathname.startsWith("/marketing");
 
@@ -200,7 +200,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {show("atlas") && (
             <>
               <Link
-                to="/atlas"
+                to="/solar/atlas"
                 preload="intent"
                 title={collapsed ? "Atlas" : undefined}
                 className={cn(
@@ -225,10 +225,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
               {show("clientes.sugestoes") && !collapsed && (
                 <div className="mb-2 ml-3 pl-3 border-l border-border">
                   <SubLink
-                    to="/clientes/sugestoes"
+                    to="/solar/clientes/sugestoes"
                     label="Sugestões do Atlas"
                     icon={Sparkles}
-                    active={pathname.startsWith("/clientes/sugestoes")}
+                    active={pathname.startsWith("/solar/clientes/sugestoes")}
                   />
                 </div>
               )}
@@ -240,16 +240,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <NavLink item={{ to: "/", label: "Home", icon: Home }} active={pathname === "/"} collapsed={collapsed} />
           )}
           {show("tarefas") && (
-            <NavLink item={{ to: "/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/tarefas")} collapsed={collapsed} />
+            <NavLink item={{ to: "/solar/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/solar/tarefas")} collapsed={collapsed} />
           )}
           {show("propostas") && (
-            <NavLink item={{ to: "/orcamentos", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/orcamentos")} collapsed={collapsed} />
+            <NavLink item={{ to: "/solar/propostas", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/solar/propostas")} collapsed={collapsed} />
           )}
           {show("pedidos") && (
-            <NavLink item={{ to: "/pedidos", label: "Pedidos", icon: KanbanSquare }} active={pathname.startsWith("/pedidos")} collapsed={collapsed} />
+            <NavLink item={{ to: "/solar/pedidos", label: "Pedidos", icon: KanbanSquare }} active={pathname.startsWith("/solar/pedidos")} collapsed={collapsed} />
           )}
           {show("cupons") && (
-            <NavLink item={{ to: "/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/cupons")} collapsed={collapsed} />
+            <NavLink item={{ to: "/solar/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/solar/cupons")} collapsed={collapsed} />
           )}
 
           {/* Módulo Carregadores — navegação exclusiva da instância */}
@@ -287,7 +287,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {(show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.sugestoes") || show("clientes.ranking")) && (
             collapsed ? (
               <Link
-                to={show("clientes.segmentacao") ? "/clientes/segmentacao" : show("clientes.perfil") ? "/clientes/perfil" : "/clientes/cadastros"}
+                to={show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : show("clientes.perfil") ? "/solar/clientes/perfil" : "/solar/clientes/cadastros"}
                 preload="intent"
                 title="Clientes"
                 className={cn(
@@ -313,18 +313,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 {clientesOpen && (
                   <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
                     {show("clientes.cadastros") && (
-                      <SubLink to="/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/clientes/cadastros")} />
+                      <SubLink to="/solar/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/solar/clientes/cadastros")} />
                     )}
                     {(show("clientes.segmentacao") || show("clientes.perfil")) && (
                       <SubLink
-                        to={show("clientes.segmentacao") ? "/clientes/segmentacao" : "/clientes/perfil"}
+                        to={show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : "/solar/clientes/perfil"}
                         label="Perfil de Cliente"
                         icon={UserIcon}
-                        active={pathname.startsWith("/clientes/segmentacao") || pathname.startsWith("/clientes/perfil")}
+                        active={pathname.startsWith("/solar/clientes/segmentacao") || pathname.startsWith("/solar/clientes/perfil")}
                       />
                     )}
                     {show("clientes.ranking") && (
-                      <SubLink to="/clientes/ranking" label="Ranking" icon={Trophy} active={pathname.startsWith("/clientes/ranking")} />
+                      <SubLink to="/solar/clientes/ranking" label="Ranking" icon={Trophy} active={pathname.startsWith("/solar/clientes/ranking")} />
                     )}
                   </div>
                 )}
@@ -335,7 +335,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {show("dashboards") && (
             collapsed ? (
               <Link
-                to="/dashboards/metas"
+                to="/solar/dashboards/metas"
                 preload="intent"
                 title="Dashboards"
                 className={cn(
@@ -361,7 +361,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 {dashboardsOpen && (
                   <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
                     {show("dashboards.metas") && (
-                      <SubLink to="/dashboards/metas" label="Metas" icon={Target} active={pathname.startsWith("/dashboards/metas")} />
+                      <SubLink to="/solar/dashboards/metas" label="Metas" icon={Target} active={pathname.startsWith("/solar/dashboards/metas")} />
                     )}
                   </div>
                 )}
@@ -601,7 +601,7 @@ function AdminMenuLink({
 
 function currentScreenKey(pathname: string): ScreenKey | null {
   if (pathname === "/") return "home";
-  if (pathname.startsWith("/dashboards")) return "dashboards";
-  if (pathname.startsWith("/clientes/segmentacao")) return "clientes.segmentacao";
+  if (pathname.startsWith("/solar/dashboards")) return "dashboards";
+  if (pathname.startsWith("/solar/clientes/segmentacao")) return "clientes.segmentacao";
   return SCREENS.find((s) => pathname.startsWith("/" + s.key))?.key ?? null;
 }

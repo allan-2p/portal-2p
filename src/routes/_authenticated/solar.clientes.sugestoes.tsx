@@ -7,7 +7,7 @@ import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.
 import { Sparkles, Check, MinusCircle, X, MessageSquare, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/clientes/sugestoes")({
+export const Route = createFileRoute("/_authenticated/solar/clientes/sugestoes")({
   head: () => ({ meta: [{ title: "Sugestões do Atlas — Portal 2P" }] }),
   component: SugestoesPage,
 });
@@ -209,7 +209,7 @@ function InsightCard({ rank, ranked }: { rank: number; ranked: Ranked }) {
             )}
           </div>
           <Link
-            to="/clientes/perfil"
+            to="/solar/clientes/perfil"
             search={{ account: account.id }}
             className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-0.5"
           >

@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Navigate, useRouterState } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/_authenticated/dashboards")({
+export const Route = createFileRoute("/_authenticated/solar/dashboards")({
   head: () => ({
     meta: [
       { title: "Dashboards — Portal 2P" },
@@ -15,9 +15,9 @@ export const Route = createFileRoute("/_authenticated/dashboards")({
         content:
           "Painéis de metas e desempenho comercial do Portal 2P, por vendedor, equipe e período.",
       },
-      { property: "og:url", content: "/dashboards" },
+      { property: "og:url", content: "/solar/dashboards" },
     ],
-    links: [{ rel: "canonical", href: "/dashboards" }],
+    links: [{ rel: "canonical", href: "/solar/dashboards" }],
   }),
   component: DashboardsLayout,
 });
@@ -25,8 +25,8 @@ export const Route = createFileRoute("/_authenticated/dashboards")({
 
 function DashboardsLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  if (pathname === "/dashboards" || pathname === "/dashboards/") {
-    return <Navigate to="/dashboards/metas" replace />;
+  if (pathname === "/solar/dashboards" || pathname === "/solar/dashboards/") {
+    return <Navigate to="/solar/dashboards/metas" replace />;
   }
   return <Outlet />;
 }
