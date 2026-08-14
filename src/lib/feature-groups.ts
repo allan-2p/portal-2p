@@ -1,0 +1,145 @@
+/**
+ * Agrupamento das telas (features) por categoria, usado na tela de Perfis.
+ *
+ * A ideia é separar claramente o que é operação do dia a dia do que é
+ * ambiente do Grupo 2P (Configurações, Moderação e Integrações), para o
+ * admin saber exatamente quem acessa o quê dentro de cada área.
+ */
+import { FEATURE_LABELS, type FeatureKey } from "@/lib/instances";
+
+export type FeatureGroupId =
+  | "operacao"
+  | "clientes"
+  | "dashboards"
+  | "inteligencia"
+  | "config"
+  | "moderacao"
+  | "integracoes";
+
+export type FeatureGroup = {
+  id: FeatureGroupId;
+  label: string;
+  description: string;
+  /** Área do portal a que o grupo pertence. */
+  area: "instancia" | "grupo";
+  keys: FeatureKey[];
+};
+
+export const FEATURE_GROUPS: FeatureGroup[] = [
+  {
+    id: "operacao",
+    label: "Operação",
+    description: "Telas do dia a dia comercial.",
+    area: "instancia",
+    keys: [
+      "home",
+      "tarefas",
+      "propostas",
+      "pedidos",
+      "cupons",
+      "cpo.home",
+      "cpo.tarefas",
+      "cpo.propostas",
+      "cpo.pedidos",
+      "marketing.home",
+      "marketing.social",
+      "marketing.trafego",
+      "marketing.cohort",
+      "marketing.cac",
+      "marketing.gargalo",
+      "marketing.prevendas",
+    ],
+  },
+  {
+    id: "clientes",
+    label: "Clientes",
+    description: "Cadastros, segmentação e ranking.",
+    area: "instancia",
+    keys: [
+      "clientes.cadastros",
+      "clientes.perfil",
+      "clientes.segmentacao",
+      "clientes.sugestoes",
+      "clientes.ranking",
+      "cpo.clientes",
+    ],
+  },
+  {
+    id: "dashboards",
+    label: "Dashboards e Metas",
+    description: "Indicadores e acompanhamento de metas.",
+    area: "instancia",
+    keys: ["dashboards", "dashboards.metas", "marketing.metas"],
+  },
+  {
+    id: "inteligencia",
+    label: "Inteligência",
+    description: "Recursos de IA do portal.",
+    area: "instancia",
+    keys: ["atlas"],
+  },
+  {
+    id: "config",
+    label: "Administração • Configurações",
+    description: "Quem administra usuários, perfis e auditoria do Grupo 2P.",
+    area: "grupo",
+    keys: [
+      "admin.usuarios",
+      "admin.perfis",
+      "admin.auditoria",
+      "admin.atividade",
+      "admin.vinculos",
+    ],
+  },
+  {
+    id: "moderacao",
+    label: "Administração • Moderação",
+    description: "Produtos, regras, comissões, metas e tabelas de cada unidade.",
+    area: "grupo",
+    keys: [
+      "admin.produtos",
+      "admin.metas",
+      "admin.tabelas",
+      "cpo.produtos",
+      "cpo.comissoes",
+      "cpo.regras",
+    ],
+  },
+  {
+    id: "integracoes",
+    label: "Administração • Integrações",
+    description: "Acesso ao painel de integrações (Salesforce, SAP, Metricool, etc.).",
+    area: "grupo",
+    keys: ["admin.integracoes"],
+  },
+];
+
+const GROUP_BY_KEY = new Map<FeatureKey, FeatureGroup>();
+for (const g of FEATURE_GROUPS) for (const k of g.keys) GROUP_BY_KEY.set(k, g);
+
+export function groupForFeature(key: FeatureKey): FeatureGroup | null {
+  return GROUP_BY_KEY.get(key) ?? null;
+}
+
+/** Rótulo curto: remove o prefixo de área ("Admin • ", "Clientes • ", …). */
+export function shortFeatureLabel(key: FeatureKey): string {
+  const full = FEATURE_LABELS[key];
+  const idx = full.indexOf("•");
+  return idx >= 0 ? full.slice(idx + 1).trim() : full;
+}
+
+/** Prefixo da feature (ex.: "Carregadores", "Marketing") ou null. */
+export function featureScopeLabel(key: FeatureKey): string | null {
+  const full = FEATURE_LABELS[key];
+  const idx = full.indexOf("•");
+  return idx >= 0 ? full.slice(0, idx).trim() : null;
+}
+
+/** Agrupa uma lista de features preservando a ordem dos grupos. */
+export function groupFeatures(keys: FeatureKey[]): { group: FeatureGroup; keys: FeatureKey[] }[] {
+  const set = new Set(keys);
+  return FEATURE_GROUPS.map((group) => ({
+    group,
+    keys: group.keys.filter((k) => set.has(k)),
+  })).filter((g) => g.keys.length > 0);
+}

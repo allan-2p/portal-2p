@@ -24,6 +24,7 @@ import {
   type FeatureKey,
   type InstanceId,
 } from "@/lib/instances";
+import { groupFeatures, shortFeatureLabel, featureScopeLabel } from "@/lib/feature-groups";
 
 export const Route = createFileRoute("/_authenticated/admin/perfis")({
   component: PerfisPage,
@@ -66,6 +67,7 @@ function PerfisPage() {
   const [userSearch, setUserSearch] = useState("");
   const [profInstances, setProfInstances] = useState<Set<InstanceId>>(new Set());
   const [tab, setTab] = useState<"perfis" | "permissoes">("perfis");
+  const [featSearch, setFeatSearch] = useState("");
 
   async function load() {
     setLoading(true);
@@ -124,6 +126,24 @@ function PerfisPage() {
     () => ALL_FEATURES.filter((f) => INSTANCES[instance].routes.includes(f)),
     [instance],
   );
+
+  const groupedFeatures = useMemo(() => {
+    const q = featSearch.trim().toLowerCase();
+    const filtered = q
+      ? instFeatures.filter((f) => FEATURE_LABELS[f].toLowerCase().includes(q))
+      : instFeatures;
+    return groupFeatures(filtered);
+  }, [instFeatures, featSearch]);
+
+  function toggleGroup(groupKeys: FeatureKey[], on: boolean) {
+    const next = new Set(keys);
+    for (const k of groupKeys) {
+      if (on) next.add(k);
+      else next.delete(k);
+    }
+    setKeys(next);
+  }
+
 
   if (authLoading) {
     return (
@@ -366,38 +386,111 @@ function PerfisPage() {
                         </button>
                       ))}
                     </div>
-                    <button
-                      onClick={saveFeatures}
-                      disabled={saving}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium disabled:opacity-60"
-                    >
-                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      Salvar telas
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {keys.size} de {instFeatures.length} telas
+                      </span>
+                      <button
+                        onClick={saveFeatures}
+                        disabled={saving}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium disabled:opacity-60"
+                      >
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Salvar telas
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="grid gap-1.5 sm:grid-cols-2">
-                    {instFeatures.map((f) => (
-                      <label
-                        key={f}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-surface-2 cursor-pointer text-sm"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={keys.has(f)}
-                          onChange={(e) => {
-                            const next = new Set(keys);
-                            if (e.target.checked) next.add(f);
-                            else next.delete(f);
-                            setKeys(next);
-                          }}
-                          className="accent-[var(--primary)]"
-                        />
-                        {FEATURE_LABELS[f]}
-                      </label>
-                    ))}
-                  </div>
+                  <input
+                    value={featSearch}
+                    onChange={(e) => setFeatSearch(e.target.value)}
+                    placeholder="Buscar tela…"
+                    className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm w-full sm:w-72 outline-none focus:border-primary"
+                  />
+
+                  {(["instancia", "grupo"] as const).map((area) => {
+                    const areaGroups = groupedFeatures.filter((g) => g.group.area === area);
+                    if (!areaGroups.length) return null;
+                    return (
+                      <div key={area} className="space-y-3">
+                        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                          {area === "instancia"
+                            ? `Telas da instância ${INSTANCES[instance].label}`
+                            : "Ambiente do Grupo 2P (Administração)"}
+                        </div>
+                        {areaGroups.map(({ group, keys: gk }) => {
+                          const allOn = gk.every((k) => keys.has(k));
+                          const someOn = gk.some((k) => keys.has(k));
+                          return (
+                            <div key={group.id} className="rounded-xl border border-border overflow-hidden">
+                              <div className="flex items-center justify-between gap-3 px-3 py-2 bg-surface-2">
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium flex items-center gap-2">
+                                    {group.label}
+                                    <span
+                                      className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                        someOn
+                                          ? "bg-primary/15 text-primary"
+                                          : "bg-muted text-muted-foreground"
+                                      }`}
+                                    >
+                                      {gk.filter((k) => keys.has(k)).length}/{gk.length}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-muted-foreground truncate">
+                                    {group.description}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => toggleGroup(gk, !allOn)}
+                                  className="text-xs px-2 py-1 rounded-md border border-border hover:bg-background shrink-0"
+                                >
+                                  {allOn ? "Desmarcar todas" : "Marcar todas"}
+                                </button>
+                              </div>
+                              <div className="grid gap-1.5 sm:grid-cols-2 p-3">
+                                {gk.map((f) => {
+                                  const scope = featureScopeLabel(f);
+                                  return (
+                                    <label
+                                      key={f}
+                                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-surface-2 cursor-pointer text-sm"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={keys.has(f)}
+                                        onChange={(e) => {
+                                          const next = new Set(keys);
+                                          if (e.target.checked) next.add(f);
+                                          else next.delete(f);
+                                          setKeys(next);
+                                        }}
+                                        className="accent-[var(--primary)]"
+                                      />
+                                      <span className="truncate">{shortFeatureLabel(f)}</span>
+                                      {scope && (
+                                        <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground shrink-0">
+                                          {scope}
+                                        </span>
+                                      )}
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+
+                  {groupedFeatures.length === 0 && (
+                    <div className="text-sm text-muted-foreground py-6 text-center">
+                      Nenhuma tela encontrada para “{featSearch}”.
+                    </div>
+                  )}
                 </div>
+
 
                 <div className="glass rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
