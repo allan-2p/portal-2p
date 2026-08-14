@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/auditoria")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="admin.auditoria">
+    <AdminRouteGuard feature="admin.auditoria" area="configuracoes">
       <AuditoriaPage />
     </AdminRouteGuard>
   ),

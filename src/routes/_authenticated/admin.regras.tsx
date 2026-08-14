@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/admin/regras")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="admin.regras">
+    <AdminRouteGuard feature="admin.regras" area="moderacao">
       <AppLayout>
         <ModeracaoPlaceholder
           unidade="2P Solar"

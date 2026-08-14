@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/admin/logs/integracoes")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="admin.logs.integracoes">
+    <AdminRouteGuard feature="admin.logs.integracoes" area="logs">
       <AppLayout>
         <div className="mx-auto max-w-6xl space-y-5">
           <header className="flex flex-wrap items-end justify-between gap-3">

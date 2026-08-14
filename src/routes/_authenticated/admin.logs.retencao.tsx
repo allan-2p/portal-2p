@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/logs/retencao")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="admin.logs.retencao">
+    <AdminRouteGuard feature="admin.logs.retencao" area="logs">
       <AppLayout>
         <div className="mx-auto max-w-4xl space-y-5">
           <header>

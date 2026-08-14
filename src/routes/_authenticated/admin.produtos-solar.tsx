@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/admin/produtos-solar")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="admin.produtos">
+    <AdminRouteGuard feature="admin.produtos" area="moderacao">
       <ProdutosSolarPage />
     </AdminRouteGuard>
   ),

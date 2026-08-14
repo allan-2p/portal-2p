@@ -183,7 +183,12 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/carregadores/metas": "cpo.metas",
 
   "/usuarios": "admin.usuarios",
+  "/admin/configuracoes": "admin.area.configuracoes",
+  "/admin/moderacao": "admin.area.moderacao",
+  "/admin/logs": "admin.area.logs",
+  "/admin/produtos-solar": "admin.produtos",
   "/admin/metas": "admin.metas",
+
   "/admin/regras": "admin.regras",
   "/admin/comissoes": "admin.comissoes",
   "/admin/tabelas": "admin.tabelas",

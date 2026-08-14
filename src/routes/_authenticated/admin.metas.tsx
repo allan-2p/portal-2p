@@ -31,7 +31,7 @@ import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 export const Route = createFileRoute("/_authenticated/admin/metas")({
   head: () => ({ meta: [{ title: "Metas — Portal 2P" }] }),
   component: () => (
-    <AdminRouteGuard feature="admin.metas">
+    <AdminRouteGuard feature="admin.metas" area="moderacao">
       <MetasPage />
     </AdminRouteGuard>
   ),

@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/metas")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="cpo.metas">
+    <AdminRouteGuard feature="cpo.metas" area="moderacao">
       <AppLayout>
         <ModeracaoPlaceholder
           unidade="2P Carregadores"

@@ -17,7 +17,7 @@ import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 export const Route = createFileRoute("/_authenticated/integracoes")({
   head: () => ({ meta: [{ title: "Integrações · Portal 2P" }] }),
   component: () => (
-    <AdminRouteGuard feature="admin.integracoes">
+    <AdminRouteGuard feature="admin.integracoes" area="integracoes">
       <IntegracoesPage />
     </AdminRouteGuard>
   ),

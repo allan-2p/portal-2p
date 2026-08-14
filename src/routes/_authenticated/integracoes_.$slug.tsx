@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/integracoes_/$slug")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="admin.integracoes">
+    <AdminRouteGuard feature="admin.integracoes" area="integracoes">
       <IntegracaoConfigPage />
     </AdminRouteGuard>
   ),
