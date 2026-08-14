@@ -77,7 +77,7 @@ const PAGE_SIZES = [10, 25, 50, 100];
 function CatalogoSapCompleto() {
   const listAll = useServerFn(listSapCatalogoCompleto);
   const [q, setQ] = useState("");
-  const [escopo, setEscopo] = useState<"todos" | "catalogo" | "fora">("todos");
+  const [escopo, setEscopo] = useState<"todos" | "catalogo" | "fora" | "sem_ncm">("todos");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
 
@@ -87,11 +87,14 @@ function CatalogoSapCompleto() {
   });
 
   const itens = data?.itens ?? [];
+  const semNcm = useMemo(() => itens.filter((i) => !i.ncm_codigo), [itens]);
+  const semNcmNoCatalogo = useMemo(() => semNcm.filter((i) => i.no_catalogo), [semNcm]);
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return itens.filter((i) => {
       if (escopo === "catalogo" && !i.no_catalogo) return false;
       if (escopo === "fora" && i.no_catalogo) return false;
+      if (escopo === "sem_ncm" && i.ncm_codigo) return false;
       if (!term) return true;
       return (
         i.codigo.toLowerCase().includes(term) ||
@@ -105,12 +108,50 @@ function CatalogoSapCompleto() {
   const current = Math.min(page, totalPages - 1);
   const rows = filtered.slice(current * pageSize, current * pageSize + pageSize);
 
+
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
         Espelho de leitura de <strong>todos</strong> os materiais devolvidos pelo SAP, inclusive os que não fazem
         parte do catálogo do portal. Atualizado a cada “Sinc. SAP”.
       </p>
+
+      {!isLoading && semNcm.length > 0 && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+            <div className="text-sm space-y-1">
+              <p className="font-medium">
+                {semNcm.length} material(is) sem NCM no SAP
+                {semNcmNoCatalogo.length > 0 && ` — ${semNcmNoCatalogo.length} no catálogo do portal`}
+              </p>
+              <p className="text-muted-foreground">
+                A RFC <code className="font-mono">listar_material</code> não devolveu o campo NCM (STEUC) para esses
+                itens, por isso a coluna aparece como “—”. Próximo passo: solicitar ao time SAP a liberação do campo
+                <code className="font-mono"> MARA-STEUC</code> na estrutura de saída <code className="font-mono">e_t_material</code>
+                {" "}e o preenchimento do NCM no cadastro do material. Depois, rode “Sinc. SAP” novamente.
+              </p>
+              {semNcmNoCatalogo.length > 0 && (
+                <p className="text-muted-foreground">
+                  Itens do portal: {semNcmNoCatalogo.slice(0, 8).map((i) => i.codigo).join(", ")}
+                  {semNcmNoCatalogo.length > 8 && ` +${semNcmNoCatalogo.length - 8}`}
+                </p>
+              )}
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setEscopo("sem_ncm");
+              setPage(0);
+            }}
+          >
+            Ver itens sem NCM
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-56">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -132,8 +173,10 @@ function CatalogoSapCompleto() {
             <SelectItem value="todos">Todos os materiais</SelectItem>
             <SelectItem value="catalogo">Somente no catálogo do portal</SelectItem>
             <SelectItem value="fora">Fora do catálogo do portal</SelectItem>
+            <SelectItem value="sem_ncm">Somente sem NCM</SelectItem>
           </SelectContent>
         </Select>
+
         <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} aria-label="Atualizar catálogo completo">
           <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
         </Button>
