@@ -75,6 +75,7 @@ type Draft = {
   preco_sugerido: string;
   ativo: boolean;
   ncm_id: string | null;
+  ncm_codigo: string | null;
 };
 
 
@@ -204,6 +205,7 @@ function ProdutosTab() {
                             preco_sugerido: String(p.preco_sugerido || precoSugeridoPadrao(p.custo)),
                             ativo: p.ativo,
                             ncm_id: p.ncm_id ?? null,
+                            ncm_codigo: p.ncm_codigo ?? null,
                           })
                         }
                       >
