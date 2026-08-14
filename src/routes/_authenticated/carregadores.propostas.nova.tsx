@@ -380,18 +380,24 @@ function PropostaCpoPage() {
       itens: s.itens.map((i) => (i.key === key ? { ...i, ...patch } : i)),
     }));
 
-  // Propostas já abertas: aplica o Preço Sugerido nos itens que ainda não têm
-  // valor definido manualmente, assim que a lista de produtos carrega.
+  // Mantém o valor unitário sincronizado com o Preço Sugerido do produto
+  // enquanto o vendedor não definir um valor manualmente. Reage a mudanças do
+  // preço sugerido (catálogo) e recalcula os totais automaticamente.
   useEffect(() => {
     if (!produtos.length) return;
     setState((s) => {
       let mudou = false;
       const itens = s.itens.map((i) => {
-        if (!i.produtoId || i.valorManual || i.valor > 0) return i;
-        const sugerido = produtos.find((p) => p.id === i.produtoId)?.preco_sugerido ?? 0;
-        if (!(sugerido > 0)) return i;
+        if (!i.produtoId) return i;
+        const sugerido = money2(produtos.find((p) => p.id === i.produtoId)?.preco_sugerido ?? 0);
+        if (!(sugerido > 0) || sugerido === i.valor) return i;
+        // Só substitui quando o item não tem preço manual e o valor atual está
+        // vazio ou veio de uma aplicação anterior do preço sugerido.
+        const podeAplicar =
+          !i.valorManual && (!(i.valor > 0) || i.sugeridoAplicado === i.valor);
+        if (!podeAplicar) return i;
         mudou = true;
-        return { ...i, valor: money2(sugerido) };
+        return { ...i, valor: sugerido, sugeridoAplicado: sugerido };
       });
       return mudou ? { ...s, itens } : s;
     });
