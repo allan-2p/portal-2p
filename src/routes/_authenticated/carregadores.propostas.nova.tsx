@@ -205,15 +205,23 @@ function PropostaCpoPage() {
         toast.error("Não foi possível carregar a proposta.");
         return;
       }
-      const itens = ((data.itens as { produtoId?: string; qtd?: number; valor?: number }[]) ?? [])
+      const itens = (
+        (data.itens as { produtoId?: string; qtd?: number; valor?: number; valorManual?: boolean }[]) ?? []
+      )
         .filter((i) => i.produtoId)
-        .map((i) => ({
-          key: Math.random().toString(36).slice(2),
-          produtoId: i.produtoId as string,
-          qtd: Number(i.qtd ?? 1),
-          valor: money2(i.valor ?? 0),
-          valorManual: true,
-        }));
+        .map((i) => {
+          const valor = money2(i.valor ?? 0);
+          return {
+            key: Math.random().toString(36).slice(2),
+            produtoId: i.produtoId as string,
+            qtd: Number(i.qtd ?? 1),
+            valor,
+            // Sem valor salvo => não é um preço definido pelo vendedor,
+            // então pode ser pré-preenchido com o Preço Sugerido do produto.
+            valorManual: i.valorManual ?? valor > 0,
+          };
+        });
+
       setState({
         nome: dupId ? `${data.cliente_nome}` : data.cliente_nome,
         telefone: data.cliente_telefone ?? "",
