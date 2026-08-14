@@ -130,7 +130,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     id: "logs",
     label: "Administração • Logs",
     description:
-      "Quem pode ver os logs do portal: usuários, integrações, moderação e retenção.",
+      "Quem pode ver os logs do portal (usuários, integrações, moderação e retenção) e quem pode exportar os registros em CSV.",
     area: "grupo",
     accessKey: "admin.area.logs",
     keys: [
@@ -139,6 +139,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "admin.logs.integracoes",
       "admin.logs.moderacao",
       "admin.logs.retencao",
+      "admin.logs.exportar",
     ],
   },
 ];
