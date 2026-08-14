@@ -75,7 +75,7 @@ type Draft = {
   nome: string;
   custo: string;
   ativo: boolean;
-  ncm_id: string;
+  ncm_id: string | null;
 };
 
 
@@ -95,14 +95,13 @@ function ProdutosTab() {
     if (!draft.id) return toast.error("Produtos só podem ser criados pela sincronização com o SAP.");
     if (!draft.nome.trim()) return toast.error("Informe o nome do produto.");
     const impedimento = draft.ativo
-      ? validateAtivacaoCarregadores({ custo: Number(draft.custo) || 0, ncm_id: draft.ncm_id || null })
+      ? validateAtivacaoCarregadores({ custo: Number(draft.custo) || 0, ncm_id: draft.ncm_id })
       : null;
     if (impedimento) return toast.error(impedimento);
     const payload = {
       descricao: draft.nome.trim(),
       custo: Number(draft.custo) || 0,
       ativo: draft.ativo,
-      ncm_id: draft.ncm_id || null,
     };
 
     setSaving(true);
@@ -215,7 +214,7 @@ function ProdutosTab() {
                             nome: p.nome,
                             custo: String(p.custo),
                             ativo: p.ativo,
-                            ncm_id: p.ncm_id ?? "",
+                            ncm_id: p.ncm_id ?? null,
                           })
                         }
                       >
