@@ -86,7 +86,7 @@ function EstoquePage() {
 
   return (
     <AppLayout>
-      <AdminRouteGuard>
+      <AdminRouteGuard feature="admin.objetos.produtos">
         <div className="space-y-6 p-4 md:p-6">
           <header className="flex flex-wrap items-center justify-between gap-3">
             <div>
