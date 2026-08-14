@@ -217,7 +217,12 @@ export async function getAllMaterials(): Promise<SapMaterialCompleto[]> {
  * `sap_produtos` (inclui o NCM devolvido pelo SAP, quando disponível).
  */
 export async function getProducts(): Promise<SapMaterial[]> {
-  return (await getAllMaterials())
+  return selecionarLiberados(await getAllMaterials());
+}
+
+/** Recorta o catálogo liberado do portal a partir do catálogo completo do SAP. */
+export function selecionarLiberados(todos: SapMaterialCompleto[]): SapMaterial[] {
+  return todos
     .filter((m) => m.liberado)
     .map((m) => ({
       codigo: m.codigo,
