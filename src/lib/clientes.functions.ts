@@ -27,6 +27,59 @@ async function assertPodeAlterarCliente(
   return atual;
 }
 
+/**
+ * Só administradores (ou quem tem visão geral) podem escolher o consultor
+ * responsável por um cadastro. Um consultor comum sempre fica com o próprio.
+ */
+async function podeEscolherConsultor(context: { supabase: any; userId: string }) {
+  const { data: isAdmin } = await context.supabase.rpc("is_admin");
+  if (isAdmin) return true;
+  const { data: perfil } = await context.supabase
+    .from("profiles")
+    .select("filter_scope")
+    .eq("id", context.userId)
+    .maybeSingle();
+  return perfil?.filter_scope === "geral";
+}
+
+/** Consultores elegíveis para receber cadastros da instância. */
+export const listConsultoresFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ instancia: instanciaSchema }).parse(input))
+  .handler(async ({ data, context }) => {
+    const podeEscolher = await podeEscolherConsultor(context as any);
+    const { data: eu } = await context.supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const meuNome = eu?.full_name || eu?.email || "—";
+    if (!podeEscolher) {
+      return {
+        podeEscolher: false as const,
+        eu: { id: context.userId, nome: meuNome },
+        consultores: [{ id: context.userId, nome: meuNome }],
+      };
+    }
+
+    const { data: perfis } = await context.supabase
+      .from("profiles")
+      .select("id, full_name, email, organizacao, ativo")
+      .eq("ativo", true)
+      .in("organizacao", [data.instancia, "grupo"])
+      .order("full_name", { ascending: true });
+
+    const consultores = (perfis ?? []).map((p: any) => ({
+      id: p.id as string,
+      nome: (p.full_name || p.email || "—") as string,
+    }));
+    if (!consultores.some((c: { id: string }) => c.id === context.userId)) {
+      consultores.unshift({ id: context.userId, nome: meuNome });
+    }
+    return { podeEscolher: true as const, eu: { id: context.userId, nome: meuNome }, consultores };
+  });
+
 /** Consulta a tabela `clientes` da instância. */
 export const listClientesFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
