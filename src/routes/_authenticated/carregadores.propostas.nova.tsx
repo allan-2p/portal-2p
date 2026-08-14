@@ -64,6 +64,7 @@ import {
   avisoDifalUsoConsumo,
 } from "@/lib/cpo";
 import { registrarConclusao } from "@/lib/cpo-conclusao-log";
+import { salvarPropostaCpo } from "@/lib/cpo-proposals.functions";
 
 
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
@@ -265,6 +266,7 @@ function PropostaCpoPage() {
   // Clientes vindos do cadastro universal (Clientes > Cadastros)
 
   const listClientes = useServerFn(listClientesFn);
+  const salvarProposta = useServerFn(salvarPropostaCpo);
   const clientesQ = useQuery({
     queryKey: ["cpo-clientes-cadastro"],
     queryFn: async () => {
@@ -691,55 +693,37 @@ function PropostaCpoPage() {
     // Quem chama concluirPedido já setou saving e status; evita piscar
     if (!saving) setSaving(true);
     try {
-      const { data: userRes } = await supabase.auth.getUser();
       // Número idempotente: reenvios reutilizam o mesmo número (índice único no banco)
       if (!numeroRef.current) numeroRef.current = `CPO-${Date.now().toString().slice(-6)}`;
       const numero = numeroAtual ?? numeroRef.current;
-      const payload = {
-        numero,
-        cliente_nome: state.nome,
-        cliente_telefone: state.telefone,
-        cliente_email: state.email,
-        cliente_doc: state.doc,
-        cliente_ie: state.ie,
-        status,
-        uf: state.uf,
-        contribuinte: state.contribuinte,
-        finalidade_uso: state.finalidadeUso,
-        frete_mod: state.freteMod,
-        frete_valor: money2(state.freteValor),
-        observacoes: observacoesFinal.trim() || null,
-        itens: state.itens.map((i) => ({
-          produtoId: i.produtoId,
-          codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
-          nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
-          qtd: i.qtd,
-          valor: money2(i.valor),
-        })),
-        totais: {
-          valorTotal: dNow.valorTotalProposta,
-          valor: dNow.valor,
-          icms: dNow.icms,
-          icmsRate: dNow.icmsRate,
-          ipi: dNow.ipiValor,
-          pisCofins: dNow.pisCofins,
-          rl: dNow.rl,
-          custo: 0,
-          mb: dNow.mb,
-          mbPct: dNow.mbPct,
-          comissao: dNow.comValor,
+      // O backend recalcula e revalida todos os totais (fiscais, MB% e comissão)
+      // a partir do catálogo/alíquotas vigentes — a UI só envia os insumos.
+      const salvo = await salvarProposta({
+        data: {
+          propostaId,
+          numero,
+          cliente: {
+            nome: state.nome,
+            telefone: state.telefone,
+            email: state.email,
+            doc: state.doc,
+            ie: state.ie,
+          },
+          uf: state.uf,
+          contribuinte: state.contribuinte,
+          regimeTributario: state.regimeTributario ?? null,
+          finalidadeUso: state.finalidadeUso,
+          freteMod: state.freteMod,
+          freteValor: money2(state.freteValor),
+          observacoes: observacoesFinal.trim() || null,
+          itens: state.itens
+            .filter((i) => i.produtoId)
+            .map((i) => ({ produtoId: i.produtoId, qtd: i.qtd, valor: money2(i.valor) })),
         },
-      };
+      });
 
       if (propostaId) {
         const concluindo = status !== "Salvo";
-        const { status: _ignore, ...dados } = payload;
-        const { error } = await supabase
-          .from("cpo_proposals")
-          .update(concluindo ? dados : payload)
-          .eq("id", propostaId);
-        if (error) throw error;
-
         if (concluindo) {
           // Lock idempotente no banco: só conclui se ainda estiver "Salvo"
           const { data: res, error: rpcErr } = await supabase.rpc("cpo_conclude_proposal", {
@@ -769,23 +753,16 @@ function PropostaCpoPage() {
 
       // Sempre nasce como "Salvo": a conclusão passa obrigatoriamente pela
       // validação de etapa/completude no banco (cpo_conclude_proposal).
-      const { data: inserida, error } = await supabase
-        .from("cpo_proposals")
-        .insert({ ...payload, status: "Salvo", created_by: userRes.user?.id ?? null })
-        .select("id")
-        .single();
-      if (error) {
-        // Índice único no número: reenvio duplicado não cria um segundo registro
-        if ((error as { code?: string }).code === "23505") {
-          if (status !== "Salvo") {
-            void registrarConclusao({ numero, status, resultado: "duplicada", detalhe: "Reenvio com número já existente" });
-          }
-          toast.info(`Proposta ${numero} já registrada.`);
-          invalidate();
-          return;
+      const inserida = salvo.id ? { id: salvo.id } : null;
+      if (salvo.duplicada) {
+        if (status !== "Salvo") {
+          void registrarConclusao({ numero, status, resultado: "duplicada", detalhe: "Reenvio com número já existente" });
         }
-        throw error;
+        toast.info(`Proposta ${numero} já registrada.`);
+        invalidate();
+        return;
       }
+
       if (status !== "Salvo") {
         if (!inserida?.id) throw new Error("Não foi possível concluir: proposta não localizada.");
         const { data: res, error: rpcErr } = await supabase.rpc("cpo_conclude_proposal", {
