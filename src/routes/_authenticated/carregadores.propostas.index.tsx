@@ -80,6 +80,7 @@ function HistoricoCpoPage() {
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
   const [vendedor, setVendedor] = useState("__all__");
+  const [excluirId, setExcluirId] = useState<string | null>(null);
   const vend = useCpoVendedores();
 
   const q = useQuery({
