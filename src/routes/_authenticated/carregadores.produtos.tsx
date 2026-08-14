@@ -324,7 +324,7 @@ function ProdutosTab() {
                 />
                 <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span>
-                    Padrão ({Math.round(MARGEM_PRECO_SUGERIDO * 100)}% sobre o custo):{" "}
+                    Padrão ({Math.round(MARGEM_PRECO_SUGERIDO * 100)}% de margem sobre a venda):{" "}
                     {fmtBRL(precoSugeridoPadrao(Number(draft.custo) || 0))}
                   </span>
                   <Button
