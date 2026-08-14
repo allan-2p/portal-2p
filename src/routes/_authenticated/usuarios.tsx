@@ -465,7 +465,7 @@ function PortalTable({
             <th className="text-left px-4 py-3 font-medium">Regime de contratação</th>
 
             <th className="text-left px-4 py-3 font-medium">Escopo do filtro</th>
-            <th className="text-left px-4 py-3 font-medium">ID Salesforce</th>
+            
             <th className="text-left px-4 py-3 font-medium">Equipe de vendas</th>
             <th className="text-center px-4 py-3 font-medium">Aparece nos filtros</th>
             <th className="text-left px-4 py-3 font-medium">Status</th>
@@ -562,13 +562,6 @@ function PortalTable({
                     ))}
                   </select>
                 </td>
-                <td className="px-4 py-3">
-                  <SfIdCell
-                    value={r.sf_user_id}
-                    onSave={(v: string | null) => onSfIdChange(r.id, v)}
-                  />
-
-                </td>
 
                 <td className="px-4 py-3">
                   {r.sf_user_id ? (
@@ -625,7 +618,7 @@ function PortalTable({
                       title="Simular este usuário"
                       aria-label="Simular este usuário"
                     >
-                      <Eye className="h-3.5 w-3.5" />
+                      <VenetianMask className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => onDetail(r)}
@@ -1026,9 +1019,6 @@ function EditUserModal({
           <Field label="Cargo">
             <input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} className="input" />
           </Field>
-          <Field label="Tipo de cargo">
-            <input value={form.cargo_tipo} onChange={(e) => setForm({ ...form, cargo_tipo: e.target.value })} className="input" placeholder="ex.: vendedor interno" />
-          </Field>
           <Field label="Equipe">
             <input value={form.equipe} onChange={(e) => setForm({ ...form, equipe: e.target.value })} className="input" />
           </Field>
@@ -1069,16 +1059,6 @@ function EditUserModal({
               onChange={(e) => setForm({ ...form, sf_user_id: e.target.value })}
               className="input font-mono"
               placeholder="005U400000..."
-            />
-          </Field>
-          <Field label="Meta mensal (R$)">
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={form.meta_mensal}
-              onChange={(e) => setForm({ ...form, meta_mensal: e.target.value })}
-              className="input"
             />
           </Field>
         </div>
