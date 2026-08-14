@@ -448,10 +448,11 @@ function UfsTab() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+    <div className="space-y-1.5 min-w-0">
+      <Label className="text-xs text-muted-foreground break-words leading-snug block">{label}</Label>
       {children}
     </div>
+
   );
 }
 
