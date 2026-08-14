@@ -421,8 +421,6 @@ export function statusMB(mbPct: number, config: CpoConfig): MbStatus {
       level: "bad",
       msg: `MB% abaixo da política mínima de ${fmtPct(config.politica_mb_min)}. Ajuste a proposta para continuar.`,
     };
-  if (mbPct < config.mb_atencao)
-    return { level: "warn", msg: "MB% dentro da política, mas em faixa de atenção." };
   return { level: "good", msg: "MB% dentro da política." };
 }
 

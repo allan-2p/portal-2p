@@ -547,13 +547,6 @@ function PropostaCpoPage() {
       motivo: `A margem bruta está abaixo do mínimo de ${fmtPct(config.politica_mb_min)} exigido pela política comercial.`,
       corrigir: "Aumente o valor unitário dos produtos ou reduza o frete absorvido (CIF/Dedicado).",
     });
-  else if (temProduto && d.mbPct < config.mb_atencao)
-    alertas.push({
-      level: "warn",
-      titulo: `Margem em atenção — ${fmtPct(d.mbPct)}`,
-      motivo: `Abaixo do patamar de conforto de ${fmtPct(config.mb_atencao)}.`,
-      corrigir: "Revise o valor unitário dos produtos antes de concluir o pedido.",
-    });
   if (itensSemValor.length)
     alertas.push({
       level: "err",
@@ -582,7 +575,7 @@ function PropostaCpoPage() {
       motivo: "Nessa modalidade a 2P absorve o frete; sem valor a margem fica superestimada.",
       corrigir: "Preencha o campo Valor do frete.",
     });
-  if (!state.contribuinte && d.difalAbs > 0 && d.mbPct < config.mb_atencao)
+  if (!state.contribuinte && d.difalAbs > 0 && abaixoPolitica)
     alertas.push({
       level: "warn",
       titulo: "DIFAL absorvido pressionando a margem",

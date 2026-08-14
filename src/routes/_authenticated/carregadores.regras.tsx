@@ -172,10 +172,7 @@ MB %            = Margem Bruta ÷ Venda`}</Formula>
               política mínima; a proposta precisa ser ajustada.
             </li>
             <li>
-              <strong className="text-amber-500">Entre {fmtPct(cfg.politica_mb_min)} e {fmtPct(cfg.mb_atencao)}</strong> — dentro da política, mas em faixa de atenção.
-            </li>
-            <li>
-              <strong className="text-emerald-500">Acima de {fmtPct(cfg.mb_atencao)}</strong> — margem saudável.
+              <strong className="text-emerald-500">MB% a partir de {fmtPct(cfg.politica_mb_min)}</strong> — dentro da política.
             </li>
           </ul>
         </Section>
