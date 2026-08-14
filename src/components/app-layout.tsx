@@ -169,7 +169,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const atlasActive = pathname.startsWith("/solar/atlas");
   const clientesActive = pathname.startsWith("/solar/clientes");
   const dashboardsActive = pathname.startsWith("/solar/dashboards");
-  const moderacaoActive = pathname.startsWith("/carregadores/produtos") || pathname.startsWith("/carregadores/comissoes") || pathname.startsWith("/carregadores/regras");
+  const moderacaoActive = pathname.startsWith("/carregadores/produtos") || pathname.startsWith("/carregadores/comissoes") || pathname.startsWith("/carregadores/regras") || pathname.startsWith("/carregadores/metas");
   const marketingActive = pathname.startsWith("/marketing");
 
   // Filtragem de itens por feature — cada bloco só aparece na sua própria
