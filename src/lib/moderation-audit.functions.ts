@@ -11,6 +11,13 @@ async function assertFeature(
   await requireAdminFeature(ctx, feature, action);
 }
 
+/** Leitura de log: liberada pela tela de moderação OU pela permissão de Logs. */
+async function assertLogRead(ctx: { supabase: any; userId: string }, fallback: any) {
+  const { canAdminFeature, requireAdminFeature } = await import("@/lib/guards.server");
+  if (await canAdminFeature(ctx, "admin.logs.moderacao", "visualizar")) return;
+  await requireAdminFeature(ctx, fallback, "visualizar");
+}
+
 
 export type ModerationAuditRow = {
   id: string;
@@ -32,7 +39,7 @@ export const listModerationAudit = createServerFn({ method: "GET" })
     (input: { area?: string; areas?: string[]; instanceId?: string; limit?: number; offset?: number }) => input,
   )
   .handler(async ({ data, context }) => {
-    await assertFeature(context, "admin.metas", "visualizar");
+    await assertLogRead(context, "admin.metas");
 
     const limit = Math.min(Math.max(data.limit ?? 10, 1), 100);
     const offset = Math.max(data.offset ?? 0, 0);
