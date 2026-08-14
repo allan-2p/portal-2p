@@ -82,7 +82,6 @@ type Draft = {
   id?: string;
   codigo: string;
   nome: string;
-  potencia: string;
   custo: string;
   ativo: boolean;
   ncm_id: string;
@@ -98,7 +97,7 @@ function ProdutosTab() {
   const [saving, setSaving] = useState(false);
 
   const filtrados = produtos.filter((p) =>
-    `${p.codigo ?? ""} ${p.nome} ${p.potencia ?? ""}`.toLowerCase().includes(busca.trim().toLowerCase()),
+    `${p.codigo ?? ""} ${p.nome}`.toLowerCase().includes(busca.trim().toLowerCase()),
   );
 
   async function salvar() {
@@ -112,7 +111,6 @@ function ProdutosTab() {
     if (impedimento) return toast.error(impedimento);
     const payload = {
       descricao: draft.nome.trim(),
-      potencia: draft.potencia.trim() || null,
       custo: Number(draft.custo) || 0,
       ativo: draft.ativo,
       ncm_id: draft.ncm_id || null,
@@ -177,7 +175,6 @@ function ProdutosTab() {
               <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                 <th className="text-left px-4 py-3">Código (SKU)</th>
                 <th className="text-left px-4 py-3">Produto</th>
-                <th className="text-left px-4 py-3">Potência</th>
                 <th className="text-left px-4 py-3">NCM</th>
                 <th className="text-right px-4 py-3">Custo</th>
                 <th className="text-center px-4 py-3">Ativo</th>
@@ -190,7 +187,6 @@ function ProdutosTab() {
                 <tr key={p.id} className="border-b border-border/50 hover:bg-surface-2">
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.codigo || "—"}</td>
                   <td className="px-4 py-3 font-medium">{p.nome}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{p.potencia || "—"}</td>
                   <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
                     {ncms.find((n) => n.id === p.ncm_id)?.codigo ?? "—"}
                   </td>
@@ -209,7 +205,6 @@ function ProdutosTab() {
                             id: p.id,
                             codigo: p.codigo ?? "",
                             nome: p.nome,
-                            potencia: p.potencia ?? "",
                             custo: String(p.custo),
                             ativo: p.ativo,
                             ncm_id: p.ncm_id ?? "",
@@ -229,7 +224,7 @@ function ProdutosTab() {
               ))}
               {filtrados.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
                     {isLoading || isFetching ? (
                       "Carregando…"
                     ) : error ? (
@@ -266,9 +261,6 @@ function ProdutosTab() {
 
               <Field label="Nome">
                 <Input value={draft.nome} onChange={(e) => setDraft({ ...draft, nome: e.target.value })} />
-              </Field>
-              <Field label="Potência (ex.: 7,4 kW)">
-                <Input value={draft.potencia} onChange={(e) => setDraft({ ...draft, potencia: e.target.value })} />
               </Field>
               <Field label="NCM (define IPI, PIS/COFINS, ST e DIFAL)">
                 <Select

@@ -1133,7 +1133,6 @@ function PropostaCpoPage() {
                               <SelectItem key={p.id} value={p.id}>
                                 {p.codigo ? `${p.codigo} — ` : ""}
                                 {p.nome}
-                                {p.potencia ? ` · ${p.potencia}` : ""}
                               </SelectItem>
                             ))}
                           </SelectContent>
