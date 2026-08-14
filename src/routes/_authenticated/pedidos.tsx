@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, KanbanSquare, List, Loader2, Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VendedorFilter } from "@/components/vendedor-filter";
+import { propostaStatusStyle } from "@/lib/proposta-status";
 import { getSalesforcePedidos, PEDIDO_STATUS, type PedidoStatus, type SalesforceOppRow } from "@/lib/salesforce.functions";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
 
@@ -163,13 +164,9 @@ function PedidosPage() {
   );
 }
 
-const STATUS_STYLE: Record<PedidoStatus, { bg: string; fg: string }> = {
-  "Aguardando Pagamento": { bg: "#32658A", fg: "#F8FAFC" },
-  "Processando": { bg: "#C6A24A", fg: "#1F1A10" },
-  "Separação": { bg: "#5F97B8", fg: "#F8FAFC" },
-  "Faturado": { bg: "#262626", fg: "#F8FAFC" },
-  "Coletado": { bg: "#4A9F8C", fg: "#F8FAFC" },
-};
+const STATUS_STYLE: Record<PedidoStatus, { bg: string; fg: string }> = Object.fromEntries(
+  PEDIDO_STATUS.map((s) => [s, propostaStatusStyle(s)]),
+) as Record<PedidoStatus, { bg: string; fg: string }>;
 
 
 function KanbanView({ data }: { data: Pedido[] }) {

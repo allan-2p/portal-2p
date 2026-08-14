@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PROPOSTA_STATUS, propostaStatusStyle } from "@/lib/proposta-status";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -58,14 +59,8 @@ type Row = {
   created_by: string | null;
 };
 
-const STATUS = ["Salvo", "Enviada", "Aprovada", "Perdida"] as const;
-
-const STATUS_CLS: Record<string, string> = {
-  Salvo: "bg-muted text-muted-foreground",
-  Enviada: "bg-primary/15 text-primary",
-  Aprovada: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  Perdida: "bg-destructive/15 text-destructive",
-};
+/** Status universais do portal (mesma lista e cores em todas as instâncias). */
+const STATUS = PROPOSTA_STATUS;
 
 function HistoricoCpoPage() {
   const [busca, setBusca] = useState("");
@@ -203,7 +198,13 @@ function HistoricoCpoPage() {
                     </td>
                     <td className="px-4 py-3">
                       <Select value={r.status} onValueChange={(v) => alterarStatus(r.id, v)}>
-                        <SelectTrigger className={cn("h-7 w-[130px] border-0 text-xs font-semibold", STATUS_CLS[r.status])}>
+                        <SelectTrigger
+                          className="h-7 w-[180px] border-0 text-xs font-semibold"
+                          style={{
+                            backgroundColor: propostaStatusStyle(r.status).bg,
+                            color: propostaStatusStyle(r.status).fg,
+                          }}
+                        >
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

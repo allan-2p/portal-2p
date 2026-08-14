@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
-import { PROPOSTA_STATUS, PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
+import { PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
 
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   head: () => ({
@@ -23,8 +23,15 @@ export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   component: CpoPedidosPage,
 });
 
-const PEDIDO_STATUS = PROPOSTA_STATUS;
-type PedidoStatus = PropostaStatus;
+/** Mesmos status exibidos em Pedidos do 2P Solar. */
+const PEDIDO_STATUS = [
+  "Aguardando Pagamento",
+  "Processando",
+  "Separação",
+  "Faturado",
+  "Coletado",
+] as const satisfies readonly PropostaStatus[];
+type PedidoStatus = (typeof PEDIDO_STATUS)[number];
 
 const STATUS_STYLE = PROPOSTA_STATUS_STYLE;
 
