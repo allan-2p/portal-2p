@@ -140,7 +140,7 @@ export async function getProducts(): Promise<SapMaterial[]> {
     if (items.length === 0) {
       throw new Error(
         `SAP: resposta sem materiais (e_t_material vazio) usando ${credencial.nome}. ` +
-          `Normalmente é falta de autorização do usuário na RFC. HTTP ${res.status}, ${xml.length} bytes.`,
+          `HTTP ${res.status}, ${xml.length} bytes. Corpo: ${xml.slice(0, 400)}`,
       );
     }
     return items as any[];
