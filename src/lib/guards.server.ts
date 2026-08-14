@@ -114,7 +114,7 @@ export async function requireAnyFeature(
 /** Guard de área administrativa (Configurações / Moderação / Integrações). */
 export async function requireAdminArea(
   ctx: GuardContext,
-  area: "configuracoes" | "moderacao" | "integracoes",
+  area: "configuracoes" | "moderacao" | "integracoes" | "logs",
   action: CapabilityId = "moderar",
 ): Promise<void> {
   const key = `admin.area.${area}` as FeatureKey;
@@ -169,6 +169,7 @@ export async function adminAreasFor(ctx: GuardContext): Promise<{
   configuracoes: boolean;
   moderacao: boolean;
   integracoes: boolean;
+  logs: boolean;
   isAdmin: boolean;
 }> {
   const acc = await resolveAccess(ctx);
@@ -185,7 +186,6 @@ export async function adminAreasFor(ctx: GuardContext): Promise<{
       "admin.usuarios",
       "admin.perfis",
       "admin.auditoria",
-      "admin.atividade",
       "admin.vinculos",
     ]),
     moderacao: areaOr("moderacao", [
@@ -197,6 +197,12 @@ export async function adminAreasFor(ctx: GuardContext): Promise<{
       "cpo.regras",
     ]),
     integracoes: areaOr("integracoes", ["admin.integracoes"]),
+    logs: areaOr("logs", [
+      "admin.atividade",
+      "admin.logs.integracoes",
+      "admin.logs.moderacao",
+      "admin.logs.retencao",
+    ]),
     isAdmin: all,
   };
 }

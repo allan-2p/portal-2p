@@ -7,6 +7,7 @@ export type AdminAreas = {
   configuracoes: boolean;
   moderacao: boolean;
   integracoes: boolean;
+  logs: boolean;
   isAdmin: boolean;
 };
 

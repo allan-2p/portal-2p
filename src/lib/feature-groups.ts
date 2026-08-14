@@ -14,7 +14,8 @@ export type FeatureGroupId =
   | "inteligencia"
   | "config"
   | "moderacao"
-  | "integracoes";
+  | "integracoes"
+  | "logs";
 
 export type FeatureGroup = {
   id: FeatureGroupId;
@@ -94,7 +95,6 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "admin.usuarios",
       "admin.perfis",
       "admin.auditoria",
-      "admin.atividade",
       "admin.vinculos",
     ],
   },
@@ -121,6 +121,21 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     area: "grupo",
     accessKey: "admin.area.integracoes",
     keys: ["admin.area.integracoes", "admin.integracoes"],
+  },
+  {
+    id: "logs",
+    label: "Administração • Logs",
+    description:
+      "Quem pode ver os logs do portal: usuários, integrações, moderação e retenção.",
+    area: "grupo",
+    accessKey: "admin.area.logs",
+    keys: [
+      "admin.area.logs",
+      "admin.atividade",
+      "admin.logs.integracoes",
+      "admin.logs.moderacao",
+      "admin.logs.retencao",
+    ],
   },
 ];
 

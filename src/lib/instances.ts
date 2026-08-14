@@ -42,6 +42,10 @@ export type FeatureKey =
   | "admin.area.configuracoes"
   | "admin.area.moderacao"
   | "admin.area.integracoes"
+  | "admin.area.logs"
+  | "admin.logs.integracoes"
+  | "admin.logs.moderacao"
+  | "admin.logs.retencao"
   | "marketing.home"
   | "marketing.social"
   | "marketing.trafego"
@@ -179,6 +183,9 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/integracoes": "admin.integracoes",
   "/admin/auditoria": "admin.auditoria",
   "/admin/atividade": "admin.atividade",
+  "/admin/logs/integracoes": "admin.logs.integracoes",
+  "/admin/logs/moderacao": "admin.logs.moderacao",
+  "/admin/logs/retencao": "admin.logs.retencao",
   "/admin/vinculos": "admin.vinculos",
   "/marketing": "marketing.home",
   "/marketing/social": "marketing.social",
@@ -219,11 +226,15 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.perfis": "Admin • Perfis",
   "admin.integracoes": "Admin • Integrações",
   "admin.auditoria": "Admin • Auditoria de Acessos",
-  "admin.atividade": "Admin • Log de Usuários",
+  "admin.atividade": "Logs • Log de Usuários",
+  "admin.logs.integracoes": "Logs • Integrações",
+  "admin.logs.moderacao": "Logs • Moderação",
+  "admin.logs.retencao": "Logs • Retenção e limpeza",
   "admin.vinculos": "Admin • Vínculos Salesforce",
   "admin.area.configuracoes": "Acesso • Configurações (engrenagem)",
   "admin.area.moderacao": "Acesso • Moderação (engrenagem)",
   "admin.area.integracoes": "Acesso • Integrações (engrenagem)",
+  "admin.area.logs": "Acesso • Logs (engrenagem)",
   "marketing.home": "Marketing • Home",
   "marketing.social": "Marketing • Social Mídia",
   "marketing.trafego": "Marketing • Mídia Paga",
