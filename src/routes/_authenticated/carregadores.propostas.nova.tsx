@@ -64,6 +64,7 @@ import {
   avisoDifalUsoConsumo,
 } from "@/lib/cpo";
 import { registrarConclusao } from "@/lib/cpo-conclusao-log";
+import { salvarPropostaCpo } from "@/lib/cpo-proposals.functions";
 
 
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
@@ -265,6 +266,7 @@ function PropostaCpoPage() {
   // Clientes vindos do cadastro universal (Clientes > Cadastros)
 
   const listClientes = useServerFn(listClientesFn);
+  const salvarProposta = useServerFn(salvarPropostaCpo);
   const clientesQ = useQuery({
     queryKey: ["cpo-clientes-cadastro"],
     queryFn: async () => {
