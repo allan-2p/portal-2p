@@ -21,6 +21,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { logUserActivity } from "@/lib/activity.functions";
 import { useIdleSignout } from "@/hooks/use-idle-signout";
 import { applyAreaAttribute } from "@/lib/admin-area";
+import { Toaster } from "@/components/ui/sonner";
+import { AccessDenied } from "@/components/access-denied";
+import { toFriendlyError } from "@/lib/friendly-errors";
 
 function NotFoundComponent() {
   return (
@@ -47,9 +50,35 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const friendly = toFriendlyError(error);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+
+  if (friendly.kind === "permissao") {
+    return (
+      <div className="min-h-screen bg-background">
+        <AccessDenied title={friendly.title} description={friendly.description} />
+      </div>
+    );
+  }
+
+  if (friendly.kind === "sessao") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <h1 className="text-xl font-semibold tracking-tight">{friendly.title}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{friendly.description}</p>
+          <a
+            href="/auth"
+            className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Entrar novamente
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -172,6 +201,7 @@ function RootComponent() {
           <SimulationBanner />
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
+          <Toaster />
         </InstanceProvider>
       </SimulationProvider>
     </QueryClientProvider>
