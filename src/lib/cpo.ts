@@ -454,6 +454,7 @@ export function precoSugeridoPadrao(custo: number) {
 export function precoParaMargem(
   produto: CpoProduct | undefined,
   state: Pick<CpoState, "uf" | "contribuinte" | "finalidadeUso"> & {
+    ie?: string;
     regimeTributario?: string | null;
   },
   ufs: CpoUf[],
@@ -484,7 +485,7 @@ export function precoParaMargem(
   const ufRow = ufs.find((u) => u.uf === state.uf);
   const carga = (ufRow?.aliq_interna ?? 0.18) + (ufRow?.fcp ?? 0);
   const informativo =
-    difalEhInformativo({ contribuinte: state.contribuinte } as CpoState) ||
+    difalEhInformativo({ contribuinte: state.contribuinte, ie: state.ie ?? "" }) ||
     difalSempreInformativoPorFinalidade(state.finalidadeUso);
   const aplicaDifal =
     geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !informativo && carga > inter && carga < 1;
