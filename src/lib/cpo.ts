@@ -433,12 +433,12 @@ export function statusMB(mbPct: number, config: CpoConfig): MbStatus {
  */
 export const MARGEM_PRECO_SUGERIDO = 0.37;
 
-/** Preço sugerido padrão: custo + 37% de margem sobre o custo. */
+/** Preço sugerido padrão: custo / (1 - 0,37) => 37% de MB sobre o preço de venda. */
 
 export function precoSugeridoPadrao(custo: number) {
   const c = Number(custo) || 0;
   if (c <= 0) return 0;
-  return Math.round(c * (1 + MARGEM_PRECO_SUGERIDO) * 100) / 100;
+  return Math.round((c / (1 - MARGEM_PRECO_SUGERIDO)) * 100) / 100;
 }
 
 export const fmtBRL = (v: number) =>
