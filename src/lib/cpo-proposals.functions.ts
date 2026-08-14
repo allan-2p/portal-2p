@@ -125,7 +125,10 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
     if (faltando.length) throw new Error("Há itens com produtos inexistentes ou indisponíveis no catálogo.");
 
     const state: CpoState = {
+      propostaNome: data.propostaNome ?? "",
+      numeroSap: data.numeroSap ?? "",
       nome: data.cliente.nome,
+
       telefone: data.cliente.telefone,
       email: data.cliente.email,
       doc: data.cliente.doc,
