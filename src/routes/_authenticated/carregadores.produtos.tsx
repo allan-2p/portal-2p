@@ -90,7 +90,7 @@ type Draft = {
 
 
 function ProdutosTab() {
-  const { data: produtos = [], isLoading } = useCpoProductsAdmin();
+  const { data: produtos = [], isLoading, error, refetch, isFetching } = useCpoProductsAdmin();
   const { data: ncms = [] } = useCpoNcms();
   const invalidate = useCpoInvalidate();
   const [busca, setBusca] = useState("");
