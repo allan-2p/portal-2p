@@ -37,9 +37,11 @@ export function CpoComissaoRegras() {
   const params = {
     cmvMax: cfg.cmv_max,
     pctGerente: cfg.pct_gerente,
+    pctRepresentante: cfg.pct_representante,
     valorIndicacao: VALOR_INDICACAO,
     fatorClt: cfg.fator_clt,
   };
+
 
   return (
     <div className="space-y-4">
