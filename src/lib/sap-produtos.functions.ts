@@ -148,7 +148,9 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
     ]);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { classificarTipo, getProducts, validarRegras } = await import("./sap-produtos.server");
+    const { classificarTipo, getAllMaterials, selecionarLiberados, validarRegras } = await import(
+      "./sap-produtos.server"
+    );
 
     // Trava de segurança: regras inválidas classificariam o catálogo errado.
     const problemas = validarRegras();
