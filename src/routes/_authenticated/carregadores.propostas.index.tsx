@@ -108,6 +108,8 @@ function HistoricoCpoPage() {
     return true;
   });
 
+  const detalheIdx = detalheId ? filtered.findIndex((r) => r.id === detalheId) : -1;
+
 
 
 
