@@ -62,8 +62,8 @@ export const PROPOSTA_STATUS_STYLE: Record<PropostaStatus, PropostaStatusStyle> 
     bg: "#16A34A", fg: "#F0FDF4",
   },
   "Cancelado": {
-    dot: "bg-[#B91C1C]", text: "text-[#B91C1C]", chip: "bg-[#B91C1C] text-[#FEF2F2]",
-    bg: "#B91C1C", fg: "#FEF2F2",
+    dot: "bg-[#991B1B]", text: "text-[#991B1B]", chip: "bg-[#991B1B] text-[#FEF2F2]",
+    bg: "#991B1B", fg: "#FEF2F2",
   },
 };
 
