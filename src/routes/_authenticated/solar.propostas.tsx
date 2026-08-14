@@ -149,13 +149,7 @@ function OrcamentosPage() {
         </div>
 
         {/* Legenda de status — padrão universal */}
-        <StatusLegend
-          statuses={STATUS_ORDER}
-          counts={orcamentos.reduce<Record<string, number>>((acc, o) => {
-            acc[o.status] = (acc[o.status] ?? 0) + 1;
-            return acc;
-          }, {})}
-        />
+        <StatusLegend statuses={STATUS_ORDER} />
 
         <div className="glass rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
