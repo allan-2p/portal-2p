@@ -270,7 +270,7 @@ function HistoricoCpoPage() {
                             <Calculator className="h-4 w-4" />
                           </Link>
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => excluir(r.id)}>
+                        <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
