@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordModeration } from "@/lib/moderation-audit.server";
 import { VISIBILIDADE_LABELS, validateVisibilidadeChange, type Visibilidade } from "@/lib/product-visibility";
+import { requireAnyFeature } from "@/lib/guards.server";
 
 export type SapVisibilidade = Visibilidade;
 

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordModeration } from "@/lib/moderation-audit.server";
+import { requireFeature } from "@/lib/guards.server";
 
 // ---- Metas de Faturamento (leitura para dashboards, respeita RLS) ---- //
 
@@ -81,9 +82,7 @@ export const setNewAbGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => NewAbSetInput.parse(d))
   .handler(async ({ data, context }) => {
-    // RLS já garante que só admin pode escrever; ainda assim, checamos por clareza.
-    const { data: isAdmin } = await context.supabase.rpc("is_admin");
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    await requireFeature(context, { instance: "solar", feature: "admin.metas", action: "moderar" });
     const { error } = await context.supabase.from("salesperson_new_ab_goals").upsert(
       {
         sf_user_id: data.sf_user_id,
@@ -134,8 +133,7 @@ export const setRetentionGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => NewAbSetInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("is_admin");
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    await requireFeature(context, { instance: "solar", feature: "admin.metas", action: "moderar" });
     const { error } = await context.supabase.from("salesperson_retention_goals").upsert(
       {
         sf_user_id: data.sf_user_id,
@@ -193,8 +191,7 @@ export const setGroupKpiGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SetGroupKpiInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("is_admin");
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    await requireFeature(context, { instance: "solar", feature: "admin.metas", action: "moderar" });
     const { error } = await context.supabase
       .from("group_kpi_goals")
       .update({ goal: data.goal, updated_at: new Date().toISOString() })
@@ -244,8 +241,7 @@ export const setBonusGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => BonusSetInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("is_admin");
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    await requireFeature(context, { instance: "solar", feature: "admin.metas", action: "moderar" });
     const trimmed = data.bonus_text.trim();
     if (!trimmed) {
       const { error } = await context.supabase

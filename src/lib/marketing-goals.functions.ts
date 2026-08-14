@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordModeration } from "@/lib/moderation-audit.server";
+import { requireFeature } from "@/lib/guards.server";
 
 export type MarketingGoalRow = {
   key: string;
@@ -33,8 +34,7 @@ export const setMarketingGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SetInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("is_admin");
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    await requireFeature(context, { instance: "marketing", feature: "marketing.metas", action: "editar" });
     const patch: { goal?: number; real_value?: number; updated_at: string } = {
       updated_at: new Date().toISOString(),
     };
