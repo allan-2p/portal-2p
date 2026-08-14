@@ -152,11 +152,19 @@ export function aliqInterOperacao(args: {
 }
 
 /**
- * DIFAL só existe quando a mercadoria é destinada a consumidor final (uso e consumo/ativo).
- * Revenda e industrialização não geram DIFAL — a mercadoria segue no ciclo de circulação.
+ * DIFAL é calculado em uso e consumo/ativo e em revenda.
+ * Industrialização é isenta — a mercadoria é insumo do processo produtivo.
  */
 export function finalidadeGeraDifal(finalidade: CpoFinalidadeUso) {
-  return finalidade === "uso_consumo";
+  return finalidade !== "industrializacao";
+}
+
+/**
+ * Em revenda o DIFAL é sempre apenas informativo: é apurado e exibido,
+ * mas não é absorvido pela 2P e não afeta a receita líquida nem a margem.
+ */
+export function difalSempreInformativoPorFinalidade(finalidade: CpoFinalidadeUso) {
+  return finalidade === "revenda";
 }
 
 /** Aviso de guia de DIFAL em compras para uso e consumo (independe de convênio ST). */
@@ -326,7 +334,8 @@ export function calcularCpo(
   // DIFAL não entra no ICMS: é custo adicional no cabeçalho da NF.
   // Contribuinte com IE recolhe o DIFAL por guia no Estado dele → informativo, sem impacto na margem.
   const difal = { base: difalBase, valor: difalValor };
-  const informativo = difalEhInformativo(state);
+  const informativo =
+    difalEhInformativo(state) || difalSempreInformativoPorFinalidade(state.finalidadeUso);
   const difalAbs = informativo ? 0 : difal.valor;
   const difalEstimado = informativo ? difal.valor : 0;
 

@@ -1124,7 +1124,16 @@ function PropostaCpoPage() {
             <div className="flex gap-2 items-start rounded-xl border border-border bg-surface-2 px-4 py-3 text-xs text-muted-foreground">
               <Info className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
               <div>
-                {state.contribuinte ? (
+                {state.finalidadeUso === "revenda" ? (
+                  <>
+                    <b className="text-foreground">Revenda.</b> ICMS origem {fmtPct(d.inter)} · DIFAL informativo{" "}
+                    {fmtBRL(d.difalEstimado)} — não afeta a margem.
+                  </>
+                ) : state.finalidadeUso === "industrializacao" ? (
+                  <>
+                    <b className="text-foreground">Industrialização.</b> ICMS origem {fmtPct(d.inter)} · sem DIFAL.
+                  </>
+                ) : state.contribuinte ? (
                   <>
                     <b className="text-foreground">Contribuinte.</b> ICMS origem {fmtPct(d.inter)} · DIFAL estimado{" "}
                     {fmtBRL(d.difalEstimado)}.

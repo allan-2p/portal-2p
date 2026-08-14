@@ -101,7 +101,7 @@ export function auditarProposta(args: {
       const geraDifal = (ncm ? ncm.gera_difal : true) && finalidadeGeraDifal(state.finalidadeUso);
       const motivoSemDifal = finalidadeGeraDifal(state.finalidadeUso)
         ? "NCM não gera DIFAL"
-        : "Finalidade não gera DIFAL (somente uso e consumo)";
+        : "Industrialização não gera DIFAL";
       const temSt = !!ncm?.tem_st;
 
       const qtd = it.qtd || 0;
@@ -171,9 +171,12 @@ export function auditarProposta(args: {
             : "—",
           valor: d.valor,
           tipo: "moeda",
-          nota: state.contribuinte
-            ? "Cliente contribuinte: DIFAL informativo, recolhido pelo destinatário."
-            : "Cliente não contribuinte: DIFAL é custo adicional no cabeçalho da NF (absorvido pela 2P).",
+          nota:
+            state.finalidadeUso === "revenda"
+              ? "Revenda: DIFAL apenas informativo — não afeta a receita líquida nem a margem."
+              : state.contribuinte
+                ? "Cliente contribuinte: DIFAL informativo, recolhido pelo destinatário."
+                : "Cliente não contribuinte: DIFAL é custo adicional no cabeçalho da NF (absorvido pela 2P).",
         },
         {
           rotulo: "ICMS-ST",
@@ -254,10 +257,10 @@ export function auditarProposta(args: {
       tipo: "moeda",
     },
     {
-      rotulo: state.contribuinte ? "DIFAL informativo" : "DIFAL absorvido pela 2P",
+      rotulo: r.difalAbs > 0 ? "DIFAL absorvido pela 2P" : "DIFAL informativo",
       formula: "Σ DIFAL dos itens",
-      substituicao: brl(state.contribuinte ? r.difalEstimado : r.difalAbs),
-      valor: state.contribuinte ? r.difalEstimado : r.difalAbs,
+      substituicao: brl(r.difalAbs > 0 ? r.difalAbs : r.difalEstimado),
+      valor: r.difalAbs > 0 ? r.difalAbs : r.difalEstimado,
       tipo: "moeda",
     },
     {
