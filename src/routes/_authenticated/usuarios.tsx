@@ -324,9 +324,9 @@ function UsuariosPage() {
               const nome = row.full_name ?? row.email;
               if (!window.confirm(`Entrar como ${nome}? Sua sessão atual será encerrada e você acessará o portal como este usuário.`)) return;
               try {
-                const { email, token_hash } = await impersonateFn({ data: { user_id: row.id } });
+                const { token_hash } = await impersonateFn({ data: { user_id: row.id } });
                 await supabase.auth.signOut();
-                const { error } = await supabase.auth.verifyOtp({ email, token_hash, type: "magiclink" });
+                const { error } = await supabase.auth.verifyOtp({ token_hash, type: "magiclink" });
                 if (error) throw error;
                 window.location.replace("/");
               } catch (e: any) {
