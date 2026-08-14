@@ -50,16 +50,19 @@ import { Route as AuthenticatedCarregadoresRegrasRouteImport } from './routes/_a
 import { Route as AuthenticatedCarregadoresPropostasRouteImport } from './routes/_authenticated/carregadores.propostas'
 import { Route as AuthenticatedCarregadoresProdutosRouteImport } from './routes/_authenticated/carregadores.produtos'
 import { Route as AuthenticatedCarregadoresPedidosRouteImport } from './routes/_authenticated/carregadores.pedidos'
+import { Route as AuthenticatedCarregadoresMetasRouteImport } from './routes/_authenticated/carregadores.metas'
 import { Route as AuthenticatedCarregadoresComissoesRouteImport } from './routes/_authenticated/carregadores.comissoes'
 import { Route as AuthenticatedCarregadoresClientesRouteImport } from './routes/_authenticated/carregadores.clientes'
 import { Route as AuthenticatedAdminVinculosRouteImport } from './routes/_authenticated/admin.vinculos'
 import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
+import { Route as AuthenticatedAdminRegrasRouteImport } from './routes/_authenticated/admin.regras'
 import { Route as AuthenticatedAdminProdutosSolarRouteImport } from './routes/_authenticated/admin.produtos-solar'
 import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authenticated/admin.produtos'
 import { Route as AuthenticatedAdminPerfisRouteImport } from './routes/_authenticated/admin.perfis'
 import { Route as AuthenticatedAdminModeracaoRouteImport } from './routes/_authenticated/admin.moderacao'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
 import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
+import { Route as AuthenticatedAdminComissoesRouteImport } from './routes/_authenticated/admin.comissoes'
 import { Route as AuthenticatedAdminAuditoriaRouteImport } from './routes/_authenticated/admin.auditoria'
 import { Route as AuthenticatedAdminAtividadeRouteImport } from './routes/_authenticated/admin.atividade'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -305,6 +308,12 @@ const AuthenticatedCarregadoresPedidosRoute =
     path: '/carregadores/pedidos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCarregadoresMetasRoute =
+  AuthenticatedCarregadoresMetasRouteImport.update({
+    id: '/carregadores/metas',
+    path: '/carregadores/metas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCarregadoresComissoesRoute =
   AuthenticatedCarregadoresComissoesRouteImport.update({
     id: '/carregadores/comissoes',
@@ -327,6 +336,12 @@ const AuthenticatedAdminTabelasRoute =
   AuthenticatedAdminTabelasRouteImport.update({
     id: '/admin/tabelas',
     path: '/admin/tabelas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminRegrasRoute =
+  AuthenticatedAdminRegrasRouteImport.update({
+    id: '/admin/regras',
+    path: '/admin/regras',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminProdutosSolarRoute =
@@ -362,6 +377,12 @@ const AuthenticatedAdminConfiguracoesRoute =
   AuthenticatedAdminConfiguracoesRouteImport.update({
     id: '/admin/configuracoes',
     path: '/admin/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminComissoesRoute =
+  AuthenticatedAdminComissoesRouteImport.update({
+    id: '/admin/comissoes',
+    path: '/admin/comissoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminAuditoriaRoute =
@@ -482,16 +503,19 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/atividade': typeof AuthenticatedAdminAtividadeRoute
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
+  '/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
+  '/admin/regras': typeof AuthenticatedAdminRegrasRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
   '/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
   '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
@@ -549,15 +573,18 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/atividade': typeof AuthenticatedAdminAtividadeRoute
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
+  '/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
+  '/admin/regras': typeof AuthenticatedAdminRegrasRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
   '/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
   '/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
@@ -617,16 +644,19 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/admin/atividade': typeof AuthenticatedAdminAtividadeRoute
   '/_authenticated/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
+  '/_authenticated/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/_authenticated/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/_authenticated/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/_authenticated/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/_authenticated/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
+  '/_authenticated/admin/regras': typeof AuthenticatedAdminRegrasRoute
   '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/_authenticated/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/_authenticated/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/_authenticated/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/_authenticated/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
   '/_authenticated/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
   '/_authenticated/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
   '/_authenticated/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
@@ -687,16 +717,19 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/admin/atividade'
     | '/admin/auditoria'
+    | '/admin/comissoes'
     | '/admin/configuracoes'
     | '/admin/metas'
     | '/admin/moderacao'
     | '/admin/perfis'
     | '/admin/produtos'
     | '/admin/produtos-solar'
+    | '/admin/regras'
     | '/admin/tabelas'
     | '/admin/vinculos'
     | '/carregadores/clientes'
     | '/carregadores/comissoes'
+    | '/carregadores/metas'
     | '/carregadores/pedidos'
     | '/carregadores/produtos'
     | '/carregadores/propostas'
@@ -754,15 +787,18 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/admin/atividade'
     | '/admin/auditoria'
+    | '/admin/comissoes'
     | '/admin/configuracoes'
     | '/admin/metas'
     | '/admin/moderacao'
     | '/admin/perfis'
     | '/admin/produtos'
     | '/admin/produtos-solar'
+    | '/admin/regras'
     | '/admin/tabelas'
     | '/admin/vinculos'
     | '/carregadores/comissoes'
+    | '/carregadores/metas'
     | '/carregadores/pedidos'
     | '/carregadores/produtos'
     | '/carregadores/regras'
@@ -821,16 +857,19 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/admin/atividade'
     | '/_authenticated/admin/auditoria'
+    | '/_authenticated/admin/comissoes'
     | '/_authenticated/admin/configuracoes'
     | '/_authenticated/admin/metas'
     | '/_authenticated/admin/moderacao'
     | '/_authenticated/admin/perfis'
     | '/_authenticated/admin/produtos'
     | '/_authenticated/admin/produtos-solar'
+    | '/_authenticated/admin/regras'
     | '/_authenticated/admin/tabelas'
     | '/_authenticated/admin/vinculos'
     | '/_authenticated/carregadores/clientes'
     | '/_authenticated/carregadores/comissoes'
+    | '/_authenticated/carregadores/metas'
     | '/_authenticated/carregadores/pedidos'
     | '/_authenticated/carregadores/produtos'
     | '/_authenticated/carregadores/propostas'
@@ -1171,6 +1210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarregadoresPedidosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/carregadores/metas': {
+      id: '/_authenticated/carregadores/metas'
+      path: '/carregadores/metas'
+      fullPath: '/carregadores/metas'
+      preLoaderRoute: typeof AuthenticatedCarregadoresMetasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/carregadores/comissoes': {
       id: '/_authenticated/carregadores/comissoes'
       path: '/carregadores/comissoes'
@@ -1197,6 +1243,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/tabelas'
       fullPath: '/admin/tabelas'
       preLoaderRoute: typeof AuthenticatedAdminTabelasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/regras': {
+      id: '/_authenticated/admin/regras'
+      path: '/admin/regras'
+      fullPath: '/admin/regras'
+      preLoaderRoute: typeof AuthenticatedAdminRegrasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/produtos-solar': {
@@ -1239,6 +1292,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/configuracoes'
       fullPath: '/admin/configuracoes'
       preLoaderRoute: typeof AuthenticatedAdminConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/comissoes': {
+      id: '/_authenticated/admin/comissoes'
+      path: '/admin/comissoes'
+      fullPath: '/admin/comissoes'
+      preLoaderRoute: typeof AuthenticatedAdminComissoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/auditoria': {
@@ -1473,16 +1533,19 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminAtividadeRoute: typeof AuthenticatedAdminAtividadeRoute
   AuthenticatedAdminAuditoriaRoute: typeof AuthenticatedAdminAuditoriaRoute
+  AuthenticatedAdminComissoesRoute: typeof AuthenticatedAdminComissoesRoute
   AuthenticatedAdminConfiguracoesRoute: typeof AuthenticatedAdminConfiguracoesRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
   AuthenticatedAdminModeracaoRoute: typeof AuthenticatedAdminModeracaoRoute
   AuthenticatedAdminPerfisRoute: typeof AuthenticatedAdminPerfisRoute
   AuthenticatedAdminProdutosRoute: typeof AuthenticatedAdminProdutosRoute
   AuthenticatedAdminProdutosSolarRoute: typeof AuthenticatedAdminProdutosSolarRoute
+  AuthenticatedAdminRegrasRoute: typeof AuthenticatedAdminRegrasRoute
   AuthenticatedAdminTabelasRoute: typeof AuthenticatedAdminTabelasRoute
   AuthenticatedAdminVinculosRoute: typeof AuthenticatedAdminVinculosRoute
   AuthenticatedCarregadoresClientesRoute: typeof AuthenticatedCarregadoresClientesRouteWithChildren
   AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
+  AuthenticatedCarregadoresMetasRoute: typeof AuthenticatedCarregadoresMetasRoute
   AuthenticatedCarregadoresPedidosRoute: typeof AuthenticatedCarregadoresPedidosRoute
   AuthenticatedCarregadoresProdutosRoute: typeof AuthenticatedCarregadoresProdutosRoute
   AuthenticatedCarregadoresPropostasRoute: typeof AuthenticatedCarregadoresPropostasRouteWithChildren
@@ -1511,18 +1574,21 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminAtividadeRoute: AuthenticatedAdminAtividadeRoute,
   AuthenticatedAdminAuditoriaRoute: AuthenticatedAdminAuditoriaRoute,
+  AuthenticatedAdminComissoesRoute: AuthenticatedAdminComissoesRoute,
   AuthenticatedAdminConfiguracoesRoute: AuthenticatedAdminConfiguracoesRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
   AuthenticatedAdminModeracaoRoute: AuthenticatedAdminModeracaoRoute,
   AuthenticatedAdminPerfisRoute: AuthenticatedAdminPerfisRoute,
   AuthenticatedAdminProdutosRoute: AuthenticatedAdminProdutosRoute,
   AuthenticatedAdminProdutosSolarRoute: AuthenticatedAdminProdutosSolarRoute,
+  AuthenticatedAdminRegrasRoute: AuthenticatedAdminRegrasRoute,
   AuthenticatedAdminTabelasRoute: AuthenticatedAdminTabelasRoute,
   AuthenticatedAdminVinculosRoute: AuthenticatedAdminVinculosRoute,
   AuthenticatedCarregadoresClientesRoute:
     AuthenticatedCarregadoresClientesRouteWithChildren,
   AuthenticatedCarregadoresComissoesRoute:
     AuthenticatedCarregadoresComissoesRoute,
+  AuthenticatedCarregadoresMetasRoute: AuthenticatedCarregadoresMetasRoute,
   AuthenticatedCarregadoresPedidosRoute: AuthenticatedCarregadoresPedidosRoute,
   AuthenticatedCarregadoresProdutosRoute:
     AuthenticatedCarregadoresProdutosRoute,
