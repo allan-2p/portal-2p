@@ -31,7 +31,6 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
 import { Route as AuthenticatedCarregadoresIndexRouteImport } from './routes/_authenticated/carregadores.index'
-import { Route as ApiPublicSapDebugRouteImport } from './routes/api/public/sap-debug'
 import { Route as AuthenticatedMarketingTrafegoRouteImport } from './routes/_authenticated/marketing.trafego'
 import { Route as AuthenticatedMarketingSocialRouteImport } from './routes/_authenticated/marketing.social'
 import { Route as AuthenticatedMarketingPreVendasRouteImport } from './routes/_authenticated/marketing.pre-vendas'
@@ -189,11 +188,6 @@ const AuthenticatedCarregadoresIndexRoute =
     path: '/carregadores/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicSapDebugRoute = ApiPublicSapDebugRouteImport.update({
-  id: '/api/public/sap-debug',
-  path: '/api/public/sap-debug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedMarketingTrafegoRoute =
   AuthenticatedMarketingTrafegoRouteImport.update({
     id: '/trafego',
@@ -494,7 +488,6 @@ export interface FileRoutesByFullPath {
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
-  '/api/public/sap-debug': typeof ApiPublicSapDebugRoute
   '/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
@@ -557,7 +550,6 @@ export interface FileRoutesByTo {
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
-  '/api/public/sap-debug': typeof ApiPublicSapDebugRoute
   '/carregadores': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
   '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
@@ -625,7 +617,6 @@ export interface FileRoutesById {
   '/_authenticated/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/_authenticated/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
-  '/api/public/sap-debug': typeof ApiPublicSapDebugRoute
   '/_authenticated/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/_authenticated/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
@@ -693,7 +684,6 @@ export interface FileRouteTypes {
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
-    | '/api/public/sap-debug'
     | '/carregadores/'
     | '/marketing/'
     | '/admin/logs/integracoes'
@@ -756,7 +746,6 @@ export interface FileRouteTypes {
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
-    | '/api/public/sap-debug'
     | '/carregadores'
     | '/marketing'
     | '/admin/logs/integracoes'
@@ -823,7 +812,6 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing/pre-vendas'
     | '/_authenticated/marketing/social'
     | '/_authenticated/marketing/trafego'
-    | '/api/public/sap-debug'
     | '/_authenticated/carregadores/'
     | '/_authenticated/marketing/'
     | '/_authenticated/admin/logs/integracoes'
@@ -850,7 +838,6 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
-  ApiPublicSapDebugRoute: typeof ApiPublicSapDebugRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1011,13 +998,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/carregadores/'
       preLoaderRoute: typeof AuthenticatedCarregadoresIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/public/sap-debug': {
-      id: '/api/public/sap-debug'
-      path: '/api/public/sap-debug'
-      fullPath: '/api/public/sap-debug'
-      preLoaderRoute: typeof ApiPublicSapDebugRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/marketing/trafego': {
       id: '/_authenticated/marketing/trafego'
@@ -1508,7 +1488,6 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
-  ApiPublicSapDebugRoute: ApiPublicSapDebugRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
