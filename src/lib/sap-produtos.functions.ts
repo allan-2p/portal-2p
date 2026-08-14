@@ -300,3 +300,24 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
     }
   });
 
+
+export type SapCatalogoRow = {
+  codigo: string;
+  descricao: string;
+  unidade: string | null;
+  ncm_codigo: string | null;
+  no_catalogo: boolean;
+  last_synced_at: string | null;
+};
+
+/** Espelho completo do SAP (todos os materiais), somente leitura. */
+export const listSapCatalogoCompleto = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ itens: SapCatalogoRow[] }> => {
+    const { data, error } = await context.supabase
+      .from("sap_catalogo_sap")
+      .select("codigo, descricao, unidade, ncm_codigo, no_catalogo, last_synced_at")
+      .order("codigo");
+    if (error) throw new Error(error.message);
+    return { itens: (data ?? []) as SapCatalogoRow[] };
+  });
