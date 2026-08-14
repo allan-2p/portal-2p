@@ -65,8 +65,8 @@ function achar(o: any, chave: string): any {
   return undefined;
 }
 
-function soapBody() {
-  return `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:sap-com:document:sap:rfc:functions"><soapenv:Header/><soapenv:Body><urn:ZHDIT_ZMMR059><I_FILTRO><MATERIAL_DE></MATERIAL_DE><MATERIAL_ATE></MATERIAL_ATE><CENTRO_DE>${CENTRO_PADRAO}</CENTRO_DE><CENTRO_ATE>${CENTRO_PADRAO}</CENTRO_ATE><DEPOSITO_DE></DEPOSITO_DE><DEPOSITO_ATE></DEPOSITO_ATE><LOTE_DE></LOTE_DE><LOTE_ATE></LOTE_ATE><TP_MATERIAL_DE></TP_MATERIAL_DE><TP_MATERIAL_ATE></TP_MATERIAL_ATE><GRP_MERC_DE>${GRUPOS_MERCADORIA}</GRP_MERC_DE><GRP_MERC_ATE></GRP_MERC_ATE><GRP_COMP_DE></GRP_COMP_DE><GRP_COMP_ATE></GRP_COMP_ATE><UNID_EXIB></UNID_EXIB></I_FILTRO></urn:ZHDIT_ZMMR059></soapenv:Body></soapenv:Envelope>`;
+function soapBody(grupos: string = GRUPOS_MERCADORIA) {
+  return `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:sap-com:document:sap:rfc:functions"><soapenv:Header/><soapenv:Body><urn:ZHDIT_ZMMR059><I_FILTRO><MATERIAL_DE></MATERIAL_DE><MATERIAL_ATE></MATERIAL_ATE><CENTRO_DE>${CENTRO_PADRAO}</CENTRO_DE><CENTRO_ATE>${CENTRO_PADRAO}</CENTRO_ATE><DEPOSITO_DE></DEPOSITO_DE><DEPOSITO_ATE></DEPOSITO_ATE><LOTE_DE></LOTE_DE><LOTE_ATE></LOTE_ATE><TP_MATERIAL_DE></TP_MATERIAL_DE><TP_MATERIAL_ATE></TP_MATERIAL_ATE><GRP_MERC_DE>${grupos}</GRP_MERC_DE><GRP_MERC_ATE></GRP_MERC_ATE><GRP_COMP_DE></GRP_COMP_DE><GRP_COMP_ATE></GRP_COMP_ATE><UNID_EXIB></UNID_EXIB></I_FILTRO></urn:ZHDIT_ZMMR059></soapenv:Body></soapenv:Envelope>`;
 }
 
 function credencial(): string {
@@ -81,7 +81,7 @@ function credencial(): string {
 }
 
 /** Chama a RFC e devolve os itens crus de //REGISTROS. */
-export async function fetchEstoqueSap(): Promise<any[]> {
+export async function fetchEstoqueSap(opts?: { grupos?: string }): Promise<any[]> {
   const url =
     process.env["SAP_ZMMR059_URL"] ??
     "https://app.webfiori.com.br/sap/bc/srt/rfc/sap/zhdit_zmmr059/500/zhdit_zmmr059/zhdit_zmmr059";
@@ -98,7 +98,7 @@ export async function fetchEstoqueSap(): Promise<any[]> {
         "accept-language": "pt-BR",
         cookie: "sap-usercontext=sap-client=500",
       },
-      body: soapBody(),
+      body: soapBody(opts?.grupos ?? GRUPOS_MERCADORIA),
       signal: controller.signal,
     });
   } catch (e: any) {
