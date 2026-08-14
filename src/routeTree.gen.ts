@@ -31,6 +31,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
 import { Route as AuthenticatedCarregadoresIndexRouteImport } from './routes/_authenticated/carregadores.index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedMarketingTrafegoRouteImport } from './routes/_authenticated/marketing.trafego'
 import { Route as AuthenticatedMarketingSocialRouteImport } from './routes/_authenticated/marketing.social'
 import { Route as AuthenticatedMarketingPreVendasRouteImport } from './routes/_authenticated/marketing.pre-vendas'
@@ -195,6 +196,11 @@ const AuthenticatedCarregadoresIndexRoute =
     path: '/carregadores/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMarketingTrafegoRoute =
   AuthenticatedMarketingTrafegoRouteImport.update({
     id: '/trafego',
@@ -543,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
@@ -612,6 +619,7 @@ export interface FileRoutesByTo {
   '/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/carregadores': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
   '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
@@ -686,6 +694,7 @@ export interface FileRoutesById {
   '/_authenticated/marketing/pre-vendas': typeof AuthenticatedMarketingPreVendasRoute
   '/_authenticated/marketing/social': typeof AuthenticatedMarketingSocialRoute
   '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/_authenticated/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
@@ -760,6 +769,7 @@ export interface FileRouteTypes {
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
+    | '/admin/'
     | '/carregadores/'
     | '/marketing/'
     | '/admin/logs/integracoes'
@@ -829,6 +839,7 @@ export interface FileRouteTypes {
     | '/marketing/pre-vendas'
     | '/marketing/social'
     | '/marketing/trafego'
+    | '/admin'
     | '/carregadores'
     | '/marketing'
     | '/admin/logs/integracoes'
@@ -902,6 +913,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing/pre-vendas'
     | '/_authenticated/marketing/social'
     | '/_authenticated/marketing/trafego'
+    | '/_authenticated/admin/'
     | '/_authenticated/carregadores/'
     | '/_authenticated/marketing/'
     | '/_authenticated/admin/logs/integracoes'
@@ -1088,6 +1100,13 @@ declare module '@tanstack/react-router' {
       path: '/carregadores'
       fullPath: '/carregadores/'
       preLoaderRoute: typeof AuthenticatedCarregadoresIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/marketing/trafego': {
@@ -1573,6 +1592,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarregadoresRegrasRoute: typeof AuthenticatedCarregadoresRegrasRoute
   AuthenticatedCarregadoresTarefasRoute: typeof AuthenticatedCarregadoresTarefasRoute
   AuthenticatedIntegracoesSlugRoute: typeof AuthenticatedIntegracoesSlugRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedCarregadoresIndexRoute: typeof AuthenticatedCarregadoresIndexRoute
   AuthenticatedAdminLogsIntegracoesRoute: typeof AuthenticatedAdminLogsIntegracoesRoute
   AuthenticatedAdminLogsModeracaoRoute: typeof AuthenticatedAdminLogsModeracaoRoute
@@ -1619,6 +1639,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCarregadoresRegrasRoute: AuthenticatedCarregadoresRegrasRoute,
   AuthenticatedCarregadoresTarefasRoute: AuthenticatedCarregadoresTarefasRoute,
   AuthenticatedIntegracoesSlugRoute: AuthenticatedIntegracoesSlugRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedCarregadoresIndexRoute: AuthenticatedCarregadoresIndexRoute,
   AuthenticatedAdminLogsIntegracoesRoute:
     AuthenticatedAdminLogsIntegracoesRoute,
