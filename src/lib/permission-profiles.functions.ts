@@ -177,7 +177,7 @@ export const adminSetUserProfiles = createServerFn({ method: "POST" })
     z
       .object({
         user_id: z.string().uuid(),
-        profile_ids: z.array(z.string().uuid()).max(20),
+        profile_ids: z.array(z.string().uuid()).max(1),
       })
       .parse(d),
   )

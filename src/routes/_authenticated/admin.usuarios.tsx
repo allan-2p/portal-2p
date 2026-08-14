@@ -1092,7 +1092,7 @@ function EditUserModal({
           </button>
           <button
             type="submit"
-            disabled={submitting || profileIds.size === 0}
+            disabled={submitting || !profileId}
             className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
