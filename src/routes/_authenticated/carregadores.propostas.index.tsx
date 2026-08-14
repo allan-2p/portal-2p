@@ -13,13 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Calculator, Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,7 +68,6 @@ function HistoricoCpoPage() {
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
   const [vendedor, setVendedor] = useState("__all__");
-  const [detalhe, setDetalhe] = useState<Row | null>(null);
   const vend = useCpoVendedores();
 
   const q = useQuery({
@@ -274,77 +266,7 @@ function HistoricoCpoPage() {
         </div>
       </div>
 
-      <Dialog open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{detalhe?.nome || detalhe?.cliente_nome}</DialogTitle>
-            <DialogDescription>
-              {detalhe?.cliente_nome} · {detalhe?.numero} · {detalhe?.uf} · {detalhe?.contribuinte ? "Contribuinte" : "Não contribuinte"}
-            </DialogDescription>
-          </DialogHeader>
-          {detalhe && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-                <Info label="Valor total" value={fmtBRL(detalhe.totais.valorTotal ?? 0)} />
-                <Info label="ICMS" value={fmtBRL(detalhe.totais.icms ?? 0)} />
-                <Info label="PIS/COFINS" value={fmtBRL(detalhe.totais.pisCofins ?? 0)} />
-                <Info label="Receita líquida" value={fmtBRL(detalhe.totais.rl ?? 0)} />
-                <Info label="Valor dos itens" value={fmtBRL(detalhe.totais.valor ?? 0)} />
-                <Info label="Comissão" value={fmtBRL(detalhe.totais.comissao ?? 0)} />
-                <Info label="Frete" value={`${detalhe.frete_mod} · ${fmtBRL(detalhe.frete_valor)}`} />
-                <Info label="Contato" value={detalhe.cliente_telefone || detalhe.cliente_email || "—"} />
-                <Info label="Nome da proposta" value={detalhe.nome || "—"} />
-                <Info label="Nº SAP" value={detalhe.numero_sap || "—"} />
-                <Info label="Consultor" value={detalhe.consultor_nome || "—"} />
-                <Info label="Criado por" value={detalhe.criado_por_nome || "—"} />
-                <Info
-                  label="Finalizado por"
-                  value={
-                    detalhe.finalizado_por_nome
-                      ? `${detalhe.finalizado_por_nome}${
-                          detalhe.finalizado_em
-                            ? ` · ${new Date(detalhe.finalizado_em).toLocaleDateString("pt-BR")}`
-                            : ""
-                        }`
-                      : "—"
-                  }
-                />
-              </div>
-              <div className="rounded-xl border border-border overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-muted-foreground uppercase border-b border-border">
-                      <th className="text-left px-3 py-2">Produto</th>
-                      <th className="text-right px-3 py-2">Qtd</th>
-                      <th className="text-right px-3 py-2">Valor un.</th>
-                      <th className="text-right px-3 py-2">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {detalhe.itens.map((i, idx) => (
-                      <tr key={idx} className="border-b border-border/50 last:border-0">
-                        <td className="px-3 py-2">{i.nome || "—"}</td>
-                        <td className="px-3 py-2 text-right">{i.qtd ?? 0}</td>
-                        <td className="px-3 py-2 text-right">{fmtBRL(i.valor ?? 0)}</td>
-                        <td className="px-3 py-2 text-right font-medium">{fmtBRL((i.valor ?? 0) * (i.qtd ?? 0))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </AppLayout>
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="font-medium">{value}</div>
-    </div>
-  );
-}
