@@ -12,7 +12,7 @@ import { getMarketingSalesforceData } from "@/lib/salesforce.functions";
 import { classifyOrigem } from "@/lib/marketing-origem";
 import { getMetricoolBrandData, type MetricoolPost, type MetricoolDailyPoint } from "@/lib/metricool.functions";
 import { useMarketingUnit } from "@/components/instance-provider";
-import { AtlasSoonCard } from "./marketing.index";
+import { AtlasSoonCard } from "@/components/marketing/atlas-soon-card";
 import { DateRangePicker, defaultRange, ymd, type DateRangeValue } from "@/components/date-range-picker";
 import { cn } from "@/lib/utils";
 import { NotionCalendarCard } from "@/components/notion-calendar-card";

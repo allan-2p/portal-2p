@@ -1103,7 +1103,7 @@ const HeaderMetas = ({ tri }: { tri: TvData["tri"] }) => {
   );
 };
 
-export function Dashboard2P({
+function Dashboard2P({
   canvasPadding = 32,
   fill = false,
   overscan = 0,
