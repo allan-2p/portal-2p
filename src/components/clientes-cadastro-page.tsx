@@ -192,7 +192,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     staleTime: 5 * 60_000,
   });
   const consultorNomeAtual =
-    (consultoresQ.data?.consultores ?? []).find((c) => c.id === consultorId)?.nome ??
+    (consultoresQ.data?.consultores ?? []).find((c: { id: string; nome: string }) => c.id === consultorId)?.nome ??
     consultoresQ.data?.eu.nome ??
     "—";
 
@@ -667,7 +667,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <Select value={consultorId ?? ""} onValueChange={(v) => setConsultorId(v)}>
                       <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
                       <SelectContent>
-                        {(consultoresQ.data?.consultores ?? []).map((c) => (
+                        {(consultoresQ.data?.consultores ?? []).map((c: { id: string; nome: string }) => (
                           <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                         ))}
                       </SelectContent>
