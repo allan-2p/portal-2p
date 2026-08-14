@@ -267,26 +267,26 @@ function ProdutosTab() {
       </div>
 
       <Dialog open={!!draft} onOpenChange={(v) => !v && setDraft(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg w-[calc(100%-2rem)] overflow-hidden sm:w-full">
           <DialogHeader>
             <DialogTitle>Editar produto</DialogTitle>
           </DialogHeader>
           {draft && (
-            <div className="grid gap-3">
+            <div className="space-y-3 min-w-0">
               <Field label="Código (SKU)">
-                <Input value={draft.codigo} readOnly disabled />
+                <Input className="w-full" value={draft.codigo} readOnly disabled />
               </Field>
 
               <Field label="Nome">
-                <Input value={draft.nome} onChange={(e) => setDraft({ ...draft, nome: e.target.value })} />
+                <Input className="w-full" value={draft.nome} onChange={(e) => setDraft({ ...draft, nome: e.target.value })} />
               </Field>
               <Field label="NCM (define IPI, PIS/COFINS, ST e DIFAL)">
                 <Select
                   value={draft.ncm_id || "none"}
                   onValueChange={(v) => setDraft({ ...draft, ncm_id: v === "none" ? "" : v })}
                 >
-                  <SelectTrigger><SelectValue placeholder="Selecione o NCM" /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Selecione o NCM" /></SelectTrigger>
+                  <SelectContent className="max-w-[calc(100vw-2rem)]">
                     <SelectItem value="none">Sem NCM (usa padrão global)</SelectItem>
                     {ncms.map((n) => (
                       <SelectItem key={n.id} value={n.id}>
@@ -298,13 +298,13 @@ function ProdutosTab() {
               </Field>
               <Field label="Custo (R$)">
                 <Input
+                  className="w-full"
                   type="number"
                   step="0.01"
                   value={draft.custo}
                   onChange={(e) => setDraft({ ...draft, custo: e.target.value })}
                 />
               </Field>
-
 
               <div className="flex items-center gap-3">
                 <Switch checked={draft.ativo} onCheckedChange={(v) => setDraft({ ...draft, ativo: v })} />
