@@ -304,24 +304,32 @@ function ProdutosTab() {
                 <Input
                   className="w-full"
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
                   value={draft.custo}
                   onChange={(e) => setDraft({ ...draft, custo: e.target.value })}
                 />
               </Field>
 
-              <div className="flex items-center gap-3">
-                <Switch checked={draft.ativo} onCheckedChange={(v) => setDraft({ ...draft, ativo: v })} />
-                <span className="text-sm">Disponível para propostas</span>
+              <div className="flex items-start gap-3">
+                <Switch
+                  className="mt-0.5 shrink-0"
+                  checked={draft.ativo}
+                  onCheckedChange={(v) => setDraft({ ...draft, ativo: v })}
+                />
+                <span className="min-w-0 text-sm break-words">Disponível para propostas</span>
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDraft(null)}>Cancelar</Button>
-            <Button onClick={salvar} disabled={saving} className="gap-2">
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setDraft(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={salvar} disabled={saving} className="w-full gap-2 sm:w-auto">
               <Save className="h-4 w-4" /> Salvar
             </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
     </div>
