@@ -16,7 +16,6 @@ import {
 import { Pencil, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { logModeration } from "@/lib/moderation-audit";
 import { validateAtivacaoCarregadores } from "@/lib/product-visibility";
 import { useServerFn } from "@tanstack/react-start";
 import { useCpoInvalidate, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
