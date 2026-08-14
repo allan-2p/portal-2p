@@ -460,7 +460,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         {visibleAdminSections.map((s) => (
                           <AdminMenuLink
                             key={s.id}
-                            to={s.home}
+                            to={
+                              hasRole("admin")
+                                ? s.home
+                                : (s.groups
+                                    .flatMap((g) => g.items)
+                                    .find((i) => !i.feature || hasFeature(i.feature))?.to ?? s.home)
+                            }
                             label={s.label}
                             icon={s.icon}
                             onClick={() => setAdminMenuOpen(false)}
