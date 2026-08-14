@@ -931,6 +931,7 @@ function EditUserModal({
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
 
   return (
