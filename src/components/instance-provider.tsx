@@ -12,6 +12,7 @@ import {
   ROUTE_FEATURE,
 } from "@/lib/instances";
 import { AREA_ACCESS_KEYS, featuresForAreaAccessKey } from "@/lib/feature-groups";
+import { capabilitiesForFeature, type CapabilityId } from "@/lib/feature-capabilities";
 
 const STORAGE_KEY = "portal2p-instance";
 const MKT_UNIT_KEY = "portal2p-marketing-unit";
@@ -43,6 +44,8 @@ type Ctx = {
   setInstance: (id: InstanceId) => void;
   allowed: InstanceId[];
   hasFeature: (key: FeatureKey) => boolean;
+  /** Tem a tela E a ação (visualizar / editar / concluir / moderar). */
+  can: (key: FeatureKey, action?: CapabilityId) => boolean;
   isRouteAllowed: (path: string) => boolean;
   defaultRoute: string;
   loading: boolean;
@@ -133,6 +136,15 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     [instance, grantedSet, isAdmin],
   );
 
+  const can = useCallback(
+    (key: FeatureKey, action: CapabilityId = "visualizar") => {
+      if (!hasFeature(key)) return false;
+      const caps = capabilitiesForFeature(key);
+      return caps.length === 0 || caps.includes(action);
+    },
+    [hasFeature],
+  );
+
   const isRouteAllowed = useCallback(
     (path: string) => {
       // resolve rota atual → feature key
@@ -155,6 +167,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     setInstance,
     allowed,
     hasFeature,
+    can,
     isRouteAllowed,
     defaultRoute,
     loading: authLoading || (!!user && q.isLoading) || sim.loading,
@@ -171,6 +184,7 @@ export function useInstance(): Ctx {
       setInstance: () => {},
       allowed: ["solar"],
       hasFeature: () => true,
+      can: () => true,
       isRouteAllowed: () => true,
       defaultRoute: "/",
       loading: false,
