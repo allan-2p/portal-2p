@@ -186,7 +186,7 @@ MB %            = Margem Bruta ÷ Venda`}</Formula>
 Comissão total   = Margem Bruta × % Comissão total     ← CUSTO TOTAL DA EMPRESA
 
 Custo Gerente    = Venda × ${fmtPct(cfg.pct_gerente)}      (fixo, CLT e PJ)
-Custo Indicação  = Venda × ${fmtPct(cfg.pct_indicacao)}      (fixo, CLT e PJ)
+Custo Indicação  = R$ 250,00 fixo por venda      (fixo, CLT e PJ)
 Custo Vendedor   = Comissão total − Custo Gerente − Custo Indicação
 
 Remuneração      = custo (PJ)   ou   custo ÷ ${cfg.fator_clt} (CLT)`}</Formula>
