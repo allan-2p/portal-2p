@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  listSapCatalogoCompleto,
   listSapProdutos,
   listSapSyncRuns,
   setSapProdutoVisibilidade,
@@ -73,6 +74,143 @@ function duracao(inicio: string, fim: string | null) {
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
+function CatalogoSapCompleto() {
+  const listAll = useServerFn(listSapCatalogoCompleto);
+  const [q, setQ] = useState("");
+  const [escopo, setEscopo] = useState<"todos" | "catalogo" | "fora">("todos");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+
+  const { data, isLoading, isFetching, refetch } = useQuery({
+    queryKey: ["sap-catalogo-completo"],
+    queryFn: () => listAll({}),
+  });
+
+  const itens = data?.itens ?? [];
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return itens.filter((i) => {
+      if (escopo === "catalogo" && !i.no_catalogo) return false;
+      if (escopo === "fora" && i.no_catalogo) return false;
+      if (!term) return true;
+      return (
+        i.codigo.toLowerCase().includes(term) ||
+        i.descricao.toLowerCase().includes(term) ||
+        (i.ncm_codigo ?? "").includes(term)
+      );
+    });
+  }, [itens, q, escopo]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const current = Math.min(page, totalPages - 1);
+  const rows = filtered.slice(current * pageSize, current * pageSize + pageSize);
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Espelho de leitura de <strong>todos</strong> os materiais devolvidos pelo SAP, inclusive os que não fazem
+        parte do catálogo do portal. Atualizado a cada “Sinc. SAP”.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-56">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            placeholder="Buscar por código, descrição ou NCM"
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(0);
+            }}
+          />
+        </div>
+        <Select value={escopo} onValueChange={(v) => { setEscopo(v as typeof escopo); setPage(0); }}>
+          <SelectTrigger className="w-56">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os materiais</SelectItem>
+            <SelectItem value="catalogo">Somente no catálogo do portal</SelectItem>
+            <SelectItem value="fora">Fora do catálogo do portal</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} aria-label="Atualizar catálogo completo">
+          <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+        </Button>
+      </div>
+
+      <div className="border border-border rounded-lg overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="text-left px-3 py-2">Código</th>
+              <th className="text-left px-3 py-2">Descrição</th>
+              <th className="text-left px-3 py-2">Unidade</th>
+              <th className="text-left px-3 py-2">NCM (SAP)</th>
+              <th className="text-left px-3 py-2">No catálogo</th>
+              <th className="text-left px-3 py-2">Sincronizado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin inline" />
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                  Nenhum material. Clique em “Sinc. SAP” para importar o catálogo completo.
+                </td>
+              </tr>
+            ) : (
+              rows.map((i) => (
+                <tr key={i.codigo} className="border-t border-border hover:bg-muted/30">
+                  <td className="px-3 py-2 font-mono text-xs">{i.codigo}</td>
+                  <td className="px-3 py-2">{i.descricao}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{i.unidade ?? "—"}</td>
+                  <td className="px-3 py-2 font-mono text-xs">{i.ncm_codigo ?? "—"}</td>
+                  <td className="px-3 py-2">
+                    <Badge variant={i.no_catalogo ? "default" : "outline"}>{i.no_catalogo ? "Sim" : "Não"}</Badge>
+                  </td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{fmt(i.last_synced_at)}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <span className="text-muted-foreground">
+          {filtered.length} material(is) • página {current + 1} de {totalPages}
+        </span>
+        <div className="flex items-center gap-2">
+          <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(0); }}>
+            <SelectTrigger className="w-24 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZES.map((s) => (
+                <SelectItem key={s} value={String(s)}>
+                  {s} / pág
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" disabled={current === 0} onClick={() => setPage(current - 1)}>
+            Anterior
+          </Button>
+          <Button variant="outline" size="sm" disabled={current >= totalPages - 1} onClick={() => setPage(current + 1)}>
+            Próxima
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProdutosPage() {
   const list = useServerFn(listSapProdutos);
   const setVis = useServerFn(setSapProdutoVisibilidade);
@@ -89,6 +227,7 @@ function ProdutosPage() {
   const [soDivergentes, setSoDivergentes] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [aba, setAba] = useState<"portal" | "sap">("portal");
 
   const alterarVisibilidade = async (id: string, v: SapVisibilidade, p?: { origem: string | null; custo: number | null; ncm_id: string | null }) => {
     const impedimento = p
@@ -485,6 +624,7 @@ function ProdutosPage() {
                 <th className="text-left px-3 py-2">Código</th>
                 <th className="text-left px-3 py-2">Descrição</th>
                 <th className="text-left px-3 py-2">Tipo</th>
+                <th className="text-left px-3 py-2">NCM</th>
                 <th className="text-left px-3 py-2">Lista de preço</th>
                 <th className="text-left px-3 py-2">Permissão</th>
                 <th className="text-left px-3 py-2">Visibilidade</th>
@@ -497,13 +637,13 @@ function ProdutosPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={audit ? 10 : 8} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 11 : 9} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={audit ? 10 : 8} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 11 : 9} className="px-3 py-10 text-center text-muted-foreground">
                     Nenhum produto encontrado. Clique em “Sinc. SAP” para importar o catálogo.
                   </td>
                 </tr>
@@ -514,6 +654,14 @@ function ProdutosPage() {
                     <td className="px-3 py-2">{p.descricao}</td>
                     <td className="px-3 py-2">
                       <Badge variant="secondary">{TIPO_LABELS[p.tipo] ?? p.tipo}</Badge>
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs">
+                      {p.ncm_codigo ?? "—"}
+                      {p.ncm_codigo && !p.ncm_id ? (
+                        <span className="ml-1 text-amber-500" title="NCM do SAP ainda não cadastrado na tabela de alíquotas">
+                          !
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">{p.lista_preco ?? "—"}</td>
                     <td className="px-3 py-2 text-muted-foreground">{p.permissao}</td>
