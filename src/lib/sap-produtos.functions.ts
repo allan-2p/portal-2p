@@ -175,26 +175,64 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
     };
 
     try {
-      const materiais = await getProducts();
+      const todosMateriais = await getAllMaterials();
+      const materiais = selecionarLiberados(todosMateriais);
       if (materiais.length === 0) {
         throw new Error("SAP: RFC listar_material não retornou materiais — sincronização abortada.");
+      }
+
+      const now = new Date().toISOString();
+
+      // Espelho completo do SAP (aba "Todos os produtos do SAP").
+      const espelho = todosMateriais.map((m) => ({
+        codigo: m.codigo,
+        descricao: m.descricao,
+        unidade: m.unidade,
+        ncm_codigo: m.ncm,
+        no_catalogo: m.liberado,
+        sap_raw: m.raw as any,
+        last_synced_at: now,
+      }));
+      for (let i = 0; i < espelho.length; i += 500) {
+        const { error } = await supabaseAdmin
+          .from("sap_catalogo_sap")
+          .upsert(espelho.slice(i, i + 500), { onConflict: "codigo" });
+        if (error) throw new Error(error.message);
       }
 
       const { data: existentes } = await supabaseAdmin
         .from("sap_produtos")
         .select("codigo, ativo, origem");
-      const known = new Set((existentes ?? []).map((r: any) => r.codigo));
+      const known = new Set((existentes ?? []).map((r: { codigo: string }) => r.codigo));
 
-      const now = new Date().toISOString();
-      const rows = materiais.map((m) => ({
-        codigo: m.codigo,
-        descricao: m.descricao,
-        tipo: classificarTipo(m.descricao),
-        permissao: m.permissao,
-        lista_preco: m.lista_preco,
-        sap_raw: m.raw as any,
-        last_synced_at: now,
-      }));
+      // NCM do SAP alimenta o produto e, quando o código existir na tabela de
+      // NCMs do portal, vincula automaticamente as alíquotas.
+      const ncmsSap = Array.from(new Set(materiais.map((m) => m.ncm).filter(Boolean))) as string[];
+      const ncmMap = new Map<string, string>();
+      if (ncmsSap.length > 0) {
+        const { data: ncmRows } = await supabaseAdmin
+          .from("cpo_ncm")
+          .select("id, codigo")
+          .in("codigo", ncmsSap);
+        for (const n of (ncmRows ?? []) as { id: string; codigo: string }[]) {
+          ncmMap.set(String(n.codigo).replace(/\D/g, ""), n.id);
+        }
+      }
+
+      const rows = materiais.map((m) => {
+        const ncmId = m.ncm ? (ncmMap.get(m.ncm) ?? null) : null;
+        return {
+          codigo: m.codigo,
+          descricao: m.descricao,
+          tipo: classificarTipo(m.descricao),
+          permissao: m.permissao,
+          lista_preco: m.lista_preco,
+          sap_raw: m.raw as any,
+          last_synced_at: now,
+          ...(m.ncm ? { ncm_codigo: m.ncm } : {}),
+          ...(ncmId ? { ncm_id: ncmId } : {}),
+        };
+      });
 
       // Novos entram ativos; nos já existentes o SAP não sobrescreve o
       // ativo/inativo definido pela moderação do portal.
