@@ -206,3 +206,30 @@ export async function adminAreasFor(ctx: GuardContext): Promise<{
     isAdmin: all,
   };
 }
+
+/**
+ * Rotas que o usuário realmente consegue abrir — usadas como sugestão
+ * quando ele cai numa tela bloqueada.
+ */
+export async function accessibleRoutesFor(
+  ctx: GuardContext,
+  limit = 6,
+): Promise<{ path: string; label: string }[]> {
+  const { ROUTE_FEATURE, FEATURE_LABELS } = await import("@/lib/instances");
+  const acc = await resolveAccess(ctx);
+  const all = acc.admin || acc.fullAccess;
+  const out: { path: string; label: string }[] = [];
+  const seen = new Set<string>();
+  for (const [path, feature] of Object.entries(ROUTE_FEATURE)) {
+    if (path === "/") continue;
+    if (seen.has(feature)) continue;
+    const ok =
+      all ||
+      Array.from(acc.features).some((k) => k.endsWith(`::${feature}`));
+    if (!ok) continue;
+    seen.add(feature);
+    out.push({ path, label: FEATURE_LABELS[feature] ?? path });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
