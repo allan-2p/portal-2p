@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/app-layout";
-import { ModerationAuditLog } from "@/components/moderation-audit-log";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,7 +60,6 @@ function ProdutosCpoPage() {
           <TabsContent value="ufs" className="mt-4"><UfsTab /></TabsContent>
         </Tabs>
 
-        <ModerationAuditLog area="cpo_produtos" description="alterações em produtos e alíquotas de Carregadores." />
       </div>
     </AppLayout>
   );

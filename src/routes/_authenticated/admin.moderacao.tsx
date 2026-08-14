@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { AdminAreaGuard } from "@/components/admin/admin-area-guard";
 import { AdminSectionHome } from "@/components/admin/admin-section-home";
-import { ModerationAuditLog } from "@/components/moderation-audit-log";
 
 export const Route = createFileRoute("/_authenticated/admin/moderacao")({
   head: () => ({
@@ -25,10 +24,6 @@ export const Route = createFileRoute("/_authenticated/admin/moderacao")({
     <AdminAreaGuard area="moderacao">
       <AppLayout>
         <AdminSectionHome sectionId="moderacao">
-          <ModerationAuditLog
-            title="Últimas alterações"
-            description="o que foi alterado recentemente nas moderações, com autor e data."
-          />
         </AdminSectionHome>
       </AppLayout>
     </AdminAreaGuard>

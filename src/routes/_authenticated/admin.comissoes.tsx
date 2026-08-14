@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ModeracaoPlaceholder, PlaceholderLink } from "@/components/admin/moderacao-placeholder";
-import { ModerationAuditLog } from "@/components/moderation-audit-log";
 
 export const Route = createFileRoute("/_authenticated/admin/comissoes")({
   head: () => ({
@@ -29,7 +28,6 @@ export const Route = createFileRoute("/_authenticated/admin/comissoes")({
           </p>
         </ModeracaoPlaceholder>
         <div className="max-w-[1100px] mx-auto mt-5">
-          <ModerationAuditLog area="solar_comissoes" description="alterações nas comissões de 2P Solar." />
         </div>
       </AppLayout>
     </AdminRouteGuard>

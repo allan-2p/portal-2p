@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/app-layout";
-import { ModerationAuditLog } from "@/components/moderation-audit-log";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -984,7 +983,6 @@ function ProdutosPage() {
           <CatalogoSapCompleto />
         )}
 
-        <ModerationAuditLog area="produtos" description="alterações no catálogo de produtos do Grupo 2P." />
       </div>
     </AppLayout>
   );
