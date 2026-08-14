@@ -107,6 +107,9 @@ export async function getProducts(): Promise<SapMaterial[]> {
         headers: {
           "content-type": "application/soap+xml; charset=utf-8",
           accept: "application/soap+xml, text/xml, */*",
+          // Sem isto o runtime envia "Accept-Language: *", que o SAP trata como
+          // idioma inválido e responde com as tabelas vazias (HTTP 200).
+          "accept-language": "pt-BR",
           authorization: credencial.header,
         },
         body: SOAP_BODY,
@@ -140,7 +143,7 @@ export async function getProducts(): Promise<SapMaterial[]> {
     if (items.length === 0) {
       throw new Error(
         `SAP: resposta sem materiais (e_t_material vazio) usando ${credencial.nome}. ` +
-          `Normalmente é falta de autorização do usuário na RFC. HTTP ${res.status}, ${xml.length} bytes.`,
+          `HTTP ${res.status}, ${xml.length} bytes.`,
       );
     }
     return items as any[];
