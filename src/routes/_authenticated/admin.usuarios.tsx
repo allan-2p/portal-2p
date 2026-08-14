@@ -904,7 +904,7 @@ function EditUserModal({
   const listProfilesFn = useServerFn(adminListPermissionProfiles);
   const setUserProfilesFn = useServerFn(adminSetUserProfiles);
   const [permProfiles, setPermProfiles] = useState<{ id: string; name: string }[]>([]);
-  const [profileIds, setProfileIds] = useState<Set<string>>(new Set());
+  const [profileId, setProfileId] = useState<string>("");
   const [profilesLoading, setProfilesLoading] = useState(true);
 
   useEffect(() => {
@@ -913,7 +913,7 @@ function EditUserModal({
       .then((res) => {
         if (!alive) return;
         setPermProfiles(res.profiles.map((p) => ({ id: p.id, name: p.name })));
-        setProfileIds(new Set(res.profiles.filter((p) => p.user_ids.includes(row.id)).map((p) => p.id)));
+        setProfileId(res.profiles.find((p) => p.user_ids.includes(row.id))?.id ?? "");
       })
       .catch(() => {})
       .finally(() => alive && setProfilesLoading(false));
@@ -948,13 +948,13 @@ function EditUserModal({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          if (profileIds.size === 0) {
-            toast.error("Selecione ao menos um perfil de permissão.");
+          if (!profileId) {
+            toast.error("Selecione o perfil de permissão.");
             return;
           }
           setSubmitting(true);
           try {
-            await setUserProfilesFn({ data: { user_id: row.id, profile_ids: [...profileIds] } });
+            await setUserProfilesFn({ data: { user_id: row.id, profile_ids: [profileId] } });
             await onSubmit({
               email: form.email,
               full_name: form.full_name,
@@ -1035,11 +1035,8 @@ function EditUserModal({
 
         <div className="pt-2 space-y-2">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            Perfis de permissão <span className="text-destructive">*</span>
+            Perfil de permissão <span className="text-destructive">*</span>
           </div>
-          {!profilesLoading && profileIds.size === 0 && (
-            <p className="text-xs text-destructive">Obrigatório: todo usuário precisa de ao menos um perfil.</p>
-          )}
           {profilesLoading ? (
             <div className="text-sm text-muted-foreground flex items-center gap-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando perfis…
@@ -1047,26 +1044,17 @@ function EditUserModal({
           ) : permProfiles.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum perfil criado ainda.</p>
           ) : (
-            <div className="grid gap-1.5 sm:grid-cols-2">
-              {permProfiles.map((p) => (
-                <label
-                  key={p.id}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-surface-2 cursor-pointer text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={profileIds.has(p.id)}
-                    onChange={(e) => {
-                      const next = new Set(profileIds);
-                      if (e.target.checked) next.add(p.id);
-                      else next.delete(p.id);
-                      setProfileIds(next);
-                    }}
-                  />
-                  <span className="truncate">{p.name}</span>
-                </label>
-              ))}
-            </div>
+            <>
+              <select value={profileId} onChange={(e) => setProfileId(e.target.value)} className="input" required>
+                <option value="">Selecione o perfil…</option>
+                {permProfiles.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              {!profileId && (
+                <p className="text-xs text-destructive">Obrigatório: todo usuário precisa de um perfil.</p>
+              )}
+            </>
           )}
         </div>
 
@@ -1104,7 +1092,7 @@ function EditUserModal({
           </button>
           <button
             type="submit"
-            disabled={submitting || profileIds.size === 0}
+            disabled={submitting || !profileId}
             className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
