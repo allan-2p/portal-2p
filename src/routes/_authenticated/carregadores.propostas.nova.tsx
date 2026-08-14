@@ -1128,7 +1128,15 @@ function PropostaCpoPage() {
                       <Field label="Produto">
                         <Select
                           value={it.produtoId}
-                          onValueChange={(v) => setItem(it.key, { produtoId: v })}
+                          onValueChange={(v) => {
+                            const sugerido = produtos.find((p) => p.id === v)?.preco_sugerido ?? 0;
+                            setItem(
+                              it.key,
+                              !it.valorManual && sugerido > 0
+                                ? { produtoId: v, valor: sugerido }
+                                : { produtoId: v },
+                            );
+                          }}
                         >
                           <SelectTrigger
                             className={cn(semProduto && "border-destructive focus-visible:ring-destructive")}

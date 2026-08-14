@@ -34,6 +34,7 @@ export type CpoProduct = {
   codigo?: string | null;
   nome: string;
   custo: number;
+  preco_sugerido?: number;
   ativo: boolean;
   ncm_id?: string | null;
   ncm_codigo?: string | null;
