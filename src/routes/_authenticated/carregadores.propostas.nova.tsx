@@ -205,15 +205,23 @@ function PropostaCpoPage() {
         toast.error("Não foi possível carregar a proposta.");
         return;
       }
-      const itens = ((data.itens as { produtoId?: string; qtd?: number; valor?: number }[]) ?? [])
+      const itens = (
+        (data.itens as { produtoId?: string; qtd?: number; valor?: number; valorManual?: boolean }[]) ?? []
+      )
         .filter((i) => i.produtoId)
-        .map((i) => ({
-          key: Math.random().toString(36).slice(2),
-          produtoId: i.produtoId as string,
-          qtd: Number(i.qtd ?? 1),
-          valor: money2(i.valor ?? 0),
-          valorManual: true,
-        }));
+        .map((i) => {
+          const valor = money2(i.valor ?? 0);
+          return {
+            key: Math.random().toString(36).slice(2),
+            produtoId: i.produtoId as string,
+            qtd: Number(i.qtd ?? 1),
+            valor,
+            // Sem valor salvo => não é um preço definido pelo vendedor,
+            // então pode ser pré-preenchido com o Preço Sugerido do produto.
+            valorManual: i.valorManual ?? valor > 0,
+          };
+        });
+
       setState({
         nome: dupId ? `${data.cliente_nome}` : data.cliente_nome,
         telefone: data.cliente_telefone ?? "",
@@ -371,6 +379,25 @@ function PropostaCpoPage() {
       ...s,
       itens: s.itens.map((i) => (i.key === key ? { ...i, ...patch } : i)),
     }));
+
+  // Propostas já abertas: aplica o Preço Sugerido nos itens que ainda não têm
+  // valor definido manualmente, assim que a lista de produtos carrega.
+  useEffect(() => {
+    if (!produtos.length) return;
+    setState((s) => {
+      let mudou = false;
+      const itens = s.itens.map((i) => {
+        if (!i.produtoId || i.valorManual || i.valor > 0) return i;
+        const sugerido = produtos.find((p) => p.id === i.produtoId)?.preco_sugerido ?? 0;
+        if (!(sugerido > 0)) return i;
+        mudou = true;
+        return { ...i, valor: money2(sugerido) };
+      });
+      return mudou ? { ...s, itens } : s;
+    });
+  }, [produtos]);
+
+
 
   const d = calcularCpo(state, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []);
   const st = statusMB(d.mbPct, config);
