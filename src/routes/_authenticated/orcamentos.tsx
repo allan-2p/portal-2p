@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { PropostaWizard, type NovaPropostaResult } from "@/components/proposta-wizard";
+import { PROPOSTA_STATUS, PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
 import {
   Dialog,
   DialogContent,
@@ -24,15 +25,7 @@ export const Route = createFileRoute("/_authenticated/orcamentos")({
   component: OrcamentosPage,
 });
 
-type Status =
-  | "Salvo"
-  | "Aguardando Pagamento"
-  | "Processando"
-  | "Separação"
-  | "Faturado"
-  | "Coletado"
-  | "Entregue"
-  | "Cancelado";
+type Status = PropostaStatus;
 
 type Vendido = "S" | "N" | "E";
 
@@ -94,19 +87,10 @@ const MOCK: Orcamento[] = [
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Cor por status — mantém o significado semântico de cada etapa do pedido.
-const STATUS_STYLE: Record<Status, { dot: string; text: string; chip: string }> = {
-  "Salvo": { dot: "bg-orange-500", text: "text-orange-500", chip: "bg-orange-500 text-background" },
-  "Aguardando Pagamento": { dot: "bg-indigo-500", text: "text-indigo-400", chip: "bg-indigo-500 text-background" },
-  "Processando": { dot: "bg-yellow-400", text: "text-yellow-500", chip: "bg-yellow-400 text-background" },
-  "Separação": { dot: "bg-sky-400", text: "text-sky-400", chip: "bg-sky-400 text-background" },
-  "Faturado": { dot: "bg-foreground", text: "text-foreground", chip: "bg-foreground text-background" },
-  "Coletado": { dot: "bg-emerald-500", text: "text-emerald-500", chip: "bg-emerald-500 text-background" },
-  "Entregue": { dot: "bg-gray-500", text: "text-gray-400", chip: "bg-gray-500 text-background" },
-  "Cancelado": { dot: "bg-red-500", text: "text-red-500", chip: "bg-red-500 text-background" },
-};
+// Cor por status — vem dos status universais das propostas (todas as instâncias).
+const STATUS_STYLE = PROPOSTA_STATUS_STYLE;
 
-const STATUS_ORDER = Object.keys(STATUS_STYLE) as Status[];
+const STATUS_ORDER = PROPOSTA_STATUS as unknown as Status[];
 
 const VENDIDO_LABEL: Record<Vendido, string> = {
   S: "Vendido ao cliente final",

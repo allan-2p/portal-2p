@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
+import { PROPOSTA_STATUS, PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
 
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   head: () => ({
@@ -22,22 +23,10 @@ export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   component: CpoPedidosPage,
 });
 
-const PEDIDO_STATUS = [
-  "Aguardando Pagamento",
-  "Processando",
-  "Separação",
-  "Faturado",
-  "Coletado",
-] as const;
-type PedidoStatus = (typeof PEDIDO_STATUS)[number];
+const PEDIDO_STATUS = PROPOSTA_STATUS;
+type PedidoStatus = PropostaStatus;
 
-const STATUS_STYLE: Record<PedidoStatus, { bg: string; fg: string }> = {
-  "Aguardando Pagamento": { bg: "#32658A", fg: "#F8FAFC" },
-  "Processando": { bg: "#C6A24A", fg: "#1F1A10" },
-  "Separação": { bg: "#5F97B8", fg: "#F8FAFC" },
-  "Faturado": { bg: "#262626", fg: "#F8FAFC" },
-  "Coletado": { bg: "#4A9F8C", fg: "#F8FAFC" },
-};
+const STATUS_STYLE = PROPOSTA_STATUS_STYLE;
 
 type Pedido = {
   id: string;
@@ -175,7 +164,7 @@ function CpoPedidosPage() {
 
 function KanbanView({ data }: { data: Pedido[] }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8 gap-3">
       {PEDIDO_STATUS.map((col) => {
         const cards = data.filter((o) => o.status === col);
         const style = STATUS_STYLE[col];
