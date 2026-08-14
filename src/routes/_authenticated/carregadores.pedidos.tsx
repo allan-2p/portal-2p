@@ -264,5 +264,6 @@ function ListView({ data, onStatus }: { data: Pedido[]; onStatus: (id: string, s
         </table>
       </div>
     </div>
+    </div>
   );
 }

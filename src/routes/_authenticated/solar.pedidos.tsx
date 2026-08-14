@@ -259,6 +259,7 @@ function ListView({ data }: { data: Pedido[] }) {
         </table>
       </div>
     </div>
+    </div>
   );
 }
 
