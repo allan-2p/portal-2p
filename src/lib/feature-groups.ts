@@ -87,7 +87,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
   {
     id: "config",
     label: "Administração • Configurações",
-    description: "Quem administra usuários, perfis e auditoria do Grupo 2P.",
+    description: "Quem administra usuários, perfis, objetos, tabelas e auditoria do Grupo 2P.",
     area: "grupo",
     accessKey: "admin.area.configuracoes",
     keys: [
@@ -97,19 +97,19 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "admin.auditoria",
       "admin.vinculos",
       "admin.objetos.produtos",
+      "admin.tabelas",
     ],
   },
   {
     id: "moderacao",
     label: "Administração • Moderação",
-    description: "Produtos, regras, comissões, metas e tabelas de cada unidade.",
+    description: "Produtos e regras (propostas, metas e comissões) de cada unidade.",
     area: "grupo",
     accessKey: "admin.area.moderacao",
     keys: [
       "admin.area.moderacao",
       "admin.produtos",
       "admin.metas",
-      "admin.tabelas",
       "cpo.produtos",
       "cpo.comissoes",
       "cpo.regras",

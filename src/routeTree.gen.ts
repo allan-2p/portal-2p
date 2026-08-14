@@ -57,13 +57,16 @@ import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminProdutosSolarRouteImport } from './routes/_authenticated/admin.produtos-solar'
 import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authenticated/admin.produtos'
 import { Route as AuthenticatedAdminPerfisRouteImport } from './routes/_authenticated/admin.perfis'
+import { Route as AuthenticatedAdminModeracaoRouteImport } from './routes/_authenticated/admin.moderacao'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
+import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
 import { Route as AuthenticatedAdminAuditoriaRouteImport } from './routes/_authenticated/admin.auditoria'
 import { Route as AuthenticatedAdminAtividadeRouteImport } from './routes/_authenticated/admin.atividade'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedCarregadoresPropostasIndexRouteImport } from './routes/_authenticated/carregadores.propostas.index'
 import { Route as AuthenticatedCarregadoresClientesIndexRouteImport } from './routes/_authenticated/carregadores.clientes.index'
+import { Route as AuthenticatedAdminLogsIndexRouteImport } from './routes/_authenticated/admin.logs.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -344,11 +347,23 @@ const AuthenticatedAdminPerfisRoute =
     path: '/admin/perfis',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminModeracaoRoute =
+  AuthenticatedAdminModeracaoRouteImport.update({
+    id: '/admin/moderacao',
+    path: '/admin/moderacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminMetasRoute = AuthenticatedAdminMetasRouteImport.update({
   id: '/admin/metas',
   path: '/admin/metas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminConfiguracoesRoute =
+  AuthenticatedAdminConfiguracoesRouteImport.update({
+    id: '/admin/configuracoes',
+    path: '/admin/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminAuditoriaRoute =
   AuthenticatedAdminAuditoriaRouteImport.update({
     id: '/admin/auditoria',
@@ -383,6 +398,12 @@ const AuthenticatedCarregadoresClientesIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedCarregadoresClientesRoute,
+  } as any)
+const AuthenticatedAdminLogsIndexRoute =
+  AuthenticatedAdminLogsIndexRouteImport.update({
+    id: '/admin/logs/',
+    path: '/admin/logs/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
@@ -461,7 +482,9 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/atividade': typeof AuthenticatedAdminAtividadeRoute
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
+  '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
@@ -499,6 +522,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/admin/logs/': typeof AuthenticatedAdminLogsIndexRoute
   '/carregadores/clientes/': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
 }
@@ -525,7 +549,9 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/atividade': typeof AuthenticatedAdminAtividadeRoute
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
+  '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
@@ -561,6 +587,7 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/admin/logs': typeof AuthenticatedAdminLogsIndexRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasIndexRoute
 }
@@ -590,7 +617,9 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/admin/atividade': typeof AuthenticatedAdminAtividadeRoute
   '/_authenticated/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
+  '/_authenticated/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/_authenticated/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/_authenticated/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/_authenticated/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
@@ -628,6 +657,7 @@ export interface FileRoutesById {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/_authenticated/admin/logs/': typeof AuthenticatedAdminLogsIndexRoute
   '/_authenticated/carregadores/clientes/': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/_authenticated/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
 }
@@ -657,7 +687,9 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/admin/atividade'
     | '/admin/auditoria'
+    | '/admin/configuracoes'
     | '/admin/metas'
+    | '/admin/moderacao'
     | '/admin/perfis'
     | '/admin/produtos'
     | '/admin/produtos-solar'
@@ -695,6 +727,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/admin/logs/'
     | '/carregadores/clientes/'
     | '/carregadores/propostas/'
   fileRoutesByTo: FileRoutesByTo
@@ -721,7 +754,9 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/admin/atividade'
     | '/admin/auditoria'
+    | '/admin/configuracoes'
     | '/admin/metas'
+    | '/admin/moderacao'
     | '/admin/perfis'
     | '/admin/produtos'
     | '/admin/produtos-solar'
@@ -757,6 +792,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/admin/logs'
     | '/carregadores/clientes'
     | '/carregadores/propostas'
   id:
@@ -785,7 +821,9 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/admin/atividade'
     | '/_authenticated/admin/auditoria'
+    | '/_authenticated/admin/configuracoes'
     | '/_authenticated/admin/metas'
+    | '/_authenticated/admin/moderacao'
     | '/_authenticated/admin/perfis'
     | '/_authenticated/admin/produtos'
     | '/_authenticated/admin/produtos-solar'
@@ -823,6 +861,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/_authenticated/admin/logs/'
     | '/_authenticated/carregadores/clientes/'
     | '/_authenticated/carregadores/propostas/'
   fileRoutesById: FileRoutesById
@@ -1181,11 +1220,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPerfisRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/moderacao': {
+      id: '/_authenticated/admin/moderacao'
+      path: '/admin/moderacao'
+      fullPath: '/admin/moderacao'
+      preLoaderRoute: typeof AuthenticatedAdminModeracaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/metas': {
       id: '/_authenticated/admin/metas'
       path: '/admin/metas'
       fullPath: '/admin/metas'
       preLoaderRoute: typeof AuthenticatedAdminMetasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/configuracoes': {
+      id: '/_authenticated/admin/configuracoes'
+      path: '/admin/configuracoes'
+      fullPath: '/admin/configuracoes'
+      preLoaderRoute: typeof AuthenticatedAdminConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/auditoria': {
@@ -1229,6 +1282,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/carregadores/clientes/'
       preLoaderRoute: typeof AuthenticatedCarregadoresClientesIndexRouteImport
       parentRoute: typeof AuthenticatedCarregadoresClientesRoute
+    }
+    '/_authenticated/admin/logs/': {
+      id: '/_authenticated/admin/logs/'
+      path: '/admin/logs'
+      fullPath: '/admin/logs/'
+      preLoaderRoute: typeof AuthenticatedAdminLogsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -1413,7 +1473,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminAtividadeRoute: typeof AuthenticatedAdminAtividadeRoute
   AuthenticatedAdminAuditoriaRoute: typeof AuthenticatedAdminAuditoriaRoute
+  AuthenticatedAdminConfiguracoesRoute: typeof AuthenticatedAdminConfiguracoesRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
+  AuthenticatedAdminModeracaoRoute: typeof AuthenticatedAdminModeracaoRoute
   AuthenticatedAdminPerfisRoute: typeof AuthenticatedAdminPerfisRoute
   AuthenticatedAdminProdutosRoute: typeof AuthenticatedAdminProdutosRoute
   AuthenticatedAdminProdutosSolarRoute: typeof AuthenticatedAdminProdutosSolarRoute
@@ -1431,6 +1493,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminLogsIntegracoesRoute: typeof AuthenticatedAdminLogsIntegracoesRoute
   AuthenticatedAdminLogsModeracaoRoute: typeof AuthenticatedAdminLogsModeracaoRoute
   AuthenticatedAdminLogsRetencaoRoute: typeof AuthenticatedAdminLogsRetencaoRoute
+  AuthenticatedAdminLogsIndexRoute: typeof AuthenticatedAdminLogsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1448,7 +1511,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminAtividadeRoute: AuthenticatedAdminAtividadeRoute,
   AuthenticatedAdminAuditoriaRoute: AuthenticatedAdminAuditoriaRoute,
+  AuthenticatedAdminConfiguracoesRoute: AuthenticatedAdminConfiguracoesRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
+  AuthenticatedAdminModeracaoRoute: AuthenticatedAdminModeracaoRoute,
   AuthenticatedAdminPerfisRoute: AuthenticatedAdminPerfisRoute,
   AuthenticatedAdminProdutosRoute: AuthenticatedAdminProdutosRoute,
   AuthenticatedAdminProdutosSolarRoute: AuthenticatedAdminProdutosSolarRoute,
@@ -1471,6 +1536,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminLogsIntegracoesRoute,
   AuthenticatedAdminLogsModeracaoRoute: AuthenticatedAdminLogsModeracaoRoute,
   AuthenticatedAdminLogsRetencaoRoute: AuthenticatedAdminLogsRetencaoRoute,
+  AuthenticatedAdminLogsIndexRoute: AuthenticatedAdminLogsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

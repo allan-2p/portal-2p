@@ -19,6 +19,7 @@ import {
   Settings2,
   SlidersHorizontal,
   ScrollText,
+  LayoutDashboard,
 } from "lucide-react";
 import type { FeatureKey } from "@/lib/instances";
 
@@ -29,6 +30,8 @@ export type AdminNavItem = {
   label: string;
   icon: typeof Users;
   feature?: FeatureKey;
+  /** Ativa apenas no match exato (usado pelas "Visão geral" das seções). */
+  exact?: boolean;
 };
 
 export type AdminNavGroup = {
@@ -40,6 +43,8 @@ export type AdminNavGroup = {
 export type AdminSection = {
   id: AdminSectionId;
   label: string;
+  /** Frase curta usada na home da seção. */
+  description: string;
   icon: typeof Users;
   home: string;
   /** Prefixos extras que pertencem à seção (ex.: a página índice de Integrações). */
@@ -51,9 +56,14 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   {
     id: "configuracoes",
     label: "Configurações",
+    description: "Usuários, perfis de acesso, objetos, campos e tabelas do Grupo 2P.",
     icon: Settings2,
-    home: "/admin/perfis",
+    home: "/admin/configuracoes",
     groups: [
+      {
+        label: null,
+        items: [{ to: "/admin/configuracoes", label: "Visão geral", icon: LayoutDashboard, exact: true }],
+      },
       {
         label: "Usuários",
         items: [
@@ -74,15 +84,26 @@ export const ADMIN_SECTIONS: AdminSection[] = [
           { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.objetos.produtos" },
         ],
       },
+      {
+        label: "Tabelas",
+        items: [
+          { to: "/admin/tabelas", label: "Tabelas", icon: TableIcon, feature: "admin.tabelas" },
+        ],
+      },
     ],
   },
   {
     id: "integracoes",
     label: "Integrações",
+    description: "Conexões com Salesforce, SAP, marketing, cadastros e plataforma.",
     icon: Plug,
     home: "/integracoes",
     prefixes: ["/integracoes"],
     groups: [
+      {
+        label: null,
+        items: [{ to: "/integracoes", label: "Visão geral", icon: LayoutDashboard, exact: true }],
+      },
       {
         label: "CRM",
         items: [{ to: "/integracoes/salesforce", label: "Salesforce", icon: Plug, feature: "admin.integracoes" }],
@@ -127,25 +148,29 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   {
     id: "moderacao",
     label: "Moderação",
+    description: "Produtos e regras (propostas, metas e comissões) de todas as unidades.",
     icon: SlidersHorizontal,
-    home: "/admin/metas",
+    home: "/admin/moderacao",
     groups: [
       {
-        label: "2P Solar",
+        label: null,
+        items: [{ to: "/admin/moderacao", label: "Visão geral", icon: LayoutDashboard, exact: true }],
+      },
+      {
+        label: "Produtos",
         collapsible: true,
         items: [
-          { to: "/admin/produtos-solar", label: "Gestão de Produtos", icon: Package, feature: "admin.produtos" },
-          { to: "/admin/metas", label: "Regras de Metas", icon: Target, feature: "admin.metas" },
-          { to: "/admin/tabelas", label: "Tabelas", icon: TableIcon, feature: "admin.tabelas" },
+          { to: "/admin/produtos-solar", label: "Produtos — 2P Solar", icon: Package, feature: "admin.produtos" },
+          { to: "/carregadores/produtos", label: "Produtos — 2P Carregadores", icon: Package, feature: "cpo.produtos" },
         ],
       },
       {
-        label: "2P Carregadores",
+        label: "Regras",
         collapsible: true,
         items: [
-          { to: "/carregadores/produtos", label: "Gestão de Produtos", icon: Package, feature: "cpo.produtos" },
-          { to: "/carregadores/comissoes", label: "Comissões", icon: Percent, feature: "cpo.comissoes" },
-          { to: "/carregadores/regras", label: "Regras", icon: BookOpen, feature: "cpo.regras" },
+          { to: "/carregadores/regras", label: "Regras de Propostas", icon: BookOpen, feature: "cpo.regras" },
+          { to: "/admin/metas", label: "Regras de Metas", icon: Target, feature: "admin.metas" },
+          { to: "/carregadores/comissoes", label: "Regras de Comissões", icon: Percent, feature: "cpo.comissoes" },
         ],
       },
     ],
@@ -153,9 +178,14 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   {
     id: "logs",
     label: "Logs",
+    description: "Histórico de acessos, integrações, moderações e políticas de retenção.",
     icon: ScrollText,
-    home: "/admin/atividade",
+    home: "/admin/logs",
     groups: [
+      {
+        label: null,
+        items: [{ to: "/admin/logs", label: "Visão geral", icon: LayoutDashboard, exact: true }],
+      },
       {
         label: "Logs do portal",
         items: [
