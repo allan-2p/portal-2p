@@ -188,18 +188,75 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       },
     };
 
+    // Consultor da proposta: fotografado do cadastro do cliente no momento da
+    // criação. Depois disso nunca muda, mesmo que o cadastro seja reatribuído.
+    async function consultorDoCliente() {
+      const doc = (data.cliente.doc ?? "").replace(/\D/g, "");
+      if (!doc) return { id: null as string | null, nome: null as string | null };
+      try {
+        const db = await import("./clientes-db.server");
+        const achados = await db.findClienteByDoc(doc);
+        const alvo =
+          achados.find((a) => a.instancia === "carregadores")?.cliente ?? achados[0]?.cliente;
+        if (!alvo) return { id: null, nome: null };
+        return {
+          id: (alvo["created_by"] as string | null) ?? null,
+          nome: (alvo["created_by_nome"] as string | null) ?? null,
+        };
+      } catch {
+        return { id: null, nome: null };
+      }
+    }
+
+    const { data: perfilAtual } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .maybeSingle();
+    const nomeAtual = (perfilAtual as any)?.full_name ?? (perfilAtual as any)?.email ?? null;
+
     if (data.propostaId) {
+      const { data: atual } = await supabase
+        .from("cpo_proposals")
+        .select("consultor_id, consultor_nome, criado_por_nome")
+        .eq("id", data.propostaId)
+        .maybeSingle();
+
+      const patch: Record<string, unknown> = { ...payload };
+      // Preenche o consultor apenas quando a proposta ainda não tem (legado).
+      if (!(atual as any)?.consultor_id && !(atual as any)?.consultor_nome) {
+        const c = await consultorDoCliente();
+        patch["consultor_id"] = c.id;
+        patch["consultor_nome"] = c.nome;
+      }
+      if (!(atual as any)?.criado_por_nome) patch["criado_por_nome"] = nomeAtual;
+
       const { error } = await supabase
         .from("cpo_proposals")
-        .update(payload)
+        .update(patch)
         .eq("id", data.propostaId);
       if (error) throw new Error(error.message);
-      return { id: data.propostaId, numero: data.numero, duplicada: false, totais: payload.totais };
+      return {
+        id: data.propostaId,
+        numero: data.numero,
+        duplicada: false,
+        totais: payload.totais,
+        consultor: ((atual as any)?.consultor_nome ?? patch["consultor_nome"] ?? null) as string | null,
+      };
     }
+
+    const consultor = await consultorDoCliente();
 
     const { data: inserida, error } = await supabase
       .from("cpo_proposals")
-      .insert({ ...payload, status: "Salvo", created_by: userId })
+      .insert({
+        ...payload,
+        status: "Salvo",
+        created_by: userId,
+        criado_por_nome: nomeAtual,
+        consultor_id: consultor.id,
+        consultor_nome: consultor.nome,
+      })
       .select("id")
       .single();
     if (error) {
@@ -214,9 +271,16 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
           numero: data.numero,
           duplicada: true,
           totais: payload.totais,
+          consultor: consultor.nome,
         };
       }
       throw new Error(error.message);
     }
-    return { id: inserida.id, numero: data.numero, duplicada: false, totais: payload.totais };
+    return {
+      id: inserida.id,
+      numero: data.numero,
+      duplicada: false,
+      totais: payload.totais,
+      consultor: consultor.nome,
+    };
   });
