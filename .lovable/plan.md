@@ -1,80 +1,17 @@
-## Escopo
+# Liberar os produtos 200000694 e 200000684
 
-Reforma da Instância Marketing em 4 páginas + novo painel admin de metas.
+## O que está acontecendo
 
-### 1) Base — nova tabela e time expandido
+A sincronização com o SAP não grava tudo o que a RFC devolve: existe uma lista fixa de códigos liberados dentro do código do portal, e a sincronização descarta qualquer material fora dela. Os códigos **200000694** e **200000684** não estão nessa lista, por isso nunca chegam ao banco — a consulta na tabela de produtos confirma que não existe nenhum registro com esses códigos.
 
-- Adicionar **Gabriel Sargiani** aos owners de Marketing em `src/lib/salesforce.functions.ts` (mantendo Erika). Time base passa a 6 pessoas: Fernando Lira, Gabriel Kendi, Gabriel Sargiani, Erika Aiello, Ygor Andreis, Marketing 2P.
-- Nova migration `marketing_goals` (KV: `key text pk, label text, unit text, period text, goal numeric, updated_at`) com RLS: SELECT authenticated / UPDATE só admin (via `is_admin`). GRANT completo. Seed com as chaves:
-  - `leads_qualificados_mes` (150 / mês, orgânico)
-  - `mql_pago_mes` (250 / mês)
-  - `novos_pago_mes` (30 / mês)
-  - `ig_solar_tri` (30000 / tri)
-  - `ig_carregadores_tri` (10000 / tri)
-  - `ig_station_tri` (3000 / tri)
-- Novo `src/lib/marketing-goals.functions.ts` com `listMarketingGoals` e `setMarketingGoal`.
+## O que será feito
 
-### 2) Novo admin — `Marketing → Metas`
-
-- Nova rota `src/routes/_authenticated/marketing.metas.tsx` (admin-only, mesmo padrão do `admin.metas.tsx` da Solar): lista as 6 metas em cards editáveis (label + valor + unidade), com salvamento inline via `setMarketingGoal`.
-- Entrada no menu quando `instance === "marketing"` (verificar `src/lib/instances.ts` e `app-layout` — só adicionar link).
-
-### 3) Página **Social Media** (`marketing.social.tsx`)
-
-- Trocar mocks pelos valores das metas (via `listMarketingGoals`):
-  - Topo com 2 cards de destaque grandes:
-    - **Leads qualificados (Orgânico)** — real vs `leads_qualificados_mes` (real ainda manual/mock por enquanto).
-    - **Seguidores Instagram (Tri)** — grid de 3 (Solar / Carregadores / Station) contra as metas do tri.
-- Remover LinkedIn dos detalhes; manter YouTube e TikTok como cards secundários abaixo.
-- Instância única (não depende mais do sub-switch marketing solar/carregadores — o card de IG já mostra os 3).
-
-### 4) Página **Tráfego Pago** (`marketing.trafego.tsx`)
-
-- Substituir mocks pelos valores das metas:
-  - Header com 2 metas fixas: **MQL 250** e **Novos 30** (mês). Reais preenchidos manualmente por hora (mock 0).
-- Mantém tabela de campanhas mock existente abaixo.
-
-### 5) Página **CAC** (`marketing.cac.tsx`)
-
-- Adicionar dois campos editáveis por mês (persist localStorage já usado): `faturamento` e `margem_liquida_valor`.
-- Novo card comparativo destacado: **Valor investido × Margem líquida** com badge verde/vermelho conforme margem cobre o investimento e ROI simples.
-
-### 6) Página **Pré-Vendas** (`marketing.pre-vendas.tsx`)
-
-- Renomear título "Home | Gerente de Pré-Vendas" → "Pré-Vendas".
-- Trocar os KPIs e o funil por dados reais do Salesforce (novo server fn `getPreVendasFunilData`):
-  - Reutilizar owners de Marketing (6 pessoas).
-  - Contadores: leads novos (Status=Novo), amadurecimento, não convertidos, convertidos.
-  - Motivos de perda de Oportunidades (`Motivo_Perda__c` — tentativa com fallback silencioso se não existir) e Motivos de não-conversão de Leads (`Motivo_Nao_Convertido__c` idem). Se o campo não existir na org, mostrar mensagem "campo não configurado".
-- Mantém alertas mock (não foi pedido pra trocar).
-
-### 7) Página **Home Marketing** (`marketing.index.tsx`)
-
-- Adicionar filtro de comparativo **Mês atual vs Mês anterior** (2 presets no topo).
-- Novo bloco de KPIs comparativos: Leads, MQL (Status = Qualificado/Convertido/Amadurecimento — ICP), Convertidos, Novos Orçamentos (Opp criadas no período pelos 6 owners), Novos Clientes (contas convertidas no período).
-- Adicionar breakdown de faturamento por origem/sub-origem — já temos porOrigem/porSubOrigem para leads; nova query para faturamento agregado por Opp.Lead_Source__c (com fallback).
-
-### 8) Fora de escopo (por decisão)
-
-- Integração real com Instagram/Meta Ads API (mocks + entrada manual conforme aprovado).
-- ID do Gabriel Sargiani ainda desconhecido — se você tiver, me passa que eu troco o placeholder na migration/lista.
-
-## Ordem de execução
-
-1. Migration `marketing_goals` + grants + seed.
-2. `marketing-goals.functions.ts`.
-3. Nova rota admin `marketing.metas.tsx` + link no menu.
-4. Refactor `marketing.social.tsx`.
-5. Refactor `marketing.trafego.tsx`.
-6. Adição no `marketing.cac.tsx`.
-7. Owners atualizados + `getPreVendasFunilData` + refactor `marketing.pre-vendas.tsx`.
-8. `marketing.index.tsx` com comparativo mês.
+- Incluir 200000694 e 200000684 na lista de códigos liberados da sincronização.
+- Marcar os dois como visíveis para **todos** os usuários (não apenas admin), para que apareçam na seleção de produtos das propostas.
+- Rodar a sincronização com o SAP e conferir se os dois vieram com descrição e lista de preço; se o SAP não devolver algum deles, aviso qual é e o motivo (código inexistente na RFC ou fora das listas 2P-0001/2P-0002).
 
 ## Detalhes técnicos
 
-- Todas as reads via `useSuspenseQuery` + `ensureQueryData` (padrão do projeto).
-- Server fns novos usam `requireSupabaseAuth` e `sfFetch`.
-- Metas persistidas no Supabase; reais que ainda dependem de fontes externas seguem manuais/mock por hora — reservei "TODO integração" nos pontos exatos.
-- Sem alteração no `src/integrations/supabase/*` (arquivos auto-gerados).
-
-Confirma o plano que eu executo tudo em sequência? Se quiser cortar algum item (ex.: adiar comparativo mês/anterior), me avisa.
+- `src/lib/sap-produtos.server.ts`: adicionar os dois códigos ao conjunto `LIBERADOS` e ao conjunto `EXTRAS_CLI` (permissão "Todos").
+- Nenhuma alteração de banco é necessária; após a sincronização eles entram em `sap_produtos` com custo/preço zerados, prontos para ajuste na Gestão de Produtos.
+- Verificação final: consulta em `sap_produtos` pelos dois códigos após o sync.
