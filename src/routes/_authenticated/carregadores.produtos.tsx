@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Pencil, Save, Search } from "lucide-react";
+import { AlertCircle, Pencil, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { validateAtivacaoCarregadores } from "@/lib/product-visibility";
