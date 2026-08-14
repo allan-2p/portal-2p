@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireFeature } from "@/lib/guards.server";
+import { precoSugeridoPadrao } from "@/lib/cpo";
 
 export type CpoProductAdmin = {
   id: string;
@@ -22,7 +23,7 @@ function toProduct(p: any): CpoProductAdmin {
     codigo: p.codigo ?? null,
     nome: p.descricao,
     custo: Number(p.custo ?? 0),
-    preco_sugerido: Number(p.preco_sugerido ?? 0),
+    preco_sugerido: Number(p.preco_sugerido ?? 0) || precoSugeridoPadrao(Number(p.custo ?? 0)),
     ativo: p.ativo,
     ncm_id: p.ncm_id ?? null,
     ncm_codigo: p.ncm_codigo ?? null,

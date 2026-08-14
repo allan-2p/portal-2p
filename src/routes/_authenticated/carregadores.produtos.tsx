@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { validateAtivacaoCarregadores } from "@/lib/product-visibility";
 import { useCpoInvalidate, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
-import { fmtBRL, type CpoProduct } from "@/lib/cpo";
+import { fmtBRL, precoSugeridoPadrao, MARGEM_PRECO_SUGERIDO, type CpoProduct } from "@/lib/cpo";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
@@ -201,7 +201,7 @@ function ProdutosTab() {
                             codigo: p.codigo ?? "",
                             nome: p.nome,
                             custo: String(p.custo),
-                            preco_sugerido: String(p.preco_sugerido ?? 0),
+                            preco_sugerido: String(p.preco_sugerido || precoSugeridoPadrao(p.custo)),
                             ativo: p.ativo,
                             ncm_id: p.ncm_id ?? null,
                           })
@@ -277,6 +277,26 @@ function ProdutosTab() {
                   value={draft.preco_sugerido}
                   onChange={(e) => setDraft({ ...draft, preco_sugerido: e.target.value })}
                 />
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span>
+                    Padrão ({Math.round(MARGEM_PRECO_SUGERIDO * 100)}% sobre o custo):{" "}
+                    {fmtBRL(precoSugeridoPadrao(Number(draft.custo) || 0))}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() =>
+                      setDraft({
+                        ...draft,
+                        preco_sugerido: String(precoSugeridoPadrao(Number(draft.custo) || 0)),
+                      })
+                    }
+                  >
+                    Aplicar margem padrão
+                  </Button>
+                </div>
               </Field>
 
               <div className="flex items-start gap-3">
