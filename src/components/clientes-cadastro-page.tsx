@@ -298,7 +298,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             cnaes_secundarios: p.cnaes_secundarios ?? [],
             contatos: p.contatos ?? [],
           } as never,
-          consultor_id: consultorId,
+          consultor_id: consultorId ?? consultoresQ.data?.eu.id ?? null,
         },
       });
     },
@@ -667,7 +667,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               <Section title="Comercial">
                 <F label="Consultor responsável">
                   {consultoresQ.data?.podeEscolher ? (
-                    <Select value={consultorId ?? ""} onValueChange={(v) => setConsultorId(v)}>
+                    <Select value={consultorId ?? consultoresQ.data?.eu.id ?? ""} onValueChange={(v) => setConsultorId(v)}>
                       <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
                       <SelectContent>
                         {(consultoresQ.data?.consultores ?? []).map((c: { id: string; nome: string }) => (
