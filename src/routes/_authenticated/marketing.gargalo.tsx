@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/app-layout";
 import { AlertTriangle, TrendingDown, Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { AtlasSoonCard } from "./marketing.index";
+import { AtlasSoonCard } from "@/components/marketing/atlas-soon-card";
 
 export const Route = createFileRoute("/_authenticated/marketing/gargalo")({
   head: () => ({ meta: [{ title: "Mapa de Gargalo — Marketing — Portal 2P" }] }),

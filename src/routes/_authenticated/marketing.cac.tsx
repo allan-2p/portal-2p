@@ -4,7 +4,7 @@ import { useMarketingUnit } from "@/components/instance-provider";
 import { TrendingUp, Check, Clock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { AtlasSoonCard } from "./marketing.index";
+import { AtlasSoonCard } from "@/components/marketing/atlas-soon-card";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/marketing/cac")({

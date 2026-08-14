@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/app-layout";
 import { useMarketingUnit } from "@/components/instance-provider";
 import { LineChart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AtlasSoonCard } from "./marketing.index";
+import { AtlasSoonCard } from "@/components/marketing/atlas-soon-card";
 
 export const Route = createFileRoute("/_authenticated/marketing/cohort")({
   head: () => ({ meta: [{ title: "Análise Cohort — Marketing — Portal 2P" }] }),
