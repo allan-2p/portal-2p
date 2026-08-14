@@ -38,6 +38,20 @@ export type SalvarPropostaInput = {
 
 const money2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
 
+/** Gera um número SAP único no formato SAP-AAAA-NNNNNN a partir da sequence. */
+async function gerarNumeroSap(supabase: any) {
+  const ano = new Date().getFullYear();
+  const { data, error } = await supabase.rpc("cpo_next_sap_seq");
+  if (error) {
+    // Fallback seguro caso o RPC não esteja disponível
+    const ts = Date.now().toString().slice(-6);
+    return `SAP-${ano}-${ts}`;
+  }
+  const n = Number(data ?? 1);
+  return `SAP-${ano}-${String(n).padStart(6, "0")}`;
+}
+
+
 function validar(input: any): SalvarPropostaInput {
   if (!input || typeof input !== "object") throw new Error("Dados inválidos.");
   const nome = String(input.cliente?.nome ?? "").trim();
@@ -160,10 +174,27 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
         `CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação da diretoria.`,
       );
 
+    // Nº SAP: gerado automaticamente quando não informado. Em atualizações,
+    // preserva o número já atribuído para manter a rastreabilidade do pedido.
+    let numeroSap = data.numeroSap?.trim() || null;
+    if (!numeroSap) {
+      if (data.propostaId) {
+        const { data: atualSap } = await supabase
+          .from("cpo_proposals")
+          .select("numero_sap")
+          .eq("id", data.propostaId)
+          .maybeSingle();
+        numeroSap = (atualSap as any)?.numero_sap?.trim() || null;
+      }
+      if (!numeroSap) {
+        numeroSap = await gerarNumeroSap(supabase);
+      }
+    }
+
     const payload = {
       numero: data.numero,
       nome: data.propostaNome,
-      numero_sap: data.numeroSap,
+      numero_sap: numeroSap,
       cliente_nome: data.cliente.nome,
 
       cliente_telefone: data.cliente.telefone,
@@ -253,6 +284,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       return {
         id: data.propostaId,
         numero: data.numero,
+        numeroSap,
         duplicada: false,
         totais: payload.totais,
         consultor: ((atual as any)?.consultor_nome ?? patch["consultor_nome"] ?? null) as string | null,
@@ -283,6 +315,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
         return {
           id: existente?.id ?? null,
           numero: data.numero,
+          numeroSap,
           duplicada: true,
           totais: payload.totais,
           consultor: consultor.nome,
@@ -293,6 +326,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
     return {
       id: inserida.id,
       numero: data.numero,
+      numeroSap,
       duplicada: false,
       totais: payload.totais,
       consultor: consultor.nome,

@@ -754,6 +754,10 @@ function PropostaCpoPage() {
       if ((salvo as { consultor?: string | null }).consultor) {
         setConsultorProposta((salvo as { consultor?: string | null }).consultor ?? null);
       }
+      const sapRetornado = (salvo as { numeroSap?: string | null }).numeroSap;
+      if (sapRetornado) {
+        setState((s) => ({ ...s, numeroSap: sapRetornado }));
+      }
 
       if (propostaId) {
         const concluindo = status !== "Salvo";

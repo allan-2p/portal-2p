@@ -62,7 +62,7 @@ const esc = (v: unknown) =>
  * Nome sugerido do arquivo ao salvar/imprimir: nº da proposta + "Proposta" + nome fantasia.
  * O navegador usa o <title> do documento como nome padrão no diálogo de impressão.
  */
-export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente" | "propostaNome">) {
+export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente" | "propostaNome" | "numeroSap">) {
   const limpo = (v: string) =>
     v
       .normalize("NFD")
@@ -72,7 +72,8 @@ export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente
       .trim();
   const fantasia = limpo(p.cliente.nomeFantasia?.trim() || p.cliente.nome || "Cliente");
   const nome = limpo(p.propostaNome?.trim() || "Proposta");
-  return [limpo(p.numero ?? "Proposta"), nome, fantasia].filter(Boolean).join(" - ");
+  const sap = p.numeroSap?.trim() ? [p.numeroSap.trim()] : [];
+  return [limpo(p.numero ?? "Proposta"), nome, ...sap, fantasia].filter(Boolean).join(" - ");
 }
 
 
@@ -220,13 +221,13 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
     <div class="hero-main">
       <div>
         <div class="hkicker">Proposta comercial</div>
-        <div class="htitle">${esc(numero)}</div>
-        ${p.propostaNome?.trim() ? `<div class="hkicker" style="margin-top:6px">${esc(p.propostaNome.trim())}</div>` : ""}
+        <div class="htitle">${esc(p.propostaNome?.trim() || numero)}</div>
+        <div class="hkicker" style="margin-top:6px">${esc(numero)}${p.propostaNome?.trim() ? ` · ${esc(numero)}` : ""}</div>
       </div>
       <div class="hmeta">
         Emissão <b>${esc(dataStr)}</b><br>
         Validade <b>${esc(validade)}</b><br>
-        ${p.numeroSap?.trim() ? `Nº SAP <b>${esc(p.numeroSap.trim())}</b><br>` : ""}
+        Nº SAP <b>${esc(p.numeroSap?.trim() || "em geração")}</b><br>
         Consultor responsável <b>${esc(p.consultor || "—")}</b>
       </div>
     </div>
