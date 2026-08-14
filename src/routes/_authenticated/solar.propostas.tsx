@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { FilePlus, Eye, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/permission-gate";
@@ -99,9 +99,6 @@ const VENDIDO_LABEL: Record<Vendido, string> = {
   E: "Estoque",
 };
 
-function StatusDotCell({ status }: { status: Status }) {
-  return <StatusDot status={status} />;
-}
 
 
 function OrcamentosPage() {
@@ -140,7 +137,6 @@ function OrcamentosPage() {
 
   return (
     <AppLayout>
-      <TooltipProvider>
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -154,15 +150,14 @@ function OrcamentosPage() {
           </PermissionGate>
         </div>
 
-        {/* Legenda de status */}
-        <div className="flex items-center gap-x-5 gap-y-2 flex-wrap text-xs">
-          {STATUS_ORDER.map((s) => (
-            <span key={s} className="inline-flex items-center gap-2">
-              <span className={`h-2.5 w-2.5 rounded-full ${STATUS_STYLE[s].dot}`} />
-              <span className="text-muted-foreground">{s}</span>
-            </span>
-          ))}
-        </div>
+        {/* Legenda de status — padrão universal */}
+        <StatusLegend
+          statuses={STATUS_ORDER}
+          counts={orcamentos.reduce<Record<string, number>>((acc, o) => {
+            acc[o.status] = (acc[o.status] ?? 0) + 1;
+            return acc;
+          }, {})}
+        />
 
         <div className="glass rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
@@ -249,7 +244,6 @@ function OrcamentosPage() {
           )}
         </DialogContent>
       </Dialog>
-      </TooltipProvider>
     </AppLayout>
   );
 }
