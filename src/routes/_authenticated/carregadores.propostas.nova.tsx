@@ -1094,24 +1094,8 @@ function PropostaCpoPage() {
                   </div>
                 ) : null}
 
-                {state.nome ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Nome da proposta">
-                      <Input
-                        value={state.propostaNome}
-                        onChange={(e) => set("propostaNome", e.target.value)}
-                        placeholder="Ex.: Eletroposto Matriz — 4 carregadores"
-                      />
-                    </Field>
-                    <Field label="Nº SAP">
-                      <Input
-                        value={state.numeroSap}
-                        onChange={(e) => set("numeroSap", e.target.value)}
-                        placeholder="Ex.: 4500123"
-                      />
-                    </Field>
-                  </div>
-                ) : null}
+
+
 
                 {state.nome ? (
 
