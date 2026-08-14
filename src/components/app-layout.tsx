@@ -234,11 +234,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {show("tarefas") && (
             <NavLink item={{ to: "/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/tarefas")} collapsed={collapsed} />
           )}
+          {show("propostas") && (
+            <NavLink item={{ to: "/orcamentos", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/orcamentos")} collapsed={collapsed} />
+          )}
           {show("pedidos") && (
-            <>
-              <NavLink item={{ to: "/orcamentos", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/orcamentos")} collapsed={collapsed} />
-              <NavLink item={{ to: "/pedidos", label: "Pedidos", icon: KanbanSquare }} active={pathname.startsWith("/pedidos")} collapsed={collapsed} />
-            </>
+            <NavLink item={{ to: "/pedidos", label: "Pedidos", icon: KanbanSquare }} active={pathname.startsWith("/pedidos")} collapsed={collapsed} />
           )}
           {show("cupons") && (
             <NavLink item={{ to: "/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/cupons")} collapsed={collapsed} />
@@ -352,7 +352,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </button>
                 {dashboardsOpen && (
                   <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-                    <SubLink to="/dashboards/metas" label="Metas" icon={Target} active={pathname.startsWith("/dashboards/metas")} />
+                    {show("dashboards.metas") && (
+                      <SubLink to="/dashboards/metas" label="Metas" icon={Target} active={pathname.startsWith("/dashboards/metas")} />
+                    )}
                   </div>
                 )}
               </div>
