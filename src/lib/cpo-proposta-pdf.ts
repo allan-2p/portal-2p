@@ -9,6 +9,11 @@ export type PropostaPdfItem = {
 
 export type PropostaPdfData = {
   numero?: string;
+  /** Nome/identificação da proposta. */
+  propostaNome?: string | null;
+  /** Nº do pedido no SAP. */
+  numeroSap?: string | null;
+
   cliente: {
     nome: string;
     nomeFantasia?: string | null;
