@@ -49,28 +49,26 @@ export const logAuthFailure = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Registra um evento de atividade do usuário autenticado. */
+/**
+ * Registra um evento de atividade do usuário autenticado.
+ *
+ * A gravação é feita pelo servidor (service role) com e-mail, IP e user-agent
+ * derivados da sessão/requisição — o cliente só informa evento e detalhe, e não
+ * possui permissão de INSERT direto na tabela de logs.
+ */
 export const logUserActivity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => LogInput.parse(d))
   .handler(async ({ data, context }) => {
-    const ip = getRequestIP({ xForwardedFor: true }) ?? null;
-    const ua = getRequestHeader("user-agent") ?? null;
-    const { data: profile } = await context.supabase
-      .from("profiles")
-      .select("email")
-      .eq("id", context.userId)
-      .maybeSingle();
-    await context.supabase.from("user_activity_log").insert({
-      user_id: context.userId,
-      email: profile?.email ?? null,
+    const { recordAudit } = await import("@/lib/audit.server");
+    await recordAudit({
+      userId: context.userId,
       event: data.event,
       detail: data.detail ?? null,
-      ip,
-      user_agent: ua ? ua.slice(0, 300) : null,
     });
     return { ok: true };
   });
+
 
 export type ActivityRow = {
   id: string;
