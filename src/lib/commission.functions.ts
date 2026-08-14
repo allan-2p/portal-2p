@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordModeration } from "@/lib/moderation-audit.server";
+import { requireAnyFeature } from "@/lib/guards.server";
 
 // ---- Tipos das regras de comissão ---- //
 
@@ -99,6 +100,10 @@ export const setVendidoTiers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => VendidoInput.parse(d))
   .handler(async ({ data, context }) => {
+    await requireAnyFeature(context, [
+      { instance: "carregadores", feature: "cpo.comissoes", action: "moderar" },
+      { instance: "solar", feature: "admin.metas", action: "moderar" },
+    ]);
     if (data.pre_vendas.length !== data.tiers.length || data.carteira.length !== data.tiers.length) {
       throw new Error("Quantidade de % não bate com as faixas.");
     }
@@ -125,6 +130,10 @@ export const setNovosValues = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => NovosInput.parse(d))
   .handler(async ({ data, context }) => {
+    await requireAnyFeature(context, [
+      { instance: "carregadores", feature: "cpo.comissoes", action: "moderar" },
+      { instance: "solar", feature: "admin.metas", action: "moderar" },
+    ]);
     const { error } = await context.supabase
       .from("commission_settings")
       .upsert({ id: "novos_values", config: data, updated_at: new Date().toISOString() });
@@ -162,6 +171,10 @@ export const setRetencaoTiers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => RetencaoInput.parse(d))
   .handler(async ({ data, context }) => {
+    await requireAnyFeature(context, [
+      { instance: "carregadores", feature: "cpo.comissoes", action: "moderar" },
+      { instance: "solar", feature: "admin.metas", action: "moderar" },
+    ]);
     if (data.values.length !== data.tiers.length) {
       throw new Error("Quantidade de valores não bate com as faixas.");
     }
@@ -188,6 +201,10 @@ export const setSalespersonEquipe = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => EquipeInput.parse(d))
   .handler(async ({ data, context }) => {
+    await requireAnyFeature(context, [
+      { instance: "carregadores", feature: "cpo.comissoes", action: "moderar" },
+      { instance: "solar", feature: "admin.metas", action: "moderar" },
+    ]);
     // Ler config existente e atualizar apenas a chave do vendedor.
     const { data: rows, error: readErr } = await context.supabase
       .from("commission_settings")

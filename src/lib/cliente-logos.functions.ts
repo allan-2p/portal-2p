@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAnyFeature } from "@/lib/guards.server";
 
 const docSchema = z
   .string()
@@ -36,6 +37,10 @@ export const saveClienteLogo = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await requireAnyFeature(context, [
+      { instance: "solar", feature: "clientes.cadastros", action: "editar" },
+      { instance: "carregadores", feature: "cpo.clientes", action: "editar" },
+    ]);
     const { error } = await context.supabase.from("cliente_logos").upsert(
       {
         doc: data.doc,
@@ -53,6 +58,10 @@ export const deleteClienteLogo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ doc: docSchema }).parse(input))
   .handler(async ({ data, context }) => {
+    await requireAnyFeature(context, [
+      { instance: "solar", feature: "clientes.cadastros", action: "editar" },
+      { instance: "carregadores", feature: "cpo.clientes", action: "editar" },
+    ]);
     const { error } = await context.supabase.from("cliente_logos").delete().eq("doc", data.doc);
     if (error) throw new Error(error.message);
     return { ok: true };

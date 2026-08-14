@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireFeature } from "@/lib/guards.server";
 
 export type CpoProductAdmin = {
   id: string;
@@ -49,8 +50,11 @@ export const listCpoProductsForProposal = createServerFn({ method: "GET" })
 export const adminListCpoProducts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ products: CpoProductAdmin[] }> => {
-    const { data: isAdmin, error: roleError } = await context.supabase.rpc("is_admin");
-    if (roleError || !isAdmin) throw new Error("Forbidden: admin role required");
+    await requireFeature(context, {
+      instance: "carregadores",
+      feature: "cpo.produtos",
+      action: "visualizar",
+    });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
