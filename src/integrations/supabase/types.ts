@@ -443,10 +443,16 @@ export type Database = {
           cliente_ie: string | null
           cliente_nome: string
           cliente_telefone: string | null
+          consultor_id: string | null
+          consultor_nome: string | null
           contribuinte: boolean
           created_at: string
           created_by: string | null
+          criado_por_nome: string | null
           finalidade_uso: string
+          finalizado_em: string | null
+          finalizado_por: string | null
+          finalizado_por_nome: string | null
           frete_mod: string
           frete_valor: number
           id: string
@@ -464,10 +470,16 @@ export type Database = {
           cliente_ie?: string | null
           cliente_nome: string
           cliente_telefone?: string | null
+          consultor_id?: string | null
+          consultor_nome?: string | null
           contribuinte?: boolean
           created_at?: string
           created_by?: string | null
+          criado_por_nome?: string | null
           finalidade_uso?: string
+          finalizado_em?: string | null
+          finalizado_por?: string | null
+          finalizado_por_nome?: string | null
           frete_mod?: string
           frete_valor?: number
           id?: string
@@ -485,10 +497,16 @@ export type Database = {
           cliente_ie?: string | null
           cliente_nome?: string
           cliente_telefone?: string | null
+          consultor_id?: string | null
+          consultor_nome?: string | null
           contribuinte?: boolean
           created_at?: string
           created_by?: string | null
+          criado_por_nome?: string | null
           finalidade_uso?: string
+          finalizado_em?: string | null
+          finalizado_por?: string | null
+          finalizado_por_nome?: string | null
           frete_mod?: string
           frete_valor?: number
           id?: string

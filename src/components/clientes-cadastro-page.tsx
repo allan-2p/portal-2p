@@ -27,6 +27,7 @@ import { useCpoUfs } from "@/hooks/use-cpo";
 import { docValido, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import {
   listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, excluirClienteFn,
+  listConsultoresFn,
 
 } from "@/lib/clientes.functions";
 import {
@@ -182,6 +183,18 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [detalhe, setDetalhe] = useState<Cliente | null>(null);
   const [tentouSalvar, setTentouSalvar] = useState(false);
   const [bloqueados, setBloqueados] = useState<Set<keyof Form>>(new Set());
+  // Consultor responsável pelo cadastro (gravado em created_by/created_by_nome)
+  const [consultorId, setConsultorId] = useState<string | null>(null);
+  const listarConsultores = useServerFn(listConsultoresFn);
+  const consultoresQ = useQuery({
+    queryKey: ["clientes-consultores", instancia],
+    queryFn: () => listarConsultores({ data: { instancia } }),
+    staleTime: 5 * 60_000,
+  });
+  const consultorNomeAtual =
+    (consultoresQ.data?.consultores ?? []).find((c: { id: string; nome: string }) => c.id === consultorId)?.nome ??
+    consultoresQ.data?.eu.nome ??
+    "—";
 
   const errosAtuais = useMemo(() => validarCampos(form), [form]);
   const erros: Erros = tentouSalvar ? errosAtuais : {};
@@ -285,6 +298,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             cnaes_secundarios: p.cnaes_secundarios ?? [],
             contatos: p.contatos ?? [],
           } as never,
+          consultor_id: consultorId ?? consultoresQ.data?.eu.id ?? null,
         },
       });
     },
@@ -351,6 +365,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
   function fechar() {
     setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
+    setConsultorId(consultoresQ.data?.eu.id ?? null);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
     setFontes([]); setAvisos([]); setBloqueados(new Set());
   }
@@ -368,6 +383,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         email: c.contato_email, telefone: c.contato_telefone,
       }),
     });
+    setConsultorId(c.created_by ?? consultoresQ.data?.eu.id ?? null);
     setTentouSalvar(false); setFontes([]); setAvisos([]); setBloqueados(new Set());
     setEtapa("formulario"); setOpen(true);
   };
@@ -649,6 +665,20 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               </Section>
 
               <Section title="Comercial">
+                <F label="Consultor responsável">
+                  {consultoresQ.data?.podeEscolher ? (
+                    <Select value={consultorId ?? consultoresQ.data?.eu.id ?? ""} onValueChange={(v) => setConsultorId(v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
+                      <SelectContent>
+                        {(consultoresQ.data?.consultores ?? []).map((c: { id: string; nome: string }) => (
+                          <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input value={consultorNomeAtual} disabled />
+                  )}
+                </F>
                 <F label="Condição de pagamento">
                   <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
                 </F>

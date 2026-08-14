@@ -27,6 +27,59 @@ async function assertPodeAlterarCliente(
   return atual;
 }
 
+/**
+ * Só administradores (ou quem tem visão geral) podem escolher o consultor
+ * responsável por um cadastro. Um consultor comum sempre fica com o próprio.
+ */
+async function podeEscolherConsultor(context: { supabase: any; userId: string }) {
+  const { data: isAdmin } = await context.supabase.rpc("is_admin");
+  if (isAdmin) return true;
+  const { data: perfil } = await context.supabase
+    .from("profiles")
+    .select("filter_scope")
+    .eq("id", context.userId)
+    .maybeSingle();
+  return perfil?.filter_scope === "geral";
+}
+
+/** Consultores elegíveis para receber cadastros da instância. */
+export const listConsultoresFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ instancia: instanciaSchema }).parse(input))
+  .handler(async ({ data, context }) => {
+    const podeEscolher = await podeEscolherConsultor(context as any);
+    const { data: eu } = await context.supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const meuNome = eu?.full_name || eu?.email || "—";
+    if (!podeEscolher) {
+      return {
+        podeEscolher: false as const,
+        eu: { id: context.userId, nome: meuNome },
+        consultores: [{ id: context.userId, nome: meuNome }],
+      };
+    }
+
+    const { data: perfis } = await context.supabase
+      .from("profiles")
+      .select("id, full_name, email, organizacao, ativo")
+      .eq("ativo", true)
+      .in("organizacao", [data.instancia, "grupo"])
+      .order("full_name", { ascending: true });
+
+    const consultores = (perfis ?? []).map((p: any) => ({
+      id: p.id as string,
+      nome: (p.full_name || p.email || "—") as string,
+    }));
+    if (!consultores.some((c: { id: string }) => c.id === context.userId)) {
+      consultores.unshift({ id: context.userId, nome: meuNome });
+    }
+    return { podeEscolher: true as const, eu: { id: context.userId, nome: meuNome }, consultores };
+  });
+
 /** Consulta a tabela `clientes` da instância. */
 export const listClientesFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -135,6 +188,8 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     z.object({
       instancia: instanciaSchema,
       id: z.string().uuid().nullable().optional(),
+      /** Consultor responsável pelo cadastro (só respeitado para quem tem visão geral). */
+      consultor_id: z.string().uuid().nullable().optional(),
       cliente: clienteSchema,
     }).parse(input),
   )
@@ -157,6 +212,22 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
+    // Consultor responsável: quem cria assume o cadastro; usuários com visão
+    // geral (ou admin) podem atribuir a outro consultor.
+    const podeEscolher = await podeEscolherConsultor(context as any);
+    const consultorId = podeEscolher && data.consultor_id ? data.consultor_id : context.userId;
+    let consultorNome = perfil?.full_name ?? perfil?.email ?? null;
+    let consultorEmail = perfil?.email ?? null;
+    if (consultorId !== context.userId) {
+      const { data: alvo } = await context.supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", consultorId)
+        .maybeSingle();
+      consultorNome = alvo?.full_name ?? alvo?.email ?? null;
+      consultorEmail = alvo?.email ?? null;
+    }
+
     const payload = {
       ...data.cliente,
       doc,
@@ -166,14 +237,21 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
 
     if (data.id) {
       await assertPodeAlterarCliente(context as any, data.instancia, data.id);
-      const row = await db.updateCliente(data.instancia, data.id, payload);
+      const patch: Record<string, unknown> = { ...payload };
+      // Só reatribui o consultor quando o usuário tem permissão e escolheu alguém.
+      if (podeEscolher && data.consultor_id) {
+        patch["created_by"] = consultorId;
+        patch["created_by_nome"] = consultorNome;
+        patch["created_by_email"] = consultorEmail;
+      }
+      const row = await db.updateCliente(data.instancia, data.id, patch);
       return { id: row?.["id"] ?? data.id };
     }
     const row = await db.insertCliente(data.instancia, {
       ...payload,
-      created_by: context.userId,
-      created_by_nome: perfil?.full_name ?? null,
-      created_by_email: perfil?.email ?? null,
+      created_by: consultorId,
+      created_by_nome: consultorNome,
+      created_by_email: consultorEmail,
     });
     return { id: row["id"] as string };
   });
