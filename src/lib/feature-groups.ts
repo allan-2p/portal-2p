@@ -22,6 +22,11 @@ export type FeatureGroup = {
   description: string;
   /** Área do portal a que o grupo pertence. */
   area: "instancia" | "grupo";
+  /**
+   * Toggle explícito que libera a área inteira (e a engrenagem) sem depender
+   * de marcar telas específicas.
+   */
+  accessKey?: FeatureKey;
   keys: FeatureKey[];
 };
 
@@ -83,7 +88,9 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     label: "Administração • Configurações",
     description: "Quem administra usuários, perfis e auditoria do Grupo 2P.",
     area: "grupo",
+    accessKey: "admin.area.configuracoes",
     keys: [
+      "admin.area.configuracoes",
       "admin.usuarios",
       "admin.perfis",
       "admin.auditoria",
@@ -96,7 +103,9 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     label: "Administração • Moderação",
     description: "Produtos, regras, comissões, metas e tabelas de cada unidade.",
     area: "grupo",
+    accessKey: "admin.area.moderacao",
     keys: [
+      "admin.area.moderacao",
       "admin.produtos",
       "admin.metas",
       "admin.tabelas",
@@ -110,7 +119,8 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     label: "Administração • Integrações",
     description: "Acesso ao painel de integrações (Salesforce, SAP, Metricool, etc.).",
     area: "grupo",
-    keys: ["admin.integracoes"],
+    accessKey: "admin.area.integracoes",
+    keys: ["admin.area.integracoes", "admin.integracoes"],
   },
 ];
 
@@ -142,4 +152,15 @@ export function groupFeatures(keys: FeatureKey[]): { group: FeatureGroup; keys: 
     group,
     keys: group.keys.filter((k) => set.has(k)),
   })).filter((g) => g.keys.length > 0);
+}
+
+/** Toggles explícitos de acesso a áreas administrativas. */
+export const AREA_ACCESS_KEYS: FeatureKey[] = FEATURE_GROUPS.flatMap((g) =>
+  g.accessKey ? [g.accessKey] : [],
+);
+
+/** Telas liberadas por um toggle de área (exclui o próprio toggle). */
+export function featuresForAreaAccessKey(key: FeatureKey): FeatureKey[] {
+  const g = FEATURE_GROUPS.find((x) => x.accessKey === key);
+  return g ? g.keys.filter((k) => k !== key) : [];
 }
