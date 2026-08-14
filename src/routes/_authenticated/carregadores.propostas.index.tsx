@@ -132,8 +132,15 @@ function HistoricoCpoPage() {
     q.refetch();
   }
 
-  async function excluir(id: string) {
-    const { error } = await supabase.from("cpo_proposals").delete().eq("id", id);
+  const propostaParaExcluir = useMemo(
+    () => rows.find((r) => r.id === excluirId) ?? null,
+    [rows, excluirId]
+  );
+
+  async function confirmarExclusao() {
+    if (!excluirId) return;
+    const { error } = await supabase.from("cpo_proposals").delete().eq("id", excluirId);
+    setExcluirId(null);
     if (error) return toast.error(error.message);
     toast.success("Proposta excluída.");
     q.refetch();
