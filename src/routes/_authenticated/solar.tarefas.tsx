@@ -37,9 +37,9 @@ export const Route = createFileRoute("/_authenticated/solar/tarefas")({
         content:
           "Calendário de tarefas sincronizado com o Salesforce, com filtros por vendedor e prioridade.",
       },
-      { property: "og:url", content: "/tarefas" },
+      { property: "og:url", content: "/solar/tarefas" },
     ],
-    links: [{ rel: "canonical", href: "/tarefas" }],
+    links: [{ rel: "canonical", href: "/solar/tarefas" }],
   }),
 
   component: TarefasPage,

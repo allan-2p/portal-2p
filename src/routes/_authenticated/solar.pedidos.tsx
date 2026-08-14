@@ -25,9 +25,9 @@ export const Route = createFileRoute("/_authenticated/solar/pedidos")({
         content:
           "Acompanhe os pedidos em Kanban ou lista, com status, valores e responsáveis por vendedor.",
       },
-      { property: "og:url", content: "/pedidos" },
+      { property: "og:url", content: "/solar/pedidos" },
     ],
-    links: [{ rel: "canonical", href: "/pedidos" }],
+    links: [{ rel: "canonical", href: "/solar/pedidos" }],
   }),
 
   component: PedidosPage,

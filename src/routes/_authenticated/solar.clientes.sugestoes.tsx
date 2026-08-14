@@ -209,7 +209,7 @@ function InsightCard({ rank, ranked }: { rank: number; ranked: Ranked }) {
             )}
           </div>
           <Link
-            to="/clientes/perfil"
+            to="/solar/clientes/perfil"
             search={{ account: account.id }}
             className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-0.5"
           >

@@ -129,13 +129,13 @@ function PerfilPage() {
             {selected && (
               <>
                 <button
-                  onClick={() => navigate({ to: "/clientes/perfil", search: {} })}
+                  onClick={() => navigate({ to: "/solar/clientes/perfil", search: {} })}
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface text-sm font-medium"
                 >
                   ← Voltar à lista
                 </button>
                 <Link
-                  to="/clientes/sugestoes"
+                  to="/solar/clientes/sugestoes"
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/15 text-primary hover:bg-primary/20 text-sm font-medium"
                 >
                   <Sparkles className="h-4 w-4" /> Sugestões do Atlas
@@ -197,7 +197,7 @@ function PerfilPage() {
                     <tr
                       key={a.id}
                       onClick={() =>
-                        navigate({ to: "/clientes/perfil", search: { account: a.id } })
+                        navigate({ to: "/solar/clientes/perfil", search: { account: a.id } })
                       }
                       className="border-t border-border hover:bg-surface-2/60 cursor-pointer"
                     >

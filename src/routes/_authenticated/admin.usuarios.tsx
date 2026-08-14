@@ -51,9 +51,9 @@ export const Route = createFileRoute("/_authenticated/admin/usuarios")({
         content:
           "Cadastre, edite e controle o acesso dos usuários do Portal 2P por organização e status.",
       },
-      { property: "og:url", content: "/usuarios" },
+      { property: "og:url", content: "/admin/usuarios" },
     ],
-    links: [{ rel: "canonical", href: "/usuarios" }],
+    links: [{ rel: "canonical", href: "/admin/usuarios" }],
   }),
 
   component: () => (

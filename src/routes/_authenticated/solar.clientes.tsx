@@ -6,8 +6,8 @@ export const Route = createFileRoute("/_authenticated/solar/clientes")({
 
 function ClientesLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  if (pathname === "/clientes" || pathname === "/clientes/") {
-    return <Navigate to="/clientes/segmentacao" replace />;
+  if (pathname === "/solar/clientes" || pathname === "/solar/clientes/") {
+    return <Navigate to="/solar/clientes/segmentacao" replace />;
   }
   return <Outlet />;
 }

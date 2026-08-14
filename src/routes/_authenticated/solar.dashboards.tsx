@@ -15,9 +15,9 @@ export const Route = createFileRoute("/_authenticated/solar/dashboards")({
         content:
           "Painéis de metas e desempenho comercial do Portal 2P, por vendedor, equipe e período.",
       },
-      { property: "og:url", content: "/dashboards" },
+      { property: "og:url", content: "/solar/dashboards" },
     ],
-    links: [{ rel: "canonical", href: "/dashboards" }],
+    links: [{ rel: "canonical", href: "/solar/dashboards" }],
   }),
   component: DashboardsLayout,
 });
@@ -25,8 +25,8 @@ export const Route = createFileRoute("/_authenticated/solar/dashboards")({
 
 function DashboardsLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  if (pathname === "/dashboards" || pathname === "/dashboards/") {
-    return <Navigate to="/dashboards/metas" replace />;
+  if (pathname === "/solar/dashboards" || pathname === "/solar/dashboards/") {
+    return <Navigate to="/solar/dashboards/metas" replace />;
   }
   return <Outlet />;
 }

@@ -237,7 +237,7 @@ function CatalogoIntegracoes() {
                 <IntegrationStatusBadge item={item} loading={health.isLoading} />
                 {slug && (
                   <Button asChild variant="outline" size="sm">
-                    <Link to="/integracoes/$slug" params={{ slug }}>
+                    <Link to="/admin/integracoes/$slug" params={{ slug }}>
                       Configurar
                     </Link>
                   </Button>

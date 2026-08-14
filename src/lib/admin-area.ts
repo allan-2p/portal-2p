@@ -5,8 +5,8 @@
  */
 const GROUP_PREFIXES = [
   "/admin",
-  "/integracoes",
-  "/usuarios",
+  "/admin/integracoes",
+  "/admin/usuarios",
   "/perfil",
   "/carregadores/produtos",
   "/carregadores/comissoes",

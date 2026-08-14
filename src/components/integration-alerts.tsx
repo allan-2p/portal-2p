@@ -184,7 +184,7 @@ export function IntegrationAlertsBanner({ notify = true }: { notify?: boolean })
       <ul className="space-y-1.5">
         {alerts.map((a) => (
           <li key={a.slug} className="text-sm flex flex-wrap items-center gap-2">
-            <Link to="/integracoes/$slug" params={{ slug: a.slug }} className="font-medium underline underline-offset-2">
+            <Link to="/admin/integracoes/$slug" params={{ slug: a.slug }} className="font-medium underline underline-offset-2">
               {a.name}
             </Link>
             <IntegrationAlertBadge alert={a} />

@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/admin/integracoes_/$slug")
 });
 
 function IntegracaoConfigPage() {
-  const { slug } = useParams({ from: "/_authenticated/integracoes_/$slug" });
+  const { slug } = useParams({ from: "/_authenticated/admin/integracoes_/$slug" });
   const def = integrationBySlug(slug);
 
   const { bySlug: alertsBySlug } = useIntegrationAlerts();
@@ -65,7 +65,7 @@ function IntegracaoConfigPage() {
         <div className="max-w-3xl mx-auto py-10 text-center space-y-4">
           <h1 className="font-display text-xl font-bold">Integração não encontrada</h1>
           <Button asChild variant="outline" size="sm">
-            <Link to="/integracoes">Voltar para Integrações</Link>
+            <Link to="/admin/integracoes">Voltar para Integrações</Link>
           </Button>
         </div>
       </AppLayout>
@@ -80,7 +80,7 @@ function IntegracaoConfigPage() {
     <AppLayout>
       <div className="max-w-3xl mx-auto space-y-6">
         <Button asChild variant="ghost" size="sm" className="-ml-2">
-          <Link to="/integracoes">
+          <Link to="/admin/integracoes">
             <ArrowLeft className="h-4 w-4 mr-1" /> Integrações
           </Link>
         </Button>
