@@ -62,7 +62,7 @@ const esc = (v: unknown) =>
  * Nome sugerido do arquivo ao salvar/imprimir: nº da proposta + "Proposta" + nome fantasia.
  * O navegador usa o <title> do documento como nome padrão no diálogo de impressão.
  */
-export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente">) {
+export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente" | "propostaNome">) {
   const limpo = (v: string) =>
     v
       .normalize("NFD")
@@ -71,8 +71,10 @@ export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente
       .replace(/\s+/g, " ")
       .trim();
   const fantasia = limpo(p.cliente.nomeFantasia?.trim() || p.cliente.nome || "Cliente");
-  return [limpo(p.numero ?? "Proposta"), "Proposta", fantasia].filter(Boolean).join(" - ");
+  const nome = limpo(p.propostaNome?.trim() || "Proposta");
+  return [limpo(p.numero ?? "Proposta"), nome, fantasia].filter(Boolean).join(" - ");
 }
+
 
 
 export function buildPropostaPdfHtml(p: PropostaPdfData) {
