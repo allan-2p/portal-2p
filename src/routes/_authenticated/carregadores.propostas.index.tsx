@@ -58,6 +58,10 @@ type Row = {
   status: string;
   created_at: string;
   created_by: string | null;
+  consultor_nome?: string | null;
+  criado_por_nome?: string | null;
+  finalizado_por_nome?: string | null;
+  finalizado_em?: string | null;
 };
 
 /** Status universais do portal (mesma lista e cores em todas as instâncias). */
