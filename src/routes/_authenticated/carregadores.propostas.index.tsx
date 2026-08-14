@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 import { PermissionGate } from "@/components/permission-gate";
+import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
   head: () => ({
@@ -225,10 +226,13 @@ function HistoricoCpoPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" aria-label="Detalhar" asChild>
-                          <Link to="/carregadores/propostas/visualizar" search={{ id: r.id }}>
-                            <Eye className="h-4 w-4" />
-                          </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Detalhar"
+                          onClick={() => setDetalheId(r.id)}
+                        >
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" aria-label="Continuar proposta" asChild>
                           <Link to="/carregadores/propostas/nova" search={{ id: r.id }}>
