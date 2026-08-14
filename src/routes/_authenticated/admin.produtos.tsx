@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -23,8 +23,19 @@ import {
   setSapProdutoVisibilidade,
   setSapProdutosNcm,
   syncSapProdutos,
+  type SapSyncResult,
   type SapVisibilidade,
 } from "@/lib/sap-produtos.functions";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+const SYNC_ETAPAS = [
+  "Conectando ao SAP Bridge…",
+  "Lendo materiais (RFC listar_material)…",
+  "Atualizando o espelho completo do SAP…",
+  "Classificando e gravando o catálogo do portal…",
+  "Finalizando e registrando o histórico…",
+] as const;
 import { useCpoNcms } from "@/hooks/use-cpo";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -311,9 +322,22 @@ function ProdutosPage() {
     queryFn: () => listRuns({}),
   });
 
+  // Progresso visual: a RFC do SAP é uma chamada única, então avançamos por
+  // etapas cronometradas e travamos em 95% até a resposta chegar.
+  const [syncEtapa, setSyncEtapa] = useState(0);
+  const [syncResultado, setSyncResultado] = useState<SapSyncResult | null>(null);
+  const [syncErro, setSyncErro] = useState<string | null>(null);
+
   const syncMut = useMutation({
     mutationFn: () => sync({}),
+    onMutate: () => {
+      setSyncResultado(null);
+      setSyncErro(null);
+      setSyncEtapa(0);
+    },
     onSuccess: (r) => {
+      setSyncEtapa(SYNC_ETAPAS.length);
+      setSyncResultado(r);
       toast.success(
         r.inserted === 0 && r.updated === 0 && !r.deactivated
           ? `Nada mudou no SAP desde a última sincronização (${r.unchanged} produtos verificados).`
@@ -323,11 +347,23 @@ function ProdutosPage() {
       runsQuery.refetch();
     },
     onError: (e: any) => {
-      toast.error(String(e?.message ?? e));
+      const msg = String(e?.message ?? e);
+      setSyncErro(msg);
+      toast.error(msg);
       refetch();
       runsQuery.refetch();
     },
   });
+
+  useEffect(() => {
+    if (!syncMut.isPending) return;
+    setSyncEtapa(1);
+    const t = setInterval(() => {
+      setSyncEtapa((e) => Math.min(e + 1, SYNC_ETAPAS.length - 1));
+    }, 2500);
+    return () => clearInterval(t);
+  }, [syncMut.isPending]);
+
 
   const ncmMut = useMutation({
     mutationFn: (payload: { ids: string[]; ncmId: string | null }) => aplicarNcm({ data: payload }),
@@ -480,10 +516,102 @@ function ProdutosPage() {
               ) : (
                 <RefreshCw className="h-4 w-4 mr-2" />
               )}
-              Sinc. SAP
+              {syncMut.isPending ? "Sincronizando…" : "Sinc. SAP"}
             </Button>
           </div>
         </div>
+
+        {syncMut.isPending && (
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              {SYNC_ETAPAS[Math.min(syncEtapa, SYNC_ETAPAS.length - 1)]}
+            </div>
+            <Progress value={Math.min(5 + syncEtapa * (90 / SYNC_ETAPAS.length), 95)} className="h-2" />
+            <ul className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+              {SYNC_ETAPAS.map((etapa, i) => (
+                <li key={etapa} className="flex items-center gap-2">
+                  {i < syncEtapa ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  ) : i === syncEtapa ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <span className="h-3.5 w-3.5 rounded-full border border-border" />
+                  )}
+                  <span className={i <= syncEtapa ? "text-foreground" : ""}>{etapa}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground">
+              Não feche esta página. O SAP costuma levar de 10 a 60 segundos, dependendo do volume de materiais.
+            </p>
+          </div>
+        )}
+
+        {syncErro && !syncMut.isPending && (
+          <Alert variant="destructive">
+            <XCircle className="h-4 w-4" />
+            <AlertTitle>Falha na sincronização com o SAP</AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p className="break-words">{syncErro}</p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button size="sm" variant="outline" onClick={() => syncMut.mutate()}>
+                  Tentar novamente
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(syncErro);
+                    toast.success("Detalhes do erro copiados.");
+                  }}
+                >
+                  Copiar detalhes
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setSyncErro(null)}>
+                  Dispensar
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {syncResultado && !syncMut.isPending && (
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-4 w-4" />
+                Sincronização concluída em {(syncResultado.duracaoMs / 1000).toFixed(1)}s
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => setSyncResultado(null)}>
+                Fechar
+              </Button>
+            </div>
+            <div className="mt-3 grid gap-3 text-xs sm:grid-cols-3 lg:grid-cols-6">
+              {[
+                { label: "Materiais lidos do SAP", valor: syncResultado.totalSap },
+                { label: "Liberados p/ o portal", valor: syncResultado.totalLiberados },
+                { label: "Novos importados", valor: syncResultado.inserted },
+                { label: "Atualizados", valor: syncResultado.updated },
+                { label: "Sem mudança", valor: syncResultado.unchanged },
+                { label: "Inativados", valor: syncResultado.deactivated },
+              ].map((c) => (
+                <div key={c.label} className="rounded-md border border-border bg-background px-3 py-2">
+                  <div className="text-lg font-semibold tabular-nums">{c.valor}</div>
+                  <div className="text-muted-foreground">{c.label}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Espelho completo do SAP: {syncResultado.catalogoAtualizado} registro(s) gravado(s),{" "}
+              {syncResultado.catalogoInalterado} sem alteração.
+              {syncResultado.semNcm > 0
+                ? ` ${syncResultado.semNcm} material(is) vieram sem NCM do SAP — defina o NCM manualmente abaixo.`
+                : ""}
+            </p>
+          </div>
+        )}
+
 
         <div className="text-xs text-muted-foreground">
           Última sincronização: {fmt(lastRun?.finished_at ?? lastRun?.started_at ?? null)}
