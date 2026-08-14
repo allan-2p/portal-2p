@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, ROLE_LABELS, type AppRole } from "@/hooks/use-auth";
 import {
   adminCreateUser,
-  adminSetRole,
   adminToggleActive,
   adminDeleteUser,
   adminUpdateUser,
@@ -90,6 +89,7 @@ type Row = {
   is_external: boolean;
   filter_scope: FilterScope;
   roles: AppRole[];
+  perfis: string[];
 };
 
 const ROLES: AppRole[] = ["admin", "gerente", "vendedor", "diretor", "marketing"];
@@ -124,7 +124,6 @@ function UsuariosPage() {
   >(null);
 
   const createFn = useServerFn(adminCreateUser);
-  const setRoleFn = useServerFn(adminSetRole);
   const toggleFn = useServerFn(adminToggleActive);
   const deleteFn = useServerFn(adminDeleteUser);
   const setScopeFn = useServerFn(adminSetUserScope);
@@ -138,6 +137,17 @@ function UsuariosPage() {
       .select("id,email,full_name,cargo,cargo_tipo,equipe,telefone,meta_mensal,regime_contratacao,organizacao,ativo,avatar_url,sf_user_id,is_external,filter_scope")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
+    const { data: linkData } = await supabase
+      .from("user_permission_profiles")
+      .select("user_id, permission_profiles(name)");
+    const perfisByUser = new Map<string, string[]>();
+    (linkData ?? []).forEach((l: any) => {
+      const name = l.permission_profiles?.name;
+      if (!name) return;
+      const arr = perfisByUser.get(l.user_id) ?? [];
+      arr.push(name);
+      perfisByUser.set(l.user_id, arr);
+    });
     const byUser = new Map<string, AppRole[]>();
     (rolesData ?? []).forEach((r: { user_id: string; role: AppRole }) => {
       const arr = byUser.get(r.user_id) ?? [];
@@ -152,6 +162,7 @@ function UsuariosPage() {
         organizacao: (p.organizacao ?? "solar") as Org,
 
         roles: byUser.get(p.id) ?? [],
+        perfis: perfisByUser.get(p.id) ?? [],
       })) as Row[],
     );
     setLoading(false);
@@ -194,16 +205,6 @@ function UsuariosPage() {
         </div>
       </AppLayout>
     );
-  }
-
-  async function handleRoleChange(userId: string, role: AppRole) {
-    try {
-      await setRoleFn({ data: { user_id: userId, role } });
-      toast.success("Papel atualizado");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
   }
 
   async function handleToggle(userId: string, ativo: boolean) {
@@ -311,7 +312,6 @@ function UsuariosPage() {
             rows={visibleRows}
             loading={loading}
             currentUserId={user?.id}
-            onRoleChange={handleRoleChange}
             onOrgChange={handleOrgChange}
             onToggle={handleToggle}
             onDelete={handleDelete}
@@ -369,12 +369,11 @@ function UsuariosPage() {
 }
 
 function PortalTable({
-  rows, loading, currentUserId, onRoleChange, onOrgChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit, onDetail, onSimulate,
+  rows, loading, currentUserId, onOrgChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit, onDetail, onSimulate,
 }: {
   rows: Row[];
   loading: boolean;
   currentUserId: string | undefined;
-  onRoleChange: (id: string, r: AppRole) => void;
   onOrgChange: (id: string, o: Org) => void;
   onToggle: (id: string, ativo: boolean) => void;
   onDelete: (id: string) => void;
@@ -444,7 +443,7 @@ function PortalTable({
             <th className="text-left px-4 py-3 font-medium">Nome</th>
             <th className="text-left px-4 py-3 font-medium">E-mail</th>
             <th className="text-left px-4 py-3 font-medium">Equipe</th>
-            <th className="text-left px-4 py-3 font-medium">Papel</th>
+            <th className="text-left px-4 py-3 font-medium">Perfil</th>
             <th className="text-left px-4 py-3 font-medium">Organização</th>
             <th className="text-left px-4 py-3 font-medium">Regime de contratação</th>
 
@@ -499,18 +498,19 @@ function PortalTable({
                 <td className="px-4 py-3 text-muted-foreground">{r.email}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.equipe ?? "—"}</td>
                 <td className="px-4 py-3">
-                  <select
-                    value={r.roles[0] ?? "vendedor"}
-                    onChange={(e) => onRoleChange(r.id, e.target.value as AppRole)}
-                    disabled={r.id === currentUserId}
-                    className="px-2 py-1 rounded-md bg-background border border-border text-xs"
-                  >
-                    {ROLES.map((role) => (
-                      <option key={role} value={role}>
-                        {ROLE_LABELS[role]}
-                      </option>
-                    ))}
-                  </select>
+                  {r.perfis.length ? (
+                    <div className="flex flex-wrap gap-1">
+                      {r.perfis.map((n) => (
+                        <span key={n} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 whitespace-nowrap">
+                          {n}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
+                      Sem perfil
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <select
@@ -668,16 +668,34 @@ function UserModal({
     password: "",
     regime_contratacao: "CLT" as Regime,
     organizacao: "solar" as Org,
-    role: "vendedor" as AppRole,
-
+    profile_id: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const listProfilesFn = useServerFn(adminListPermissionProfiles);
+  const [permProfiles, setPermProfiles] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    let alive = true;
+    listProfilesFn()
+      .then((res) => {
+        if (!alive) return;
+        setPermProfiles(res.profiles.map((p) => ({ id: p.id, name: p.name })));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          if (!form.profile_id) {
+            toast.error("Selecione o perfil do usuário.");
+            return;
+          }
           setSubmitting(true);
           try {
             const payload =
@@ -690,8 +708,7 @@ function UserModal({
                     equipe: form.equipe || null,
                     regime_contratacao: form.regime_contratacao,
                     organizacao: form.organizacao,
-                    role: form.role,
-
+                    profile_id: form.profile_id,
                   };
             await onSubmit(payload);
           } catch (e) {
@@ -737,10 +754,16 @@ function UserModal({
             <input value={form.equipe} onChange={(e) => setForm({ ...form, equipe: e.target.value })} className="input" />
           </Field>
         </div>
-        <Field label="Papel">
-          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as AppRole })} className="input">
-            {ROLES.map((r) => (
-              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+        <Field label="Perfil">
+          <select
+            required
+            value={form.profile_id}
+            onChange={(e) => setForm({ ...form, profile_id: e.target.value })}
+            className="input"
+          >
+            <option value="">Selecione o perfil…</option>
+            {permProfiles.map((p) => (
+              <option key={p.id} value={p.name ? p.id : p.id}>{p.name}</option>
             ))}
           </select>
         </Field>
@@ -890,7 +913,6 @@ type EditPayload = {
   filter_scope: FilterScope;
   sf_user_id: string | null;
   ativo: boolean;
-  role?: AppRole;
 };
 
 
@@ -939,7 +961,6 @@ function EditUserModal({
     filter_scope: (row.filter_scope ?? "individual") as FilterScope,
     sf_user_id: row.sf_user_id ?? "",
     ativo: row.ativo,
-    role: (row.roles?.[0] ?? "vendedor") as AppRole,
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -971,7 +992,6 @@ function EditUserModal({
               filter_scope: form.filter_scope,
               sf_user_id: form.sf_user_id.trim() || null,
               ativo: form.ativo,
-              role: form.role,
             });
           } catch (err) {
             toast.error(err instanceof Error ? err.message : "Erro");
@@ -1010,13 +1030,6 @@ function EditUserModal({
             <select value={form.regime_contratacao} onChange={(e) => setForm({ ...form, regime_contratacao: e.target.value as Regime })} className="input">
               {REGIMES.map((rg) => (
                 <option key={rg} value={rg}>{rg}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Papel">
-            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as AppRole })} className="input">
-              {ROLES.map((r) => (
-                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
               ))}
             </select>
           </Field>

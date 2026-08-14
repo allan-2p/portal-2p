@@ -19,7 +19,8 @@ const CreateInput = z.object({
   equipe: z.string().optional().nullable(),
   regime_contratacao: RegimeEnum.optional().default("CLT"),
   organizacao: OrgEnum.optional().default("solar"),
-  role: RoleEnum,
+  role: RoleEnum.optional().default("vendedor"),
+  profile_id: z.string().uuid(),
 });
 
 
@@ -35,6 +36,7 @@ export const adminCreateUser = createServerFn({ method: "POST" })
       {
         email: data.email,
         role: data.role,
+        profile_id: data.profile_id,
         full_name: data.full_name,
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
@@ -53,7 +55,13 @@ export const adminCreateUser = createServerFn({ method: "POST" })
       user_metadata: { full_name: data.full_name },
     });
     if (error) throw new Error(error.message);
-    return { id: created.user?.id };
+    const newId = created.user?.id;
+    if (newId) {
+      await supabaseAdmin
+        .from("user_permission_profiles")
+        .upsert({ user_id: newId, profile_id: data.profile_id }, { onConflict: "user_id,profile_id" });
+    }
+    return { id: newId };
   });
 
 const InviteInput = z.object({
@@ -63,7 +71,8 @@ const InviteInput = z.object({
   equipe: z.string().optional().nullable(),
   regime_contratacao: RegimeEnum.optional().default("CLT"),
   organizacao: OrgEnum.optional().default("solar"),
-  role: RoleEnum,
+  role: RoleEnum.optional().default("vendedor"),
+  profile_id: z.string().uuid(),
 
   is_external: z.boolean().optional().default(false),
   sf_user_id: z.string().optional().nullable(),
@@ -81,6 +90,7 @@ export const adminInviteUser = createServerFn({ method: "POST" })
       {
         email: data.email,
         role: data.role,
+        profile_id: data.profile_id,
         full_name: data.full_name,
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
@@ -232,13 +242,7 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    if (data.role) {
-      await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id);
-      const { error } = await supabaseAdmin
-        .from("user_roles")
-        .insert({ user_id: data.user_id, role: data.role });
-      if (error) throw new Error(error.message);
-    }
+    // O papel interno é derivado do perfil de permissão (trigger no banco).
 
     if (data.ativo !== undefined) {
       await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
@@ -711,6 +715,7 @@ export type UserDiagnostics = {
     updated_at: string | null;
   };
   roles: string[];
+  perfis: string[];
   auth: { last_sign_in_at: string | null; email_confirmed_at: string | null; banned: boolean };
   salesforce: {
     linked: boolean;
@@ -774,7 +779,7 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
       supabaseAdmin.from("user_instance_access").select("instance_id").eq("user_id", uid),
       supabaseAdmin
         .from("user_permission_profiles")
-        .select("profile_id, permission_profile_features(instance_id)")
+        .select("profile_id, permission_profiles(name), permission_profile_features(instance_id)")
         .eq("user_id", uid),
       sfId
         ? supabaseAdmin.from("salesforce_team_members").select("team").eq("sf_user_id", sfId).maybeSingle()
@@ -809,6 +814,9 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
     ]);
 
     const roles = ((rolesRes.data ?? []) as any[]).map((r) => r.role as string);
+    const perfis = ((permRes.data ?? []) as any[])
+      .map((r) => r.permission_profiles?.name as string | undefined)
+      .filter((n): n is string => !!n);
     const instances = ((instRes.data ?? []) as any[]).map((r) => r.instance_id as string);
     // Permissões vêm exclusivamente dos perfis vinculados ao usuário.
     const perms = ((permRes.data ?? []) as any[]).flatMap((r) =>
@@ -934,13 +942,13 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
       });
     }
 
-    if (roles.length === 0) {
+    if (perfis.length === 0) {
       push({
-        id: "no_role",
-        label: "Sem papel definido",
+        id: "no_profile",
+        label: "Sem perfil definido",
         status: "error",
-        detail: "O usuário não tem nenhum papel (admin/gerente/vendedor/...).",
-        fix: "Defina o papel na edição do usuário.",
+        detail: "O usuário não está vinculado a nenhum perfil, então não tem acesso a nada.",
+        fix: "Defina o perfil na edição do usuário (Administrador > Perfis).",
       });
     }
 
@@ -1006,6 +1014,7 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
         updated_at: p.updated_at ?? null,
       },
       roles,
+      perfis,
       auth: {
         last_sign_in_at: authUser?.last_sign_in_at ?? null,
         email_confirmed_at: authUser?.email_confirmed_at ?? null,

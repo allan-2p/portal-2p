@@ -171,12 +171,8 @@ export function UserDetailSheet({
                   <Info label="Regime" value={d.profile.regime_contratacao} />
                   <Info label="Meta mensal" value={fmtMoney(d.profile.meta_mensal)} />
                   <Info
-                    label="Papéis"
-                    value={
-                      d.roles.length
-                        ? d.roles.map((r) => ROLE_LABELS[r as AppRole] ?? r).join(", ")
-                        : "—"
-                    }
+                    label="Perfis"
+                    value={d.perfis?.length ? d.perfis.join(", ") : "—"}
                   />
                   <Info label="Escopo" value={SCOPE_LABELS[d.profile.filter_scope] ?? d.profile.filter_scope} />
                   <Info label="Status" value={d.profile.ativo ? "Ativo" : "Inativo"} />

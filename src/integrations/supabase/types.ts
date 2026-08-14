@@ -1383,6 +1383,7 @@ export type Database = {
           invited_by: string | null
           is_external: boolean
           organizacao: string
+          profile_id: string | null
           regime_contratacao: string
           role: Database["public"]["Enums"]["app_role"]
           sf_user_id: string | null
@@ -1399,6 +1400,7 @@ export type Database = {
           invited_by?: string | null
           is_external?: boolean
           organizacao?: string
+          profile_id?: string | null
           regime_contratacao?: string
           role?: Database["public"]["Enums"]["app_role"]
           sf_user_id?: string | null
@@ -1415,11 +1417,20 @@ export type Database = {
           invited_by?: string | null
           is_external?: boolean
           organizacao?: string
+          profile_id?: string | null
           regime_contratacao?: string
           role?: Database["public"]["Enums"]["app_role"]
           sf_user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_invites_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "permission_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_permission_profiles: {
         Row: {
@@ -1587,6 +1598,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      sync_user_role_from_profiles: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
