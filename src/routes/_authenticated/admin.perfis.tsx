@@ -15,7 +15,6 @@ import {
   type PermissionProfile,
 } from "@/lib/permission-profiles.functions";
 import { adminListAccessMatrix, type AdminUserRow } from "@/lib/access.functions";
-import { PermissoesContent } from "@/components/admin/permissoes-content";
 import {
   INSTANCES,
   INSTANCE_IDS,
@@ -66,7 +65,6 @@ function PerfisPage() {
   const [saving, setSaving] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [profInstances, setProfInstances] = useState<Set<InstanceId>>(new Set());
-  const [tab, setTab] = useState<"perfis" | "permissoes">("perfis");
   const [featSearch, setFeatSearch] = useState("");
 
   async function load() {
@@ -245,10 +243,10 @@ function PerfisPage() {
             <h1 className="font-display font-bold text-2xl">Perfis</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Administradores acessam tudo, sem exceção. Os demais usuários recebem acesso pelos
-              perfis — e, na aba Permissões por usuário, você ajusta exceções individuais.
+              perfis: todo acesso é definido aqui.
             </p>
           </div>
-          {tab === "perfis" && (
+          {(
             <button
               onClick={createProfile}
               className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
@@ -258,29 +256,6 @@ function PerfisPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-1 border-b border-border">
-          {([
-            { key: "perfis", label: "Perfis" },
-            { key: "permissoes", label: "Permissões por usuário" },
-          ] as const).map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
-                tab === t.key
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {tab === "permissoes" ? (
-          <PermissoesContent />
-        ) : (
-        <>
 
 
         {loading ? (
@@ -559,8 +534,6 @@ function PerfisPage() {
               </div>
             )}
           </div>
-        )}
-        </>
         )}
       </div>
     </AppLayout>

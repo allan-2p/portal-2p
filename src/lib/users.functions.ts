@@ -772,7 +772,10 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
     ] = await Promise.all([
       supabaseAdmin.from("user_roles").select("role").eq("user_id", uid),
       supabaseAdmin.from("user_instance_access").select("instance_id").eq("user_id", uid),
-      supabaseAdmin.from("user_feature_permissions").select("instance_id, allowed").eq("user_id", uid),
+      supabaseAdmin
+        .from("user_permission_profiles")
+        .select("profile_id, permission_profile_features(instance_id)")
+        .eq("user_id", uid),
       sfId
         ? supabaseAdmin.from("salesforce_team_members").select("team").eq("sf_user_id", sfId).maybeSingle()
         : Promise.resolve({ data: null } as any),
@@ -807,12 +810,16 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
 
     const roles = ((rolesRes.data ?? []) as any[]).map((r) => r.role as string);
     const instances = ((instRes.data ?? []) as any[]).map((r) => r.instance_id as string);
-    const perms = (permRes.data ?? []) as Array<{ instance_id: string; allowed: boolean }>;
+    // Permissões vêm exclusivamente dos perfis vinculados ao usuário.
+    const perms = ((permRes.data ?? []) as any[]).flatMap((r) =>
+      ((r.permission_profile_features ?? []) as any[]).map((f) => ({
+        instance_id: f.instance_id as string,
+      })),
+    );
     const byInstMap = new Map<string, { allowed: number; denied: number }>();
     for (const perm of perms) {
       const cur = byInstMap.get(perm.instance_id) ?? { allowed: 0, denied: 0 };
-      if (perm.allowed) cur.allowed++;
-      else cur.denied++;
+      cur.allowed++;
       byInstMap.set(perm.instance_id, cur);
     }
 
