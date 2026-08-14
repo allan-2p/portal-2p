@@ -111,7 +111,7 @@ const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
 
 function UsuariosPage() {
   const { hasRole, loading: authLoading, user } = useAuth();
-  const sim = useSimulation();
+  const impersonateFn = useServerFn(adminImpersonateUser);
   const navigate = useNavigate();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -320,9 +320,18 @@ function UsuariosPage() {
 
             onEdit={(row) => setModal({ kind: "edit", row })}
             onDetail={(row) => setModal({ kind: "detail", row })}
-            onSimulate={(row) => {
-              sim.start({ id: row.id, name: row.full_name ?? row.email });
-              navigate({ to: "/" });
+            onSimulate={async (row) => {
+              const nome = row.full_name ?? row.email;
+              if (!window.confirm(`Entrar como ${nome}? Sua sessão atual será encerrada e você acessará o portal como este usuário.`)) return;
+              try {
+                const { email, token_hash } = await impersonateFn({ data: { user_id: row.id } });
+                await supabase.auth.signOut();
+                const { error } = await supabase.auth.verifyOtp({ email, token_hash, type: "magiclink" });
+                if (error) throw error;
+                window.location.replace("/");
+              } catch (e: any) {
+                toast.error(e?.message ?? "Não foi possível entrar como este usuário.");
+              }
             }}
           />
       </div>
@@ -386,7 +395,7 @@ function PortalTable({
   onRegimeChange: (id: string, regime: Regime) => void;
   onEdit: (row: Row) => void;
   onDetail: (row: Row) => void;
-  onSimulate: (row: Row) => void;
+  onSimulate: (row: Row) => void | Promise<void>;
 }) {
 
 
@@ -580,10 +589,10 @@ function PortalTable({
                     <button
                       onClick={() => onSimulate(r)}
                       className="p-1.5 rounded hover:bg-surface-2"
-                      title="Simular este usuário"
-                      aria-label="Simular este usuário"
+                      title="Entrar como este usuário"
+                      aria-label="Entrar como este usuário"
                     >
-                      <VenetianMask className="h-3.5 w-3.5" />
+                      <LogIn className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => onDetail(r)}
