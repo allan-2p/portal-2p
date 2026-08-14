@@ -458,13 +458,13 @@ function PortalTable({
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={12} className="text-center py-10 text-muted-foreground">
+              <td colSpan={10} className="text-center py-10 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin inline" />
               </td>
             </tr>
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={12} className="text-center py-10 text-muted-foreground">
+              <td colSpan={10} className="text-center py-10 text-muted-foreground">
                 Nenhum usuário ainda.
               </td>
             </tr>
