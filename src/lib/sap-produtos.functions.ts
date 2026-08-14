@@ -300,6 +300,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       }
     };
 
+    const iniciadoEm = Date.now();
     try {
       const todosMateriais = await getAllMaterials();
       const materiais = selecionarLiberados(todosMateriais);
