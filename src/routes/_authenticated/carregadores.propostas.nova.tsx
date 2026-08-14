@@ -466,9 +466,11 @@ function PropostaCpoPage() {
       comissaoTotal: d.comValor,
       cmv: d.cmv,
       regimeVendedor,
+      comIndicacao: state.indicacao,
       params: {
         cmvMax: config.cmv_max,
         pctGerente: config.pct_gerente,
+        pctRepresentante: config.pct_representante,
         valorIndicacao: VALOR_INDICACAO,
         fatorClt: config.fator_clt,
       },
@@ -480,7 +482,8 @@ function PropostaCpoPage() {
       custo: rateio.custoVendedor,
       total: rateio.comissaoTotal,
     };
-  }, [d.valorItens, d.comValor, d.cmv, regimeVendedor, config]);
+  }, [d.valorItens, d.comValor, d.cmv, regimeVendedor, config, state.indicacao]);
+
   const st = statusMB(d.mbPct, config);
 
   const avisoUsoConsumo = avisoDifalUsoConsumo(state);
