@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Pencil, Trash2, Save, Search } from "lucide-react";
+import { Pencil, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
@@ -121,19 +121,6 @@ function ProdutosTab() {
   }
 
 
-  async function excluir(p: CpoProduct) {
-    const { error } = await supabase.from("sap_produtos").delete().eq("id", p.id);
-    if (error) return toast.error(error.message);
-    void logModeration({
-      area: "cpo_produtos",
-      action: "removeu",
-      target: p.nome,
-      summary: `Produto removido: ${p.nome}`,
-    });
-    toast.success("Produto removido.");
-    invalidate();
-  }
-
   async function toggleAtivo(p: CpoProduct) {
     if (!p.ativo) {
       const impedimento = validateAtivacaoCarregadores({ custo: Number(p.custo) || 0, ncm_id: p.ncm_id ?? null });
@@ -221,9 +208,6 @@ function ProdutosTab() {
 
 
                         <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" aria-label="Excluir produto" onClick={() => excluir(p)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   </td>
