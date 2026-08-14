@@ -25,27 +25,36 @@ export const Route = createFileRoute("/_authenticated/admin/configuracoes")({
 });
 
 function ConfiguracoesHome() {
-  const { newFeatures } = useNewFeatures();
+  const { newFeatures, markSeen } = useNewFeatures();
   return (
     <AdminAreaGuard area="configuracoes">
       <AppLayout>
         <AdminSectionHome sectionId="configuracoes">
           <AdminSectionNotice
-            title={newFeatures.length ? "Pendências" : "Sugestões"}
-            items={
-              newFeatures.length
+            title="Sugestões"
+            dismissKey="configuracoes"
+            onDismiss={(ids) => {
+              if (ids.includes("novas-telas")) markSeen();
+            }}
+            items={[
+              ...(newFeatures.length
                 ? [
                     {
+                      id: "novas-telas",
                       label: `${newFeatures.length} tela(s) nova(s) bloqueada(s) por padrão`,
                       hint: "libere em Perfis para quem precisa",
                       to: "/admin/perfis",
                     },
                   ]
-                : [
-                    { label: "Revise os perfis de acesso", hint: "quem vê o quê", to: "/admin/perfis" },
-                    { label: "Confira vínculos do Salesforce", hint: "usuários sem sf_user_id", to: "/admin/vinculos" },
-                  ]
-            }
+                : []),
+              { id: "perfis", label: "Revise os perfis de acesso", hint: "quem vê o quê", to: "/admin/perfis" },
+              {
+                id: "vinculos",
+                label: "Confira vínculos do Salesforce",
+                hint: "usuários sem sf_user_id",
+                to: "/admin/vinculos",
+              },
+            ]}
           />
         </AdminSectionHome>
       </AppLayout>
