@@ -457,7 +457,9 @@ export type Database = {
           frete_valor: number
           id: string
           itens: Json
+          nome: string | null
           numero: string | null
+          numero_sap: string | null
           observacoes: string | null
           status: string
           totais: Json
@@ -484,7 +486,9 @@ export type Database = {
           frete_valor?: number
           id?: string
           itens?: Json
+          nome?: string | null
           numero?: string | null
+          numero_sap?: string | null
           observacoes?: string | null
           status?: string
           totais?: Json
@@ -511,7 +515,9 @@ export type Database = {
           frete_valor?: number
           id?: string
           itens?: Json
+          nome?: string | null
           numero?: string | null
+          numero_sap?: string | null
           observacoes?: string | null
           status?: string
           totais?: Json
