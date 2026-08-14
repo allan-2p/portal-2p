@@ -90,7 +90,7 @@ type Draft = {
 
 
 function ProdutosTab() {
-  const { data: produtos = [], isLoading } = useCpoProductsAdmin();
+  const { data: produtos = [], isLoading, error, refetch, isFetching } = useCpoProductsAdmin();
   const { data: ncms = [] } = useCpoNcms();
   const invalidate = useCpoInvalidate();
   const [busca, setBusca] = useState("");
@@ -230,7 +230,20 @@ function ProdutosTab() {
               {filtrados.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
-                    {isLoading ? "Carregando…" : "Nenhum produto cadastrado."}
+                    {isLoading || isFetching ? (
+                      "Carregando…"
+                    ) : error ? (
+                      <div className="space-y-2">
+                        <p className="text-destructive">
+                          Não foi possível carregar o catálogo: {(error as Error).message}
+                        </p>
+                        <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                          Tentar novamente
+                        </Button>
+                      </div>
+                    ) : (
+                      "Nenhum produto cadastrado."
+                    )}
                   </td>
 
                 </tr>
