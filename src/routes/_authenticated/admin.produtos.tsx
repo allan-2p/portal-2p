@@ -329,6 +329,35 @@ function ProdutosPage() {
     },
   });
 
+  const ncmMut = useMutation({
+    mutationFn: (payload: { ids: string[]; ncmId: string | null }) => aplicarNcm({ data: payload }),
+    onSuccess: (r: any) => {
+      toast.success(
+        r.ncm_codigo
+          ? `NCM ${r.ncm_codigo} aplicado a ${r.atualizados} produto(s).`
+          : `NCM removido de ${r.atualizados} produto(s).`,
+      );
+      setSelecionados([]);
+      refetch();
+    },
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+  });
+
+  const backfillMut = useMutation({
+    mutationFn: () => backfillNcm({}),
+    onSuccess: (r: any) => {
+      toast.success(
+        r.atualizados > 0
+          ? `${r.atualizados} produto(s) tiveram o código do NCM preenchido.`
+          : "Nenhum produto pendente: todos os NCMs vinculados já têm código.",
+      );
+      refetch();
+    },
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+  });
+
+
+
   const problemasRegras = useMemo(() => validarRegras(), []);
   const errosRegras = problemasRegras.filter((p) => p.nivel === "erro");
 
