@@ -433,13 +433,68 @@ export function statusMB(mbPct: number, config: CpoConfig): MbStatus {
  */
 export const MARGEM_PRECO_SUGERIDO = 0.37;
 
-/** Preço sugerido padrão: custo / (1 - 0,37) => 37% de MB sobre o preço de venda. */
-
+/**
+ * Preço sugerido "seco" (sem impostos): custo / (1 - 0,37).
+ * Usado apenas como referência no cadastro do produto.
+ */
 export function precoSugeridoPadrao(custo: number) {
   const c = Number(custo) || 0;
   if (c <= 0) return 0;
   return Math.round((c / (1 - MARGEM_PRECO_SUGERIDO)) * 100) / 100;
 }
+
+/**
+ * Preço unitário (com IPI) que resulta na margem-alvo real da proposta.
+ *
+ * MB% da proposta = (RL - custo) / valor bruto, e a RL já é líquida de IPI,
+ * ICMS, PIS/COFINS e DIFAL (quando não informativo). Por isso o preço precisa
+ * ser "grossado" pelos impostos — usar custo/(1-0,37) direto derruba a MB%
+ * para bem abaixo da política de 33%.
+ */
+export function precoParaMargem(
+  produto: CpoProduct | undefined,
+  state: Pick<CpoState, "uf" | "contribuinte" | "finalidadeUso"> & {
+    regimeTributario?: string | null;
+  },
+  ufs: CpoUf[],
+  config: CpoConfig,
+  ncms: CpoNcm[] = [],
+  margem: number = MARGEM_PRECO_SUGERIDO,
+) {
+  const custo = Number(produto?.custo) || 0;
+  if (custo <= 0) return 0;
+
+  const ncm = produto?.ncm_id ? ncms.find((n) => n.id === produto.ncm_id) : undefined;
+  const ipi = ncm?.ipi ?? config.ipi;
+  const pc = ncm?.pis_cofins ?? config.pis_cofins;
+  const geraDifal = ncm ? ncm.gera_difal : true;
+
+  const inter = aliqInterOperacao({
+    uf: state.uf,
+    contribuinte: state.contribuinte,
+    regimeTributario: state.regimeTributario ?? null,
+    finalidade: state.finalidadeUso,
+    padrao: ncm?.aliq_inter ?? config.aliq_inter,
+  });
+
+  // Fração da receita líquida sobre o valor bruto (com IPI).
+  const f = (1 - inter - (1 - inter) * pc) / (1 + ipi);
+
+  // DIFAL só pesa na margem quando não é informativo.
+  const ufRow = ufs.find((u) => u.uf === state.uf);
+  const carga = (ufRow?.aliq_interna ?? 0.18) + (ufRow?.fcp ?? 0);
+  const informativo =
+    difalEhInformativo({ contribuinte: state.contribuinte } as CpoState) ||
+    difalSempreInformativoPorFinalidade(state.finalidadeUso);
+  const aplicaDifal =
+    geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !informativo && carga > inter && carga < 1;
+  const dPct = aplicaDifal ? (carga - inter) / (1 - carga) : 0;
+
+  const denom = f - dPct - margem;
+  if (!(denom > 0)) return 0;
+  return Math.round((custo / denom) * 100) / 100;
+}
+
 
 export const fmtBRL = (v: number) =>
   (isFinite(v) ? v : 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
