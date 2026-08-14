@@ -404,6 +404,7 @@ const RetentionInput = z.object({
 export const adminGetLogRetention = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    await assertFeature(context, "admin.logs.retencao", "visualizar");
     const [{ data: policy }, { data: runs }] = await Promise.all([
       context.supabase.from("log_retention_policy").select("*").eq("id", 1).maybeSingle(),
       context.supabase
@@ -447,6 +448,7 @@ export const adminUpdateLogRetention = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => RetentionInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertFeature(context, "admin.logs.retencao", "editar");
     const { error } = await context.supabase
       .from("log_retention_policy")
       .update({
