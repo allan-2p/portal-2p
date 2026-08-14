@@ -94,6 +94,7 @@ export function calcularComissao(e: EntradaComissao) {
 
 export type RateioLinha = {
   key: string;
+  /** Perfil de permissão correspondente ao papel. */
   papel: string;
   regime: Regime;
   /** % do custo da empresa sobre a venda */
@@ -109,11 +110,14 @@ export type Rateio = {
   bloqueado: boolean;
   linhas: RateioLinha[];
   custoVendedor: number;
+  /** Indicação é tratada à parte — não é um papel da tabela de perfis. */
+  indicacao: { valor: number; aplicada: boolean };
 };
 
 /**
- * Rateia o custo total da comissão: gerente e indicação são fixos sobre a
- * venda; o vendedor fica com o saldo. CMV acima do limite zera a comissão.
+ * Rateia o custo total da comissão entre os perfis: gerente e representante são
+ * fixos sobre a venda, a indicação (quando houver) é um valor fixo e o consultor
+ * dono do cliente fica com o saldo. CMV acima do limite zera a comissão.
  */
 export function ratearComissao(args: {
   venda: number;
@@ -121,6 +125,9 @@ export function ratearComissao(args: {
   cmv: number;
   regimeVendedor: Regime;
   regimeGerente?: Regime;
+  regimeRepresentante?: Regime;
+  /** Marcado na proposta (Carregadores). Padrão: true. */
+  comIndicacao?: boolean;
   params?: Partial<ParamsComissao>;
 }): Rateio {
   const p = { ...PARAMS_PADRAO, ...(args.params ?? {}) };
@@ -128,44 +135,44 @@ export function ratearComissao(args: {
   const total = bloqueado ? 0 : args.comissaoTotal;
 
   const custoGerente = args.venda * p.pctGerente;
-  const custoIndicacao = args.venda > 0 ? p.valorIndicacao : 0;
-  const custoVendedor = Math.max(0, total - custoGerente - custoIndicacao);
+  const custoRepresentante = args.venda * p.pctRepresentante;
+  const comIndicacao = args.comIndicacao !== false;
+  const custoIndicacao = comIndicacao && args.venda > 0 ? p.valorIndicacao : 0;
+  const custoVendedor = Math.max(0, total - custoGerente - custoRepresentante - custoIndicacao);
   const regimeGerente = args.regimeGerente ?? "CLT";
+  const regimeRepresentante = args.regimeRepresentante ?? "PJ";
 
   const rem = (custo: number, regime: Regime) => (regime === "CLT" ? custo / p.fatorClt : custo);
 
+  const linha = (
+    key: string,
+    papel: string,
+    regime: Regime,
+    custo: number,
+    fixo: boolean,
+  ): RateioLinha => ({
+    key,
+    papel,
+    regime,
+    pctCusto: args.venda > 0 ? custo / args.venda : 0,
+    custo,
+    remuneracao: rem(custo, regime),
+    pctRemuneracao: args.venda > 0 ? rem(custo, regime) / args.venda : 0,
+    fixo,
+  });
+
   const linhas: RateioLinha[] = [
-    {
-      key: "vendedor",
-      papel: "Vendedor",
-      regime: args.regimeVendedor,
-      pctCusto: args.venda > 0 ? custoVendedor / args.venda : 0,
-      custo: custoVendedor,
-      remuneracao: rem(custoVendedor, args.regimeVendedor),
-      pctRemuneracao: args.venda > 0 ? rem(custoVendedor, args.regimeVendedor) / args.venda : 0,
-      fixo: false,
-    },
-    {
-      key: "gerente",
-      papel: "Gerente",
-      regime: regimeGerente,
-      pctCusto: p.pctGerente,
-      custo: custoGerente,
-      remuneracao: rem(custoGerente, regimeGerente),
-      pctRemuneracao: args.venda > 0 ? rem(custoGerente, regimeGerente) / args.venda : 0,
-      fixo: true,
-    },
-    {
-      key: "indicacao",
-      papel: "Indicação",
-      regime: "PJ",
-      pctCusto: args.venda > 0 ? custoIndicacao / args.venda : 0,
-      custo: custoIndicacao,
-      remuneracao: custoIndicacao,
-      pctRemuneracao: args.venda > 0 ? custoIndicacao / args.venda : 0,
-      fixo: true,
-    },
+    linha("vendedor", PERFIL_POR_PAPEL.vendedor, args.regimeVendedor, custoVendedor, false),
+    linha("gerente", PERFIL_POR_PAPEL.gerente, regimeGerente, custoGerente, true),
+    linha("representante", PERFIL_POR_PAPEL.representante, regimeRepresentante, custoRepresentante, true),
   ];
 
-  return { comissaoTotal: total, bloqueado, linhas, custoVendedor };
+  return {
+    comissaoTotal: total,
+    bloqueado,
+    linhas,
+    custoVendedor,
+    indicacao: { valor: custoIndicacao, aplicada: comIndicacao },
+  };
 }
+
