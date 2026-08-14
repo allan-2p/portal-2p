@@ -272,7 +272,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
 
       // NCM do SAP alimenta o produto e, quando o código existir na tabela de
       // NCMs do portal, vincula automaticamente as alíquotas.
-      const ncmsSap = Array.from(new Set(materiais.map((m) => m.ncm).filter(Boolean))) as string[];
+      const ncmsSap = Array.from(new Set(materiais.map((m) => ncmDe(m)).filter(Boolean))) as string[];
       const ncmMap = new Map<string, string>();
       if (ncmsSap.length > 0) {
         const { data: ncmRows } = await supabaseAdmin
@@ -285,7 +285,8 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       }
 
       const rows = materiais.map((m) => {
-        const ncmId = m.ncm ? (ncmMap.get(m.ncm) ?? null) : null;
+        const ncm = ncmDe(m);
+        const ncmId = ncm ? (ncmMap.get(ncm) ?? null) : null;
         return {
           codigo: m.codigo,
           descricao: m.descricao,
@@ -294,10 +295,11 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
           lista_preco: m.lista_preco,
           sap_raw: m.raw as any,
           last_synced_at: now,
-          ...(m.ncm ? { ncm_codigo: m.ncm } : {}),
+          ...(ncm ? { ncm_codigo: ncm } : {}),
           ...(ncmId ? { ncm_id: ncmId } : {}),
         };
       });
+
 
       // Novos entram ativos; nos já existentes o SAP não sobrescreve o
       // ativo/inativo definido pela moderação do portal.
