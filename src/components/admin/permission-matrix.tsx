@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Check, Minus, ChevronRight, ChevronDown } from "lucide-react";
 import {
   INSTANCES,
@@ -170,9 +170,8 @@ export function PermissionMatrix({ profiles }: { profiles: PermissionProfile[] }
                   const groupCaps = new Set<CapabilityId>();
                   for (const k of on) for (const c of capabilitiesForFeature(k)) groupCaps.add(c);
                   return (
-                    <>
+                    <Fragment key={group.id}>
                       <tr
-                        key={group.id}
                         onClick={() => toggleOpen(group.id)}
                         className="border-t border-border cursor-pointer hover:bg-surface-2"
                       >
@@ -227,7 +226,7 @@ export function PermissionMatrix({ profiles }: { profiles: PermissionProfile[] }
                             </tr>
                           );
                         })}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>

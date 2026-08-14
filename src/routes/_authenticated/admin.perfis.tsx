@@ -24,6 +24,7 @@ import {
   type InstanceId,
 } from "@/lib/instances";
 import { groupFeatures, shortFeatureLabel, featureScopeLabel } from "@/lib/feature-groups";
+import { PermissionMatrix } from "@/components/admin/permission-matrix";
 
 export const Route = createFileRoute("/_authenticated/admin/perfis")({
   component: PerfisPage,
@@ -66,6 +67,7 @@ function PerfisPage() {
   const [userSearch, setUserSearch] = useState("");
   const [profInstances, setProfInstances] = useState<Set<InstanceId>>(new Set());
   const [featSearch, setFeatSearch] = useState("");
+  const [tab, setTab] = useState<"perfis" | "matriz">("perfis");
 
   async function load() {
     setLoading(true);
