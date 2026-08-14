@@ -950,18 +950,18 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
         label: "Sem acesso a instâncias",
         status: "error",
         detail: "Nenhuma instância liberada — o portal abre travado na tela de perfil.",
-        fix: "Libere as instâncias em Administrador > Permissões.",
+        fix: "Libere as instâncias em Administrador > Perfis.",
       });
     }
 
-    const totalAllowed = perms.filter((x) => x.allowed).length;
+    const totalAllowed = perms.length;
     if (totalAllowed === 0) {
       push({
         id: "no_permissions",
         label: "Sem telas liberadas",
         status: "error",
-        detail: "O modelo é 'bloqueado por padrão' e não há nenhuma permissão marcada como liberada.",
-        fix: "Libere as telas em Administrador > Permissões.",
+        detail: "O modelo é 'bloqueado por padrão' e o perfil do usuário não libera nenhuma tela.",
+        fix: "Libere as telas em Administrador > Perfis.",
       });
     }
 
