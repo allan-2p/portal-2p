@@ -275,6 +275,20 @@ function HistoricoCpoPage() {
                 <Info label="Comissão" value={fmtBRL(detalhe.totais.comissao ?? 0)} />
                 <Info label="Frete" value={`${detalhe.frete_mod} · ${fmtBRL(detalhe.frete_valor)}`} />
                 <Info label="Contato" value={detalhe.cliente_telefone || detalhe.cliente_email || "—"} />
+                <Info label="Consultor" value={detalhe.consultor_nome || "—"} />
+                <Info label="Criado por" value={detalhe.criado_por_nome || "—"} />
+                <Info
+                  label="Finalizado por"
+                  value={
+                    detalhe.finalizado_por_nome
+                      ? `${detalhe.finalizado_por_nome}${
+                          detalhe.finalizado_em
+                            ? ` · ${new Date(detalhe.finalizado_em).toLocaleDateString("pt-BR")}`
+                            : ""
+                        }`
+                      : "—"
+                  }
+                />
               </div>
               <div className="rounded-xl border border-border overflow-hidden">
                 <table className="w-full text-sm">
