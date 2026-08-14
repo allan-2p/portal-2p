@@ -7,7 +7,7 @@ import { fmtBRL, fmtPct } from "@/lib/cpo";
 import { StatusDot } from "@/components/proposta-status-ui";
 import { PropostaTimeline } from "@/components/proposta-timeline";
 import { propostaStatusStyle } from "@/lib/proposta-status";
-import { Calculator, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { ArrowLeft, Calculator, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 
 type Item = { codigo?: string | null; nome?: string; qtd?: number; valor?: number };
 
