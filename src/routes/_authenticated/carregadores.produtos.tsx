@@ -286,16 +286,19 @@ function ProdutosTab() {
                   value={draft.ncm_id || "none"}
                   onValueChange={(v) => setDraft({ ...draft, ncm_id: v === "none" ? "" : v })}
                 >
-                  <SelectTrigger className="w-full"><SelectValue placeholder="Selecione o NCM" /></SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-left">
+                    <SelectValue placeholder="Selecione o NCM" />
+                  </SelectTrigger>
                   <SelectContent className="max-w-[calc(100vw-2rem)]">
                     <SelectItem value="none">Sem NCM (usa padrão global)</SelectItem>
                     {ncms.map((n) => (
-                      <SelectItem key={n.id} value={n.id}>
+                      <SelectItem key={n.id} value={n.id} className="whitespace-normal break-words">
                         {n.codigo} — {n.descricao}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+
               </Field>
               <Field label="Custo (R$)">
                 <Input
