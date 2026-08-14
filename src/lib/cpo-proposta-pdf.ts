@@ -218,7 +218,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="hmeta">
         Emissão <b>${esc(dataStr)}</b><br>
         Validade <b>${esc(validade)}</b><br>
-        ${p.consultor ? `Consultor <b>${esc(p.consultor)}</b>` : ""}
+        Consultor responsável <b>${esc(p.consultor || "—")}</b>
       </div>
     </div>
   </div>
