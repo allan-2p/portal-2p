@@ -30,12 +30,25 @@ export const CMV_MAX = 0.605;
 
 /** Percentuais fixos deduzidos do custo total da comissão (sobre a venda). */
 export const PCT_GERENTE = 0.005;
+/** Percentual fixo do Representante sobre a venda. */
+export const PCT_REPRESENTANTE = 0;
 /** Comissão de indicação: valor fixo em reais (não é percentual). */
 export const VALOR_INDICACAO = 250;
+
+/**
+ * Os papéis da política deixam de ser cargos livres: cada linha corresponde ao
+ * Perfil de permissão do consultor dono do cliente.
+ */
+export const PERFIL_POR_PAPEL = {
+  vendedor: "Consultor | Closer | 2P Carregadores",
+  gerente: "Gerente | 2P Carregadores",
+  representante: "Representante | 2P Carregadores",
+} as const;
 
 export type ParamsComissao = {
   cmvMax: number;
   pctGerente: number;
+  pctRepresentante: number;
   /** Valor fixo (R$) da comissão de indicação. */
   valorIndicacao: number;
   fatorClt: number;
@@ -44,9 +57,11 @@ export type ParamsComissao = {
 export const PARAMS_PADRAO: ParamsComissao = {
   cmvMax: CMV_MAX,
   pctGerente: PCT_GERENTE,
+  pctRepresentante: PCT_REPRESENTANTE,
   valorIndicacao: VALOR_INDICACAO,
   fatorClt: FATOR_CLT,
 };
+
 
 export type EntradaComissao = {
   venda: number;
