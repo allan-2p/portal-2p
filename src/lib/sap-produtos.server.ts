@@ -107,6 +107,9 @@ export async function getProducts(): Promise<SapMaterial[]> {
         headers: {
           "content-type": "application/soap+xml; charset=utf-8",
           accept: "application/soap+xml, text/xml, */*",
+          // Sem isto o runtime envia "Accept-Language: *", que o SAP trata como
+          // idioma inválido e responde com as tabelas vazias (HTTP 200).
+          "accept-language": "pt-BR",
           authorization: credencial.header,
         },
         body: SOAP_BODY,
