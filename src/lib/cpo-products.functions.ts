@@ -7,13 +7,14 @@ export type CpoProductAdmin = {
   codigo: string | null;
   nome: string;
   custo: number;
+  preco_sugerido: number;
   ativo: boolean;
   ncm_id?: string | null;
   ncm_codigo?: string | null;
 };
 
 /** Colunas do catálogo único do portal (`sap_produtos`). */
-const COLS = "id, codigo, descricao, custo, ativo, ncm_id, ncm_codigo, visibilidade";
+const COLS = "id, codigo, descricao, custo, preco_sugerido, ativo, ncm_id, ncm_codigo, visibilidade";
 
 function toProduct(p: any): CpoProductAdmin {
   return {
@@ -21,6 +22,7 @@ function toProduct(p: any): CpoProductAdmin {
     codigo: p.codigo ?? null,
     nome: p.descricao,
     custo: Number(p.custo ?? 0),
+    preco_sugerido: Number(p.preco_sugerido ?? 0),
     ativo: p.ativo,
     ncm_id: p.ncm_id ?? null,
     ncm_codigo: p.ncm_codigo ?? null,

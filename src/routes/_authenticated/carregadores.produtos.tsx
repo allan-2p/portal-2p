@@ -44,7 +44,6 @@ function ProdutosCpoPage() {
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div>
-          <div className="text-xs uppercase tracking-wider text-primary font-semibold">Módulo CPO</div>
           <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Catálogo único do portal (alimentado pelo SAP e por edições manuais), alíquotas por UF. Base usada pelo cálculo de DRE das propostas de carregadores.
@@ -72,6 +71,7 @@ type Draft = {
   codigo: string;
   nome: string;
   custo: string;
+  preco_sugerido: string;
   ativo: boolean;
   ncm_id: string | null;
 };
@@ -99,6 +99,7 @@ function ProdutosTab() {
     const payload = {
       descricao: draft.nome.trim(),
       custo: Number(draft.custo) || 0,
+      preco_sugerido: Number(draft.preco_sugerido) || 0,
       ativo: draft.ativo,
     };
 
@@ -154,6 +155,7 @@ function ProdutosTab() {
                 <th className="text-left px-4 py-3">Produto</th>
                 <th className="text-left px-4 py-3">NCM</th>
                 <th className="text-right px-4 py-3">Custo</th>
+                <th className="text-right px-4 py-3">Preço sugerido</th>
                 <th className="text-center px-4 py-3">Ativo</th>
                 <th className="text-right px-4 py-3">Ações</th>
               </tr>
@@ -174,6 +176,7 @@ function ProdutosTab() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">{fmtBRL(p.custo)}</td>
+                  <td className="px-4 py-3 text-right">{fmtBRL(p.preco_sugerido ?? 0)}</td>
                   <td className="px-4 py-3 text-center">
                     <Switch
                       checked={p.ativo}
@@ -198,6 +201,7 @@ function ProdutosTab() {
                             codigo: p.codigo ?? "",
                             nome: p.nome,
                             custo: String(p.custo),
+                            preco_sugerido: String(p.preco_sugerido ?? 0),
                             ativo: p.ativo,
                             ncm_id: p.ncm_id ?? null,
                           })
@@ -213,7 +217,7 @@ function ProdutosTab() {
               ))}
               {filtrados.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
                     {isLoading || isFetching ? (
                       "Carregando…"
                     ) : error ? (
@@ -261,6 +265,17 @@ function ProdutosTab() {
                   step="0.01"
                   value={draft.custo}
                   onChange={(e) => setDraft({ ...draft, custo: e.target.value })}
+                />
+              </Field>
+
+              <Field label="Preço sugerido (R$)">
+                <Input
+                  className="w-full"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={draft.preco_sugerido}
+                  onChange={(e) => setDraft({ ...draft, preco_sugerido: e.target.value })}
                 />
               </Field>
 
