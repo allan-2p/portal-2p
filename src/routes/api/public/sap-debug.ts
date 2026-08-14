@@ -35,7 +35,14 @@ export const Route = createFileRoute("/api/public/sap-debug")({
           },
           textxml: { body: BODY, headers: { "content-type": "text/xml; charset=utf-8", soapaction: '""', authorization: auth } },
         };
-        const out: Record<string, unknown> = {};
+        const out: Record<string, unknown> = {
+          env: {
+            urlHost: new URL(url).host,
+            authUser: atob(auth.replace(/^Basic /, "")).split(":")[0],
+            userVar: process.env["SAP_BRIDGE_USER"] ?? null,
+            passLen: (process.env["SAP_BRIDGE_PASSWORD"] ?? "").length,
+          },
+        };
         for (const [name, init] of Object.entries(variants)) {
           try {
             const res = await fetch(url, { method: "POST", ...init });
