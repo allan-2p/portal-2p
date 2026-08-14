@@ -1211,7 +1211,14 @@ function PropostaCpoPage() {
                           placeholder="R$ 0,00"
                           maxValue={10000000}
                           className={cn(semValor && "border-destructive focus-visible:ring-destructive")}
-                          onValueChange={(n: number) => setItem(it.key, { valor: n, valorManual: true })}
+                          onValueChange={(n: number) =>
+                            // Zerar o campo volta a permitir o Preço Sugerido.
+                            setItem(it.key, {
+                              valor: n,
+                              valorManual: n > 0,
+                              sugeridoAplicado: undefined,
+                            })
+                          }
                         />
 
 
