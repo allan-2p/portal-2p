@@ -54,7 +54,9 @@ export function AdminSidebar({ pathname, collapsed }: { pathname: string; collap
           {current.groups.map((g, gi) => {
             const items = g.items.filter((i) => !i.feature || hasFeature(i.feature));
             if (!items.length) return null;
-            const hasActiveItem = items.some((i) => pathname === i.to || pathname.startsWith(`${i.to}/`));
+            const hasActiveItem = items.some(
+              (i) => pathname === i.to || (!i.exact && pathname.startsWith(`${i.to}/`)),
+            );
 
             return (
               <div key={gi} className={cn("mb-4", g.collapsible && !collapsed && "mb-2")}>
@@ -100,7 +102,7 @@ function AdminGroupItems({
   health,
   alerts,
 }: {
-  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
+  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }>; exact?: boolean }[];
   pathname: string;
   collapsed: boolean;
   health?: { map: Map<string, IntegrationHealthItem>; isLoading: boolean };
@@ -110,7 +112,9 @@ function AdminGroupItems({
     <div className="space-y-0.5">
       {items.map((i) => {
         const Icon = i.icon;
-        const active = pathname === i.to || pathname.startsWith(`${i.to}/`);
+        const active = i.exact
+          ? pathname === i.to
+          : pathname === i.to || pathname.startsWith(`${i.to}/`);
         return (
           <Link
             key={i.to}

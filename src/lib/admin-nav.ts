@@ -30,6 +30,8 @@ export type AdminNavItem = {
   label: string;
   icon: typeof Users;
   feature?: FeatureKey;
+  /** Ativa apenas no match exato (usado pelas "Visão geral" das seções). */
+  exact?: boolean;
 };
 
 export type AdminNavGroup = {
@@ -60,7 +62,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     groups: [
       {
         label: null,
-        items: [{ to: "/admin/configuracoes", label: "Visão geral", icon: LayoutDashboard }],
+        items: [{ to: "/admin/configuracoes", label: "Visão geral", icon: LayoutDashboard, exact: true }],
       },
       {
         label: "Usuários",
@@ -100,7 +102,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     groups: [
       {
         label: null,
-        items: [{ to: "/integracoes", label: "Visão geral", icon: LayoutDashboard }],
+        items: [{ to: "/integracoes", label: "Visão geral", icon: LayoutDashboard, exact: true }],
       },
       {
         label: "CRM",
@@ -152,7 +154,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     groups: [
       {
         label: null,
-        items: [{ to: "/admin/moderacao", label: "Visão geral", icon: LayoutDashboard }],
+        items: [{ to: "/admin/moderacao", label: "Visão geral", icon: LayoutDashboard, exact: true }],
       },
       {
         label: "Produtos",
@@ -182,7 +184,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     groups: [
       {
         label: null,
-        items: [{ to: "/admin/logs", label: "Visão geral", icon: LayoutDashboard }],
+        items: [{ to: "/admin/logs", label: "Visão geral", icon: LayoutDashboard, exact: true }],
       },
       {
         label: "Logs do portal",
