@@ -215,7 +215,20 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         throw new Error("SAP: RFC listar_material não retornou materiais — sincronização abortada.");
       }
 
+      // O NCM não vem na listar_material: buscamos sempre junto na RFC de
+      // estoque (ZHDIT_ZMMR059), que é a fonte oficial do NCM por material.
+      const ncmSapMap = new Map<string, string>();
+      try {
+        const { fetchEstoqueSap, mapearEstoque } = await import("./sap-estoque.server");
+        const { estoque } = mapearEstoque(await fetchEstoqueSap());
+        for (const e of estoque) if (e.ncm) ncmSapMap.set(e.material, e.ncm);
+      } catch (err) {
+        console.error("[SAP] NCM (ZMMR059) indisponível nesta sincronização:", err);
+      }
+      const ncmDe = (m: { codigo: string; ncm?: string | null }) => m.ncm || ncmSapMap.get(m.codigo) || null;
+
       const now = new Date().toISOString();
+
 
       // ---------- Espelho completo do SAP (aba "Todos os produtos do SAP") ----------
       // Sincronização incremental: só grava os materiais que mudaram desde a
