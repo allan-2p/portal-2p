@@ -194,3 +194,46 @@ export const adminGetUserAccess = createServerFn({ method: "GET" })
     );
     return { ...merged, is_admin: (roles ?? []).some((r: any) => r.role === "admin") };
   });
+
+// ---- Admin: logar de verdade como outro usuário ---- //
+
+export const adminImpersonateUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ email: string; token_hash: string }> => {
+    await assertAdmin(context);
+    if (data.user_id === context.userId) throw new Error("Você já está logado com este usuário.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: target, error: tErr } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email, full_name")
+      .eq("id", data.user_id)
+      .maybeSingle();
+    if (tErr) throw new Error(tErr.message);
+    if (!target?.email) throw new Error("Usuário sem e-mail cadastrado.");
+
+    const { data: link, error: lErr } = await supabaseAdmin.auth.admin.generateLink({
+      type: "magiclink",
+      email: target.email,
+    });
+    if (lErr) throw new Error(lErr.message);
+    const token_hash = (link as any)?.properties?.hashed_token as string | undefined;
+    if (!token_hash) throw new Error("Não foi possível gerar o acesso.");
+
+    const { data: actor } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    await supabaseAdmin.from("user_activity_log").insert({
+      user_id: context.userId,
+      email: actor?.email ?? null,
+      event: "impersonate",
+      detail: `Login como ${target.full_name ?? target.email} (${target.email})`,
+    });
+
+    return { email: target.email, token_hash };
+  });
