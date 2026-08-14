@@ -18,6 +18,7 @@ import { getAdminAreas } from "@/lib/admin-guard.functions";
 
 import { AdminSidebar } from "./admin-sidebar";
 import { cn } from "@/lib/utils";
+import type { AppPath } from "@/lib/routes";
 import { supabase } from "@/integrations/supabase/client";
 import { logUserActivity } from "@/lib/activity.functions";
 import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
@@ -547,7 +548,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 function NavLink({
   item, active, collapsed,
 }: {
-  item: { to: string; label: string; icon: typeof Home };
+  item: { to: AppPath; label: string; icon: typeof Home };
   active: boolean;
   collapsed: boolean;
 }) {
@@ -569,7 +570,7 @@ function NavLink({
   );
 }
 
-function SubLink({ to, label, icon: Icon, active }: { to: string; label: string; icon: typeof Home; active: boolean }) {
+function SubLink({ to, label, icon: Icon, active }: { to: AppPath; label: string; icon: typeof Home; active: boolean }) {
   return (
     <Link
       to={to}
@@ -587,7 +588,7 @@ function SubLink({ to, label, icon: Icon, active }: { to: string; label: string;
 
 function AdminMenuLink({
   to, label, icon: Icon, onClick,
-}: { to: string; label: string; icon: typeof Home; onClick: () => void }) {
+}: { to: AppPath; label: string; icon: typeof Home; onClick: () => void }) {
   return (
     <Link
       to={to}

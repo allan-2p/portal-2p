@@ -1,6 +1,7 @@
 // Central config das instâncias do Portal 2P.
 // Solar (atual, laranja), Carregadores (azul), Marketing (cinza + amarelo fosco).
 
+import type { AppPath } from "@/lib/routes";
 import solarLogoRaw from "@/assets/2p-logo.jpg";
 import carregadoresAsset from "@/assets/2p-carregadores-logo.png.asset.json";
 
@@ -157,7 +158,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
 };
 
 // Mapa: rota do TanStack → feature key (para gate de menu e roteamento).
-export const ROUTE_FEATURE: Record<string, FeatureKey> = {
+export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/": "home",
   "/solar/tarefas": "tarefas",
   "/solar/pedidos": "pedidos",
@@ -295,7 +296,7 @@ export function defaultInstanceForList(allowed: InstanceId[]): InstanceId {
 export function featureForPath(path: string): FeatureKey | null {
   const keys = Object.keys(ROUTE_FEATURE).sort((a, b) => b.length - a.length);
   const match = keys.find((k) => path === k || path.startsWith(k + "/"));
-  return match ? ROUTE_FEATURE[match] : null;
+  return match ? (ROUTE_FEATURE as Record<string, FeatureKey>)[match] ?? null : null;
 }
 
 // Primeira instância permitida que contém a feature — usada para trocar de

@@ -23,11 +23,12 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import type { FeatureKey } from "@/lib/instances";
+import type { AppPath } from "@/lib/routes";
 
 export type AdminSectionId = "configuracoes" | "integracoes" | "moderacao" | "logs";
 
 export type AdminNavItem = {
-  to: string;
+  to: AppPath | (string & {});
   label: string;
   icon: typeof Users;
   feature?: FeatureKey;
@@ -47,7 +48,7 @@ export type AdminSection = {
   /** Frase curta usada na home da seção. */
   description: string;
   icon: typeof Users;
-  home: string;
+  home: AppPath;
   /** Prefixos extras que pertencem à seção (ex.: a página índice de Integrações). */
   prefixes?: string[];
   groups: AdminNavGroup[];
