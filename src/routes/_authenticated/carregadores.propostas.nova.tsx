@@ -110,6 +110,7 @@ type ClienteCadastro = {
   contribuinte: boolean;
   regime_tributario?: string | null;
   cliente_updated_at: string | null;
+  consultor_nome: string | null;
 };
 
 
@@ -163,6 +164,8 @@ function PropostaCpoPage() {
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   const [previewAberto, setPreviewAberto] = useState(false);
   const [usarLogoCliente, setUsarLogoCliente] = useState(true);
+  // Consultor da proposta: vem do cadastro do cliente e é congelado ao salvar.
+  const [consultorProposta, setConsultorProposta] = useState<string | null>(null);
 
   const [propostaUpdatedAt, setPropostaUpdatedAt] = useState<string | null>(null);
   const [statusProposta, setStatusProposta] = useState<string>("Salvo");
@@ -243,6 +246,7 @@ function PropostaCpoPage() {
         observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
         itens: itens.length ? itens : [novoItem()],
       });
+      setConsultorProposta(((data as any).consultor_nome as string | null) ?? null);
       setNumeroAtual(editId ? data.numero : null);
       setPropostaUpdatedAt((data.updated_at as string) ?? null);
       setAutosaveAt(data.updated_at ? new Date(data.updated_at as string) : null);
@@ -288,6 +292,7 @@ function PropostaCpoPage() {
           contribuinte: c["contribuinte"] !== false,
           regime_tributario: (c["regime_tributario"] as string) ?? null,
           cliente_updated_at: (c["updated_at"] as string) ?? null,
+          consultor_nome: (c["created_by_nome"] as string) ?? null,
         }));
       return lista.sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR"));
 
@@ -361,7 +366,8 @@ function PropostaCpoPage() {
 
 
 
-  const aplicarCliente = (c: ClienteCadastro) =>
+  const aplicarCliente = (c: ClienteCadastro) => {
+    if (!editId) setConsultorProposta(c.consultor_nome ?? null);
     setState((s) => ({
       ...s,
       nome: c.cliente_nome,
@@ -373,6 +379,7 @@ function PropostaCpoPage() {
       contribuinte: c.contribuinte ?? s.contribuinte,
       regimeTributario: c.regime_tributario ?? null,
     }));
+  };
 
 
 
@@ -662,12 +669,13 @@ function PropostaCpoPage() {
           comissaoPct: d.comPct,
         },
         logoCliente: usarLogoCliente ? logoCliente : null,
+        consultor: consultorProposta ?? undefined,
       });
 
   const pdfHtml = useMemo(
     () => buildHtml(d),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, produtos, config, d, usarLogoCliente, logoCliente, observacoesFinal],
+    [state, produtos, config, d, usarLogoCliente, logoCliente, observacoesFinal, consultorProposta],
   );
 
   function montarPdfHtml() {
@@ -731,6 +739,10 @@ function PropostaCpoPage() {
             .map((i) => ({ produtoId: i.produtoId, qtd: i.qtd, valor: money2(i.valor) })),
         },
       });
+
+      if ((salvo as { consultor?: string | null }).consultor) {
+        setConsultorProposta((salvo as { consultor?: string | null }).consultor ?? null);
+      }
 
       if (propostaId) {
         const concluindo = status !== "Salvo";
