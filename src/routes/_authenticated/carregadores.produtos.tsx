@@ -25,7 +25,7 @@ import { Plus, Pencil, Trash2, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
-import { validateVisibilidadeChange } from "@/lib/product-visibility";
+import { validateAtivacaoCarregadores } from "@/lib/product-visibility";
 import { useCpoConfig, useCpoInvalidate, useCpoNcms, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
 import { fmtBRL, type CpoConfig, type CpoNcm, type CpoProduct } from "@/lib/cpo";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
@@ -104,10 +104,9 @@ function ProdutosTab() {
     if (!draft) return;
     if (!draft.id) return toast.error("Produtos só podem ser criados pela sincronização com o SAP.");
     if (!draft.nome.trim()) return toast.error("Informe o nome do produto.");
-    const impedimento = validateVisibilidadeChange("carregadores", {
-      custo: Number(draft.custo) || 0,
-      ncm_id: draft.ncm_id || null,
-    });
+    const impedimento = draft.ativo
+      ? validateAtivacaoCarregadores({ custo: Number(draft.custo) || 0, ncm_id: draft.ncm_id || null })
+      : null;
     if (impedimento) return toast.error(impedimento);
     const payload = {
       descricao: draft.nome.trim(),
@@ -147,6 +146,10 @@ function ProdutosTab() {
   }
 
   async function toggleAtivo(p: CpoProduct) {
+    if (!p.ativo) {
+      const impedimento = validateAtivacaoCarregadores({ custo: Number(p.custo) || 0, ncm_id: p.ncm_id ?? null });
+      if (impedimento) return toast.error(impedimento);
+    }
     const { error } = await supabase.from("sap_produtos").update({ ativo: !p.ativo }).eq("id", p.id);
     if (error) return toast.error(error.message);
     void logModeration({
@@ -187,12 +190,27 @@ function ProdutosTab() {
                 <tr key={p.id} className="border-b border-border/50 hover:bg-surface-2">
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.codigo || "—"}</td>
                   <td className="px-4 py-3 font-medium">{p.nome}</td>
-                  <td className="px-4 py-3 text-muted-foreground font-mono text-xs">
-                    {ncms.find((n) => n.id === p.ncm_id)?.codigo ?? "—"}
+                  <td className="px-4 py-3 font-mono text-xs">
+                    {p.ncm_id ? (
+                      <span className="text-muted-foreground">{ncms.find((n) => n.id === p.ncm_id)?.codigo ?? "—"}</span>
+                    ) : (
+                      <span className="rounded-full bg-warning/10 px-2 py-0.5 font-sans text-[11px] font-medium text-warning">
+                        NCM pendente
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">{fmtBRL(p.custo)}</td>
                   <td className="px-4 py-3 text-center">
-                    <Switch checked={p.ativo} onCheckedChange={() => toggleAtivo(p)} />
+                    <Switch
+                      checked={p.ativo}
+                      onCheckedChange={() => toggleAtivo(p)}
+                      aria-label={p.ativo ? "Desativar produto" : "Ativar produto"}
+                      title={
+                        !p.ativo && !p.ncm_id
+                          ? "Defina o NCM do produto para poder ativá-lo"
+                          : undefined
+                      }
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
