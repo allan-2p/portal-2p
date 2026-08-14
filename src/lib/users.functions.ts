@@ -715,6 +715,7 @@ export type UserDiagnostics = {
     updated_at: string | null;
   };
   roles: string[];
+  perfis: string[];
   auth: { last_sign_in_at: string | null; email_confirmed_at: string | null; banned: boolean };
   salesforce: {
     linked: boolean;
@@ -778,7 +779,7 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
       supabaseAdmin.from("user_instance_access").select("instance_id").eq("user_id", uid),
       supabaseAdmin
         .from("user_permission_profiles")
-        .select("profile_id, permission_profile_features(instance_id)")
+        .select("profile_id, permission_profiles(name), permission_profile_features(instance_id)")
         .eq("user_id", uid),
       sfId
         ? supabaseAdmin.from("salesforce_team_members").select("team").eq("sf_user_id", sfId).maybeSingle()
@@ -813,6 +814,9 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
     ]);
 
     const roles = ((rolesRes.data ?? []) as any[]).map((r) => r.role as string);
+    const perfis = ((permRes.data ?? []) as any[])
+      .map((r) => r.permission_profiles?.name as string | undefined)
+      .filter((n): n is string => !!n);
     const instances = ((instRes.data ?? []) as any[]).map((r) => r.instance_id as string);
     // Permissões vêm exclusivamente dos perfis vinculados ao usuário.
     const perms = ((permRes.data ?? []) as any[]).flatMap((r) =>
@@ -938,13 +942,13 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
       });
     }
 
-    if (roles.length === 0) {
+    if (perfis.length === 0) {
       push({
-        id: "no_role",
-        label: "Sem papel definido",
+        id: "no_profile",
+        label: "Sem perfil definido",
         status: "error",
-        detail: "O usuário não tem nenhum papel (admin/gerente/vendedor/...).",
-        fix: "Defina o papel na edição do usuário.",
+        detail: "O usuário não está vinculado a nenhum perfil, então não tem acesso a nada.",
+        fix: "Defina o perfil na edição do usuário (Administrador > Perfis).",
       });
     }
 
@@ -1010,6 +1014,7 @@ export const adminUserDiagnostics = createServerFn({ method: "GET" })
         updated_at: p.updated_at ?? null,
       },
       roles,
+      perfis,
       auth: {
         last_sign_in_at: authUser?.last_sign_in_at ?? null,
         email_confirmed_at: authUser?.email_confirmed_at ?? null,
