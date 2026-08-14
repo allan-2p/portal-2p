@@ -9,6 +9,11 @@ export type PropostaPdfItem = {
 
 export type PropostaPdfData = {
   numero?: string;
+  /** Nome/identificação da proposta. */
+  propostaNome?: string | null;
+  /** Nº do pedido no SAP. */
+  numeroSap?: string | null;
+
   cliente: {
     nome: string;
     nomeFantasia?: string | null;
@@ -57,7 +62,7 @@ const esc = (v: unknown) =>
  * Nome sugerido do arquivo ao salvar/imprimir: nº da proposta + "Proposta" + nome fantasia.
  * O navegador usa o <title> do documento como nome padrão no diálogo de impressão.
  */
-export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente">) {
+export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente" | "propostaNome">) {
   const limpo = (v: string) =>
     v
       .normalize("NFD")
@@ -66,8 +71,10 @@ export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente
       .replace(/\s+/g, " ")
       .trim();
   const fantasia = limpo(p.cliente.nomeFantasia?.trim() || p.cliente.nome || "Cliente");
-  return [limpo(p.numero ?? "Proposta"), "Proposta", fantasia].filter(Boolean).join(" - ");
+  const nome = limpo(p.propostaNome?.trim() || "Proposta");
+  return [limpo(p.numero ?? "Proposta"), nome, fantasia].filter(Boolean).join(" - ");
 }
+
 
 
 export function buildPropostaPdfHtml(p: PropostaPdfData) {
@@ -214,13 +221,16 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div>
         <div class="hkicker">Proposta comercial</div>
         <div class="htitle">${esc(numero)}</div>
+        ${p.propostaNome?.trim() ? `<div class="hkicker" style="margin-top:6px">${esc(p.propostaNome.trim())}</div>` : ""}
       </div>
       <div class="hmeta">
         Emissão <b>${esc(dataStr)}</b><br>
         Validade <b>${esc(validade)}</b><br>
+        ${p.numeroSap?.trim() ? `Nº SAP <b>${esc(p.numeroSap.trim())}</b><br>` : ""}
         Consultor responsável <b>${esc(p.consultor || "—")}</b>
       </div>
     </div>
+
   </div>
   <div class="accentbar"></div>
 

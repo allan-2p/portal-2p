@@ -14,6 +14,10 @@ import {
 export type SalvarPropostaInput = {
   propostaId: string | null;
   numero: string;
+  /** Nome/identificação da proposta (padrão universal do portal). */
+  propostaNome: string | null;
+  /** Nº do pedido no SAP. */
+  numeroSap: string | null;
   cliente: {
     nome: string;
     telefone: string;
@@ -30,6 +34,7 @@ export type SalvarPropostaInput = {
   observacoes: string | null;
   itens: { produtoId: string; qtd: number; valor: number }[];
 };
+
 
 const money2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
 
@@ -50,6 +55,9 @@ function validar(input: any): SalvarPropostaInput {
   return {
     propostaId: input.propostaId ? String(input.propostaId) : null,
     numero: String(input.numero ?? "").trim(),
+    propostaNome: input.propostaNome ? String(input.propostaNome).trim().slice(0, 160) : null,
+    numeroSap: input.numeroSap ? String(input.numeroSap).trim().slice(0, 40) : null,
+
     cliente: {
       nome,
       telefone: String(input.cliente?.telefone ?? ""),
@@ -117,7 +125,10 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
     if (faltando.length) throw new Error("Há itens com produtos inexistentes ou indisponíveis no catálogo.");
 
     const state: CpoState = {
+      propostaNome: data.propostaNome ?? "",
+      numeroSap: data.numeroSap ?? "",
       nome: data.cliente.nome,
+
       telefone: data.cliente.telefone,
       email: data.cliente.email,
       doc: data.cliente.doc,
@@ -151,7 +162,10 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
 
     const payload = {
       numero: data.numero,
+      nome: data.propostaNome,
+      numero_sap: data.numeroSap,
       cliente_nome: data.cliente.nome,
+
       cliente_telefone: data.cliente.telefone,
       cliente_email: data.cliente.email,
       cliente_doc: data.cliente.doc,

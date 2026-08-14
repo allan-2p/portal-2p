@@ -231,7 +231,10 @@ function PropostaCpoPage() {
         });
 
       setState({
+        propostaNome: ((data as any).nome as string | null) ?? "",
+        numeroSap: dupId ? "" : (((data as any).numero_sap as string | null) ?? ""),
         nome: dupId ? `${data.cliente_nome}` : data.cliente_nome,
+
         telefone: data.cliente_telefone ?? "",
         email: data.cliente_email ?? "",
         doc: data.cliente_doc ?? "",
@@ -632,7 +635,10 @@ function PropostaCpoPage() {
   const buildHtml = (d: ReturnType<typeof calcularCpo>) =>
       buildPropostaPdfHtml({
         numero: numeroAtual ?? numeroRef.current ?? undefined,
+        propostaNome: state.propostaNome.trim() || null,
+        numeroSap: state.numeroSap.trim() || null,
         cliente: {
+
           nome: state.nome,
           nomeFantasia: state.nome,
           doc: state.doc,
@@ -722,6 +728,9 @@ function PropostaCpoPage() {
         data: {
           propostaId,
           numero,
+          propostaNome: state.propostaNome.trim() || null,
+          numeroSap: state.numeroSap.trim() || null,
+
           cliente: {
             nome: state.nome,
             telefone: state.telefone,
@@ -1086,6 +1095,26 @@ function PropostaCpoPage() {
                 ) : null}
 
                 {state.nome ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Nome da proposta">
+                      <Input
+                        value={state.propostaNome}
+                        onChange={(e) => set("propostaNome", e.target.value)}
+                        placeholder="Ex.: Eletroposto Matriz — 4 carregadores"
+                      />
+                    </Field>
+                    <Field label="Nº SAP">
+                      <Input
+                        value={state.numeroSap}
+                        onChange={(e) => set("numeroSap", e.target.value)}
+                        placeholder="Ex.: 4500123"
+                      />
+                    </Field>
+                  </div>
+                ) : null}
+
+                {state.nome ? (
+
                   <Field label="Finalidade de uso">
                     <Select
                       value={state.finalidadeUso}

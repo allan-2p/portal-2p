@@ -46,6 +46,9 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/")(
 type Row = {
   id: string;
   numero: string | null;
+  nome?: string | null;
+  numero_sap?: string | null;
+
   cliente_nome: string;
   cliente_telefone: string | null;
   cliente_email: string | null;
@@ -101,9 +104,16 @@ function HistoricoCpoPage() {
     if (uf !== "todos" && r.uf !== uf) return false;
     if (!vend.matches(vendedor, r.created_by)) return false;
     const t = busca.trim().toLowerCase();
-    if (t && !`${r.cliente_nome} ${r.numero ?? ""}`.toLowerCase().includes(t)) return false;
+    if (
+      t &&
+      !`${r.cliente_nome} ${r.numero ?? ""} ${r.nome ?? ""} ${r.numero_sap ?? ""}`
+        .toLowerCase()
+        .includes(t)
+    )
+      return false;
     return true;
   });
+
 
 
 
@@ -147,7 +157,7 @@ function HistoricoCpoPage() {
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Buscar por cliente ou número"
+              placeholder="Buscar por cliente, nome da proposta, nº ou nº SAP"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -187,7 +197,10 @@ function HistoricoCpoPage() {
               <thead>
                 <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-4 py-3">Nº</th>
+                  <th className="text-left px-4 py-3">Proposta</th>
+                  <th className="text-left px-4 py-3">Nº SAP</th>
                   <th className="text-left px-4 py-3">Cliente</th>
+
                   <th className="text-left px-4 py-3">UF</th>
                   <th className="text-left px-4 py-3">Contribuinte</th>
                   <th className="text-right px-4 py-3">Valor</th>
@@ -200,7 +213,10 @@ function HistoricoCpoPage() {
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
+                    <td className="px-4 py-3">{r.nome || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{r.numero_sap || "—"}</td>
                     <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
+
                     <td className="px-4 py-3">{r.uf}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.contribuinte ? "Sim" : "Não"}</td>
                     <td className="px-4 py-3 text-right font-semibold">{fmtBRL(r.totais.valorTotal ?? 0)}</td>
@@ -259,9 +275,9 @@ function HistoricoCpoPage() {
       <Dialog open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{detalhe?.cliente_nome}</DialogTitle>
+            <DialogTitle>{detalhe?.nome || detalhe?.cliente_nome}</DialogTitle>
             <DialogDescription>
-              {detalhe?.numero} · {detalhe?.uf} · {detalhe?.contribuinte ? "Contribuinte" : "Não contribuinte"}
+              {detalhe?.cliente_nome} · {detalhe?.numero} · {detalhe?.uf} · {detalhe?.contribuinte ? "Contribuinte" : "Não contribuinte"}
             </DialogDescription>
           </DialogHeader>
           {detalhe && (
@@ -275,6 +291,8 @@ function HistoricoCpoPage() {
                 <Info label="Comissão" value={fmtBRL(detalhe.totais.comissao ?? 0)} />
                 <Info label="Frete" value={`${detalhe.frete_mod} · ${fmtBRL(detalhe.frete_valor)}`} />
                 <Info label="Contato" value={detalhe.cliente_telefone || detalhe.cliente_email || "—"} />
+                <Info label="Nome da proposta" value={detalhe.nome || "—"} />
+                <Info label="Nº SAP" value={detalhe.numero_sap || "—"} />
                 <Info label="Consultor" value={detalhe.consultor_nome || "—"} />
                 <Info label="Criado por" value={detalhe.criado_por_nome || "—"} />
                 <Info
