@@ -281,7 +281,6 @@ export type Database = {
           id: string
           ncm_id: string | null
           nome: string
-          potencia: string | null
           preco_sugerido: number
           updated_at: string
         }
@@ -293,7 +292,6 @@ export type Database = {
           id?: string
           ncm_id?: string | null
           nome: string
-          potencia?: string | null
           preco_sugerido?: number
           updated_at?: string
         }
@@ -305,7 +303,6 @@ export type Database = {
           id?: string
           ncm_id?: string | null
           nome?: string
-          potencia?: string | null
           preco_sugerido?: number
           updated_at?: string
         }
@@ -1163,7 +1160,6 @@ export type Database = {
           ncm_id: string | null
           origem: string
           permissao: string
-          potencia: string | null
           preco_sugerido: number
           sap_raw: Json | null
           tipo: string
@@ -1182,7 +1178,6 @@ export type Database = {
           ncm_id?: string | null
           origem?: string
           permissao?: string
-          potencia?: string | null
           preco_sugerido?: number
           sap_raw?: Json | null
           tipo?: string
@@ -1201,7 +1196,6 @@ export type Database = {
           ncm_id?: string | null
           origem?: string
           permissao?: string
-          potencia?: string | null
           preco_sugerido?: number
           sap_raw?: Json | null
           tipo?: string

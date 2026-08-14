@@ -6,21 +6,19 @@ export type CpoProductAdmin = {
   id: string;
   codigo: string | null;
   nome: string;
-  potencia: string | null;
   custo: number;
   ativo: boolean;
   ncm_id?: string | null;
 };
 
 /** Colunas do catálogo único do portal (`sap_produtos`). */
-const COLS = "id, codigo, descricao, potencia, custo, ativo, ncm_id, visibilidade";
+const COLS = "id, codigo, descricao, custo, ativo, ncm_id, visibilidade";
 
 function toProduct(p: any): CpoProductAdmin {
   return {
     id: p.id,
     codigo: p.codigo ?? null,
     nome: p.descricao,
-    potencia: p.potencia ?? null,
     custo: Number(p.custo ?? 0),
     ativo: p.ativo,
     ncm_id: p.ncm_id ?? null,

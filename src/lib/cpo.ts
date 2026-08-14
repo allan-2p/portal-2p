@@ -33,7 +33,6 @@ export type CpoProduct = {
   id: string;
   codigo?: string | null;
   nome: string;
-  potencia: string | null;
   custo: number;
   ativo: boolean;
   ncm_id?: string | null;
