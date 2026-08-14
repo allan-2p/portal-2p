@@ -46,6 +46,9 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/")(
 type Row = {
   id: string;
   numero: string | null;
+  nome?: string | null;
+  numero_sap?: string | null;
+
   cliente_nome: string;
   cliente_telefone: string | null;
   cliente_email: string | null;
