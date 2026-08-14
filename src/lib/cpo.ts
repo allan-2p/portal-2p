@@ -247,6 +247,10 @@ export function novoEstado(): CpoState {
     uf: "SP",
     contribuinte: false,
     finalidadeUso: "uso_consumo",
+    indicacao: false,
+    padrinhoId: null,
+    padrinhoNome: "",
+
     freteMod: "FOB",
     freteValor: 0,
     observacoes: OBSERVACOES_PADRAO,
