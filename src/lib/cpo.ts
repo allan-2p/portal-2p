@@ -400,10 +400,15 @@ export function statusMB(mbPct: number, config: CpoConfig): MbStatus {
   return { level: "good", msg: "MB% dentro da política." };
 }
 
-/** Margem padrão aplicada sobre o custo para sugerir o preço de venda. */
+/**
+ * Margem padrão aplicada sobre o custo para sugerir o preço de venda (37%).
+ * Não confundir com a política de MB mínima (33%, `politica_mb_min`): o
+ * sugerido nasce em 37% e a proposta nunca pode ser salva abaixo de 33%.
+ */
 export const MARGEM_PRECO_SUGERIDO = 0.37;
 
 /** Preço sugerido padrão: custo + 37% de margem sobre o custo. */
+
 export function precoSugeridoPadrao(custo: number) {
   const c = Number(custo) || 0;
   if (c <= 0) return 0;
