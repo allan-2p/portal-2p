@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AppLayout } from "@/components/app-layout";
@@ -14,7 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { adminListUserActivity } from "@/lib/activity.functions";
-import { ActivityDashboard } from "@/components/activity-dashboard";
+// Recharts é pesado: o painel só é baixado quando a tela realmente renderiza os gráficos.
+const ActivityDashboard = lazy(() =>
+  import("@/components/activity-dashboard").then((m) => ({ default: m.ActivityDashboard })),
+);
 import { SecurityAlerts } from "@/components/security-alerts";
 import { Loader2, Activity, LogIn, LogOut, RefreshCw, Search, ShieldAlert, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -137,7 +140,9 @@ function AtividadePage() {
 
         <SecurityAlerts />
 
-        <ActivityDashboard days={days} />
+        <Suspense fallback={<div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>}>
+          <ActivityDashboard days={days} />
+        </Suspense>
 
         {isLoading ? (
           <div className="p-10 text-center text-muted-foreground">
