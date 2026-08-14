@@ -201,7 +201,7 @@ function ProdutosTab() {
                             codigo: p.codigo ?? "",
                             nome: p.nome,
                             custo: String(p.custo),
-                            preco_sugerido: String(p.preco_sugerido ?? 0),
+                            preco_sugerido: String(p.preco_sugerido || precoSugeridoPadrao(p.custo)),
                             ativo: p.ativo,
                             ncm_id: p.ncm_id ?? null,
                           })
