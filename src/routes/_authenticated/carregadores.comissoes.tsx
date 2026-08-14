@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/comissoes")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="cpo.comissoes">
+    <AdminRouteGuard feature="cpo.comissoes" area="moderacao">
       <ComissoesCpoPage />
     </AdminRouteGuard>
   ),

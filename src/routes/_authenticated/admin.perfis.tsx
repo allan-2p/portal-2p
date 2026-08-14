@@ -29,7 +29,7 @@ import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 export const Route = createFileRoute("/_authenticated/admin/perfis")({
   component: () => (
-    <AdminRouteGuard feature="admin.perfis">
+    <AdminRouteGuard feature="admin.perfis" area="configuracoes">
       <PerfisPage />
     </AdminRouteGuard>
   ),

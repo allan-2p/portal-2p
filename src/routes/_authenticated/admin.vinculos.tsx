@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/admin/vinculos")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="admin.vinculos">
+    <AdminRouteGuard feature="admin.vinculos" area="configuracoes">
       <VinculosPage />
     </AdminRouteGuard>
   ),

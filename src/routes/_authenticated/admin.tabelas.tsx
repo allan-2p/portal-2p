@@ -63,7 +63,7 @@ import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 export const Route = createFileRoute("/_authenticated/admin/tabelas")({
   head: () => ({ meta: [{ title: "Tabelas — Portal 2P" }] }),
   component: () => (
-    <AdminRouteGuard feature="admin.tabelas">
+    <AdminRouteGuard feature="admin.tabelas" area="configuracoes">
       <TabelasPage />
     </AdminRouteGuard>
   ),

@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/regras")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="cpo.regras">
+    <AdminRouteGuard feature="cpo.regras" area="moderacao">
       <RegrasPage />
     </AdminRouteGuard>
   ),

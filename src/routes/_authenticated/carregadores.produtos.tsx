@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="cpo.produtos">
+    <AdminRouteGuard feature="cpo.produtos" area="moderacao">
       <ProdutosCpoPage />
     </AdminRouteGuard>
   ),

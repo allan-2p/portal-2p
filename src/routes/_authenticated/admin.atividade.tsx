@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/admin/atividade")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="admin.atividade">
+    <AdminRouteGuard feature="admin.atividade" area="logs">
       <AtividadePage />
     </AdminRouteGuard>
   ),
