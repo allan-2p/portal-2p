@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
+import { ExportLogsButton } from "@/components/admin/export-logs-button";
 import { ModerationAuditLog } from "@/components/moderation-audit-log";
 
 export const Route = createFileRoute("/_authenticated/admin/logs/moderacao")({
@@ -24,11 +25,14 @@ export const Route = createFileRoute("/_authenticated/admin/logs/moderacao")({
     <AdminRouteGuard feature="admin.logs.moderacao">
       <AppLayout>
         <div className="mx-auto max-w-6xl space-y-5">
-          <header>
+          <header className="flex flex-wrap items-end justify-between gap-3">
+            <div>
             <h1 className="text-2xl font-bold">Log de Moderação</h1>
             <p className="text-sm text-muted-foreground">
               Todas as alterações feitas nas moderações do Grupo 2P, com autor e data.
             </p>
+            </div>
+            <ExportLogsButton source="moderacao" />
           </header>
           <ModerationAuditLog
             title="Log de auditoria"
