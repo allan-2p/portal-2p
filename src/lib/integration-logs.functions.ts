@@ -29,7 +29,7 @@ export const listIntegrationLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { slug?: string; level?: "all" | "info" | "warn" | "error"; limit?: number; offset?: number }) => input)
   .handler(async ({ data, context }) => {
-    await assertFeature(context, "admin.integracoes", "editar");
+    await assertFeature(context, "admin.integracoes", "visualizar");
 
     const limit = Math.min(Math.max(data.limit ?? 10, 1), 100);
     const offset = Math.max(data.offset ?? 0, 0);
@@ -52,7 +52,7 @@ export const listIntegrationLogs = createServerFn({ method: "GET" })
 export const getIntegrationErrorSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertFeature(context, "admin.integracoes", "editar");
+    await assertFeature(context, "admin.integracoes", "visualizar");
 
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data, error } = await context.supabase

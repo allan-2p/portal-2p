@@ -109,7 +109,7 @@ export const adminListUserActivity = createServerFn({ method: "POST" })
       data,
       context,
     }): Promise<{ rows: ActivityRow[]; summary: ActivityUserSummary[] }> => {
-      await assertFeature(context, "admin.atividade", "editar");
+      await assertFeature(context, "admin.atividade", "visualizar");
 
       const since = new Date(Date.now() - data.days * 86400_000).toISOString();
       let q = context.supabase
@@ -185,7 +185,7 @@ export const adminActivityDashboard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => DashInput.parse(d))
   .handler(async ({ data, context }): Promise<ActivityDashboard> => {
-    await assertFeature(context, "admin.atividade", "editar");
+    await assertFeature(context, "admin.atividade", "visualizar");
 
     const since = new Date(Date.now() - data.days * 86400_000).toISOString();
     const { data: rows, error } = await context.supabase
@@ -280,7 +280,7 @@ export const adminSecurityAlerts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => AlertInput.parse(d))
   .handler(async ({ data, context }): Promise<{ alerts: SecurityAlert[]; windowMinutes: number }> => {
-    await assertFeature(context, "admin.atividade", "editar");
+    await assertFeature(context, "admin.atividade", "visualizar");
 
     const since = new Date(Date.now() - data.windowMinutes * 60_000).toISOString();
     const { data: rows, error } = await context.supabase
@@ -466,7 +466,7 @@ export const adminUpdateLogRetention = createServerFn({ method: "POST" })
 export const adminRunLogRetention = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertFeature(context, "admin.atividade", "editar");
+    await assertFeature(context, "admin.atividade", "visualizar");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin.rpc("apply_log_retention");
     if (error) throw new Error(error.message);

@@ -32,7 +32,7 @@ export const listModerationAudit = createServerFn({ method: "GET" })
     (input: { area?: string; areas?: string[]; instanceId?: string; limit?: number; offset?: number }) => input,
   )
   .handler(async ({ data, context }) => {
-    await assertFeature(context, "admin.metas", "editar");
+    await assertFeature(context, "admin.metas", "visualizar");
 
     const limit = Math.min(Math.max(data.limit ?? 10, 1), 100);
     const offset = Math.max(data.offset ?? 0, 0);
