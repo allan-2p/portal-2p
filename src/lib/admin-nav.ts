@@ -18,10 +18,11 @@ import {
   BookOpen,
   Settings2,
   SlidersHorizontal,
+  ScrollText,
 } from "lucide-react";
 import type { FeatureKey } from "@/lib/instances";
 
-export type AdminSectionId = "configuracoes" | "integracoes" | "moderacao";
+export type AdminSectionId = "configuracoes" | "integracoes" | "moderacao" | "logs";
 
 export type AdminNavItem = {
   to: string;
@@ -57,7 +58,6 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         label: "Usuários",
         items: [
           { to: "/usuarios", label: "Usuários", icon: Users, feature: "admin.usuarios" },
-          { to: "/admin/atividade", label: "Log de Usuários", icon: ActivityIcon, feature: "admin.atividade" },
           { to: "/admin/vinculos", label: "Vínculos Salesforce", icon: Link2, feature: "admin.vinculos" },
         ],
       },
@@ -147,6 +147,23 @@ export const ADMIN_SECTIONS: AdminSection[] = [
           { to: "/carregadores/produtos", label: "Gestão de Produtos", icon: Package, feature: "cpo.produtos" },
           { to: "/carregadores/comissoes", label: "Comissões", icon: Percent, feature: "cpo.comissoes" },
           { to: "/carregadores/regras", label: "Regras", icon: BookOpen, feature: "cpo.regras" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "logs",
+    label: "Logs",
+    icon: ScrollText,
+    home: "/admin/atividade",
+    groups: [
+      {
+        label: "Logs do portal",
+        items: [
+          { to: "/admin/atividade", label: "Log de Usuários", icon: ActivityIcon, feature: "admin.atividade" },
+          { to: "/admin/logs/integracoes", label: "Log de Integrações", icon: Plug, feature: "admin.logs.integracoes" },
+          { to: "/admin/logs/moderacao", label: "Log de Moderação", icon: ShieldCheck, feature: "admin.logs.moderacao" },
+          { to: "/admin/logs/retencao", label: "Retenção e limpeza", icon: ScrollText, feature: "admin.logs.retencao" },
         ],
       },
     ],

@@ -70,6 +70,9 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as AuthenticatedCarregadoresPropostasNovaRouteImport } from './routes/_authenticated/carregadores.propostas.nova'
 import { Route as AuthenticatedCarregadoresPropostasAuditoriaRouteImport } from './routes/_authenticated/carregadores.propostas.auditoria'
 import { Route as AuthenticatedCarregadoresClientesCadastrosRouteImport } from './routes/_authenticated/carregadores.clientes.cadastros'
+import { Route as AuthenticatedAdminLogsRetencaoRouteImport } from './routes/_authenticated/admin.logs.retencao'
+import { Route as AuthenticatedAdminLogsModeracaoRouteImport } from './routes/_authenticated/admin.logs.moderacao'
+import { Route as AuthenticatedAdminLogsIntegracoesRouteImport } from './routes/_authenticated/admin.logs.integracoes'
 
 const TvGeralRoute = TvGeralRouteImport.update({
   id: '/tv-geral',
@@ -415,6 +418,24 @@ const AuthenticatedCarregadoresClientesCadastrosRoute =
     path: '/cadastros',
     getParentRoute: () => AuthenticatedCarregadoresClientesRoute,
   } as any)
+const AuthenticatedAdminLogsRetencaoRoute =
+  AuthenticatedAdminLogsRetencaoRouteImport.update({
+    id: '/admin/logs/retencao',
+    path: '/admin/logs/retencao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminLogsModeracaoRoute =
+  AuthenticatedAdminLogsModeracaoRouteImport.update({
+    id: '/admin/logs/moderacao',
+    path: '/admin/logs/moderacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminLogsIntegracoesRoute =
+  AuthenticatedAdminLogsIntegracoesRouteImport.update({
+    id: '/admin/logs/integracoes',
+    path: '/admin/logs/integracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -469,6 +490,9 @@ export interface FileRoutesByFullPath {
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
+  '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
+  '/admin/logs/moderacao': typeof AuthenticatedAdminLogsModeracaoRoute
+  '/admin/logs/retencao': typeof AuthenticatedAdminLogsRetencaoRoute
   '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
@@ -528,6 +552,9 @@ export interface FileRoutesByTo {
   '/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/carregadores': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
+  '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
+  '/admin/logs/moderacao': typeof AuthenticatedAdminLogsModeracaoRoute
+  '/admin/logs/retencao': typeof AuthenticatedAdminLogsRetencaoRoute
   '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
@@ -592,6 +619,9 @@ export interface FileRoutesById {
   '/_authenticated/marketing/trafego': typeof AuthenticatedMarketingTrafegoRoute
   '/_authenticated/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
+  '/_authenticated/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
+  '/_authenticated/admin/logs/moderacao': typeof AuthenticatedAdminLogsModeracaoRoute
+  '/_authenticated/admin/logs/retencao': typeof AuthenticatedAdminLogsRetencaoRoute
   '/_authenticated/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/_authenticated/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/_authenticated/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
@@ -656,6 +686,9 @@ export interface FileRouteTypes {
     | '/marketing/trafego'
     | '/carregadores/'
     | '/marketing/'
+    | '/admin/logs/integracoes'
+    | '/admin/logs/moderacao'
+    | '/admin/logs/retencao'
     | '/carregadores/clientes/cadastros'
     | '/carregadores/propostas/auditoria'
     | '/carregadores/propostas/nova'
@@ -715,6 +748,9 @@ export interface FileRouteTypes {
     | '/marketing/trafego'
     | '/carregadores'
     | '/marketing'
+    | '/admin/logs/integracoes'
+    | '/admin/logs/moderacao'
+    | '/admin/logs/retencao'
     | '/carregadores/clientes/cadastros'
     | '/carregadores/propostas/auditoria'
     | '/carregadores/propostas/nova'
@@ -778,6 +814,9 @@ export interface FileRouteTypes {
     | '/_authenticated/marketing/trafego'
     | '/_authenticated/carregadores/'
     | '/_authenticated/marketing/'
+    | '/_authenticated/admin/logs/integracoes'
+    | '/_authenticated/admin/logs/moderacao'
+    | '/_authenticated/admin/logs/retencao'
     | '/_authenticated/carregadores/clientes/cadastros'
     | '/_authenticated/carregadores/propostas/auditoria'
     | '/_authenticated/carregadores/propostas/nova'
@@ -1233,6 +1272,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarregadoresClientesCadastrosRouteImport
       parentRoute: typeof AuthenticatedCarregadoresClientesRoute
     }
+    '/_authenticated/admin/logs/retencao': {
+      id: '/_authenticated/admin/logs/retencao'
+      path: '/admin/logs/retencao'
+      fullPath: '/admin/logs/retencao'
+      preLoaderRoute: typeof AuthenticatedAdminLogsRetencaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/logs/moderacao': {
+      id: '/_authenticated/admin/logs/moderacao'
+      path: '/admin/logs/moderacao'
+      fullPath: '/admin/logs/moderacao'
+      preLoaderRoute: typeof AuthenticatedAdminLogsModeracaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/logs/integracoes': {
+      id: '/_authenticated/admin/logs/integracoes'
+      path: '/admin/logs/integracoes'
+      fullPath: '/admin/logs/integracoes'
+      preLoaderRoute: typeof AuthenticatedAdminLogsIntegracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -1368,6 +1428,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarregadoresTarefasRoute: typeof AuthenticatedCarregadoresTarefasRoute
   AuthenticatedIntegracoesSlugRoute: typeof AuthenticatedIntegracoesSlugRoute
   AuthenticatedCarregadoresIndexRoute: typeof AuthenticatedCarregadoresIndexRoute
+  AuthenticatedAdminLogsIntegracoesRoute: typeof AuthenticatedAdminLogsIntegracoesRoute
+  AuthenticatedAdminLogsModeracaoRoute: typeof AuthenticatedAdminLogsModeracaoRoute
+  AuthenticatedAdminLogsRetencaoRoute: typeof AuthenticatedAdminLogsRetencaoRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1404,6 +1467,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCarregadoresTarefasRoute: AuthenticatedCarregadoresTarefasRoute,
   AuthenticatedIntegracoesSlugRoute: AuthenticatedIntegracoesSlugRoute,
   AuthenticatedCarregadoresIndexRoute: AuthenticatedCarregadoresIndexRoute,
+  AuthenticatedAdminLogsIntegracoesRoute:
+    AuthenticatedAdminLogsIntegracoesRoute,
+  AuthenticatedAdminLogsModeracaoRoute: AuthenticatedAdminLogsModeracaoRoute,
+  AuthenticatedAdminLogsRetencaoRoute: AuthenticatedAdminLogsRetencaoRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
