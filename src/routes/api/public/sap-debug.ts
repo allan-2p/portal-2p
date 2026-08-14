@@ -22,17 +22,30 @@ export const Route = createFileRoute("/api/public/sap-debug")({
         }
         const url = process.env["SAP_BRIDGE_URL"]!;
         const auth = process.env["SAP_BRIDGE_AUTH"]!;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: {
-            "content-type": "application/soap+xml; charset=utf-8",
-            accept: "application/soap+xml, text/xml, */*",
-            authorization: auth,
+        const bytes = new TextEncoder().encode(BODY);
+        const variants: Record<string, RequestInit> = {
+          plain: { body: BODY, headers: { "content-type": "application/soap+xml; charset=utf-8", authorization: auth } },
+          bytesLen: {
+            body: bytes,
+            headers: {
+              "content-type": "application/soap+xml; charset=utf-8",
+              "content-length": String(bytes.byteLength),
+              authorization: auth,
+            },
           },
-          body: BODY,
-        });
-        const xml = await res.text();
-        return Response.json({ status: res.status, len: xml.length, head: xml.slice(0, 500) });
+          textxml: { body: BODY, headers: { "content-type": "text/xml; charset=utf-8", soapaction: '""', authorization: auth } },
+        };
+        const out: Record<string, unknown> = {};
+        for (const [name, init] of Object.entries(variants)) {
+          try {
+            const res = await fetch(url, { method: "POST", ...init });
+            const xml = await res.text();
+            out[name] = { status: res.status, len: xml.length, head: xml.slice(0, 200) };
+          } catch (e: any) {
+            out[name] = { error: String(e?.message ?? e) };
+          }
+        }
+        return Response.json(out);
       },
     },
   },
