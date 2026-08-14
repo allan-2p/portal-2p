@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Navigate, useRouterState } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/_authenticated/dashboards")({
+export const Route = createFileRoute("/_authenticated/solar/dashboards")({
   head: () => ({
     meta: [
       { title: "Dashboards — Portal 2P" },

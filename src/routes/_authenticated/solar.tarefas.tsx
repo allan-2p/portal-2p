@@ -22,7 +22,7 @@ import { getSalesforceTasks, type SalesforceTask } from "@/lib/salesforce.functi
 import { VendedorFilter } from "@/components/vendedor-filter";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
 
-export const Route = createFileRoute("/_authenticated/tarefas")({
+export const Route = createFileRoute("/_authenticated/solar/tarefas")({
   head: () => ({
     meta: [
       { title: "Tarefas — Portal 2P" },

@@ -7,7 +7,7 @@ import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.
 import { Sparkles, Check, MinusCircle, X, MessageSquare, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/clientes/sugestoes")({
+export const Route = createFileRoute("/_authenticated/solar/clientes/sugestoes")({
   head: () => ({ meta: [{ title: "Sugestões do Atlas — Portal 2P" }] }),
   component: SugestoesPage,
 });

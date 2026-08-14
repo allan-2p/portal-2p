@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2, AlertTriangle, Trophy, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/_authenticated/clientes/ranking")({
+export const Route = createFileRoute("/_authenticated/solar/clientes/ranking")({
   head: () => ({
     meta: [
       { title: "Ranking de Clientes — Portal 2P" },

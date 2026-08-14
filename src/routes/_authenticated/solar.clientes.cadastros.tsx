@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { ClientesCadastroPage } from "@/components/clientes-cadastro-page";
 
-export const Route = createFileRoute("/_authenticated/clientes/cadastros")({
+export const Route = createFileRoute("/_authenticated/solar/clientes/cadastros")({
   head: () => ({
     meta: [
       { title: "Cadastro de clientes — Portal 2P Solar" },

@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/app-layout";
 import { Sparkles, Target, AlertTriangle, TrendingUp, LineChart, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/atlas")({
+export const Route = createFileRoute("/_authenticated/solar/atlas")({
   head: () => ({ meta: [{ title: "Atlas — Portal 2P" }] }),
   component: AtlasPage,
 });

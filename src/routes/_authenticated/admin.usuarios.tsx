@@ -36,7 +36,7 @@ import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
-export const Route = createFileRoute("/_authenticated/usuarios")({
+export const Route = createFileRoute("/_authenticated/admin/usuarios")({
   head: () => ({
     meta: [
       { title: "Usuários — Portal 2P" },

@@ -5,7 +5,7 @@ import { VendedorFilter } from "@/components/vendedor-filter";
 import { GoalsPanel } from "@/components/goals-panel";
 import { CARTEIRA_OWNER_IDS } from "@/lib/salespeople";
 
-export const Route = createFileRoute("/_authenticated/dashboards/metas")({
+export const Route = createFileRoute("/_authenticated/solar/dashboards/metas")({
   head: () => ({ meta: [{ title: "Metas — Portal 2P" }] }),
   component: DashboardMetasPage,
 });

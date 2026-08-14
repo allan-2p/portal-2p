@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/permission-gate";
 
-export const Route = createFileRoute("/_authenticated/cupons")({
+export const Route = createFileRoute("/_authenticated/solar/cupons")({
   head: () => ({
     meta: [
       { title: "Cupons — Portal 2P" },

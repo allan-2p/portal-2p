@@ -14,7 +14,7 @@ import { IntegrationAlertsBanner } from "@/components/integration-alerts";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
-export const Route = createFileRoute("/_authenticated/integracoes")({
+export const Route = createFileRoute("/_authenticated/admin/integracoes")({
   head: () => ({ meta: [{ title: "Integrações · Portal 2P" }] }),
   component: () => (
     <AdminRouteGuard feature="admin.integracoes" area="integracoes">

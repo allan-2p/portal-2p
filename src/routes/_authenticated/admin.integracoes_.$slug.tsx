@@ -14,7 +14,7 @@ import { IntegrationLogsPanel } from "@/components/integration-logs";
 import { IntegrationAlertBadge, IntegrationAlertSettingsCard, useIntegrationAlerts } from "@/components/integration-alerts";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
-export const Route = createFileRoute("/_authenticated/integracoes_/$slug")({
+export const Route = createFileRoute("/_authenticated/admin/integracoes_/$slug")({
   head: () => ({
     meta: [
       { title: "Configuração da integração · Portal 2P" },

@@ -44,7 +44,7 @@ import {
 
 type Search = { account?: string };
 
-export const Route = createFileRoute("/_authenticated/clientes/perfil")({
+export const Route = createFileRoute("/_authenticated/solar/clientes/perfil")({
   head: () => ({ meta: [{ title: "Perfil do Cliente — Portal 2P" }] }),
   validateSearch: (s: Record<string, unknown>): Search => ({
     account: typeof s.account === "string" ? s.account : undefined,

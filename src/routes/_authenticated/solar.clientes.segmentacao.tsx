@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/select";
 
 
-export const Route = createFileRoute("/_authenticated/clientes/segmentacao")({
+export const Route = createFileRoute("/_authenticated/solar/clientes/segmentacao")({
   head: () => ({ meta: [{ title: "Perfil de Cliente — Portal 2P" }] }),
   component: SegmentacaoPage,
 });

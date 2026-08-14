@@ -10,7 +10,7 @@ import { propostaStatusStyle } from "@/lib/proposta-status";
 import { getSalesforcePedidos, PEDIDO_STATUS, type PedidoStatus, type SalesforceOppRow } from "@/lib/salesforce.functions";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
 
-export const Route = createFileRoute("/_authenticated/pedidos")({
+export const Route = createFileRoute("/_authenticated/solar/pedidos")({
   head: () => ({
     meta: [
       { title: "Pedidos — Portal 2P" },
