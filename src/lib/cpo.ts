@@ -106,8 +106,13 @@ export const labelFreteMod: Record<CpoFreteMod, string> = {
 };
 
 export type CpoState = {
+  /** Nome/identificação da proposta (padrão universal do portal). */
+  propostaNome: string;
+  /** Nº do pedido no SAP vinculado à proposta. */
+  numeroSap: string;
   nome: string;
   telefone: string;
+
   email: string;
   doc: string;
   ie: string;
