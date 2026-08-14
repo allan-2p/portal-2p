@@ -68,6 +68,12 @@ export const ADMIN_SECTIONS: AdminSection[] = [
           { to: "/admin/auditoria", label: "Auditoria de Acessos", icon: ShieldCheck, feature: "admin.auditoria" },
         ],
       },
+      {
+        label: "Objetos e Campos",
+        items: [
+          { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.produtos" },
+        ],
+      },
     ],
   },
   {
@@ -124,13 +130,6 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     icon: SlidersHorizontal,
     home: "/admin/metas",
     groups: [
-      {
-        label: "Grupo 2P",
-        collapsible: true,
-        items: [
-          { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.produtos" },
-        ],
-      },
       {
         label: "2P Solar",
         collapsible: true,
