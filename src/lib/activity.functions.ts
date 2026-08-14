@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getRequestIP, getRequestHeader } from "@tanstack/react-start/server";
+
 
 /** Guard por tela/ação (default deny) — admin, acesso total ou perfil com a tela. */
 async function assertFeature(
