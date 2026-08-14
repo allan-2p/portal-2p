@@ -269,6 +269,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cpo_metas: {
+        Row: {
+          ano: number
+          ativo: boolean
+          created_at: string
+          id: string
+          mes: number
+          meta: number
+          meta_bonus: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ano: number
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          mes: number
+          meta?: number
+          meta_bonus?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ano?: number
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          mes?: number
+          meta?: number
+          meta_bonus?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cpo_ncm: {
         Row: {
           aliq_inter: number
