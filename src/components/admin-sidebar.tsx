@@ -1,4 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { getAdminAreas } from "@/lib/admin-guard.functions";
+
 import { AlertTriangle, ArrowLeft, ChevronDown } from "lucide-react";
 import { sectionForPath } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
