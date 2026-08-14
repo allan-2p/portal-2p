@@ -104,9 +104,16 @@ function HistoricoCpoPage() {
     if (uf !== "todos" && r.uf !== uf) return false;
     if (!vend.matches(vendedor, r.created_by)) return false;
     const t = busca.trim().toLowerCase();
-    if (t && !`${r.cliente_nome} ${r.numero ?? ""}`.toLowerCase().includes(t)) return false;
+    if (
+      t &&
+      !`${r.cliente_nome} ${r.numero ?? ""} ${r.nome ?? ""} ${r.numero_sap ?? ""}`
+        .toLowerCase()
+        .includes(t)
+    )
+      return false;
     return true;
   });
+
 
 
 
