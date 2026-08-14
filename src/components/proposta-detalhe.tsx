@@ -87,6 +87,9 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             <Campo label="Contribuinte" value={p['contribuinte'] ? "Sim" : "Não"} />
             <Campo label="Finalidade de uso" value={labelFinalidade(p['finalidade_uso'])} />
             <Campo label="Frete" value={`${p['frete_mod'] ?? "—"} · ${fmtBRL(frete)}`} />
+            <Campo label="Indicação" value={p['indicacao'] ? "Sim" : "Não"} />
+            {p['indicacao'] ? <Campo label="Padrinho" value={p['padrinho_nome'] || "—"} /> : null}
+
           </div>
         </div>
 
