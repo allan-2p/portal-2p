@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Pencil, Save, Search } from "lucide-react";
+import { AlertCircle, Pencil, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { validateAtivacaoCarregadores } from "@/lib/product-visibility";
@@ -85,6 +85,18 @@ function ProdutosTab() {
   const [busca, setBusca] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  // Aviso ao vivo: mostra o que falta antes mesmo de clicar em Salvar.
+  const avisoAtivacao =
+    draft && draft.ativo
+      ? validateAtivacaoCarregadores({
+          custo: Number(draft.custo) || 0,
+          ncm_id: draft.ncm_id,
+          ncm_codigo: draft.ncm_codigo ?? null,
+        })
+      : null;
+  const nomeInvalido = !!draft && !draft.nome.trim();
 
   const filtrados = produtos.filter((p) =>
     `${p.codigo ?? ""} ${p.nome}`.toLowerCase().includes(busca.trim().toLowerCase()),
@@ -95,12 +107,16 @@ function ProdutosTab() {
 
   async function salvar() {
     if (!draft) return;
-    if (!draft.id) return toast.error("Produtos só podem ser criados pela sincronização com o SAP.");
-    if (!draft.nome.trim()) return toast.error("Informe o nome do produto.");
-    const impedimento = draft.ativo
-      ? validateAtivacaoCarregadores({ custo: Number(draft.custo) || 0, ncm_id: draft.ncm_id, ncm_codigo: draft.ncm_codigo ?? null })
-      : null;
-    if (impedimento) return toast.error(impedimento);
+    setErro(null);
+    const falha = (msg: string) => {
+      setErro(msg);
+      toast.error(msg);
+    };
+    if (!draft.id) return falha("Produtos só podem ser criados pela sincronização com o SAP.");
+    if (!draft.nome.trim()) return falha("Informe o nome do produto.");
+    if (Number.isNaN(Number(draft.custo))) return falha("Custo inválido.");
+    if (Number.isNaN(Number(draft.preco_sugerido))) return falha("Preço sugerido inválido.");
+    if (avisoAtivacao) return falha(avisoAtivacao);
 
     setSaving(true);
     try {
@@ -115,9 +131,10 @@ function ProdutosTab() {
       });
       toast.success("Produto atualizado.");
       setDraft(null);
+      setErro(null);
       invalidate();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível salvar o produto.");
+      falha(e instanceof Error ? e.message : "Não foi possível salvar o produto.");
     } finally {
       setSaving(false);
     }
@@ -243,20 +260,46 @@ function ProdutosTab() {
         </div>
       </div>
 
-      <Dialog open={!!draft} onOpenChange={(v) => !v && setDraft(null)}>
+      <Dialog
+        open={!!draft}
+        onOpenChange={(v) => {
+          if (!v) {
+            setDraft(null);
+            setErro(null);
+          }
+        }}
+      >
         <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg overflow-hidden p-4 sm:p-6 max-h-[90dvh] flex flex-col gap-4">
           <DialogHeader className="text-left">
             <DialogTitle className="break-words">Editar produto</DialogTitle>
           </DialogHeader>
           {draft && (
             <div className="space-y-3 min-w-0 flex-1 overflow-y-auto -mx-1 px-1">
+              {(erro || avisoAtivacao) && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+                >
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span className="min-w-0 break-words">{erro || avisoAtivacao}</span>
+                </div>
+              )}
 
               <Field label="Código (SKU)">
                 <Input className="w-full" value={draft.codigo} readOnly disabled />
               </Field>
 
               <Field label="Nome">
-                <Input className="w-full" value={draft.nome} onChange={(e) => setDraft({ ...draft, nome: e.target.value })} />
+                <Input
+                  className={`w-full ${nomeInvalido ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  value={draft.nome}
+                  aria-invalid={nomeInvalido}
+                  onChange={(e) => {
+                    setErro(null);
+                    setDraft({ ...draft, nome: e.target.value });
+                  }}
+                />
+                {nomeInvalido && <p className="mt-1 text-xs text-destructive">Informe o nome do produto.</p>}
               </Field>
               
               <Field label="Custo (R$)">
@@ -315,8 +358,13 @@ function ProdutosTab() {
             <Button variant="outline" className="w-full sm:w-auto" onClick={() => setDraft(null)}>
               Cancelar
             </Button>
-            <Button onClick={salvar} disabled={saving} className="w-full gap-2 sm:w-auto">
-              <Save className="h-4 w-4" /> Salvar
+            <Button
+              onClick={salvar}
+              disabled={saving || nomeInvalido || !!avisoAtivacao}
+              title={avisoAtivacao ?? (nomeInvalido ? "Informe o nome do produto." : undefined)}
+              className="w-full gap-2 sm:w-auto"
+            >
+              <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
 
