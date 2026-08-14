@@ -22,22 +22,10 @@ export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   component: CpoPedidosPage,
 });
 
-const PEDIDO_STATUS = [
-  "Aguardando Pagamento",
-  "Processando",
-  "Separação",
-  "Faturado",
-  "Coletado",
-] as const;
-type PedidoStatus = (typeof PEDIDO_STATUS)[number];
+const PEDIDO_STATUS = PROPOSTA_STATUS;
+type PedidoStatus = PropostaStatus;
 
-const STATUS_STYLE: Record<PedidoStatus, { bg: string; fg: string }> = {
-  "Aguardando Pagamento": { bg: "#32658A", fg: "#F8FAFC" },
-  "Processando": { bg: "#C6A24A", fg: "#1F1A10" },
-  "Separação": { bg: "#5F97B8", fg: "#F8FAFC" },
-  "Faturado": { bg: "#262626", fg: "#F8FAFC" },
-  "Coletado": { bg: "#4A9F8C", fg: "#F8FAFC" },
-};
+const STATUS_STYLE = PROPOSTA_STATUS_STYLE;
 
 type Pedido = {
   id: string;

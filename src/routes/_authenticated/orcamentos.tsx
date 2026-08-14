@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { PropostaWizard, type NovaPropostaResult } from "@/components/proposta-wizard";
+import { PROPOSTA_STATUS, PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
 import {
   Dialog,
   DialogContent,
