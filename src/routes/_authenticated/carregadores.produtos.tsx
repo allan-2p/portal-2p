@@ -88,6 +88,9 @@ function ProdutosTab() {
     `${p.codigo ?? ""} ${p.nome}`.toLowerCase().includes(busca.trim().toLowerCase()),
   );
 
+  const saveProduct = useServerFn(updateCpoProduct);
+  const toggleProduct = useServerFn(setCpoProductAtivo);
+
   async function salvar() {
     if (!draft) return;
     if (!draft.id) return toast.error("Produtos só podem ser criados pela sincronização com o SAP.");
@@ -96,44 +99,40 @@ function ProdutosTab() {
       ? validateAtivacaoCarregadores({ custo: Number(draft.custo) || 0, ncm_id: draft.ncm_id })
       : null;
     if (impedimento) return toast.error(impedimento);
-    const payload = {
-      descricao: draft.nome.trim(),
-      custo: Number(draft.custo) || 0,
-      preco_sugerido: Number(draft.preco_sugerido) || 0,
-      ativo: draft.ativo,
-    };
 
     setSaving(true);
-    const { error } = await supabase.from("sap_produtos").update(payload).eq("id", draft.id);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    void logModeration({
-      area: "cpo_produtos",
-      action: "atualizou",
-      target: payload.descricao,
-      summary: `Produto atualizado: ${payload.descricao}`,
-      details: { custo: payload.custo, ativo: payload.ativo },
-    });
-    toast.success("Produto atualizado.");
-    setDraft(null);
-    invalidate();
+    try {
+      await saveProduct({
+        data: {
+          id: draft.id,
+          nome: draft.nome.trim(),
+          custo: Number(draft.custo) || 0,
+          preco_sugerido: Number(draft.preco_sugerido) || 0,
+          ativo: draft.ativo,
+        },
+      });
+      toast.success("Produto atualizado.");
+      setDraft(null);
+      invalidate();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível salvar o produto.");
+    } finally {
+      setSaving(false);
+    }
   }
-
 
   async function toggleAtivo(p: CpoProduct) {
     if (!p.ativo) {
       const impedimento = validateAtivacaoCarregadores({ custo: Number(p.custo) || 0, ncm_id: p.ncm_id ?? null });
       if (impedimento) return toast.error(impedimento);
     }
-    const { error } = await supabase.from("sap_produtos").update({ ativo: !p.ativo }).eq("id", p.id);
-    if (error) return toast.error(error.message);
-    void logModeration({
-      area: "cpo_produtos",
-      action: p.ativo ? "desativou" : "ativou",
-      target: p.nome,
-      summary: `Produto ${p.ativo ? "desativado" : "ativado"}: ${p.nome}`,
-    });
-    invalidate();
+    try {
+      await toggleProduct({ data: { id: p.id, ativo: !p.ativo } });
+      toast.success(p.ativo ? "Produto desativado." : "Produto ativado.");
+      invalidate();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível alterar o status do produto.");
+    }
   }
 
 
