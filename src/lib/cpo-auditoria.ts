@@ -8,6 +8,7 @@
 import {
   calcularCpo,
   calcularDifal,
+  finalidadeGeraDifal,
   pctComissaoPorCmv,
   type CpoConfig,
   type CpoNcm,
