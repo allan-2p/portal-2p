@@ -220,7 +220,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       const ncmSapMap = new Map<string, string>();
       try {
         const { fetchEstoqueSap, mapearEstoque } = await import("./sap-estoque.server");
-        const { estoque } = mapearEstoque(await fetchEstoqueSap());
+        const { estoque } = mapearEstoque(await fetchEstoqueSap({ grupos: "" }));
         for (const e of estoque) if (e.ncm) ncmSapMap.set(e.material, e.ncm);
       } catch (err) {
         console.error("[SAP] NCM (ZMMR059) indisponível nesta sincronização:", err);
