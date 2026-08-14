@@ -367,14 +367,12 @@ function UsuariosPage() {
 }
 
 function PortalTable({
-  rows, loading, currentUserId, onOrgChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit, onDetail, onSimulate,
+  rows, loading, currentUserId, onOrgChange, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit, onDetail, onSimulate,
 }: {
   rows: Row[];
   loading: boolean;
   currentUserId: string | undefined;
   onOrgChange: (id: string, o: Org) => void;
-  onToggle: (id: string, ativo: boolean) => void;
-  onDelete: (id: string) => void;
   onReload: () => void;
   onScopeChange: (id: string, scope: FilterScope) => void;
   onSfIdChange: (id: string, sf_user_id: string | null) => void;
