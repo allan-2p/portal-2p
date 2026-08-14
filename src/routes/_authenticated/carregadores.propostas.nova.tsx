@@ -725,6 +725,9 @@ function PropostaCpoPage() {
         data: {
           propostaId,
           numero,
+          propostaNome: state.propostaNome.trim() || null,
+          numeroSap: state.numeroSap.trim() || null,
+
           cliente: {
             nome: state.nome,
             telefone: state.telefone,
