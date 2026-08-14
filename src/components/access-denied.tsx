@@ -46,10 +46,10 @@ export function AccessDenied({
                 variant="ghost"
                 className="h-9 justify-between px-2 text-sm"
               >
-                <Link to={s.path}>
+                <a href={s.path}>
                   <span>{s.label}</span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                </Link>
+                </a>
               </Button>
             ))}
           </div>
