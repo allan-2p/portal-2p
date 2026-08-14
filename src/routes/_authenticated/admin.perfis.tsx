@@ -283,6 +283,8 @@ function PerfisPage() {
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
+        ) : tab === "matriz" ? (
+          <PermissionMatrix profiles={profiles} />
         ) : (
           <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
             <div className="glass rounded-xl overflow-hidden h-fit">
