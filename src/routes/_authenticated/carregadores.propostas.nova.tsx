@@ -149,6 +149,9 @@ function PropostaCpoPage() {
 
   // Nova proposta sempre começa vazia; só carrega dados ao editar/duplicar uma proposta salva.
   const [state, setState] = useState<CpoState>(() => novoEstado());
+  // Itens cujo valor unitário acabou de ser atualizado pelo Preço Sugerido.
+  const [precoChanges, setPrecoChanges] = useState<Record<string, { de: number; para: number }>>({});
+
   const [openCli, setOpenCli] = useState(false);
   const [etapa, setEtapa] = useState<1 | 2 | 3 | 4>(1);
   const [tentouAvancar, setTentouAvancar] = useState(false);
@@ -388,6 +391,7 @@ function PropostaCpoPage() {
   // preço sugerido (catálogo) e recalcula os totais automaticamente.
   useEffect(() => {
     if (!produtos.length) return;
+    const mudancas: Record<string, { de: number; para: number }> = {};
     setState((s) => {
       let mudou = false;
       const itens = s.itens.map((i) => {
@@ -400,11 +404,17 @@ function PropostaCpoPage() {
           !i.valorManual && (!(i.valor > 0) || i.sugeridoAplicado === i.valor);
         if (!podeAplicar) return i;
         mudou = true;
+        if (i.valor > 0) mudancas[i.key] = { de: i.valor, para: sugerido };
         return { ...i, valor: sugerido, sugeridoAplicado: sugerido };
       });
       return mudou ? { ...s, itens } : s;
     });
+    if (Object.keys(mudancas).length) {
+      setPrecoChanges((p) => ({ ...p, ...mudancas }));
+      window.setTimeout(() => setPrecoChanges({}), 8000);
+    }
   }, [produtos]);
+
 
 
 
@@ -1194,6 +1204,14 @@ function PropostaCpoPage() {
                       </Field>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {(() => {
+                        const sugerido = money2(
+                          produtos.find((p) => p.id === it.produtoId)?.preco_sugerido ?? 0,
+                        );
+                        const usandoSugerido =
+                          !it.valorManual && sugerido > 0 && money2(it.valor) === sugerido;
+                        const mudou = precoChanges[it.key];
+                        return (
                       <Field label="Valor unitário (com IPI)">
                         <MoneyInput
                           value={it.valor}
@@ -1209,12 +1227,48 @@ function PropostaCpoPage() {
                             })
                           }
                         />
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                              usandoSugerido
+                                ? "border-primary/40 bg-primary/10 text-primary"
+                                : "border-border bg-muted text-muted-foreground",
+                            )}
+                          >
+                            {usandoSugerido ? "Preço Sugerido" : "Preço manual"}
+                          </span>
+                          {sugerido > 0 && !usandoSugerido ? (
+                            <button
+                              type="button"
+                              className="text-[11px] text-primary underline underline-offset-2"
+                              onClick={() =>
+                                setItem(it.key, {
+                                  valor: sugerido,
+                                  valorManual: false,
+                                  sugeridoAplicado: sugerido,
+                                })
+                              }
+                            >
+                              Usar sugerido ({fmtBRL(sugerido)})
+                            </button>
+                          ) : null}
+                        </div>
+                        {mudou ? (
+                          <p className="text-[11px] text-primary mt-1">
+                            Recalculado: {fmtBRL(mudou.de)} → {fmtBRL(mudou.para)}
+                          </p>
+                        ) : null}
+
 
 
                         {semValor ? (
                           <p className="text-[11px] text-destructive mt-1">Informe o valor unitário deste item.</p>
                         ) : null}
                       </Field>
+                        );
+                      })()}
+
 
                       <div className="flex items-end justify-between gap-2">
                         <div className="text-xs text-muted-foreground">
