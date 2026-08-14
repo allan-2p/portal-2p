@@ -451,11 +451,22 @@ function PerfisPage() {
                               <div className="grid gap-1.5 sm:grid-cols-2 p-3">
                                 {gk.map((f) => {
                                   const scope = featureScopeLabel(f);
+                                  const isAreaToggle = group.accessKey === f;
                                   return (
                                     <label
                                       key={f}
-                                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border hover:bg-surface-2 cursor-pointer text-sm"
+                                      title={
+                                        isAreaToggle
+                                          ? "Libera a engrenagem e todas as telas desta área, sem precisar marcar tela por tela."
+                                          : undefined
+                                      }
+                                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm ${
+                                        isAreaToggle
+                                          ? "sm:col-span-2 border-primary/50 bg-primary/5 font-medium"
+                                          : "border-border hover:bg-surface-2"
+                                      }`}
                                     >
+
                                       <input
                                         type="checkbox"
                                         checked={keys.has(f)}

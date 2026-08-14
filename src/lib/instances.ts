@@ -39,6 +39,9 @@ export type FeatureKey =
   | "admin.auditoria"
   | "admin.atividade"
   | "admin.vinculos"
+  | "admin.area.configuracoes"
+  | "admin.area.moderacao"
+  | "admin.area.integracoes"
   | "marketing.home"
   | "marketing.social"
   | "marketing.trafego"
@@ -218,6 +221,9 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.auditoria": "Admin • Auditoria de Acessos",
   "admin.atividade": "Admin • Log de Usuários",
   "admin.vinculos": "Admin • Vínculos Salesforce",
+  "admin.area.configuracoes": "Acesso • Configurações (engrenagem)",
+  "admin.area.moderacao": "Acesso • Moderação (engrenagem)",
+  "admin.area.integracoes": "Acesso • Integrações (engrenagem)",
   "marketing.home": "Marketing • Home",
   "marketing.social": "Marketing • Social Mídia",
   "marketing.trafego": "Marketing • Mídia Paga",
