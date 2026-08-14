@@ -12,7 +12,6 @@ import {
   adminToggleActive,
   adminDeleteUser,
   adminUpdateUser,
-  syncSalesforcePhoto,
 } from "@/lib/users.functions";
 import { listSalespeopleForAdmin, setSalespersonVisibility } from "@/lib/admin.functions";
 import {
@@ -30,7 +29,7 @@ import {
 import { toast } from "sonner";
 
 import {
-  Loader2, UserPlus, Shield, Trash2, Power, Camera, RefreshCw, Cloud, Pencil, Stethoscope, VenetianMask,
+  Loader2, UserPlus, Shield, Trash2, Power, Camera, Cloud, Pencil, Stethoscope, VenetianMask,
 } from "lucide-react";
 import { useSimulation } from "@/components/simulation";
 import { UserDetailSheet } from "@/components/user-detail-sheet";
