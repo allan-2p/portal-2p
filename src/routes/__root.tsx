@@ -21,7 +21,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { logUserActivity } from "@/lib/activity.functions";
 import { useIdleSignout } from "@/hooks/use-idle-signout";
 import { applyAreaAttribute } from "@/lib/admin-area";
-import { Toaster } from "@/components/ui/sonner";
 import { AccessDenied } from "@/components/access-denied";
 import { toFriendlyError } from "@/lib/friendly-errors";
 
@@ -201,7 +200,6 @@ function RootComponent() {
           <SimulationBanner />
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
-          <Toaster />
         </InstanceProvider>
       </SimulationProvider>
     </QueryClientProvider>
