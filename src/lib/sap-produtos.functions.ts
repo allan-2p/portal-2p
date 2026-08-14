@@ -186,16 +186,34 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
 
       const now = new Date().toISOString();
 
-      // Espelho completo do SAP (aba "Todos os produtos do SAP").
-      const espelho = todosMateriais.map((m) => ({
-        codigo: m.codigo,
-        descricao: m.descricao,
-        unidade: m.unidade,
-        ncm_codigo: m.ncm,
-        no_catalogo: m.liberado,
-        sap_raw: m.raw as any,
-        last_synced_at: now,
-      }));
+      // ---------- Espelho completo do SAP (aba "Todos os produtos do SAP") ----------
+      // Sincronização incremental: só grava os materiais que mudaram desde a
+      // última execução (comparação campo a campo com o que já está no banco).
+      const { data: espelhoExistente } = await supabaseAdmin
+        .from("sap_catalogo_sap")
+        .select("codigo, descricao, unidade, ncm_codigo, no_catalogo");
+      const espelhoMap = new Map(
+        (espelhoExistente ?? []).map((r: any) => [
+          String(r.codigo),
+          `${r.descricao ?? ""}|${r.unidade ?? ""}|${r.ncm_codigo ?? ""}|${r.no_catalogo ? 1 : 0}`,
+        ]),
+      );
+      const espelho = todosMateriais
+        .map((m) => ({
+          codigo: m.codigo,
+          descricao: m.descricao,
+          unidade: m.unidade,
+          ncm_codigo: m.ncm,
+          no_catalogo: m.liberado,
+          sap_raw: m.raw as any,
+          last_synced_at: now,
+        }))
+        .filter((r) => {
+          const anterior = espelhoMap.get(r.codigo);
+          const atual = `${r.descricao ?? ""}|${r.unidade ?? ""}|${r.ncm_codigo ?? ""}|${r.no_catalogo ? 1 : 0}`;
+          return anterior === undefined || anterior !== atual;
+        });
+      const catalogoInalterado = todosMateriais.length - espelho.length;
       for (let i = 0; i < espelho.length; i += 500) {
         const { error } = await supabaseAdmin
           .from("sap_catalogo_sap")
@@ -205,7 +223,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
 
       const { data: existentes } = await supabaseAdmin
         .from("sap_produtos")
-        .select("codigo, ativo, origem");
+        .select("codigo, ativo, origem, descricao, tipo, permissao, lista_preco, ncm_codigo, ncm_id");
       const known = new Set((existentes ?? []).map((r: { codigo: string }) => r.codigo));
 
       // NCM do SAP alimenta o produto e, quando o código existir na tabela de
@@ -246,10 +264,20 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
           .upsert(novos.slice(i, i + 500), { onConflict: "codigo" });
         if (error) throw new Error(error.message);
       }
-      const ativoAtual = new Map((existentes ?? []).map((r: any) => [r.codigo as string, r.ativo as boolean]));
-      const atualizados = rows
-        .filter((x) => known.has(x.codigo))
-        .map((x) => ({ ...x, ativo: ativoAtual.get(x.codigo) ?? true }));
+      const atuaisMap = new Map((existentes ?? []).map((r: any) => [r.codigo as string, r]));
+      const mudou = (novo: any, atual: any) =>
+        (atual.descricao ?? "") !== (novo.descricao ?? "") ||
+        (atual.tipo ?? "") !== (novo.tipo ?? "") ||
+        (atual.permissao ?? "") !== (novo.permissao ?? "") ||
+        (atual.lista_preco ?? "") !== (novo.lista_preco ?? "") ||
+        (novo.ncm_codigo !== undefined && (atual.ncm_codigo ?? "") !== (novo.ncm_codigo ?? "")) ||
+        (novo.ncm_id !== undefined && (atual.ncm_id ?? "") !== (novo.ncm_id ?? ""));
+
+      const existentesRows = rows.filter((x) => known.has(x.codigo));
+      const atualizados = existentesRows
+        .filter((x) => mudou(x, atuaisMap.get(x.codigo)))
+        .map((x) => ({ ...x, ativo: (atuaisMap.get(x.codigo) as any)?.ativo ?? true }));
+      const unchanged = existentesRows.length - atualizados.length;
       for (let i = 0; i < atualizados.length; i += 500) {
         const { error } = await supabaseAdmin
           .from("sap_produtos")
@@ -274,19 +302,32 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       }
 
       const inserted = novos.length;
-
-      const updated = rows.length - inserted;
+      const updated = atualizados.length;
       await finish({ status: "success", inserted_count: inserted, updated_count: updated });
       const { logIntegrationEvent } = await import("./integration-logs.server");
       await logIntegrationEvent({
         slug: "sap",
         level: "info",
         event: "sync",
-        message: `Sincronização concluída: ${inserted} novos, ${updated} atualizados, ${orfaos.length} desativados.`,
-        detail: { inserted, updated, deactivated: orfaos.length },
+        message: `Sincronização incremental: ${inserted} novos, ${updated} atualizados, ${unchanged} sem mudança, ${orfaos.length} desativados.`,
+        detail: {
+          inserted,
+          updated,
+          unchanged,
+          deactivated: orfaos.length,
+          catalogo_atualizado: espelho.length,
+          catalogo_inalterado: catalogoInalterado,
+        },
         actorId: context.userId,
       });
-      return { inserted, updated, deactivated: orfaos.length };
+      return {
+        inserted,
+        updated,
+        deactivated: orfaos.length,
+        unchanged,
+        catalogoAtualizado: espelho.length,
+        catalogoInalterado,
+      };
     } catch (e: any) {
       await finish({ status: "error", error_message: String(e?.message ?? e).slice(0, 500) });
       const { logIntegrationEvent } = await import("./integration-logs.server");
