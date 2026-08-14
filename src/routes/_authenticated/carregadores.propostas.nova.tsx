@@ -635,7 +635,10 @@ function PropostaCpoPage() {
   const buildHtml = (d: ReturnType<typeof calcularCpo>) =>
       buildPropostaPdfHtml({
         numero: numeroAtual ?? numeroRef.current ?? undefined,
+        propostaNome: state.propostaNome.trim() || null,
+        numeroSap: state.numeroSap.trim() || null,
         cliente: {
+
           nome: state.nome,
           nomeFantasia: state.nome,
           doc: state.doc,
