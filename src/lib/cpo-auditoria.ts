@@ -97,7 +97,7 @@ export function auditarProposta(args: {
       const ipiR = ncm?.ipi ?? config.ipi;
       const pcR = ncm?.pis_cofins ?? config.pis_cofins;
       const interR = ncm?.aliq_inter ?? config.aliq_inter;
-      const geraDifal = ncm ? ncm.gera_difal : true;
+      const geraDifal = (ncm ? ncm.gera_difal : true) && finalidadeGeraDifal(state.finalidadeUso);
       const temSt = !!ncm?.tem_st;
 
       const qtd = it.qtd || 0;
