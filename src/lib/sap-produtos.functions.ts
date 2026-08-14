@@ -74,9 +74,16 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
     });
     if (bloqueio) throw new Error(bloqueio);
 
+    // Ao entrar em Carregadores sem NCM/custo o produto vai para a Gestão de
+    // Produtos como inativo — a ativação acontece lá, depois do NCM definido.
+    const { validateAtivacaoCarregadores, showsInCarregadores } = await import("@/lib/product-visibility");
+    const pendente =
+      showsInCarregadores(data.visibilidade) &&
+      validateAtivacaoCarregadores({ custo: Number(produto.custo ?? 0), ncm_id: produto.ncm_id }) !== null;
+
     const { error } = await context.supabase
       .from("sap_produtos")
-      .update({ visibilidade: data.visibilidade })
+      .update(pendente ? { visibilidade: data.visibilidade, ativo: false } : { visibilidade: data.visibilidade })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     await recordModeration(context, {
