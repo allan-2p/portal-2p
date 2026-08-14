@@ -1204,6 +1204,14 @@ function PropostaCpoPage() {
                       </Field>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {(() => {
+                        const sugerido = money2(
+                          produtos.find((p) => p.id === it.produtoId)?.preco_sugerido ?? 0,
+                        );
+                        const usandoSugerido =
+                          !it.valorManual && sugerido > 0 && money2(it.valor) === sugerido;
+                        const mudou = precoChanges[it.key];
+                        return (
                       <Field label="Valor unitário (com IPI)">
                         <MoneyInput
                           value={it.valor}
@@ -1219,6 +1227,39 @@ function PropostaCpoPage() {
                             })
                           }
                         />
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                              usandoSugerido
+                                ? "border-primary/40 bg-primary/10 text-primary"
+                                : "border-border bg-muted text-muted-foreground",
+                            )}
+                          >
+                            {usandoSugerido ? "Preço Sugerido" : "Preço manual"}
+                          </span>
+                          {sugerido > 0 && !usandoSugerido ? (
+                            <button
+                              type="button"
+                              className="text-[11px] text-primary underline underline-offset-2"
+                              onClick={() =>
+                                setItem(it.key, {
+                                  valor: sugerido,
+                                  valorManual: false,
+                                  sugeridoAplicado: sugerido,
+                                })
+                              }
+                            >
+                              Usar sugerido ({fmtBRL(sugerido)})
+                            </button>
+                          ) : null}
+                        </div>
+                        {mudou ? (
+                          <p className="text-[11px] text-primary mt-1">
+                            Recalculado: {fmtBRL(mudou.de)} → {fmtBRL(mudou.para)}
+                          </p>
+                        ) : null}
+
 
 
                         {semValor ? (
