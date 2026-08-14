@@ -60,10 +60,10 @@ function pick(r: any, ...keys: string[]) {
 }
 
 /**
- * getProducts(): chama a RFC `listar_material` (SOAP) no bridge SAP e devolve
- * os materiais liberados, já normalizados para gravação em `sap_produtos`.
+ * fetchMateriaisSap(): chama a RFC `listar_material` (SOAP) no bridge SAP e
+ * devolve os itens crus retornados pela tabela `e_t_material`.
  */
-export async function getProducts(): Promise<SapMaterial[]> {
+async function fetchMateriaisSap(): Promise<any[]> {
   const url = process.env["SAP_BRIDGE_URL"] ?? process.env["SAP_RFC_URL"];
   const user = process.env["SAP_BRIDGE_USER"];
   const pass = process.env["SAP_BRIDGE_PASSWORD"];
