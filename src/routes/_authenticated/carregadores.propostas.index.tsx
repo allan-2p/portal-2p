@@ -157,7 +157,7 @@ function HistoricoCpoPage() {
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Buscar por cliente ou número"
+              placeholder="Buscar por cliente, nome da proposta, nº ou nº SAP"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
@@ -275,9 +275,9 @@ function HistoricoCpoPage() {
       <Dialog open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{detalhe?.cliente_nome}</DialogTitle>
+            <DialogTitle>{detalhe?.nome || detalhe?.cliente_nome}</DialogTitle>
             <DialogDescription>
-              {detalhe?.numero} · {detalhe?.uf} · {detalhe?.contribuinte ? "Contribuinte" : "Não contribuinte"}
+              {detalhe?.cliente_nome} · {detalhe?.numero} · {detalhe?.uf} · {detalhe?.contribuinte ? "Contribuinte" : "Não contribuinte"}
             </DialogDescription>
           </DialogHeader>
           {detalhe && (
@@ -291,6 +291,8 @@ function HistoricoCpoPage() {
                 <Info label="Comissão" value={fmtBRL(detalhe.totais.comissao ?? 0)} />
                 <Info label="Frete" value={`${detalhe.frete_mod} · ${fmtBRL(detalhe.frete_valor)}`} />
                 <Info label="Contato" value={detalhe.cliente_telefone || detalhe.cliente_email || "—"} />
+                <Info label="Nome da proposta" value={detalhe.nome || "—"} />
+                <Info label="Nº SAP" value={detalhe.numero_sap || "—"} />
                 <Info label="Consultor" value={detalhe.consultor_nome || "—"} />
                 <Info label="Criado por" value={detalhe.criado_por_nome || "—"} />
                 <Info
