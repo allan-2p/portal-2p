@@ -80,7 +80,7 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
     const { validateAtivacaoCarregadores, showsInCarregadores } = await import("@/lib/product-visibility");
     const pendente =
       showsInCarregadores(data.visibilidade) &&
-      validateAtivacaoCarregadores({ custo: Number(produto.custo ?? 0), ncm_id: produto.ncm_id }) !== null;
+      validateAtivacaoCarregadores({ custo: Number(produto.custo ?? 0), ncm_id: produto.ncm_id, ncm_codigo: (produto as any).ncm_codigo ?? null }) !== null;
 
     const { error } = await context.supabase
       .from("sap_produtos")

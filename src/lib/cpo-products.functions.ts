@@ -111,6 +111,7 @@ export const updateCpoProduct = createServerFn({ method: "POST" })
       const impedimento = validateAtivacaoCarregadores({
         custo: data.custo,
         ncm_id: (atual as any).ncm_id ?? null,
+        ncm_codigo: (atual as any).ncm_codigo ?? null,
       });
       if (impedimento) throw new Error(impedimento);
     }
@@ -169,6 +170,7 @@ export const setCpoProductAtivo = createServerFn({ method: "POST" })
       const impedimento = validateAtivacaoCarregadores({
         custo: Number((atual as any).custo ?? 0),
         ncm_id: (atual as any).ncm_id ?? null,
+        ncm_codigo: (atual as any).ncm_codigo ?? null,
       });
       if (impedimento) throw new Error(impedimento);
     }
