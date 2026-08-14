@@ -16,12 +16,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  backfillSapProdutosNcm,
   listSapCatalogoCompleto,
   listSapProdutos,
   listSapSyncRuns,
   setSapProdutoVisibilidade,
-  setSapProdutosNcm,
   syncSapProdutos,
   type SapSyncResult,
   type SapVisibilidade,
@@ -36,8 +34,6 @@ const SYNC_ETAPAS = [
   "Classificando e gravando o catálogo do portal…",
   "Finalizando e registrando o histórico…",
 ] as const;
-import { useCpoNcms } from "@/hooks/use-cpo";
-import { Checkbox } from "@/components/ui/checkbox";
 
 import { VISIBILIDADE_LABELS, VISIBILIDADE_OPTIONS, validateVisibilidadeChange } from "@/lib/product-visibility";
 
@@ -286,15 +282,7 @@ function ProdutosPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [aba, setAba] = useState<"portal" | "sap">("portal");
-  const [selecionados, setSelecionados] = useState<string[]>([]);
-  const [ncmEmMassa, setNcmEmMassa] = useState<string>("");
 
-  const { data: ncms = [] } = useCpoNcms();
-  const aplicarNcm = useServerFn(setSapProdutosNcm);
-  const backfillNcm = useServerFn(backfillSapProdutosNcm);
-
-  const toggleSelecionado = (id: string) =>
-    setSelecionados((atual) => (atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]));
 
 
 
@@ -363,35 +351,6 @@ function ProdutosPage() {
     }, 2500);
     return () => clearInterval(t);
   }, [syncMut.isPending]);
-
-
-  const ncmMut = useMutation({
-    mutationFn: (payload: { ids: string[]; ncmId: string | null }) => aplicarNcm({ data: payload }),
-    onSuccess: (r: any) => {
-      toast.success(
-        r.ncm_codigo
-          ? `NCM ${r.ncm_codigo} aplicado a ${r.atualizados} produto(s).`
-          : `NCM removido de ${r.atualizados} produto(s).`,
-      );
-      setSelecionados([]);
-      refetch();
-    },
-    onError: (e: any) => toast.error(String(e?.message ?? e)),
-  });
-
-  const backfillMut = useMutation({
-    mutationFn: () => backfillNcm({}),
-    onSuccess: (r: any) => {
-      toast.success(
-        r.atualizados > 0
-          ? `${r.atualizados} produto(s) tiveram o código do NCM preenchido.`
-          : "Nenhum produto pendente: todos os NCMs vinculados já têm código.",
-      );
-      refetch();
-    },
-    onError: (e: any) => toast.error(String(e?.message ?? e)),
-  });
-
 
 
   const problemasRegras = useMemo(() => validarRegras(), []);
@@ -606,7 +565,7 @@ function ProdutosPage() {
               Espelho completo do SAP: {syncResultado.catalogoAtualizado} registro(s) gravado(s),{" "}
               {syncResultado.catalogoInalterado} sem alteração.
               {syncResultado.semNcm > 0
-                ? ` ${syncResultado.semNcm} material(is) vieram sem NCM do SAP — defina o NCM manualmente abaixo.`
+                ? ` ${syncResultado.semNcm} material(is) ainda vieram sem NCM do SAP.`
                 : ""}
             </p>
           </div>
@@ -856,72 +815,10 @@ function ProdutosPage() {
           </Select>
         </div>
 
-        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {selecionados.length > 0
-                ? `${selecionados.length} produto(s) selecionado(s)`
-                : "Selecione produtos na tabela para definir o NCM"}
-            </span>
-            <Select value={ncmEmMassa} onValueChange={setNcmEmMassa}>
-              <SelectTrigger className="h-8 w-[280px] text-xs">
-                <SelectValue placeholder="Escolher NCM" />
-              </SelectTrigger>
-              <SelectContent>
-                {ncms.map((n) => (
-                  <SelectItem key={n.id} value={n.id}>
-                    {n.codigo} — {n.descricao}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              disabled={selecionados.length === 0 || !ncmEmMassa || ncmMut.isPending}
-              onClick={() => ncmMut.mutate({ ids: selecionados, ncmId: ncmEmMassa })}
-            >
-              {ncmMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar NCM"}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={selecionados.length === 0 || ncmMut.isPending}
-              onClick={() => ncmMut.mutate({ ids: selecionados, ncmId: null })}
-            >
-              Remover NCM
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={backfillMut.isPending}
-              onClick={() => backfillMut.mutate()}
-            >
-              {backfillMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Preencher códigos pendentes"}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            A RFC do SAP (listar_material) não devolve o campo NCM (STEUC), então o vínculo é definido aqui e
-            passa a valer para impostos e propostas. Cadastre novos NCMs em 2P Carregadores › Produtos › NCM.
-          </p>
-        </div>
-
         <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="w-9 px-3 py-2 text-left">
-                  <Checkbox
-                    checked={rows.length > 0 && rows.every((p) => selecionados.includes(p.id))}
-                    onCheckedChange={(v) =>
-                      setSelecionados((atual) =>
-                        v
-                          ? Array.from(new Set([...atual, ...rows.map((p) => p.id)]))
-                          : atual.filter((id) => !rows.some((p) => p.id === id)),
-                      )
-                    }
-                    aria-label="Selecionar página"
-                  />
-                </th>
                 <th className="text-left px-3 py-2">Código</th>
                 <th className="text-left px-3 py-2">Descrição</th>
                 <th className="text-left px-3 py-2">Tipo</th>
@@ -938,26 +835,19 @@ function ProdutosPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={audit ? 12 : 10} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 11 : 9} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={audit ? 12 : 10} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 11 : 9} className="px-3 py-10 text-center text-muted-foreground">
                     Nenhum produto encontrado. Clique em “Sinc. SAP” para importar o catálogo.
                   </td>
                 </tr>
               ) : (
                 rows.map((p) => (
                   <tr key={p.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="px-3 py-2">
-                      <Checkbox
-                        checked={selecionados.includes(p.id)}
-                        onCheckedChange={() => toggleSelecionado(p.id)}
-                        aria-label={`Selecionar ${p.codigo}`}
-                      />
-                    </td>
                     <td className="px-3 py-2 font-mono text-xs">{p.codigo}</td>
                     <td className="px-3 py-2">{p.descricao}</td>
                     <td className="px-3 py-2">
