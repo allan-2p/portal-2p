@@ -12,7 +12,10 @@ import { useInstance } from "./instance-provider";
 import { INSTANCES, featureForPath, instanceForFeature, type FeatureKey } from "@/lib/instances";
 import { SCREENS, type ScreenKey } from "@/lib/view-screens";
 import { isGroupAdminPath } from "@/lib/admin-area";
-import { ADMIN_SECTIONS } from "@/lib/admin-nav";
+import { ADMIN_SECTIONS, type AdminSectionId } from "@/lib/admin-nav";
+import { useQuery } from "@tanstack/react-query";
+import { getAdminAreas } from "@/lib/admin-guard.functions";
+
 import { AdminSidebar } from "./admin-sidebar";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
