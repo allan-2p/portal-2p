@@ -69,8 +69,9 @@ export function validateVisibilidadeChange(
  */
 export function validateAtivacaoCarregadores(ctx: ProductVisibilityContext): string | null {
   if (!ctx.ncm_id) {
-    return "Defina o NCM do produto antes de ativá-lo em 2P Carregadores — ele define IPI, PIS/COFINS, ST e DIFAL das propostas.";
+    return "O NCM deste produto ainda não veio do SAP. Ajuste o cadastro do material no SAP e rode a sincronização — o NCM define IPI, PIS/COFINS, ST e DIFAL.";
   }
+
   if (!ctx.custo || Number(ctx.custo) <= 0) {
     return "Defina o custo do produto antes de ativá-lo em 2P Carregadores — o custo é a base de CMV, margem e comissão.";
   }
