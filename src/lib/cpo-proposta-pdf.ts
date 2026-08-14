@@ -11,6 +11,7 @@ export type PropostaPdfData = {
   numero?: string;
   cliente: {
     nome: string;
+    nomeFantasia?: string | null;
     doc?: string;
     ie?: string;
     email?: string;
