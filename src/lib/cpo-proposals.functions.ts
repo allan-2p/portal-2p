@@ -55,6 +55,9 @@ function validar(input: any): SalvarPropostaInput {
   return {
     propostaId: input.propostaId ? String(input.propostaId) : null,
     numero: String(input.numero ?? "").trim(),
+    propostaNome: input.propostaNome ? String(input.propostaNome).trim().slice(0, 160) : null,
+    numeroSap: input.numeroSap ? String(input.numeroSap).trim().slice(0, 40) : null,
+
     cliente: {
       nome,
       telefone: String(input.cliente?.telefone ?? ""),
