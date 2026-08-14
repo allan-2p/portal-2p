@@ -24,6 +24,7 @@ import {
   type FeatureKey,
   type InstanceId,
 } from "@/lib/instances";
+import { groupFeatures, shortFeatureLabel, featureScopeLabel } from "@/lib/feature-groups";
 
 export const Route = createFileRoute("/_authenticated/admin/perfis")({
   component: PerfisPage,
@@ -66,6 +67,7 @@ function PerfisPage() {
   const [userSearch, setUserSearch] = useState("");
   const [profInstances, setProfInstances] = useState<Set<InstanceId>>(new Set());
   const [tab, setTab] = useState<"perfis" | "permissoes">("perfis");
+  const [featSearch, setFeatSearch] = useState("");
 
   async function load() {
     setLoading(true);
