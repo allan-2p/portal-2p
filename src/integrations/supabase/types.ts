@@ -1402,7 +1402,7 @@ export type Database = {
           sap_raw: Json | null
           tipo: string
           updated_at: string
-          visibilidade: string
+          visibilidade: string | null
         }
         Insert: {
           ativo?: boolean
@@ -1421,7 +1421,7 @@ export type Database = {
           sap_raw?: Json | null
           tipo?: string
           updated_at?: string
-          visibilidade?: string
+          visibilidade?: string | null
         }
         Update: {
           ativo?: boolean
@@ -1440,7 +1440,7 @@ export type Database = {
           sap_raw?: Json | null
           tipo?: string
           updated_at?: string
-          visibilidade?: string
+          visibilidade?: string | null
         }
         Relationships: [
           {
