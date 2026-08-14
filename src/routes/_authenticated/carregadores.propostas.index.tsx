@@ -197,7 +197,10 @@ function HistoricoCpoPage() {
               <thead>
                 <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-4 py-3">Nº</th>
+                  <th className="text-left px-4 py-3">Proposta</th>
+                  <th className="text-left px-4 py-3">Nº SAP</th>
                   <th className="text-left px-4 py-3">Cliente</th>
+
                   <th className="text-left px-4 py-3">UF</th>
                   <th className="text-left px-4 py-3">Contribuinte</th>
                   <th className="text-right px-4 py-3">Valor</th>
