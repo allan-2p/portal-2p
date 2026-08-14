@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordModeration } from "@/lib/moderation-audit.server";
 import { VISIBILIDADE_LABELS, validateVisibilidadeChange, type Visibilidade } from "@/lib/product-visibility";
+import { requireAnyFeature } from "@/lib/guards.server";
 
 export type SapVisibilidade = Visibilidade;
 
@@ -45,8 +46,10 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("is_admin");
-    if (!isAdmin) throw new Error("Apenas administradores podem alterar a visibilidade de produtos.");
+    await requireAnyFeature(context, [
+      { instance: "solar", feature: "admin.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "cpo.produtos", action: "moderar" },
+    ]);
 
     const { data: produto, error: readError } = await context.supabase
       .from("sap_produtos")
@@ -130,8 +133,10 @@ export const validateSapRules = createServerFn({ method: "GET" })
 export const syncSapProdutos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ inserted: number; updated: number; deactivated: number }> => {
-    const { data: isAdmin, error: roleError } = await context.supabase.rpc("is_admin");
-    if (roleError || !isAdmin) throw new Error("Forbidden: admin role required");
+    await requireAnyFeature(context, [
+      { instance: "solar", feature: "admin.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "cpo.produtos", action: "moderar" },
+    ]);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { classificarTipo, getProducts, validarRegras } = await import("./sap-produtos.server");
