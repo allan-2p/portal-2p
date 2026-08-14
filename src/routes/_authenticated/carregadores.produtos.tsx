@@ -14,20 +14,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Save, Search } from "lucide-react";
+import { Pencil, Trash2, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { validateAtivacaoCarregadores } from "@/lib/product-visibility";
-import { useCpoConfig, useCpoInvalidate, useCpoNcms, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
-import { fmtBRL, type CpoConfig, type CpoNcm, type CpoProduct } from "@/lib/cpo";
+import { useCpoInvalidate, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
+import { fmtBRL, type CpoProduct } from "@/lib/cpo";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
@@ -55,22 +48,20 @@ function ProdutosCpoPage() {
           <div className="text-xs uppercase tracking-wider text-primary font-semibold">Módulo CPO</div>
           <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Catálogo único do portal (alimentado pelo SAP e por edições manuais), alíquotas por NCM e por UF. Base usada pelo cálculo de DRE das propostas de carregadores.
+            Catálogo único do portal (alimentado pelo SAP e por edições manuais), alíquotas por UF. Base usada pelo cálculo de DRE das propostas de carregadores.
           </p>
         </div>
 
         <Tabs defaultValue="produtos">
           <TabsList>
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
-            <TabsTrigger value="ncm">NCM</TabsTrigger>
             <TabsTrigger value="ufs">Alíquotas por UF</TabsTrigger>
           </TabsList>
           <TabsContent value="produtos" className="mt-4"><ProdutosTab /></TabsContent>
-          <TabsContent value="ncm" className="mt-4"><NcmTab /></TabsContent>
           <TabsContent value="ufs" className="mt-4"><UfsTab /></TabsContent>
         </Tabs>
 
-        <ModerationAuditLog area="cpo_produtos" description="alterações em produtos, NCMs e alíquotas de Carregadores." />
+        <ModerationAuditLog area="cpo_produtos" description="alterações em produtos e alíquotas de Carregadores." />
       </div>
     </AppLayout>
   );
@@ -90,7 +81,6 @@ type Draft = {
 
 function ProdutosTab() {
   const { data: produtos = [], isLoading, error, refetch, isFetching } = useCpoProductsAdmin();
-  const { data: ncms = [] } = useCpoNcms();
   const invalidate = useCpoInvalidate();
   const [busca, setBusca] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -191,10 +181,8 @@ function ProdutosTab() {
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.codigo || "—"}</td>
                   <td className="px-4 py-3 font-medium">{p.nome}</td>
                   <td className="px-4 py-3 font-mono text-xs">
-                    {p.ncm_codigo ?? (p.ncm_id ? ncms.find((n) => n.id === p.ncm_id)?.codigo : null) ? (
-                      <span className="text-muted-foreground">
-                        {p.ncm_codigo ?? ncms.find((n) => n.id === p.ncm_id)?.codigo}
-                      </span>
+                    {p.ncm_codigo ? (
+                      <span className="text-muted-foreground">{p.ncm_codigo}</span>
                     ) : (
                       <span className="rounded-full bg-warning/10 px-2 py-0.5 font-sans text-[11px] font-medium text-warning">
                         NCM não veio do SAP
@@ -440,216 +428,3 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-/* ------------------------------ NCM ------------------------------- */
-
-type NcmDraft = {
-  id?: string;
-  codigo: string;
-  descricao: string;
-  ipi: string;
-  pis_cofins: string;
-  aliq_inter: string;
-  tem_st: boolean;
-  gera_difal: boolean;
-  observacoes: string;
-  ativo: boolean;
-};
-
-const NCM_EMPTY: NcmDraft = {
-  codigo: "",
-  descricao: "",
-  ipi: "5.00",
-  pis_cofins: "9.25",
-  aliq_inter: "4.00",
-  tem_st: false,
-  gera_difal: true,
-  observacoes: "",
-  ativo: true,
-};
-
-function NcmTab() {
-  const { data: ncms = [], isLoading } = useCpoNcms();
-  const invalidate = useCpoInvalidate();
-  const [draft, setDraft] = useState<NcmDraft | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  async function salvar() {
-    if (!draft) return;
-    if (!draft.codigo.trim()) return toast.error("Informe o código do NCM.");
-    const payload = {
-      codigo: draft.codigo.trim(),
-      descricao: draft.descricao.trim(),
-      ipi: Number(draft.ipi) / 100,
-      pis_cofins: Number(draft.pis_cofins) / 100,
-      aliq_inter: Number(draft.aliq_inter) / 100,
-      tem_st: draft.tem_st,
-      gera_difal: draft.gera_difal,
-      observacoes: draft.observacoes.trim() || null,
-      ativo: draft.ativo,
-    };
-    setSaving(true);
-    const { error } = draft.id
-      ? await supabase.from("cpo_ncm").update(payload).eq("id", draft.id)
-      : await supabase.from("cpo_ncm").insert(payload);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    void logModeration({
-      area: "cpo_produtos",
-      action: draft.id ? "atualizou" : "criou",
-      target: payload.codigo,
-      summary: `${draft.id ? "NCM atualizado" : "NCM criado"}: ${payload.codigo}`,
-      details: { ipi: payload.ipi, aliq_inter: payload.aliq_inter, tem_st: payload.tem_st, gera_difal: payload.gera_difal },
-    });
-    toast.success(draft.id ? "NCM atualizado." : "NCM criado.");
-    setDraft(null);
-    invalidate();
-  }
-
-  async function excluir(n: CpoNcm) {
-    const { error } = await supabase.from("cpo_ncm").delete().eq("id", n.id);
-    if (error) return toast.error(error.message);
-    void logModeration({
-      area: "cpo_produtos",
-      action: "removeu",
-      target: n.codigo,
-      summary: `NCM removido: ${n.codigo}`,
-    });
-    toast.success("NCM removido.");
-    invalidate();
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground max-w-3xl">
-          As regras fiscais são cadastradas por NCM, e não por produto: cada NCM importado tem alíquotas próprias e
-          regras distintas de ICMS-ST e DIFAL. O NCM de cada material vem do SAP na sincronização.
-        </p>
-        <Button className="gap-2" onClick={() => setDraft({ ...NCM_EMPTY })}>
-          <Plus className="h-4 w-4" /> Novo NCM
-        </Button>
-      </div>
-
-      <div className="glass rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[900px]">
-            <thead>
-              <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-                <th className="text-left px-4 py-3">NCM</th>
-                <th className="text-left px-4 py-3">Descrição</th>
-                <th className="text-right px-4 py-3">IPI</th>
-                <th className="text-right px-4 py-3">PIS/COFINS</th>
-                <th className="text-right px-4 py-3">ICMS inter.</th>
-                <th className="text-center px-4 py-3">ICMS-ST</th>
-                <th className="text-center px-4 py-3">DIFAL</th>
-                <th className="text-center px-4 py-3">Ativo</th>
-                <th className="text-right px-4 py-3">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ncms.map((n) => (
-                <tr key={n.id} className="border-b border-border/50 hover:bg-surface-2">
-                  <td className="px-4 py-3 font-mono font-semibold">{n.codigo}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{n.descricao}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{(n.ipi * 100).toFixed(2)}%</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{(n.pis_cofins * 100).toFixed(2)}%</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{(n.aliq_inter * 100).toFixed(2)}%</td>
-                  <td className="px-4 py-3 text-center">{n.tem_st ? "Sim" : "—"}</td>
-                  <td className="px-4 py-3 text-center">{n.gera_difal ? "Sim" : "—"}</td>
-                  <td className="px-4 py-3 text-center">{n.ativo ? "Sim" : "—"}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Editar NCM"
-                        onClick={() =>
-                          setDraft({
-                            id: n.id,
-                            codigo: n.codigo,
-                            descricao: n.descricao,
-                            ipi: (n.ipi * 100).toFixed(2),
-                            pis_cofins: (n.pis_cofins * 100).toFixed(2),
-                            aliq_inter: (n.aliq_inter * 100).toFixed(2),
-                            tem_st: n.tem_st,
-                            gera_difal: n.gera_difal,
-                            observacoes: n.observacoes ?? "",
-                            ativo: n.ativo,
-                          })
-                        }
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" aria-label="Excluir NCM" onClick={() => excluir(n)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {ncms.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
-                    {isLoading ? "Carregando…" : "Nenhum NCM cadastrado."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <Dialog open={!!draft} onOpenChange={(v) => !v && setDraft(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{draft?.id ? "Editar NCM" : "Novo NCM"}</DialogTitle>
-          </DialogHeader>
-          {draft && (
-            <div className="grid gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Código NCM">
-                  <Input value={draft.codigo} onChange={(e) => setDraft({ ...draft, codigo: e.target.value })} />
-                </Field>
-                <Field label="Descrição">
-                  <Input value={draft.descricao} onChange={(e) => setDraft({ ...draft, descricao: e.target.value })} />
-                </Field>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <Field label="IPI (%)">
-                  <Input type="number" step="0.01" value={draft.ipi} onChange={(e) => setDraft({ ...draft, ipi: e.target.value })} />
-                </Field>
-                <Field label="PIS/COFINS (%)">
-                  <Input type="number" step="0.01" value={draft.pis_cofins} onChange={(e) => setDraft({ ...draft, pis_cofins: e.target.value })} />
-                </Field>
-                <Field label="ICMS interestadual (%)">
-                  <Input type="number" step="0.01" value={draft.aliq_inter} onChange={(e) => setDraft({ ...draft, aliq_inter: e.target.value })} />
-                </Field>
-              </div>
-              <Field label="Observações fiscais">
-                <Input value={draft.observacoes} onChange={(e) => setDraft({ ...draft, observacoes: e.target.value })} />
-              </Field>
-              <div className="flex items-center gap-3">
-                <Switch checked={draft.tem_st} onCheckedChange={(v) => setDraft({ ...draft, tem_st: v })} />
-                <span className="text-sm">Sujeito a ICMS-ST nas UFs com convênio</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Switch checked={draft.gera_difal} onCheckedChange={(v) => setDraft({ ...draft, gera_difal: v })} />
-                <span className="text-sm">Gera DIFAL para não contribuinte</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Switch checked={draft.ativo} onCheckedChange={(v) => setDraft({ ...draft, ativo: v })} />
-                <span className="text-sm">Ativo</span>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDraft(null)}>Cancelar</Button>
-            <Button onClick={salvar} disabled={saving} className="gap-2">
-              <Save className="h-4 w-4" /> Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
