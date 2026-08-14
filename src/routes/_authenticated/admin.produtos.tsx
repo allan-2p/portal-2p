@@ -300,7 +300,9 @@ function ProdutosPage() {
     mutationFn: () => sync({}),
     onSuccess: (r) => {
       toast.success(
-        `Sincronização concluída: ${r.inserted} novos, ${r.updated} atualizados${r.deactivated ? `, ${r.deactivated} inativados` : ""}.`,
+        r.inserted === 0 && r.updated === 0 && !r.deactivated
+          ? `Nada mudou no SAP desde a última sincronização (${r.unchanged} produtos verificados).`
+          : `Sincronização concluída: ${r.inserted} novos, ${r.updated} atualizados, ${r.unchanged} sem mudança${r.deactivated ? `, ${r.deactivated} inativados` : ""}.`,
       );
       refetch();
       runsQuery.refetch();
