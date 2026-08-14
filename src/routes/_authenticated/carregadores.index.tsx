@@ -11,8 +11,8 @@ import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
 import { cn } from "@/lib/utils";
-import {
 import { PermissionGate } from "@/components/permission-gate";
+import {
   Zap,
   Users,
   CalendarClock,
