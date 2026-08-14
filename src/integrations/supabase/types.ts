@@ -1870,6 +1870,7 @@ export type Database = {
           status: string
         }[]
       }
+      cpo_next_sap_seq: { Args: never; Returns: number }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
