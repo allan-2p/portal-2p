@@ -728,10 +728,72 @@ function ProdutosPage() {
           </Select>
         </div>
 
+        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {selecionados.length > 0
+                ? `${selecionados.length} produto(s) selecionado(s)`
+                : "Selecione produtos na tabela para definir o NCM"}
+            </span>
+            <Select value={ncmEmMassa} onValueChange={setNcmEmMassa}>
+              <SelectTrigger className="h-8 w-[280px] text-xs">
+                <SelectValue placeholder="Escolher NCM" />
+              </SelectTrigger>
+              <SelectContent>
+                {ncms.map((n) => (
+                  <SelectItem key={n.id} value={n.id}>
+                    {n.codigo} — {n.descricao}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              disabled={selecionados.length === 0 || !ncmEmMassa || ncmMut.isPending}
+              onClick={() => ncmMut.mutate({ ids: selecionados, ncmId: ncmEmMassa })}
+            >
+              {ncmMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar NCM"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={selecionados.length === 0 || ncmMut.isPending}
+              onClick={() => ncmMut.mutate({ ids: selecionados, ncmId: null })}
+            >
+              Remover NCM
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={backfillMut.isPending}
+              onClick={() => backfillMut.mutate()}
+            >
+              {backfillMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Preencher códigos pendentes"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            A RFC do SAP (listar_material) não devolve o campo NCM (STEUC), então o vínculo é definido aqui e
+            passa a valer para impostos e propostas. Cadastre novos NCMs em 2P Carregadores › Produtos › NCM.
+          </p>
+        </div>
+
         <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
+                <th className="w-9 px-3 py-2 text-left">
+                  <Checkbox
+                    checked={rows.length > 0 && rows.every((p) => selecionados.includes(p.id))}
+                    onCheckedChange={(v) =>
+                      setSelecionados((atual) =>
+                        v
+                          ? Array.from(new Set([...atual, ...rows.map((p) => p.id)]))
+                          : atual.filter((id) => !rows.some((p) => p.id === id)),
+                      )
+                    }
+                    aria-label="Selecionar página"
+                  />
+                </th>
                 <th className="text-left px-3 py-2">Código</th>
                 <th className="text-left px-3 py-2">Descrição</th>
                 <th className="text-left px-3 py-2">Tipo</th>
