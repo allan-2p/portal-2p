@@ -375,7 +375,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         catalogoInalterado,
         totalSap: todosMateriais.length,
         totalLiberados: materiais.length,
-        semNcm: materiais.filter((m) => !m.ncm).length,
+        semNcm: materiais.filter((m) => !ncmDe(m)).length,
         duracaoMs: Date.now() - iniciadoEm,
       };
     } catch (e: any) {
