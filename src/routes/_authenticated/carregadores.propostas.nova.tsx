@@ -386,6 +386,18 @@ function PropostaCpoPage() {
   };
 
 
+  // Preço sugerido do item já considerando os impostos da operação, para que
+  // a MB% da proposta nasça em 37% (e não abaixo da política de 33%).
+  const precoSugeridoItem = (produtoId: string, s: CpoState) =>
+    money2(
+      precoParaMargem(
+        produtos.find((p) => p.id === produtoId),
+        s,
+        ufs,
+        config,
+        ncmsQ.data ?? [],
+      ),
+    );
 
 
   const set = <K extends keyof CpoState>(k: K, v: CpoState[K]) =>
