@@ -94,7 +94,7 @@ export const setCpoMeta = createServerFn({ method: "POST" })
 
     const { data: atual } = await context.supabase
       .from("cpo_metas")
-      .select("meta, meta_bonus")
+      .select("meta, meta_bonus, ativo")
       .eq("user_id", data.user_id)
       .eq("ano", data.year)
       .eq("mes", data.month)
@@ -106,6 +106,7 @@ export const setCpoMeta = createServerFn({ method: "POST" })
       mes: data.month,
       meta: data.meta ?? Number(atual?.meta ?? 0),
       meta_bonus: data.meta_bonus ?? Number(atual?.meta_bonus ?? 0),
+      ativo: atual?.ativo ?? true,
     };
 
     const { error } = await context.supabase
@@ -128,10 +129,26 @@ export const setCpoMetaAtiva = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await requireFeature(context, guard("moderar"));
 
+    // Preserva os valores já gravados: o upsert reescreve a linha inteira.
+    const { data: atuais } = await context.supabase
+      .from("cpo_metas")
+      .select("mes, meta, meta_bonus")
+      .eq("user_id", data.user_id)
+      .eq("ano", data.year)
+      .in("mes", data.months);
+    const porMes = new Map<number, { meta: number; meta_bonus: number }>(
+      ((atuais ?? []) as any[]).map((r) => [
+        Number(r.mes),
+        { meta: Number(r.meta ?? 0), meta_bonus: Number(r.meta_bonus ?? 0) },
+      ]),
+    );
+
     const rows = data.months.map((mes) => ({
       user_id: data.user_id,
       ano: data.year,
       mes,
+      meta: porMes.get(mes)?.meta ?? 0,
+      meta_bonus: porMes.get(mes)?.meta_bonus ?? 0,
       ativo: data.active,
     }));
     const { error } = await context.supabase
