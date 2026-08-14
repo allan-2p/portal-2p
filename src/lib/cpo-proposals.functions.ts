@@ -233,7 +233,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
 
       const { error } = await supabase
         .from("cpo_proposals")
-        .update(patch)
+        .update(patch as any)
         .eq("id", data.propostaId);
       if (error) throw new Error(error.message);
       return {
