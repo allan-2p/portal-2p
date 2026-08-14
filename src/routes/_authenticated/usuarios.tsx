@@ -881,12 +881,16 @@ type EditPayload = {
 
 function EditUserModal({
   row,
+  currentUserId,
   onClose,
   onSubmit,
+  onDelete,
 }: {
   row: Row;
+  currentUserId: string | undefined;
   onClose: () => void;
   onSubmit: (data: EditPayload) => Promise<void>;
+  onDelete: () => Promise<void>;
 }) {
   const listProfilesFn = useServerFn(adminListPermissionProfiles);
   const setUserProfilesFn = useServerFn(adminSetUserProfiles);
