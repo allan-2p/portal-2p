@@ -58,6 +58,7 @@ import { getMonthGoalTotal } from "@/lib/admin.functions";
 import { listRetentionGoals } from "@/lib/goals.functions";
 import { CARTEIRA_OWNER_IDS } from "@/lib/salespeople";
 import { businessDaysOfMonth } from "@/lib/business-days";
+import { PermissionGate } from "@/components/permission-gate";
 
 type TaskInteractionState = { contacted: "yes" | "no"; type?: string; note?: string; ts: number };
 const TASK_INTERACTIONS_KEY = "portal2p:task-interactions:v1";
@@ -1017,9 +1018,11 @@ function HomePage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" className="gap-2" onClick={() => setNewTaskOpen(true)}>
-                  <CalendarPlus className="h-3.5 w-3.5" /> Nova tarefa
-                </Button>
+                <PermissionGate feature="tarefas" action="editar" mode="disable">
+                  <Button size="sm" className="gap-2" onClick={() => setNewTaskOpen(true)}>
+                    <CalendarPlus className="h-3.5 w-3.5" /> Nova tarefa
+                  </Button>
+                </PermissionGate>
                 <Popover open={agendaSortOpen} onOpenChange={setAgendaSortOpen}>
 
                   <PopoverTrigger asChild>
