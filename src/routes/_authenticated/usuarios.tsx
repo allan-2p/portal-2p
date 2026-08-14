@@ -1073,6 +1073,23 @@ function EditUserModal({
         </div>
 
         <div className="flex gap-2 pt-2">
+          <button
+            type="button"
+            disabled={row.id === currentUserId || deleting}
+            onClick={async () => {
+              if (!confirm("Remover este usuário permanentemente?")) return;
+              setDeleting(true);
+              try {
+                await onDelete();
+              } finally {
+                setDeleting(false);
+              }
+            }}
+            className="py-2 px-4 rounded-lg border border-destructive text-destructive text-sm font-medium hover:bg-destructive/10 disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
+            Excluir
+          </button>
           <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2">
             Cancelar
           </button>
