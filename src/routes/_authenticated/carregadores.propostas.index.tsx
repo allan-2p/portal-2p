@@ -301,6 +301,34 @@ function HistoricoCpoPage() {
           if (next) setDetalheId(next.id);
         }}
       />
+
+      <AlertDialog open={!!excluirId} onOpenChange={(open) => !open && setExcluirId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir proposta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {propostaParaExcluir ? (
+                <>
+                  Você está prestes a excluir permanentemente a proposta{" "}
+                  <strong>{propostaParaExcluir.nome || propostaParaExcluir.numero || "—"}</strong>
+                  {propostaParaExcluir.cliente_nome && (
+                    <> do cliente <strong>{propostaParaExcluir.cliente_nome}</strong></>
+                  )}
+                  . Essa ação não pode ser desfeita.
+                </>
+              ) : (
+                "Confirme para excluir a proposta selecionada. Essa ação não pode ser desfeita."
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setExcluirId(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarExclusao} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sim, excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
