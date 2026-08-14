@@ -61,6 +61,8 @@ export type CpoConfig = {
   cmv_max: number;
   /** % fixo de gerente sobre a venda (custo empresa). */
   pct_gerente: number;
+  /** % fixo de representante sobre a venda (custo empresa). */
+  pct_representante: number;
   /** % fixo de indicação sobre a venda (custo empresa) — vale para CLT e PJ. */
   pct_indicacao: number;
   /** Fator de encargos CLT (custo empresa ÷ remuneração). */
@@ -78,9 +80,11 @@ export const CPO_CONFIG_FALLBACK: CpoConfig = {
   comissao_pct: 0,
   cmv_max: 0.605,
   pct_gerente: 0.005,
+  pct_representante: 0,
   pct_indicacao: 0.0025,
   fator_clt: 1.66,
 };
+
 
 export type CpoItem = {
   key: string;
