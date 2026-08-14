@@ -33,6 +33,8 @@ export type ProductVisibilityContext = {
   origem?: string | null;
   custo?: number | null;
   ncm_id?: string | null;
+  /** NCM textual vindo do SAP (ZMMR059) — é a fonte real do NCM no portal. */
+  ncm_codigo?: string | null;
   /** Propostas de Carregadores em aberto que já usam o produto. */
   propostasAbertas?: number;
 };
@@ -70,7 +72,8 @@ export function validateVisibilidadeChange(
  * Retorna a mensagem do impedimento ou null.
  */
 export function validateAtivacaoCarregadores(ctx: ProductVisibilityContext): string | null {
-  if (!ctx.ncm_id) {
+  const temNcm = !!(ctx.ncm_id || (ctx.ncm_codigo ?? "").trim());
+  if (!temNcm) {
     return "O NCM deste produto ainda não veio do SAP. Ajuste o cadastro do material no SAP e rode a sincronização — o NCM define IPI, PIS/COFINS, ST e DIFAL.";
   }
 
