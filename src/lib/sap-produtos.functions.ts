@@ -451,18 +451,24 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         unchanged,
         catalogoAtualizado: espelho.length,
         catalogoInalterado,
+        totalSap: todosMateriais.length,
+        totalLiberados: materiais.length,
+        semNcm: materiais.filter((m) => !m.ncm).length,
+        duracaoMs: Date.now() - iniciadoEm,
       };
     } catch (e: any) {
-      await finish({ status: "error", error_message: String(e?.message ?? e).slice(0, 500) });
+      const amigavel = descreverErroSap(e);
+      await finish({ status: "error", error_message: amigavel.slice(0, 500) });
       const { logIntegrationEvent } = await import("./integration-logs.server");
       await logIntegrationEvent({
         slug: "sap",
         level: "error",
         event: "sync",
-        message: String(e?.message ?? e).slice(0, 500),
+        message: amigavel.slice(0, 500),
+        detail: { original: String(e?.message ?? e).slice(0, 1000), duracao_ms: Date.now() - iniciadoEm },
         actorId: context.userId,
       });
-      throw e;
+      throw new Error(amigavel);
     }
   });
 
