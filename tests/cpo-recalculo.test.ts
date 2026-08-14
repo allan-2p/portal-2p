@@ -77,11 +77,18 @@ describe("Preço Sugerido", () => {
     expect(precoSugeridoPadrao(Number.NaN)).toBe(0);
   });
 
-  it("mantém a MB% acima da política mínima de 33%", () => {
+  // Markup de 37% sobre o custo ≠ MB% de 37%: impostos e frete reduzem a
+  // receita líquida, então o sugerido é só o ponto de partida — a política de
+  // MB mínima (33%) é validada à parte, no cálculo da proposta.
+  it("é markup sobre o custo, não MB% — a política mínima é avaliada no cálculo", () => {
     const d = calc(estado());
-    expect(d.mbPct).toBeGreaterThanOrEqual(config.politica_mb_min);
-    expect(statusMB(d.mbPct, config).level).not.toBe("bad");
+    expect(d.valorItens).toBeCloseTo(precoSugeridoPadrao(PRODUTO.custo), 6);
+    expect(d.mbPct).toBeLessThan(MARGEM_PRECO_SUGERIDO);
+    expect(statusMB(d.mbPct, config).level).toBe(
+      d.mbPct < config.politica_mb_min ? "bad" : "good",
+    );
   });
+
 });
 
 describe("Recalculo dos itens", () => {
