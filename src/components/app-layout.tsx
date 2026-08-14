@@ -118,6 +118,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const initials = (profile?.full_name ?? user?.email ?? "U")
     .split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
+  // Engrenagem de administração: visível para admin OU para quem tem alguma tela
+  // de administração liberada no perfil de permissão.
+  const visibleAdminSections = ADMIN_SECTIONS.filter((s) =>
+    s.groups.some((g) => g.items.some((i) => !i.feature || hasFeature(i.feature))),
+  );
+  const canSeeAdminMenu = hasRole("admin") || visibleAdminSections.length > 0;
+
+
+
   async function handleSignOut() {
     await logUserActivity({ data: { event: "logout" } }).catch(() => {});
     await supabase.auth.signOut();
