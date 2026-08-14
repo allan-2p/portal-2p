@@ -19,6 +19,7 @@ import { SecurityAlerts } from "@/components/security-alerts";
 import { Loader2, Activity, LogIn, LogOut, RefreshCw, Search, ShieldAlert, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
+import { ExportLogsButton } from "@/components/admin/export-logs-button";
 
 export const Route = createFileRoute("/_authenticated/admin/atividade")({
   head: () => ({
@@ -127,6 +128,7 @@ function AtividadePage() {
                 <SelectItem value="365">12 meses</SelectItem>
               </SelectContent>
             </Select>
+            <ExportLogsButton source="atividade" days={Number(days) || 30} />
             <Button variant="outline" size="icon" onClick={() => refetch()}>
               <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
             </Button>
