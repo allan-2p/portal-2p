@@ -26,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/admin/logs/")({
         <AdminSectionHome sectionId="logs">
           <AdminSectionNotice
             title="Sugestões"
+            dismissKey="logs"
             items={[
               { label: "Acompanhe logins e falhas de acesso", to: "/admin/atividade" },
               { label: "Verifique integrações com erro recente", to: "/admin/logs/integracoes" },
