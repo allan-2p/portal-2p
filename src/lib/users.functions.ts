@@ -19,7 +19,8 @@ const CreateInput = z.object({
   equipe: z.string().optional().nullable(),
   regime_contratacao: RegimeEnum.optional().default("CLT"),
   organizacao: OrgEnum.optional().default("solar"),
-  role: RoleEnum,
+  role: RoleEnum.optional().default("vendedor"),
+  profile_id: z.string().uuid(),
 });
 
 
@@ -35,6 +36,7 @@ export const adminCreateUser = createServerFn({ method: "POST" })
       {
         email: data.email,
         role: data.role,
+        profile_id: data.profile_id,
         full_name: data.full_name,
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
@@ -53,7 +55,13 @@ export const adminCreateUser = createServerFn({ method: "POST" })
       user_metadata: { full_name: data.full_name },
     });
     if (error) throw new Error(error.message);
-    return { id: created.user?.id };
+    const newId = created.user?.id;
+    if (newId) {
+      await supabaseAdmin
+        .from("user_permission_profiles")
+        .upsert({ user_id: newId, profile_id: data.profile_id }, { onConflict: "user_id,profile_id" });
+    }
+    return { id: newId };
   });
 
 const InviteInput = z.object({
@@ -63,7 +71,8 @@ const InviteInput = z.object({
   equipe: z.string().optional().nullable(),
   regime_contratacao: RegimeEnum.optional().default("CLT"),
   organizacao: OrgEnum.optional().default("solar"),
-  role: RoleEnum,
+  role: RoleEnum.optional().default("vendedor"),
+  profile_id: z.string().uuid(),
 
   is_external: z.boolean().optional().default(false),
   sf_user_id: z.string().optional().nullable(),
@@ -81,6 +90,7 @@ export const adminInviteUser = createServerFn({ method: "POST" })
       {
         email: data.email,
         role: data.role,
+        profile_id: data.profile_id,
         full_name: data.full_name,
         cargo: data.cargo ?? null,
         equipe: data.equipe ?? null,
@@ -232,13 +242,7 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    if (data.role) {
-      await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id);
-      const { error } = await supabaseAdmin
-        .from("user_roles")
-        .insert({ user_id: data.user_id, role: data.role });
-      if (error) throw new Error(error.message);
-    }
+    // O papel interno é derivado do perfil de permissão (trigger no banco).
 
     if (data.ativo !== undefined) {
       await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
