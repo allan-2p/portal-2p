@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
 import { PermissionGate } from "@/components/permission-gate";
+import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
   head: () => ({
@@ -65,6 +66,7 @@ const STATUS = PROPOSTA_STATUS;
 
 function HistoricoCpoPage() {
   const [busca, setBusca] = useState("");
+  const [detalheId, setDetalheId] = useState<string | null>(null);
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
   const [vendedor, setVendedor] = useState("__all__");
@@ -105,6 +107,8 @@ function HistoricoCpoPage() {
       return false;
     return true;
   });
+
+  const detalheIdx = detalheId ? filtered.findIndex((r) => r.id === detalheId) : -1;
 
 
 
@@ -225,10 +229,13 @@ function HistoricoCpoPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" aria-label="Detalhar" asChild>
-                          <Link to="/carregadores/propostas/visualizar" search={{ id: r.id }}>
-                            <Eye className="h-4 w-4" />
-                          </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Detalhar"
+                          onClick={() => setDetalheId(r.id)}
+                        >
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" aria-label="Continuar proposta" asChild>
                           <Link to="/carregadores/propostas/nova" search={{ id: r.id }}>
@@ -266,6 +273,16 @@ function HistoricoCpoPage() {
         </div>
       </div>
 
+      <PropostaDetalheDialog
+        id={detalheId ?? undefined}
+        onOpenChange={(open) => !open && setDetalheId(null)}
+        hasPrev={detalheIdx > 0}
+        hasNext={detalheIdx >= 0 && detalheIdx < filtered.length - 1}
+        onNavigate={(dir) => {
+          const next = filtered[detalheIdx + dir];
+          if (next) setDetalheId(next.id);
+        }}
+      />
     </AppLayout>
   );
 }
