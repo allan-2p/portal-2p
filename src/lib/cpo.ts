@@ -151,6 +151,14 @@ export function aliqInterOperacao(args: {
   return 0.04;
 }
 
+/**
+ * DIFAL só existe quando a mercadoria é destinada a consumidor final (uso e consumo/ativo).
+ * Revenda e industrialização não geram DIFAL — a mercadoria segue no ciclo de circulação.
+ */
+export function finalidadeGeraDifal(finalidade: CpoFinalidadeUso) {
+  return finalidade === "uso_consumo";
+}
+
 /** Aviso de guia de DIFAL em compras para uso e consumo (independe de convênio ST). */
 export function avisoDifalUsoConsumo(state: Pick<CpoState, "contribuinte" | "ie" | "finalidadeUso">) {
   if (state.finalidadeUso !== "uso_consumo" || !difalEhInformativo(state)) return null;
@@ -159,6 +167,7 @@ export function avisoDifalUsoConsumo(state: Pick<CpoState, "contribuinte" | "ie"
     "do DIFAL no seu Estado, mesmo em UF sem convênio de ICMS-ST. Valor apresentado apenas em caráter informativo."
   );
 }
+
 
 /** Texto padrão de observações incluído em toda nova proposta. */
 export const OBSERVACOES_PADRAO =
