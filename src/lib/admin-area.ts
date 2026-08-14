@@ -11,6 +11,8 @@ const GROUP_PREFIXES = [
   "/carregadores/produtos",
   "/carregadores/comissoes",
   "/carregadores/regras",
+  "/carregadores/metas",
+
 ];
 
 export function isGroupAdminPath(pathname: string): boolean {
