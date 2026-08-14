@@ -28,7 +28,7 @@ import {
 import { toast } from "sonner";
 
 import {
-  Loader2, UserPlus, Shield, Trash2, Power, Camera, Cloud, Pencil, Stethoscope, VenetianMask,
+  Loader2, UserPlus, Shield, Camera, Cloud, Pencil, Stethoscope, VenetianMask,
 } from "lucide-react";
 import { useSimulation } from "@/components/simulation";
 import { UserDetailSheet } from "@/components/user-detail-sheet";
@@ -313,8 +313,6 @@ function UsuariosPage() {
             loading={loading}
             currentUserId={user?.id}
             onOrgChange={handleOrgChange}
-            onToggle={handleToggle}
-            onDelete={handleDelete}
             onReload={load}
             onScopeChange={handleScopeChange}
             onSfIdChange={handleSfIdChange}
@@ -341,10 +339,17 @@ function UsuariosPage() {
       {modal?.kind === "edit" && (
         <EditUserModal
           row={modal.row}
+          currentUserId={user?.id}
           onClose={() => setModal(null)}
           onSubmit={async (data) => {
             await updateFn({ data: { user_id: modal.row.id, ...data } });
             toast.success("Usuário atualizado");
+            setModal(null);
+            load();
+          }}
+          onDelete={async () => {
+            await deleteFn({ data: { user_id: modal.row.id } });
+            toast.success("Usuário removido");
             setModal(null);
             load();
           }}
@@ -369,14 +374,12 @@ function UsuariosPage() {
 }
 
 function PortalTable({
-  rows, loading, currentUserId, onOrgChange, onToggle, onDelete, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit, onDetail, onSimulate,
+  rows, loading, currentUserId, onOrgChange, onReload, onScopeChange, onSfIdChange, onRegimeChange, onEdit, onDetail, onSimulate,
 }: {
   rows: Row[];
   loading: boolean;
   currentUserId: string | undefined;
   onOrgChange: (id: string, o: Org) => void;
-  onToggle: (id: string, ativo: boolean) => void;
-  onDelete: (id: string) => void;
   onReload: () => void;
   onScopeChange: (id: string, scope: FilterScope) => void;
   onSfIdChange: (id: string, sf_user_id: string | null) => void;
@@ -597,24 +600,6 @@ function PortalTable({
                       aria-label="Editar informações"
                     >
                       <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => onToggle(r.id, r.ativo)}
-                      disabled={r.id === currentUserId}
-                      className="p-1.5 rounded hover:bg-surface-2 disabled:opacity-30"
-                      title={r.ativo ? "Desativar" : "Ativar"}
-                      aria-label={r.ativo ? "Desativar usuário" : "Ativar usuário"}
-                    >
-                      <Power className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(r.id)}
-                      disabled={r.id === currentUserId}
-                      className="p-1.5 rounded hover:bg-destructive/10 text-destructive disabled:opacity-30"
-                      title="Remover"
-                      aria-label="Remover"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </td>
@@ -896,12 +881,16 @@ type EditPayload = {
 
 function EditUserModal({
   row,
+  currentUserId,
   onClose,
   onSubmit,
+  onDelete,
 }: {
   row: Row;
+  currentUserId: string | undefined;
   onClose: () => void;
   onSubmit: (data: EditPayload) => Promise<void>;
+  onDelete: () => Promise<void>;
 }) {
   const listProfilesFn = useServerFn(adminListPermissionProfiles);
   const setUserProfilesFn = useServerFn(adminSetUserProfiles);
@@ -942,6 +931,7 @@ function EditUserModal({
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
 
   return (
@@ -1083,6 +1073,23 @@ function EditUserModal({
         </div>
 
         <div className="flex gap-2 pt-2">
+          <button
+            type="button"
+            disabled={row.id === currentUserId || deleting}
+            onClick={async () => {
+              if (!confirm("Remover este usuário permanentemente?")) return;
+              setDeleting(true);
+              try {
+                await onDelete();
+              } finally {
+                setDeleting(false);
+              }
+            }}
+            className="py-2 px-4 rounded-lg border border-destructive text-destructive text-sm font-medium hover:bg-destructive/10 disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
+            Excluir
+          </button>
           <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-border text-sm hover:bg-surface-2">
             Cancelar
           </button>
