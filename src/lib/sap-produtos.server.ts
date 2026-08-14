@@ -15,7 +15,19 @@ export type SapMaterial = {
   lista_preco: string | null;
   /** 'Todos' | 'Admin' */
   permissao: string;
+  /** NCM devolvido pelo SAP (8 dígitos), quando a RFC informa. */
+  ncm: string | null;
   raw: unknown;
+};
+
+export type SapMaterialCompleto = {
+  codigo: string;
+  descricao: string;
+  unidade: string | null;
+  ncm: string | null;
+  /** true quando o código faz parte do catálogo liberado do portal. */
+  liberado: boolean;
+  raw: any;
 };
 
 /** Códigos que entram na calculadora (whitelist do legado). */
