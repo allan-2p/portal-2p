@@ -20,7 +20,15 @@ function slugFromTo(to: string): string | null {
 export function AdminSidebar({ pathname, collapsed }: { pathname: string; collapsed: boolean }) {
   const navigate = useNavigate();
   const { hasFeature, defaultRoute } = useInstance();
-  const current = sectionForPath(pathname);
+  const section = sectionForPath(pathname);
+  // O menu só lista a seção quando o backend libera a área correspondente.
+  const { data: areas } = useQuery({
+    queryKey: ["admin-areas"],
+    queryFn: () => getAdminAreas(),
+    staleTime: 60_000,
+  });
+  const current = section && areas?.[section.id] === true ? section : null;
+
   const health = useIntegrationHealthMap(current?.id === "integracoes");
   const { bySlug: alertsBySlug } = useIntegrationAlerts(current?.id === "integracoes");
 
