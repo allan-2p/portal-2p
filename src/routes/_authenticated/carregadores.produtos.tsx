@@ -191,11 +191,13 @@ function ProdutosTab() {
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.codigo || "—"}</td>
                   <td className="px-4 py-3 font-medium">{p.nome}</td>
                   <td className="px-4 py-3 font-mono text-xs">
-                    {p.ncm_id ? (
-                      <span className="text-muted-foreground">{ncms.find((n) => n.id === p.ncm_id)?.codigo ?? "—"}</span>
+                    {p.ncm_codigo ?? (p.ncm_id ? ncms.find((n) => n.id === p.ncm_id)?.codigo : null) ? (
+                      <span className="text-muted-foreground">
+                        {p.ncm_codigo ?? ncms.find((n) => n.id === p.ncm_id)?.codigo}
+                      </span>
                     ) : (
                       <span className="rounded-full bg-warning/10 px-2 py-0.5 font-sans text-[11px] font-medium text-warning">
-                        NCM pendente
+                        NCM não veio do SAP
                       </span>
                     )}
                   </td>
@@ -207,7 +209,7 @@ function ProdutosTab() {
                       aria-label={p.ativo ? "Desativar produto" : "Ativar produto"}
                       title={
                         !p.ativo && !p.ncm_id
-                          ? "Defina o NCM do produto para poder ativá-lo"
+                          ? "O NCM ainda não veio do SAP para este material"
                           : undefined
                       }
                     />
@@ -281,25 +283,7 @@ function ProdutosTab() {
               <Field label="Nome">
                 <Input className="w-full" value={draft.nome} onChange={(e) => setDraft({ ...draft, nome: e.target.value })} />
               </Field>
-              <Field label="NCM (define IPI, PIS/COFINS, ST e DIFAL)">
-                <Select
-                  value={draft.ncm_id || "none"}
-                  onValueChange={(v) => setDraft({ ...draft, ncm_id: v === "none" ? "" : v })}
-                >
-                  <SelectTrigger className="w-full min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-left">
-                    <SelectValue placeholder="Selecione o NCM" />
-                  </SelectTrigger>
-                  <SelectContent className="max-w-[calc(100vw-2rem)]">
-                    <SelectItem value="none">Sem NCM (usa padrão global)</SelectItem>
-                    {ncms.map((n) => (
-                      <SelectItem key={n.id} value={n.id} className="whitespace-normal break-words">
-                        {n.codigo} — {n.descricao}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-              </Field>
+              
               <Field label="Custo (R$)">
                 <Input
                   className="w-full"
@@ -539,7 +523,7 @@ function NcmTab() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground max-w-3xl">
           As regras fiscais são cadastradas por NCM, e não por produto: cada NCM importado tem alíquotas próprias e
-          regras distintas de ICMS-ST e DIFAL. Vincule cada carregador ao seu NCM na aba Produtos.
+          regras distintas de ICMS-ST e DIFAL. O NCM de cada material vem do SAP na sincronização.
         </p>
         <Button className="gap-2" onClick={() => setDraft({ ...NCM_EMPTY })}>
           <Plus className="h-4 w-4" /> Novo NCM
