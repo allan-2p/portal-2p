@@ -649,6 +649,20 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               </Section>
 
               <Section title="Comercial">
+                <F label="Consultor responsável">
+                  {consultoresQ.data?.podeEscolher ? (
+                    <Select value={consultorId ?? ""} onValueChange={(v) => setConsultorId(v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
+                      <SelectContent>
+                        {(consultoresQ.data?.consultores ?? []).map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input value={consultorNomeAtual} disabled />
+                  )}
+                </F>
                 <F label="Condição de pagamento">
                   <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
                 </F>
