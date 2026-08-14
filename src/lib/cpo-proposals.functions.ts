@@ -162,7 +162,10 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
 
     const payload = {
       numero: data.numero,
+      nome: data.propostaNome,
+      numero_sap: data.numeroSap,
       cliente_nome: data.cliente.nome,
+
       cliente_telefone: data.cliente.telefone,
       cliente_email: data.cliente.email,
       cliente_doc: data.cliente.doc,
