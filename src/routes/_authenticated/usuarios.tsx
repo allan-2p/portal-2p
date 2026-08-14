@@ -389,21 +389,6 @@ function PortalTable({
 }) {
 
 
-  const syncPhoto = useServerFn(syncSalesforcePhoto);
-  async function handleSyncPhoto(userId: string) {
-    try {
-      const r = await syncPhoto({ data: { user_id: userId } });
-      if (r.ok) {
-        toast.success("Foto sincronizada do Salesforce");
-        onReload();
-      } else {
-        toast.warning(r.reason);
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
-    }
-  }
-
   const qc = useQueryClient();
   const fetchTeams = useServerFn(listSfTeams);
   const setTeamFn = useServerFn(adminSetSfTeam);
@@ -636,16 +621,6 @@ function PortalTable({
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
-                    {r.sf_user_id && (
-                      <button
-                        onClick={() => handleSyncPhoto(r.id)}
-                        className="p-1.5 rounded hover:bg-surface-2"
-                        title="Sincronizar foto do Salesforce"
-                      aria-label="Sincronizar foto do Salesforce"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                      </button>
-                    )}
                     <button
                       onClick={() => onToggle(r.id, r.ativo)}
                       disabled={r.id === currentUserId}
