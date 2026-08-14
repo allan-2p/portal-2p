@@ -164,9 +164,9 @@ function PedidosPage() {
   );
 }
 
-const STATUS_STYLE: Record<PedidoStatus, { bg: string; fg: string }> = Object.fromEntries(
+const STATUS_STYLE = Object.fromEntries(
   PEDIDO_STATUS.map((s) => [s, propostaStatusStyle(s)]),
-) as Record<PedidoStatus, { bg: string; fg: string }>;
+) as unknown as Record<PedidoStatus, { bg: string; fg: string }>;
 
 
 function KanbanView({ data }: { data: Pedido[] }) {
