@@ -154,7 +154,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
       const keys = Object.keys(ROUTE_FEATURE).sort((a, b) => b.length - a.length);
       const match = keys.find((k) => path === k || path.startsWith(k + "/"));
       if (!match) return true;
-      return hasFeature(ROUTE_FEATURE[match]);
+      return hasFeature((ROUTE_FEATURE as Record<string, FeatureKey>)[match]);
     },
     [hasFeature, isAdmin],
   );
