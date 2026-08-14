@@ -445,9 +445,8 @@ function PortalTable({
             <th className="text-left px-4 py-3 font-medium">Equipe</th>
             <th className="text-left px-4 py-3 font-medium">Perfil</th>
             <th className="text-left px-4 py-3 font-medium">Organização</th>
-            <th className="text-left px-4 py-3 font-medium">Regime de contratação</th>
 
-            <th className="text-left px-4 py-3 font-medium">Escopo do filtro</th>
+
             
             <th className="text-left px-4 py-3 font-medium">Equipe de vendas</th>
             <th className="text-center px-4 py-3 font-medium">Aparece nos filtros</th>
