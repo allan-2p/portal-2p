@@ -267,12 +267,13 @@ function ProdutosTab() {
       </div>
 
       <Dialog open={!!draft} onOpenChange={(v) => !v && setDraft(null)}>
-        <DialogContent className="max-w-lg w-[calc(100%-2rem)] overflow-hidden sm:w-full">
-          <DialogHeader>
-            <DialogTitle>Editar produto</DialogTitle>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg overflow-hidden p-4 sm:p-6 max-h-[90dvh] flex flex-col gap-4">
+          <DialogHeader className="text-left">
+            <DialogTitle className="break-words">Editar produto</DialogTitle>
           </DialogHeader>
           {draft && (
-            <div className="space-y-3 min-w-0">
+            <div className="space-y-3 min-w-0 flex-1 overflow-y-auto -mx-1 px-1">
+
               <Field label="Código (SKU)">
                 <Input className="w-full" value={draft.codigo} readOnly disabled />
               </Field>
@@ -285,39 +286,50 @@ function ProdutosTab() {
                   value={draft.ncm_id || "none"}
                   onValueChange={(v) => setDraft({ ...draft, ncm_id: v === "none" ? "" : v })}
                 >
-                  <SelectTrigger className="w-full"><SelectValue placeholder="Selecione o NCM" /></SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-left">
+                    <SelectValue placeholder="Selecione o NCM" />
+                  </SelectTrigger>
                   <SelectContent className="max-w-[calc(100vw-2rem)]">
                     <SelectItem value="none">Sem NCM (usa padrão global)</SelectItem>
                     {ncms.map((n) => (
-                      <SelectItem key={n.id} value={n.id}>
+                      <SelectItem key={n.id} value={n.id} className="whitespace-normal break-words">
                         {n.codigo} — {n.descricao}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+
               </Field>
               <Field label="Custo (R$)">
                 <Input
                   className="w-full"
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
                   value={draft.custo}
                   onChange={(e) => setDraft({ ...draft, custo: e.target.value })}
                 />
               </Field>
 
-              <div className="flex items-center gap-3">
-                <Switch checked={draft.ativo} onCheckedChange={(v) => setDraft({ ...draft, ativo: v })} />
-                <span className="text-sm">Disponível para propostas</span>
+              <div className="flex items-start gap-3">
+                <Switch
+                  className="mt-0.5 shrink-0"
+                  checked={draft.ativo}
+                  onCheckedChange={(v) => setDraft({ ...draft, ativo: v })}
+                />
+                <span className="min-w-0 text-sm break-words">Disponível para propostas</span>
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDraft(null)}>Cancelar</Button>
-            <Button onClick={salvar} disabled={saving} className="gap-2">
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setDraft(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={salvar} disabled={saving} className="w-full gap-2 sm:w-auto">
               <Save className="h-4 w-4" /> Salvar
             </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
     </div>
@@ -436,10 +448,11 @@ function UfsTab() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+    <div className="space-y-1.5 min-w-0">
+      <Label className="text-xs text-muted-foreground break-words leading-snug block">{label}</Label>
       {children}
     </div>
+
   );
 }
 
