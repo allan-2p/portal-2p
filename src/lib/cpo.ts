@@ -273,12 +273,19 @@ export function calcularCpo(
     const bruto = (it.valor || 0) * qtd;
     const prod = produtos.find((p) => p.id === it.produtoId);
     const r = ncmDoItem(it.produtoId);
+    const interItem = aliqInterOperacao({
+      uf: state.uf,
+      contribuinte: state.contribuinte,
+      regimeTributario: state.regimeTributario ?? null,
+      finalidade: state.finalidadeUso,
+      padrao: r.inter,
+    });
 
     const semIpi = bruto / (1 + r.ipi);
     // ICMS incide sobre o valor da mercadoria + frete rateado por item.
     const freteItem = brutoTotal > 0 ? frete * (bruto / brutoTotal) : 0;
     const baseIcms = semIpi + freteItem;
-    const icmsItem = baseIcms * r.inter;
+    const icmsItem = baseIcms * interItem;
     const pcItem = (semIpi - icmsItem) * r.pisCofins;
 
     valorItens += bruto;
@@ -287,10 +294,10 @@ export function calcularCpo(
     ipiValor += bruto - semIpi;
     icms += icmsItem;
     pisCofins += pcItem;
-    interPonderado += r.inter * bruto;
+    interPonderado += interItem * bruto;
 
     if (r.geraDifal) {
-      const d = calcularDifal(bruto + freteItem, interna, fcp, r.inter);
+      const d = calcularDifal(bruto + freteItem, interna, fcp, interItem);
       difalBase += d.base;
       difalValor += d.valor;
     }
@@ -305,9 +312,11 @@ export function calcularCpo(
   const icmsRate = inter;
 
   // DIFAL não entra no ICMS: é custo adicional no cabeçalho da NF.
+  // Contribuinte com IE recolhe o DIFAL por guia no Estado dele → informativo, sem impacto na margem.
   const difal = { base: difalBase, valor: difalValor };
-  const difalAbs = state.contribuinte ? 0 : difal.valor;
-  const difalEstimado = state.contribuinte ? difal.valor : 0;
+  const informativo = difalEhInformativo(state);
+  const difalAbs = informativo ? 0 : difal.valor;
+  const difalEstimado = informativo ? difal.valor : 0;
 
 
   const rl = valorItens - ipiValor - icms - pisCofins - difalAbs;
