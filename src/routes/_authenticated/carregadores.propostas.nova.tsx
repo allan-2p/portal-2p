@@ -149,6 +149,9 @@ function PropostaCpoPage() {
 
   // Nova proposta sempre começa vazia; só carrega dados ao editar/duplicar uma proposta salva.
   const [state, setState] = useState<CpoState>(() => novoEstado());
+  // Itens cujo valor unitário acabou de ser atualizado pelo Preço Sugerido.
+  const [precoChanges, setPrecoChanges] = useState<Record<string, { de: number; para: number }>>({});
+
   const [openCli, setOpenCli] = useState(false);
   const [etapa, setEtapa] = useState<1 | 2 | 3 | 4>(1);
   const [tentouAvancar, setTentouAvancar] = useState(false);
