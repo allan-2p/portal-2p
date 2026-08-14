@@ -1068,6 +1068,7 @@ function PropostaCpoPage() {
                       <ReadField label="CNPJ / CPF" value={state.doc} invalid={campoInvalido("doc")} />
                       <ReadField label="Estado (UF) de destino" value={uf ? `${uf.uf} — ${uf.nome}` : state.uf} invalid={campoInvalido("uf")} />
                       <ReadField label="Inscrição Estadual" value={state.ie || "Cliente sem IE"} invalid={campoInvalido("ie")} />
+                      <ReadField label="Consultor" value={consultorProposta || "—"} />
                     </div>
                     <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs">
                       <b className="text-foreground">
