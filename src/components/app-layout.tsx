@@ -161,8 +161,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const moderacaoActive = pathname.startsWith("/carregadores/produtos") || pathname.startsWith("/carregadores/comissoes") || pathname.startsWith("/carregadores/regras");
   const marketingActive = pathname.startsWith("/marketing");
 
-  // Filtragem de itens por feature.
-  const show = (k: FeatureKey) => hasFeature(k);
+  // Filtragem de itens por feature — cada bloco só aparece na sua própria
+  // instância (nada de item Solar sob o título Carregadores, e vice-versa).
+  const instanceOf = (k: FeatureKey): "solar" | "carregadores" | "marketing" | "any" =>
+    k.startsWith("cpo.") ? "carregadores" : k.startsWith("marketing.") ? "marketing" : k.startsWith("admin.") ? "any" : "solar";
+  const show = (k: FeatureKey) => {
+    const owner = instanceOf(k);
+    if (owner !== "any" && owner !== instance) return false;
+    return hasFeature(k);
+  };
+
 
   // Área do Grupo 2P (admin/config): tema neutro (preto/branco), sem identidade de instância.
   // O atributo global é aplicado em __root (vale para todo o portal); aqui só ajustamos a marca.
