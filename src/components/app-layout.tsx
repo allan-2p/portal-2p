@@ -432,7 +432,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <ThemeToggle />
               <NotificationsDropdown />
 
-              {hasRole("admin") && (
+              {canSeeAdminMenu && (
                 <div className="relative">
                   <button
                     onClick={() => setAdminMenuOpen((v) => !v)}
@@ -457,7 +457,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
                           Grupo 2P • Administração
                         </div>
-                        {ADMIN_SECTIONS.map((s) => (
+                        {visibleAdminSections.map((s) => (
                           <AdminMenuLink
                             key={s.id}
                             to={s.home}
