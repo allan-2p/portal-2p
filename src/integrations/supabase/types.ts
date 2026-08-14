@@ -841,51 +841,6 @@ export type Database = {
         }
         Relationships: []
       }
-      permission_audit_log: {
-        Row: {
-          action: string
-          actor_email: string | null
-          actor_id: string | null
-          before_state: Json
-          created_at: string
-          details: Json
-          feature_keys: string[]
-          id: string
-          instance_id: string
-          undone_at: string | null
-          undone_by: string | null
-          user_ids: string[]
-        }
-        Insert: {
-          action: string
-          actor_email?: string | null
-          actor_id?: string | null
-          before_state?: Json
-          created_at?: string
-          details?: Json
-          feature_keys?: string[]
-          id?: string
-          instance_id: string
-          undone_at?: string | null
-          undone_by?: string | null
-          user_ids?: string[]
-        }
-        Update: {
-          action?: string
-          actor_email?: string | null
-          actor_id?: string | null
-          before_state?: Json
-          created_at?: string
-          details?: Json
-          feature_keys?: string[]
-          id?: string
-          instance_id?: string
-          undone_at?: string | null
-          undone_by?: string | null
-          user_ids?: string[]
-        }
-        Relationships: []
-      }
       permission_profile_features: {
         Row: {
           created_at: string
@@ -1388,38 +1343,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
-      }
-      user_feature_permissions: {
-        Row: {
-          allowed: boolean
-          feature_key: string
-          instance_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          allowed?: boolean
-          feature_key: string
-          instance_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          allowed?: boolean
-          feature_key?: string
-          instance_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_feature_permissions_instance_id_fkey"
-            columns: ["instance_id"]
-            isOneToOne: false
-            referencedRelation: "instances"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_instance_access: {
         Row: {
