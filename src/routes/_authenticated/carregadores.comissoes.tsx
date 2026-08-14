@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { ModerationAuditLog } from "@/components/moderation-audit-log";
 import { CpoConfigTab } from "@/components/cpo-config-tab";
 import { CpoComissaoRegras } from "@/components/cpo-comissao-regras";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
@@ -40,7 +39,6 @@ function ComissoesCpoPage() {
           <h2 className="font-semibold mb-2">Parâmetros tributários</h2>
           <CpoConfigTab />
         </div>
-        <ModerationAuditLog area="cpo_regras" description="alterações nas regras de comissão e parâmetros tributários de Carregadores." />
       </div>
 
 

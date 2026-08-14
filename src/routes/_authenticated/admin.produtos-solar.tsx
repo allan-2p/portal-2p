@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
-import { ModerationAuditLog } from "@/components/moderation-audit-log";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -211,7 +210,6 @@ function ProdutosSolarPage() {
           </div>
         </div>
 
-        <ModerationAuditLog area="produtos" description="alterações no catálogo de produtos." />
       </div>
     </AppLayout>
   );

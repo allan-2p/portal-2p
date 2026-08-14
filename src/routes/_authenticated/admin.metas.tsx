@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { ModerationAuditLog } from "@/components/moderation-audit-log";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -294,7 +293,6 @@ function MetasPage() {
         <CommissionRetencaoPanel />
         <CommissionNovosPanel />
         <SalespersonEquipePanel />
-        <ModerationAuditLog area="metas" description="alterações nas metas e regras de comissão do 2P Solar." />
       </div>
     </AppLayout>
   );

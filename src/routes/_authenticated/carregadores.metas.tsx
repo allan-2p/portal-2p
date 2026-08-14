@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ModeracaoPlaceholder, PlaceholderLink } from "@/components/admin/moderacao-placeholder";
-import { ModerationAuditLog } from "@/components/moderation-audit-log";
 
 export const Route = createFileRoute("/_authenticated/carregadores/metas")({
   head: () => ({
@@ -30,7 +29,6 @@ export const Route = createFileRoute("/_authenticated/carregadores/metas")({
           </p>
         </ModeracaoPlaceholder>
         <div className="max-w-[1100px] mx-auto mt-5">
-          <ModerationAuditLog area="cpo_metas" description="alterações nas metas de 2P Carregadores." />
         </div>
       </AppLayout>
     </AdminRouteGuard>
