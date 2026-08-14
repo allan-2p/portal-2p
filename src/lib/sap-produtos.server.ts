@@ -143,7 +143,7 @@ export async function getProducts(): Promise<SapMaterial[]> {
     if (items.length === 0) {
       throw new Error(
         `SAP: resposta sem materiais (e_t_material vazio) usando ${credencial.nome}. ` +
-          `HTTP ${res.status}, ${xml.length} bytes. Corpo: ${xml.slice(0, 400)}`,
+          `HTTP ${res.status}, ${xml.length} bytes.`,
       );
     }
     return items as any[];
