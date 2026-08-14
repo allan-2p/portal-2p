@@ -213,7 +213,10 @@ function HistoricoCpoPage() {
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
+                    <td className="px-4 py-3">{r.nome || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{r.numero_sap || "—"}</td>
                     <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
+
                     <td className="px-4 py-3">{r.uf}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.contribuinte ? "Sim" : "Não"}</td>
                     <td className="px-4 py-3 text-right font-semibold">{fmtBRL(r.totais.valorTotal ?? 0)}</td>
