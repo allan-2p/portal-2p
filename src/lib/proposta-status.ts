@@ -28,40 +28,45 @@ export type PropostaStatusStyle = {
   fg: string;
 };
 
+/**
+ * Paleta oficial dos status (fonte única). As cores são dados de domínio —
+ * consumidas via style inline ou pelas classes utilitárias abaixo.
+ */
 export const PROPOSTA_STATUS_STYLE: Record<PropostaStatus, PropostaStatusStyle> = {
   "Salvo": {
-    dot: "bg-orange-500", text: "text-orange-500", chip: "bg-orange-500 text-background",
-    bg: "#F97316", fg: "#1A1206",
+    dot: "bg-[#A8A29E]", text: "text-[#A8A29E]", chip: "bg-[#A8A29E] text-[#1C1917]",
+    bg: "#A8A29E", fg: "#1C1917",
   },
   "Aguardando Pagamento": {
-    dot: "bg-indigo-500", text: "text-indigo-400", chip: "bg-indigo-500 text-background",
-    bg: "#6366F1", fg: "#F8FAFC",
+    dot: "bg-[#A78BFA]", text: "text-[#A78BFA]", chip: "bg-[#A78BFA] text-[#1E1B4B]",
+    bg: "#A78BFA", fg: "#1E1B4B",
   },
   "Processando": {
-    dot: "bg-yellow-400", text: "text-yellow-500", chip: "bg-yellow-400 text-background",
-    bg: "#FACC15", fg: "#1F1A10",
+    dot: "bg-[#D97706]", text: "text-[#D97706]", chip: "bg-[#D97706] text-[#FFFBEB]",
+    bg: "#D97706", fg: "#FFFBEB",
   },
   "Separação": {
-    dot: "bg-sky-400", text: "text-sky-400", chip: "bg-sky-400 text-background",
-    bg: "#38BDF8", fg: "#0B1B24",
+    dot: "bg-[#0284C7]", text: "text-[#0284C7]", chip: "bg-[#0284C7] text-[#F0F9FF]",
+    bg: "#0284C7", fg: "#F0F9FF",
   },
   "Faturado": {
-    dot: "bg-foreground", text: "text-foreground", chip: "bg-foreground text-background",
-    bg: "#111111", fg: "#F8FAFC",
+    dot: "bg-[#1E3A8A]", text: "text-[#1E3A8A]", chip: "bg-[#1E3A8A] text-[#EFF6FF]",
+    bg: "#1E3A8A", fg: "#EFF6FF",
   },
   "Coletado": {
-    dot: "bg-emerald-500", text: "text-emerald-500", chip: "bg-emerald-500 text-background",
-    bg: "#10B981", fg: "#04211A",
+    dot: "bg-[#0F766E]", text: "text-[#0F766E]", chip: "bg-[#0F766E] text-[#ECFDF5]",
+    bg: "#0F766E", fg: "#ECFDF5",
   },
   "Entregue": {
-    dot: "bg-gray-500", text: "text-gray-400", chip: "bg-gray-500 text-background",
-    bg: "#6B7280", fg: "#F8FAFC",
+    dot: "bg-[#15803D]", text: "text-[#15803D]", chip: "bg-[#15803D] text-[#F0FDF4]",
+    bg: "#15803D", fg: "#F0FDF4",
   },
   "Cancelado": {
-    dot: "bg-red-500", text: "text-red-500", chip: "bg-red-500 text-background",
-    bg: "#EF4444", fg: "#FFF5F5",
+    dot: "bg-[#B91C1C]", text: "text-[#B91C1C]", chip: "bg-[#B91C1C] text-[#FEF2F2]",
+    bg: "#B91C1C", fg: "#FEF2F2",
   },
 };
+
 
 /** Status ainda "em curso" (não finalizados nem cancelados). */
 export const PROPOSTA_STATUS_EM_CURSO: PropostaStatus[] = [
