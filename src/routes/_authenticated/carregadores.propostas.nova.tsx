@@ -1266,6 +1266,9 @@ function PropostaCpoPage() {
                           <p className="text-[11px] text-destructive mt-1">Informe o valor unitário deste item.</p>
                         ) : null}
                       </Field>
+                        );
+                      })()}
+
 
                       <div className="flex items-end justify-between gap-2">
                         <div className="text-xs text-muted-foreground">
