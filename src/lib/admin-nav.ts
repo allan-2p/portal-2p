@@ -68,6 +68,12 @@ export const ADMIN_SECTIONS: AdminSection[] = [
           { to: "/admin/auditoria", label: "Auditoria de Acessos", icon: ShieldCheck, feature: "admin.auditoria" },
         ],
       },
+      {
+        label: "Objetos e Campos",
+        items: [
+          { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.produtos" },
+        ],
+      },
     ],
   },
   {
