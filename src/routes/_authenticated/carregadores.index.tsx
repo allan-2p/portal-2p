@@ -11,6 +11,7 @@ import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL } from "@/lib/cpo";
 import { cn } from "@/lib/utils";
+import { PermissionGate } from "@/components/permission-gate";
 import {
   Zap,
   Users,
@@ -213,11 +214,13 @@ function CarregadoresHome() {
               allLabel="Todos os vendedores"
             />
           </div>
-          <Button asChild>
-            <Link to="/carregadores/propostas/nova">
-              <Plus className="h-4 w-4 mr-1.5" /> Nova proposta
-            </Link>
-          </Button>
+          <PermissionGate feature="cpo.propostas" action="editar">
+            <Button asChild>
+              <Link to="/carregadores/propostas/nova">
+                <Plus className="h-4 w-4 mr-1.5" /> Nova proposta
+              </Link>
+            </Button>
+          </PermissionGate>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

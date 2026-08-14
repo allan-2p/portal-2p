@@ -14,6 +14,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { FilePlus, Eye, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { PermissionGate } from "@/components/permission-gate";
 
 export const Route = createFileRoute("/_authenticated/orcamentos")({
   head: () => ({
@@ -157,9 +158,11 @@ function OrcamentosPage() {
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Carteira</div>
             <h1 className="text-3xl font-bold mt-1">Propostas</h1>
           </div>
-          <Button className="gap-2" onClick={() => setWizard(true)}>
-            <FilePlus className="h-4 w-4" /> Nova proposta
-          </Button>
+          <PermissionGate feature="propostas" action="editar" mode="disable">
+            <Button className="gap-2" onClick={() => setWizard(true)}>
+              <FilePlus className="h-4 w-4" /> Nova proposta
+            </Button>
+          </PermissionGate>
         </div>
 
         {/* Legenda de status */}

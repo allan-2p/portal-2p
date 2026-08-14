@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
+import { PermissionGate } from "@/components/permission-gate";
 
 export const Route = createFileRoute("/_authenticated/carregadores/tarefas")({
   head: () => ({
@@ -135,9 +136,11 @@ function CarregadoresTarefas() {
               </SelectContent>
             </Select>
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4 mr-1.5" /> Nova tarefa</Button>
-              </DialogTrigger>
+              <PermissionGate feature="cpo.tarefas" action="editar" mode="disable">
+                <DialogTrigger asChild>
+                  <Button><Plus className="h-4 w-4 mr-1.5" /> Nova tarefa</Button>
+                </DialogTrigger>
+              </PermissionGate>
               <DialogContent>
                 <DialogHeader><DialogTitle>Nova tarefa</DialogTitle></DialogHeader>
                 <div className="space-y-3">
