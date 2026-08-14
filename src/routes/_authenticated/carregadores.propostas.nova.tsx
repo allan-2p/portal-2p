@@ -231,7 +231,10 @@ function PropostaCpoPage() {
         });
 
       setState({
+        propostaNome: ((data as any).nome as string | null) ?? "",
+        numeroSap: dupId ? "" : (((data as any).numero_sap as string | null) ?? ""),
         nome: dupId ? `${data.cliente_nome}` : data.cliente_nome,
+
         telefone: data.cliente_telefone ?? "",
         email: data.cliente_email ?? "",
         doc: data.cliente_doc ?? "",
