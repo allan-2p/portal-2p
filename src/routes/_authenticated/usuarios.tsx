@@ -339,10 +339,17 @@ function UsuariosPage() {
       {modal?.kind === "edit" && (
         <EditUserModal
           row={modal.row}
+          currentUserId={user?.id}
           onClose={() => setModal(null)}
           onSubmit={async (data) => {
             await updateFn({ data: { user_id: modal.row.id, ...data } });
             toast.success("Usuário atualizado");
+            setModal(null);
+            load();
+          }}
+          onDelete={async () => {
+            await deleteFn({ data: { user_id: modal.row.id } });
+            toast.success("Usuário removido");
             setModal(null);
             load();
           }}
