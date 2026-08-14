@@ -14,6 +14,10 @@ import {
 export type SalvarPropostaInput = {
   propostaId: string | null;
   numero: string;
+  /** Nome/identificação da proposta (padrão universal do portal). */
+  propostaNome: string | null;
+  /** Nº do pedido no SAP. */
+  numeroSap: string | null;
   cliente: {
     nome: string;
     telefone: string;
@@ -30,6 +34,7 @@ export type SalvarPropostaInput = {
   observacoes: string | null;
   itens: { produtoId: string; qtd: number; valor: number }[];
 };
+
 
 const money2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
 
