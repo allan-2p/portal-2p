@@ -313,8 +313,6 @@ function UsuariosPage() {
             loading={loading}
             currentUserId={user?.id}
             onOrgChange={handleOrgChange}
-            onToggle={handleToggle}
-            onDelete={handleDelete}
             onReload={load}
             onScopeChange={handleScopeChange}
             onSfIdChange={handleSfIdChange}
