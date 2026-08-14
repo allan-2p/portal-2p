@@ -7,7 +7,7 @@ import { fmtBRL, fmtPct } from "@/lib/cpo";
 import { StatusDot } from "@/components/proposta-status-ui";
 import { PropostaTimeline } from "@/components/proposta-timeline";
 import { propostaStatusStyle } from "@/lib/proposta-status";
-import { Calculator, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { ArrowLeft, Calculator, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 
 type Item = { codigo?: string | null; nome?: string; qtd?: number; valor?: number };
 
@@ -186,11 +186,22 @@ export function PropostaDetalheDialog({
 }) {
   return (
     <Dialog open={!!id} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-5xl max-h-[92dvh] flex flex-col gap-4 p-4 sm:p-6">
-        <DialogHeader className="text-left">
-          <DialogTitle className="flex flex-wrap items-center justify-between gap-3">
-            <span>Detalhes da proposta</span>
-            <span className="flex items-center gap-1">
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-6xl h-[92dvh] max-h-[92dvh] flex flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader className="sticky top-0 z-10 shrink-0 border-b bg-background/95 px-4 py-3 text-left backdrop-blur sm:px-6">
+          <DialogTitle className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
+            <span className="flex min-w-0 items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                aria-label="Voltar"
+                onClick={() => onOpenChange(false)}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <span className="truncate">Detalhes da proposta</span>
+            </span>
+            <span className="flex flex-wrap items-center justify-end gap-1">
               {onNavigate && (
                 <>
                   <Button
@@ -230,9 +241,10 @@ export function PropostaDetalheDialog({
             </span>
           </DialogTitle>
         </DialogHeader>
-        <div className="min-w-0 flex-1 overflow-y-auto -mx-1 px-1">
+        <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6">
           <PropostaDetalhe id={id} />
         </div>
+
       </DialogContent>
     </Dialog>
   );
