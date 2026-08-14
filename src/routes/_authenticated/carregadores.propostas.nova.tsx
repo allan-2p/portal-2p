@@ -1015,7 +1015,16 @@ function PropostaCpoPage() {
 
             {etapa === 1 ? (
               <>
-                <Field label="Cliente já cadastrado">
+                <Field label="Nome da proposta">
+                  <Input
+                    value={state.propostaNome}
+                    onChange={(e) => set("propostaNome", e.target.value)}
+                    placeholder="Ex.: Eletroposto Matriz — 4 carregadores"
+                  />
+                </Field>
+
+                <Field label="Cliente">
+
                   <Popover open={openCli} onOpenChange={setOpenCli}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
