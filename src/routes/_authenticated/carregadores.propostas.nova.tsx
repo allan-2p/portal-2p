@@ -61,6 +61,7 @@ import {
   type CpoFreteMod,
   type CpoState,
   textoDifalContribuinte,
+  avisoDifalUsoConsumo,
 } from "@/lib/cpo";
 import { registrarConclusao } from "@/lib/cpo-conclusao-log";
 
@@ -105,6 +106,7 @@ type ClienteCadastro = {
   cliente_ie: string | null;
   uf: string;
   contribuinte: boolean;
+  regime_tributario?: string | null;
   cliente_updated_at: string | null;
 };
 
@@ -270,6 +272,7 @@ function PropostaCpoPage() {
           cliente_ie: (c["ie"] as string) ?? null,
           uf: (c["uf"] as string) ?? "",
           contribuinte: c["contribuinte"] !== false,
+          regime_tributario: (c["regime_tributario"] as string) ?? null,
           cliente_updated_at: (c["updated_at"] as string) ?? null,
         }));
       return lista.sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR"));
@@ -312,6 +315,7 @@ function PropostaCpoPage() {
       ie: atual.cliente_ie ?? "",
       uf: atual.uf || s.uf,
       contribuinte: atual.contribuinte,
+      regimeTributario: atual.regime_tributario ?? s.regimeTributario ?? null,
     }));
     toast.info("Dados do cliente atualizados conforme o cadastro atual.");
   }, [clientesQ.data, editId, dupId, state.doc, state.nome, state.telefone, state.email, state.ie, state.uf, state.contribuinte]);
@@ -353,6 +357,7 @@ function PropostaCpoPage() {
       ie: c.cliente_ie ?? "",
       uf: c.uf || s.uf,
       contribuinte: c.contribuinte ?? s.contribuinte,
+      regimeTributario: c.regime_tributario ?? null,
     }));
 
 
@@ -369,6 +374,8 @@ function PropostaCpoPage() {
 
   const d = calcularCpo(state, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []);
   const st = statusMB(d.mbPct, config);
+  const avisoUsoConsumo = avisoDifalUsoConsumo(state);
+  const observacoesFinal = [state.observacoes?.trim(), avisoUsoConsumo].filter(Boolean).join("\n\n");
   const uf = ufs.find((u) => u.uf === state.uf);
   const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
@@ -583,7 +590,7 @@ function PropostaCpoPage() {
           })),
         freteMod: state.freteMod,
         freteValor: state.freteValor,
-        observacoes: state.observacoes,
+        observacoes: observacoesFinal,
         impostos: {
           ipiRate: config.ipi,
           ipiValor: d.ipiValor,
@@ -656,7 +663,7 @@ function PropostaCpoPage() {
         finalidade_uso: state.finalidadeUso,
         frete_mod: state.freteMod,
         frete_valor: money2(state.freteValor),
-        observacoes: state.observacoes?.trim() || null,
+        observacoes: observacoesFinal.trim() || null,
         itens: state.itens.map((i) => ({
           produtoId: i.produtoId,
           codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
