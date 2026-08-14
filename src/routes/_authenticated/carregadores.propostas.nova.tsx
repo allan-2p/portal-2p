@@ -1162,11 +1162,13 @@ function PropostaCpoPage() {
                         <Select
                           value={it.produtoId}
                           onValueChange={(v) => {
-                            const sugerido = produtos.find((p) => p.id === v)?.preco_sugerido ?? 0;
+                            const sugerido = money2(
+                              produtos.find((p) => p.id === v)?.preco_sugerido ?? 0,
+                            );
                             setItem(
                               it.key,
                               !it.valorManual && sugerido > 0
-                                ? { produtoId: v, valor: sugerido }
+                                ? { produtoId: v, valor: sugerido, sugeridoAplicado: sugerido }
                                 : { produtoId: v },
                             );
                           }}
