@@ -77,7 +77,7 @@ const PAGE_SIZES = [10, 25, 50, 100];
 function CatalogoSapCompleto() {
   const listAll = useServerFn(listSapCatalogoCompleto);
   const [q, setQ] = useState("");
-  const [escopo, setEscopo] = useState<"todos" | "catalogo" | "fora">("todos");
+  const [escopo, setEscopo] = useState<"todos" | "catalogo" | "fora" | "sem_ncm">("todos");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
 
@@ -87,11 +87,14 @@ function CatalogoSapCompleto() {
   });
 
   const itens = data?.itens ?? [];
+  const semNcm = useMemo(() => itens.filter((i) => !i.ncm_codigo), [itens]);
+  const semNcmNoCatalogo = useMemo(() => semNcm.filter((i) => i.no_catalogo), [semNcm]);
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
     return itens.filter((i) => {
       if (escopo === "catalogo" && !i.no_catalogo) return false;
       if (escopo === "fora" && i.no_catalogo) return false;
+      if (escopo === "sem_ncm" && i.ncm_codigo) return false;
       if (!term) return true;
       return (
         i.codigo.toLowerCase().includes(term) ||
@@ -104,6 +107,7 @@ function CatalogoSapCompleto() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const current = Math.min(page, totalPages - 1);
   const rows = filtered.slice(current * pageSize, current * pageSize + pageSize);
+
 
   return (
     <div className="space-y-3">
