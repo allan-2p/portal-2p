@@ -36,6 +36,7 @@ export type CpoProduct = {
   custo: number;
   ativo: boolean;
   ncm_id?: string | null;
+  ncm_codigo?: string | null;
 };
 
 export type CpoUf = {
