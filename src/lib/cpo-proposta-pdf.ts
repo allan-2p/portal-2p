@@ -221,13 +221,16 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div>
         <div class="hkicker">Proposta comercial</div>
         <div class="htitle">${esc(numero)}</div>
+        ${p.propostaNome?.trim() ? `<div class="hkicker" style="margin-top:6px">${esc(p.propostaNome.trim())}</div>` : ""}
       </div>
       <div class="hmeta">
         Emissão <b>${esc(dataStr)}</b><br>
         Validade <b>${esc(validade)}</b><br>
+        ${p.numeroSap?.trim() ? `Nº SAP <b>${esc(p.numeroSap.trim())}</b><br>` : ""}
         Consultor responsável <b>${esc(p.consultor || "—")}</b>
       </div>
     </div>
+
   </div>
   <div class="accentbar"></div>
 
