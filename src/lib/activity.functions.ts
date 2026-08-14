@@ -3,6 +3,17 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getRequestIP, getRequestHeader } from "@tanstack/react-start/server";
 
+/** Guard por tela/ação (default deny) — admin, acesso total ou perfil com a tela. */
+async function assertFeature(
+  ctx: { supabase: any; userId: string },
+  feature: any,
+  action: any = "visualizar",
+) {
+  const { requireAdminFeature } = await import("@/lib/guards.server");
+  await requireAdminFeature(ctx, feature, action);
+}
+
+
 const LogInput = z.object({
   event: z.enum(["login", "logout", "page_view", "sensitive_action"]),
   detail: z.string().max(200).optional(),
@@ -98,8 +109,7 @@ export const adminListUserActivity = createServerFn({ method: "POST" })
       data,
       context,
     }): Promise<{ rows: ActivityRow[]; summary: ActivityUserSummary[] }> => {
-      const { data: isAdmin } = await context.supabase.rpc("is_admin");
-      if (!isAdmin) throw new Error("Forbidden: admin role required");
+      await assertFeature(context, "admin.atividade", "editar");
 
       const since = new Date(Date.now() - data.days * 86400_000).toISOString();
       let q = context.supabase
@@ -175,8 +185,7 @@ export const adminActivityDashboard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => DashInput.parse(d))
   .handler(async ({ data, context }): Promise<ActivityDashboard> => {
-    const { data: isAdmin } = await context.supabase.rpc("is_admin");
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    await assertFeature(context, "admin.atividade", "editar");
 
     const since = new Date(Date.now() - data.days * 86400_000).toISOString();
     const { data: rows, error } = await context.supabase
@@ -271,8 +280,7 @@ export const adminSecurityAlerts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => AlertInput.parse(d))
   .handler(async ({ data, context }): Promise<{ alerts: SecurityAlert[]; windowMinutes: number }> => {
-    const { data: isAdmin } = await context.supabase.rpc("is_admin");
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    await assertFeature(context, "admin.atividade", "editar");
 
     const since = new Date(Date.now() - data.windowMinutes * 60_000).toISOString();
     const { data: rows, error } = await context.supabase
@@ -458,8 +466,7 @@ export const adminUpdateLogRetention = createServerFn({ method: "POST" })
 export const adminRunLogRetention = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("is_admin");
-    if (!isAdmin) throw new Error("Acesso restrito a administradores.");
+    await assertFeature(context, "admin.atividade", "editar");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin.rpc("apply_log_retention");
     if (error) throw new Error(error.message);

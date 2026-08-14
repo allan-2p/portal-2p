@@ -1,6 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+/** Guard por tela/ação (default deny) — admin, acesso total ou perfil com a tela. */
+async function assertFeature(
+  ctx: { supabase: any; userId: string },
+  feature: any,
+  action: any = "visualizar",
+) {
+  const { requireAdminFeature } = await import("@/lib/guards.server");
+  await requireAdminFeature(ctx, feature, action);
+}
+
+
 export type CredentialState = {
   env: string;
   configured: boolean;
@@ -14,8 +25,7 @@ export const getIntegrationConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { slug: string }) => input)
   .handler(async ({ data, context }) => {
-    const { data: isAdmin, error } = await context.supabase.rpc("is_admin");
-    if (error || !isAdmin) throw new Error("Forbidden: admin role required");
+    await assertFeature(context, "admin.integracoes", "editar");
 
     const { integrationBySlug } = await import("./integrations-catalog");
     const def = integrationBySlug(data.slug);
@@ -38,8 +48,7 @@ export const testIntegration = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { slug: string }) => input)
   .handler(async ({ data, context }) => {
-    const { data: isAdmin, error } = await context.supabase.rpc("is_admin");
-    if (error || !isAdmin) throw new Error("Forbidden: admin role required");
+    await assertFeature(context, "admin.integracoes", "editar");
 
     const started = Date.now();
     const { collectIntegrationsHealth } = await import("./integrations-health.server");
