@@ -75,6 +75,7 @@ import { Route as AuthenticatedSolarClientesSegmentacaoRouteImport } from './rou
 import { Route as AuthenticatedSolarClientesRankingRouteImport } from './routes/_authenticated/solar.clientes.ranking'
 import { Route as AuthenticatedSolarClientesPerfilRouteImport } from './routes/_authenticated/solar.clientes.perfil'
 import { Route as AuthenticatedSolarClientesCadastrosRouteImport } from './routes/_authenticated/solar.clientes.cadastros'
+import { Route as AuthenticatedCarregadoresPropostasVisualizarRouteImport } from './routes/_authenticated/carregadores.propostas.visualizar'
 import { Route as AuthenticatedCarregadoresPropostasNovaRouteImport } from './routes/_authenticated/carregadores.propostas.nova'
 import { Route as AuthenticatedCarregadoresPropostasAuditoriaRouteImport } from './routes/_authenticated/carregadores.propostas.auditoria'
 import { Route as AuthenticatedCarregadoresClientesCadastrosRouteImport } from './routes/_authenticated/carregadores.clientes.cadastros'
@@ -462,6 +463,12 @@ const AuthenticatedSolarClientesCadastrosRoute =
     path: '/cadastros',
     getParentRoute: () => AuthenticatedSolarClientesRoute,
   } as any)
+const AuthenticatedCarregadoresPropostasVisualizarRoute =
+  AuthenticatedCarregadoresPropostasVisualizarRouteImport.update({
+    id: '/visualizar',
+    path: '/visualizar',
+    getParentRoute: () => AuthenticatedCarregadoresPropostasRoute,
+  } as any)
 const AuthenticatedCarregadoresPropostasNovaRoute =
   AuthenticatedCarregadoresPropostasNovaRouteImport.update({
     id: '/nova',
@@ -566,6 +573,7 @@ export interface FileRoutesByFullPath {
   '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
+  '/carregadores/propostas/visualizar': typeof AuthenticatedCarregadoresPropostasVisualizarRoute
   '/solar/clientes/cadastros': typeof AuthenticatedSolarClientesCadastrosRoute
   '/solar/clientes/perfil': typeof AuthenticatedSolarClientesPerfilRoute
   '/solar/clientes/ranking': typeof AuthenticatedSolarClientesRankingRoute
@@ -637,6 +645,7 @@ export interface FileRoutesByTo {
   '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
+  '/carregadores/propostas/visualizar': typeof AuthenticatedCarregadoresPropostasVisualizarRoute
   '/solar/clientes/cadastros': typeof AuthenticatedSolarClientesCadastrosRoute
   '/solar/clientes/perfil': typeof AuthenticatedSolarClientesPerfilRoute
   '/solar/clientes/ranking': typeof AuthenticatedSolarClientesRankingRoute
@@ -713,6 +722,7 @@ export interface FileRoutesById {
   '/_authenticated/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/_authenticated/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/_authenticated/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
+  '/_authenticated/carregadores/propostas/visualizar': typeof AuthenticatedCarregadoresPropostasVisualizarRoute
   '/_authenticated/solar/clientes/cadastros': typeof AuthenticatedSolarClientesCadastrosRoute
   '/_authenticated/solar/clientes/perfil': typeof AuthenticatedSolarClientesPerfilRoute
   '/_authenticated/solar/clientes/ranking': typeof AuthenticatedSolarClientesRankingRoute
@@ -789,6 +799,7 @@ export interface FileRouteTypes {
     | '/carregadores/clientes/cadastros'
     | '/carregadores/propostas/auditoria'
     | '/carregadores/propostas/nova'
+    | '/carregadores/propostas/visualizar'
     | '/solar/clientes/cadastros'
     | '/solar/clientes/perfil'
     | '/solar/clientes/ranking'
@@ -860,6 +871,7 @@ export interface FileRouteTypes {
     | '/carregadores/clientes/cadastros'
     | '/carregadores/propostas/auditoria'
     | '/carregadores/propostas/nova'
+    | '/carregadores/propostas/visualizar'
     | '/solar/clientes/cadastros'
     | '/solar/clientes/perfil'
     | '/solar/clientes/ranking'
@@ -935,6 +947,7 @@ export interface FileRouteTypes {
     | '/_authenticated/carregadores/clientes/cadastros'
     | '/_authenticated/carregadores/propostas/auditoria'
     | '/_authenticated/carregadores/propostas/nova'
+    | '/_authenticated/carregadores/propostas/visualizar'
     | '/_authenticated/solar/clientes/cadastros'
     | '/_authenticated/solar/clientes/perfil'
     | '/_authenticated/solar/clientes/ranking'
@@ -1430,6 +1443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSolarClientesCadastrosRouteImport
       parentRoute: typeof AuthenticatedSolarClientesRoute
     }
+    '/_authenticated/carregadores/propostas/visualizar': {
+      id: '/_authenticated/carregadores/propostas/visualizar'
+      path: '/visualizar'
+      fullPath: '/carregadores/propostas/visualizar'
+      preLoaderRoute: typeof AuthenticatedCarregadoresPropostasVisualizarRouteImport
+      parentRoute: typeof AuthenticatedCarregadoresPropostasRoute
+    }
     '/_authenticated/carregadores/propostas/nova': {
       id: '/_authenticated/carregadores/propostas/nova'
       path: '/nova'
@@ -1531,6 +1551,7 @@ const AuthenticatedCarregadoresClientesRouteWithChildren =
 interface AuthenticatedCarregadoresPropostasRouteChildren {
   AuthenticatedCarregadoresPropostasAuditoriaRoute: typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   AuthenticatedCarregadoresPropostasNovaRoute: typeof AuthenticatedCarregadoresPropostasNovaRoute
+  AuthenticatedCarregadoresPropostasVisualizarRoute: typeof AuthenticatedCarregadoresPropostasVisualizarRoute
   AuthenticatedCarregadoresPropostasIndexRoute: typeof AuthenticatedCarregadoresPropostasIndexRoute
 }
 
@@ -1540,6 +1561,8 @@ const AuthenticatedCarregadoresPropostasRouteChildren: AuthenticatedCarregadores
       AuthenticatedCarregadoresPropostasAuditoriaRoute,
     AuthenticatedCarregadoresPropostasNovaRoute:
       AuthenticatedCarregadoresPropostasNovaRoute,
+    AuthenticatedCarregadoresPropostasVisualizarRoute:
+      AuthenticatedCarregadoresPropostasVisualizarRoute,
     AuthenticatedCarregadoresPropostasIndexRoute:
       AuthenticatedCarregadoresPropostasIndexRoute,
   }
