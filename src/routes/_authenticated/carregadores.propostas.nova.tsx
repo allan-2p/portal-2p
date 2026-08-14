@@ -388,6 +388,7 @@ function PropostaCpoPage() {
   // preço sugerido (catálogo) e recalcula os totais automaticamente.
   useEffect(() => {
     if (!produtos.length) return;
+    const mudancas: Record<string, { de: number; para: number }> = {};
     setState((s) => {
       let mudou = false;
       const itens = s.itens.map((i) => {
@@ -400,11 +401,17 @@ function PropostaCpoPage() {
           !i.valorManual && (!(i.valor > 0) || i.sugeridoAplicado === i.valor);
         if (!podeAplicar) return i;
         mudou = true;
+        if (i.valor > 0) mudancas[i.key] = { de: i.valor, para: sugerido };
         return { ...i, valor: sugerido, sugeridoAplicado: sugerido };
       });
       return mudou ? { ...s, itens } : s;
     });
+    if (Object.keys(mudancas).length) {
+      setPrecoChanges((p) => ({ ...p, ...mudancas }));
+      window.setTimeout(() => setPrecoChanges({}), 8000);
+    }
   }, [produtos]);
+
 
 
 
