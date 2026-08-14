@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/metas")({
           </p>
         </ModeracaoPlaceholder>
         <div className="max-w-[1100px] mx-auto mt-5">
-          <ModerationAuditLog area="metas" description="alterações nas metas de 2P Carregadores." />
+          <ModerationAuditLog area="cpo_metas" description="alterações nas metas de 2P Carregadores." />
         </div>
       </AppLayout>
     </AdminRouteGuard>

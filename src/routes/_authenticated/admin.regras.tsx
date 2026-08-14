@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/admin/regras")({
           </p>
         </ModeracaoPlaceholder>
         <div className="max-w-[1100px] mx-auto mt-5">
-          <ModerationAuditLog area="regras" description="alterações nas regras de propostas de 2P Solar." />
+          <ModerationAuditLog area="solar_regras" description="alterações nas regras de propostas de 2P Solar." />
         </div>
       </AppLayout>
     </AdminRouteGuard>

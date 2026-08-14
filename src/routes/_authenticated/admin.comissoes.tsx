@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/admin/comissoes")({
           </p>
         </ModeracaoPlaceholder>
         <div className="max-w-[1100px] mx-auto mt-5">
-          <ModerationAuditLog area="comissoes" description="alterações nas comissões de 2P Solar." />
+          <ModerationAuditLog area="solar_comissoes" description="alterações nas comissões de 2P Solar." />
         </div>
       </AppLayout>
     </AdminRouteGuard>
