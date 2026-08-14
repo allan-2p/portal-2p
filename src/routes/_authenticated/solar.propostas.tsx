@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { PropostaWizard, type NovaPropostaResult } from "@/components/proposta-wizard";
-import { PROPOSTA_STATUS, PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
+import { PROPOSTA_STATUS, type PropostaStatus } from "@/lib/proposta-status";
 import {
   Dialog,
   DialogContent,
@@ -88,8 +88,6 @@ const MOCK: Orcamento[] = [
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Cor por status — vem dos status universais das propostas (todas as instâncias).
-const STATUS_STYLE = PROPOSTA_STATUS_STYLE;
 
 const STATUS_ORDER = PROPOSTA_STATUS as unknown as Status[];
 
