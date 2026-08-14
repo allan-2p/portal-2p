@@ -450,7 +450,32 @@ function PropostaCpoPage() {
     () => calcularCpo(stateCalc, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []),
     [stateCalc, produtosQ.data, ufs, config, ncmsQ.data],
   );
+  // A comissão exibida é a REMUNERAÇÃO do vendedor (não o custo total da empresa).
+  // O regime vem do cadastro do usuário: PJ recebe o custo cheio, CLT recebe custo ÷ fator.
+  const regimeVendedor: Regime = profile?.regime_contratacao === "PJ" ? "PJ" : "CLT";
+  const comissaoVendedor = useMemo(() => {
+    const rateio = ratearComissao({
+      venda: d.valorItens,
+      comissaoTotal: d.comValor,
+      cmv: d.cmv,
+      regimeVendedor,
+      params: {
+        cmvMax: config.cmv_max,
+        pctGerente: config.pct_gerente,
+        valorIndicacao: VALOR_INDICACAO,
+        fatorClt: config.fator_clt,
+      },
+    });
+    const linha = rateio.linhas.find((l) => l.key === "vendedor");
+    return {
+      valor: linha?.remuneracao ?? 0,
+      pct: linha?.pctRemuneracao ?? 0,
+      custo: rateio.custoVendedor,
+      total: rateio.comissaoTotal,
+    };
+  }, [d.valorItens, d.comValor, d.cmv, regimeVendedor, config]);
   const st = statusMB(d.mbPct, config);
+
   const avisoUsoConsumo = avisoDifalUsoConsumo(state);
   const observacoesFinal = [state.observacoes?.trim(), avisoUsoConsumo].filter(Boolean).join("\n\n");
   const uf = ufs.find((u) => u.uf === state.uf);
