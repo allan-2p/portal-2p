@@ -1,20 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-
-/**
- * Caminhos legados → caminho padronizado (Solar em /solar, administração em /admin).
- * Links salvos, favoritos e e-mails antigos continuam funcionando.
- */
-const LEGACY_PREFIXES: Array<[string, string]> = [
-  ["/orcamentos", "/solar/propostas"],
-  ["/atlas", "/solar/atlas"],
-  ["/tarefas", "/solar/tarefas"],
-  ["/pedidos", "/solar/pedidos"],
-  ["/cupons", "/solar/cupons"],
-  ["/dashboards", "/solar/dashboards"],
-  ["/clientes", "/solar/clientes"],
-  ["/usuarios", "/admin/usuarios"],
-  ["/integracoes", "/admin/integracoes"],
-];
+import { legacyTarget } from "@/lib/routes";
 
 export const Route = createFileRoute("/$")({
   head: () => ({
@@ -24,12 +9,8 @@ export const Route = createFileRoute("/$")({
     ],
   }),
   beforeLoad: ({ location }) => {
-    const path = location.pathname.replace(/\/+$/, "") || "/";
-    for (const [from, to] of LEGACY_PREFIXES) {
-      if (path === from || path.startsWith(`${from}/`)) {
-        throw redirect({ href: to + path.slice(from.length) + location.searchStr, replace: true });
-      }
-    }
+    const target = legacyTarget(location.pathname);
+    if (target) throw redirect({ href: target + location.searchStr, replace: true });
   },
   component: NotFoundPage,
 });
