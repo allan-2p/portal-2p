@@ -8,6 +8,7 @@
 import {
   calcularCpo,
   calcularDifal,
+  finalidadeGeraDifal,
   pctComissaoPorCmv,
   type CpoConfig,
   type CpoNcm,
@@ -97,7 +98,10 @@ export function auditarProposta(args: {
       const ipiR = ncm?.ipi ?? config.ipi;
       const pcR = ncm?.pis_cofins ?? config.pis_cofins;
       const interR = ncm?.aliq_inter ?? config.aliq_inter;
-      const geraDifal = ncm ? ncm.gera_difal : true;
+      const geraDifal = (ncm ? ncm.gera_difal : true) && finalidadeGeraDifal(state.finalidadeUso);
+      const motivoSemDifal = finalidadeGeraDifal(state.finalidadeUso)
+        ? "NCM não gera DIFAL"
+        : "Finalidade não gera DIFAL (somente uso e consumo)";
       const temSt = !!ncm?.tem_st;
 
       const qtd = it.qtd || 0;
@@ -154,14 +158,14 @@ export function auditarProposta(args: {
         },
         {
           rotulo: "Base do DIFAL (por dentro)",
-          formula: geraDifal ? "Bruto ÷ (1 − (interna + FCP))" : "NCM não gera DIFAL",
+          formula: geraDifal ? "Bruto ÷ (1 − (interna + FCP))" : motivoSemDifal,
           substituicao: geraDifal ? `${brl(bruto)} ÷ (1 − (${pct(interna)} + ${pct(fcp)}))` : "—",
           valor: d.base,
           tipo: "moeda",
         },
         {
           rotulo: "DIFAL",
-          formula: geraDifal ? "Base × (interna + FCP − interestadual)" : "NCM não gera DIFAL",
+          formula: geraDifal ? "Base × (interna + FCP − interestadual)" : motivoSemDifal,
           substituicao: geraDifal
             ? `${brl(d.base)} × (${pct(interna)} + ${pct(fcp)} − ${pct(interR)})`
             : "—",
