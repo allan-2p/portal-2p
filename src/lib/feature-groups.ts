@@ -110,9 +110,12 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "admin.area.moderacao",
       "admin.produtos",
       "admin.metas",
+      "admin.regras",
+      "admin.comissoes",
       "cpo.produtos",
       "cpo.comissoes",
       "cpo.regras",
+      "cpo.metas",
     ],
   },
   {

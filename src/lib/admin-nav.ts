@@ -148,7 +148,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   {
     id: "moderacao",
     label: "Moderação",
-    description: "Produtos e regras (propostas, metas e comissões) de todas as unidades.",
+    description: "Configurações por unidade: 2P Solar e 2P Carregadores — produtos e regras de propostas, metas e comissões.",
     icon: SlidersHorizontal,
     home: "/admin/moderacao",
     groups: [
@@ -157,19 +157,22 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         items: [{ to: "/admin/moderacao", label: "Visão geral", icon: LayoutDashboard, exact: true }],
       },
       {
-        label: "Produtos",
+        label: "2P Solar",
         collapsible: true,
         items: [
-          { to: "/admin/produtos-solar", label: "Produtos — 2P Solar", icon: Package, feature: "admin.produtos" },
-          { to: "/carregadores/produtos", label: "Produtos — 2P Carregadores", icon: Package, feature: "cpo.produtos" },
+          { to: "/admin/produtos-solar", label: "Gestão de Produtos", icon: Package, feature: "admin.produtos" },
+          { to: "/admin/regras", label: "Regras de Propostas", icon: BookOpen, feature: "admin.regras" },
+          { to: "/admin/metas", label: "Regras de Metas", icon: Target, feature: "admin.metas" },
+          { to: "/admin/comissoes", label: "Regras de Comissões", icon: Percent, feature: "admin.comissoes" },
         ],
       },
       {
-        label: "Regras",
+        label: "2P Carregadores",
         collapsible: true,
         items: [
+          { to: "/carregadores/produtos", label: "Gestão de Produtos", icon: Package, feature: "cpo.produtos" },
           { to: "/carregadores/regras", label: "Regras de Propostas", icon: BookOpen, feature: "cpo.regras" },
-          { to: "/admin/metas", label: "Regras de Metas", icon: Target, feature: "admin.metas" },
+          { to: "/carregadores/metas", label: "Regras de Metas", icon: Target, feature: "cpo.metas" },
           { to: "/carregadores/comissoes", label: "Regras de Comissões", icon: Percent, feature: "cpo.comissoes" },
         ],
       },

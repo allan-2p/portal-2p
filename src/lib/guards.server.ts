@@ -193,9 +193,12 @@ export async function adminAreasFor(ctx: GuardContext): Promise<{
     moderacao: areaOr("moderacao", [
       "admin.produtos",
       "admin.metas",
+      "admin.regras",
+      "admin.comissoes",
       "cpo.produtos",
       "cpo.comissoes",
       "cpo.regras",
+      "cpo.metas",
     ]),
     integracoes: areaOr("integracoes", ["admin.integracoes"]),
     logs: areaOr("logs", [
