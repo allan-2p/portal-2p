@@ -164,29 +164,57 @@ async function fetchMateriaisSap(): Promise<any[]> {
     if (items) break;
   }
   if (!items) throw ultimoErro instanceof Error ? ultimoErro : new Error(String(ultimoErro));
+  return items;
+}
 
+/** Normaliza o NCM devolvido pelo SAP (campo STEUC / NCM) para só dígitos. */
+function extrairNcm(m: any): string | null {
+  const bruto = pick(m, "Steuc", "STEUC", "steuc", "Stawn", "STAWN", "Ncm", "NCM", "ncm", "ncm_codigo");
+  if (bruto == null) return null;
+  const digitos = String(bruto).replace(/\D/g, "");
+  return digitos.length >= 8 ? digitos.slice(0, 8) : null;
+}
 
-
-
-  // Dedup por código: a RFC repete o material por centro/lista de preço.
-  const map = new Map<string, SapMaterial>();
-  for (const m of items as any[]) {
+/**
+ * getAllMaterials(): catálogo completo do SAP, sem a whitelist do portal.
+ * Usado na aba "Todos os produtos do SAP" (espelho somente leitura).
+ */
+export async function getAllMaterials(): Promise<SapMaterialCompleto[]> {
+  const items = await fetchMateriaisSap();
+  const map = new Map<string, SapMaterialCompleto>();
+  for (const m of items) {
     const codigo = String(pick(m, "Matnr", "MATNR", "matnr", "codigo") ?? "")
       .trim()
       .replace(/^0+(?=\d)/, "");
     const descricao = String(pick(m, "Maktx", "MAKTX", "maktx", "descricao") ?? "").trim();
     if (!codigo || !descricao) continue;
-    // Somente os códigos liberados entram no catálogo.
-    if (!LIBERADOS.has(codigo)) continue;
     map.set(codigo, {
       codigo,
       descricao,
-      lista_preco: (pick(m, "Pltyp", "PLTYP", "lista_preco") as string | null) ?? null,
-      permissao: EXTRAS_CLI.has(codigo) ? "Todos" : "Admin",
+      unidade: (pick(m, "Meins", "MEINS", "unidade") as string | null) ?? null,
+      ncm: extrairNcm(m),
+      liberado: LIBERADOS.has(codigo),
       raw: m,
     });
   }
   return Array.from(map.values());
+}
+
+/**
+ * getProducts(): materiais liberados, já normalizados para gravação em
+ * `sap_produtos` (inclui o NCM devolvido pelo SAP, quando disponível).
+ */
+export async function getProducts(): Promise<SapMaterial[]> {
+  return (await getAllMaterials())
+    .filter((m) => m.liberado)
+    .map((m) => ({
+      codigo: m.codigo,
+      descricao: m.descricao,
+      lista_preco: (pick(m.raw, "Pltyp", "PLTYP", "lista_preco") as string | null) ?? null,
+      permissao: EXTRAS_CLI.has(m.codigo) ? "Todos" : "Admin",
+      ncm: m.ncm,
+      raw: m.raw,
+    }));
 }
 
 /** @deprecated use getProducts() */
