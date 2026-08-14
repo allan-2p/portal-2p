@@ -36,10 +36,14 @@ export type ProductVisibilityContext = {
 };
 
 /**
- * Bloqueia combinações inválidas. Retorna a mensagem do impedimento ou null.
+ * Bloqueia combinações inválidas de visibilidade. Retorna a mensagem do
+ * impedimento ou null.
  *
- * - Para aparecer em Carregadores o produto precisa de NCM (define IPI,
- *   PIS/COFINS, ST e DIFAL) e de custo > 0 (base de CMV, margem e comissão).
+ * NCM e custo NÃO bloqueiam aqui: liberar o produto para 2P Carregadores é
+ * decisão de Configurações › Objetos e Campos. Ele entra na Gestão de Produtos
+ * de Carregadores como inativo e só pode ser ativado lá depois do NCM e do
+ * custo definidos (ver `validateAtivacaoCarregadores`).
+ *
  * - Não é possível tirar de Carregadores um produto criado manualmente lá
  *   (não existe no SAP, ficaria órfão) nem um produto usado em propostas
  *   em aberto.
@@ -48,17 +52,7 @@ export function validateVisibilidadeChange(
   next: Visibilidade,
   ctx: ProductVisibilityContext,
 ): string | null {
-  const entraNoCarregadores = showsInCarregadores(next);
-
-  if (entraNoCarregadores) {
-    if (!ctx.ncm_id) {
-      return "Defina o NCM do produto antes de liberá-lo para 2P Carregadores — ele define IPI, PIS/COFINS, ST e DIFAL das propostas.";
-    }
-    if (!ctx.custo || Number(ctx.custo) <= 0) {
-      return "Defina o custo do produto antes de liberá-lo para 2P Carregadores — o custo é a base de CMV, margem e comissão.";
-    }
-    return null;
-  }
+  if (showsInCarregadores(next)) return null;
 
   if (ctx.origem === "manual") {
     return "Produto criado manualmente em 2P Carregadores não pode sair dessa instância. Use 2P Carregadores ou Grupo 2P.";
@@ -67,4 +61,23 @@ export function validateVisibilidadeChange(
     return `Produto está em ${ctx.propostasAbertas} proposta(s) de Carregadores em aberto. Finalize ou cancele essas propostas antes de removê-lo da instância.`;
   }
   return null;
+}
+
+/**
+ * Regras para ATIVAR um produto na Gestão de Produtos de 2P Carregadores.
+ * Retorna a mensagem do impedimento ou null.
+ */
+export function validateAtivacaoCarregadores(ctx: ProductVisibilityContext): string | null {
+  if (!ctx.ncm_id) {
+    return "Defina o NCM do produto antes de ativá-lo em 2P Carregadores — ele define IPI, PIS/COFINS, ST e DIFAL das propostas.";
+  }
+  if (!ctx.custo || Number(ctx.custo) <= 0) {
+    return "Defina o custo do produto antes de ativá-lo em 2P Carregadores — o custo é a base de CMV, margem e comissão.";
+  }
+  return null;
+}
+
+/** Produto pronto para ser ativado/usado em Carregadores. */
+export function podeAtivarEmCarregadores(ctx: ProductVisibilityContext): boolean {
+  return validateAtivacaoCarregadores(ctx) === null;
 }
