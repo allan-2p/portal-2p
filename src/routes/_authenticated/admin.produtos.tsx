@@ -275,6 +275,17 @@ function ProdutosPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [aba, setAba] = useState<"portal" | "sap">("portal");
+  const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [ncmEmMassa, setNcmEmMassa] = useState<string>("");
+
+  const { data: ncms = [] } = useCpoNcms();
+  const aplicarNcm = useServerFn(setSapProdutosNcm);
+  const backfillNcm = useServerFn(backfillSapProdutosNcm);
+
+  const toggleSelecionado = (id: string) =>
+    setSelecionados((atual) => (atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]));
+
+
 
   const alterarVisibilidade = async (id: string, v: SapVisibilidade, p?: { origem: string | null; custo: number | null; ncm_id: string | null }) => {
     const impedimento = p
