@@ -594,24 +594,6 @@ function PortalTable({
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
-                    <button
-                      onClick={() => onToggle(r.id, r.ativo)}
-                      disabled={r.id === currentUserId}
-                      className="p-1.5 rounded hover:bg-surface-2 disabled:opacity-30"
-                      title={r.ativo ? "Desativar" : "Ativar"}
-                      aria-label={r.ativo ? "Desativar usuário" : "Ativar usuário"}
-                    >
-                      <Power className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(r.id)}
-                      disabled={r.id === currentUserId}
-                      className="p-1.5 rounded hover:bg-destructive/10 text-destructive disabled:opacity-30"
-                      title="Remover"
-                      aria-label="Remover"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
                   </div>
                 </td>
               </tr>
