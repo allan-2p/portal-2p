@@ -120,7 +120,14 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
       // A home da instância é sempre acessível — é a página inicial de todo usuário.
       if (HOME_FEATURE[instance] === key) return true;
       // Default deny: só libera com permissão explícita.
-      return grantedSet.has(`${instance}::${key}`);
+      if (grantedSet.has(`${instance}::${key}`)) return true;
+      // Toggle explícito de área (ex.: "Acesso • Configurações") libera todas as
+      // telas daquela área sem precisar marcar tela por tela.
+      return AREA_ACCESS_KEYS.some(
+        (areaKey) =>
+          grantedSet.has(`${instance}::${areaKey}`) &&
+          featuresForAreaAccessKey(areaKey).includes(key),
+      );
     },
     [instance, grantedSet, isAdmin],
   );
