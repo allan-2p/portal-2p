@@ -69,9 +69,6 @@ export function CpoConfigTab() {
         <Field label="MB mínima de política (%)">
           <Input type="number" step="0.01" value={pct("politica_mb_min")} onChange={(e) => setPct("politica_mb_min", e.target.value)} />
         </Field>
-        <Field label="MB de atenção (%)">
-          <Input type="number" step="0.01" value={pct("mb_atencao")} onChange={(e) => setPct("mb_atencao", e.target.value)} />
-        </Field>
         <Field label="Base da comissão">
           <Select
             value={form.comissao_base}
