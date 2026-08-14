@@ -125,6 +125,24 @@ function PerfisPage() {
     [instance],
   );
 
+  const groupedFeatures = useMemo(() => {
+    const q = featSearch.trim().toLowerCase();
+    const filtered = q
+      ? instFeatures.filter((f) => FEATURE_LABELS[f].toLowerCase().includes(q))
+      : instFeatures;
+    return groupFeatures(filtered);
+  }, [instFeatures, featSearch]);
+
+  function toggleGroup(groupKeys: FeatureKey[], on: boolean) {
+    const next = new Set(keys);
+    for (const k of groupKeys) {
+      if (on) next.add(k);
+      else next.delete(k);
+    }
+    setKeys(next);
+  }
+
+
   if (authLoading) {
     return (
       <AppLayout>
