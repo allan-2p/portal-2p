@@ -213,13 +213,9 @@ function KanbanView({ data }: { data: Pedido[] }) {
 }
 
 function ListView({ data }: { data: Pedido[] }) {
-  const counts = data.reduce<Record<string, number>>((acc, o) => {
-    acc[o.status] = (acc[o.status] ?? 0) + 1;
-    return acc;
-  }, {});
   return (
     <div className="space-y-3">
-    <StatusLegend statuses={PEDIDO_STATUS} counts={counts} />
+    <StatusLegend statuses={PEDIDO_STATUS} />
     <div className="glass rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

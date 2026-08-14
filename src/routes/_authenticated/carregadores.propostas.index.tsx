@@ -173,10 +173,6 @@ function HistoricoCpoPage() {
 
         {/* Legenda universal de status — clique para filtrar */}
         <StatusLegend
-          counts={rows.reduce<Record<string, number>>((acc, r) => {
-            acc[r.status] = (acc[r.status] ?? 0) + 1;
-            return acc;
-          }, {})}
           active={status === "todos" ? null : [status]}
           onToggle={(s) => setStatus(status === s ? "todos" : s)}
         />
