@@ -25,6 +25,7 @@ import { fmtBRL } from "@/lib/cpo";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
+import { PermissionGate } from "@/components/permission-gate";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
   head: () => ({
@@ -129,11 +130,13 @@ function HistoricoCpoPage() {
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">Carregadores</div>
             <h1 className="text-3xl font-bold mt-1">Propostas</h1>
           </div>
-          <Button asChild className="gap-2">
-            <Link to="/carregadores/propostas/nova">
-              <Plus className="h-4 w-4" /> Nova proposta
-            </Link>
-          </Button>
+          <PermissionGate feature="cpo.propostas" action="editar" mode="disable">
+            <Button asChild className="gap-2">
+              <Link to="/carregadores/propostas/nova">
+                <Plus className="h-4 w-4" /> Nova proposta
+              </Link>
+            </Button>
+          </PermissionGate>
         </div>
 
 

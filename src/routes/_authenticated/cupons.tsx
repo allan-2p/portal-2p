@@ -20,6 +20,7 @@ import { CalendarIcon, Copy, Plus, RefreshCw, Tag } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { PermissionGate } from "@/components/permission-gate";
 
 export const Route = createFileRoute("/_authenticated/cupons")({
   head: () => ({
@@ -146,11 +147,13 @@ function CuponsPage() {
               }
             }}
           >
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" /> Criar cupom
-              </Button>
-            </DialogTrigger>
+            <PermissionGate feature="cupons" action="editar" mode="disable">
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" /> Criar cupom
+                </Button>
+              </DialogTrigger>
+            </PermissionGate>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Novo cupom</DialogTitle>
