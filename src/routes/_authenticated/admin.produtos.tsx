@@ -16,13 +16,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  backfillSapProdutosNcm,
   listSapCatalogoCompleto,
   listSapProdutos,
   listSapSyncRuns,
   setSapProdutoVisibilidade,
+  setSapProdutosNcm,
   syncSapProdutos,
   type SapVisibilidade,
 } from "@/lib/sap-produtos.functions";
+import { useCpoNcms } from "@/hooks/use-cpo";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { VISIBILIDADE_LABELS, VISIBILIDADE_OPTIONS, validateVisibilidadeChange } from "@/lib/product-visibility";
 
