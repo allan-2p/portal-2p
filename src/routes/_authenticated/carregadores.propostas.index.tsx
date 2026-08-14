@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PROPOSTA_STATUS, propostaStatusStyle } from "@/lib/proposta-status";
+import { PROPOSTA_STATUS } from "@/lib/proposta-status";
+import { StatusLegend, StatusPicker } from "@/components/proposta-status-ui";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -170,6 +171,16 @@ function HistoricoCpoPage() {
 
         </div>
 
+        {/* Legenda universal de status — clique para filtrar */}
+        <StatusLegend
+          counts={rows.reduce<Record<string, number>>((acc, r) => {
+            acc[r.status] = (acc[r.status] ?? 0) + 1;
+            return acc;
+          }, {})}
+          active={status === "todos" ? null : [status]}
+          onToggle={(s) => setStatus(status === s ? "todos" : s)}
+        />
+
         <div className="glass rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[1000px]">
@@ -181,7 +192,7 @@ function HistoricoCpoPage() {
                   <th className="text-left px-4 py-3">Contribuinte</th>
                   <th className="text-right px-4 py-3">Valor</th>
                   <th className="text-left px-4 py-3">Data</th>
-                  <th className="text-left px-4 py-3">Status</th>
+                  <th className="text-center px-4 py-3">Status</th>
                   <th className="text-right px-4 py-3">Ações</th>
                 </tr>
               </thead>
@@ -196,21 +207,13 @@ function HistoricoCpoPage() {
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("pt-BR")}
                     </td>
-                    <td className="px-4 py-3">
-                      <Select value={r.status} onValueChange={(v) => alterarStatus(r.id, v)}>
-                        <SelectTrigger
-                          className="h-7 w-[180px] border-0 text-xs font-semibold"
-                          style={{
-                            backgroundColor: propostaStatusStyle(r.status).bg,
-                            color: propostaStatusStyle(r.status).fg,
-                          }}
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {STATUS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                    <td className="px-4 py-3 text-center">
+                      <StatusPicker
+                        compact
+                        value={r.status}
+                        options={STATUS}
+                        onChange={(v) => alterarStatus(r.id, v)}
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">

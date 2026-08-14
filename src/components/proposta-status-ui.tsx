@@ -120,11 +120,14 @@ export function StatusPicker({
   options = PROPOSTA_STATUS as unknown as string[],
   onChange,
   disabled,
+  compact = false,
 }: {
   value: string;
   options?: readonly string[];
   onChange: (status: PropostaStatus) => void;
   disabled?: boolean;
+  /** Mostra apenas a bolinha (padrão das listas). */
+  compact?: boolean;
 }) {
   const s = propostaStatusStyle(value);
   return (
@@ -132,12 +135,28 @@ export function StatusPicker({
       <DropdownMenuTrigger asChild disabled={disabled}>
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-full border border-border px-2.5 py-1 text-xs hover:bg-surface-2 transition-colors disabled:opacity-50"
+          title={value}
+          className={cn(
+            "inline-flex items-center transition-colors disabled:opacity-50",
+            compact
+              ? "h-7 w-7 justify-center rounded-full hover:bg-surface-2"
+              : "gap-2 rounded-full border border-border px-2.5 py-1 text-xs hover:bg-surface-2",
+          )}
           aria-label={`Status: ${value}`}
         >
-          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.bg }} />
-          <span className="font-medium">{value}</span>
-          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+          <span
+            className={cn(
+              "rounded-full ring-2 ring-background transition-transform",
+              compact ? "h-3 w-3 hover:scale-125" : "h-2.5 w-2.5",
+            )}
+            style={{ backgroundColor: s.bg }}
+          />
+          {!compact && (
+            <>
+              <span className="font-medium">{value}</span>
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            </>
+          )}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[200px]">
