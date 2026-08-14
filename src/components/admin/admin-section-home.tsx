@@ -108,24 +108,79 @@ export function AdminSectionHome({
   );
 }
 
-/** Bloco padrão de pendências/sugestões usado nas homes administrativas. */
+/**
+ * Bloco de sugestões/avisos das homes administrativas.
+ * São apenas dicas: cada item pode ser dispensado individualmente e o bloco
+ * inteiro pode ser ocultado. A escolha fica salva neste navegador.
+ */
 export function AdminSectionNotice({
   title,
   items,
+  dismissKey,
+  onDismiss,
 }: {
   title: string;
-  items: { label: string; hint?: string; to?: string }[];
+  items: { id?: string; label: string; hint?: string; to?: string }[];
+  /** Chave de persistência das dispensas (padrão: o título). */
+  dismissKey?: string;
+  /** Chamado quando um item (ou todos) é dispensado. */
+  onDismiss?: (ids: string[]) => void;
 }) {
-  if (!items.length) return null;
+  const storageKey = `portal2p.notice-dismissed.${dismissKey ?? title}`;
+  const [dismissed, setDismissed] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      setDismissed(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setDismissed([]);
+    }
+  }, [storageKey]);
+
+  const persist = (next: string[]) => {
+    setDismissed(next);
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const withIds = items.map((i, idx) => ({ ...i, id: i.id ?? `${idx}:${i.label}` }));
+  const visible = withIds.filter((i) => !dismissed.includes(i.id));
+  if (!visible.length) return null;
+
+  const dismissOne = (id: string) => {
+    persist(Array.from(new Set([...dismissed, id])));
+    onDismiss?.([id]);
+  };
+
+  const dismissAll = () => {
+    const ids = withIds.map((i) => i.id);
+    persist(Array.from(new Set([...dismissed, ...ids])));
+    onDismiss?.(ids);
+  };
+
   return (
     <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-      <div className="flex items-center gap-2 text-sm font-semibold">
-        <Sparkles className="h-4 w-4 text-primary" />
-        {title}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Sparkles className="h-4 w-4 text-primary" />
+          {title}
+        </div>
+        <button
+          type="button"
+          onClick={dismissAll}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Dispensar tudo
+        </button>
       </div>
       <ul className="space-y-1.5">
-        {items.map((i, idx) => (
-          <li key={idx} className="text-sm flex flex-wrap items-center gap-2">
+        {visible.map((i) => (
+          <li key={i.id} className="text-sm flex flex-wrap items-center gap-2">
             {i.to ? (
               <Link to={i.to} className="font-medium underline underline-offset-2">
                 {i.label}
@@ -134,9 +189,18 @@ export function AdminSectionNotice({
               <span className="font-medium">{i.label}</span>
             )}
             {i.hint && <span className="text-muted-foreground text-xs">{i.hint}</span>}
+            <button
+              type="button"
+              aria-label={`Dispensar sugestão: ${i.label}`}
+              onClick={() => dismissOne(i.id)}
+              className="ml-auto rounded-md p-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           </li>
         ))}
       </ul>
     </div>
   );
 }
+
