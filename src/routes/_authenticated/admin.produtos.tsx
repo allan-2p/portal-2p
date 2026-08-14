@@ -33,6 +33,7 @@ import {
   TIPO_PREFIXOS,
   TIPO_LABELS,
 } from "@/lib/sap-produtos-rules";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos")({
   head: () => ({
@@ -51,7 +52,11 @@ export const Route = createFileRoute("/_authenticated/admin/produtos")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ProdutosPage,
+  component: () => (
+    <AdminRouteGuard feature="admin.produtos">
+      <ProdutosPage />
+    </AdminRouteGuard>
+  ),
 });
 
 function fmt(d: string | null) {

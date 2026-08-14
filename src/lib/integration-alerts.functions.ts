@@ -3,6 +3,17 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordModeration } from "@/lib/moderation-audit.server";
 
+/** Guard por tela/ação (default deny) — admin, acesso total ou perfil com a tela. */
+async function assertFeature(
+  ctx: { supabase: any; userId: string },
+  feature: any,
+  action: any = "visualizar",
+) {
+  const { requireAdminFeature } = await import("@/lib/guards.server");
+  await requireAdminFeature(ctx, feature, action);
+}
+
+
 export type IntegrationAlertSetting = {
   slug: string;
   alert_enabled: boolean;
@@ -32,8 +43,7 @@ export const saveIntegrationAlertSetting = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SaveInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("is_admin");
-    if (!isAdmin) throw new Error("Forbidden: admin role required");
+    await assertFeature(context, "admin.integracoes", "editar");
 
     const { error } = await context.supabase
       .from("integration_alert_settings")

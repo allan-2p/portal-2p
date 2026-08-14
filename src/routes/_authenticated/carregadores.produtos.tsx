@@ -28,6 +28,7 @@ import { logModeration } from "@/lib/moderation-audit";
 import { validateVisibilidadeChange } from "@/lib/product-visibility";
 import { useCpoConfig, useCpoInvalidate, useCpoNcms, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
 import { fmtBRL, type CpoConfig, type CpoNcm, type CpoProduct } from "@/lib/cpo";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
@@ -39,7 +40,11 @@ export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
       { property: "og:description", content: "Gerencie custos, ICMS/FCP por estado e regras de margem." },
     ],
   }),
-  component: ProdutosCpoPage,
+  component: () => (
+    <AdminRouteGuard feature="cpo.produtos">
+      <ProdutosCpoPage />
+    </AdminRouteGuard>
+  ),
 });
 
 function ProdutosCpoPage() {

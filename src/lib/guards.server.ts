@@ -125,3 +125,78 @@ export async function requireAdminArea(
   }
   throw new ForbiddenError(`Forbidden: acesso à área de ${area} não liberado (${action}).`);
 }
+
+/**
+ * Guard de tela administrativa, independente de instância.
+ *
+ * Passa quem: é admin, tem perfil de acesso total, tem a tela liberada em
+ * qualquer instância, ou tem o toggle da área a que a tela pertence.
+ */
+export async function requireAdminFeature(
+  ctx: GuardContext,
+  feature: FeatureKey,
+  action: CapabilityId = "visualizar",
+): Promise<void> {
+  const ok = await canAdminFeature(ctx, feature, action);
+  if (!ok) {
+    throw new ForbiddenError(
+      `Forbidden: seu perfil não permite "${action}" em "${feature}".`,
+    );
+  }
+}
+
+export async function canAdminFeature(
+  ctx: GuardContext,
+  feature: FeatureKey,
+  action: CapabilityId = "visualizar",
+): Promise<boolean> {
+  const caps = capabilitiesForFeature(feature);
+  if (caps.length && !caps.includes(action)) return false;
+  const acc = await resolveAccess(ctx);
+  if (acc.admin || acc.fullAccess) return true;
+  for (const inst of acc.instances) {
+    if (acc.features.has(`${inst}::${feature}`)) return true;
+  }
+  // fallback: alguma concessão registrada em instância não listada
+  for (const k of acc.features) {
+    if (k.endsWith(`::${feature}`)) return true;
+  }
+  return false;
+}
+
+/** Áreas administrativas disponíveis para o usuário (controla a engrenagem). */
+export async function adminAreasFor(ctx: GuardContext): Promise<{
+  configuracoes: boolean;
+  moderacao: boolean;
+  integracoes: boolean;
+  isAdmin: boolean;
+}> {
+  const acc = await resolveAccess(ctx);
+  const all = acc.admin || acc.fullAccess;
+  const has = (key: string) => {
+    if (all) return true;
+    for (const k of acc.features) if (k.endsWith(`::${key}`)) return true;
+    return false;
+  };
+  const areaOr = (area: string, keys: string[]) =>
+    has(`admin.area.${area}`) || keys.some((k) => has(k));
+  return {
+    configuracoes: areaOr("configuracoes", [
+      "admin.usuarios",
+      "admin.perfis",
+      "admin.auditoria",
+      "admin.atividade",
+      "admin.vinculos",
+    ]),
+    moderacao: areaOr("moderacao", [
+      "admin.produtos",
+      "admin.metas",
+      "admin.tabelas",
+      "cpo.produtos",
+      "cpo.comissoes",
+      "cpo.regras",
+    ]),
+    integracoes: areaOr("integracoes", ["admin.integracoes"]),
+    isAdmin: all,
+  };
+}

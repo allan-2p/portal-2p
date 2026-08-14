@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/app-layout";
 import { ModerationAuditLog } from "@/components/moderation-audit-log";
 import { useCpoConfig } from "@/hooks/use-cpo";
 import { CPO_CONFIG_FALLBACK, fmtPct } from "@/lib/cpo";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/regras")({
@@ -16,7 +17,11 @@ export const Route = createFileRoute("/_authenticated/carregadores/regras")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: RegrasPage,
+  component: () => (
+    <AdminRouteGuard feature="cpo.regras">
+      <RegrasPage />
+    </AdminRouteGuard>
+  ),
 });
 
 function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {

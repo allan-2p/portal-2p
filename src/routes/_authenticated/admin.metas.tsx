@@ -26,11 +26,16 @@ import {
 } from "@/lib/commission.functions";
 import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_NAMES } from "@/lib/salespeople";
 import { useAuth } from "@/hooks/use-auth";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
 export const Route = createFileRoute("/_authenticated/admin/metas")({
   head: () => ({ meta: [{ title: "Metas — Portal 2P" }] }),
-  component: MetasPage,
+  component: () => (
+    <AdminRouteGuard feature="admin.metas">
+      <MetasPage />
+    </AdminRouteGuard>
+  ),
 });
 
 const fmt = (n: number) =>

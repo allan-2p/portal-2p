@@ -19,6 +19,7 @@ import { SecurityAlerts } from "@/components/security-alerts";
 import { LogRetention } from "@/components/log-retention";
 import { Loader2, Activity, LogIn, LogOut, RefreshCw, Search, ShieldAlert, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 export const Route = createFileRoute("/_authenticated/admin/atividade")({
   head: () => ({
@@ -37,7 +38,11 @@ export const Route = createFileRoute("/_authenticated/admin/atividade")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: AtividadePage,
+  component: () => (
+    <AdminRouteGuard feature="admin.atividade">
+      <AtividadePage />
+    </AdminRouteGuard>
+  ),
 });
 
 const EVENT_LABEL: Record<string, string> = {

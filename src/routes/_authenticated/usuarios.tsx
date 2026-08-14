@@ -36,6 +36,7 @@ import { useSimulation } from "@/components/simulation";
 import { UserDetailSheet } from "@/components/user-detail-sheet";
 import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
   head: () => ({
@@ -57,7 +58,11 @@ export const Route = createFileRoute("/_authenticated/usuarios")({
     links: [{ rel: "canonical", href: "/usuarios" }],
   }),
 
-  component: UsuariosPage,
+  component: () => (
+    <AdminRouteGuard feature="admin.usuarios">
+      <UsuariosPage />
+    </AdminRouteGuard>
+  ),
 });
 
 type Regime = "CLT" | "PJ";

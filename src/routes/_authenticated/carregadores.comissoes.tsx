@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/app-layout";
 import { ModerationAuditLog } from "@/components/moderation-audit-log";
 import { CpoConfigTab } from "@/components/cpo-config-tab";
 import { CpoComissaoRegras } from "@/components/cpo-comissao-regras";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/comissoes")({
@@ -16,7 +17,11 @@ export const Route = createFileRoute("/_authenticated/carregadores/comissoes")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ComissoesCpoPage,
+  component: () => (
+    <AdminRouteGuard feature="cpo.comissoes">
+      <ComissoesCpoPage />
+    </AdminRouteGuard>
+  ),
 });
 
 function ComissoesCpoPage() {
