@@ -66,6 +66,7 @@ const STATUS = PROPOSTA_STATUS;
 
 function HistoricoCpoPage() {
   const [busca, setBusca] = useState("");
+  const [detalheId, setDetalheId] = useState<string | null>(null);
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
   const [vendedor, setVendedor] = useState("__all__");
@@ -270,6 +271,16 @@ function HistoricoCpoPage() {
         </div>
       </div>
 
+      <PropostaDetalheDialog
+        id={detalheId ?? undefined}
+        onOpenChange={(open) => !open && setDetalheId(null)}
+        hasPrev={detalheIdx > 0}
+        hasNext={detalheIdx >= 0 && detalheIdx < filtered.length - 1}
+        onNavigate={(dir) => {
+          const next = filtered[detalheIdx + dir];
+          if (next) setDetalheId(next.id);
+        }}
+      />
     </AppLayout>
   );
 }
