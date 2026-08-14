@@ -61,6 +61,8 @@ type Props = Omit<React.ComponentProps<"input">, "value" | "onChange"> & {
   onValidityChange?: (erro: string | null) => void;
   /** Força o modo do campo, ignorando a preferência global. */
   mask?: boolean;
+  /** Atraso (ms) para propagar o valor digitado ao pai. 0 desativa. */
+  debounceMs?: number;
 };
 
 type Sane = { text: string; aviso: string | null };
@@ -102,6 +104,7 @@ export function MoneyInput({
   maxValue,
   onValidityChange,
   mask,
+  debounceMs = 200,
   className,
   ...rest
 }: Props) {
@@ -109,6 +112,33 @@ export function MoneyInput({
   const masked = mask ?? globalMask;
   const [raw, setRaw] = React.useState<string | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
+
+  // Digitação não dispara recálculo a cada tecla: o pai só é notificado após
+  // uma pausa (ou imediatamente ao sair do campo).
+  const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const changeRef = React.useRef(onValueChange);
+  changeRef.current = onValueChange;
+
+  const cancelPending = () => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+  };
+
+  React.useEffect(() => cancelPending, []);
+
+  const emit = (n: number, immediate: boolean) => {
+    cancelPending();
+    if (immediate || debounceMs <= 0) {
+      changeRef.current(n);
+      return;
+    }
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      changeRef.current(n);
+    }, debounceMs);
+  };
 
   const report = (msg: string | null) => {
     setErro(msg);
@@ -154,13 +184,13 @@ export function MoneyInput({
           const { clean, n, msg } = masked ? evaluateMasked(e.target.value) : evaluate(e.target.value);
           setRaw(clean);
           report(msg);
-          onValueChange(n);
+          emit(n, false);
         }}
         onBlur={(e) => {
           const { n, msg } = masked ? evaluateMasked(e.target.value) : evaluate(e.target.value);
           setRaw(null);
           report(msg);
-          onValueChange(n);
+          emit(n, true);
           onBlur?.(e);
         }}
       />
