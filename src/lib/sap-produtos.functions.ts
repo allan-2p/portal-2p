@@ -42,7 +42,7 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
     z
       .object({
         id: z.string().uuid(),
-        visibilidade: z.enum(["solar", "carregadores", "ambos"]),
+        visibilidade: z.enum(["nenhuma", "solar", "carregadores", "ambos"]),
       })
       .parse(d),
   )
@@ -84,7 +84,13 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
 
     const { error } = await context.supabase
       .from("sap_produtos")
-      .update(pendente ? { visibilidade: data.visibilidade, ativo: false } : { visibilidade: data.visibilidade })
+      .update(
+        data.visibilidade === "nenhuma"
+          ? { visibilidade: null, ativo: false }
+          : pendente
+            ? { visibilidade: data.visibilidade, ativo: false }
+            : { visibilidade: data.visibilidade },
+      )
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     await recordModeration(context, {
@@ -301,9 +307,10 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       });
 
 
-      // Novos entram ativos; nos já existentes o SAP não sobrescreve o
+      // Novos entram SEM visibilidade (e inativos): a instância é definida
+      // depois, na Administração › Produtos. Nos já existentes o SAP não sobrescreve o
       // ativo/inativo definido pela moderação do portal.
-      const novos = rows.filter((r) => !known.has(r.codigo)).map((r) => ({ ...r, ativo: true, origem: "sap" }));
+      const novos = rows.filter((r) => !known.has(r.codigo)).map((r) => ({ ...r, ativo: false, visibilidade: null, origem: "sap" }));
       for (let i = 0; i < novos.length; i += 500) {
         const { error } = await supabaseAdmin
           .from("sap_produtos")

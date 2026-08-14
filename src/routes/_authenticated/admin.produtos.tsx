@@ -384,7 +384,7 @@ function ProdutosPage() {
     return produtos.filter((p) => {
       if (tipo !== "all" && p.tipo !== tipo) return false;
       if (permissao !== "all" && (p.permissao ?? "").toLowerCase() !== permissao) return false;
-      if (visibilidade !== "all" && (p.visibilidade ?? "ambos") !== visibilidade) return false;
+      if (visibilidade !== "all" && (p.visibilidade ?? "nenhuma") !== visibilidade) return false;
       if (status === "ativos" && !p.ativo) return false;
       if (status === "inativos" && p.ativo) return false;
       if (soDivergentes && !p.divergente) return false;
@@ -410,7 +410,7 @@ function ProdutosPage() {
       Descrição: p.descricao,
       Tipo: TIPO_LABELS[p.tipo] ?? p.tipo,
       Permissão: p.permissao ?? "",
-      Visibilidade: VIS_LABELS[p.visibilidade ?? "ambos"],
+      Visibilidade: VIS_LABELS[p.visibilidade ?? "nenhuma"],
       "Lista de preço": p.lista_preco ?? "",
       Status: p.ativo ? "Ativo" : "Inativo",
       "Última sincronização": p.last_synced_at ? new Date(p.last_synced_at).toLocaleString("pt-BR") : "",
@@ -802,6 +802,7 @@ function ProdutosPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as visibilidades</SelectItem>
+              <SelectItem value="nenhuma">Sem visibilidade</SelectItem>
               <SelectItem value="solar">2P Solar</SelectItem>
               <SelectItem value="carregadores">2P Carregadores</SelectItem>
               <SelectItem value="ambos">Grupo 2P</SelectItem>
@@ -875,7 +876,7 @@ function ProdutosPage() {
                     <td className="px-3 py-2 text-muted-foreground">{p.permissao}</td>
                     <td className="px-3 py-2">
                       <Select
-                        value={p.visibilidade ?? "ambos"}
+                        value={p.visibilidade ?? "nenhuma"}
                         onValueChange={(v) =>
                           alterarVisibilidade(p.id, v as SapVisibilidade, {
                             origem: p.origem ?? null,
