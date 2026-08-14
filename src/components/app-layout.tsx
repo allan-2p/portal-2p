@@ -118,12 +118,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const initials = (profile?.full_name ?? user?.email ?? "U")
     .split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
-  // Engrenagem de administração: visível para admin OU para quem tem alguma tela
-  // de administração liberada no perfil de permissão.
-  const visibleAdminSections = ADMIN_SECTIONS.filter((s) =>
-    s.groups.some((g) => g.items.some((i) => !i.feature || hasFeature(i.feature))),
+  // Engrenagem de administração: o backend decide (getAdminAreas). O front só
+  // usa isso para esconder — quem tentar a rota direto é barrado pelo guard.
+  const { data: adminAreas } = useQuery({
+    queryKey: ["admin-areas"],
+    queryFn: () => getAdminAreas(),
+    staleTime: 60_000,
+  });
+  const areaAllowed = (id: AdminSectionId) =>
+    adminAreas ? adminAreas[id] === true : false;
+  const visibleAdminSections = ADMIN_SECTIONS.filter(
+    (s) =>
+      areaAllowed(s.id) &&
+      (adminAreas?.isAdmin ||
+        s.groups.some((g) => g.items.some((i) => !i.feature || hasFeature(i.feature)))),
   );
-  const canSeeAdminMenu = hasRole("admin") || visibleAdminSections.length > 0;
+  const canSeeAdminMenu = visibleAdminSections.length > 0;
+
 
 
 
