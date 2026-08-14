@@ -233,8 +233,10 @@ function HistoricoCpoPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" aria-label="Detalhar" onClick={() => setDetalhe(r)}>
-                          <Eye className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" aria-label="Detalhar" asChild>
+                          <Link to="/carregadores/propostas/visualizar" search={{ id: r.id }}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
                         </Button>
                         <Button variant="ghost" size="icon" aria-label="Continuar proposta" asChild>
                           <Link to="/carregadores/propostas/nova" search={{ id: r.id }}>
