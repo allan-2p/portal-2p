@@ -13,6 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Calculator, Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +80,7 @@ function HistoricoCpoPage() {
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
   const [vendedor, setVendedor] = useState("__all__");
+  const [excluirId, setExcluirId] = useState<string | null>(null);
   const vend = useCpoVendedores();
 
   const q = useQuery({
@@ -121,8 +132,15 @@ function HistoricoCpoPage() {
     q.refetch();
   }
 
-  async function excluir(id: string) {
-    const { error } = await supabase.from("cpo_proposals").delete().eq("id", id);
+  const propostaParaExcluir = useMemo(
+    () => rows.find((r) => r.id === excluirId) ?? null,
+    [rows, excluirId]
+  );
+
+  async function confirmarExclusao() {
+    if (!excluirId) return;
+    const { error } = await supabase.from("cpo_proposals").delete().eq("id", excluirId);
+    setExcluirId(null);
     if (error) return toast.error(error.message);
     toast.success("Proposta excluída.");
     q.refetch();
@@ -252,7 +270,7 @@ function HistoricoCpoPage() {
                             <Calculator className="h-4 w-4" />
                           </Link>
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => excluir(r.id)}>
+                        <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -283,6 +301,34 @@ function HistoricoCpoPage() {
           if (next) setDetalheId(next.id);
         }}
       />
+
+      <AlertDialog open={!!excluirId} onOpenChange={(open) => !open && setExcluirId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir proposta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {propostaParaExcluir ? (
+                <>
+                  Você está prestes a excluir permanentemente a proposta{" "}
+                  <strong>{propostaParaExcluir.nome || propostaParaExcluir.numero || "—"}</strong>
+                  {propostaParaExcluir.cliente_nome && (
+                    <> do cliente <strong>{propostaParaExcluir.cliente_nome}</strong></>
+                  )}
+                  . Essa ação não pode ser desfeita.
+                </>
+              ) : (
+                "Confirme para excluir a proposta selecionada. Essa ação não pode ser desfeita."
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setExcluirId(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarExclusao} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sim, excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
