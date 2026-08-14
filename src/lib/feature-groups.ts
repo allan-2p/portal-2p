@@ -96,6 +96,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "admin.perfis",
       "admin.auditoria",
       "admin.vinculos",
+      "admin.objetos.produtos",
     ],
   },
   {

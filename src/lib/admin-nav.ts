@@ -71,7 +71,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       {
         label: "Objetos e Campos",
         items: [
-          { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.produtos" },
+          { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.objetos.produtos" },
         ],
       },
     ],
