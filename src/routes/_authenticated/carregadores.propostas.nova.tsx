@@ -33,6 +33,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listClientesFn } from "@/lib/clientes.functions";
 import { getClienteLogo } from "@/lib/cliente-logos.functions";
+import { PropostaIndicacao } from "@/components/proposta-indicacao";
 
 
 import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
@@ -502,6 +503,9 @@ function PropostaCpoPage() {
     errosCliente.push({ campo: "ie", msg: "Cliente contribuinte precisa de Inscrição Estadual." });
   if (state.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(state.email.trim()))
     errosCliente.push({ campo: "email", msg: "E-mail do cliente é inválido." });
+
+  if (state.indicacao && !state.padrinhoId)
+    errosCliente.push({ campo: "padrinho", msg: "Selecione ou cadastre o padrinho da indicação." });
 
   const clienteOk = errosCliente.length === 0;
   const campoInvalido = (c: string) => errosCliente.some((e) => e.campo === c);
@@ -1159,6 +1163,22 @@ function PropostaCpoPage() {
                       </SelectContent>
                     </Select>
                   </Field>
+                ) : null}
+
+                {state.nome ? (
+                  <PropostaIndicacao
+                    indicacao={state.indicacao}
+                    padrinhoId={state.padrinhoId}
+                    padrinhoNome={state.padrinhoNome}
+                    onChange={(v) =>
+                      setState((s) => ({
+                        ...s,
+                        indicacao: v.indicacao,
+                        padrinhoId: v.padrinhoId,
+                        padrinhoNome: v.padrinhoNome,
+                      }))
+                    }
+                  />
                 ) : null}
               </>
             ) : state.nome ? (
