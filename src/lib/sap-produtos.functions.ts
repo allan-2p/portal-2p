@@ -247,7 +247,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
           codigo: m.codigo,
           descricao: m.descricao,
           unidade: m.unidade,
-          ncm_codigo: m.ncm,
+          ncm_codigo: ncmDe(m),
           no_catalogo: m.liberado,
           sap_raw: m.raw as any,
           last_synced_at: now,
