@@ -1147,6 +1147,45 @@ export type Database = {
         }
         Relationships: []
       }
+      sap_catalogo_sap: {
+        Row: {
+          codigo: string
+          created_at: string
+          descricao: string
+          id: string
+          last_synced_at: string | null
+          ncm_codigo: string | null
+          no_catalogo: boolean
+          sap_raw: Json | null
+          unidade: string | null
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          descricao: string
+          id?: string
+          last_synced_at?: string | null
+          ncm_codigo?: string | null
+          no_catalogo?: boolean
+          sap_raw?: Json | null
+          unidade?: string | null
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          last_synced_at?: string | null
+          ncm_codigo?: string | null
+          no_catalogo?: boolean
+          sap_raw?: Json | null
+          unidade?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sap_produtos: {
         Row: {
           ativo: boolean
@@ -1157,6 +1196,7 @@ export type Database = {
           id: string
           last_synced_at: string | null
           lista_preco: string | null
+          ncm_codigo: string | null
           ncm_id: string | null
           origem: string
           permissao: string
@@ -1175,6 +1215,7 @@ export type Database = {
           id?: string
           last_synced_at?: string | null
           lista_preco?: string | null
+          ncm_codigo?: string | null
           ncm_id?: string | null
           origem?: string
           permissao?: string
@@ -1193,6 +1234,7 @@ export type Database = {
           id?: string
           last_synced_at?: string | null
           lista_preco?: string | null
+          ncm_codigo?: string | null
           ncm_id?: string | null
           origem?: string
           permissao?: string
