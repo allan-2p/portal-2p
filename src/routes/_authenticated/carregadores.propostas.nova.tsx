@@ -1004,14 +1004,7 @@ function PropostaCpoPage() {
                   Dados fiscais incompletos? Ajuste em Clientes › Cadastros.
                 </p>
               </div>
-            ) : etapa === 1 && !state.nome.trim() ? (
-              <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm text-muted-foreground">
-                Escolha o cliente. Os dados fiscais vêm do cadastro.
-              </div>
             ) : null}
-
-
-
 
             {etapa === 1 ? (
               <>
