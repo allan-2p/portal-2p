@@ -1588,6 +1588,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      sync_user_role_from_profiles: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "gerente" | "vendedor" | "diretor" | "marketing"
