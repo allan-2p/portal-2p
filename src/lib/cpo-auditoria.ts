@@ -15,7 +15,7 @@ import {
   type CpoState,
   type CpoUf,
 } from "./cpo";
-import { ratearComissao, type Rateio, type Regime } from "./cpo-comissao";
+import { VALOR_INDICACAO, ratearComissao, type Rateio, type Regime } from "./cpo-comissao";
 
 /** Versão da política fiscal/comercial implementada no motor. */
 export const REGRAS_VERSAO = "2026.07";
@@ -303,7 +303,7 @@ export function auditarProposta(args: {
     params: {
       cmvMax: config.cmv_max,
       pctGerente: config.pct_gerente,
-      pctIndicacao: config.pct_indicacao,
+      valorIndicacao: VALOR_INDICACAO,
       fatorClt: config.fator_clt,
     },
   });
@@ -333,15 +333,15 @@ export function auditarProposta(args: {
     },
     {
       rotulo: "Custo indicação (fixo)",
-      formula: "Venda × % indicação",
-      substituicao: `${brl(r.valorItens)} × ${pct(config.pct_indicacao)}`,
-      valor: r.valorItens * config.pct_indicacao,
+      formula: "Valor fixo por venda",
+      substituicao: brl(r.valorItens > 0 ? VALOR_INDICACAO : 0),
+      valor: r.valorItens > 0 ? VALOR_INDICACAO : 0,
       tipo: "moeda",
     },
     {
       rotulo: "Custo do vendedor (saldo)",
       formula: "Comissão total − gerente − indicação",
-      substituicao: `${brl(rateio.comissaoTotal)} − ${brl(r.valorItens * config.pct_gerente)} − ${brl(r.valorItens * config.pct_indicacao)}`,
+      substituicao: `${brl(rateio.comissaoTotal)} − ${brl(r.valorItens * config.pct_gerente)} − ${brl(r.valorItens > 0 ? VALOR_INDICACAO : 0)}`,
       valor: rateio.custoVendedor,
       tipo: "moeda",
     },
@@ -375,7 +375,7 @@ export function auditarProposta(args: {
       { rotulo: "CMV máximo", valor: pct(config.cmv_max) },
       { rotulo: "MB mínima", valor: pct(config.politica_mb_min) },
       { rotulo: "% gerente", valor: pct(config.pct_gerente) },
-      { rotulo: "% indicação", valor: pct(config.pct_indicacao) },
+      { rotulo: "Indicação (fixo)", valor: brl(VALOR_INDICACAO) },
       { rotulo: "Fator CLT", valor: config.fator_clt.toLocaleString("pt-BR") },
       { rotulo: "ICMS interno da UF", valor: pct(interna) },
       { rotulo: "FCP da UF", valor: pct(fcp) },

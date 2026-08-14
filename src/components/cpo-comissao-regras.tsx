@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCpoConfig } from "@/hooks/use-cpo";
 import { CPO_CONFIG_FALLBACK } from "@/lib/cpo";
-import { calcularComissao, ratearComissao, type Regime } from "@/lib/cpo-comissao";
+import { VALOR_INDICACAO, calcularComissao, ratearComissao, type Regime } from "@/lib/cpo-comissao";
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2 });
@@ -37,7 +37,7 @@ export function CpoComissaoRegras() {
   const params = {
     cmvMax: cfg.cmv_max,
     pctGerente: cfg.pct_gerente,
-    pctIndicacao: cfg.pct_indicacao,
+    valorIndicacao: VALOR_INDICACAO,
     fatorClt: cfg.fator_clt,
   };
 
@@ -117,7 +117,7 @@ export function CpoComissaoRegras() {
             <TabsContent key={regime} value={regime} className="mt-3">
               <div className="glass rounded-2xl p-5 space-y-3">
                 <p className="text-xs text-muted-foreground">
-                  Gerente ({pct(params.pctGerente)}) e Indicação ({pct(params.pctIndicacao)}) são fixos sobre a venda
+                  Gerente ({pct(params.pctGerente)}) é fixo sobre a venda e a Indicação é um valor fixo de {brl(params.valorIndicacao)}
                   em qualquer regime. O vendedor recebe o saldo do custo total da comissão — por isso o valor é
                   extremamente variável.
                   {regime === "CLT"

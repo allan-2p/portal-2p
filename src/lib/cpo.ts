@@ -110,12 +110,52 @@ export type CpoState = {
   ie: string;
   uf: string;
   contribuinte: boolean;
+  /** Regime tributário do cadastro (usado na exceção de SC). */
+  regimeTributario?: string | null;
   finalidadeUso: CpoFinalidadeUso;
   freteMod: CpoFreteMod;
   freteValor: number;
   observacoes: string;
   itens: CpoItem[];
 };
+
+/** Cliente contribuinte com IE: o DIFAL é recolhido por ele, sem impacto na margem da 2P. */
+export function difalEhInformativo(state: Pick<CpoState, "contribuinte" | "ie">) {
+  return state.contribuinte && !!(state.ie ?? "").trim();
+}
+
+export function isSimplesNacional(regime?: string | null) {
+  return /simples/i.test(regime ?? "");
+}
+
+/**
+ * Alíquota de ICMS da operação. Regra geral: interestadual do NCM (4%).
+ * Exceção — vendas para dentro de SC:
+ *   não contribuinte 17% · contribuinte Simples Nacional 12%
+ *   demais contribuintes: revenda 4% · industrialização 10%
+ */
+export function aliqInterOperacao(args: {
+  uf: string;
+  contribuinte: boolean;
+  regimeTributario?: string | null;
+  finalidade: CpoFinalidadeUso;
+  padrao: number;
+}) {
+  if (args.uf !== "SC") return args.padrao;
+  if (!args.contribuinte) return 0.17;
+  if (isSimplesNacional(args.regimeTributario)) return 0.12;
+  if (args.finalidade === "industrializacao") return 0.1;
+  return 0.04;
+}
+
+/** Aviso de guia de DIFAL em compras para uso e consumo (independe de convênio ST). */
+export function avisoDifalUsoConsumo(state: Pick<CpoState, "contribuinte" | "ie" | "finalidadeUso">) {
+  if (state.finalidadeUso !== "uso_consumo" || !difalEhInformativo(state)) return null;
+  return (
+    "DIFAL: por se tratar de aquisição para uso e consumo, o destinatário poderá receber guia de recolhimento " +
+    "do DIFAL no seu Estado, mesmo em UF sem convênio de ICMS-ST. Valor apresentado apenas em caráter informativo."
+  );
+}
 
 /** Texto padrão de observações incluído em toda nova proposta. */
 export const OBSERVACOES_PADRAO =
@@ -233,12 +273,19 @@ export function calcularCpo(
     const bruto = (it.valor || 0) * qtd;
     const prod = produtos.find((p) => p.id === it.produtoId);
     const r = ncmDoItem(it.produtoId);
+    const interItem = aliqInterOperacao({
+      uf: state.uf,
+      contribuinte: state.contribuinte,
+      regimeTributario: state.regimeTributario ?? null,
+      finalidade: state.finalidadeUso,
+      padrao: r.inter,
+    });
 
     const semIpi = bruto / (1 + r.ipi);
     // ICMS incide sobre o valor da mercadoria + frete rateado por item.
     const freteItem = brutoTotal > 0 ? frete * (bruto / brutoTotal) : 0;
     const baseIcms = semIpi + freteItem;
-    const icmsItem = baseIcms * r.inter;
+    const icmsItem = baseIcms * interItem;
     const pcItem = (semIpi - icmsItem) * r.pisCofins;
 
     valorItens += bruto;
@@ -247,10 +294,10 @@ export function calcularCpo(
     ipiValor += bruto - semIpi;
     icms += icmsItem;
     pisCofins += pcItem;
-    interPonderado += r.inter * bruto;
+    interPonderado += interItem * bruto;
 
     if (r.geraDifal) {
-      const d = calcularDifal(bruto + freteItem, interna, fcp, r.inter);
+      const d = calcularDifal(bruto + freteItem, interna, fcp, interItem);
       difalBase += d.base;
       difalValor += d.valor;
     }
@@ -265,9 +312,11 @@ export function calcularCpo(
   const icmsRate = inter;
 
   // DIFAL não entra no ICMS: é custo adicional no cabeçalho da NF.
+  // Contribuinte com IE recolhe o DIFAL por guia no Estado dele → informativo, sem impacto na margem.
   const difal = { base: difalBase, valor: difalValor };
-  const difalAbs = state.contribuinte ? 0 : difal.valor;
-  const difalEstimado = state.contribuinte ? difal.valor : 0;
+  const informativo = difalEhInformativo(state);
+  const difalAbs = informativo ? 0 : difal.valor;
+  const difalEstimado = informativo ? difal.valor : 0;
 
 
   const rl = valorItens - ipiValor - icms - pisCofins - difalAbs;

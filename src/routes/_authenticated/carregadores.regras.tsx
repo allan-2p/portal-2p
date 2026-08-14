@@ -138,13 +138,25 @@ PIS/COFINS   = (Valor NF − ICMS) × ${fmtPct(cfg.pis_cofins)}
 Base DIFAL   = Valor Itens ÷ (1 − (alíquota interna + FCP))
 DIFAL        = Base DIFAL × (alíquota interna + FCP − ${fmtPct(cfg.aliq_inter)})
 
-Cliente NÃO CONTRIBUINTE → o DIFAL é custo da 2P e entra no cabeçalho da NF
-Cliente CONTRIBUINTE     → o DIFAL é apenas estimativa informativa`}</Formula>
+Cliente NÃO CONTRIBUINTE          → o DIFAL é custo da 2P e entra no cabeçalho da NF
+Cliente CONTRIBUINTE (com IE)     → o DIFAL é apenas informativo: quem recolhe é o
+                                    destinatário, por guia no Estado dele — sem
+                                    impacto na margem da 2P
+
+Exceção — vendas para dentro de SC:
+  Não contribuinte                 → ICMS 17%
+  Contribuinte Simples Nacional    → ICMS 12%
+  Demais contribuintes             → Revenda 4% · Industrialização 10%`}</Formula>
           <p className="text-muted-foreground">
-            A alíquota de ICMS destacada na nota permanece em {fmtPct(cfg.aliq_inter)} em qualquer UF. Somar ICMS +
-            DIFAL numa única alíquota — como era feito antes — distorce tanto a nota quanto a margem.
+            A alíquota de ICMS destacada na nota permanece em {fmtPct(cfg.aliq_inter)} em qualquer UF (exceto SC, acima).
+            Somar ICMS + DIFAL numa única alíquota — como era feito antes — distorce tanto a nota quanto a margem.
+          </p>
+          <p className="text-muted-foreground">
+            Mesmo em UF sem convênio de ICMS-ST, o cliente que compra para <strong>uso e consumo</strong> pode receber
+            guia de DIFAL no Estado dele. Nesse caso basta o aviso nas observações da proposta — não há custo para a 2P.
           </p>
         </Section>
+
 
         <Section title="6. Receita líquida, CMV e margem bruta" subtitle="Indicadores que governam a aprovação da proposta.">
           <Formula>{`Receita Líquida = Venda − IPI − ICMS − PIS/COFINS − DIFAL (quando custo da 2P)
@@ -174,7 +186,7 @@ MB %            = Margem Bruta ÷ Venda`}</Formula>
 Comissão total   = Margem Bruta × % Comissão total     ← CUSTO TOTAL DA EMPRESA
 
 Custo Gerente    = Venda × ${fmtPct(cfg.pct_gerente)}      (fixo, CLT e PJ)
-Custo Indicação  = Venda × ${fmtPct(cfg.pct_indicacao)}      (fixo, CLT e PJ)
+Custo Indicação  = R$ 250,00 fixo por venda      (fixo, CLT e PJ)
 Custo Vendedor   = Comissão total − Custo Gerente − Custo Indicação
 
 Remuneração      = custo (PJ)   ou   custo ÷ ${cfg.fator_clt} (CLT)`}</Formula>

@@ -7,7 +7,7 @@
 //   Comissão total    = MB × % comissão total   → CUSTO TOTAL PARA A EMPRESA
 //
 // Do custo total deduzem-se os percentuais fixos de Gerente e Indicação
-// (ambos sobre a venda, iguais em CLT e PJ). O saldo é a comissão do vendedor
+// (gerente % sobre a venda; indicação valor fixo de R$ 250, iguais em CLT e PJ). O saldo é a comissão do vendedor
 // — por isso ela é extremamente variável.
 //
 //   Custo vendedor = Comissão total − Custo gerente − Custo indicação
@@ -30,19 +30,21 @@ export const CMV_MAX = 0.605;
 
 /** Percentuais fixos deduzidos do custo total da comissão (sobre a venda). */
 export const PCT_GERENTE = 0.005;
-export const PCT_INDICACAO = 0.0025;
+/** Comissão de indicação: valor fixo em reais (não é percentual). */
+export const VALOR_INDICACAO = 250;
 
 export type ParamsComissao = {
   cmvMax: number;
   pctGerente: number;
-  pctIndicacao: number;
+  /** Valor fixo (R$) da comissão de indicação. */
+  valorIndicacao: number;
   fatorClt: number;
 };
 
 export const PARAMS_PADRAO: ParamsComissao = {
   cmvMax: CMV_MAX,
   pctGerente: PCT_GERENTE,
-  pctIndicacao: PCT_INDICACAO,
+  valorIndicacao: VALOR_INDICACAO,
   fatorClt: FATOR_CLT,
 };
 
@@ -111,7 +113,7 @@ export function ratearComissao(args: {
   const total = bloqueado ? 0 : args.comissaoTotal;
 
   const custoGerente = args.venda * p.pctGerente;
-  const custoIndicacao = args.venda * p.pctIndicacao;
+  const custoIndicacao = args.venda > 0 ? p.valorIndicacao : 0;
   const custoVendedor = Math.max(0, total - custoGerente - custoIndicacao);
   const regimeGerente = args.regimeGerente ?? "CLT";
 
@@ -142,10 +144,10 @@ export function ratearComissao(args: {
       key: "indicacao",
       papel: "Indicação",
       regime: "PJ",
-      pctCusto: p.pctIndicacao,
+      pctCusto: args.venda > 0 ? custoIndicacao / args.venda : 0,
       custo: custoIndicacao,
       remuneracao: custoIndicacao,
-      pctRemuneracao: p.pctIndicacao,
+      pctRemuneracao: args.venda > 0 ? custoIndicacao / args.venda : 0,
       fixo: true,
     },
   ];
