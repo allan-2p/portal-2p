@@ -141,7 +141,7 @@ export const validateSapRules = createServerFn({ method: "GET" })
 
 export const syncSapProdutos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ inserted: number; updated: number; deactivated: number }> => {
+  .handler(async ({ context }): Promise<{ inserted: number; updated: number; deactivated: number; unchanged: number; catalogoAtualizado: number; catalogoInalterado: number }> => {
     await requireAnyFeature(context, [
       { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
       { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
