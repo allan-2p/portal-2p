@@ -3,15 +3,17 @@
 // de Carregadores e por tudo que depende do catálogo em Carregadores
 // (propostas, impostos/NCM, CMV, margem e comissão).
 
-export type Visibilidade = "solar" | "carregadores" | "ambos";
+export type Visibilidade = "nenhuma" | "solar" | "carregadores" | "ambos";
 
 export const VISIBILIDADE_LABELS: Record<Visibilidade, string> = {
+  nenhuma: "Sem visibilidade",
   solar: "2P Solar",
   carregadores: "2P Carregadores",
   ambos: "Grupo 2P",
 };
 
 export const VISIBILIDADE_OPTIONS: { value: Visibilidade; label: string }[] = [
+  { value: "nenhuma", label: VISIBILIDADE_LABELS.nenhuma },
   { value: "solar", label: VISIBILIDADE_LABELS.solar },
   { value: "carregadores", label: VISIBILIDADE_LABELS.carregadores },
   { value: "ambos", label: VISIBILIDADE_LABELS.ambos },
