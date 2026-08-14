@@ -68,6 +68,7 @@ import { registrarConclusao } from "@/lib/cpo-conclusao-log";
 
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
 import { MoneyInput } from "@/components/money-input";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { cn } from "@/lib/utils";
 
@@ -405,7 +406,15 @@ function PropostaCpoPage() {
 
 
 
-  const d = calcularCpo(state, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []);
+  // O recálculo fiscal é caro: enquanto o vendedor digita valores/quantidades,
+  // ele roda com um pequeno atraso, evitando re-render a cada tecla. Ações que
+  // gravam dados (salvar/concluir/PDF) usam `calcAtual()`, sempre com o estado atual.
+  const stateCalc = useDebouncedValue(state, 200);
+  const calcAtual = () => calcularCpo(state, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []);
+  const d = useMemo(
+    () => calcularCpo(stateCalc, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []),
+    [stateCalc, produtosQ.data, ufs, config, ncmsQ.data],
+  );
   const st = statusMB(d.mbPct, config);
   const avisoUsoConsumo = avisoDifalUsoConsumo(state);
   const observacoesFinal = [state.observacoes?.trim(), avisoUsoConsumo].filter(Boolean).join("\n\n");
@@ -601,8 +610,7 @@ function PropostaCpoPage() {
 
   // HTML do PDF derivado do estado atual: qualquer mudança em itens, frete,
   // impostos, margem ou comissão reflete imediatamente na prévia e no download.
-  const pdfHtml = useMemo(
-    () =>
+  const buildHtml = (d: ReturnType<typeof calcularCpo>) =>
       buildPropostaPdfHtml({
         cliente: {
           nome: state.nome,
@@ -642,13 +650,16 @@ function PropostaCpoPage() {
           comissaoPct: d.comPct,
         },
         logoCliente: usarLogoCliente ? logoCliente : null,
-      }),
-    [state, produtos, config, d, usarLogoCliente, logoCliente],
+      });
 
+  const pdfHtml = useMemo(
+    () => buildHtml(d),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state, produtos, config, d, usarLogoCliente, logoCliente, observacoesFinal],
   );
 
   function montarPdfHtml() {
-    return pdfHtml;
+    return buildHtml(calcAtual());
   }
 
   function abrirPreviewPdf() {
@@ -673,8 +684,9 @@ function PropostaCpoPage() {
     if (!state.nome.trim()) return toast.error("Informe o nome do cliente.");
     if (!state.itens.some((i) => i.produtoId)) return toast.error("Adicione ao menos um produto.");
     if (abaixoPolitica) return toast.error("MB% abaixo da política mínima.");
-    if (d.cmvExcedido)
-      return toast.error(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação especial da diretoria.`);
+    const dNow = calcAtual();
+    if (dNow.cmvExcedido)
+      return toast.error(`CMV de ${fmtPct(dNow.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação especial da diretoria.`);
     submitLock.current = true;
     // Quem chama concluirPedido já setou saving e status; evita piscar
     if (!saving) setSaving(true);
@@ -705,17 +717,17 @@ function PropostaCpoPage() {
           valor: money2(i.valor),
         })),
         totais: {
-          valorTotal: d.valorTotalProposta,
-          valor: d.valor,
-          icms: d.icms,
-          icmsRate: d.icmsRate,
-          ipi: d.ipiValor,
-          pisCofins: d.pisCofins,
-          rl: d.rl,
+          valorTotal: dNow.valorTotalProposta,
+          valor: dNow.valor,
+          icms: dNow.icms,
+          icmsRate: dNow.icmsRate,
+          ipi: dNow.ipiValor,
+          pisCofins: dNow.pisCofins,
+          rl: dNow.rl,
           custo: 0,
-          mb: d.mb,
-          mbPct: d.mbPct,
-          comissao: d.comValor,
+          mb: dNow.mb,
+          mbPct: dNow.mbPct,
+          comissao: dNow.comValor,
         },
       };
 
