@@ -110,12 +110,52 @@ export type CpoState = {
   ie: string;
   uf: string;
   contribuinte: boolean;
+  /** Regime tributário do cadastro (usado na exceção de SC). */
+  regimeTributario?: string | null;
   finalidadeUso: CpoFinalidadeUso;
   freteMod: CpoFreteMod;
   freteValor: number;
   observacoes: string;
   itens: CpoItem[];
 };
+
+/** Cliente contribuinte com IE: o DIFAL é recolhido por ele, sem impacto na margem da 2P. */
+export function difalEhInformativo(state: Pick<CpoState, "contribuinte" | "ie">) {
+  return state.contribuinte && !!(state.ie ?? "").trim();
+}
+
+export function isSimplesNacional(regime?: string | null) {
+  return /simples/i.test(regime ?? "");
+}
+
+/**
+ * Alíquota de ICMS da operação. Regra geral: interestadual do NCM (4%).
+ * Exceção — vendas para dentro de SC:
+ *   não contribuinte 17% · contribuinte Simples Nacional 12%
+ *   demais contribuintes: revenda 4% · industrialização 10%
+ */
+export function aliqInterOperacao(args: {
+  uf: string;
+  contribuinte: boolean;
+  regimeTributario?: string | null;
+  finalidade: CpoFinalidadeUso;
+  padrao: number;
+}) {
+  if (args.uf !== "SC") return args.padrao;
+  if (!args.contribuinte) return 0.17;
+  if (isSimplesNacional(args.regimeTributario)) return 0.12;
+  if (args.finalidade === "industrializacao") return 0.1;
+  return 0.04;
+}
+
+/** Aviso de guia de DIFAL em compras para uso e consumo (independe de convênio ST). */
+export function avisoDifalUsoConsumo(state: Pick<CpoState, "contribuinte" | "ie" | "finalidadeUso">) {
+  if (state.finalidadeUso !== "uso_consumo" || !difalEhInformativo(state)) return null;
+  return (
+    "DIFAL: por se tratar de aquisição para uso e consumo, o destinatário poderá receber guia de recolhimento " +
+    "do DIFAL no seu Estado, mesmo em UF sem convênio de ICMS-ST. Valor apresentado apenas em caráter informativo."
+  );
+}
 
 /** Texto padrão de observações incluído em toda nova proposta. */
 export const OBSERVACOES_PADRAO =
