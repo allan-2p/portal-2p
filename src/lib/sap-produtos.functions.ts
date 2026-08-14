@@ -215,7 +215,20 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         throw new Error("SAP: RFC listar_material não retornou materiais — sincronização abortada.");
       }
 
+      // O NCM não vem na listar_material: buscamos sempre junto na RFC de
+      // estoque (ZHDIT_ZMMR059), que é a fonte oficial do NCM por material.
+      const ncmSapMap = new Map<string, string>();
+      try {
+        const { fetchEstoqueSap, mapearEstoque } = await import("./sap-estoque.server");
+        const { estoque } = mapearEstoque(await fetchEstoqueSap());
+        for (const e of estoque) if (e.ncm) ncmSapMap.set(e.material, e.ncm);
+      } catch (err) {
+        console.error("[SAP] NCM (ZMMR059) indisponível nesta sincronização:", err);
+      }
+      const ncmDe = (m: { codigo: string; ncm?: string | null }) => m.ncm || ncmSapMap.get(m.codigo) || null;
+
       const now = new Date().toISOString();
+
 
       // ---------- Espelho completo do SAP (aba "Todos os produtos do SAP") ----------
       // Sincronização incremental: só grava os materiais que mudaram desde a
@@ -234,7 +247,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
           codigo: m.codigo,
           descricao: m.descricao,
           unidade: m.unidade,
-          ncm_codigo: m.ncm,
+          ncm_codigo: ncmDe(m),
           no_catalogo: m.liberado,
           sap_raw: m.raw as any,
           last_synced_at: now,
@@ -259,7 +272,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
 
       // NCM do SAP alimenta o produto e, quando o código existir na tabela de
       // NCMs do portal, vincula automaticamente as alíquotas.
-      const ncmsSap = Array.from(new Set(materiais.map((m) => m.ncm).filter(Boolean))) as string[];
+      const ncmsSap = Array.from(new Set(materiais.map((m) => ncmDe(m)).filter(Boolean))) as string[];
       const ncmMap = new Map<string, string>();
       if (ncmsSap.length > 0) {
         const { data: ncmRows } = await supabaseAdmin
@@ -272,7 +285,8 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       }
 
       const rows = materiais.map((m) => {
-        const ncmId = m.ncm ? (ncmMap.get(m.ncm) ?? null) : null;
+        const ncm = ncmDe(m);
+        const ncmId = ncm ? (ncmMap.get(ncm) ?? null) : null;
         return {
           codigo: m.codigo,
           descricao: m.descricao,
@@ -281,10 +295,11 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
           lista_preco: m.lista_preco,
           sap_raw: m.raw as any,
           last_synced_at: now,
-          ...(m.ncm ? { ncm_codigo: m.ncm } : {}),
+          ...(ncm ? { ncm_codigo: ncm } : {}),
           ...(ncmId ? { ncm_id: ncmId } : {}),
         };
       });
+
 
       // Novos entram ativos; nos já existentes o SAP não sobrescreve o
       // ativo/inativo definido pela moderação do portal.
@@ -360,7 +375,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         catalogoInalterado,
         totalSap: todosMateriais.length,
         totalLiberados: materiais.length,
-        semNcm: materiais.filter((m) => !m.ncm).length,
+        semNcm: materiais.filter((m) => !ncmDe(m)).length,
         duracaoMs: Date.now() - iniciadoEm,
       };
     } catch (e: any) {
