@@ -267,12 +267,13 @@ function ProdutosTab() {
       </div>
 
       <Dialog open={!!draft} onOpenChange={(v) => !v && setDraft(null)}>
-        <DialogContent className="max-w-lg w-[calc(100%-2rem)] overflow-hidden sm:w-full">
-          <DialogHeader>
-            <DialogTitle>Editar produto</DialogTitle>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg overflow-hidden p-4 sm:p-6 max-h-[90dvh] flex flex-col gap-4">
+          <DialogHeader className="text-left">
+            <DialogTitle className="break-words">Editar produto</DialogTitle>
           </DialogHeader>
           {draft && (
-            <div className="space-y-3 min-w-0">
+            <div className="space-y-3 min-w-0 flex-1 overflow-y-auto -mx-1 px-1">
+
               <Field label="Código (SKU)">
                 <Input className="w-full" value={draft.codigo} readOnly disabled />
               </Field>
