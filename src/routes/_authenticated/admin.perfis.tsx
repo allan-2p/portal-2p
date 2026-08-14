@@ -24,6 +24,7 @@ import {
   type InstanceId,
 } from "@/lib/instances";
 import { groupFeatures, shortFeatureLabel, featureScopeLabel } from "@/lib/feature-groups";
+import { PermissionMatrix } from "@/components/admin/permission-matrix";
 
 export const Route = createFileRoute("/_authenticated/admin/perfis")({
   component: PerfisPage,
@@ -66,6 +67,7 @@ function PerfisPage() {
   const [userSearch, setUserSearch] = useState("");
   const [profInstances, setProfInstances] = useState<Set<InstanceId>>(new Set());
   const [featSearch, setFeatSearch] = useState("");
+  const [tab, setTab] = useState<"perfis" | "matriz">("perfis");
 
   async function load() {
     setLoading(true);
@@ -256,12 +258,33 @@ function PerfisPage() {
           )}
         </div>
 
-
+        <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
+          {(
+            [
+              ["perfis", "Perfis e telas"],
+              ["matriz", "Matriz de permissões"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+                tab === id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
+        ) : tab === "matriz" ? (
+          <PermissionMatrix profiles={profiles} />
         ) : (
           <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
             <div className="glass rounded-xl overflow-hidden h-fit">
