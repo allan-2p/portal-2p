@@ -466,7 +466,8 @@ export const adminUpdateLogRetention = createServerFn({ method: "POST" })
 export const adminRunLogRetention = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertFeature(context, "admin.atividade", "visualizar");
+    const { data: isAdmin } = await context.supabase.rpc("is_admin");
+    if (!isAdmin) throw new Error("Acesso restrito a administradores.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin.rpc("apply_log_retention");
     if (error) throw new Error(error.message);
