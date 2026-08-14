@@ -420,6 +420,26 @@ function ProdutosPage() {
           ) : null}
         </div>
 
+        <div className="flex items-center gap-1 border-b border-border">
+          {([
+            { id: "portal", label: "Catálogo do portal" },
+            { id: "sap", label: "Todos os produtos do SAP" },
+          ] as const).map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setAba(t.id)}
+              className={
+                aba === t.id
+                  ? "px-3 py-2 text-sm font-medium border-b-2 border-primary text-foreground"
+                  : "px-3 py-2 text-sm text-muted-foreground border-b-2 border-transparent hover:text-foreground"
+              }
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         {showRuns && (
           <div className="border border-border rounded-lg overflow-hidden">
             <div className="flex items-center justify-between px-3 py-2 bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
@@ -540,6 +560,8 @@ function ProdutosPage() {
           </div>
         )}
 
+        {aba === "portal" ? (
+        <>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -770,6 +792,10 @@ function ProdutosPage() {
             </Button>
           </div>
         </div>
+        </>
+        ) : (
+          <CatalogoSapCompleto />
+        )}
 
         <ModerationAuditLog area="produtos" description="alterações no catálogo de produtos do Grupo 2P." />
       </div>
