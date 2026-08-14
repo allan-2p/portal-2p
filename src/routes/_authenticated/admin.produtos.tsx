@@ -311,9 +311,22 @@ function ProdutosPage() {
     queryFn: () => listRuns({}),
   });
 
+  // Progresso visual: a RFC do SAP é uma chamada única, então avançamos por
+  // etapas cronometradas e travamos em 95% até a resposta chegar.
+  const [syncEtapa, setSyncEtapa] = useState(0);
+  const [syncResultado, setSyncResultado] = useState<SapSyncResult | null>(null);
+  const [syncErro, setSyncErro] = useState<string | null>(null);
+
   const syncMut = useMutation({
     mutationFn: () => sync({}),
+    onMutate: () => {
+      setSyncResultado(null);
+      setSyncErro(null);
+      setSyncEtapa(0);
+    },
     onSuccess: (r) => {
+      setSyncEtapa(SYNC_ETAPAS.length);
+      setSyncResultado(r);
       toast.success(
         r.inserted === 0 && r.updated === 0 && !r.deactivated
           ? `Nada mudou no SAP desde a última sincronização (${r.unchanged} produtos verificados).`
@@ -323,11 +336,23 @@ function ProdutosPage() {
       runsQuery.refetch();
     },
     onError: (e: any) => {
-      toast.error(String(e?.message ?? e));
+      const msg = String(e?.message ?? e);
+      setSyncErro(msg);
+      toast.error(msg);
       refetch();
       runsQuery.refetch();
     },
   });
+
+  useEffect(() => {
+    if (!syncMut.isPending) return;
+    setSyncEtapa(1);
+    const t = setInterval(() => {
+      setSyncEtapa((e) => Math.min(e + 1, SYNC_ETAPAS.length - 1));
+    }, 2500);
+    return () => clearInterval(t);
+  }, [syncMut.isPending]);
+
 
   const ncmMut = useMutation({
     mutationFn: (payload: { ids: string[]; ncmId: string | null }) => aplicarNcm({ data: payload }),
