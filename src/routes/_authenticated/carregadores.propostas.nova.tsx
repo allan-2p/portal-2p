@@ -62,6 +62,7 @@ import {
   type CpoState,
   textoDifalContribuinte,
   avisoDifalUsoConsumo,
+  precoParaMargem,
 } from "@/lib/cpo";
 import { registrarConclusao } from "@/lib/cpo-conclusao-log";
 import { salvarPropostaCpo } from "@/lib/cpo-proposals.functions";
@@ -385,6 +386,18 @@ function PropostaCpoPage() {
   };
 
 
+  // Preço sugerido do item já considerando os impostos da operação, para que
+  // a MB% da proposta nasça em 37% (e não abaixo da política de 33%).
+  const precoSugeridoItem = (produtoId: string, s: CpoState) =>
+    money2(
+      precoParaMargem(
+        produtos.find((p) => p.id === produtoId),
+        s,
+        ufs,
+        config,
+        ncmsQ.data ?? [],
+      ),
+    );
 
 
   const set = <K extends keyof CpoState>(k: K, v: CpoState[K]) =>
@@ -406,7 +419,7 @@ function PropostaCpoPage() {
       let mudou = false;
       const itens = s.itens.map((i) => {
         if (!i.produtoId) return i;
-        const sugerido = money2(produtos.find((p) => p.id === i.produtoId)?.preco_sugerido ?? 0);
+        const sugerido = precoSugeridoItem(i.produtoId, s);
         if (!(sugerido > 0) || sugerido === i.valor) return i;
         // Só substitui quando o item não tem preço manual e o valor atual está
         // vazio ou veio de uma aplicação anterior do preço sugerido.
@@ -423,7 +436,7 @@ function PropostaCpoPage() {
       setPrecoChanges((p) => ({ ...p, ...mudancas }));
       window.setTimeout(() => setPrecoChanges({}), 8000);
     }
-  }, [produtos]);
+  }, [produtos, ufs, config, ncmsQ.data, state.uf, state.contribuinte, state.ie, state.finalidadeUso, state.regimeTributario]);
 
 
 
@@ -1204,9 +1217,7 @@ function PropostaCpoPage() {
                         <Select
                           value={it.produtoId}
                           onValueChange={(v) => {
-                            const sugerido = money2(
-                              produtos.find((p) => p.id === v)?.preco_sugerido ?? 0,
-                            );
+                            const sugerido = precoSugeridoItem(v, state);
                             setItem(
                               it.key,
                               !it.valorManual && sugerido > 0
@@ -1248,9 +1259,7 @@ function PropostaCpoPage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {(() => {
-                        const sugerido = money2(
-                          produtos.find((p) => p.id === it.produtoId)?.preco_sugerido ?? 0,
-                        );
+                        const sugerido = precoSugeridoItem(it.produtoId, state);
                         const usandoSugerido =
                           !it.valorManual && sugerido > 0 && money2(it.valor) === sugerido;
                         const mudou = precoChanges[it.key];
