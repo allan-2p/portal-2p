@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, Lock } from "lucide-react";
+import { ArrowRight, Sparkles, Lock, X } from "lucide-react";
 import { ADMIN_SECTIONS, type AdminSectionId } from "@/lib/admin-nav";
 import { useInstance } from "@/components/instance-provider";
 import { cn } from "@/lib/utils";
