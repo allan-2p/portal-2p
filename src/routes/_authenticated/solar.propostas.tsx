@@ -99,21 +99,10 @@ const VENDIDO_LABEL: Record<Vendido, string> = {
   E: "Estoque",
 };
 
-function StatusDot({ status }: { status: Status }) {
-  const s = STATUS_STYLE[status];
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          className={`inline-block h-3 w-3 rounded-full ring-2 ring-background ${s.dot}`}
-          aria-label={status}
-          role="img"
-        />
-      </TooltipTrigger>
-      <TooltipContent className={`${s.chip} border-0 font-medium`}>{status}</TooltipContent>
-    </Tooltip>
-  );
+function StatusDotCell({ status }: { status: Status }) {
+  return <StatusDot status={status} />;
 }
+
 
 function OrcamentosPage() {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>(MOCK);
