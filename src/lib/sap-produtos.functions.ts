@@ -47,7 +47,8 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, [
-      { instance: "solar", feature: "admin.produtos", action: "moderar" },
+      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
       { instance: "carregadores", feature: "cpo.produtos", action: "moderar" },
     ]);
 
@@ -134,7 +135,8 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ inserted: number; updated: number; deactivated: number }> => {
     await requireAnyFeature(context, [
-      { instance: "solar", feature: "admin.produtos", action: "moderar" },
+      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
       { instance: "carregadores", feature: "cpo.produtos", action: "moderar" },
     ]);
 

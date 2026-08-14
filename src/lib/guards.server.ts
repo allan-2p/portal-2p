@@ -187,6 +187,7 @@ export async function adminAreasFor(ctx: GuardContext): Promise<{
       "admin.perfis",
       "admin.auditoria",
       "admin.vinculos",
+      "admin.objetos.produtos",
     ]),
     moderacao: areaOr("moderacao", [
       "admin.produtos",

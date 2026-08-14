@@ -34,6 +34,7 @@ export type FeatureKey =
   | "admin.metas"
   | "admin.tabelas"
   | "admin.produtos"
+  | "admin.objetos.produtos"
   | "admin.perfis"
   | "admin.integracoes"
   | "admin.auditoria"
@@ -178,7 +179,7 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/usuarios": "admin.usuarios",
   "/admin/metas": "admin.metas",
   "/admin/tabelas": "admin.tabelas",
-  "/admin/produtos": "admin.produtos",
+  "/admin/produtos": "admin.objetos.produtos",
   "/admin/perfis": "admin.perfis",
   "/integracoes": "admin.integracoes",
   "/admin/auditoria": "admin.auditoria",
@@ -223,6 +224,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.metas": "Admin • Metas",
   "admin.tabelas": "Admin • Tabelas",
   "admin.produtos": "Admin • Produtos (SAP)",
+  "admin.objetos.produtos": "Configurações • Objetos e Campos — Produtos",
   "admin.perfis": "Admin • Perfis",
   "admin.integracoes": "Admin • Integrações",
   "admin.auditoria": "Admin • Auditoria de Acessos",
