@@ -298,6 +298,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             cnaes_secundarios: p.cnaes_secundarios ?? [],
             contatos: p.contatos ?? [],
           } as never,
+          consultor_id: consultorId,
         },
       });
     },
@@ -364,6 +365,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
   function fechar() {
     setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
+    setConsultorId(consultoresQ.data?.eu.id ?? null);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
     setFontes([]); setAvisos([]); setBloqueados(new Set());
   }
@@ -381,6 +383,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         email: c.contato_email, telefone: c.contato_telefone,
       }),
     });
+    setConsultorId(c.created_by ?? consultoresQ.data?.eu.id ?? null);
     setTentouSalvar(false); setFontes([]); setAvisos([]); setBloqueados(new Set());
     setEtapa("formulario"); setOpen(true);
   };
