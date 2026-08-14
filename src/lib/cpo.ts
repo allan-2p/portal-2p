@@ -125,11 +125,17 @@ export type CpoState = {
   /** Regime tributário do cadastro (usado na exceção de SC). */
   regimeTributario?: string | null;
   finalidadeUso: CpoFinalidadeUso;
+  /** Proposta veio de indicação (somente Carregadores). */
+  indicacao: boolean;
+  /** Padrinho da indicação, quando houver. */
+  padrinhoId: string | null;
+  padrinhoNome: string;
   freteMod: CpoFreteMod;
   freteValor: number;
   observacoes: string;
   itens: CpoItem[];
 };
+
 
 /** Cliente contribuinte com IE: o DIFAL é recolhido por ele, sem impacto na margem da 2P. */
 export function difalEhInformativo(state: Pick<CpoState, "contribuinte" | "ie">) {
