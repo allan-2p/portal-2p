@@ -37,9 +37,11 @@ export function CpoComissaoRegras() {
   const params = {
     cmvMax: cfg.cmv_max,
     pctGerente: cfg.pct_gerente,
+    pctRepresentante: cfg.pct_representante,
     valorIndicacao: VALOR_INDICACAO,
     fatorClt: cfg.fator_clt,
   };
+
 
   return (
     <div className="space-y-4">
@@ -117,9 +119,9 @@ export function CpoComissaoRegras() {
             <TabsContent key={regime} value={regime} className="mt-3">
               <div className="glass rounded-2xl p-5 space-y-3">
                 <p className="text-xs text-muted-foreground">
-                  Gerente ({pct(params.pctGerente)}) é fixo sobre a venda e a Indicação é um valor fixo de {brl(params.valorIndicacao)}
-                  em qualquer regime. O vendedor recebe o saldo do custo total da comissão — por isso o valor é
-                  extremamente variável.
+                  Os papéis seguem o <strong>Perfil de permissão do consultor dono do cliente</strong>. Gerente
+                  ({pct(params.pctGerente)}) e Representante ({pct(params.pctRepresentante)}) são fixos sobre a
+                  venda; o consultor recebe o saldo do custo total da comissão.
                   {regime === "CLT"
                     ? ` No CLT a remuneração é o custo dividido pelo fator de encargos ${params.fatorClt}.`
                     : " No PJ o custo da empresa é igual à remuneração paga."}
@@ -128,7 +130,7 @@ export function CpoComissaoRegras() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-xs text-muted-foreground border-b border-border/60">
-                        <th className="text-left py-2">Papel</th>
+                        <th className="text-left py-2">Perfil</th>
                         <th className="text-left py-2">Regime</th>
                         <th className="text-right py-2">% custo s/ venda</th>
                         <th className="text-right py-2">Custo empresa</th>
@@ -166,20 +168,58 @@ export function CpoComissaoRegras() {
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Comissão total permitida pela fórmula: <strong>{brl(rateio.comissaoTotal)}</strong> (
-                  {pct(r.pctComissao)} da MB). Saldo do vendedor:{" "}
+                  {pct(r.pctComissao)} da MB). Saldo do consultor:{" "}
                   <strong>{brl(rateio.custoVendedor)}</strong>
                   {rateio.bloqueado ? (
                     <span className="text-destructive"> · bloqueado por CMV acima de {pct(params.cmvMax)}</span>
                   ) : rateio.custoVendedor <= 0 ? (
-                    <span className="text-destructive"> · sem saldo após gerente e indicação</span>
+                    <span className="text-destructive"> · sem saldo após os fixos e a indicação</span>
                   ) : (
                     <span className="text-emerald-500"> · dentro do limite</span>
                   )}
                 </div>
               </div>
+
+              {/* Indicação — tabela separada */}
+              <div className="glass rounded-2xl p-5 space-y-3 mt-4">
+                <div>
+                  <h3 className="font-semibold text-sm">Indicação (padrinho)</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    A indicação não é um perfil do time: é marcada na proposta e paga a um padrinho cadastrado.
+                    Valor fixo em qualquer regime, deduzido do custo total da comissão.
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs text-muted-foreground border-b border-border/60">
+                        <th className="text-left py-2">Origem</th>
+                        <th className="text-left py-2">Regime</th>
+                        <th className="text-right py-2">% custo s/ venda</th>
+                        <th className="text-right py-2">Custo empresa</th>
+                        <th className="text-right py-2">Remuneração</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="py-2 font-medium">Padrinho da proposta</td>
+                        <td className="py-2 text-muted-foreground">PJ / PF</td>
+                        <td className="py-2 text-right tabular-nums text-muted-foreground">
+                          {pct(venda > 0 ? rateio.indicacao.valor / venda : 0)}
+                        </td>
+                        <td className="py-2 text-right tabular-nums">{brl(rateio.indicacao.valor)}</td>
+                        <td className="py-2 text-right tabular-nums font-semibold">
+                          {brl(rateio.indicacao.valor)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </TabsContent>
           );
         })}
+
       </Tabs>
     </div>
   );

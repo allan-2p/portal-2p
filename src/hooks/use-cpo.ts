@@ -107,6 +107,9 @@ export function useCpoConfig() {
         comissao_pct: Number(d.comissao_pct),
         cmv_max: d.cmv_max != null ? Number(d.cmv_max) : CPO_CONFIG_FALLBACK.cmv_max,
         pct_gerente: d.pct_gerente != null ? Number(d.pct_gerente) : CPO_CONFIG_FALLBACK.pct_gerente,
+        pct_representante:
+          d.pct_representante != null ? Number(d.pct_representante) : CPO_CONFIG_FALLBACK.pct_representante,
+
         pct_indicacao: d.pct_indicacao != null ? Number(d.pct_indicacao) : CPO_CONFIG_FALLBACK.pct_indicacao,
         fator_clt: d.fator_clt != null ? Number(d.fator_clt) : CPO_CONFIG_FALLBACK.fator_clt,
       };

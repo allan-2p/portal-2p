@@ -32,6 +32,9 @@ export type SalvarPropostaInput = {
   freteMod: string;
   freteValor: number;
   observacoes: string | null;
+  /** Proposta originada de indicação (Carregadores). */
+  indicacao: boolean;
+  padrinhoId: string | null;
   itens: { produtoId: string; qtd: number; valor: number }[];
 };
 
@@ -86,6 +89,8 @@ function validar(input: any): SalvarPropostaInput {
     freteMod: String(input.freteMod ?? "FOB"),
     freteValor: money2(input.freteValor),
     observacoes: input.observacoes ? String(input.observacoes) : null,
+    indicacao: !!input.indicacao,
+    padrinhoId: input.padrinhoId ? String(input.padrinhoId) : null,
     itens,
   };
 }
@@ -151,6 +156,9 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       contribuinte: data.contribuinte,
       regimeTributario: data.regimeTributario ?? null,
       finalidadeUso: data.finalidadeUso as CpoState["finalidadeUso"],
+      indicacao: data.indicacao,
+      padrinhoId: data.padrinhoId,
+      padrinhoNome: "",
       freteMod: data.freteMod as CpoState["freteMod"],
       freteValor: data.freteValor,
       observacoes: data.observacoes ?? "",
@@ -191,6 +199,21 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       }
     }
 
+    // Padrinho da indicação: valida o vínculo e fotografa o nome na proposta.
+    let padrinhoId: string | null = null;
+    let padrinhoNome: string | null = null;
+    if (data.indicacao && data.padrinhoId) {
+      const { data: pad } = await supabase
+        .from("cpo_padrinhos")
+        .select("id, nome")
+        .eq("id", data.padrinhoId)
+        .maybeSingle();
+      if (!pad) throw new Error("Padrinho da indicação não encontrado.");
+      padrinhoId = (pad as any).id as string;
+      padrinhoNome = (pad as any).nome as string;
+    }
+    if (data.indicacao && !padrinhoId) throw new Error("Selecione ou cadastre o padrinho da indicação.");
+
     const payload = {
       numero: data.numero,
       nome: data.propostaNome,
@@ -207,6 +230,9 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       frete_mod: data.freteMod,
       frete_valor: data.freteValor,
       observacoes: data.observacoes,
+      indicacao: data.indicacao,
+      padrinho_id: data.indicacao ? padrinhoId : null,
+      padrinho_nome: data.indicacao ? padrinhoNome : null,
       itens: data.itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId)!;
         return {

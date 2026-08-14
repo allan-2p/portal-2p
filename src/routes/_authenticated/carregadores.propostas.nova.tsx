@@ -33,6 +33,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listClientesFn } from "@/lib/clientes.functions";
 import { getClienteLogo } from "@/lib/cliente-logos.functions";
+import { PropostaIndicacao } from "@/components/proposta-indicacao";
 
 
 import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
@@ -246,6 +247,9 @@ function PropostaCpoPage() {
         uf: data.uf,
         contribuinte: data.contribuinte,
         finalidadeUso: ((data.finalidade_uso as CpoState["finalidadeUso"]) ?? "uso_consumo"),
+        indicacao: !!(data as any).indicacao,
+        padrinhoId: ((data as any).padrinho_id as string | null) ?? null,
+        padrinhoNome: ((data as any).padrinho_nome as string | null) ?? "",
         freteMod: (data.frete_mod === "CIF" || data.frete_mod === "DEDICADO"
           ? data.frete_mod
           : "FOB") as CpoFreteMod,
@@ -462,9 +466,11 @@ function PropostaCpoPage() {
       comissaoTotal: d.comValor,
       cmv: d.cmv,
       regimeVendedor,
+      comIndicacao: state.indicacao,
       params: {
         cmvMax: config.cmv_max,
         pctGerente: config.pct_gerente,
+        pctRepresentante: config.pct_representante,
         valorIndicacao: VALOR_INDICACAO,
         fatorClt: config.fator_clt,
       },
@@ -476,7 +482,8 @@ function PropostaCpoPage() {
       custo: rateio.custoVendedor,
       total: rateio.comissaoTotal,
     };
-  }, [d.valorItens, d.comValor, d.cmv, regimeVendedor, config]);
+  }, [d.valorItens, d.comValor, d.cmv, regimeVendedor, config, state.indicacao]);
+
   const st = statusMB(d.mbPct, config);
 
   const avisoUsoConsumo = avisoDifalUsoConsumo(state);
@@ -499,6 +506,9 @@ function PropostaCpoPage() {
     errosCliente.push({ campo: "ie", msg: "Cliente contribuinte precisa de Inscrição Estadual." });
   if (state.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(state.email.trim()))
     errosCliente.push({ campo: "email", msg: "E-mail do cliente é inválido." });
+
+  if (state.indicacao && !state.padrinhoId)
+    errosCliente.push({ campo: "padrinho", msg: "Selecione ou cadastre o padrinho da indicação." });
 
   const clienteOk = errosCliente.length === 0;
   const campoInvalido = (c: string) => errosCliente.some((e) => e.campo === c);
@@ -776,6 +786,8 @@ function PropostaCpoPage() {
           contribuinte: state.contribuinte,
           regimeTributario: state.regimeTributario ?? null,
           finalidadeUso: state.finalidadeUso,
+          indicacao: state.indicacao,
+          padrinhoId: state.indicacao ? state.padrinhoId : null,
           freteMod: state.freteMod,
           freteValor: money2(state.freteValor),
           observacoes: observacoesFinal.trim() || null,
@@ -1154,6 +1166,22 @@ function PropostaCpoPage() {
                       </SelectContent>
                     </Select>
                   </Field>
+                ) : null}
+
+                {state.nome ? (
+                  <PropostaIndicacao
+                    indicacao={state.indicacao}
+                    padrinhoId={state.padrinhoId}
+                    padrinhoNome={state.padrinhoNome}
+                    onChange={(v) =>
+                      setState((s) => ({
+                        ...s,
+                        indicacao: v.indicacao,
+                        padrinhoId: v.padrinhoId,
+                        padrinhoNome: v.padrinhoNome,
+                      }))
+                    }
+                  />
                 ) : null}
               </>
             ) : state.nome ? (

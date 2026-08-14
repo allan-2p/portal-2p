@@ -231,6 +231,7 @@ export type Database = {
           mb_atencao: number
           pct_gerente: number
           pct_indicacao: number
+          pct_representante: number
           pis_cofins: number
           politica_mb_min: number
           updated_at: string
@@ -247,6 +248,7 @@ export type Database = {
           mb_atencao?: number
           pct_gerente?: number
           pct_indicacao?: number
+          pct_representante?: number
           pis_cofins?: number
           politica_mb_min?: number
           updated_at?: string
@@ -263,6 +265,7 @@ export type Database = {
           mb_atencao?: number
           pct_gerente?: number
           pct_indicacao?: number
+          pct_representante?: number
           pis_cofins?: number
           politica_mb_min?: number
           updated_at?: string
@@ -346,6 +349,42 @@ export type Database = {
           observacoes?: string | null
           pis_cofins?: number
           tem_st?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cpo_padrinhos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          doc: string | null
+          email: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          doc?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          doc?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -456,11 +495,14 @@ export type Database = {
           frete_mod: string
           frete_valor: number
           id: string
+          indicacao: boolean
           itens: Json
           nome: string | null
           numero: string | null
           numero_sap: string | null
           observacoes: string | null
+          padrinho_id: string | null
+          padrinho_nome: string | null
           status: string
           totais: Json
           uf: string
@@ -485,11 +527,14 @@ export type Database = {
           frete_mod?: string
           frete_valor?: number
           id?: string
+          indicacao?: boolean
           itens?: Json
           nome?: string | null
           numero?: string | null
           numero_sap?: string | null
           observacoes?: string | null
+          padrinho_id?: string | null
+          padrinho_nome?: string | null
           status?: string
           totais?: Json
           uf?: string
@@ -514,17 +559,28 @@ export type Database = {
           frete_mod?: string
           frete_valor?: number
           id?: string
+          indicacao?: boolean
           itens?: Json
           nome?: string | null
           numero?: string | null
           numero_sap?: string | null
           observacoes?: string | null
+          padrinho_id?: string | null
+          padrinho_nome?: string | null
           status?: string
           totais?: Json
           uf?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cpo_proposals_padrinho_id_fkey"
+            columns: ["padrinho_id"]
+            isOneToOne: false
+            referencedRelation: "cpo_padrinhos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cpo_tasks: {
         Row: {
