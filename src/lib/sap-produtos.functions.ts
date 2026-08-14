@@ -231,9 +231,40 @@ export const validateSapRules = createServerFn({ method: "GET" })
     return { problemas: validarRegras() };
   });
 
+export type SapSyncResult = {
+  inserted: number;
+  updated: number;
+  deactivated: number;
+  unchanged: number;
+  catalogoAtualizado: number;
+  catalogoInalterado: number;
+  totalSap: number;
+  totalLiberados: number;
+  semNcm: number;
+  duracaoMs: number;
+};
+
+/** Traduz falhas técnicas do SAP Bridge em mensagens acionáveis. */
+function descreverErroSap(e: unknown): string {
+  const raw = String((e as any)?.message ?? e ?? "Erro desconhecido");
+  if (/listar_material não retornou/i.test(raw))
+    return "O SAP respondeu, mas não devolveu nenhum material. Verifique se o usuário de integração tem acesso à RFC listar_material e se a lista de preços está preenchida no SAP.";
+  if (/fetch failed|ECONNREFUSED|ENOTFOUND|network/i.test(raw))
+    return `Não foi possível conectar ao SAP Bridge. Verifique se o serviço está no ar e se a URL/porta está correta. (${raw})`;
+  if (/timeout|ETIMEDOUT|aborted/i.test(raw))
+    return `O SAP demorou demais para responder e a sincronização foi interrompida. Tente novamente em alguns minutos. (${raw})`;
+  if (/401|403|unauthor|forbidden|credenc/i.test(raw))
+    return `O SAP Bridge recusou as credenciais de integração. Peça a revisão do usuário/senha do serviço. (${raw})`;
+  if (/50\d|SOAP|Fault/i.test(raw))
+    return `O SAP retornou um erro interno ao processar a RFC. Encaminhe esta mensagem ao time SAP: ${raw}`;
+  if (/permission denied|row-level security|violates/i.test(raw))
+    return `Falha ao gravar no banco do portal durante a sincronização: ${raw}`;
+  return raw;
+}
+
 export const syncSapProdutos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ inserted: number; updated: number; deactivated: number; unchanged: number; catalogoAtualizado: number; catalogoInalterado: number }> => {
+  .handler(async ({ context }): Promise<SapSyncResult> => {
     await requireAnyFeature(context, [
       { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
       { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
