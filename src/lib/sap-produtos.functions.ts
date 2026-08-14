@@ -21,6 +21,7 @@ export type SapProdutoRow = {
   origem: string | null;
   custo: number | null;
   ncm_id: string | null;
+  ncm_codigo: string | null;
 };
 
 
@@ -102,7 +103,7 @@ export const listSapProdutos = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<{ produtos: SapProdutoRow[]; lastRun: SapSyncRun | null }> => {
     const { data, error } = await context.supabase
       .from("sap_produtos")
-      .select("id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id")
+      .select("id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id, ncm_codigo")
       .order("descricao");
     if (error) throw new Error(error.message);
 
