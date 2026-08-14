@@ -631,8 +631,10 @@ function PropostaCpoPage() {
   // impostos, margem ou comissão reflete imediatamente na prévia e no download.
   const buildHtml = (d: ReturnType<typeof calcularCpo>) =>
       buildPropostaPdfHtml({
+        numero: numeroAtual ?? numeroRef.current ?? undefined,
         cliente: {
           nome: state.nome,
+          nomeFantasia: state.nome,
           doc: state.doc,
           ie: state.ie,
           email: state.email,

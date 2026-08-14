@@ -11,6 +11,7 @@ export type PropostaPdfData = {
   numero?: string;
   cliente: {
     nome: string;
+    nomeFantasia?: string | null;
     doc?: string;
     ie?: string;
     email?: string;
@@ -52,6 +53,23 @@ const esc = (v: unknown) =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
+/**
+ * Nome sugerido do arquivo ao salvar/imprimir: nº da proposta + "Proposta" + nome fantasia.
+ * O navegador usa o <title> do documento como nome padrão no diálogo de impressão.
+ */
+export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente">) {
+  const limpo = (v: string) =>
+    v
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[\\/:*?"<>|]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  const fantasia = limpo(p.cliente.nomeFantasia?.trim() || p.cliente.nome || "Cliente");
+  return [limpo(p.numero ?? "Proposta"), "Proposta", fantasia].filter(Boolean).join(" - ");
+}
+
+
 export function buildPropostaPdfHtml(p: PropostaPdfData) {
   const hoje = new Date();
   const dataStr = hoje.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
@@ -75,7 +93,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
 
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8">
-<title>Proposta ${esc(numero)} — ${esc(p.cliente.nome)}</title>
+<title>${esc(propostaPdfFileName({ ...p, numero }))}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
