@@ -88,6 +88,8 @@ export type CpoItem = {
   qtd: number;
   valor: number;
   valorManual: boolean;
+  /** Último Preço Sugerido aplicado automaticamente neste item. */
+  sugeridoAplicado?: number;
 };
 
 export type CpoFinalidadeUso = "uso_consumo" | "revenda" | "industrializacao";
