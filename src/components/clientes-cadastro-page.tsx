@@ -182,6 +182,18 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [detalhe, setDetalhe] = useState<Cliente | null>(null);
   const [tentouSalvar, setTentouSalvar] = useState(false);
   const [bloqueados, setBloqueados] = useState<Set<keyof Form>>(new Set());
+  // Consultor responsável pelo cadastro (gravado em created_by/created_by_nome)
+  const [consultorId, setConsultorId] = useState<string | null>(null);
+  const listarConsultores = useServerFn(listConsultoresFn);
+  const consultoresQ = useQuery({
+    queryKey: ["clientes-consultores", instancia],
+    queryFn: () => listarConsultores({ data: { instancia } }),
+    staleTime: 5 * 60_000,
+  });
+  const consultorNomeAtual =
+    (consultoresQ.data?.consultores ?? []).find((c) => c.id === consultorId)?.nome ??
+    consultoresQ.data?.eu.nome ??
+    "—";
 
   const errosAtuais = useMemo(() => validarCampos(form), [form]);
   const erros: Erros = tentouSalvar ? errosAtuais : {};
