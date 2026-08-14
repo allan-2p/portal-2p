@@ -30,8 +30,11 @@ export type FeatureKey =
   | "cpo.produtos"
   | "cpo.comissoes"
   | "cpo.regras"
+  | "cpo.metas"
   | "admin.usuarios"
   | "admin.metas"
+  | "admin.regras"
+  | "admin.comissoes"
   | "admin.tabelas"
   | "admin.produtos"
   | "admin.objetos.produtos"
@@ -116,6 +119,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "cpo.produtos",
       "cpo.comissoes",
       "cpo.regras",
+      "cpo.metas",
       "admin.usuarios",
       "admin.perfis",
       "admin.integracoes",
@@ -175,9 +179,12 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/carregadores/pedidos": "cpo.pedidos",
   "/carregadores/comissoes": "cpo.comissoes",
   "/carregadores/regras": "cpo.regras",
+  "/carregadores/metas": "cpo.metas",
 
   "/usuarios": "admin.usuarios",
   "/admin/metas": "admin.metas",
+  "/admin/regras": "admin.regras",
+  "/admin/comissoes": "admin.comissoes",
   "/admin/tabelas": "admin.tabelas",
   "/admin/produtos": "admin.objetos.produtos",
   "/admin/perfis": "admin.perfis",
@@ -217,13 +224,16 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "cpo.clientes": "Carregadores • Clientes",
   "cpo.propostas": "Carregadores • Propostas",
   "cpo.pedidos": "Carregadores • Pedidos",
-  "cpo.produtos": "Moderação • Produtos e Alíquotas",
-  "cpo.comissoes": "Moderação • Comissões",
-  "cpo.regras": "Moderação • Regras",
+  "cpo.produtos": "Moderação • Carregadores • Gestão de Produtos",
+  "cpo.comissoes": "Moderação • Carregadores • Regras de Comissões",
+  "cpo.regras": "Moderação • Carregadores • Regras de Propostas",
+  "cpo.metas": "Moderação • Carregadores • Regras de Metas",
   "admin.usuarios": "Admin • Usuários",
-  "admin.metas": "Admin • Metas",
+  "admin.metas": "Moderação • Solar • Regras de Metas",
+  "admin.regras": "Moderação • Solar • Regras de Propostas",
+  "admin.comissoes": "Moderação • Solar • Regras de Comissões",
   "admin.tabelas": "Admin • Tabelas",
-  "admin.produtos": "Admin • Produtos (SAP)",
+  "admin.produtos": "Moderação • Solar • Gestão de Produtos",
   "admin.objetos.produtos": "Configurações • Objetos e Campos — Produtos",
   "admin.perfis": "Admin • Perfis",
   "admin.integracoes": "Admin • Integrações",
@@ -260,6 +270,7 @@ export const GROUP_FEATURE_KEYS: FeatureKey[] = [
   "cpo.produtos",
   "cpo.comissoes",
   "cpo.regras",
+  "cpo.metas",
 ];
 for (const id of INSTANCE_IDS) {
   for (const key of GROUP_FEATURE_KEYS) {
