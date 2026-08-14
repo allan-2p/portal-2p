@@ -187,6 +187,7 @@ export const ROUTE_FEATURE: Record<string, FeatureKey> = {
   "/admin/comissoes": "admin.comissoes",
   "/admin/tabelas": "admin.tabelas",
   "/admin/produtos": "admin.objetos.produtos",
+  "/admin/estoque": "admin.objetos.produtos",
   "/admin/perfis": "admin.perfis",
   "/integracoes": "admin.integracoes",
   "/admin/auditoria": "admin.auditoria",

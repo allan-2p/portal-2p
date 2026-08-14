@@ -53,6 +53,48 @@ export type Database = {
         }
         Relationships: []
       }
+      containers: {
+        Row: {
+          atualizado_em: string
+          dt_remessa: string | null
+          est_entreposto: number
+          g_weight_total: number
+          g_weight_un: number
+          id: number
+          id_container: string
+          material: string
+          n_weight_total: number
+          n_weight_un: number
+          supplier: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          dt_remessa?: string | null
+          est_entreposto?: number
+          g_weight_total?: number
+          g_weight_un?: number
+          id?: never
+          id_container: string
+          material: string
+          n_weight_total?: number
+          n_weight_un?: number
+          supplier?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          dt_remessa?: string | null
+          est_entreposto?: number
+          g_weight_total?: number
+          g_weight_un?: number
+          id?: never
+          id_container?: string
+          material?: string
+          n_weight_total?: number
+          n_weight_un?: number
+          supplier?: string | null
+        }
+        Relationships: []
+      }
       cpo_clientes: {
         Row: {
           ativo: boolean
@@ -577,6 +619,99 @@ export type Database = {
         }
         Relationships: []
       }
+      estoque: {
+        Row: {
+          atualizado_em: string
+          centro: string
+          cmm: number
+          descricao: string | null
+          ean: string | null
+          est_bloqueado: number
+          est_entreposto: number
+          est_livre: number
+          grp_mercadorias: string | null
+          material: string
+          ncm: string | null
+          preco_venda: number
+          qtd_pend_faturar: number
+          tipo_material: string | null
+          umb: string | null
+          valor_estoque: number
+        }
+        Insert: {
+          atualizado_em?: string
+          centro?: string
+          cmm?: number
+          descricao?: string | null
+          ean?: string | null
+          est_bloqueado?: number
+          est_entreposto?: number
+          est_livre?: number
+          grp_mercadorias?: string | null
+          material: string
+          ncm?: string | null
+          preco_venda?: number
+          qtd_pend_faturar?: number
+          tipo_material?: string | null
+          umb?: string | null
+          valor_estoque?: number
+        }
+        Update: {
+          atualizado_em?: string
+          centro?: string
+          cmm?: number
+          descricao?: string | null
+          ean?: string | null
+          est_bloqueado?: number
+          est_entreposto?: number
+          est_livre?: number
+          grp_mercadorias?: string | null
+          material?: string
+          ncm?: string | null
+          preco_venda?: number
+          qtd_pend_faturar?: number
+          tipo_material?: string | null
+          umb?: string | null
+          valor_estoque?: number
+        }
+        Relationships: []
+      }
+      estoque_sync_runs: {
+        Row: {
+          containers_count: number
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          materiais_count: number
+          ncm_aplicado: number
+          started_at: string
+          status: string
+          triggered_by: string | null
+        }
+        Insert: {
+          containers_count?: number
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          materiais_count?: number
+          ncm_aplicado?: number
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          containers_count?: number
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          materiais_count?: number
+          ncm_aplicado?: number
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       group_kpi_goals: {
         Row: {
           goal: number
@@ -934,6 +1069,69 @@ export type Database = {
           is_system?: boolean
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      produtos: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          custo: number
+          descricao: string
+          grp_mercadorias: string | null
+          last_synced_at: string | null
+          lista_preco: string | null
+          ncm: string | null
+          no_catalogo: boolean
+          origem: string
+          permissao: string
+          preco_venda: number
+          sap_raw: Json | null
+          tipo: string | null
+          unidade: string | null
+          updated_at: string
+          visibilidade: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          custo?: number
+          descricao?: string
+          grp_mercadorias?: string | null
+          last_synced_at?: string | null
+          lista_preco?: string | null
+          ncm?: string | null
+          no_catalogo?: boolean
+          origem?: string
+          permissao?: string
+          preco_venda?: number
+          sap_raw?: Json | null
+          tipo?: string | null
+          unidade?: string | null
+          updated_at?: string
+          visibilidade?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          custo?: number
+          descricao?: string
+          grp_mercadorias?: string | null
+          last_synced_at?: string | null
+          lista_preco?: string | null
+          ncm?: string | null
+          no_catalogo?: boolean
+          origem?: string
+          permissao?: string
+          preco_venda?: number
+          sap_raw?: Json | null
+          tipo?: string | null
+          unidade?: string | null
+          updated_at?: string
+          visibilidade?: string
         }
         Relationships: []
       }
@@ -1586,6 +1784,10 @@ export type Database = {
           archived: number
           purged: number
         }[]
+      }
+      check_disponibilidade: {
+        Args: { p_material: string; p_qtd: number }
+        Returns: Json
       }
       check_rate_limit: {
         Args: { _key: string; _limit: number; _window_seconds: number }

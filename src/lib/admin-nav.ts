@@ -14,6 +14,7 @@ import {
   Target,
   Table as TableIcon,
   Package,
+  Boxes,
   Percent,
   BookOpen,
   Settings2,
@@ -82,6 +83,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         label: "Objetos e Campos",
         items: [
           { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.objetos.produtos" },
+          { to: "/admin/estoque", label: "Estoque", icon: Boxes, feature: "admin.objetos.produtos" },
         ],
       },
       {
