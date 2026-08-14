@@ -23,8 +23,19 @@ import {
   setSapProdutoVisibilidade,
   setSapProdutosNcm,
   syncSapProdutos,
+  type SapSyncResult,
   type SapVisibilidade,
 } from "@/lib/sap-produtos.functions";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+const SYNC_ETAPAS = [
+  "Conectando ao SAP Bridge…",
+  "Lendo materiais (RFC listar_material)…",
+  "Atualizando o espelho completo do SAP…",
+  "Classificando e gravando o catálogo do portal…",
+  "Finalizando e registrando o histórico…",
+] as const;
 import { useCpoNcms } from "@/hooks/use-cpo";
 import { Checkbox } from "@/components/ui/checkbox";
 
