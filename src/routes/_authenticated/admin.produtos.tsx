@@ -810,19 +810,26 @@ function ProdutosPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={audit ? 11 : 9} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 12 : 10} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={audit ? 11 : 9} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 12 : 10} className="px-3 py-10 text-center text-muted-foreground">
                     Nenhum produto encontrado. Clique em “Sinc. SAP” para importar o catálogo.
                   </td>
                 </tr>
               ) : (
                 rows.map((p) => (
                   <tr key={p.id} className="border-t border-border hover:bg-muted/30">
+                    <td className="px-3 py-2">
+                      <Checkbox
+                        checked={selecionados.includes(p.id)}
+                        onCheckedChange={() => toggleSelecionado(p.id)}
+                        aria-label={`Selecionar ${p.codigo}`}
+                      />
+                    </td>
                     <td className="px-3 py-2 font-mono text-xs">{p.codigo}</td>
                     <td className="px-3 py-2">{p.descricao}</td>
                     <td className="px-3 py-2">
