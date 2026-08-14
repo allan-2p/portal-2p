@@ -226,7 +226,10 @@ export function novoItem(): CpoItem {
 
 export function novoEstado(): CpoState {
   return {
+    propostaNome: "",
+    numeroSap: "",
     nome: "",
+
     telefone: "",
     email: "",
     doc: "",
