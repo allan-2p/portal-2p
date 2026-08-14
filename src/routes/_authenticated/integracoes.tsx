@@ -11,11 +11,16 @@ import { getSalesforceStatus, getSalesforceSample } from "@/lib/salesforce.funct
 import { IntegrationStatusBadge, formatLastSync, useIntegrationHealthMap } from "@/components/integration-status";
 import { IntegrationLogsPanel } from "@/components/integration-logs";
 import { IntegrationAlertsBanner } from "@/components/integration-alerts";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
 export const Route = createFileRoute("/_authenticated/integracoes")({
   head: () => ({ meta: [{ title: "Integrações · Portal 2P" }] }),
-  component: IntegracoesPage,
+  component: () => (
+    <AdminRouteGuard feature="admin.integracoes">
+      <IntegracoesPage />
+    </AdminRouteGuard>
+  ),
 });
 
 function IntegracoesPage() {

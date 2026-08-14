@@ -25,9 +25,14 @@ import {
 } from "@/lib/instances";
 import { groupFeatures, shortFeatureLabel, featureScopeLabel } from "@/lib/feature-groups";
 import { PermissionMatrix } from "@/components/admin/permission-matrix";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 export const Route = createFileRoute("/_authenticated/admin/perfis")({
-  component: PerfisPage,
+  component: () => (
+    <AdminRouteGuard feature="admin.perfis">
+      <PerfisPage />
+    </AdminRouteGuard>
+  ),
   head: () => ({
     meta: [
       { title: "Perfis | Portal 2P" },

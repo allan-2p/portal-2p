@@ -17,6 +17,7 @@ import { Search, Package, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos-solar")({
   head: () => ({
@@ -29,7 +30,11 @@ export const Route = createFileRoute("/_authenticated/admin/produtos-solar")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ProdutosSolarPage,
+  component: () => (
+    <AdminRouteGuard feature="admin.produtos">
+      <ProdutosSolarPage />
+    </AdminRouteGuard>
+  ),
 });
 
 type Row = {

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { validateAdminVisibility } from "@/lib/instance-consistency";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 export const Route = createFileRoute("/_authenticated/admin/auditoria")({
   head: () => ({
@@ -19,7 +20,11 @@ export const Route = createFileRoute("/_authenticated/admin/auditoria")({
       { name: "description", content: "Relatório de auditoria de telas, abas e menus com os usuários que têm acesso a cada um." },
     ],
   }),
-  component: AuditoriaPage,
+  component: () => (
+    <AdminRouteGuard feature="admin.auditoria">
+      <AuditoriaPage />
+    </AdminRouteGuard>
+  ),
 });
 
 type Row = {

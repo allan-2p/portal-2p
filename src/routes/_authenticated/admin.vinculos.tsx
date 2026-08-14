@@ -22,6 +22,7 @@ import {
 } from "@/lib/users.functions";
 import { Loader2, Link2, Search, RefreshCw, Wand2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 export const Route = createFileRoute("/_authenticated/admin/vinculos")({
   head: () => ({
@@ -41,7 +42,11 @@ export const Route = createFileRoute("/_authenticated/admin/vinculos")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: VinculosPage,
+  component: () => (
+    <AdminRouteGuard feature="admin.vinculos">
+      <VinculosPage />
+    </AdminRouteGuard>
+  ),
 });
 
 const STATUS_META: Record<

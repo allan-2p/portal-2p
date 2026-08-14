@@ -12,6 +12,7 @@ import { getIntegrationConfig, testIntegration } from "@/lib/integration-config.
 import { formatLastSync } from "@/components/integration-status";
 import { IntegrationLogsPanel } from "@/components/integration-logs";
 import { IntegrationAlertBadge, IntegrationAlertSettingsCard, useIntegrationAlerts } from "@/components/integration-alerts";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 export const Route = createFileRoute("/_authenticated/integracoes_/$slug")({
   head: () => ({
@@ -24,7 +25,11 @@ export const Route = createFileRoute("/_authenticated/integracoes_/$slug")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: IntegracaoConfigPage,
+  component: () => (
+    <AdminRouteGuard feature="admin.integracoes">
+      <IntegracaoConfigPage />
+    </AdminRouteGuard>
+  ),
 });
 
 function IntegracaoConfigPage() {

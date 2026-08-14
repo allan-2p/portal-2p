@@ -54,6 +54,7 @@ import {
   type RetentionAccountRow,
 } from "@/lib/salesforce.functions";
 import { useAuth } from "@/hooks/use-auth";
+import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
 
@@ -61,7 +62,11 @@ import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/tabelas")({
   head: () => ({ meta: [{ title: "Tabelas — Portal 2P" }] }),
-  component: TabelasPage,
+  component: () => (
+    <AdminRouteGuard feature="admin.tabelas">
+      <TabelasPage />
+    </AdminRouteGuard>
+  ),
 });
 
 const brl = (n: number | null) =>
