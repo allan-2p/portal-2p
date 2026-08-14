@@ -30,7 +30,7 @@ import {
 import { toast } from "sonner";
 
 import {
-  Loader2, UserPlus, Shield, Trash2, Power, Camera, RefreshCw, Cloud, Pencil, Stethoscope, Eye,
+  Loader2, UserPlus, Shield, Trash2, Power, Camera, RefreshCw, Cloud, Pencil, Stethoscope, VenetianMask,
 } from "lucide-react";
 import { useSimulation } from "@/components/simulation";
 import { UserDetailSheet } from "@/components/user-detail-sheet";
