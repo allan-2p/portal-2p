@@ -64,6 +64,8 @@ import {
   avisoDifalUsoConsumo,
   precoParaMargem,
 } from "@/lib/cpo";
+import { ratearComissao, VALOR_INDICACAO, type Regime, type RateioLinha } from "@/lib/cpo-comissao";
+import { useAuth } from "@/hooks/use-auth";
 import { registrarConclusao } from "@/lib/cpo-conclusao-log";
 import { salvarPropostaCpo } from "@/lib/cpo-proposals.functions";
 
@@ -168,6 +170,7 @@ function PropostaCpoPage() {
   // Consultor da proposta: vem do cadastro do cliente e é congelado ao salvar.
   const [consultorProposta, setConsultorProposta] = useState<string | null>(null);
 
+  const { profile } = useAuth();
   const [propostaUpdatedAt, setPropostaUpdatedAt] = useState<string | null>(null);
   const [statusProposta, setStatusProposta] = useState<string>("Salvo");
   const submitLock = useRef(false);
@@ -450,7 +453,32 @@ function PropostaCpoPage() {
     () => calcularCpo(stateCalc, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []),
     [stateCalc, produtosQ.data, ufs, config, ncmsQ.data],
   );
+  // A comissão exibida é a REMUNERAÇÃO do vendedor (não o custo total da empresa).
+  // O regime vem do cadastro do usuário: PJ recebe o custo cheio, CLT recebe custo ÷ fator.
+  const regimeVendedor: Regime = profile?.regime_contratacao === "PJ" ? "PJ" : "CLT";
+  const comissaoVendedor = useMemo(() => {
+    const rateio = ratearComissao({
+      venda: d.valorItens,
+      comissaoTotal: d.comValor,
+      cmv: d.cmv,
+      regimeVendedor,
+      params: {
+        cmvMax: config.cmv_max,
+        pctGerente: config.pct_gerente,
+        valorIndicacao: VALOR_INDICACAO,
+        fatorClt: config.fator_clt,
+      },
+    });
+    const linha = rateio.linhas.find((l: RateioLinha) => l.key === "vendedor");
+    return {
+      valor: linha?.remuneracao ?? 0,
+      pct: linha?.pctRemuneracao ?? 0,
+      custo: rateio.custoVendedor,
+      total: rateio.comissaoTotal,
+    };
+  }, [d.valorItens, d.comValor, d.cmv, regimeVendedor, config]);
   const st = statusMB(d.mbPct, config);
+
   const avisoUsoConsumo = avisoDifalUsoConsumo(state);
   const observacoesFinal = [state.observacoes?.trim(), avisoUsoConsumo].filter(Boolean).join("\n\n");
   const uf = ufs.find((u) => u.uf === state.uf);
@@ -1432,7 +1460,7 @@ function PropostaCpoPage() {
                 <LiveTotal label={`Frete (${state.freteMod})`} value={fmtBRL(state.freteValor)} />
                 <LiveTotal label="Total da proposta" value={fmtBRL(d.valorTotalProposta)} strong />
                 <LiveTotal label="Margem bruta" value={fmtPct(d.mbPct)} hint={fmtBRL(d.mb)} />
-                <LiveTotal label="Comissão estimada" value={fmtBRL(d.comValor)} hint={fmtPct(d.comPct)} />
+                <LiveTotal label={`Comissão do vendedor (${regimeVendedor})`} value={fmtBRL(comissaoVendedor.valor)} hint={fmtPct(comissaoVendedor.pct)} />
               </div>
             </div>
             </>
@@ -1489,7 +1517,7 @@ function PropostaCpoPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <SumItem label="Margem bruta %" value={fmtPct(d.mbPct)} hint={fmtBRL(d.mb)} />
-                <SumItem label="Comissão estimada" value={fmtBRL(d.comValor)} hint={fmtPct(d.comPct)} />
+                <SumItem label={`Comissão do vendedor (${regimeVendedor})`} value={fmtBRL(comissaoVendedor.valor)} hint={fmtPct(comissaoVendedor.pct)} />
               </div>
 
 
@@ -1750,8 +1778,8 @@ function PropostaCpoPage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Comissão estimada</span>
-                  <span className="tabular-nums">{fmtBRL(d.comValor)}</span>
+                  <span className="text-muted-foreground">Comissão do vendedor ({regimeVendedor})</span>
+                  <span className="tabular-nums">{fmtBRL(comissaoVendedor.valor)}</span>
                 </div>
               </div>
 

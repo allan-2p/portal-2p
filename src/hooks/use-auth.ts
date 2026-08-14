@@ -16,6 +16,9 @@ export interface Profile {
   ativo: boolean;
   sf_user_id: string | null;
   filter_scope: "geral" | "pre_vendas" | "carteira" | "individual" | null;
+  /** Regime de contratação — define se a comissão é paga como custo cheio (PJ) ou líquido (CLT). */
+  regime_contratacao?: "CLT" | "PJ" | string | null;
+
 }
 
 interface AuthState {
