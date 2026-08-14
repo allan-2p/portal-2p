@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION private.is_internal_staff(uuid) FROM PUBLIC, anon, authenticated;
