@@ -730,6 +730,7 @@ function PropostaCpoPage() {
     errosFechamento.push("Cotação de frete pendente — selecione a transportadora.");
   if (state.freteMod === "DEDICADO" && !(state.freteValor > 0))
     errosFechamento.push("Frete dedicado sem valor informado — necessário para fechar os totais.");
+  if (!state.formaPagamento) errosFechamento.push("Selecione a forma de pagamento.");
 
   if (temProduto && !(d.valorTotalProposta > 0))
     errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
