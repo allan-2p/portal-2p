@@ -15,7 +15,8 @@ export type FeatureGroupId =
   | "config"
   | "moderacao"
   | "integracoes"
-  | "logs";
+  | "logs"
+  | "sistema";
 
 export type FeatureGroup = {
   id: FeatureGroupId;
@@ -141,6 +142,14 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "admin.logs.retencao",
       "admin.logs.exportar",
     ],
+  },
+  {
+    id: "sistema",
+    label: "Administração • Sistema",
+    description:
+      "Permissões universais do portal. Excluir registros é exclusivo do Administrador do Sistema.",
+    area: "grupo",
+    keys: ["admin.sistema.excluir"],
   },
 ];
 

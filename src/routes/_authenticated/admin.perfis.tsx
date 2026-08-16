@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Save, ShieldCheck, Users, Pencil } from "lucide-react";
+import { useCanDelete } from "@/components/permission-gate";
 import { AppLayout } from "@/components/app-layout";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -53,6 +54,7 @@ export const Route = createFileRoute("/_authenticated/admin/perfis")({
 });
 
 function PerfisPage() {
+  const podeExcluir = useCanDelete();
   const { hasRole, loading: authLoading } = useAuth();
   const listFn = useServerFn(adminListPermissionProfiles);
   const saveFn = useServerFn(adminSavePermissionProfile);
@@ -335,7 +337,7 @@ function PerfisPage() {
                       >
                         <Pencil className="h-3.5 w-3.5" /> Renomear
                       </button>
-                      {!selected.is_system && (
+                      {!selected.is_system && podeExcluir && (
                         <button
                           onClick={() => removeProfile(selected)}
                           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border text-sm text-destructive hover:bg-surface-2"

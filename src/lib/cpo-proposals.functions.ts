@@ -57,17 +57,15 @@ export type SalvarPropostaInput = {
 
 const money2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
 
-/** Gera um número SAP único no formato SAP-AAAA-NNNNNN a partir da sequence. */
+/** Gera um número SAP único: 6 dígitos, apenas números. */
 async function gerarNumeroSap(supabase: any) {
-  const ano = new Date().getFullYear();
   const { data, error } = await supabase.rpc("cpo_next_sap_seq");
   if (error) {
     // Fallback seguro caso o RPC não esteja disponível
-    const ts = Date.now().toString().slice(-6);
-    return `SAP-${ano}-${ts}`;
+    return Date.now().toString().slice(-6);
   }
   const n = Number(data ?? 1);
-  return `SAP-${ano}-${String(n).padStart(6, "0")}`;
+  return String(n % 1000000).padStart(6, "0");
 }
 
 
