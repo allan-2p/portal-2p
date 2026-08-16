@@ -2388,9 +2388,15 @@ function PropostaCpoPage() {
             </DialogHeader>
 
             <div className="space-y-3 text-sm max-h-[55vh] overflow-y-auto pr-1">
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between">
+              <div className="rounded-xl border border-border bg-muted/30 p-3 flex items-center justify-between">
                 <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Status do pedido</span>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: propostaStatusStyle("Aguardando Pagamento").bg,
+                    color: propostaStatusStyle("Aguardando Pagamento").fg,
+                  }}
+                >
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                   Aguardando Pagamento
                 </span>
