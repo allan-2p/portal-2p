@@ -193,8 +193,29 @@ export function avisoDifalUsoConsumo(state: Pick<CpoState, "contribuinte" | "ie"
 
 
 /** Texto padrão de observações incluído em toda nova proposta. */
-export const OBSERVACOES_PADRAO =
-  "Valores dos itens expressos com IPI. O DIFAL não é de responsabilidade da 2P, sendo o recolhimento de responsabilidade do destinatário.";
+export const OBSERVACOES_PADRAO = "Valores dos itens expressos com IPI.";
+
+/** Ressalva de DIFAL — só faz sentido para cliente contribuinte. */
+export const OBSERVACAO_DIFAL_CONTRIBUINTE =
+  "O DIFAL não é de responsabilidade da 2P, sendo o recolhimento de responsabilidade do destinatário.";
+
+/**
+ * Monta as observações finais: remove qualquer ressalva de DIFAL existente e
+ * só a inclui novamente quando o cliente for contribuinte.
+ */
+export function observacoesComDifal(
+  texto: string | null | undefined,
+  state: Pick<CpoState, "contribuinte" | "ie">,
+) {
+  const base = (texto ?? "")
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter((l) => l && l !== OBSERVACAO_DIFAL_CONTRIBUINTE)
+    .join("\n");
+  if (!state.contribuinte) return base;
+  return [base, OBSERVACAO_DIFAL_CONTRIBUINTE].filter(Boolean).join("\n");
+}
+
 
 export type CpoResult = {
   valorItens: number;
