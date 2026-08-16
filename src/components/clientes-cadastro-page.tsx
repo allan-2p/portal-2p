@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   AlertCircle, Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye,
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
-  ArrowRight,
+  ArrowRight, RefreshCw,
 } from "lucide-react";
 import { ClientHistoryTab } from "@/components/client-history-tab";
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
