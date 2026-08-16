@@ -723,7 +723,7 @@ function PropostaCpoPage() {
       motivo: "Nessa modalidade a 2P absorve o frete; sem valor a margem fica superestimada.",
       corrigir:
         state.freteMod === "CIF"
-          ? "Cote o frete na etapa 3 e selecione a transportadora."
+          ? "Cote o frete na etapa de entrega e selecione a transportadora."
           : "Preencha o campo Valor do frete.",
     });
 
