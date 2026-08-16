@@ -613,6 +613,16 @@ function PropostaCpoPage() {
   const uf = ufs.find((u) => u.uf === state.uf);
   const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
+  const erroFreteMsg = !state.freteMod
+    ? "Selecione a modalidade de frete."
+    : state.freteMod === "CIF" && !state.transportadora
+      ? "Cotação de frete pendente — calcule e selecione a transportadora."
+      : state.freteMod === "CIF" && !(state.freteValor > 0)
+        ? "Frete CIF sem valor calculado — refaça a cotação."
+        : state.freteMod === "DEDICADO" && !(state.freteValor > 0)
+          ? "Informe o valor do frete dedicado."
+          : null;
+  const freteInvalido = !!erroFreteMsg;
   // ---- Validação da etapa 1 (identificação) e etapa 2 (faturamento) ----
   const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
   const errosIdentificacao: { campo: string; msg: string }[] = [];
@@ -684,22 +694,11 @@ function PropostaCpoPage() {
       return;
     }
     // Etapa 4 → 5: o frete precisa estar definido e calculado conforme a modalidade.
-    if (alvo >= 5) {
-      const erroFrete = !state.freteMod
-        ? "Selecione a modalidade de frete."
-        : state.freteMod === "CIF" && !state.transportadora
-          ? "Cotação de frete pendente — calcule e selecione a transportadora."
-          : state.freteMod === "CIF" && !(state.freteValor > 0)
-            ? "Frete CIF sem valor calculado — refaça a cotação."
-            : state.freteMod === "DEDICADO" && !(state.freteValor > 0)
-              ? "Informe o valor do frete dedicado."
-              : null;
-      if (erroFrete) {
-        setTentouAvancar(true);
-        setEtapa(4);
-        toast.error(erroFrete);
-        return;
-      }
+    if (alvo >= 5 && erroFreteMsg) {
+      setTentouAvancar(true);
+      setEtapa(4);
+      toast.error(erroFreteMsg);
+      return;
     }
     setEtapa(alvo);
   }
@@ -1878,13 +1877,20 @@ function PropostaCpoPage() {
                     }))
                   }
                 >
-                  <SelectTrigger><SelectValue placeholder="Selecione a modalidade" /></SelectTrigger>
+                  <SelectTrigger className={cn(freteInvalido && tentouAvancar && "border-destructive focus-visible:ring-destructive")}>
+                    <SelectValue placeholder="Selecione a modalidade" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="CIF">{labelFreteMod.CIF}</SelectItem>
                     <SelectItem value="FOB">{labelFreteMod.FOB}</SelectItem>
                     <SelectItem value="DEDICADO">{labelFreteMod.DEDICADO}</SelectItem>
                   </SelectContent>
                 </Select>
+                {freteInvalido && tentouAvancar ? (
+                  <p className="text-[11px] text-destructive mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {erroFreteMsg}
+                  </p>
+                ) : null}
                 {state.freteMod === "CIF" ? (
                   <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
                     <span className="text-xs">Entrega em área rural?</span>
@@ -1902,18 +1908,24 @@ function PropostaCpoPage() {
                     value={state.freteValor}
                     placeholder="R$ 0,00"
                     maxValue={1000000}
-                    className={cn(!(state.freteValor > 0) && "border-amber-500 focus-visible:ring-amber-500")}
+                    className={cn(
+                      !(state.freteValor > 0) && !tentouAvancar && "border-amber-500 focus-visible:ring-amber-500",
+                      !(state.freteValor > 0) && tentouAvancar && "border-destructive focus-visible:ring-destructive",
+                    )}
                     onValueChange={(n: number) => set("freteValor", n)}
                   />
                   {!(state.freteValor > 0) ? (
-                    <p className="text-[11px] text-amber-600 mt-1">
-                      Informe o valor do frete dedicado absorvido pela 2P.
+                    <p className={cn("text-[11px] mt-1", tentouAvancar ? "text-destructive" : "text-amber-600")}>
+                      {tentouAvancar ? "Informe o valor do frete dedicado para avançar." : "Informe o valor do frete dedicado absorvido pela 2P."}
                     </p>
                   ) : null}
                 </Field>
               ) : (
                 <Field label="Valor do frete">
-                  <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
+                  <div className={cn(
+                    "rounded-lg border px-3 py-2 text-sm",
+                    freteInvalido && tentouAvancar && state.freteMod === "CIF" ? "border-destructive bg-destructive/10" : "border-border bg-surface-2",
+                  )}>
                     {state.freteMod === "FOB" ? (
                       <span className="text-muted-foreground">
                         FOB — retirada por conta do cliente, sem valor de frete.
@@ -1952,6 +1964,11 @@ function PropostaCpoPage() {
                   )
                 }
               />
+            ) : null}
+            {state.freteMod === "CIF" && !state.transportadora && tentouAvancar ? (
+              <p className="text-[11px] text-destructive mt-1 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> Selecione uma transportadora e confirme a cotação para avançar.
+              </p>
             ) : null}
 
             </>
