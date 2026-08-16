@@ -175,7 +175,7 @@ function PropostaCpoPage() {
   const [precoChanges, setPrecoChanges] = useState<Record<string, { de: number; para: number }>>({});
 
   const [openCli, setOpenCli] = useState(false);
-  const [etapa, setEtapa] = useState<1 | 2 | 3 | 4>(1);
+  const [etapa, setEtapa] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [tentouAvancar, setTentouAvancar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
@@ -574,55 +574,63 @@ function PropostaCpoPage() {
   const uf = ufs.find((u) => u.uf === state.uf);
   const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
-  // ---- Validação da etapa 1 (dados obrigatórios do cliente) ----
+  // ---- Validação da etapa 1 (identificação) e etapa 2 (faturamento) ----
   const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
-  const errosCliente: { campo: string; msg: string }[] = [];
-  if (!state.nome.trim()) errosCliente.push({ campo: "nome", msg: "Selecione um cliente." });
+  const errosIdentificacao: { campo: string; msg: string }[] = [];
+  if (!state.nome.trim()) errosIdentificacao.push({ campo: "nome", msg: "Selecione um cliente." });
   const docDigits = soDigitos(state.doc);
-  if (!docDigits) errosCliente.push({ campo: "doc", msg: "CNPJ/CPF não informado no cadastro do cliente." });
+  if (!docDigits) errosIdentificacao.push({ campo: "doc", msg: "CNPJ/CPF não informado no cadastro do cliente." });
   else if (docDigits.length !== 11 && docDigits.length !== 14)
-    errosCliente.push({ campo: "doc", msg: "CNPJ/CPF inválido (11 ou 14 dígitos)." });
-  if (!state.uf) errosCliente.push({ campo: "uf", msg: "UF de destino não informada." });
+    errosIdentificacao.push({ campo: "doc", msg: "CNPJ/CPF inválido (11 ou 14 dígitos)." });
+  if (!state.uf) errosIdentificacao.push({ campo: "uf", msg: "UF de destino não informada." });
   else if (!ufs.some((u) => u.uf === state.uf))
-    errosCliente.push({ campo: "uf", msg: "UF sem alíquota cadastrada." });
+    errosIdentificacao.push({ campo: "uf", msg: "UF sem alíquota cadastrada." });
   if (state.contribuinte && !state.ie.trim())
-    errosCliente.push({ campo: "ie", msg: "Cliente contribuinte precisa de Inscrição Estadual." });
+    errosIdentificacao.push({ campo: "ie", msg: "Cliente contribuinte precisa de Inscrição Estadual." });
   if (state.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(state.email.trim()))
-    errosCliente.push({ campo: "email", msg: "E-mail do cliente é inválido." });
+    errosIdentificacao.push({ campo: "email", msg: "E-mail do cliente é inválido." });
 
   if (state.indicacao && !state.padrinhoId)
-    errosCliente.push({ campo: "padrinho", msg: "Selecione ou cadastre o padrinho da indicação." });
+    errosIdentificacao.push({ campo: "padrinho", msg: "Selecione ou cadastre o padrinho da indicação." });
 
   // Faturamento para terceiro: o destinatário fiscal precisa ser informado por completo.
-  if (!state.faturarClienteFinal) {
+  const errosFaturamento: { campo: string; msg: string }[] = [];
+  if (state.faturarClienteFinal) {
     const fatDoc = soDigitos(state.faturamento.doc);
     if (!state.faturamento.nome.trim())
-      errosCliente.push({ campo: "fat_nome", msg: "Informe o cliente do faturamento." });
+      errosFaturamento.push({ campo: "fat_nome", msg: "Informe o cliente do faturamento." });
     if (fatDoc.length !== 11 && fatDoc.length !== 14)
-      errosCliente.push({ campo: "fat_doc", msg: "CNPJ/CPF do faturamento inválido." });
+      errosFaturamento.push({ campo: "fat_doc", msg: "CNPJ/CPF do faturamento inválido." });
     if (state.faturamento.contribuinte && !state.faturamento.ie.trim())
-      errosCliente.push({ campo: "fat_ie", msg: "Faturamento contribuinte precisa de Inscrição Estadual." });
+      errosFaturamento.push({ campo: "fat_ie", msg: "Faturamento contribuinte precisa de Inscrição Estadual." });
     if (!state.faturamento.logradouro.trim() || !state.faturamento.cidade.trim())
-      errosCliente.push({ campo: "fat_end", msg: "Informe o endereço de faturamento." });
+      errosFaturamento.push({ campo: "fat_end", msg: "Informe o endereço de faturamento." });
     if (state.faturamento.uf.trim().toUpperCase() !== state.uf.trim().toUpperCase())
-      errosCliente.push({ campo: "fat_uf", msg: "O faturamento deve estar no mesmo estado da operação." });
+      errosFaturamento.push({ campo: "fat_uf", msg: "O faturamento deve estar no mesmo estado da operação." });
   }
 
+  const errosCliente = [...errosIdentificacao, ...errosFaturamento];
 
+  const identificacaoOk = errosIdentificacao.length === 0;
   const clienteOk = errosCliente.length === 0;
   const campoInvalido = (c: string) => errosCliente.some((e) => e.campo === c);
   const temProduto = state.itens.some((i) => i.produtoId);
   const podeSalvar = clienteOk && temProduto && !abaixoPolitica && !d.cmvExcedido;
 
 
-  function irParaEtapa(alvo: 1 | 2 | 3 | 4) {
+  function irParaEtapa(alvo: 1 | 2 | 3 | 4 | 5) {
     if (alvo === 1) return setEtapa(1);
-    if (!clienteOk) {
+    if (!identificacaoOk) {
       setTentouAvancar(true);
-      toast.error(errosCliente[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
+      toast.error(errosIdentificacao[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
       return;
     }
-    if (alvo >= 3 && !temProduto) {
+    if (alvo >= 3 && !clienteOk) {
+      setTentouAvancar(true);
+      toast.error(errosFaturamento[0]?.msg ?? "Complete os dados de faturamento.");
+      return;
+    }
+    if (alvo >= 4 && !temProduto) {
       setTentouAvancar(true);
       toast.error("Adicione ao menos um produto à proposta.");
       return;
@@ -631,11 +639,11 @@ function PropostaCpoPage() {
   }
 
   function avancarEtapa() {
-    if (etapa < 4) irParaEtapa((etapa + 1) as 2 | 3 | 4);
+    if (etapa < 5) irParaEtapa((etapa + 1) as 2 | 3 | 4 | 5);
   }
 
   function voltarEtapa() {
-    if (etapa > 1) setEtapa((etapa - 1) as 1 | 2 | 3);
+    if (etapa > 1) setEtapa((etapa - 1) as 1 | 2 | 3 | 4);
   }
 
 
@@ -715,7 +723,7 @@ function PropostaCpoPage() {
       motivo: "Nessa modalidade a 2P absorve o frete; sem valor a margem fica superestimada.",
       corrigir:
         state.freteMod === "CIF"
-          ? "Cote o frete na etapa 3 e selecione a transportadora."
+          ? "Cote o frete na etapa de entrega e selecione a transportadora."
           : "Preencha o campo Valor do frete.",
     });
 
@@ -929,7 +937,8 @@ function PropostaCpoPage() {
             _id: propostaId,
             _status: status,
             _origem: "portal",
-            _etapa: etapa,
+            // O banco valida a etapa de finalização como 4 (última etapa do fluxo).
+            _etapa: etapa === 5 ? 4 : etapa,
           });
 
           if (rpcErr) throw rpcErr;
@@ -968,7 +977,7 @@ function PropostaCpoPage() {
           _id: inserida.id,
           _status: status,
           _origem: "portal",
-          _etapa: etapa,
+          _etapa: etapa === 5 ? 4 : etapa,
         });
         if (rpcErr) {
           setPropostaId(inserida.id);
@@ -1064,10 +1073,11 @@ function PropostaCpoPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm">
               {[
-                { n: 1 as const, label: "Faturamento", go: () => setEtapa(1) },
-                { n: 2 as const, label: "Produtos", go: () => irParaEtapa(2) },
-                { n: 3 as const, label: "Entrega e frete", go: () => irParaEtapa(3) },
-                { n: 4 as const, label: "Finalização", go: () => irParaEtapa(4) },
+                { n: 1 as const, label: "Identificação", go: () => setEtapa(1) },
+                { n: 2 as const, label: "Faturamento", go: () => irParaEtapa(2) },
+                { n: 3 as const, label: "Produtos", go: () => irParaEtapa(3) },
+                { n: 4 as const, label: "Entrega e frete", go: () => irParaEtapa(4) },
+                { n: 5 as const, label: "Finalização", go: () => irParaEtapa(5) },
               ].map((s, i) => {
                 const atual = etapa === s.n;
                 const concluida = etapa > s.n;
@@ -1101,20 +1111,20 @@ function PropostaCpoPage() {
               })}
             </div>
             <span className="text-xs font-medium text-muted-foreground shrink-0">
-              Etapa {etapa} de 4
+              Etapa {etapa} de 5
             </span>
           </div>
           <div
             className="h-1.5 rounded-full bg-surface-2 overflow-hidden"
             role="progressbar"
             aria-valuemin={1}
-            aria-valuemax={4}
+            aria-valuemax={5}
             aria-valuenow={etapa}
-            aria-label={`Etapa ${etapa} de 4`}
+            aria-label={`Etapa ${etapa} de 5`}
           >
             <div
               className="h-full bg-primary rounded-full transition-all duration-300"
-              style={{ width: `${(etapa / 4) * 100}%` }}
+              style={{ width: `${(etapa / 5) * 100}%` }}
             />
           </div>
         </div>
@@ -1139,7 +1149,7 @@ function PropostaCpoPage() {
         <div
           className={cn(
             "grid grid-cols-1 gap-5 items-start",
-            etapa >= 2 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
+            etapa >= 3 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
           )}
         >
           {/* ENTRADAS */}
@@ -1147,12 +1157,14 @@ function PropostaCpoPage() {
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">
                 {etapa === 1
-                  ? "Etapa 1 — Faturamento"
+                  ? "Etapa 1 — Identificação"
                   : etapa === 2
-                    ? "Etapa 2 — Produtos"
+                    ? "Etapa 2 — Faturamento"
                     : etapa === 3
-                      ? "Etapa 3 — Entrega e frete"
-                      : "Etapa 4 — Finalização"}
+                      ? "Etapa 3 — Produtos"
+                      : etapa === 4
+                        ? "Etapa 4 — Entrega e frete"
+                        : "Etapa 5 — Finalização"}
               </h2>
             </div>
 
@@ -1267,25 +1279,6 @@ function PropostaCpoPage() {
 
 
                 {state.nome ? (
-
-                  <Field label="Finalidade de uso">
-                    <Select
-                      value={state.finalidadeUso}
-                      onValueChange={(v) => set("finalidadeUso", v as CpoFinalidadeUso)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
-                        <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
-                        <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                ) : null}
-
-                {state.nome ? (
                   <Field label="Previsão de fechamento (opcional)">
                     <Input
                       type="date"
@@ -1294,135 +1287,6 @@ function PropostaCpoPage() {
                     />
                   </Field>
                 ) : null}
-
-                {state.nome ? (
-                  <Field label="Tipo de nota fiscal">
-                    <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CpoState["tipoNf"])}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="venda">{labelTipoNf.venda}</SelectItem>
-                        <SelectItem value="triangulacao">{labelTipoNf.triangulacao}</SelectItem>
-                        <SelectItem value="bonificacao">{labelTipoNf.bonificacao}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                ) : null}
-
-                {state.nome ? (
-                  <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">Faturar para o cliente final?</p>
-                        <p className="text-xs text-muted-foreground">
-                          Marque apenas quando a nota for emitida para outro destinatário.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={!state.faturarClienteFinal}
-                        onCheckedChange={(v) =>
-                          setState((s) => ({
-                            ...s,
-                            faturarClienteFinal: !v,
-                            faturamento: v
-                              ? { ...s.faturamento, uf: s.faturamento.uf || s.uf }
-                              : s.faturamento,
-                          }))
-                        }
-                      />
-                    </div>
-
-                    {!state.faturarClienteFinal ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Field label="CPF / CNPJ">
-                          <Input
-                            value={state.faturamento.doc}
-                            className={cn(campoInvalido("fat_doc") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ doc: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Cliente">
-                          <Input
-                            value={state.faturamento.nome}
-                            className={cn(campoInvalido("fat_nome") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ nome: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Inscrição Estadual">
-                          <Input
-                            value={state.faturamento.ie}
-                            className={cn(campoInvalido("fat_ie") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ ie: e.target.value })}
-                          />
-                        </Field>
-                        <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
-                          <span className="text-xs">Contribuinte do ICMS?</span>
-                          <Switch
-                            checked={state.faturamento.contribuinte}
-                            onCheckedChange={(v) => setFaturamento({ contribuinte: v })}
-                          />
-                        </div>
-                        <Field label="CEP">
-                          <CepInput
-                            value={state.faturamento.cep}
-                            onChange={(v) => setFaturamento({ cep: v })}
-                            onFound={(e) =>
-                              setFaturamento({
-                                cep: e.cep,
-                                logradouro: e.logradouro,
-                                complemento: e.complemento || state.faturamento.complemento,
-                                bairro: e.bairro,
-                                cidade: e.cidade,
-                                uf: e.uf,
-                              })
-                            }
-                          />
-                        </Field>
-                        <Field label="Endereço">
-                          <Input
-                            value={state.faturamento.logradouro}
-                            className={cn(campoInvalido("fat_end") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ logradouro: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Número">
-                          <Input
-                            value={state.faturamento.numero}
-                            onChange={(e) => setFaturamento({ numero: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Complemento">
-                          <Input
-                            value={state.faturamento.complemento}
-                            onChange={(e) => setFaturamento({ complemento: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Bairro">
-                          <Input
-                            value={state.faturamento.bairro}
-                            onChange={(e) => setFaturamento({ bairro: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Cidade">
-                          <Input
-                            value={state.faturamento.cidade}
-                            className={cn(campoInvalido("fat_end") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ cidade: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Estado (UF)">
-                          <Input
-                            value={state.faturamento.uf}
-                            maxLength={2}
-                            className={cn(campoInvalido("fat_uf") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ uf: e.target.value.toUpperCase().slice(0, 2) })}
-                          />
-                        </Field>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-
-
 
                 {state.nome ? (
                   <PropostaIndicacao
@@ -1452,7 +1316,151 @@ function PropostaCpoPage() {
               </div>
             ) : null}
 
-            {etapa >= 2 ? (
+            {etapa === 2 ? (
+              <>
+                <Field label="Finalidade de uso">
+                  <Select
+                    value={state.finalidadeUso}
+                    onValueChange={(v) => set("finalidadeUso", v as CpoFinalidadeUso)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
+                      <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
+                      <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field label="Tipo de nota fiscal">
+                  <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CpoState["tipoNf"])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="venda">{labelTipoNf.venda}</SelectItem>
+                      <SelectItem value="triangulacao">{labelTipoNf.triangulacao}</SelectItem>
+                      <SelectItem value="bonificacao">{labelTipoNf.bonificacao}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">Faturar para o cliente final?</p>
+                      <p className="text-xs text-muted-foreground">
+                        Marque apenas quando a nota for emitida para outro destinatário.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={state.faturarClienteFinal}
+                      onCheckedChange={(v) =>
+                        setState((s) => ({
+                          ...s,
+                          faturarClienteFinal: v,
+                          faturamento: v
+                            ? { ...s.faturamento, uf: s.faturamento.uf || s.uf }
+                            : s.faturamento,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  {state.faturarClienteFinal ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field label="CPF / CNPJ">
+                        <Input
+                          value={state.faturamento.doc}
+                          className={cn(campoInvalido("fat_doc") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ doc: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Cliente">
+                        <Input
+                          value={state.faturamento.nome}
+                          className={cn(campoInvalido("fat_nome") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ nome: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Inscrição Estadual">
+                        <Input
+                          value={state.faturamento.ie}
+                          className={cn(campoInvalido("fat_ie") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ ie: e.target.value })}
+                        />
+                      </Field>
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                        <span className="text-xs">Contribuinte do ICMS?</span>
+                        <Switch
+                          checked={state.faturamento.contribuinte}
+                          onCheckedChange={(v) => setFaturamento({ contribuinte: v })}
+                        />
+                      </div>
+                      <Field label="CEP">
+                        <CepInput
+                          value={state.faturamento.cep}
+                          onChange={(v) => setFaturamento({ cep: v })}
+                          onFound={(e) =>
+                            setFaturamento({
+                              cep: e.cep,
+                              logradouro: e.logradouro,
+                              complemento: e.complemento || state.faturamento.complemento,
+                              bairro: e.bairro,
+                              cidade: e.cidade,
+                              uf: e.uf,
+                            })
+                          }
+                        />
+                      </Field>
+                      <Field label="Endereço">
+                        <Input
+                          value={state.faturamento.logradouro}
+                          className={cn(campoInvalido("fat_end") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ logradouro: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Número">
+                        <Input
+                          value={state.faturamento.numero}
+                          onChange={(e) => setFaturamento({ numero: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Complemento">
+                        <Input
+                          value={state.faturamento.complemento}
+                          onChange={(e) => setFaturamento({ complemento: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Bairro">
+                        <Input
+                          value={state.faturamento.bairro}
+                          onChange={(e) => setFaturamento({ bairro: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Cidade">
+                        <Input
+                          value={state.faturamento.cidade}
+                          className={cn(campoInvalido("fat_end") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ cidade: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Estado (UF)">
+                        <Input
+                          value={state.faturamento.uf}
+                          maxLength={2}
+                          className={cn(campoInvalido("fat_uf") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ uf: e.target.value.toUpperCase().slice(0, 2) })}
+                        />
+                      </Field>
+                    </div>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+
+
+            {etapa >= 3 ? (
               <>
             {temProduto ? <Banner level={st.level} text={st.msg} /> : null}
 
@@ -1485,7 +1493,7 @@ function PropostaCpoPage() {
             </div>
 
             {/* Itens */}
-            {etapa === 2 ? (
+            {etapa === 3 ? (
             <>
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -1658,10 +1666,26 @@ function PropostaCpoPage() {
             </>
             ) : null}
 
-            {etapa === 3 ? (
+            {etapa === 4 ? (
             <>
             <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
-              <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Endereço de entrega</p>
+                <p className="text-xs text-muted-foreground">
+                  {state.entregaDiferente
+                    ? "Endereço alternativo informado abaixo."
+                    : [
+                        [state.entrega.logradouro, state.entrega.numero].filter(Boolean).join(", "),
+                        state.entrega.bairro,
+                        [state.entrega.cidade, state.uf].filter(Boolean).join(" / "),
+                        state.entrega.cep,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || "Endereço padrão do faturamento."}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium">Endereço de entrega diferente do faturamento?</p>
                   <p className="text-xs text-muted-foreground">
@@ -1680,6 +1704,7 @@ function PropostaCpoPage() {
                 />
               </div>
 
+              {state.entregaDiferente ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="CEP">
                     <CepInput
@@ -1738,7 +1763,9 @@ function PropostaCpoPage() {
                     <Input value={state.entrega.telefone} onChange={(e) => setEntrega({ telefone: e.target.value })} />
                   </Field>
               </div>
+              ) : null}
             </div>
+
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Modalidade de frete">
@@ -1827,7 +1854,7 @@ function PropostaCpoPage() {
             ) : null}
 
 
-            {etapa === 4 ? (
+            {etapa === 5 ? (
               <>
               <Field label="Forma de pagamento">
                 <Select
@@ -1906,7 +1933,7 @@ function PropostaCpoPage() {
           </div>
 
           {/* PAINEL / DRE */}
-          {etapa >= 2 ? (
+          {etapa >= 3 ? (
           <div className="space-y-4">
             <div className="glass rounded-2xl p-5 space-y-1.5">
               <h2 className="font-semibold mb-3">Impostos da proposta</h2>
@@ -2007,21 +2034,21 @@ function PropostaCpoPage() {
         {/* Barra de ações fixa no rodapé */}
         <WizardActionBar
           step={etapa}
-          totalSteps={4}
+          totalSteps={5}
           stepLabel={
-            ["Faturamento", "Produtos", "Entrega e frete", "Finalização"][etapa - 1]
+            ["Identificação", "Faturamento", "Produtos", "Entrega e frete", "Finalização"][etapa - 1]
           }
           onBack={voltarEtapa}
           onNext={avancarEtapa}
           backDisabled={etapa === 1 || saving}
-          nextDisabled={etapa === 4 || saving}
+          nextDisabled={etapa === 5 || saving}
           errors={errosFechamento}
           showErrors={!podeFechar && tentouAvancar}
           savedAt={autosaveAt}
           savedLabel="Salvo"
           minimal={etapa === 1 && !temItemComValor}
           actions={
-            etapa === 4 && temItemComValor
+            etapa === 5 && temItemComValor
               ? [
                   {
                     label: "Salvar proposta",
@@ -2042,7 +2069,7 @@ function PropostaCpoPage() {
           primary={
             !temItemComValor
               ? null
-              : etapa === 4
+              : etapa === 5
                 ? {
                     label: "Concluir pedido",
                     onClick: iniciarConclusao,

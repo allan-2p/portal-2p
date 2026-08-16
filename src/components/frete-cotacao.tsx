@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Truck, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ type Opcao = {
   ajustes: string[];
 };
 
-/** Cotação de frete CIF via Fretefy, com escolha da transportadora. */
+/** Cotação de frete CIF, com escolha da transportadora. */
 export function FreteCotacao({
   itens,
   valorNota,
@@ -44,6 +44,23 @@ export function FreteCotacao({
 
   const cepOk = (destino.cep ?? "").replace(/\D/g, "").length === 8;
   const podeCotar = cepOk && !!destino.cidade && !!destino.uf && itens.length > 0 && valorNota > 0;
+
+  // Assinatura dos dados que mudam a cotação — dispara o cálculo automático.
+  const assinatura = JSON.stringify({
+    itens: itens.map((i) => [i.codigo, i.quantidade]),
+    valorNota,
+    destino,
+    areaRural,
+  });
+  const ultima = useRef<string>("");
+
+  useEffect(() => {
+    if (!podeCotar || loading) return;
+    if (ultima.current === assinatura) return;
+    ultima.current = assinatura;
+    void executar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assinatura, podeCotar]);
 
   async function executar() {
     setLoading(true);
@@ -85,17 +102,24 @@ export function FreteCotacao({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <p className="text-sm font-medium flex items-center gap-2">
-            <Truck className="h-4 w-4 text-primary" /> Cotação de frete (Fretefy)
+            <Truck className="h-4 w-4 text-primary" /> Cotação de frete
           </p>
           <p className="text-xs text-muted-foreground">
-            Origem Itajaí/SC. O valor da nota é recalculado automaticamente com o frete embutido.
+            Origem Itajaí/SC. O cálculo é automático e o valor da nota já considera o frete embutido.
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={executar} disabled={!podeCotar || loading} className="gap-1.5">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => void executar()}
+          disabled={!podeCotar || loading}
+          className="gap-1.5"
+        >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          {opcoes.length ? "Recotar frete" : "Calcular frete"}
+          {loading ? "Calculando..." : opcoes.length ? "Recalcular frete" : "Calcular frete"}
         </Button>
       </div>
+
 
       {!podeCotar ? (
         <p className="text-xs text-muted-foreground">
