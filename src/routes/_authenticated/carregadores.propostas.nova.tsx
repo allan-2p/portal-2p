@@ -2042,7 +2042,7 @@ function PropostaCpoPage() {
           primary={
             !temItemComValor
               ? null
-              : etapa === 4
+              : etapa === 5
                 ? {
                     label: "Concluir pedido",
                     onClick: iniciarConclusao,
