@@ -109,14 +109,15 @@ function validar(input: any): SalvarPropostaInput {
       throw new Error("Informe o endereço de faturamento.");
   }
 
+  // Modalidade em branco é aceita em rascunhos; a conclusão do pedido exige a escolha.
   const freteMod = ["FOB", "CIF", "DEDICADO"].includes(String(input.freteMod))
     ? String(input.freteMod)
-    : "CIF";
-  // FOB: o cliente retira, então nunca existe valor de frete na proposta.
-  const freteValor = freteMod === "FOB" ? 0 : money2(input.freteValor);
+    : "";
+  // FOB (ou sem modalidade): não existe valor de frete na proposta.
+  const freteValor = freteMod === "FOB" || freteMod === "" ? 0 : money2(input.freteValor);
   const t = input.transportadora;
   const transportadora =
-    freteMod !== "FOB" && t && String(t.nome ?? "").trim()
+    freteMod !== "FOB" && freteMod !== "" && t && String(t.nome ?? "").trim()
       ? {
           id: String(t.id ?? ""),
           nome: String(t.nome).slice(0, 120),

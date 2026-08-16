@@ -3,6 +3,8 @@ import { fmtBRL, fmtPct } from "@/lib/cpo";
 export type PropostaPdfItem = {
   codigo?: string | null;
   nome: string;
+  /** Código NCM do produto (exibido logo abaixo do nome). */
+  ncm?: string | null;
   qtd: number;
   valor: number;
 };
@@ -89,7 +91,11 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       (i, idx) => `
       <tr>
         <td class="idx">${String(idx + 1).padStart(2, "0")}</td>
-        <td class="prod"><span class="pname">${i.codigo ? `${esc(i.codigo)} — ` : ""}${esc(i.nome)}</span></td>
+        <td class="prod"><span class="pname">${esc(i.nome)}</span>${
+          i.ncm || i.codigo
+            ? `<div class="pmeta">${[i.ncm ? `NCM ${esc(i.ncm)}` : "", i.codigo ? `Cód. ${esc(i.codigo)}` : ""].filter(Boolean).join(" · ")}</div>`
+            : ""
+        }</td>
         <td class="c">${i.qtd}</td>
         <td class="r">${fmtBRL(i.valor)}</td>
         <td class="r strong">${fmtBRL(i.valor * i.qtd)}</td>
@@ -167,6 +173,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .c{ text-align:center } .r{ text-align:right } .strong{ font-weight:700 }
   .idx{ color:var(--muted); font-size:8.6px; width:20px; font-variant-numeric:tabular-nums; }
   .pname{ font-weight:600; }
+  .pmeta{ font-size:8px; color:var(--muted); margin-top:1.5px; letter-spacing:.02em; }
   tfoot td{ padding:6px 5px; font-size:9px; color:var(--muted); }
 
   /* TWO COL */

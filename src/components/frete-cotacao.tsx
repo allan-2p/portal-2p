@@ -16,6 +16,8 @@ type Props = {
   documento: string;
   selecionada: CpoTransportadora | null;
   onSelect: (t: CpoTransportadora) => void;
+  /** Chamado quando algum dado muda e a cotação anterior deixa de valer. */
+  onInvalidate?: () => void;
 };
 
 type Opcao = {
@@ -36,6 +38,7 @@ export function FreteCotacao({
   documento,
   selecionada,
   onSelect,
+  onInvalidate,
 }: Props) {
   const cotar = useServerFn(cotarFrete);
   const [opcoes, setOpcoes] = useState<Opcao[]>([]);
@@ -51,12 +54,18 @@ export function FreteCotacao({
     valorNota,
     destino,
     areaRural,
+    documento,
   });
   const ultima = useRef<string>("");
 
   useEffect(() => {
-    if (!podeCotar || loading) return;
     if (ultima.current === assinatura) return;
+    // Qualquer mudança que influencie o frete descarta a cotação anterior.
+    if (ultima.current) {
+      setOpcoes([]);
+      onInvalidate?.();
+    }
+    if (!podeCotar || loading) return;
     ultima.current = assinatura;
     void executar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
