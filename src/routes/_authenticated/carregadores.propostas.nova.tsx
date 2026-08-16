@@ -677,6 +677,12 @@ function PropostaCpoPage() {
       toast.error("Adicione ao menos um produto à proposta.");
       return;
     }
+    // Após produtos cadastrados, MB abaixo da política mínima bloqueia qualquer avanço.
+    if (alvo >= 4 && temProduto && abaixoPolitica) {
+      setTentouAvancar(true);
+      toast.error(`Margem bruta abaixo da política mínima (${fmtPct(config.politica_mb_min)}). Ajuste os valores para avançar.`);
+      return;
+    }
     // Etapa 4 → 5: o frete precisa estar definido e calculado conforme a modalidade.
     if (alvo >= 5) {
       const erroFrete = !state.freteMod
