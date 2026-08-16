@@ -2007,21 +2007,21 @@ function PropostaCpoPage() {
         {/* Barra de ações fixa no rodapé */}
         <WizardActionBar
           step={etapa}
-          totalSteps={4}
+          totalSteps={5}
           stepLabel={
-            ["Faturamento", "Produtos", "Entrega e frete", "Finalização"][etapa - 1]
+            ["Identificação", "Faturamento", "Produtos", "Entrega e frete", "Finalização"][etapa - 1]
           }
           onBack={voltarEtapa}
           onNext={avancarEtapa}
           backDisabled={etapa === 1 || saving}
-          nextDisabled={etapa === 4 || saving}
+          nextDisabled={etapa === 5 || saving}
           errors={errosFechamento}
           showErrors={!podeFechar && tentouAvancar}
           savedAt={autosaveAt}
           savedLabel="Salvo"
           minimal={etapa === 1 && !temItemComValor}
           actions={
-            etapa === 4 && temItemComValor
+            etapa === 5 && temItemComValor
               ? [
                   {
                     label: "Salvar proposta",
