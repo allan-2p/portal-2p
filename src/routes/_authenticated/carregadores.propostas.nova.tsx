@@ -1507,7 +1507,7 @@ function PropostaCpoPage() {
 
             {etapa >= 3 ? (
               <>
-            {temProduto ? <Banner level={st.level} text={st.msg} /> : null}
+            
 
 
 
