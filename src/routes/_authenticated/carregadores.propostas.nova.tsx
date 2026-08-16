@@ -686,6 +686,7 @@ function PropostaCpoPage() {
 
   // ---- Bloqueios de fechamento (exportar PDF / concluir pedido) ----
   const errosFechamento: string[] = [];
+  if (!state.propostaNome.trim()) errosFechamento.push("Informe o nome da proposta.");
   if (!clienteOk) errosFechamento.push(errosCliente[0]?.msg ?? "Complete os dados do cliente.");
   if (!temProduto) errosFechamento.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length)
