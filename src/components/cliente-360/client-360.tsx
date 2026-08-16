@@ -1013,38 +1013,41 @@ function AtlasPanelTab({ account }: { account: SalesforceAccount }) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="glass rounded-xl p-4 sm:p-5">
-        <AtlasBoard cards={cards} onChange={touch(setCards)} />
-      </div>
+    <Card
+      title="Atlas do cliente"
+      icon={Sparkles}
+      right={
+        <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+          <Save className="h-3 w-3" />
+          {mutation.isPending
+            ? "Salvando…"
+            : dirty
+              ? "Alterações não salvas"
+              : savedAt
+                ? `Salvo ${new Date(savedAt).toLocaleString("pt-BR")}`
+                : "Sem anotações ainda"}
+        </span>
+      }
+    >
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Contexto para o Atlas</label>
+          <textarea
+            value={notes}
+            onChange={(e) => touch(setNotes)(e.target.value)}
+            placeholder="Escreva livremente sobre o cliente: decisores, histórico da relação, concorrência, oportunidades, riscos… O Atlas usa isso como contexto."
+            className="w-full min-h-[160px] rounded-lg bg-background border border-border p-3 text-sm resize-y focus:outline-none focus:border-primary/50"
+          />
+          {q.isError && (
+            <div className="text-xs text-destructive mt-2">Não foi possível carregar as anotações.</div>
+          )}
+        </div>
 
-      <Card
-        title="Contexto para o Atlas"
-        icon={Sparkles}
-        right={
-          <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
-            <Save className="h-3 w-3" />
-            {mutation.isPending
-              ? "Salvando…"
-              : dirty
-                ? "Alterações não salvas"
-                : savedAt
-                  ? `Salvo ${new Date(savedAt).toLocaleString("pt-BR")}`
-                  : "Sem anotações ainda"}
-          </span>
-        }
-      >
-        <textarea
-          value={notes}
-          onChange={(e) => touch(setNotes)(e.target.value)}
-          placeholder="Escreva livremente sobre o cliente: decisores, histórico da relação, concorrência, oportunidades, riscos… O Atlas usa isso como contexto."
-          className="w-full min-h-[160px] rounded-lg bg-background border border-border p-3 text-sm resize-y focus:outline-none focus:border-primary/50"
-        />
-        {q.isError && (
-          <div className="text-xs text-destructive mt-2">Não foi possível carregar as anotações.</div>
-        )}
-      </Card>
-    </div>
+        <div className="border-t border-border pt-4">
+          <AtlasBoard cards={cards} onChange={touch(setCards)} />
+        </div>
+      </div>
+    </Card>
   );
 }
 
