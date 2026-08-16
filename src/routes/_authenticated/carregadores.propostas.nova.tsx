@@ -2058,12 +2058,12 @@ function PropostaCpoPage() {
 
 
             {/* TOTAIS FINAIS — recalculam a cada mudança de preço/quantidade/frete */}
-            <div className="sticky bottom-2 z-10 rounded-2xl border-2 border-primary/40 bg-background/95 backdrop-blur px-5 py-4 shadow-xl">
+            <div className="sticky bottom-2 z-10 rounded-2xl border-2 border-primary/60 bg-background/95 backdrop-blur px-5 py-4 shadow-2xl ring-1 ring-primary/20">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Totais finais</span>
-                <span className="text-[11px] text-emerald-600">atualiza automaticamente</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-primary">Totais finais</span>
+                <span className="text-[11px] text-muted-foreground">atualiza automaticamente</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-stretch">
                 <LiveTotal label="Itens" value={fmtBRL(d.valorItens)} />
                 <LiveTotal label={`Frete (${state.freteMod || "—"})`} value={fmtBRL(state.freteValor)} />
                 <LiveTotal label="Total da proposta" value={fmtBRL(d.valorTotalProposta)} strong />
@@ -2077,7 +2077,7 @@ function PropostaCpoPage() {
           </div>
 
           {/* PAINEL / DRE */}
-          {etapa >= 3 ? (
+          {etapa === 3 || etapa === 4 ? (
           <div className="space-y-4">
             <div className="glass rounded-2xl p-5 space-y-1.5">
               <h2 className="font-semibold mb-3">Impostos da proposta</h2>
