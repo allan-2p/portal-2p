@@ -1102,20 +1102,20 @@ function PropostaCpoPage() {
               })}
             </div>
             <span className="text-xs font-medium text-muted-foreground shrink-0">
-              Etapa {etapa} de 4
+              Etapa {etapa} de 5
             </span>
           </div>
           <div
             className="h-1.5 rounded-full bg-surface-2 overflow-hidden"
             role="progressbar"
             aria-valuemin={1}
-            aria-valuemax={4}
+            aria-valuemax={5}
             aria-valuenow={etapa}
-            aria-label={`Etapa ${etapa} de 4`}
+            aria-label={`Etapa ${etapa} de 5`}
           >
             <div
               className="h-full bg-primary rounded-full transition-all duration-300"
-              style={{ width: `${(etapa / 4) * 100}%` }}
+              style={{ width: `${(etapa / 5) * 100}%` }}
             />
           </div>
         </div>
@@ -1140,7 +1140,7 @@ function PropostaCpoPage() {
         <div
           className={cn(
             "grid grid-cols-1 gap-5 items-start",
-            etapa >= 2 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
+            etapa >= 3 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
           )}
         >
           {/* ENTRADAS */}
