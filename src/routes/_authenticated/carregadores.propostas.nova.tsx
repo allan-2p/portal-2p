@@ -1485,7 +1485,7 @@ function PropostaCpoPage() {
             </div>
 
             {/* Itens */}
-            {etapa === 2 ? (
+            {etapa === 3 ? (
             <>
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3 flex-wrap">
