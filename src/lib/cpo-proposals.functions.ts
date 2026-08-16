@@ -29,7 +29,14 @@ export type SalvarPropostaInput = {
   contribuinte: boolean;
   regimeTributario?: string | null;
   finalidadeUso: string;
+  previsaoFechamento: string | null;
+  tipoNf: string;
+  faturarClienteFinal: boolean;
+  formaPagamento: string | null;
+  entregaDiferente: boolean;
+  entrega: Record<string, string>;
   freteMod: string;
+  freteAreaRural: boolean;
   freteValor: number;
   observacoes: string | null;
   /** Proposta originada de indicação (Carregadores). */
@@ -69,6 +76,15 @@ function validar(input: any): SalvarPropostaInput {
       valor: money2(i.valor),
     }));
   if (!itens.length) throw new Error("Adicione ao menos um produto.");
+  const campos = ["cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "contato", "telefone"];
+  const entregaNormalizada: Record<string, string> = {};
+  for (const c of campos) entregaNormalizada[c] = String(input.entrega?.[c] ?? "").slice(0, 160);
+  if (input.entregaDiferente) {
+    if (!entregaNormalizada['logradouro'] || !entregaNormalizada['cidade'])
+      throw new Error("Informe o endereço de entrega.");
+    if ((entregaNormalizada['uf'] ?? "").toUpperCase() !== uf)
+      throw new Error("O endereço de entrega deve estar no mesmo estado do faturamento.");
+  }
   return {
     propostaId: input.propostaId ? String(input.propostaId) : null,
     numero: String(input.numero ?? "").trim(),
@@ -86,7 +102,22 @@ function validar(input: any): SalvarPropostaInput {
     contribuinte: !!input.contribuinte,
     regimeTributario: input.regimeTributario ?? null,
     finalidadeUso: String(input.finalidadeUso ?? "uso_consumo"),
+    previsaoFechamento: /^\d{4}-\d{2}-\d{2}$/.test(String(input.previsaoFechamento ?? ""))
+      ? String(input.previsaoFechamento)
+      : null,
+    tipoNf: ["venda", "triangulacao", "bonificacao"].includes(String(input.tipoNf))
+      ? String(input.tipoNf)
+      : "venda",
+    faturarClienteFinal: input.faturarClienteFinal !== false,
+    formaPagamento: ["boleto_vista", "boleto_prazo", "pix", "cartao_credito"].includes(
+      String(input.formaPagamento),
+    )
+      ? String(input.formaPagamento)
+      : null,
+    entregaDiferente: !!input.entregaDiferente,
+    entrega: entregaNormalizada,
     freteMod: String(input.freteMod ?? "FOB"),
+    freteAreaRural: !!input.freteAreaRural,
     freteValor: money2(input.freteValor),
     observacoes: input.observacoes ? String(input.observacoes) : null,
     indicacao: !!input.indicacao,
@@ -159,7 +190,14 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       indicacao: data.indicacao,
       padrinhoId: data.padrinhoId,
       padrinhoNome: "",
+      previsaoFechamento: data.previsaoFechamento ?? "",
+      tipoNf: data.tipoNf as CpoState["tipoNf"],
+      faturarClienteFinal: data.faturarClienteFinal,
+      formaPagamento: (data.formaPagamento ?? "") as CpoState["formaPagamento"],
+      entregaDiferente: data.entregaDiferente,
+      entrega: data.entrega as unknown as CpoState["entrega"],
       freteMod: data.freteMod as CpoState["freteMod"],
+      freteAreaRural: data.freteAreaRural,
       freteValor: data.freteValor,
       observacoes: data.observacoes ?? "",
       itens: data.itens.map((i, idx) => ({
@@ -227,7 +265,14 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       uf: data.uf,
       contribuinte: data.contribuinte,
       finalidade_uso: data.finalidadeUso,
+      previsao_fechamento: data.previsaoFechamento,
+      tipo_nf: data.tipoNf,
+      faturar_cliente_final: data.faturarClienteFinal,
+      forma_pagamento: data.formaPagamento,
+      entrega_diferente: data.entregaDiferente,
+      entrega: data.entrega,
       frete_mod: data.freteMod,
+      frete_area_rural: data.freteMod === "CIF" ? data.freteAreaRural : false,
       frete_valor: data.freteValor,
       observacoes: data.observacoes,
       indicacao: data.indicacao,

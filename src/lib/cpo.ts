@@ -104,10 +104,57 @@ export type CpoFreteMod = "FOB" | "CIF" | "DEDICADO";
 export const FRETE_ABSORVIDO: CpoFreteMod[] = ["CIF", "DEDICADO"];
 
 export const labelFreteMod: Record<CpoFreteMod, string> = {
-  FOB: "FOB — por conta do cliente",
-  CIF: "CIF — por conta da 2P",
+  FOB: "FOB — por conta do cliente (retirar)",
+  CIF: "CIF — por conta da 2P (receber)",
   DEDICADO: "Dedicado — veículo exclusivo por conta da 2P",
 };
+
+/** Tipo de nota fiscal da operação. */
+export type CpoTipoNf = "venda" | "triangulacao" | "bonificacao";
+
+export const labelTipoNf: Record<CpoTipoNf, string> = {
+  venda: "Venda",
+  triangulacao: "Triangulação",
+  bonificacao: "Bonificação",
+};
+
+/** Formas de pagamento aceitas na proposta. */
+export type CpoFormaPagamento = "boleto_vista" | "boleto_prazo" | "pix" | "cartao_credito";
+
+export const labelFormaPagamento: Record<CpoFormaPagamento, string> = {
+  boleto_vista: "Boleto à vista (5 dias)",
+  boleto_prazo: "Boleto a prazo",
+  pix: "Pix",
+  cartao_credito: "Cartão de crédito",
+};
+
+/** Endereço de entrega da proposta (usado depois no cálculo do frete). */
+export type CpoEndereco = {
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  contato: string;
+  telefone: string;
+};
+
+export function novoEndereco(uf = ""): CpoEndereco {
+  return {
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    cidade: "",
+    uf,
+    contato: "",
+    telefone: "",
+  };
+}
+
 
 export type CpoState = {
   /** Nome/identificação da proposta (padrão universal do portal). */
@@ -130,7 +177,19 @@ export type CpoState = {
   /** Padrinho da indicação, quando houver. */
   padrinhoId: string | null;
   padrinhoNome: string;
+  /** Previsão de fechamento (AAAA-MM-DD) — campo opcional. */
+  previsaoFechamento: string;
+  /** Tipo de nota fiscal da operação. */
+  tipoNf: CpoTipoNf;
+  /** Faturar diretamente para o cliente final. */
+  faturarClienteFinal: boolean;
+  formaPagamento: CpoFormaPagamento | "";
+  /** Entrega em endereço diferente do faturamento (mesmo estado). */
+  entregaDiferente: boolean;
+  entrega: CpoEndereco;
   freteMod: CpoFreteMod;
+  /** Entrega em área rural (perguntado apenas no CIF). */
+  freteAreaRural: boolean;
   freteValor: number;
   observacoes: string;
   itens: CpoItem[];
@@ -271,8 +330,14 @@ export function novoEstado(): CpoState {
     indicacao: false,
     padrinhoId: null,
     padrinhoNome: "",
-
+    previsaoFechamento: "",
+    tipoNf: "venda",
+    faturarClienteFinal: true,
+    formaPagamento: "",
+    entregaDiferente: false,
+    entrega: novoEndereco("SP"),
     freteMod: "FOB",
+    freteAreaRural: false,
     freteValor: 0,
     observacoes: OBSERVACOES_PADRAO,
     itens: [novoItem()],

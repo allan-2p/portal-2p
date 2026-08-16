@@ -34,6 +34,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listClientesFn } from "@/lib/clientes.functions";
 import { getClienteLogo } from "@/lib/cliente-logos.functions";
 import { PropostaIndicacao } from "@/components/proposta-indicacao";
+import { CepInput } from "@/components/cep-input";
 
 
 import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
@@ -54,6 +55,9 @@ import {
   observacoesComDifal,
   FRETE_ABSORVIDO,
   labelFreteMod,
+  labelTipoNf,
+  labelFormaPagamento,
+  novoEndereco,
   novoEstado,
   novoItem,
   parseMoeda,
@@ -251,9 +255,16 @@ function PropostaCpoPage() {
         indicacao: !!(data as any).indicacao,
         padrinhoId: ((data as any).padrinho_id as string | null) ?? null,
         padrinhoNome: ((data as any).padrinho_nome as string | null) ?? "",
+        previsaoFechamento: ((data as any).previsao_fechamento as string | null) ?? "",
+        tipoNf: (((data as any).tipo_nf as string | null) ?? "venda") as CpoState["tipoNf"],
+        faturarClienteFinal: (data as any).faturar_cliente_final !== false,
+        formaPagamento: (((data as any).forma_pagamento as string | null) ?? "") as CpoState["formaPagamento"],
+        entregaDiferente: !!(data as any).entrega_diferente,
+        entrega: { ...novoEndereco(data.uf), ...(((data as any).entrega as Record<string, string>) ?? {}) },
         freteMod: (data.frete_mod === "CIF" || data.frete_mod === "DEDICADO"
           ? data.frete_mod
           : "FOB") as CpoFreteMod,
+        freteAreaRural: !!(data as any).frete_area_rural,
         freteValor: money2(data.frete_valor ?? 0),
         observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
         itens: itens.length ? itens : [novoItem()],
@@ -410,6 +421,16 @@ function PropostaCpoPage() {
 
   const set = <K extends keyof CpoState>(k: K, v: CpoState[K]) =>
     setState((s) => ({ ...s, [k]: v }));
+
+  /** Atualiza campos do endereço de entrega. */
+  const setEntrega = (patch: Partial<CpoState["entrega"]>) =>
+    setState((s) => ({ ...s, entrega: { ...s.entrega, ...patch } }));
+
+  /** Entrega precisa ficar no mesmo estado do faturamento. */
+  const entregaUfInvalida =
+    state.entregaDiferente &&
+    !!state.entrega.uf.trim() &&
+    state.entrega.uf.trim().toUpperCase() !== state.uf.trim().toUpperCase();
 
   const setItem = (key: string, patch: Partial<CpoItem>) =>
     setState((s) => ({
@@ -791,7 +812,14 @@ function PropostaCpoPage() {
           finalidadeUso: state.finalidadeUso,
           indicacao: state.indicacao,
           padrinhoId: state.indicacao ? state.padrinhoId : null,
+          previsaoFechamento: state.previsaoFechamento || null,
+          tipoNf: state.tipoNf,
+          faturarClienteFinal: state.faturarClienteFinal,
+          formaPagamento: state.formaPagamento || null,
+          entregaDiferente: state.entregaDiferente,
+          entrega: state.entrega,
           freteMod: state.freteMod,
+          freteAreaRural: state.freteMod === "CIF" ? state.freteAreaRural : false,
           freteValor: money2(state.freteValor),
           observacoes: observacoesFinal.trim() || null,
           itens: state.itens
@@ -1066,6 +1094,14 @@ function PropostaCpoPage() {
                     value={state.propostaNome}
                     onChange={(e) => set("propostaNome", e.target.value)}
                     placeholder="Ex.: Eletroposto Matriz — 4 carregadores"
+                  />
+                </Field>
+
+                <Field label="Previsão de fechamento (opcional)">
+                  <Input
+                    type="date"
+                    value={state.previsaoFechamento}
+                    onChange={(e) => set("previsaoFechamento", e.target.value)}
                   />
                 </Field>
 
@@ -1408,6 +1444,128 @@ function PropostaCpoPage() {
             {etapa === 3 ? (
             <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Tipo de nota fiscal">
+                <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CpoState["tipoNf"])}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="venda">{labelTipoNf.venda}</SelectItem>
+                    <SelectItem value="triangulacao">{labelTipoNf.triangulacao}</SelectItem>
+                    <SelectItem value="bonificacao">{labelTipoNf.bonificacao}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Forma de pagamento">
+                <Select
+                  value={state.formaPagamento || undefined}
+                  onValueChange={(v) => set("formaPagamento", v as CpoState["formaPagamento"])}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="boleto_vista">{labelFormaPagamento.boleto_vista}</SelectItem>
+                    <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
+                    <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
+                    <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Faturar para o cliente final?</p>
+                <p className="text-xs text-muted-foreground">
+                  Desmarque quando a nota for emitida para um intermediário.
+                </p>
+              </div>
+              <Switch
+                checked={state.faturarClienteFinal}
+                onCheckedChange={(v) => set("faturarClienteFinal", v)}
+              />
+            </div>
+
+            <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">Endereço de entrega diferente do faturamento?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Permitido apenas dentro do mesmo estado ({state.uf}). Este endereço será usado no cálculo do frete.
+                  </p>
+                </div>
+                <Switch
+                  checked={state.entregaDiferente}
+                  onCheckedChange={(v) =>
+                    setState((prev) => ({
+                      ...prev,
+                      entregaDiferente: v,
+                      entrega: v ? { ...prev.entrega, uf: prev.entrega.uf || prev.uf } : prev.entrega,
+                    }))
+                  }
+                />
+              </div>
+
+              {state.entregaDiferente ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="CEP">
+                    <CepInput
+                      value={state.entrega.cep}
+                      onChange={(v) => setEntrega({ cep: v })}
+                      onFound={(e) =>
+                        setEntrega({
+                          cep: e.cep,
+                          logradouro: e.logradouro,
+                          complemento: e.complemento || state.entrega.complemento,
+                          bairro: e.bairro,
+                          cidade: e.cidade,
+                          uf: e.uf,
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label="Endereço">
+                    <Input
+                      value={state.entrega.logradouro}
+                      onChange={(e) => setEntrega({ logradouro: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Número">
+                    <Input value={state.entrega.numero} onChange={(e) => setEntrega({ numero: e.target.value })} />
+                  </Field>
+                  <Field label="Complemento">
+                    <Input
+                      value={state.entrega.complemento}
+                      onChange={(e) => setEntrega({ complemento: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Bairro">
+                    <Input value={state.entrega.bairro} onChange={(e) => setEntrega({ bairro: e.target.value })} />
+                  </Field>
+                  <Field label="Cidade">
+                    <Input value={state.entrega.cidade} onChange={(e) => setEntrega({ cidade: e.target.value })} />
+                  </Field>
+                  <Field label="Estado (UF)">
+                    <Input
+                      value={state.entrega.uf}
+                      maxLength={2}
+                      className={cn(entregaUfInvalida && "border-destructive focus-visible:ring-destructive")}
+                      onChange={(e) => setEntrega({ uf: e.target.value.toUpperCase().slice(0, 2) })}
+                    />
+                    {entregaUfInvalida ? (
+                      <p className="text-[11px] text-destructive mt-1">
+                        A entrega precisa ser no mesmo estado do faturamento ({state.uf}).
+                      </p>
+                    ) : null}
+                  </Field>
+                  <Field label="Contato da entrega">
+                    <Input value={state.entrega.contato} onChange={(e) => setEntrega({ contato: e.target.value })} />
+                  </Field>
+                  <Field label="Telefone">
+                    <Input value={state.entrega.telefone} onChange={(e) => setEntrega({ telefone: e.target.value })} />
+                  </Field>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Modalidade de frete">
                 <Select value={state.freteMod} onValueChange={(v) => set("freteMod", v as CpoFreteMod)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1417,6 +1575,20 @@ function PropostaCpoPage() {
                     <SelectItem value="DEDICADO">{labelFreteMod.DEDICADO}</SelectItem>
                   </SelectContent>
                 </Select>
+                {state.freteMod === "CIF" ? (
+                  <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                    <span className="text-xs">Entrega em área rural?</span>
+                    <Switch
+                      checked={state.freteAreaRural}
+                      onCheckedChange={(v) => set("freteAreaRural", v)}
+                    />
+                  </div>
+                ) : null}
+                {state.freteMod === "DEDICADO" ? (
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Frete dedicado: informe o valor manualmente ao lado.
+                  </p>
+                ) : null}
               </Field>
               <Field label="Valor do frete">
                 <MoneyInput
