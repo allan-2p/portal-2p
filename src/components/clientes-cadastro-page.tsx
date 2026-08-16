@@ -322,6 +322,22 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
   });
 
+  // Transferência de carteira: realinha o consultor dos cadastros com o dono
+  // atual da conta no Salesforce (registros antigos permanecem intactos).
+  const sincronizarDonos = useServerFn(sincronizarDonosFn);
+  const sincronizarCarteira = useMutation({
+    mutationFn: () => sincronizarDonos({ data: { instancia } }),
+    onSuccess: (r) => {
+      if (r.transferidos > 0) {
+        toast.success(`${r.transferidos} cliente(s) transferido(s) para o novo vendedor.`);
+      } else {
+        toast.success("Carteira já está atualizada.");
+      }
+      qc.invalidateQueries({ queryKey: ["clientes", instancia] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao sincronizar."),
+  });
+
   const filtrados = useMemo(() => {
     const t = q.trim().toLowerCase();
     const tDoc = soDigitos(q);
