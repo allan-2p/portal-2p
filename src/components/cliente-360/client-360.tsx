@@ -1033,7 +1033,7 @@ function ActivityRail({ accountId }: { accountId: string }) {
               Próximas & atrasadas
             </div>
             {proximas.length === 0 ? (
-              <div className="text-xs text-muted-foreground py-2">Nada pendente. 🎉</div>
+              <div className="text-xs text-muted-foreground py-2">Nada pendente.</div>
             ) : (
               <ul className="space-y-2">
                 {proximas.map((a) => (
