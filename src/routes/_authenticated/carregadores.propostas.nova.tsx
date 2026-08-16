@@ -2094,20 +2094,19 @@ function PropostaCpoPage() {
             ) : null}
 
 
-            {/* TOTAIS AO VIVO — recalculam a cada mudança de preço/quantidade/frete */}
-            <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-background/90 backdrop-blur px-4 py-3 shadow-lg">
-              <div className="flex items-center justify-between gap-3 mb-2">
-                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Totais ao vivo</span>
+            {/* TOTAIS FINAIS — recalculam a cada mudança de preço/quantidade/frete */}
+            <div className="sticky bottom-2 z-10 rounded-2xl border-2 border-primary/40 bg-background/95 backdrop-blur px-5 py-4 shadow-xl">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Totais finais</span>
                 <span className="text-[11px] text-emerald-600">atualiza automaticamente</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                 <LiveTotal label="Itens" value={fmtBRL(d.valorItens)} />
                 <LiveTotal label={`Frete (${state.freteMod || "—"})`} value={fmtBRL(state.freteValor)} />
                 <LiveTotal label="Total da proposta" value={fmtBRL(d.valorTotalProposta)} strong />
-                <LiveTotal label="Margem bruta" value={fmtPct(d.mbPct)} hint={fmtBRL(d.mb)} />
-                <LiveTotal label={`Comissão do vendedor (${regimeVendedor})`} value={fmtBRL(comissaoVendedor.valor)} hint={fmtPct(comissaoVendedor.pct)} />
               </div>
             </div>
+
             </>
 
             ) : null}
