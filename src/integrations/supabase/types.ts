@@ -488,10 +488,15 @@ export type Database = {
           created_at: string
           created_by: string | null
           criado_por_nome: string | null
+          entrega: Json
+          entrega_diferente: boolean
+          faturar_cliente_final: boolean
           finalidade_uso: string
           finalizado_em: string | null
           finalizado_por: string | null
           finalizado_por_nome: string | null
+          forma_pagamento: string | null
+          frete_area_rural: boolean
           frete_mod: string
           frete_valor: number
           id: string
@@ -503,7 +508,9 @@ export type Database = {
           observacoes: string | null
           padrinho_id: string | null
           padrinho_nome: string | null
+          previsao_fechamento: string | null
           status: string
+          tipo_nf: string
           totais: Json
           uf: string
           updated_at: string
@@ -520,10 +527,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           criado_por_nome?: string | null
+          entrega?: Json
+          entrega_diferente?: boolean
+          faturar_cliente_final?: boolean
           finalidade_uso?: string
           finalizado_em?: string | null
           finalizado_por?: string | null
           finalizado_por_nome?: string | null
+          forma_pagamento?: string | null
+          frete_area_rural?: boolean
           frete_mod?: string
           frete_valor?: number
           id?: string
@@ -535,7 +547,9 @@ export type Database = {
           observacoes?: string | null
           padrinho_id?: string | null
           padrinho_nome?: string | null
+          previsao_fechamento?: string | null
           status?: string
+          tipo_nf?: string
           totais?: Json
           uf?: string
           updated_at?: string
@@ -552,10 +566,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           criado_por_nome?: string | null
+          entrega?: Json
+          entrega_diferente?: boolean
+          faturar_cliente_final?: boolean
           finalidade_uso?: string
           finalizado_em?: string | null
           finalizado_por?: string | null
           finalizado_por_nome?: string | null
+          forma_pagamento?: string | null
+          frete_area_rural?: boolean
           frete_mod?: string
           frete_valor?: number
           id?: string
@@ -567,7 +586,9 @@ export type Database = {
           observacoes?: string | null
           padrinho_id?: string | null
           padrinho_nome?: string | null
+          previsao_fechamento?: string | null
           status?: string
+          tipo_nf?: string
           totais?: Json
           uf?: string
           updated_at?: string
