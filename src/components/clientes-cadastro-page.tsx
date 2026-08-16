@@ -18,6 +18,7 @@ import {
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
   ArrowRight, RefreshCw,
 } from "lucide-react";
+import { sincronizarDonosFn } from "@/lib/owner-sync.functions";
 import { ClientHistoryTab } from "@/components/client-history-tab";
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
@@ -327,7 +328,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const sincronizarDonos = useServerFn(sincronizarDonosFn);
   const sincronizarCarteira = useMutation({
     mutationFn: () => sincronizarDonos({ data: { instancia } }),
-    onSuccess: (r) => {
+    onSuccess: (r: { transferidos: number }) => {
       if (r.transferidos > 0) {
         toast.success(`${r.transferidos} cliente(s) transferido(s) para o novo vendedor.`);
       } else {
