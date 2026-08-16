@@ -436,16 +436,56 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </button>
       </aside>
 
+      {/* Navegação mobile — gaveta lateral com o mesmo menu do desktop */}
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent side="left" className="w-[86vw] max-w-[320px] p-0 flex flex-col md:hidden">
+          <SheetHeader className="px-4 py-4 border-b border-border text-left">
+            <SheetTitle className="flex items-center gap-3">
+              <img src={brand.logo} alt="" className={cn("h-8 w-auto rounded shrink-0 object-contain", isAdminArea && "dark:invert")} />
+              <span className="min-w-0">
+                <span className="block font-display font-bold text-base leading-none truncate">Portal 2P</span>
+                <span className="block text-[11px] font-normal text-muted-foreground mt-1 truncate">{brand.label}</span>
+              </span>
+            </SheetTitle>
+          </SheetHeader>
+          <div className="px-3 py-3 border-b border-border flex items-center gap-2">
+            <InstanceSwitcher />
+            {instance === "marketing" && <MarketingUnitSwitch />}
+          </div>
+          <div
+            className="flex-1 overflow-y-auto overscroll-contain"
+            onClick={() => setMobileNavOpen(false)}
+          >
+            {isAdminArea ? <AdminSidebar pathname={pathname} collapsed={false} /> : navTree(false)}
+          </div>
+          {canSeeAdminMenu && (
+            <div className="border-t border-border p-3 grid gap-1 max-h-[38vh] overflow-y-auto" onClick={() => setMobileNavOpen(false)}>
+              <div className="px-1 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Grupo 2P • Administração</div>
+              {visibleAdminSections.map((s) => (
+                <AdminMenuLink key={s.id} to={s.home} label={s.label} icon={s.icon} onClick={() => setMobileNavOpen(false)} />
+              ))}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
       <main className="flex-1 min-w-0">
         <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-lg">
-          <div className="flex items-center gap-4 px-6 h-16">
-            <div className="md:hidden flex items-center gap-2">
-              <img src={brand.logo} alt={brand.label} className={cn("h-7 w-auto rounded object-contain", isGroupAdminPath(pathname) && "dark:invert")} />
-              <span className="font-display font-bold">Portal 2P</span>
+          <div className="flex items-center gap-2 px-3 sm:px-4 md:px-6 h-14 md:h-16">
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              className="md:hidden h-10 w-10 -ml-1 shrink-0 rounded-lg border border-border bg-surface flex items-center justify-center"
+              aria-label="Abrir menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="md:hidden flex items-center gap-2 min-w-0">
+              <img src={brand.logo} alt={brand.label} className={cn("h-7 w-auto rounded object-contain shrink-0", isGroupAdminPath(pathname) && "dark:invert")} />
+              <span className="font-display font-bold truncate">Portal 2P</span>
             </div>
             <div className="hidden md:flex flex-1" />
 
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
               {user && roles.length === 0 && (
                 <button
                   onClick={handlePromote}
