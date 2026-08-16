@@ -89,11 +89,18 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   const validade = new Date(hoje.getTime() + (p.validadeDias ?? 15) * 86400000).toLocaleDateString("pt-BR");
   const numero = p.numero ?? hoje.getTime().toString().slice(-6);
 
+  const temFoto = p.itens.some((i) => !!i.foto);
+
   const linhas = p.itens
     .map(
       (i, idx) => `
       <tr>
         <td class="idx">${String(idx + 1).padStart(2, "0")}</td>
+        ${
+          temFoto
+            ? `<td class="foto">${i.foto ? `<img src="${esc(i.foto)}" alt="${esc(i.nome)}">` : `<div class="nofoto"></div>`}</td>`
+            : ""
+        }
         <td class="prod"><span class="pname">${esc(i.nome)}</span>${
           i.ncm || i.codigo
             ? `<div class="pmeta">${[i.ncm ? `NCM ${esc(i.ncm)}` : "", i.codigo ? `Cód. ${esc(i.codigo)}` : ""].filter(Boolean).join(" · ")}</div>`
@@ -105,6 +112,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       </tr>`,
     )
     .join("");
+
 
   const qtdTotal = p.itens.reduce((a, i) => a + i.qtd, 0);
 
