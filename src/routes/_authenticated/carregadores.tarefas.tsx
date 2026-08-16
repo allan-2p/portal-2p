@@ -54,6 +54,7 @@ const PRIOS = [
 ];
 
 function CarregadoresTarefas() {
+  const podeExcluir = useCanDelete();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"aberta" | "concluida" | "todas">("aberta");
   const [vendedor, setVendedor] = useState("__all__");
