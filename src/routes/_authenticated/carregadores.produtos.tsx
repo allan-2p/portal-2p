@@ -24,6 +24,8 @@ import { fmtBRL, precoSugeridoPadrao, MARGEM_PRECO_SUGERIDO, type CpoProduct } f
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorPath, BUCKET_PRODUTOS } from "@/lib/produto-imagens";
+import { CatalogoFotos } from "@/components/produtos/catalogo-fotos";
+
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
