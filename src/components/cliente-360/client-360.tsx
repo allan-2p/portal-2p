@@ -470,24 +470,6 @@ function VisaoGeral({
     return { pct: ((now - prev) / prev) * 100, up: now >= prev };
   }, [history]);
 
-  const quarters = (history?.quarters ?? []).slice(-8);
-  const criadas = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const o of data?.opportunities ?? []) {
-      if (!o.createdDate) continue;
-      const dt = new Date(o.createdDate);
-      const key = `${dt.getUTCFullYear()}-T${Math.floor(dt.getUTCMonth() / 3) + 1}`;
-      map.set(key, (map.get(key) ?? 0) + (o.amount || 0));
-    }
-    return map;
-  }, [data]);
-
-  const max = Math.max(
-    1,
-    ...quarters.map((q: any) => q.total || 0),
-    ...quarters.map((q: any) => criadas.get(normQuarterKey(q)) ?? 0),
-  );
-
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -512,46 +494,7 @@ function VisaoGeral({
         />
       </div>
 
-      <Card title="Geração x Vendas por trimestre" icon={BarChart3}>
-        {quarters.length === 0 ? (
-          <Empty>Sem histórico de oportunidades nos últimos trimestres.</Empty>
-        ) : (
-          <>
-            <div className="flex items-end gap-3 h-44">
-              {quarters.map((q: any) => {
-                const ger = criadas.get(normQuarterKey(q)) ?? 0;
-                return (
-                  <div key={q.label} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                    <div className="w-full flex items-end justify-center gap-1 h-36">
-                      <div
-                        className="w-1/2 rounded-t bg-primary/30"
-                        style={{ height: `${Math.max(2, (ger / max) * 100)}%` }}
-                        title={`Geração: ${fmt(ger)}`}
-                      />
-                      <div
-                        className="w-1/2 rounded-t bg-primary"
-                        style={{ height: `${Math.max(2, ((q.total || 0) / max) * 100)}%` }}
-                        title={`Vendas: ${fmt(q.total)}`}
-                      />
-                    </div>
-                    <div className="text-[10px] text-muted-foreground truncate w-full text-center">
-                      {q.label}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-4 mt-3 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-3 rounded-sm bg-primary/30" /> Geração (oportunidades criadas)
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-3 rounded-sm bg-primary" /> Vendas (fechadas)
-              </span>
-            </div>
-          </>
-        )}
-      </Card>
+
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card title="Funil do cliente" icon={Briefcase}>
