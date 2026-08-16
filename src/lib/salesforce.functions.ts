@@ -499,7 +499,32 @@ export type SalesforceAccount = {
   description: string | null;
   quarterProjection: number | null;
   quarterSold: number | null;
+  /** Campos extras de cadastro (dossiê 360) */
+  nomeFantasia?: string | null;
+  email?: string | null;
+  instagram?: string | null;
+  nSap?: string | null;
+  tipoCliente?: string | null;
+  carteira?: string | null;
+  condicaoPagamento?: string | null;
+  tabelaPrecos?: string | null;
+  regiao?: string | null;
+  finalidadeUso?: string | null;
+  statusConta?: string | null;
+  regimeTributario?: string | null;
+  contribuinte?: string | null;
+  inscricaoEstadual?: string | null;
+  primeiraCompra?: string | null;
+  origem?: string | null;
+  icp?: number | null;
+  operacao?: string | null;
+  porte?: string | null;
+  organizacao?: string | null;
+  planoFidelidade?: string | null;
+  pontuacaoFidelidade?: number | null;
+  ativo?: boolean | null;
 };
+
 
 function formatCnpj(v: string | null): string | null {
   if (!v) return null;
