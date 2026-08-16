@@ -2216,8 +2216,9 @@ function PropostaCpoPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <SumItem label="Margem bruta %" value={fmtPct(d.mbPct)} hint={fmtBRL(d.mb)} />
-                <SumItem label={`Comissão do vendedor (${regimeVendedor})`} value={fmtBRL(comissaoVendedor.valor)} hint={fmtPct(comissaoVendedor.pct)} />
+                <SumItem label="Margem bruta %" value={fmtPct(d.mbPct)} />
+                <SumItem label={`Comissão do vendedor (${regimeVendedor})`} value={fmtBRL(comissaoVendedor.valor)} />
+
               </div>
 
               <div className="flex items-center gap-2 text-sm">
