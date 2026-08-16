@@ -80,7 +80,6 @@ type TabKey =
 
 const TABS: Array<{ key: TabKey; label: string; icon: typeof Users }> = [
   { key: "visao", label: "Visão geral", icon: BarChart3 },
-  { key: "atlas", label: "Atlas", icon: Sparkles },
   { key: "contatos", label: "Contatos", icon: Users },
   { key: "negocios", label: "Propostas & pedidos", icon: Briefcase },
   { key: "casos", label: "Casos", icon: LifeBuoy },
