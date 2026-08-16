@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { sincronizarDonoContaFn } from "@/lib/owner-sync.functions";
+
 import {
   getSalesforceAccountHistory,
   getSalesforceAccountContacts,
