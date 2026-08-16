@@ -1150,7 +1150,7 @@ function PropostaCpoPage() {
         {/* Indicador de progresso: etapa atual x total */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-sm overflow-x-auto no-scrollbar -mx-1 px-1 flex-nowrap">
               {[
                 { n: 1 as const, label: "Identificação", go: () => setEtapa(1) },
                 { n: 2 as const, label: "Faturamento", go: () => irParaEtapa(2) },
@@ -1161,13 +1161,13 @@ function PropostaCpoPage() {
                 const atual = etapa === s.n;
                 const concluida = etapa > s.n;
                 return (
-                  <div key={s.n} className="flex items-center gap-2">
-                    {i > 0 && <div className="h-px w-6 bg-border" />}
+                  <div key={s.n} className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    {i > 0 && <div className="h-px w-3 sm:w-6 bg-border" />}
                     <button
                       onClick={s.go}
                       aria-current={atual ? "step" : undefined}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors",
+                        "flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full border transition-colors shrink-0",
                         atual
                           ? "border-primary bg-primary/10 text-primary font-semibold"
                           : concluida
@@ -1183,13 +1183,13 @@ function PropostaCpoPage() {
                       >
                         {concluida ? <Check className="h-3 w-3" /> : s.n}
                       </span>
-                      {s.label}
+                      <span className={cn("whitespace-nowrap", !atual && "hidden sm:inline")}>{s.label}</span>
                     </button>
                   </div>
                 );
               })}
             </div>
-            <span className="text-xs font-medium text-muted-foreground shrink-0">
+            <span className="hidden sm:inline text-xs font-medium text-muted-foreground shrink-0">
               Etapa {etapa} de 5
             </span>
           </div>
