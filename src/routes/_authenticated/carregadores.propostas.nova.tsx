@@ -1086,14 +1086,11 @@ function PropostaCpoPage() {
                 {propostaId ? `Editar proposta${numeroAtual ? ` ${numeroAtual}` : ""}` : "Nova proposta"}
               </h1>
               <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border",
-                  statusProposta === "Aguardando Pagamento"
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-                    : statusProposta === "Salvo"
-                      ? "bg-surface-2 text-muted-foreground border-border"
-                      : "bg-primary/10 text-primary border-primary/30",
-                )}
+                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                style={{
+                  backgroundColor: propostaStatusStyle(statusProposta).bg,
+                  color: propostaStatusStyle(statusProposta).fg,
+                }}
               >
                 {saving && statusProposta === "Aguardando Pagamento" ? (
                   <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
