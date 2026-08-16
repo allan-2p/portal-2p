@@ -7,6 +7,8 @@ import { fmtBRL, fmtPct } from "@/lib/cpo";
 import { StatusDot } from "@/components/proposta-status-ui";
 import { PropostaTimeline } from "@/components/proposta-timeline";
 import { propostaStatusStyle } from "@/lib/proposta-status";
+import { ProdutoFoto } from "@/components/produto-foto";
+import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, Calculator, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 
 type Item = { codigo?: string | null; nome?: string; qtd?: number; valor?: number };
@@ -33,6 +35,8 @@ export function PropostaDetalhe({ id }: { id?: string }) {
   const itens: Item[] = (p?.['itens'] as Item[]) ?? [];
   const totais: Record<string, number> = (p?.['totais'] as Record<string, number>) ?? {};
   const subtotal = itens.reduce((a, i) => a + (i.valor ?? 0) * (i.qtd ?? 0), 0);
+  const fotosQ = useImagensPorCodigo(itens.map((i) => i.codigo));
+  const fotos = fotosQ.data ?? {};
   const frete = Number(p?.['frete_valor'] ?? 0);
   const status = String(p?.['status'] ?? "Salvo");
   const st = propostaStatusStyle(status);
@@ -118,6 +122,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-xs text-muted-foreground uppercase tracking-wider border-y border-border">
+                <th className="text-left px-5 py-3">Foto</th>
                 <th className="text-left px-5 py-3">Código</th>
                 <th className="text-left px-5 py-3">Descrição</th>
                 <th className="text-right px-5 py-3">Qtde</th>
@@ -128,6 +133,9 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             <tbody>
               {itens.map((i, idx) => (
                 <tr key={idx} className="border-b border-border/50 last:border-0">
+                  <td className="px-5 py-2">
+                    <ProdutoFoto url={i.codigo ? fotos[i.codigo] : undefined} alt={i.nome} />
+                  </td>
                   <td className="px-5 py-3 text-muted-foreground">{i.codigo || "—"}</td>
                   <td className="px-5 py-3 font-medium">{i.nome || "—"}</td>
                   <td className="px-5 py-3 text-right">{i.qtd ?? 0}</td>
@@ -139,7 +147,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
               ))}
               {itens.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-5 py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">
                     Nenhum item nesta proposta.
                   </td>
                 </tr>
