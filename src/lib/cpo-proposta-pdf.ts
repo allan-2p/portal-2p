@@ -29,6 +29,8 @@ export type PropostaPdfData = {
     uf: string;
     contribuinte: boolean;
   };
+  /** Finalidade da mercadoria: uso e consumo, revenda ou industrialização. */
+  finalidadeUso?: string | null;
   itens: PropostaPdfItem[];
   freteMod: string;
   freteValor: number;
