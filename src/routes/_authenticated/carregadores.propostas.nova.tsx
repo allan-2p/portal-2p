@@ -1658,10 +1658,26 @@ function PropostaCpoPage() {
             </>
             ) : null}
 
-            {etapa === 3 ? (
+            {etapa === 4 ? (
             <>
             <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
-              <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Endereço de entrega</p>
+                <p className="text-xs text-muted-foreground">
+                  {state.entregaDiferente
+                    ? "Endereço alternativo informado abaixo."
+                    : [
+                        [state.entrega.logradouro, state.entrega.numero].filter(Boolean).join(", "),
+                        state.entrega.bairro,
+                        [state.entrega.cidade, state.uf].filter(Boolean).join(" / "),
+                        state.entrega.cep,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || "Endereço padrão do faturamento."}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium">Endereço de entrega diferente do faturamento?</p>
                   <p className="text-xs text-muted-foreground">
@@ -1680,6 +1696,7 @@ function PropostaCpoPage() {
                 />
               </div>
 
+              {state.entregaDiferente ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="CEP">
                     <CepInput
@@ -1738,7 +1755,9 @@ function PropostaCpoPage() {
                     <Input value={state.entrega.telefone} onChange={(e) => setEntrega({ telefone: e.target.value })} />
                   </Field>
               </div>
+              ) : null}
             </div>
+
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Modalidade de frete">
