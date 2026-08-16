@@ -73,7 +73,7 @@ function CpoPedidosPage() {
         return {
           id: r.id,
           code: r.numero ?? r.id.slice(-6).toUpperCase(),
-          title: r.numero ? `Proposta ${r.numero}` : "Proposta CPO",
+          title: r.numero ? `Proposta ${r.numero}` : "Proposta",
           client: r.cliente_nome,
           closing: datePtBr(r.created_at),
           value: Number(totais.valorTotal ?? 0),

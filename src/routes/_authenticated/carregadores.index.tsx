@@ -204,7 +204,7 @@ function CarregadoresHome() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-display font-bold">Portal 2P Carregadores</h1>
-            <p className="text-sm text-muted-foreground">Operação CPO — propostas, clientes e tarefas da unidade.</p>
+            <p className="text-sm text-muted-foreground">Operação de carregadores — propostas, clientes e tarefas da unidade.</p>
           </div>
           <div className="flex items-center gap-2">
             <VendedorNamesFilter
