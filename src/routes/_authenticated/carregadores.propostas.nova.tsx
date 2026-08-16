@@ -921,7 +921,7 @@ function PropostaCpoPage() {
     if (!saving) setSaving(true);
     try {
       // Número idempotente: reenvios reutilizam o mesmo número (índice único no banco)
-      if (!numeroRef.current) numeroRef.current = `PROP-${Date.now().toString().slice(-6)}`;
+      if (!numeroRef.current) numeroRef.current = Date.now().toString().slice(-6);
       const numero = numeroAtual ?? numeroRef.current;
       // O backend recalcula e revalida todos os totais (fiscais, MB% e comissão)
       // a partir do catálogo/alíquotas vigentes — a UI só envia os insumos.

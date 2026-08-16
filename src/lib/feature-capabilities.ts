@@ -86,6 +86,8 @@ const MAP: Partial<Record<FeatureKey, CapabilityId[]>> = {
   "admin.logs.moderacao": V,
   "admin.logs.retencao": VE,
   "admin.logs.exportar": V,
+  // Sistema (universal)
+  "admin.sistema.excluir": V,
   // Moderação
   "admin.area.moderacao": VECM,
   "admin.produtos": VEM,
