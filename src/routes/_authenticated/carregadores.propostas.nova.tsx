@@ -1064,9 +1064,9 @@ function PropostaCpoPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm">
               {[
-                { n: 1 as const, label: "Identificação", go: () => setEtapa(1) },
+                { n: 1 as const, label: "Faturamento", go: () => setEtapa(1) },
                 { n: 2 as const, label: "Produtos", go: () => irParaEtapa(2) },
-                { n: 3 as const, label: "Faturamento e frete", go: () => irParaEtapa(3) },
+                { n: 3 as const, label: "Entrega e frete", go: () => irParaEtapa(3) },
                 { n: 4 as const, label: "Finalização", go: () => irParaEtapa(4) },
               ].map((s, i) => {
                 const atual = etapa === s.n;
@@ -1151,7 +1151,7 @@ function PropostaCpoPage() {
                   : etapa === 2
                     ? "Etapa 2 — Produtos"
                     : etapa === 3
-                      ? "Etapa 3 — Faturamento e frete"
+                      ? "Etapa 3 — Entrega e frete"
                       : "Etapa 4 — Finalização"}
               </h2>
             </div>
@@ -2009,7 +2009,7 @@ function PropostaCpoPage() {
           step={etapa}
           totalSteps={4}
           stepLabel={
-            ["Identificação", "Produtos", "Faturamento e frete", "Finalização"][etapa - 1]
+            ["Faturamento", "Produtos", "Entrega e frete", "Finalização"][etapa - 1]
           }
           onBack={voltarEtapa}
           onNext={avancarEtapa}
