@@ -262,6 +262,13 @@ export function aliqInterOperacao(args: {
  * DIFAL é calculado em uso e consumo/ativo e em revenda.
  * Industrialização é isenta — a mercadoria é insumo do processo produtivo.
  */
+export const UF_ORIGEM = "SC";
+
+/** Venda dentro de SC é operação interna: não há diferencial de alíquota (DIFAL). */
+export function operacaoInterna(uf: string) {
+  return (uf || "").toUpperCase() === UF_ORIGEM;
+}
+
 export function finalidadeGeraDifal(finalidade: CpoFinalidadeUso) {
   return finalidade !== "industrializacao";
 }
@@ -275,7 +282,8 @@ export function difalSempreInformativoPorFinalidade(finalidade: CpoFinalidadeUso
 }
 
 /** Aviso de guia de DIFAL em compras para uso e consumo (independe de convênio ST). */
-export function avisoDifalUsoConsumo(state: Pick<CpoState, "contribuinte" | "ie" | "finalidadeUso">) {
+export function avisoDifalUsoConsumo(state: Pick<CpoState, "contribuinte" | "ie" | "finalidadeUso"> & { uf?: string }) {
+  if (operacaoInterna(state.uf ?? "")) return null;
   if (state.finalidadeUso !== "uso_consumo" || !difalEhInformativo(state)) return null;
   return (
     "DIFAL: por se tratar de aquisição para uso e consumo, o destinatário poderá receber guia de recolhimento " +
@@ -297,14 +305,14 @@ export const OBSERVACAO_DIFAL_CONTRIBUINTE =
  */
 export function observacoesComDifal(
   texto: string | null | undefined,
-  state: Pick<CpoState, "contribuinte" | "ie">,
+  state: Pick<CpoState, "contribuinte" | "ie"> & { uf?: string },
 ) {
   const base = (texto ?? "")
     .split(/\n+/)
     .map((l) => l.trim())
     .filter((l) => l && l !== OBSERVACAO_DIFAL_CONTRIBUINTE)
     .join("\n");
-  if (!state.contribuinte) return base;
+  if (!state.contribuinte || operacaoInterna(state.uf ?? "")) return base;
   return [base, OBSERVACAO_DIFAL_CONTRIBUINTE].filter(Boolean).join("\n");
 }
 
@@ -460,7 +468,7 @@ export function calcularCpo(
     pisCofins += pcItem;
     interPonderado += interItem * bruto;
 
-    if (r.geraDifal && finalidadeGeraDifal(state.finalidadeUso)) {
+    if (r.geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !operacaoInterna(state.uf)) {
       const d = calcularDifal(bruto, interna, fcp, interItem);
       difalBase += d.base;
       difalValor += d.valor;
@@ -622,7 +630,12 @@ export function precoParaMargem(
     difalEhInformativo({ contribuinte: state.contribuinte, ie: state.ie ?? "" }) ||
     difalSempreInformativoPorFinalidade(state.finalidadeUso);
   const aplicaDifal =
-    geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !informativo && carga > inter && carga < 1;
+    geraDifal &&
+    finalidadeGeraDifal(state.finalidadeUso) &&
+    !operacaoInterna(state.uf) &&
+    !informativo &&
+    carga > inter &&
+    carga < 1;
   const dPct = aplicaDifal ? (carga - inter) / (1 - carga) : 0;
 
   const denom = f - dPct - margem;
