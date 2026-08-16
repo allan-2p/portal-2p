@@ -38,6 +38,7 @@ export type CpoProduct = {
   ativo: boolean;
   ncm_id?: string | null;
   ncm_codigo?: string | null;
+  imagem_path?: string | null;
 };
 
 export type CpoUf = {
