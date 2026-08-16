@@ -237,6 +237,23 @@ html[data-area="admin"].dark {
     transition-duration: 160ms;
     transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
+
+  /* ---- Mobile-first hardening -------------------------------------- */
+  /* Nada de rolagem horizontal na página inteira. */
+  html, body { overflow-x: hidden; max-width: 100%; }
+  /* Itens de grid/flex podem encolher (evita estouro por conteúdo largo).
+     :where() = especificidade 0, então qualquer classe explícita vence. */
+  :where(.grid) > *, :where(.flex) > * { min-width: 0; }
+  /* Texto e URLs longos quebram em vez de esticar o layout. */
+  :where(p, span, div, td, th, li, h1, h2, h3, h4) { overflow-wrap: anywhere; }
+  /* Áreas de toque confortáveis no celular. */
+  @media (max-width: 767px) {
+    :where(button, a[role="button"], [role="tab"]):not(:where(.h-4, .h-5, .h-6, .h-7, .h-8)) { touch-action: manipulation; }
+    /* iOS não dá zoom ao focar campos com fonte >= 16px */
+    :where(input, select, textarea) { font-size: max(16px, 1em); }
+  }
+  /* Respeita o notch / barra inferior em PWA e Safari iOS. */
+  body { padding-bottom: env(safe-area-inset-bottom); }
 }
 
 @layer utilities {
