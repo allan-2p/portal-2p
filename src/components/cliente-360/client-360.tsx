@@ -281,13 +281,8 @@ function Banner({
           </div>
         </div>
 
-        {/* Faixa de indicadores rápidos */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-          <MiniStat label="Vendido tri. atual" value={fmt(history?.quarters?.at(-1)?.total ?? account.quarterSold ?? 0)} />
-          <MiniStat label="Vendido tri. anterior" value={fmt(history?.quarters?.at(-2)?.total ?? account.quarterProjection ?? 0)} />
-          <MiniStat label="Ticket médio" value={fmt(history?.avgTicket ?? null)} />
-          <MiniStat label="Última compra" value={date(history?.lastPurchase)} />
-        </div>
+        {/* Contatos direto no banner */}
+        <BannerContacts accountId={account.id} />
 
         <button
           onClick={() => setOpen((v) => !v)}
@@ -296,6 +291,7 @@ function Banner({
           <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
           {open ? "Recolher dados cadastrais" : "Expandir dados cadastrais"}
         </button>
+
 
         {open && (
           <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3 border-t border-border pt-3">
