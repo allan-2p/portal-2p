@@ -75,6 +75,7 @@ import {
   type CpoState,
   textoDifalContribuinte,
   avisoDifalUsoConsumo,
+  operacaoInterna,
   precoParaMargem,
 } from "@/lib/cpo";
 import { ratearComissao, VALOR_INDICACAO, type Regime, type RateioLinha } from "@/lib/cpo-comissao";
@@ -797,7 +798,7 @@ function PropostaCpoPage() {
           : "Preencha o campo Valor do frete.",
     });
 
-  if (!state.contribuinte && d.difalAbs > 0 && abaixoPolitica)
+  if (!state.contribuinte && !operacaoInterna(state.uf) && d.difalAbs > 0 && abaixoPolitica)
     alertas.push({
       level: "warn",
       titulo: "DIFAL absorvido pressionando a margem",
@@ -1354,9 +1355,11 @@ function PropostaCpoPage() {
                         {state.contribuinte ? "Cliente contribuinte do ICMS" : "Cliente não contribuinte do ICMS"}
                       </b>{" "}
                       <span className="text-muted-foreground">
-                        {state.contribuinte
-                          ? "DIFAL por conta do destinatário."
-                          : "DIFAL absorvido na venda."}
+                        {operacaoInterna(state.uf)
+                          ? "Operação interna em SC: ICMS pela alíquota interna, sem DIFAL."
+                          : state.contribuinte
+                            ? "DIFAL por conta do destinatário."
+                            : "DIFAL absorvido na venda."}
                       </span>
                     </div>
                   </div>
@@ -1556,7 +1559,12 @@ function PropostaCpoPage() {
             <div className="flex gap-2 items-start rounded-xl border border-border bg-surface-2 px-4 py-3 text-xs text-muted-foreground">
               <Info className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
               <div>
-                {state.finalidadeUso === "revenda" ? (
+                {operacaoInterna(state.uf) ? (
+                  <>
+                    <b className="text-foreground">Operação interna (SC).</b> ICMS {fmtPct(d.inter)} · sem DIFAL —
+                    venda dentro do estado de origem.
+                  </>
+                ) : state.finalidadeUso === "revenda" ? (
                   <>
                     <b className="text-foreground">Revenda.</b> ICMS origem {fmtPct(d.inter)} · DIFAL informativo{" "}
                     {fmtBRL(d.difalEstimado)} — não afeta a margem.
