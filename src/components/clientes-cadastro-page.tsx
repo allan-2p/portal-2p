@@ -1,3 +1,4 @@
+import { useCanDelete } from "@/components/permission-gate";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -160,6 +161,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const excluirFn = useServerFn(excluirClienteFn);
 
 
+  const podeExcluir = useCanDelete();
   const [q, setQ] = useState("");
   const [fUf, setFUf] = useState("todas");
   const [fStatus, setFStatus] = useState("ativos");

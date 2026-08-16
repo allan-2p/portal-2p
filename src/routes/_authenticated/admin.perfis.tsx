@@ -54,6 +54,7 @@ export const Route = createFileRoute("/_authenticated/admin/perfis")({
 });
 
 function PerfisPage() {
+  const podeExcluir = useCanDelete();
   const { hasRole, loading: authLoading } = useAuth();
   const listFn = useServerFn(adminListPermissionProfiles);
   const saveFn = useServerFn(adminSavePermissionProfile);
