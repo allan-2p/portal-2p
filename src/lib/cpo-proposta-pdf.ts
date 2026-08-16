@@ -185,6 +185,10 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .idx{ color:var(--muted); font-size:8.6px; width:20px; font-variant-numeric:tabular-nums; }
   .pname{ font-weight:600; }
   .pmeta{ font-size:8px; color:var(--muted); margin-top:1.5px; letter-spacing:.02em; }
+  .foto{ width:16mm; }
+  .foto img{ width:14mm; height:14mm; object-fit:contain; border:1px solid var(--line); border-radius:6px; background:#fff; display:block; }
+  .foto .nofoto{ width:14mm; height:14mm; border:1px dashed var(--line); border-radius:6px; background:var(--soft); }
+
   tfoot td{ padding:6px 5px; font-size:9px; color:var(--muted); }
 
   /* TWO COL */
