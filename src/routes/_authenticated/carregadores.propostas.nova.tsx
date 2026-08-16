@@ -1267,25 +1267,6 @@ function PropostaCpoPage() {
 
 
                 {state.nome ? (
-
-                  <Field label="Finalidade de uso">
-                    <Select
-                      value={state.finalidadeUso}
-                      onValueChange={(v) => set("finalidadeUso", v as CpoFinalidadeUso)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
-                        <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
-                        <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                ) : null}
-
-                {state.nome ? (
                   <Field label="Previsão de fechamento (opcional)">
                     <Input
                       type="date"
@@ -1294,135 +1275,6 @@ function PropostaCpoPage() {
                     />
                   </Field>
                 ) : null}
-
-                {state.nome ? (
-                  <Field label="Tipo de nota fiscal">
-                    <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CpoState["tipoNf"])}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="venda">{labelTipoNf.venda}</SelectItem>
-                        <SelectItem value="triangulacao">{labelTipoNf.triangulacao}</SelectItem>
-                        <SelectItem value="bonificacao">{labelTipoNf.bonificacao}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                ) : null}
-
-                {state.nome ? (
-                  <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">Faturar para o cliente final?</p>
-                        <p className="text-xs text-muted-foreground">
-                          Marque apenas quando a nota for emitida para outro destinatário.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={!state.faturarClienteFinal}
-                        onCheckedChange={(v) =>
-                          setState((s) => ({
-                            ...s,
-                            faturarClienteFinal: !v,
-                            faturamento: v
-                              ? { ...s.faturamento, uf: s.faturamento.uf || s.uf }
-                              : s.faturamento,
-                          }))
-                        }
-                      />
-                    </div>
-
-                    {!state.faturarClienteFinal ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Field label="CPF / CNPJ">
-                          <Input
-                            value={state.faturamento.doc}
-                            className={cn(campoInvalido("fat_doc") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ doc: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Cliente">
-                          <Input
-                            value={state.faturamento.nome}
-                            className={cn(campoInvalido("fat_nome") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ nome: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Inscrição Estadual">
-                          <Input
-                            value={state.faturamento.ie}
-                            className={cn(campoInvalido("fat_ie") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ ie: e.target.value })}
-                          />
-                        </Field>
-                        <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
-                          <span className="text-xs">Contribuinte do ICMS?</span>
-                          <Switch
-                            checked={state.faturamento.contribuinte}
-                            onCheckedChange={(v) => setFaturamento({ contribuinte: v })}
-                          />
-                        </div>
-                        <Field label="CEP">
-                          <CepInput
-                            value={state.faturamento.cep}
-                            onChange={(v) => setFaturamento({ cep: v })}
-                            onFound={(e) =>
-                              setFaturamento({
-                                cep: e.cep,
-                                logradouro: e.logradouro,
-                                complemento: e.complemento || state.faturamento.complemento,
-                                bairro: e.bairro,
-                                cidade: e.cidade,
-                                uf: e.uf,
-                              })
-                            }
-                          />
-                        </Field>
-                        <Field label="Endereço">
-                          <Input
-                            value={state.faturamento.logradouro}
-                            className={cn(campoInvalido("fat_end") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ logradouro: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Número">
-                          <Input
-                            value={state.faturamento.numero}
-                            onChange={(e) => setFaturamento({ numero: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Complemento">
-                          <Input
-                            value={state.faturamento.complemento}
-                            onChange={(e) => setFaturamento({ complemento: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Bairro">
-                          <Input
-                            value={state.faturamento.bairro}
-                            onChange={(e) => setFaturamento({ bairro: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Cidade">
-                          <Input
-                            value={state.faturamento.cidade}
-                            className={cn(campoInvalido("fat_end") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ cidade: e.target.value })}
-                          />
-                        </Field>
-                        <Field label="Estado (UF)">
-                          <Input
-                            value={state.faturamento.uf}
-                            maxLength={2}
-                            className={cn(campoInvalido("fat_uf") && "border-destructive")}
-                            onChange={(e) => setFaturamento({ uf: e.target.value.toUpperCase().slice(0, 2) })}
-                          />
-                        </Field>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-
-
 
                 {state.nome ? (
                   <PropostaIndicacao
@@ -1451,6 +1303,150 @@ function PropostaCpoPage() {
                 </div>
               </div>
             ) : null}
+
+            {etapa === 2 ? (
+              <>
+                <Field label="Finalidade de uso">
+                  <Select
+                    value={state.finalidadeUso}
+                    onValueChange={(v) => set("finalidadeUso", v as CpoFinalidadeUso)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
+                      <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
+                      <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field label="Tipo de nota fiscal">
+                  <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CpoState["tipoNf"])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="venda">{labelTipoNf.venda}</SelectItem>
+                      <SelectItem value="triangulacao">{labelTipoNf.triangulacao}</SelectItem>
+                      <SelectItem value="bonificacao">{labelTipoNf.bonificacao}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">Faturar para o cliente final?</p>
+                      <p className="text-xs text-muted-foreground">
+                        Marque apenas quando a nota for emitida para outro destinatário.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={state.faturarClienteFinal}
+                      onCheckedChange={(v) =>
+                        setState((s) => ({
+                          ...s,
+                          faturarClienteFinal: v,
+                          faturamento: v
+                            ? { ...s.faturamento, uf: s.faturamento.uf || s.uf }
+                            : s.faturamento,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  {state.faturarClienteFinal ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field label="CPF / CNPJ">
+                        <Input
+                          value={state.faturamento.doc}
+                          className={cn(campoInvalido("fat_doc") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ doc: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Cliente">
+                        <Input
+                          value={state.faturamento.nome}
+                          className={cn(campoInvalido("fat_nome") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ nome: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Inscrição Estadual">
+                        <Input
+                          value={state.faturamento.ie}
+                          className={cn(campoInvalido("fat_ie") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ ie: e.target.value })}
+                        />
+                      </Field>
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                        <span className="text-xs">Contribuinte do ICMS?</span>
+                        <Switch
+                          checked={state.faturamento.contribuinte}
+                          onCheckedChange={(v) => setFaturamento({ contribuinte: v })}
+                        />
+                      </div>
+                      <Field label="CEP">
+                        <CepInput
+                          value={state.faturamento.cep}
+                          onChange={(v) => setFaturamento({ cep: v })}
+                          onFound={(e) =>
+                            setFaturamento({
+                              cep: e.cep,
+                              logradouro: e.logradouro,
+                              complemento: e.complemento || state.faturamento.complemento,
+                              bairro: e.bairro,
+                              cidade: e.cidade,
+                              uf: e.uf,
+                            })
+                          }
+                        />
+                      </Field>
+                      <Field label="Endereço">
+                        <Input
+                          value={state.faturamento.logradouro}
+                          className={cn(campoInvalido("fat_end") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ logradouro: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Número">
+                        <Input
+                          value={state.faturamento.numero}
+                          onChange={(e) => setFaturamento({ numero: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Complemento">
+                        <Input
+                          value={state.faturamento.complemento}
+                          onChange={(e) => setFaturamento({ complemento: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Bairro">
+                        <Input
+                          value={state.faturamento.bairro}
+                          onChange={(e) => setFaturamento({ bairro: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Cidade">
+                        <Input
+                          value={state.faturamento.cidade}
+                          className={cn(campoInvalido("fat_end") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ cidade: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Estado (UF)">
+                        <Input
+                          value={state.faturamento.uf}
+                          maxLength={2}
+                          className={cn(campoInvalido("fat_uf") && "border-destructive")}
+                          onChange={(e) => setFaturamento({ uf: e.target.value.toUpperCase().slice(0, 2) })}
+                        />
+                      </Field>
+                    </div>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+
 
             {etapa >= 3 ? (
               <>
