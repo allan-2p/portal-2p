@@ -1147,3 +1147,208 @@ function ActivityItem({ a }: { a: SalesforceActivity }) {
     </li>
   );
 }
+
+/* ------------------------------------------- Nova tarefa / nova interação */
+
+const TIPOS_INTERACAO = ["Ligação", "WhatsApp", "E-mail", "Reunião", "Visita"];
+
+/** Botão + modal para criar uma tarefa ou registrar uma interação (Log a Call). */
+function ActivityComposer({
+  accountId,
+  mode,
+}: {
+  accountId: string;
+  mode: "task" | "call";
+}) {
+  const isCall = mode === "call";
+  const queryClient = useQueryClient();
+  const criarTarefa = useServerFn(createSalesforceTask);
+  const registrarInteracao = useServerFn(logSalesforceInteraction);
+
+  const [open, setOpen] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [activityDate, setActivityDate] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("Normal");
+  const [tipoInteracao, setTipoInteracao] = useState(TIPOS_INTERACAO[0]);
+  const [conseguiuFalar, setConseguiuFalar] = useState<"Sim" | "Não">("Sim");
+  const [whoId, setWhoId] = useState("");
+
+  const fetchContacts = useServerFn(getSalesforceAccountContacts);
+  const contactsQ = useQuery({
+    queryKey: ["sf-account-contacts", accountId],
+    queryFn: () => fetchContacts({ data: { accountId } }),
+    staleTime: 5 * 60_000,
+    enabled: open,
+  });
+  const contacts: SalesforceContact[] = contactsQ.data?.records ?? [];
+
+  const reset = () => {
+    setSubject("");
+    setActivityDate("");
+    setDescription("");
+    setPriority("Normal");
+    setTipoInteracao(TIPOS_INTERACAO[0]);
+    setConseguiuFalar("Sim");
+    setWhoId("");
+  };
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        subject: subject.trim(),
+        description: description.trim() || null,
+        whatId: accountId,
+        whoId: whoId || null,
+        ...(isCall
+          ? { tipoInteracao, conseguiuFalar }
+          : { activityDate: activityDate || null, priority }),
+      };
+      return isCall
+        ? registrarInteracao({ data: payload })
+        : criarTarefa({ data: payload });
+    },
+    onSuccess: () => {
+      toast.success(isCall ? "Interação registrada." : "Tarefa criada.");
+      queryClient.invalidateQueries({ queryKey: ["sf-account-activities", accountId] });
+      setOpen(false);
+      reset();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Não foi possível salvar."),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button
+          className={cn(
+            "inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors",
+            isCall
+              ? "bg-surface-2 text-foreground hover:bg-surface"
+              : "bg-primary text-primary-foreground hover:opacity-90",
+          )}
+        >
+          {isCall ? <PhoneCall className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+          {isCall ? "Nova interação" : "Nova tarefa"}
+        </button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            {isCall ? <PhoneCall className="h-4 w-4 text-primary" /> : <Plus className="h-4 w-4 text-primary" />}
+            {isCall ? "Registrar interação" : "Nova tarefa"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <label className="block">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Assunto</span>
+            <input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder={isCall ? "Ex.: Follow-up sobre proposta" : "Ex.: Enviar cotação atualizada"}
+              className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+            />
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            {isCall ? (
+              <>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Tipo</span>
+                  <select
+                    value={tipoInteracao}
+                    onChange={(e) => setTipoInteracao(e.target.value)}
+                    className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                  >
+                    {TIPOS_INTERACAO.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Falou com o cliente?
+                  </span>
+                  <select
+                    value={conseguiuFalar}
+                    onChange={(e) => setConseguiuFalar(e.target.value as "Sim" | "Não")}
+                    className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                  >
+                    <option value="Sim">Sim</option>
+                    <option value="Não">Não</option>
+                  </select>
+                </label>
+              </>
+            ) : (
+              <>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Vencimento</span>
+                  <input
+                    type="date"
+                    value={activityDate}
+                    onChange={(e) => setActivityDate(e.target.value)}
+                    className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Prioridade</span>
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                  >
+                    <option value="High">Alta</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Low">Baixa</option>
+                  </select>
+                </label>
+              </>
+            )}
+          </div>
+
+          <label className="block">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Contato (opcional)</span>
+            <select
+              value={whoId}
+              onChange={(e) => setWhoId(e.target.value)}
+              className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+            >
+              <option value="">— sem contato —</option>
+              {contacts.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              {isCall ? "Resumo da conversa" : "Descrição"}
+            </span>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-1 w-full min-h-[110px] rounded-lg bg-background border border-border px-3 py-2 text-sm resize-y focus:outline-none focus:border-primary/50"
+            />
+          </label>
+        </div>
+
+        <DialogFooter>
+          <button
+            onClick={() => setOpen(false)}
+            className="px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface text-sm font-medium"
+          >
+            Cancelar
+          </button>
+          <button
+            disabled={!subject.trim() || mutation.isPending}
+            onClick={() => mutation.mutate()}
+            className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-40"
+          >
+            {mutation.isPending ? "Salvando…" : isCall ? "Registrar interação" : "Criar tarefa"}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
