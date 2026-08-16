@@ -212,13 +212,12 @@ function HistoricoCpoPage() {
               <thead>
                 <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-4 py-3">Nº</th>
+                  <th className="text-left px-4 py-3">Cliente</th>
                   <th className="text-left px-4 py-3">Proposta</th>
                   <th className="text-left px-4 py-3">Nº SAP</th>
-                  <th className="text-left px-4 py-3">Cliente</th>
-
-                  <th className="text-left px-4 py-3">UF</th>
                   <th className="text-right px-4 py-3">Valor</th>
                   <th className="text-left px-4 py-3">Data</th>
+                  <th className="text-left px-4 py-3">Consultor</th>
                   <th className="text-center px-4 py-3">Status</th>
                   <th className="text-right px-4 py-3">Ações</th>
                 </tr>
@@ -227,15 +226,14 @@ function HistoricoCpoPage() {
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
+                    <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
                     <td className="px-4 py-3">{r.nome || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.numero_sap || "—"}</td>
-                    <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
-
-                    <td className="px-4 py-3">{r.uf}</td>
                     <td className="px-4 py-3 text-right font-semibold">{fmtBRL(r.totais.valorTotal ?? 0)}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("pt-BR")}
                     </td>
+                    <td className="px-4 py-3">{r.consultor_nome || r.criado_por_nome || "—"}</td>
                     <td className="px-4 py-3 text-center">
                       <StatusPicker
                         compact
@@ -278,7 +276,6 @@ function HistoricoCpoPage() {
                         )}
                       </div>
                     </td>
-
                   </tr>
                 ))}
                 {filtered.length === 0 && (
