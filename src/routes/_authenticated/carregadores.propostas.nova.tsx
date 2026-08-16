@@ -422,6 +422,16 @@ function PropostaCpoPage() {
   const set = <K extends keyof CpoState>(k: K, v: CpoState[K]) =>
     setState((s) => ({ ...s, [k]: v }));
 
+  /** Atualiza campos do endereço de entrega. */
+  const setEntrega = (patch: Partial<CpoState["entrega"]>) =>
+    setState((s) => ({ ...s, entrega: { ...s.entrega, ...patch } }));
+
+  /** Entrega precisa ficar no mesmo estado do faturamento. */
+  const entregaUfInvalida =
+    state.entregaDiferente &&
+    !!state.entrega.uf.trim() &&
+    state.entrega.uf.trim().toUpperCase() !== state.uf.trim().toUpperCase();
+
   const setItem = (key: string, patch: Partial<CpoItem>) =>
     setState((s) => ({
       ...s,
