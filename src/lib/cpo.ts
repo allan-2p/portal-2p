@@ -215,7 +215,8 @@ export type CpoState = {
   /** Entrega em endereço diferente do faturamento (mesmo estado). */
   entregaDiferente: boolean;
   entrega: CpoEndereco;
-  freteMod: CpoFreteMod;
+  /** Modalidade de frete — começa vazia e é escolhida pelo usuário. */
+  freteMod: CpoFreteMod | "";
   /** Entrega em área rural (perguntado apenas no CIF). */
   freteAreaRural: boolean;
   freteValor: number;
@@ -368,7 +369,7 @@ export function novoEstado(): CpoState {
     formaPagamento: "",
     entregaDiferente: false,
     entrega: novoEndereco("SP"),
-    freteMod: "CIF",
+    freteMod: "",
     freteAreaRural: false,
     freteValor: 0,
     transportadora: null,

@@ -277,9 +277,9 @@ function PropostaCpoPage() {
         formaPagamento: (((data as any).forma_pagamento as string | null) ?? "") as CpoState["formaPagamento"],
         entregaDiferente: !!(data as any).entrega_diferente,
         entrega: { ...novoEndereco(data.uf), ...(((data as any).entrega as Record<string, string>) ?? {}) },
-        freteMod: (data.frete_mod === "FOB" || data.frete_mod === "DEDICADO"
+        freteMod: (data.frete_mod === "FOB" || data.frete_mod === "DEDICADO" || data.frete_mod === "CIF"
           ? data.frete_mod
-          : "CIF") as CpoFreteMod,
+          : "") as CpoState["freteMod"],
         freteAreaRural: !!(data as any).frete_area_rural,
         freteValor: money2(data.frete_valor ?? 0),
         transportadora: (data as any).transportadora
@@ -485,10 +485,41 @@ function PropostaCpoPage() {
     !!state.entrega.uf.trim() &&
     state.entrega.uf.trim().toUpperCase() !== state.uf.trim().toUpperCase();
 
+  /**
+   * Endereço padrão de entrega — sempre o do cadastro do cliente. Enquanto a
+   * opção de endereço alternativo estiver desativada, é ele que é persistido
+   * e usado na cotação do frete.
+   */
+  const enderecoPadraoCliente = useMemo(() => {
+    const soDigitos = (v?: string | null) => (v ?? "").replace(/\D/g, "");
+    const c = (clientesQ.data ?? []).find(
+      (x) => soDigitos(x.cliente_doc) && soDigitos(x.cliente_doc) === soDigitos(state.doc),
+    );
+    if (!c) return null;
+    return {
+      cep: c.cep ?? "",
+      logradouro: c.logradouro ?? "",
+      numero: c.numero ?? "",
+      complemento: c.complemento ?? "",
+      bairro: c.bairro ?? "",
+      cidade: c.cidade ?? "",
+      uf: c.uf || state.uf,
+      contato: "",
+      telefone: c.cliente_telefone ?? "",
+    } satisfies CpoState["entrega"];
+  }, [clientesQ.data, state.doc, state.uf]);
+
+  /** Endereço que efetivamente vale para a proposta. */
+  const entregaEfetiva: CpoState["entrega"] = state.entregaDiferente
+    ? state.entrega
+    : (enderecoPadraoCliente ?? { ...state.entrega, uf: state.entrega.uf || state.uf });
+
   /** Endereço efetivo de entrega — base da cotação de frete. */
-  const destinoFrete = state.entregaDiferente
-    ? { uf: state.entrega.uf, cidade: state.entrega.cidade, cep: state.entrega.cep }
-    : { uf: state.uf, cidade: state.entrega.cidade, cep: state.entrega.cep };
+  const destinoFrete = {
+    uf: entregaEfetiva.uf || state.uf,
+    cidade: entregaEfetiva.cidade,
+    cep: entregaEfetiva.cep,
+  };
 
 
   const setItem = (key: string, patch: Partial<CpoItem>) =>
@@ -663,6 +694,7 @@ function PropostaCpoPage() {
     errosFechamento.push(`${itensSemValor.length} item(ns) sem valor unitário.`);
   if (itensSemQtd.length)
     errosFechamento.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
+  if (!state.freteMod) errosFechamento.push("Selecione a modalidade de frete.");
   if (state.freteMod === "CIF" && !state.transportadora)
     errosFechamento.push("Cotação de frete pendente — selecione a transportadora.");
   if (state.freteMod === "DEDICADO" && !(state.freteValor > 0))
@@ -716,7 +748,7 @@ function PropostaCpoPage() {
       motivo: "Há linhas preenchidas sem produto selecionado.",
       corrigir: "Selecione o produto ou remova a linha.",
     });
-  if (FRETE_ABSORVIDO.includes(state.freteMod) && !(state.freteValor > 0))
+  if (state.freteMod && FRETE_ABSORVIDO.includes(state.freteMod as CpoFreteMod) && !(state.freteValor > 0))
     alertas.push({
       level: "warn",
       titulo: `Frete ${state.freteMod} sem valor informado`,
@@ -808,13 +840,21 @@ function PropostaCpoPage() {
         },
         itens: state.itens
           .filter((i) => i.produtoId)
-          .map((i) => ({
-            codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? null,
-            nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
-            qtd: i.qtd,
-            valor: i.valor,
-          })),
-        freteMod: state.freteMod,
+          .map((i) => {
+            const prod = produtos.find((p) => p.id === i.produtoId);
+            const ncm =
+              prod?.ncm_codigo ??
+              (ncmsQ.data ?? []).find((n) => n.id === prod?.ncm_id)?.codigo ??
+              null;
+            return {
+              codigo: prod?.codigo ?? null,
+              nome: prod?.nome ?? "",
+              ncm,
+              qtd: i.qtd,
+              valor: i.valor,
+            };
+          }),
+        freteMod: state.freteMod || "—",
         freteValor: state.freteValor,
         observacoes: observacoesFinal,
         impostos: {
@@ -908,11 +948,11 @@ function PropostaCpoPage() {
           faturamento: state.faturamento as unknown as Record<string, string | boolean>,
           formaPagamento: state.formaPagamento || null,
           entregaDiferente: state.entregaDiferente,
-          entrega: state.entrega,
+          entrega: entregaEfetiva,
           freteMod: state.freteMod,
           freteAreaRural: state.freteMod === "CIF" ? state.freteAreaRural : false,
-          freteValor: state.freteMod === "FOB" ? 0 : money2(state.freteValor),
-          transportadora: state.freteMod === "FOB" ? null : state.transportadora,
+          freteValor: state.freteMod === "FOB" || !state.freteMod ? 0 : money2(state.freteValor),
+          transportadora: state.freteMod === "FOB" || !state.freteMod ? null : state.transportadora,
 
           observacoes: observacoesFinal.trim() || null,
           itens: state.itens
@@ -1675,13 +1715,13 @@ function PropostaCpoPage() {
                   {state.entregaDiferente
                     ? "Endereço alternativo informado abaixo."
                     : [
-                        [state.entrega.logradouro, state.entrega.numero].filter(Boolean).join(", "),
-                        state.entrega.bairro,
-                        [state.entrega.cidade, state.uf].filter(Boolean).join(" / "),
-                        state.entrega.cep,
+                        [entregaEfetiva.logradouro, entregaEfetiva.numero].filter(Boolean).join(", "),
+                        entregaEfetiva.bairro,
+                        [entregaEfetiva.cidade, entregaEfetiva.uf || state.uf].filter(Boolean).join(" / "),
+                        entregaEfetiva.cep,
                       ]
                         .filter(Boolean)
-                        .join(" · ") || "Endereço padrão do faturamento."}
+                        .join(" · ") || "Endereço padrão do cadastro do cliente."}
                 </p>
               </div>
 
@@ -1698,7 +1738,9 @@ function PropostaCpoPage() {
                     setState((prev) => ({
                       ...prev,
                       entregaDiferente: v,
-                      entrega: v ? { ...prev.entrega, uf: prev.entrega.uf || prev.uf } : prev.entrega,
+                      entrega: v
+                        ? { ...(enderecoPadraoCliente ?? prev.entrega), uf: (enderecoPadraoCliente?.uf || prev.entrega.uf || prev.uf) }
+                        : prev.entrega,
                     }))
                   }
                 />
@@ -1770,7 +1812,7 @@ function PropostaCpoPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Modalidade de frete">
                 <Select
-                  value={state.freteMod}
+                  value={state.freteMod || undefined}
                   onValueChange={(v) =>
                     setState((s) => ({
                       ...s,
@@ -1782,7 +1824,7 @@ function PropostaCpoPage() {
                     }))
                   }
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Selecione a modalidade" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="CIF">{labelFreteMod.CIF}</SelectItem>
                     <SelectItem value="FOB">{labelFreteMod.FOB}</SelectItem>
@@ -1847,6 +1889,13 @@ function PropostaCpoPage() {
                 onSelect={(t) =>
                   setState((s) => ({ ...s, transportadora: t, freteValor: money2(t.total) }))
                 }
+                onInvalidate={() =>
+                  setState((s) =>
+                    s.transportadora || s.freteValor
+                      ? { ...s, transportadora: null, freteValor: 0 }
+                      : s,
+                  )
+                }
               />
             ) : null}
 
@@ -1885,27 +1934,159 @@ function PropostaCpoPage() {
                 ) : null}
               </Field>
 
-              <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-2 text-sm">
-                <p className="font-semibold">Revisão final</p>
+              <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-4 text-sm">
+                <p className="font-semibold">Resumo do pedido</p>
 
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Cliente</span>
-                  <b>{state.nome || "—"}</b>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                  <ResumoLinha k="Proposta" v={state.propostaNome || "—"} />
+                  <ResumoLinha k="Nº SAP" v={state.numeroSap || "em geração"} />
+                  <ResumoLinha k="Cliente" v={state.nome || "—"} />
+                  <ResumoLinha k="CNPJ / CPF" v={state.doc || "—"} />
+                  <ResumoLinha k="Inscrição estadual" v={state.ie || "—"} />
+                  <ResumoLinha k="Contribuinte ICMS" v={state.contribuinte ? "Sim" : "Não"} />
+                  <ResumoLinha k="Consultor" v={consultorProposta ?? "—"} />
+                  <ResumoLinha
+                    k="Previsão de fechamento"
+                    v={
+                      state.previsaoFechamento
+                        ? new Date(`${state.previsaoFechamento}T00:00:00`).toLocaleDateString("pt-BR")
+                        : "—"
+                    }
+                  />
+                  <ResumoLinha k="Finalidade de uso" v={labelFinalidadeUso[state.finalidadeUso]} />
+                  <ResumoLinha
+                    k="Indicação"
+                    v={state.indicacao ? `Sim — ${state.padrinhoNome || "padrinho não informado"}` : "Não"}
+                  />
                 </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Itens</span>
-                  <b>{state.itens.filter((i) => i.produtoId).length}</b>
+
+                <div className="border-t border-border pt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                  <ResumoLinha k="Tipo de nota" v={labelTipoNf[state.tipoNf]} />
+                  <ResumoLinha k="Faturar para o cliente final" v={state.faturarClienteFinal ? "Sim" : "Não"} />
+                  <ResumoLinha k="UF de faturamento" v={state.uf || "—"} />
+                  {state.faturarClienteFinal ? (
+                    <>
+                      <ResumoLinha k="Destinatário da nota" v={state.faturamento.nome || "—"} />
+                      <ResumoLinha k="CNPJ / CPF do destinatário" v={state.faturamento.doc || "—"} />
+                      <ResumoLinha
+                        k="Endereço de faturamento"
+                        v={
+                          [
+                            [state.faturamento.logradouro, state.faturamento.numero].filter(Boolean).join(", "),
+                            state.faturamento.bairro,
+                            [state.faturamento.cidade, state.faturamento.uf].filter(Boolean).join(" / "),
+                            state.faturamento.cep,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "—"
+                        }
+                      />
+                    </>
+                  ) : null}
+                  <ResumoLinha
+                    k="Forma de pagamento"
+                    v={state.formaPagamento ? labelFormaPagamento[state.formaPagamento] : "—"}
+                  />
                 </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Frete ({state.freteMod})</span>
-                  <b>{fmtBRL(state.freteValor)}</b>
+
+                <div className="border-t border-border pt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                  <ResumoLinha
+                    k="Endereço de entrega"
+                    v={
+                      [
+                        [entregaEfetiva.logradouro, entregaEfetiva.numero].filter(Boolean).join(", "),
+                        entregaEfetiva.complemento,
+                        entregaEfetiva.bairro,
+                        [entregaEfetiva.cidade, entregaEfetiva.uf || state.uf].filter(Boolean).join(" / "),
+                        entregaEfetiva.cep,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || "—"
+                    }
+                  />
+                  <ResumoLinha
+                    k="Entrega"
+                    v={state.entregaDiferente ? "Endereço alternativo" : "Endereço padrão do cliente"}
+                  />
+                  <ResumoLinha k="Modalidade de frete" v={state.freteMod ? labelFreteMod[state.freteMod] : "—"} />
+                  {state.freteMod === "CIF" ? (
+                    <>
+                      <ResumoLinha k="Área rural" v={state.freteAreaRural ? "Sim" : "Não"} />
+                      <ResumoLinha k="Transportadora" v={state.transportadora?.nome ?? "—"} />
+                      <ResumoLinha
+                        k="Prazo de entrega"
+                        v={state.transportadora ? `${state.transportadora.prazo} dia(s) útil(eis)` : "—"}
+                      />
+                    </>
+                  ) : null}
+                  <ResumoLinha k="Valor do frete" v={fmtBRL(state.freteValor)} />
                 </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Total da proposta</span>
-                  <b>{fmtBRL(d.valorTotalProposta)}</b>
+
+                <div className="border-t border-border pt-3 space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Produtos</p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-muted-foreground">
+                          <th className="text-left font-medium py-1">Produto</th>
+                          <th className="text-left font-medium py-1">NCM</th>
+                          <th className="text-right font-medium py-1">Qtd</th>
+                          <th className="text-right font-medium py-1">Valor unit.</th>
+                          <th className="text-right font-medium py-1">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {state.itens
+                          .filter((i) => i.produtoId)
+                          .map((i) => {
+                            const prod = produtos.find((p) => p.id === i.produtoId);
+                            const ncm =
+                              prod?.ncm_codigo ??
+                              (ncmsQ.data ?? []).find((n) => n.id === prod?.ncm_id)?.codigo ??
+                              "—";
+                            return (
+                              <tr key={i.key} className="border-t border-border/60">
+                                <td className="py-1.5 pr-2">
+                                  <span className="font-medium">{prod?.nome ?? "—"}</span>
+                                  {prod?.codigo ? (
+                                    <span className="text-muted-foreground"> · {prod.codigo}</span>
+                                  ) : null}
+                                </td>
+                                <td className="py-1.5 pr-2 tabular-nums">{ncm}</td>
+                                <td className="py-1.5 text-right tabular-nums">{i.qtd}</td>
+                                <td className="py-1.5 text-right tabular-nums">{fmtBRL(i.valor)}</td>
+                                <td className="py-1.5 text-right tabular-nums font-medium">
+                                  {fmtBRL(i.valor * i.qtd)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
+
+                <div className="border-t border-border pt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                  <ResumoLinha k="Total dos itens" v={fmtBRL(d.valorItens)} />
+                  <ResumoLinha k={`Frete (${state.freteMod || "—"})`} v={fmtBRL(state.freteValor)} />
+                  <ResumoLinha k="IPI destacado" v={fmtBRL(d.ipiValor)} />
+                  <ResumoLinha k="Margem bruta" v={`${fmtPct(d.mbPct)} · ${fmtBRL(d.mb)}`} />
+                  <ResumoLinha
+                    k={`Comissão do vendedor (${regimeVendedor})`}
+                    v={`${fmtBRL(comissaoVendedor.valor)} · ${fmtPct(comissaoVendedor.pct)}`}
+                  />
+                  <ResumoLinha k="Total da proposta" v={fmtBRL(d.valorTotalProposta)} strong />
+                </div>
+
+                {observacoesFinal.trim() ? (
+                  <div className="border-t border-border pt-3">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Observações</p>
+                    <p className="text-xs whitespace-pre-wrap">{observacoesFinal}</p>
+                  </div>
+                ) : null}
+
                 <p className="text-xs text-muted-foreground pt-1">
-                  Confira os valores e finalize salvando a proposta ou concluindo o pedido.
+                  Confira os dados e finalize salvando a proposta ou concluindo o pedido.
                 </p>
               </div>
               </>
@@ -1920,7 +2101,7 @@ function PropostaCpoPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 <LiveTotal label="Itens" value={fmtBRL(d.valorItens)} />
-                <LiveTotal label={`Frete (${state.freteMod})`} value={fmtBRL(state.freteValor)} />
+                <LiveTotal label={`Frete (${state.freteMod || "—"})`} value={fmtBRL(state.freteValor)} />
                 <LiveTotal label="Total da proposta" value={fmtBRL(d.valorTotalProposta)} strong />
                 <LiveTotal label="Margem bruta" value={fmtPct(d.mbPct)} hint={fmtBRL(d.mb)} />
                 <LiveTotal label={`Comissão do vendedor (${regimeVendedor})`} value={fmtBRL(comissaoVendedor.valor)} hint={fmtPct(comissaoVendedor.pct)} />
@@ -1945,7 +2126,7 @@ function PropostaCpoPage() {
               />
               <DreRow
                 k="Frete"
-                sub={`Modalidade ${state.freteMod}`}
+                sub={`Modalidade ${state.freteMod || "não informada"}`}
                 v={fmtBRL(state.freteValor)}
                 tone="neutral"
               />
@@ -2220,7 +2401,7 @@ function PropostaCpoPage() {
                     </div>
                   ))}
                 <div className="flex items-center justify-between gap-3 pt-1 border-t border-border">
-                  <span className="text-muted-foreground">Frete ({state.freteMod})</span>
+                  <span className="text-muted-foreground">Frete ({state.freteMod || "—"})</span>
                   <span className="tabular-nums">{fmtBRL(state.freteValor)}</span>
                 </div>
               </div>
@@ -2378,6 +2559,16 @@ function DreRow({
         {sub && <div className="text-[11px] text-muted-foreground mt-0.5 max-w-[340px]">{sub}</div>}
       </div>
       <div className="font-bold whitespace-nowrap">{v}</div>
+    </div>
+  );
+}
+
+/** Linha do resumo do pedido (etapa de finalização). */
+function ResumoLinha({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3 text-sm">
+      <span className="text-muted-foreground shrink-0">{k}</span>
+      <span className={cn("text-right break-words", strong ? "font-bold" : "font-medium")}>{v}</span>
     </div>
   );
 }
