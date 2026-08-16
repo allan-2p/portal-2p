@@ -107,3 +107,20 @@ export async function fetchAccountOwners(
   }
   return out;
 }
+
+/** Busca uma conta específica do banco espelho. */
+export async function fetchAccountById(
+  instance: AccountsInstance,
+  id: string,
+): Promise<AccountDbRow | null> {
+  if (!/^[a-zA-Z0-9]{15,18}$/.test(id)) return null;
+  const cfg = configFor(instance);
+  if (!cfg) throw new Error(`Base de contas não configurada para ${instance}`);
+  const params = new URLSearchParams({ select: COLUMNS, id: `eq.${id}`, limit: "1" });
+  const res = await fetch(`${cfg.url}/rest/v1/account_sf?${params.toString()}`, {
+    headers: { apikey: cfg.key, Authorization: `Bearer ${cfg.key}`, Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`Banco de contas ${instance} ${res.status}`);
+  const rows = (await res.json()) as AccountDbRow[];
+  return rows[0] ?? null;
+}
