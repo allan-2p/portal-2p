@@ -446,10 +446,10 @@ export function calcularCpo(
     });
 
     const semIpi = bruto / (1 + r.ipi);
-    // ICMS incide sobre o valor da mercadoria + frete rateado por item.
-    const freteItem = brutoTotal > 0 ? frete * (bruto / brutoTotal) : 0;
-    const baseIcms = semIpi + freteItem;
+    // Frete vai "por fora": não entra na base de ICMS/DIFAL nem na MB/comissão.
+    const baseIcms = semIpi;
     const icmsItem = baseIcms * interItem;
+
     const pcItem = (semIpi - icmsItem) * r.pisCofins;
 
     valorItens += bruto;
