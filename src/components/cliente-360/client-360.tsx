@@ -333,6 +333,77 @@ function Banner({
   );
 }
 
+/** Trilha de contatos-chave exibida direto no banner do cliente. */
+function BannerContacts({ accountId }: { accountId: string }) {
+  const fetchContacts = useServerFn(getSalesforceAccountContacts);
+  const q = useQuery({
+    queryKey: ["sf-account-contacts", accountId],
+    queryFn: () => fetchContacts({ data: { accountId } }),
+    staleTime: 5 * 60_000,
+  });
+  const contacts: SalesforceContact[] = q.data?.records ?? [];
+  const [expanded, setExpanded] = useState(false);
+  if (q.isLoading || contacts.length === 0) return null;
+  const visiveis = expanded ? contacts : contacts.slice(0, 4);
+
+  return (
+    <div className="mt-4 border-t border-border pt-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Users className="h-3.5 w-3.5 text-primary" />
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          Contatos
+        </span>
+        <span className="text-[10px] text-muted-foreground">{contacts.length}</span>
+        {contacts.length > 4 && (
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="ml-auto text-[11px] text-primary font-medium hover:underline"
+          >
+            {expanded ? "Ver menos" : `Ver todos (${contacts.length})`}
+          </button>
+        )}
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 sm:grid sm:grid-cols-2 xl:grid-cols-4 sm:overflow-visible">
+        {visiveis.map((c) => (
+          <div
+            key={c.id}
+            className="shrink-0 w-[240px] sm:w-auto rounded-xl border border-border bg-background/40 px-3 py-2 hover:border-primary/40 transition-colors"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-8 w-8 shrink-0 rounded-full bg-primary/15 text-primary grid place-items-center text-[11px] font-semibold">
+                {c.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-medium truncate">{c.name}</div>
+                <div className="text-[10px] text-muted-foreground truncate">{c.title ?? "—"}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-1.5">
+              {(c.mobile || c.phone) && (
+                <a
+                  href={`tel:${(c.mobile || c.phone)!.replace(/\s/g, "")}`}
+                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
+                >
+                  <Smartphone className="h-3 w-3" /> {c.mobile || c.phone}
+                </a>
+              )}
+              {c.email && (
+                <a
+                  href={`mailto:${c.email}`}
+                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
+                >
+                  <Mail className="h-3 w-3" /> e-mail
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-surface-2/50 px-3 py-2">
