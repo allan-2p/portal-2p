@@ -5,9 +5,12 @@ export type PropostaPdfItem = {
   nome: string;
   /** Código NCM do produto (exibido logo abaixo do nome). */
   ncm?: string | null;
+  /** Foto do produto (URL assinada ou data URL) exibida na linha do item. */
+  foto?: string | null;
   qtd: number;
   valor: number;
 };
+
 
 export type PropostaPdfData = {
   numero?: string;
@@ -86,11 +89,18 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   const validade = new Date(hoje.getTime() + (p.validadeDias ?? 15) * 86400000).toLocaleDateString("pt-BR");
   const numero = p.numero ?? hoje.getTime().toString().slice(-6);
 
+  const temFoto = p.itens.some((i) => !!i.foto);
+
   const linhas = p.itens
     .map(
       (i, idx) => `
       <tr>
         <td class="idx">${String(idx + 1).padStart(2, "0")}</td>
+        ${
+          temFoto
+            ? `<td class="foto">${i.foto ? `<img src="${esc(i.foto)}" alt="${esc(i.nome)}">` : `<div class="nofoto"></div>`}</td>`
+            : ""
+        }
         <td class="prod"><span class="pname">${esc(i.nome)}</span>${
           i.ncm || i.codigo
             ? `<div class="pmeta">${[i.ncm ? `NCM ${esc(i.ncm)}` : "", i.codigo ? `Cód. ${esc(i.codigo)}` : ""].filter(Boolean).join(" · ")}</div>`
@@ -102,6 +112,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       </tr>`,
     )
     .join("");
+
 
   const qtdTotal = p.itens.reduce((a, i) => a + i.qtd, 0);
 
@@ -174,6 +185,10 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .idx{ color:var(--muted); font-size:8.6px; width:20px; font-variant-numeric:tabular-nums; }
   .pname{ font-weight:600; }
   .pmeta{ font-size:8px; color:var(--muted); margin-top:1.5px; letter-spacing:.02em; }
+  .foto{ width:16mm; }
+  .foto img{ width:14mm; height:14mm; object-fit:contain; border:1px solid var(--line); border-radius:6px; background:#fff; display:block; }
+  .foto .nofoto{ width:14mm; height:14mm; border:1px dashed var(--line); border-radius:6px; background:var(--soft); }
+
   tfoot td{ padding:6px 5px; font-size:9px; color:var(--muted); }
 
   /* TWO COL */
@@ -264,11 +279,12 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="sech"><span>Escopo de fornecimento</span></div>
       <table>
         <thead><tr>
-          <th></th><th>Produto</th><th class="c">Qtd</th><th class="r">Valor unit.</th><th class="r">Total</th>
+          <th></th>${temFoto ? "<th></th>" : ""}<th>Produto</th><th class="c">Qtd</th><th class="r">Valor unit.</th><th class="r">Total</th>
         </tr></thead>
         <tbody>${linhas}</tbody>
         <tfoot><tr>
-          <td colspan="2">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
+          <td colspan="${temFoto ? 3 : 2}">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
+
           <td colspan="3" class="r">Frete ${esc(p.freteMod)} · <b style="color:var(--ink)">${fmtBRL(p.freteValor)}</b></td>
         </tr></tfoot>
       </table>
