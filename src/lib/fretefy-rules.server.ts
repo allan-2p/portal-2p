@@ -16,7 +16,6 @@ import {
   TRILHOS_SAO_MIGUEL,
   TRILHOS_SCHREIBER_TDE,
   TRILHOS_TRANSCARAPIA,
-  normalizarCodigo,
   temCarregadorAcimaDe,
 } from "./fretefy-regras";
 
@@ -24,11 +23,6 @@ export * from "./fretefy-regras";
 
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
 const soDigitos = (s?: string) => (s ?? "").replace(/\D/g, "");
-
-/** Normaliza o código do produto (remove zeros à esquerda). */
-export function normalizarCodigo(codigo: string) {
-  return String(codigo ?? "").replace(/^0+/, "");
-}
 
 /** Primeiro trilho do carrinho presente na lista oficial. */
 export function detectarTrilho(codigosCarrinho: string[]): string | null {
