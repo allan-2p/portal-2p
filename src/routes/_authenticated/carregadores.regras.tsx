@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/regras")({
       { title: "Regras de Propostas — Portal 2P Carregadores" },
       { name: "description", content: "Como as propostas de carregadores são calculadas: impostos, DIFAL, margem bruta e comissões." },
       { property: "og:title", content: "Regras de Propostas — Portal 2P Carregadores" },
-      { property: "og:description", content: "Documentação completa do motor de cálculo das propostas CPO." },
+      { property: "og:description", content: "Documentação completa do motor de cálculo das propostas de carregadores." },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],

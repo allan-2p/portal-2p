@@ -84,7 +84,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   const hoje = new Date();
   const dataStr = hoje.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   const validade = new Date(hoje.getTime() + (p.validadeDias ?? 15) * 86400000).toLocaleDateString("pt-BR");
-  const numero = p.numero ?? `CPO-${hoje.getTime().toString().slice(-6)}`;
+  const numero = p.numero ?? `PROP-${hoje.getTime().toString().slice(-6)}`;
 
   const linhas = p.itens
     .map(

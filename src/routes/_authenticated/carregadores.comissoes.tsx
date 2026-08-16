@@ -8,9 +8,9 @@ import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 export const Route = createFileRoute("/_authenticated/carregadores/comissoes")({
   head: () => ({
     meta: [
-      { title: "Comissões CPO — Portal 2P Carregadores" },
+      { title: "Comissões — Portal 2P Carregadores" },
       { name: "description", content: "Política tributária e regras de comissão das propostas de carregadores." },
-      { property: "og:title", content: "Comissões CPO — Portal 2P Carregadores" },
+      { property: "og:title", content: "Comissões — Portal 2P Carregadores" },
       { property: "og:description", content: "Defina base e percentual de comissão, IPI, PIS/COFINS e margens mínimas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
