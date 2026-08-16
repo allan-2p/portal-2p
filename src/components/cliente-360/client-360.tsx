@@ -535,15 +535,25 @@ function VisaoGeral({
           )}
         </Card>
       </div>
+
+      {/* Indicadores comerciais do cliente */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <MiniStat
+          label="Vendido tri. atual"
+          value={fmt(history?.quarters?.at(-1)?.total ?? account.quarterSold ?? 0)}
+        />
+        <MiniStat
+          label="Vendido tri. anterior"
+          value={fmt(history?.quarters?.at(-2)?.total ?? account.quarterProjection ?? 0)}
+        />
+        <MiniStat label="Ticket médio" value={fmt(history?.avgTicket ?? null)} />
+        <MiniStat label="Última compra" value={date(history?.lastPurchase)} />
+      </div>
     </div>
   );
 }
 
-function normQuarterKey(q: any) {
-  if (q.key) return String(q.key);
-  const m = /(\d)[ºo]?\s*T?.*?(\d{4})/.exec(q.label ?? "");
-  return m ? `${m[2]}-T${m[1]}` : String(q.label ?? "");
-}
+
 
 function Signal({ label, value }: { label: string; value: string }) {
   return (
