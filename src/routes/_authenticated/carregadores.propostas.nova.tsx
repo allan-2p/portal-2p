@@ -1827,7 +1827,7 @@ function PropostaCpoPage() {
             ) : null}
 
 
-            {etapa === 4 ? (
+            {etapa === 5 ? (
               <>
               <Field label="Forma de pagamento">
                 <Select
