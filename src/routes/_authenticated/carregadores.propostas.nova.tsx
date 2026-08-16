@@ -2347,7 +2347,13 @@ function PropostaCpoPage() {
               </p>
               <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center justify-between">
                 <span className="text-muted-foreground">Status que será aplicado</span>
-                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                <span
+                  className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: propostaStatusStyle("Aguardando Pagamento").bg,
+                    color: propostaStatusStyle("Aguardando Pagamento").fg,
+                  }}
+                >
                   {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : null}
                   Aguardando Pagamento
                 </span>
