@@ -248,7 +248,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div>
         <div class="hkicker">Proposta comercial</div>
         <div class="htitle">${esc(p.propostaNome?.trim() || numero)}</div>
-        <div class="hkicker" style="margin-top:6px">${esc(numero)}${p.propostaNome?.trim() ? ` · ${esc(numero)}` : ""}</div>
+        <div class="hkicker" style="margin-top:6px">${esc(numero)}</div>
       </div>
       <div class="hmeta">
         Emissão <b>${esc(dataStr)}</b><br>
