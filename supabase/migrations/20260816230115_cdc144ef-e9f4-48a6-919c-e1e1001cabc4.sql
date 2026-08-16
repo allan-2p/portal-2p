@@ -1,0 +1,1 @@
+DELETE FROM public.client_notes WHERE notes = 'Teste de contexto Atlas.';
