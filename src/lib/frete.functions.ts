@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type CotarFreteData = {
-  itens: { codigo: string; quantidade: number; pesoLiquido?: number }[];
+  itens: { codigo: string; quantidade: number; pesoLiquido?: number; nome?: string }[];
   valorNota: number;
   destino: { uf: string; cidade: string; cep: string };
   areaRural?: boolean;
@@ -23,6 +23,7 @@ export const cotarFrete = createServerFn({ method: "POST" })
     const pesos = await pesosLiquidosPorCodigo(codigos);
     const itens = data.itens.map((i) => ({
       codigo: String(i.codigo),
+      nome: String(i.nome ?? ""),
       quantidade: Number(i.quantidade || 0),
       pesoLiquido: Number(i.pesoLiquido ?? pesos.get(String(i.codigo).replace(/^0+/, "")) ?? 0),
     }));
