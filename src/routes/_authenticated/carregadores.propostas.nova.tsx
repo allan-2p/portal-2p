@@ -1192,7 +1192,11 @@ function PropostaCpoPage() {
         <div
           className={cn(
             "grid grid-cols-1 gap-5 items-start",
-            etapa === 3 || etapa === 4 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
+            etapa === 3 || etapa === 4
+              ? "xl:grid-cols-[1.15fr_.85fr]"
+              : etapa === 5
+                ? "xl:grid-cols-[1.3fr_.7fr]"
+                : "max-w-3xl",
           )}
         >
           {/* ENTRADAS */}
