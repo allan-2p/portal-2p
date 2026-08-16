@@ -882,9 +882,11 @@ function PropostaCpoPage() {
               codigo: prod?.codigo ?? null,
               nome: prod?.nome ?? "",
               ncm,
+              foto: fotoDoProduto(i.produtoId) ?? null,
               qtd: i.qtd,
               valor: i.valor,
             };
+
           }),
         freteMod: state.freteMod || "—",
         freteValor: state.freteValor,
