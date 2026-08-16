@@ -3,11 +3,23 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sincronizarDonoContaFn } from "@/lib/owner-sync.functions";
 
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
 import {
   getSalesforceAccountHistory,
   getSalesforceAccountContacts,
   getSalesforceAccountActivities,
   getSalesforceAccount360,
+  createSalesforceTask,
+  logSalesforceInteraction,
   type SalesforceAccount,
   type SalesforceContact,
   type SalesforceActivity,
@@ -19,6 +31,7 @@ import {
 } from "@/lib/client-notes.functions";
 import { AtlasBoard } from "@/components/cliente-360/atlas-board";
 import { cn } from "@/lib/utils";
+
 import {
   Building2,
   Phone,
@@ -44,6 +57,8 @@ import {
   ShieldCheck,
   Hash,
   Save,
+  Plus,
+  PhoneCall,
 } from "lucide-react";
 
 const fmt = (n: number | null | undefined) =>
@@ -65,13 +80,14 @@ type TabKey =
 
 const TABS: Array<{ key: TabKey; label: string; icon: typeof Users }> = [
   { key: "visao", label: "Visão geral", icon: BarChart3 },
+  { key: "atlas", label: "Atlas", icon: Sparkles },
   { key: "contatos", label: "Contatos", icon: Users },
   { key: "negocios", label: "Propostas & pedidos", icon: Briefcase },
   { key: "casos", label: "Casos", icon: LifeBuoy },
   { key: "campo", label: "Visitas & treinamentos", icon: MapPin },
   { key: "financeiro", label: "Financeiro", icon: Wallet },
-  { key: "atlas", label: "Atlas", icon: Sparkles },
 ];
+
 
 /** Dossiê 360 do cliente: cadastro, negócios, campo, financeiro e Atlas. */
 export function Client360({
@@ -280,13 +296,8 @@ function Banner({
           </div>
         </div>
 
-        {/* Faixa de indicadores rápidos */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-          <MiniStat label="Vendido tri. atual" value={fmt(history?.quarters?.at(-1)?.total ?? account.quarterSold ?? 0)} />
-          <MiniStat label="Vendido tri. anterior" value={fmt(history?.quarters?.at(-2)?.total ?? account.quarterProjection ?? 0)} />
-          <MiniStat label="Ticket médio" value={fmt(history?.avgTicket ?? null)} />
-          <MiniStat label="Última compra" value={date(history?.lastPurchase)} />
-        </div>
+        {/* Contatos direto no banner */}
+        <BannerContacts accountId={account.id} />
 
         <button
           onClick={() => setOpen((v) => !v)}
@@ -295,6 +306,7 @@ function Banner({
           <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
           {open ? "Recolher dados cadastrais" : "Expandir dados cadastrais"}
         </button>
+
 
         {open && (
           <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3 border-t border-border pt-3">
@@ -335,6 +347,77 @@ function Banner({
     </div>
   );
 }
+
+/** Trilha de contatos-chave exibida direto no banner do cliente. */
+function BannerContacts({ accountId }: { accountId: string }) {
+  const fetchContacts = useServerFn(getSalesforceAccountContacts);
+  const q = useQuery({
+    queryKey: ["sf-account-contacts", accountId],
+    queryFn: () => fetchContacts({ data: { accountId } }),
+    staleTime: 5 * 60_000,
+  });
+  const contacts: SalesforceContact[] = q.data?.records ?? [];
+  const [expanded, setExpanded] = useState(false);
+  if (q.isLoading || contacts.length === 0) return null;
+  const visiveis = expanded ? contacts : contacts.slice(0, 4);
+
+  return (
+    <div className="mt-4 border-t border-border pt-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Users className="h-3.5 w-3.5 text-primary" />
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          Contatos
+        </span>
+        <span className="text-[10px] text-muted-foreground">{contacts.length}</span>
+        {contacts.length > 4 && (
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="ml-auto text-[11px] text-primary font-medium hover:underline"
+          >
+            {expanded ? "Ver menos" : `Ver todos (${contacts.length})`}
+          </button>
+        )}
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 sm:grid sm:grid-cols-2 xl:grid-cols-4 sm:overflow-visible">
+        {visiveis.map((c) => (
+          <div
+            key={c.id}
+            className="shrink-0 w-[240px] sm:w-auto rounded-xl border border-border bg-background/40 px-3 py-2 hover:border-primary/40 transition-colors"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-8 w-8 shrink-0 rounded-full bg-primary/15 text-primary grid place-items-center text-[11px] font-semibold">
+                {c.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-medium truncate">{c.name}</div>
+                <div className="text-[10px] text-muted-foreground truncate">{c.title ?? "—"}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-1.5">
+              {(c.mobile || c.phone) && (
+                <a
+                  href={`tel:${(c.mobile || c.phone)!.replace(/\s/g, "")}`}
+                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
+                >
+                  <Smartphone className="h-3 w-3" /> {c.mobile || c.phone}
+                </a>
+              )}
+              {c.email && (
+                <a
+                  href={`mailto:${c.email}`}
+                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
+                >
+                  <Mail className="h-3 w-3" /> e-mail
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
@@ -402,24 +485,6 @@ function VisaoGeral({
     return { pct: ((now - prev) / prev) * 100, up: now >= prev };
   }, [history]);
 
-  const quarters = (history?.quarters ?? []).slice(-8);
-  const criadas = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const o of data?.opportunities ?? []) {
-      if (!o.createdDate) continue;
-      const dt = new Date(o.createdDate);
-      const key = `${dt.getUTCFullYear()}-T${Math.floor(dt.getUTCMonth() / 3) + 1}`;
-      map.set(key, (map.get(key) ?? 0) + (o.amount || 0));
-    }
-    return map;
-  }, [data]);
-
-  const max = Math.max(
-    1,
-    ...quarters.map((q: any) => q.total || 0),
-    ...quarters.map((q: any) => criadas.get(normQuarterKey(q)) ?? 0),
-  );
-
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -444,46 +509,7 @@ function VisaoGeral({
         />
       </div>
 
-      <Card title="Geração x Vendas por trimestre" icon={BarChart3}>
-        {quarters.length === 0 ? (
-          <Empty>Sem histórico de oportunidades nos últimos trimestres.</Empty>
-        ) : (
-          <>
-            <div className="flex items-end gap-3 h-44">
-              {quarters.map((q: any) => {
-                const ger = criadas.get(normQuarterKey(q)) ?? 0;
-                return (
-                  <div key={q.label} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                    <div className="w-full flex items-end justify-center gap-1 h-36">
-                      <div
-                        className="w-1/2 rounded-t bg-primary/30"
-                        style={{ height: `${Math.max(2, (ger / max) * 100)}%` }}
-                        title={`Geração: ${fmt(ger)}`}
-                      />
-                      <div
-                        className="w-1/2 rounded-t bg-primary"
-                        style={{ height: `${Math.max(2, ((q.total || 0) / max) * 100)}%` }}
-                        title={`Vendas: ${fmt(q.total)}`}
-                      />
-                    </div>
-                    <div className="text-[10px] text-muted-foreground truncate w-full text-center">
-                      {q.label}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-4 mt-3 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-3 rounded-sm bg-primary/30" /> Geração (oportunidades criadas)
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-3 rounded-sm bg-primary" /> Vendas (fechadas)
-              </span>
-            </div>
-          </>
-        )}
-      </Card>
+
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card title="Funil do cliente" icon={Briefcase}>
@@ -524,15 +550,25 @@ function VisaoGeral({
           )}
         </Card>
       </div>
+
+      {/* Indicadores comerciais do cliente */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <MiniStat
+          label="Vendido tri. atual"
+          value={fmt(history?.quarters?.at(-1)?.total ?? account.quarterSold ?? 0)}
+        />
+        <MiniStat
+          label="Vendido tri. anterior"
+          value={fmt(history?.quarters?.at(-2)?.total ?? account.quarterProjection ?? 0)}
+        />
+        <MiniStat label="Ticket médio" value={fmt(history?.avgTicket ?? null)} />
+        <MiniStat label="Última compra" value={date(history?.lastPurchase)} />
+      </div>
     </div>
   );
 }
 
-function normQuarterKey(q: any) {
-  if (q.key) return String(q.key);
-  const m = /(\d)[ºo]?\s*T?.*?(\d{4})/.exec(q.label ?? "");
-  return m ? `${m[2]}-T${m[1]}` : String(q.label ?? "");
-}
+
 
 function Signal({ label, value }: { label: string; value: string }) {
   return (
@@ -1047,6 +1083,13 @@ function ActivityRail({ accountId }: { accountId: string }) {
         <span className="ml-auto text-[11px] text-muted-foreground">{activities.length}</span>
       </div>
 
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <ActivityComposer accountId={accountId} mode="task" />
+        <ActivityComposer accountId={accountId} mode="call" />
+      </div>
+
+
+
       {q.isLoading ? (
         <Empty>Carregando…</Empty>
       ) : activities.length === 0 ? (
@@ -1117,5 +1160,210 @@ function ActivityItem({ a }: { a: SalesforceActivity }) {
         </p>
       )}
     </li>
+  );
+}
+
+/* ------------------------------------------- Nova tarefa / nova interação */
+
+const TIPOS_INTERACAO = ["Ligação", "WhatsApp", "E-mail", "Reunião", "Visita"];
+
+/** Botão + modal para criar uma tarefa ou registrar uma interação (Log a Call). */
+function ActivityComposer({
+  accountId,
+  mode,
+}: {
+  accountId: string;
+  mode: "task" | "call";
+}) {
+  const isCall = mode === "call";
+  const queryClient = useQueryClient();
+  const criarTarefa = useServerFn(createSalesforceTask);
+  const registrarInteracao = useServerFn(logSalesforceInteraction);
+
+  const [open, setOpen] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [activityDate, setActivityDate] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("Normal");
+  const [tipoInteracao, setTipoInteracao] = useState(TIPOS_INTERACAO[0]);
+  const [conseguiuFalar, setConseguiuFalar] = useState<"Sim" | "Não">("Sim");
+  const [whoId, setWhoId] = useState("");
+
+  const fetchContacts = useServerFn(getSalesforceAccountContacts);
+  const contactsQ = useQuery({
+    queryKey: ["sf-account-contacts", accountId],
+    queryFn: () => fetchContacts({ data: { accountId } }),
+    staleTime: 5 * 60_000,
+    enabled: open,
+  });
+  const contacts: SalesforceContact[] = contactsQ.data?.records ?? [];
+
+  const reset = () => {
+    setSubject("");
+    setActivityDate("");
+    setDescription("");
+    setPriority("Normal");
+    setTipoInteracao(TIPOS_INTERACAO[0]);
+    setConseguiuFalar("Sim");
+    setWhoId("");
+  };
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        subject: subject.trim(),
+        description: description.trim() || null,
+        whatId: accountId,
+        whoId: whoId || null,
+        ...(isCall
+          ? { tipoInteracao, conseguiuFalar }
+          : { activityDate: activityDate || null, priority }),
+      };
+      return isCall
+        ? registrarInteracao({ data: payload })
+        : criarTarefa({ data: payload });
+    },
+    onSuccess: () => {
+      toast.success(isCall ? "Interação registrada." : "Tarefa criada.");
+      queryClient.invalidateQueries({ queryKey: ["sf-account-activities", accountId] });
+      setOpen(false);
+      reset();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Não foi possível salvar."),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button
+          className={cn(
+            "inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors",
+            isCall
+              ? "bg-surface-2 text-foreground hover:bg-surface"
+              : "bg-primary text-primary-foreground hover:opacity-90",
+          )}
+        >
+          {isCall ? <PhoneCall className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+          {isCall ? "Nova interação" : "Nova tarefa"}
+        </button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            {isCall ? <PhoneCall className="h-4 w-4 text-primary" /> : <Plus className="h-4 w-4 text-primary" />}
+            {isCall ? "Registrar interação" : "Nova tarefa"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <label className="block">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Assunto</span>
+            <input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder={isCall ? "Ex.: Follow-up sobre proposta" : "Ex.: Enviar cotação atualizada"}
+              className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+            />
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            {isCall ? (
+              <>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Tipo</span>
+                  <select
+                    value={tipoInteracao}
+                    onChange={(e) => setTipoInteracao(e.target.value)}
+                    className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                  >
+                    {TIPOS_INTERACAO.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Falou com o cliente?
+                  </span>
+                  <select
+                    value={conseguiuFalar}
+                    onChange={(e) => setConseguiuFalar(e.target.value as "Sim" | "Não")}
+                    className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                  >
+                    <option value="Sim">Sim</option>
+                    <option value="Não">Não</option>
+                  </select>
+                </label>
+              </>
+            ) : (
+              <>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Vencimento</span>
+                  <input
+                    type="date"
+                    value={activityDate}
+                    onChange={(e) => setActivityDate(e.target.value)}
+                    className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Prioridade</span>
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                  >
+                    <option value="High">Alta</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Low">Baixa</option>
+                  </select>
+                </label>
+              </>
+            )}
+          </div>
+
+          <label className="block">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Contato (opcional)</span>
+            <select
+              value={whoId}
+              onChange={(e) => setWhoId(e.target.value)}
+              className="mt-1 w-full rounded-lg bg-background border border-border px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+            >
+              <option value="">— sem contato —</option>
+              {contacts.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              {isCall ? "Resumo da conversa" : "Descrição"}
+            </span>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-1 w-full min-h-[110px] rounded-lg bg-background border border-border px-3 py-2 text-sm resize-y focus:outline-none focus:border-primary/50"
+            />
+          </label>
+        </div>
+
+        <DialogFooter>
+          <button
+            onClick={() => setOpen(false)}
+            className="px-3 py-2 rounded-lg bg-surface-2 hover:bg-surface text-sm font-medium"
+          >
+            Cancelar
+          </button>
+          <button
+            disabled={!subject.trim() || mutation.isPending}
+            onClick={() => mutation.mutate()}
+            className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-40"
+          >
+            {mutation.isPending ? "Salvando…" : isCall ? "Registrar interação" : "Criar tarefa"}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
