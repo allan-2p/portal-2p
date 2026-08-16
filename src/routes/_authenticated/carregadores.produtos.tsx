@@ -56,11 +56,14 @@ function ProdutosCpoPage() {
         <Tabs defaultValue="produtos">
           <TabsList>
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
+            <TabsTrigger value="fotos">Fotos do catálogo</TabsTrigger>
             <TabsTrigger value="ufs">Alíquotas por UF</TabsTrigger>
           </TabsList>
           <TabsContent value="produtos" className="mt-4"><ProdutosTab /></TabsContent>
+          <TabsContent value="fotos" className="mt-4"><CatalogoFotos /></TabsContent>
           <TabsContent value="ufs" className="mt-4"><UfsTab /></TabsContent>
         </Tabs>
+
 
       </div>
     </AppLayout>
