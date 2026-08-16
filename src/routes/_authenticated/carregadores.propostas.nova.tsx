@@ -1182,13 +1182,6 @@ function PropostaCpoPage() {
                   />
                 </Field>
 
-                <Field label="Previsão de fechamento (opcional)">
-                  <Input
-                    type="date"
-                    value={state.previsaoFechamento}
-                    onChange={(e) => set("previsaoFechamento", e.target.value)}
-                  />
-                </Field>
 
                 <Field label="Cliente">
 
