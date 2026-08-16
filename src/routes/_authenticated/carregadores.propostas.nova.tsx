@@ -1906,7 +1906,7 @@ function PropostaCpoPage() {
           </div>
 
           {/* PAINEL / DRE */}
-          {etapa >= 2 ? (
+          {etapa >= 3 ? (
           <div className="space-y-4">
             <div className="glass rounded-2xl p-5 space-y-1.5">
               <h2 className="font-semibold mb-3">Impostos da proposta</h2>
