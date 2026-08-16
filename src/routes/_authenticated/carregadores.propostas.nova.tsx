@@ -2580,12 +2580,16 @@ function LiveTotal({
   return (
     <div
       className={cn(
-        "rounded-xl border px-3 py-2 transition-colors duration-500",
-        flash ? "border-primary/60 bg-primary/10" : "border-border/60 bg-muted/30",
+        "rounded-xl border px-4 py-3 transition-colors duration-500",
+        strong
+          ? "border-primary/60 bg-primary/10"
+          : flash
+            ? "border-primary/60 bg-primary/10"
+            : "border-border/60 bg-muted/30",
       )}
     >
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={cn("tabular-nums", strong ? "text-lg font-bold text-primary" : "text-sm font-semibold")}>
+      <div className={cn("tabular-nums", strong ? "text-2xl font-extrabold text-primary" : "text-lg font-bold")}>
         {value}
       </div>
       {hint ? <div className="text-[10px] text-muted-foreground tabular-nums">{hint}</div> : null}
