@@ -175,7 +175,7 @@ function PropostaCpoPage() {
   const [precoChanges, setPrecoChanges] = useState<Record<string, { de: number; para: number }>>({});
 
   const [openCli, setOpenCli] = useState(false);
-  const [etapa, setEtapa] = useState<1 | 2 | 3 | 4>(1);
+  const [etapa, setEtapa] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [tentouAvancar, setTentouAvancar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
