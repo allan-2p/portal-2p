@@ -574,55 +574,63 @@ function PropostaCpoPage() {
   const uf = ufs.find((u) => u.uf === state.uf);
   const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
-  // ---- Validação da etapa 1 (dados obrigatórios do cliente) ----
+  // ---- Validação da etapa 1 (identificação) e etapa 2 (faturamento) ----
   const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
-  const errosCliente: { campo: string; msg: string }[] = [];
-  if (!state.nome.trim()) errosCliente.push({ campo: "nome", msg: "Selecione um cliente." });
+  const errosIdentificacao: { campo: string; msg: string }[] = [];
+  if (!state.nome.trim()) errosIdentificacao.push({ campo: "nome", msg: "Selecione um cliente." });
   const docDigits = soDigitos(state.doc);
-  if (!docDigits) errosCliente.push({ campo: "doc", msg: "CNPJ/CPF não informado no cadastro do cliente." });
+  if (!docDigits) errosIdentificacao.push({ campo: "doc", msg: "CNPJ/CPF não informado no cadastro do cliente." });
   else if (docDigits.length !== 11 && docDigits.length !== 14)
-    errosCliente.push({ campo: "doc", msg: "CNPJ/CPF inválido (11 ou 14 dígitos)." });
-  if (!state.uf) errosCliente.push({ campo: "uf", msg: "UF de destino não informada." });
+    errosIdentificacao.push({ campo: "doc", msg: "CNPJ/CPF inválido (11 ou 14 dígitos)." });
+  if (!state.uf) errosIdentificacao.push({ campo: "uf", msg: "UF de destino não informada." });
   else if (!ufs.some((u) => u.uf === state.uf))
-    errosCliente.push({ campo: "uf", msg: "UF sem alíquota cadastrada." });
+    errosIdentificacao.push({ campo: "uf", msg: "UF sem alíquota cadastrada." });
   if (state.contribuinte && !state.ie.trim())
-    errosCliente.push({ campo: "ie", msg: "Cliente contribuinte precisa de Inscrição Estadual." });
+    errosIdentificacao.push({ campo: "ie", msg: "Cliente contribuinte precisa de Inscrição Estadual." });
   if (state.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(state.email.trim()))
-    errosCliente.push({ campo: "email", msg: "E-mail do cliente é inválido." });
+    errosIdentificacao.push({ campo: "email", msg: "E-mail do cliente é inválido." });
 
   if (state.indicacao && !state.padrinhoId)
-    errosCliente.push({ campo: "padrinho", msg: "Selecione ou cadastre o padrinho da indicação." });
+    errosIdentificacao.push({ campo: "padrinho", msg: "Selecione ou cadastre o padrinho da indicação." });
 
   // Faturamento para terceiro: o destinatário fiscal precisa ser informado por completo.
-  if (!state.faturarClienteFinal) {
+  const errosFaturamento: { campo: string; msg: string }[] = [];
+  if (state.faturarClienteFinal) {
     const fatDoc = soDigitos(state.faturamento.doc);
     if (!state.faturamento.nome.trim())
-      errosCliente.push({ campo: "fat_nome", msg: "Informe o cliente do faturamento." });
+      errosFaturamento.push({ campo: "fat_nome", msg: "Informe o cliente do faturamento." });
     if (fatDoc.length !== 11 && fatDoc.length !== 14)
-      errosCliente.push({ campo: "fat_doc", msg: "CNPJ/CPF do faturamento inválido." });
+      errosFaturamento.push({ campo: "fat_doc", msg: "CNPJ/CPF do faturamento inválido." });
     if (state.faturamento.contribuinte && !state.faturamento.ie.trim())
-      errosCliente.push({ campo: "fat_ie", msg: "Faturamento contribuinte precisa de Inscrição Estadual." });
+      errosFaturamento.push({ campo: "fat_ie", msg: "Faturamento contribuinte precisa de Inscrição Estadual." });
     if (!state.faturamento.logradouro.trim() || !state.faturamento.cidade.trim())
-      errosCliente.push({ campo: "fat_end", msg: "Informe o endereço de faturamento." });
+      errosFaturamento.push({ campo: "fat_end", msg: "Informe o endereço de faturamento." });
     if (state.faturamento.uf.trim().toUpperCase() !== state.uf.trim().toUpperCase())
-      errosCliente.push({ campo: "fat_uf", msg: "O faturamento deve estar no mesmo estado da operação." });
+      errosFaturamento.push({ campo: "fat_uf", msg: "O faturamento deve estar no mesmo estado da operação." });
   }
 
+  const errosCliente = [...errosIdentificacao, ...errosFaturamento];
 
+  const identificacaoOk = errosIdentificacao.length === 0;
   const clienteOk = errosCliente.length === 0;
   const campoInvalido = (c: string) => errosCliente.some((e) => e.campo === c);
   const temProduto = state.itens.some((i) => i.produtoId);
   const podeSalvar = clienteOk && temProduto && !abaixoPolitica && !d.cmvExcedido;
 
 
-  function irParaEtapa(alvo: 1 | 2 | 3 | 4) {
+  function irParaEtapa(alvo: 1 | 2 | 3 | 4 | 5) {
     if (alvo === 1) return setEtapa(1);
-    if (!clienteOk) {
+    if (!identificacaoOk) {
       setTentouAvancar(true);
-      toast.error(errosCliente[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
+      toast.error(errosIdentificacao[0]?.msg ?? "Preencha os dados obrigatórios do cliente.");
       return;
     }
-    if (alvo >= 3 && !temProduto) {
+    if (alvo >= 3 && !clienteOk) {
+      setTentouAvancar(true);
+      toast.error(errosFaturamento[0]?.msg ?? "Complete os dados de faturamento.");
+      return;
+    }
+    if (alvo >= 4 && !temProduto) {
       setTentouAvancar(true);
       toast.error("Adicione ao menos um produto à proposta.");
       return;
@@ -631,11 +639,11 @@ function PropostaCpoPage() {
   }
 
   function avancarEtapa() {
-    if (etapa < 4) irParaEtapa((etapa + 1) as 2 | 3 | 4);
+    if (etapa < 5) irParaEtapa((etapa + 1) as 2 | 3 | 4 | 5);
   }
 
   function voltarEtapa() {
-    if (etapa > 1) setEtapa((etapa - 1) as 1 | 2 | 3);
+    if (etapa > 1) setEtapa((etapa - 1) as 1 | 2 | 3 | 4);
   }
 
 
