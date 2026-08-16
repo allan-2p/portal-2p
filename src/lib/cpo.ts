@@ -430,7 +430,7 @@ export function calcularCpo(
   let interPonderado = 0;
 
   const frete = state.freteValor || 0;
-  const brutoTotal = state.itens.reduce((s, it) => s + (it.valor || 0) * (it.qtd || 0), 0);
+
 
   for (const it of state.itens) {
     const qtd = it.qtd || 0;
@@ -446,10 +446,10 @@ export function calcularCpo(
     });
 
     const semIpi = bruto / (1 + r.ipi);
-    // ICMS incide sobre o valor da mercadoria + frete rateado por item.
-    const freteItem = brutoTotal > 0 ? frete * (bruto / brutoTotal) : 0;
-    const baseIcms = semIpi + freteItem;
+    // Frete vai "por fora": não entra na base de ICMS/DIFAL nem na MB/comissão.
+    const baseIcms = semIpi;
     const icmsItem = baseIcms * interItem;
+
     const pcItem = (semIpi - icmsItem) * r.pisCofins;
 
     valorItens += bruto;
@@ -461,7 +461,7 @@ export function calcularCpo(
     interPonderado += interItem * bruto;
 
     if (r.geraDifal && finalidadeGeraDifal(state.finalidadeUso)) {
-      const d = calcularDifal(bruto + freteItem, interna, fcp, interItem);
+      const d = calcularDifal(bruto, interna, fcp, interItem);
       difalBase += d.base;
       difalValor += d.valor;
     }
