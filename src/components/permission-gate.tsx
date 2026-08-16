@@ -4,6 +4,16 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import type { FeatureKey } from "@/lib/instances";
 import type { CapabilityId } from "@/lib/feature-capabilities";
 
+/**
+ * Permissão universal do portal: só o Administrador do Sistema exclui registros.
+ */
+export const DELETE_FEATURE: FeatureKey = "admin.sistema.excluir";
+
+/** Regra universal: pode excluir registros no portal? */
+export function useCanDelete() {
+  return useCan(DELETE_FEATURE);
+}
+
 export const NO_PERMISSION_HINT = "Seu perfil não permite esta ação. Fale com um administrador.";
 
 /** Hook simples: `can("pedidos", "editar")`. */

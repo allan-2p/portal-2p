@@ -47,7 +47,7 @@ type Orcamento = {
 const MOCK: Orcamento[] = [
   {
     id: "1",
-    numero: "PROP-0001",
+    numero: "000001",
     cliente: "Solar Prime Ltda",
     projeto: "Usina Rural Cascavel",
     vendido: "S",
@@ -60,7 +60,7 @@ const MOCK: Orcamento[] = [
   },
   {
     id: "2",
-    numero: "PROP-0002",
+    numero: "000002",
     cliente: "Energia Verde SA",
     projeto: "Telhado Metálico Galpão 3",
     vendido: "N",
@@ -73,7 +73,7 @@ const MOCK: Orcamento[] = [
   },
   {
     id: "3",
-    numero: "PROP-0003",
+    numero: "000003",
     cliente: "Casa & Cia Engenharia",
     projeto: "Residencial Alto da Glória",
     vendido: "E",
@@ -107,7 +107,7 @@ function OrcamentosPage() {
   const handleFinish = (r: NovaPropostaResult) => {
     const next: Orcamento = {
       id: crypto.randomUUID(),
-      numero: `PROP-${String(orcamentos.length + 1).padStart(4, "0")}`,
+      numero: String(orcamentos.length + 1).padStart(6, "0"),
       cliente: r.cliente,
       projeto: r.projeto,
       vendido: r.vendido === "sim" ? "S" : r.vendido === "estoque" ? "E" : "N",
