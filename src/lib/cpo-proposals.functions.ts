@@ -127,10 +127,13 @@ function validar(input: any): SalvarPropostaInput {
         }
       : null;
 
+  const propostaNome = String(input.propostaNome ?? "").trim().slice(0, 160);
+  if (!propostaNome) throw new Error("Informe o nome da proposta.");
+
   return {
     propostaId: input.propostaId ? String(input.propostaId) : null,
     numero: String(input.numero ?? "").trim(),
-    propostaNome: input.propostaNome ? String(input.propostaNome).trim().slice(0, 160) : null,
+    propostaNome,
     numeroSap: input.numeroSap ? String(input.numeroSap).trim().slice(0, 40) : null,
 
     cliente: {

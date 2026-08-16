@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { propostaStatusStyle } from "@/lib/proposta-status";
 import { WizardActionBar } from "@/components/wizard-action-bar";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -686,6 +687,7 @@ function PropostaCpoPage() {
 
   // ---- Bloqueios de fechamento (exportar PDF / concluir pedido) ----
   const errosFechamento: string[] = [];
+  if (!state.propostaNome.trim()) errosFechamento.push("Informe o nome da proposta.");
   if (!clienteOk) errosFechamento.push(errosCliente[0]?.msg ?? "Complete os dados do cliente.");
   if (!temProduto) errosFechamento.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length)
@@ -709,6 +711,7 @@ function PropostaCpoPage() {
 
   // ---- Bloqueios de salvamento ----
   const errosSalvar: string[] = [];
+  if (!state.propostaNome.trim()) errosSalvar.push("Informe o nome da proposta.");
   errosCliente.forEach((e) => errosSalvar.push(e.msg));
   if (!temProduto) errosSalvar.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length) errosSalvar.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
@@ -1084,14 +1087,11 @@ function PropostaCpoPage() {
                 {propostaId ? `Editar proposta${numeroAtual ? ` ${numeroAtual}` : ""}` : "Nova proposta"}
               </h1>
               <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border",
-                  statusProposta === "Aguardando Pagamento"
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-                    : statusProposta === "Salvo"
-                      ? "bg-surface-2 text-muted-foreground border-border"
-                      : "bg-primary/10 text-primary border-primary/30",
-                )}
+                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                style={{
+                  backgroundColor: propostaStatusStyle(statusProposta).bg,
+                  color: propostaStatusStyle(statusProposta).fg,
+                }}
               >
                 {saving && statusProposta === "Aguardando Pagamento" ? (
                   <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
@@ -1226,12 +1226,17 @@ function PropostaCpoPage() {
 
             {etapa === 1 ? (
               <>
-                <Field label="Nome da proposta">
+                <Field label="Nome da proposta *">
                   <Input
                     value={state.propostaNome}
                     onChange={(e) => set("propostaNome", e.target.value)}
                     placeholder="Ex.: Eletroposto Matriz — 4 carregadores"
+                    aria-invalid={!state.propostaNome.trim()}
+                    className={cn(!state.propostaNome.trim() && "border-destructive/60")}
                   />
+                  {!state.propostaNome.trim() ? (
+                    <p className="text-xs text-destructive">Campo obrigatório.</p>
+                  ) : null}
                 </Field>
 
 
@@ -2342,7 +2347,13 @@ function PropostaCpoPage() {
               </p>
               <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center justify-between">
                 <span className="text-muted-foreground">Status que será aplicado</span>
-                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                <span
+                  className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: propostaStatusStyle("Aguardando Pagamento").bg,
+                    color: propostaStatusStyle("Aguardando Pagamento").fg,
+                  }}
+                >
                   {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : null}
                   Aguardando Pagamento
                 </span>
@@ -2377,9 +2388,15 @@ function PropostaCpoPage() {
             </DialogHeader>
 
             <div className="space-y-3 text-sm max-h-[55vh] overflow-y-auto pr-1">
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 flex items-center justify-between">
+              <div className="rounded-xl border border-border bg-muted/30 p-3 flex items-center justify-between">
                 <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Status do pedido</span>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: propostaStatusStyle("Aguardando Pagamento").bg,
+                    color: propostaStatusStyle("Aguardando Pagamento").fg,
+                  }}
+                >
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                   Aguardando Pagamento
                 </span>
