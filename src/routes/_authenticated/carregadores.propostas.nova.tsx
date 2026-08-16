@@ -1881,7 +1881,9 @@ function PropostaCpoPage() {
                   Confira os valores e finalize salvando a proposta ou concluindo o pedido.
                 </p>
               </div>
+              </>
             ) : null}
+
 
             {/* TOTAIS AO VIVO — recalculam a cada mudança de preço/quantidade/frete */}
             <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-background/90 backdrop-blur px-4 py-3 shadow-lg">
