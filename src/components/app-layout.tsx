@@ -68,6 +68,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
     if (pathname.startsWith("/solar/clientes")) setClientesOpen(true);
     if (pathname.startsWith("/solar/dashboards")) setDashboardsOpen(true);
   }, [pathname]);
@@ -501,18 +505,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 to="/tv-geral"
                 target="_blank"
                 title="Painel de TV — 2P Group"
-                className="h-9 w-9 rounded-lg border border-border bg-gradient-to-br from-[#F28A3C]/20 to-[#1A00B0]/20 hover:from-[#F28A3C]/35 hover:to-[#1A00B0]/35 flex items-center justify-center transition-colors"
+                className="hidden sm:flex h-9 w-9 rounded-lg border border-border bg-gradient-to-br from-[#F28A3C]/20 to-[#1A00B0]/20 hover:from-[#F28A3C]/35 hover:to-[#1A00B0]/35 flex items-center justify-center transition-colors"
               >
                 <Tv className="h-4 w-4" />
               </Link>
-              <InstanceSwitcher />
-              {instance === "marketing" && <MarketingUnitSwitch />}
-              
-              <ThemeToggle />
+              <div className="hidden md:flex items-center gap-2">
+                <InstanceSwitcher />
+                {instance === "marketing" && <MarketingUnitSwitch />}
+              </div>
+              <div className="hidden sm:block"><ThemeToggle /></div>
               <NotificationsDropdown />
 
               {canSeeAdminMenu && (
-                <div className="relative">
+                <div className="relative hidden md:block">
                   <button
                     onClick={() => setAdminMenuOpen((v) => !v)}
                     className="h-9 w-9 rounded-lg border border-border bg-surface hover:bg-surface-2 flex items-center justify-center relative"
@@ -589,7 +594,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
         {showBar && <div className="route-bar" aria-hidden />}
-        <div key={pathname} className="p-6 page-transition">{children}</div>
+        <div key={pathname} className="p-4 sm:p-5 md:p-6 page-transition">{children}</div>
 
       </main>
     </div>
