@@ -585,7 +585,31 @@ function mapAccountDb(r: any, ownerNames: Map<string, string>): SalesforceAccoun
     description: r.description ?? null,
     quarterProjection: num(cf.Total_Vendido_Trimestre_Anterior__c),
     quarterSold: num(cf.Total_Vendido_Esse_Trimestre__c),
+    nomeFantasia: cf.Nome_Fantasia__c ?? null,
+    email: cf.Email__c ?? null,
+    instagram: cf.Instagram__c ?? null,
+    nSap: cf.N_SAP__c != null ? String(cf.N_SAP__c) : null,
+    tipoCliente: cf.Tipo_de_Cliente__c ?? null,
+    carteira: cf.Carteira_Atribuida__c ?? null,
+    condicaoPagamento: cf.Condicao_de_Pagamento__c ?? null,
+    tabelaPrecos: cf.Tabela_de_pre_os__c ?? null,
+    regiao: cf.Regiao_de_Atuacao__c ?? null,
+    finalidadeUso: cf.Finalidade_de_Uso__c ?? null,
+    statusConta: cf.Status_da_Conta__c ?? null,
+    regimeTributario: cf.Regime_Tributario_Detalhado__c ?? cf.Regime_Tributario__c ?? null,
+    contribuinte: cf.Contribuinte_ICMS__c ?? null,
+    inscricaoEstadual: cf.Inscri_o_Estadual__c != null ? String(cf.Inscri_o_Estadual__c) : null,
+    primeiraCompra: cf.Data_da_Primeira_Compra__c ?? null,
+    origem: cf.Origem__c ?? null,
+    icp: num(cf.ICP__c),
+    operacao: cf.Operacao__c ?? null,
+    porte: cf.Porte__c ?? null,
+    organizacao: cf.Org_Conta__c ?? null,
+    planoFidelidade: cf.Plano_Fidelidade__c ?? null,
+    pontuacaoFidelidade: num(cf.Pontuacao_Plano_Fidelidade__c),
+    ativo: typeof cf.Ativo__c === "boolean" ? cf.Ativo__c : null,
   };
+
 }
 
 export const getSalesforceAccounts = createServerFn({ method: "GET" })
