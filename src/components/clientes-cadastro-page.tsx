@@ -16,8 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   AlertCircle, Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye,
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
-  ArrowRight,
+  ArrowRight, RefreshCw,
 } from "lucide-react";
+import { sincronizarDonosFn } from "@/lib/owner-sync.functions";
 import { ClientHistoryTab } from "@/components/client-history-tab";
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
@@ -322,6 +323,22 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
   });
 
+  // Transferência de carteira: realinha o consultor dos cadastros com o dono
+  // atual da conta no Salesforce (registros antigos permanecem intactos).
+  const sincronizarDonos = useServerFn(sincronizarDonosFn);
+  const sincronizarCarteira = useMutation({
+    mutationFn: () => sincronizarDonos({ data: { instancia } }),
+    onSuccess: (r: { transferidos: number }) => {
+      if (r.transferidos > 0) {
+        toast.success(`${r.transferidos} cliente(s) transferido(s) para o novo vendedor.`);
+      } else {
+        toast.success("Carteira já está atualizada.");
+      }
+      qc.invalidateQueries({ queryKey: ["clientes", instancia] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao sincronizar."),
+  });
+
   const filtrados = useMemo(() => {
     const t = q.trim().toLowerCase();
     const tDoc = soDigitos(q);
@@ -442,7 +459,20 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input className="pl-8" placeholder="Buscar por nome, CNPJ, cidade…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
+          {consultoresQ.data?.podeEscolher && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => sincronizarCarteira.mutate()}
+              disabled={sincronizarCarteira.isPending}
+              title="Atualiza o consultor dos cadastros conforme o dono atual da conta no Salesforce"
+            >
+              <RefreshCw className={`h-4 w-4 ${sincronizarCarteira.isPending ? "animate-spin" : ""}`} />
+              Sincronizar carteira
+            </Button>
+          )}
           <Button className="gap-2" onClick={abrirNovo}><Plus className="h-4 w-4" /> Novo cadastro</Button>
+
 
         </div>
       </div>
