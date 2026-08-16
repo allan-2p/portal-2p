@@ -802,7 +802,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   <td className="px-4 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" aria-label="Ver detalhes" onClick={() => setDetalhe(c)}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" aria-label="Editar" onClick={() => abrirEdicao(c)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => excluir.mutate(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    {podeExcluir && (<Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => excluir.mutate(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>)}
                   </td>
                 </tr>
               ))}

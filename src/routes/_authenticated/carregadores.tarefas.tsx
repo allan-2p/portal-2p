@@ -14,6 +14,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Check, Plus, Trash2 } from "lucide-react";
+import { useCanDelete } from "@/components/permission-gate";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -211,9 +212,11 @@ function CarregadoresTarefas() {
                   <span className="text-xs text-muted-foreground w-24 text-right shrink-0">
                     {t.due_date ? new Date(t.due_date + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
                   </span>
-                  <Button variant="ghost" size="icon" onClick={() => remove(t.id)} title="Excluir">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {podeExcluir && (
+                    <Button variant="ghost" size="icon" onClick={() => remove(t.id)} title="Excluir">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               );
             })}
