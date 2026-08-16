@@ -279,11 +279,12 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="sech"><span>Escopo de fornecimento</span></div>
       <table>
         <thead><tr>
-          <th></th><th>Produto</th><th class="c">Qtd</th><th class="r">Valor unit.</th><th class="r">Total</th>
+          <th></th>${temFoto ? "<th></th>" : ""}<th>Produto</th><th class="c">Qtd</th><th class="r">Valor unit.</th><th class="r">Total</th>
         </tr></thead>
         <tbody>${linhas}</tbody>
         <tfoot><tr>
-          <td colspan="2">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
+          <td colspan="${temFoto ? 3 : 2}">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
+
           <td colspan="3" class="r">Frete ${esc(p.freteMod)} · <b style="color:var(--ink)">${fmtBRL(p.freteValor)}</b></td>
         </tr></tfoot>
       </table>
