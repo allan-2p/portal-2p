@@ -22,6 +22,8 @@ import { useCpoInvalidate, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cp
 import { setCpoProductAtivo, updateCpoProduct } from "@/lib/cpo-products.functions";
 import { fmtBRL, precoSugeridoPadrao, MARGEM_PRECO_SUGERIDO, type CpoProduct } from "@/lib/cpo";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
+import { ProdutoFoto } from "@/components/produto-foto";
+import { useImagensPorPath, BUCKET_PRODUTOS } from "@/lib/produto-imagens";
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
@@ -102,6 +104,24 @@ function ProdutosTab() {
     `${p.codigo ?? ""} ${p.nome}`.toLowerCase().includes(busca.trim().toLowerCase()),
   );
 
+  const fotosQ = useImagensPorPath(produtos.map((p) => p.imagem_path));
+  const fotos = fotosQ.data ?? {};
+
+  async function enviarFoto(p: CpoProduct, file: File) {
+    const ext = (file.name.split(".").pop() ?? "png").toLowerCase();
+    const path = `skus/${p.codigo || p.id}.${ext}`;
+    const up = await supabase.storage.from(BUCKET_PRODUTOS).upload(path, file, {
+      upsert: true,
+      contentType: file.type || undefined,
+    });
+    if (up.error) return toast.error(up.error.message);
+    const { error } = await supabase.from("sap_produtos").update({ imagem_path: path }).eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Foto do produto atualizada.");
+    invalidate();
+    fotosQ.refetch();
+  }
+
   const saveProduct = useServerFn(updateCpoProduct);
   const toggleProduct = useServerFn(setCpoProductAtivo);
 
@@ -169,6 +189,7 @@ function ProdutosTab() {
           <table className="w-full text-sm min-w-[820px]">
             <thead>
               <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
+                <th className="text-left px-4 py-3">Foto</th>
                 <th className="text-left px-4 py-3">Código (SKU)</th>
                 <th className="text-left px-4 py-3">Produto</th>
                 <th className="text-left px-4 py-3">NCM</th>
@@ -182,6 +203,21 @@ function ProdutosTab() {
             <tbody>
               {filtrados.map((p) => (
                 <tr key={p.id} className="border-b border-border/50 hover:bg-surface-2">
+                  <td className="px-4 py-2">
+                    <label className="cursor-pointer" title="Enviar/alterar foto">
+                      <ProdutoFoto url={p.imagem_path ? fotos[p.imagem_path] : undefined} alt={p.nome} />
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = "";
+                          if (f) void enviarFoto(p, f);
+                        }}
+                      />
+                    </label>
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.codigo || "—"}</td>
                   <td className="px-4 py-3 font-medium">{p.nome}</td>
                   <td className="px-4 py-3 font-mono text-xs">
