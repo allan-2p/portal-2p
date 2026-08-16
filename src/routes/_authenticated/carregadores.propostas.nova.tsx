@@ -51,6 +51,7 @@ import {
   fmtPct,
   labelFinalidadeUso,
   OBSERVACOES_PADRAO,
+  observacoesComDifal,
   FRETE_ABSORVIDO,
   labelFreteMod,
   novoEstado,
