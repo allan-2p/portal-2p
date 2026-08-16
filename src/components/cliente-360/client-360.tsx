@@ -72,11 +72,33 @@ const TABS: Array<{ key: TabKey; label: string; icon: typeof Users }> = [
 ];
 
 /** Dossiê 360 do cliente: cadastro, negócios, campo, financeiro e Atlas. */
-export function Client360({ account }: { account: SalesforceAccount }) {
+export function Client360({
+  account,
+  instancia = "solar",
+}: {
+  account: SalesforceAccount;
+  instancia?: "solar" | "carregadores";
+}) {
   const [tab, setTab] = useState<TabKey>("visao");
+  const queryClient = useQueryClient();
 
   const fetchHistory = useServerFn(getSalesforceAccountHistory);
   const fetch360 = useServerFn(getSalesforceAccount360);
+  const sincronizarDono = useServerFn(sincronizarDonoContaFn);
+
+  // Transferência de carteira: se a conta mudou de vendedor no Salesforce,
+  // o cadastro do portal é realinhado ao abrir o perfil.
+  const syncQ = useQuery({
+    queryKey: ["sync-dono-conta", instancia, account.id],
+    queryFn: () => sincronizarDono({ data: { instancia, accountId: account.id } }),
+    staleTime: 10 * 60_000,
+  });
+  useEffect(() => {
+    if ((syncQ.data?.transferidos ?? 0) > 0) {
+      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      queryClient.invalidateQueries({ queryKey: ["sf-accounts"] });
+    }
+  }, [syncQ.data, queryClient]);
 
   const historyQ = useQuery({
     queryKey: ["sf-account-history", account.id],
@@ -88,6 +110,7 @@ export function Client360({ account }: { account: SalesforceAccount }) {
     queryFn: () => fetch360({ data: { accountId: account.id } }),
     staleTime: 5 * 60_000,
   });
+
 
   const history = historyQ.data;
   const d = q360.data;
