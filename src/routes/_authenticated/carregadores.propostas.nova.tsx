@@ -487,7 +487,9 @@ function PropostaCpoPage() {
   const st = statusMB(d.mbPct, config);
 
   const avisoUsoConsumo = avisoDifalUsoConsumo(state);
-  const observacoesFinal = [state.observacoes?.trim(), avisoUsoConsumo].filter(Boolean).join("\n\n");
+  const observacoesFinal = [observacoesComDifal(state.observacoes, state), avisoUsoConsumo]
+    .filter(Boolean)
+    .join("\n\n");
   const uf = ufs.find((u) => u.uf === state.uf);
   const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
