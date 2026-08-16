@@ -940,7 +940,7 @@ export const getSalesforceAccountContacts = createServerFn({ method: "GET" })
     if (!validId(accountId)) throw new Error("accountId inválido");
     await assertAccountAccess(context.supabase, context.userId, accountId);
     const soql =
-      `SELECT Id, Name, Title, Email, Phone, MobilePhone, Department, Description ` +
+      `SELECT Id, Name, Title, Email, Phone, MobilePhone, Department ` +
       `FROM Contact WHERE AccountId = '${esc(accountId)}' ORDER BY Name ASC LIMIT 200`;
     const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
     const records: SalesforceContact[] = (res?.records ?? []).map((r: any) => ({
@@ -951,7 +951,7 @@ export const getSalesforceAccountContacts = createServerFn({ method: "GET" })
       phone: r.Phone ?? null,
       mobile: r.MobilePhone ?? null,
       department: r.Department ?? null,
-      description: r.Description ?? null,
+      description: null,
     }));
     return { records };
   });
