@@ -187,6 +187,226 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // O atributo global é aplicado em __root (vale para todo o portal); aqui só ajustamos a marca.
   const isAdminArea = isGroupAdminPath(pathname);
 
+  const navTree = (collapsed: boolean) => (
+          <nav className="px-2 py-2 flex-1 overflow-y-auto">
+            {/* Atlas — só se instância permitir */}
+            {show("atlas") && (
+              <>
+                <Link
+                  to="/solar/atlas"
+                  preload="intent"
+                  title={collapsed ? "Atlas" : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl text-sm transition-all mb-2 relative overflow-hidden group",
+                    collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
+                    atlasActive
+                      ? "bg-gradient-to-r from-primary to-[oklch(0.65_0.2_30)] text-primary-foreground shadow-md shadow-primary/30 font-semibold"
+                      : "bg-gradient-to-r from-primary/10 to-[oklch(0.65_0.2_30)]/5 text-foreground hover:from-primary/20 hover:to-[oklch(0.65_0.2_30)]/10 border border-primary/20",
+                  )}
+                >
+                  <Sparkles className={cn("h-4 w-4 shrink-0", !atlasActive && "text-primary")} />
+                  {!collapsed && (
+                    <>
+                      <span className="font-semibold">Atlas</span>
+                      <span className={cn(
+                        "ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-bold tracking-wider",
+                        atlasActive ? "bg-background/20" : "bg-primary text-primary-foreground",
+                      )}>AI</span>
+                    </>
+                  )}
+                </Link>
+                {show("clientes.sugestoes") && !collapsed && (
+                  <div className="mb-2 ml-3 pl-3 border-l border-border">
+                    <SubLink
+                      to="/solar/clientes/sugestoes"
+                      label="Sugestões do Atlas"
+                      icon={Sparkles}
+                      active={pathname.startsWith("/solar/clientes/sugestoes")}
+                    />
+                  </div>
+                )}
+                <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
+              </>
+            )}
+  
+            {show("home") && (
+              <NavLink item={{ to: "/", label: "Home", icon: Home }} active={pathname === "/"} collapsed={collapsed} />
+            )}
+            {show("tarefas") && (
+              <NavLink item={{ to: "/solar/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/solar/tarefas")} collapsed={collapsed} />
+            )}
+            {show("propostas") && (
+              <NavLink item={{ to: "/solar/propostas", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/solar/propostas")} collapsed={collapsed} />
+            )}
+            {show("pedidos") && (
+              <NavLink item={{ to: "/solar/pedidos", label: "Pedidos", icon: KanbanSquare }} active={pathname.startsWith("/solar/pedidos")} collapsed={collapsed} />
+            )}
+            {show("cupons") && (
+              <NavLink item={{ to: "/solar/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/solar/cupons")} collapsed={collapsed} />
+            )}
+  
+            {/* Módulo Carregadores — navegação exclusiva da instância */}
+            {(show("cpo.home") || show("cpo.tarefas") || show("cpo.clientes") || show("cpo.propostas") || show("cpo.pedidos") || show("cpo.produtos") || show("cpo.comissoes") || show("cpo.regras")) && (
+              <>
+                {!collapsed && (
+                  <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Carregadores
+                  </div>
+                )}
+                {show("cpo.home") && (
+                  <NavLink item={{ to: "/carregadores", label: "Home", icon: Home }} active={pathname === "/carregadores"} collapsed={collapsed} />
+                )}
+                {show("cpo.tarefas") && (
+                  <NavLink item={{ to: "/carregadores/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/carregadores/tarefas")} collapsed={collapsed} />
+                )}
+                {show("cpo.clientes") && (
+                  <NavLink item={{ to: "/carregadores/clientes/cadastros", label: "Clientes", icon: Users }} active={pathname.startsWith("/carregadores/clientes")} collapsed={collapsed} />
+                )}
+  
+  
+                {show("cpo.propostas") && (
+                  <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
+                )}
+                {show("cpo.pedidos") && (
+                  <NavLink item={{ to: "/carregadores/pedidos", label: "Pedidos", icon: ShoppingCart }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
+                )}
+                {/* Moderação foi movida para o ambiente de Administração (engrenagem no topo). */}
+                <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
+              </>
+            )}
+  
+  
+            {/* Clientes — grupo expansível */}
+            {(show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.sugestoes") || show("clientes.ranking")) && (
+              collapsed ? (
+                <Link
+                  to={show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : show("clientes.perfil") ? "/solar/clientes/perfil" : "/solar/clientes/cadastros"}
+                  preload="intent"
+                  title="Clientes"
+                  className={cn(
+                    "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
+                    clientesActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                  )}
+                >
+                  <Layers className="h-4 w-4" />
+                </Link>
+              ) : (
+                <div className="mb-1">
+                  <button
+                    onClick={toggleClientes}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                      clientesActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                    )}
+                  >
+                    <Layers className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Clientes</span>
+                    <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !clientesOpen && "-rotate-90")} />
+                  </button>
+                  {clientesOpen && (
+                    <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
+                      {show("clientes.cadastros") && (
+                        <SubLink to="/solar/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/solar/clientes/cadastros")} />
+                      )}
+                      {(show("clientes.segmentacao") || show("clientes.perfil")) && (
+                        <SubLink
+                          to={show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : "/solar/clientes/perfil"}
+                          label="Perfil de Cliente"
+                          icon={UserIcon}
+                          active={pathname.startsWith("/solar/clientes/segmentacao") || pathname.startsWith("/solar/clientes/perfil")}
+                        />
+                      )}
+                      {show("clientes.ranking") && (
+                        <SubLink to="/solar/clientes/ranking" label="Ranking" icon={Trophy} active={pathname.startsWith("/solar/clientes/ranking")} />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            )}
+  
+            {show("dashboards") && (
+              collapsed ? (
+                <Link
+                  to="/solar/dashboards/metas"
+                  preload="intent"
+                  title="Dashboards"
+                  className={cn(
+                    "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
+                    dashboardsActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                  )}
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </Link>
+              ) : (
+                <div className="mb-1">
+                  <button
+                    onClick={toggleDashboards}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                      dashboardsActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                    )}
+                  >
+                    <BarChart3 className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Dashboards</span>
+                    <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !dashboardsOpen && "-rotate-90")} />
+                  </button>
+                  {dashboardsOpen && (
+                    <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
+                      {show("dashboards.metas") && (
+                        <SubLink to="/solar/dashboards/metas" label="Metas" icon={Target} active={pathname.startsWith("/solar/dashboards/metas")} />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            )}
+  
+            {/* Marketing — só na instância marketing */}
+            {show("marketing.home") && (
+              collapsed ? (
+                <Link
+                  to="/marketing"
+                  preload="intent"
+                  title="Marketing"
+                  className={cn(
+                    "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
+                    marketingActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                  )}
+                >
+                  <Megaphone className="h-4 w-4" />
+                </Link>
+              ) : (
+                <div className="mb-1 space-y-0.5">
+                  <NavLink item={{ to: "/marketing", label: "Home", icon: Megaphone }} active={pathname === "/marketing"} collapsed={false} />
+                  {show("marketing.social") && (
+                    <NavLink item={{ to: "/marketing/social", label: "Social Mídia", icon: Users }} active={pathname.startsWith("/marketing/social")} collapsed={false} />
+                  )}
+                  {show("marketing.trafego") && (
+                    <NavLink item={{ to: "/marketing/trafego", label: "Mídia Paga", icon: Filter }} active={pathname.startsWith("/marketing/trafego")} collapsed={false} />
+                  )}
+                  {show("marketing.cohort") && (
+                    <NavLink item={{ to: "/marketing/cohort", label: "Análise Cohort", icon: LineChart }} active={pathname.startsWith("/marketing/cohort")} collapsed={false} />
+                  )}
+                  {show("marketing.cac") && (
+                    <NavLink item={{ to: "/marketing/cac", label: "CAC", icon: TrendingUp }} active={pathname.startsWith("/marketing/cac")} collapsed={false} />
+                  )}
+                  {show("marketing.gargalo") && (
+                    <NavLink item={{ to: "/marketing/gargalo", label: "Mapa de Gargalo", icon: Filter }} active={pathname.startsWith("/marketing/gargalo")} collapsed={false} />
+                  )}
+                  {show("marketing.prevendas") && (
+                    <NavLink item={{ to: "/marketing/pre-vendas", label: "Pré-Vendas", icon: ClipboardList }} active={pathname.startsWith("/marketing/pre-vendas")} collapsed={false} />
+                  )}
+                  {show("marketing.metas") && (
+                    <NavLink item={{ to: "/marketing/metas", label: "Metas", icon: Target }} active={pathname.startsWith("/marketing/metas")} collapsed={false} />
+                  )}
+                </div>
+              )
+            )}
+  
+          </nav>
+  );
+
   return (
     <div className="min-h-screen flex bg-background">
       <aside
@@ -205,225 +425,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        {isAdminArea ? <AdminSidebar pathname={pathname} collapsed={collapsed} /> : (
-        <nav className="px-2 py-2 flex-1 overflow-y-auto">
-          {/* Atlas — só se instância permitir */}
-          {show("atlas") && (
-            <>
-              <Link
-                to="/solar/atlas"
-                preload="intent"
-                title={collapsed ? "Atlas" : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl text-sm transition-all mb-2 relative overflow-hidden group",
-                  collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
-                  atlasActive
-                    ? "bg-gradient-to-r from-primary to-[oklch(0.65_0.2_30)] text-primary-foreground shadow-md shadow-primary/30 font-semibold"
-                    : "bg-gradient-to-r from-primary/10 to-[oklch(0.65_0.2_30)]/5 text-foreground hover:from-primary/20 hover:to-[oklch(0.65_0.2_30)]/10 border border-primary/20",
-                )}
-              >
-                <Sparkles className={cn("h-4 w-4 shrink-0", !atlasActive && "text-primary")} />
-                {!collapsed && (
-                  <>
-                    <span className="font-semibold">Atlas</span>
-                    <span className={cn(
-                      "ml-auto text-[10px] px-1.5 py-0.5 rounded-md font-bold tracking-wider",
-                      atlasActive ? "bg-background/20" : "bg-primary text-primary-foreground",
-                    )}>AI</span>
-                  </>
-                )}
-              </Link>
-              {show("clientes.sugestoes") && !collapsed && (
-                <div className="mb-2 ml-3 pl-3 border-l border-border">
-                  <SubLink
-                    to="/solar/clientes/sugestoes"
-                    label="Sugestões do Atlas"
-                    icon={Sparkles}
-                    active={pathname.startsWith("/solar/clientes/sugestoes")}
-                  />
-                </div>
-              )}
-              <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
-            </>
-          )}
-
-          {show("home") && (
-            <NavLink item={{ to: "/", label: "Home", icon: Home }} active={pathname === "/"} collapsed={collapsed} />
-          )}
-          {show("tarefas") && (
-            <NavLink item={{ to: "/solar/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/solar/tarefas")} collapsed={collapsed} />
-          )}
-          {show("propostas") && (
-            <NavLink item={{ to: "/solar/propostas", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/solar/propostas")} collapsed={collapsed} />
-          )}
-          {show("pedidos") && (
-            <NavLink item={{ to: "/solar/pedidos", label: "Pedidos", icon: KanbanSquare }} active={pathname.startsWith("/solar/pedidos")} collapsed={collapsed} />
-          )}
-          {show("cupons") && (
-            <NavLink item={{ to: "/solar/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/solar/cupons")} collapsed={collapsed} />
-          )}
-
-          {/* Módulo Carregadores — navegação exclusiva da instância */}
-          {(show("cpo.home") || show("cpo.tarefas") || show("cpo.clientes") || show("cpo.propostas") || show("cpo.pedidos") || show("cpo.produtos") || show("cpo.comissoes") || show("cpo.regras")) && (
-            <>
-              {!collapsed && (
-                <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Carregadores
-                </div>
-              )}
-              {show("cpo.home") && (
-                <NavLink item={{ to: "/carregadores", label: "Home", icon: Home }} active={pathname === "/carregadores"} collapsed={collapsed} />
-              )}
-              {show("cpo.tarefas") && (
-                <NavLink item={{ to: "/carregadores/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/carregadores/tarefas")} collapsed={collapsed} />
-              )}
-              {show("cpo.clientes") && (
-                <NavLink item={{ to: "/carregadores/clientes/cadastros", label: "Clientes", icon: Users }} active={pathname.startsWith("/carregadores/clientes")} collapsed={collapsed} />
-              )}
-
-
-              {show("cpo.propostas") && (
-                <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
-              )}
-              {show("cpo.pedidos") && (
-                <NavLink item={{ to: "/carregadores/pedidos", label: "Pedidos", icon: ShoppingCart }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
-              )}
-              {/* Moderação foi movida para o ambiente de Administração (engrenagem no topo). */}
-              <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
-            </>
-          )}
-
-
-          {/* Clientes — grupo expansível */}
-          {(show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.sugestoes") || show("clientes.ranking")) && (
-            collapsed ? (
-              <Link
-                to={show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : show("clientes.perfil") ? "/solar/clientes/perfil" : "/solar/clientes/cadastros"}
-                preload="intent"
-                title="Clientes"
-                className={cn(
-                  "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
-                  clientesActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                )}
-              >
-                <Layers className="h-4 w-4" />
-              </Link>
-            ) : (
-              <div className="mb-1">
-                <button
-                  onClick={toggleClientes}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                    clientesActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                  )}
-                >
-                  <Layers className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Clientes</span>
-                  <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !clientesOpen && "-rotate-90")} />
-                </button>
-                {clientesOpen && (
-                  <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-                    {show("clientes.cadastros") && (
-                      <SubLink to="/solar/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/solar/clientes/cadastros")} />
-                    )}
-                    {(show("clientes.segmentacao") || show("clientes.perfil")) && (
-                      <SubLink
-                        to={show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : "/solar/clientes/perfil"}
-                        label="Perfil de Cliente"
-                        icon={UserIcon}
-                        active={pathname.startsWith("/solar/clientes/segmentacao") || pathname.startsWith("/solar/clientes/perfil")}
-                      />
-                    )}
-                    {show("clientes.ranking") && (
-                      <SubLink to="/solar/clientes/ranking" label="Ranking" icon={Trophy} active={pathname.startsWith("/solar/clientes/ranking")} />
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          )}
-
-          {show("dashboards") && (
-            collapsed ? (
-              <Link
-                to="/solar/dashboards/metas"
-                preload="intent"
-                title="Dashboards"
-                className={cn(
-                  "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
-                  dashboardsActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                )}
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Link>
-            ) : (
-              <div className="mb-1">
-                <button
-                  onClick={toggleDashboards}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                    dashboardsActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                  )}
-                >
-                  <BarChart3 className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Dashboards</span>
-                  <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !dashboardsOpen && "-rotate-90")} />
-                </button>
-                {dashboardsOpen && (
-                  <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-                    {show("dashboards.metas") && (
-                      <SubLink to="/solar/dashboards/metas" label="Metas" icon={Target} active={pathname.startsWith("/solar/dashboards/metas")} />
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          )}
-
-          {/* Marketing — só na instância marketing */}
-          {show("marketing.home") && (
-            collapsed ? (
-              <Link
-                to="/marketing"
-                preload="intent"
-                title="Marketing"
-                className={cn(
-                  "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
-                  marketingActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
-                )}
-              >
-                <Megaphone className="h-4 w-4" />
-              </Link>
-            ) : (
-              <div className="mb-1 space-y-0.5">
-                <NavLink item={{ to: "/marketing", label: "Home", icon: Megaphone }} active={pathname === "/marketing"} collapsed={false} />
-                {show("marketing.social") && (
-                  <NavLink item={{ to: "/marketing/social", label: "Social Mídia", icon: Users }} active={pathname.startsWith("/marketing/social")} collapsed={false} />
-                )}
-                {show("marketing.trafego") && (
-                  <NavLink item={{ to: "/marketing/trafego", label: "Mídia Paga", icon: Filter }} active={pathname.startsWith("/marketing/trafego")} collapsed={false} />
-                )}
-                {show("marketing.cohort") && (
-                  <NavLink item={{ to: "/marketing/cohort", label: "Análise Cohort", icon: LineChart }} active={pathname.startsWith("/marketing/cohort")} collapsed={false} />
-                )}
-                {show("marketing.cac") && (
-                  <NavLink item={{ to: "/marketing/cac", label: "CAC", icon: TrendingUp }} active={pathname.startsWith("/marketing/cac")} collapsed={false} />
-                )}
-                {show("marketing.gargalo") && (
-                  <NavLink item={{ to: "/marketing/gargalo", label: "Mapa de Gargalo", icon: Filter }} active={pathname.startsWith("/marketing/gargalo")} collapsed={false} />
-                )}
-                {show("marketing.prevendas") && (
-                  <NavLink item={{ to: "/marketing/pre-vendas", label: "Pré-Vendas", icon: ClipboardList }} active={pathname.startsWith("/marketing/pre-vendas")} collapsed={false} />
-                )}
-                {show("marketing.metas") && (
-                  <NavLink item={{ to: "/marketing/metas", label: "Metas", icon: Target }} active={pathname.startsWith("/marketing/metas")} collapsed={false} />
-                )}
-              </div>
-            )
-          )}
-
-        </nav>
-        )}
+        {isAdminArea ? <AdminSidebar pathname={pathname} collapsed={collapsed} /> : navTree(collapsed)}
 
         <button
           onClick={toggleCollapsed}
