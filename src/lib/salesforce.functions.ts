@@ -2424,3 +2424,200 @@ export const getClientTimeline = createServerFn({ method: "GET" })
     entries.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
     return { entries };
   });
+
+// ---------------------------------------------------------------------------
+// Dossiê 360 do cliente: oportunidades, casos, visitas, treinamentos e crédito
+// ---------------------------------------------------------------------------
+
+export type Account360Opportunity = {
+  id: string;
+  name: string;
+  stage: string | null;
+  amount: number;
+  closeDate: string | null;
+  createdDate: string | null;
+  isClosed: boolean;
+  isWon: boolean;
+  owner: string | null;
+  tipoNf: string | null;
+};
+
+export type Account360Case = {
+  id: string;
+  number: string | null;
+  subject: string;
+  status: string | null;
+  priority: string | null;
+  type: string | null;
+  origin: string | null;
+  createdDate: string | null;
+  closedDate: string | null;
+  description: string | null;
+  owner: string | null;
+};
+
+export type Account360Visita = {
+  id: string;
+  numero: string | null;
+  date: string | null;
+  status: string | null;
+  motivo: string | null;
+  descricao: string | null;
+  planoAcao: string | null;
+  contato: string | null;
+  owner: string | null;
+  cidade: string | null;
+};
+
+export type Account360Treinamento = {
+  id: string;
+  nome: string | null;
+  tipo: string | null;
+  date: string | null;
+  observacoes: string | null;
+  contato: string | null;
+  owner: string | null;
+};
+
+export type Account360Credito = {
+  id: string;
+  nome: string | null;
+  status: string | null;
+  conclusao: string | null;
+  restricao: string | null;
+  condicaoSolicitada: string | null;
+  condicaoAprovada: string | null;
+  creditoSolicitado: number | null;
+  creditoAprovado: number | null;
+  serasa: number | null;
+  prioridade: string | null;
+  solicitadoEm: string | null;
+  concluidoEm: string | null;
+  observacoesFinanceiro: string | null;
+  observacoesVendedor: string | null;
+};
+
+export type Account360 = {
+  opportunities: Account360Opportunity[];
+  cases: Account360Case[];
+  visitas: Account360Visita[];
+  treinamentos: Account360Treinamento[];
+  creditos: Account360Credito[];
+};
+
+/** Tudo o que o vendedor precisa ver sobre um cliente, em uma chamada só. */
+export const getSalesforceAccount360 = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { accountId: string }) => input)
+  .handler(async ({ data, context }): Promise<Account360> => {
+    const accountId = String(data.accountId ?? "").trim();
+    if (!validId(accountId)) throw new Error("accountId inválido");
+    await assertAccountAccess(context.supabase, context.userId, accountId);
+    const id = esc(accountId);
+
+    const cutoff = new Date();
+    cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 3);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+    const soqlOpp =
+      `SELECT Id, Name, StageName, Amount, Total__c, CloseDate, CreatedDate, IsClosed, IsWon, ` +
+      `Tipo_de_NF__c, Owner.Name FROM Opportunity WHERE AccountId = '${id}' ` +
+      `AND CloseDate >= ${cutoffStr} ORDER BY CloseDate DESC NULLS LAST LIMIT 500`;
+    const soqlCase =
+      `SELECT Id, CaseNumber, Subject, Status, Priority, Type, Origin, CreatedDate, ClosedDate, ` +
+      `Description, Owner.Name FROM Case WHERE AccountId = '${id}' ` +
+      `ORDER BY CreatedDate DESC LIMIT 200`;
+    const soqlVisita =
+      `SELECT Id, N_da_Visita__c, Data_da_Visita__c, Status_da_Visita__c, Motivo_da_Visita__c, ` +
+      `Descri_o_da_Visita__c, Plano_de_Acao__c, Contato__r.Name, Owner.Name, Destino__City__s ` +
+      `FROM Visita__c WHERE Conta__c = '${id}' ORDER BY Data_da_Visita__c DESC NULLS LAST LIMIT 200`;
+    const soqlTrein =
+      `SELECT Id, Name, Tipo__c, Data_do_Treinamento__c, Observacoes_do_Treinamento__c, ` +
+      `Contato__r.Name, Owner.Name FROM Treinamento__c WHERE Conta__c = '${id}' ` +
+      `ORDER BY Data_do_Treinamento__c DESC NULLS LAST LIMIT 200`;
+    const soqlCredito =
+      `SELECT Id, Name, Status_da_Analise__c, Conclusao__c, Restricao__c, Condicao_Solicitada__c, ` +
+      `Condicao_Aprovada__c, Credito_Solicitado_R__c, Credito_Aprovado_R__c, Pontuacao_no_Serasa__c, ` +
+      `Prioridade__c, Solicitacao__c, Concluido__c, Observacoes_do_Financeiro__c, ` +
+      `Observacoes_do_Vendedor__c FROM Analise_de_Credito__c WHERE Conta__c = '${id}' ` +
+      `ORDER BY CreatedDate DESC LIMIT 100`;
+
+    const run = (soql: string) =>
+      sfFetch(`/query?q=${encodeURIComponent(soql)}`).catch(() => ({ records: [] }));
+
+    const [oRes, cRes, vRes, tRes, crRes] = await Promise.all([
+      run(soqlOpp),
+      run(soqlCase),
+      run(soqlVisita),
+      run(soqlTrein),
+      run(soqlCredito),
+    ]);
+
+    const numOrNull = (v: any) => (typeof v === "number" ? v : null);
+
+    return {
+      opportunities: ((oRes?.records ?? []) as any[]).map((r) => ({
+        id: r.Id,
+        name: r.Name ?? "Oportunidade",
+        stage: r.StageName ?? null,
+        amount: Number(r.Total__c ?? r.Amount ?? 0) || 0,
+        closeDate: r.CloseDate ?? null,
+        createdDate: r.CreatedDate ?? null,
+        isClosed: Boolean(r.IsClosed),
+        isWon: Boolean(r.IsWon),
+        owner: r.Owner?.Name ?? null,
+        tipoNf: r.Tipo_de_NF__c ?? null,
+      })),
+      cases: ((cRes?.records ?? []) as any[]).map((r) => ({
+        id: r.Id,
+        number: r.CaseNumber ?? null,
+        subject: r.Subject ?? "(sem assunto)",
+        status: r.Status ?? null,
+        priority: r.Priority ?? null,
+        type: r.Type ?? null,
+        origin: r.Origin ?? null,
+        createdDate: r.CreatedDate ?? null,
+        closedDate: r.ClosedDate ?? null,
+        description: r.Description ?? null,
+        owner: r.Owner?.Name ?? null,
+      })),
+      visitas: ((vRes?.records ?? []) as any[]).map((r) => ({
+        id: r.Id,
+        numero: r.N_da_Visita__c ?? null,
+        date: r.Data_da_Visita__c ?? null,
+        status: r.Status_da_Visita__c ?? null,
+        motivo: r.Motivo_da_Visita__c ?? null,
+        descricao: r.Descri_o_da_Visita__c ?? null,
+        planoAcao: r.Plano_de_Acao__c ?? null,
+        contato: r.Contato__r?.Name ?? null,
+        owner: r.Owner?.Name ?? null,
+        cidade: r.Destino__City__s ?? null,
+      })),
+      treinamentos: ((tRes?.records ?? []) as any[]).map((r) => ({
+        id: r.Id,
+        nome: r.Name ?? null,
+        tipo: r.Tipo__c ?? null,
+        date: r.Data_do_Treinamento__c ?? null,
+        observacoes: r.Observacoes_do_Treinamento__c ?? null,
+        contato: r.Contato__r?.Name ?? null,
+        owner: r.Owner?.Name ?? null,
+      })),
+      creditos: ((crRes?.records ?? []) as any[]).map((r) => ({
+        id: r.Id,
+        nome: r.Name ?? null,
+        status: r.Status_da_Analise__c ?? null,
+        conclusao: r.Conclusao__c ?? null,
+        restricao: r.Restricao__c ?? null,
+        condicaoSolicitada: r.Condicao_Solicitada__c ?? null,
+        condicaoAprovada: r.Condicao_Aprovada__c ?? null,
+        creditoSolicitado: numOrNull(r.Credito_Solicitado_R__c),
+        creditoAprovado: numOrNull(r.Credito_Aprovado_R__c),
+        serasa: numOrNull(r.Pontuacao_no_Serasa__c),
+        prioridade: r.Prioridade__c ?? null,
+        solicitadoEm: r.Solicitacao__c ?? null,
+        concluidoEm: r.Concluido__c ?? null,
+        observacoesFinanceiro: r.Observacoes_do_Financeiro__c ?? null,
+        observacoesVendedor: r.Observacoes_do_Vendedor__c ?? null,
+      })),
+    };
+  });
