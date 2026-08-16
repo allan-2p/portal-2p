@@ -269,12 +269,14 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
         <div class="tags">
           <div class="tag">UF ${esc(p.cliente.uf)}</div>
           <div class="tag ${p.cliente.contribuinte ? "on" : ""}">${p.cliente.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}</div>
+          ${p.finalidadeUso ? `<div class="tag on">Finalidade: ${esc(p.finalidadeUso)}</div>` : ""}
         </div>
         <div class="grid">
           <div class="f"><label>CNPJ / CPF</label><div>${esc(p.cliente.doc) || "—"}</div></div>
           <div class="f"><label>Inscrição estadual</label><div>${esc(p.cliente.ie) || "—"}</div></div>
           <div class="f"><label>E-mail</label><div>${esc(p.cliente.email) || "—"}</div></div>
           <div class="f"><label>Telefone</label><div>${esc(p.cliente.telefone) || "—"}</div></div>
+          <div class="f"><label>Finalidade da mercadoria</label><div>${esc(p.finalidadeUso) || "—"}</div></div>
         </div>
       </div>
     </div>
