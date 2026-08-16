@@ -710,6 +710,7 @@ function PropostaCpoPage() {
 
   // ---- Bloqueios de salvamento ----
   const errosSalvar: string[] = [];
+  if (!state.propostaNome.trim()) errosSalvar.push("Informe o nome da proposta.");
   errosCliente.forEach((e) => errosSalvar.push(e.msg));
   if (!temProduto) errosSalvar.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length) errosSalvar.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
