@@ -876,6 +876,7 @@ function PropostaCpoPage() {
           uf: state.uf,
           contribuinte: state.contribuinte,
         },
+        finalidadeUso: labelFinalidadeUso[state.finalidadeUso] ?? null,
         itens: state.itens
           .filter((i) => i.produtoId)
           .map((i) => {
