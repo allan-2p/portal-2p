@@ -30,7 +30,7 @@ import { fmtBRL } from "@/lib/cpo";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
-import { PermissionGate } from "@/components/permission-gate";
+import { PermissionGate, useCanDelete } from "@/components/permission-gate";
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
@@ -81,6 +81,7 @@ function HistoricoCpoPage() {
   const [uf, setUf] = useState("todos");
   const [vendedor, setVendedor] = useState("__all__");
   const [excluirId, setExcluirId] = useState<string | null>(null);
+  const podeExcluir = useCanDelete();
   const vend = useCpoVendedores();
 
   const q = useQuery({
@@ -216,7 +217,6 @@ function HistoricoCpoPage() {
                   <th className="text-left px-4 py-3">Cliente</th>
 
                   <th className="text-left px-4 py-3">UF</th>
-                  <th className="text-left px-4 py-3">Contribuinte</th>
                   <th className="text-right px-4 py-3">Valor</th>
                   <th className="text-left px-4 py-3">Data</th>
                   <th className="text-center px-4 py-3">Status</th>
@@ -232,7 +232,6 @@ function HistoricoCpoPage() {
                     <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
 
                     <td className="px-4 py-3">{r.uf}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.contribuinte ? "Sim" : "Não"}</td>
                     <td className="px-4 py-3 text-right font-semibold">{fmtBRL(r.totais.valorTotal ?? 0)}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("pt-BR")}
@@ -265,14 +264,18 @@ function HistoricoCpoPage() {
                             <Copy className="h-4 w-4" />
                           </Link>
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label="Auditoria de cálculo" asChild>
-                          <Link to="/carregadores/propostas/auditoria" search={{ id: r.id }}>
-                            <Calculator className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {podeExcluir && (
+                          <>
+                            <Button variant="ghost" size="icon" aria-label="Auditoria de cálculo" asChild>
+                              <Link to="/carregadores/propostas/auditoria" search={{ id: r.id }}>
+                                <Calculator className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </td>
 
@@ -280,7 +283,7 @@ function HistoricoCpoPage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                       {q.isLoading ? "Carregando…" : "Nenhuma proposta encontrada."}
                     </td>
                   </tr>
