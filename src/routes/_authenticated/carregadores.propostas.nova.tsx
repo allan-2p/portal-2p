@@ -1976,6 +1976,11 @@ function PropostaCpoPage() {
                 }
               />
             ) : null}
+            {state.freteMod === "CIF" && !state.transportadora && tentouAvancar ? (
+              <p className="text-[11px] text-destructive mt-1 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> Selecione uma transportadora e confirme a cotação para avançar.
+              </p>
+            ) : null}
 
             </>
             ) : null}
