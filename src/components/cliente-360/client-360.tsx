@@ -3,11 +3,23 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sincronizarDonoContaFn } from "@/lib/owner-sync.functions";
 
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
 import {
   getSalesforceAccountHistory,
   getSalesforceAccountContacts,
   getSalesforceAccountActivities,
   getSalesforceAccount360,
+  createSalesforceTask,
+  logSalesforceInteraction,
   type SalesforceAccount,
   type SalesforceContact,
   type SalesforceActivity,
@@ -19,6 +31,7 @@ import {
 } from "@/lib/client-notes.functions";
 import { AtlasBoard } from "@/components/cliente-360/atlas-board";
 import { cn } from "@/lib/utils";
+
 import {
   Building2,
   Phone,
