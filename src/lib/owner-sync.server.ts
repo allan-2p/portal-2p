@@ -130,9 +130,43 @@ export async function sincronizarDonoDaConta(
   instancia: AccountsInstance,
   accountId: string,
 ): Promise<OwnerSyncResult> {
+  const vazio: OwnerSyncResult = { verificados: 0, transferidos: 0, detalhes: [] };
   const accountsDb = await import("./accounts-db.server");
+  const clientesDb = await import("./clientes-db.server");
   const conta = await accountsDb.fetchAccountById(instancia, accountId);
   const cnpj = digits((conta?.custom_fields as any)?.["CNPJ__c"]);
-  if (!conta || !cnpj) return { verificados: 0, transferidos: 0, detalhes: [] };
-  return sincronizarDonos(ctx, instancia, { docs: [cnpj] });
+  if (!conta || !cnpj || !conta.owner_id) return vazio;
+
+  const perfis = await perfisPorSfId(ctx.supabase);
+  const dono = perfis.get(conta.owner_id);
+  if (!dono) return vazio;
+
+  let cliente: ClienteRow | null = null;
+  try {
+    const achados = await clientesDb.findClienteByDoc(cnpj);
+    cliente = achados.find((a) => a.instancia === instancia)?.cliente ?? null;
+  } catch {
+    return vazio;
+  }
+  if (!cliente) return vazio;
+  const res: OwnerSyncResult = { verificados: 1, transferidos: 0, detalhes: [] };
+  if ((cliente["created_by"] as string | null) === dono.id) return res;
+
+  await clientesDb.updateCliente(instancia, cliente["id"] as string, {
+    created_by: dono.id,
+    created_by_nome: dono.nome,
+    created_by_email: dono.email,
+  });
+  const info = {
+    cliente: String(cliente["razao_social"] ?? conta.name ?? cnpj),
+    doc: cnpj,
+    de: (cliente["created_by_nome"] as string | null) ?? null,
+    para: dono.nome ?? dono.email ?? "—",
+    paraId: dono.id,
+  };
+  res.transferidos = 1;
+  res.detalhes.push({ cliente: info.cliente, doc: info.doc, de: info.de, para: info.para });
+  await registrar(ctx, instancia, info);
+  return res;
 }
+
