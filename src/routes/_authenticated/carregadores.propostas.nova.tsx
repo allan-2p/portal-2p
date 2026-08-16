@@ -1911,98 +1911,38 @@ function PropostaCpoPage() {
 
             {etapa === 5 ? (
               <>
-              <Field label="Forma de pagamento">
-                <Select
-                  value={state.formaPagamento || undefined}
-                  onValueChange={(v) => set("formaPagamento", v as CpoState["formaPagamento"])}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="boleto_vista">{labelFormaPagamento.boleto_vista}</SelectItem>
-                    <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
-                    <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
-                    <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field label="Observações">
-                <Textarea
-                  rows={3}
-                  value={state.observacoes}
-                  placeholder="Observações da proposta"
-                  onChange={(e) => set("observacoes", e.target.value)}
-                />
-                {avisoUsoConsumo ? (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Este aviso será incluído automaticamente nas observações da proposta: “{avisoUsoConsumo}”
-                  </p>
-                ) : null}
-              </Field>
-
+              {/* RESUMO ÚNICO DO PEDIDO */}
               <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-4 text-sm">
-                <p className="font-semibold">Resumo do pedido</p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold">Resumo do pedido</p>
+                  <span
+                    className={cn(
+                      "text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full",
+                      abaixoPolitica
+                        ? "bg-destructive/15 text-destructive"
+                        : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+                    )}
+                  >
+                    MB {fmtPct(d.mbPct)} · {abaixoPolitica ? "fora da política" : "dentro da política"}
+                  </span>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                  <ResumoLinha k="Proposta" v={state.propostaNome || "—"} />
-                  <ResumoLinha k="Nº SAP" v={state.numeroSap || "em geração"} />
-                  <ResumoLinha k="Cliente" v={state.nome || "—"} />
-                  <ResumoLinha k="CNPJ / CPF" v={state.doc || "—"} />
-                  <ResumoLinha k="Inscrição estadual" v={state.ie || "—"} />
-                  <ResumoLinha k="Contribuinte ICMS" v={state.contribuinte ? "Sim" : "Não"} />
+                  <ResumoLinha
+                    k="Proposta"
+                    v={`${state.propostaNome || "—"}${state.numeroSap ? ` · ${state.numeroSap}` : ""}`}
+                  />
+                  <ResumoLinha k="Cliente" v={`${state.nome || "—"}${state.doc ? ` · ${state.doc}` : ""}`} />
                   <ResumoLinha k="Consultor" v={consultorProposta ?? "—"} />
                   <ResumoLinha
-                    k="Previsão de fechamento"
-                    v={
-                      state.previsaoFechamento
-                        ? new Date(`${state.previsaoFechamento}T00:00:00`).toLocaleDateString("pt-BR")
-                        : "—"
-                    }
+                    k="Nota"
+                    v={`${labelTipoNf[state.tipoNf]} · ${labelFinalidadeUso[state.finalidadeUso]} · ${state.uf || "—"}`}
                   />
-                  <ResumoLinha k="Finalidade de uso" v={labelFinalidadeUso[state.finalidadeUso]} />
                   <ResumoLinha
-                    k="Indicação"
-                    v={state.indicacao ? `Sim — ${state.padrinhoNome || "padrinho não informado"}` : "Não"}
-                  />
-                </div>
-
-                <div className="border-t border-border pt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                  <ResumoLinha k="Tipo de nota" v={labelTipoNf[state.tipoNf]} />
-                  <ResumoLinha k="Faturar para o cliente final" v={state.faturarClienteFinal ? "Sim" : "Não"} />
-                  <ResumoLinha k="UF de faturamento" v={state.uf || "—"} />
-                  {state.faturarClienteFinal ? (
-                    <>
-                      <ResumoLinha k="Destinatário da nota" v={state.faturamento.nome || "—"} />
-                      <ResumoLinha k="CNPJ / CPF do destinatário" v={state.faturamento.doc || "—"} />
-                      <ResumoLinha
-                        k="Endereço de faturamento"
-                        v={
-                          [
-                            [state.faturamento.logradouro, state.faturamento.numero].filter(Boolean).join(", "),
-                            state.faturamento.bairro,
-                            [state.faturamento.cidade, state.faturamento.uf].filter(Boolean).join(" / "),
-                            state.faturamento.cep,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ") || "—"
-                        }
-                      />
-                    </>
-                  ) : null}
-                  <ResumoLinha
-                    k="Forma de pagamento"
-                    v={state.formaPagamento ? labelFormaPagamento[state.formaPagamento] : "—"}
-                  />
-                </div>
-
-                <div className="border-t border-border pt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                  <ResumoLinha
-                    k="Endereço de entrega"
+                    k="Entrega"
                     v={
                       [
                         [entregaEfetiva.logradouro, entregaEfetiva.numero].filter(Boolean).join(", "),
-                        entregaEfetiva.complemento,
-                        entregaEfetiva.bairro,
                         [entregaEfetiva.cidade, entregaEfetiva.uf || state.uf].filter(Boolean).join(" / "),
                         entregaEfetiva.cep,
                       ]
@@ -2011,23 +1951,16 @@ function PropostaCpoPage() {
                     }
                   />
                   <ResumoLinha
-                    k="Entrega"
-                    v={state.entregaDiferente ? "Endereço alternativo" : "Endereço padrão do cliente"}
+                    k="Frete"
+                    v={
+                      state.freteMod
+                        ? `${labelFreteMod[state.freteMod]}${state.transportadora ? ` · ${state.transportadora.nome} · ${state.transportadora.prazo} dia(s)` : ""}`
+                        : "—"
+                    }
                   />
-                  <ResumoLinha k="Modalidade de frete" v={state.freteMod ? labelFreteMod[state.freteMod] : "—"} />
-                  {state.freteMod === "CIF" ? (
-                    <>
-                      <ResumoLinha k="Área rural" v={state.freteAreaRural ? "Sim" : "Não"} />
-                      <ResumoLinha k="Transportadora" v={state.transportadora?.nome ?? "—"} />
-                      <ResumoLinha
-                        k="Prazo de entrega"
-                        v={state.transportadora ? `${state.transportadora.prazo} dia(s) útil(eis)` : "—"}
-                      />
-                    </>
-                  ) : null}
-                  <ResumoLinha k="Valor do frete" v={fmtBRL(state.freteValor)} />
                 </div>
 
+                {/* PRODUTOS */}
                 <div className="border-t border-border pt-3 space-y-2">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Produtos</p>
                   <div className="overflow-x-auto">
@@ -2072,28 +2005,53 @@ function PropostaCpoPage() {
                   </div>
                 </div>
 
+                {/* IMPOSTOS */}
                 <div className="border-t border-border pt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                  <p className="sm:col-span-2 text-xs uppercase tracking-wide text-muted-foreground">Impostos</p>
                   <ResumoLinha k="Total dos itens" v={fmtBRL(d.valorItens)} />
-                  <ResumoLinha k={`Frete (${state.freteMod || "—"})`} v={fmtBRL(state.freteValor)} />
                   <ResumoLinha k="IPI destacado" v={fmtBRL(d.ipiValor)} />
+                  <ResumoLinha k="Itens sem IPI (base fiscal)" v={fmtBRL(d.valorItem)} />
+                  <ResumoLinha k={`Frete (${state.freteMod || "—"})`} v={fmtBRL(state.freteValor)} />
                   <ResumoLinha k="Margem bruta" v={`${fmtPct(d.mbPct)} · ${fmtBRL(d.mb)}`} />
                   <ResumoLinha
                     k={`Comissão do vendedor (${regimeVendedor})`}
                     v={`${fmtBRL(comissaoVendedor.valor)} · ${fmtPct(comissaoVendedor.pct)}`}
                   />
-                  <ResumoLinha k="Total da proposta" v={fmtBRL(d.valorTotalProposta)} strong />
                 </div>
+              </div>
 
-                {observacoesFinal.trim() ? (
-                  <div className="border-t border-border pt-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Observações</p>
-                    <p className="text-xs whitespace-pre-wrap">{observacoesFinal}</p>
-                  </div>
-                ) : null}
+              {/* DEFINIÇÕES FINAIS */}
+              <div className="rounded-xl border border-border p-4 space-y-4">
+                <p className="font-semibold text-sm">Definições finais</p>
 
-                <p className="text-xs text-muted-foreground pt-1">
-                  Confira os dados e finalize salvando a proposta ou concluindo o pedido.
-                </p>
+                <Field label="Forma de pagamento">
+                  <Select
+                    value={state.formaPagamento || undefined}
+                    onValueChange={(v) => set("formaPagamento", v as CpoState["formaPagamento"])}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="boleto_vista">{labelFormaPagamento.boleto_vista}</SelectItem>
+                      <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
+                      <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
+                      <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field label="Observações finais">
+                  <Textarea
+                    rows={3}
+                    value={state.observacoes}
+                    placeholder="Observações da proposta"
+                    onChange={(e) => set("observacoes", e.target.value)}
+                  />
+                  {avisoUsoConsumo ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Este aviso será incluído automaticamente nas observações da proposta: “{avisoUsoConsumo}”
+                    </p>
+                  ) : null}
+                </Field>
               </div>
               </>
             ) : null}
