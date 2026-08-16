@@ -24,6 +24,8 @@ import { fmtBRL, precoSugeridoPadrao, MARGEM_PRECO_SUGERIDO, type CpoProduct } f
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorPath, BUCKET_PRODUTOS } from "@/lib/produto-imagens";
+import { CatalogoFotos } from "@/components/produtos/catalogo-fotos";
+
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
@@ -56,11 +58,14 @@ function ProdutosCpoPage() {
         <Tabs defaultValue="produtos">
           <TabsList>
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
+            <TabsTrigger value="fotos">Fotos do catálogo</TabsTrigger>
             <TabsTrigger value="ufs">Alíquotas por UF</TabsTrigger>
           </TabsList>
           <TabsContent value="produtos" className="mt-4"><ProdutosTab /></TabsContent>
+          <TabsContent value="fotos" className="mt-4"><CatalogoFotos /></TabsContent>
           <TabsContent value="ufs" className="mt-4"><UfsTab /></TabsContent>
         </Tabs>
+
 
       </div>
     </AppLayout>
