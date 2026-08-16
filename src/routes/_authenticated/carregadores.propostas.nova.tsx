@@ -977,7 +977,7 @@ function PropostaCpoPage() {
           _id: inserida.id,
           _status: status,
           _origem: "portal",
-          _etapa: etapa,
+          _etapa: etapa === 5 ? 4 : etapa,
         });
         if (rpcErr) {
           setPropostaId(inserida.id);
