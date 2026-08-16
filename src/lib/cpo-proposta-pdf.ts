@@ -5,9 +5,12 @@ export type PropostaPdfItem = {
   nome: string;
   /** Código NCM do produto (exibido logo abaixo do nome). */
   ncm?: string | null;
+  /** Foto do produto (URL assinada ou data URL) exibida na linha do item. */
+  foto?: string | null;
   qtd: number;
   valor: number;
 };
+
 
 export type PropostaPdfData = {
   numero?: string;
