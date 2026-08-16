@@ -37,6 +37,8 @@ import { getClienteLogo } from "@/lib/cliente-logos.functions";
 import { PropostaIndicacao } from "@/components/proposta-indicacao";
 import { CepInput } from "@/components/cep-input";
 import { FreteCotacao } from "@/components/frete-cotacao";
+import { ProdutoFoto } from "@/components/produto-foto";
+import { useImagensPorPath } from "@/lib/produto-imagens";
 
 
 
@@ -167,6 +169,11 @@ function PropostaCpoPage() {
   const invalidate = useCpoInvalidate();
 
   const produtos = useMemo(() => (produtosQ.data ?? []).filter((p) => p.ativo), [produtosQ.data]);
+  const fotosQ = useImagensPorPath(produtos.map((p) => p.imagem_path));
+  const fotoDoProduto = (produtoId?: string) => {
+    const path = produtos.find((p) => p.id === produtoId)?.imagem_path;
+    return path ? (fotosQ.data ?? {})[path] : undefined;
+  };
   const ufs = ufsQ.data ?? [];
   const config = configQ.data ?? CPO_CONFIG_FALLBACK;
 
@@ -1577,7 +1584,14 @@ function PropostaCpoPage() {
                       bloqueado ? "border-destructive/60 ring-1 ring-destructive/25" : "border-border",
                     )}
                   >
-                    <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_.5fr] gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-[auto_1.5fr_.5fr] gap-3">
+                      <div className="flex items-end">
+                        <ProdutoFoto
+                          url={fotoDoProduto(it.produtoId)}
+                          alt={produtos.find((p) => p.id === it.produtoId)?.nome}
+                          className="h-14 w-16"
+                        />
+                      </div>
                       <Field label="Produto">
                         <Select
                           value={it.produtoId}
@@ -1993,10 +2007,19 @@ function PropostaCpoPage() {
                             return (
                               <tr key={i.key} className="border-t border-border/60">
                                 <td className="py-1.5 pr-2">
+                                  <div className="flex items-center gap-2">
+                                    <ProdutoFoto
+                                      url={fotoDoProduto(i.produtoId)}
+                                      alt={prod?.nome}
+                                      className="h-10 w-11"
+                                    />
+                                    <div className="min-w-0">
                                   <span className="font-medium">{prod?.nome ?? "—"}</span>
                                   {prod?.codigo ? (
                                     <span className="text-muted-foreground"> · {prod.codigo}</span>
                                   ) : null}
+                                    </div>
+                                  </div>
                                 </td>
                                 <td className="py-1.5 pr-2 tabular-nums">{ncm}</td>
                                 <td className="py-1.5 text-right tabular-nums">{i.qtd}</td>
@@ -2384,8 +2407,15 @@ function PropostaCpoPage() {
                   .filter((i) => i.produtoId)
                   .map((i) => (
                     <div key={i.key} className="flex items-center justify-between gap-3">
-                      <span className="truncate">
-                        {produtos.find((p) => p.id === i.produtoId)?.nome ?? "—"} × {i.qtd}
+                      <span className="flex min-w-0 items-center gap-2">
+                        <ProdutoFoto
+                          url={fotoDoProduto(i.produtoId)}
+                          alt={produtos.find((p) => p.id === i.produtoId)?.nome}
+                          className="h-9 w-10"
+                        />
+                        <span className="truncate">
+                          {produtos.find((p) => p.id === i.produtoId)?.nome ?? "—"} × {i.qtd}
+                        </span>
                       </span>
                       <span className="tabular-nums font-medium">{fmtBRL(i.qtd * i.valor)}</span>
                     </div>
