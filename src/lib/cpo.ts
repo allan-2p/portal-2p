@@ -177,7 +177,19 @@ export type CpoState = {
   /** Padrinho da indicação, quando houver. */
   padrinhoId: string | null;
   padrinhoNome: string;
+  /** Previsão de fechamento (AAAA-MM-DD) — campo opcional. */
+  previsaoFechamento: string;
+  /** Tipo de nota fiscal da operação. */
+  tipoNf: CpoTipoNf;
+  /** Faturar diretamente para o cliente final. */
+  faturarClienteFinal: boolean;
+  formaPagamento: CpoFormaPagamento | "";
+  /** Entrega em endereço diferente do faturamento (mesmo estado). */
+  entregaDiferente: boolean;
+  entrega: CpoEndereco;
   freteMod: CpoFreteMod;
+  /** Entrega em área rural (perguntado apenas no CIF). */
+  freteAreaRural: boolean;
   freteValor: number;
   observacoes: string;
   itens: CpoItem[];
