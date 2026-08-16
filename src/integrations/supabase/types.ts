@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_notes: {
+        Row: {
+          account_id: string
+          account_name: string | null
+          canvas: Json
+          created_at: string
+          id: string
+          instancia: string
+          notes: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id: string
+          account_name?: string | null
+          canvas?: Json
+          created_at?: string
+          id?: string
+          instancia?: string
+          notes?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string
+          account_name?: string | null
+          canvas?: Json
+          created_at?: string
+          id?: string
+          instancia?: string
+          notes?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       cliente_logos: {
         Row: {
           data_url: string
