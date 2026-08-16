@@ -1192,7 +1192,11 @@ function PropostaCpoPage() {
         <div
           className={cn(
             "grid grid-cols-1 gap-5 items-start",
-            etapa === 3 || etapa === 4 ? "xl:grid-cols-[1.15fr_.85fr]" : "max-w-3xl",
+            etapa === 3 || etapa === 4
+              ? "xl:grid-cols-[1.15fr_.85fr]"
+              : etapa === 5
+                ? "xl:grid-cols-[1fr_.45fr]"
+                : "max-w-3xl",
           )}
         >
           {/* ENTRADAS */}
@@ -2022,40 +2026,6 @@ function PropostaCpoPage() {
                   />
                 </div>
               </div>
-
-              {/* DEFINIÇÕES FINAIS */}
-              <div className="rounded-xl border border-border p-4 space-y-4">
-                <p className="font-semibold text-sm">Definições finais</p>
-
-                <Field label="Forma de pagamento">
-                  <Select
-                    value={state.formaPagamento || undefined}
-                    onValueChange={(v) => set("formaPagamento", v as CpoState["formaPagamento"])}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="boleto_vista">{labelFormaPagamento.boleto_vista}</SelectItem>
-                      <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
-                      <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
-                      <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-
-                <Field label="Observações finais">
-                  <Textarea
-                    rows={3}
-                    value={state.observacoes}
-                    placeholder="Observações da proposta"
-                    onChange={(e) => set("observacoes", e.target.value)}
-                  />
-                  {avisoUsoConsumo ? (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Este aviso será incluído automaticamente nas observações da proposta: “{avisoUsoConsumo}”
-                    </p>
-                  ) : null}
-                </Field>
-              </div>
               </>
             ) : null}
 
@@ -2079,9 +2049,44 @@ function PropostaCpoPage() {
 
           </div>
 
-          {/* PAINEL / DRE */}
-          {etapa === 3 || etapa === 4 ? (
+          {/* PAINEL / DRE (etapas 3/4) ou DEFINIÇÕES FINAIS (etapa 5) */}
+          {etapa === 3 || etapa === 4 || etapa === 5 ? (
           <div className="space-y-4">
+            {etapa === 5 ? (
+              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <p className="font-semibold text-sm">Definições finais</p>
+
+                <Field label="Forma de pagamento">
+                  <Select
+                    value={state.formaPagamento || undefined}
+                    onValueChange={(v) => set("formaPagamento", v as CpoState["formaPagamento"])}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="boleto_vista">{labelFormaPagamento.boleto_vista}</SelectItem>
+                      <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
+                      <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
+                      <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field label="Observações finais">
+                  <Textarea
+                    rows={4}
+                    value={state.observacoes}
+                    placeholder="Observações da proposta"
+                    onChange={(e) => set("observacoes", e.target.value)}
+                  />
+                  {avisoUsoConsumo ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Este aviso será incluído automaticamente nas observações da proposta: “{avisoUsoConsumo}”
+                    </p>
+                  ) : null}
+                </Field>
+              </div>
+            ) : (
+            <>
             <div className="glass rounded-2xl p-5 space-y-1.5">
               <h2 className="font-semibold mb-3">Impostos da proposta</h2>
               <DreRow
@@ -2174,7 +2179,7 @@ function PropostaCpoPage() {
                 </div>
               ) : null}
             </div>
-
+            </>)}
 
 
 
