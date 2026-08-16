@@ -937,7 +937,8 @@ function PropostaCpoPage() {
             _id: propostaId,
             _status: status,
             _origem: "portal",
-            _etapa: etapa,
+            // O banco valida a etapa de finalização como 4 (última etapa do fluxo).
+            _etapa: etapa === 5 ? 4 : etapa,
           });
 
           if (rpcErr) throw rpcErr;
