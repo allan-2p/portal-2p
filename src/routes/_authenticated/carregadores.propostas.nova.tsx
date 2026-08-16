@@ -34,6 +34,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listClientesFn } from "@/lib/clientes.functions";
 import { getClienteLogo } from "@/lib/cliente-logos.functions";
 import { PropostaIndicacao } from "@/components/proposta-indicacao";
+import { CepInput } from "@/components/cep-input";
 
 
 import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
@@ -54,6 +55,9 @@ import {
   observacoesComDifal,
   FRETE_ABSORVIDO,
   labelFreteMod,
+  labelTipoNf,
+  labelFormaPagamento,
+  novoEndereco,
   novoEstado,
   novoItem,
   parseMoeda,
@@ -251,9 +255,16 @@ function PropostaCpoPage() {
         indicacao: !!(data as any).indicacao,
         padrinhoId: ((data as any).padrinho_id as string | null) ?? null,
         padrinhoNome: ((data as any).padrinho_nome as string | null) ?? "",
+        previsaoFechamento: ((data as any).previsao_fechamento as string | null) ?? "",
+        tipoNf: (((data as any).tipo_nf as string | null) ?? "venda") as CpoState["tipoNf"],
+        faturarClienteFinal: (data as any).faturar_cliente_final !== false,
+        formaPagamento: (((data as any).forma_pagamento as string | null) ?? "") as CpoState["formaPagamento"],
+        entregaDiferente: !!(data as any).entrega_diferente,
+        entrega: { ...novoEndereco(data.uf), ...(((data as any).entrega as Record<string, string>) ?? {}) },
         freteMod: (data.frete_mod === "CIF" || data.frete_mod === "DEDICADO"
           ? data.frete_mod
           : "FOB") as CpoFreteMod,
+        freteAreaRural: !!(data as any).frete_area_rural,
         freteValor: money2(data.frete_valor ?? 0),
         observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
         itens: itens.length ? itens : [novoItem()],
@@ -791,7 +802,14 @@ function PropostaCpoPage() {
           finalidadeUso: state.finalidadeUso,
           indicacao: state.indicacao,
           padrinhoId: state.indicacao ? state.padrinhoId : null,
+          previsaoFechamento: state.previsaoFechamento || null,
+          tipoNf: state.tipoNf,
+          faturarClienteFinal: state.faturarClienteFinal,
+          formaPagamento: state.formaPagamento || null,
+          entregaDiferente: state.entregaDiferente,
+          entrega: state.entrega,
           freteMod: state.freteMod,
+          freteAreaRural: state.freteMod === "CIF" ? state.freteAreaRural : false,
           freteValor: money2(state.freteValor),
           observacoes: observacoesFinal.trim() || null,
           itens: state.itens
