@@ -1014,6 +1014,10 @@ function AtlasPanelTab({ account }: { account: SalesforceAccount }) {
 
   return (
     <div className="space-y-4">
+      <div className="glass rounded-xl p-4 sm:p-5">
+        <AtlasBoard cards={cards} onChange={touch(setCards)} />
+      </div>
+
       <Card
         title="Contexto para o Atlas"
         icon={Sparkles}
@@ -1040,10 +1044,6 @@ function AtlasPanelTab({ account }: { account: SalesforceAccount }) {
           <div className="text-xs text-destructive mt-2">Não foi possível carregar as anotações.</div>
         )}
       </Card>
-
-      <div className="glass rounded-xl p-4 sm:p-5">
-        <AtlasBoard cards={cards} onChange={touch(setCards)} />
-      </div>
     </div>
   );
 }
