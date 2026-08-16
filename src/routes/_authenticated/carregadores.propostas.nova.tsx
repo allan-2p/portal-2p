@@ -609,6 +609,8 @@ function PropostaCpoPage() {
   // ---- Validação da etapa 1 (identificação) e etapa 2 (faturamento) ----
   const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
   const errosIdentificacao: { campo: string; msg: string }[] = [];
+  if (!state.propostaNome.trim())
+    errosIdentificacao.push({ campo: "propostaNome", msg: "Informe o nome da proposta." });
   if (!state.nome.trim()) errosIdentificacao.push({ campo: "nome", msg: "Selecione um cliente." });
   const docDigits = soDigitos(state.doc);
   if (!docDigits) errosIdentificacao.push({ campo: "doc", msg: "CNPJ/CPF não informado no cadastro do cliente." });
@@ -645,7 +647,8 @@ function PropostaCpoPage() {
 
   const identificacaoOk = errosIdentificacao.length === 0;
   const clienteOk = errosCliente.length === 0;
-  const campoInvalido = (c: string) => errosCliente.some((e) => e.campo === c);
+  // Só sinalizamos campos em vermelho depois que o usuário tenta avançar.
+  const campoInvalido = (c: string) => tentouAvancar && errosCliente.some((e) => e.campo === c);
   const temProduto = state.itens.some((i) => i.produtoId);
   const podeSalvar = clienteOk && temProduto && !abaixoPolitica && !d.cmvExcedido;
 
@@ -1208,7 +1211,7 @@ function PropostaCpoPage() {
               </h2>
             </div>
 
-            {etapa === 1 && errosCliente.length > 0 && (state.nome.trim() || tentouAvancar) ? (
+            {etapa === 1 && errosCliente.length > 0 && tentouAvancar ? (
               <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
                 <p className="font-semibold text-destructive mb-1">
                   Complete os campos obrigatórios para avançar
@@ -1231,10 +1234,10 @@ function PropostaCpoPage() {
                     value={state.propostaNome}
                     onChange={(e) => set("propostaNome", e.target.value)}
                     placeholder="Ex.: Eletroposto Matriz — 4 carregadores"
-                    aria-invalid={!state.propostaNome.trim()}
-                    className={cn(!state.propostaNome.trim() && "border-destructive/60")}
+                    aria-invalid={campoInvalido("propostaNome")}
+                    className={cn(campoInvalido("propostaNome") && "border-destructive/60")}
                   />
-                  {!state.propostaNome.trim() ? (
+                  {campoInvalido("propostaNome") ? (
                     <p className="text-xs text-destructive">Campo obrigatório.</p>
                   ) : null}
                 </Field>
