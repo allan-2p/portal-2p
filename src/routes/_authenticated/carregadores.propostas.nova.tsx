@@ -694,22 +694,11 @@ function PropostaCpoPage() {
       return;
     }
     // Etapa 4 → 5: o frete precisa estar definido e calculado conforme a modalidade.
-    if (alvo >= 5) {
-      const erroFrete = !state.freteMod
-        ? "Selecione a modalidade de frete."
-        : state.freteMod === "CIF" && !state.transportadora
-          ? "Cotação de frete pendente — calcule e selecione a transportadora."
-          : state.freteMod === "CIF" && !(state.freteValor > 0)
-            ? "Frete CIF sem valor calculado — refaça a cotação."
-            : state.freteMod === "DEDICADO" && !(state.freteValor > 0)
-              ? "Informe o valor do frete dedicado."
-              : null;
-      if (erroFrete) {
-        setTentouAvancar(true);
-        setEtapa(4);
-        toast.error(erroFrete);
-        return;
-      }
+    if (alvo >= 5 && erroFreteMsg) {
+      setTentouAvancar(true);
+      setEtapa(4);
+      toast.error(erroFreteMsg);
+      return;
     }
     setEtapa(alvo);
   }
