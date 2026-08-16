@@ -1068,6 +1068,13 @@ function ActivityRail({ accountId }: { accountId: string }) {
         <span className="ml-auto text-[11px] text-muted-foreground">{activities.length}</span>
       </div>
 
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <ActivityComposer accountId={accountId} mode="task" />
+        <ActivityComposer accountId={accountId} mode="call" />
+      </div>
+
+
+
       {q.isLoading ? (
         <Empty>Carregando…</Empty>
       ) : activities.length === 0 ? (
