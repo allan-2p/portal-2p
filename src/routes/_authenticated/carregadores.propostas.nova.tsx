@@ -2094,20 +2094,19 @@ function PropostaCpoPage() {
             ) : null}
 
 
-            {/* TOTAIS AO VIVO — recalculam a cada mudança de preço/quantidade/frete */}
-            <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-background/90 backdrop-blur px-4 py-3 shadow-lg">
-              <div className="flex items-center justify-between gap-3 mb-2">
-                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Totais ao vivo</span>
+            {/* TOTAIS FINAIS — recalculam a cada mudança de preço/quantidade/frete */}
+            <div className="sticky bottom-2 z-10 rounded-2xl border-2 border-primary/40 bg-background/95 backdrop-blur px-5 py-4 shadow-xl">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Totais finais</span>
                 <span className="text-[11px] text-emerald-600">atualiza automaticamente</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                 <LiveTotal label="Itens" value={fmtBRL(d.valorItens)} />
                 <LiveTotal label={`Frete (${state.freteMod || "—"})`} value={fmtBRL(state.freteValor)} />
                 <LiveTotal label="Total da proposta" value={fmtBRL(d.valorTotalProposta)} strong />
-                <LiveTotal label="Margem bruta" value={fmtPct(d.mbPct)} hint={fmtBRL(d.mb)} />
-                <LiveTotal label={`Comissão do vendedor (${regimeVendedor})`} value={fmtBRL(comissaoVendedor.valor)} hint={fmtPct(comissaoVendedor.pct)} />
               </div>
             </div>
+
             </>
 
             ) : null}
@@ -2152,57 +2151,64 @@ function PropostaCpoPage() {
             </div>
 
 
-            {/* RESUMO FINAL DESTACADO */}
-            <div className="rounded-2xl p-6 text-white bg-gradient-to-br from-[oklch(0.28_0.12_265)] via-[oklch(0.42_0.18_265)] to-[oklch(0.58_0.17_265)] shadow-xl space-y-5">
-              <div className="border-b border-white/20 pb-4">
-                <div className="text-[11px] uppercase tracking-[0.2em] opacity-75">Valor total da proposta</div>
-                <div className="text-[2.6rem] leading-none font-extrabold mt-2 tabular-nums">
-                  {fmtBRL(d.valorTotalProposta)}
-                </div>
+            {/* SAÚDE DA MARGEM */}
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-semibold">Saúde da margem</h2>
+                <span
+                  className={cn(
+                    "text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full",
+                    abaixoPolitica
+                      ? "bg-destructive/15 text-destructive"
+                      : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+                  )}
+                >
+                  {abaixoPolitica ? "Fora da política" : "Dentro da política"}
+                </span>
               </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <SumItem label="Margem bruta %" value={fmtPct(d.mbPct)} hint={fmtBRL(d.mb)} />
                 <SumItem label={`Comissão do vendedor (${regimeVendedor})`} value={fmtBRL(comissaoVendedor.valor)} hint={fmtPct(comissaoVendedor.pct)} />
               </div>
 
+              <div className="flex items-center gap-2 text-sm">
+                {abaixoPolitica ? (
+                  <>
+                    <TriangleAlert className="h-4 w-4 text-destructive" />
+                    <span className="text-destructive font-medium">
+                      MB abaixo da política mínima de {fmtPct(config.politica_mb_min)}.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span className="text-muted-foreground">
+                      MB acima da política mínima de {fmtPct(config.politica_mb_min)}.
+                    </span>
+                  </>
+                )}
+              </div>
 
-              {/* ALERTAS AUTOMÁTICOS DE POLÍTICA */}
               {alertas.length ? (
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] opacity-80">
-                    <TriangleAlert className="h-3.5 w-3.5" />
-                    {abaixoPolitica ? "Proposta fora da política" : "Pontos de atenção"}
-                  </div>
+                <div className="space-y-2">
                   {alertas.map((a, i) => (
                     <div
                       key={i}
                       className={cn(
-                        "rounded-xl border px-4 py-3 bg-white/10 backdrop-blur-sm",
-                        a.level === "err" ? "border-red-300/70" : "border-amber-200/60",
+                        "rounded-xl border px-3 py-2",
+                        a.level === "err" ? "border-destructive/40 bg-destructive/5" : "border-border bg-muted/40",
                       )}
                     >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                            a.level === "err" ? "bg-red-500 text-white" : "bg-amber-400 text-amber-950",
-                          )}
-                        >
-                          {a.level === "err" ? "Bloqueio" : "Atenção"}
-                        </span>
-                        <span className="text-sm font-semibold">{a.titulo}</span>
-                      </div>
-                      <p className="text-xs opacity-90 mt-1.5">{a.motivo}</p>
-                      <p className="text-xs font-medium mt-1">Corrigir: {a.corrigir}</p>
+                      <p className="text-sm font-medium">{a.titulo}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{a.motivo}</p>
+                      <p className="text-xs mt-0.5">Corrigir: {a.corrigir}</p>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm font-medium">
-                  <CheckCircle2 className="h-4 w-4" /> Proposta dentro da política comercial.
-                </div>
-              )}
+              ) : null}
             </div>
+
 
 
 
@@ -2470,14 +2476,14 @@ function SumItem({
   return (
     <div
       className={cn(
-        "flex h-full min-w-0 flex-col justify-between rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm",
+        "flex h-full min-w-0 flex-col justify-between rounded-xl border border-border bg-muted/40 px-4 py-3",
         className,
       )}
     >
-      <div className="text-[10px] uppercase tracking-[0.18em] opacity-80 truncate">{label}</div>
+      <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground truncate">{label}</div>
       <div className="mt-2 flex items-baseline gap-2">
         <span className="text-xl font-bold tabular-nums truncate">{value}</span>
-        {hint ? <span className="text-xs font-semibold opacity-85 shrink-0">{hint}</span> : null}
+        {hint ? <span className="text-xs font-semibold text-muted-foreground shrink-0">{hint}</span> : null}
       </div>
     </div>
 
