@@ -1228,12 +1228,17 @@ function PropostaCpoPage() {
 
             {etapa === 1 ? (
               <>
-                <Field label="Nome da proposta">
+                <Field label="Nome da proposta *">
                   <Input
                     value={state.propostaNome}
                     onChange={(e) => set("propostaNome", e.target.value)}
                     placeholder="Ex.: Eletroposto Matriz — 4 carregadores"
+                    aria-invalid={!state.propostaNome.trim()}
+                    className={cn(!state.propostaNome.trim() && "border-destructive/60")}
                   />
+                  {!state.propostaNome.trim() ? (
+                    <p className="text-xs text-destructive">Campo obrigatório.</p>
+                  ) : null}
                 </Field>
 
 
