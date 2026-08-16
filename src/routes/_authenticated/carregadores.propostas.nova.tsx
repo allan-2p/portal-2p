@@ -2086,6 +2086,7 @@ function PropostaCpoPage() {
                 </Field>
               </div>
             ) : (
+            <>
             <div className="glass rounded-2xl p-5 space-y-1.5">
               <h2 className="font-semibold mb-3">Impostos da proposta</h2>
               <DreRow
