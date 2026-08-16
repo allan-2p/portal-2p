@@ -1147,12 +1147,14 @@ function PropostaCpoPage() {
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">
                 {etapa === 1
-                  ? "Etapa 1 — Faturamento"
+                  ? "Etapa 1 — Identificação"
                   : etapa === 2
-                    ? "Etapa 2 — Produtos"
+                    ? "Etapa 2 — Faturamento"
                     : etapa === 3
-                      ? "Etapa 3 — Entrega e frete"
-                      : "Etapa 4 — Finalização"}
+                      ? "Etapa 3 — Produtos"
+                      : etapa === 4
+                        ? "Etapa 4 — Entrega e frete"
+                        : "Etapa 5 — Finalização"}
               </h2>
             </div>
 
