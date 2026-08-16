@@ -613,6 +613,16 @@ function PropostaCpoPage() {
   const uf = ufs.find((u) => u.uf === state.uf);
   const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
+  const erroFreteMsg = !state.freteMod
+    ? "Selecione a modalidade de frete."
+    : state.freteMod === "CIF" && !state.transportadora
+      ? "Cotação de frete pendente — calcule e selecione a transportadora."
+      : state.freteMod === "CIF" && !(state.freteValor > 0)
+        ? "Frete CIF sem valor calculado — refaça a cotação."
+        : state.freteMod === "DEDICADO" && !(state.freteValor > 0)
+          ? "Informe o valor do frete dedicado."
+          : null;
+  const freteInvalido = !!erroFreteMsg;
   // ---- Validação da etapa 1 (identificação) e etapa 2 (faturamento) ----
   const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
   const errosIdentificacao: { campo: string; msg: string }[] = [];
