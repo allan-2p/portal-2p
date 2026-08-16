@@ -490,6 +490,7 @@ export type Database = {
           criado_por_nome: string | null
           entrega: Json
           entrega_diferente: boolean
+          faturamento: Json
           faturar_cliente_final: boolean
           finalidade_uso: string
           finalizado_em: string | null
@@ -498,6 +499,7 @@ export type Database = {
           forma_pagamento: string | null
           frete_area_rural: boolean
           frete_mod: string
+          frete_prazo: number | null
           frete_valor: number
           id: string
           indicacao: boolean
@@ -512,6 +514,9 @@ export type Database = {
           status: string
           tipo_nf: string
           totais: Json
+          transportadora: string | null
+          transportadora_documento: string | null
+          transportadora_id: string | null
           uf: string
           updated_at: string
         }
@@ -529,6 +534,7 @@ export type Database = {
           criado_por_nome?: string | null
           entrega?: Json
           entrega_diferente?: boolean
+          faturamento?: Json
           faturar_cliente_final?: boolean
           finalidade_uso?: string
           finalizado_em?: string | null
@@ -537,6 +543,7 @@ export type Database = {
           forma_pagamento?: string | null
           frete_area_rural?: boolean
           frete_mod?: string
+          frete_prazo?: number | null
           frete_valor?: number
           id?: string
           indicacao?: boolean
@@ -551,6 +558,9 @@ export type Database = {
           status?: string
           tipo_nf?: string
           totais?: Json
+          transportadora?: string | null
+          transportadora_documento?: string | null
+          transportadora_id?: string | null
           uf?: string
           updated_at?: string
         }
@@ -568,6 +578,7 @@ export type Database = {
           criado_por_nome?: string | null
           entrega?: Json
           entrega_diferente?: boolean
+          faturamento?: Json
           faturar_cliente_final?: boolean
           finalidade_uso?: string
           finalizado_em?: string | null
@@ -576,6 +587,7 @@ export type Database = {
           forma_pagamento?: string | null
           frete_area_rural?: boolean
           frete_mod?: string
+          frete_prazo?: number | null
           frete_valor?: number
           id?: string
           indicacao?: boolean
@@ -590,6 +602,9 @@ export type Database = {
           status?: string
           tipo_nf?: string
           totais?: Json
+          transportadora?: string | null
+          transportadora_documento?: string | null
+          transportadora_id?: string | null
           uf?: string
           updated_at?: string
         }

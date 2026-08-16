@@ -32,18 +32,27 @@ export type SalvarPropostaInput = {
   previsaoFechamento: string | null;
   tipoNf: string;
   faturarClienteFinal: boolean;
+  faturamento: Record<string, string | boolean>;
   formaPagamento: string | null;
   entregaDiferente: boolean;
   entrega: Record<string, string>;
   freteMod: string;
   freteAreaRural: boolean;
   freteValor: number;
+  transportadora: {
+    id: string;
+    nome: string;
+    documento: string;
+    total: number;
+    prazo: number;
+  } | null;
   observacoes: string | null;
   /** Proposta originada de indicação (Carregadores). */
   indicacao: boolean;
   padrinhoId: string | null;
   itens: { produtoId: string; qtd: number; valor: number }[];
 };
+
 
 
 const money2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
@@ -85,6 +94,38 @@ function validar(input: any): SalvarPropostaInput {
     if ((entregaNormalizada['uf'] ?? "").toUpperCase() !== uf)
       throw new Error("O endereço de entrega deve estar no mesmo estado do faturamento.");
   }
+
+  const faturarClienteFinal = input.faturarClienteFinal === true;
+  const faturamento: Record<string, string | boolean> = {};
+  for (const c of [...campos, "doc", "nome", "ie"])
+    faturamento[c] = String(input.faturamento?.[c] ?? "").slice(0, 160);
+  faturamento['contribuinte'] = !!input.faturamento?.contribuinte;
+  if (faturarClienteFinal) {
+    const docFat = String(faturamento['doc'] ?? "").replace(/\D/g, "");
+    if (!faturamento['nome']) throw new Error("Informe o destinatário do faturamento.");
+    if (docFat.length !== 11 && docFat.length !== 14)
+      throw new Error("CNPJ/CPF do faturamento inválido.");
+    if (!faturamento['logradouro'] || !faturamento['cidade'] || !faturamento['uf'])
+      throw new Error("Informe o endereço de faturamento.");
+  }
+
+  const freteMod = ["FOB", "CIF", "DEDICADO"].includes(String(input.freteMod))
+    ? String(input.freteMod)
+    : "CIF";
+  // FOB: o cliente retira, então nunca existe valor de frete na proposta.
+  const freteValor = freteMod === "FOB" ? 0 : money2(input.freteValor);
+  const t = input.transportadora;
+  const transportadora =
+    freteMod !== "FOB" && t && String(t.nome ?? "").trim()
+      ? {
+          id: String(t.id ?? ""),
+          nome: String(t.nome).slice(0, 120),
+          documento: String(t.documento ?? "").slice(0, 20),
+          total: money2(t.total),
+          prazo: Math.max(0, Math.round(Number(t.prazo) || 0)),
+        }
+      : null;
+
   return {
     propostaId: input.propostaId ? String(input.propostaId) : null,
     numero: String(input.numero ?? "").trim(),
@@ -108,7 +149,8 @@ function validar(input: any): SalvarPropostaInput {
     tipoNf: ["venda", "triangulacao", "bonificacao"].includes(String(input.tipoNf))
       ? String(input.tipoNf)
       : "venda",
-    faturarClienteFinal: input.faturarClienteFinal !== false,
+    faturarClienteFinal,
+    faturamento,
     formaPagamento: ["boleto_vista", "boleto_prazo", "pix", "cartao_credito"].includes(
       String(input.formaPagamento),
     )
@@ -116,15 +158,17 @@ function validar(input: any): SalvarPropostaInput {
       : null,
     entregaDiferente: !!input.entregaDiferente,
     entrega: entregaNormalizada,
-    freteMod: String(input.freteMod ?? "FOB"),
+    freteMod,
     freteAreaRural: !!input.freteAreaRural,
-    freteValor: money2(input.freteValor),
+    freteValor,
+    transportadora,
     observacoes: input.observacoes ? String(input.observacoes) : null,
     indicacao: !!input.indicacao,
     padrinhoId: input.padrinhoId ? String(input.padrinhoId) : null,
     itens,
   };
 }
+
 
 /**
  * Salva/atualiza a proposta recalculando TODOS os totais no servidor a partir
@@ -193,12 +237,15 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       previsaoFechamento: data.previsaoFechamento ?? "",
       tipoNf: data.tipoNf as CpoState["tipoNf"],
       faturarClienteFinal: data.faturarClienteFinal,
+      faturamento: data.faturamento as unknown as CpoState["faturamento"],
       formaPagamento: (data.formaPagamento ?? "") as CpoState["formaPagamento"],
       entregaDiferente: data.entregaDiferente,
       entrega: data.entrega as unknown as CpoState["entrega"],
       freteMod: data.freteMod as CpoState["freteMod"],
       freteAreaRural: data.freteAreaRural,
       freteValor: data.freteValor,
+      transportadora: data.transportadora,
+
       observacoes: data.observacoes ?? "",
       itens: data.itens.map((i, idx) => ({
         key: String(idx),
@@ -268,13 +315,19 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       previsao_fechamento: data.previsaoFechamento,
       tipo_nf: data.tipoNf,
       faturar_cliente_final: data.faturarClienteFinal,
+      faturamento: data.faturarClienteFinal ? data.faturamento : {},
       forma_pagamento: data.formaPagamento,
       entrega_diferente: data.entregaDiferente,
       entrega: data.entrega,
       frete_mod: data.freteMod,
       frete_area_rural: data.freteMod === "CIF" ? data.freteAreaRural : false,
       frete_valor: data.freteValor,
+      transportadora: data.transportadora?.nome ?? null,
+      transportadora_documento: data.transportadora?.documento ?? null,
+      transportadora_id: data.transportadora?.id ?? null,
+      frete_prazo: data.transportadora?.prazo ?? null,
       observacoes: data.observacoes,
+
       indicacao: data.indicacao,
       padrinho_id: data.indicacao ? padrinhoId : null,
       padrinho_nome: data.indicacao ? padrinhoNome : null,

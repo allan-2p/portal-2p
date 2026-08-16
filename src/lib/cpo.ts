@@ -155,6 +155,32 @@ export function novoEndereco(uf = ""): CpoEndereco {
   };
 }
 
+/**
+ * Dados de faturamento alternativos — usados quando a nota NÃO é emitida para
+ * o cliente final (revenda/intermediário). Nesse caso o consultor informa
+ * novamente o destinatário fiscal da nota.
+ */
+export type CpoFaturamento = CpoEndereco & {
+  doc: string;
+  nome: string;
+  ie: string;
+  contribuinte: boolean;
+};
+
+export function novoFaturamento(uf = ""): CpoFaturamento {
+  return { ...novoEndereco(uf), doc: "", nome: "", ie: "", contribuinte: false };
+}
+
+/** Transportadora escolhida na cotação do Fretefy. */
+export type CpoTransportadora = {
+  id: string;
+  nome: string;
+  documento: string;
+  total: number;
+  prazo: number;
+};
+
+
 
 export type CpoState = {
   /** Nome/identificação da proposta (padrão universal do portal). */
@@ -181,8 +207,10 @@ export type CpoState = {
   previsaoFechamento: string;
   /** Tipo de nota fiscal da operação. */
   tipoNf: CpoTipoNf;
-  /** Faturar diretamente para o cliente final. */
+  /** Faturar diretamente para o cliente final (desmarcado por padrão). */
   faturarClienteFinal: boolean;
+  /** Destinatário fiscal alternativo (quando não é o cliente final). */
+  faturamento: CpoFaturamento;
   formaPagamento: CpoFormaPagamento | "";
   /** Entrega em endereço diferente do faturamento (mesmo estado). */
   entregaDiferente: boolean;
@@ -191,9 +219,12 @@ export type CpoState = {
   /** Entrega em área rural (perguntado apenas no CIF). */
   freteAreaRural: boolean;
   freteValor: number;
+  /** Transportadora escolhida na cotação (CIF). */
+  transportadora: CpoTransportadora | null;
   observacoes: string;
   itens: CpoItem[];
 };
+
 
 
 /** Cliente contribuinte com IE: o DIFAL é recolhido por ele, sem impacto na margem da 2P. */
@@ -332,13 +363,16 @@ export function novoEstado(): CpoState {
     padrinhoNome: "",
     previsaoFechamento: "",
     tipoNf: "venda",
-    faturarClienteFinal: true,
+    faturarClienteFinal: false,
+    faturamento: novoFaturamento("SP"),
     formaPagamento: "",
     entregaDiferente: false,
     entrega: novoEndereco("SP"),
-    freteMod: "FOB",
+    freteMod: "CIF",
     freteAreaRural: false,
     freteValor: 0,
+    transportadora: null,
+
     observacoes: OBSERVACOES_PADRAO,
     itens: [novoItem()],
   };
