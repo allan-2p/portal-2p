@@ -1878,6 +1878,7 @@ function PropostaCpoPage() {
                   .filter((i) => i.produtoId && i.qtd > 0)
                   .map((i) => ({
                     codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? "",
+                    nome: produtos.find((p) => p.id === i.produtoId)?.nome ?? "",
                     quantidade: i.qtd,
                   }))
                   .filter((i) => i.codigo)}

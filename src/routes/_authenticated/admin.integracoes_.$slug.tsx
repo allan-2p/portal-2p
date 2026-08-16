@@ -13,6 +13,7 @@ import { formatLastSync } from "@/components/integration-status";
 import { IntegrationLogsPanel } from "@/components/integration-logs";
 import { IntegrationAlertBadge, IntegrationAlertSettingsCard, useIntegrationAlerts } from "@/components/integration-alerts";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
+import { FreteRegrasPanel } from "@/components/frete-regras-panel";
 
 export const Route = createFileRoute("/_authenticated/admin/integracoes_/$slug")({
   head: () => ({
@@ -165,6 +166,8 @@ function IntegracaoConfigPage() {
           )}
           {def.note && <p className="text-xs text-muted-foreground">{def.note}</p>}
         </section>
+
+        {slug === "fretefy" ? <FreteRegrasPanel /> : null}
 
         <section className="rounded-2xl border border-border bg-card p-6 space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">

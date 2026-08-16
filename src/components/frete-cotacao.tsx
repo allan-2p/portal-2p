@@ -6,7 +6,7 @@ import { cotarFrete } from "@/lib/frete.functions";
 import { fmtBRL, type CpoTransportadora } from "@/lib/cpo";
 import { cn } from "@/lib/utils";
 
-export type FreteCotacaoItem = { codigo: string; quantidade: number };
+export type FreteCotacaoItem = { codigo: string; quantidade: number; nome?: string };
 
 type Props = {
   itens: FreteCotacaoItem[];
@@ -50,7 +50,7 @@ export function FreteCotacao({
 
   // Assinatura dos dados que mudam a cotação — dispara o cálculo automático.
   const assinatura = JSON.stringify({
-    itens: itens.map((i) => [i.codigo, i.quantidade]),
+    itens: itens.map((i) => [i.codigo, i.quantidade, i.nome ?? ""]),
     valorNota,
     destino,
     areaRural,

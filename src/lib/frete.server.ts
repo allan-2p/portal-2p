@@ -20,7 +20,7 @@ import {
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
 
 export type CotarFreteInput = {
-  itens: { codigo: string; quantidade: number; pesoLiquido?: number }[];
+  itens: { codigo: string; quantidade: number; pesoLiquido?: number; nome?: string }[];
   valorNota: number;
   destino: { uf: string; cidade: string; cep: string };
   peso?: number;
@@ -72,6 +72,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
   }
 
   const codigosCarrinho = data.itens.map((i) => normalizarCodigo(i.codigo));
+  const nomesCarrinho = data.itens.map((i) => String(i.nome ?? ""));
   const codigoTrilho = detectarTrilho(codigosCarrinho);
 
   const destino: Record<string, unknown> = {
@@ -94,6 +95,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
 
   const ctx: ContextoFrete = {
     codigosCarrinho,
+    nomesCarrinho,
     documento: data.documento,
     tipoEntrega: data.tipoEntrega,
     areaRural: data.areaRural,
@@ -109,7 +111,9 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     if (res.status >= 500) throw new Error("Erro interno do Fretefy ao calcular o frete.");
 
     opcoes = (Array.isArray(res.json) ? (res.json as OpcaoBruta[]) : [])
-      .filter((o) => filtraFretes(codigoTrilho, String(o.transportadoraDocumento ?? "")))
+      .filter((o) =>
+        filtraFretes(codigosCarrinho, String(o.transportadoraDocumento ?? ""), nomesCarrinho),
+      )
       .map((o) => aplicarRegras(o, ctx))
       .sort((a, b) => a.total - b.total);
 
