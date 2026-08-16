@@ -80,7 +80,6 @@ type TabKey =
 
 const TABS: Array<{ key: TabKey; label: string; icon: typeof Users }> = [
   { key: "visao", label: "Visão geral", icon: BarChart3 },
-  { key: "atlas", label: "Atlas", icon: Sparkles },
   { key: "contatos", label: "Contatos", icon: Users },
   { key: "negocios", label: "Propostas & pedidos", icon: Briefcase },
   { key: "casos", label: "Casos", icon: LifeBuoy },
@@ -159,13 +158,17 @@ export function Client360({
             ))}
           </div>
 
-          {tab === "visao" && <VisaoGeral account={account} history={history} data={d} loading={q360.isLoading} />}
+          {tab === "visao" && (
+            <div className="space-y-4">
+              <AtlasPanelTab account={account} />
+              <VisaoGeral account={account} history={history} data={d} loading={q360.isLoading} />
+            </div>
+          )}
           {tab === "contatos" && <ContactsPanel accountId={account.id} />}
           {tab === "negocios" && <NegociosPanel data={d} loading={q360.isLoading} />}
           {tab === "casos" && <CasosPanel data={d} loading={q360.isLoading} />}
           {tab === "campo" && <CampoPanel data={d} loading={q360.isLoading} />}
           {tab === "financeiro" && <FinanceiroPanel data={d} history={history} loading={q360.isLoading} />}
-          {tab === "atlas" && <AtlasPanelTab account={account} />}
         </div>
 
         <ActivityRail accountId={account.id} />
