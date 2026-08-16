@@ -1544,6 +1544,7 @@ export type Database = {
           custo: number
           descricao: string
           id: string
+          imagem_path: string | null
           last_synced_at: string | null
           lista_preco: string | null
           ncm_codigo: string | null
@@ -1563,6 +1564,7 @@ export type Database = {
           custo?: number
           descricao: string
           id?: string
+          imagem_path?: string | null
           last_synced_at?: string | null
           lista_preco?: string | null
           ncm_codigo?: string | null
@@ -1582,6 +1584,7 @@ export type Database = {
           custo?: number
           descricao?: string
           id?: string
+          imagem_path?: string | null
           last_synced_at?: string | null
           lista_preco?: string | null
           ncm_codigo?: string | null
