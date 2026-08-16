@@ -35,6 +35,8 @@ import { listClientesFn } from "@/lib/clientes.functions";
 import { getClienteLogo } from "@/lib/cliente-logos.functions";
 import { PropostaIndicacao } from "@/components/proposta-indicacao";
 import { CepInput } from "@/components/cep-input";
+import { FreteCotacao } from "@/components/frete-cotacao";
+
 
 
 import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
@@ -58,6 +60,8 @@ import {
   labelTipoNf,
   labelFormaPagamento,
   novoEndereco,
+  novoFaturamento,
+
   novoEstado,
   novoItem,
   parseMoeda,
@@ -120,7 +124,15 @@ type ClienteCadastro = {
   regime_tributario?: string | null;
   cliente_updated_at: string | null;
   consultor_nome: string | null;
+  /** Endereço do cadastro — base do frete quando a entrega não é diferente. */
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
 };
+
 
 
 const DRAFT_KEY = "cpo-proposta-rascunho";
@@ -257,15 +269,29 @@ function PropostaCpoPage() {
         padrinhoNome: ((data as any).padrinho_nome as string | null) ?? "",
         previsaoFechamento: ((data as any).previsao_fechamento as string | null) ?? "",
         tipoNf: (((data as any).tipo_nf as string | null) ?? "venda") as CpoState["tipoNf"],
-        faturarClienteFinal: (data as any).faturar_cliente_final !== false,
+        faturarClienteFinal: (data as any).faturar_cliente_final === true,
+        faturamento: {
+          ...novoFaturamento(data.uf),
+          ...(((data as any).faturamento as Record<string, string | boolean>) ?? {}),
+        } as CpoState["faturamento"],
         formaPagamento: (((data as any).forma_pagamento as string | null) ?? "") as CpoState["formaPagamento"],
         entregaDiferente: !!(data as any).entrega_diferente,
         entrega: { ...novoEndereco(data.uf), ...(((data as any).entrega as Record<string, string>) ?? {}) },
-        freteMod: (data.frete_mod === "CIF" || data.frete_mod === "DEDICADO"
+        freteMod: (data.frete_mod === "FOB" || data.frete_mod === "DEDICADO"
           ? data.frete_mod
-          : "FOB") as CpoFreteMod,
+          : "CIF") as CpoFreteMod,
         freteAreaRural: !!(data as any).frete_area_rural,
         freteValor: money2(data.frete_valor ?? 0),
+        transportadora: (data as any).transportadora
+          ? {
+              id: ((data as any).transportadora_id as string | null) ?? "",
+              nome: (data as any).transportadora as string,
+              documento: ((data as any).transportadora_documento as string | null) ?? "",
+              total: money2(data.frete_valor ?? 0),
+              prazo: Number((data as any).frete_prazo ?? 0),
+            }
+          : null,
+
         observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
         itens: itens.length ? itens : [novoItem()],
       });
@@ -316,6 +342,13 @@ function PropostaCpoPage() {
           regime_tributario: (c["regime_tributario"] as string) ?? null,
           cliente_updated_at: (c["updated_at"] as string) ?? null,
           consultor_nome: (c["created_by_nome"] as string) ?? null,
+          cep: (c["cep"] as string) ?? "",
+          logradouro: (c["logradouro"] as string) ?? "",
+          numero: (c["numero"] as string) ?? "",
+          complemento: (c["complemento"] as string) ?? "",
+          bairro: (c["bairro"] as string) ?? "",
+          cidade: (c["cidade"] as string) ?? "",
+
         }));
       return lista.sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR"));
 
@@ -401,8 +434,24 @@ function PropostaCpoPage() {
       uf: c.uf || s.uf,
       contribuinte: c.contribuinte ?? s.contribuinte,
       regimeTributario: c.regime_tributario ?? null,
+      // Entrega parte do endereço do cadastro; o consultor ajusta se for diferente.
+      entrega: s.entregaDiferente
+        ? s.entrega
+        : {
+            ...s.entrega,
+            cep: c.cep,
+            logradouro: c.logradouro,
+            numero: c.numero,
+            complemento: c.complemento,
+            bairro: c.bairro,
+            cidade: c.cidade,
+            uf: c.uf || s.uf,
+            contato: s.entrega.contato,
+            telefone: s.entrega.telefone || (c.cliente_telefone ?? ""),
+          },
     }));
   };
+
 
 
   // Preço sugerido do item já considerando os impostos da operação, para que
@@ -426,11 +475,21 @@ function PropostaCpoPage() {
   const setEntrega = (patch: Partial<CpoState["entrega"]>) =>
     setState((s) => ({ ...s, entrega: { ...s.entrega, ...patch } }));
 
+  /** Atualiza os dados do destinatário fiscal alternativo. */
+  const setFaturamento = (patch: Partial<CpoState["faturamento"]>) =>
+    setState((s) => ({ ...s, faturamento: { ...s.faturamento, ...patch } }));
+
   /** Entrega precisa ficar no mesmo estado do faturamento. */
   const entregaUfInvalida =
     state.entregaDiferente &&
     !!state.entrega.uf.trim() &&
     state.entrega.uf.trim().toUpperCase() !== state.uf.trim().toUpperCase();
+
+  /** Endereço efetivo de entrega — base da cotação de frete. */
+  const destinoFrete = state.entregaDiferente
+    ? { uf: state.entrega.uf, cidade: state.entrega.cidade, cep: state.entrega.cep }
+    : { uf: state.uf, cidade: state.entrega.cidade, cep: state.entrega.cep };
+
 
   const setItem = (key: string, patch: Partial<CpoItem>) =>
     setState((s) => ({
@@ -534,6 +593,22 @@ function PropostaCpoPage() {
   if (state.indicacao && !state.padrinhoId)
     errosCliente.push({ campo: "padrinho", msg: "Selecione ou cadastre o padrinho da indicação." });
 
+  // Faturamento para terceiro: o destinatário fiscal precisa ser informado por completo.
+  if (!state.faturarClienteFinal) {
+    const fatDoc = soDigitos(state.faturamento.doc);
+    if (!state.faturamento.nome.trim())
+      errosCliente.push({ campo: "fat_nome", msg: "Informe o cliente do faturamento." });
+    if (fatDoc.length !== 11 && fatDoc.length !== 14)
+      errosCliente.push({ campo: "fat_doc", msg: "CNPJ/CPF do faturamento inválido." });
+    if (state.faturamento.contribuinte && !state.faturamento.ie.trim())
+      errosCliente.push({ campo: "fat_ie", msg: "Faturamento contribuinte precisa de Inscrição Estadual." });
+    if (!state.faturamento.logradouro.trim() || !state.faturamento.cidade.trim())
+      errosCliente.push({ campo: "fat_end", msg: "Informe o endereço de faturamento." });
+    if (state.faturamento.uf.trim().toUpperCase() !== state.uf.trim().toUpperCase())
+      errosCliente.push({ campo: "fat_uf", msg: "O faturamento deve estar no mesmo estado da operação." });
+  }
+
+
   const clienteOk = errosCliente.length === 0;
   const campoInvalido = (c: string) => errosCliente.some((e) => e.campo === c);
   const temProduto = state.itens.some((i) => i.produtoId);
@@ -580,8 +655,11 @@ function PropostaCpoPage() {
     errosFechamento.push(`${itensSemValor.length} item(ns) sem valor unitário.`);
   if (itensSemQtd.length)
     errosFechamento.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
-  if (FRETE_ABSORVIDO.includes(state.freteMod) && !(state.freteValor > 0))
-    errosFechamento.push(`Frete ${state.freteMod} sem valor informado — necessário para fechar os totais.`);
+  if (state.freteMod === "CIF" && !state.transportadora)
+    errosFechamento.push("Cotação de frete pendente — selecione a transportadora.");
+  if (state.freteMod === "DEDICADO" && !(state.freteValor > 0))
+    errosFechamento.push("Frete dedicado sem valor informado — necessário para fechar os totais.");
+
   if (temProduto && !(d.valorTotalProposta > 0))
     errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
   if (temProduto && abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
@@ -635,8 +713,12 @@ function PropostaCpoPage() {
       level: "warn",
       titulo: `Frete ${state.freteMod} sem valor informado`,
       motivo: "Nessa modalidade a 2P absorve o frete; sem valor a margem fica superestimada.",
-      corrigir: "Preencha o campo Valor do frete.",
+      corrigir:
+        state.freteMod === "CIF"
+          ? "Cote o frete na etapa 3 e selecione a transportadora."
+          : "Preencha o campo Valor do frete.",
     });
+
   if (!state.contribuinte && d.difalAbs > 0 && abaixoPolitica)
     alertas.push({
       level: "warn",
@@ -815,12 +897,15 @@ function PropostaCpoPage() {
           previsaoFechamento: state.previsaoFechamento || null,
           tipoNf: state.tipoNf,
           faturarClienteFinal: state.faturarClienteFinal,
+          faturamento: state.faturamento as unknown as Record<string, string | boolean>,
           formaPagamento: state.formaPagamento || null,
           entregaDiferente: state.entregaDiferente,
           entrega: state.entrega,
           freteMod: state.freteMod,
           freteAreaRural: state.freteMod === "CIF" ? state.freteAreaRural : false,
-          freteValor: money2(state.freteValor),
+          freteValor: state.freteMod === "FOB" ? 0 : money2(state.freteValor),
+          transportadora: state.freteMod === "FOB" ? null : state.transportadora,
+
           observacoes: observacoesFinal.trim() || null,
           itens: state.itens
             .filter((i) => i.produtoId)
@@ -979,9 +1064,9 @@ function PropostaCpoPage() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm">
               {[
-                { n: 1 as const, label: "Identificação", go: () => setEtapa(1) },
+                { n: 1 as const, label: "Faturamento", go: () => setEtapa(1) },
                 { n: 2 as const, label: "Produtos", go: () => irParaEtapa(2) },
-                { n: 3 as const, label: "Faturamento e frete", go: () => irParaEtapa(3) },
+                { n: 3 as const, label: "Entrega e frete", go: () => irParaEtapa(3) },
                 { n: 4 as const, label: "Finalização", go: () => irParaEtapa(4) },
               ].map((s, i) => {
                 const atual = etapa === s.n;
@@ -1062,11 +1147,11 @@ function PropostaCpoPage() {
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">
                 {etapa === 1
-                  ? "Etapa 1 — Identificação"
+                  ? "Etapa 1 — Faturamento"
                   : etapa === 2
                     ? "Etapa 2 — Produtos"
                     : etapa === 3
-                      ? "Etapa 3 — Faturamento e frete"
+                      ? "Etapa 3 — Entrega e frete"
                       : "Etapa 4 — Finalização"}
               </h2>
             </div>
@@ -1097,13 +1182,6 @@ function PropostaCpoPage() {
                   />
                 </Field>
 
-                <Field label="Previsão de fechamento (opcional)">
-                  <Input
-                    type="date"
-                    value={state.previsaoFechamento}
-                    onChange={(e) => set("previsaoFechamento", e.target.value)}
-                  />
-                </Field>
 
                 <Field label="Cliente">
 
@@ -1206,6 +1284,145 @@ function PropostaCpoPage() {
                     </Select>
                   </Field>
                 ) : null}
+
+                {state.nome ? (
+                  <Field label="Previsão de fechamento (opcional)">
+                    <Input
+                      type="date"
+                      value={state.previsaoFechamento}
+                      onChange={(e) => set("previsaoFechamento", e.target.value)}
+                    />
+                  </Field>
+                ) : null}
+
+                {state.nome ? (
+                  <Field label="Tipo de nota fiscal">
+                    <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CpoState["tipoNf"])}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="venda">{labelTipoNf.venda}</SelectItem>
+                        <SelectItem value="triangulacao">{labelTipoNf.triangulacao}</SelectItem>
+                        <SelectItem value="bonificacao">{labelTipoNf.bonificacao}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                ) : null}
+
+                {state.nome ? (
+                  <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">Faturar para o cliente final?</p>
+                        <p className="text-xs text-muted-foreground">
+                          Marque apenas quando a nota for emitida para outro destinatário.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={!state.faturarClienteFinal}
+                        onCheckedChange={(v) =>
+                          setState((s) => ({
+                            ...s,
+                            faturarClienteFinal: !v,
+                            faturamento: v
+                              ? { ...s.faturamento, uf: s.faturamento.uf || s.uf }
+                              : s.faturamento,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    {!state.faturarClienteFinal ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Field label="CPF / CNPJ">
+                          <Input
+                            value={state.faturamento.doc}
+                            className={cn(campoInvalido("fat_doc") && "border-destructive")}
+                            onChange={(e) => setFaturamento({ doc: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Cliente">
+                          <Input
+                            value={state.faturamento.nome}
+                            className={cn(campoInvalido("fat_nome") && "border-destructive")}
+                            onChange={(e) => setFaturamento({ nome: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Inscrição Estadual">
+                          <Input
+                            value={state.faturamento.ie}
+                            className={cn(campoInvalido("fat_ie") && "border-destructive")}
+                            onChange={(e) => setFaturamento({ ie: e.target.value })}
+                          />
+                        </Field>
+                        <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                          <span className="text-xs">Contribuinte do ICMS?</span>
+                          <Switch
+                            checked={state.faturamento.contribuinte}
+                            onCheckedChange={(v) => setFaturamento({ contribuinte: v })}
+                          />
+                        </div>
+                        <Field label="CEP">
+                          <CepInput
+                            value={state.faturamento.cep}
+                            onChange={(v) => setFaturamento({ cep: v })}
+                            onFound={(e) =>
+                              setFaturamento({
+                                cep: e.cep,
+                                logradouro: e.logradouro,
+                                complemento: e.complemento || state.faturamento.complemento,
+                                bairro: e.bairro,
+                                cidade: e.cidade,
+                                uf: e.uf,
+                              })
+                            }
+                          />
+                        </Field>
+                        <Field label="Endereço">
+                          <Input
+                            value={state.faturamento.logradouro}
+                            className={cn(campoInvalido("fat_end") && "border-destructive")}
+                            onChange={(e) => setFaturamento({ logradouro: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Número">
+                          <Input
+                            value={state.faturamento.numero}
+                            onChange={(e) => setFaturamento({ numero: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Complemento">
+                          <Input
+                            value={state.faturamento.complemento}
+                            onChange={(e) => setFaturamento({ complemento: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Bairro">
+                          <Input
+                            value={state.faturamento.bairro}
+                            onChange={(e) => setFaturamento({ bairro: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Cidade">
+                          <Input
+                            value={state.faturamento.cidade}
+                            className={cn(campoInvalido("fat_end") && "border-destructive")}
+                            onChange={(e) => setFaturamento({ cidade: e.target.value })}
+                          />
+                        </Field>
+                        <Field label="Estado (UF)">
+                          <Input
+                            value={state.faturamento.uf}
+                            maxLength={2}
+                            className={cn(campoInvalido("fat_uf") && "border-destructive")}
+                            onChange={(e) => setFaturamento({ uf: e.target.value.toUpperCase().slice(0, 2) })}
+                          />
+                        </Field>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+
 
                 {state.nome ? (
                   <PropostaIndicacao
@@ -1443,52 +1660,12 @@ function PropostaCpoPage() {
 
             {etapa === 3 ? (
             <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Tipo de nota fiscal">
-                <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CpoState["tipoNf"])}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="venda">{labelTipoNf.venda}</SelectItem>
-                    <SelectItem value="triangulacao">{labelTipoNf.triangulacao}</SelectItem>
-                    <SelectItem value="bonificacao">{labelTipoNf.bonificacao}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field label="Forma de pagamento">
-                <Select
-                  value={state.formaPagamento || undefined}
-                  onValueChange={(v) => set("formaPagamento", v as CpoState["formaPagamento"])}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="boleto_vista">{labelFormaPagamento.boleto_vista}</SelectItem>
-                    <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
-                    <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
-                    <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2 px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Faturar para o cliente final?</p>
-                <p className="text-xs text-muted-foreground">
-                  Desmarque quando a nota for emitida para um intermediário.
-                </p>
-              </div>
-              <Switch
-                checked={state.faturarClienteFinal}
-                onCheckedChange={(v) => set("faturarClienteFinal", v)}
-              />
-            </div>
-
             <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium">Endereço de entrega diferente do faturamento?</p>
                   <p className="text-xs text-muted-foreground">
-                    Permitido apenas dentro do mesmo estado ({state.uf}). Este endereço será usado no cálculo do frete.
+                    Permitido apenas dentro do mesmo estado ({state.uf}). Este endereço é usado no cálculo do frete.
                   </p>
                 </div>
                 <Switch
@@ -1503,8 +1680,7 @@ function PropostaCpoPage() {
                 />
               </div>
 
-              {state.entregaDiferente ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="CEP">
                     <CepInput
                       value={state.entrega.cep}
@@ -1561,17 +1737,28 @@ function PropostaCpoPage() {
                   <Field label="Telefone">
                     <Input value={state.entrega.telefone} onChange={(e) => setEntrega({ telefone: e.target.value })} />
                   </Field>
-                </div>
-              ) : null}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Modalidade de frete">
-                <Select value={state.freteMod} onValueChange={(v) => set("freteMod", v as CpoFreteMod)}>
+                <Select
+                  value={state.freteMod}
+                  onValueChange={(v) =>
+                    setState((s) => ({
+                      ...s,
+                      freteMod: v as CpoFreteMod,
+                      // Cada modalidade tem sua própria origem de valor.
+                      freteValor: v === "CIF" ? (s.transportadora?.total ?? 0) : v === "FOB" ? 0 : s.freteValor,
+                      transportadora: v === "CIF" ? s.transportadora : null,
+                      freteAreaRural: v === "CIF" ? s.freteAreaRural : false,
+                    }))
+                  }
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="FOB">{labelFreteMod.FOB}</SelectItem>
                     <SelectItem value="CIF">{labelFreteMod.CIF}</SelectItem>
+                    <SelectItem value="FOB">{labelFreteMod.FOB}</SelectItem>
                     <SelectItem value="DEDICADO">{labelFreteMod.DEDICADO}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1584,52 +1771,96 @@ function PropostaCpoPage() {
                     />
                   </div>
                 ) : null}
-                {state.freteMod === "DEDICADO" ? (
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    Frete dedicado: informe o valor manualmente ao lado.
-                  </p>
-                ) : null}
               </Field>
-              <Field label="Valor do frete">
-                <MoneyInput
-                  value={state.freteValor}
-                  placeholder="R$ 0,00"
-                  maxValue={1000000}
-                  className={cn(
-                    FRETE_ABSORVIDO.includes(state.freteMod) &&
-                      !(state.freteValor > 0) &&
-                      "border-amber-500 focus-visible:ring-amber-500",
-                  )}
-                  onValueChange={(n: number) => set("freteValor", n)}
-                />
-                {FRETE_ABSORVIDO.includes(state.freteMod) && !(state.freteValor > 0) ? (
-                  <p className="text-[11px] text-amber-600 mt-1">
-                    Informe o valor do frete absorvido pela 2P.
-                  </p>
-                ) : null}
-              </Field>
+
+              {state.freteMod === "DEDICADO" ? (
+                <Field label="Valor do frete (manual)">
+                  <MoneyInput
+                    value={state.freteValor}
+                    placeholder="R$ 0,00"
+                    maxValue={1000000}
+                    className={cn(!(state.freteValor > 0) && "border-amber-500 focus-visible:ring-amber-500")}
+                    onValueChange={(n: number) => set("freteValor", n)}
+                  />
+                  {!(state.freteValor > 0) ? (
+                    <p className="text-[11px] text-amber-600 mt-1">
+                      Informe o valor do frete dedicado absorvido pela 2P.
+                    </p>
+                  ) : null}
+                </Field>
+              ) : (
+                <Field label="Valor do frete">
+                  <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
+                    {state.freteMod === "FOB" ? (
+                      <span className="text-muted-foreground">
+                        FOB — retirada por conta do cliente, sem valor de frete.
+                      </span>
+                    ) : (
+                      <b>{fmtBRL(state.freteValor)}</b>
+                    )}
+                  </div>
+                </Field>
+              )}
             </div>
 
-            <Field label="Observações">
-              <Textarea
-                rows={3}
-                value={state.observacoes}
-                placeholder="Observações da proposta"
-                onChange={(e) => set("observacoes", e.target.value)}
+            {state.freteMod === "CIF" ? (
+              <FreteCotacao
+                itens={state.itens
+                  .filter((i) => i.produtoId && i.qtd > 0)
+                  .map((i) => ({
+                    codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? "",
+                    quantidade: i.qtd,
+                  }))
+                  .filter((i) => i.codigo)}
+                valorNota={d.valorItens}
+                destino={destinoFrete}
+                areaRural={state.freteAreaRural}
+                documento={state.doc}
+                selecionada={state.transportadora}
+                onSelect={(t) =>
+                  setState((s) => ({ ...s, transportadora: t, freteValor: money2(t.total) }))
+                }
               />
-              {avisoUsoConsumo ? (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Este aviso será incluído automaticamente nas observações da proposta: “{avisoUsoConsumo}”
-                </p>
-              ) : null}
-            </Field>
+            ) : null}
 
             </>
             ) : null}
 
+
             {etapa === 4 ? (
+              <>
+              <Field label="Forma de pagamento">
+                <Select
+                  value={state.formaPagamento || undefined}
+                  onValueChange={(v) => set("formaPagamento", v as CpoState["formaPagamento"])}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="boleto_vista">{labelFormaPagamento.boleto_vista}</SelectItem>
+                    <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
+                    <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
+                    <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label="Observações">
+                <Textarea
+                  rows={3}
+                  value={state.observacoes}
+                  placeholder="Observações da proposta"
+                  onChange={(e) => set("observacoes", e.target.value)}
+                />
+                {avisoUsoConsumo ? (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Este aviso será incluído automaticamente nas observações da proposta: “{avisoUsoConsumo}”
+                  </p>
+                ) : null}
+              </Field>
+
               <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-2 text-sm">
                 <p className="font-semibold">Revisão final</p>
+
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">Cliente</span>
                   <b>{state.nome || "—"}</b>
@@ -1650,7 +1881,9 @@ function PropostaCpoPage() {
                   Confira os valores e finalize salvando a proposta ou concluindo o pedido.
                 </p>
               </div>
+              </>
             ) : null}
+
 
             {/* TOTAIS AO VIVO — recalculam a cada mudança de preço/quantidade/frete */}
             <div className="sticky bottom-2 z-10 rounded-2xl border border-border bg-background/90 backdrop-blur px-4 py-3 shadow-lg">
@@ -1776,7 +2009,7 @@ function PropostaCpoPage() {
           step={etapa}
           totalSteps={4}
           stepLabel={
-            ["Identificação", "Produtos", "Faturamento e frete", "Finalização"][etapa - 1]
+            ["Faturamento", "Produtos", "Entrega e frete", "Finalização"][etapa - 1]
           }
           onBack={voltarEtapa}
           onNext={avancarEtapa}
