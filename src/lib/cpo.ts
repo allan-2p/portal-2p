@@ -430,7 +430,7 @@ export function calcularCpo(
   let interPonderado = 0;
 
   const frete = state.freteValor || 0;
-  const brutoTotal = state.itens.reduce((s, it) => s + (it.valor || 0) * (it.qtd || 0), 0);
+
 
   for (const it of state.itens) {
     const qtd = it.qtd || 0;
