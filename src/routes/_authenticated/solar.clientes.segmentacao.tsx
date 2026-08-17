@@ -854,6 +854,15 @@ function SegmentacaoPage() {
       </div>
 
       {detailClient && <ClientDetailModal client={detailClient} onClose={() => setDetailClient(null)} />}
+
+      <Dialog open={!!profileAccount} onOpenChange={(o) => !o && setProfileAccount(null)}>
+        <DialogContent className="max-w-[96vw] w-[96vw] sm:max-w-[1400px] max-h-[92vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg">{profileAccount?.name ?? "Perfil do cliente"}</DialogTitle>
+          </DialogHeader>
+          {profileAccount && <Client360 account={profileAccount} />}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
