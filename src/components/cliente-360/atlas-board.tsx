@@ -48,10 +48,12 @@ export function AtlasBoard({
       ...cards,
       {
         id: `card-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        title: "",
         text: "",
         color: ORDER[idx % ORDER.length]!,
         x: 6 + ((idx * 17) % 60),
         y: 8 + ((idx * 23) % 55),
+        createdAt: new Date().toISOString(),
       },
     ]);
   };

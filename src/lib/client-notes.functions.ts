@@ -4,11 +4,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 /** Um cartão do mapa mental do cliente. */
 export type ClientNoteCard = {
   id: string;
+  title?: string;
   text: string;
   color: "amber" | "sky" | "emerald" | "rose" | "violet";
   x: number;
   y: number;
   pinned?: boolean;
+  /** ISO da criação do cartão. */
+  createdAt?: string;
 };
 
 export type ClientNotesPayload = {
