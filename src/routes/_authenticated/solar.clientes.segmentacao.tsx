@@ -39,6 +39,9 @@ import {
 } from "@/lib/salesforce.functions";
 import { useSellerScope } from "@/hooks/use-seller-scope";
 import { FORMER_OWNER_NAMES } from "@/lib/salespeople";
+import { Client360 } from "@/components/cliente-360/client-360";
+import type { SalesforceAccount } from "@/lib/salesforce.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import {
   Select,
