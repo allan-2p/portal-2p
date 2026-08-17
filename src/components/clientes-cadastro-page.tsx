@@ -697,7 +697,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               </Section>
 
               <Section title="Comercial">
-                <F label="Consultor responsável">
+                <F label="Consultor">
                   {consultoresQ.data?.podeEscolher ? (
                     <Select value={consultorId ?? consultoresQ.data?.eu.id ?? ""} onValueChange={(v) => setConsultorId(v)}>
                       <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
@@ -785,7 +785,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   ["doc", "CNPJ / CPF"],
                   ["fiscal", "Fiscal"],
                   ["cidade", "Cidade / UF"],
-                  ["contato", "Consultor responsável"],
+                  ["contato", "Consultor"],
                 ] as [OrdemKey, string][]).map(([k, label]) => (
                   <th key={k} className="text-left px-4 py-2">
                     <button
