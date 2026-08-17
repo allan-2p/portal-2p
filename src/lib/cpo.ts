@@ -513,7 +513,8 @@ export function calcularCpo(
   // Contribuinte com IE recolhe o DIFAL por guia no Estado dele → informativo, sem impacto na margem.
   const difal = { base: difalBase, valor: difalValor };
   const informativo =
-    difalEhInformativo(state) || difalSempreInformativoPorFinalidade(state.finalidadeUso);
+    difalEhInformativo(destino) || difalSempreInformativoPorFinalidade(state.finalidadeUso);
+
   const difalAbs = informativo ? 0 : difal.valor;
   const difalEstimado = informativo ? difal.valor : 0;
 
