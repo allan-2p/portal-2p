@@ -494,7 +494,7 @@ export function calcularCpo(
     pisCofins += pcItem;
     interPonderado += interItem * bruto;
 
-    if (r.geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !operacaoInterna(state.uf)) {
+    if (r.geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !operacaoInterna(destino.uf)) {
       const d = calcularDifal(bruto, interna, fcp, interItem);
       difalBase += d.base;
       difalValor += d.valor;
