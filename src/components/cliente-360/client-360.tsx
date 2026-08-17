@@ -995,23 +995,11 @@ function AtlasPanelTab({ account }: { account: SalesforceAccount }) {
         </span>
       }
     >
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Contexto para o Atlas</label>
-          <textarea
-            value={notes}
-            onChange={(e) => touch(setNotes)(e.target.value)}
-            placeholder="Escreva livremente sobre o cliente: decisores, histórico da relação, concorrência, oportunidades, riscos… O Atlas usa isso como contexto."
-            className="w-full min-h-[160px] rounded-lg bg-background border border-border p-3 text-sm resize-y focus:outline-none focus:border-primary/50"
-          />
-          {q.isError && (
-            <div className="text-xs text-destructive mt-2">Não foi possível carregar as anotações.</div>
-          )}
-        </div>
-
-        <div className="border-t border-border pt-4">
-          <AtlasBoard cards={cards} onChange={touch(setCards)} />
-        </div>
+      <div className="space-y-3">
+        {q.isError && (
+          <div className="text-xs text-destructive">Não foi possível carregar as anotações.</div>
+        )}
+        <AtlasBoard cards={cards} onChange={touch(setCards)} />
       </div>
     </Card>
   );
@@ -1029,74 +1017,81 @@ function ActivityRail({ accountId }: { accountId: string }) {
   const activities: SalesforceActivity[] = q.data?.records ?? [];
   const hoje = new Date().toISOString().slice(0, 10);
 
-  const proximas = activities.filter(
-    (a) => (a.kind === "task" && a.status !== "Completed") || (a.date ?? "") >= hoje,
+  const abertas = useMemo(
+    () =>
+      activities.filter(
+        (a) => (a.kind === "task" && a.status !== "Completed") || (a.date ?? "") >= hoje,
+      ),
+    [activities, hoje],
   );
-  const passadas = activities.filter((a) => !proximas.includes(a));
+  const ultimas = useMemo(
+    () =>
+      activities
+        .filter((a) => !abertas.includes(a))
+        .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")),
+    [activities, abertas],
+  );
 
-  const grupos = useMemo(() => {
-    const map = new Map<string, SalesforceActivity[]>();
-    for (const a of passadas) {
-      const key = a.date
-        ? new Date(a.date).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
-        : "Sem data";
-      const arr = map.get(key) ?? [];
-      arr.push(a);
-      map.set(key, arr);
-    }
-    return Array.from(map.entries());
-  }, [passadas]);
+  const [view, setView] = useState<"abertas" | "ultimas">("abertas");
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [view]);
+
+  const lista = view === "abertas" ? abertas : ultimas;
+  const PAGE = 5;
+  const totalPages = Math.max(1, Math.ceil(lista.length / PAGE));
+  const pageSafe = Math.min(page, totalPages);
+  const rows = lista.slice((pageSafe - 1) * PAGE, pageSafe * PAGE);
 
   return (
-    <aside className="xl:sticky xl:top-4 glass rounded-xl p-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <aside className="glass rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
         <CalendarClock className="h-4 w-4 text-primary" />
         <h3 className="font-semibold text-sm">Atividades</h3>
         <span className="ml-auto text-[11px] text-muted-foreground">{activities.length}</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      <div className="grid grid-cols-2 gap-2 mb-3">
         <ActivityComposer accountId={accountId} mode="task" />
         <ActivityComposer accountId={accountId} mode="call" />
       </div>
 
-
+      <div className="flex items-center gap-1 mb-2">
+        {(
+          [
+            ["abertas", `Em aberto (${abertas.length})`],
+            ["ultimas", `Últimas (${ultimas.length})`],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setView(key)}
+            className={cn(
+              "flex-1 text-[11px] px-2 py-1.5 rounded-md font-medium transition-colors",
+              view === key
+                ? "bg-primary text-primary-foreground"
+                : "bg-surface-2 text-muted-foreground hover:bg-surface",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {q.isLoading ? (
-        <Empty>Carregando…</Empty>
-      ) : activities.length === 0 ? (
-        <Empty>Nenhuma atividade registrada.</Empty>
-      ) : (
-        <div className="space-y-4">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
-              Próximas & atrasadas
-            </div>
-            {proximas.length === 0 ? (
-              <div className="text-xs text-muted-foreground py-2">Nada pendente.</div>
-            ) : (
-              <ul className="space-y-2">
-                {proximas.map((a) => (
-                  <ActivityItem key={a.id} a={a} />
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {grupos.map(([mes, itens]) => (
-            <div key={mes}>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
-                {mes}
-              </div>
-              <ul className="space-y-2">
-                {itens.map((a) => (
-                  <ActivityItem key={a.id} a={a} />
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div className="text-xs text-muted-foreground py-3">Carregando…</div>
+      ) : rows.length === 0 ? (
+        <div className="text-xs text-muted-foreground py-3">
+          {view === "abertas" ? "Nada pendente." : "Sem atividades anteriores."}
         </div>
+      ) : (
+        <ul className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+          {rows.map((a) => (
+            <ActivityItem key={a.id} a={a} />
+          ))}
+        </ul>
       )}
+
+      {totalPages > 1 && <Pager page={pageSafe} total={totalPages} onChange={setPage} />}
     </aside>
   );
 }
