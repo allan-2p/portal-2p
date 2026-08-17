@@ -167,13 +167,25 @@ export function AtlasBoard({
                 <Trash2 className="h-3 w-3" />
               </button>
             </div>
+            <input
+              data-no-drag
+              value={card.title ?? ""}
+              onChange={(e) => update(card.id, { title: e.target.value })}
+              placeholder="Título"
+              className="w-full bg-transparent text-xs font-semibold focus:outline-none placeholder:text-muted-foreground/70"
+            />
             <textarea
               data-no-drag
               value={card.text}
               onChange={(e) => update(card.id, { text: e.target.value })}
-              placeholder="Escreva aqui…"
-              className="w-full h-20 bg-transparent text-xs resize-none focus:outline-none placeholder:text-muted-foreground/70"
+              placeholder="Anotação…"
+              className="w-full h-20 bg-transparent text-xs resize-none focus:outline-none placeholder:text-muted-foreground/70 mt-0.5"
             />
+            {card.createdAt && (
+              <div className="text-[10px] text-muted-foreground/80 pt-0.5 border-t border-foreground/10">
+                {new Date(card.createdAt).toLocaleDateString("pt-BR")}
+              </div>
+            )}
           </div>
         ))}
       </div>
