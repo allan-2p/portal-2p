@@ -349,7 +349,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       if (fFiscal === "contribuinte" && !c.contribuinte) return false;
       if (fFiscal === "nao" && c.contribuinte) return false;
       if (!t) return true;
-      const texto = [c.razao_social, c.nome_fantasia, c.cidade, c.uf, c.email, c.contato_nome]
+      const texto = [c.razao_social, c.nome_fantasia, c.cidade, c.uf, c.email, c.created_by_nome]
         .some((v) => (v ?? "").toLowerCase().includes(t));
       return texto || (tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc));
     });
@@ -361,7 +361,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         case "doc": return soDigitos(c.doc ?? "");
         case "fiscal": return c.contribuinte ? "1" : "0";
         case "cidade": return `${c.uf} ${c.cidade ?? ""}`;
-        case "contato": return (c.contato_nome || c.email || "").toLowerCase();
+        case "contato": return (c.created_by_nome || "").toLowerCase();
         default: return (c.razao_social ?? "").toLowerCase();
       }
     };
@@ -785,7 +785,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   ["doc", "CNPJ / CPF"],
                   ["fiscal", "Fiscal"],
                   ["cidade", "Cidade / UF"],
-                  ["contato", "Contato"],
+                  ["contato", "Consultor responsável"],
                 ] as [OrdemKey, string][]).map(([k, label]) => (
                   <th key={k} className="text-left px-4 py-2">
                     <button
@@ -830,7 +830,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     </div>
                   </td>
                   <td className="px-4 py-2">{[c.cidade, c.uf].filter(Boolean).join(" / ") || "—"}</td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">{c.contato_nome || c.email || "—"}</td>
+                  <td className="px-4 py-2 text-xs text-muted-foreground">{c.created_by_nome || "—"}</td>
                   <td className="px-4 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" aria-label="Ver detalhes" onClick={() => setDetalhe(c)}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" aria-label="Editar" onClick={() => abrirEdicao(c)}><Pencil className="h-4 w-4" /></Button>
