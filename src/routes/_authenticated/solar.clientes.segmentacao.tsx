@@ -39,6 +39,9 @@ import {
 } from "@/lib/salesforce.functions";
 import { useSellerScope } from "@/hooks/use-seller-scope";
 import { FORMER_OWNER_NAMES } from "@/lib/salespeople";
+import { Client360 } from "@/components/cliente-360/client-360";
+import type { SalesforceAccount } from "@/lib/salesforce.functions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import {
   Select,
@@ -137,6 +140,7 @@ function SegBadge({ seg }: { seg: Segment }) {
 
 function SegmentacaoPage() {
   const navigate = useNavigate();
+  const [profileAccount, setProfileAccount] = useState<SalesforceAccount | null>(null);
   const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detailClient, setDetailClient] = useState<Client | null>(null);
@@ -706,7 +710,11 @@ function SegmentacaoPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate({ to: "/solar/clientes/perfil", search: { account: c.id } });
+                                const acc = (accountsQ.data?.records ?? []).find(
+                                  (a) => a.name === c.name || a.id === c.id,
+                                );
+                                if (acc) setProfileAccount(acc);
+                                else navigate({ to: "/solar/clientes/perfil", search: { account: c.id } });
                               }}
                               className="p-1.5 rounded hover:bg-primary/15 text-muted-foreground hover:text-primary"
                               title="Abrir perfil do cliente"
@@ -846,6 +854,15 @@ function SegmentacaoPage() {
       </div>
 
       {detailClient && <ClientDetailModal client={detailClient} onClose={() => setDetailClient(null)} />}
+
+      <Dialog open={!!profileAccount} onOpenChange={(o) => !o && setProfileAccount(null)}>
+        <DialogContent className="max-w-[96vw] w-[96vw] sm:max-w-[1400px] max-h-[92vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg">{profileAccount?.name ?? "Perfil do cliente"}</DialogTitle>
+          </DialogHeader>
+          {profileAccount && <Client360 account={profileAccount} />}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
