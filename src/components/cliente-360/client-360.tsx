@@ -69,18 +69,10 @@ const fmt = (n: number | null | undefined) =>
 const date = (v: string | null | undefined) =>
   v ? new Date(v.length <= 10 ? `${v}T12:00:00` : v).toLocaleDateString("pt-BR") : "—";
 
-type TabKey =
-  | "visao"
-  | "contatos"
-  | "negocios"
-  | "casos"
-  | "campo"
-  | "financeiro"
-  | "atlas";
+type TabKey = "visao" | "negocios" | "casos" | "campo" | "financeiro" | "atlas";
 
 const TABS: Array<{ key: TabKey; label: string; icon: typeof Users }> = [
   { key: "visao", label: "Visão geral", icon: BarChart3 },
-  { key: "contatos", label: "Contatos", icon: Users },
   { key: "negocios", label: "Propostas & pedidos", icon: Briefcase },
   { key: "casos", label: "Casos", icon: LifeBuoy },
   { key: "campo", label: "Visitas & treinamentos", icon: MapPin },
@@ -164,14 +156,16 @@ export function Client360({
               <VisaoGeral account={account} history={history} data={d} loading={q360.isLoading} />
             </div>
           )}
-          {tab === "contatos" && <ContactsPanel accountId={account.id} />}
           {tab === "negocios" && <NegociosPanel data={d} loading={q360.isLoading} />}
           {tab === "casos" && <CasosPanel data={d} loading={q360.isLoading} />}
           {tab === "campo" && <CampoPanel data={d} loading={q360.isLoading} />}
           {tab === "financeiro" && <FinanceiroPanel data={d} history={history} loading={q360.isLoading} />}
         </div>
 
-        <ActivityRail accountId={account.id} />
+        <div className="space-y-4 xl:sticky xl:top-4">
+          <ActivityRail accountId={account.id} />
+          <ContactsRail accountId={account.id} />
+        </div>
       </div>
     </div>
   );
@@ -299,8 +293,8 @@ function Banner({
           </div>
         </div>
 
-        {/* Contatos direto no banner */}
-        <BannerContacts accountId={account.id} />
+        {/* Indicadores comerciais direto no banner */}
+        <BannerStats account={account} history={history} />
 
         <button
           onClick={() => setOpen((v) => !v)}
