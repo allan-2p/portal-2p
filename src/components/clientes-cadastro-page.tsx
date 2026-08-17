@@ -830,7 +830,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     </div>
                   </td>
                   <td className="px-4 py-2">{[c.cidade, c.uf].filter(Boolean).join(" / ") || "—"}</td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">{c.contato_nome || c.email || "—"}</td>
+                  <td className="px-4 py-2 text-xs text-muted-foreground">{c.created_by_nome || "—"}</td>
                   <td className="px-4 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" aria-label="Ver detalhes" onClick={() => setDetalhe(c)}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" aria-label="Editar" onClick={() => abrirEdicao(c)}><Pencil className="h-4 w-4" /></Button>
