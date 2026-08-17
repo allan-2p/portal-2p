@@ -345,72 +345,47 @@ function Banner({
   );
 }
 
-/** Trilha de contatos-chave exibida direto no banner do cliente. */
-function BannerContacts({ accountId }: { accountId: string }) {
-  const fetchContacts = useServerFn(getSalesforceAccountContacts);
-  const q = useQuery({
-    queryKey: ["sf-account-contacts", accountId],
-    queryFn: () => fetchContacts({ data: { accountId } }),
-    staleTime: 5 * 60_000,
-  });
-  const contacts: SalesforceContact[] = q.data?.records ?? [];
-  const [expanded, setExpanded] = useState(false);
-  if (q.isLoading || contacts.length === 0) return null;
-  const visiveis = expanded ? contacts : contacts.slice(0, 4);
+/** Indicadores comerciais (faturamento, variação, vendido) direto no banner. */
+function BannerStats({ account, history }: { account: SalesforceAccount; history: any }) {
+  const trend = useMemo(() => {
+    const qs = history?.quarters ?? [];
+    const now = qs[qs.length - 1]?.total ?? 0;
+    const prev = qs[qs.length - 2]?.total ?? 0;
+    if (!prev) return { pct: null as number | null, up: now > 0 };
+    return { pct: ((now - prev) / prev) * 100, up: now >= prev };
+  }, [history]);
 
   return (
-    <div className="mt-4 border-t border-border pt-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Users className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Contatos
-        </span>
-        <span className="text-[10px] text-muted-foreground">{contacts.length}</span>
-        {contacts.length > 4 && (
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="ml-auto text-[11px] text-primary font-medium hover:underline"
-          >
-            {expanded ? "Ver menos" : `Ver todos (${contacts.length})`}
-          </button>
-        )}
+    <div className="mt-4 border-t border-border pt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
+      <MiniStat label="Faturamento 24m" value={fmt(history?.totalLifetime ?? null)} />
+      <div className="rounded-xl bg-surface-2/50 px-3 py-2">
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Variação tri.</div>
+        <div className="flex items-center gap-1.5">
+          {trend.up ? (
+            <TrendingUp className="h-4 w-4 text-success" />
+          ) : (
+            <TrendingDown className="h-4 w-4 text-destructive" />
+          )}
+          <span className="text-base font-bold tabular-nums">
+            {trend.pct == null ? "—" : `${trend.pct >= 0 ? "+" : ""}${trend.pct.toFixed(1)}%`}
+          </span>
+        </div>
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 sm:grid sm:grid-cols-2 xl:grid-cols-4 sm:overflow-visible">
-        {visiveis.map((c) => (
-          <div
-            key={c.id}
-            className="shrink-0 w-[240px] sm:w-auto rounded-xl border border-border bg-background/40 px-3 py-2 hover:border-primary/40 transition-colors"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="h-8 w-8 shrink-0 rounded-full bg-primary/15 text-primary grid place-items-center text-[11px] font-semibold">
-                {c.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <div className="text-xs font-medium truncate">{c.name}</div>
-                <div className="text-[10px] text-muted-foreground truncate">{c.title ?? "—"}</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mt-1.5">
-              {(c.mobile || c.phone) && (
-                <a
-                  href={`tel:${(c.mobile || c.phone)!.replace(/\s/g, "")}`}
-                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
-                >
-                  <Smartphone className="h-3 w-3" /> {c.mobile || c.phone}
-                </a>
-              )}
-              {c.email && (
-                <a
-                  href={`mailto:${c.email}`}
-                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
-                >
-                  <Mail className="h-3 w-3" /> e-mail
-                </a>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      <MiniStat
+        label="Vendido tri. atual"
+        value={fmt(history?.quarters?.at(-1)?.total ?? account.quarterSold ?? 0)}
+      />
+      <MiniStat
+        label="Vendido tri. anterior"
+        value={fmt(history?.quarters?.at(-2)?.total ?? account.quarterProjection ?? 0)}
+      />
+      <MiniStat label="Em aberto" value={`${history?.openCount ?? 0} · ${fmt(history?.openValue ?? 0)}`} />
+      <MiniStat
+        label="Taxa de ganho"
+        value={history?.wonRate != null ? `${Math.round(history.wonRate * 100)}%` : "—"}
+      />
+      <MiniStat label="Ticket médio" value={fmt(history?.avgTicket ?? null)} />
+      <MiniStat label="Última compra" value={date(history?.lastPurchase)} />
     </div>
   );
 }
