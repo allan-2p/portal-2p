@@ -349,7 +349,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       if (fFiscal === "contribuinte" && !c.contribuinte) return false;
       if (fFiscal === "nao" && c.contribuinte) return false;
       if (!t) return true;
-      const texto = [c.razao_social, c.nome_fantasia, c.cidade, c.uf, c.email, c.contato_nome]
+      const texto = [c.razao_social, c.nome_fantasia, c.cidade, c.uf, c.email, c.created_by_nome]
         .some((v) => (v ?? "").toLowerCase().includes(t));
       return texto || (tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc));
     });
