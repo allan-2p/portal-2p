@@ -361,7 +361,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         case "doc": return soDigitos(c.doc ?? "");
         case "fiscal": return c.contribuinte ? "1" : "0";
         case "cidade": return `${c.uf} ${c.cidade ?? ""}`;
-        case "contato": return (c.contato_nome || c.email || "").toLowerCase();
+        case "contato": return (c.created_by_nome || "").toLowerCase();
         default: return (c.razao_social ?? "").toLowerCase();
       }
     };
