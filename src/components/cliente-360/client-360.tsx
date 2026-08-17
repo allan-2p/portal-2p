@@ -69,18 +69,10 @@ const fmt = (n: number | null | undefined) =>
 const date = (v: string | null | undefined) =>
   v ? new Date(v.length <= 10 ? `${v}T12:00:00` : v).toLocaleDateString("pt-BR") : "—";
 
-type TabKey =
-  | "visao"
-  | "contatos"
-  | "negocios"
-  | "casos"
-  | "campo"
-  | "financeiro"
-  | "atlas";
+type TabKey = "visao" | "negocios" | "casos" | "campo" | "financeiro" | "atlas";
 
 const TABS: Array<{ key: TabKey; label: string; icon: typeof Users }> = [
   { key: "visao", label: "Visão geral", icon: BarChart3 },
-  { key: "contatos", label: "Contatos", icon: Users },
   { key: "negocios", label: "Propostas & pedidos", icon: Briefcase },
   { key: "casos", label: "Casos", icon: LifeBuoy },
   { key: "campo", label: "Visitas & treinamentos", icon: MapPin },
@@ -164,14 +156,16 @@ export function Client360({
               <VisaoGeral account={account} history={history} data={d} loading={q360.isLoading} />
             </div>
           )}
-          {tab === "contatos" && <ContactsPanel accountId={account.id} />}
           {tab === "negocios" && <NegociosPanel data={d} loading={q360.isLoading} />}
           {tab === "casos" && <CasosPanel data={d} loading={q360.isLoading} />}
           {tab === "campo" && <CampoPanel data={d} loading={q360.isLoading} />}
           {tab === "financeiro" && <FinanceiroPanel data={d} history={history} loading={q360.isLoading} />}
         </div>
 
-        <ActivityRail accountId={account.id} />
+        <div className="space-y-4 xl:sticky xl:top-4">
+          <ActivityRail accountId={account.id} />
+          <ContactsRail accountId={account.id} />
+        </div>
       </div>
     </div>
   );
@@ -299,8 +293,8 @@ function Banner({
           </div>
         </div>
 
-        {/* Contatos direto no banner */}
-        <BannerContacts accountId={account.id} />
+        {/* Indicadores comerciais direto no banner */}
+        <BannerStats account={account} history={history} />
 
         <button
           onClick={() => setOpen((v) => !v)}
@@ -351,72 +345,47 @@ function Banner({
   );
 }
 
-/** Trilha de contatos-chave exibida direto no banner do cliente. */
-function BannerContacts({ accountId }: { accountId: string }) {
-  const fetchContacts = useServerFn(getSalesforceAccountContacts);
-  const q = useQuery({
-    queryKey: ["sf-account-contacts", accountId],
-    queryFn: () => fetchContacts({ data: { accountId } }),
-    staleTime: 5 * 60_000,
-  });
-  const contacts: SalesforceContact[] = q.data?.records ?? [];
-  const [expanded, setExpanded] = useState(false);
-  if (q.isLoading || contacts.length === 0) return null;
-  const visiveis = expanded ? contacts : contacts.slice(0, 4);
+/** Indicadores comerciais (faturamento, variação, vendido) direto no banner. */
+function BannerStats({ account, history }: { account: SalesforceAccount; history: any }) {
+  const trend = useMemo(() => {
+    const qs = history?.quarters ?? [];
+    const now = qs[qs.length - 1]?.total ?? 0;
+    const prev = qs[qs.length - 2]?.total ?? 0;
+    if (!prev) return { pct: null as number | null, up: now > 0 };
+    return { pct: ((now - prev) / prev) * 100, up: now >= prev };
+  }, [history]);
 
   return (
-    <div className="mt-4 border-t border-border pt-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Users className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Contatos
-        </span>
-        <span className="text-[10px] text-muted-foreground">{contacts.length}</span>
-        {contacts.length > 4 && (
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="ml-auto text-[11px] text-primary font-medium hover:underline"
-          >
-            {expanded ? "Ver menos" : `Ver todos (${contacts.length})`}
-          </button>
-        )}
+    <div className="mt-4 border-t border-border pt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
+      <MiniStat label="Faturamento 24m" value={fmt(history?.totalLifetime ?? null)} />
+      <div className="rounded-xl bg-surface-2/50 px-3 py-2">
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Variação tri.</div>
+        <div className="flex items-center gap-1.5">
+          {trend.up ? (
+            <TrendingUp className="h-4 w-4 text-success" />
+          ) : (
+            <TrendingDown className="h-4 w-4 text-destructive" />
+          )}
+          <span className="text-base font-bold tabular-nums">
+            {trend.pct == null ? "—" : `${trend.pct >= 0 ? "+" : ""}${trend.pct.toFixed(1)}%`}
+          </span>
+        </div>
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 sm:grid sm:grid-cols-2 xl:grid-cols-4 sm:overflow-visible">
-        {visiveis.map((c) => (
-          <div
-            key={c.id}
-            className="shrink-0 w-[240px] sm:w-auto rounded-xl border border-border bg-background/40 px-3 py-2 hover:border-primary/40 transition-colors"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="h-8 w-8 shrink-0 rounded-full bg-primary/15 text-primary grid place-items-center text-[11px] font-semibold">
-                {c.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <div className="text-xs font-medium truncate">{c.name}</div>
-                <div className="text-[10px] text-muted-foreground truncate">{c.title ?? "—"}</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mt-1.5">
-              {(c.mobile || c.phone) && (
-                <a
-                  href={`tel:${(c.mobile || c.phone)!.replace(/\s/g, "")}`}
-                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
-                >
-                  <Smartphone className="h-3 w-3" /> {c.mobile || c.phone}
-                </a>
-              )}
-              {c.email && (
-                <a
-                  href={`mailto:${c.email}`}
-                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
-                >
-                  <Mail className="h-3 w-3" /> e-mail
-                </a>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      <MiniStat
+        label="Vendido tri. atual"
+        value={fmt(history?.quarters?.at(-1)?.total ?? account.quarterSold ?? 0)}
+      />
+      <MiniStat
+        label="Vendido tri. anterior"
+        value={fmt(history?.quarters?.at(-2)?.total ?? account.quarterProjection ?? 0)}
+      />
+      <MiniStat label="Em aberto" value={`${history?.openCount ?? 0} · ${fmt(history?.openValue ?? 0)}`} />
+      <MiniStat
+        label="Taxa de ganho"
+        value={history?.wonRate != null ? `${Math.round(history.wonRate * 100)}%` : "—"}
+      />
+      <MiniStat label="Ticket médio" value={fmt(history?.avgTicket ?? null)} />
+      <MiniStat label="Última compra" value={date(history?.lastPurchase)} />
     </div>
   );
 }
@@ -480,37 +449,10 @@ function VisaoGeral({
   data: any;
   loading: boolean;
 }) {
-  const trend = useMemo(() => {
-    const qs = history?.quarters ?? [];
-    const now = qs[qs.length - 1]?.total ?? 0;
-    const prev = qs[qs.length - 2]?.total ?? 0;
-    if (!prev) return { pct: null as number | null, up: now > 0 };
-    return { pct: ((now - prev) / prev) * 100, up: now >= prev };
-  }, [history]);
-
+  void history;
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MiniStat label="Faturamento 24m" value={fmt(history?.totalLifetime ?? null)} />
-        <div className="rounded-xl bg-surface-2/50 px-3 py-2">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Variação tri.</div>
-          <div className="flex items-center gap-1.5">
-            {trend.up ? (
-              <TrendingUp className="h-4 w-4 text-success" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-destructive" />
-            )}
-            <span className="text-base font-bold tabular-nums">
-              {trend.pct == null ? "—" : `${trend.pct >= 0 ? "+" : ""}${trend.pct.toFixed(1)}%`}
-            </span>
-          </div>
-        </div>
-        <MiniStat label="Em aberto" value={`${history?.openCount ?? 0} · ${fmt(history?.openValue ?? 0)}`} />
-        <MiniStat
-          label="Taxa de ganho"
-          value={history?.wonRate != null ? `${Math.round(history.wonRate * 100)}%` : "—"}
-        />
-      </div>
+
 
 
 
@@ -554,19 +496,6 @@ function VisaoGeral({
         </Card>
       </div>
 
-      {/* Indicadores comerciais do cliente */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MiniStat
-          label="Vendido tri. atual"
-          value={fmt(history?.quarters?.at(-1)?.total ?? account.quarterSold ?? 0)}
-        />
-        <MiniStat
-          label="Vendido tri. anterior"
-          value={fmt(history?.quarters?.at(-2)?.total ?? account.quarterProjection ?? 0)}
-        />
-        <MiniStat label="Ticket médio" value={fmt(history?.avgTicket ?? null)} />
-        <MiniStat label="Última compra" value={date(history?.lastPurchase)} />
-      </div>
     </div>
   );
 }
@@ -584,7 +513,8 @@ function Signal({ label, value }: { label: string; value: string }) {
 
 /* ---------------------------------------------------------------- Contatos */
 
-function ContactsPanel({ accountId }: { accountId: string }) {
+/** Bloco lateral compacto de contatos, com rolagem e paginação. */
+function ContactsRail({ accountId }: { accountId: string }) {
   const fetchContacts = useServerFn(getSalesforceAccountContacts);
   const q = useQuery({
     queryKey: ["sf-account-contacts", accountId],
@@ -592,60 +522,96 @@ function ContactsPanel({ accountId }: { accountId: string }) {
     staleTime: 5 * 60_000,
   });
   const contacts: SalesforceContact[] = q.data?.records ?? [];
+  const PAGE = 5;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(contacts.length / PAGE));
+  const pageSafe = Math.min(page, totalPages);
+  const rows = contacts.slice((pageSafe - 1) * PAGE, pageSafe * PAGE);
 
   return (
-    <Card
-      title="Contatos"
-      icon={Users}
-      right={<span className="text-[11px] text-muted-foreground">{contacts.length}</span>}
-    >
+    <aside className="glass rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Users className="h-4 w-4 text-primary" />
+        <h3 className="font-semibold text-sm">Contatos</h3>
+        <span className="ml-auto text-[11px] text-muted-foreground">{contacts.length}</span>
+      </div>
+
       {q.isLoading ? (
-        <Empty>Carregando contatos…</Empty>
+        <div className="text-xs text-muted-foreground py-3">Carregando contatos…</div>
       ) : contacts.length === 0 ? (
-        <Empty>Nenhum contato cadastrado.</Empty>
+        <div className="text-xs text-muted-foreground py-3">Nenhum contato cadastrado.</div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-2">
-          {contacts.map((c) => (
-            <div key={c.id} className="rounded-lg border border-border bg-background/40 p-3">
-              <div className="flex items-start gap-3">
-                <div className="h-9 w-9 shrink-0 rounded-full bg-primary/15 text-primary grid place-items-center text-xs font-semibold">
-                  {c.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
+        <>
+          <ul className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+            {rows.map((c) => (
+              <li key={c.id} className="rounded-lg border border-border bg-background/40 p-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="h-8 w-8 shrink-0 rounded-full bg-primary/15 text-primary grid place-items-center text-[11px] font-semibold">
+                    {c.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium truncate">{c.name}</div>
+                    <div className="text-[10px] text-muted-foreground truncate">{c.title ?? "—"}</div>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{c.name}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">
-                    {c.title ?? "—"}
-                    {c.department ? ` · ${c.department}` : ""}
-                  </div>
-                  <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
-                    {c.email && (
-                      <div className="inline-flex items-center gap-1 truncate">
-                        <Mail className="h-3 w-3" /> {c.email}
-                      </div>
-                    )}
-                    {c.phone && (
-                      <div className="inline-flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {c.phone}
-                      </div>
-                    )}
-                    {c.mobile && (
-                      <div className="inline-flex items-center gap-1">
-                        <Smartphone className="h-3 w-3" /> {c.mobile}
-                      </div>
-                    )}
-                  </div>
-                  {c.description && (
-                    <p className="text-[11px] text-muted-foreground mt-1.5 whitespace-pre-wrap line-clamp-3">
-                      {c.description}
-                    </p>
+                <div className="flex items-center gap-3 mt-1.5">
+                  {(c.mobile || c.phone) && (
+                    <a
+                      href={`tel:${(c.mobile || c.phone)!.replace(/\s/g, "")}`}
+                      className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
+                    >
+                      <Smartphone className="h-3 w-3" /> {c.mobile || c.phone}
+                    </a>
+                  )}
+                  {c.email && (
+                    <a
+                      href={`mailto:${c.email}`}
+                      className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
+                    >
+                      <Mail className="h-3 w-3" /> e-mail
+                    </a>
                   )}
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              </li>
+            ))}
+          </ul>
+          {totalPages > 1 && <Pager page={pageSafe} total={totalPages} onChange={setPage} />}
+        </>
       )}
-    </Card>
+    </aside>
+  );
+}
+
+/** Paginação compacta usada nos blocos laterais. */
+function Pager({
+  page,
+  total,
+  onChange,
+}: {
+  page: number;
+  total: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-border">
+      <button
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+        className="px-2 py-1 rounded-md bg-surface-2 hover:bg-surface disabled:opacity-40 text-[11px] font-medium"
+      >
+        ←
+      </button>
+      <span className="text-[10px] text-muted-foreground tabular-nums">
+        {page} / {total}
+      </span>
+      <button
+        onClick={() => onChange(Math.min(total, page + 1))}
+        disabled={page === total}
+        className="px-2 py-1 rounded-md bg-surface-2 hover:bg-surface disabled:opacity-40 text-[11px] font-medium"
+      >
+        →
+      </button>
+    </div>
   );
 }
 
@@ -1029,23 +995,11 @@ function AtlasPanelTab({ account }: { account: SalesforceAccount }) {
         </span>
       }
     >
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Contexto para o Atlas</label>
-          <textarea
-            value={notes}
-            onChange={(e) => touch(setNotes)(e.target.value)}
-            placeholder="Escreva livremente sobre o cliente: decisores, histórico da relação, concorrência, oportunidades, riscos… O Atlas usa isso como contexto."
-            className="w-full min-h-[160px] rounded-lg bg-background border border-border p-3 text-sm resize-y focus:outline-none focus:border-primary/50"
-          />
-          {q.isError && (
-            <div className="text-xs text-destructive mt-2">Não foi possível carregar as anotações.</div>
-          )}
-        </div>
-
-        <div className="border-t border-border pt-4">
-          <AtlasBoard cards={cards} onChange={touch(setCards)} />
-        </div>
+      <div className="space-y-3">
+        {q.isError && (
+          <div className="text-xs text-destructive">Não foi possível carregar as anotações.</div>
+        )}
+        <AtlasBoard cards={cards} onChange={touch(setCards)} />
       </div>
     </Card>
   );
@@ -1063,74 +1017,81 @@ function ActivityRail({ accountId }: { accountId: string }) {
   const activities: SalesforceActivity[] = q.data?.records ?? [];
   const hoje = new Date().toISOString().slice(0, 10);
 
-  const proximas = activities.filter(
-    (a) => (a.kind === "task" && a.status !== "Completed") || (a.date ?? "") >= hoje,
+  const abertas = useMemo(
+    () =>
+      activities.filter(
+        (a) => (a.kind === "task" && a.status !== "Completed") || (a.date ?? "") >= hoje,
+      ),
+    [activities, hoje],
   );
-  const passadas = activities.filter((a) => !proximas.includes(a));
+  const ultimas = useMemo(
+    () =>
+      activities
+        .filter((a) => !abertas.includes(a))
+        .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")),
+    [activities, abertas],
+  );
 
-  const grupos = useMemo(() => {
-    const map = new Map<string, SalesforceActivity[]>();
-    for (const a of passadas) {
-      const key = a.date
-        ? new Date(a.date).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
-        : "Sem data";
-      const arr = map.get(key) ?? [];
-      arr.push(a);
-      map.set(key, arr);
-    }
-    return Array.from(map.entries());
-  }, [passadas]);
+  const [view, setView] = useState<"abertas" | "ultimas">("abertas");
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [view]);
+
+  const lista = view === "abertas" ? abertas : ultimas;
+  const PAGE = 5;
+  const totalPages = Math.max(1, Math.ceil(lista.length / PAGE));
+  const pageSafe = Math.min(page, totalPages);
+  const rows = lista.slice((pageSafe - 1) * PAGE, pageSafe * PAGE);
 
   return (
-    <aside className="xl:sticky xl:top-4 glass rounded-xl p-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <aside className="glass rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
         <CalendarClock className="h-4 w-4 text-primary" />
         <h3 className="font-semibold text-sm">Atividades</h3>
         <span className="ml-auto text-[11px] text-muted-foreground">{activities.length}</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      <div className="grid grid-cols-2 gap-2 mb-3">
         <ActivityComposer accountId={accountId} mode="task" />
         <ActivityComposer accountId={accountId} mode="call" />
       </div>
 
-
+      <div className="flex items-center gap-1 mb-2">
+        {(
+          [
+            ["abertas", `Em aberto (${abertas.length})`],
+            ["ultimas", `Últimas (${ultimas.length})`],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setView(key)}
+            className={cn(
+              "flex-1 text-[11px] px-2 py-1.5 rounded-md font-medium transition-colors",
+              view === key
+                ? "bg-primary text-primary-foreground"
+                : "bg-surface-2 text-muted-foreground hover:bg-surface",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {q.isLoading ? (
-        <Empty>Carregando…</Empty>
-      ) : activities.length === 0 ? (
-        <Empty>Nenhuma atividade registrada.</Empty>
-      ) : (
-        <div className="space-y-4">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
-              Próximas & atrasadas
-            </div>
-            {proximas.length === 0 ? (
-              <div className="text-xs text-muted-foreground py-2">Nada pendente.</div>
-            ) : (
-              <ul className="space-y-2">
-                {proximas.map((a) => (
-                  <ActivityItem key={a.id} a={a} />
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {grupos.map(([mes, itens]) => (
-            <div key={mes}>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
-                {mes}
-              </div>
-              <ul className="space-y-2">
-                {itens.map((a) => (
-                  <ActivityItem key={a.id} a={a} />
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div className="text-xs text-muted-foreground py-3">Carregando…</div>
+      ) : rows.length === 0 ? (
+        <div className="text-xs text-muted-foreground py-3">
+          {view === "abertas" ? "Nada pendente." : "Sem atividades anteriores."}
         </div>
+      ) : (
+        <ul className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+          {rows.map((a) => (
+            <ActivityItem key={a.id} a={a} />
+          ))}
+        </ul>
       )}
+
+      {totalPages > 1 && <Pager page={pageSafe} total={totalPages} onChange={setPage} />}
     </aside>
   );
 }
