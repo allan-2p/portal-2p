@@ -785,7 +785,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   ["doc", "CNPJ / CPF"],
                   ["fiscal", "Fiscal"],
                   ["cidade", "Cidade / UF"],
-                  ["contato", "Contato"],
+                  ["contato", "Consultor responsável"],
                 ] as [OrdemKey, string][]).map(([k, label]) => (
                   <th key={k} className="text-left px-4 py-2">
                     <button
