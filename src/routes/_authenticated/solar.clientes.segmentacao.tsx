@@ -141,6 +141,7 @@ function SegBadge({ seg }: { seg: Segment }) {
 function SegmentacaoPage() {
   const navigate = useNavigate();
   const [profileAccount, setProfileAccount] = useState<SalesforceAccount | null>(null);
+  const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detailClient, setDetailClient] = useState<Client | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
