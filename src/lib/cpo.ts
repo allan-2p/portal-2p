@@ -625,6 +625,8 @@ export function precoParaMargem(
   state: Pick<CpoState, "uf" | "contribuinte" | "finalidadeUso"> & {
     ie?: string;
     regimeTributario?: string | null;
+    faturarClienteFinal?: boolean;
+    faturamento?: CpoFaturamento;
   },
   ufs: CpoUf[],
   config: CpoConfig,
@@ -639,9 +641,17 @@ export function precoParaMargem(
   const pc = ncm?.pis_cofins ?? config.pis_cofins;
   const geraDifal = ncm ? ncm.gera_difal : true;
 
-  const inter = aliqInterOperacao({
+  const destino = destinoFiscal({
     uf: state.uf,
     contribuinte: state.contribuinte,
+    ie: state.ie ?? "",
+    faturarClienteFinal: state.faturarClienteFinal === true,
+    faturamento: state.faturamento as CpoFaturamento,
+  });
+
+  const inter = aliqInterOperacao({
+    uf: destino.uf,
+    contribuinte: destino.contribuinte,
     regimeTributario: state.regimeTributario ?? null,
     finalidade: state.finalidadeUso,
     padrao: ncm?.aliq_inter ?? config.aliq_inter,
@@ -651,19 +661,20 @@ export function precoParaMargem(
   const f = (1 - inter - (1 - inter) * pc) / (1 + ipi);
 
   // DIFAL só pesa na margem quando não é informativo.
-  const ufRow = ufs.find((u) => u.uf === state.uf);
+  const ufRow = ufs.find((u) => u.uf === destino.uf);
   const carga = (ufRow?.aliq_interna ?? 0.18) + (ufRow?.fcp ?? 0);
   const informativo =
-    difalEhInformativo({ contribuinte: state.contribuinte, ie: state.ie ?? "" }) ||
+    difalEhInformativo({ contribuinte: destino.contribuinte, ie: destino.ie }) ||
     difalSempreInformativoPorFinalidade(state.finalidadeUso);
   const aplicaDifal =
     geraDifal &&
     finalidadeGeraDifal(state.finalidadeUso) &&
-    !operacaoInterna(state.uf) &&
+    !operacaoInterna(destino.uf) &&
     !informativo &&
     carga > inter &&
     carga < 1;
   const dPct = aplicaDifal ? (carga - inter) / (1 - carga) : 0;
+
 
   const denom = f - dPct - margem;
   if (!(denom > 0)) return 0;
