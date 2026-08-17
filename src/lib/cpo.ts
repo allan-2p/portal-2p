@@ -229,6 +229,28 @@ export type CpoState = {
 
 
 
+/**
+ * Destinatário fiscal da nota: quando a NF é emitida para outro destinatário,
+ * o ICMS segue os dados dele (UF, contribuinte, IE), não os do cliente final.
+ */
+export function destinoFiscal(
+  state: Pick<CpoState, "uf" | "contribuinte" | "ie" | "faturarClienteFinal" | "faturamento">,
+) {
+  const f = state.faturamento;
+  if (state.faturarClienteFinal && f) {
+    return {
+      uf: (f.uf || state.uf || "").toUpperCase(),
+      contribuinte: !!f.contribuinte,
+      ie: f.ie ?? "",
+    };
+  }
+  return {
+    uf: (state.uf || "").toUpperCase(),
+    contribuinte: !!state.contribuinte,
+    ie: state.ie ?? "",
+  };
+}
+
 /** Cliente contribuinte com IE: o DIFAL é recolhido por ele, sem impacto na margem da 2P. */
 export function difalEhInformativo(state: Pick<CpoState, "contribuinte" | "ie">) {
   return state.contribuinte && !!(state.ie ?? "").trim();
@@ -237,6 +259,7 @@ export function difalEhInformativo(state: Pick<CpoState, "contribuinte" | "ie">)
 export function isSimplesNacional(regime?: string | null) {
   return /simples/i.test(regime ?? "");
 }
+
 
 /**
  * Alíquota de ICMS da operação. Regra geral: interestadual do NCM (4%).
