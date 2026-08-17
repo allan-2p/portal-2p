@@ -449,37 +449,10 @@ function VisaoGeral({
   data: any;
   loading: boolean;
 }) {
-  const trend = useMemo(() => {
-    const qs = history?.quarters ?? [];
-    const now = qs[qs.length - 1]?.total ?? 0;
-    const prev = qs[qs.length - 2]?.total ?? 0;
-    if (!prev) return { pct: null as number | null, up: now > 0 };
-    return { pct: ((now - prev) / prev) * 100, up: now >= prev };
-  }, [history]);
-
+  void history;
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MiniStat label="Faturamento 24m" value={fmt(history?.totalLifetime ?? null)} />
-        <div className="rounded-xl bg-surface-2/50 px-3 py-2">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Variação tri.</div>
-          <div className="flex items-center gap-1.5">
-            {trend.up ? (
-              <TrendingUp className="h-4 w-4 text-success" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-destructive" />
-            )}
-            <span className="text-base font-bold tabular-nums">
-              {trend.pct == null ? "—" : `${trend.pct >= 0 ? "+" : ""}${trend.pct.toFixed(1)}%`}
-            </span>
-          </div>
-        </div>
-        <MiniStat label="Em aberto" value={`${history?.openCount ?? 0} · ${fmt(history?.openValue ?? 0)}`} />
-        <MiniStat
-          label="Taxa de ganho"
-          value={history?.wonRate != null ? `${Math.round(history.wonRate * 100)}%` : "—"}
-        />
-      </div>
+
 
 
 
@@ -523,19 +496,6 @@ function VisaoGeral({
         </Card>
       </div>
 
-      {/* Indicadores comerciais do cliente */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MiniStat
-          label="Vendido tri. atual"
-          value={fmt(history?.quarters?.at(-1)?.total ?? account.quarterSold ?? 0)}
-        />
-        <MiniStat
-          label="Vendido tri. anterior"
-          value={fmt(history?.quarters?.at(-2)?.total ?? account.quarterProjection ?? 0)}
-        />
-        <MiniStat label="Ticket médio" value={fmt(history?.avgTicket ?? null)} />
-        <MiniStat label="Última compra" value={date(history?.lastPurchase)} />
-      </div>
     </div>
   );
 }
@@ -553,7 +513,8 @@ function Signal({ label, value }: { label: string; value: string }) {
 
 /* ---------------------------------------------------------------- Contatos */
 
-function ContactsPanel({ accountId }: { accountId: string }) {
+/** Bloco lateral compacto de contatos, com rolagem e paginação. */
+function ContactsRail({ accountId }: { accountId: string }) {
   const fetchContacts = useServerFn(getSalesforceAccountContacts);
   const q = useQuery({
     queryKey: ["sf-account-contacts", accountId],
@@ -561,60 +522,96 @@ function ContactsPanel({ accountId }: { accountId: string }) {
     staleTime: 5 * 60_000,
   });
   const contacts: SalesforceContact[] = q.data?.records ?? [];
+  const PAGE = 5;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(contacts.length / PAGE));
+  const pageSafe = Math.min(page, totalPages);
+  const rows = contacts.slice((pageSafe - 1) * PAGE, pageSafe * PAGE);
 
   return (
-    <Card
-      title="Contatos"
-      icon={Users}
-      right={<span className="text-[11px] text-muted-foreground">{contacts.length}</span>}
-    >
+    <aside className="glass rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Users className="h-4 w-4 text-primary" />
+        <h3 className="font-semibold text-sm">Contatos</h3>
+        <span className="ml-auto text-[11px] text-muted-foreground">{contacts.length}</span>
+      </div>
+
       {q.isLoading ? (
-        <Empty>Carregando contatos…</Empty>
+        <div className="text-xs text-muted-foreground py-3">Carregando contatos…</div>
       ) : contacts.length === 0 ? (
-        <Empty>Nenhum contato cadastrado.</Empty>
+        <div className="text-xs text-muted-foreground py-3">Nenhum contato cadastrado.</div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-2">
-          {contacts.map((c) => (
-            <div key={c.id} className="rounded-lg border border-border bg-background/40 p-3">
-              <div className="flex items-start gap-3">
-                <div className="h-9 w-9 shrink-0 rounded-full bg-primary/15 text-primary grid place-items-center text-xs font-semibold">
-                  {c.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
+        <>
+          <ul className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+            {rows.map((c) => (
+              <li key={c.id} className="rounded-lg border border-border bg-background/40 p-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="h-8 w-8 shrink-0 rounded-full bg-primary/15 text-primary grid place-items-center text-[11px] font-semibold">
+                    {c.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium truncate">{c.name}</div>
+                    <div className="text-[10px] text-muted-foreground truncate">{c.title ?? "—"}</div>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{c.name}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">
-                    {c.title ?? "—"}
-                    {c.department ? ` · ${c.department}` : ""}
-                  </div>
-                  <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
-                    {c.email && (
-                      <div className="inline-flex items-center gap-1 truncate">
-                        <Mail className="h-3 w-3" /> {c.email}
-                      </div>
-                    )}
-                    {c.phone && (
-                      <div className="inline-flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {c.phone}
-                      </div>
-                    )}
-                    {c.mobile && (
-                      <div className="inline-flex items-center gap-1">
-                        <Smartphone className="h-3 w-3" /> {c.mobile}
-                      </div>
-                    )}
-                  </div>
-                  {c.description && (
-                    <p className="text-[11px] text-muted-foreground mt-1.5 whitespace-pre-wrap line-clamp-3">
-                      {c.description}
-                    </p>
+                <div className="flex items-center gap-3 mt-1.5">
+                  {(c.mobile || c.phone) && (
+                    <a
+                      href={`tel:${(c.mobile || c.phone)!.replace(/\s/g, "")}`}
+                      className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
+                    >
+                      <Smartphone className="h-3 w-3" /> {c.mobile || c.phone}
+                    </a>
+                  )}
+                  {c.email && (
+                    <a
+                      href={`mailto:${c.email}`}
+                      className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary truncate"
+                    >
+                      <Mail className="h-3 w-3" /> e-mail
+                    </a>
                   )}
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              </li>
+            ))}
+          </ul>
+          {totalPages > 1 && <Pager page={pageSafe} total={totalPages} onChange={setPage} />}
+        </>
       )}
-    </Card>
+    </aside>
+  );
+}
+
+/** Paginação compacta usada nos blocos laterais. */
+function Pager({
+  page,
+  total,
+  onChange,
+}: {
+  page: number;
+  total: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-border">
+      <button
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+        className="px-2 py-1 rounded-md bg-surface-2 hover:bg-surface disabled:opacity-40 text-[11px] font-medium"
+      >
+        ←
+      </button>
+      <span className="text-[10px] text-muted-foreground tabular-nums">
+        {page} / {total}
+      </span>
+      <button
+        onClick={() => onChange(Math.min(total, page + 1))}
+        disabled={page === total}
+        className="px-2 py-1 rounded-md bg-surface-2 hover:bg-surface disabled:opacity-40 text-[11px] font-medium"
+      >
+        →
+      </button>
+    </div>
   );
 }
 
