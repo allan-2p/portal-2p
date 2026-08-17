@@ -433,10 +433,12 @@ export function calcularCpo(
   config: CpoConfig,
   ncms: CpoNcm[] = [],
 ): CpoResult {
-  const uf = ufs.find((u) => u.uf === state.uf);
+  const destino = destinoFiscal(state);
+  const uf = ufs.find((u) => u.uf === destino.uf);
   const interna = uf?.aliq_interna ?? 0.18;
   const fcp = uf?.fcp ?? 0;
   const aliqInterna = interna + fcp;
+
 
   // As alíquotas são regras do NCM; a config global só é fallback.
   const ncmDoItem = (produtoId: string) => {
