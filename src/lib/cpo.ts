@@ -471,12 +471,13 @@ export function calcularCpo(
     const prod = produtos.find((p) => p.id === it.produtoId);
     const r = ncmDoItem(it.produtoId);
     const interItem = aliqInterOperacao({
-      uf: state.uf,
-      contribuinte: state.contribuinte,
+      uf: destino.uf,
+      contribuinte: destino.contribuinte,
       regimeTributario: state.regimeTributario ?? null,
       finalidade: state.finalidadeUso,
       padrao: r.inter,
     });
+
 
     const semIpi = bruto / (1 + r.ipi);
     // Frete vai "por fora": não entra na base de ICMS/DIFAL nem na MB/comissão.
