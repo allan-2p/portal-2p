@@ -710,7 +710,11 @@ function SegmentacaoPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate({ to: "/solar/clientes/perfil", search: { account: c.id } });
+                                const acc = (accountsQ.data?.records ?? []).find(
+                                  (a) => a.name === c.name || a.id === c.id,
+                                );
+                                if (acc) setProfileAccount(acc);
+                                else navigate({ to: "/solar/clientes/perfil", search: { account: c.id } });
                               }}
                               className="p-1.5 rounded hover:bg-primary/15 text-muted-foreground hover:text-primary"
                               title="Abrir perfil do cliente"
