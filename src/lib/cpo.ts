@@ -229,6 +229,28 @@ export type CpoState = {
 
 
 
+/**
+ * Destinatário fiscal da nota: quando a NF é emitida para outro destinatário,
+ * o ICMS segue os dados dele (UF, contribuinte, IE), não os do cliente final.
+ */
+export function destinoFiscal(
+  state: Pick<CpoState, "uf" | "contribuinte" | "ie" | "faturarClienteFinal" | "faturamento">,
+) {
+  const f = state.faturamento;
+  if (state.faturarClienteFinal && f) {
+    return {
+      uf: (f.uf || state.uf || "").toUpperCase(),
+      contribuinte: !!f.contribuinte,
+      ie: f.ie ?? "",
+    };
+  }
+  return {
+    uf: (state.uf || "").toUpperCase(),
+    contribuinte: !!state.contribuinte,
+    ie: state.ie ?? "",
+  };
+}
+
 /** Cliente contribuinte com IE: o DIFAL é recolhido por ele, sem impacto na margem da 2P. */
 export function difalEhInformativo(state: Pick<CpoState, "contribuinte" | "ie">) {
   return state.contribuinte && !!(state.ie ?? "").trim();
@@ -237,6 +259,7 @@ export function difalEhInformativo(state: Pick<CpoState, "contribuinte" | "ie">)
 export function isSimplesNacional(regime?: string | null) {
   return /simples/i.test(regime ?? "");
 }
+
 
 /**
  * Alíquota de ICMS da operação. Regra geral: interestadual do NCM (4%).
@@ -410,10 +433,12 @@ export function calcularCpo(
   config: CpoConfig,
   ncms: CpoNcm[] = [],
 ): CpoResult {
-  const uf = ufs.find((u) => u.uf === state.uf);
+  const destino = destinoFiscal(state);
+  const uf = ufs.find((u) => u.uf === destino.uf);
   const interna = uf?.aliq_interna ?? 0.18;
   const fcp = uf?.fcp ?? 0;
   const aliqInterna = interna + fcp;
+
 
   // As alíquotas são regras do NCM; a config global só é fallback.
   const ncmDoItem = (produtoId: string) => {
@@ -446,12 +471,13 @@ export function calcularCpo(
     const prod = produtos.find((p) => p.id === it.produtoId);
     const r = ncmDoItem(it.produtoId);
     const interItem = aliqInterOperacao({
-      uf: state.uf,
-      contribuinte: state.contribuinte,
+      uf: destino.uf,
+      contribuinte: destino.contribuinte,
       regimeTributario: state.regimeTributario ?? null,
       finalidade: state.finalidadeUso,
       padrao: r.inter,
     });
+
 
     const semIpi = bruto / (1 + r.ipi);
     // Frete vai "por fora": não entra na base de ICMS/DIFAL nem na MB/comissão.
@@ -468,7 +494,7 @@ export function calcularCpo(
     pisCofins += pcItem;
     interPonderado += interItem * bruto;
 
-    if (r.geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !operacaoInterna(state.uf)) {
+    if (r.geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !operacaoInterna(destino.uf)) {
       const d = calcularDifal(bruto, interna, fcp, interItem);
       difalBase += d.base;
       difalValor += d.valor;
@@ -487,7 +513,8 @@ export function calcularCpo(
   // Contribuinte com IE recolhe o DIFAL por guia no Estado dele → informativo, sem impacto na margem.
   const difal = { base: difalBase, valor: difalValor };
   const informativo =
-    difalEhInformativo(state) || difalSempreInformativoPorFinalidade(state.finalidadeUso);
+    difalEhInformativo(destino) || difalSempreInformativoPorFinalidade(state.finalidadeUso);
+
   const difalAbs = informativo ? 0 : difal.valor;
   const difalEstimado = informativo ? difal.valor : 0;
 
@@ -598,6 +625,8 @@ export function precoParaMargem(
   state: Pick<CpoState, "uf" | "contribuinte" | "finalidadeUso"> & {
     ie?: string;
     regimeTributario?: string | null;
+    faturarClienteFinal?: boolean;
+    faturamento?: CpoFaturamento;
   },
   ufs: CpoUf[],
   config: CpoConfig,
@@ -612,9 +641,17 @@ export function precoParaMargem(
   const pc = ncm?.pis_cofins ?? config.pis_cofins;
   const geraDifal = ncm ? ncm.gera_difal : true;
 
-  const inter = aliqInterOperacao({
+  const destino = destinoFiscal({
     uf: state.uf,
     contribuinte: state.contribuinte,
+    ie: state.ie ?? "",
+    faturarClienteFinal: state.faturarClienteFinal === true,
+    faturamento: state.faturamento as CpoFaturamento,
+  });
+
+  const inter = aliqInterOperacao({
+    uf: destino.uf,
+    contribuinte: destino.contribuinte,
     regimeTributario: state.regimeTributario ?? null,
     finalidade: state.finalidadeUso,
     padrao: ncm?.aliq_inter ?? config.aliq_inter,
@@ -624,19 +661,20 @@ export function precoParaMargem(
   const f = (1 - inter - (1 - inter) * pc) / (1 + ipi);
 
   // DIFAL só pesa na margem quando não é informativo.
-  const ufRow = ufs.find((u) => u.uf === state.uf);
+  const ufRow = ufs.find((u) => u.uf === destino.uf);
   const carga = (ufRow?.aliq_interna ?? 0.18) + (ufRow?.fcp ?? 0);
   const informativo =
-    difalEhInformativo({ contribuinte: state.contribuinte, ie: state.ie ?? "" }) ||
+    difalEhInformativo({ contribuinte: destino.contribuinte, ie: destino.ie }) ||
     difalSempreInformativoPorFinalidade(state.finalidadeUso);
   const aplicaDifal =
     geraDifal &&
     finalidadeGeraDifal(state.finalidadeUso) &&
-    !operacaoInterna(state.uf) &&
+    !operacaoInterna(destino.uf) &&
     !informativo &&
     carga > inter &&
     carga < 1;
   const dPct = aplicaDifal ? (carga - inter) / (1 - carga) : 0;
+
 
   const denom = f - dPct - margem;
   if (!(denom > 0)) return 0;
