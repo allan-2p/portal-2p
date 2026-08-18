@@ -348,6 +348,21 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
   });
 
+  // Reenvio manual das integrações (SAP + Salesforce) de um cadastro.
+  const reenviarFn = useServerFn(reenviarClienteFn);
+  const reenviar = useMutation({
+    mutationFn: (id: string) => reenviarFn({ data: { instancia, id } }),
+    onSuccess: (r: any) => {
+      if (r?.sap?.ok) toast.success(`SAP atualizado${r.sap.numero_sap ? ` — código ${r.sap.numero_sap}` : ""}.`);
+      else if (r?.sap) toast.error(`SAP: ${r.sap.erro ?? "falha no envio"}`);
+      if (r?.sf?.ok) toast.success("Salesforce sincronizado.");
+      else if (r?.sf) toast.error(`Salesforce: ${r.sf.erro ?? "falha no envio"}`);
+      qc.invalidateQueries({ queryKey: ["clientes", instancia] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao reenviar."),
+  });
+
+
   // Transferência de carteira: realinha o consultor dos cadastros com o dono
   // atual da conta no Salesforce (registros antigos permanecem intactos).
   const sincronizarDonos = useServerFn(sincronizarDonosFn);
