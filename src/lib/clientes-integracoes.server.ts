@@ -89,6 +89,21 @@ export async function sincronizarCliente(
     vendedor_sap: extras.vendedorSap ?? null,
   });
 
+  await logIntegrationEvent({
+    slug: "sap-clientes",
+    level: sap.ok ? "info" : "error",
+    event: sap.ok ? "cliente.envio.sucesso" : "cliente.envio.erro",
+    message: sap.ok
+      ? `SAP retornou o código ${sap.numero_sap ?? "(sem número)"} para ${base.razao_social}`
+      : `Falha no envio ao SAP: ${sap.erro ?? "erro desconhecido"}`,
+    durationMs: Date.now() - sapIniciadoEm,
+    detail: {
+      ...base,
+      payload: sapPayload,
+      resposta: { ok: sap.ok, numero_sap: sap.numero_sap ?? null, erro: sap.erro ?? null },
+    },
+  });
+
   // Grava o retorno do SAP antes de seguir para o Salesforce, mantendo a ordem:
   // cadastro na tabela `clientes` > SAP (número) > Salesforce (id).
   try {
@@ -101,7 +116,31 @@ export async function sincronizarCliente(
     console.error("[clientes] falha ao gravar retorno do SAP", err);
   }
 
+  const sfPayload = {
+    doc: base.doc,
+    razao_social: base.razao_social,
+    nome_fantasia: cliente["nome_fantasia"] ?? null,
+    email: cliente["email"] ?? null,
+    telefone: cliente["telefone"] ?? null,
+    cidade: cliente["cidade"] ?? null,
+    uf: base.uf,
+    contato_nome: cliente["contato_nome"] ?? principal?.nome ?? null,
+    contato_email: cliente["contato_email"] ?? principal?.emails?.[0] ?? null,
+    owner_sf_id: extras.ownerSfId ?? null,
+    organizacao: cliente["organizacao"] ?? null,
+  };
+
+  await logIntegrationEvent({
+    slug: "salesforce-clientes",
+    level: "info",
+    event: "cliente.envio.tentativa",
+    message: `Enviando ${base.razao_social} (${base.doc}) para o Salesforce`,
+    detail: { ...base, payload: sfPayload },
+  });
+
+  const sfIniciadoEm = Date.now();
   const salesforce = await sincronizarClienteSalesforce({
+
     doc: String(cliente["doc"] ?? ""),
     razao_social: String(cliente["razao_social"] ?? ""),
     nome_fantasia: cliente["nome_fantasia"],
