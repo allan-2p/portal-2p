@@ -34,7 +34,16 @@ export type IntegrationLogRow = {
 /** Histórico de sincronizações e erros — filtrável por integração e nível. */
 export const listIntegrationLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { slug?: string; level?: "all" | "info" | "warn" | "error"; limit?: number; offset?: number }) => input)
+  .inputValidator((input: {
+    slug?: string;
+    level?: "all" | "info" | "warn" | "error";
+    limit?: number;
+    offset?: number;
+    /** Busca livre por evento, mensagem, documento ou razão social do cliente. */
+    search?: string;
+    /** Auditoria de um cliente específico (integration_logs.detail->>cliente_id). */
+    clienteId?: string;
+  }) => input)
   .handler(async ({ data, context }) => {
     await assertLogRead(context, "admin.integracoes");
 
@@ -49,6 +58,22 @@ export const listIntegrationLogs = createServerFn({ method: "GET" })
 
     if (data.slug) q = q.eq("slug", data.slug);
     if (data.level && data.level !== "all") q = q.eq("level", data.level);
+    if (data.clienteId) q = q.eq("detail->>cliente_id", data.clienteId);
+
+    const termo = (data.search ?? "").trim().replace(/[,()*]/g, " ");
+    if (termo) {
+      q = q.or(
+        [
+          `event.ilike.*${termo}*`,
+          `message.ilike.*${termo}*`,
+          `slug.ilike.*${termo}*`,
+          `detail->>doc.ilike.*${termo}*`,
+          `detail->>razao_social.ilike.*${termo}*`,
+          `detail->>cliente_id.ilike.*${termo}*`,
+        ].join(","),
+      );
+    }
+
 
     const { data: rows, count, error } = await q;
     if (error) throw new Error(error.message);
