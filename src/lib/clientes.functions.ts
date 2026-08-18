@@ -271,26 +271,41 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     };
 
     let clienteId = data.id ?? null;
-    if (data.id) {
-      await assertPodeAlterarCliente(context as any, data.instancia, data.id);
-      const patch: Record<string, unknown> = { ...payload };
-      // Só reatribui o consultor quando o usuário tem permissão e escolheu alguém.
-      if (podeEscolher && data.consultor_id) {
-        patch["created_by"] = consultorId;
-        patch["created_by_nome"] = consultorNome;
-        patch["created_by_email"] = consultorEmail;
+    try {
+      if (data.id) {
+        await assertPodeAlterarCliente(context as any, data.instancia, data.id);
+        const patch: Record<string, unknown> = { ...payload };
+        // Só reatribui o consultor quando o usuário tem permissão e escolheu alguém.
+        if (podeEscolher && data.consultor_id) {
+          patch["created_by"] = consultorId;
+          patch["created_by_nome"] = consultorNome;
+          patch["created_by_email"] = consultorEmail;
+        }
+        const row = await db.updateCliente(data.instancia, data.id, patch);
+        clienteId = (row?.["id"] as string) ?? data.id;
+      } else {
+        const row = await db.insertCliente(data.instancia, {
+          ...payload,
+          created_by: consultorId,
+          created_by_nome: consultorNome,
+          created_by_email: consultorEmail,
+        });
+        clienteId = row["id"] as string;
       }
-      const row = await db.updateCliente(data.instancia, data.id, patch);
-      clienteId = (row?.["id"] as string) ?? data.id;
-    } else {
-      const row = await db.insertCliente(data.instancia, {
-        ...payload,
-        created_by: consultorId,
-        created_by_nome: consultorNome,
-        created_by_email: consultorEmail,
-      });
-      clienteId = row["id"] as string;
+    } catch (err) {
+      await logErroBanco(data.id ? "atualizar" : "gravar", err);
+      throw err;
     }
+
+    await logIntegrationEvent({
+      slug: "clientes-cadastro",
+      level: "info",
+      event: data.id ? "cadastro.atualizado" : "cadastro.criado",
+      message: `${data.id ? "Cadastro atualizado" : "Cadastro criado"}: ${payload.razao_social} (${doc})`,
+      actorId: context.userId,
+      detail: { cliente_id: clienteId, instancia: data.instancia, doc, razao_social: payload.razao_social },
+    });
+
 
     // Envio automático ao salvar: SAP + Salesforce. Erros não desfazem o
     // cadastro; ficam visíveis na tela para reenvio.
