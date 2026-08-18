@@ -348,7 +348,13 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
 export const reenviarClienteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ instancia: instanciaSchema, id: z.string().uuid() }).parse(input),
+    z
+      .object({
+        instancia: instanciaSchema,
+        id: z.string().uuid(),
+        alvos: z.array(z.enum(["sap", "salesforce", "contatos"])).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const cliente = await assertPodeAlterarCliente(context as any, data.instancia, data.id);
@@ -361,7 +367,26 @@ export const reenviarClienteFn = createServerFn({ method: "POST" })
     return sincronizarCliente(data.instancia, data.id, cliente as Record<string, any>, {
       vendedorSap: (dono as any)?.numero_sap ?? null,
       ownerSfId: (dono as any)?.sf_user_id ?? null,
+      ...(data.alvos && data.alvos.length ? { alvos: data.alvos } : {}),
     });
+  });
+
+/** Testa isoladamente banco, SAP, Salesforce ou contatos (sem alterar dados). */
+export const testarIntegracoesClienteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        instancia: instanciaSchema,
+        id: z.string().uuid().optional(),
+        alvos: z.array(z.enum(["banco", "sap", "salesforce", "contatos"])).min(1),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    if (data.id) await assertPodeAlterarCliente(context as any, data.instancia, data.id);
+    const { testarIntegracoes } = await import("./integracoes-diagnostico.server");
+    return { resultados: await testarIntegracoes(data.instancia, data.alvos, data.id ?? null) };
   });
 
 
