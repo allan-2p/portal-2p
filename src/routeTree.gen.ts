@@ -72,6 +72,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksSapNfsRouteImport } from './routes/api/public/hooks/sap-nfs'
+import { Route as ApiPublicHooksPixItauRouteImport } from './routes/api/public/hooks/pix-itau'
 import { Route as ApiPublicHooksPagamentoLinkRouteImport } from './routes/api/public/hooks/pagamento-link'
 import { Route as ApiPublicHooksFretefyTrackingRouteImport } from './routes/api/public/hooks/fretefy-tracking'
 import { Route as AuthenticatedSolarPropostasNovaRouteImport } from './routes/_authenticated/solar.propostas.nova'
@@ -450,6 +451,11 @@ const ApiPublicHooksSapNfsRoute = ApiPublicHooksSapNfsRouteImport.update({
   path: '/api/public/hooks/sap-nfs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPixItauRoute = ApiPublicHooksPixItauRouteImport.update({
+  id: '/api/public/hooks/pix-itau',
+  path: '/api/public/hooks/pix-itau',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksPagamentoLinkRoute =
   ApiPublicHooksPagamentoLinkRouteImport.update({
     id: '/api/public/hooks/pagamento-link',
@@ -632,6 +638,7 @@ export interface FileRoutesByFullPath {
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
+  '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -711,6 +718,7 @@ export interface FileRoutesByTo {
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
+  '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -795,6 +803,7 @@ export interface FileRoutesById {
   '/_authenticated/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
+  '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -879,6 +888,7 @@ export interface FileRouteTypes {
     | '/solar/propostas/nova'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
+    | '/api/public/hooks/pix-itau'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -958,6 +968,7 @@ export interface FileRouteTypes {
     | '/solar/propostas/nova'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
+    | '/api/public/hooks/pix-itau'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1041,6 +1052,7 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/propostas/nova'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
+    | '/api/public/hooks/pix-itau'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1066,6 +1078,7 @@ export interface RootRouteChildren {
   ApiPublicAppVersionRoute: typeof ApiPublicAppVersionRoute
   ApiPublicHooksFretefyTrackingRoute: typeof ApiPublicHooksFretefyTrackingRoute
   ApiPublicHooksPagamentoLinkRoute: typeof ApiPublicHooksPagamentoLinkRoute
+  ApiPublicHooksPixItauRoute: typeof ApiPublicHooksPixItauRoute
   ApiPublicHooksSapNfsRoute: typeof ApiPublicHooksSapNfsRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1515,6 +1528,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSapNfsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/pix-itau': {
+      id: '/api/public/hooks/pix-itau'
+      path: '/api/public/hooks/pix-itau'
+      fullPath: '/api/public/hooks/pix-itau'
+      preLoaderRoute: typeof ApiPublicHooksPixItauRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/pagamento-link': {
       id: '/api/public/hooks/pagamento-link'
       path: '/api/public/hooks/pagamento-link'
@@ -1874,6 +1894,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAppVersionRoute: ApiPublicAppVersionRoute,
   ApiPublicHooksFretefyTrackingRoute: ApiPublicHooksFretefyTrackingRoute,
   ApiPublicHooksPagamentoLinkRoute: ApiPublicHooksPagamentoLinkRoute,
+  ApiPublicHooksPixItauRoute: ApiPublicHooksPixItauRoute,
   ApiPublicHooksSapNfsRoute: ApiPublicHooksSapNfsRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
