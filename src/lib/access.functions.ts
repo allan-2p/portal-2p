@@ -15,11 +15,21 @@ async function profileGrantsFor(client: any, userId: string) {
     .select("profile_id")
     .eq("user_id", userId);
   const ids = (links ?? []).map((r: any) => r.profile_id as string);
-  if (!ids.length) return { features: [], instances: [], full_access: false } as ProfileGrants;
+  if (!ids.length)
+    return {
+      features: [],
+      instances: [],
+      full_access: false,
+      default_instance: null,
+      default_route: null,
+    } as ProfileGrants;
   const [{ data: feats }, { data: insts }, { data: profs }] = await Promise.all([
     client.from("permission_profile_features").select("instance_id, feature_key").in("profile_id", ids),
     client.from("permission_profile_instances").select("instance_id").in("profile_id", ids),
-    client.from("permission_profiles").select("id, is_full_access").in("id", ids),
+    client
+      .from("permission_profiles")
+      .select("id, is_full_access, default_instance, default_route")
+      .in("id", ids),
   ]);
   return {
     features: (feats ?? []).map((r: any) => ({
@@ -28,6 +38,8 @@ async function profileGrantsFor(client: any, userId: string) {
     })),
     instances: (insts ?? []).map((r: any) => r.instance_id as string),
     full_access: (profs ?? []).some((p: any) => p.is_full_access === true),
+    default_instance: (profs ?? []).find((p: any) => p.default_instance)?.default_instance ?? null,
+    default_route: (profs ?? []).find((p: any) => p.default_route)?.default_route ?? null,
   };
 }
 
@@ -35,6 +47,8 @@ type ProfileGrants = {
   features: { instance_id: string; feature_key: string }[];
   instances: string[];
   full_access?: boolean;
+  default_instance?: string | null;
+  default_route?: string | null;
 };
 
 function mergeAccess(instances: string[], fromProfiles: ProfileGrants) {
@@ -65,6 +79,10 @@ export type UserAccess = {
   /** Features explicitamente liberadas. Sem linha = sem acesso (default deny). */
   granted: { instance_id: string; feature_key: string }[];
   is_admin: boolean;
+  /** Unidade inicial definida no perfil do usuário (null = padrão do portal). */
+  default_instance: string | null;
+  /** Página inicial definida no perfil do usuário. */
+  default_route: string | null;
 };
 
 export const getMyAccess = createServerFn({ method: "GET" })
@@ -82,7 +100,12 @@ export const getMyAccess = createServerFn({ method: "GET" })
       (inst ?? []).map((r: any) => r.instance_id as string),
       fromProfiles,
     );
-    return { ...merged, is_admin: !!isAdmin || !!fromProfiles.full_access };
+    return {
+      ...merged,
+      is_admin: !!isAdmin || !!fromProfiles.full_access,
+      default_instance: fromProfiles.default_instance ?? null,
+      default_route: fromProfiles.default_route ?? null,
+    };
   });
 
 // ---- Admin: listar todos usuários + acessos ---- //
@@ -198,7 +221,12 @@ export const adminGetUserAccess = createServerFn({ method: "GET" })
       (inst ?? []).map((r: any) => r.instance_id as string),
       fromProfiles,
     );
-    return { ...merged, is_admin: (roles ?? []).some((r: any) => r.role === "admin") };
+    return {
+      ...merged,
+      is_admin: (roles ?? []).some((r: any) => r.role === "admin") || !!fromProfiles.full_access,
+      default_instance: fromProfiles.default_instance ?? null,
+      default_route: fromProfiles.default_route ?? null,
+    };
   });
 
 // ---- Admin: logar de verdade como outro usuário ---- //

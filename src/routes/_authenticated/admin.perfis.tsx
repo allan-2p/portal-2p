@@ -12,6 +12,7 @@ import {
   adminDeletePermissionProfile,
   adminSetProfileFeatures,
   adminSetProfileInstances,
+  adminSetProfileHome,
   adminSetUserProfiles,
   type PermissionProfile,
 } from "@/lib/permission-profiles.functions";
@@ -21,6 +22,7 @@ import {
   INSTANCE_IDS,
   ALL_FEATURES,
   FEATURE_LABELS,
+  ROUTE_FEATURE,
   type FeatureKey,
   type InstanceId,
 } from "@/lib/instances";
@@ -61,6 +63,7 @@ function PerfisPage() {
   const deleteFn = useServerFn(adminDeletePermissionProfile);
   const setFeatsFn = useServerFn(adminSetProfileFeatures);
   const setInstsFn = useServerFn(adminSetProfileInstances);
+  const setHomeFn = useServerFn(adminSetProfileHome);
   const setUsersFn = useServerFn(adminSetUserProfiles);
   const matrixFn = useServerFn(adminListAccessMatrix);
 
@@ -113,6 +116,23 @@ function PerfisPage() {
     if (!selected) return;
     setProfInstances(new Set(selected.instances as InstanceId[]));
   }, [selected]);
+
+  async function salvarHome(inst: InstanceId | "", rota: string) {
+    if (!selected) return;
+    try {
+      await setHomeFn({
+        data: {
+          profile_id: selected.id,
+          default_instance: inst || null,
+          default_route: rota || null,
+        },
+      });
+      toast.success("Página inicial do perfil atualizada");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  }
 
   async function toggleProfileInstance(id: InstanceId, on: boolean) {
     if (!selected) return;
@@ -374,6 +394,47 @@ function PerfisPage() {
                   </div>
                 </div>
 
+                <div className="glass rounded-xl p-4 space-y-3">
+                  <div>
+                    <h3 className="font-medium text-sm">Página inicial do perfil</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Define para onde o usuário deste perfil é levado ao entrar no portal. Sem
+                      definição, abre a home da primeira unidade liberada.
+                    </p>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <select
+                      value={selected.default_instance ?? ""}
+                      onChange={(e) =>
+                        salvarHome((e.target.value as InstanceId) || "", "")
+                      }
+                      className="px-3 py-2 rounded-lg border border-border bg-surface-2 text-sm"
+                    >
+                      <option value="">Unidade padrão (primeira liberada)</option>
+                      {[...profInstances].map((id) => (
+                        <option key={id} value={id}>
+                          {INSTANCES[id].label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={selected.default_route ?? ""}
+                      disabled={!selected.default_instance}
+                      onChange={(e) =>
+                        salvarHome((selected.default_instance as InstanceId) ?? "", e.target.value)
+                      }
+                      className="px-3 py-2 rounded-lg border border-border bg-surface-2 text-sm disabled:opacity-50"
+                    >
+                      <option value="">Home da unidade</option>
+                      {rotasDaUnidade(selected.default_instance as InstanceId | null).map((r) => (
+                        <option key={r.path} value={r.path}>
+                          {r.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div className="glass rounded-xl p-4 space-y-4">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex bg-surface-2 rounded-lg p-0.5 border border-border text-sm w-fit">
@@ -568,4 +629,15 @@ function PerfisPage() {
       </div>
     </AppLayout>
   );
+}
+
+
+/** Rotas que podem ser usadas como página inicial de um perfil. */
+function rotasDaUnidade(inst: InstanceId | null) {
+  if (!inst) return [] as { path: string; label: string }[];
+  const rotas = ROUTE_FEATURE as Record<string, FeatureKey>;
+  return Object.keys(rotas)
+    .filter((path) => INSTANCES[inst].routes.includes(rotas[path]!))
+    .map((path) => ({ path, label: `${FEATURE_LABELS[rotas[path]!]} (${path})` }))
+    .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
 }

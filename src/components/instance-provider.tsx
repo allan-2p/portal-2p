@@ -76,11 +76,21 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
   const sim = useSimulation();
   const effective = sim.target ? sim.access : q.data;
 
+  // Instâncias liberadas vêm exclusivamente do acesso do usuário/perfil.
+  // Sem nenhuma liberada não existe fallback para a Solar — nada é acessível.
   const allowed: InstanceId[] = useMemo(() => {
     const list = (effective?.instances ?? []) as string[];
-    const filt = list.filter((v): v is InstanceId => v === "solar" || v === "carregadores" || v === "marketing");
-    return filt.length ? filt : ["solar"];
+    return list.filter(
+      (v): v is InstanceId => v === "solar" || v === "carregadores" || v === "marketing",
+    );
   }, [effective]);
+
+  // Página inicial definida no perfil de permissão do usuário.
+  const perfilInstance = useMemo(() => {
+    const v = effective?.default_instance;
+    return v === "solar" || v === "carregadores" || v === "marketing" ? (v as InstanceId) : null;
+  }, [effective]);
+  const perfilRoute = effective?.default_route ?? null;
 
   const granted = effective?.granted ?? [];
   const isAdmin = effective?.is_admin ?? false;
@@ -97,12 +107,26 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (authLoading) return;
     if (user && (q.isLoading || !q.data)) return;
+    if (!allowed.length) return;
     if (!allowed.includes(instance)) {
-      const next = defaultInstanceForList(allowed);
+      const next =
+        perfilInstance && allowed.includes(perfilInstance)
+          ? perfilInstance
+          : defaultInstanceForList(allowed);
       setInstanceState(next);
       if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, next);
     }
-  }, [allowed, instance, authLoading, user, q.isLoading, q.data]);
+  }, [allowed, instance, authLoading, user, q.isLoading, q.data, perfilInstance]);
+
+  // Primeiro acesso (sem instância salva): abre na unidade definida no perfil.
+  const [instanceTocada, setInstanceTocada] = useState(() => readSavedInstance() !== null);
+  useEffect(() => {
+    if (instanceTocada || !perfilInstance) return;
+    if (!allowed.includes(perfilInstance)) return;
+    setInstanceTocada(true);
+    setInstanceState(perfilInstance);
+    if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, perfilInstance);
+  }, [perfilInstance, allowed, instanceTocada]);
 
 
   // Aplica atributo no <html> pra CSS reagir.
@@ -112,6 +136,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
   }, [instance]);
 
   const setInstance = useCallback((id: InstanceId) => {
+    setInstanceTocada(true);
     setInstanceState(id);
     if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, id);
   }, []);
@@ -121,6 +146,9 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
       // Administração é do Grupo 2P: admin enxerga todas as telas de configuração
       // em qualquer instância — a separação acontece dentro de cada tela.
       if (isAdmin && key.startsWith("admin.")) return true;
+      // Instância não liberada para o usuário: nenhuma tela dela é acessível,
+      // mesmo entrando direto pela URL.
+      if (!isAdmin && !allowed.includes(instance)) return false;
       const meta = INSTANCES[instance];
       if (!meta.routes.includes(key)) return false;
       if (isAdmin) return true;
@@ -136,7 +164,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
           featuresForAreaAccessKey(areaKey).includes(key),
       );
     },
-    [instance, grantedSet, isAdmin],
+    [instance, grantedSet, isAdmin, allowed],
   );
 
   const can = useCallback(
@@ -154,16 +182,24 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
       // tenta match exato, depois prefixo mais longo
       // Administrador acessa todas as telas, sem exceção.
       if (isAdmin) return true;
+      if (!allowed.includes(instance)) return false;
       const keys = Object.keys(ROUTE_FEATURE).sort((a, b) => b.length - a.length);
       const match = keys.find((k) => path === k || path.startsWith(k + "/"));
       if (!match) return true;
       return hasFeature((ROUTE_FEATURE as Record<string, FeatureKey>)[match]);
     },
-    [hasFeature, isAdmin],
+    [hasFeature, isAdmin, allowed, instance],
   );
 
-  // Página inicial: sempre a home da instância ativa.
-  const defaultRoute = useMemo(() => HOME_ROUTE[instance] ?? "/", [instance]);
+  // Página inicial: a definida no perfil (quando acessível) ou a home da instância.
+  const defaultRoute = useMemo(() => {
+    const home = HOME_ROUTE[instance] ?? "/";
+    if (!perfilRoute) return home;
+    if (perfilInstance && perfilInstance !== instance) return home;
+    const feat = (ROUTE_FEATURE as Record<string, FeatureKey>)[perfilRoute];
+    if (!feat) return home;
+    return isAdmin || hasFeature(feat) ? perfilRoute : home;
+  }, [instance, perfilRoute, perfilInstance, hasFeature, isAdmin]);
 
   const value: Ctx = {
     instance,

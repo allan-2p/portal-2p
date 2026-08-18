@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getAdminAreas } from "@/lib/admin-guard.functions";
 
 import { AdminSidebar } from "./admin-sidebar";
+import { AccessDenied } from "./access-denied";
 import { cn } from "@/lib/utils";
 import type { AppPath } from "@/lib/routes";
 import { supabase } from "@/integrations/supabase/client";
@@ -594,7 +595,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
         {showBar && <div className="route-bar" aria-hidden />}
-        <div key={pathname} className="p-4 sm:p-5 md:p-6 page-transition">{children}</div>
+        <div key={pathname} className="p-4 sm:p-5 md:p-6 page-transition">
+          {!instanceLoading && !isRouteAllowed(pathname) ? <AccessDenied /> : children}
+        </div>
 
       </main>
     </div>
