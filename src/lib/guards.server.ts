@@ -206,6 +206,7 @@ export async function adminAreasFor(ctx: GuardContext): Promise<{
       "admin.logs.integracoes",
       "admin.logs.moderacao",
       "admin.logs.retencao",
+      "admin.logs.jobs",
     ]),
     isAdmin: all,
   };

@@ -51,6 +51,7 @@ export type FeatureKey =
   | "admin.logs.integracoes"
   | "admin.logs.moderacao"
   | "admin.logs.retencao"
+  | "admin.logs.jobs"
   | "admin.logs.exportar"
   | "admin.sistema.excluir"
   | "admin.clientes.integracoes"
@@ -205,6 +206,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/admin/logs/integracoes": "admin.logs.integracoes",
   "/admin/logs/moderacao": "admin.logs.moderacao",
   "/admin/logs/retencao": "admin.logs.retencao",
+  "/admin/logs/gatilhos": "admin.logs.jobs",
   "/admin/vinculos": "admin.vinculos",
   "/marketing": "marketing.home",
   "/marketing/social": "marketing.social",
@@ -253,6 +255,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.logs.integracoes": "Logs • Integrações",
   "admin.logs.moderacao": "Logs • Moderação",
   "admin.logs.retencao": "Logs • Retenção e limpeza",
+  "admin.logs.jobs": "Logs • Gatilhos automáticos (monitoramento)",
   "admin.logs.exportar": "Logs • Exportar registros (CSV)",
   "admin.sistema.excluir": "Sistema • Excluir registros (universal)",
   "admin.clientes.integracoes": "Clientes • Integrações e histórico (auditoria)",

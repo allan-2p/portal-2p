@@ -85,6 +85,7 @@ const MAP: Partial<Record<FeatureKey, CapabilityId[]>> = {
   "admin.logs.integracoes": V,
   "admin.logs.moderacao": V,
   "admin.logs.retencao": VE,
+  "admin.logs.jobs": VE,
   "admin.logs.exportar": V,
   // Sistema (universal)
   "admin.sistema.excluir": V,

@@ -601,6 +601,8 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data, context }) => {
+    const { runJob } = await import("@/lib/job-runs.server");
+    const executar = async () => {
     const { supabase, userId } = context as any;
     const db = await repo();
 
@@ -690,6 +692,22 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
 
     await db.registrarConclusaoLog({ ...base, status: data.status, resultado: "concluida" });
     return { id: row.id, status: data.status, already_concluded: false };
+    };
+
+    // Monitoramento: cada finalização vira uma execução auditável em job_runs.
+    const run = await runJob(
+      {
+        job: "checkout.finalizar",
+        trigger: "portal",
+        refType: "proposta",
+        refId: data.id,
+        payload: { id: data.id, status: data.status, etapa: data.etapa, origem: data.origem },
+        actorId: (context as any).userId ?? null,
+      },
+      executar,
+    );
+    if (!run.ok) throw new Error(run.error);
+    return run.result;
   });
 
 /** Registra uma tentativa de conclusão (auditoria do portal). */
