@@ -4,6 +4,7 @@ import {
   CPO_CONFIG_FALLBACK,
   calcularCpo,
   fmtPct,
+  finalidadeUsoDoCadastro,
   type CpoConfig,
   type CpoNcm,
   type CpoProduct,
@@ -220,6 +221,21 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
     const faltando = data.itens.filter((i) => !produtos.some((p) => p.id === i.produtoId));
     if (faltando.length) throw new Error("Há itens com produtos inexistentes ou indisponíveis no catálogo.");
 
+    // Finalidade de uso: SEMPRE a do cadastro atual do cliente (o vendedor não
+    // escolhe na proposta). Propostas antigas são migradas neste momento.
+    let finalidadeUso = data.finalidadeUso as CpoState["finalidadeUso"];
+    const docDigitos = (data.cliente.doc ?? "").replace(/\D/g, "");
+    if (docDigitos.length >= 11) {
+      try {
+        const db = await import("./clientes-db.server");
+        const achados = await db.findClienteByDoc(docDigitos);
+        const cad = achados[0]?.cliente ?? null;
+        if (cad) finalidadeUso = finalidadeUsoDoCadastro(cad["finalidade"] as string | null);
+      } catch {
+        /* cadastro indisponível: mantém o valor recebido */
+      }
+    }
+
     const state: CpoState = {
       propostaNome: data.propostaNome ?? "",
       numeroSap: data.numeroSap ?? "",
@@ -232,7 +248,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       uf: data.uf,
       contribuinte: data.contribuinte,
       regimeTributario: data.regimeTributario ?? null,
-      finalidadeUso: data.finalidadeUso as CpoState["finalidadeUso"],
+      finalidadeUso,
       indicacao: data.indicacao,
       padrinhoId: data.padrinhoId,
       padrinhoNome: "",
@@ -309,7 +325,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       cliente_ie: data.cliente.ie,
       uf: data.uf,
       contribuinte: data.contribuinte,
-      finalidade_uso: data.finalidadeUso,
+      finalidade_uso: finalidadeUso,
       previsao_fechamento: data.previsaoFechamento,
       tipo_nf: data.tipoNf,
       faturar_cliente_final: data.faturarClienteFinal,

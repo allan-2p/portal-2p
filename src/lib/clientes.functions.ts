@@ -390,6 +390,20 @@ export const testarIntegracoesClienteFn = createServerFn({ method: "POST" })
   });
 
 
+/**
+ * Finalidade de uso vigente no cadastro do cliente (fonte única de verdade).
+ * Usada por propostas antigas e novas — a proposta nunca guarda escolha própria.
+ */
+export const finalidadeUsoPorDocFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ doc: docSchema }).parse(input))
+  .handler(async ({ data }) => {
+    const db = await import("./clientes-db.server");
+    const achados = await db.findClienteByDoc(data.doc);
+    const cliente = achados[0]?.cliente ?? null;
+    return { finalidade: (cliente?.["finalidade"] as string | null) ?? null };
+  });
+
 export const excluirClienteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
