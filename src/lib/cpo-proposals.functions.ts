@@ -269,22 +269,18 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
         `CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação da diretoria.`,
       );
 
-    // Nº SAP: gerado automaticamente quando não informado. Em atualizações,
-    // preserva o número já atribuído para manter a rastreabilidade do pedido.
+    // Nº SAP: a proposta nasce SEM número. Ele só é atribuído na conclusão
+    // (atribuirNumeroSapFn). Aqui apenas preservamos o que já existir.
     let numeroSap = data.numeroSap?.trim() || null;
-    if (!numeroSap) {
-      if (data.propostaId) {
-        const { data: atualSap } = await supabase
-          .from("cpo_proposals")
-          .select("numero_sap")
-          .eq("id", data.propostaId)
-          .maybeSingle();
-        numeroSap = (atualSap as any)?.numero_sap?.trim() || null;
-      }
-      if (!numeroSap) {
-        numeroSap = await gerarNumeroSap(supabase);
-      }
+    if (!numeroSap && data.propostaId) {
+      const { data: atualSap } = await supabase
+        .from("cpo_proposals")
+        .select("numero_sap")
+        .eq("id", data.propostaId)
+        .maybeSingle();
+      numeroSap = (atualSap as any)?.numero_sap?.trim() || null;
     }
+
 
     // Padrinho da indicação: valida o vínculo e fotografa o nome na proposta.
     let padrinhoId: string | null = null;
