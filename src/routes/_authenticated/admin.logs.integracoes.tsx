@@ -5,6 +5,10 @@ import { ExportLogsButton } from "@/components/admin/export-logs-button";
 import { IntegrationLogsPanel } from "@/components/integration-logs";
 
 export const Route = createFileRoute("/_authenticated/admin/logs/integracoes")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    cliente: typeof search["cliente"] === "string" ? (search["cliente"] as string) : undefined,
+  }),
+
   head: () => ({
     meta: [
       { title: "Log de Integrações | Portal 2P" },
