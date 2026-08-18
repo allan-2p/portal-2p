@@ -994,7 +994,7 @@ function PropostaCarregadoresPage() {
   const pdfHtml = useMemo(
     () => buildHtml(d),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, produtos, config, d, usarLogoCliente, logoCliente, observacoesFinal, consultorProposta],
+    [state, produtos, config, d, usarLogoCliente, logoCliente, observacoesFinal, consultorProposta, enderecoPadraoCliente],
   );
 
   function montarPdfHtml() {
