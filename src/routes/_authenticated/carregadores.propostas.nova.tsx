@@ -2492,9 +2492,7 @@ function PropostaCpoPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Margem bruta</span>
-                  <span className="tabular-nums">
-                    {fmtBRL(d.mb)} ({fmtPct(d.mbPct)})
-                  </span>
+                  <span className="tabular-nums">{fmtPct(d.mbPct)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Comissão do vendedor ({regimeVendedor})</span>
