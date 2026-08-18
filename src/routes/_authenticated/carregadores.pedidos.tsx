@@ -6,12 +6,15 @@ import { AlertTriangle, KanbanSquare, List, Loader2, Search } from "lucide-react
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { listarPropostasFn } from "@/lib/propostas.functions";
+import { listarPropostasFn, listarPagamentosFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
+import { PixStatusBadge } from "@/components/pix-status-badge";
+import { acaoAtlasPix, normalizarPagamentoStatus, type PagamentoStatus } from "@/lib/pagamentos-ui";
+
 
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   head: () => ({
@@ -47,6 +50,8 @@ type Pedido = {
   status: PedidoStatus;
   uf: string;
   created_by: string | null;
+  pix: PagamentoStatus | null;
+  pixEm: string | null;
 };
 
 function datePtBr(iso: string | null) {
@@ -60,9 +65,16 @@ function CarregadoresPedidosPage() {
   const [vendedor, setVendedor] = useState("__all__");
   const vend = useCarregadoresVendedores();
 
+  const pagamentosQ = useQuery({
+    queryKey: ["carregadores-pagamentos"],
+    queryFn: () => listarPagamentosFn({ data: { organizacao: "carregadores" } }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
   const q = useQuery({
     queryKey: ["carregadores-pedidos"],
-    queryFn: async (): Promise<Pedido[]> => {
+    queryFn: async () => {
       const data = await listarPropostasFn({
         data: {
           organizacao: "carregadores",
@@ -70,28 +82,40 @@ function CarregadoresPedidosPage() {
           statusIn: PEDIDO_STATUS as unknown as string[],
         },
       });
-      return (data ?? []).map((r: any) => {
-        const totais = (r.totais as Record<string, number>) ?? {};
-        return {
-          id: r.id,
-          code: r.numero ?? r.id.slice(-6).toUpperCase(),
-          title: r.numero ? `Proposta ${r.numero}` : "Proposta",
-          client: r.cliente_nome,
-          closing: datePtBr(r.created_at),
-          value: Number(totais.valorTotal ?? 0),
-          status: r.status as PedidoStatus,
-          uf: r.uf,
-          created_by: r.created_by ?? null,
-        };
-      });
+      return data ?? [];
     },
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 
+  const pedidos = useMemo<Pedido[]>(() => {
+    const pag = new Map(
+      (pagamentosQ.data ?? [])
+        .filter((p: any) => String(p.pagamento_meio ?? "").toLowerCase() === "pix")
+        .map((p: any) => [p.id as string, p]),
+    );
+    return (q.data ?? []).map((r: any) => {
+      const totais = (r.totais as Record<string, number>) ?? {};
+      const p: any = pag.get(r.id);
+      return {
+        id: r.id,
+        code: r.numero ?? r.id.slice(-6).toUpperCase(),
+        title: r.numero ? `Proposta ${r.numero}` : "Proposta",
+        client: r.cliente_nome,
+        closing: datePtBr(r.created_at),
+        value: Number(totais.valorTotal ?? 0),
+        status: r.status as PedidoStatus,
+        uf: r.uf,
+        created_by: r.created_by ?? null,
+        pix: p ? normalizarPagamentoStatus(p.pagamento_status) ?? "pendente" : null,
+        pixEm: p?.pago_em ?? p?.pagamento_atualizado_em ?? null,
+      };
+    });
+  }, [q.data, pagamentosQ.data]);
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    return (q.data ?? [])
+    return pedidos
       .filter((o) => vend.matches(vendedor, o.created_by))
       .filter((o) =>
         !s ||
@@ -100,7 +124,8 @@ function CarregadoresPedidosPage() {
         o.client.toLowerCase().includes(s),
       )
       .sort((a, b) => b.value - a.value);
-  }, [search, q.data, vendedor, vend]);
+  }, [search, pedidos, vendedor, vend]);
+
 
   return (
     <AppLayout>
@@ -194,6 +219,18 @@ function KanbanView({ data }: { data: Pedido[] }) {
                     </div>
                   </div>
                   <div className="text-[11px] text-muted-foreground mt-2">UF {c.uf}</div>
+                  {c.pix && (
+                    <div className="mt-2 space-y-1">
+                      <PixStatusBadge status={c.pix} />
+                      {acaoAtlasPix(c.pix) && (
+                        <div className="text-[11px] leading-snug text-muted-foreground">
+                          <span className="text-primary font-medium">Atlas: </span>
+                          {acaoAtlasPix(c.pix)!.acao}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                 </div>
               ))}
               {cards.length === 0 && (
@@ -220,6 +257,7 @@ function ListView({ data }: { data: Pedido[] }) {
               <th className="text-left px-4 py-3">Pedido</th>
               <th className="text-left px-4 py-3">Cliente</th>
               <th className="text-center px-4 py-3">Status</th>
+              <th className="text-left px-4 py-3">Pix</th>
               <th className="text-left px-4 py-3">UF</th>
               <th className="text-left px-4 py-3">Data</th>
               <th className="text-right px-4 py-3">Valor</th>
@@ -234,6 +272,21 @@ function ListView({ data }: { data: Pedido[] }) {
                 <td className="px-4 py-3 text-center">
                   <StatusDot status={o.status} />
                 </td>
+                <td className="px-4 py-3">
+                  {o.pix ? (
+                    <div className="space-y-1 max-w-[280px]">
+                      <PixStatusBadge status={o.pix} />
+                      {acaoAtlasPix(o.pix) && (
+                        <div className="text-[11px] leading-snug text-muted-foreground">
+                          <span className="text-primary font-medium">Atlas: </span>
+                          {acaoAtlasPix(o.pix)!.acao}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-muted-foreground">{o.uf}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.closing}</td>
                 <td className="px-4 py-3 text-right font-semibold">{fmtBRL(o.value)}</td>
@@ -241,11 +294,12 @@ function ListView({ data }: { data: Pedido[] }) {
             ))}
             {data.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                   Nenhum pedido encontrado nos status em curso.
                 </td>
               </tr>
             )}
+
           </tbody>
         </table>
       </div>
