@@ -104,6 +104,7 @@ function CarregadoresHome() {
       const { data, error } = await supabase
         .from("propostas")
         .select("id,numero,cliente_nome,uf,status,totais,created_at,created_by")
+        .eq("organizacao", "carregadores")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Prop[];

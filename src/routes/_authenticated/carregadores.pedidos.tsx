@@ -65,6 +65,7 @@ function CarregadoresPedidosPage() {
       const { data, error } = await supabase
         .from("propostas")
         .select("id,numero,cliente_nome,uf,status,totais,created_at,created_by")
+        .eq("organizacao", "carregadores")
         .in("status", PEDIDO_STATUS as unknown as string[])
         .order("created_at", { ascending: false });
       if (error) throw error;

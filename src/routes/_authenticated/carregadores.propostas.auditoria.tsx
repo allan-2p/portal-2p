@@ -114,6 +114,7 @@ function AuditoriaPage() {
       const { data, error } = await supabase
         .from("propostas")
         .select("*")
+        .eq("organizacao", "carregadores")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((r) => ({
