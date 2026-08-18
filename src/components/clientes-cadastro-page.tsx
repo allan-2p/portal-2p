@@ -180,6 +180,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
 
   const podeExcluir = useCanDelete();
+  // Campos SAP sensíveis (tabela de preço / condições) só para Administrador do Sistema.
+  const ehAdmin = podeExcluir;
   const [q, setQ] = useState("");
   const [fUf, setFUf] = useState("todas");
   const [fStatus, setFStatus] = useState("ativos");
