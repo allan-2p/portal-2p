@@ -213,7 +213,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
 
     const { data: perfil } = await context.supabase
       .from("profiles")
-      .select("full_name, email")
+      .select("full_name, email, numero_sap, sf_user_id")
       .eq("id", context.userId)
       .maybeSingle();
 
@@ -223,14 +223,18 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     const consultorId = podeEscolher && data.consultor_id ? data.consultor_id : context.userId;
     let consultorNome = perfil?.full_name ?? perfil?.email ?? null;
     let consultorEmail = perfil?.email ?? null;
+    let consultorSap = (perfil as any)?.numero_sap ?? null;
+    let consultorSfId = (perfil as any)?.sf_user_id ?? null;
     if (consultorId !== context.userId) {
       const { data: alvo } = await context.supabase
         .from("profiles")
-        .select("full_name, email")
+        .select("full_name, email, numero_sap, sf_user_id")
         .eq("id", consultorId)
         .maybeSingle();
       consultorNome = alvo?.full_name ?? alvo?.email ?? null;
       consultorEmail = alvo?.email ?? null;
+      consultorSap = (alvo as any)?.numero_sap ?? null;
+      consultorSfId = (alvo as any)?.sf_user_id ?? null;
     }
 
     const payload = {
@@ -240,6 +244,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       instancia: data.instancia,
     };
 
+    let clienteId = data.id ?? null;
     if (data.id) {
       await assertPodeAlterarCliente(context as any, data.instancia, data.id);
       const patch: Record<string, unknown> = { ...payload };
@@ -250,16 +255,48 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
         patch["created_by_email"] = consultorEmail;
       }
       const row = await db.updateCliente(data.instancia, data.id, patch);
-      return { id: row?.["id"] ?? data.id };
+      clienteId = (row?.["id"] as string) ?? data.id;
+    } else {
+      const row = await db.insertCliente(data.instancia, {
+        ...payload,
+        created_by: consultorId,
+        created_by_nome: consultorNome,
+        created_by_email: consultorEmail,
+      });
+      clienteId = row["id"] as string;
     }
-    const row = await db.insertCliente(data.instancia, {
-      ...payload,
-      created_by: consultorId,
-      created_by_nome: consultorNome,
-      created_by_email: consultorEmail,
+
+    // Envio automático ao salvar: SAP + Salesforce. Erros não desfazem o
+    // cadastro; ficam visíveis na tela para reenvio.
+    const { sincronizarCliente } = await import("./clientes-integracoes.server");
+    const sync = await sincronizarCliente(data.instancia, clienteId!, payload, {
+      vendedorSap: consultorSap,
+      ownerSfId: consultorSfId,
     });
-    return { id: row["id"] as string };
+
+    return { id: clienteId!, sync };
   });
+
+/** Reenvia um cadastro já salvo para o SAP e o Salesforce. */
+export const reenviarClienteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ instancia: instanciaSchema, id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const cliente = await assertPodeAlterarCliente(context as any, data.instancia, data.id);
+    const { data: dono } = await context.supabase
+      .from("profiles")
+      .select("numero_sap, sf_user_id")
+      .eq("id", (cliente as any)?.created_by ?? context.userId)
+      .maybeSingle();
+    const { sincronizarCliente } = await import("./clientes-integracoes.server");
+    return sincronizarCliente(data.instancia, data.id, cliente as Record<string, any>, {
+      vendedorSap: (dono as any)?.numero_sap ?? null,
+      ownerSfId: (dono as any)?.sf_user_id ?? null,
+    });
+  });
+
 
 export const excluirClienteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
