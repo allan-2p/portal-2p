@@ -6,6 +6,9 @@ import { AppLayout } from "@/components/app-layout";
 import { getSalesforceAccounts, type SalesforceAccount } from "@/lib/salesforce.functions";
 import { Sparkles, Check, MinusCircle, X, MessageSquare, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { listarPagamentosFn } from "@/lib/propostas.functions";
+import { PixStatusBadge } from "@/components/pix-status-badge";
+import { acaoAtlasPix, normalizarPagamentoStatus } from "@/lib/pagamentos-ui";
 
 export const Route = createFileRoute("/_authenticated/solar/clientes/sugestoes")({
   head: () => ({ meta: [{ title: "Sugestões do Atlas — Portal 2P" }] }),
@@ -318,5 +321,55 @@ function VerdictBadge({ verdict }: { verdict: Verdict }) {
     >
       <m.Icon className="h-3 w-3" /> {m.label}
     </span>
+  );
+}
+
+/** Ações do Atlas derivadas do status das cobranças Pix dos pedidos. */
+function PagamentosAtlas() {
+  const q = useQuery({
+    queryKey: ["atlas-pagamentos-pix"],
+    queryFn: () => listarPagamentosFn({ data: {} }),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const itens = useMemo(() => {
+    return (q.data ?? [])
+      .filter((p: any) => String(p.pagamento_meio ?? "").toLowerCase() === "pix")
+      .map((p: any) => {
+        const status = normalizarPagamentoStatus(p.pagamento_status) ?? "pendente";
+        return { p, status, acao: acaoAtlasPix(status)! };
+      })
+      .sort((a, b) => b.acao.prioridade - a.acao.prioridade)
+      .slice(0, 8);
+  }, [q.data]);
+
+  if (q.isLoading || itens.length === 0) return null;
+
+  return (
+    <section className="glass rounded-xl p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-primary" />
+        <h2 className="font-semibold">Ações de pagamento (Pix)</h2>
+      </div>
+      <div className="space-y-2">
+        {itens.map(({ p, status, acao }) => (
+          <div key={p.id} className="rounded-lg border border-border bg-surface-2 p-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-medium">
+                Pedido {p.numero ?? p.id.slice(-6).toUpperCase()}
+              </span>
+              <PixStatusBadge status={status} />
+              <span className="text-xs text-muted-foreground truncate">{p.cliente_nome ?? "—"}</span>
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">{acao.motivo}</div>
+            <div className="text-xs mt-1">
+              <span className="text-primary font-medium">Atlas: </span>
+              {acao.acao}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
