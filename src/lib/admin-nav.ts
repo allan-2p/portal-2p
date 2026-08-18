@@ -21,6 +21,7 @@ import {
   SlidersHorizontal,
   ScrollText,
   LayoutDashboard,
+  LayoutGrid,
 } from "lucide-react";
 import type { FeatureKey } from "@/lib/instances";
 import type { AppPath } from "@/lib/routes";
@@ -34,6 +35,8 @@ export type AdminNavItem = {
   feature?: FeatureKey;
   /** Ativa apenas no match exato (usado pelas "Visão geral" das seções). */
   exact?: boolean;
+  /** Sub-itens exibidos num toggle abaixo do item. */
+  children?: AdminNavItem[];
 };
 
 export type AdminNavGroup = {
@@ -163,8 +166,16 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         label: "2P Solar",
         collapsible: true,
         items: [
-          { to: "/admin/produtos-solar", label: "Gestão de Produtos", icon: Package, feature: "admin.produtos" },
-          { to: "/admin/modulos-solar", label: "Módulos", icon: Package, feature: "admin.produtos" },
+          {
+            to: "/admin/produtos-solar",
+            label: "Gestão de Produtos",
+            icon: Package,
+            feature: "admin.produtos",
+            exact: true,
+            children: [
+              { to: "/admin/modulos-solar", label: "Módulos", icon: LayoutGrid, feature: "admin.produtos" },
+            ],
+          },
           { to: "/admin/regras", label: "Regras de Propostas", icon: BookOpen, feature: "admin.regras" },
           { to: "/admin/metas", label: "Regras de Metas", icon: Target, feature: "admin.metas" },
           { to: "/admin/comissoes", label: "Regras de Comissões", icon: Percent, feature: "admin.comissoes" },
@@ -207,7 +218,13 @@ export const ADMIN_SECTIONS: AdminSection[] = [
 ];
 
 
-const ALL_ADMIN_PATHS = ADMIN_SECTIONS.flatMap((s) => s.groups.flatMap((g) => g.items.map((i) => i.to)));
+function flattenItems(items: AdminNavItem[]): AdminNavItem[] {
+  return items.flatMap((i) => [i, ...flattenItems(i.children ?? [])]);
+}
+
+const ALL_ADMIN_PATHS = ADMIN_SECTIONS.flatMap((s) =>
+  s.groups.flatMap((g) => flattenItems(g.items).map((i) => i.to)),
+);
 
 export function isAdminEnvPath(pathname: string): boolean {
   return ADMIN_SECTIONS.flatMap((s) => s.prefixes ?? []).some(
@@ -221,7 +238,7 @@ export function sectionForPath(pathname: string): AdminSection | null {
       if (pathname === p || pathname.startsWith(`${p}/`)) return s;
     }
     for (const g of s.groups) {
-      for (const i of g.items) {
+      for (const i of flattenItems(g.items)) {
         if (pathname === i.to || pathname.startsWith(`${i.to}/`)) return s;
       }
     }
