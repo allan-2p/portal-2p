@@ -53,6 +53,18 @@ export async function sincronizarCliente(
     vendedor_sap: extras.vendedorSap ?? null,
   });
 
+  // Grava o retorno do SAP antes de seguir para o Salesforce, mantendo a ordem:
+  // cadastro na tabela `clientes` > SAP (número) > Salesforce (id).
+  try {
+    await db.updateCliente(instancia, clienteId, {
+      sap_status: sap.ok ? "enviado" : "erro",
+      sap_erro: sap.ok ? null : sap.erro,
+      ...(sap.ok && sap.numero_sap ? { numero_sap: sap.numero_sap } : {}),
+    });
+  } catch (err) {
+    console.error("[clientes] falha ao gravar retorno do SAP", err);
+  }
+
   const salesforce = await sincronizarClienteSalesforce({
     doc: String(cliente["doc"] ?? ""),
     razao_social: String(cliente["razao_social"] ?? ""),
