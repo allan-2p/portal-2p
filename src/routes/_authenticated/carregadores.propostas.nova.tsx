@@ -2109,16 +2109,38 @@ function PropostaCpoPage() {
 
 
             {/* TOTAIS FINAIS — recalculam a cada mudança de preço/quantidade/frete */}
-            <div className="sticky bottom-2 z-10 rounded-2xl border-2 border-primary/60 bg-background/95 backdrop-blur px-5 py-4 shadow-2xl ring-1 ring-primary/20">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-primary">Totais finais</span>
+            <div className="sticky bottom-2 z-10 rounded-2xl border-2 border-primary/60 bg-background/95 backdrop-blur px-5 py-5 shadow-2xl ring-1 ring-primary/20">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-primary">Totais finais</span>
+                </div>
                 <span className="text-[11px] text-muted-foreground">atualiza automaticamente</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
-                <LiveTotal label="Itens" value={fmtBRL(d.valorItens)} />
-                <LiveTotal label="Valor líquido (sem IPI/ICMS/PIS-COFINS)" value={fmtBRL(d.rl)} />
-                <LiveTotal label={`Frete (${state.freteMod || "—"})`} value={fmtBRL(state.freteValor)} />
-                <LiveTotal label="Total da proposta" value={fmtBRL(d.valorTotalProposta)} strong />
+
+              <div className="space-y-2.5">
+                <TotalRow label="Itens" value={fmtBRL(d.valorItens)} hint="Valor bruto dos produtos com IPI" />
+                <TotalRow
+                  label="Valor líquido"
+                  value={fmtBRL(d.rl)}
+                  hint="Sem IPI, ICMS, PIS/COFINS"
+                />
+                <TotalRow
+                  label={`Frete (${state.freteMod || "—"})`}
+                  value={fmtBRL(state.freteValor)}
+                  hint={state.freteMod === "CIF" ? "Frete incluso no total" : undefined}
+                />
+                <div className="mt-3 rounded-xl border-2 border-primary/70 bg-primary/10 px-4 py-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-primary/80 font-semibold">Total da proposta</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">Itens + frete</div>
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-primary tracking-tight">
+                      {fmtBRL(d.valorTotalProposta)}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
