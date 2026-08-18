@@ -109,21 +109,50 @@ export async function testarIntegracoes(
           (user && pass ? `Basic ${Buffer.from(`${user}:${pass}`).toString("base64")}` : undefined);
         if (!auth) return { ok: false, mensagem: "Credenciais do SAP não configuradas." };
 
+        // 1) Tenta o contrato (WSDL). Em muitos ambientes o SAP não publica o
+        //    WSDL mesmo com o serviço de runtime ativo, então isso é só um indício.
         const res = await fetch(`${url}${url.includes("?") ? "&" : "?"}wsdl`, {
           method: "GET",
           headers: { Authorization: auth },
         });
-        const corpo = (await res.text()).slice(0, 400);
-        if (!res.ok) {
-          return { ok: false, mensagem: `SAP respondeu HTTP ${res.status}.`, detalhe: corpo };
+        const corpo = (await res.text()).slice(0, 600);
+        const ehWsdl = corpo.includes("definitions") || corpo.includes("wsdl:");
+        if (res.ok && ehWsdl) {
+          return { ok: true, mensagem: "Endpoint do SAP acessível e contrato (WSDL) publicado.", detalhe: corpo };
         }
-        const ehWsdl = corpo.includes("definitions") || corpo.includes("wsdl");
+
+        // 2) Teste de runtime: envia um envelope propositalmente vazio.
+        //    Se o serviço estiver ativo, o SAP responde com SOAP Fault (400/500),
+        //    o que comprova que o binding está funcionando — sem gravar nada.
+        const ping = await fetch(url, {
+          method: "POST",
+          headers: { Authorization: auth, "Content-Type": "text/xml;charset=UTF-8", SOAPAction: '""' },
+          body:
+            '<?xml version="1.0" encoding="UTF-8"?>' +
+            '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">' +
+            "<soapenv:Header/><soapenv:Body/></soapenv:Envelope>",
+        });
+        const pingCorpo = (await ping.text()).slice(0, 600);
+        const respondeuSoap =
+          pingCorpo.includes("Envelope") || pingCorpo.includes("Fault") || pingCorpo.includes("faultstring");
+
+        const wspConfig = /WSP Exception|config key/i.test(corpo);
+        if (respondeuSoap) {
+          return {
+            ok: true,
+            mensagem: wspConfig
+              ? "Serviço de runtime do SAP respondendo (o WSDL não está publicado, mas o envio funciona)."
+              : "Serviço de runtime do SAP respondendo.",
+            detalhe: `WSDL (HTTP ${res.status}):\n${corpo}\n\nRuntime (HTTP ${ping.status}):\n${pingCorpo}`,
+          };
+        }
+
         return {
-          ok: ehWsdl,
-          mensagem: ehWsdl
-            ? "Endpoint do SAP acessível e serviço publicado."
-            : "Endpoint respondeu, mas não retornou o contrato do serviço (binding pode estar inativo).",
-          detalhe: corpo,
+          ok: false,
+          mensagem: wspConfig
+            ? "O WSDL não está publicado (WSP Exception: config key) e o runtime não respondeu SOAP — verifique o binding no SOAMANAGER."
+            : `SAP respondeu HTTP ${res.status}/${ping.status} sem contrato nem resposta SOAP.`,
+          detalhe: `WSDL (HTTP ${res.status}):\n${corpo}\n\nRuntime (HTTP ${ping.status}):\n${pingCorpo}`,
         };
       }),
     );
