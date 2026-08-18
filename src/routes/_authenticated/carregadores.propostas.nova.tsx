@@ -2095,6 +2095,7 @@ function PropostaCpoPage() {
                   <ResumoLinha k="Total dos itens" v={fmtBRL(d.valorItens)} />
                   <ResumoLinha k="IPI destacado" v={fmtBRL(d.ipiValor)} />
                   <ResumoLinha k="Itens sem IPI (base fiscal)" v={fmtBRL(d.valorItem)} />
+                  <ResumoLinha k="Valor líquido (sem IPI/ICMS/PIS-COFINS)" v={fmtBRL(d.rl)} />
                   <ResumoLinha k={`Frete (${state.freteMod || "—"})`} v={fmtBRL(state.freteValor)} />
                   <ResumoLinha k="Margem bruta" v={fmtPct(d.mbPct)} />
                   <ResumoLinha
@@ -2113,8 +2114,9 @@ function PropostaCpoPage() {
                 <span className="text-xs font-bold uppercase tracking-widest text-primary">Totais finais</span>
                 <span className="text-[11px] text-muted-foreground">atualiza automaticamente</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-stretch">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
                 <LiveTotal label="Itens" value={fmtBRL(d.valorItens)} />
+                <LiveTotal label="Valor líquido (sem IPI/ICMS/PIS-COFINS)" value={fmtBRL(d.rl)} />
                 <LiveTotal label={`Frete (${state.freteMod || "—"})`} value={fmtBRL(state.freteValor)} />
                 <LiveTotal label="Total da proposta" value={fmtBRL(d.valorTotalProposta)} strong />
               </div>
