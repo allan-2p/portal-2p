@@ -56,6 +56,7 @@ import {
   fmtBRL,
   fmtPct,
   labelFinalidadeUso,
+  finalidadeUsoDoCadastro,
   OBSERVACOES_PADRAO,
   observacoesComDifal,
   FRETE_ABSORVIDO,
