@@ -14,6 +14,410 @@ export type Database = {
   }
   public: {
     Tables: {
+      carregadores_clientes: {
+        Row: {
+          ativo: boolean
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
+          condicao_pagamento: string | null
+          contato_cargo: string | null
+          contato_email: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
+          contatos: Json
+          contribuinte: boolean
+          created_at: string
+          created_by: string
+          doc: string | null
+          email: string | null
+          id: string
+          ie: string | null
+          logradouro: string | null
+          nome_fantasia: string | null
+          numero: string | null
+          observacoes: string | null
+          razao_social: string
+          regime_tributario: string | null
+          site: string | null
+          telefone: string | null
+          transportadora: string | null
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          condicao_pagamento?: string | null
+          contato_cargo?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contatos?: Json
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string
+          doc?: string | null
+          email?: string | null
+          id?: string
+          ie?: string | null
+          logradouro?: string | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          razao_social: string
+          regime_tributario?: string | null
+          site?: string | null
+          telefone?: string | null
+          transportadora?: string | null
+          uf?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          condicao_pagamento?: string | null
+          contato_cargo?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contatos?: Json
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string
+          doc?: string | null
+          email?: string | null
+          id?: string
+          ie?: string | null
+          logradouro?: string | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          razao_social?: string
+          regime_tributario?: string | null
+          site?: string | null
+          telefone?: string | null
+          transportadora?: string | null
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      carregadores_clientes_im_legado: {
+        Row: {
+          archived_at: string
+          cliente_id: string
+          doc: string | null
+          id: string
+          im: string
+          razao_social: string | null
+        }
+        Insert: {
+          archived_at?: string
+          cliente_id: string
+          doc?: string | null
+          id?: string
+          im: string
+          razao_social?: string | null
+        }
+        Update: {
+          archived_at?: string
+          cliente_id?: string
+          doc?: string | null
+          id?: string
+          im?: string
+          razao_social?: string | null
+        }
+        Relationships: []
+      }
+      carregadores_config: {
+        Row: {
+          aliq_inter: number
+          cmv_max: number
+          comissao_base: string
+          comissao_pct: number
+          fator_clt: number
+          id: number
+          ipi: number
+          majoracao_sem_ie: number
+          mb_atencao: number
+          pct_gerente: number
+          pct_indicacao: number
+          pct_representante: number
+          pis_cofins: number
+          politica_mb_min: number
+          updated_at: string
+        }
+        Insert: {
+          aliq_inter?: number
+          cmv_max?: number
+          comissao_base?: string
+          comissao_pct?: number
+          fator_clt?: number
+          id?: number
+          ipi?: number
+          majoracao_sem_ie?: number
+          mb_atencao?: number
+          pct_gerente?: number
+          pct_indicacao?: number
+          pct_representante?: number
+          pis_cofins?: number
+          politica_mb_min?: number
+          updated_at?: string
+        }
+        Update: {
+          aliq_inter?: number
+          cmv_max?: number
+          comissao_base?: string
+          comissao_pct?: number
+          fator_clt?: number
+          id?: number
+          ipi?: number
+          majoracao_sem_ie?: number
+          mb_atencao?: number
+          pct_gerente?: number
+          pct_indicacao?: number
+          pct_representante?: number
+          pis_cofins?: number
+          politica_mb_min?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      carregadores_metas: {
+        Row: {
+          ano: number
+          ativo: boolean
+          created_at: string
+          id: string
+          mes: number
+          meta: number
+          meta_bonus: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ano: number
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          mes: number
+          meta?: number
+          meta_bonus?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ano?: number
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          mes?: number
+          meta?: number
+          meta_bonus?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      carregadores_ncm: {
+        Row: {
+          aliq_inter: number
+          ativo: boolean
+          codigo: string
+          created_at: string
+          descricao: string
+          gera_difal: boolean
+          id: string
+          ipi: number
+          observacoes: string | null
+          pis_cofins: number
+          tem_st: boolean
+          updated_at: string
+        }
+        Insert: {
+          aliq_inter?: number
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          descricao: string
+          gera_difal?: boolean
+          id?: string
+          ipi?: number
+          observacoes?: string | null
+          pis_cofins?: number
+          tem_st?: boolean
+          updated_at?: string
+        }
+        Update: {
+          aliq_inter?: number
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          gera_difal?: boolean
+          id?: string
+          ipi?: number
+          observacoes?: string | null
+          pis_cofins?: number
+          tem_st?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      carregadores_padrinhos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          doc: string | null
+          email: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          doc?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          doc?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      carregadores_produtos: {
+        Row: {
+          ativo: boolean
+          codigo: string | null
+          created_at: string
+          custo: number
+          id: string
+          ncm_id: string | null
+          nome: string
+          preco_sugerido: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo?: string | null
+          created_at?: string
+          custo?: number
+          id?: string
+          ncm_id?: string | null
+          nome: string
+          preco_sugerido?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string | null
+          created_at?: string
+          custo?: number
+          id?: string
+          ncm_id?: string | null
+          nome?: string
+          preco_sugerido?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cpo_products_ncm_id_fkey"
+            columns: ["ncm_id"]
+            isOneToOne: false
+            referencedRelation: "carregadores_ncm"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carregadores_tarefas: {
+        Row: {
+          cliente_nome: string | null
+          created_at: string
+          descricao: string | null
+          due_date: string | null
+          id: string
+          owner_id: string
+          prioridade: string
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_nome?: string | null
+          created_at?: string
+          descricao?: string | null
+          due_date?: string | null
+          id?: string
+          owner_id?: string
+          prioridade?: string
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_nome?: string | null
+          created_at?: string
+          descricao?: string | null
+          due_date?: string | null
+          id?: string
+          owner_id?: string
+          prioridade?: string
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      carregadores_uf_rates: {
+        Row: {
+          aliq_interna: number
+          convenio_st: boolean
+          fcp: number
+          nome: string
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          aliq_interna?: number
+          convenio_st?: boolean
+          fcp?: number
+          nome: string
+          uf: string
+          updated_at?: string
+        }
+        Update: {
+          aliq_interna?: number
+          convenio_st?: boolean
+          fcp?: number
+          nome?: string
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_notes: {
         Row: {
           account_id: string
@@ -378,595 +782,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      cpo_clientes: {
-        Row: {
-          ativo: boolean
-          bairro: string | null
-          cep: string | null
-          cidade: string | null
-          complemento: string | null
-          condicao_pagamento: string | null
-          contato_cargo: string | null
-          contato_email: string | null
-          contato_nome: string | null
-          contato_telefone: string | null
-          contatos: Json
-          contribuinte: boolean
-          created_at: string
-          created_by: string
-          doc: string | null
-          email: string | null
-          id: string
-          ie: string | null
-          logradouro: string | null
-          nome_fantasia: string | null
-          numero: string | null
-          observacoes: string | null
-          razao_social: string
-          regime_tributario: string | null
-          site: string | null
-          telefone: string | null
-          transportadora: string | null
-          uf: string
-          updated_at: string
-        }
-        Insert: {
-          ativo?: boolean
-          bairro?: string | null
-          cep?: string | null
-          cidade?: string | null
-          complemento?: string | null
-          condicao_pagamento?: string | null
-          contato_cargo?: string | null
-          contato_email?: string | null
-          contato_nome?: string | null
-          contato_telefone?: string | null
-          contatos?: Json
-          contribuinte?: boolean
-          created_at?: string
-          created_by?: string
-          doc?: string | null
-          email?: string | null
-          id?: string
-          ie?: string | null
-          logradouro?: string | null
-          nome_fantasia?: string | null
-          numero?: string | null
-          observacoes?: string | null
-          razao_social: string
-          regime_tributario?: string | null
-          site?: string | null
-          telefone?: string | null
-          transportadora?: string | null
-          uf?: string
-          updated_at?: string
-        }
-        Update: {
-          ativo?: boolean
-          bairro?: string | null
-          cep?: string | null
-          cidade?: string | null
-          complemento?: string | null
-          condicao_pagamento?: string | null
-          contato_cargo?: string | null
-          contato_email?: string | null
-          contato_nome?: string | null
-          contato_telefone?: string | null
-          contatos?: Json
-          contribuinte?: boolean
-          created_at?: string
-          created_by?: string
-          doc?: string | null
-          email?: string | null
-          id?: string
-          ie?: string | null
-          logradouro?: string | null
-          nome_fantasia?: string | null
-          numero?: string | null
-          observacoes?: string | null
-          razao_social?: string
-          regime_tributario?: string | null
-          site?: string | null
-          telefone?: string | null
-          transportadora?: string | null
-          uf?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      cpo_clientes_im_legado: {
-        Row: {
-          archived_at: string
-          cliente_id: string
-          doc: string | null
-          id: string
-          im: string
-          razao_social: string | null
-        }
-        Insert: {
-          archived_at?: string
-          cliente_id: string
-          doc?: string | null
-          id?: string
-          im: string
-          razao_social?: string | null
-        }
-        Update: {
-          archived_at?: string
-          cliente_id?: string
-          doc?: string | null
-          id?: string
-          im?: string
-          razao_social?: string | null
-        }
-        Relationships: []
-      }
-      cpo_config: {
-        Row: {
-          aliq_inter: number
-          cmv_max: number
-          comissao_base: string
-          comissao_pct: number
-          fator_clt: number
-          id: number
-          ipi: number
-          majoracao_sem_ie: number
-          mb_atencao: number
-          pct_gerente: number
-          pct_indicacao: number
-          pct_representante: number
-          pis_cofins: number
-          politica_mb_min: number
-          updated_at: string
-        }
-        Insert: {
-          aliq_inter?: number
-          cmv_max?: number
-          comissao_base?: string
-          comissao_pct?: number
-          fator_clt?: number
-          id?: number
-          ipi?: number
-          majoracao_sem_ie?: number
-          mb_atencao?: number
-          pct_gerente?: number
-          pct_indicacao?: number
-          pct_representante?: number
-          pis_cofins?: number
-          politica_mb_min?: number
-          updated_at?: string
-        }
-        Update: {
-          aliq_inter?: number
-          cmv_max?: number
-          comissao_base?: string
-          comissao_pct?: number
-          fator_clt?: number
-          id?: number
-          ipi?: number
-          majoracao_sem_ie?: number
-          mb_atencao?: number
-          pct_gerente?: number
-          pct_indicacao?: number
-          pct_representante?: number
-          pis_cofins?: number
-          politica_mb_min?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      cpo_metas: {
-        Row: {
-          ano: number
-          ativo: boolean
-          created_at: string
-          id: string
-          mes: number
-          meta: number
-          meta_bonus: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          ano: number
-          ativo?: boolean
-          created_at?: string
-          id?: string
-          mes: number
-          meta?: number
-          meta_bonus?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          ano?: number
-          ativo?: boolean
-          created_at?: string
-          id?: string
-          mes?: number
-          meta?: number
-          meta_bonus?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      cpo_ncm: {
-        Row: {
-          aliq_inter: number
-          ativo: boolean
-          codigo: string
-          created_at: string
-          descricao: string
-          gera_difal: boolean
-          id: string
-          ipi: number
-          observacoes: string | null
-          pis_cofins: number
-          tem_st: boolean
-          updated_at: string
-        }
-        Insert: {
-          aliq_inter?: number
-          ativo?: boolean
-          codigo: string
-          created_at?: string
-          descricao: string
-          gera_difal?: boolean
-          id?: string
-          ipi?: number
-          observacoes?: string | null
-          pis_cofins?: number
-          tem_st?: boolean
-          updated_at?: string
-        }
-        Update: {
-          aliq_inter?: number
-          ativo?: boolean
-          codigo?: string
-          created_at?: string
-          descricao?: string
-          gera_difal?: boolean
-          id?: string
-          ipi?: number
-          observacoes?: string | null
-          pis_cofins?: number
-          tem_st?: boolean
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      cpo_padrinhos: {
-        Row: {
-          ativo: boolean
-          created_at: string
-          created_by: string | null
-          doc: string | null
-          email: string | null
-          id: string
-          nome: string
-          telefone: string | null
-          updated_at: string
-        }
-        Insert: {
-          ativo?: boolean
-          created_at?: string
-          created_by?: string | null
-          doc?: string | null
-          email?: string | null
-          id?: string
-          nome: string
-          telefone?: string | null
-          updated_at?: string
-        }
-        Update: {
-          ativo?: boolean
-          created_at?: string
-          created_by?: string | null
-          doc?: string | null
-          email?: string | null
-          id?: string
-          nome?: string
-          telefone?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      cpo_products: {
-        Row: {
-          ativo: boolean
-          codigo: string | null
-          created_at: string
-          custo: number
-          id: string
-          ncm_id: string | null
-          nome: string
-          preco_sugerido: number
-          updated_at: string
-        }
-        Insert: {
-          ativo?: boolean
-          codigo?: string | null
-          created_at?: string
-          custo?: number
-          id?: string
-          ncm_id?: string | null
-          nome: string
-          preco_sugerido?: number
-          updated_at?: string
-        }
-        Update: {
-          ativo?: boolean
-          codigo?: string | null
-          created_at?: string
-          custo?: number
-          id?: string
-          ncm_id?: string | null
-          nome?: string
-          preco_sugerido?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cpo_products_ncm_id_fkey"
-            columns: ["ncm_id"]
-            isOneToOne: false
-            referencedRelation: "cpo_ncm"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      cpo_proposal_conclusion_log: {
-        Row: {
-          actor_email: string | null
-          actor_id: string | null
-          actor_nome: string | null
-          created_at: string
-          detalhe: string | null
-          id: string
-          numero: string | null
-          origem: string
-          proposta_id: string | null
-          resultado: string
-          status: string | null
-        }
-        Insert: {
-          actor_email?: string | null
-          actor_id?: string | null
-          actor_nome?: string | null
-          created_at?: string
-          detalhe?: string | null
-          id?: string
-          numero?: string | null
-          origem?: string
-          proposta_id?: string | null
-          resultado: string
-          status?: string | null
-        }
-        Update: {
-          actor_email?: string | null
-          actor_id?: string | null
-          actor_nome?: string | null
-          created_at?: string
-          detalhe?: string | null
-          id?: string
-          numero?: string | null
-          origem?: string
-          proposta_id?: string | null
-          resultado?: string
-          status?: string | null
-        }
-        Relationships: []
-      }
-      cpo_proposals: {
-        Row: {
-          cliente_doc: string | null
-          cliente_email: string | null
-          cliente_ie: string | null
-          cliente_nome: string
-          cliente_telefone: string | null
-          consultor_id: string | null
-          consultor_nome: string | null
-          contribuinte: boolean
-          created_at: string
-          created_by: string | null
-          criado_por_nome: string | null
-          entrega: Json
-          entrega_diferente: boolean
-          faturamento: Json
-          faturar_cliente_final: boolean
-          finalidade_uso: string
-          finalizado_em: string | null
-          finalizado_por: string | null
-          finalizado_por_nome: string | null
-          forma_pagamento: string | null
-          frete_area_rural: boolean
-          frete_mod: string
-          frete_prazo: number | null
-          frete_valor: number
-          id: string
-          indicacao: boolean
-          itens: Json
-          nome: string | null
-          numero: string | null
-          numero_sap: string | null
-          observacoes: string | null
-          padrinho_id: string | null
-          padrinho_nome: string | null
-          previsao_fechamento: string | null
-          status: string
-          tipo_nf: string
-          totais: Json
-          transportadora: string | null
-          transportadora_documento: string | null
-          transportadora_id: string | null
-          uf: string
-          updated_at: string
-        }
-        Insert: {
-          cliente_doc?: string | null
-          cliente_email?: string | null
-          cliente_ie?: string | null
-          cliente_nome: string
-          cliente_telefone?: string | null
-          consultor_id?: string | null
-          consultor_nome?: string | null
-          contribuinte?: boolean
-          created_at?: string
-          created_by?: string | null
-          criado_por_nome?: string | null
-          entrega?: Json
-          entrega_diferente?: boolean
-          faturamento?: Json
-          faturar_cliente_final?: boolean
-          finalidade_uso?: string
-          finalizado_em?: string | null
-          finalizado_por?: string | null
-          finalizado_por_nome?: string | null
-          forma_pagamento?: string | null
-          frete_area_rural?: boolean
-          frete_mod?: string
-          frete_prazo?: number | null
-          frete_valor?: number
-          id?: string
-          indicacao?: boolean
-          itens?: Json
-          nome?: string | null
-          numero?: string | null
-          numero_sap?: string | null
-          observacoes?: string | null
-          padrinho_id?: string | null
-          padrinho_nome?: string | null
-          previsao_fechamento?: string | null
-          status?: string
-          tipo_nf?: string
-          totais?: Json
-          transportadora?: string | null
-          transportadora_documento?: string | null
-          transportadora_id?: string | null
-          uf?: string
-          updated_at?: string
-        }
-        Update: {
-          cliente_doc?: string | null
-          cliente_email?: string | null
-          cliente_ie?: string | null
-          cliente_nome?: string
-          cliente_telefone?: string | null
-          consultor_id?: string | null
-          consultor_nome?: string | null
-          contribuinte?: boolean
-          created_at?: string
-          created_by?: string | null
-          criado_por_nome?: string | null
-          entrega?: Json
-          entrega_diferente?: boolean
-          faturamento?: Json
-          faturar_cliente_final?: boolean
-          finalidade_uso?: string
-          finalizado_em?: string | null
-          finalizado_por?: string | null
-          finalizado_por_nome?: string | null
-          forma_pagamento?: string | null
-          frete_area_rural?: boolean
-          frete_mod?: string
-          frete_prazo?: number | null
-          frete_valor?: number
-          id?: string
-          indicacao?: boolean
-          itens?: Json
-          nome?: string | null
-          numero?: string | null
-          numero_sap?: string | null
-          observacoes?: string | null
-          padrinho_id?: string | null
-          padrinho_nome?: string | null
-          previsao_fechamento?: string | null
-          status?: string
-          tipo_nf?: string
-          totais?: Json
-          transportadora?: string | null
-          transportadora_documento?: string | null
-          transportadora_id?: string | null
-          uf?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cpo_proposals_padrinho_id_fkey"
-            columns: ["padrinho_id"]
-            isOneToOne: false
-            referencedRelation: "cpo_padrinhos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      cpo_tasks: {
-        Row: {
-          cliente_nome: string | null
-          created_at: string
-          descricao: string | null
-          due_date: string | null
-          id: string
-          owner_id: string
-          prioridade: string
-          status: string
-          titulo: string
-          updated_at: string
-        }
-        Insert: {
-          cliente_nome?: string | null
-          created_at?: string
-          descricao?: string | null
-          due_date?: string | null
-          id?: string
-          owner_id?: string
-          prioridade?: string
-          status?: string
-          titulo: string
-          updated_at?: string
-        }
-        Update: {
-          cliente_nome?: string | null
-          created_at?: string
-          descricao?: string | null
-          due_date?: string | null
-          id?: string
-          owner_id?: string
-          prioridade?: string
-          status?: string
-          titulo?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      cpo_uf_rates: {
-        Row: {
-          aliq_interna: number
-          convenio_st: boolean
-          fcp: number
-          nome: string
-          uf: string
-          updated_at: string
-        }
-        Insert: {
-          aliq_interna?: number
-          convenio_st?: boolean
-          fcp?: number
-          nome: string
-          uf: string
-          updated_at?: string
-        }
-        Update: {
-          aliq_interna?: number
-          convenio_st?: boolean
-          fcp?: number
-          nome?: string
-          uf?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       email_send_log: {
         Row: {
@@ -1634,6 +1449,194 @@ export type Database = {
         }
         Relationships: []
       }
+      propostas: {
+        Row: {
+          cliente_doc: string | null
+          cliente_email: string | null
+          cliente_ie: string | null
+          cliente_nome: string
+          cliente_telefone: string | null
+          consultor_id: string | null
+          consultor_nome: string | null
+          contribuinte: boolean
+          created_at: string
+          created_by: string | null
+          criado_por_nome: string | null
+          entrega: Json
+          entrega_diferente: boolean
+          faturamento: Json
+          faturar_cliente_final: boolean
+          finalidade_uso: string
+          finalizado_em: string | null
+          finalizado_por: string | null
+          finalizado_por_nome: string | null
+          forma_pagamento: string | null
+          frete_area_rural: boolean
+          frete_mod: string
+          frete_prazo: number | null
+          frete_valor: number
+          id: string
+          indicacao: boolean
+          itens: Json
+          nome: string | null
+          numero: string | null
+          numero_sap: string | null
+          observacoes: string | null
+          organizacao: string
+          padrinho_id: string | null
+          padrinho_nome: string | null
+          previsao_fechamento: string | null
+          status: string
+          tipo_nf: string
+          totais: Json
+          transportadora: string | null
+          transportadora_documento: string | null
+          transportadora_id: string | null
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_doc?: string | null
+          cliente_email?: string | null
+          cliente_ie?: string | null
+          cliente_nome: string
+          cliente_telefone?: string | null
+          consultor_id?: string | null
+          consultor_nome?: string | null
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string | null
+          criado_por_nome?: string | null
+          entrega?: Json
+          entrega_diferente?: boolean
+          faturamento?: Json
+          faturar_cliente_final?: boolean
+          finalidade_uso?: string
+          finalizado_em?: string | null
+          finalizado_por?: string | null
+          finalizado_por_nome?: string | null
+          forma_pagamento?: string | null
+          frete_area_rural?: boolean
+          frete_mod?: string
+          frete_prazo?: number | null
+          frete_valor?: number
+          id?: string
+          indicacao?: boolean
+          itens?: Json
+          nome?: string | null
+          numero?: string | null
+          numero_sap?: string | null
+          observacoes?: string | null
+          organizacao?: string
+          padrinho_id?: string | null
+          padrinho_nome?: string | null
+          previsao_fechamento?: string | null
+          status?: string
+          tipo_nf?: string
+          totais?: Json
+          transportadora?: string | null
+          transportadora_documento?: string | null
+          transportadora_id?: string | null
+          uf?: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_doc?: string | null
+          cliente_email?: string | null
+          cliente_ie?: string | null
+          cliente_nome?: string
+          cliente_telefone?: string | null
+          consultor_id?: string | null
+          consultor_nome?: string | null
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string | null
+          criado_por_nome?: string | null
+          entrega?: Json
+          entrega_diferente?: boolean
+          faturamento?: Json
+          faturar_cliente_final?: boolean
+          finalidade_uso?: string
+          finalizado_em?: string | null
+          finalizado_por?: string | null
+          finalizado_por_nome?: string | null
+          forma_pagamento?: string | null
+          frete_area_rural?: boolean
+          frete_mod?: string
+          frete_prazo?: number | null
+          frete_valor?: number
+          id?: string
+          indicacao?: boolean
+          itens?: Json
+          nome?: string | null
+          numero?: string | null
+          numero_sap?: string | null
+          observacoes?: string | null
+          organizacao?: string
+          padrinho_id?: string | null
+          padrinho_nome?: string | null
+          previsao_fechamento?: string | null
+          status?: string
+          tipo_nf?: string
+          totais?: Json
+          transportadora?: string | null
+          transportadora_documento?: string | null
+          transportadora_id?: string | null
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cpo_proposals_padrinho_id_fkey"
+            columns: ["padrinho_id"]
+            isOneToOne: false
+            referencedRelation: "carregadores_padrinhos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      propostas_conclusao_log: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          actor_nome: string | null
+          created_at: string
+          detalhe: string | null
+          id: string
+          numero: string | null
+          origem: string
+          proposta_id: string | null
+          resultado: string
+          status: string | null
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_nome?: string | null
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          numero?: string | null
+          origem?: string
+          proposta_id?: string | null
+          resultado: string
+          status?: string | null
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_nome?: string | null
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          numero?: string | null
+          origem?: string
+          proposta_id?: string | null
+          resultado?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
       rate_limit_hits: {
         Row: {
           bucket_key: string
@@ -1889,7 +1892,7 @@ export type Database = {
             foreignKeyName: "sap_produtos_ncm_id_fkey"
             columns: ["ncm_id"]
             isOneToOne: false
-            referencedRelation: "cpo_ncm"
+            referencedRelation: "carregadores_ncm"
             referencedColumns: ["id"]
           },
         ]
@@ -2242,7 +2245,7 @@ export type Database = {
           reset_at: string
         }[]
       }
-      cpo_conclude_proposal: {
+      concluir_proposta: {
         Args: {
           _etapa?: number
           _id: string
@@ -2255,7 +2258,6 @@ export type Database = {
           status: string
         }[]
       }
-      cpo_next_sap_seq: { Args: never; Returns: number }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -2275,6 +2277,7 @@ export type Database = {
         }
         Returns: number
       }
+      proposta_next_sap_seq: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
