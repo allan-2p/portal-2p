@@ -1828,6 +1828,7 @@ export type Database = {
           ativo: boolean
           codigo: string
           created_at: string
+          cubagem_m3: number
           custo: number
           descricao: string
           id: string
@@ -1838,6 +1839,7 @@ export type Database = {
           ncm_id: string | null
           origem: string
           permissao: string
+          peso_bruto_kg: number
           preco_sugerido: number
           sap_raw: Json | null
           tipo: string
@@ -1848,6 +1850,7 @@ export type Database = {
           ativo?: boolean
           codigo: string
           created_at?: string
+          cubagem_m3?: number
           custo?: number
           descricao: string
           id?: string
@@ -1858,6 +1861,7 @@ export type Database = {
           ncm_id?: string | null
           origem?: string
           permissao?: string
+          peso_bruto_kg?: number
           preco_sugerido?: number
           sap_raw?: Json | null
           tipo?: string
@@ -1868,6 +1872,7 @@ export type Database = {
           ativo?: boolean
           codigo?: string
           created_at?: string
+          cubagem_m3?: number
           custo?: number
           descricao?: string
           id?: string
@@ -1878,6 +1883,7 @@ export type Database = {
           ncm_id?: string | null
           origem?: string
           permissao?: string
+          peso_bruto_kg?: number
           preco_sugerido?: number
           sap_raw?: Json | null
           tipo?: string

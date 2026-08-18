@@ -24,6 +24,7 @@ export type CotarFreteInput = {
   valorNota: number;
   destino: { uf: string; cidade: string; cep: string };
   peso?: number;
+  cubagem?: number;
   tipoEntrega: "S" | "D" | "G" | "N";
   areaRural?: boolean;
   documento?: string;
@@ -35,6 +36,7 @@ export type CotarFreteResultado = {
   opcoes: OpcaoFrete[];
   escolhida: number;
   peso: number;
+  cubagem: number;
   valorNotaFinal: number;
   trilho: string | null;
 };
@@ -56,20 +58,24 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
       ],
       escolhida: 0,
       peso: 0,
+      cubagem: 0,
       valorNotaFinal: round2(data.valorNota),
       trilho: null,
     };
   }
 
-  // Peso: recalcula pela soma dos pesos líquidos quando vier ≤ 1 kg.
-  let peso = Number(data.peso ?? 1);
-  if (peso <= 1) {
-    const soma = data.itens.reduce(
-      (s, i) => s + Number(i.quantidade || 0) * Number(i.pesoLiquido ?? 0),
-      0,
+  // Peso considerado: soma do peso bruto dos itens (kg). O valor informado só
+  // é usado quando não há peso cadastrado nos produtos (ex.: diagnóstico).
+  const somaPeso = data.itens.reduce(
+    (s, i) => s + Number(i.quantidade || 0) * Number(i.pesoLiquido ?? 0),
+    0,
+  );
+  const peso = round2(somaPeso > 0 ? somaPeso : Number(data.peso ?? 0));
+  if (!(peso > 0))
+    throw new Error(
+      "Não foi possível cotar: os produtos do pedido estão sem peso bruto cadastrado. Informe o peso (kg) em Gestão de Produtos.",
     );
-    if (soma > 0) peso = round2(soma);
-  }
+  const cubagem = round2(Number(data.cubagem ?? 0));
 
   const codigosCarrinho = data.itens.map((i) => normalizarCodigo(i.codigo));
   const nomesCarrinho = data.itens.map((i) => String(i.nome ?? ""));
@@ -79,7 +85,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     uf: data.destino.uf,
     cidade: data.destino.cidade,
     cep: (data.destino.cep ?? "").replace(/\D/g, ""),
-    cubagem: 0,
+    cubagem,
     peso,
   };
   if (codigoTrilho) destino["codigoProdutos"] = [codigoTrilho];
@@ -89,7 +95,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     paradas: [],
     qntEntregas: 1,
     valorNota: round2(data.valorNota),
-    origem: { ...ORIGEM, cubagem: 0, peso },
+    origem: { ...ORIGEM, cubagem, peso },
     destino,
   };
 
@@ -133,28 +139,63 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     opcoes,
     escolhida,
     peso,
+    cubagem,
     valorNotaFinal: Number(body["valorNota"]),
     trilho: codigoTrilho,
   };
 }
 
-/** Busca o peso líquido unitário dos itens no espelho de containers do SAP. */
-export async function pesosLiquidosPorCodigo(codigos: string[]): Promise<Map<string, number>> {
-  const mapa = new Map<string, number>();
+export type PesoUnitario = { peso: number; cubagem: number };
+
+/**
+ * Peso bruto e cubagem unitários dos itens.
+ *
+ * Fonte principal: catálogo `sap_produtos` (peso_bruto_kg / cubagem_m3),
+ * mantido na Gestão de Produtos. Fallback: espelho de containers do SAP
+ * (peso bruto unitário). Os códigos são normalizados (zeros à esquerda).
+ */
+export async function pesosPorCodigo(codigos: string[]): Promise<Map<string, PesoUnitario>> {
+  const mapa = new Map<string, PesoUnitario>();
   if (!codigos.length) return mapa;
+  const variantes = Array.from(
+    new Set(codigos.flatMap((c) => [String(c), normalizarCodigo(c), String(c).padStart(18, "0")])),
+  );
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
-      .from("containers")
-      .select("material, n_weight_un")
-      .in("material", codigos);
-    for (const row of (data ?? []) as { material: string; n_weight_un: number | null }[]) {
-      const peso = Number(row.n_weight_un ?? 0);
-      const chave = normalizarCodigo(String(row.material));
-      if (peso > 0 && !mapa.has(chave)) mapa.set(chave, peso);
+
+    const { data: produtos } = await supabaseAdmin
+      .from("sap_produtos")
+      .select("codigo, peso_bruto_kg, cubagem_m3")
+      .in("codigo", variantes);
+    for (const row of (produtos ?? []) as {
+      codigo: string | null;
+      peso_bruto_kg: number | null;
+      cubagem_m3: number | null;
+    }[]) {
+      const peso = Number(row.peso_bruto_kg ?? 0);
+      const cubagem = Number(row.cubagem_m3 ?? 0);
+      const chave = normalizarCodigo(String(row.codigo ?? ""));
+      if (chave && peso > 0 && !mapa.has(chave)) mapa.set(chave, { peso, cubagem });
+    }
+
+    const faltando = variantes.filter((c) => !mapa.has(normalizarCodigo(c)));
+    if (faltando.length) {
+      const { data } = await supabaseAdmin
+        .from("containers")
+        .select("material, g_weight_un, n_weight_un")
+        .in("material", faltando);
+      for (const row of (data ?? []) as {
+        material: string;
+        g_weight_un: number | null;
+        n_weight_un: number | null;
+      }[]) {
+        const peso = Number(row.g_weight_un ?? 0) || Number(row.n_weight_un ?? 0);
+        const chave = normalizarCodigo(String(row.material));
+        if (peso > 0 && !mapa.has(chave)) mapa.set(chave, { peso, cubagem: 0 });
+      }
     }
   } catch {
-    // Sem espelho de estoque a cotação segue com o peso informado.
+    // Sem catálogo/espelho a cotação segue com o peso informado.
   }
   return mapa;
 }

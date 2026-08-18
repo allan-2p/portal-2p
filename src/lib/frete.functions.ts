@@ -15,24 +15,35 @@ export const cotarFrete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: CotarFreteData) => input)
   .handler(async ({ data, context }) => {
-    const { cotarFreteFretefy, pesosLiquidosPorCodigo } = await import("./frete.server");
+    const { cotarFreteFretefy, pesosPorCodigo } = await import("./frete.server");
     const { logIntegrationEvent } = await import("./integration-logs.server");
     const started = Date.now();
 
     const codigos = data.itens.map((i) => String(i.codigo));
-    const pesos = await pesosLiquidosPorCodigo(codigos);
+    const pesos = await pesosPorCodigo(codigos);
+    const chave = (c: string) => String(c).replace(/^0+/, "");
     const itens = data.itens.map((i) => ({
       codigo: String(i.codigo),
       nome: String(i.nome ?? ""),
       quantidade: Number(i.quantidade || 0),
-      pesoLiquido: Number(i.pesoLiquido ?? pesos.get(String(i.codigo).replace(/^0+/, "")) ?? 0),
+      pesoLiquido: Number(i.pesoLiquido ?? pesos.get(chave(i.codigo))?.peso ?? 0),
     }));
+    const cubagem = data.itens.reduce(
+      (s, i) => s + Number(i.quantidade || 0) * Number(pesos.get(chave(i.codigo))?.cubagem ?? 0),
+      0,
+    );
+    const semPeso = itens.filter((i) => !(i.pesoLiquido > 0)).map((i) => i.nome || i.codigo);
 
     try {
+      if (semPeso.length)
+        throw new Error(
+          `Produtos sem peso bruto cadastrado: ${semPeso.join(", ")}. Cadastre o peso (kg) em Gestão de Produtos para cotar o frete corretamente.`,
+        );
       const r = await cotarFreteFretefy({
         itens,
         valorNota: Number(data.valorNota || 0),
         destino: data.destino,
+        cubagem,
         tipoEntrega: "S",
         ...(data.areaRural !== undefined ? { areaRural: data.areaRural } : {}),
         ...(data.documento !== undefined ? { documento: data.documento } : {}),
