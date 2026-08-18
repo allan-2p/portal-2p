@@ -297,6 +297,8 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       </div>
     </div>
 
+    ${enderecosHtml}
+
     <div class="sec">
       <div class="sech"><span>Escopo de fornecimento</span></div>
       <table>
