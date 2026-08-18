@@ -105,20 +105,45 @@ function HistoricoCpoPage() {
   const rows = q.data ?? [];
   const ufs = useMemo(() => Array.from(new Set(rows.map((r) => r.uf))).sort(), [rows]);
 
-  const filtered = rows.filter((r) => {
-    if (status !== "todos" && r.status !== status) return false;
-    if (uf !== "todos" && r.uf !== uf) return false;
-    if (!vend.matches(vendedor, r.created_by)) return false;
-    const t = busca.trim().toLowerCase();
-    if (
-      t &&
-      !`${r.cliente_nome} ${r.numero ?? ""} ${r.nome ?? ""} ${r.numero_sap ?? ""}`
-        .toLowerCase()
-        .includes(t)
-    )
+  /** Busca tolerante: ignora acento/pontuação para casar Nº e Nº SAP digitados de qualquer jeito. */
+  const norm = (v: string) =>
+    v
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  const soDigitos = (v: string) => v.replace(/\D/g, "");
+
+  const filtered = useMemo(() => {
+    const t = norm(busca.trim());
+    const tDig = soDigitos(busca);
+    return rows.filter((r) => {
+      if (status !== "todos" && r.status !== status) return false;
+      if (uf !== "todos" && r.uf !== uf) return false;
+      if (!vend.matches(vendedor, r.created_by)) return false;
+      const temSap = !!(r.numero_sap ?? "").trim();
+      if (sap === "com" && !temSap) return false;
+      if (sap === "sem" && temSap) return false;
+      if (!t) return true;
+      // Propostas abertas não têm Nº SAP: a busca continua válida pelos demais campos.
+      const alvo = norm(
+        [r.cliente_nome, r.numero, r.nome, r.numero_sap, r.cliente_doc, r.consultor_nome]
+          .filter(Boolean)
+          .join(" ")
+      );
+      if (alvo.includes(t)) return true;
+      if (tDig) {
+        const alvoDig = soDigitos(
+          [r.numero, r.numero_sap, r.cliente_doc].filter(Boolean).join(" ")
+        );
+        if (alvoDig.includes(tDig)) return true;
+      }
       return false;
-    return true;
-  });
+    });
+  }, [rows, busca, status, uf, sap, vendedor, vend]);
+
+  const totalPaginas = Math.max(1, Math.ceil(filtered.length / porPagina));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const visiveis = filtered.slice((paginaAtual - 1) * porPagina, paginaAtual * porPagina);
 
   const detalheIdx = detalheId ? filtered.findIndex((r) => r.id === detalheId) : -1;
 
