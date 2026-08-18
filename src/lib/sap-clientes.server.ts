@@ -84,8 +84,14 @@ export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<Sa
     });
     texto = await res.text();
     if (!res.ok) {
-      return { ok: false, erro: `SAP ${res.status}: ${texto.slice(0, 400)}`, raw: texto.slice(0, 2000) };
+      const diag = await diagnosticarEndpoint(url, auth);
+      return {
+        ok: false,
+        erro: `SAP ${res.status}: ${diag ?? resumoFalha(texto)}`,
+        raw: { resposta: texto.slice(0, 2000), diagnostico: diag },
+      };
     }
+
   } catch (err) {
     return { ok: false, erro: `Falha ao chamar o SAP: ${(err as Error).message}` };
   }
