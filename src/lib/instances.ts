@@ -53,6 +53,7 @@ export type FeatureKey =
   | "admin.logs.retencao"
   | "admin.logs.exportar"
   | "admin.sistema.excluir"
+  | "admin.clientes.integracoes"
   | "marketing.home"
   | "marketing.social"
   | "marketing.trafego"
@@ -253,6 +254,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.logs.retencao": "Logs • Retenção e limpeza",
   "admin.logs.exportar": "Logs • Exportar registros (CSV)",
   "admin.sistema.excluir": "Sistema • Excluir registros (universal)",
+  "admin.clientes.integracoes": "Clientes • Integrações e histórico (auditoria)",
   "admin.vinculos": "Admin • Vínculos Salesforce",
   "admin.area.configuracoes": "Acesso • Configurações (engrenagem)",
   "admin.area.moderacao": "Acesso • Moderação (engrenagem)",
