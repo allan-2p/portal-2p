@@ -200,16 +200,42 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const db = await import("./clientes-db.server");
+    const { logIntegrationEvent } = await import("./integration-logs.server");
     const doc = data.cliente.doc.replace(/\D/g, "");
 
+    /** Toda falha do cadastro (banco incluído) fica visível em Logs > Integrações. */
+    const logErroBanco = async (etapa: string, err: unknown) =>
+      logIntegrationEvent({
+        slug: "clientes-cadastro",
+        level: "error",
+        event: `cadastro.${etapa}.erro`,
+        message: `Falha ao ${etapa} o cadastro ${data.cliente.razao_social} (${doc}): ${(err as Error)?.message ?? String(err)}`,
+        actorId: context.userId,
+        detail: {
+          cliente_id: data.id ?? null,
+          instancia: data.instancia,
+          doc,
+          razao_social: data.cliente.razao_social,
+          uf: data.cliente.uf ?? null,
+          erro: (err as Error)?.message ?? String(err),
+        },
+      });
+
     // Duplicidade: mesmo documento em qualquer instância.
-    const achados = await db.findClienteByDoc(doc);
+    let achados: Awaited<ReturnType<typeof db.findClienteByDoc>>;
+    try {
+      achados = await db.findClienteByDoc(doc);
+    } catch (err) {
+      await logErroBanco("consultar", err);
+      throw err;
+    }
     const conflito = achados.find((a) => a.cliente["id"] !== data.id);
     if (conflito) {
-      throw new Error(
-        `Este documento já está cadastrado em ${db.ORGANIZACAO[conflito.instancia]} (${conflito.cliente["razao_social"]}).`,
-      );
+      const msg = `Este documento já está cadastrado em ${db.ORGANIZACAO[conflito.instancia]} (${conflito.cliente["razao_social"]}).`;
+      await logErroBanco("validar", new Error(msg));
+      throw new Error(msg);
     }
+
 
     const { data: perfil } = await context.supabase
       .from("profiles")
