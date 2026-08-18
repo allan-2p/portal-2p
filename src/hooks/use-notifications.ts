@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from "react";
+import { listarMinhasNotificacoesFn, marcarNotificacoesLidasFn } from "@/lib/notificacoes.functions";
 
-export type NotificationKind = "task" | "atlas" | "info";
+export type NotificationKind = "task" | "atlas" | "info" | "pagamento";
 
 export interface AppNotification {
   id: string;
@@ -10,7 +11,10 @@ export interface AppNotification {
   client?: string;
   createdAt: number;
   read: boolean;
+  /** Notificação vinda do servidor (persistida). */
+  serverId?: string;
 }
+
 
 interface State {
   items: AppNotification[];
