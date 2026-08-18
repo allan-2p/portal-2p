@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  AlertCircle, Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye,
+  AlertCircle, Plus, Search, Pencil, Building2, Filter, X, Eye,
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
   ArrowRight, RefreshCw, History,
 } from "lucide-react";
@@ -32,7 +32,7 @@ import { cnpjValido, mascaraCnpj, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
 
 import {
-  listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, excluirClienteFn,
+  listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn,
   listConsultoresFn,
 
 } from "@/lib/clientes.functions";
@@ -179,7 +179,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const verificarDoc = useServerFn(verificarDocFn);
   const enriquecer = useServerFn(enriquecerCnpjFn);
   const salvarFn = useServerFn(salvarClienteFn);
-  const excluirFn = useServerFn(excluirClienteFn);
 
 
   const podeExcluir = useCanDelete();
@@ -341,15 +340,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     },
 
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao salvar."),
-  });
-
-  const excluir = useMutation({
-    mutationFn: (id: string) => excluirFn({ data: { instancia, id } }),
-    onSuccess: () => {
-      toast.success("Cadastro removido.");
-      qc.invalidateQueries({ queryKey: ["clientes", instancia] });
-    },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
   });
 
   // Reenvio manual das integrações (SAP + Salesforce) de um cadastro.
@@ -918,7 +908,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     {podeVerIntegracoes && (
                       <Button variant="ghost" size="icon" aria-label="Integrações e histórico" onClick={() => setIntegracoesDe(c)}><History className="h-4 w-4" /></Button>
                     )}
-                    {podeExcluir && (<Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => excluir.mutate(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>)}
                   </td>
                 </tr>
               ))}
