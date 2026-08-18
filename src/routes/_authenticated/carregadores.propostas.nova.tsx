@@ -2677,7 +2677,7 @@ function TotalRow({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-4 rounded-xl border px-4 py-3 transition-colors duration-500",
+        "flex items-center justify-between gap-4 rounded-xl border px-4 sm:px-5 py-4 transition-colors duration-500",
         flash ? "border-primary/60 bg-primary/10" : "border-border/60 bg-muted/30",
       )}
     >
@@ -2692,6 +2692,7 @@ function TotalRow({
       </div>
     </div>
   );
+
 }
 
 /** Linha do resumo do pedido (etapa de finalização). */
