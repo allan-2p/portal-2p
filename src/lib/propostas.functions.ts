@@ -527,7 +527,13 @@ export const obterPropostaFn = createServerFn({ method: "POST" })
     return await db.getProposta(data.id);
   });
 
-/** Atualiza apenas o status da proposta. */
+/**
+ * Atualiza o status da proposta.
+ *
+ * O status é governado pela máquina de estados (checkout, crons SAP, webhook
+ * Fretefy). A única transição humana é o cancelamento — qualquer outra
+ * alteração manual é recusada.
+ */
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
@@ -538,7 +544,19 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const db = await repo();
-    await db.atualizarProposta(data.id, { status: data.status });
+    const atual = await db.getProposta(data.id);
+    const de = String((atual as Record<string, unknown> | null)?.["status"] ?? "Salvo");
+
+    if (data.status !== "Cancelado") {
+      throw new Error(
+        "O status é definido automaticamente pelo processo (pagamento, SAP e transporte). Só o cancelamento é manual.",
+      );
+    }
+    if (!podeCancelarProposta(de)) {
+      throw new Error(`Não é possível cancelar um pedido com status "${de}".`);
+    }
+
+    await db.atualizarProposta(data.id, { status: "Cancelado" });
     return { ok: true };
   });
 
