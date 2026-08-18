@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Truck, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cotarFrete } from "@/lib/frete.functions";
-import { fmtBRL, type CpoTransportadora } from "@/lib/cpo";
+import { fmtBRL, type CarregadoresTransportadora } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 
 export type FreteCotacaoItem = { codigo: string; quantidade: number; nome?: string };
@@ -14,8 +14,8 @@ type Props = {
   destino: { uf: string; cidade: string; cep: string };
   areaRural: boolean;
   documento: string;
-  selecionada: CpoTransportadora | null;
-  onSelect: (t: CpoTransportadora) => void;
+  selecionada: CarregadoresTransportadora | null;
+  onSelect: (t: CarregadoresTransportadora) => void;
   /** Chamado quando algum dado muda e a cotação anterior deixa de valer. */
   onInvalidate?: () => void;
 };

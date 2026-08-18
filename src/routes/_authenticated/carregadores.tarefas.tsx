@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
-import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
+import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PermissionGate } from "@/components/permission-gate";
 
 export const Route = createFileRoute("/_authenticated/carregadores/tarefas")({
@@ -58,15 +58,15 @@ function CarregadoresTarefas() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<"aberta" | "concluida" | "todas">("aberta");
   const [vendedor, setVendedor] = useState("__all__");
-  const vend = useCpoVendedores();
+  const vend = useCarregadoresVendedores();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ titulo: "", descricao: "", cliente_nome: "", due_date: "", prioridade: "media" });
 
   const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ["cpo-tasks"],
+    queryKey: ["carregadores-tasks"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("cpo_tasks")
+        .from("carregadores_tarefas")
         .select("id,titulo,descricao,cliente_nome,due_date,prioridade,status,owner_id")
         .order("due_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
@@ -84,7 +84,7 @@ function CarregadoresTarefas() {
 
   async function create() {
     if (!form.titulo.trim()) { toast.error("Informe o título da tarefa."); return; }
-    const { error } = await supabase.from("cpo_tasks").insert({
+    const { error } = await supabase.from("carregadores_tarefas").insert({
       titulo: form.titulo.trim(),
       descricao: form.descricao.trim() || null,
       cliente_nome: form.cliente_nome.trim() || null,
@@ -95,23 +95,23 @@ function CarregadoresTarefas() {
     toast.success("Tarefa criada.");
     setForm({ titulo: "", descricao: "", cliente_nome: "", due_date: "", prioridade: "media" });
     setOpen(false);
-    qc.invalidateQueries({ queryKey: ["cpo-tasks"] });
-    qc.invalidateQueries({ queryKey: ["cpo-home-tarefas"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-tasks"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-home-tarefas"] });
   }
 
   async function toggle(t: Task) {
     const next = t.status === "aberta" ? "concluida" : "aberta";
-    const { error } = await supabase.from("cpo_tasks").update({ status: next }).eq("id", t.id);
+    const { error } = await supabase.from("carregadores_tarefas").update({ status: next }).eq("id", t.id);
     if (error) { toast.error(error.message); return; }
-    qc.invalidateQueries({ queryKey: ["cpo-tasks"] });
-    qc.invalidateQueries({ queryKey: ["cpo-home-tarefas"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-tasks"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-home-tarefas"] });
   }
 
   async function remove(id: string) {
-    const { error } = await supabase.from("cpo_tasks").delete().eq("id", id);
+    const { error } = await supabase.from("carregadores_tarefas").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
-    qc.invalidateQueries({ queryKey: ["cpo-tasks"] });
-    qc.invalidateQueries({ queryKey: ["cpo-home-tarefas"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-tasks"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-home-tarefas"] });
   }
 
   return (
@@ -138,7 +138,7 @@ function CarregadoresTarefas() {
               </SelectContent>
             </Select>
             <Dialog open={open} onOpenChange={setOpen}>
-              <PermissionGate feature="cpo.tarefas" action="editar" mode="disable">
+              <PermissionGate feature="carregadores.tarefas" action="editar" mode="disable">
                 <DialogTrigger asChild>
                   <Button><Plus className="h-4 w-4 mr-1.5" /> Nova tarefa</Button>
                 </DialogTrigger>

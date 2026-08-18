@@ -26,10 +26,10 @@ import {
 import { Calculator, Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fmtBRL } from "@/lib/cpo";
+import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
-import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
+import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PermissionGate, useCanDelete } from "@/components/permission-gate";
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/")(
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: HistoricoCpoPage,
+  component: HistoricoCarregadoresPage,
 });
 
 type Row = {
@@ -75,7 +75,7 @@ type Row = {
 /** Status universais do portal (mesma lista e cores em todas as instâncias). */
 const STATUS = PROPOSTA_STATUS;
 
-function HistoricoCpoPage() {
+function HistoricoCarregadoresPage() {
   const [busca, setBusca] = useState("");
   const [detalheId, setDetalheId] = useState<string | null>(null);
   const [status, setStatus] = useState("todos");
@@ -86,13 +86,13 @@ function HistoricoCpoPage() {
   const [vendedor, setVendedor] = useState("__all__");
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const podeExcluir = useCanDelete();
-  const vend = useCpoVendedores();
+  const vend = useCarregadoresVendedores();
 
   const q = useQuery({
-    queryKey: ["cpo-proposals"],
+    queryKey: ["carregadores-proposals"],
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
-        .from("cpo_proposals")
+        .from("propostas")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -160,7 +160,7 @@ function HistoricoCpoPage() {
 
 
   async function alterarStatus(id: string, novo: string) {
-    const { error } = await supabase.from("cpo_proposals").update({ status: novo }).eq("id", id);
+    const { error } = await supabase.from("propostas").update({ status: novo }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Status atualizado.");
     q.refetch();
@@ -173,7 +173,7 @@ function HistoricoCpoPage() {
 
   async function confirmarExclusao() {
     if (!excluirId) return;
-    const { error } = await supabase.from("cpo_proposals").delete().eq("id", excluirId);
+    const { error } = await supabase.from("propostas").delete().eq("id", excluirId);
     setExcluirId(null);
     if (error) return toast.error(error.message);
     toast.success("Proposta excluída.");
@@ -188,7 +188,7 @@ function HistoricoCpoPage() {
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">Carregadores</div>
             <h1 className="text-3xl font-bold mt-1">Propostas</h1>
           </div>
-          <PermissionGate feature="cpo.propostas" action="editar" mode="disable">
+          <PermissionGate feature="carregadores.propostas" action="editar" mode="disable">
             <Button asChild className="gap-2">
               <Link to="/carregadores/propostas/nova">
                 <Plus className="h-4 w-4" /> Nova proposta

@@ -49,10 +49,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 
-import { useCpoConfig, useCpoNcms, useCpoProducts, useCpoUfs, useCpoInvalidate } from "@/hooks/use-cpo";
+import { useCarregadoresConfig, useCarregadoresNcms, useCarregadoresProducts, useCarregadoresUfs, useCarregadoresInvalidate } from "@/hooks/use-carregadores";
 import {
-  CPO_CONFIG_FALLBACK,
-  calcularCpo,
+  CARREGADORES_CONFIG_FALLBACK,
+  calcularCarregadores,
   fmtBRL,
   fmtPct,
   labelFinalidadeUso,
@@ -70,22 +70,22 @@ import {
   novoItem,
   parseMoeda,
   statusMB,
-  type CpoFinalidadeUso,
-  type CpoItem,
-  type CpoFreteMod,
-  type CpoState,
+  type CarregadoresFinalidadeUso,
+  type CarregadoresItem,
+  type CarregadoresFreteMod,
+  type CarregadoresState,
   textoDifalContribuinte,
   avisoDifalUsoConsumo,
   operacaoInterna,
   precoParaMargem,
-} from "@/lib/cpo";
-import { ratearComissao, VALOR_INDICACAO, type Regime, type RateioLinha } from "@/lib/cpo-comissao";
+} from "@/lib/carregadores";
+import { ratearComissao, VALOR_INDICACAO, type Regime, type RateioLinha } from "@/lib/carregadores-comissao";
 import { useAuth } from "@/hooks/use-auth";
-import { registrarConclusao } from "@/lib/cpo-conclusao-log";
-import { salvarPropostaCpo, atribuirNumeroSapFn } from "@/lib/cpo-proposals.functions";
+import { registrarConclusao } from "@/lib/carregadores-conclusao-log";
+import { salvarPropostaCarregadores, atribuirNumeroSapFn } from "@/lib/propostas.functions";
 
 
-import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
+import { buildPropostaPdfHtml } from "@/lib/carregadores-proposta-pdf";
 import { MoneyInput } from "@/components/money-input";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
@@ -113,7 +113,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/propostas/nov
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: PropostaCpoPage,
+  component: PropostaCarregadoresPage,
 });
 
 
@@ -142,7 +142,7 @@ type ClienteCadastro = {
 
 
 
-const DRAFT_KEY = "cpo-proposta-rascunho";
+const DRAFT_KEY = "carregadores-proposta-rascunho";
 
 /** Arredonda para centavos exatos, evitando resíduo de ponto flutuante ao salvar/reabrir. */
 const money2 = (n: unknown) => {
@@ -163,14 +163,14 @@ function limparRascunho() {
 }
 
 
-function PropostaCpoPage() {
+function PropostaCarregadoresPage() {
   const { id: editId, dup: dupId } = Route.useSearch();
   const carregandoExistente = !!(editId || dupId);
-  const produtosQ = useCpoProducts();
-  const ufsQ = useCpoUfs();
-  const configQ = useCpoConfig();
-  const ncmsQ = useCpoNcms();
-  const invalidate = useCpoInvalidate();
+  const produtosQ = useCarregadoresProducts();
+  const ufsQ = useCarregadoresUfs();
+  const configQ = useCarregadoresConfig();
+  const ncmsQ = useCarregadoresNcms();
+  const invalidate = useCarregadoresInvalidate();
 
   const produtos = useMemo(() => (produtosQ.data ?? []).filter((p) => p.ativo), [produtosQ.data]);
   const fotosQ = useImagensPorPath(produtos.map((p) => p.imagem_path));
@@ -179,10 +179,10 @@ function PropostaCpoPage() {
     return path ? (fotosQ.data ?? {})[path] : undefined;
   };
   const ufs = ufsQ.data ?? [];
-  const config = configQ.data ?? CPO_CONFIG_FALLBACK;
+  const config = configQ.data ?? CARREGADORES_CONFIG_FALLBACK;
 
   // Nova proposta sempre começa vazia; só carrega dados ao editar/duplicar uma proposta salva.
-  const [state, setState] = useState<CpoState>(() => novoEstado());
+  const [state, setState] = useState<CarregadoresState>(() => novoEstado());
   // Itens cujo valor unitário acabou de ser atualizado pelo Preço Sugerido.
   const [precoChanges, setPrecoChanges] = useState<Record<string, { de: number; para: number }>>({});
 
@@ -239,7 +239,7 @@ function PropostaCpoPage() {
     carregado.current = true;
     (async () => {
       const { data, error } = await supabase
-        .from("cpo_proposals")
+        .from("propostas")
         .select("*")
         .eq("id", alvo)
         .maybeSingle();
@@ -275,23 +275,23 @@ function PropostaCpoPage() {
         ie: data.cliente_ie ?? "",
         uf: data.uf,
         contribuinte: data.contribuinte,
-        finalidadeUso: ((data.finalidade_uso as CpoState["finalidadeUso"]) ?? "uso_consumo"),
+        finalidadeUso: ((data.finalidade_uso as CarregadoresState["finalidadeUso"]) ?? "uso_consumo"),
         indicacao: !!(data as any).indicacao,
         padrinhoId: ((data as any).padrinho_id as string | null) ?? null,
         padrinhoNome: ((data as any).padrinho_nome as string | null) ?? "",
         previsaoFechamento: ((data as any).previsao_fechamento as string | null) ?? "",
-        tipoNf: (((data as any).tipo_nf as string | null) ?? "venda") as CpoState["tipoNf"],
+        tipoNf: (((data as any).tipo_nf as string | null) ?? "venda") as CarregadoresState["tipoNf"],
         faturarClienteFinal: (data as any).faturar_cliente_final === true,
         faturamento: {
           ...novoFaturamento(data.uf),
           ...(((data as any).faturamento as Record<string, string | boolean>) ?? {}),
-        } as CpoState["faturamento"],
-        formaPagamento: (((data as any).forma_pagamento as string | null) ?? "") as CpoState["formaPagamento"],
+        } as CarregadoresState["faturamento"],
+        formaPagamento: (((data as any).forma_pagamento as string | null) ?? "") as CarregadoresState["formaPagamento"],
         entregaDiferente: !!(data as any).entrega_diferente,
         entrega: { ...novoEndereco(data.uf), ...(((data as any).entrega as Record<string, string>) ?? {}) },
         freteMod: (data.frete_mod === "FOB" || data.frete_mod === "DEDICADO" || data.frete_mod === "CIF"
           ? data.frete_mod
-          : "") as CpoState["freteMod"],
+          : "") as CarregadoresState["freteMod"],
         freteAreaRural: !!(data as any).frete_area_rural,
         freteValor: money2(data.frete_valor ?? 0),
         transportadora: (data as any).transportadora
@@ -334,10 +334,10 @@ function PropostaCpoPage() {
   // Clientes vindos do cadastro universal (Clientes > Cadastros)
 
   const listClientes = useServerFn(listClientesFn);
-  const salvarProposta = useServerFn(salvarPropostaCpo);
+  const salvarProposta = useServerFn(salvarPropostaCarregadores);
   const atribuirNumeroSap = useServerFn(atribuirNumeroSapFn);
   const clientesQ = useQuery({
-    queryKey: ["cpo-clientes-cadastro"],
+    queryKey: ["carregadores-clientes-cadastro"],
     queryFn: async () => {
       const res = await listClientes({ data: { instancia: "carregadores" } });
       const lista: ClienteCadastro[] = (res.clientes ?? [])
@@ -474,7 +474,7 @@ function PropostaCpoPage() {
 
   // Preço sugerido do item já considerando os impostos da operação, para que
   // a MB% da proposta nasça em 37% (e não abaixo da política de 33%).
-  const precoSugeridoItem = (produtoId: string, s: CpoState) =>
+  const precoSugeridoItem = (produtoId: string, s: CarregadoresState) =>
     money2(
       precoParaMargem(
         produtos.find((p) => p.id === produtoId),
@@ -486,15 +486,15 @@ function PropostaCpoPage() {
     );
 
 
-  const set = <K extends keyof CpoState>(k: K, v: CpoState[K]) =>
+  const set = <K extends keyof CarregadoresState>(k: K, v: CarregadoresState[K]) =>
     setState((s) => ({ ...s, [k]: v }));
 
   /** Atualiza campos do endereço de entrega. */
-  const setEntrega = (patch: Partial<CpoState["entrega"]>) =>
+  const setEntrega = (patch: Partial<CarregadoresState["entrega"]>) =>
     setState((s) => ({ ...s, entrega: { ...s.entrega, ...patch } }));
 
   /** Atualiza os dados do destinatário fiscal alternativo. */
-  const setFaturamento = (patch: Partial<CpoState["faturamento"]>) =>
+  const setFaturamento = (patch: Partial<CarregadoresState["faturamento"]>) =>
     setState((s) => ({ ...s, faturamento: { ...s.faturamento, ...patch } }));
 
   /** Entrega precisa ficar no mesmo estado do faturamento. */
@@ -524,11 +524,11 @@ function PropostaCpoPage() {
       uf: c.uf || state.uf,
       contato: "",
       telefone: c.cliente_telefone ?? "",
-    } satisfies CpoState["entrega"];
+    } satisfies CarregadoresState["entrega"];
   }, [clientesQ.data, state.doc, state.uf]);
 
   /** Endereço que efetivamente vale para a proposta. */
-  const entregaEfetiva: CpoState["entrega"] = state.entregaDiferente
+  const entregaEfetiva: CarregadoresState["entrega"] = state.entregaDiferente
     ? state.entrega
     : (enderecoPadraoCliente ?? { ...state.entrega, uf: state.entrega.uf || state.uf });
 
@@ -540,7 +540,7 @@ function PropostaCpoPage() {
   };
 
 
-  const setItem = (key: string, patch: Partial<CpoItem>) =>
+  const setItem = (key: string, patch: Partial<CarregadoresItem>) =>
     setState((s) => ({
       ...s,
       itens: s.itens.map((i) => (i.key === key ? { ...i, ...patch } : i)),
@@ -582,9 +582,9 @@ function PropostaCpoPage() {
   // ele roda com um pequeno atraso, evitando re-render a cada tecla. Ações que
   // gravam dados (salvar/concluir/PDF) usam `calcAtual()`, sempre com o estado atual.
   const stateCalc = useDebouncedValue(state, 200);
-  const calcAtual = () => calcularCpo(state, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []);
+  const calcAtual = () => calcularCarregadores(state, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []);
   const d = useMemo(
-    () => calcularCpo(stateCalc, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []),
+    () => calcularCarregadores(stateCalc, produtosQ.data ?? [], ufs, config, ncmsQ.data ?? []),
     [stateCalc, produtosQ.data, ufs, config, ncmsQ.data],
   );
   // A comissão exibida é a REMUNERAÇÃO do vendedor (não o custo total da empresa).
@@ -799,7 +799,7 @@ function PropostaCpoPage() {
       motivo: "Há linhas preenchidas sem produto selecionado.",
       corrigir: "Selecione o produto ou remova a linha.",
     });
-  if (state.freteMod && FRETE_ABSORVIDO.includes(state.freteMod as CpoFreteMod) && !(state.freteValor > 0))
+  if (state.freteMod && FRETE_ABSORVIDO.includes(state.freteMod as CarregadoresFreteMod) && !(state.freteValor > 0))
     alertas.push({
       level: "warn",
       titulo: `Frete ${state.freteMod} sem valor informado`,
@@ -886,7 +886,7 @@ function PropostaCpoPage() {
 
   // HTML do PDF derivado do estado atual: qualquer mudança em itens, frete,
   // impostos, margem ou comissão reflete imediatamente na prévia e no download.
-  const buildHtml = (d: ReturnType<typeof calcularCpo>) =>
+  const buildHtml = (d: ReturnType<typeof calcularCarregadores>) =>
       buildPropostaPdfHtml({
         numero: numeroAtual ?? numeroRef.current ?? undefined,
         propostaNome: state.propostaNome.trim() || null,
@@ -1042,7 +1042,7 @@ function PropostaCpoPage() {
         const concluindo = status !== "Salvo";
         if (concluindo) {
           // Lock idempotente no banco: só conclui se ainda estiver "Salvo"
-          const { data: res, error: rpcErr } = await supabase.rpc("cpo_conclude_proposal", {
+          const { data: res, error: rpcErr } = await supabase.rpc("concluir_proposta", {
             _id: propostaId,
             _status: status,
             _origem: "portal",
@@ -1076,7 +1076,7 @@ function PropostaCpoPage() {
       }
 
       // Sempre nasce como "Salvo": a conclusão passa obrigatoriamente pela
-      // validação de etapa/completude no banco (cpo_conclude_proposal).
+      // validação de etapa/completude no banco (concluir_proposta).
       const inserida = salvo.id ? { id: salvo.id } : null;
       if (salvo.duplicada) {
         if (status !== "Salvo") {
@@ -1089,7 +1089,7 @@ function PropostaCpoPage() {
 
       if (status !== "Salvo") {
         if (!inserida?.id) throw new Error("Não foi possível concluir: proposta não localizada.");
-        const { data: res, error: rpcErr } = await supabase.rpc("cpo_conclude_proposal", {
+        const { data: res, error: rpcErr } = await supabase.rpc("concluir_proposta", {
           _id: inserida.id,
           _status: status,
           _origem: "portal",
@@ -1455,7 +1455,7 @@ function PropostaCpoPage() {
               <>
 
                 <Field label="Tipo de nota fiscal">
-                  <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CpoState["tipoNf"])}>
+                  <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CarregadoresState["tipoNf"])}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="venda">{labelTipoNf.venda}</SelectItem>
@@ -1922,7 +1922,7 @@ function PropostaCpoPage() {
                   onValueChange={(v) =>
                     setState((s) => ({
                       ...s,
-                      freteMod: v as CpoFreteMod,
+                      freteMod: v as CarregadoresFreteMod,
                       // Cada modalidade tem sua própria origem de valor.
                       freteValor: v === "CIF" ? (s.transportadora?.total ?? 0) : v === "FOB" ? 0 : s.freteValor,
                       transportadora: v === "CIF" ? s.transportadora : null,
@@ -2169,7 +2169,7 @@ function PropostaCpoPage() {
                 <Field label="Forma de pagamento">
                   <Select
                     value={state.formaPagamento || undefined}
-                    onValueChange={(v) => set("formaPagamento", v as CpoState["formaPagamento"])}
+                    onValueChange={(v) => set("formaPagamento", v as CarregadoresState["formaPagamento"])}
                   >
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>

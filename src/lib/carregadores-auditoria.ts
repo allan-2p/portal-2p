@@ -1,22 +1,22 @@
 // ============================================================================
 // Auditoria de cálculo — 2P Carregadores
-// Reproduz, passo a passo, o mesmo motor de src/lib/cpo.ts e cpo-comissao.ts,
+// Reproduz, passo a passo, o mesmo motor de src/lib/carregadores.ts e carregadores-comissao.ts,
 // expondo cada valor intermediário (ICMS, DIFAL, ICMS-ST, impostos, CMV e
 // comissão) por item e no total, junto da versão das regras utilizadas.
 // ============================================================================
 
 import {
-  calcularCpo,
+  calcularCarregadores,
   calcularDifal,
   finalidadeGeraDifal,
   pctComissaoPorCmv,
-  type CpoConfig,
-  type CpoNcm,
-  type CpoProduct,
-  type CpoState,
-  type CpoUf,
-} from "./cpo";
-import { VALOR_INDICACAO, ratearComissao, type Rateio, type Regime } from "./cpo-comissao";
+  type CarregadoresConfig,
+  type CarregadoresNcm,
+  type CarregadoresProduct,
+  type CarregadoresState,
+  type CarregadoresUf,
+} from "./carregadores";
+import { VALOR_INDICACAO, ratearComissao, type Rateio, type Regime } from "./carregadores-comissao";
 
 /** Versão da política fiscal/comercial implementada no motor. */
 export const REGRAS_VERSAO = "2026.07";
@@ -76,15 +76,15 @@ const pct = (v: number) =>
   })}%`;
 
 export function auditarProposta(args: {
-  state: CpoState;
-  produtos: CpoProduct[];
-  ufs: CpoUf[];
-  config: CpoConfig;
-  ncms: CpoNcm[];
+  state: CarregadoresState;
+  produtos: CarregadoresProduct[];
+  ufs: CarregadoresUf[];
+  config: CarregadoresConfig;
+  ncms: CarregadoresNcm[];
   regimeVendedor?: Regime;
 }): AuditoriaProposta {
   const { state, produtos, ufs, config, ncms } = args;
-  const r = calcularCpo(state, produtos, ufs, config, ncms);
+  const r = calcularCarregadores(state, produtos, ufs, config, ncms);
   const uf = ufs.find((u) => u.uf === state.uf);
   const interna = uf?.aliq_interna ?? 0.18;
   const fcp = uf?.fcp ?? 0;

@@ -303,8 +303,8 @@ function ProdutosPage() {
   const qc = useQueryClient();
   /** Propaga mudanças do SAP para as telas de Gestão de Produtos (Carregadores/Solar). */
   const propagar = () => {
-    qc.invalidateQueries({ queryKey: ["cpo-products"] });
-    qc.invalidateQueries({ queryKey: ["cpo-products-admin"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-products"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-products-admin"] });
     qc.invalidateQueries({ queryKey: ["sap-catalogo-completo"] });
     qc.invalidateQueries({ queryKey: ["produtos"] });
   };

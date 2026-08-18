@@ -20,7 +20,7 @@ const MKT_UNIT_KEY = "portal2p-marketing-unit";
 // Home de cada instância — página inicial padrão de qualquer usuário.
 const HOME_FEATURE: Record<InstanceId, FeatureKey> = {
   solar: "home",
-  carregadores: "cpo.home",
+  carregadores: "carregadores.home",
   marketing: "marketing.home",
 };
 const HOME_ROUTE: Record<InstanceId, string> = {

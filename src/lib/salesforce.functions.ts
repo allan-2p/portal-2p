@@ -2377,13 +2377,13 @@ export const getClientTimeline = createServerFn({ method: "GET" })
     if (clienteNome) {
       const [props, tarefas] = await Promise.all([
         context.supabase
-          .from("cpo_proposals")
+          .from("propostas")
           .select("id, numero, cliente_nome, status, totais, created_at")
           .ilike("cliente_nome", `%${clienteNome}%`)
           .order("created_at", { ascending: false })
           .limit(100),
         context.supabase
-          .from("cpo_tasks")
+          .from("carregadores_tarefas")
           .select("id, titulo, descricao, cliente_nome, status, due_date, created_at")
           .ilike("cliente_nome", `%${clienteNome}%`)
           .order("created_at", { ascending: false })
@@ -2394,7 +2394,7 @@ export const getClientTimeline = createServerFn({ method: "GET" })
         const totais = (p.totais ?? {}) as Record<string, unknown>;
         const total = Number(totais["totalProposta"] ?? totais["receitaBruta"] ?? 0) || null;
         entries.push({
-          id: `cpo-prop-${p.id}`,
+          id: `carregadores-prop-${p.id}`,
           kind: "pedido",
           date: p.created_at?.slice(0, 10) ?? null,
           title: `Proposta ${p.numero ?? ""}`.trim() + ` — ${p.cliente_nome}`,
@@ -2408,7 +2408,7 @@ export const getClientTimeline = createServerFn({ method: "GET" })
       for (const t of tarefas.data ?? []) {
         const texto = `${t.titulo} ${t.descricao ?? ""}`;
         entries.push({
-          id: `cpo-task-${t.id}`,
+          id: `carregadores-task-${t.id}`,
           kind: classificarAtividade(texto, false),
           date: t.due_date ?? t.created_at?.slice(0, 10) ?? null,
           title: t.titulo,

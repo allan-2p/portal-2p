@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Search, ImageOff, Upload, RefreshCw, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useCpoInvalidate, useCpoProductsAdmin } from "@/hooks/use-cpo";
+import { useCarregadoresInvalidate, useCarregadoresProductsAdmin } from "@/hooks/use-carregadores";
 import { useImagensPorPath, BUCKET_PRODUTOS } from "@/lib/produto-imagens";
-import type { CpoProduct } from "@/lib/cpo";
+import type { CarregadoresProduct } from "@/lib/carregadores";
 
 type Filtro = "todos" | "com" | "sem";
 
@@ -34,8 +34,8 @@ function useUltimaSync() {
 }
 
 export function CatalogoFotos() {
-  const { data: produtos = [], isLoading } = useCpoProductsAdmin();
-  const invalidate = useCpoInvalidate();
+  const { data: produtos = [], isLoading } = useCarregadoresProductsAdmin();
+  const invalidate = useCarregadoresInvalidate();
   const syncQ = useUltimaSync();
 
   const [busca, setBusca] = useState("");
@@ -58,7 +58,7 @@ export function CatalogoFotos() {
     });
   }, [produtos, busca, filtro]);
 
-  async function enviarFoto(p: CpoProduct, file: File) {
+  async function enviarFoto(p: CarregadoresProduct, file: File) {
     const ext = (file.name.split(".").pop() ?? "").toLowerCase();
     if (!EXT_OK.includes(ext)) return toast.error("Use uma imagem PNG, JPG ou WEBP.");
     if (file.size > MAX_MB * 1024 * 1024) return toast.error(`Imagem acima de ${MAX_MB} MB.`);
@@ -82,7 +82,7 @@ export function CatalogoFotos() {
     }
   }
 
-  async function removerFoto(p: CpoProduct) {
+  async function removerFoto(p: CarregadoresProduct) {
     if (!p.imagem_path) return;
     setEnviando(p.id);
     try {

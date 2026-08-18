@@ -2,11 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { finalidadeUsoPorDocFn } from "@/lib/clientes.functions";
-import { finalidadeUsoDoCadastro, labelFinalidadeUso } from "@/lib/cpo";
+import { finalidadeUsoDoCadastro, labelFinalidadeUso } from "@/lib/carregadores";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { fmtBRL, fmtPct } from "@/lib/cpo";
+import { fmtBRL, fmtPct } from "@/lib/carregadores";
 import { StatusDot } from "@/components/proposta-status-ui";
 import { PropostaTimeline } from "@/components/proposta-timeline";
 import { propostaStatusStyle } from "@/lib/proposta-status";
@@ -21,10 +21,10 @@ const fmtData = (v?: string | null) =>
 
 export function usePropostaDetalhe(id?: string) {
   return useQuery({
-    queryKey: ["cpo-proposta", id],
+    queryKey: ["carregadores-proposta", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("cpo_proposals").select("*").eq("id", id!).maybeSingle();
+      const { data, error } = await supabase.from("propostas").select("*").eq("id", id!).maybeSingle();
       if (error) throw error;
       return data;
     },

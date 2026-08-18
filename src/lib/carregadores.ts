@@ -16,7 +16,7 @@
 //   Margem Bruta     = Receita Líquida − Custo   ;  MB% = MB ÷ Venda
 // ============================================================================
 
-export type CpoNcm = {
+export type CarregadoresNcm = {
   id: string;
   codigo: string;
   descricao: string;
@@ -29,7 +29,7 @@ export type CpoNcm = {
   ativo: boolean;
 };
 
-export type CpoProduct = {
+export type CarregadoresProduct = {
   id: string;
   codigo?: string | null;
   nome: string;
@@ -41,7 +41,7 @@ export type CpoProduct = {
   imagem_path?: string | null;
 };
 
-export type CpoUf = {
+export type CarregadoresUf = {
   uf: string;
   nome: string;
   aliq_interna: number;
@@ -49,7 +49,7 @@ export type CpoUf = {
   convenio_st?: boolean;
 };
 
-export type CpoConfig = {
+export type CarregadoresConfig = {
   ipi: number;
   pis_cofins: number;
   aliq_inter: number;
@@ -70,7 +70,7 @@ export type CpoConfig = {
   fator_clt: number;
 };
 
-export const CPO_CONFIG_FALLBACK: CpoConfig = {
+export const CARREGADORES_CONFIG_FALLBACK: CarregadoresConfig = {
   ipi: 0.05,
   pis_cofins: 0.0925,
   aliq_inter: 0.04,
@@ -87,7 +87,7 @@ export const CPO_CONFIG_FALLBACK: CpoConfig = {
 };
 
 
-export type CpoItem = {
+export type CarregadoresItem = {
   key: string;
   produtoId: string;
   qtd: number;
@@ -97,32 +97,32 @@ export type CpoItem = {
   sugeridoAplicado?: number;
 };
 
-export type CpoFinalidadeUso = "uso_consumo" | "revenda" | "industrializacao";
+export type CarregadoresFinalidadeUso = "uso_consumo" | "revenda" | "industrializacao";
 
-export type CpoFreteMod = "FOB" | "CIF" | "DEDICADO";
+export type CarregadoresFreteMod = "FOB" | "CIF" | "DEDICADO";
 
 /** Modalidades em que o frete é absorvido pela 2P. */
-export const FRETE_ABSORVIDO: CpoFreteMod[] = ["CIF", "DEDICADO"];
+export const FRETE_ABSORVIDO: CarregadoresFreteMod[] = ["CIF", "DEDICADO"];
 
-export const labelFreteMod: Record<CpoFreteMod, string> = {
+export const labelFreteMod: Record<CarregadoresFreteMod, string> = {
   FOB: "FOB — por conta do cliente (retirar)",
   CIF: "CIF — por conta da 2P (receber)",
   DEDICADO: "Dedicado — veículo exclusivo por conta da 2P",
 };
 
 /** Tipo de nota fiscal da operação. */
-export type CpoTipoNf = "venda" | "triangulacao" | "bonificacao";
+export type CarregadoresTipoNf = "venda" | "triangulacao" | "bonificacao";
 
-export const labelTipoNf: Record<CpoTipoNf, string> = {
+export const labelTipoNf: Record<CarregadoresTipoNf, string> = {
   venda: "Venda",
   triangulacao: "Triangulação",
   bonificacao: "Bonificação",
 };
 
 /** Formas de pagamento aceitas na proposta. */
-export type CpoFormaPagamento = "boleto_vista" | "boleto_prazo" | "pix" | "cartao_credito";
+export type CarregadoresFormaPagamento = "boleto_vista" | "boleto_prazo" | "pix" | "cartao_credito";
 
-export const labelFormaPagamento: Record<CpoFormaPagamento, string> = {
+export const labelFormaPagamento: Record<CarregadoresFormaPagamento, string> = {
   boleto_vista: "Boleto à vista (5 dias)",
   boleto_prazo: "Boleto a prazo",
   pix: "Pix",
@@ -130,7 +130,7 @@ export const labelFormaPagamento: Record<CpoFormaPagamento, string> = {
 };
 
 /** Endereço de entrega da proposta (usado depois no cálculo do frete). */
-export type CpoEndereco = {
+export type CarregadoresEndereco = {
   cep: string;
   logradouro: string;
   numero: string;
@@ -142,7 +142,7 @@ export type CpoEndereco = {
   telefone: string;
 };
 
-export function novoEndereco(uf = ""): CpoEndereco {
+export function novoEndereco(uf = ""): CarregadoresEndereco {
   return {
     cep: "",
     logradouro: "",
@@ -161,19 +161,19 @@ export function novoEndereco(uf = ""): CpoEndereco {
  * o cliente final (revenda/intermediário). Nesse caso o consultor informa
  * novamente o destinatário fiscal da nota.
  */
-export type CpoFaturamento = CpoEndereco & {
+export type CarregadoresFaturamento = CarregadoresEndereco & {
   doc: string;
   nome: string;
   ie: string;
   contribuinte: boolean;
 };
 
-export function novoFaturamento(uf = ""): CpoFaturamento {
+export function novoFaturamento(uf = ""): CarregadoresFaturamento {
   return { ...novoEndereco(uf), doc: "", nome: "", ie: "", contribuinte: false };
 }
 
 /** Transportadora escolhida na cotação do Fretefy. */
-export type CpoTransportadora = {
+export type CarregadoresTransportadora = {
   id: string;
   nome: string;
   documento: string;
@@ -183,7 +183,7 @@ export type CpoTransportadora = {
 
 
 
-export type CpoState = {
+export type CarregadoresState = {
   /** Nome/identificação da proposta (padrão universal do portal). */
   propostaNome: string;
   /** Nº do pedido no SAP vinculado à proposta. */
@@ -198,7 +198,7 @@ export type CpoState = {
   contribuinte: boolean;
   /** Regime tributário do cadastro (usado na exceção de SC). */
   regimeTributario?: string | null;
-  finalidadeUso: CpoFinalidadeUso;
+  finalidadeUso: CarregadoresFinalidadeUso;
   /** Proposta veio de indicação (somente Carregadores). */
   indicacao: boolean;
   /** Padrinho da indicação, quando houver. */
@@ -207,24 +207,24 @@ export type CpoState = {
   /** Previsão de fechamento (AAAA-MM-DD) — campo opcional. */
   previsaoFechamento: string;
   /** Tipo de nota fiscal da operação. */
-  tipoNf: CpoTipoNf;
+  tipoNf: CarregadoresTipoNf;
   /** Faturar diretamente para o cliente final (desmarcado por padrão). */
   faturarClienteFinal: boolean;
   /** Destinatário fiscal alternativo (quando não é o cliente final). */
-  faturamento: CpoFaturamento;
-  formaPagamento: CpoFormaPagamento | "";
+  faturamento: CarregadoresFaturamento;
+  formaPagamento: CarregadoresFormaPagamento | "";
   /** Entrega em endereço diferente do faturamento (mesmo estado). */
   entregaDiferente: boolean;
-  entrega: CpoEndereco;
+  entrega: CarregadoresEndereco;
   /** Modalidade de frete — começa vazia e é escolhida pelo usuário. */
-  freteMod: CpoFreteMod | "";
+  freteMod: CarregadoresFreteMod | "";
   /** Entrega em área rural (perguntado apenas no CIF). */
   freteAreaRural: boolean;
   freteValor: number;
   /** Transportadora escolhida na cotação (CIF). */
-  transportadora: CpoTransportadora | null;
+  transportadora: CarregadoresTransportadora | null;
   observacoes: string;
-  itens: CpoItem[];
+  itens: CarregadoresItem[];
 };
 
 
@@ -234,7 +234,7 @@ export type CpoState = {
  * o ICMS segue os dados dele (UF, contribuinte, IE), não os do cliente final.
  */
 export function destinoFiscal(
-  state: Pick<CpoState, "uf" | "contribuinte" | "ie" | "faturarClienteFinal" | "faturamento">,
+  state: Pick<CarregadoresState, "uf" | "contribuinte" | "ie" | "faturarClienteFinal" | "faturamento">,
 ) {
   const f = state.faturamento;
   if (state.faturarClienteFinal && f) {
@@ -252,7 +252,7 @@ export function destinoFiscal(
 }
 
 /** Cliente contribuinte com IE: o DIFAL é recolhido por ele, sem impacto na margem da 2P. */
-export function difalEhInformativo(state: Pick<CpoState, "contribuinte" | "ie">) {
+export function difalEhInformativo(state: Pick<CarregadoresState, "contribuinte" | "ie">) {
   return state.contribuinte && !!(state.ie ?? "").trim();
 }
 
@@ -271,7 +271,7 @@ export function aliqInterOperacao(args: {
   uf: string;
   contribuinte: boolean;
   regimeTributario?: string | null;
-  finalidade: CpoFinalidadeUso;
+  finalidade: CarregadoresFinalidadeUso;
   padrao: number;
 }) {
   if (args.uf !== "SC") return args.padrao;
@@ -292,7 +292,7 @@ export function operacaoInterna(uf: string) {
   return (uf || "").toUpperCase() === UF_ORIGEM;
 }
 
-export function finalidadeGeraDifal(finalidade: CpoFinalidadeUso) {
+export function finalidadeGeraDifal(finalidade: CarregadoresFinalidadeUso) {
   return finalidade !== "industrializacao";
 }
 
@@ -300,12 +300,12 @@ export function finalidadeGeraDifal(finalidade: CpoFinalidadeUso) {
  * Em revenda o DIFAL é sempre apenas informativo: é apurado e exibido,
  * mas não é absorvido pela 2P e não afeta a receita líquida nem a margem.
  */
-export function difalSempreInformativoPorFinalidade(finalidade: CpoFinalidadeUso) {
+export function difalSempreInformativoPorFinalidade(finalidade: CarregadoresFinalidadeUso) {
   return finalidade === "revenda";
 }
 
 /** Aviso de guia de DIFAL em compras para uso e consumo (independe de convênio ST). */
-export function avisoDifalUsoConsumo(state: Pick<CpoState, "contribuinte" | "ie" | "finalidadeUso"> & { uf?: string }) {
+export function avisoDifalUsoConsumo(state: Pick<CarregadoresState, "contribuinte" | "ie" | "finalidadeUso"> & { uf?: string }) {
   if (operacaoInterna(state.uf ?? "")) return null;
   if (state.finalidadeUso !== "uso_consumo" || !difalEhInformativo(state)) return null;
   return (
@@ -328,7 +328,7 @@ export const OBSERVACAO_DIFAL_CONTRIBUINTE =
  */
 export function observacoesComDifal(
   texto: string | null | undefined,
-  state: Pick<CpoState, "contribuinte" | "ie"> & { uf?: string },
+  state: Pick<CarregadoresState, "contribuinte" | "ie"> & { uf?: string },
 ) {
   const base = (texto ?? "")
     .split(/\n+/)
@@ -340,7 +340,7 @@ export function observacoesComDifal(
 }
 
 
-export type CpoResult = {
+export type CarregadoresResult = {
   valorItens: number;
   valorTotalProposta: number;
   valor: number;
@@ -368,7 +368,7 @@ export type CpoResult = {
   convenioSt: boolean;
 };
 
-export function novoItem(): CpoItem {
+export function novoItem(): CarregadoresItem {
   return {
     key: Math.random().toString(36).slice(2),
     produtoId: "",
@@ -378,7 +378,7 @@ export function novoItem(): CpoItem {
   };
 }
 
-export function novoEstado(): CpoState {
+export function novoEstado(): CarregadoresState {
   return {
     propostaNome: "",
     numeroSap: "",
@@ -418,7 +418,7 @@ export function novoEstado(): CpoState {
  */
 export function finalidadeUsoDoCadastro(
   valor?: string | null,
-): CpoFinalidadeUso {
+): CarregadoresFinalidadeUso {
   const v = (valor ?? "")
     .toLowerCase()
     .normalize("NFD")
@@ -429,7 +429,7 @@ export function finalidadeUsoDoCadastro(
   return "uso_consumo";
 }
 
-export const labelFinalidadeUso: Record<CpoFinalidadeUso, string> = {
+export const labelFinalidadeUso: Record<CarregadoresFinalidadeUso, string> = {
   uso_consumo: "Uso e consumo",
   revenda: "Revenda",
   industrializacao: "Industrialização",
@@ -444,13 +444,13 @@ export function calcularDifal(vendaComIpi: number, aliqInterna: number, fcp: num
   return { base, valor, pct: valor / vendaComIpi };
 }
 
-export function calcularCpo(
-  state: CpoState,
-  produtos: CpoProduct[],
-  ufs: CpoUf[],
-  config: CpoConfig,
-  ncms: CpoNcm[] = [],
-): CpoResult {
+export function calcularCarregadores(
+  state: CarregadoresState,
+  produtos: CarregadoresProduct[],
+  ufs: CarregadoresUf[],
+  config: CarregadoresConfig,
+  ncms: CarregadoresNcm[] = [],
+): CarregadoresResult {
   const destino = destinoFiscal(state);
   const uf = ufs.find((u) => u.uf === destino.uf);
   const interna = uf?.aliq_interna ?? 0.18;
@@ -604,7 +604,7 @@ export function textoDifalContribuinte(opts: {
 
 export type MbStatus = { level: "bad" | "warn" | "good"; msg: string };
 
-export function statusMB(mbPct: number, config: CpoConfig): MbStatus {
+export function statusMB(mbPct: number, config: CarregadoresConfig): MbStatus {
   if (mbPct < config.politica_mb_min)
     return {
       level: "bad",
@@ -639,16 +639,16 @@ export function precoSugeridoPadrao(custo: number) {
  * para bem abaixo da política de 33%.
  */
 export function precoParaMargem(
-  produto: CpoProduct | undefined,
-  state: Pick<CpoState, "uf" | "contribuinte" | "finalidadeUso"> & {
+  produto: CarregadoresProduct | undefined,
+  state: Pick<CarregadoresState, "uf" | "contribuinte" | "finalidadeUso"> & {
     ie?: string;
     regimeTributario?: string | null;
     faturarClienteFinal?: boolean;
-    faturamento?: CpoFaturamento;
+    faturamento?: CarregadoresFaturamento;
   },
-  ufs: CpoUf[],
-  config: CpoConfig,
-  ncms: CpoNcm[] = [],
+  ufs: CarregadoresUf[],
+  config: CarregadoresConfig,
+  ncms: CarregadoresNcm[] = [],
   margem: number = MARGEM_PRECO_SUGERIDO,
 ) {
   const custo = Number(produto?.custo) || 0;
@@ -664,7 +664,7 @@ export function precoParaMargem(
     contribuinte: state.contribuinte,
     ie: state.ie ?? "",
     faturarClienteFinal: state.faturarClienteFinal === true,
-    faturamento: state.faturamento as CpoFaturamento,
+    faturamento: state.faturamento as CarregadoresFaturamento,
   });
 
   const inter = aliqInterOperacao({

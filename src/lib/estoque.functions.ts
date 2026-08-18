@@ -54,7 +54,7 @@ export type ProdutoConsolidado = {
 const FEATURES_ESTOQUE = [
   { instance: "solar" as const, feature: "admin.objetos.produtos" as const, action: "moderar" as const },
   { instance: "carregadores" as const, feature: "admin.objetos.produtos" as const, action: "moderar" as const },
-  { instance: "carregadores" as const, feature: "cpo.produtos" as const, action: "moderar" as const },
+  { instance: "carregadores" as const, feature: "carregadores.produtos" as const, action: "moderar" as const },
 ];
 
 export const listEstoque = createServerFn({ method: "GET" })

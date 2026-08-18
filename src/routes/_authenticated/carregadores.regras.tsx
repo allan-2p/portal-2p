@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { useCpoConfig } from "@/hooks/use-cpo";
-import { CPO_CONFIG_FALLBACK, fmtPct } from "@/lib/cpo";
+import { useCarregadoresConfig } from "@/hooks/use-carregadores";
+import { CARREGADORES_CONFIG_FALLBACK, fmtPct } from "@/lib/carregadores";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/regras")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="cpo.regras" area="moderacao">
+    <AdminRouteGuard feature="carregadores.regras" area="moderacao">
       <RegrasPage />
     </AdminRouteGuard>
   ),
@@ -53,8 +53,8 @@ function Campo({ nome, origem }: { nome: string; origem: string }) {
 }
 
 function RegrasPage() {
-  const { data: cfgData } = useCpoConfig();
-  const cfg = cfgData ?? CPO_CONFIG_FALLBACK;
+  const { data: cfgData } = useCarregadoresConfig();
+  const cfg = cfgData ?? CARREGADORES_CONFIG_FALLBACK;
 
   return (
     <AppLayout>

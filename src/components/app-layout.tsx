@@ -181,7 +181,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // Filtragem de itens por feature — cada bloco só aparece na sua própria
   // instância (nada de item Solar sob o título Carregadores, e vice-versa).
   const instanceOf = (k: FeatureKey): "solar" | "carregadores" | "marketing" | "any" =>
-    k.startsWith("cpo.") ? "carregadores" : k.startsWith("marketing.") ? "marketing" : k.startsWith("admin.") ? "any" : "solar";
+    k.startsWith("carregadores.") ? "carregadores" : k.startsWith("marketing.") ? "marketing" : k.startsWith("admin.") ? "any" : "solar";
   const show = (k: FeatureKey) => {
     const owner = instanceOf(k);
     if (owner !== "any" && owner !== instance) return false;
@@ -252,28 +252,28 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )}
   
             {/* Módulo Carregadores — navegação exclusiva da instância */}
-            {(show("cpo.home") || show("cpo.tarefas") || show("cpo.clientes") || show("cpo.propostas") || show("cpo.pedidos") || show("cpo.produtos") || show("cpo.comissoes") || show("cpo.regras")) && (
+            {(show("carregadores.home") || show("carregadores.tarefas") || show("carregadores.clientes") || show("carregadores.propostas") || show("carregadores.pedidos") || show("carregadores.produtos") || show("carregadores.comissoes") || show("carregadores.regras")) && (
               <>
                 {!collapsed && (
                   <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     Carregadores
                   </div>
                 )}
-                {show("cpo.home") && (
+                {show("carregadores.home") && (
                   <NavLink item={{ to: "/carregadores", label: "Home", icon: Home }} active={pathname === "/carregadores"} collapsed={collapsed} />
                 )}
-                {show("cpo.tarefas") && (
+                {show("carregadores.tarefas") && (
                   <NavLink item={{ to: "/carregadores/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/carregadores/tarefas")} collapsed={collapsed} />
                 )}
-                {show("cpo.clientes") && (
+                {show("carregadores.clientes") && (
                   <NavLink item={{ to: "/carregadores/clientes/cadastros", label: "Clientes", icon: Users }} active={pathname.startsWith("/carregadores/clientes")} collapsed={collapsed} />
                 )}
   
   
-                {show("cpo.propostas") && (
+                {show("carregadores.propostas") && (
                   <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
                 )}
-                {show("cpo.pedidos") && (
+                {show("carregadores.pedidos") && (
                   <NavLink item={{ to: "/carregadores/pedidos", label: "Pedidos", icon: ShoppingCart }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
                 )}
                 {/* Moderação foi movida para o ambiente de Administração (engrenagem no topo). */}

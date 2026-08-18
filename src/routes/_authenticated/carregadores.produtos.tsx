@@ -18,9 +18,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { validateAtivacaoCarregadores } from "@/lib/product-visibility";
 import { useServerFn } from "@tanstack/react-start";
-import { useCpoInvalidate, useCpoProductsAdmin, useCpoUfs } from "@/hooks/use-cpo";
-import { setCpoProductAtivo, updateCpoProduct } from "@/lib/cpo-products.functions";
-import { fmtBRL, precoSugeridoPadrao, MARGEM_PRECO_SUGERIDO, type CpoProduct } from "@/lib/cpo";
+import { useCarregadoresInvalidate, useCarregadoresProductsAdmin, useCarregadoresUfs } from "@/hooks/use-carregadores";
+import { setCarregadoresProductAtivo, updateCarregadoresProduct } from "@/lib/carregadores-produtos.functions";
+import { fmtBRL, precoSugeridoPadrao, MARGEM_PRECO_SUGERIDO, type CarregadoresProduct } from "@/lib/carregadores";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorPath, BUCKET_PRODUTOS } from "@/lib/produto-imagens";
@@ -38,13 +38,13 @@ export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="cpo.produtos" area="moderacao">
-      <ProdutosCpoPage />
+    <AdminRouteGuard feature="carregadores.produtos" area="moderacao">
+      <ProdutosCarregadoresPage />
     </AdminRouteGuard>
   ),
 });
 
-function ProdutosCpoPage() {
+function ProdutosCarregadoresPage() {
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
@@ -87,8 +87,8 @@ type Draft = {
 
 
 function ProdutosTab() {
-  const { data: produtos = [], isLoading, error, refetch, isFetching } = useCpoProductsAdmin();
-  const invalidate = useCpoInvalidate();
+  const { data: produtos = [], isLoading, error, refetch, isFetching } = useCarregadoresProductsAdmin();
+  const invalidate = useCarregadoresInvalidate();
   const [busca, setBusca] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
@@ -112,7 +112,7 @@ function ProdutosTab() {
   const fotosQ = useImagensPorPath(produtos.map((p) => p.imagem_path));
   const fotos = fotosQ.data ?? {};
 
-  async function enviarFoto(p: CpoProduct, file: File) {
+  async function enviarFoto(p: CarregadoresProduct, file: File) {
     const ext = (file.name.split(".").pop() ?? "png").toLowerCase();
     const path = `skus/${p.codigo || p.id}.${ext}`;
     const up = await supabase.storage.from(BUCKET_PRODUTOS).upload(path, file, {
@@ -127,8 +127,8 @@ function ProdutosTab() {
     fotosQ.refetch();
   }
 
-  const saveProduct = useServerFn(updateCpoProduct);
-  const toggleProduct = useServerFn(setCpoProductAtivo);
+  const saveProduct = useServerFn(updateCarregadoresProduct);
+  const toggleProduct = useServerFn(setCarregadoresProductAtivo);
 
   async function salvar() {
     if (!draft) return;
@@ -165,7 +165,7 @@ function ProdutosTab() {
     }
   }
 
-  async function toggleAtivo(p: CpoProduct) {
+  async function toggleAtivo(p: CarregadoresProduct) {
     if (!p.ativo) {
       const impedimento = validateAtivacaoCarregadores({ custo: Number(p.custo) || 0, ncm_id: p.ncm_id ?? null, ncm_codigo: (p as any).ncm_codigo ?? null });
       if (impedimento) return toast.error(impedimento);
@@ -419,8 +419,8 @@ function ProdutosTab() {
 /* ------------------------------ UFs ------------------------------- */
 
 function UfsTab() {
-  const { data: ufs = [], isLoading } = useCpoUfs();
-  const invalidate = useCpoInvalidate();
+  const { data: ufs = [], isLoading } = useCarregadoresUfs();
+  const invalidate = useCarregadoresInvalidate();
   const [edits, setEdits] = useState<Record<string, { aliq: string; fcp: string }>>({});
   const [saving, setSaving] = useState(false);
 
@@ -430,7 +430,7 @@ function UfsTab() {
     setSaving(true);
     for (const [uf, v] of Object.entries(edits)) {
       const { error } = await supabase
-        .from("cpo_uf_rates")
+        .from("carregadores_uf_rates")
         .update({ aliq_interna: Number(v.aliq) / 100, fcp: Number(v.fcp) / 100 })
         .eq("uf", uf);
       if (error) {

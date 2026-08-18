@@ -344,7 +344,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "cpo_products_ncm_id_fkey"
+            foreignKeyName: "carregadores_produtos_ncm_id_fkey"
             columns: ["ncm_id"]
             isOneToOne: false
             referencedRelation: "carregadores_ncm"
@@ -1587,7 +1587,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "cpo_proposals_padrinho_id_fkey"
+            foreignKeyName: "propostas_padrinho_id_fkey"
             columns: ["padrinho_id"]
             isOneToOne: false
             referencedRelation: "carregadores_padrinhos"

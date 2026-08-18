@@ -12,11 +12,11 @@ export type Padrinho = {
 /** Padrinhos (indicação) cadastrados — usados nas propostas de Carregadores. */
 export function usePadrinhos() {
   return useQuery({
-    queryKey: ["cpo-padrinhos"],
+    queryKey: ["carregadores-padrinhos"],
     staleTime: 60_000,
     queryFn: async (): Promise<Padrinho[]> => {
       const { data, error } = await supabase
-        .from("cpo_padrinhos")
+        .from("carregadores_padrinhos")
         .select("id,nome,doc,telefone,email")
         .eq("ativo", true)
         .order("nome");
@@ -41,7 +41,7 @@ export function useCriarPadrinho() {
       const uid = auth.user?.id;
       if (!uid) throw new Error("Sessão expirada. Entre novamente.");
       const { data, error } = await supabase
-        .from("cpo_padrinhos")
+        .from("carregadores_padrinhos")
         .insert({
           nome: nome.slice(0, 160),
           doc: input.doc?.replace(/\D/g, "").slice(0, 14) || null,
@@ -54,6 +54,6 @@ export function useCriarPadrinho() {
       if (error) throw new Error(error.message);
       return data as Padrinho;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["cpo-padrinhos"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["carregadores-padrinhos"] }),
   });
 }

@@ -23,15 +23,15 @@ export type FeatureKey =
   | "clientes.sugestoes"
   | "clientes.ranking"
   | "atlas"
-  | "cpo.home"
-  | "cpo.tarefas"
-  | "cpo.clientes"
-  | "cpo.propostas"
-  | "cpo.pedidos"
-  | "cpo.produtos"
-  | "cpo.comissoes"
-  | "cpo.regras"
-  | "cpo.metas"
+  | "carregadores.home"
+  | "carregadores.tarefas"
+  | "carregadores.clientes"
+  | "carregadores.propostas"
+  | "carregadores.pedidos"
+  | "carregadores.produtos"
+  | "carregadores.comissoes"
+  | "carregadores.regras"
+  | "carregadores.metas"
   | "admin.usuarios"
   | "admin.metas"
   | "admin.regras"
@@ -115,15 +115,15 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
     logo: carregadoresAsset.url,
     swatch: "oklch(0.5 0.19 265)",
     routes: [
-      "cpo.home",
-      "cpo.tarefas",
-      "cpo.clientes",
-      "cpo.propostas",
-      "cpo.pedidos",
-      "cpo.produtos",
-      "cpo.comissoes",
-      "cpo.regras",
-      "cpo.metas",
+      "carregadores.home",
+      "carregadores.tarefas",
+      "carregadores.clientes",
+      "carregadores.propostas",
+      "carregadores.pedidos",
+      "carregadores.produtos",
+      "carregadores.comissoes",
+      "carregadores.regras",
+      "carregadores.metas",
       "admin.usuarios",
       "admin.perfis",
       "admin.integracoes",
@@ -174,16 +174,16 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/solar/clientes/sugestoes": "clientes.sugestoes",
   "/solar/clientes/ranking": "clientes.ranking",
   "/solar/atlas": "atlas",
-  "/carregadores": "cpo.home",
-  "/carregadores/tarefas": "cpo.tarefas",
-  "/carregadores/clientes": "cpo.clientes",
-  "/carregadores/clientes/cadastros": "cpo.clientes",
-  "/carregadores/propostas": "cpo.propostas",
-  "/carregadores/produtos": "cpo.produtos",
-  "/carregadores/pedidos": "cpo.pedidos",
-  "/carregadores/comissoes": "cpo.comissoes",
-  "/carregadores/regras": "cpo.regras",
-  "/carregadores/metas": "cpo.metas",
+  "/carregadores": "carregadores.home",
+  "/carregadores/tarefas": "carregadores.tarefas",
+  "/carregadores/clientes": "carregadores.clientes",
+  "/carregadores/clientes/cadastros": "carregadores.clientes",
+  "/carregadores/propostas": "carregadores.propostas",
+  "/carregadores/produtos": "carregadores.produtos",
+  "/carregadores/pedidos": "carregadores.pedidos",
+  "/carregadores/comissoes": "carregadores.comissoes",
+  "/carregadores/regras": "carregadores.regras",
+  "/carregadores/metas": "carregadores.metas",
 
   "/admin/usuarios": "admin.usuarios",
   "/admin/configuracoes": "admin.area.configuracoes",
@@ -229,15 +229,15 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "clientes.sugestoes": "Clientes • Sugestões do Atlas",
   "clientes.ranking": "Clientes • Ranking",
   atlas: "Atlas (AI)",
-  "cpo.home": "Carregadores • Home",
-  "cpo.tarefas": "Carregadores • Tarefas",
-  "cpo.clientes": "Carregadores • Clientes",
-  "cpo.propostas": "Carregadores • Propostas",
-  "cpo.pedidos": "Carregadores • Pedidos",
-  "cpo.produtos": "Moderação • Carregadores • Gestão de Produtos",
-  "cpo.comissoes": "Moderação • Carregadores • Regras de Comissões",
-  "cpo.regras": "Moderação • Carregadores • Regras de Propostas",
-  "cpo.metas": "Moderação • Carregadores • Regras de Metas",
+  "carregadores.home": "Carregadores • Home",
+  "carregadores.tarefas": "Carregadores • Tarefas",
+  "carregadores.clientes": "Carregadores • Clientes",
+  "carregadores.propostas": "Carregadores • Propostas",
+  "carregadores.pedidos": "Carregadores • Pedidos",
+  "carregadores.produtos": "Moderação • Carregadores • Gestão de Produtos",
+  "carregadores.comissoes": "Moderação • Carregadores • Regras de Comissões",
+  "carregadores.regras": "Moderação • Carregadores • Regras de Propostas",
+  "carregadores.metas": "Moderação • Carregadores • Regras de Metas",
   "admin.usuarios": "Admin • Usuários",
   "admin.metas": "Moderação • Solar • Regras de Metas",
   "admin.regras": "Moderação • Solar • Regras de Propostas",
@@ -280,10 +280,10 @@ export const GROUP_FEATURE_KEYS: FeatureKey[] = [
   ...ALL_FEATURES.filter((k) => k.startsWith("admin.")),
   // Itens de Moderação da unidade Carregadores também devem ser visíveis
   // para administradores em qualquer instância.
-  "cpo.produtos",
-  "cpo.comissoes",
-  "cpo.regras",
-  "cpo.metas",
+  "carregadores.produtos",
+  "carregadores.comissoes",
+  "carregadores.regras",
+  "carregadores.metas",
 ];
 for (const id of INSTANCE_IDS) {
   for (const key of GROUP_FEATURE_KEYS) {

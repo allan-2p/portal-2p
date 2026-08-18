@@ -5,8 +5,8 @@
 // cliente seja contribuinte ou não contribuinte. Serve para anexar ao processo.
 // ============================================================================
 
-import { fmtBRL, fmtPct, textoDifalContribuinte } from "./cpo";
-import type { AuditoriaProposta } from "./cpo-auditoria";
+import { fmtBRL, fmtPct, textoDifalContribuinte } from "./carregadores";
+import type { AuditoriaProposta } from "./carregadores-auditoria";
 
 export type ResumoFiscalMeta = {
   numero?: string | null;

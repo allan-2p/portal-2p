@@ -432,15 +432,15 @@ export const excluirClienteFn = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Migração única dos cadastros antigos (cpo_clientes) para a nova tabela. */
-export const migrarCpoClientesFn = createServerFn({ method: "POST" })
+/** Migração única dos cadastros antigos (carregadores_clientes) para a nova tabela. */
+export const migrarCarregadoresClientesFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data: isAdmin } = await context.supabase.rpc("is_admin");
     if (!isAdmin) throw new Error("Apenas administradores podem migrar cadastros.");
 
     const db = await import("./clientes-db.server");
-    const { data: antigos, error } = await context.supabase.from("cpo_clientes").select("*");
+    const { data: antigos, error } = await context.supabase.from("carregadores_clientes").select("*");
     if (error) throw error;
 
     const existentes = new Set(
