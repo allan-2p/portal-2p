@@ -180,7 +180,10 @@ export async function sincronizarCliente(
     contato_cargo: cliente["contato_cargo"] ?? principal?.cargo ?? null,
     owner_sf_id: extras.ownerSfId ?? null,
     organizacao: cliente["organizacao"],
+    sf_account_id: sfAccountAtual,
+    sf_contact_id: sfContactAtual,
   });
+
 
   await logIntegrationEvent({
     slug: "salesforce-clientes",
