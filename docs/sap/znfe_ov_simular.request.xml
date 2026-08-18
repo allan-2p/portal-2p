@@ -1,0 +1,42 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <urn:ZNFE_OV_SIMULAR>
+            <I_S_OV>
+                <EMPRESA>9800</EMPRESA>
+                <FILIAL>9802</FILIAL>
+                <TP_OV>ZC2P</TP_OV>
+                <VALOR_DESC></VALOR_DESC>
+                <PERC_DESC></PERC_DESC>
+                <VLR_FRETE>0</VLR_FRETE>
+                <ZTERM>B000</ZTERM>
+                <VKORG>9800</VKORG>
+                <VTWEG>10</VTWEG>
+                <SPART>10</SPART>
+                <PURCH_DATE>2024-12-06</PURCH_DATE>
+                <DATA_REMESSA>2024-12-06</DATA_REMESSA>
+            </I_S_OV>
+            <I_S_PARCEIRO>
+                <!-- <CNPJ>26234275000183</CNPJ> -->
+                <CNPJ>00000000000000</CNPJ>
+                <CPF>99833862080</CPF>
+                <CNPJ_CI></CNPJ_CI>
+            </I_S_PARCEIRO>
+            <I_T_ITENS>
+                <!--Zero or more repetitions:-->
+                <item>
+                    <ITM_NUMBER>1</ITM_NUMBER>
+                    <MATERIAL>200000017</MATERIAL>
+                    <UM>UN</UM>
+                    <QTDE>200</QTDE>
+                </item>
+                <item>
+                    <ITM_NUMBER>1</ITM_NUMBER>
+                    <MATERIAL>200000159</MATERIAL>
+                    <UM>UN</UM>
+                    <QTDE>200</QTDE>
+                </item>
+            </I_T_ITENS>
+        </urn:ZNFE_OV_SIMULAR>
+    </soapenv:Body>
+</soapenv:Envelope>
