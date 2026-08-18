@@ -78,18 +78,40 @@ export function ClienteIntegracoesDialog({
   });
 
   const reenviar = useMutation({
-    mutationFn: ({ id, alvos }: { id: string; alvos?: ("sap" | "salesforce" | "contatos")[] }) => {
+    mutationFn: async ({ id, alvos }: { id: string; alvos?: ("sap" | "salesforce" | "contatos")[] }) => {
       setAlvoAtivo(`reenvio:${alvos?.join(",") ?? "tudo"}`);
-      return reenviarFn({ data: { instancia, id, ...(alvos ? { alvos } : {}) } });
+      const r = await reenviarFn({ data: { instancia, id, ...(alvos ? { alvos } : {}) } });
+      return { alvos, resultado: r as any };
     },
-    onSuccess: () => {
-      toast.success("Reenvio solicitado.");
+    onSuccess: ({ alvos, resultado }) => {
+      const pedidos = alvos ?? ["sap", "salesforce", "contatos"];
+      const next: Record<string, { ok: boolean; mensagem: string; detalhe?: string | null }> = {};
+      if (pedidos.includes("sap") && resultado?.sap) {
+        next["sap"] = resultado.sap.ok
+          ? { ok: true, mensagem: `SAP OK${resultado.sap.numero_sap ? ` · código ${resultado.sap.numero_sap}` : ""}.` }
+          : { ok: false, mensagem: resultado.sap.erro ?? "Falha no envio ao SAP." };
+      }
+      if ((pedidos.includes("salesforce") || pedidos.includes("contatos")) && resultado?.salesforce) {
+        const item = resultado.salesforce.ok
+          ? {
+              ok: true,
+              mensagem: `Salesforce OK${resultado.salesforce.accountId ? ` · conta ${resultado.salesforce.accountId}` : ""}.`,
+            }
+          : { ok: false, mensagem: resultado.salesforce.erro ?? "Falha no envio ao Salesforce." };
+        if (pedidos.includes("salesforce")) next["salesforce"] = item;
+        if (pedidos.includes("contatos")) next["contatos"] = item;
+      }
+      setTestes((prev) => ({ ...prev, ...next }));
+      const falhou = Object.values(next).find((r) => !r.ok);
+      if (falhou) toast.error(falhou.mensagem);
+      else toast.success("Reenvio concluído.");
       qc.invalidateQueries({ queryKey: ["clientes"] });
       qc.invalidateQueries({ queryKey: ["cliente-integracao-historico"] });
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao reenviar."),
     onSettled: () => setAlvoAtivo(null),
   });
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
