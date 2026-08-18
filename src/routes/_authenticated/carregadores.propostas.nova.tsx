@@ -1101,10 +1101,11 @@ function PropostaCarregadoresPage() {
 
       if (propostaId) {
         const concluindo = status !== "Salvo";
+        let cobrancaAviso: Parameters<typeof avisarCobranca>[0] = null;
         if (concluindo) {
           // Lock idempotente no banco: só conclui se ainda estiver "Salvo"
           // O servidor valida a etapa de finalização como 4 (última etapa do fluxo).
-          const linhaConclusaoRef = await concluirPropostaFn({
+          const linha = await concluirPropostaFn({
             data: { id: propostaId, status, origem: "portal", etapa: etapa === 5 ? 4 : etapa },
           });
           if (linha?.already_concluded) {
@@ -1112,6 +1113,7 @@ function PropostaCarregadoresPage() {
             invalidate();
             return;
           }
+          cobrancaAviso = (linha as { cobranca?: Parameters<typeof avisarCobranca>[0] }).cobranca ?? null;
           // Nº SAP só existe após a conclusão.
           try {
             const { numeroSap } = await atribuirNumeroSap({ data: { propostaId } });
@@ -1123,7 +1125,7 @@ function PropostaCarregadoresPage() {
 
 
         toast.success(concluindo ? `Pedido ${numero} concluído.` : `Proposta ${numero} atualizada.`);
-        if (concluindo) avisarCobranca((linhaConclusao as any)?.cobranca);
+        if (concluindo) avisarCobranca(cobrancaAviso);
         setNumeroAtual(numero);
         invalidate();
         limparRascunho();
@@ -1160,6 +1162,7 @@ function PropostaCarregadoresPage() {
           invalidate();
           return;
         }
+        avisarCobranca(linha?.cobranca);
         try {
           const { numeroSap } = await atribuirNumeroSap({ data: { propostaId: inserida.id } });
           if (numeroSap) setState((s) => ({ ...s, numeroSap }));
