@@ -75,12 +75,13 @@ export const cotarFrete = createServerFn({ method: "POST" })
         slug: "fretefy",
         level: "info",
         event: "cotacao",
-        message: `Cotação concluída: ${r.opcoes.length} opção(ões) para ${data.destino.cidade}/${data.destino.uf}.`,
+        message: `Cotação concluída: ${r.opcoes.length} opção(ões) para ${data.destino.cidade}/${data.destino.uf}. Peso ${r.peso} kg (origem: ${origemPeso === "sap" ? "simulação SAP" : "catálogo de produtos"}).`,
         durationMs: Date.now() - started,
         actorId: context.userId,
         actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
       });
-      return r;
+      return { ...r, origemPeso };
+
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro ao cotar o frete.";
       await logIntegrationEvent({
