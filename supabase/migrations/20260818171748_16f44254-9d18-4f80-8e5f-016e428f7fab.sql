@@ -1,0 +1,1 @@
+ALTER TABLE public.sap_produtos DROP COLUMN IF EXISTS peso_bruto_kg, DROP COLUMN IF EXISTS cubagem_m3;

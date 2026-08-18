@@ -15,33 +15,23 @@ export const cotarFrete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: CotarFreteData) => input)
   .handler(async ({ data, context }) => {
-    const { cotarFreteFretefy, pesosPorCodigo } = await import("./frete.server");
+    const { cotarFreteFretefy } = await import("./frete.server");
     const { simularPrecosSap } = await import("./sap-precos.server");
     const { logIntegrationEvent } = await import("./integration-logs.server");
     const started = Date.now();
 
-    const codigos = data.itens.map((i) => String(i.codigo));
     const chave = (c: string) => String(c).replace(/^0+/, "");
 
-    // Fonte oficial do peso: PESO_LIQUIDO devolvido pela simulação de preço do
-    // SAP (peso da linha). Fallback: peso unitário do catálogo de produtos.
-    const [sim, pesos] = await Promise.all([
-      simularPrecosSap(
-        data.itens.map((i) => ({ codigo: String(i.codigo), quantidade: Number(i.quantidade || 0) })),
-      ).catch(() => new Map()),
-      pesosPorCodigo(codigos),
-    ]);
+    // Fonte única do peso: PESO_LIQUIDO devolvido pela simulação de preço do SAP.
+    const sim = await simularPrecosSap(
+      data.itens.map((i) => ({ codigo: String(i.codigo), quantidade: Number(i.quantidade || 0) })),
+    ).catch(() => new Map());
 
-    const origem = { peso: "catalogo" as "sap" | "catalogo" };
+    const origem = { peso: "sap" as const };
     const itens = data.itens.map((i) => {
       const qtd = Number(i.quantidade || 0);
       const linhaSap = Number(sim.get(chave(i.codigo))?.pesoLiquido ?? 0);
-      const unitSap = linhaSap > 0 && qtd > 0 ? linhaSap / qtd : 0;
-      if (unitSap > 0) origem.peso = "sap";
-      const unit =
-        unitSap > 0
-          ? unitSap
-          : Number(pesos.get(chave(i.codigo))?.peso ?? i.pesoLiquido ?? 0);
+      const unit = linhaSap > 0 && qtd > 0 ? linhaSap / qtd : 0;
       return {
         codigo: String(i.codigo),
         nome: String(i.nome ?? ""),
@@ -49,17 +39,15 @@ export const cotarFrete = createServerFn({ method: "POST" })
         pesoLiquido: unit,
       };
     });
-    const cubagem = data.itens.reduce(
-      (s, i) => s + Number(i.quantidade || 0) * Number(pesos.get(chave(i.codigo))?.cubagem ?? 0),
-      0,
-    );
+    const cubagem = 0;
     const semPeso = itens.filter((i) => !(i.pesoLiquido > 0)).map((i) => i.nome || i.codigo);
 
     try {
       if (semPeso.length)
         throw new Error(
-          `Produtos sem peso bruto cadastrado: ${semPeso.join(", ")}. Cadastre o peso (kg) em Gestão de Produtos para cotar o frete corretamente.`,
+          `A simulação de preço do SAP não retornou peso para: ${semPeso.join(", ")}. Tente novamente ou verifique o cadastro do material no SAP.`,
         );
+
 
       const r = await cotarFreteFretefy({
         itens,
