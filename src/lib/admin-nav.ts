@@ -132,7 +132,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       {
         label: "Dados e Arquivos",
         items: [
-          { to: "/admin/integracoes/base-contas-carregadores", label: "Base de Contas — Carregadores", icon: Plug, feature: "admin.integracoes" },
+          { to: "/admin/integracoes/base-contas-carregadores", label: "Base do Grupo 2P", icon: Plug, feature: "admin.integracoes" },
           { to: "/admin/integracoes/top20", label: "Top 20", icon: Plug, feature: "admin.integracoes" },
           { to: "/admin/integracoes/storage", label: "Storage — Top 20 / Logos", icon: Plug, feature: "admin.integracoes" },
         ],
