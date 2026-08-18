@@ -278,7 +278,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
           <div class="f"><label>Inscrição estadual</label><div>${esc(p.cliente.ie) || "—"}</div></div>
           <div class="f"><label>E-mail</label><div>${esc(p.cliente.email) || "—"}</div></div>
           <div class="f"><label>Telefone</label><div>${esc(p.cliente.telefone) || "—"}</div></div>
-          <div class="f"><label>Finalidade da mercadoria</label><div>${esc(p.finalidadeUso) || "—"}</div></div>
+          <div class="f"><label>Finalidade de uso</label><div>${esc(p.finalidadeUso) || "—"}</div></div>
         </div>
       </div>
     </div>

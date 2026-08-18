@@ -121,7 +121,7 @@ const ROTULOS: Record<string, string> = {
   razao_social: "Razão social", doc: "CNPJ", uf: "UF de destino",
   ie: "Inscrição Estadual", cep: "CEP", logradouro: "Logradouro",
   numero: "Número", cidade: "Cidade",
-  finalidade: "Finalidade da mercadoria", tabela_preco: "Tabela de preço",
+  finalidade: "Finalidade de uso", tabela_preco: "Tabela de preço",
 };
 const rotuloCampo = (chave: string, contatos: Contato[]) =>
   ROTULOS[chave] ?? rotuloErroContato(chave, contatos) ?? chave;
@@ -137,7 +137,7 @@ function validarCampos(f: Form): Erros {
   if (!f.logradouro?.trim()) e.logradouro = "Informe o logradouro.";
   if (!f.numero?.trim()) e.numero = "Informe o número do endereço.";
   if (!f.cidade?.trim()) e.cidade = "Informe a cidade.";
-  if (!f.finalidade?.trim()) e.finalidade = "Selecione a finalidade da mercadoria (exigida pelo SAP).";
+  if (!f.finalidade?.trim()) e.finalidade = "Selecione a finalidade de uso (exigida pelo SAP).";
   // Tabela de preço tem padrão automático (2P-0001) — não bloqueia o cadastro.
 
   return e;
@@ -740,7 +740,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <Input value={consultorNomeAtual} disabled />
                   )}
                 </F>
-                <F label="Finalidade da mercadoria *" id="campo-finalidade" error={erros.finalidade}>
+                <F label="Finalidade de uso *" id="campo-finalidade" error={erros.finalidade}>
                   <Select value={form.finalidade ?? ""} onValueChange={(v) => set("finalidade", v)}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                     <SelectContent>
@@ -1000,7 +1000,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
                 <Bloco titulo="Comercial">
                   <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
-                  <Linha rot="Finalidade" val={detalhe.finalidade} />
+                  <Linha rot="Finalidade de uso" val={detalhe.finalidade} />
                   <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
                   <Linha rot="Consultor" val={detalhe.created_by_nome} />
                   <Linha rot="Observações" val={detalhe.observacoes} />

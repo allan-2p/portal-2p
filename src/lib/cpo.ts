@@ -415,6 +415,24 @@ export function novoEstado(): CpoState {
   };
 }
 
+/**
+ * Converte a "Finalidade de uso" do cadastro do cliente ("Revenda",
+ * "Industrialização", "Uso e Consumo") na finalidade usada nos cálculos da
+ * proposta. A proposta nunca define isso manualmente: sempre herda do cadastro.
+ */
+export function finalidadeUsoDoCadastro(
+  valor?: string | null,
+): CpoFinalidadeUso {
+  const v = (valor ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+  if (v.startsWith("revenda")) return "revenda";
+  if (v.startsWith("industrializ")) return "industrializacao";
+  return "uso_consumo";
+}
+
 export const labelFinalidadeUso: Record<CpoFinalidadeUso, string> = {
   uso_consumo: "Uso e consumo",
   revenda: "Revenda",
