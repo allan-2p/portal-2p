@@ -190,6 +190,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/admin/moderacao": "admin.area.moderacao",
   "/admin/logs": "admin.area.logs",
   "/admin/produtos-solar": "admin.produtos",
+  "/admin/modulos-solar": "admin.produtos",
   "/admin/metas": "admin.metas",
 
   "/admin/regras": "admin.regras",
