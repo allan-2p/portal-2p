@@ -308,6 +308,77 @@ export type Database = {
         }
         Relationships: []
       }
+      contatos: {
+        Row: {
+          ativo: boolean
+          cargo: string | null
+          cliente_doc: string
+          cliente_id: string
+          created_at: string
+          emails: Json
+          id: string
+          instancia: string
+          nome: string
+          numero_sap: string | null
+          organizacao: string
+          sf_account_id: string | null
+          sf_contact_id: string | null
+          sf_erro: string | null
+          sf_status: string | null
+          telefones: Json
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cargo?: string | null
+          cliente_doc?: string
+          cliente_id: string
+          created_at?: string
+          emails?: Json
+          id?: string
+          instancia: string
+          nome?: string
+          numero_sap?: string | null
+          organizacao?: string
+          sf_account_id?: string | null
+          sf_contact_id?: string | null
+          sf_erro?: string | null
+          sf_status?: string | null
+          telefones?: Json
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cargo?: string | null
+          cliente_doc?: string
+          cliente_id?: string
+          created_at?: string
+          emails?: Json
+          id?: string
+          instancia?: string
+          nome?: string
+          numero_sap?: string | null
+          organizacao?: string
+          sf_account_id?: string | null
+          sf_contact_id?: string | null
+          sf_erro?: string | null
+          sf_status?: string | null
+          telefones?: Json
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contatos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cpo_clientes: {
         Row: {
           ativo: boolean
