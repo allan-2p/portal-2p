@@ -936,6 +936,17 @@ function PropostaCarregadoresPage() {
           contribuinte: state.contribuinte,
         },
         finalidadeUso: finalidadeUsoPdf,
+        enderecoFaturamento: {
+          nome: faturamentoEfetivo.nome || state.nome,
+          doc: faturamentoEfetivo.doc || state.doc,
+          ie: faturamentoEfetivo.ie || state.ie,
+          linhas: linhasEndereco(faturamentoEfetivo),
+        },
+        enderecoEntrega: {
+          contato: entregaEfetiva.contato || null,
+          telefone: entregaEfetiva.telefone || null,
+          linhas: linhasEndereco(entregaEfetiva),
+        },
 
         itens: state.itens
           .filter((i) => i.produtoId)
@@ -2086,16 +2097,19 @@ function PropostaCarregadoresPage() {
                     v={`${labelTipoNf[state.tipoNf]} · ${labelFinalidadeUso[state.finalidadeUso]} · ${state.uf || "—"}`}
                   />
                   <ResumoLinha
-                    k="Entrega"
+                    k="Endereço de faturamento"
                     v={
                       [
-                        [entregaEfetiva.logradouro, entregaEfetiva.numero].filter(Boolean).join(", "),
-                        [entregaEfetiva.cidade, entregaEfetiva.uf || state.uf].filter(Boolean).join(" / "),
-                        entregaEfetiva.cep,
+                        faturamentoEfetivo.nome && state.faturarClienteFinal ? faturamentoEfetivo.nome : "",
+                        ...linhasEndereco(faturamentoEfetivo),
                       ]
                         .filter(Boolean)
                         .join(" · ") || "—"
                     }
+                  />
+                  <ResumoLinha
+                    k="Endereço de entrega"
+                    v={linhasEndereco(entregaEfetiva).join(" · ") || "—"}
                   />
                   <ResumoLinha
                     k="Frete"
