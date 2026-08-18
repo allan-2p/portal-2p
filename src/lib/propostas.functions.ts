@@ -515,6 +515,19 @@ export const listarPropostasFn = createServerFn({ method: "POST" })
     return await db.listarPropostas(data);
   });
 
+/** Resumo de pagamento (Pix/boleto) dos pedidos de uma organização. */
+export const listarPagamentosFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const org = (input as { organizacao?: unknown })?.organizacao;
+    return { organizacao: typeof org === "string" ? org : undefined };
+  })
+  .handler(async ({ data }) => {
+    const db = await repo();
+    return await db.listarPagamentos(data.organizacao);
+  });
+
+
 /** Carrega uma proposta pelo id. */
 export const obterPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
