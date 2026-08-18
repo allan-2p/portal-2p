@@ -165,6 +165,25 @@ export async function sincronizarCliente(
     organizacao: cliente["organizacao"],
   });
 
+  await logIntegrationEvent({
+    slug: "salesforce-clientes",
+    level: salesforce.ok ? "info" : "error",
+    event: salesforce.ok ? "cliente.envio.sucesso" : "cliente.envio.erro",
+    message: salesforce.ok
+      ? `Salesforce retornou a conta ${salesforce.accountId ?? "(sem id)"} para ${base.razao_social}`
+      : `Falha no envio ao Salesforce: ${salesforce.erro ?? "erro desconhecido"}`,
+    durationMs: Date.now() - sfIniciadoEm,
+    detail: {
+      ...base,
+      payload: sfPayload,
+      resposta: salesforce.ok
+        ? { ok: true, accountId: salesforce.accountId ?? null, contactId: salesforce.contactId ?? null }
+        : { ok: false, erro: salesforce.erro ?? null },
+    },
+  });
+
+
+
   const patch: Record<string, unknown> = {
     sap_status: sap.ok ? "enviado" : "erro",
     sap_erro: sap.ok ? null : sap.erro,
