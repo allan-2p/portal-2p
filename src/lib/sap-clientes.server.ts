@@ -5,7 +5,7 @@
  */
 
 import { XMLParser } from "fast-xml-parser";
-import { mapClienteParaSap, validarParaSap, type ClienteSapInput } from "./sap-clientes-map";
+import { camposSapCliente, validarParaSap, type ClienteSapInput } from "./sap-clientes-map";
 
 export type SapClienteResultado =
   | { ok: true; numero_sap: string | null; mensagem: string | null; raw: unknown }
@@ -44,20 +44,39 @@ export function sapClientesConfigurado() {
   return Boolean(credenciais().url);
 }
 
-function montarEnvelope(pares: Array<{ atributo: string; valor: string }>) {
-  const itens = pares
-    .map((p) => `<item><Atributo>${escXml(p.atributo)}</Atributo><Valor>${escXml(p.valor)}</Valor></item>`)
-    .join("");
+function montarEnvelope(cliente: ClienteSapInput): string {
+  const c = camposSapCliente(cliente);
+  const tag = (nome: string, valor: string) => `<${nome}>${escXml(valor)}</${nome}>`;
+  const names = c.NAMES.map((v, i) => tag(`NAME${i + 1}`, v)).join("");
+  const indSector = c.IND_SECTOR ? tag("IND_SECTOR", c.IND_SECTOR) : "";
+
+  // SOAP 1.1 (`schemas.xmlsoap.org`) + namespace `rfc:functions`: é o único
+  // binding ativo desse serviço no SAP. SOAP 1.2 responde "config key INITIALIZE".
   return `<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:urn="urn:sap-com:document:sap:soap:functions:mc-style">
-  <soap:Header/>
-  <soap:Body>
-    <urn:ZhditClientesCadastro>
-      <i_t_param>${itens}</i_t_param>
-    </urn:ZhditClientesCadastro>
-  </soap:Body>
-</soap:Envelope>`;
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <urn:ZHDIT_CLIENTES_CADASTRO>
+      <I_S_CLIENTE>
+        ${tag("ATUALIZAR", c.ATUALIZAR)}${tag("EMPRESA", c.EMPRESA)}
+        ${tag("CNPJ", c.CNPJ)}${tag("CPF", c.CPF)}${tag("CODCLI", c.CODCLI)}
+        ${names}
+        <SORTL/>${tag("IE", c.IE)}<IMUN/><RG/><RNE/><CNAE/>
+        ${tag("CIDADE", c.CIDADE)}${tag("BAIRRO", c.BAIRRO)}${tag("CEP", c.CEP)}
+        ${tag("LOGRADOURO", c.LOGRADOURO)}${tag("NUMERO", c.NUMERO)}${tag("COMPLEMENTO", c.COMPLEMENTO)}
+        <PAIS>BR</PAIS>${tag("UF", c.UF)}${tag("TELEFONE", c.TELEFONE)}<FAX/>
+        <INCO1>FOB</INCO1><INCO2/>${tag("E_MAIL", c.E_MAIL)}
+        ${tag("CFOPC", c.CFOPC)}${tag("ICMSTAXPAY", c.ICMSTAXPAY)}${tag("VENDEDOR", c.VENDEDOR)}
+        <BZIRK>SOUTH</BZIRK><KALKS>01</KALKS><VZSKZ>01</VZSKZ>
+        ${tag("PLTYP", c.PLTYP)}${tag("KONDA", c.KONDA)}${tag("CRT", c.CRT)}${tag("ZTERM", c.ZTERM)}
+        ${indSector}
+      </I_S_CLIENTE>
+      <WERKS/>
+    </urn:ZHDIT_CLIENTES_CADASTRO>
+  </soapenv:Body>
+</soapenv:Envelope>`;
 }
+
 /** Extrai o texto útil (e o ID de transação) de um SOAP Fault do SAP. */
 function resumoFalha(texto: string) {
   const m = /<[^>]*Text[^>]*>([\s\S]*?)<\/[^>]*Text>/i.exec(texto);
@@ -97,13 +116,13 @@ export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<Sa
     return { ok: false, erro: "Integração SAP de clientes não configurada (SAP_CLIENTES_URL)." };
   }
 
-  const body = montarEnvelope(mapClienteParaSap(cliente));
+  const body = montarEnvelope(cliente);
   let texto = "";
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/soap+xml; charset=utf-8",
+        "Content-Type": "text/xml;charset=UTF-8",
         ...(auth ? { Authorization: auth } : {}),
       },
       body,
@@ -137,13 +156,14 @@ export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<Sa
   }
 
   const numero =
+    achar(json, "E_CODCLI") ??
+    achar(json, "ECodcli") ??
     achar(json, "EKunnr") ??
-    achar(json, "e_kunnr") ??
     achar(json, "Kunnr") ??
-    achar(json, "EVCodigo") ??
     null;
-  const mensagem = achar(json, "EMessage") ?? achar(json, "e_message") ?? achar(json, "Message") ?? null;
-  const tipo = achar(json, "EType") ?? achar(json, "e_type") ?? null;
+  const mensagem =
+    achar(json, "E_MENSAGEM") ?? achar(json, "EMessage") ?? achar(json, "Message") ?? null;
+  const tipo = achar(json, "E_TYPE") ?? achar(json, "EType") ?? null;
 
   if (tipo && /^E|^A/i.test(String(tipo))) {
     return { ok: false, erro: String(mensagem ?? "SAP retornou erro no cadastro."), raw: json };
