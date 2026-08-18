@@ -71,6 +71,9 @@ import { Route as AuthenticatedAdminLogsIndexRouteImport } from './routes/_authe
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicHooksSapNfsRouteImport } from './routes/api/public/hooks/sap-nfs'
+import { Route as ApiPublicHooksPagamentoLinkRouteImport } from './routes/api/public/hooks/pagamento-link'
+import { Route as ApiPublicHooksFretefyTrackingRouteImport } from './routes/api/public/hooks/fretefy-tracking'
 import { Route as AuthenticatedSolarPropostasNovaRouteImport } from './routes/_authenticated/solar.propostas.nova'
 import { Route as AuthenticatedSolarDashboardsMetasRouteImport } from './routes/_authenticated/solar.dashboards.metas'
 import { Route as AuthenticatedSolarClientesSugestoesRouteImport } from './routes/_authenticated/solar.clientes.sugestoes'
@@ -441,6 +444,23 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSapNfsRoute = ApiPublicHooksSapNfsRouteImport.update({
+  id: '/api/public/hooks/sap-nfs',
+  path: '/api/public/hooks/sap-nfs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksPagamentoLinkRoute =
+  ApiPublicHooksPagamentoLinkRouteImport.update({
+    id: '/api/public/hooks/pagamento-link',
+    path: '/api/public/hooks/pagamento-link',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksFretefyTrackingRoute =
+  ApiPublicHooksFretefyTrackingRouteImport.update({
+    id: '/api/public/hooks/fretefy-tracking',
+    path: '/api/public/hooks/fretefy-tracking',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedSolarPropostasNovaRoute =
   AuthenticatedSolarPropostasNovaRouteImport.update({
     id: '/solar/propostas/nova',
@@ -602,6 +622,9 @@ export interface FileRoutesByFullPath {
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
+  '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
+  '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -677,6 +700,9 @@ export interface FileRoutesByTo {
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
+  '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
+  '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -757,6 +783,9 @@ export interface FileRoutesById {
   '/_authenticated/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/_authenticated/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/_authenticated/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
+  '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
+  '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -837,6 +866,9 @@ export interface FileRouteTypes {
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
     | '/solar/propostas/nova'
+    | '/api/public/hooks/fretefy-tracking'
+    | '/api/public/hooks/pagamento-link'
+    | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -912,6 +944,9 @@ export interface FileRouteTypes {
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
     | '/solar/propostas/nova'
+    | '/api/public/hooks/fretefy-tracking'
+    | '/api/public/hooks/pagamento-link'
+    | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -991,6 +1026,9 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/clientes/sugestoes'
     | '/_authenticated/solar/dashboards/metas'
     | '/_authenticated/solar/propostas/nova'
+    | '/api/public/hooks/fretefy-tracking'
+    | '/api/public/hooks/pagamento-link'
+    | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -1013,6 +1051,9 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAppVersionRoute: typeof ApiPublicAppVersionRoute
+  ApiPublicHooksFretefyTrackingRoute: typeof ApiPublicHooksFretefyTrackingRoute
+  ApiPublicHooksPagamentoLinkRoute: typeof ApiPublicHooksPagamentoLinkRoute
+  ApiPublicHooksSapNfsRoute: typeof ApiPublicHooksSapNfsRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1454,6 +1495,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sap-nfs': {
+      id: '/api/public/hooks/sap-nfs'
+      path: '/api/public/hooks/sap-nfs'
+      fullPath: '/api/public/hooks/sap-nfs'
+      preLoaderRoute: typeof ApiPublicHooksSapNfsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/pagamento-link': {
+      id: '/api/public/hooks/pagamento-link'
+      path: '/api/public/hooks/pagamento-link'
+      fullPath: '/api/public/hooks/pagamento-link'
+      preLoaderRoute: typeof ApiPublicHooksPagamentoLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/fretefy-tracking': {
+      id: '/api/public/hooks/fretefy-tracking'
+      path: '/api/public/hooks/fretefy-tracking'
+      fullPath: '/api/public/hooks/fretefy-tracking'
+      preLoaderRoute: typeof ApiPublicHooksFretefyTrackingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/solar/propostas/nova': {
       id: '/_authenticated/solar/propostas/nova'
       path: '/solar/propostas/nova'
@@ -1788,6 +1850,9 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAppVersionRoute: ApiPublicAppVersionRoute,
+  ApiPublicHooksFretefyTrackingRoute: ApiPublicHooksFretefyTrackingRoute,
+  ApiPublicHooksPagamentoLinkRoute: ApiPublicHooksPagamentoLinkRoute,
+  ApiPublicHooksSapNfsRoute: ApiPublicHooksSapNfsRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,

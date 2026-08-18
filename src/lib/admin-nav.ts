@@ -5,6 +5,7 @@
  * lateral padrão por este — é um ambiente separado de configuração.
  */
 import {
+  RefreshCw,
   Users,
   UserCog,
   Activity as ActivityIcon,
@@ -210,6 +211,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
           { to: "/admin/atividade", label: "Log de Usuários", icon: ActivityIcon, feature: "admin.atividade" },
           { to: "/admin/logs/integracoes", label: "Log de Integrações", icon: Plug, feature: "admin.logs.integracoes" },
           { to: "/admin/logs/moderacao", label: "Log de Moderação", icon: ShieldCheck, feature: "admin.logs.moderacao" },
+          { to: "/admin/logs/gatilhos", label: "Gatilhos e reprocessamento", icon: RefreshCw, feature: "admin.logs.jobs" },
           { to: "/admin/logs/retencao", label: "Retenção e limpeza", icon: ScrollText, feature: "admin.logs.retencao" },
         ],
       },

@@ -1092,6 +1092,71 @@ export type Database = {
         }
         Relationships: []
       }
+      job_runs: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          attempt: number
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          job: string
+          parent_run_id: string | null
+          payload: Json
+          ref_id: string | null
+          ref_type: string | null
+          result: Json
+          started_at: string
+          status: string
+          trigger_source: string
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          attempt?: number
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          job: string
+          parent_run_id?: string | null
+          payload?: Json
+          ref_id?: string | null
+          ref_type?: string | null
+          result?: Json
+          started_at?: string
+          status?: string
+          trigger_source?: string
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          attempt?: number
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          job?: string
+          parent_run_id?: string | null
+          payload?: Json
+          ref_id?: string | null
+          ref_type?: string | null
+          result?: Json
+          started_at?: string
+          status?: string
+          trigger_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_runs_parent_run_id_fkey"
+            columns: ["parent_run_id"]
+            isOneToOne: false
+            referencedRelation: "job_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       log_retention_policy: {
         Row: {
           archive_days: number
