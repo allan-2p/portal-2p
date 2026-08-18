@@ -207,7 +207,10 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
       filter_scope?: "geral" | "pre_vendas" | "carteira" | "individual";
       ativo?: boolean;
       sf_user_id?: string | null;
+      numero_sap?: string | null;
     } = {};
+    if (data.numero_sap !== undefined) profilePatch.numero_sap = (data.numero_sap ?? "").trim() || null;
+
     if (data.email !== undefined) profilePatch.email = data.email;
     if (data.full_name !== undefined) profilePatch.full_name = data.full_name;
     if (data.cargo !== undefined) profilePatch.cargo = data.cargo;
