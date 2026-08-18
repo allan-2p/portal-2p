@@ -888,7 +888,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               {rows.map((c) => (
                 <tr key={c.id} className="hover:bg-surface-2/40 cursor-pointer" onClick={() => setDetalhe(c)}>
                   <td className="px-4 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                    {c.numero_sap ?? "—"}
+                    {c.numero_sap ? <Marca texto={c.numero_sap} termo={q} /> : "—"}
                   </td>
                   <td className="px-4 py-2">
                     <div className="font-medium"><Marca texto={c.razao_social} termo={q} /></div>
