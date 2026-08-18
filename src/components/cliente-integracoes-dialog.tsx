@@ -78,18 +78,40 @@ export function ClienteIntegracoesDialog({
   });
 
   const reenviar = useMutation({
-    mutationFn: ({ id, alvos }: { id: string; alvos?: ("sap" | "salesforce" | "contatos")[] }) => {
+    mutationFn: async ({ id, alvos }: { id: string; alvos?: ("sap" | "salesforce" | "contatos")[] }) => {
       setAlvoAtivo(`reenvio:${alvos?.join(",") ?? "tudo"}`);
-      return reenviarFn({ data: { instancia, id, ...(alvos ? { alvos } : {}) } });
+      const r = await reenviarFn({ data: { instancia, id, ...(alvos ? { alvos } : {}) } });
+      return { alvos, resultado: r as any };
     },
-    onSuccess: () => {
-      toast.success("Reenvio solicitado.");
+    onSuccess: ({ alvos, resultado }) => {
+      const pedidos = alvos ?? ["sap", "salesforce", "contatos"];
+      const next: Record<string, { ok: boolean; mensagem: string; detalhe?: string | null }> = {};
+      if (pedidos.includes("sap") && resultado?.sap) {
+        next["sap"] = resultado.sap.ok
+          ? { ok: true, mensagem: `SAP OK${resultado.sap.numero_sap ? ` · código ${resultado.sap.numero_sap}` : ""}.` }
+          : { ok: false, mensagem: resultado.sap.erro ?? "Falha no envio ao SAP." };
+      }
+      if ((pedidos.includes("salesforce") || pedidos.includes("contatos")) && resultado?.salesforce) {
+        const item = resultado.salesforce.ok
+          ? {
+              ok: true,
+              mensagem: `Salesforce OK${resultado.salesforce.accountId ? ` · conta ${resultado.salesforce.accountId}` : ""}.`,
+            }
+          : { ok: false, mensagem: resultado.salesforce.erro ?? "Falha no envio ao Salesforce." };
+        if (pedidos.includes("salesforce")) next["salesforce"] = item;
+        if (pedidos.includes("contatos")) next["contatos"] = item;
+      }
+      setTestes((prev) => ({ ...prev, ...next }));
+      const falhou = Object.values(next).find((r) => !r.ok);
+      if (falhou) toast.error(falhou.mensagem);
+      else toast.success("Reenvio concluído.");
       qc.invalidateQueries({ queryKey: ["clientes"] });
       qc.invalidateQueries({ queryKey: ["cliente-integracao-historico"] });
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao reenviar."),
     onSettled: () => setAlvoAtivo(null),
   });
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,6 +132,7 @@ export function ClienteIntegracoesDialog({
                 <Acoes
                   onTestar={() => testar.mutate("banco")}
                   testando={alvoAtivo === "teste:banco"}
+                  ocupado={Boolean(alvoAtivo)}
                   resultado={testes["banco"]}
                 />
               </div>
@@ -122,6 +145,7 @@ export function ClienteIntegracoesDialog({
                 <Acoes
                   onTestar={() => testar.mutate("sap")}
                   testando={alvoAtivo === "teste:sap"}
+                  ocupado={Boolean(alvoAtivo)}
                   onReenviar={() => reenviar.mutate({ id: cliente.id, alvos: ["sap"] })}
                   reenviando={alvoAtivo === "reenvio:sap"}
                   resultado={testes["sap"]}
@@ -137,6 +161,7 @@ export function ClienteIntegracoesDialog({
                 <Acoes
                   onTestar={() => testar.mutate("salesforce")}
                   testando={alvoAtivo === "teste:salesforce"}
+                  ocupado={Boolean(alvoAtivo)}
                   onReenviar={() => reenviar.mutate({ id: cliente.id, alvos: ["salesforce"] })}
                   reenviando={alvoAtivo === "reenvio:salesforce"}
                   resultado={testes["salesforce"]}
@@ -148,6 +173,7 @@ export function ClienteIntegracoesDialog({
                 <Acoes
                   onTestar={() => testar.mutate("contatos")}
                   testando={alvoAtivo === "teste:contatos"}
+                  ocupado={Boolean(alvoAtivo)}
                   onReenviar={() => reenviar.mutate({ id: cliente.id, alvos: ["contatos"] })}
                   reenviando={alvoAtivo === "reenvio:contatos"}
                   resultado={testes["contatos"]}
@@ -184,12 +210,14 @@ export function ClienteIntegracoesDialog({
 function Acoes({
   onTestar,
   testando,
+  ocupado,
   onReenviar,
   reenviando,
   resultado,
 }: {
   onTestar: () => void;
   testando: boolean;
+  ocupado?: boolean;
   onReenviar?: () => void;
   reenviando?: boolean;
   resultado?: { ok: boolean; mensagem: string; detalhe?: string | null };
@@ -197,12 +225,12 @@ function Acoes({
   return (
     <div className="space-y-2 pt-1">
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" className="gap-2 h-8" onClick={onTestar} disabled={testando}>
+        <Button variant="outline" size="sm" className="gap-2 h-8" onClick={onTestar} disabled={testando || ocupado}>
           <Plug className={`h-3.5 w-3.5 ${testando ? "animate-pulse" : ""}`} />
           Testar
         </Button>
         {onReenviar && (
-          <Button variant="secondary" size="sm" className="gap-2 h-8" onClick={onReenviar} disabled={reenviando}>
+          <Button variant="secondary" size="sm" className="gap-2 h-8" onClick={onReenviar} disabled={reenviando || ocupado}>
             <RefreshCw className={`h-3.5 w-3.5 ${reenviando ? "animate-spin" : ""}`} />
             Reenviar
           </Button>
