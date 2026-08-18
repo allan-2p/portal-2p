@@ -97,27 +97,40 @@ export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<Sa
 
   const body = montarEnvelope(cliente);
   let texto = "";
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/xml;charset=UTF-8",
-        ...(auth ? { Authorization: auth } : {}),
-      },
-      body,
-    });
-    texto = await res.text();
-    if (!res.ok) {
+  // O SAP às vezes devolve 500 `env:Receiver` (dump momentâneo do provedor).
+  // Nesses casos vale reenviar: a RFC é idempotente pelo CNPJ.
+  const tentativas = 3;
+  for (let i = 1; i <= tentativas; i++) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/xml;charset=UTF-8",
+          ...(auth ? { Authorization: auth } : {}),
+        },
+        body,
+      });
+      texto = await res.text();
+      if (res.ok) break;
+      const transitorio = res.status >= 500 || /Receiver|processamento do Web Service/i.test(texto);
+      if (transitorio && i < tentativas) {
+        await new Promise((r) => setTimeout(r, 1500 * i));
+        continue;
+      }
       return {
         ok: false,
         erro: `SAP ${res.status}: ${resumoFalha(texto)}`,
-        raw: { resposta: texto.slice(0, 2000) },
+        raw: { resposta: texto.slice(0, 2000), tentativas: i },
       };
+    } catch (err) {
+      if (i < tentativas) {
+        await new Promise((r) => setTimeout(r, 1500 * i));
+        continue;
+      }
+      return { ok: false, erro: `Falha ao chamar o SAP: ${(err as Error).message}` };
     }
-
-  } catch (err) {
-    return { ok: false, erro: `Falha ao chamar o SAP: ${(err as Error).message}` };
   }
+
 
   const parser = new XMLParser({ ignoreAttributes: false, removeNSPrefix: true, parseTagValue: false });
   let json: any = null;
