@@ -305,12 +305,20 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       toast.success(editId ? "Cadastro atualizado." : `Cliente cadastrado em ${ORGANIZACAO[instancia]}.`);
+      const sync = res?.sync;
+      if (sync) {
+        if (sync.sap?.ok) toast.success(`Enviado ao SAP${sync.sap.numero_sap ? ` — código ${sync.sap.numero_sap}` : ""}.`);
+        else toast.error(`SAP: ${sync.sap?.erro ?? "falha no envio."}`);
+        if (sync.salesforce?.ok) toast.success("Conta e contato criados no Salesforce.");
+        else toast.error(`Salesforce: ${sync.salesforce?.erro ?? "falha no envio."}`);
+      }
       qc.invalidateQueries({ queryKey: ["clientes", instancia] });
       qc.invalidateQueries({ queryKey: ["cpo-clientes-cadastro"] });
       fechar();
     },
+
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao salvar."),
   });
 
