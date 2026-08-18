@@ -129,7 +129,7 @@ function validarCampos(f: Form): Erros {
   if (!f.razao_social?.trim()) e.razao_social = "Informe a razão social.";
   if (!docValido(f.doc ?? "")) e.doc = "CNPJ / CPF inválido.";
   if (!f.uf?.trim()) e.uf = "Selecione a UF de destino.";
-  if (f.contribuinte && !f.ie?.trim()) e.ie = "Cliente contribuinte: informe a Inscrição Estadual.";
+  // Contribuinte é derivado da IE retornada pela consulta do CNPJ — nunca definido manualmente.
   Object.assign(e, validarContatos(f.contatos ?? []));
   if (soDigitos(f.cep ?? "").length !== 8) e.cep = "Informe um CEP válido (8 dígitos).";
   if (!f.logradouro?.trim()) e.logradouro = "Informe o logradouro.";
