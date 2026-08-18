@@ -1,0 +1,10 @@
+# Portal 2P
+
+> Portal interno do Grupo 2P (2P Solar e 2P Carregadores) para vendas, propostas, pedidos e inteligência comercial. O acesso ao conteúdo operacional exige login.
+
+O Portal 2P reúne cadastro de clientes, propostas comerciais, acompanhamento de pedidos, metas e indicadores das unidades de energia solar e carregadores veiculares do Grupo 2P. Apenas as páginas abaixo são públicas.
+
+## Pages
+
+- [Início](/): Apresentação do Portal 2P e ponto de entrada para os times comerciais.
+- [Entrar](/auth): Login dos usuários autorizados do Grupo 2P.
