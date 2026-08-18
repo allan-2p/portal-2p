@@ -203,6 +203,71 @@ export async function sincronizarCliente(
     console.error("[clientes] falha ao gravar retorno das integrações", err);
   }
 
+  // Contatos: cada um vira um registro na tabela `contatos` (vinculado pelo
+  // CÓDIGO SAP e pelo ID Salesforce da conta) e um objeto Contact no Salesforce.
+  try {
+    const contatosDb = await import("./contatos-db.server");
+    const { sincronizarContatosSalesforce } = await import("./salesforce-clientes.server");
+
+    const numeroSap = (patch["numero_sap"] as string | undefined) ?? cliente["numero_sap"] ?? null;
+    const sfAccountId = (patch["sf_account_id"] as string | undefined) ?? cliente["sf_account_id"] ?? null;
+
+    const salvos = await contatosDb.salvarContatos(
+      instancia,
+      { ...cliente, id: clienteId, numero_sap: numeroSap, sf_account_id: sfAccountId },
+      Array.isArray(cliente["contatos"]) ? cliente["contatos"] : [],
+    );
+    await contatosDb.atualizarVinculosContatos(clienteId, {
+      numero_sap: numeroSap,
+      sf_account_id: sfAccountId,
+    });
+
+    if (sfAccountId && salvos.length > 0) {
+      const inicio = Date.now();
+      const resultados = await sincronizarContatosSalesforce(
+        sfAccountId,
+        salvos.map((c) => ({
+          id: c.id,
+          tipo: c.tipo,
+          nome: c.nome,
+          cargo: c.cargo,
+          email: c.emails?.[0] ?? cliente["email"] ?? null,
+          telefone: c.telefones?.[0] ?? cliente["telefone"] ?? null,
+          sf_contact_id: c.sf_contact_id,
+        })),
+        extras.ownerSfId ?? null,
+      );
+
+      for (const r of resultados) {
+        await contatosDb.atualizarContatoSalesforce(r.id, {
+          sf_contact_id: r.contactId,
+          sf_status: r.ok ? "enviado" : "erro",
+          sf_erro: r.erro,
+        });
+      }
+
+      await logIntegrationEvent({
+        slug: "salesforce-clientes",
+        level: resultados.every((r) => r.ok) ? "info" : "warn",
+        event: "contatos.sincronizacao",
+        message: `${resultados.filter((r) => r.ok).length}/${resultados.length} contatos sincronizados no Salesforce`,
+        durationMs: Date.now() - inicio,
+        detail: { ...base, numero_sap: numeroSap, sf_account_id: sfAccountId, contatos: resultados },
+      });
+    }
+  } catch (err) {
+    console.error("[clientes] falha ao sincronizar contatos", err);
+    await logIntegrationEvent({
+      slug: "salesforce-clientes",
+      level: "error",
+      event: "contatos.erro",
+      message: `Falha ao sincronizar contatos: ${(err as Error).message}`,
+      detail: { ...base },
+    });
+  }
+
+
+
   return {
     sap: {
       ok: sap.ok,
