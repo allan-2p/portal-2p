@@ -819,7 +819,7 @@ function PropostaCpoPage() {
 
 
   function concluirPedido() {
-    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de concluir o pedido.");
+    if (!podeFechar) return toast.error(errosConclusao[0] ?? "Complete a proposta antes de concluir o pedido.");
     setStatusProposta("Aguardando Pagamento");
     setSaving(true);
     void salvar("Aguardando Pagamento");
@@ -845,11 +845,11 @@ function PropostaCpoPage() {
 
   // Abre a revisão final apenas para concluir o pedido.
   function pedirRevisao(acao: "concluir") {
-    if (errosFechamento.length) {
+    if (errosConclusao.length) {
       setTentouAvancar(true);
       if (etapa === 1 && !clienteOk) setEtapa(1);
-      toast.error(errosFechamento[0], {
-        description: errosFechamento.length > 1 ? `+ ${errosFechamento.length - 1} pendência(s) a corrigir.` : undefined,
+      toast.error(errosConclusao[0], {
+        description: errosConclusao.length > 1 ? `+ ${errosConclusao.length - 1} pendência(s) a corrigir.` : undefined,
       });
       return;
     }
@@ -934,12 +934,12 @@ function PropostaCpoPage() {
   }
 
   function abrirPreviewPdf() {
-    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de visualizar o PDF.");
+    if (errosPdf.length) return toast.error(errosPdf[0] ?? "Complete a proposta antes de visualizar o PDF.");
     setPreviewAberto(true);
   }
 
   function exportarPdf() {
-    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de exportar o PDF.");
+    if (errosPdf.length) return toast.error(errosPdf[0] ?? "Complete a proposta antes de exportar o PDF.");
     const html = montarPdfHtml();
     const w = window.open("", "_blank");
     if (!w) return toast.error("Permita pop-ups para exportar o PDF.");
