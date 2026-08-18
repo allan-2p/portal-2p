@@ -136,7 +136,7 @@ function validarCampos(f: Form): Erros {
   if (!f.numero?.trim()) e.numero = "Informe o número do endereço.";
   if (!f.cidade?.trim()) e.cidade = "Informe a cidade.";
   if (!f.finalidade?.trim()) e.finalidade = "Selecione a finalidade da mercadoria (exigida pelo SAP).";
-  if (!f.tabela_preco?.trim()) e.tabela_preco = "Selecione a tabela de preço (exigida pelo SAP).";
+  // Tabela de preço tem padrão automático (2P-0001) — não bloqueia o cadastro.
 
   return e;
 }
@@ -145,6 +145,7 @@ function comLegado(f: Form): Form {
   const principal = (f.contatos ?? []).find((c) => c.tipo === "principal");
   return {
     ...f,
+    tabela_preco: f.tabela_preco?.trim() || "2P-0001",
     contato_nome: principal?.nome?.trim() || null,
     contato_cargo: principal?.cargo?.trim() || null,
     contato_email: principal?.emails.find((v) => v.trim())?.trim() || null,
@@ -180,6 +181,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
 
   const podeExcluir = useCanDelete();
+  // Campos SAP sensíveis (tabela de preço / condições) só para Administrador do Sistema.
+  const ehAdmin = podeExcluir;
   const [q, setQ] = useState("");
   const [fUf, setFUf] = useState("todas");
   const [fStatus, setFStatus] = useState("ativos");
@@ -751,9 +754,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <Input value={consultorNomeAtual} disabled />
                   )}
                 </F>
-                <F label="Condição de pagamento">
-                  <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
-                </F>
                 <F label="Finalidade da mercadoria *" id="campo-finalidade" error={erros.finalidade}>
                   <Select value={form.finalidade ?? ""} onValueChange={(v) => set("finalidade", v)}>
                     <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
@@ -762,17 +762,24 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     </SelectContent>
                   </Select>
                 </F>
-                <F label="Tabela de preço (SAP) *" id="campo-tabela_preco" error={erros.tabela_preco}>
-                  <Select value={form.tabela_preco ?? ""} onValueChange={(v) => set("tabela_preco", v)}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                    <SelectContent>
-                      {TABELAS_PRECO.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </F>
-                <F label="Condição de pagamento SAP (ZTERM)">
-                  <Input value={form.condicao_pgto_sap ?? ""} onChange={(e) => set("condicao_pgto_sap", e.target.value)} placeholder="Ex.: 0030" />
-                </F>
+                {ehAdmin && (
+                  <>
+                    <F label="Condição de pagamento">
+                      <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
+                    </F>
+                    <F label="Tabela de preço (SAP)" id="campo-tabela_preco" error={erros.tabela_preco}>
+                      <Select value={form.tabela_preco || "2P-0001"} onValueChange={(v) => set("tabela_preco", v)}>
+                        <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                        <SelectContent>
+                          {TABELAS_PRECO.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </F>
+                    <F label="Condição de pagamento SAP (ZTERM)">
+                      <Input value={form.condicao_pgto_sap ?? ""} onChange={(e) => set("condicao_pgto_sap", e.target.value)} placeholder="Ex.: 0030" />
+                    </F>
+                  </>
+                )}
 
                 <ClienteLogoUpload doc={form.doc ?? ""} />
                 <div className="sm:col-span-2">
