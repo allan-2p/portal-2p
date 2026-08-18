@@ -43,6 +43,7 @@ export function FreteCotacao({
   const cotar = useServerFn(cotarFrete);
   const [opcoes, setOpcoes] = useState<Opcao[]>([]);
   const [peso, setPeso] = useState(0);
+  const [origemPeso, setOrigemPeso] = useState<"sap" | "catalogo">("catalogo");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
 
@@ -102,6 +103,7 @@ export function FreteCotacao({
       });
       setOpcoes(r.opcoes as Opcao[]);
       setPeso(Number(r.peso ?? 0));
+      setOrigemPeso((r as { origemPeso?: "sap" | "catalogo" }).origemPeso ?? "catalogo");
       const escolhida = (r.opcoes as Opcao[])[r.escolhida];
       if (escolhida) aplicar(escolhida);
     } catch (e) {
@@ -131,7 +133,7 @@ export function FreteCotacao({
           </p>
           <p className="text-xs text-muted-foreground">
             Origem Itajaí/SC. O cálculo é automático e o valor da nota já considera o frete embutido.
-            {peso > 0 ? ` Peso considerado: ${peso.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} kg.` : ""}
+            {peso > 0 ? ` Peso considerado: ${peso.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} kg (${origemPeso === "sap" ? "simulação SAP" : "catálogo de produtos"}).` : ""}
           </p>
         </div>
         <Button
