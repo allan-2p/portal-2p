@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getAdminAreas } from "@/lib/admin-guard.functions";
 
 import { AlertTriangle, ArrowLeft, ChevronDown } from "lucide-react";
-import { sectionForPath } from "@/lib/admin-nav";
+import { sectionForPath, type AdminNavItem } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useInstance } from "./instance-provider";
@@ -113,7 +113,7 @@ function AdminGroupItems({
   health,
   alerts,
 }: {
-  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }>; exact?: boolean }[];
+  items: AdminNavItem[];
   pathname: string;
   collapsed: boolean;
   health?: { map: Map<string, IntegrationHealthItem>; isLoading: boolean };
@@ -123,10 +123,11 @@ function AdminGroupItems({
     <div className="space-y-0.5">
       {items.map((i) => {
         const Icon = i.icon;
+        const children = (i.children ?? []) as AdminNavItem[];
         const active = i.exact
           ? pathname === i.to
           : pathname === i.to || pathname.startsWith(`${i.to}/`);
-        return (
+        const link = (
           <Link
             key={i.to}
             to={i.to}
@@ -161,6 +162,43 @@ function AdminGroupItems({
               return <IntegrationStatusDot item={health.map.get(slug)} loading={health.isLoading} />;
             })()}
           </Link>
+        );
+
+        if (!children.length) return link;
+
+        const childActive = children.some(
+          (c) => pathname === c.to || pathname.startsWith(`${c.to}/`),
+        );
+
+        if (collapsed) {
+          return (
+            <div key={i.to} className="space-y-0.5">
+              {link}
+              <AdminGroupItems items={children} pathname={pathname} collapsed={collapsed} />
+            </div>
+          );
+        }
+
+        return (
+          <Collapsible key={i.to} defaultOpen={active || childActive}>
+            <div className="flex items-center gap-1">
+              <div className="flex-1 min-w-0">{link}</div>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Alternar sub-itens de ${i.label}`}
+                  className="group shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors"
+                >
+                  <ChevronDown className="h-3.5 w-3.5 transition-transform group-data-[state=closed]:-rotate-90" />
+                </button>
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent>
+              <div className="ml-4 mt-0.5 border-l border-border pl-2">
+                <AdminGroupItems items={children} pathname={pathname} collapsed={collapsed} />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         );
       })}
     </div>
