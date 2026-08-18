@@ -168,7 +168,7 @@ function Marca({ texto, termo }: { texto?: string | null; termo: string }) {
   );
 }
 
-type OrdemKey = "cliente" | "doc" | "fiscal" | "cidade" | "contato";
+type OrdemKey = "sap" | "cliente" | "doc" | "fiscal" | "cidade" | "contato";
 
 export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const qc = useQueryClient();
