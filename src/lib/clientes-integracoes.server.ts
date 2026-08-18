@@ -100,7 +100,10 @@ export async function sincronizarCliente(
     detail: {
       ...base,
       payload: sapPayload,
-      resposta: { ok: sap.ok, numero_sap: sap.numero_sap ?? null, erro: sap.erro ?? null },
+      resposta: sap.ok
+        ? { ok: true, numero_sap: sap.numero_sap ?? null, mensagem: sap.mensagem ?? null }
+        : { ok: false, erro: sap.erro ?? null },
+
     },
   });
 
