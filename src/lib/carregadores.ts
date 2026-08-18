@@ -1,5 +1,5 @@
 // ============================================================================
-// Motor de cálculo e tipos do módulo CPO (Portal 2P Carregadores).
+// Motor de cálculo e tipos do módulo de propostas (Portal 2P Carregadores).
 // Base: planilhas "Precificação Carregadores — Memória Cálculo",
 // "Tabela DIFAL — Não Contribuinte" e "Informações Fiscais".
 //
