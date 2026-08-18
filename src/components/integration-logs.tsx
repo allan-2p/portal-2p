@@ -96,6 +96,26 @@ export function IntegrationLogsPanel({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <form
+            className="relative"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setTermo(busca.trim());
+              setPage(0);
+            }}
+          >
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              onBlur={() => {
+                setTermo(busca.trim());
+                setPage(0);
+              }}
+              placeholder="Cliente, CNPJ ou evento"
+              className="h-8 w-52 pl-7 text-xs"
+            />
+          </form>
           <div className="flex rounded-lg border border-border overflow-hidden">
             {LEVELS.map((l) => (
               <button
@@ -131,31 +151,56 @@ export function IntegrationLogsPanel({
         </div>
       ) : (
         <ul className="divide-y divide-border">
-          {rows.map((r) => (
-            <li key={r.id} className="px-6 py-3 flex items-start gap-3">
-              <LevelIcon level={r.level} />
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium flex items-center gap-2 flex-wrap">
-                  {!slug && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-                      {r.slug}
+          {rows.map((r) => {
+            const temDetalhe = !!r.detail && Object.keys(r.detail).length > 0;
+            const expandido = !!aberto[r.id];
+            const cliente =
+              (r.detail?.["razao_social"] as string | undefined) || (r.detail?.["doc"] as string | undefined);
+            return (
+              <li key={r.id} className="px-6 py-3 flex items-start gap-3">
+                <LevelIcon level={r.level} />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium flex items-center gap-2 flex-wrap">
+                    {!slug && (
+                      <span className="text-[11px] px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+                        {r.slug}
+                      </span>
+                    )}
+                    <span>{r.event}</span>
+                    {cliente && (
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground truncate max-w-[220px]">
+                        {cliente}
+                      </span>
+                    )}
+                    {r.duration_ms != null && (
+                      <span className="text-[11px] text-muted-foreground">{r.duration_ms} ms</span>
+                    )}
+                  </div>
+                  {r.message && <div className="text-xs text-muted-foreground mt-0.5 break-words">{r.message}</div>}
+                  <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                    <span>
+                      {new Date(r.created_at).toLocaleString("pt-BR")}
+                      {r.actor_email ? ` · ${r.actor_email}` : ""}
                     </span>
-                  )}
-                  <span className="capitalize">{r.event}</span>
-                  {r.duration_ms != null && (
-                    <span className="text-[11px] text-muted-foreground">{r.duration_ms} ms</span>
-                  )}
+                    {temDetalhe && (
+                      <button
+                        type="button"
+                        onClick={() => setAberto((prev) => ({ ...prev, [r.id]: !expandido }))}
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      >
+                        {expandido ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                        {expandido ? "Ocultar payload e resposta" : "Ver payload e resposta"}
+                      </button>
+                    )}
+                  </div>
+                  {temDetalhe && expandido && <LogDetail detail={r.detail as Record<string, unknown>} />}
                 </div>
-                {r.message && <div className="text-xs text-muted-foreground mt-0.5 break-words">{r.message}</div>}
-                <div className="text-[11px] text-muted-foreground mt-1">
-                  {new Date(r.created_at).toLocaleString("pt-BR")}
-                  {r.actor_email ? ` · ${r.actor_email}` : ""}
-                </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
+
 
       <div className="px-6 py-3 border-t border-border flex items-center justify-between gap-3 flex-wrap text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
