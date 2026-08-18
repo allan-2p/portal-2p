@@ -54,6 +54,8 @@ export type PropostaPdfData = {
   observacoes?: string;
   consultor?: string;
   validadeDias?: number;
+  /** Forma de pagamento escolhida (exibida no PDF, mas pode estar vazia). */
+  formaPagamento?: string | null;
   /** Logomarca do cliente exibida no cabeçalho (data URL ou URL http). */
   logoCliente?: string | null;
 };
