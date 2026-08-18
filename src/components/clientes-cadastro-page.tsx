@@ -129,7 +129,7 @@ function validarCampos(f: Form): Erros {
   if (!f.razao_social?.trim()) e.razao_social = "Informe a razão social.";
   if (!docValido(f.doc ?? "")) e.doc = "CNPJ / CPF inválido.";
   if (!f.uf?.trim()) e.uf = "Selecione a UF de destino.";
-  if (f.contribuinte && !f.ie?.trim()) e.ie = "Cliente contribuinte: informe a Inscrição Estadual.";
+  // Contribuinte é derivado da IE retornada pela consulta do CNPJ — nunca definido manualmente.
   Object.assign(e, validarContatos(f.contatos ?? []));
   if (soDigitos(f.cep ?? "").length !== 8) e.cep = "Informe um CEP válido (8 dígitos).";
   if (!f.logradouro?.trim()) e.logradouro = "Informe o logradouro.";
@@ -653,13 +653,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               </Section>
 
               <Section title="Situação fiscal">
-                <F label={form.contribuinte ? "Inscrição Estadual *" : "Inscrição Estadual"} id="campo-ie" error={erros.ie}>
+                <F label="Inscrição Estadual" id="campo-ie" error={erros.ie}>
                   <Input
                     value={form.ie ?? ""}
-                    onChange={(e) => set("ie", e.target.value)}
-                    disabled={!form.contribuinte}
-                    placeholder={form.contribuinte ? "IE" : "Isento / não contribuinte"}
+                    onChange={(e) => setForm((f) => ({ ...f, ie: e.target.value, contribuinte: !!e.target.value.trim() }))}
+                    placeholder="Isento / não contribuinte"
                   />
+
                   {form.ie_situacao && <p className="mt-1 text-[11px] text-muted-foreground">Situação da IE: {form.ie_situacao}</p>}
                 </F>
                 <F label="Suframa">
@@ -676,10 +676,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                   <div>
                     <div className="text-sm font-semibold">Cliente contribuinte do ICMS</div>
-                    <div className="text-xs text-muted-foreground">Define o cálculo de DIFAL nas propostas.</div>
+                    <div className="text-xs text-muted-foreground">Definido automaticamente pela consulta do CNPJ (Inscrição Estadual). Não editável.</div>
                   </div>
-                  <Switch checked={form.contribuinte} onCheckedChange={(v) => set("contribuinte", v)} />
+                  <Badge variant={form.contribuinte ? "default" : "secondary"}>
+                    {form.contribuinte ? "Contribuinte" : "Não contribuinte"}
+                  </Badge>
                 </div>
+
                 {(form.cnaes_secundarios ?? []).length > 0 && (
                   <div className="sm:col-span-2">
                     <Label className="text-xs">CNAEs secundários</Label>
