@@ -401,6 +401,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const ordenados = useMemo(() => {
     const val = (c: Cliente) => {
       switch (ordem) {
+        case "sap": return soDigitos(c.numero_sap ?? "");
         case "doc": return soDigitos(c.doc ?? "");
         case "fiscal": return c.contribuinte ? "1" : "0";
         case "cidade": return `${c.uf} ${c.cidade ?? ""}`;
