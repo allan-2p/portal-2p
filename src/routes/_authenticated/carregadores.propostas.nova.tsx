@@ -1038,16 +1038,10 @@ function PropostaCarregadoresPage() {
         const concluindo = status !== "Salvo";
         if (concluindo) {
           // Lock idempotente no banco: só conclui se ainda estiver "Salvo"
-          const { data: res, error: rpcErr } = await supabase.rpc("concluir_proposta", {
-            _id: propostaId,
-            _status: status,
-            _origem: "portal",
-            // O banco valida a etapa de finalização como 4 (última etapa do fluxo).
-            _etapa: etapa === 5 ? 4 : etapa,
+          // O servidor valida a etapa de finalização como 4 (última etapa do fluxo).
+          const linha = await concluirPropostaFn({
+            data: { id: propostaId, status, origem: "portal", etapa: etapa === 5 ? 4 : etapa },
           });
-
-          if (rpcErr) throw rpcErr;
-          const linha = Array.isArray(res) ? res[0] : res;
           if (linha?.already_concluded) {
             toast.info(`Pedido ${numero} já havia sido concluído (${linha.status}).`);
             invalidate();
@@ -1085,18 +1079,16 @@ function PropostaCarregadoresPage() {
 
       if (status !== "Salvo") {
         if (!inserida?.id) throw new Error("Não foi possível concluir: proposta não localizada.");
-        const { data: res, error: rpcErr } = await supabase.rpc("concluir_proposta", {
-          _id: inserida.id,
-          _status: status,
-          _origem: "portal",
-          _etapa: etapa === 5 ? 4 : etapa,
-        });
-        if (rpcErr) {
+        let linha: { status?: string; already_concluded?: boolean };
+        try {
+          linha = await concluirPropostaFn({
+            data: { id: inserida.id, status, origem: "portal", etapa: etapa === 5 ? 4 : etapa },
+          });
+        } catch (e) {
           setPropostaId(inserida.id);
           setNumeroAtual(numero);
-          throw rpcErr;
+          throw e;
         }
-        const linha = Array.isArray(res) ? res[0] : res;
         if (linha?.already_concluded) {
           toast.info(`Pedido ${numero} já havia sido concluído (${linha.status}).`);
           invalidate();
