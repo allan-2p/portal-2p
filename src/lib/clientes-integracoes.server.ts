@@ -24,13 +24,49 @@ export async function sincronizarCliente(
 ): Promise<SincronizacaoResultado> {
   const { enviarClienteParaSap } = await import("./sap-clientes.server");
   const { sincronizarClienteSalesforce } = await import("./salesforce-clientes.server");
+  const { logIntegrationEvent } = await import("./integration-logs.server");
   const db = await import("./clientes-db.server");
 
   const principal = Array.isArray(cliente["contatos"])
     ? cliente["contatos"].find((c: any) => c?.tipo === "principal")
     : null;
 
+  /** Dados de identificação do cliente presentes em todo registro de auditoria. */
+  const base = {
+    cliente_id: clienteId,
+    instancia,
+    doc: String(cliente["doc"] ?? ""),
+    razao_social: String(cliente["razao_social"] ?? ""),
+    organizacao: cliente["organizacao"] ?? null,
+    uf: cliente["uf"] ?? null,
+  };
+
+  const sapPayload = {
+    doc: base.doc,
+    razao_social: base.razao_social,
+    nome_fantasia: cliente["nome_fantasia"] ?? null,
+    ie: cliente["ie"] ?? null,
+    contribuinte: cliente["contribuinte"] !== false,
+    finalidade: cliente["finalidade"] ?? null,
+    tabela_preco: cliente["tabela_preco"] ?? null,
+    condicao_pgto_sap: cliente["condicao_pgto_sap"] ?? null,
+    cidade: cliente["cidade"] ?? null,
+    uf: base.uf,
+    cep: cliente["cep"] ?? null,
+    vendedor_sap: extras.vendedorSap ?? null,
+  };
+
+  await logIntegrationEvent({
+    slug: "sap-clientes",
+    level: "info",
+    event: "cliente.envio.tentativa",
+    message: `Enviando ${base.razao_social} (${base.doc}) para o SAP`,
+    detail: { ...base, payload: sapPayload },
+  });
+
+  const sapIniciadoEm = Date.now();
   const sap = await enviarClienteParaSap({
+
     doc: String(cliente["doc"] ?? ""),
     razao_social: String(cliente["razao_social"] ?? ""),
     nome_fantasia: cliente["nome_fantasia"],
