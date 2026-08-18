@@ -58,15 +58,18 @@ export type SalvarPropostaInput = {
 
 const money2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
 
+/** Repositório da tabela `propostas` no banco do Grupo 2P. */
+async function repo() {
+  return await import("./propostas-db.server");
+}
+
 /** Gera um número SAP único: 6 dígitos, apenas números. */
-async function gerarNumeroSap(supabase: any) {
-  const { data, error } = await supabase.rpc("proposta_next_sap_seq");
-  if (error) {
-    // Fallback seguro caso o RPC não esteja disponível
+async function gerarNumeroSap() {
+  try {
+    return await (await repo()).proximoNumeroSap();
+  } catch {
     return Date.now().toString().slice(-6);
   }
-  const n = Number(data ?? 1);
-  return String(n % 1000000).padStart(6, "0");
 }
 
 
@@ -289,11 +292,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     // (atribuirNumeroSapFn). Aqui apenas preservamos o que já existir.
     let numeroSap = data.numeroSap?.trim() || null;
     if (!numeroSap && data.propostaId) {
-      const { data: atualSap } = await supabase
-        .from("propostas")
-        .select("numero_sap")
-        .eq("id", data.propostaId)
-        .maybeSingle();
+      const atualSap = await (await repo()).getProposta(data.propostaId, "numero_sap");
       numeroSap = (atualSap as any)?.numero_sap?.trim() || null;
     }
 
@@ -398,12 +397,13 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       .maybeSingle();
     const nomeAtual = (perfilAtual as any)?.full_name ?? (perfilAtual as any)?.email ?? null;
 
+    const db = await repo();
+
     if (data.propostaId) {
-      const { data: atual } = await supabase
-        .from("propostas")
-        .select("consultor_id, consultor_nome, criado_por_nome")
-        .eq("id", data.propostaId)
-        .maybeSingle();
+      const atual = await db.getProposta(
+        data.propostaId,
+        "consultor_id,consultor_nome,criado_por_nome",
+      );
 
       const patch: Record<string, unknown> = { ...payload };
       // Preenche o consultor apenas quando a proposta ainda não tem (legado).
@@ -414,11 +414,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       }
       if (!(atual as any)?.criado_por_nome) patch["criado_por_nome"] = nomeAtual;
 
-      const { error } = await supabase
-        .from("propostas")
-        .update(patch as any)
-        .eq("id", data.propostaId);
-      if (error) throw new Error(error.message);
+      await db.atualizarProposta(data.propostaId, patch);
       return {
         id: data.propostaId,
         numero: data.numero,
@@ -431,9 +427,9 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
 
     const consultor = await consultorDoCliente();
 
-    const { data: inserida, error } = await supabase
-      .from("propostas")
-      .insert({
+    let inserida: { id: string } | null = null;
+    try {
+      inserida = (await db.inserirProposta({
         ...payload,
         organizacao: "carregadores",
         status: "Salvo",
@@ -441,16 +437,11 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
         criado_por_nome: nomeAtual,
         consultor_id: consultor.id,
         consultor_nome: consultor.nome,
-      })
-      .select("id")
-      .single();
-    if (error) {
-      if ((error as { code?: string }).code === "23505") {
-        const { data: existente } = await supabase
-          .from("propostas")
-          .select("id")
-          .eq("numero", data.numero)
-          .maybeSingle();
+      })) as { id: string };
+    } catch (e) {
+      const err = e as Error & { status?: number; body?: string };
+      if (err.status === 409 || /duplicate key|23505/i.test(err.body ?? err.message)) {
+        const existente = await db.getPropostaPorNumero(data.numero);
         return {
           id: existente?.id ?? null,
           numero: data.numero,
@@ -460,10 +451,10 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
           consultor: consultor.nome,
         };
       }
-      throw new Error(error.message);
+      throw err;
     }
     return {
-      id: inserida.id,
+      id: inserida!.id,
       numero: data.numero,
       numeroSap,
       duplicada: false,
@@ -483,21 +474,13 @@ export const atribuirNumeroSapFn = createServerFn({ method: "POST" })
     if (typeof id !== "string" || !id) throw new Error("Proposta inválida.");
     return { propostaId: id };
   })
-  .handler(async ({ data, context }) => {
-    const supabase = (context as any).supabase;
-    const { data: atual } = await supabase
-      .from("propostas")
-      .select("numero_sap")
-      .eq("id", data.propostaId)
-      .maybeSingle();
+  .handler(async ({ data }) => {
+    const db = await repo();
+    const atual = await db.getProposta(data.propostaId, "numero_sap");
     const existente = (atual as any)?.numero_sap?.trim() || null;
     if (existente) return { numeroSap: existente as string };
 
-    const numeroSap = await gerarNumeroSap(supabase);
-    const { error } = await supabase
-      .from("propostas")
-      .update({ numero_sap: numeroSap })
-      .eq("id", data.propostaId);
-    if (error) throw new Error(error.message);
+    const numeroSap = await gerarNumeroSap();
+    await db.atualizarProposta(data.propostaId, { numero_sap: numeroSap });
     return { numeroSap };
   });
