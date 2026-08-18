@@ -2274,13 +2274,14 @@ function PropostaCpoPage() {
                 value={fmtBRL(state.freteValor)}
                 hint={state.freteMod === "CIF" ? "Frete incluso no total" : undefined}
               />
-              <div className="rounded-xl border-2 border-primary/70 bg-primary/10 px-4 py-3 flex flex-col justify-center">
+              <div className="rounded-xl border-2 border-primary/70 bg-primary/10 px-4 sm:px-5 py-4 flex flex-col justify-center">
                 <div className="text-[10px] uppercase tracking-wider text-primary/80 font-semibold">Total da proposta</div>
                 <div className="text-xs text-muted-foreground mb-1">Itens + frete</div>
                 <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-primary tracking-tight">
                   {fmtBRL(d.valorTotalProposta)}
                 </div>
               </div>
+
             </div>
           </div>
         </div>
