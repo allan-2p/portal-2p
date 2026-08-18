@@ -972,8 +972,27 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
                 <Bloco titulo="Comercial">
                   <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
+                  <Linha rot="Finalidade" val={detalhe.finalidade} />
+                  <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
                   <Linha rot="Consultor" val={detalhe.created_by_nome} />
                   <Linha rot="Observações" val={detalhe.observacoes} />
+                </Bloco>
+
+                <Bloco titulo="Integrações">
+                  <Linha rot="Código SAP" val={detalhe.numero_sap ?? "Não enviado"} />
+                  <Linha rot="Status SAP" val={detalhe.sap_status ?? "—"} />
+                  {detalhe.sap_erro && <Linha rot="Erro SAP" val={detalhe.sap_erro} />}
+                  <Linha rot="Conta Salesforce" val={detalhe.sf_account_id ?? "Não enviada"} />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-1 gap-2"
+                    onClick={() => reenviar.mutate(detalhe.id)}
+                    disabled={reenviar.isPending}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${reenviar.isPending ? "animate-spin" : ""}`} />
+                    Reenviar ao SAP / Salesforce
+                  </Button>
                 </Bloco>
 
                 <ClientHistoryTab clienteNome={detalhe.razao_social} />
@@ -984,6 +1003,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   </Button>
                   <Button variant="outline" onClick={() => setDetalhe(null)}>Fechar</Button>
                 </div>
+
               </div>
             </>
           )}
