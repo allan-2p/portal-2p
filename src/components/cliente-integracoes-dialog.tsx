@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { ClienteIntegracaoHistorico } from "@/components/cliente-integracao-historico";
 import { reenviarClienteFn } from "@/lib/clientes.functions";
-import type { Instancia } from "@/lib/cpo";
+type Instancia = "solar" | "carregadores";
 
 type ClienteResumo = {
   id: string;
