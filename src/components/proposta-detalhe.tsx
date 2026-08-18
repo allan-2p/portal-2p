@@ -1,5 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { finalidadeUsoPorDocFn } from "@/lib/clientes.functions";
+import { finalidadeUsoDoCadastro, labelFinalidadeUso } from "@/lib/cpo";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +43,17 @@ export function PropostaDetalhe({ id }: { id?: string }) {
   const frete = Number(p?.['frete_valor'] ?? 0);
   const status = String(p?.['status'] ?? "Salvo");
   const st = propostaStatusStyle(status);
+
+  // Finalidade de uso: sempre a do cadastro atual do cliente (nunca a salva na proposta).
+  const buscarFinalidade = useServerFn(finalidadeUsoPorDocFn);
+  const docCliente = String(p?.['cliente_doc'] ?? "").replace(/\D/g, "");
+  const finalidadeQ = useQuery({
+    queryKey: ["cliente-finalidade", docCliente],
+    queryFn: () => buscarFinalidade({ data: { doc: docCliente } }),
+    enabled: docCliente.length >= 11,
+    staleTime: 0,
+  });
+  const finalidadeCadastro = finalidadeQ.data?.finalidade ?? null;
 
   if (q.isLoading) return <div className="glass rounded-2xl p-8 text-muted-foreground">Carregando…</div>;
   if (!p) return <div className="glass rounded-2xl p-8 text-muted-foreground">Proposta não encontrada.</div>;
@@ -89,7 +103,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <Campo label="UF de destino" value={String(p['uf'] ?? "—")} />
             <Campo label="Contribuinte" value={p['contribuinte'] ? "Sim" : "Não"} />
-            <Campo label="Finalidade de uso" value={labelFinalidade(p['finalidade_uso'])} />
+            <Campo label="Finalidade de uso" value={finalidadeCadastro ? labelFinalidadeUso[finalidadeUsoDoCadastro(finalidadeCadastro)] : labelFinalidade(p['finalidade_uso'])} />
             <Campo label="Frete" value={`${p['frete_mod'] ?? "—"} · ${fmtBRL(frete)}`} />
             <Campo label="Indicação" value={p['indicacao'] ? "Sim" : "Não"} />
             {p['indicacao'] ? <Campo label="Padrinho" value={p['padrinho_nome'] || "—"} /> : null}
