@@ -29,7 +29,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { toast } from "sonner";
 import { useCpoUfs } from "@/hooks/use-cpo";
 import { docValido, mascaraDoc, soDigitos } from "@/lib/cnpj";
-import { FINALIDADES, TABELAS_PRECO } from "@/lib/sap-clientes-map";
+import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
 
 import {
   listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, excluirClienteFn,
@@ -771,24 +771,38 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     </SelectContent>
                   </Select>
                 </F>
+                {/* Tabela de preço: no Solar o vendedor escolhe; em Carregadores é sempre a padrão. */}
+                {instancia === "solar" ? (
+                  <F label="Tabela de preço (SAP) *" id="campo-tabela_preco" error={erros.tabela_preco}>
+                    <Select value={form.tabela_preco || TABELA_PRECO_PADRAO} onValueChange={(v) => set("tabela_preco", v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                      <SelectContent>
+                        {TABELAS_PRECO.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </F>
+                ) : null}
                 {ehAdmin && (
                   <>
                     <F label="Condição de pagamento">
                       <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
                     </F>
-                    <F label="Tabela de preço (SAP)" id="campo-tabela_preco" error={erros.tabela_preco}>
-                      <Select value={form.tabela_preco || "2P-0001"} onValueChange={(v) => set("tabela_preco", v)}>
-                        <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                        <SelectContent>
-                          {TABELAS_PRECO.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </F>
+                    {instancia !== "solar" && (
+                      <F label="Tabela de preço (SAP)" id="campo-tabela_preco" error={erros.tabela_preco}>
+                        <Select value={form.tabela_preco || TABELA_PRECO_PADRAO} onValueChange={(v) => set("tabela_preco", v)}>
+                          <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                          <SelectContent>
+                            {TABELAS_PRECO.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.label}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </F>
+                    )}
                     <F label="Condição de pagamento SAP (ZTERM)">
                       <Input value={form.condicao_pgto_sap ?? ""} onChange={(e) => set("condicao_pgto_sap", e.target.value)} placeholder="Ex.: 0030" />
                     </F>
                   </>
                 )}
+
 
                 <ClienteLogoUpload doc={form.doc ?? ""} />
                 <div className="sm:col-span-2">

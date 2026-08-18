@@ -1,29 +1,38 @@
 /**
  * De-para entre o cadastro do portal e os campos esperados pela RFC
- * `ZHDIT_CLIENTES_CADASTRO` do SAP. Módulo puro (sem I/O) para poder ser
- * testado e importado tanto do servidor quanto de código cliente.
+ * `ZHDIT_CLIENTES_CADASTRO` do SAP (estrutura I_S_CLIENTE). Módulo puro
+ * (sem I/O) para poder ser testado e importado do servidor ou do cliente.
  */
 
 export const FINALIDADES = ["Revenda", "Industrialização", "Uso e Consumo"] as const;
 export type Finalidade = (typeof FINALIDADES)[number];
 
-/** Tabelas de preço do SAP (PLTYP). */
+/** Tabelas de preço do SAP (PLTYP). O código enviado ao SAP é o `pltyp`. */
 export const TABELAS_PRECO = [
-  { codigo: "2P-0001", label: "2P-0001 — Tabela padrão" },
-  { codigo: "2P-0002", label: "2P-0002 — Tabela especial" },
+  { codigo: "2P-0001", pltyp: "01", label: "2P-0001 — Varejo" },
+  { codigo: "2P-0002", pltyp: "02", label: "2P-0002 — Atacado" },
+  { codigo: "2P-0003", pltyp: "03", label: "2P-0003 — Especial" },
+  { codigo: "2P-0004", pltyp: "04", label: "2P-0004 — Distribuidor" },
+  { codigo: "2P-0005", pltyp: "05", label: "2P-0005 — Distribuidor especial" },
 ] as const;
 
-/** CFOP de cadastro (CFOPC) conforme a finalidade da mercadoria. */
-export const CFOPC_POR_FINALIDADE: Record<Finalidade, string> = {
-  Revenda: "1",
-  "Industrialização": "2",
-  "Uso e Consumo": "3",
-};
+/** Tabela usada por padrão (2P Carregadores sempre usa esta). */
+export const TABELA_PRECO_PADRAO = "2P-0001";
 
-/** Categoria de contribuinte do ICMS (ICMSTAXPAY). */
-export function icmsTaxPay(contribuinte: boolean, ie: string | null | undefined): string {
-  if (!contribuinte) return "9"; // não contribuinte
-  return ie && ie.trim() ? "1" : "2"; // contribuinte com IE / contribuinte isento
+export function pltypDaTabela(tabela: string | null | undefined): string {
+  const t = String(tabela ?? "").trim();
+  const achado = TABELAS_PRECO.find((x) => x.codigo === t || x.pltyp === t);
+  if (achado) return achado.pltyp;
+  const num = /^(\d)/.exec(t)?.[1];
+  return num ? num.padStart(2, "0") : "01";
+}
+
+/** CRT (código de regime tributário) do SAP a partir do regime do cadastro. */
+export function crtDoRegime(regime: string | null | undefined): string {
+  const r = String(regime ?? "").toLowerCase();
+  if (r.includes("simples")) return "1";
+  if (r.includes("mei")) return "1";
+  return "3"; // Lucro Presumido / Lucro Real / demais = regime normal
 }
 
 export type ClienteSapInput = {
@@ -33,6 +42,7 @@ export type ClienteSapInput = {
   ie?: string | null;
   suframa?: string | null;
   contribuinte: boolean;
+  regime_tributario?: string | null;
   finalidade?: string | null;
   tabela_preco?: string | null;
   condicao_pgto_sap?: string | null;
@@ -54,40 +64,99 @@ export type ClienteSapInput = {
 const so = (v: unknown) => String(v ?? "").trim();
 const digitos = (v: unknown) => so(v).replace(/\D/g, "");
 
-/** Lista de pares Atributo/Valor enviados no `i_t_param` da RFC. */
-export function mapClienteParaSap(c: ClienteSapInput): Array<{ atributo: string; valor: string }> {
+/** Quebra a razão social em até 4 linhas de 40 caracteres (NAME1..NAME4). */
+export function quebrarNome(nome: string, largura = 40): string[] {
+  const linhas: string[] = [];
+  let atual = "";
+  for (const palavra of so(nome).split(/\s+/).filter(Boolean)) {
+    if (!atual) atual = palavra.slice(0, largura);
+    else if ((atual + " " + palavra).length <= largura) atual += " " + palavra;
+    else {
+      linhas.push(atual);
+      atual = palavra.slice(0, largura);
+    }
+  }
+  if (atual) linhas.push(atual);
+  return linhas.slice(0, 4);
+}
+
+export type CamposSapCliente = {
+  ATUALIZAR: string;
+  EMPRESA: string;
+  CNPJ: string;
+  CPF: string;
+  CODCLI: string;
+  NAMES: string[];
+  IE: string;
+  CIDADE: string;
+  BAIRRO: string;
+  CEP: string;
+  LOGRADOURO: string;
+  NUMERO: string;
+  COMPLEMENTO: string;
+  UF: string;
+  TELEFONE: string;
+  E_MAIL: string;
+  CFOPC: string;
+  ICMSTAXPAY: string;
+  VENDEDOR: string;
+  PLTYP: string;
+  KONDA: string;
+  CRT: string;
+  ZTERM: string;
+  IND_SECTOR: string;
+};
+
+const UFS_KONDA_04 = ["SP", "RJ", "ES", "MG", "RS", "PR", "SC"];
+
+/** Monta os campos da estrutura I_S_CLIENTE conforme as regras do SAP. */
+export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
   const doc = digitos(c.doc);
   const pessoaFisica = doc.length === 11;
   const finalidade = (so(c.finalidade) || "Revenda") as Finalidade;
+  const contribuinte = c.contribuinte === true;
 
-  const pares: Array<[string, string]> = [
-    ["KUNNR", digitos(c.numero_sap)],
-    ["NOME1", so(c.razao_social).slice(0, 40)],
-    ["NAME2", so(c.nome_fantasia).slice(0, 40)],
-    [pessoaFisica ? "STCD2" : "STCD1", doc],
-    ["STCD3", so(c.ie)],
-    ["SUFRAMA", so(c.suframa)],
-    ["ICMSTAXPAY", icmsTaxPay(c.contribuinte, c.ie)],
-    ["CFOPC", CFOPC_POR_FINALIDADE[finalidade] ?? "1"],
-    ["FINALIDADE", finalidade],
-    ["PLTYP", so(c.tabela_preco) || "2P-0001"],
-    ["ZTERM", so(c.condicao_pgto_sap)],
-    ["STRAS", so(c.logradouro).slice(0, 60)],
-    ["HAUSN", so(c.numero).slice(0, 10)],
-    ["COMPLEMENTO", so(c.complemento).slice(0, 40)],
-    ["ORT02", so(c.bairro).slice(0, 40)],
-    ["ORT01", so(c.cidade).slice(0, 40)],
-    ["REGIO", so(c.uf).toUpperCase().slice(0, 2)],
-    ["PSTLZ", digitos(c.cep)],
-    ["LAND1", "BR"],
-    ["SPRAS", "P"],
-    ["TXJCD", digitos(c.municipio_ibge)],
-    ["SMTP_ADDR", so(c.email).slice(0, 60)],
-    ["TELF1", so(c.telefone).slice(0, 30)],
-    ["VENDEDOR", so(c.vendedor_sap)],
-  ];
+  let ie = so(c.ie).replace(/[.\-/]/g, "").slice(0, 18);
+  let icmstaxpay = "01";
+  let cfopc: string;
+  if (contribuinte && finalidade === "Revenda") cfopc = "08";
+  else if (contribuinte && finalidade === "Industrialização") cfopc = "00";
+  else if (contribuinte && finalidade === "Uso e Consumo") cfopc = "90";
+  else {
+    ie = ie || "ISENTO";
+    cfopc = "6";
+    icmstaxpay = "09";
+  }
 
-  return pares.filter(([, valor]) => valor !== "").map(([atributo, valor]) => ({ atributo, valor }));
+  const uf = so(c.uf).toUpperCase().slice(0, 2);
+  const atualizar = digitos(c.numero_sap) ? "X" : "";
+
+  return {
+    ATUALIZAR: atualizar,
+    EMPRESA: "9800",
+    CNPJ: pessoaFisica ? "" : doc.padStart(14, "0"),
+    CPF: pessoaFisica ? doc : "",
+    CODCLI: digitos(c.numero_sap),
+    NAMES: quebrarNome(c.razao_social),
+    IE: ie,
+    CIDADE: so(c.cidade).slice(0, 40),
+    BAIRRO: so(c.bairro).slice(0, 40),
+    CEP: digitos(c.cep),
+    LOGRADOURO: so(c.logradouro).slice(0, 60),
+    NUMERO: so(c.numero).slice(0, 10),
+    COMPLEMENTO: so(c.complemento).slice(0, 40),
+    UF: uf,
+    TELEFONE: so(c.telefone).slice(0, 30),
+    E_MAIL: so(c.email).slice(0, 60),
+    CFOPC: cfopc,
+    ICMSTAXPAY: icmstaxpay,
+    VENDEDOR: so(c.vendedor_sap),
+    PLTYP: pltypDaTabela(c.tabela_preco),
+    KONDA: UFS_KONDA_04.includes(uf) ? "04" : "03",
+    CRT: crtDoRegime(c.regime_tributario),
+    ZTERM: digitos(c.numero_sap) ? so(c.condicao_pgto_sap) : "2P00",
+    IND_SECTOR: uf === "SC" && finalidade === "Industrialização" ? "04" : "",
+  };
 }
 
 /** Validações que precisam existir antes de tentar o envio ao SAP. */
@@ -97,10 +166,15 @@ export function validarParaSap(c: ClienteSapInput): string[] {
   if (!digitos(c.doc)) faltando.push("CNPJ / CPF");
   if (!so(c.logradouro)) faltando.push("Logradouro");
   if (!so(c.numero)) faltando.push("Número");
+  if (!so(c.bairro)) faltando.push("Bairro");
   if (!so(c.cidade)) faltando.push("Cidade");
   if (!so(c.uf)) faltando.push("UF");
   if (digitos(c.cep).length !== 8) faltando.push("CEP");
   if (!so(c.finalidade)) faltando.push("Finalidade da mercadoria");
   if (!so(c.tabela_preco)) faltando.push("Tabela de preço");
+  if (!so(c.vendedor_sap)) faltando.push("Código SAP do vendedor");
+  if (quebrarNome(c.razao_social).join(" ").length < so(c.razao_social).length) {
+    faltando.push("Razão social (excede 4 linhas de 40 caracteres)");
+  }
   return faltando;
 }
