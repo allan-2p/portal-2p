@@ -264,7 +264,7 @@ export async function aplicarEventoPix(ev: PixEvento, io: PixIO = pixIOBanco): P
 
   // Notificação para o dono do pedido (pago / expirado / cancelado).
   const dono = proposta["created_by"] ? String(proposta["created_by"]) : null;
-  if (dono && io.notificar && ev.tipo !== "desconhecido") {
+  if (dono && io.notificar) {
     try {
       await io.notificar({
         tipo: ev.tipo,
