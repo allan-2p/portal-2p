@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Mail, Phone, UserPlus } from "lucide-react";
 
 export type ContatoTipo = "principal" | "financeiro" | "outro";
