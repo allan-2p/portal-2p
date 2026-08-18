@@ -6,6 +6,7 @@ import { AlertTriangle, KanbanSquare, List, Loader2, Search } from "lucide-react
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { listarPropostasFn, atualizarStatusPropostaFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";

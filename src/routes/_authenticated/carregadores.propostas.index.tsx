@@ -26,6 +26,7 @@ import {
 import { Calculator, Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { listarPropostasFn, atualizarStatusPropostaFn, excluirPropostaFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";

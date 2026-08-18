@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertTriangle, ArrowLeft, Calculator, FileDown, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { listarPropostasFn } from "@/lib/propostas.functions";
 import { fmtBRL, fmtPct, novoEstado, type CarregadoresFreteMod, type CarregadoresState } from "@/lib/carregadores";
 import { auditarProposta, type PassoCalculo, REGRAS_VERSAO } from "@/lib/carregadores-auditoria";
 import {

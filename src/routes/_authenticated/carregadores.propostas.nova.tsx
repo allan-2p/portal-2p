@@ -82,7 +82,12 @@ import {
 import { ratearComissao, VALOR_INDICACAO, type Regime, type RateioLinha } from "@/lib/carregadores-comissao";
 import { useAuth } from "@/hooks/use-auth";
 import { registrarConclusao } from "@/lib/carregadores-conclusao-log";
-import { salvarPropostaCarregadores, atribuirNumeroSapFn } from "@/lib/propostas.functions";
+import {
+  salvarPropostaCarregadores,
+  atribuirNumeroSapFn,
+  obterPropostaFn,
+  concluirPropostaFn,
+} from "@/lib/propostas.functions";
 
 
 import { buildPropostaPdfHtml } from "@/lib/carregadores-proposta-pdf";

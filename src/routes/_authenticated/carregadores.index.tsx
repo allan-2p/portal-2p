@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
+import { listarPropostasFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 import { PermissionGate } from "@/components/permission-gate";
