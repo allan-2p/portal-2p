@@ -117,6 +117,7 @@ const ROTULOS: Record<string, string> = {
   razao_social: "Razão social", doc: "CNPJ / CPF", uf: "UF de destino",
   ie: "Inscrição Estadual", cep: "CEP", logradouro: "Logradouro",
   numero: "Número", cidade: "Cidade",
+  finalidade: "Finalidade da mercadoria", tabela_preco: "Tabela de preço",
 };
 const rotuloCampo = (chave: string, contatos: Contato[]) =>
   ROTULOS[chave] ?? rotuloErroContato(chave, contatos) ?? chave;
@@ -132,6 +133,9 @@ function validarCampos(f: Form): Erros {
   if (!f.logradouro?.trim()) e.logradouro = "Informe o logradouro.";
   if (!f.numero?.trim()) e.numero = "Informe o número do endereço.";
   if (!f.cidade?.trim()) e.cidade = "Informe a cidade.";
+  if (!f.finalidade?.trim()) e.finalidade = "Selecione a finalidade da mercadoria (exigida pelo SAP).";
+  if (!f.tabela_preco?.trim()) e.tabela_preco = "Selecione a tabela de preço (exigida pelo SAP).";
+
   return e;
 }
 
