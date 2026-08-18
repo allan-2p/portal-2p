@@ -175,3 +175,40 @@ export async function listarPropostasPorPagamentoTxid(txid: string): Promise<Pro
     throw e;
   }
 }
+
+export type PagamentoResumoRow = {
+  id: string;
+  numero: string | null;
+  cliente_nome: string | null;
+  status: string | null;
+  created_by: string | null;
+  pagamento_meio: string | null;
+  pagamento_status: string | null;
+  pagamento_txid: string | null;
+  pagamento_vencimento: string | null;
+  pagamento_atualizado_em: string | null;
+  pago_em: string | null;
+};
+
+const PAGAMENTO_SELECT =
+  "id,numero,cliente_nome,status,created_by,pagamento_meio,pagamento_status,pagamento_txid,pagamento_vencimento,pagamento_atualizado_em,pago_em";
+
+/**
+ * Resumo de pagamento dos pedidos. Retorna lista vazia (sem quebrar a tela)
+ * enquanto as colunas de pagamento não existirem no banco.
+ */
+export async function listarPagamentos(organizacao?: string): Promise<PagamentoResumoRow[]> {
+  const params = new URLSearchParams({
+    select: PAGAMENTO_SELECT,
+    order: "created_at.desc",
+    limit: "2000",
+  });
+  if (organizacao) params.set("organizacao", `eq.${organizacao}`);
+  try {
+    return ((await rest(`propostas?${params}`)) ?? []) as PagamentoResumoRow[];
+  } catch (e) {
+    if (/pagamento_|42703|PGRST204/i.test((e as Error).message)) return [];
+    throw e;
+  }
+}
+
