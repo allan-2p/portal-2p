@@ -56,6 +56,7 @@ import {
   fmtBRL,
   fmtPct,
   labelFinalidadeUso,
+  finalidadeUsoDoCadastro,
   OBSERVACOES_PADRAO,
   observacoesComDifal,
   FRETE_ABSORVIDO,
@@ -125,6 +126,8 @@ type ClienteCadastro = {
   cliente_ie: string | null;
   uf: string;
   contribuinte: boolean;
+  /** Finalidade de uso definida no cadastro do cliente (fonte única de verdade). */
+  finalidade?: string | null;
   regime_tributario?: string | null;
   cliente_updated_at: string | null;
   consultor_nome: string | null;
@@ -349,6 +352,7 @@ function PropostaCpoPage() {
           cliente_ie: (c["ie"] as string) ?? null,
           uf: (c["uf"] as string) ?? "",
           contribuinte: c["contribuinte"] !== false,
+          finalidade: (c["finalidade"] as string) ?? null,
           regime_tributario: (c["regime_tributario"] as string) ?? null,
           cliente_updated_at: (c["updated_at"] as string) ?? null,
           consultor_nome: (c["created_by_nome"] as string) ?? null,
@@ -389,7 +393,8 @@ function PropostaCpoPage() {
       (atual.cliente_email ?? "") !== state.email ||
       (atual.cliente_ie ?? "") !== state.ie ||
       (atual.uf || "") !== state.uf ||
-      atual.contribuinte !== state.contribuinte;
+      atual.contribuinte !== state.contribuinte ||
+      finalidadeUsoDoCadastro(atual.finalidade) !== state.finalidadeUso;
     if (!mudou) return;
     setState((s) => ({
       ...s,
@@ -400,6 +405,7 @@ function PropostaCpoPage() {
       ie: atual.cliente_ie ?? "",
       uf: atual.uf || s.uf,
       contribuinte: atual.contribuinte,
+      finalidadeUso: finalidadeUsoDoCadastro(atual.finalidade),
       regimeTributario: atual.regime_tributario ?? s.regimeTributario ?? null,
     }));
     toast.info("Dados do cliente atualizados conforme o cadastro atual.");
@@ -443,6 +449,8 @@ function PropostaCpoPage() {
       ie: c.cliente_ie ?? "",
       uf: c.uf || s.uf,
       contribuinte: c.contribuinte ?? s.contribuinte,
+      // Finalidade de uso nunca é escolhida na proposta: vem sempre do cadastro.
+      finalidadeUso: finalidadeUsoDoCadastro(c.finalidade),
       regimeTributario: c.regime_tributario ?? null,
       // Entrega parte do endereço do cadastro; o consultor ajusta se for diferente.
       entrega: s.entregaDiferente
@@ -1367,6 +1375,11 @@ function PropostaCpoPage() {
                       <ReadField label="Estado (UF) de destino" value={uf ? `${uf.uf} — ${uf.nome}` : state.uf} invalid={campoInvalido("uf")} />
                       <ReadField label="Inscrição Estadual" value={state.ie || "Cliente sem IE"} invalid={campoInvalido("ie")} />
                       <ReadField label="Consultor" value={consultorProposta || "—"} />
+                      {/* Somente leitura: herdada do cadastro do cliente. */}
+                      <ReadField
+                        label="Finalidade de uso"
+                        value={labelFinalidadeUso[state.finalidadeUso]}
+                      />
                     </div>
                     <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs">
                       <b className="text-foreground">
@@ -1426,21 +1439,6 @@ function PropostaCpoPage() {
 
             {etapa === 2 ? (
               <>
-                <Field label="Finalidade de uso">
-                  <Select
-                    value={state.finalidadeUso}
-                    onValueChange={(v) => set("finalidadeUso", v as CpoFinalidadeUso)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
-                      <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
-                      <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
 
                 <Field label="Tipo de nota fiscal">
                   <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CpoState["tipoNf"])}>

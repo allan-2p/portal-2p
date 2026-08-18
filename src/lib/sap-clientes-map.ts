@@ -170,7 +170,7 @@ export function validarParaSap(c: ClienteSapInput): string[] {
   if (!so(c.cidade)) faltando.push("Cidade");
   if (!so(c.uf)) faltando.push("UF");
   if (digitos(c.cep).length !== 8) faltando.push("CEP");
-  if (!so(c.finalidade)) faltando.push("Finalidade da mercadoria");
+  if (!so(c.finalidade)) faltando.push("Finalidade de uso");
   if (!so(c.tabela_preco)) faltando.push("Tabela de preço");
   if (!so(c.vendedor_sap)) faltando.push("Código SAP do vendedor");
   if (quebrarNome(c.razao_social).join(" ").length < so(c.razao_social).length) {
