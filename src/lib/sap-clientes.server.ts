@@ -58,6 +58,32 @@ function montarEnvelope(pares: Array<{ atributo: string; valor: string }>) {
   </soap:Body>
 </soap:Envelope>`;
 }
+/** Extrai o texto útil (e o ID de transação) de um SOAP Fault do SAP. */
+function resumoFalha(texto: string) {
+  const m = /<[^>]*Text[^>]*>([\s\S]*?)<\/[^>]*Text>/i.exec(texto);
+  return (m?.[1] ?? texto).replace(/\s+/g, " ").trim().slice(0, 400);
+}
+
+/**
+ * O SAP responde `env:Receiver` genérico tanto para payload inválido quanto
+ * para serviço sem binding configurado. Consultando o `?wsdl` conseguimos a
+ * mensagem real do provedor (ex.: "Initialer Wert 'config key'"), o que evita
+ * caçar erro no payload quando o problema é configuração no SOAMANAGER.
+ */
+async function diagnosticarEndpoint(url: string, auth: string | undefined): Promise<string | null> {
+  try {
+    const res = await fetch(`${url.split("?")[0]}?wsdl`, {
+      headers: { ...(auth ? { Authorization: auth } : {}) },
+    });
+    const txt = await res.text();
+    const erro = /<errorText>([\s\S]*?)<\/errorText>/i.exec(txt)?.[1]?.trim();
+    if (!erro) return null;
+    return `o serviço ZHDIT_CLIENTES_CADASTRO não está configurado no SAP (SOAMANAGER) — resposta do provedor: "${erro}". Peça ao time de Basis para ativar/configurar o binding deste serviço.`;
+  } catch {
+    return null;
+  }
+}
+
 
 /** Cria/atualiza o cliente no SAP e devolve o código (KUNNR) quando houver. */
 export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<SapClienteResultado> {
