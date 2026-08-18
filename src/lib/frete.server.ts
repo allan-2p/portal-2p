@@ -58,20 +58,24 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
       ],
       escolhida: 0,
       peso: 0,
+      cubagem: 0,
       valorNotaFinal: round2(data.valorNota),
       trilho: null,
     };
   }
 
-  // Peso: recalcula pela soma dos pesos líquidos quando vier ≤ 1 kg.
-  let peso = Number(data.peso ?? 1);
-  if (peso <= 1) {
-    const soma = data.itens.reduce(
-      (s, i) => s + Number(i.quantidade || 0) * Number(i.pesoLiquido ?? 0),
-      0,
+  // Peso considerado: soma do peso bruto dos itens (kg). O valor informado só
+  // é usado quando não há peso cadastrado nos produtos (ex.: diagnóstico).
+  const somaPeso = data.itens.reduce(
+    (s, i) => s + Number(i.quantidade || 0) * Number(i.pesoLiquido ?? 0),
+    0,
+  );
+  const peso = round2(somaPeso > 0 ? somaPeso : Number(data.peso ?? 0));
+  if (!(peso > 0))
+    throw new Error(
+      "Não foi possível cotar: os produtos do pedido estão sem peso bruto cadastrado. Informe o peso (kg) em Gestão de Produtos.",
     );
-    if (soma > 0) peso = round2(soma);
-  }
+  const cubagem = round2(Number(data.cubagem ?? 0));
 
   const codigosCarrinho = data.itens.map((i) => normalizarCodigo(i.codigo));
   const nomesCarrinho = data.itens.map((i) => String(i.nome ?? ""));
@@ -81,7 +85,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     uf: data.destino.uf,
     cidade: data.destino.cidade,
     cep: (data.destino.cep ?? "").replace(/\D/g, ""),
-    cubagem: 0,
+    cubagem,
     peso,
   };
   if (codigoTrilho) destino["codigoProdutos"] = [codigoTrilho];
@@ -91,7 +95,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     paradas: [],
     qntEntregas: 1,
     valorNota: round2(data.valorNota),
-    origem: { ...ORIGEM, cubagem: 0, peso },
+    origem: { ...ORIGEM, cubagem, peso },
     destino,
   };
 
