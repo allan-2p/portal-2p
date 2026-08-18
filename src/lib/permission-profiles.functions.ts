@@ -10,6 +10,10 @@ export type PermissionProfile = {
   description: string | null;
   is_system: boolean;
   is_full_access: boolean;
+  /** Unidade inicial do perfil (página que abre ao entrar no portal). */
+  default_instance: string | null;
+  /** Rota inicial do perfil dentro dessa unidade. */
+  default_route: string | null;
   features: { instance_id: string; feature_key: string }[];
   instances: string[];
   user_ids: string[];
@@ -56,6 +60,8 @@ export const adminListPermissionProfiles = createServerFn({ method: "GET" })
         description: p.description,
         is_system: p.is_system,
         is_full_access: !!p.is_full_access,
+        default_instance: p.default_instance ?? null,
+        default_route: p.default_route ?? null,
         features: featBy.get(p.id) ?? [],
         instances: instBy.get(p.id) ?? [],
         user_ids: usersBy.get(p.id) ?? [],
@@ -167,6 +173,31 @@ export const adminSetProfileInstances = createServerFn({ method: "POST" })
         .insert(data.instance_ids.map((i) => ({ profile_id: data.profile_id, instance_id: i })));
       if (error) throw new Error(error.message);
     }
+    return { ok: true };
+  });
+
+// ---- Página inicial do perfil ---- //
+export const adminSetProfileHome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        profile_id: z.string().uuid(),
+        default_instance: InstanceEnum.nullable(),
+        default_route: z.string().max(200).nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase
+      .from("permission_profiles")
+      .update({
+        default_instance: data.default_instance,
+        default_route: data.default_route,
+      })
+      .eq("id", data.profile_id);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
