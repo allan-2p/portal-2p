@@ -164,6 +164,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         collapsible: true,
         items: [
           { to: "/admin/produtos-solar", label: "Gestão de Produtos", icon: Package, feature: "admin.produtos" },
+          { to: "/admin/modulos-solar", label: "Módulos", icon: Package, feature: "admin.produtos" },
           { to: "/admin/regras", label: "Regras de Propostas", icon: BookOpen, feature: "admin.regras" },
           { to: "/admin/metas", label: "Regras de Metas", icon: Target, feature: "admin.metas" },
           { to: "/admin/comissoes", label: "Regras de Comissões", icon: Percent, feature: "admin.comissoes" },

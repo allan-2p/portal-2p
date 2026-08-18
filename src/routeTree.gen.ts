@@ -26,7 +26,6 @@ import { Route as AuthenticatedCarregadoresIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ApiPublicAppVersionRouteImport } from './routes/api/public/app-version'
 import { Route as AuthenticatedSolarTarefasRouteImport } from './routes/_authenticated/solar.tarefas'
-import { Route as AuthenticatedSolarPropostasRouteImport } from './routes/_authenticated/solar.propostas'
 import { Route as AuthenticatedSolarPedidosRouteImport } from './routes/_authenticated/solar.pedidos'
 import { Route as AuthenticatedSolarDashboardsRouteImport } from './routes/_authenticated/solar.dashboards'
 import { Route as AuthenticatedSolarCuponsRouteImport } from './routes/_authenticated/solar.cupons'
@@ -54,6 +53,7 @@ import { Route as AuthenticatedAdminRegrasRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminProdutosSolarRouteImport } from './routes/_authenticated/admin.produtos-solar'
 import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authenticated/admin.produtos'
 import { Route as AuthenticatedAdminPerfisRouteImport } from './routes/_authenticated/admin.perfis'
+import { Route as AuthenticatedAdminModulosSolarRouteImport } from './routes/_authenticated/admin.modulos-solar'
 import { Route as AuthenticatedAdminModeracaoRouteImport } from './routes/_authenticated/admin.moderacao'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
 import { Route as AuthenticatedAdminIntegracoesRouteImport } from './routes/_authenticated/admin.integracoes'
@@ -64,12 +64,14 @@ import { Route as AuthenticatedAdminAuditoriaRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminAtividadeRouteImport } from './routes/_authenticated/admin.atividade'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as AuthenticatedSolarPropostasIndexRouteImport } from './routes/_authenticated/solar.propostas.index'
 import { Route as AuthenticatedCarregadoresPropostasIndexRouteImport } from './routes/_authenticated/carregadores.propostas.index'
 import { Route as AuthenticatedCarregadoresClientesIndexRouteImport } from './routes/_authenticated/carregadores.clientes.index'
 import { Route as AuthenticatedAdminLogsIndexRouteImport } from './routes/_authenticated/admin.logs.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as AuthenticatedSolarPropostasNovaRouteImport } from './routes/_authenticated/solar.propostas.nova'
 import { Route as AuthenticatedSolarDashboardsMetasRouteImport } from './routes/_authenticated/solar.dashboards.metas'
 import { Route as AuthenticatedSolarClientesSugestoesRouteImport } from './routes/_authenticated/solar.clientes.sugestoes'
 import { Route as AuthenticatedSolarClientesSegmentacaoRouteImport } from './routes/_authenticated/solar.clientes.segmentacao'
@@ -172,12 +174,6 @@ const AuthenticatedSolarTarefasRoute =
   AuthenticatedSolarTarefasRouteImport.update({
     id: '/solar/tarefas',
     path: '/solar/tarefas',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSolarPropostasRoute =
-  AuthenticatedSolarPropostasRouteImport.update({
-    id: '/solar/propostas',
-    path: '/solar/propostas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSolarPedidosRoute =
@@ -341,6 +337,12 @@ const AuthenticatedAdminPerfisRoute =
     path: '/admin/perfis',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminModulosSolarRoute =
+  AuthenticatedAdminModulosSolarRouteImport.update({
+    id: '/admin/modulos-solar',
+    path: '/admin/modulos-solar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminModeracaoRoute =
   AuthenticatedAdminModeracaoRouteImport.update({
     id: '/admin/moderacao',
@@ -399,6 +401,12 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSolarPropostasIndexRoute =
+  AuthenticatedSolarPropostasIndexRouteImport.update({
+    id: '/solar/propostas/',
+    path: '/solar/propostas/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCarregadoresPropostasIndexRoute =
   AuthenticatedCarregadoresPropostasIndexRouteImport.update({
     id: '/',
@@ -433,6 +441,12 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSolarPropostasNovaRoute =
+  AuthenticatedSolarPropostasNovaRouteImport.update({
+    id: '/solar/propostas/nova',
+    path: '/solar/propostas/nova',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSolarDashboardsMetasRoute =
   AuthenticatedSolarDashboardsMetasRouteImport.update({
     id: '/metas',
@@ -540,6 +554,7 @@ export interface FileRoutesByFullPath {
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
+  '/admin/modulos-solar': typeof AuthenticatedAdminModulosSolarRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
@@ -567,7 +582,6 @@ export interface FileRoutesByFullPath {
   '/solar/cupons': typeof AuthenticatedSolarCuponsRoute
   '/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
   '/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
-  '/solar/propostas': typeof AuthenticatedSolarPropostasRoute
   '/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -587,12 +601,14 @@ export interface FileRoutesByFullPath {
   '/solar/clientes/segmentacao': typeof AuthenticatedSolarClientesSegmentacaoRoute
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
+  '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/admin/logs/': typeof AuthenticatedAdminLogsIndexRoute
   '/carregadores/clientes/': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
+  '/solar/propostas/': typeof AuthenticatedSolarPropostasIndexRoute
 }
 export interface FileRoutesByTo {
   '/$': typeof SplatRoute
@@ -615,6 +631,7 @@ export interface FileRoutesByTo {
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
+  '/admin/modulos-solar': typeof AuthenticatedAdminModulosSolarRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
@@ -640,7 +657,6 @@ export interface FileRoutesByTo {
   '/solar/cupons': typeof AuthenticatedSolarCuponsRoute
   '/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
   '/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
-  '/solar/propostas': typeof AuthenticatedSolarPropostasRoute
   '/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -660,12 +676,14 @@ export interface FileRoutesByTo {
   '/solar/clientes/segmentacao': typeof AuthenticatedSolarClientesSegmentacaoRoute
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
+  '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/admin/logs': typeof AuthenticatedAdminLogsIndexRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasIndexRoute
+  '/solar/propostas': typeof AuthenticatedSolarPropostasIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -691,6 +709,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/_authenticated/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
+  '/_authenticated/admin/modulos-solar': typeof AuthenticatedAdminModulosSolarRoute
   '/_authenticated/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/_authenticated/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
@@ -718,7 +737,6 @@ export interface FileRoutesById {
   '/_authenticated/solar/cupons': typeof AuthenticatedSolarCuponsRoute
   '/_authenticated/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
   '/_authenticated/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
-  '/_authenticated/solar/propostas': typeof AuthenticatedSolarPropostasRoute
   '/_authenticated/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -738,12 +756,14 @@ export interface FileRoutesById {
   '/_authenticated/solar/clientes/segmentacao': typeof AuthenticatedSolarClientesSegmentacaoRoute
   '/_authenticated/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/_authenticated/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
+  '/_authenticated/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/admin/logs/': typeof AuthenticatedAdminLogsIndexRoute
   '/_authenticated/carregadores/clientes/': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/_authenticated/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
+  '/_authenticated/solar/propostas/': typeof AuthenticatedSolarPropostasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -769,6 +789,7 @@ export interface FileRouteTypes {
     | '/admin/integracoes'
     | '/admin/metas'
     | '/admin/moderacao'
+    | '/admin/modulos-solar'
     | '/admin/perfis'
     | '/admin/produtos'
     | '/admin/produtos-solar'
@@ -796,7 +817,6 @@ export interface FileRouteTypes {
     | '/solar/cupons'
     | '/solar/dashboards'
     | '/solar/pedidos'
-    | '/solar/propostas'
     | '/solar/tarefas'
     | '/api/public/app-version'
     | '/admin/'
@@ -816,12 +836,14 @@ export interface FileRouteTypes {
     | '/solar/clientes/segmentacao'
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
+    | '/solar/propostas/nova'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/admin/logs/'
     | '/carregadores/clientes/'
     | '/carregadores/propostas/'
+    | '/solar/propostas/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/$'
@@ -844,6 +866,7 @@ export interface FileRouteTypes {
     | '/admin/integracoes'
     | '/admin/metas'
     | '/admin/moderacao'
+    | '/admin/modulos-solar'
     | '/admin/perfis'
     | '/admin/produtos'
     | '/admin/produtos-solar'
@@ -869,7 +892,6 @@ export interface FileRouteTypes {
     | '/solar/cupons'
     | '/solar/dashboards'
     | '/solar/pedidos'
-    | '/solar/propostas'
     | '/solar/tarefas'
     | '/api/public/app-version'
     | '/admin'
@@ -889,12 +911,14 @@ export interface FileRouteTypes {
     | '/solar/clientes/segmentacao'
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
+    | '/solar/propostas/nova'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/admin/logs'
     | '/carregadores/clientes'
     | '/carregadores/propostas'
+    | '/solar/propostas'
   id:
     | '__root__'
     | '/_authenticated'
@@ -919,6 +943,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/integracoes'
     | '/_authenticated/admin/metas'
     | '/_authenticated/admin/moderacao'
+    | '/_authenticated/admin/modulos-solar'
     | '/_authenticated/admin/perfis'
     | '/_authenticated/admin/produtos'
     | '/_authenticated/admin/produtos-solar'
@@ -946,7 +971,6 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/cupons'
     | '/_authenticated/solar/dashboards'
     | '/_authenticated/solar/pedidos'
-    | '/_authenticated/solar/propostas'
     | '/_authenticated/solar/tarefas'
     | '/api/public/app-version'
     | '/_authenticated/admin/'
@@ -966,12 +990,14 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/clientes/segmentacao'
     | '/_authenticated/solar/clientes/sugestoes'
     | '/_authenticated/solar/dashboards/metas'
+    | '/_authenticated/solar/propostas/nova'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
     | '/_authenticated/admin/logs/'
     | '/_authenticated/carregadores/clientes/'
     | '/_authenticated/carregadores/propostas/'
+    | '/_authenticated/solar/propostas/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1111,13 +1137,6 @@ declare module '@tanstack/react-router' {
       path: '/solar/tarefas'
       fullPath: '/solar/tarefas'
       preLoaderRoute: typeof AuthenticatedSolarTarefasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/solar/propostas': {
-      id: '/_authenticated/solar/propostas'
-      path: '/solar/propostas'
-      fullPath: '/solar/propostas'
-      preLoaderRoute: typeof AuthenticatedSolarPropostasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/solar/pedidos': {
@@ -1309,6 +1328,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPerfisRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/modulos-solar': {
+      id: '/_authenticated/admin/modulos-solar'
+      path: '/admin/modulos-solar'
+      fullPath: '/admin/modulos-solar'
+      preLoaderRoute: typeof AuthenticatedAdminModulosSolarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/moderacao': {
       id: '/_authenticated/admin/moderacao'
       path: '/admin/moderacao'
@@ -1379,6 +1405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/solar/propostas/': {
+      id: '/_authenticated/solar/propostas/'
+      path: '/solar/propostas'
+      fullPath: '/solar/propostas/'
+      preLoaderRoute: typeof AuthenticatedSolarPropostasIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/carregadores/propostas/': {
       id: '/_authenticated/carregadores/propostas/'
       path: '/'
@@ -1420,6 +1453,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/lovable/email/auth/preview'
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/solar/propostas/nova': {
+      id: '/_authenticated/solar/propostas/nova'
+      path: '/solar/propostas/nova'
+      fullPath: '/solar/propostas/nova'
+      preLoaderRoute: typeof AuthenticatedSolarPropostasNovaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/solar/dashboards/metas': {
       id: '/_authenticated/solar/dashboards/metas'
@@ -1646,6 +1686,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIntegracoesRoute: typeof AuthenticatedAdminIntegracoesRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
   AuthenticatedAdminModeracaoRoute: typeof AuthenticatedAdminModeracaoRoute
+  AuthenticatedAdminModulosSolarRoute: typeof AuthenticatedAdminModulosSolarRoute
   AuthenticatedAdminPerfisRoute: typeof AuthenticatedAdminPerfisRoute
   AuthenticatedAdminProdutosRoute: typeof AuthenticatedAdminProdutosRoute
   AuthenticatedAdminProdutosSolarRoute: typeof AuthenticatedAdminProdutosSolarRoute
@@ -1666,7 +1707,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSolarCuponsRoute: typeof AuthenticatedSolarCuponsRoute
   AuthenticatedSolarDashboardsRoute: typeof AuthenticatedSolarDashboardsRouteWithChildren
   AuthenticatedSolarPedidosRoute: typeof AuthenticatedSolarPedidosRoute
-  AuthenticatedSolarPropostasRoute: typeof AuthenticatedSolarPropostasRoute
   AuthenticatedSolarTarefasRoute: typeof AuthenticatedSolarTarefasRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedCarregadoresIndexRoute: typeof AuthenticatedCarregadoresIndexRoute
@@ -1674,7 +1714,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminLogsIntegracoesRoute: typeof AuthenticatedAdminLogsIntegracoesRoute
   AuthenticatedAdminLogsModeracaoRoute: typeof AuthenticatedAdminLogsModeracaoRoute
   AuthenticatedAdminLogsRetencaoRoute: typeof AuthenticatedAdminLogsRetencaoRoute
+  AuthenticatedSolarPropostasNovaRoute: typeof AuthenticatedSolarPropostasNovaRoute
   AuthenticatedAdminLogsIndexRoute: typeof AuthenticatedAdminLogsIndexRoute
+  AuthenticatedSolarPropostasIndexRoute: typeof AuthenticatedSolarPropostasIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1689,6 +1731,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminIntegracoesRoute: AuthenticatedAdminIntegracoesRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
   AuthenticatedAdminModeracaoRoute: AuthenticatedAdminModeracaoRoute,
+  AuthenticatedAdminModulosSolarRoute: AuthenticatedAdminModulosSolarRoute,
   AuthenticatedAdminPerfisRoute: AuthenticatedAdminPerfisRoute,
   AuthenticatedAdminProdutosRoute: AuthenticatedAdminProdutosRoute,
   AuthenticatedAdminProdutosSolarRoute: AuthenticatedAdminProdutosSolarRoute,
@@ -1714,7 +1757,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSolarDashboardsRoute:
     AuthenticatedSolarDashboardsRouteWithChildren,
   AuthenticatedSolarPedidosRoute: AuthenticatedSolarPedidosRoute,
-  AuthenticatedSolarPropostasRoute: AuthenticatedSolarPropostasRoute,
   AuthenticatedSolarTarefasRoute: AuthenticatedSolarTarefasRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedCarregadoresIndexRoute: AuthenticatedCarregadoresIndexRoute,
@@ -1724,7 +1766,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminLogsIntegracoesRoute,
   AuthenticatedAdminLogsModeracaoRoute: AuthenticatedAdminLogsModeracaoRoute,
   AuthenticatedAdminLogsRetencaoRoute: AuthenticatedAdminLogsRetencaoRoute,
+  AuthenticatedSolarPropostasNovaRoute: AuthenticatedSolarPropostasNovaRoute,
   AuthenticatedAdminLogsIndexRoute: AuthenticatedAdminLogsIndexRoute,
+  AuthenticatedSolarPropostasIndexRoute: AuthenticatedSolarPropostasIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

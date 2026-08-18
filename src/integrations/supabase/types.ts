@@ -1742,6 +1742,309 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_calc_config: {
+        Row: {
+          altura_min: number
+          balanco_ponta: number
+          barra_curta_larga: number
+          barra_curta_padrao: number
+          barras_longas: number[]
+          cod_grampo_final: string
+          cod_grampo_intermediario: string
+          cod_juncao: string
+          cod_terminal_aterramento: string
+          espessura_max: number
+          espessura_min: number
+          folga_paineis: number
+          id: number
+          largura_limite: number
+          largura_min: number
+          limite_paineis_todos_trilhos: number
+          updated_at: string
+        }
+        Insert: {
+          altura_min?: number
+          balanco_ponta?: number
+          barra_curta_larga?: number
+          barra_curta_padrao?: number
+          barras_longas?: number[]
+          cod_grampo_final?: string
+          cod_grampo_intermediario?: string
+          cod_juncao?: string
+          cod_terminal_aterramento?: string
+          espessura_max?: number
+          espessura_min?: number
+          folga_paineis?: number
+          id?: number
+          largura_limite?: number
+          largura_min?: number
+          limite_paineis_todos_trilhos?: number
+          updated_at?: string
+        }
+        Update: {
+          altura_min?: number
+          balanco_ponta?: number
+          barra_curta_larga?: number
+          barra_curta_padrao?: number
+          barras_longas?: number[]
+          cod_grampo_final?: string
+          cod_grampo_intermediario?: string
+          cod_juncao?: string
+          cod_terminal_aterramento?: string
+          espessura_max?: number
+          espessura_min?: number
+          folga_paineis?: number
+          id?: number
+          largura_limite?: number
+          largura_min?: number
+          limite_paineis_todos_trilhos?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      solar_cupons: {
+        Row: {
+          ativo: boolean
+          cliente_doc: string | null
+          cliente_nome: string | null
+          codigo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          percentual: number
+          reutilizavel: boolean
+          tipos: string[]
+          updated_at: string
+          usos: number
+          validade: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          cliente_doc?: string | null
+          cliente_nome?: string | null
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          percentual?: number
+          reutilizavel?: boolean
+          tipos?: string[]
+          updated_at?: string
+          usos?: number
+          validade: string
+          valor?: number
+        }
+        Update: {
+          ativo?: boolean
+          cliente_doc?: string | null
+          cliente_nome?: string | null
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          percentual?: number
+          reutilizavel?: boolean
+          tipos?: string[]
+          updated_at?: string
+          usos?: number
+          validade?: string
+          valor?: number
+        }
+        Relationships: []
+      }
+      solar_geradores: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          exige_microinversor: boolean
+          id: string
+          legado_id: number | null
+          nome: string
+          oculta_microinversor: boolean
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          exige_microinversor?: boolean
+          id?: string
+          legado_id?: number | null
+          nome: string
+          oculta_microinversor?: boolean
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          exige_microinversor?: boolean
+          id?: string
+          legado_id?: number | null
+          nome?: string
+          oculta_microinversor?: boolean
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      solar_modulos: {
+        Row: {
+          altura: number | null
+          ativo: boolean
+          created_at: string
+          espessura: number | null
+          id: string
+          largura: number | null
+          nome: string
+          ordem: number
+          personalizado: boolean
+          updated_at: string
+        }
+        Insert: {
+          altura?: number | null
+          ativo?: boolean
+          created_at?: string
+          espessura?: number | null
+          id?: string
+          largura?: number | null
+          nome: string
+          ordem?: number
+          personalizado?: boolean
+          updated_at?: string
+        }
+        Update: {
+          altura?: number | null
+          ativo?: boolean
+          created_at?: string
+          espessura?: number | null
+          id?: string
+          largura?: number | null
+          nome?: string
+          ordem?: number
+          personalizado?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      solar_suportes: {
+        Row: {
+          ativo: boolean
+          codigo_sap: string | null
+          created_at: string
+          id: string
+          legado_id: number | null
+          multiplo: number
+          nome: string
+          ordem: number
+          updated_at: string
+          usa_barra: boolean
+        }
+        Insert: {
+          ativo?: boolean
+          codigo_sap?: string | null
+          created_at?: string
+          id?: string
+          legado_id?: number | null
+          multiplo?: number
+          nome: string
+          ordem?: number
+          updated_at?: string
+          usa_barra?: boolean
+        }
+        Update: {
+          ativo?: boolean
+          codigo_sap?: string | null
+          created_at?: string
+          id?: string
+          legado_id?: number | null
+          multiplo?: number
+          nome?: string
+          ordem?: number
+          updated_at?: string
+          usa_barra?: boolean
+        }
+        Relationships: []
+      }
+      solar_trilho_suportes: {
+        Row: {
+          created_at: string
+          suporte_id: string
+          trilho_id: string
+        }
+        Insert: {
+          created_at?: string
+          suporte_id: string
+          trilho_id: string
+        }
+        Update: {
+          created_at?: string
+          suporte_id?: string
+          trilho_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solar_trilho_suportes_suporte_id_fkey"
+            columns: ["suporte_id"]
+            isOneToOne: false
+            referencedRelation: "solar_suportes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solar_trilho_suportes_trilho_id_fkey"
+            columns: ["trilho_id"]
+            isOneToOne: false
+            referencedRelation: "solar_trilhos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solar_trilhos: {
+        Row: {
+          ativo: boolean
+          codigo_sap: string | null
+          created_at: string
+          familia: string
+          id: string
+          laje: boolean
+          legado_id: number | null
+          nome: string
+          ordem: number
+          orientacao_fixa: string | null
+          suporte_fixo_legado: number | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo_sap?: string | null
+          created_at?: string
+          familia?: string
+          id?: string
+          laje?: boolean
+          legado_id?: number | null
+          nome: string
+          ordem?: number
+          orientacao_fixa?: string | null
+          suporte_fixo_legado?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo_sap?: string | null
+          created_at?: string
+          familia?: string
+          id?: string
+          laje?: boolean
+          legado_id?: number | null
+          nome?: string
+          ordem?: number
+          orientacao_fixa?: string | null
+          suporte_fixo_legado?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
