@@ -136,7 +136,7 @@ function validarCampos(f: Form): Erros {
   if (!f.numero?.trim()) e.numero = "Informe o número do endereço.";
   if (!f.cidade?.trim()) e.cidade = "Informe a cidade.";
   if (!f.finalidade?.trim()) e.finalidade = "Selecione a finalidade da mercadoria (exigida pelo SAP).";
-  if (!f.tabela_preco?.trim()) e.tabela_preco = "Selecione a tabela de preço (exigida pelo SAP).";
+  // Tabela de preço tem padrão automático (2P-0001) — não bloqueia o cadastro.
 
   return e;
 }
