@@ -132,6 +132,7 @@ export function ClienteIntegracoesDialog({
                 <Acoes
                   onTestar={() => testar.mutate("banco")}
                   testando={alvoAtivo === "teste:banco"}
+                  ocupado={Boolean(alvoAtivo)}
                   resultado={testes["banco"]}
                 />
               </div>
@@ -144,6 +145,7 @@ export function ClienteIntegracoesDialog({
                 <Acoes
                   onTestar={() => testar.mutate("sap")}
                   testando={alvoAtivo === "teste:sap"}
+                  ocupado={Boolean(alvoAtivo)}
                   onReenviar={() => reenviar.mutate({ id: cliente.id, alvos: ["sap"] })}
                   reenviando={alvoAtivo === "reenvio:sap"}
                   resultado={testes["sap"]}
@@ -159,6 +161,7 @@ export function ClienteIntegracoesDialog({
                 <Acoes
                   onTestar={() => testar.mutate("salesforce")}
                   testando={alvoAtivo === "teste:salesforce"}
+                  ocupado={Boolean(alvoAtivo)}
                   onReenviar={() => reenviar.mutate({ id: cliente.id, alvos: ["salesforce"] })}
                   reenviando={alvoAtivo === "reenvio:salesforce"}
                   resultado={testes["salesforce"]}
@@ -170,6 +173,7 @@ export function ClienteIntegracoesDialog({
                 <Acoes
                   onTestar={() => testar.mutate("contatos")}
                   testando={alvoAtivo === "teste:contatos"}
+                  ocupado={Boolean(alvoAtivo)}
                   onReenviar={() => reenviar.mutate({ id: cliente.id, alvos: ["contatos"] })}
                   reenviando={alvoAtivo === "reenvio:contatos"}
                   resultado={testes["contatos"]}
@@ -206,12 +210,14 @@ export function ClienteIntegracoesDialog({
 function Acoes({
   onTestar,
   testando,
+  ocupado,
   onReenviar,
   reenviando,
   resultado,
 }: {
   onTestar: () => void;
   testando: boolean;
+  ocupado?: boolean;
   onReenviar?: () => void;
   reenviando?: boolean;
   resultado?: { ok: boolean; mensagem: string; detalhe?: string | null };
@@ -219,12 +225,12 @@ function Acoes({
   return (
     <div className="space-y-2 pt-1">
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" className="gap-2 h-8" onClick={onTestar} disabled={testando}>
+        <Button variant="outline" size="sm" className="gap-2 h-8" onClick={onTestar} disabled={testando || ocupado}>
           <Plug className={`h-3.5 w-3.5 ${testando ? "animate-pulse" : ""}`} />
           Testar
         </Button>
         {onReenviar && (
-          <Button variant="secondary" size="sm" className="gap-2 h-8" onClick={onReenviar} disabled={reenviando}>
+          <Button variant="secondary" size="sm" className="gap-2 h-8" onClick={onReenviar} disabled={reenviando || ocupado}>
             <RefreshCw className={`h-3.5 w-3.5 ${reenviando ? "animate-spin" : ""}`} />
             Reenviar
           </Button>
