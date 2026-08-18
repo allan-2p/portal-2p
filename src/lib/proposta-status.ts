@@ -1,6 +1,8 @@
 /**
  * Status universais das propostas/pedidos — valem para todas as instâncias
  * (2P Solar, 2P Carregadores, Grupo 2P). Fonte única de verdade.
+ *
+ * A ordem abaixo é a ordem real do processo e define o `id` de cada status.
  */
 export const PROPOSTA_STATUS = [
   "Salvo",
@@ -14,6 +16,60 @@ export const PROPOSTA_STATUS = [
 ] as const;
 
 export type PropostaStatus = (typeof PROPOSTA_STATUS)[number];
+
+/** id_status oficial (1..8) — segue a ordem do processo. */
+export const PROPOSTA_STATUS_ID: Record<PropostaStatus, number> = {
+  "Salvo": 1,
+  "Aguardando Pagamento": 2,
+  "Processando": 3,
+  "Separação": 4,
+  "Faturado": 5,
+  "Coletado": 6,
+  "Entregue": 7,
+  "Cancelado": 8,
+};
+
+export const PROPOSTA_STATUS_BY_ID = Object.fromEntries(
+  (PROPOSTA_STATUS as readonly PropostaStatus[]).map((s) => [PROPOSTA_STATUS_ID[s], s]),
+) as Record<number, PropostaStatus>;
+
+export function propostaStatusId(status: string): number {
+  return PROPOSTA_STATUS_ID[status as PropostaStatus] ?? 1;
+}
+
+/** Motor responsável por cada transição — nenhum é acionado manualmente. */
+export type PropostaMotor =
+  | "checkout"
+  | "pagamento"
+  | "cron-sap"
+  | "webhook-fretefy"
+  | "humano";
+
+/** Transições permitidas: destino → motor que dispara. */
+export const PROPOSTA_TRANSICOES: Record<PropostaStatus, Partial<Record<PropostaStatus, PropostaMotor>>> = {
+  "Salvo": { "Aguardando Pagamento": "checkout", "Processando": "checkout", "Cancelado": "humano" },
+  "Aguardando Pagamento": { "Processando": "pagamento", "Cancelado": "humano" },
+  "Processando": { "Separação": "cron-sap", "Cancelado": "humano" },
+  "Separação": { "Faturado": "cron-sap", "Cancelado": "humano" },
+  "Faturado": { "Coletado": "cron-sap", "Cancelado": "humano" },
+  "Coletado": { "Entregue": "webhook-fretefy", "Cancelado": "humano" },
+  "Entregue": {},
+  "Cancelado": {},
+};
+
+/** A proposta só é editável enquanto rascunho (id 1). */
+export function propostaEditavel(status: string): boolean {
+  return propostaStatusId(status) === PROPOSTA_STATUS_ID["Salvo"];
+}
+
+/** Cancelar é a única transição humana; não cancela pedido entregue/cancelado. */
+export function podeCancelarProposta(status: string): boolean {
+  return PROPOSTA_TRANSICOES[status as PropostaStatus]?.["Cancelado"] === "humano";
+}
+
+export function transicaoPermitida(de: string, para: string): PropostaMotor | null {
+  return PROPOSTA_TRANSICOES[de as PropostaStatus]?.[para as PropostaStatus] ?? null;
+}
 
 export type PropostaStatusStyle = {
   /** classe de fundo para o "dot" */
