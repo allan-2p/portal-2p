@@ -26,7 +26,6 @@ import { toast } from "sonner";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import {
-  atualizarStatusPropostaFn,
   excluirPropostaFn,
   listarPropostasFn,
 } from "@/lib/propostas.functions";

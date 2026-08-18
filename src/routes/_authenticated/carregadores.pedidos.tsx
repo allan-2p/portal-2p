@@ -6,7 +6,7 @@ import { AlertTriangle, KanbanSquare, List, Loader2, Search } from "lucide-react
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { listarPropostasFn, atualizarStatusPropostaFn } from "@/lib/propostas.functions";
+import { listarPropostasFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
@@ -102,16 +102,6 @@ function CarregadoresPedidosPage() {
       .sort((a, b) => b.value - a.value);
   }, [search, q.data, vendedor, vend]);
 
-  async function alterarStatus(id: string, novo: PedidoStatus) {
-    try {
-      await atualizarStatusPropostaFn({ data: { id, status: novo } });
-    } catch (e) {
-      return toast.error((e as Error).message);
-    }
-    toast.success("Status atualizado.");
-    q.refetch();
-  }
-
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
@@ -168,7 +158,7 @@ function CarregadoresPedidosPage() {
         ) : view === "kanban" ? (
           <KanbanView data={filtered} />
         ) : (
-          <ListView data={filtered} onStatus={alterarStatus} />
+          <ListView data={filtered} />
         )}
       </div>
     </AppLayout>
@@ -217,7 +207,7 @@ function KanbanView({ data }: { data: Pedido[] }) {
   );
 }
 
-function ListView({ data, onStatus }: { data: Pedido[]; onStatus: (id: string, s: PedidoStatus) => void }) {
+function ListView({ data }: { data: Pedido[] }) {
   return (
     <div className="space-y-3">
     <StatusLegend statuses={PEDIDO_STATUS} />
