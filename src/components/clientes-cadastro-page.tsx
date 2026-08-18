@@ -733,6 +733,26 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <F label="Condição de pagamento">
                   <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
                 </F>
+                <F label="Finalidade da mercadoria *" id="campo-finalidade" error={erros.finalidade}>
+                  <Select value={form.finalidade ?? ""} onValueChange={(v) => set("finalidade", v)}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <SelectContent>
+                      {FINALIDADES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </F>
+                <F label="Tabela de preço (SAP) *" id="campo-tabela_preco" error={erros.tabela_preco}>
+                  <Select value={form.tabela_preco ?? ""} onValueChange={(v) => set("tabela_preco", v)}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <SelectContent>
+                      {TABELAS_PRECO.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </F>
+                <F label="Condição de pagamento SAP (ZTERM)">
+                  <Input value={form.condicao_pgto_sap ?? ""} onChange={(e) => set("condicao_pgto_sap", e.target.value)} placeholder="Ex.: 0030" />
+                </F>
+
                 <ClienteLogoUpload doc={form.doc ?? ""} />
                 <div className="sm:col-span-2">
                   <Label className="text-xs">Observações</Label>
