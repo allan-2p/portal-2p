@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { RefreshCw } from "lucide-react";
+import { CheckCircle2, Plug, RefreshCw, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ClienteIntegracaoHistorico } from "@/components/cliente-integracao-historico";
-import { reenviarClienteFn } from "@/lib/clientes.functions";
+import { reenviarClienteFn, testarIntegracoesClienteFn } from "@/lib/clientes.functions";
 type Instancia = "solar" | "carregadores";
 
 type ClienteResumo = {
@@ -52,14 +53,42 @@ export function ClienteIntegracoesDialog({
 }) {
   const qc = useQueryClient();
   const reenviarFn = useServerFn(reenviarClienteFn);
+  const testarFn = useServerFn(testarIntegracoesClienteFn);
+  const [testes, setTestes] = useState<Record<string, { ok: boolean; mensagem: string; detalhe?: string | null }>>({});
+  const [alvoAtivo, setAlvoAtivo] = useState<string | null>(null);
+
+  const testar = useMutation({
+    mutationFn: async (alvo: "banco" | "sap" | "salesforce" | "contatos") => {
+      setAlvoAtivo(`teste:${alvo}`);
+      const r = await testarFn({ data: { instancia, id: cliente?.id, alvos: [alvo] } });
+      return r.resultados;
+    },
+    onSuccess: (resultados) => {
+      setTestes((prev) => {
+        const next = { ...prev };
+        for (const r of resultados) next[r.alvo] = { ok: r.ok, mensagem: r.mensagem, detalhe: r.detalhe };
+        return next;
+      });
+      const falhou = resultados.find((r) => !r.ok);
+      if (falhou) toast.error(falhou.mensagem);
+      else toast.success("Teste concluído com sucesso.");
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha no teste."),
+    onSettled: () => setAlvoAtivo(null),
+  });
+
   const reenviar = useMutation({
-    mutationFn: (id: string) => reenviarFn({ data: { instancia, id } }),
+    mutationFn: ({ id, alvos }: { id: string; alvos?: ("sap" | "salesforce" | "contatos")[] }) => {
+      setAlvoAtivo(`reenvio:${alvos?.join(",") ?? "tudo"}`);
+      return reenviarFn({ data: { instancia, id, ...(alvos ? { alvos } : {}) } });
+    },
     onSuccess: () => {
       toast.success("Reenvio solicitado.");
       qc.invalidateQueries({ queryKey: ["clientes"] });
       qc.invalidateQueries({ queryKey: ["cliente-integracao-historico"] });
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao reenviar."),
+    onSettled: () => setAlvoAtivo(null),
   });
 
   return (
@@ -76,18 +105,53 @@ export function ClienteIntegracoesDialog({
 
             <div className="space-y-5">
               <div className="rounded-xl border border-border bg-surface/40 p-3 space-y-2">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-primary">Banco (cadastro)</div>
+                <Linha rot="ID do cadastro" val={cliente.id} />
+                <Acoes
+                  onTestar={() => testar.mutate("banco")}
+                  testando={alvoAtivo === "teste:banco"}
+                  resultado={testes["banco"]}
+                />
+              </div>
+
+              <div className="rounded-xl border border-border bg-surface/40 p-3 space-y-2">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-primary">SAP</div>
                 <Linha rot="Código SAP" val={cliente.numero_sap ?? "Não enviado"} />
                 <Linha rot="Status" val={cliente.sap_status ?? "—"} />
                 {cliente.sap_erro && <Linha rot="Erro" val={cliente.sap_erro} />}
+                <Acoes
+                  onTestar={() => testar.mutate("sap")}
+                  testando={alvoAtivo === "teste:sap"}
+                  onReenviar={() => reenviar.mutate({ id: cliente.id, alvos: ["sap"] })}
+                  reenviando={alvoAtivo === "reenvio:sap"}
+                  resultado={testes["sap"]}
+                />
               </div>
 
               <div className="rounded-xl border border-border bg-surface/40 p-3 space-y-2">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-primary">Salesforce</div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-primary">Salesforce (conta)</div>
                 <Linha rot="Conta" val={cliente.sf_account_id ?? "Não enviada"} />
-                <Linha rot="Contato" val={cliente.sf_contact_id ?? "—"} />
+                <Linha rot="Contato principal" val={cliente.sf_contact_id ?? "—"} />
                 <Linha rot="Status" val={cliente.sf_status ?? "—"} />
                 {cliente.sf_erro && <Linha rot="Erro" val={cliente.sf_erro} />}
+                <Acoes
+                  onTestar={() => testar.mutate("salesforce")}
+                  testando={alvoAtivo === "teste:salesforce"}
+                  onReenviar={() => reenviar.mutate({ id: cliente.id, alvos: ["salesforce"] })}
+                  reenviando={alvoAtivo === "reenvio:salesforce"}
+                  resultado={testes["salesforce"]}
+                />
+              </div>
+
+              <div className="rounded-xl border border-border bg-surface/40 p-3 space-y-2">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-primary">Contatos</div>
+                <Acoes
+                  onTestar={() => testar.mutate("contatos")}
+                  testando={alvoAtivo === "teste:contatos"}
+                  onReenviar={() => reenviar.mutate({ id: cliente.id, alvos: ["contatos"] })}
+                  reenviando={alvoAtivo === "reenvio:contatos"}
+                  resultado={testes["contatos"]}
+                />
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -95,11 +159,11 @@ export function ClienteIntegracoesDialog({
                   variant="outline"
                   size="sm"
                   className="gap-2"
-                  onClick={() => reenviar.mutate(cliente.id)}
+                  onClick={() => reenviar.mutate({ id: cliente.id })}
                   disabled={reenviar.isPending}
                 >
                   <RefreshCw className={`h-4 w-4 ${reenviar.isPending ? "animate-spin" : ""}`} />
-                  Reenviar ao SAP / Salesforce
+                  Reenviar tudo
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
                   <a href={`/admin/logs/integracoes?cliente=${encodeURIComponent(cliente.id)}`}>
@@ -114,5 +178,55 @@ export function ClienteIntegracoesDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function Acoes({
+  onTestar,
+  testando,
+  onReenviar,
+  reenviando,
+  resultado,
+}: {
+  onTestar: () => void;
+  testando: boolean;
+  onReenviar?: () => void;
+  reenviando?: boolean;
+  resultado?: { ok: boolean; mensagem: string; detalhe?: string | null };
+}) {
+  return (
+    <div className="space-y-2 pt-1">
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" className="gap-2 h-8" onClick={onTestar} disabled={testando}>
+          <Plug className={`h-3.5 w-3.5 ${testando ? "animate-pulse" : ""}`} />
+          Testar
+        </Button>
+        {onReenviar && (
+          <Button variant="secondary" size="sm" className="gap-2 h-8" onClick={onReenviar} disabled={reenviando}>
+            <RefreshCw className={`h-3.5 w-3.5 ${reenviando ? "animate-spin" : ""}`} />
+            Reenviar
+          </Button>
+        )}
+      </div>
+      {resultado && (
+        <div
+          className={`rounded-lg border p-2 text-xs ${
+            resultado.ok
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              : "border-destructive/40 bg-destructive/10 text-destructive"
+          }`}
+        >
+          <div className="flex items-start gap-2 font-medium">
+            {resultado.ok ? <CheckCircle2 className="h-3.5 w-3.5 mt-0.5" /> : <XCircle className="h-3.5 w-3.5 mt-0.5" />}
+            <span>{resultado.mensagem}</span>
+          </div>
+          {resultado.detalhe && (
+            <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all text-[10px] opacity-80">
+              {resultado.detalhe}
+            </pre>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
