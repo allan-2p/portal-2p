@@ -54,6 +54,8 @@ export type PropostaPdfData = {
   observacoes?: string;
   consultor?: string;
   validadeDias?: number;
+  /** Forma de pagamento escolhida (exibida no PDF, mas pode estar vazia). */
+  formaPagamento?: string | null;
   /** Logomarca do cliente exibida no cabeçalho (data URL ou URL http). */
   logoCliente?: string | null;
 };
@@ -216,7 +218,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .total .val small{ display:block; font-size:7.6px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--accent-2); margin-bottom:2px; }
 
   /* CONDITIONS */
-  .cond{ margin-top:6mm; display:grid; grid-template-columns:repeat(3,1fr); gap:4mm; }
+  .cond{ margin-top:6mm; display:grid; grid-template-columns:repeat(4,1fr); gap:4mm; }
   .cond div{ border-left:2px solid var(--accent); padding-left:3mm; }
   .cond label{ display:block; font-size:7.2px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:2px; }
   .cond p{ font-size:8.8px; line-height:1.45; }
@@ -333,6 +335,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div><label>Validade</label><p>Proposta válida até ${esc(validade)}, sujeita a disponibilidade de estoque.</p></div>
       <div><label>Prazo de entrega</label><p>A confirmar na aprovação do pedido, conforme modalidade de frete ${esc(p.freteMod)}.</p></div>
       <div><label>Condições</label><p>Valores em reais, impostos conforme legislação vigente na UF ${esc(p.cliente.uf)}.</p></div>
+      <div><label>Forma de pagamento</label><p>${esc(p.formaPagamento) || "—"}</p></div>
     </div>
   </div>
 

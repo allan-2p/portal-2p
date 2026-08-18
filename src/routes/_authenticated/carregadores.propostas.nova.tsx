@@ -721,29 +721,32 @@ function PropostaCpoPage() {
   const itensSemProduto = state.itens.filter((i) => !i.produtoId && i.valor > 0);
 
   // ---- Bloqueios de fechamento (exportar PDF / concluir pedido) ----
-  const errosFechamento: string[] = [];
-  if (!state.propostaNome.trim()) errosFechamento.push("Informe o nome da proposta.");
-  if (!clienteOk) errosFechamento.push(errosCliente[0]?.msg ?? "Complete os dados do cliente.");
-  if (!temProduto) errosFechamento.push("Adicione ao menos um produto à proposta.");
+  const errosPdf: string[] = [];
+  if (!state.propostaNome.trim()) errosPdf.push("Informe o nome da proposta.");
+  if (!clienteOk) errosPdf.push(errosCliente[0]?.msg ?? "Complete os dados do cliente.");
+  if (!temProduto) errosPdf.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length)
-    errosFechamento.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
+    errosPdf.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
   if (itensSemValor.length)
-    errosFechamento.push(`${itensSemValor.length} item(ns) sem valor unitário.`);
+    errosPdf.push(`${itensSemValor.length} item(ns) sem valor unitário.`);
   if (itensSemQtd.length)
-    errosFechamento.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
-  if (!state.freteMod) errosFechamento.push("Selecione a modalidade de frete.");
+    errosPdf.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
+  if (!state.freteMod) errosPdf.push("Selecione a modalidade de frete.");
   if (state.freteMod === "CIF" && !state.transportadora)
-    errosFechamento.push("Cotação de frete pendente — selecione a transportadora.");
+    errosPdf.push("Cotação de frete pendente — selecione a transportadora.");
   if (state.freteMod === "DEDICADO" && !(state.freteValor > 0))
-    errosFechamento.push("Frete dedicado sem valor informado — necessário para fechar os totais.");
-  if (!state.formaPagamento) errosFechamento.push("Selecione a forma de pagamento.");
+    errosPdf.push("Frete dedicado sem valor informado — necessário para fechar os totais.");
 
   if (temProduto && !(d.valorTotalProposta > 0))
-    errosFechamento.push("Total da proposta zerado — revise valores e quantidades.");
-  if (temProduto && abaixoPolitica) errosFechamento.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+    errosPdf.push("Total da proposta zerado — revise valores e quantidades.");
+  if (temProduto && abaixoPolitica) errosPdf.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
   if (temProduto && d.cmvExcedido)
-    errosFechamento.push(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)} — exige aprovação da diretoria.`);
-  const podeFechar = errosFechamento.length === 0;
+    errosPdf.push(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)} — exige aprovação da diretoria.`);
+
+  // Conclusão do pedido exige forma de pagamento; PDF não exige.
+  const errosConclusao: string[] = [...errosPdf];
+  if (!state.formaPagamento) errosConclusao.push("Selecione a forma de pagamento.");
+  const podeFechar = errosConclusao.length === 0;
 
   // ---- Bloqueios de salvamento ----
   const errosSalvar: string[] = [];
@@ -816,7 +819,7 @@ function PropostaCpoPage() {
 
 
   function concluirPedido() {
-    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de concluir o pedido.");
+    if (!podeFechar) return toast.error(errosConclusao[0] ?? "Complete a proposta antes de concluir o pedido.");
     setStatusProposta("Aguardando Pagamento");
     setSaving(true);
     void salvar("Aguardando Pagamento");
@@ -842,11 +845,11 @@ function PropostaCpoPage() {
 
   // Abre a revisão final apenas para concluir o pedido.
   function pedirRevisao(acao: "concluir") {
-    if (errosFechamento.length) {
+    if (errosConclusao.length) {
       setTentouAvancar(true);
       if (etapa === 1 && !clienteOk) setEtapa(1);
-      toast.error(errosFechamento[0], {
-        description: errosFechamento.length > 1 ? `+ ${errosFechamento.length - 1} pendência(s) a corrigir.` : undefined,
+      toast.error(errosConclusao[0], {
+        description: errosConclusao.length > 1 ? `+ ${errosConclusao.length - 1} pendência(s) a corrigir.` : undefined,
       });
       return;
     }
@@ -918,6 +921,7 @@ function PropostaCpoPage() {
         },
         logoCliente: usarLogoCliente ? logoCliente : null,
         consultor: consultorProposta ?? undefined,
+        formaPagamento: state.formaPagamento || null,
       });
 
   const pdfHtml = useMemo(
@@ -931,12 +935,12 @@ function PropostaCpoPage() {
   }
 
   function abrirPreviewPdf() {
-    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de visualizar o PDF.");
+    if (errosPdf.length) return toast.error(errosPdf[0] ?? "Complete a proposta antes de visualizar o PDF.");
     setPreviewAberto(true);
   }
 
   function exportarPdf() {
-    if (!podeFechar) return toast.error(errosFechamento[0] ?? "Complete a proposta antes de exportar o PDF.");
+    if (errosPdf.length) return toast.error(errosPdf[0] ?? "Complete a proposta antes de exportar o PDF.");
     const html = montarPdfHtml();
     const w = window.open("", "_blank");
     if (!w) return toast.error("Permita pop-ups para exportar o PDF.");
@@ -2326,7 +2330,7 @@ function PropostaCpoPage() {
           onNext={avancarEtapa}
           backDisabled={etapa === 1 || saving}
           nextDisabled={etapa === 5 || saving}
-          errors={errosFechamento}
+          errors={errosConclusao}
           showErrors={!podeFechar && tentouAvancar}
           savedAt={autosaveAt}
           savedLabel="Salvo"
