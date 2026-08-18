@@ -177,10 +177,15 @@ const clienteSchema = z.object({
   uf: z.string().trim().length(2),
   municipio_ibge: z.string().trim().max(12).nullable().optional(),
   condicao_pagamento: z.string().trim().max(120).nullable().optional(),
+  /** Campos exigidos pelo cadastro no SAP. */
+  finalidade: z.string().trim().max(40).nullable().optional(),
+  tabela_preco: z.string().trim().max(20).nullable().optional(),
+  condicao_pgto_sap: z.string().trim().max(20).nullable().optional(),
   observacoes: z.string().trim().max(2000).nullable().optional(),
   ativo: z.boolean().default(true),
   enriquecimento: z.any().nullable().optional(),
 });
+
 
 export const salvarClienteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
