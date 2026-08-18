@@ -2095,6 +2095,7 @@ function PropostaCpoPage() {
                   <ResumoLinha k="Total dos itens" v={fmtBRL(d.valorItens)} />
                   <ResumoLinha k="IPI destacado" v={fmtBRL(d.ipiValor)} />
                   <ResumoLinha k="Itens sem IPI (base fiscal)" v={fmtBRL(d.valorItem)} />
+                  <ResumoLinha k="Valor líquido (sem IPI/ICMS/PIS-COFINS)" v={fmtBRL(d.rl)} />
                   <ResumoLinha k={`Frete (${state.freteMod || "—"})`} v={fmtBRL(state.freteValor)} />
                   <ResumoLinha k="Margem bruta" v={fmtPct(d.mbPct)} />
                   <ResumoLinha
