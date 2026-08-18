@@ -342,15 +342,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao salvar."),
   });
 
-  const excluir = useMutation({
-    mutationFn: (id: string) => excluirFn({ data: { instancia, id } }),
-    onSuccess: () => {
-      toast.success("Cadastro removido.");
-      qc.invalidateQueries({ queryKey: ["clientes", instancia] });
-    },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
-  });
-
   // Reenvio manual das integrações (SAP + Salesforce) de um cadastro.
 
 
