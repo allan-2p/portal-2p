@@ -262,7 +262,27 @@ export async function aplicarEventoPix(ev: PixEvento, io: PixIO = pixIOBanco): P
     detalhe: `txid ${ev.txid}${ev.endToEndId ? ` • e2e ${ev.endToEndId}` : ""} • ${de} → ${para}`,
   });
 
+  // Notificação para o dono do pedido (pago / expirado / cancelado).
+  const dono = proposta["created_by"] ? String(proposta["created_by"]) : null;
+  if (dono && io.notificar && ev.tipo !== "desconhecido") {
+    try {
+      await io.notificar({
+        tipo: ev.tipo,
+        user_id: dono,
+        proposta_id: String(proposta["id"]),
+        numero: (proposta["numero"] ?? null) as string | null,
+        cliente: (proposta["cliente_nome"] ?? null) as string | null,
+        txid: ev.txid,
+        de,
+        para,
+      });
+    } catch {
+      // notificação nunca deve quebrar o processamento do webhook
+    }
+  }
+
   return { ...base, proposta_id: proposta["id"], numero: proposta["numero"] ?? null, de, para };
+
 }
 
 export type PixResultado = {
