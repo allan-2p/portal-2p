@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, Sparkles, CheckCircle2, ListChecks } from "lucide-react";
+import { Bell, Sparkles, CheckCircle2, ListChecks, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   markAllRead,
   clearNotifications,
   timeAgo,
   useNotifications,
+  useServerNotificationsFeed,
 } from "@/hooks/use-notifications";
 
 export function NotificationsDropdown() {
   const { items, lastPulse } = useNotifications();
+  useServerNotificationsFeed();
   const [open, setOpen] = useState(false);
   const [shake, setShake] = useState(false);
   const firstPulse = useRef(true);
@@ -57,7 +59,7 @@ export function NotificationsDropdown() {
               <div>
                 <div className="font-display font-semibold text-sm">Notificações</div>
                 <div className="text-[11px] text-muted-foreground">
-                  Tarefas do Salesforce e recomendações do Atlas
+                  Pagamentos, tarefas do Salesforce e Atlas
                 </div>
               </div>
               {items.length > 0 && (
@@ -79,13 +81,21 @@ export function NotificationsDropdown() {
               ) : (
                 items.map((n) => {
                   const Icon =
-                    n.kind === "atlas" ? Sparkles : n.kind === "task" ? ListChecks : CheckCircle2;
+                    n.kind === "atlas"
+                      ? Sparkles
+                      : n.kind === "task"
+                        ? ListChecks
+                        : n.kind === "pagamento"
+                          ? CreditCard
+                          : CheckCircle2;
                   const color =
                     n.kind === "atlas"
                       ? "from-primary to-[oklch(0.7_0.18_280)]"
                       : n.kind === "task"
                         ? "from-emerald-500 to-emerald-700"
-                        : "from-sky-500 to-sky-700";
+                        : n.kind === "pagamento"
+                          ? "from-amber-500 to-amber-700"
+                          : "from-sky-500 to-sky-700";
                   return (
                     <div
                       key={n.id}
