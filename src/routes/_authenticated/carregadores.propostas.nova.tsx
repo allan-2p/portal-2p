@@ -2683,15 +2683,17 @@ function DreRow({
   );
 }
 
-/** Linha do bloco de totais finais (etapa de produtos). */
+/** Card compacto do bloco de totais finais (etapa de produtos). */
 function TotalRow({
   label,
   value,
   hint,
+  strong,
 }: {
   label: string;
   value: string;
   hint?: string;
+  strong?: boolean;
 }) {
   const anterior = useRef(value);
   const [flash, setFlash] = useState(false);
@@ -2706,22 +2708,28 @@ function TotalRow({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-4 rounded-xl border px-4 sm:px-5 py-4 transition-colors duration-500",
-        flash ? "border-primary/60 bg-primary/10" : "border-border/60 bg-muted/30",
+        "flex-1 min-w-[140px] rounded-xl border px-3 py-2.5 transition-colors duration-500 flex flex-col justify-center",
+        strong
+          ? "border-primary/60 bg-primary/10"
+          : flash
+            ? "border-primary/50 bg-primary/5"
+            : "border-border/60 bg-muted/30",
       )}
     >
-      <div className="min-w-0">
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium truncate">
-          {label}
-        </div>
-        {hint ? <div className="text-[10px] text-muted-foreground/70 truncate">{hint}</div> : null}
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium truncate">
+        {label}
       </div>
-      <div className="text-lg sm:text-xl font-bold tabular-nums text-foreground shrink-0">
+      <div
+        className={cn(
+          "text-base sm:text-lg font-bold tabular-nums tracking-tight truncate",
+          strong ? "text-primary" : "text-foreground",
+        )}
+      >
         {value}
       </div>
+      {hint ? <div className="text-[9px] text-muted-foreground/70 truncate">{hint}</div> : null}
     </div>
   );
-
 }
 
 /** Linha do resumo do pedido (etapa de finalização). */
