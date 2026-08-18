@@ -310,12 +310,19 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     // Envio automático ao salvar: SAP + Salesforce. Erros não desfazem o
     // cadastro; ficam visíveis na tela para reenvio.
     const { sincronizarCliente } = await import("./clientes-integracoes.server");
-    const sync = await sincronizarCliente(data.instancia, clienteId!, payload, {
-      vendedorSap: consultorSap,
-      ownerSfId: consultorSfId,
-    });
+    let sync;
+    try {
+      sync = await sincronizarCliente(data.instancia, clienteId!, payload, {
+        vendedorSap: consultorSap,
+        ownerSfId: consultorSfId,
+      });
+    } catch (err) {
+      await logErroBanco("sincronizar", err);
+      throw err;
+    }
 
     return { id: clienteId!, sync };
+
   });
 
 /** Reenvia um cadastro já salvo para o SAP e o Salesforce. */
