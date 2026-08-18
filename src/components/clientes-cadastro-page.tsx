@@ -27,9 +27,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { toast } from "sonner";
 import { useCpoUfs } from "@/hooks/use-cpo";
 import { docValido, mascaraDoc, soDigitos } from "@/lib/cnpj";
+import { FINALIDADES, TABELAS_PRECO } from "@/lib/sap-clientes-map";
+
 import {
   listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, excluirClienteFn,
-  listConsultoresFn,
+  listConsultoresFn, reenviarClienteFn,
 
 } from "@/lib/clientes.functions";
 import {
@@ -78,6 +80,14 @@ export type Cliente = {
   uf: string;
   municipio_ibge: string | null;
   condicao_pagamento: string | null;
+  /** Campos exigidos pelo cadastro no SAP. */
+  finalidade: string | null;
+  tabela_preco: string | null;
+  condicao_pgto_sap: string | null;
+  numero_sap?: string | null;
+  sap_status?: string | null;
+  sap_erro?: string | null;
+  sf_account_id?: string | null;
   observacoes: string | null;
   ativo: boolean;
   created_by?: string | null;
@@ -96,16 +106,20 @@ const vazio = (): Form => ({
   contatos: contatosPadrao(),
   contato_nome: "", contato_cargo: "", contato_email: "", contato_telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "",
-  uf: "SP", municipio_ibge: null, condicao_pagamento: "", observacoes: "", ativo: true,
+  uf: "SP", municipio_ibge: null, condicao_pagamento: "",
+  finalidade: "Revenda", tabela_preco: "2P-0001", condicao_pgto_sap: "",
+  observacoes: "", ativo: true,
 });
 
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
+
 
 type Erros = Record<string, string>;
 const ROTULOS: Record<string, string> = {
   razao_social: "Razão social", doc: "CNPJ / CPF", uf: "UF de destino",
   ie: "Inscrição Estadual", cep: "CEP", logradouro: "Logradouro",
   numero: "Número", cidade: "Cidade",
+  finalidade: "Finalidade da mercadoria", tabela_preco: "Tabela de preço",
 };
 const rotuloCampo = (chave: string, contatos: Contato[]) =>
   ROTULOS[chave] ?? rotuloErroContato(chave, contatos) ?? chave;
@@ -121,6 +135,9 @@ function validarCampos(f: Form): Erros {
   if (!f.logradouro?.trim()) e.logradouro = "Informe o logradouro.";
   if (!f.numero?.trim()) e.numero = "Informe o número do endereço.";
   if (!f.cidade?.trim()) e.cidade = "Informe a cidade.";
+  if (!f.finalidade?.trim()) e.finalidade = "Selecione a finalidade da mercadoria (exigida pelo SAP).";
+  if (!f.tabela_preco?.trim()) e.tabela_preco = "Selecione a tabela de preço (exigida pelo SAP).";
+
   return e;
 }
 
@@ -305,12 +322,20 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       toast.success(editId ? "Cadastro atualizado." : `Cliente cadastrado em ${ORGANIZACAO[instancia]}.`);
+      const sync = res?.sync;
+      if (sync) {
+        if (sync.sap?.ok) toast.success(`Enviado ao SAP${sync.sap.numero_sap ? ` — código ${sync.sap.numero_sap}` : ""}.`);
+        else toast.error(`SAP: ${sync.sap?.erro ?? "falha no envio."}`);
+        if (sync.salesforce?.ok) toast.success("Conta e contato criados no Salesforce.");
+        else toast.error(`Salesforce: ${sync.salesforce?.erro ?? "falha no envio."}`);
+      }
       qc.invalidateQueries({ queryKey: ["clientes", instancia] });
       qc.invalidateQueries({ queryKey: ["cpo-clientes-cadastro"] });
       fechar();
     },
+
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao salvar."),
   });
 
@@ -322,6 +347,21 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao excluir."),
   });
+
+  // Reenvio manual das integrações (SAP + Salesforce) de um cadastro.
+  const reenviarFn = useServerFn(reenviarClienteFn);
+  const reenviar = useMutation({
+    mutationFn: (id: string) => reenviarFn({ data: { instancia, id } }),
+    onSuccess: (r: any) => {
+      if (r?.sap?.ok) toast.success(`SAP atualizado${r.sap.numero_sap ? ` — código ${r.sap.numero_sap}` : ""}.`);
+      else if (r?.sap) toast.error(`SAP: ${r.sap.erro ?? "falha no envio"}`);
+      if (r?.sf?.ok) toast.success("Salesforce sincronizado.");
+      else if (r?.sf) toast.error(`Salesforce: ${r.sf.erro ?? "falha no envio"}`);
+      qc.invalidateQueries({ queryKey: ["clientes", instancia] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao reenviar."),
+  });
+
 
   // Transferência de carteira: realinha o consultor dos cadastros com o dono
   // atual da conta no Salesforce (registros antigos permanecem intactos).
@@ -714,6 +754,26 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <F label="Condição de pagamento">
                   <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
                 </F>
+                <F label="Finalidade da mercadoria *" id="campo-finalidade" error={erros.finalidade}>
+                  <Select value={form.finalidade ?? ""} onValueChange={(v) => set("finalidade", v)}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <SelectContent>
+                      {FINALIDADES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </F>
+                <F label="Tabela de preço (SAP) *" id="campo-tabela_preco" error={erros.tabela_preco}>
+                  <Select value={form.tabela_preco ?? ""} onValueChange={(v) => set("tabela_preco", v)}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <SelectContent>
+                      {TABELAS_PRECO.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </F>
+                <F label="Condição de pagamento SAP (ZTERM)">
+                  <Input value={form.condicao_pgto_sap ?? ""} onChange={(e) => set("condicao_pgto_sap", e.target.value)} placeholder="Ex.: 0030" />
+                </F>
+
                 <ClienteLogoUpload doc={form.doc ?? ""} />
                 <div className="sm:col-span-2">
                   <Label className="text-xs">Observações</Label>
@@ -927,8 +987,27 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
                 <Bloco titulo="Comercial">
                   <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
+                  <Linha rot="Finalidade" val={detalhe.finalidade} />
+                  <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
                   <Linha rot="Consultor" val={detalhe.created_by_nome} />
                   <Linha rot="Observações" val={detalhe.observacoes} />
+                </Bloco>
+
+                <Bloco titulo="Integrações">
+                  <Linha rot="Código SAP" val={detalhe.numero_sap ?? "Não enviado"} />
+                  <Linha rot="Status SAP" val={detalhe.sap_status ?? "—"} />
+                  {detalhe.sap_erro && <Linha rot="Erro SAP" val={detalhe.sap_erro} />}
+                  <Linha rot="Conta Salesforce" val={detalhe.sf_account_id ?? "Não enviada"} />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-1 gap-2"
+                    onClick={() => reenviar.mutate(detalhe.id)}
+                    disabled={reenviar.isPending}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${reenviar.isPending ? "animate-spin" : ""}`} />
+                    Reenviar ao SAP / Salesforce
+                  </Button>
                 </Bloco>
 
                 <ClientHistoryTab clienteNome={detalhe.razao_social} />
@@ -939,6 +1018,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   </Button>
                   <Button variant="outline" onClick={() => setDetalhe(null)}>Fechar</Button>
                 </div>
+
               </div>
             </>
           )}

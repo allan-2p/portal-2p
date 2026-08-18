@@ -86,6 +86,7 @@ type Row = {
   ativo: boolean;
   avatar_url: string | null;
   sf_user_id: string | null;
+  numero_sap: string | null;
   is_external: boolean;
   filter_scope: FilterScope;
   roles: AppRole[];
@@ -134,7 +135,7 @@ function UsuariosPage() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id,email,full_name,cargo,cargo_tipo,equipe,telefone,meta_mensal,regime_contratacao,organizacao,ativo,avatar_url,sf_user_id,is_external,filter_scope")
+      .select("id,email,full_name,cargo,cargo_tipo,equipe,telefone,meta_mensal,regime_contratacao,organizacao,ativo,avatar_url,sf_user_id,numero_sap,is_external,filter_scope")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
     const { data: linkData } = await supabase
@@ -884,6 +885,7 @@ type EditPayload = {
   meta_mensal: number | null;
   filter_scope: FilterScope;
   sf_user_id: string | null;
+  numero_sap: string | null;
   ativo: boolean;
 };
 
@@ -936,6 +938,7 @@ function EditUserModal({
     is_external: row.is_external,
     filter_scope: (row.filter_scope ?? "individual") as FilterScope,
     sf_user_id: row.sf_user_id ?? "",
+    numero_sap: row.numero_sap ?? "",
     ativo: row.ativo,
   });
 
@@ -968,6 +971,7 @@ function EditUserModal({
               is_external: form.is_external,
               filter_scope: form.filter_scope,
               sf_user_id: form.sf_user_id.trim() || null,
+              numero_sap: form.numero_sap.trim() || null,
               ativo: form.ativo,
             });
           } catch (err) {
@@ -1023,6 +1027,14 @@ function EditUserModal({
               onChange={(e) => setForm({ ...form, sf_user_id: e.target.value })}
               className="input font-mono"
               placeholder="005U400000..."
+            />
+          </Field>
+          <Field label="Número SAP do vendedor">
+            <input
+              value={form.numero_sap}
+              onChange={(e) => setForm({ ...form, numero_sap: e.target.value })}
+              className="input font-mono"
+              placeholder="Ex.: 1000123"
             />
           </Field>
         </div>
