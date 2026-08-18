@@ -53,9 +53,9 @@ import {
 } from "@/lib/solar-calculadora";
 
 export const Route = createFileRoute("/_authenticated/solar/propostas/nova")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    id: typeof search['id'] === "string" ? (search['id'] as string) : undefined,
-    dup: typeof search['dup'] === "string" ? (search['dup'] as string) : undefined,
+  validateSearch: (s: Record<string, unknown>): { id?: string; dup?: string } => ({
+    ...(typeof s['id'] === "string" ? { id: s['id'] as string } : {}),
+    ...(typeof s['dup'] === "string" ? { dup: s['dup'] as string } : {}),
   }),
   head: () => ({
     meta: [
