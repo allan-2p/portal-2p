@@ -25,6 +25,9 @@ export type SalesforceClienteInput = {
   contato_cargo?: string | null;
   owner_sf_id?: string | null;
   organizacao?: string | null;
+  /** Ids já gravados no cadastro: usados na atualização para não duplicar. */
+  sf_account_id?: string | null;
+  sf_contact_id?: string | null;
 };
 
 export type SalesforceClienteResultado =
@@ -117,7 +120,7 @@ export async function sincronizarClienteSalesforce(
     // eles e, se o Salesforce recusar, repetimos apenas com os padrões.
     const comCustom = { ...accountBase, CNPJ__c: digitos(c.doc) };
 
-    let accountId = await acharAccount(c.doc, nome);
+    let accountId = so(c.sf_account_id) || (await acharAccount(c.doc, nome));
     const enviar = async (body: Record<string, unknown>) =>
       accountId
         ? sf(`/sobjects/Account/${accountId}`, { method: "PATCH", body: JSON.stringify(body) })
@@ -144,9 +147,12 @@ export async function sincronizarClienteSalesforce(
       const lastName = partes.length > 1 ? partes.slice(1).join(" ") : contatoNome;
       const firstName = partes.length > 1 ? partes[0] : null;
 
-      const q = `SELECT Id FROM Contact WHERE AccountId = '${esc(accountId)}' AND LastName = '${esc(lastName)}' LIMIT 1`;
-      const existente = await sf(`/query?q=${encodeURIComponent(q)}`);
-      contactId = existente?.records?.[0]?.Id ?? null;
+      contactId = so(c.sf_contact_id) || null;
+      if (!contactId) {
+        const q = `SELECT Id FROM Contact WHERE AccountId = '${esc(accountId)}' AND LastName = '${esc(lastName)}' LIMIT 1`;
+        const existente = await sf(`/query?q=${encodeURIComponent(q)}`);
+        contactId = existente?.records?.[0]?.Id ?? null;
+      }
 
       const contactBody: Record<string, unknown> = {
         AccountId: accountId,

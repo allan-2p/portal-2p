@@ -47,6 +47,8 @@ export type ClienteSapInput = {
   uf: string;
   municipio_ibge?: string | null;
   vendedor_sap?: string | null;
+  /** KUNNR já existente: quando presente, o SAP atualiza em vez de criar. */
+  numero_sap?: string | null;
 };
 
 const so = (v: unknown) => String(v ?? "").trim();
@@ -59,6 +61,7 @@ export function mapClienteParaSap(c: ClienteSapInput): Array<{ atributo: string;
   const finalidade = (so(c.finalidade) || "Revenda") as Finalidade;
 
   const pares: Array<[string, string]> = [
+    ["KUNNR", digitos(c.numero_sap)],
     ["NOME1", so(c.razao_social).slice(0, 40)],
     ["NAME2", so(c.nome_fantasia).slice(0, 40)],
     [pessoaFisica ? "STCD2" : "STCD1", doc],
