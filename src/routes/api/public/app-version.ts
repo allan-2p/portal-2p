@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 /** Injetado pelo Vite (define __APP_BUILD_ID__ em vite.config.ts). */
-const BUILD_ID: string =
-  (globalThis as Record<string, unknown>)["__APP_BUILD_ID__"] as string | undefined ?? "dev";
+declare const __APP_BUILD_ID__: string;
+const BUILD_ID: string = typeof __APP_BUILD_ID__ === "string" ? __APP_BUILD_ID__ : "dev";
+
 
 /**
  * Versão do build em execução no servidor. O portal compara com a versão que
