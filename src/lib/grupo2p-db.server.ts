@@ -22,7 +22,7 @@ export type Grupo2pConfig = { url: string; key: string };
 
 /**
  * URL + chave de serviço do projeto grupo-2p. As variáveis antigas
- * (ACCOUNTS_*/PRODUTOS_*) continuam aceitas como fallback para não quebrar
+ * (ACCOUNTS_ e PRODUTOS_) continuam aceitas como fallback para não quebrar
  * ambientes que ainda não foram atualizados.
  */
 export function grupo2pConfig(): Grupo2pConfig | null {
