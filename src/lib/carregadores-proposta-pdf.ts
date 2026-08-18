@@ -375,10 +375,14 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="val"><small>Valor da proposta</small>${fmtBRL(p.valorTotal)}</div>
     </div>
 
-    ${p.observacoes ? `<div class="sec">
+    <div class="sec">
       <div class="sech"><span>Observações</span></div>
-      <div class="client"><div style="font-size:11px;line-height:1.5">${esc(p.observacoes)}</div></div>
-    </div>` : ""}
+      <div class="client"><div style="font-size:11px;line-height:1.5">
+        <b>Descarga por responsabilidade do cliente.</b>
+        ${p.observacoes ? `<div style="margin-top:4px">${esc(p.observacoes)}</div>` : ""}
+      </div></div>
+    </div>
+
 
 
     <div class="cond">
