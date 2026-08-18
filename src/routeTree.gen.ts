@@ -24,6 +24,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
 import { Route as AuthenticatedCarregadoresIndexRouteImport } from './routes/_authenticated/carregadores.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as ApiPublicAppVersionRouteImport } from './routes/api/public/app-version'
 import { Route as AuthenticatedSolarTarefasRouteImport } from './routes/_authenticated/solar.tarefas'
 import { Route as AuthenticatedSolarPropostasRouteImport } from './routes/_authenticated/solar.propostas'
 import { Route as AuthenticatedSolarPedidosRouteImport } from './routes/_authenticated/solar.pedidos'
@@ -161,6 +162,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiPublicAppVersionRoute = ApiPublicAppVersionRouteImport.update({
+  id: '/api/public/app-version',
+  path: '/api/public/app-version',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSolarTarefasRoute =
   AuthenticatedSolarTarefasRouteImport.update({
@@ -563,6 +569,7 @@ export interface FileRoutesByFullPath {
   '/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
   '/solar/propostas': typeof AuthenticatedSolarPropostasRoute
   '/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
+  '/api/public/app-version': typeof ApiPublicAppVersionRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
@@ -635,6 +642,7 @@ export interface FileRoutesByTo {
   '/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
   '/solar/propostas': typeof AuthenticatedSolarPropostasRoute
   '/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
+  '/api/public/app-version': typeof ApiPublicAppVersionRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/carregadores': typeof AuthenticatedCarregadoresIndexRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
@@ -712,6 +720,7 @@ export interface FileRoutesById {
   '/_authenticated/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
   '/_authenticated/solar/propostas': typeof AuthenticatedSolarPropostasRoute
   '/_authenticated/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
+  '/api/public/app-version': typeof ApiPublicAppVersionRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
@@ -789,6 +798,7 @@ export interface FileRouteTypes {
     | '/solar/pedidos'
     | '/solar/propostas'
     | '/solar/tarefas'
+    | '/api/public/app-version'
     | '/admin/'
     | '/carregadores/'
     | '/marketing/'
@@ -861,6 +871,7 @@ export interface FileRouteTypes {
     | '/solar/pedidos'
     | '/solar/propostas'
     | '/solar/tarefas'
+    | '/api/public/app-version'
     | '/admin'
     | '/carregadores'
     | '/marketing'
@@ -937,6 +948,7 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/pedidos'
     | '/_authenticated/solar/propostas'
     | '/_authenticated/solar/tarefas'
+    | '/api/public/app-version'
     | '/_authenticated/admin/'
     | '/_authenticated/carregadores/'
     | '/_authenticated/marketing/'
@@ -974,6 +986,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicAppVersionRoute: typeof ApiPublicAppVersionRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1085,6 +1098,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/app-version': {
+      id: '/api/public/app-version'
+      path: '/api/public/app-version'
+      fullPath: '/api/public/app-version'
+      preLoaderRoute: typeof ApiPublicAppVersionRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/solar/tarefas': {
       id: '/_authenticated/solar/tarefas'
@@ -1723,6 +1743,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicAppVersionRoute: ApiPublicAppVersionRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
