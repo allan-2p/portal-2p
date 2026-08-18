@@ -139,6 +139,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     opcoes,
     escolhida,
     peso,
+    cubagem,
     valorNotaFinal: Number(body["valorNota"]),
     trilho: codigoTrilho,
   };
