@@ -27,7 +27,7 @@ import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { useCpoUfs } from "@/hooks/use-cpo";
+import { useCarregadoresUfs } from "@/hooks/use-carregadores";
 import { cnpjValido, mascaraCnpj, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
 
@@ -174,7 +174,7 @@ type OrdemKey = "sap" | "cliente" | "doc" | "fiscal" | "cidade" | "contato";
 
 export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const qc = useQueryClient();
-  const ufs = useCpoUfs().data ?? [];
+  const ufs = useCarregadoresUfs().data ?? [];
   const listar = useServerFn(listClientesFn);
   const verificarDoc = useServerFn(verificarDocFn);
   const enriquecer = useServerFn(enriquecerCnpjFn);
@@ -335,7 +335,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         else toast.error(`Salesforce: ${sync.salesforce?.erro ?? "falha no envio."}`);
       }
       qc.invalidateQueries({ queryKey: ["clientes", instancia] });
-      qc.invalidateQueries({ queryKey: ["cpo-clientes-cadastro"] });
+      qc.invalidateQueries({ queryKey: ["carregadores-clientes-cadastro"] });
       fechar();
     },
 

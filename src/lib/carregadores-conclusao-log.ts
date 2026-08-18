@@ -28,7 +28,7 @@ export async function registrarConclusao(input: {
   try {
     const { data: userRes } = await supabase.auth.getUser();
     const user = userRes.user;
-    await supabase.from("cpo_proposal_conclusion_log").insert({
+    await supabase.from("propostas_conclusao_log").insert({
       proposta_id: input.propostaId ?? null,
       numero: input.numero ?? null,
       status: input.status ?? null,
@@ -46,7 +46,7 @@ export async function registrarConclusao(input: {
 
 export async function listarConclusoes(limit = 100): Promise<ConclusaoLogRow[]> {
   const { data, error } = await supabase
-    .from("cpo_proposal_conclusion_log")
+    .from("propostas_conclusao_log")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(limit);

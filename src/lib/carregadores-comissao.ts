@@ -16,7 +16,7 @@
 // CMV acima de 60,5% bloqueia o orçamento (exige aprovação da diretoria).
 // ============================================================================
 
-import { pctComissaoPorCmv } from "./cpo";
+import { pctComissaoPorCmv } from "./carregadores";
 
 export { pctComissaoPorCmv };
 

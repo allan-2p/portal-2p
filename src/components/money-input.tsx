@@ -3,11 +3,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { fmtBRL, parseMoeda } from "@/lib/cpo";
+import { fmtBRL, parseMoeda } from "@/lib/carregadores";
 
 /* ---------- preferência global: digitação livre x máscara automática ---------- */
 
-const STORAGE_KEY = "cpo:money-mask";
+const STORAGE_KEY = "carregadores:money-mask";
 let maskOn = false;
 const listeners = new Set<() => void>();
 

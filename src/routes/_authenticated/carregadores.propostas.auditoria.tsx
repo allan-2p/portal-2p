@@ -22,17 +22,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertTriangle, ArrowLeft, Calculator, FileDown, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fmtBRL, fmtPct, novoEstado, type CpoFreteMod, type CpoState } from "@/lib/cpo";
-import { auditarProposta, type PassoCalculo, REGRAS_VERSAO } from "@/lib/cpo-auditoria";
+import { fmtBRL, fmtPct, novoEstado, type CarregadoresFreteMod, type CarregadoresState } from "@/lib/carregadores";
+import { auditarProposta, type PassoCalculo, REGRAS_VERSAO } from "@/lib/carregadores-auditoria";
 import {
   baixarCsv,
   buildResumoFiscalCsv,
   buildResumoFiscalHtml,
   textosPadrao,
   type ResumoFiscalMeta,
-} from "@/lib/cpo-fiscal-export";
-import { useCpoConfig, useCpoNcms, useCpoProducts, useCpoUfs } from "@/hooks/use-cpo";
-import { ConclusaoLogCard } from "@/components/cpo/conclusao-log";
+} from "@/lib/carregadores-fiscal-export";
+import { useCarregadoresConfig, useCarregadoresNcms, useCarregadoresProducts, useCarregadoresUfs } from "@/hooks/use-carregadores";
+import { ConclusaoLogCard } from "@/components/carregadores/conclusao-log";
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/auditoria")({
@@ -109,11 +109,12 @@ function AuditoriaPage() {
   const [selecionada, setSelecionada] = useState<string | undefined>(search.id);
 
   const propostas = useQuery({
-    queryKey: ["cpo-proposals"],
+    queryKey: ["carregadores-proposals"],
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
-        .from("cpo_proposals")
+        .from("propostas")
         .select("*")
+        .eq("organizacao", "carregadores")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((r) => ({
@@ -125,10 +126,10 @@ function AuditoriaPage() {
     staleTime: 30_000,
   });
 
-  const produtos = useCpoProducts();
-  const ufs = useCpoUfs();
-  const config = useCpoConfig();
-  const ncms = useCpoNcms();
+  const produtos = useCarregadoresProducts();
+  const ufs = useCarregadoresUfs();
+  const config = useCarregadoresConfig();
+  const ncms = useCarregadoresNcms();
 
   const rows = propostas.data ?? [];
   const atualId = selecionada ?? rows[0]?.id;
@@ -136,12 +137,12 @@ function AuditoriaPage() {
 
   const auditoria = useMemo(() => {
     if (!atual || !produtos.data || !ufs.data || !config.data || !ncms.data) return null;
-    const state: CpoState = {
+    const state: CarregadoresState = {
       ...novoEstado(),
       nome: atual.cliente_nome,
       uf: atual.uf,
       contribuinte: atual.contribuinte,
-      freteMod: (atual.frete_mod === "CIF" || atual.frete_mod === "DEDICADO" ? atual.frete_mod : "FOB") as CpoFreteMod,
+      freteMod: (atual.frete_mod === "CIF" || atual.frete_mod === "DEDICADO" ? atual.frete_mod : "FOB") as CarregadoresFreteMod,
       freteValor: atual.frete_valor,
       itens: atual.itens
         .filter((i) => i.produtoId)

@@ -38,19 +38,19 @@ const SOLAR_GESTOR: FeatureKey[] = [
   "admin.produtos",
 ];
 
-const CPO_VENDEDOR: FeatureKey[] = [
-  "cpo.home",
-  "cpo.tarefas",
-  "cpo.clientes",
-  "cpo.propostas",
-  "cpo.pedidos",
+const CARREGADORES_VENDEDOR: FeatureKey[] = [
+  "carregadores.home",
+  "carregadores.tarefas",
+  "carregadores.clientes",
+  "carregadores.propostas",
+  "carregadores.pedidos",
 ];
 
-const CPO_GESTOR: FeatureKey[] = [
-  ...CPO_VENDEDOR,
-  "cpo.produtos",
-  "cpo.comissoes",
-  "cpo.regras",
+const CARREGADORES_GESTOR: FeatureKey[] = [
+  ...CARREGADORES_VENDEDOR,
+  "carregadores.produtos",
+  "carregadores.comissoes",
+  "carregadores.regras",
 ];
 
 const MKT_VENDEDOR: FeatureKey[] = ["marketing.home", "marketing.social", "marketing.prevendas"];
@@ -77,7 +77,7 @@ export const PERMISSION_PROFILES: PermissionProfile[] = [
     description: "Operação do dia a dia: agenda, propostas, pedidos e clientes.",
     features: {
       solar: SOLAR_VENDEDOR,
-      carregadores: CPO_VENDEDOR,
+      carregadores: CARREGADORES_VENDEDOR,
       marketing: MKT_VENDEDOR,
     },
   },
@@ -87,7 +87,7 @@ export const PERMISSION_PROFILES: PermissionProfile[] = [
     description: "Tudo do vendedor + dashboards, metas, tabelas e moderação.",
     features: {
       solar: SOLAR_GESTOR,
-      carregadores: CPO_GESTOR,
+      carregadores: CARREGADORES_GESTOR,
       marketing: MKT_GESTOR,
     },
   },

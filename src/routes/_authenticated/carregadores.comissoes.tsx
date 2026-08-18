@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
-import { CpoConfigTab } from "@/components/cpo-config-tab";
-import { CpoComissaoRegras } from "@/components/cpo-comissao-regras";
+import { CarregadoresConfigTab } from "@/components/carregadores-config-tab";
+import { CarregadoresComissaoRegras } from "@/components/carregadores-comissao-regras";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 
@@ -17,13 +17,13 @@ export const Route = createFileRoute("/_authenticated/carregadores/comissoes")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="cpo.comissoes" area="moderacao">
-      <ComissoesCpoPage />
+    <AdminRouteGuard feature="carregadores.comissoes" area="moderacao">
+      <ComissoesCarregadoresPage />
     </AdminRouteGuard>
   ),
 });
 
-function ComissoesCpoPage() {
+function ComissoesCarregadoresPage() {
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
@@ -34,10 +34,10 @@ function ComissoesCpoPage() {
             Regras de comissão por regime (CLT e PJ) e parâmetros tributários usados no DRE das propostas.
           </p>
         </div>
-        <CpoComissaoRegras />
+        <CarregadoresComissaoRegras />
         <div>
           <h2 className="font-semibold mb-2">Parâmetros tributários</h2>
-          <CpoConfigTab />
+          <CarregadoresConfigTab />
         </div>
       </div>
 

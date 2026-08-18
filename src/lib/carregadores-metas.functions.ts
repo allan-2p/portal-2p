@@ -3,14 +3,14 @@
  *
  * Totalmente separado das metas da 2P Solar (que vivem no Salesforce, por
  * `sf_user_id`): aqui a meta é por usuário do portal com organização
- * "carregadores", gravada na tabela `cpo_metas`.
+ * "carregadores", gravada na tabela `carregadores_metas`.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireFeature } from "@/lib/guards.server";
 
-export type CpoMetaPessoa = {
+export type CarregadoresMetaPessoa = {
   user_id: string;
   nome: string;
   email: string;
@@ -25,17 +25,17 @@ export type CpoMetaPessoa = {
 };
 
 const guard = (action: "visualizar" | "moderar") =>
-  ({ instance: "carregadores", feature: "cpo.metas", action }) as const;
+  ({ instance: "carregadores", feature: "carregadores.metas", action }) as const;
 
 const ListInput = z.object({
   year: z.number().int().min(2020).max(2100),
   months: z.array(z.number().int().min(1).max(12)).min(1).max(12),
 });
 
-export const listCpoMetas = createServerFn({ method: "GET" })
+export const listCarregadoresMetas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ListInput.parse(d))
-  .handler(async ({ context, data }): Promise<{ records: CpoMetaPessoa[] }> => {
+  .handler(async ({ context, data }): Promise<{ records: CarregadoresMetaPessoa[] }> => {
     await requireFeature(context, guard("visualizar"));
 
     const [{ data: profiles, error: pErr }, { data: metas, error: mErr }] = await Promise.all([
@@ -45,7 +45,7 @@ export const listCpoMetas = createServerFn({ method: "GET" })
         .in("organizacao", ["carregadores", "grupo"])
         .order("full_name", { ascending: true }),
       context.supabase
-        .from("cpo_metas")
+        .from("carregadores_metas")
         .select("user_id, ano, mes, meta, meta_bonus, ativo")
         .eq("ano", data.year)
         .in("mes", data.months),
@@ -53,7 +53,7 @@ export const listCpoMetas = createServerFn({ method: "GET" })
     if (pErr) throw new Error(pErr.message);
     if (mErr) throw new Error(mErr.message);
 
-    const byUser = new Map<string, CpoMetaPessoa>();
+    const byUser = new Map<string, CarregadoresMetaPessoa>();
     for (const p of (profiles ?? []) as any[]) {
       byUser.set(p.id, {
         user_id: p.id,
@@ -86,14 +86,14 @@ const SetInput = z.object({
   meta_bonus: z.number().min(0).max(1_000_000_000).optional(),
 });
 
-export const setCpoMeta = createServerFn({ method: "POST" })
+export const setCarregadoresMeta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SetInput.parse(d))
   .handler(async ({ context, data }) => {
     await requireFeature(context, guard("moderar"));
 
     const { data: atual } = await context.supabase
-      .from("cpo_metas")
+      .from("carregadores_metas")
       .select("meta, meta_bonus, ativo")
       .eq("user_id", data.user_id)
       .eq("ano", data.year)
@@ -110,7 +110,7 @@ export const setCpoMeta = createServerFn({ method: "POST" })
     };
 
     const { error } = await context.supabase
-      .from("cpo_metas")
+      .from("carregadores_metas")
       .upsert(payload, { onConflict: "user_id,ano,mes" });
     if (error) throw new Error(error.message);
     return { ok: true as const };
@@ -123,7 +123,7 @@ const ActiveInput = z.object({
   active: z.boolean(),
 });
 
-export const setCpoMetaAtiva = createServerFn({ method: "POST" })
+export const setCarregadoresMetaAtiva = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ActiveInput.parse(d))
   .handler(async ({ context, data }) => {
@@ -131,7 +131,7 @@ export const setCpoMetaAtiva = createServerFn({ method: "POST" })
 
     // Preserva os valores já gravados: o upsert reescreve a linha inteira.
     const { data: atuais } = await context.supabase
-      .from("cpo_metas")
+      .from("carregadores_metas")
       .select("mes, meta, meta_bonus")
       .eq("user_id", data.user_id)
       .eq("ano", data.year)
@@ -152,7 +152,7 @@ export const setCpoMetaAtiva = createServerFn({ method: "POST" })
       ativo: data.active,
     }));
     const { error } = await context.supabase
-      .from("cpo_metas")
+      .from("carregadores_metas")
       .upsert(rows, { onConflict: "user_id,ano,mes" });
     if (error) throw new Error(error.message);
     return { ok: true as const };

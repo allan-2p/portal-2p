@@ -101,7 +101,7 @@ export const setVendidoTiers = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => VendidoInput.parse(d))
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, [
-      { instance: "carregadores", feature: "cpo.comissoes", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.comissoes", action: "moderar" },
       { instance: "solar", feature: "admin.metas", action: "moderar" },
     ]);
     if (data.pre_vendas.length !== data.tiers.length || data.carteira.length !== data.tiers.length) {
@@ -131,7 +131,7 @@ export const setNovosValues = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => NovosInput.parse(d))
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, [
-      { instance: "carregadores", feature: "cpo.comissoes", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.comissoes", action: "moderar" },
       { instance: "solar", feature: "admin.metas", action: "moderar" },
     ]);
     const { error } = await context.supabase
@@ -172,7 +172,7 @@ export const setRetencaoTiers = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => RetencaoInput.parse(d))
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, [
-      { instance: "carregadores", feature: "cpo.comissoes", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.comissoes", action: "moderar" },
       { instance: "solar", feature: "admin.metas", action: "moderar" },
     ]);
     if (data.values.length !== data.tiers.length) {
@@ -202,7 +202,7 @@ export const setSalespersonEquipe = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => EquipeInput.parse(d))
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, [
-      { instance: "carregadores", feature: "cpo.comissoes", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.comissoes", action: "moderar" },
       { instance: "solar", feature: "admin.metas", action: "moderar" },
     ]);
     // Ler config existente e atualizar apenas a chave do vendedor.

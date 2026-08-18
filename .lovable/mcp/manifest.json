@@ -19,7 +19,7 @@
       {
         "name": "list_tasks",
         "title": "Listar tarefas",
-        "description": "Lista as tarefas (cpo_tasks) visíveis para o usuário autenticado, opcionalmente filtradas por status.",
+        "description": "Lista as tarefas (carregadores_tarefas) visíveis para o usuário autenticado, opcionalmente filtradas por status.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -46,7 +46,7 @@
       {
         "name": "create_task",
         "title": "Criar tarefa",
-        "description": "Cria uma nova tarefa (cpo_tasks) para o usuário autenticado.",
+        "description": "Cria uma nova tarefa (carregadores_tarefas) para o usuário autenticado.",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -86,7 +86,7 @@
       {
         "name": "list_clientes",
         "title": "Listar clientes",
-        "description": "Busca clientes cadastrados (cpo_clientes) por razão social, nome fantasia ou documento.",
+        "description": "Busca clientes cadastrados (carregadores_clientes) por razão social, nome fantasia ou documento.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -113,7 +113,7 @@
       {
         "name": "list_proposals",
         "title": "Listar propostas",
-        "description": "Lista as propostas comerciais (cpo_proposals) visíveis para o usuário autenticado.",
+        "description": "Lista as propostas comerciais (propostas) visíveis para o usuário autenticado.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,

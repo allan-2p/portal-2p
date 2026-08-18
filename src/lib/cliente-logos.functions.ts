@@ -39,7 +39,7 @@ export const saveClienteLogo = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, [
       { instance: "solar", feature: "clientes.cadastros", action: "editar" },
-      { instance: "carregadores", feature: "cpo.clientes", action: "editar" },
+      { instance: "carregadores", feature: "carregadores.clientes", action: "editar" },
     ]);
     const { error } = await context.supabase.from("cliente_logos").upsert(
       {
@@ -60,7 +60,7 @@ export const deleteClienteLogo = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, [
       { instance: "solar", feature: "clientes.cadastros", action: "editar" },
-      { instance: "carregadores", feature: "cpo.clientes", action: "editar" },
+      { instance: "carregadores", feature: "carregadores.clientes", action: "editar" },
     ]);
     const { error } = await context.supabase.from("cliente_logos").delete().eq("doc", data.doc);
     if (error) throw new Error(error.message);

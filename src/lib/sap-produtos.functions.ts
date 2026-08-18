@@ -50,7 +50,7 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
     await requireAnyFeature(context, [
       { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
       { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "cpo.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
     ]);
 
     const { data: produto, error: readError } = await context.supabase
@@ -181,7 +181,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
     await requireAnyFeature(context, [
       { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
       { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "cpo.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
     ]);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -282,7 +282,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       const ncmMap = new Map<string, string>();
       if (ncmsSap.length > 0) {
         const { data: ncmRows } = await supabaseAdmin
-          .from("cpo_ncm")
+          .from("carregadores_ncm")
           .select("id, codigo")
           .in("codigo", ncmsSap);
         for (const n of (ncmRows ?? []) as { id: string; codigo: string }[]) {

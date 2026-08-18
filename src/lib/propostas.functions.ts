@@ -1,16 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
-  CPO_CONFIG_FALLBACK,
-  calcularCpo,
+  CARREGADORES_CONFIG_FALLBACK,
+  calcularCarregadores,
   fmtPct,
   finalidadeUsoDoCadastro,
-  type CpoConfig,
-  type CpoNcm,
-  type CpoProduct,
-  type CpoState,
-  type CpoUf,
-} from "@/lib/cpo";
+  type CarregadoresConfig,
+  type CarregadoresNcm,
+  type CarregadoresProduct,
+  type CarregadoresState,
+  type CarregadoresUf,
+} from "@/lib/carregadores";
 
 export type SalvarPropostaInput = {
   propostaId: string | null;
@@ -60,7 +60,7 @@ const money2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
 
 /** Gera um número SAP único: 6 dígitos, apenas números. */
 async function gerarNumeroSap(supabase: any) {
-  const { data, error } = await supabase.rpc("cpo_next_sap_seq");
+  const { data, error } = await supabase.rpc("proposta_next_sap_seq");
   if (error) {
     // Fallback seguro caso o RPC não esteja disponível
     return Date.now().toString().slice(-6);
@@ -179,16 +179,16 @@ function validar(input: any): SalvarPropostaInput {
  * os valores persistidos — ela só envia cliente, itens e frete. Regras de
  * política (MB mínima e CMV máximo) são revalidadas aqui.
  */
-export const salvarPropostaCpo = createServerFn({ method: "POST" })
+export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validar)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
     const [cfgRes, ufRes, ncmRes, prodRes] = await Promise.all([
-      supabase.from("cpo_config").select("*").eq("id", 1).maybeSingle(),
-      supabase.from("cpo_uf_rates").select("uf, nome, aliq_interna, fcp, convenio_st"),
-      supabase.from("cpo_ncm").select("*"),
+      supabase.from("carregadores_config").select("*").eq("id", 1).maybeSingle(),
+      supabase.from("carregadores_uf_rates").select("uf, nome, aliq_interna, fcp, convenio_st"),
+      supabase.from("carregadores_ncm").select("*"),
       supabase
         .from("sap_produtos")
         .select("id, codigo, descricao, custo, preco_sugerido, ativo, ncm_id, ncm_codigo")
@@ -196,17 +196,17 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
     ]);
     if (prodRes.error) throw new Error(prodRes.error.message);
 
-    const config: CpoConfig = cfgRes.data
-      ? ({ ...CPO_CONFIG_FALLBACK, ...(cfgRes.data as any) } as CpoConfig)
-      : CPO_CONFIG_FALLBACK;
+    const config: CarregadoresConfig = cfgRes.data
+      ? ({ ...CARREGADORES_CONFIG_FALLBACK, ...(cfgRes.data as any) } as CarregadoresConfig)
+      : CARREGADORES_CONFIG_FALLBACK;
     const ufs = ((ufRes.data ?? []) as any[]).map((u) => ({
       uf: u.uf,
       nome: u.nome,
       aliq_interna: Number(u.aliq_interna),
       fcp: Number(u.fcp),
       convenio_st: !!u.convenio_st,
-    })) as CpoUf[];
-    const ncms = ((ncmRes.data ?? []) as any[]) as CpoNcm[];
+    })) as CarregadoresUf[];
+    const ncms = ((ncmRes.data ?? []) as any[]) as CarregadoresNcm[];
     const produtos = ((prodRes.data ?? []) as any[]).map((p) => ({
       id: p.id,
       codigo: p.codigo ?? null,
@@ -216,14 +216,14 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       ativo: !!p.ativo,
       ncm_id: p.ncm_id ?? null,
       ncm_codigo: p.ncm_codigo ?? null,
-    })) as CpoProduct[];
+    })) as CarregadoresProduct[];
 
     const faltando = data.itens.filter((i) => !produtos.some((p) => p.id === i.produtoId));
     if (faltando.length) throw new Error("Há itens com produtos inexistentes ou indisponíveis no catálogo.");
 
     // Finalidade de uso: SEMPRE a do cadastro atual do cliente (o vendedor não
     // escolhe na proposta). Propostas antigas são migradas neste momento.
-    let finalidadeUso = data.finalidadeUso as CpoState["finalidadeUso"];
+    let finalidadeUso = data.finalidadeUso as CarregadoresState["finalidadeUso"];
     const docDigitos = (data.cliente.doc ?? "").replace(/\D/g, "");
     if (docDigitos.length >= 11) {
       try {
@@ -236,7 +236,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       }
     }
 
-    const state: CpoState = {
+    const state: CarregadoresState = {
       propostaNome: data.propostaNome ?? "",
       numeroSap: data.numeroSap ?? "",
       nome: data.cliente.nome,
@@ -253,13 +253,13 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       padrinhoId: data.padrinhoId,
       padrinhoNome: "",
       previsaoFechamento: data.previsaoFechamento ?? "",
-      tipoNf: data.tipoNf as CpoState["tipoNf"],
+      tipoNf: data.tipoNf as CarregadoresState["tipoNf"],
       faturarClienteFinal: data.faturarClienteFinal,
-      faturamento: data.faturamento as unknown as CpoState["faturamento"],
-      formaPagamento: (data.formaPagamento ?? "") as CpoState["formaPagamento"],
+      faturamento: data.faturamento as unknown as CarregadoresState["faturamento"],
+      formaPagamento: (data.formaPagamento ?? "") as CarregadoresState["formaPagamento"],
       entregaDiferente: data.entregaDiferente,
-      entrega: data.entrega as unknown as CpoState["entrega"],
-      freteMod: data.freteMod as CpoState["freteMod"],
+      entrega: data.entrega as unknown as CarregadoresState["entrega"],
+      freteMod: data.freteMod as CarregadoresState["freteMod"],
       freteAreaRural: data.freteAreaRural,
       freteValor: data.freteValor,
       transportadora: data.transportadora,
@@ -274,7 +274,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       })),
     };
 
-    const d = calcularCpo(state, produtos, ufs, config, ncms);
+    const d = calcularCarregadores(state, produtos, ufs, config, ncms);
 
     if (d.mbPct < config.politica_mb_min)
       throw new Error(
@@ -290,7 +290,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
     let numeroSap = data.numeroSap?.trim() || null;
     if (!numeroSap && data.propostaId) {
       const { data: atualSap } = await supabase
-        .from("cpo_proposals")
+        .from("propostas")
         .select("numero_sap")
         .eq("id", data.propostaId)
         .maybeSingle();
@@ -303,7 +303,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
     let padrinhoNome: string | null = null;
     if (data.indicacao && data.padrinhoId) {
       const { data: pad } = await supabase
-        .from("cpo_padrinhos")
+        .from("carregadores_padrinhos")
         .select("id, nome")
         .eq("id", data.padrinhoId)
         .maybeSingle();
@@ -400,7 +400,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
 
     if (data.propostaId) {
       const { data: atual } = await supabase
-        .from("cpo_proposals")
+        .from("propostas")
         .select("consultor_id, consultor_nome, criado_por_nome")
         .eq("id", data.propostaId)
         .maybeSingle();
@@ -415,7 +415,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       if (!(atual as any)?.criado_por_nome) patch["criado_por_nome"] = nomeAtual;
 
       const { error } = await supabase
-        .from("cpo_proposals")
+        .from("propostas")
         .update(patch as any)
         .eq("id", data.propostaId);
       if (error) throw new Error(error.message);
@@ -432,9 +432,10 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
     const consultor = await consultorDoCliente();
 
     const { data: inserida, error } = await supabase
-      .from("cpo_proposals")
+      .from("propostas")
       .insert({
         ...payload,
+        organizacao: "carregadores",
         status: "Salvo",
         created_by: userId,
         criado_por_nome: nomeAtual,
@@ -446,7 +447,7 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
     if (error) {
       if ((error as { code?: string }).code === "23505") {
         const { data: existente } = await supabase
-          .from("cpo_proposals")
+          .from("propostas")
           .select("id")
           .eq("numero", data.numero)
           .maybeSingle();
@@ -485,7 +486,7 @@ export const atribuirNumeroSapFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const supabase = (context as any).supabase;
     const { data: atual } = await supabase
-      .from("cpo_proposals")
+      .from("propostas")
       .select("numero_sap")
       .eq("id", data.propostaId)
       .maybeSingle();
@@ -494,7 +495,7 @@ export const atribuirNumeroSapFn = createServerFn({ method: "POST" })
 
     const numeroSap = await gerarNumeroSap(supabase);
     const { error } = await supabase
-      .from("cpo_proposals")
+      .from("propostas")
       .update({ numero_sap: numeroSap })
       .eq("id", data.propostaId);
     if (error) throw new Error(error.message);

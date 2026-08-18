@@ -3,9 +3,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireFeature } from "@/lib/guards.server";
 import { recordModeration } from "@/lib/moderation-audit.server";
-import { precoSugeridoPadrao } from "@/lib/cpo";
+import { precoSugeridoPadrao } from "@/lib/carregadores";
 
-export type CpoProductAdmin = {
+export type CarregadoresProductAdmin = {
   id: string;
   codigo: string | null;
   nome: string;
@@ -21,7 +21,7 @@ export type CpoProductAdmin = {
 const COLS =
   "id, codigo, descricao, custo, preco_sugerido, ativo, ncm_id, ncm_codigo, visibilidade, imagem_path";
 
-function toProduct(p: any): CpoProductAdmin {
+function toProduct(p: any): CarregadoresProductAdmin {
   return {
     id: p.id,
     codigo: p.codigo ?? null,
@@ -40,9 +40,9 @@ function toProduct(p: any): CpoProductAdmin {
  * proposta. Origem única: tabela `sap_produtos` do portal (alimentada pelo SAP
  * e pelas edições manuais), filtrada pela visibilidade de Carregadores.
  */
-export const listCpoProductsForProposal = createServerFn({ method: "GET" })
+export const listCarregadoresProductsForProposal = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ products: CpoProductAdmin[] }> => {
+  .handler(async ({ context }): Promise<{ products: CarregadoresProductAdmin[] }> => {
     const { data, error } = await context.supabase
       .from("sap_produtos")
       .select(COLS)
@@ -55,12 +55,12 @@ export const listCpoProductsForProposal = createServerFn({ method: "GET" })
 
 
 /** Lista de produtos com custo — restrita a administradores. */
-export const adminListCpoProducts = createServerFn({ method: "GET" })
+export const adminListCarregadoresProducts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ products: CpoProductAdmin[] }> => {
+  .handler(async ({ context }): Promise<{ products: CarregadoresProductAdmin[] }> => {
     await requireFeature(context, {
       instance: "carregadores",
-      feature: "cpo.produtos",
+      feature: "carregadores.produtos",
       action: "visualizar",
     });
 
@@ -80,7 +80,7 @@ export const adminListCpoProducts = createServerFn({ method: "GET" })
  * A gravação acontece no servidor: a tabela `sap_produtos` não aceita escrita
  * direta pelo navegador, o que fazia a alteração ser descartada em silêncio.
  */
-export const updateCpoProduct = createServerFn({ method: "POST" })
+export const updateCarregadoresProduct = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
@@ -93,10 +93,10 @@ export const updateCpoProduct = createServerFn({ method: "POST" })
       .parse(d),
   )
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data, context }): Promise<{ product: CpoProductAdmin }> => {
+  .handler(async ({ data, context }): Promise<{ product: CarregadoresProductAdmin }> => {
     await requireFeature(context, {
       instance: "carregadores",
-      feature: "cpo.produtos",
+      feature: "carregadores.produtos",
       action: "moderar",
     });
 
@@ -134,7 +134,7 @@ export const updateCpoProduct = createServerFn({ method: "POST" })
     if (!updated) throw new Error("Não foi possível salvar o produto.");
 
     await recordModeration(context, {
-      area: "cpo_produtos",
+      area: "carregadores_produtos",
       instanceId: "carregadores",
       action: "atualizou",
       target: data.nome,
@@ -149,13 +149,13 @@ export const updateCpoProduct = createServerFn({ method: "POST" })
   });
 
 /** Ativa/desativa o produto para uso nas propostas de Carregadores. */
-export const setCpoProductAtivo = createServerFn({ method: "POST" })
+export const setCarregadoresProductAtivo = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid(), ativo: z.boolean() }).parse(d))
   .middleware([requireSupabaseAuth])
-  .handler(async ({ data, context }): Promise<{ product: CpoProductAdmin }> => {
+  .handler(async ({ data, context }): Promise<{ product: CarregadoresProductAdmin }> => {
     await requireFeature(context, {
       instance: "carregadores",
-      feature: "cpo.produtos",
+      feature: "carregadores.produtos",
       action: "moderar",
     });
 
@@ -188,7 +188,7 @@ export const setCpoProductAtivo = createServerFn({ method: "POST" })
     if (!updated) throw new Error("Não foi possível alterar o status do produto.");
 
     await recordModeration(context, {
-      area: "cpo_produtos",
+      area: "carregadores_produtos",
       instanceId: "carregadores",
       action: data.ativo ? "ativou" : "desativou",
       target: (atual as any).descricao,

@@ -9,7 +9,7 @@ export const MENU_PARENT: Partial<Record<FeatureKey, FeatureKey>> = {
 /** Porta de entrada (home) de cada instância. */
 export const INSTANCE_HOME: Record<InstanceId, FeatureKey> = {
   solar: "home",
-  carregadores: "cpo.home",
+  carregadores: "carregadores.home",
   marketing: "marketing.home",
 };
 

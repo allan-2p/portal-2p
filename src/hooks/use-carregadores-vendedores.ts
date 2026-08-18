@@ -7,9 +7,9 @@ import { parseVendedores } from "@/components/vendedor-names-filter";
  * Lista de usuários do portal (vendedores) para filtrar registros
  * de Carregadores por quem criou/é dono do registro.
  */
-export function useCpoVendedores() {
+export function useCarregadoresVendedores() {
   const q = useQuery({
-    queryKey: ["cpo-vendedores"],
+    queryKey: ["carregadores-vendedores"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase

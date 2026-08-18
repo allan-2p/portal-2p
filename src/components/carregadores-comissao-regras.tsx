@@ -2,17 +2,17 @@ import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCpoConfig } from "@/hooks/use-cpo";
-import { CPO_CONFIG_FALLBACK } from "@/lib/cpo";
-import { VALOR_INDICACAO, calcularComissao, ratearComissao, type Regime } from "@/lib/cpo-comissao";
+import { useCarregadoresConfig } from "@/hooks/use-carregadores";
+import { CARREGADORES_CONFIG_FALLBACK } from "@/lib/carregadores";
+import { VALOR_INDICACAO, calcularComissao, ratearComissao, type Regime } from "@/lib/carregadores-comissao";
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2 });
 const pct = (v: number) => `${(v * 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
 
-export function CpoComissaoRegras() {
-  const { data: cfgData } = useCpoConfig();
-  const cfg = cfgData ?? CPO_CONFIG_FALLBACK;
+export function CarregadoresComissaoRegras() {
+  const { data: cfgData } = useCarregadoresConfig();
+  const cfg = cfgData ?? CARREGADORES_CONFIG_FALLBACK;
 
   const [venda, setVenda] = useState(68750);
   const [custo, setCusto] = useState(34500);

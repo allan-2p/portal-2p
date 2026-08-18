@@ -5,7 +5,7 @@ import { supabaseForUser } from "../supabase";
 export default defineTool({
   name: "create_task",
   title: "Criar tarefa",
-  description: "Cria uma nova tarefa (cpo_tasks) para o usuário autenticado.",
+  description: "Cria uma nova tarefa (carregadores_tarefas) para o usuário autenticado.",
   inputSchema: {
     titulo: z.string().trim().describe("Título da tarefa."),
     descricao: z.string().optional().describe("Descrição detalhada da tarefa."),
@@ -23,7 +23,7 @@ export default defineTool({
     }
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase
-      .from("cpo_tasks")
+      .from("carregadores_tarefas")
       .insert({
         titulo: titulo.trim(),
         descricao: descricao ?? null,

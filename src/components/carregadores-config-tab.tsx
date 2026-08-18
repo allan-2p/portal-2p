@@ -13,13 +13,13 @@ import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
-import { useCpoConfig, useCpoInvalidate } from "@/hooks/use-cpo";
-import type { CpoConfig } from "@/lib/cpo";
+import { useCarregadoresConfig, useCarregadoresInvalidate } from "@/hooks/use-carregadores";
+import type { CarregadoresConfig } from "@/lib/carregadores";
 
-export function CpoConfigTab() {
-  const { data } = useCpoConfig();
-  const invalidate = useCpoInvalidate();
-  const [form, setForm] = useState<CpoConfig | null>(null);
+export function CarregadoresConfigTab() {
+  const { data } = useCarregadoresConfig();
+  const invalidate = useCarregadoresInvalidate();
+  const [form, setForm] = useState<CarregadoresConfig | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -28,17 +28,17 @@ export function CpoConfigTab() {
 
   if (!form) return <div className="glass rounded-2xl p-6 text-muted-foreground">Carregando…</div>;
 
-  const pct = (k: keyof CpoConfig) => ((form[k] as number) * 100).toFixed(2);
-  const setPct = (k: keyof CpoConfig, v: string) => setForm({ ...form, [k]: Number(v) / 100 });
+  const pct = (k: keyof CarregadoresConfig) => ((form[k] as number) * 100).toFixed(2);
+  const setPct = (k: keyof CarregadoresConfig, v: string) => setForm({ ...form, [k]: Number(v) / 100 });
 
   async function salvar() {
     if (!form) return;
     setSaving(true);
-    const { error } = await supabase.from("cpo_config").update({ ...form }).eq("id", 1);
+    const { error } = await supabase.from("carregadores_config").update({ ...form }).eq("id", 1);
     setSaving(false);
     if (error) return toast.error(error.message);
     void logModeration({
-      area: "cpo_regras",
+      area: "carregadores_regras",
       action: "atualizou",
       target: "Política tributária",
       summary: "Política tributária e comercial atualizada",

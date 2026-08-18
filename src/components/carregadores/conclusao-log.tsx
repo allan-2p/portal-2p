@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { History, RefreshCw } from "lucide-react";
-import { listarConclusoes } from "@/lib/cpo-conclusao-log";
+import { listarConclusoes } from "@/lib/carregadores-conclusao-log";
 
 const resultadoBadge: Record<string, { label: string; className: string }> = {
   concluida: { label: "Concluída", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
@@ -27,7 +27,7 @@ export function ConclusaoLogCard({ propostaId }: { propostaId?: string | null })
   const [resultado, setResultado] = useState("todos");
 
   const q = useQuery({
-    queryKey: ["cpo-conclusao-log"],
+    queryKey: ["carregadores-conclusao-log"],
     queryFn: () => listarConclusoes(200),
     refetchOnMount: "always",
   });

@@ -7,11 +7,11 @@ import { toast } from "sonner";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import {
-  listCpoMetas,
-  setCpoMeta,
-  setCpoMetaAtiva,
-  type CpoMetaPessoa,
-} from "@/lib/cpo-metas.functions";
+  listCarregadoresMetas,
+  setCarregadoresMeta,
+  setCarregadoresMetaAtiva,
+  type CarregadoresMetaPessoa,
+} from "@/lib/carregadores-metas.functions";
 import { logModeration } from "@/lib/moderation-audit";
 
 export const Route = createFileRoute("/_authenticated/carregadores/metas")({
@@ -29,8 +29,8 @@ export const Route = createFileRoute("/_authenticated/carregadores/metas")({
     ],
   }),
   component: () => (
-    <AdminRouteGuard feature="cpo.metas" area="moderacao">
-      <CpoMetasPage />
+    <AdminRouteGuard feature="carregadores.metas" area="moderacao">
+      <CarregadoresMetasPage />
     </AdminRouteGuard>
   ),
 });
@@ -67,7 +67,7 @@ function parseBRL(v: string): number | null {
   return Math.round(n * 100) / 100;
 }
 
-function CpoMetasPage() {
+function CarregadoresMetasPage() {
   const quarters = useMemo(quarterOptions, []);
   const currentQuarter = quarters[Math.floor(new Date().getMonth() / 3)] ?? quarters[0];
   const [quarterId, setQuarterId] = useState(currentQuarter.id);
@@ -75,18 +75,18 @@ function CpoMetasPage() {
   const [onlyActive, setOnlyActive] = useState(false);
   const quarter = quarters.find((q) => q.id === quarterId) ?? currentQuarter;
 
-  const fetchList = useServerFn(listCpoMetas);
-  const saveMeta = useServerFn(setCpoMeta);
-  const saveAtiva = useServerFn(setCpoMetaAtiva);
+  const fetchList = useServerFn(listCarregadoresMetas);
+  const saveMeta = useServerFn(setCarregadoresMeta);
+  const saveAtiva = useServerFn(setCarregadoresMetaAtiva);
   const qc = useQueryClient();
 
   const q = useQuery({
-    queryKey: ["cpo-metas", quarter.year, quarter.months.join(",")],
+    queryKey: ["carregadores-metas", quarter.year, quarter.months.join(",")],
     queryFn: () => fetchList({ data: { year: quarter.year, months: [...quarter.months] } }),
     staleTime: 60_000,
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["cpo-metas"] });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["carregadores-metas"] });
 
   const metaMut = useMutation({
     mutationFn: (v: {
@@ -108,7 +108,7 @@ function CpoMetasPage() {
     onSuccess: (_r, v) => {
       invalidate();
       void logModeration({
-        area: "cpo_metas",
+        area: "carregadores_metas",
         action: v.meta_bonus !== undefined ? "meta_bonus" : "meta",
         target: v.nome,
         summary: `Meta ${v.meta_bonus !== undefined ? "bônus " : ""}de ${v.nome} em ${MONTH_FULL[v.month - 1]}/${quarter.year} definida para ${fmt(v.meta ?? v.meta_bonus ?? 0)}`,
@@ -130,7 +130,7 @@ function CpoMetasPage() {
     onSuccess: (_r, v) => {
       invalidate();
       void logModeration({
-        area: "cpo_metas",
+        area: "carregadores_metas",
         action: v.active ? "ativar" : "desativar",
         target: v.nome,
         summary: `Meta de ${v.nome} ${v.active ? "ativada" : "desativada"} em ${quarter.label}`,
@@ -324,7 +324,7 @@ function MetaRow({
   onSaveBonus,
   onToggleActive,
 }: {
-  pessoa: CpoMetaPessoa;
+  pessoa: CarregadoresMetaPessoa;
   year: number;
   months: readonly number[];
   onSaveMeta: (month: number, meta: number) => void;

@@ -6,9 +6,9 @@ import { AlertTriangle, KanbanSquare, List, Loader2, Search } from "lucide-react
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { fmtBRL } from "@/lib/cpo";
+import { fmtBRL } from "@/lib/carregadores";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
-import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
+import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
 import { StatusLegend, StatusPicker } from "@/components/proposta-status-ui";
 
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
       { property: "og:description", content: "Acompanhe os pedidos de carregadores por status, cliente e valor." },
     ],
   }),
-  component: CpoPedidosPage,
+  component: CarregadoresPedidosPage,
 });
 
 /** Mesmos status exibidos em Pedidos do 2P Solar. */
@@ -53,18 +53,19 @@ function datePtBr(iso: string | null) {
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
-function CpoPedidosPage() {
+function CarregadoresPedidosPage() {
   const [view, setView] = useState<"kanban" | "list">("kanban");
   const [search, setSearch] = useState("");
   const [vendedor, setVendedor] = useState("__all__");
-  const vend = useCpoVendedores();
+  const vend = useCarregadoresVendedores();
 
   const q = useQuery({
-    queryKey: ["cpo-pedidos"],
+    queryKey: ["carregadores-pedidos"],
     queryFn: async (): Promise<Pedido[]> => {
       const { data, error } = await supabase
-        .from("cpo_proposals")
+        .from("propostas")
         .select("id,numero,cliente_nome,uf,status,totais,created_at,created_by")
+        .eq("organizacao", "carregadores")
         .in("status", PEDIDO_STATUS as unknown as string[])
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -101,7 +102,7 @@ function CpoPedidosPage() {
   }, [search, q.data, vendedor, vend]);
 
   async function alterarStatus(id: string, novo: PedidoStatus) {
-    const { error } = await supabase.from("cpo_proposals").update({ status: novo }).eq("id", id);
+    const { error } = await supabase.from("propostas").update({ status: novo }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Status atualizado.");
     q.refetch();

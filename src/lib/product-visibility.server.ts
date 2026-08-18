@@ -8,7 +8,7 @@ export async function countOpenProposalsWithProduct(
   productId: string,
 ): Promise<number> {
   const { data, error } = await supabase
-    .from("cpo_proposals")
+    .from("propostas")
     .select("id, itens")
     .in("status", ABERTAS)
     .limit(1000);

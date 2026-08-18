@@ -1,4 +1,4 @@
-import { fmtBRL, fmtPct } from "@/lib/cpo";
+import { fmtBRL, fmtPct } from "@/lib/carregadores";
 
 export type PropostaPdfItem = {
   codigo?: string | null;

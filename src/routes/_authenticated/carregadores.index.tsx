@@ -2,14 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
-import { useCpoVendedores } from "@/hooks/use-cpo-vendedores";
+import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { AppLayout } from "@/components/app-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
-import { fmtBRL } from "@/lib/cpo";
+import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 import { PermissionGate } from "@/components/permission-gate";
 import {
@@ -99,25 +99,26 @@ function CarregadoresHome() {
   const [forecastFilter, setForecastFilter] = useState<"all" | "7d" | "15-30" | "30-60" | "60+" | "atrasados">("all");
 
   const propsQ = useQuery({
-    queryKey: ["cpo-home-propostas"],
+    queryKey: ["carregadores-home-propostas"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("cpo_proposals")
+        .from("propostas")
         .select("id,numero,cliente_nome,uf,status,totais,created_at,created_by")
+        .eq("organizacao", "carregadores")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Prop[];
     },
   });
-  const vend = useCpoVendedores();
+  const vend = useCarregadoresVendedores();
   const props = (propsQ.data ?? []).filter((p) => vend.matches(vendedor, (p as { created_by?: string | null }).created_by));
   const isLoading = propsQ.isLoading;
 
   const tasksQ = useQuery({
-    queryKey: ["cpo-home-agenda"],
+    queryKey: ["carregadores-home-agenda"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("cpo_tasks")
+        .from("carregadores_tarefas")
         .select("id,titulo,descricao,cliente_nome,due_date,prioridade,status,owner_id")
         .eq("status", "aberta")
         .order("due_date", { ascending: true });
@@ -214,7 +215,7 @@ function CarregadoresHome() {
               allLabel="Todos os vendedores"
             />
           </div>
-          <PermissionGate feature="cpo.propostas" action="editar">
+          <PermissionGate feature="carregadores.propostas" action="editar">
             <Button asChild>
               <Link to="/carregadores/propostas/nova">
                 <Plus className="h-4 w-4 mr-1.5" /> Nova proposta

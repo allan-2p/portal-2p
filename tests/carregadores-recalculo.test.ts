@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
-  CPO_CONFIG_FALLBACK,
+  CARREGADORES_CONFIG_FALLBACK,
   MARGEM_PRECO_SUGERIDO,
-  calcularCpo,
+  calcularCarregadores,
   precoSugeridoPadrao,
   statusMB,
-  type CpoNcm,
-  type CpoProduct,
-  type CpoState,
-  type CpoUf,
-} from "@/lib/cpo";
+  type CarregadoresNcm,
+  type CarregadoresProduct,
+  type CarregadoresState,
+  type CarregadoresUf,
+} from "@/lib/carregadores";
 
-const NCM: CpoNcm = {
+const NCM: CarregadoresNcm = {
   id: "ncm-1",
   codigo: "85044090",
   descricao: "Carregador",
@@ -24,7 +24,7 @@ const NCM: CpoNcm = {
   ativo: true,
 };
 
-const PRODUTO: CpoProduct = {
+const PRODUTO: CarregadoresProduct = {
   id: "p1",
   codigo: "200000694",
   nome: "Carregador 7,4 kW",
@@ -34,16 +34,16 @@ const PRODUTO: CpoProduct = {
   ncm_id: NCM.id,
 };
 
-const PRODUTO_2: CpoProduct = { ...PRODUTO, id: "p2", codigo: "200000684", custo: 2000 };
+const PRODUTO_2: CarregadoresProduct = { ...PRODUTO, id: "p2", codigo: "200000684", custo: 2000 };
 
-const UFS: CpoUf[] = [
+const UFS: CarregadoresUf[] = [
   { uf: "SP", nome: "São Paulo", aliq_interna: 0.18, fcp: 0, convenio_st: false },
 ];
 
 const produtos = [PRODUTO, PRODUTO_2];
-const config = CPO_CONFIG_FALLBACK;
+const config = CARREGADORES_CONFIG_FALLBACK;
 
-function estado(over: Partial<CpoState> = {}): CpoState {
+function estado(over: Partial<CarregadoresState> = {}): CarregadoresState {
   return {
     nome: "Cliente Teste",
     telefone: "",
@@ -64,7 +64,7 @@ function estado(over: Partial<CpoState> = {}): CpoState {
   };
 }
 
-const calc = (s: CpoState) => calcularCpo(s, produtos, UFS, config, [NCM]);
+const calc = (s: CarregadoresState) => calcularCarregadores(s, produtos, UFS, config, [NCM]);
 
 describe("Preço Sugerido", () => {
   it("aplica 37% de margem sobre o custo", () => {
