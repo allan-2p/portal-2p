@@ -64,7 +64,7 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
     const { countOpenProposalsWithProduct } = await import("@/lib/product-visibility.server");
     const propostasAbertas =
       produto.visibilidade !== data.visibilidade && data.visibilidade === "solar"
-        ? await countOpenProposalsWithProduct(context.supabase as never, data.id)
+        ? await countOpenProposalsWithProduct(data.id)
         : 0;
 
     const bloqueio = validateVisibilidadeChange(data.visibilidade, {

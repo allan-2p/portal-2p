@@ -2375,13 +2375,25 @@ export const getClientTimeline = createServerFn({ method: "GET" })
     }
 
     if (clienteNome) {
+      const propostasDoCliente = async () => {
+        try {
+          const { listarPropostas } = await import("./propostas-db.server");
+          const alvo = clienteNome.toLowerCase();
+          const rows = await listarPropostas({
+            select: "id,numero,cliente_nome,status,totais,created_at",
+            limit: 1000,
+          });
+          return {
+            data: rows
+              .filter((r: any) => String(r.cliente_nome ?? "").toLowerCase().includes(alvo))
+              .slice(0, 100),
+          };
+        } catch {
+          return { data: [] as any[] };
+        }
+      };
       const [props, tarefas] = await Promise.all([
-        context.supabase
-          .from("propostas")
-          .select("id, numero, cliente_nome, status, totais, created_at")
-          .ilike("cliente_nome", `%${clienteNome}%`)
-          .order("created_at", { ascending: false })
-          .limit(100),
+        propostasDoCliente(),
         context.supabase
           .from("carregadores_tarefas")
           .select("id, titulo, descricao, cliente_nome, status, due_date, created_at")

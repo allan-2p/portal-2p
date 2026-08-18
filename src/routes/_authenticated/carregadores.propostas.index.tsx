@@ -26,6 +26,7 @@ import {
 import { Calculator, Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { listarPropostasFn, atualizarStatusPropostaFn, excluirPropostaFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
@@ -91,13 +92,8 @@ function HistoricoCarregadoresPage() {
   const q = useQuery({
     queryKey: ["carregadores-proposals"],
     queryFn: async (): Promise<Row[]> => {
-      const { data, error } = await supabase
-        .from("propostas")
-        .select("*")
-        .eq("organizacao", "carregadores")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map((r) => ({
+      const data = await listarPropostasFn({ data: { organizacao: "carregadores" } });
+      return (data ?? []).map((r: any) => ({
         ...r,
         frete_valor: Number(r.frete_valor),
         itens: (r.itens as Row["itens"]) ?? [],
@@ -161,8 +157,11 @@ function HistoricoCarregadoresPage() {
 
 
   async function alterarStatus(id: string, novo: string) {
-    const { error } = await supabase.from("propostas").update({ status: novo }).eq("id", id);
-    if (error) return toast.error(error.message);
+    try {
+      await atualizarStatusPropostaFn({ data: { id, status: novo } });
+    } catch (e) {
+      return toast.error((e as Error).message);
+    }
     toast.success("Status atualizado.");
     q.refetch();
   }
@@ -174,9 +173,13 @@ function HistoricoCarregadoresPage() {
 
   async function confirmarExclusao() {
     if (!excluirId) return;
-    const { error } = await supabase.from("propostas").delete().eq("id", excluirId);
+    try {
+      await excluirPropostaFn({ data: { id: excluirId } });
+    } catch (e) {
+      setExcluirId(null);
+      return toast.error((e as Error).message);
+    }
     setExcluirId(null);
-    if (error) return toast.error(error.message);
     toast.success("Proposta excluída.");
     q.refetch();
   }

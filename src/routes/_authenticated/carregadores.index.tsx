@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
+import { listarPropostasFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 import { PermissionGate } from "@/components/permission-gate";
@@ -101,12 +102,12 @@ function CarregadoresHome() {
   const propsQ = useQuery({
     queryKey: ["carregadores-home-propostas"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("propostas")
-        .select("id,numero,cliente_nome,uf,status,totais,created_at,created_by")
-        .eq("organizacao", "carregadores")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
+      const data = await listarPropostasFn({
+        data: {
+          organizacao: "carregadores",
+          select: "id,numero,cliente_nome,uf,status,totais,created_at,created_by",
+        },
+      });
       return (data ?? []) as unknown as Prop[];
     },
   });

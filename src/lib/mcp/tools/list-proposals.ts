@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { supabaseForUser } from "../supabase";
+import { listarPropostas } from "@/lib/propostas-db.server";
 
 export default defineTool({
   name: "list_proposals",
@@ -16,18 +16,19 @@ export default defineTool({
       return { content: [{ type: "text", text: "Não autenticado" }], isError: true };
     }
     const take = Math.min(Math.max(limit ?? 20, 1), 100);
-    const supabase = supabaseForUser(ctx);
-    let query = supabase
-      .from("propostas")
-      .select("id, numero, cliente_nome, uf, status, totais, created_at, updated_at")
-      .order("created_at", { ascending: false })
-      .limit(take);
-    if (status) query = query.eq("status", status);
-    const { data, error } = await query;
-    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    let data: Record<string, unknown>[] = [];
+    try {
+      data = await listarPropostas({
+        select: "id,numero,cliente_nome,uf,status,totais,created_at,updated_at",
+        limit: take,
+        ...(status ? { statusIn: [status] } : {}),
+      });
+    } catch (e) {
+      return { content: [{ type: "text", text: (e as Error).message }], isError: true };
+    }
     return {
-      content: [{ type: "text", text: JSON.stringify(data ?? []) }],
-      structuredContent: { proposals: data ?? [] },
+      content: [{ type: "text", text: JSON.stringify(data) }],
+      structuredContent: { proposals: data },
     };
   },
 });

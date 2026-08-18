@@ -2,10 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { finalidadeUsoPorDocFn } from "@/lib/clientes.functions";
+import { obterPropostaFn } from "@/lib/propostas.functions";
 import { finalidadeUsoDoCadastro, labelFinalidadeUso } from "@/lib/carregadores";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
 import { fmtBRL, fmtPct } from "@/lib/carregadores";
 import { StatusDot } from "@/components/proposta-status-ui";
 import { PropostaTimeline } from "@/components/proposta-timeline";
@@ -24,9 +24,7 @@ export function usePropostaDetalhe(id?: string) {
     queryKey: ["carregadores-proposta", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("propostas").select("*").eq("id", id!).maybeSingle();
-      if (error) throw error;
-      return data;
+      return await obterPropostaFn({ data: { id: id! } });
     },
   });
 }
