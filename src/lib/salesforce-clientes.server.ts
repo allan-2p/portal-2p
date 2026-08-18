@@ -169,3 +169,80 @@ export async function sincronizarClienteSalesforce(
     return { ok: false, erro: (err as Error).message };
   }
 }
+
+export type ContatoSalesforceInput = {
+  /** Id do registro na tabela `contatos` (para gravar o retorno). */
+  id: string;
+  tipo?: string | null;
+  nome?: string | null;
+  cargo?: string | null;
+  email?: string | null;
+  telefone?: string | null;
+  sf_contact_id?: string | null;
+};
+
+export type ContatoSalesforceResultado = {
+  id: string;
+  nome: string;
+  ok: boolean;
+  contactId: string | null;
+  erro: string | null;
+};
+
+/**
+ * Cria/atualiza um objeto Contact no Salesforce para cada contato do cliente,
+ * sempre vinculado à Account (`AccountId`).
+ */
+export async function sincronizarContatosSalesforce(
+  accountId: string,
+  contatos: ContatoSalesforceInput[],
+  ownerSfId?: string | null,
+): Promise<ContatoSalesforceResultado[]> {
+  const out: ContatoSalesforceResultado[] = [];
+  if (!secrets()) {
+    return contatos.map((c) => ({
+      id: c.id,
+      nome: so(c.nome),
+      ok: false,
+      contactId: null,
+      erro: "Conector do Salesforce não está configurado.",
+    }));
+  }
+
+  for (const c of contatos) {
+    const nome = so(c.nome);
+    if (!nome) continue;
+    try {
+      const partes = nome.split(/\s+/);
+      const lastName = partes.length > 1 ? partes.slice(1).join(" ") : nome;
+      const firstName = partes.length > 1 ? partes[0] : null;
+
+      let contactId = so(c.sf_contact_id) || null;
+      if (!contactId) {
+        const q = `SELECT Id FROM Contact WHERE AccountId = '${esc(accountId)}' AND LastName = '${esc(lastName)}' LIMIT 1`;
+        const existente = await sf(`/query?q=${encodeURIComponent(q)}`);
+        contactId = existente?.records?.[0]?.Id ?? null;
+      }
+
+      const body: Record<string, unknown> = {
+        AccountId: accountId,
+        LastName: lastName.slice(0, 80),
+        FirstName: firstName ? firstName.slice(0, 40) : null,
+        Email: so(c.email) || null,
+        Phone: so(c.telefone) || null,
+        Title: so(c.cargo) || null,
+      };
+      if (ownerSfId) body["OwnerId"] = ownerSfId;
+
+      const r = contactId
+        ? await sf(`/sobjects/Contact/${contactId}`, { method: "PATCH", body: JSON.stringify(body) })
+        : await sf(`/sobjects/Contact`, { method: "POST", body: JSON.stringify(body) });
+
+      out.push({ id: c.id, nome, ok: true, contactId: contactId ?? r?.id ?? null, erro: null });
+    } catch (err) {
+      out.push({ id: c.id, nome, ok: false, contactId: null, erro: (err as Error).message });
+    }
+  }
+  return out;
+}
+
