@@ -1758,9 +1758,13 @@ function PropostaCpoPage() {
                           onClick={() =>
                             setState((s) => ({
                               ...s,
-                              itens: s.itens.length > 1 ? s.itens.filter((x) => x.key !== it.key) : s.itens,
+                              itens:
+                                s.itens.length > 1
+                                  ? s.itens.filter((x) => x.key !== it.key)
+                                  : [novoItem()],
                             }))
                           }
+
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
