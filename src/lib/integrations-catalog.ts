@@ -30,6 +30,30 @@ export type IntegrationDef = {
 
 export const INTEGRATIONS: IntegrationDef[] = [
   {
+    slug: "clientes-cadastro",
+    name: "Cadastro de clientes (banco)",
+    category: "Cadastros",
+    description:
+      "Gravação do cadastro na tabela clientes do Grupo 2P. Registra criação, atualização e qualquer erro de banco.",
+    credentials: [],
+    note: "Erros aqui indicam falha no banco (permissão, coluna ausente, duplicidade) antes do envio ao SAP/Salesforce.",
+  },
+  {
+    slug: "sap-clientes",
+    name: "SAP — Cadastro de clientes",
+    category: "ERP",
+    description: "Envio do cadastro ao SAP e retorno do código KUNNR, com payload e erro de cada tentativa.",
+    credentials: [],
+  },
+  {
+    slug: "salesforce-clientes",
+    name: "Salesforce — Contas e contatos",
+    category: "CRM",
+    description: "Criação/atualização de Account e Contact a partir do cadastro de clientes.",
+    credentials: [],
+  },
+
+  {
     slug: "salesforce",
     name: "Salesforce",
     category: "CRM",

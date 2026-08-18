@@ -35,6 +35,13 @@ export async function sincronizarCliente(
     atual = (await db.getClienteById(instancia, clienteId)) as Record<string, any> | null;
   } catch (err) {
     console.error("[clientes] não foi possível ler o cadastro atual", err);
+    await logIntegrationEvent({
+      slug: "clientes-cadastro",
+      level: "error",
+      event: "cadastro.leitura.erro",
+      message: `Falha ao ler o cadastro no banco: ${(err as Error)?.message ?? String(err)}`,
+      detail: { cliente_id: clienteId, instancia, erro: (err as Error)?.message ?? String(err) },
+    });
   }
   const numeroSapAtual = cliente["numero_sap"] ?? atual?.["numero_sap"] ?? null;
   const sfAccountAtual = cliente["sf_account_id"] ?? atual?.["sf_account_id"] ?? null;
@@ -132,6 +139,13 @@ export async function sincronizarCliente(
     });
   } catch (err) {
     console.error("[clientes] falha ao gravar retorno do SAP", err);
+    await logIntegrationEvent({
+      slug: "clientes-cadastro",
+      level: "error",
+      event: "cadastro.gravar_retorno_sap.erro",
+      message: `Falha ao gravar no banco o retorno do SAP: ${(err as Error)?.message ?? String(err)}`,
+      detail: { ...base, erro: (err as Error)?.message ?? String(err) },
+    });
   }
 
   const sfPayload = {
@@ -221,6 +235,13 @@ export async function sincronizarCliente(
     await db.updateCliente(instancia, clienteId, patch);
   } catch (err) {
     console.error("[clientes] falha ao gravar retorno das integrações", err);
+    await logIntegrationEvent({
+      slug: "clientes-cadastro",
+      level: "error",
+      event: "cadastro.gravar_retorno.erro",
+      message: `Falha ao gravar no banco o retorno das integrações: ${(err as Error)?.message ?? String(err)}`,
+      detail: { ...base, patch, erro: (err as Error)?.message ?? String(err) },
+    });
   }
 
   // Contatos: cada um vira um registro na tabela `contatos` (vinculado pelo
@@ -282,7 +303,7 @@ export async function sincronizarCliente(
       level: "error",
       event: "contatos.erro",
       message: `Falha ao sincronizar contatos: ${(err as Error).message}`,
-      detail: { ...base },
+      detail: { ...base, erro: (err as Error)?.message ?? String(err) },
     });
   }
 

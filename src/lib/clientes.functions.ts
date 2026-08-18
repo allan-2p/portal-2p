@@ -200,16 +200,42 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const db = await import("./clientes-db.server");
+    const { logIntegrationEvent } = await import("./integration-logs.server");
     const doc = data.cliente.doc.replace(/\D/g, "");
 
+    /** Toda falha do cadastro (banco incluído) fica visível em Logs > Integrações. */
+    const logErroBanco = async (etapa: string, err: unknown) =>
+      logIntegrationEvent({
+        slug: "clientes-cadastro",
+        level: "error",
+        event: `cadastro.${etapa}.erro`,
+        message: `Falha ao ${etapa} o cadastro ${data.cliente.razao_social} (${doc}): ${(err as Error)?.message ?? String(err)}`,
+        actorId: context.userId,
+        detail: {
+          cliente_id: data.id ?? null,
+          instancia: data.instancia,
+          doc,
+          razao_social: data.cliente.razao_social,
+          uf: data.cliente.uf ?? null,
+          erro: (err as Error)?.message ?? String(err),
+        },
+      });
+
     // Duplicidade: mesmo documento em qualquer instância.
-    const achados = await db.findClienteByDoc(doc);
+    let achados: Awaited<ReturnType<typeof db.findClienteByDoc>>;
+    try {
+      achados = await db.findClienteByDoc(doc);
+    } catch (err) {
+      await logErroBanco("consultar", err);
+      throw err;
+    }
     const conflito = achados.find((a) => a.cliente["id"] !== data.id);
     if (conflito) {
-      throw new Error(
-        `Este documento já está cadastrado em ${db.ORGANIZACAO[conflito.instancia]} (${conflito.cliente["razao_social"]}).`,
-      );
+      const msg = `Este documento já está cadastrado em ${db.ORGANIZACAO[conflito.instancia]} (${conflito.cliente["razao_social"]}).`;
+      await logErroBanco("validar", new Error(msg));
+      throw new Error(msg);
     }
+
 
     const { data: perfil } = await context.supabase
       .from("profiles")
@@ -245,36 +271,58 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     };
 
     let clienteId = data.id ?? null;
-    if (data.id) {
-      await assertPodeAlterarCliente(context as any, data.instancia, data.id);
-      const patch: Record<string, unknown> = { ...payload };
-      // Só reatribui o consultor quando o usuário tem permissão e escolheu alguém.
-      if (podeEscolher && data.consultor_id) {
-        patch["created_by"] = consultorId;
-        patch["created_by_nome"] = consultorNome;
-        patch["created_by_email"] = consultorEmail;
+    try {
+      if (data.id) {
+        await assertPodeAlterarCliente(context as any, data.instancia, data.id);
+        const patch: Record<string, unknown> = { ...payload };
+        // Só reatribui o consultor quando o usuário tem permissão e escolheu alguém.
+        if (podeEscolher && data.consultor_id) {
+          patch["created_by"] = consultorId;
+          patch["created_by_nome"] = consultorNome;
+          patch["created_by_email"] = consultorEmail;
+        }
+        const row = await db.updateCliente(data.instancia, data.id, patch);
+        clienteId = (row?.["id"] as string) ?? data.id;
+      } else {
+        const row = await db.insertCliente(data.instancia, {
+          ...payload,
+          created_by: consultorId,
+          created_by_nome: consultorNome,
+          created_by_email: consultorEmail,
+        });
+        clienteId = row["id"] as string;
       }
-      const row = await db.updateCliente(data.instancia, data.id, patch);
-      clienteId = (row?.["id"] as string) ?? data.id;
-    } else {
-      const row = await db.insertCliente(data.instancia, {
-        ...payload,
-        created_by: consultorId,
-        created_by_nome: consultorNome,
-        created_by_email: consultorEmail,
-      });
-      clienteId = row["id"] as string;
+    } catch (err) {
+      await logErroBanco(data.id ? "atualizar" : "gravar", err);
+      throw err;
     }
+
+    await logIntegrationEvent({
+      slug: "clientes-cadastro",
+      level: "info",
+      event: data.id ? "cadastro.atualizado" : "cadastro.criado",
+      message: `${data.id ? "Cadastro atualizado" : "Cadastro criado"}: ${payload.razao_social} (${doc})`,
+      actorId: context.userId,
+      detail: { cliente_id: clienteId, instancia: data.instancia, doc, razao_social: payload.razao_social },
+    });
+
 
     // Envio automático ao salvar: SAP + Salesforce. Erros não desfazem o
     // cadastro; ficam visíveis na tela para reenvio.
     const { sincronizarCliente } = await import("./clientes-integracoes.server");
-    const sync = await sincronizarCliente(data.instancia, clienteId!, payload, {
-      vendedorSap: consultorSap,
-      ownerSfId: consultorSfId,
-    });
+    let sync;
+    try {
+      sync = await sincronizarCliente(data.instancia, clienteId!, payload, {
+        vendedorSap: consultorSap,
+        ownerSfId: consultorSfId,
+      });
+    } catch (err) {
+      await logErroBanco("sincronizar", err);
+      throw err;
+    }
 
     return { id: clienteId!, sync };
+
   });
 
 /** Reenvia um cadastro já salvo para o SAP e o Salesforce. */
