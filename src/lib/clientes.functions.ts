@@ -271,9 +271,11 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     };
 
     let clienteId = data.id ?? null;
+    /** Diff campo a campo (auditoria por cliente, visível só ao administrador). */
+    let alteracoes: Array<{ campo: string; de: unknown; para: unknown }> = [];
     try {
       if (data.id) {
-        await assertPodeAlterarCliente(context as any, data.instancia, data.id);
+        const anterior = await assertPodeAlterarCliente(context as any, data.instancia, data.id);
         const patch: Record<string, unknown> = { ...payload };
         // Só reatribui o consultor quando o usuário tem permissão e escolheu alguém.
         if (podeEscolher && data.consultor_id) {
@@ -281,6 +283,14 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
           patch["created_by_nome"] = consultorNome;
           patch["created_by_email"] = consultorEmail;
         }
+        const igual = (a: unknown, b: unknown) => {
+          const norm = (v: unknown) =>
+            v === null || v === undefined || v === "" ? "" : typeof v === "object" ? JSON.stringify(v) : String(v);
+          return norm(a) === norm(b);
+        };
+        alteracoes = Object.keys(patch)
+          .filter((campo) => !igual((anterior as any)?.[campo], patch[campo]))
+          .map((campo) => ({ campo, de: (anterior as any)?.[campo] ?? null, para: patch[campo] ?? null }));
         const row = await db.updateCliente(data.instancia, data.id, patch);
         clienteId = (row?.["id"] as string) ?? data.id;
       } else {
@@ -301,10 +311,19 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       slug: "clientes-cadastro",
       level: "info",
       event: data.id ? "cadastro.atualizado" : "cadastro.criado",
-      message: `${data.id ? "Cadastro atualizado" : "Cadastro criado"}: ${payload.razao_social} (${doc})`,
+      message: data.id
+        ? `Cadastro atualizado: ${payload.razao_social} (${doc})${alteracoes.length ? ` — ${alteracoes.length} campo(s) alterado(s): ${alteracoes.map((a) => a.campo).slice(0, 8).join(", ")}` : " — sem alterações de campo"}`
+        : `Cadastro criado: ${payload.razao_social} (${doc})`,
       actorId: context.userId,
-      detail: { cliente_id: clienteId, instancia: data.instancia, doc, razao_social: payload.razao_social },
+      detail: {
+        cliente_id: clienteId,
+        instancia: data.instancia,
+        doc,
+        razao_social: payload.razao_social,
+        ...(data.id ? { alteracoes } : {}),
+      },
     });
+
 
 
     // Envio automático ao salvar: SAP + Salesforce. Erros não desfazem o
