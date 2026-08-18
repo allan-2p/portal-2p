@@ -55,7 +55,9 @@ export function pushNotification(n: Omit<AppNotification, "id" | "createdAt" | "
 }
 
 export function markAllRead() {
+  const pendentes = state.items.filter((i) => !i.read && i.serverId).map((i) => i.serverId!);
   setState({ items: state.items.map((i) => ({ ...i, read: true })) });
+  if (pendentes.length) void marcarNotificacoesLidasFn({ data: { ids: pendentes } }).catch(() => {});
 }
 
 export function clearNotifications() {
@@ -71,6 +73,66 @@ const getSnapshot = () => state;
 export function useNotifications() {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
+
+// --- feed do servidor ------------------------------------------------------
+// Busca as notificações persistidas (ex.: Pix pago / expirado / cancelado)
+// e mostra toast para cada novidade não lida.
+const vistos = new Set<string>();
+
+async function sincronizarServidor(primeiraCarga: boolean) {
+  try {
+    const remotas = await listarMinhasNotificacoesFn();
+    const novas = remotas.filter((r) => !vistos.has(r.id));
+    if (!novas.length) return;
+    novas.forEach((r) => vistos.add(r.id));
+
+    const mapeadas: AppNotification[] = novas.map((r) => ({
+      id: `s_${r.id}`,
+      serverId: r.id,
+      kind: (r.tipo as NotificationKind) ?? "info",
+      title: r.titulo,
+      description: r.descricao ?? "",
+      createdAt: new Date(r.created_at).getTime(),
+      read: r.lida,
+    }));
+
+    setState({
+      items: [...mapeadas, ...state.items]
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 30),
+      lastPulse: state.lastPulse + (mapeadas.some((m) => !m.read) ? 1 : 0),
+    });
+
+    if (!primeiraCarga) {
+      const { toast } = await import("sonner");
+      mapeadas
+        .filter((m) => !m.read)
+        .forEach((m) => toast(`💳  ${m.title}`, { description: m.description, duration: 6500 }));
+    }
+  } catch {
+    // sino nunca deve quebrar a navegação
+  }
+}
+
+let feedIniciado = false;
+
+/** Liga o feed persistido do sino (poll a cada 45s). Chame uma vez no layout. */
+export function useServerNotificationsFeed(enabled = true) {
+  useEffect(() => {
+    if (!enabled || feedIniciado) return;
+    feedIniciado = true;
+    void sincronizarServidor(true);
+    const t = setInterval(() => void sincronizarServidor(false), 45_000);
+    const onFocus = () => void sincronizarServidor(false);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("focus", onFocus);
+      feedIniciado = false;
+    };
+  }, [enabled]);
+}
+
 
 // --- demo feed -------------------------------------------------------------
 // Periodically pushes a sample task / atlas notification so the bell is alive.
