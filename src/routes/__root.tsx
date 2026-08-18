@@ -173,6 +173,9 @@ function AreaThemeSync() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useIdleSignout();
+  // Nova publicação detectada → refresh completo, sem cache antigo.
+  useAppVersionRefresh();
+
 
   useEffect(() => {
     let lastUserId: string | null = null;
