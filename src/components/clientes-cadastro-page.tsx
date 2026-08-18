@@ -1020,7 +1020,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <RefreshCw className={`h-4 w-4 ${reenviar.isPending ? "animate-spin" : ""}`} />
                     Reenviar ao SAP / Salesforce
                   </Button>
+                  <a
+                    href={`/admin/logs/integracoes?cliente=${encodeURIComponent(detalhe.id)}`}
+                    className="mt-1 text-xs text-primary hover:underline"
+                  >
+                    Ver auditoria completa (tentativas, payloads e respostas)
+                  </a>
                 </Bloco>
+
 
                 <ClientHistoryTab clienteNome={detalhe.razao_social} />
 
