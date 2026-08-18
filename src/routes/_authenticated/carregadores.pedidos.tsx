@@ -50,6 +50,8 @@ type Pedido = {
   status: PedidoStatus;
   uf: string;
   created_by: string | null;
+  pix: PagamentoStatus | null;
+  pixEm: string | null;
 };
 
 function datePtBr(iso: string | null) {
@@ -63,9 +65,16 @@ function CarregadoresPedidosPage() {
   const [vendedor, setVendedor] = useState("__all__");
   const vend = useCarregadoresVendedores();
 
+  const pagamentosQ = useQuery({
+    queryKey: ["carregadores-pagamentos"],
+    queryFn: () => listarPagamentosFn({ data: { organizacao: "carregadores" } }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
   const q = useQuery({
     queryKey: ["carregadores-pedidos"],
-    queryFn: async (): Promise<Pedido[]> => {
+    queryFn: async () => {
       const data = await listarPropostasFn({
         data: {
           organizacao: "carregadores",
@@ -73,28 +82,40 @@ function CarregadoresPedidosPage() {
           statusIn: PEDIDO_STATUS as unknown as string[],
         },
       });
-      return (data ?? []).map((r: any) => {
-        const totais = (r.totais as Record<string, number>) ?? {};
-        return {
-          id: r.id,
-          code: r.numero ?? r.id.slice(-6).toUpperCase(),
-          title: r.numero ? `Proposta ${r.numero}` : "Proposta",
-          client: r.cliente_nome,
-          closing: datePtBr(r.created_at),
-          value: Number(totais.valorTotal ?? 0),
-          status: r.status as PedidoStatus,
-          uf: r.uf,
-          created_by: r.created_by ?? null,
-        };
-      });
+      return data ?? [];
     },
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 
+  const pedidos = useMemo<Pedido[]>(() => {
+    const pag = new Map(
+      (pagamentosQ.data ?? [])
+        .filter((p: any) => String(p.pagamento_meio ?? "").toLowerCase() === "pix")
+        .map((p: any) => [p.id as string, p]),
+    );
+    return (q.data ?? []).map((r: any) => {
+      const totais = (r.totais as Record<string, number>) ?? {};
+      const p: any = pag.get(r.id);
+      return {
+        id: r.id,
+        code: r.numero ?? r.id.slice(-6).toUpperCase(),
+        title: r.numero ? `Proposta ${r.numero}` : "Proposta",
+        client: r.cliente_nome,
+        closing: datePtBr(r.created_at),
+        value: Number(totais.valorTotal ?? 0),
+        status: r.status as PedidoStatus,
+        uf: r.uf,
+        created_by: r.created_by ?? null,
+        pix: p ? normalizarPagamentoStatus(p.pagamento_status) ?? "pendente" : null,
+        pixEm: p?.pago_em ?? p?.pagamento_atualizado_em ?? null,
+      };
+    });
+  }, [q.data, pagamentosQ.data]);
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    return (q.data ?? [])
+    return pedidos
       .filter((o) => vend.matches(vendedor, o.created_by))
       .filter((o) =>
         !s ||
@@ -103,7 +124,8 @@ function CarregadoresPedidosPage() {
         o.client.toLowerCase().includes(s),
       )
       .sort((a, b) => b.value - a.value);
-  }, [search, q.data, vendedor, vend]);
+  }, [search, pedidos, vendedor, vend]);
+
 
   return (
     <AppLayout>
