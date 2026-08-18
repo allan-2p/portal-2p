@@ -1,0 +1,161 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <n0:ZNFE_OV_CRIAR xmlns:n0="urn:sap-com:document:sap:rfc:functions">
+            <I_CARGA>S</I_CARGA>
+            <I_JOB></I_JOB>
+            <I_JOBNAME>String 3</I_JOBNAME>
+            <I_ORIG_PEDIDO>4</I_ORIG_PEDIDO>
+            <I_S_OV>
+                <EMPRESA>9800</EMPRESA>
+                <FILIAL>9802</FILIAL>
+                <TP_OV>ZC2P</TP_OV>
+                <VKBUR></VKBUR>
+                <VKGRP></VKGRP>
+                <INCO1>FOB</INCO1>
+                <INCO2></INCO2>
+                <PURCH_DATE>2025-03-10</PURCH_DATE>
+                <DATA_REMESSA>2025-03-10</DATA_REMESSA>
+                <NROPED>36802</NROPED>
+                <VALOR_DESC></VALOR_DESC>
+                <PERC_DESC></PERC_DESC>
+                <VLR_FRETE>0</VLR_FRETE>
+                <ZTERM>2P00</ZTERM>
+                <NRO_BANCO></NRO_BANCO>
+                <XPED></XPED>
+                <QVOL></QVOL>
+                <PESO_BRUTO></PESO_BRUTO>
+                <PESO_LIQ></PESO_LIQ>
+                <ESP></ESP>
+                <VKORG></VKORG>
+                <VTWEG></VTWEG>
+                <SPART></SPART>
+                <AUGRU></AUGRU>
+                <VENDEDOR></VENDEDOR>
+                <IMEI_VENDEDOR></IMEI_VENDEDOR>
+                <NOME_VENDEDOR></NOME_VENDEDOR>
+                <EMAIL_VENDEDOR></EMAIL_VENDEDOR>
+                <CPF_VENDEDOR></CPF_VENDEDOR>
+            </I_S_OV>
+            <I_S_TRANSP>
+                <QVOL>32</QVOL>
+                <PESO_BRUTO>33</PESO_BRUTO>
+                <PESO_LIQ>34</PESO_LIQ>
+                <ESP>Str</ESP>
+            </I_S_TRANSP>
+            <I_TESTRUN></I_TESTRUN>
+            <I_USUARIO></I_USUARIO>
+            <I_XMLNFE></I_XMLNFE>
+            <T_EMAIL>
+                <item>
+                    <EMAIL></EMAIL>
+                </item>
+            </T_EMAIL>
+            <T_ITEM>
+                <item>
+                    <ITM_NUMBER>0</ITM_NUMBER>
+                    <MATERIAL>200000052</MATERIAL>
+                    <BILL_DATE>2025-03-10</BILL_DATE>
+                    <UM>UN</UM>
+                    <QTDE>1</QTDE>
+                    <PESO_BRUTO></PESO_BRUTO>
+                    <PESO_LIQ></PESO_LIQ>
+                    <UM_PESO></UM_PESO>
+                    <VALOR_PROD></VALOR_PROD>
+                    <VALOR_DESC></VALOR_DESC>
+                    <PERC_DESC></PERC_DESC>
+                    <NCM></NCM>
+                    <FCI></FCI>
+                    <EAN></EAN>
+                    <DEPOSITO></DEPOSITO>
+                </item>
+            </T_ITEM>
+            <T_MSG>
+                <item>
+                    <TYPE>S</TYPE>
+                    <MSGNR>69</MSGNR>
+                    <MESSAGE>String 70</MESSAGE>
+                    <MSGID>String 71</MSGID>
+                </item>
+                <item>
+                    <TYPE>S</TYPE>
+                    <MSGNR>73</MSGNR>
+                    <MESSAGE>String 74</MESSAGE>
+                    <MSGID>String 75</MSGID>
+                </item>
+            </T_MSG>
+            <T_OBS>
+                <item>
+                    <OBS>limpador</OBS>
+                </item>
+                <item>
+                    <OBS>Contato: JHONATAN MATEUS Telefone (47) 99618-4708</OBS>
+                </item>
+                <item>
+                    <OBS>Entregar no endereço: Rua Manoel Joaquim Coelho, 109  - Dom Bosco - Itajaí, SC CEP: 88307-090 - Contato: Luiz Telefone: (47)</OBS>
+                </item>
+                <item>
+                    <OBS>9650-2815</OBS>
+                </item>
+                <item>
+                    <OBS></OBS>
+                </item>
+            </T_OBS>
+            <!-- <T_OBS_ITM><item><ITM_NUMBER>78</ITM_NUMBER><OBS>String 79</OBS></item><item><ITM_NUMBER>80</ITM_NUMBER><OBS>String 81</OBS></item>
+                                </T_OBS_ITM> -->
+    <T_PAGTO>
+        <item>
+            <PARCELA>1</PARCELA>
+            <DT_VENCTO>2025-03-10</DT_VENCTO>
+            <!-- <VALOR>0.00</VALOR> -->
+            <VALOR>5799.00</VALOR>
+            <TIPO_PG></TIPO_PG>
+        </item>
+    </T_PAGTO>
+    <T_PARCEIRO>
+        <item>
+            <PARTN_ROLE>AG</PARTN_ROLE>
+            <CNPJ></CNPJ>
+            <CPF>05898947906</CPF>
+            <NAME></NAME>
+            <NAME_2></NAME_2>
+            <NAME_3></NAME_3>
+            <NAME_4></NAME_4>
+            <STREET></STREET>
+            <POSTL_CODE></POSTL_CODE>
+            <CITY></CITY>
+            <DISTRICT></DISTRICT>
+            <REGION></REGION>
+            <TELEPHONE></TELEPHONE>
+            <FAX_NUMBER></FAX_NUMBER>
+            <E_MAIL></E_MAIL>
+            <PAIS></PAIS>
+            <NUMERO></NUMERO>
+            <COMPLEMENTO></COMPLEMENTO>
+            <KUNNR></KUNNR>
+        </item>
+        <item>
+            <PARTN_ROLE>CL</PARTN_ROLE>
+            <CNPJ>21482122000131</CNPJ>
+            <CPF></CPF>
+            <NAME></NAME>
+            <NAME_2></NAME_2>
+            <NAME_3></NAME_3>
+            <NAME_4></NAME_4>
+            <STREET></STREET>
+            <POSTL_CODE></POSTL_CODE>
+            <CITY></CITY>
+            <DISTRICT></DISTRICT>
+            <REGION></REGION>
+            <TELEPHONE></TELEPHONE>
+            <FAX_NUMBER></FAX_NUMBER>
+            <E_MAIL></E_MAIL>
+            <PAIS></PAIS>
+            <NUMERO></NUMERO>
+            <COMPLEMENTO></COMPLEMENTO>
+            <KUNNR></KUNNR>
+        </item>
+    </T_PARCEIRO>
+</n0:ZNFE_OV_CRIAR>
+</soapenv:Body>
+</soapenv:Envelope>

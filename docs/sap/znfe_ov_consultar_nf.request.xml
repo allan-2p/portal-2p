@@ -1,0 +1,15 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
+    <soapenv:Header/>
+    <soapenv:Body>
+      <urn:ZNFE_OV_CONSULTAR>
+         <I_BOLETO></I_BOLETO>
+         <I_DADOS>X</I_DADOS>
+         <I_DANFE>X</I_DANFE>
+         <I_NROPED></I_NROPED>
+         <I_NFENUM></I_NFENUM>
+         <I_FILIAL>9601</I_FILIAL>
+         <I_VBELN_VA>9055</I_VBELN_VA>
+         <I_XML_NFE>X</I_XML_NFE>
+      </urn:ZNFE_OV_CONSULTAR>
+    </soapenv:Body>
+</soapenv:Envelope>
