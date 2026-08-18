@@ -546,10 +546,8 @@ function PropostaCarregadoresPage() {
    */
   const faturamentoEfetivo = state.faturarClienteFinal
     ? {
-        nome: state.faturamento.nome || state.nome,
-        doc: state.faturamento.doc || "",
-        ie: state.faturamento.ie || "",
         ...state.faturamento,
+        nome: state.faturamento.nome || state.nome,
       }
     : {
         nome: state.nome,
