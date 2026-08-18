@@ -6,12 +6,15 @@ import { AlertTriangle, KanbanSquare, List, Loader2, Search } from "lucide-react
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { listarPropostasFn } from "@/lib/propostas.functions";
+import { listarPropostasFn, listarPagamentosFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
+import { PixStatusBadge } from "@/components/pix-status-badge";
+import { acaoAtlasPix, normalizarPagamentoStatus, type PagamentoStatus } from "@/lib/pagamentos-ui";
+
 
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   head: () => ({
