@@ -29,7 +29,7 @@ export type PropostaPdfData = {
     uf: string;
     contribuinte: boolean;
   };
-  /** Finalidade da mercadoria: uso e consumo, revenda ou industrialização. */
+  /** Finalidade de uso herdada do cadastro do cliente (somente leitura). */
   finalidadeUso?: string | null;
   itens: PropostaPdfItem[];
   freteMod: string;

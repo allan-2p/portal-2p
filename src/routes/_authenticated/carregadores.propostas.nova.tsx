@@ -871,6 +871,19 @@ function PropostaCpoPage() {
   }
 
 
+  // Finalidade de uso do PDF: sempre a do cadastro atual do cliente (nunca
+  // editável na proposta). Só cai no estado quando o cadastro não foi achado.
+  const finalidadeUsoPdf = (() => {
+    const soDigitos = (v?: string | null) => (v ?? "").replace(/\D/g, "");
+    const atual = (clientesQ.data ?? []).find(
+      (c) =>
+        (soDigitos(c.cliente_doc) && soDigitos(c.cliente_doc) === soDigitos(state.doc)) ||
+        c.cliente_nome.trim().toLowerCase() === state.nome.trim().toLowerCase(),
+    );
+    const chave = atual ? finalidadeUsoDoCadastro(atual.finalidade) : state.finalidadeUso;
+    return labelFinalidadeUso[chave] ?? null;
+  })();
+
   // HTML do PDF derivado do estado atual: qualquer mudança em itens, frete,
   // impostos, margem ou comissão reflete imediatamente na prévia e no download.
   const buildHtml = (d: ReturnType<typeof calcularCpo>) =>
@@ -889,7 +902,8 @@ function PropostaCpoPage() {
           uf: state.uf,
           contribuinte: state.contribuinte,
         },
-        finalidadeUso: labelFinalidadeUso[state.finalidadeUso] ?? null,
+        finalidadeUso: finalidadeUsoPdf,
+
         itens: state.itens
           .filter((i) => i.produtoId)
           .map((i) => {
