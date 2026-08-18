@@ -28,7 +28,7 @@ import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { useCpoUfs } from "@/hooks/use-cpo";
-import { docValido, mascaraDoc, soDigitos } from "@/lib/cnpj";
+import { cnpjValido, mascaraCnpj, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
 
 import {
@@ -118,7 +118,7 @@ const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pe
 
 type Erros = Record<string, string>;
 const ROTULOS: Record<string, string> = {
-  razao_social: "Razão social", doc: "CNPJ / CPF", uf: "UF de destino",
+  razao_social: "Razão social", doc: "CNPJ", uf: "UF de destino",
   ie: "Inscrição Estadual", cep: "CEP", logradouro: "Logradouro",
   numero: "Número", cidade: "Cidade",
   finalidade: "Finalidade da mercadoria", tabela_preco: "Tabela de preço",
@@ -129,7 +129,7 @@ const rotuloCampo = (chave: string, contatos: Contato[]) =>
 function validarCampos(f: Form): Erros {
   const e: Erros = {};
   if (!f.razao_social?.trim()) e.razao_social = "Informe a razão social.";
-  if (!docValido(f.doc ?? "")) e.doc = "CNPJ / CPF inválido.";
+  if (!cnpjValido(f.doc ?? "")) e.doc = "CNPJ inválido.";
   if (!f.uf?.trim()) e.uf = "Selecione a UF de destino.";
   // Contribuinte é derivado da IE retornada pela consulta do CNPJ — nunca definido manualmente.
   Object.assign(e, validarContatos(f.contatos ?? []));
@@ -239,12 +239,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const verificar = useMutation({
     mutationFn: async () => {
       const doc = soDigitos(docBusca);
-      if (!docValido(doc)) throw new Error("CNPJ / CPF inválido — confira os dígitos.");
+      if (!cnpjValido(doc)) throw new Error("CNPJ inválido — o cadastro aceita apenas CNPJ (14 dígitos).");
       const dup = await verificarDoc({ data: { doc } });
       if (dup.existe) return { tipo: "duplicado" as const, registros: dup.registros };
-      if (doc.length !== 14) {
-        return { tipo: "novo" as const, doc, enriquecimento: null };
-      }
       const enr = await enriquecer({ data: { cnpj: doc } });
       return { tipo: "novo" as const, doc, enriquecimento: enr };
     },
@@ -546,11 +543,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
           {etapa === "documento" ? (
             <div className="space-y-4">
               <div className="space-y-1">
-                <Label className="text-xs">CNPJ (ou CPF)</Label>
+                <Label className="text-xs">CNPJ</Label>
                 <Input
                   autoFocus
                   value={docBusca}
-                  onChange={(e) => { setDocBusca(mascaraDoc(e.target.value)); setDocErro(null); setDuplicado([]); }}
+                  onChange={(e) => { setDocBusca(mascaraCnpj(e.target.value)); setDocErro(null); setDuplicado([]); }}
                   onKeyDown={(e) => { if (e.key === "Enter" && !verificar.isPending) verificar.mutate(); }}
                   placeholder="00.000.000/0000-00"
                   className={docErro ? "border-destructive" : ""}
@@ -629,8 +626,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <F label="Nome fantasia">
                   <Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} disabled={bloqueados.has("nome_fantasia")} />
                 </F>
-                <F label="CNPJ / CPF *" id="campo-doc" error={erros.doc}>
-                  <Input value={form.doc ?? ""} onChange={(e) => set("doc", mascaraDoc(e.target.value))} disabled />
+                <F label="CNPJ *" id="campo-doc" error={erros.doc}>
+                  <Input value={form.doc ?? ""} onChange={(e) => set("doc", mascaraCnpj(e.target.value))} disabled />
                 </F>
                 <F label="Regime tributário">
                   <Select value={form.regime_tributario ?? ""} onValueChange={(v) => set("regime_tributario", v)}>
@@ -863,7 +860,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 {([
                   ["sap", "Código SAP"],
                   ["cliente", "Cliente"],
-                  ["doc", "CNPJ / CPF"],
+                  ["doc", "CNPJ"],
                   ["fiscal", "Fiscal"],
                   ["cidade", "Cidade / UF"],
                   ["contato", "Consultor"],
@@ -973,7 +970,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 </div>
 
                 <Bloco titulo="Situação fiscal">
-                  <Linha rot="CNPJ / CPF" val={mascaraDoc(detalhe.doc ?? "")} />
+                  <Linha rot="CNPJ" val={mascaraDoc(detalhe.doc ?? "")} />
                   <Linha rot="Inscrição Estadual" val={detalhe.contribuinte ? detalhe.ie : "Isento / não contribuinte"} />
                   <Linha rot="Situação da IE" val={detalhe.ie_situacao} />
                   <Linha rot="Suframa" val={[detalhe.suframa, detalhe.suframa_situacao].filter(Boolean).join(" · ")} />
