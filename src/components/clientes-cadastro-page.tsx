@@ -29,7 +29,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { toast } from "sonner";
 import { useCpoUfs } from "@/hooks/use-cpo";
 import { docValido, mascaraDoc, soDigitos } from "@/lib/cnpj";
-import { FINALIDADES, TABELAS_PRECO } from "@/lib/sap-clientes-map";
+import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
 
 import {
   listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, excluirClienteFn,
