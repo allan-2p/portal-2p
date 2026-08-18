@@ -3,6 +3,8 @@ import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ExportLogsButton } from "@/components/admin/export-logs-button";
 import { IntegrationLogsPanel } from "@/components/integration-logs";
+import { ClientesIntegracaoStatus } from "@/components/admin/clientes-integracao-status";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/admin/logs/integracoes")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -33,7 +35,7 @@ function LogIntegracoesPage() {
   return (
     <AdminRouteGuard feature="admin.logs.integracoes" area="logs">
       <AppLayout>
-        <div className="mx-auto max-w-6xl space-y-5">
+        <div className="mx-auto max-w-7xl space-y-5">
           <header className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold">Log de Integrações</h1>
@@ -45,10 +47,23 @@ function LogIntegracoesPage() {
             </div>
             <ExportLogsButton source="integracoes" />
           </header>
-          <IntegrationLogsPanel
-            clienteId={cliente}
-            title={cliente ? "Auditoria do cliente" : "Histórico geral de sincronizações e erros"}
-          />
+          <Tabs defaultValue={cliente ? "logs" : "cadastros"}>
+            <TabsList>
+              <TabsTrigger value="cadastros">Status por cliente</TabsTrigger>
+              <TabsTrigger value="logs">Histórico de logs</TabsTrigger>
+            </TabsList>
+            <TabsContent value="cadastros" className="mt-4">
+              <ClientesIntegracaoStatus />
+            </TabsContent>
+            <TabsContent value="logs" className="mt-4">
+              <IntegrationLogsPanel
+                clienteId={cliente}
+                title={
+                  cliente ? "Auditoria do cliente" : "Histórico geral de sincronizações e erros"
+                }
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </AppLayout>
     </AdminRouteGuard>
