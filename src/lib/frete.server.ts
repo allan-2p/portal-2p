@@ -24,6 +24,7 @@ export type CotarFreteInput = {
   valorNota: number;
   destino: { uf: string; cidade: string; cep: string };
   peso?: number;
+  cubagem?: number;
   tipoEntrega: "S" | "D" | "G" | "N";
   areaRural?: boolean;
   documento?: string;
@@ -35,6 +36,7 @@ export type CotarFreteResultado = {
   opcoes: OpcaoFrete[];
   escolhida: number;
   peso: number;
+  cubagem: number;
   valorNotaFinal: number;
   trilho: string | null;
 };
