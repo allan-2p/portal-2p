@@ -2660,6 +2660,46 @@ function DreRow({
   );
 }
 
+/** Linha do bloco de totais finais (etapa de produtos). */
+function TotalRow({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  const anterior = useRef(value);
+  const [flash, setFlash] = useState(false);
+  useEffect(() => {
+    if (anterior.current === value) return;
+    anterior.current = value;
+    setFlash(true);
+    const t = setTimeout(() => setFlash(false), 600);
+    return () => clearTimeout(t);
+  }, [value]);
+
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-4 rounded-xl border px-4 py-3 transition-colors duration-500",
+        flash ? "border-primary/60 bg-primary/10" : "border-border/60 bg-muted/30",
+      )}
+    >
+      <div className="min-w-0">
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium truncate">
+          {label}
+        </div>
+        {hint ? <div className="text-[10px] text-muted-foreground/70 truncate">{hint}</div> : null}
+      </div>
+      <div className="text-lg sm:text-xl font-bold tabular-nums text-foreground shrink-0">
+        {value}
+      </div>
+    </div>
+  );
+}
+
 /** Linha do resumo do pedido (etapa de finalização). */
 function ResumoLinha({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
   return (
