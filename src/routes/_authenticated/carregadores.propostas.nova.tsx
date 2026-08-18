@@ -238,12 +238,8 @@ function PropostaCarregadoresPage() {
     if (!alvo || carregado.current) return;
     carregado.current = true;
     (async () => {
-      const { data, error } = await supabase
-        .from("propostas")
-        .select("*")
-        .eq("id", alvo)
-        .maybeSingle();
-      if (error || !data) {
+      const data = await obterPropostaFn({ data: { id: alvo } }).catch(() => null);
+      if (!data) {
         toast.error("Não foi possível carregar a proposta.");
         return;
       }

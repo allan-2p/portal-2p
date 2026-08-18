@@ -101,12 +101,12 @@ function CarregadoresHome() {
   const propsQ = useQuery({
     queryKey: ["carregadores-home-propostas"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("propostas")
-        .select("id,numero,cliente_nome,uf,status,totais,created_at,created_by")
-        .eq("organizacao", "carregadores")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
+      const data = await listarPropostasFn({
+        data: {
+          organizacao: "carregadores",
+          select: "id,numero,cliente_nome,uf,status,totais,created_at,created_by",
+        },
+      });
       return (data ?? []) as unknown as Prop[];
     },
   });

@@ -62,14 +62,14 @@ function CarregadoresPedidosPage() {
   const q = useQuery({
     queryKey: ["carregadores-pedidos"],
     queryFn: async (): Promise<Pedido[]> => {
-      const { data, error } = await supabase
-        .from("propostas")
-        .select("id,numero,cliente_nome,uf,status,totais,created_at,created_by")
-        .eq("organizacao", "carregadores")
-        .in("status", PEDIDO_STATUS as unknown as string[])
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map((r) => {
+      const data = await listarPropostasFn({
+        data: {
+          organizacao: "carregadores",
+          select: "id,numero,cliente_nome,uf,status,totais,created_at,created_by",
+          statusIn: PEDIDO_STATUS as unknown as string[],
+        },
+      });
+      return (data ?? []).map((r: any) => {
         const totais = (r.totais as Record<string, number>) ?? {};
         return {
           id: r.id,
@@ -102,8 +102,11 @@ function CarregadoresPedidosPage() {
   }, [search, q.data, vendedor, vend]);
 
   async function alterarStatus(id: string, novo: PedidoStatus) {
-    const { error } = await supabase.from("propostas").update({ status: novo }).eq("id", id);
-    if (error) return toast.error(error.message);
+    try {
+      await atualizarStatusPropostaFn({ data: { id, status: novo } });
+    } catch (e) {
+      return toast.error((e as Error).message);
+    }
     toast.success("Status atualizado.");
     q.refetch();
   }

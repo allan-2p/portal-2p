@@ -111,13 +111,8 @@ function AuditoriaPage() {
   const propostas = useQuery({
     queryKey: ["carregadores-proposals"],
     queryFn: async (): Promise<Row[]> => {
-      const { data, error } = await supabase
-        .from("propostas")
-        .select("*")
-        .eq("organizacao", "carregadores")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map((r) => ({
+      const data = await listarPropostasFn({ data: { organizacao: "carregadores" } });
+      return (data ?? []).map((r: any) => ({
         ...r,
         frete_valor: Number(r.frete_valor),
         itens: (r.itens as Row["itens"]) ?? [],
