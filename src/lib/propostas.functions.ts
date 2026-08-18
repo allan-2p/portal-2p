@@ -289,12 +289,21 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       );
 
     // Nº SAP: a proposta nasce SEM número. Ele só é atribuído na conclusão
-    // (atribuirNumeroSapFn). Aqui apenas preservamos o que já existir.
-    let numeroSap = data.numeroSap?.trim() || null;
-    if (!numeroSap && data.propostaId) {
-      const atualSap = await (await repo()).getProposta(data.propostaId, "numero_sap");
+    // (atribuirNumeroSapFn). O cliente nunca envia esse dado — só preservamos
+    // o que já estiver gravado no banco.
+    let numeroSap: string | null = null;
+    let numeroExistente: string | null = null;
+    if (data.propostaId) {
+      const atualSap = await (await repo()).getProposta(data.propostaId, "numero_sap, numero");
       numeroSap = (atualSap as any)?.numero_sap?.trim() || null;
+      numeroExistente = (atualSap as any)?.numero?.trim() || null;
     }
+
+    // Nº da proposta: sequencial no servidor (6 dígitos, a partir de 050000).
+    const numeroProposta = data.propostaId
+      ? (numeroExistente ?? data.numero)
+      : await (await repo()).proximoNumeroProposta("carregadores");
+
 
 
     // Padrinho da indicação: valida o vínculo e fotografa o nome na proposta.
