@@ -1030,6 +1030,10 @@ function PropostaCarregadoresPage() {
         },
       });
 
+      // Número definitivo: sempre o que o servidor gravou.
+      const numero = (salvo as { numero?: string | null }).numero ?? numeroAtual ?? "";
+      numeroRef.current = numero || null;
+
       if ((salvo as { consultor?: string | null }).consultor) {
         setConsultorProposta((salvo as { consultor?: string | null }).consultor ?? null);
       }
