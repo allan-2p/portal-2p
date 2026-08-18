@@ -21,7 +21,15 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    // Identidade do build: muda a cada publicação e dispara o refresh forçado
+    // nos navegadores que ainda estão numa versão antiga.
+    define: {
+      __APP_BUILD_ID__: JSON.stringify(
+        process.env["LOVABLE_BUILD_ID"] ?? process.env["CF_VERSION_METADATA_ID"] ?? String(Date.now()),
+      ),
+    },
     plugins: [mcpPlugin()],
+
     resolve: {
       alias: {
         "entities/lib/decode.js": path.resolve(__dirname, "node_modules/entities/lib/decode.js"),
