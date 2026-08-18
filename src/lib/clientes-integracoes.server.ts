@@ -7,6 +7,9 @@
 
 import type { ClientesInstance } from "./clientes-db.server";
 
+/** Destinos que podem ser reenviados/testados isoladamente. */
+export type AlvoIntegracao = "sap" | "salesforce" | "contatos";
+
 export type SincronizacaoResultado = {
   sap: { ok: boolean; numero_sap: string | null; erro: string | null };
   salesforce: { ok: boolean; accountId: string | null; contactId: string | null; erro: string | null };
@@ -20,7 +23,12 @@ export async function sincronizarCliente(
   instancia: ClientesInstance,
   clienteId: string,
   cliente: Record<string, any>,
-  extras: { vendedorSap?: string | null; ownerSfId?: string | null },
+  extras: {
+    vendedorSap?: string | null;
+    ownerSfId?: string | null;
+    /** Quais integrações executar. Vazio/omitido = todas. */
+    alvos?: AlvoIntegracao[];
+  },
 ): Promise<SincronizacaoResultado> {
   const { enviarClienteParaSap } = await import("./sap-clientes.server");
   const { sincronizarClienteSalesforce } = await import("./salesforce-clientes.server");
@@ -46,6 +54,12 @@ export async function sincronizarCliente(
   const numeroSapAtual = cliente["numero_sap"] ?? atual?.["numero_sap"] ?? null;
   const sfAccountAtual = cliente["sf_account_id"] ?? atual?.["sf_account_id"] ?? null;
   const sfContactAtual = cliente["sf_contact_id"] ?? atual?.["sf_contact_id"] ?? null;
+
+  const alvos: AlvoIntegracao[] =
+    extras.alvos && extras.alvos.length ? extras.alvos : ["sap", "salesforce", "contatos"];
+  const fazSap = alvos.includes("sap");
+  const fazSf = alvos.includes("salesforce");
+  const fazContatos = alvos.includes("contatos");
 
   const principal = Array.isArray(cliente["contatos"])
     ? cliente["contatos"].find((c: any) => c?.tipo === "principal")
@@ -82,7 +96,7 @@ export async function sincronizarCliente(
     numero_sap: numeroSapAtual,
   };
 
-  await logIntegrationEvent({
+  if (fazSap) await logIntegrationEvent({
     slug: "sap-clientes",
     level: "info",
     event: "cliente.envio.tentativa",
@@ -91,7 +105,9 @@ export async function sincronizarCliente(
   });
 
   const sapIniciadoEm = Date.now();
-  const sap = await enviarClienteParaSap({
+  const sap = !fazSap
+    ? { ok: true, numero_sap: numeroSapAtual, erro: null as string | null, mensagem: "ignorado" }
+    : await enviarClienteParaSap({
 
     doc: String(cliente["doc"] ?? ""),
     razao_social: String(cliente["razao_social"] ?? ""),
@@ -117,7 +133,7 @@ export async function sincronizarCliente(
     numero_sap: numeroSapAtual,
   });
 
-  await logIntegrationEvent({
+  if (fazSap) await logIntegrationEvent({
     slug: "sap-clientes",
     level: sap.ok ? "info" : "error",
     event: sap.ok ? "cliente.envio.sucesso" : "cliente.envio.erro",
@@ -137,7 +153,7 @@ export async function sincronizarCliente(
 
   // Grava o retorno do SAP antes de seguir para o Salesforce, mantendo a ordem:
   // cadastro na tabela `clientes` > SAP (número) > Salesforce (id).
-  try {
+  if (fazSap) try {
     await db.updateCliente(instancia, clienteId, {
       sap_status: sap.ok ? "enviado" : "erro",
       sap_erro: sap.ok ? null : sap.erro,
@@ -170,7 +186,7 @@ export async function sincronizarCliente(
     sf_contact_id: sfContactAtual,
   };
 
-  await logIntegrationEvent({
+  if (fazSf) await logIntegrationEvent({
     slug: "salesforce-clientes",
     level: "info",
     event: "cliente.envio.tentativa",
@@ -179,7 +195,9 @@ export async function sincronizarCliente(
   });
 
   const sfIniciadoEm = Date.now();
-  const salesforce = await sincronizarClienteSalesforce({
+  const salesforce = !fazSf
+    ? { ok: true, accountId: sfAccountAtual, contactId: sfContactAtual, erro: null as string | null }
+    : await sincronizarClienteSalesforce({
 
     doc: String(cliente["doc"] ?? ""),
     razao_social: String(cliente["razao_social"] ?? ""),
@@ -205,7 +223,7 @@ export async function sincronizarCliente(
   });
 
 
-  await logIntegrationEvent({
+  if (fazSf) await logIntegrationEvent({
     slug: "salesforce-clientes",
     level: salesforce.ok ? "info" : "error",
     event: salesforce.ok ? "cliente.envio.sucesso" : "cliente.envio.erro",
@@ -224,15 +242,17 @@ export async function sincronizarCliente(
 
 
 
-  const patch: Record<string, unknown> = {
-    sap_status: sap.ok ? "enviado" : "erro",
-    sap_erro: sap.ok ? null : sap.erro,
-    sf_status: salesforce.ok ? "enviado" : "erro",
-    sf_erro: salesforce.ok ? null : salesforce.erro,
-    sincronizado_em: new Date().toISOString(),
-  };
-  if (sap.ok && sap.numero_sap) patch["numero_sap"] = sap.numero_sap;
-  if (salesforce.ok) {
+  const patch: Record<string, unknown> = { sincronizado_em: new Date().toISOString() };
+  if (fazSap) {
+    patch["sap_status"] = sap.ok ? "enviado" : "erro";
+    patch["sap_erro"] = sap.ok ? null : sap.erro;
+  }
+  if (fazSf) {
+    patch["sf_status"] = salesforce.ok ? "enviado" : "erro";
+    patch["sf_erro"] = salesforce.ok ? null : salesforce.erro;
+  }
+  if (fazSap && sap.ok && sap.numero_sap) patch["numero_sap"] = sap.numero_sap;
+  if (fazSf && salesforce.ok) {
     patch["sf_account_id"] = salesforce.accountId;
     if (salesforce.contactId) patch["sf_contact_id"] = salesforce.contactId;
   }
@@ -252,7 +272,7 @@ export async function sincronizarCliente(
 
   // Contatos: cada um vira um registro na tabela `contatos` (vinculado pelo
   // CÓDIGO SAP e pelo ID Salesforce da conta) e um objeto Contact no Salesforce.
-  try {
+  if (fazContatos) try {
     const contatosDb = await import("./contatos-db.server");
     const { sincronizarContatosSalesforce } = await import("./salesforce-clientes.server");
 
