@@ -502,9 +502,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
           </p>
         </div>
         <div className="flex flex-1 flex-wrap items-center justify-end gap-2 ml-auto">
-          <div className="relative w-72">
+          <div className="relative w-80">
             <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-8" placeholder="Buscar por nome, CNPJ, cidade…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input className="pl-8" placeholder="Buscar por Código SAP, nome, CNPJ, cidade…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
           {consultoresQ.data?.podeEscolher && (
             <Button
