@@ -138,6 +138,10 @@ function SugestoesPage() {
           </p>
         </header>
 
+        <PagamentosAtlas />
+
+
+
         {accountsQ.isLoading ? (
           <div className="glass rounded-xl p-10 text-center text-muted-foreground">
             Carregando sugestões…
