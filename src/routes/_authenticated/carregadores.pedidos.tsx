@@ -219,6 +219,18 @@ function KanbanView({ data }: { data: Pedido[] }) {
                     </div>
                   </div>
                   <div className="text-[11px] text-muted-foreground mt-2">UF {c.uf}</div>
+                  {c.pix && (
+                    <div className="mt-2 space-y-1">
+                      <PixStatusBadge status={c.pix} />
+                      {acaoAtlasPix(c.pix) && (
+                        <div className="text-[11px] leading-snug text-muted-foreground">
+                          <span className="text-primary font-medium">Atlas: </span>
+                          {acaoAtlasPix(c.pix)!.acao}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                 </div>
               ))}
               {cards.length === 0 && (
