@@ -12,8 +12,6 @@ export type CpoProductAdmin = {
   custo: number;
   preco_sugerido: number;
   ativo: boolean;
-  peso_bruto_kg: number;
-  cubagem_m3: number;
   ncm_id?: string | null;
   ncm_codigo?: string | null;
   imagem_path?: string | null;
@@ -21,7 +19,7 @@ export type CpoProductAdmin = {
 
 /** Colunas do catálogo único do portal (`sap_produtos`). */
 const COLS =
-  "id, codigo, descricao, custo, preco_sugerido, ativo, peso_bruto_kg, cubagem_m3, ncm_id, ncm_codigo, visibilidade, imagem_path";
+  "id, codigo, descricao, custo, preco_sugerido, ativo, ncm_id, ncm_codigo, visibilidade, imagem_path";
 
 function toProduct(p: any): CpoProductAdmin {
   return {
@@ -31,8 +29,6 @@ function toProduct(p: any): CpoProductAdmin {
     custo: Number(p.custo ?? 0),
     preco_sugerido: Number(p.preco_sugerido ?? 0) || precoSugeridoPadrao(Number(p.custo ?? 0)),
     ativo: p.ativo,
-    peso_bruto_kg: Number(p.peso_bruto_kg ?? 0),
-    cubagem_m3: Number(p.cubagem_m3 ?? 0),
     ncm_id: p.ncm_id ?? null,
     ncm_codigo: p.ncm_codigo ?? null,
     imagem_path: p.imagem_path ?? null,
@@ -92,8 +88,6 @@ export const updateCpoProduct = createServerFn({ method: "POST" })
         nome: z.string().trim().min(1, "Informe o nome do produto."),
         custo: z.number().nonnegative(),
         preco_sugerido: z.number().nonnegative(),
-        peso_bruto_kg: z.number().nonnegative().default(0),
-        cubagem_m3: z.number().nonnegative().default(0),
         ativo: z.boolean(),
       })
       .parse(d),
@@ -131,8 +125,6 @@ export const updateCpoProduct = createServerFn({ method: "POST" })
         descricao: data.nome,
         custo: data.custo,
         preco_sugerido: data.preco_sugerido,
-        peso_bruto_kg: data.peso_bruto_kg,
-        cubagem_m3: data.cubagem_m3,
         ativo: data.ativo,
       })
       .eq("id", data.id)

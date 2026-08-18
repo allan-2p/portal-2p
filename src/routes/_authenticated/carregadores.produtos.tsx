@@ -80,8 +80,6 @@ type Draft = {
   nome: string;
   custo: string;
   preco_sugerido: string;
-  peso_bruto_kg: string;
-  cubagem_m3: string;
   ativo: boolean;
   ncm_id: string | null;
   ncm_codigo: string | null;
@@ -153,8 +151,6 @@ function ProdutosTab() {
           nome: draft.nome.trim(),
           custo: Number(draft.custo) || 0,
           preco_sugerido: Number(draft.preco_sugerido) || 0,
-          peso_bruto_kg: Number(draft.peso_bruto_kg) || 0,
-          cubagem_m3: Number(draft.cubagem_m3) || 0,
           ativo: draft.ativo,
         },
       });
@@ -265,8 +261,6 @@ function ProdutosTab() {
                             nome: p.nome,
                             custo: String(p.custo),
                             preco_sugerido: String(p.preco_sugerido || precoSugeridoPadrao(p.custo)),
-                            peso_bruto_kg: String(p.peso_bruto_kg ?? 0),
-                            cubagem_m3: String(p.cubagem_m3 ?? 0),
                             ativo: p.ativo,
                             ncm_id: p.ncm_id ?? null,
                             ncm_codigo: p.ncm_codigo ?? null,
@@ -391,30 +385,6 @@ function ProdutosTab() {
                 </div>
               </Field>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field label="Peso bruto (kg por unidade)">
-                  <Input
-                    className="w-full"
-                    type="number"
-                    inputMode="decimal"
-                    step="0.001"
-                    value={draft.peso_bruto_kg}
-                    onChange={(e) => setDraft({ ...draft, peso_bruto_kg: e.target.value })}
-                  />
-                  <p className="mt-1 text-xs text-muted-foreground">Usado na cotação de frete.</p>
-                </Field>
-                <Field label="Cubagem (m³ por unidade)">
-                  <Input
-                    className="w-full"
-                    type="number"
-                    inputMode="decimal"
-                    step="0.001"
-                    value={draft.cubagem_m3}
-                    onChange={(e) => setDraft({ ...draft, cubagem_m3: e.target.value })}
-                  />
-                  <p className="mt-1 text-xs text-muted-foreground">Opcional — melhora o peso considerado.</p>
-                </Field>
-              </div>
 
               <div className="flex items-start gap-3">
                 <Switch
