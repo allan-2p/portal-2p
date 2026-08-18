@@ -2096,10 +2096,10 @@ function PropostaCpoPage() {
                   <ResumoLinha k="IPI destacado" v={fmtBRL(d.ipiValor)} />
                   <ResumoLinha k="Itens sem IPI (base fiscal)" v={fmtBRL(d.valorItem)} />
                   <ResumoLinha k={`Frete (${state.freteMod || "—"})`} v={fmtBRL(state.freteValor)} />
-                  <ResumoLinha k="Margem bruta" v={`${fmtPct(d.mbPct)} · ${fmtBRL(d.mb)}`} />
+                  <ResumoLinha k="Margem bruta" v={fmtPct(d.mbPct)} />
                   <ResumoLinha
                     k={`Comissão do vendedor (${regimeVendedor})`}
-                    v={`${fmtBRL(comissaoVendedor.valor)} · ${fmtPct(comissaoVendedor.pct)}`}
+                    v={fmtBRL(comissaoVendedor.valor)}
                   />
                 </div>
               </div>
@@ -2492,9 +2492,7 @@ function PropostaCpoPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Margem bruta</span>
-                  <span className="tabular-nums">
-                    {fmtBRL(d.mb)} ({fmtPct(d.mbPct)})
-                  </span>
+                  <span className="tabular-nums">{fmtPct(d.mbPct)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Comissão do vendedor ({regimeVendedor})</span>
