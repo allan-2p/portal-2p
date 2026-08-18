@@ -1026,16 +1026,20 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <RefreshCw className={`h-4 w-4 ${reenviar.isPending ? "animate-spin" : ""}`} />
                     Reenviar ao SAP / Salesforce
                   </Button>
-                  <a
-                    href={`/admin/logs/integracoes?cliente=${encodeURIComponent(detalhe.id)}`}
-                    className="mt-1 text-xs text-primary hover:underline"
-                  >
-                    Ver auditoria completa (tentativas, payloads e respostas)
-                  </a>
+                  {ehAdmin && (
+                    <a
+                      href={`/admin/logs/integracoes?cliente=${encodeURIComponent(detalhe.id)}`}
+                      className="mt-1 text-xs text-primary hover:underline"
+                    >
+                      Ver auditoria completa (tentativas, payloads e respostas)
+                    </a>
+                  )}
                 </Bloco>
 
+                {ehAdmin && <ClienteIntegracaoHistorico clienteId={detalhe.id} />}
 
                 <ClientHistoryTab clienteNome={detalhe.razao_social} />
+
 
                 <div className="flex gap-2 pt-1">
                   <Button className="flex-1 gap-2" onClick={() => { const c = detalhe; setDetalhe(null); abrirEdicao(c); }}>
