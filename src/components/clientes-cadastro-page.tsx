@@ -849,6 +849,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             <thead className="bg-surface-2/60 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 {([
+                  ["sap", "Código SAP"],
                   ["cliente", "Cliente"],
                   ["doc", "CNPJ / CPF"],
                   ["fiscal", "Fiscal"],
