@@ -385,6 +385,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const filtrados = useMemo(() => {
     const t = q.trim().toLowerCase();
     const tDoc = soDigitos(q);
+    const tSap = soDigitos(q);
     return clientes.filter((c) => {
       if (fUf !== "todas" && c.uf !== fUf) return false;
       if (fStatus === "ativos" && !c.ativo) return false;
@@ -392,9 +393,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       if (fFiscal === "contribuinte" && !c.contribuinte) return false;
       if (fFiscal === "nao" && c.contribuinte) return false;
       if (!t) return true;
-      const texto = [c.razao_social, c.nome_fantasia, c.cidade, c.uf, c.email, c.created_by_nome]
+      const texto = [c.razao_social, c.nome_fantasia, c.cidade, c.uf, c.email, c.created_by_nome, c.numero_sap]
         .some((v) => (v ?? "").toLowerCase().includes(t));
-      return texto || (tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc));
+      return texto
+        || (tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc))
+        || (tSap.length >= 3 && soDigitos(c.numero_sap ?? "").includes(tSap));
     });
   }, [clientes, q, fUf, fStatus, fFiscal]);
 
@@ -499,9 +502,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
           </p>
         </div>
         <div className="flex flex-1 flex-wrap items-center justify-end gap-2 ml-auto">
-          <div className="relative w-72">
+          <div className="relative w-80">
             <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-8" placeholder="Buscar por nome, CNPJ, cidade…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input className="pl-8" placeholder="Buscar por Código SAP, nome, CNPJ, cidade…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
           {consultoresQ.data?.podeEscolher && (
             <Button
@@ -885,7 +888,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               {rows.map((c) => (
                 <tr key={c.id} className="hover:bg-surface-2/40 cursor-pointer" onClick={() => setDetalhe(c)}>
                   <td className="px-4 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                    {c.numero_sap ?? "—"}
+                    {c.numero_sap ? <Marca texto={c.numero_sap} termo={q} /> : "—"}
                   </td>
                   <td className="px-4 py-2">
                     <div className="font-medium"><Marca texto={c.razao_social} termo={q} /></div>
