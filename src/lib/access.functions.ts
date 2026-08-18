@@ -221,7 +221,12 @@ export const adminGetUserAccess = createServerFn({ method: "GET" })
       (inst ?? []).map((r: any) => r.instance_id as string),
       fromProfiles,
     );
-    return { ...merged, is_admin: (roles ?? []).some((r: any) => r.role === "admin") };
+    return {
+      ...merged,
+      is_admin: (roles ?? []).some((r: any) => r.role === "admin") || !!fromProfiles.full_access,
+      default_instance: fromProfiles.default_instance ?? null,
+      default_route: fromProfiles.default_route ?? null,
+    };
   });
 
 // ---- Admin: logar de verdade como outro usuário ---- //
