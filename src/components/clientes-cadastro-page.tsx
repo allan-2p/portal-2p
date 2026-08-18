@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { sincronizarDonosFn } from "@/lib/owner-sync.functions";
 import { ClientHistoryTab } from "@/components/client-history-tab";
-import { ClienteIntegracaoHistorico } from "@/components/cliente-integracao-historico";
+import { ClienteIntegracoesDialog } from "@/components/cliente-integracoes-dialog";
 
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
@@ -183,6 +183,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
 
   const podeExcluir = useCanDelete();
+  const podeVerIntegracoes = useCan("admin.clientes.integracoes");
+  const [integracoesDe, setIntegracoesDe] = useState<Cliente | null>(null);
   // Campos SAP sensíveis (tabela de preço / condições) só para Administrador do Sistema.
   const ehAdmin = podeExcluir;
   const [q, setQ] = useState("");
@@ -928,6 +930,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   <td className="px-4 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" aria-label="Ver detalhes" onClick={() => setDetalhe(c)}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" aria-label="Editar" onClick={() => abrirEdicao(c)}><Pencil className="h-4 w-4" /></Button>
+                    {podeVerIntegracoes && (
+                      <Button variant="ghost" size="icon" aria-label="Integrações e histórico" onClick={() => setIntegracoesDe(c)}><History className="h-4 w-4" /></Button>
+                    )}
                     {podeExcluir && (<Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => excluir.mutate(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>)}
                   </td>
                 </tr>
@@ -1027,33 +1032,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   <Linha rot="Observações" val={detalhe.observacoes} />
                 </Bloco>
 
-                <Bloco titulo="Integrações">
-                  <Linha rot="Código SAP" val={detalhe.numero_sap ?? "Não enviado"} />
-                  <Linha rot="Status SAP" val={detalhe.sap_status ?? "—"} />
-                  {detalhe.sap_erro && <Linha rot="Erro SAP" val={detalhe.sap_erro} />}
-                  <Linha rot="Conta Salesforce" val={detalhe.sf_account_id ?? "Não enviada"} />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-1 gap-2"
-                    onClick={() => reenviar.mutate(detalhe.id)}
-                    disabled={reenviar.isPending}
-                  >
-                    <RefreshCw className={`h-4 w-4 ${reenviar.isPending ? "animate-spin" : ""}`} />
-                    Reenviar ao SAP / Salesforce
-                  </Button>
-                  {ehAdmin && (
-                    <a
-                      href={`/admin/logs/integracoes?cliente=${encodeURIComponent(detalhe.id)}`}
-                      className="mt-1 text-xs text-primary hover:underline"
-                    >
-                      Ver auditoria completa (tentativas, payloads e respostas)
-                    </a>
-                  )}
-                </Bloco>
-
-                {ehAdmin && <ClienteIntegracaoHistorico clienteId={detalhe.id} />}
-
                 <ClientHistoryTab clienteNome={detalhe.razao_social} />
 
 
@@ -1069,6 +1047,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
           )}
         </SheetContent>
       </Sheet>
+
+      <ClienteIntegracoesDialog
+        cliente={integracoesDe}
+        instancia={instancia}
+        open={!!integracoesDe}
+        onOpenChange={(v) => !v && setIntegracoesDe(null)}
+      />
     </div>
   );
 }
