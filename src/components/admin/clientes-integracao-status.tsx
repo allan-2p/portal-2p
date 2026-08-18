@@ -136,11 +136,11 @@ export function ClientesIntegracaoStatus() {
     return { erro, pendente, ok, total: base.length };
   }, [query.data]);
 
-  async function reprocessar(l: Linha) {
-    setProcessando(l.id);
+  async function reprocessar(l: Linha, alvos?: ("sap" | "salesforce" | "contatos")[]) {
+    setProcessando(alvos ? `${l.id}:${alvos.join(",")}` : l.id);
     try {
-      await reenviar({ data: { instancia: l.instancia, id: l.id } });
-      toast.success(`Reprocessado: ${l.razao}`);
+      await reenviar({ data: { instancia: l.instancia, id: l.id, ...(alvos ? { alvos } : {}) } });
+      toast.success(`Reprocessado${alvos ? ` (${alvos.join(", ")})` : ""}: ${l.razao}`);
       await query.refetch();
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao reprocessar");
@@ -250,7 +250,31 @@ export function ClientesIntegracaoStatus() {
                       <RefreshCw
                         className={`h-4 w-4 ${processando === l.id ? "animate-spin" : ""}`}
                       />
-                      Reprocessar
+                      Reprocessar tudo
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => reprocessar(l, ["sap"])}
+                      disabled={processando === `${l.id}:sap`}
+                    >
+                      Só SAP
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => reprocessar(l, ["salesforce"])}
+                      disabled={processando === `${l.id}:salesforce`}
+                    >
+                      Só Salesforce
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => reprocessar(l, ["contatos"])}
+                      disabled={processando === `${l.id}:contatos`}
+                    >
+                      Só contatos
                     </Button>
                   </div>
                 </div>
