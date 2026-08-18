@@ -31,7 +31,7 @@ import { FINALIDADES, TABELAS_PRECO } from "@/lib/sap-clientes-map";
 
 import {
   listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, excluirClienteFn,
-  listConsultoresFn,
+  listConsultoresFn, reenviarClienteFn,
 
 } from "@/lib/clientes.functions";
 import {
