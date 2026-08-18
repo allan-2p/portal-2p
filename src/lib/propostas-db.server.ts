@@ -18,7 +18,9 @@ export class PropostasTableMissing extends Error {
 async function rest(path: string, init: RequestInit & { prefer?: string } = {}): Promise<any> {
   const { ok, status, text } = await grupo2pRest(path, init);
   if (!ok) {
-    if (status === 404 || /propostas.* does not exist|PGRST205/i.test(text)) {
+    // Só é "tabela ausente" quando o PostgREST não encontra a relação.
+    // Coluna inexistente (42703) é outro problema e precisa aparecer como tal.
+    if (status === 404 || /PGRST205/i.test(text) || /relation .*propostas.* does not exist/i.test(text)) {
       throw new PropostasTableMissing();
     }
     const err = new Error(`Erro no banco (${status}): ${text.slice(0, 300)}`) as Error & {
