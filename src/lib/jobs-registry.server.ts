@@ -30,6 +30,12 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     "Motor do boleto Itaú aguardando credenciais — a execução foi registrada para auditoria.",
   ),
 
+  // Motor real: aplica o evento Pix no pedido (pago / expirado / cancelado).
+  "webhook.pix-itau": async (payload) => {
+    const { processarWebhookPix } = await import("@/lib/pagamentos-pix.server");
+    return await processarWebhookPix(payload);
+  },
+
   // O webhook apenas registra o retorno recebido enquanto o motor de rastreio
   // não estiver ligado; o payload fica auditável e pode ser reprocessado.
   "webhook.fretefy": async (payload) => ({

@@ -156,3 +156,20 @@ export async function listarConclusaoLog(limit = 100): Promise<Record<string, an
   });
   return (await rest(`propostas_conclusao_log?${params}`)) ?? [];
 }
+
+// --------------------------------------------------------------------------
+// Pagamentos (Pix / boleto)
+// --------------------------------------------------------------------------
+
+/** Busca a proposta pelo txid da cobrança Pix gravado no pedido. */
+export async function listarPropostasPorPagamentoTxid(txid: string): Promise<PropostaRow | null> {
+  const params = new URLSearchParams({ select: "*", pagamento_txid: `eq.${txid}`, limit: "1" });
+  try {
+    const rows = (await rest(`propostas?${params}`)) ?? [];
+    return rows[0] ?? null;
+  } catch (e) {
+    // Enquanto as colunas de pagamento não existirem, cai no fallback por número.
+    if (/pagamento_txid|42703|PGRST204/i.test((e as Error).message)) return null;
+    throw e;
+  }
+}

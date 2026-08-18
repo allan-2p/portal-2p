@@ -24,6 +24,11 @@ export const JOBS = {
     descricao: "Verifica a liquidação do boleto e libera o pedido.",
     reprocessavel: true,
   },
+  "webhook.pix-itau": {
+    label: "Webhook • Pix (Itaú)",
+    descricao: "Notificação do PSP: cobrança paga, expirada, removida ou devolvida.",
+    reprocessavel: true,
+  },
   "webhook.fretefy": {
     label: "Webhook • Fretefy (rastreio)",
     descricao: "Retorno de coleta/entrega enviado pela Fretefy.",
