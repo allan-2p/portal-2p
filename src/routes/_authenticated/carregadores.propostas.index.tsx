@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
-import { StatusLegend, StatusPicker } from "@/components/proposta-status-ui";
+import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -26,7 +26,7 @@ import {
 import { Calculator, Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { listarPropostasFn, atualizarStatusPropostaFn, excluirPropostaFn } from "@/lib/propostas.functions";
+import { listarPropostasFn, excluirPropostaFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
@@ -156,15 +156,6 @@ function HistoricoCarregadoresPage() {
 
 
 
-  async function alterarStatus(id: string, novo: string) {
-    try {
-      await atualizarStatusPropostaFn({ data: { id, status: novo } });
-    } catch (e) {
-      return toast.error((e as Error).message);
-    }
-    toast.success("Status atualizado.");
-    q.refetch();
-  }
 
   const propostaParaExcluir = useMemo(
     () => rows.find((r) => r.id === excluirId) ?? null,
@@ -280,12 +271,7 @@ function HistoricoCarregadoresPage() {
                     </td>
                     <td className="px-4 py-3">{r.consultor_nome || r.criado_por_nome || "—"}</td>
                     <td className="px-4 py-3 text-center">
-                      <StatusPicker
-                        compact
-                        value={r.status}
-                        options={STATUS}
-                        onChange={(v) => alterarStatus(r.id, v)}
-                      />
+                      <StatusDot status={r.status} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">

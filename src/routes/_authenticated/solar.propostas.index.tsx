@@ -24,7 +24,7 @@ import {
 import { Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
-import { StatusLegend, StatusPicker } from "@/components/proposta-status-ui";
+import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import {
   atualizarStatusPropostaFn,
   excluirPropostaFn,
@@ -115,15 +115,6 @@ function PropostasSolarPage() {
   const visiveis = filtered.slice((paginaAtual - 1) * porPagina, paginaAtual * porPagina);
   const detalheIdx = detalheId ? filtered.findIndex((r) => r.id === detalheId) : -1;
 
-  async function alterarStatus(id: string, novo: string) {
-    try {
-      await atualizarStatusPropostaFn({ data: { id, status: novo } });
-    } catch (e) {
-      return toast.error((e as Error).message);
-    }
-    toast.success("Status atualizado.");
-    q.refetch();
-  }
 
   async function confirmarExclusao() {
     if (!excluirId) return;
@@ -217,12 +208,7 @@ function PropostasSolarPage() {
                     </td>
                     <td className="px-4 py-3">{r.consultor_nome || r.criado_por_nome || "—"}</td>
                     <td className="px-4 py-3 text-center">
-                      <StatusPicker
-                        compact
-                        value={r.status}
-                        options={STATUS}
-                        onChange={(v) => alterarStatus(r.id, v)}
-                      />
+                      <StatusDot status={r.status} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">

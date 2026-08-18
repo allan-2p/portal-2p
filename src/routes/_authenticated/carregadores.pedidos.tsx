@@ -11,7 +11,7 @@ import { fmtBRL } from "@/lib/carregadores";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-status";
-import { StatusLegend, StatusPicker } from "@/components/proposta-status-ui";
+import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   head: () => ({
@@ -242,12 +242,7 @@ function ListView({ data, onStatus }: { data: Pedido[]; onStatus: (id: string, s
                 <td className="px-4 py-3 text-muted-foreground">{o.title}</td>
                 <td className="px-4 py-3">{o.client}</td>
                 <td className="px-4 py-3 text-center">
-                  <StatusPicker
-                    compact
-                    value={o.status}
-                    options={PEDIDO_STATUS}
-                    onChange={(v) => onStatus(o.id, v as PedidoStatus)}
-                  />
+                  <StatusDot status={o.status} />
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{o.uf}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.closing}</td>
