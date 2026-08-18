@@ -177,6 +177,34 @@ export function ContatosEditor({
   const upd = (i: number, patch: Partial<Contato>) =>
     onChange(contatos.map((c, k) => (k === i ? { ...c, ...patch } : c)));
 
+  const principal = contatos.find((c) => c.tipo === "principal");
+  const financeiroIdx = contatos.findIndex((c) => c.tipo === "financeiro");
+  const financeiro = financeiroIdx >= 0 ? contatos[financeiroIdx] : undefined;
+
+  /** O financeiro está espelhando o principal? */
+  const mesmoFinanceiro =
+    !!principal && !!financeiro &&
+    (principal.nome.trim() !== "" || principal.emails.some((v) => v.trim())) &&
+    principal.nome === financeiro.nome &&
+    principal.cargo === financeiro.cargo &&
+    principal.emails.join("|") === financeiro.emails.join("|") &&
+    principal.telefones.join("|") === financeiro.telefones.join("|");
+
+  const copiarDoPrincipal = (marcar: boolean) => {
+    if (financeiroIdx < 0 || !principal) return;
+    upd(
+      financeiroIdx,
+      marcar
+        ? {
+            nome: principal.nome,
+            cargo: principal.cargo,
+            emails: [...principal.emails],
+            telefones: [...principal.telefones],
+          }
+        : { nome: "", cargo: "", emails: [""], telefones: [""] },
+    );
+  };
+
   return (
     <div className="space-y-3">
       {contatos.map((c, i) => {
@@ -198,6 +226,16 @@ export function ContatosEditor({
                 </Button>
               )}
             </div>
+
+            {c.tipo === "financeiro" && principal && (
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Checkbox
+                  checked={mesmoFinanceiro}
+                  onCheckedChange={(v) => copiarDoPrincipal(v === true)}
+                />
+                É o mesmo do contato principal
+              </label>
+            )}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
