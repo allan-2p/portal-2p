@@ -435,6 +435,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       .from("propostas")
       .insert({
         ...payload,
+        organizacao: "carregadores",
         status: "Salvo",
         created_by: userId,
         criado_por_nome: nomeAtual,
