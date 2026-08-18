@@ -1130,7 +1130,7 @@ function PropostaCarregadoresPage() {
 
       if (status !== "Salvo") {
         if (!inserida?.id) throw new Error("Não foi possível concluir: proposta não localizada.");
-        let linha: { status?: string; already_concluded?: boolean };
+        let linha: { status?: string; already_concluded?: boolean; cobranca?: { gerada?: boolean; meio?: string | null; motivo?: string | null; erro?: string | null } | null };
         try {
           linha = await concluirPropostaFn({
             data: { id: inserida.id, status, origem: "portal", etapa: etapa === 5 ? 4 : etapa },
