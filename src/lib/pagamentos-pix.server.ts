@@ -117,12 +117,63 @@ export function normalizarEventosPix(payload: Record<string, unknown>): PixEvent
   return eventos;
 }
 
+export type PropostaLike = Record<string, any>;
+
+/** Camada de IO do motor Pix — permite simulação sem escrever no banco. */
+export type PixIO = {
+  buscarPorTxid(txid: string): Promise<PropostaLike | null>;
+  buscarPorNumero(numero: string): Promise<PropostaLike | null>;
+  atualizar(id: string, patch: Record<string, unknown>): Promise<void>;
+  log(entry: {
+    proposta_id: string;
+    numero: string | null;
+    status: string;
+    resultado: string;
+    origem: string;
+    detalhe: string;
+  }): Promise<void>;
+};
+
+export const pixIOBanco: PixIO = {
+  buscarPorTxid: (txid) => db.listarPropostasPorPagamentoTxid(txid) as Promise<PropostaLike | null>,
+  buscarPorNumero: (numero) => db.getPropostaPorNumero(numero) as Promise<PropostaLike | null>,
+  atualizar: (id, patch) => db.atualizarProposta(id, patch as any).then(() => undefined),
+  log: (entry) => db.registrarConclusaoLog(entry as any),
+};
+
+/**
+ * IO em memória para simulação/testes: parte de uma cópia das propostas e
+ * aplica os patches localmente, registrando cada escrita.
+ */
+export function criarPixIOSimulado(propostas: PropostaLike[]) {
+  const rows = propostas.map((p) => ({ ...p }));
+  const escritas: { proposta_id: string; patch: Record<string, unknown> }[] = [];
+  const logs: Record<string, unknown>[] = [];
+  const io: PixIO = {
+    async buscarPorTxid(txid) {
+      return rows.find((r) => String(r["pagamento_txid"] ?? "") === txid) ?? null;
+    },
+    async buscarPorNumero(numero) {
+      return rows.find((r) => String(r["numero"] ?? "") === numero) ?? null;
+    },
+    async atualizar(id, patch) {
+      const row = rows.find((r) => r["id"] === id);
+      if (row) Object.assign(row, patch);
+      escritas.push({ proposta_id: id, patch });
+    },
+    async log(entry) {
+      logs.push(entry);
+    },
+  };
+  return { io, rows, escritas, logs };
+}
+
 /** Localiza a proposta pelo txid gravado nela ou pelo nº embutido no txid. */
-async function localizarProposta(txid: string): Promise<Record<string, any> | null> {
-  const porTxid = await db.listarPropostasPorPagamentoTxid(txid);
+async function localizarProposta(txid: string, io: PixIO): Promise<PropostaLike | null> {
+  const porTxid = await io.buscarPorTxid(txid);
   if (porTxid) return porTxid;
   const numero = (txid.match(/\d{6}/) ?? [])[0];
-  if (numero) return await db.getPropostaPorNumero(numero);
+  if (numero) return await io.buscarPorNumero(numero);
   return null;
 }
 
@@ -138,14 +189,14 @@ export type PixAplicacao = {
 };
 
 /** Aplica um evento na proposta, de forma idempotente. */
-export async function aplicarEventoPix(ev: PixEvento): Promise<PixAplicacao> {
+export async function aplicarEventoPix(ev: PixEvento, io: PixIO = pixIOBanco): Promise<PixAplicacao> {
   const base = { txid: ev.txid, tipo: ev.tipo };
 
   if (ev.tipo === "desconhecido") {
     return { ...base, skipped: true, motivo: `Status Pix não tratado: ${ev.statusOriginal ?? "-"}` };
   }
 
-  const proposta = await localizarProposta(ev.txid);
+  const proposta = await localizarProposta(ev.txid, io);
   if (!proposta) {
     return { ...base, skipped: true, motivo: "Nenhum pedido encontrado para este txid." };
   }
@@ -155,10 +206,10 @@ export async function aplicarEventoPix(ev: PixEvento): Promise<PixAplicacao> {
 
   // Idempotência: mesmo evento reenviado pelo PSP não reprocessa.
   if (pagamentoAtual === ev.tipo && (ev.tipo !== "pago" || proposta["pagamento_e2eid"] === ev.endToEndId)) {
-    return { ...base, proposta_id: proposta.id, numero: proposta["numero"], de, skipped: true, motivo: "Evento já aplicado." };
+    return { ...base, proposta_id: proposta["id"], numero: proposta["numero"], de, skipped: true, motivo: "Evento já aplicado." };
   }
   if (pagamentoAtual === "pago" && ev.tipo !== "cancelado") {
-    return { ...base, proposta_id: proposta.id, numero: proposta["numero"], de, skipped: true, motivo: "Pedido já está pago." };
+    return { ...base, proposta_id: proposta["id"], numero: proposta["numero"], de, skipped: true, motivo: "Pedido já está pago." };
   }
 
   const patch: Record<string, unknown> = {
@@ -181,9 +232,9 @@ export async function aplicarEventoPix(ev: PixEvento): Promise<PixAplicacao> {
 
   if (para !== de) patch["status"] = para;
 
-  await db.atualizarProposta(proposta.id, patch);
-  await db.registrarConclusaoLog({
-    proposta_id: proposta.id,
+  await io.atualizar(proposta["id"], patch);
+  await io.log({
+    proposta_id: proposta["id"],
     numero: proposta["numero"] ?? null,
     status: para,
     resultado: `pix:${ev.tipo}`,
@@ -191,17 +242,28 @@ export async function aplicarEventoPix(ev: PixEvento): Promise<PixAplicacao> {
     detalhe: `txid ${ev.txid}${ev.endToEndId ? ` • e2e ${ev.endToEndId}` : ""} • ${de} → ${para}`,
   });
 
-  return { ...base, proposta_id: proposta.id, numero: proposta["numero"] ?? null, de, para };
+  return { ...base, proposta_id: proposta["id"], numero: proposta["numero"] ?? null, de, para };
 }
 
+export type PixResultado = {
+  recebidos: number;
+  atualizados?: number;
+  detalhes?: PixAplicacao[];
+  skipped?: boolean;
+  motivo?: string;
+};
+
 /** Processa o payload completo do webhook. */
-export async function processarWebhookPix(payload: Record<string, unknown>) {
+export async function processarWebhookPix(
+  payload: Record<string, unknown>,
+  io: PixIO = pixIOBanco,
+): Promise<PixResultado> {
   const eventos = normalizarEventosPix(payload);
   if (!eventos.length) {
     return { skipped: true, motivo: "Payload sem eventos Pix reconhecíveis.", recebidos: 0 };
   }
   const aplicados: PixAplicacao[] = [];
-  for (const ev of eventos) aplicados.push(await aplicarEventoPix(ev));
+  for (const ev of eventos) aplicados.push(await aplicarEventoPix(ev, io));
   const atualizados = aplicados.filter((a) => !a.skipped);
   return {
     recebidos: eventos.length,
@@ -209,5 +271,47 @@ export async function processarWebhookPix(payload: Record<string, unknown>) {
     detalhes: aplicados,
     skipped: atualizados.length === 0,
     ...(atualizados.length === 0 ? { motivo: aplicados[0]?.motivo ?? "Nenhum pedido atualizado." } : {}),
+  };
+}
+
+export type PixSimulacao = {
+  repeticoes: number;
+  escritas: number;
+  idempotente: boolean;
+  rodadas: { rodada: number; resultado: PixResultado; escritasNaRodada: number }[];
+  estadoFinal: { id: string; numero: string | null; status: string; pagamento_status: string | null }[];
+  logs: number;
+};
+
+/**
+ * Modo simulação: reprocessa o MESMO payload N vezes em memória (nada é
+ * gravado) e verifica que só a primeira rodada altera o pedido.
+ */
+export async function simularWebhookPix(
+  payload: Record<string, unknown>,
+  propostas: PropostaLike[],
+  repeticoes = 3,
+): Promise<PixSimulacao> {
+  const n = Math.min(Math.max(repeticoes, 1), 20);
+  const { io, rows, escritas, logs } = criarPixIOSimulado(propostas);
+  const rodadas: PixSimulacao["rodadas"] = [];
+  for (let i = 1; i <= n; i++) {
+    const antes = escritas.length;
+    const resultado = await processarWebhookPix(payload, io);
+    rodadas.push({ rodada: i, resultado, escritasNaRodada: escritas.length - antes });
+  }
+  const depoisDaPrimeira = rodadas.slice(1).reduce((acc, r) => acc + r.escritasNaRodada, 0);
+  return {
+    repeticoes: n,
+    escritas: escritas.length,
+    idempotente: depoisDaPrimeira === 0,
+    rodadas,
+    logs: logs.length,
+    estadoFinal: rows.map((r) => ({
+      id: String(r["id"]),
+      numero: (r["numero"] ?? null) as string | null,
+      status: String(r["status"] ?? ""),
+      pagamento_status: (r["pagamento_status"] ?? null) as string | null,
+    })),
   };
 }
