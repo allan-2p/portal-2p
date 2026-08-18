@@ -78,6 +78,14 @@ export type Cliente = {
   uf: string;
   municipio_ibge: string | null;
   condicao_pagamento: string | null;
+  /** Campos exigidos pelo cadastro no SAP. */
+  finalidade: string | null;
+  tabela_preco: string | null;
+  condicao_pgto_sap: string | null;
+  numero_sap?: string | null;
+  sap_status?: string | null;
+  sap_erro?: string | null;
+  sf_account_id?: string | null;
   observacoes: string | null;
   ativo: boolean;
   created_by?: string | null;
@@ -96,10 +104,13 @@ const vazio = (): Form => ({
   contatos: contatosPadrao(),
   contato_nome: "", contato_cargo: "", contato_email: "", contato_telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "",
-  uf: "SP", municipio_ibge: null, condicao_pagamento: "", observacoes: "", ativo: true,
+  uf: "SP", municipio_ibge: null, condicao_pagamento: "",
+  finalidade: "Revenda", tabela_preco: "2P-0001", condicao_pgto_sap: "",
+  observacoes: "", ativo: true,
 });
 
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
+
 
 type Erros = Record<string, string>;
 const ROTULOS: Record<string, string> = {
