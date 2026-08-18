@@ -25,22 +25,33 @@ export const Route = createFileRoute("/_authenticated/admin/logs/integracoes")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => (
+  component: LogIntegracoesPage,
+});
+
+function LogIntegracoesPage() {
+  const { cliente } = Route.useSearch();
+  return (
     <AdminRouteGuard feature="admin.logs.integracoes" area="logs">
       <AppLayout>
         <div className="mx-auto max-w-6xl space-y-5">
           <header className="flex flex-wrap items-end justify-between gap-3">
             <div>
-            <h1 className="text-2xl font-bold">Log de Integrações</h1>
-            <p className="text-sm text-muted-foreground">
-              Histórico completo de sincronizações e erros de todas as integrações.
-            </p>
+              <h1 className="text-2xl font-bold">Log de Integrações</h1>
+              <p className="text-sm text-muted-foreground">
+                {cliente
+                  ? "Auditoria das integrações deste cliente: tentativas, payloads e respostas."
+                  : "Histórico completo de sincronizações e erros de todas as integrações."}
+              </p>
             </div>
             <ExportLogsButton source="integracoes" />
           </header>
-          <IntegrationLogsPanel title="Histórico geral de sincronizações e erros" />
+          <IntegrationLogsPanel
+            clienteId={cliente}
+            title={cliente ? "Auditoria do cliente" : "Histórico geral de sincronizações e erros"}
+          />
         </div>
       </AppLayout>
     </AdminRouteGuard>
-  ),
-});
+  );
+}
+
