@@ -161,7 +161,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       ? `
     <div class="sec">
       <div class="sech"><span>Endereços</span></div>
-      <div class="grid">
+      <div class="grid" style="grid-template-columns:repeat(2,1fr)">
         ${blocoEndereco("Endereço de faturamento", p.enderecoFaturamento)}
         ${blocoEndereco("Endereço de entrega", p.enderecoEntrega)}
       </div>
