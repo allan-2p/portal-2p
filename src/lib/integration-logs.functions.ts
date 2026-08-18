@@ -19,13 +19,15 @@ async function assertLogRead(ctx: { supabase: any; userId: string }, fallback: a
 }
 
 
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+
 export type IntegrationLogRow = {
   id: string;
   slug: string;
   level: "info" | "warn" | "error";
   event: string;
   message: string | null;
-  detail: Record<string, unknown> | null;
+  detail: Record<string, JsonValue> | null;
   duration_ms: number | null;
   actor_email: string | null;
   created_at: string;

@@ -33,7 +33,7 @@ function LevelIcon({ level }: { level: IntegrationLogRow["level"] }) {
 
 /** Bloco de auditoria: payload enviado e resposta recebida da integração. */
 function LogDetail({ detail }: { detail: Record<string, unknown> }) {
-  const { payload, resposta, ...contexto } = detail as Record<string, unknown>;
+  const { payload, resposta, ...contexto } = detail;
   const blocos: Array<[string, unknown]> = [];
   if (Object.keys(contexto).length > 0) blocos.push(["Contexto", contexto]);
   if (payload !== undefined) blocos.push(["Payload enviado", payload]);
