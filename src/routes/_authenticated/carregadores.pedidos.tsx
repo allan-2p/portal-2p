@@ -257,6 +257,7 @@ function ListView({ data }: { data: Pedido[] }) {
               <th className="text-left px-4 py-3">Pedido</th>
               <th className="text-left px-4 py-3">Cliente</th>
               <th className="text-center px-4 py-3">Status</th>
+              <th className="text-left px-4 py-3">Pix</th>
               <th className="text-left px-4 py-3">UF</th>
               <th className="text-left px-4 py-3">Data</th>
               <th className="text-right px-4 py-3">Valor</th>
@@ -271,6 +272,21 @@ function ListView({ data }: { data: Pedido[] }) {
                 <td className="px-4 py-3 text-center">
                   <StatusDot status={o.status} />
                 </td>
+                <td className="px-4 py-3">
+                  {o.pix ? (
+                    <div className="space-y-1 max-w-[280px]">
+                      <PixStatusBadge status={o.pix} />
+                      {acaoAtlasPix(o.pix) && (
+                        <div className="text-[11px] leading-snug text-muted-foreground">
+                          <span className="text-primary font-medium">Atlas: </span>
+                          {acaoAtlasPix(o.pix)!.acao}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-muted-foreground">{o.uf}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.closing}</td>
                 <td className="px-4 py-3 text-right font-semibold">{fmtBRL(o.value)}</td>
@@ -278,11 +294,12 @@ function ListView({ data }: { data: Pedido[] }) {
             ))}
             {data.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                   Nenhum pedido encontrado nos status em curso.
                 </td>
               </tr>
             )}
+
           </tbody>
         </table>
       </div>
