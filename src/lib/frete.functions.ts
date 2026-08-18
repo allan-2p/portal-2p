@@ -25,13 +25,16 @@ export const cotarFrete = createServerFn({ method: "POST" })
     // Fonte única do peso: PESO_LIQUIDO devolvido pela simulação de preço do SAP.
     const sim = await simularPrecosSap(
       data.itens.map((i) => ({ codigo: String(i.codigo), quantidade: Number(i.quantidade || 0) })),
+      { ...(data.documento ? { documento: data.documento } : {}) },
     ).catch(() => new Map());
 
     const origem = { peso: "sap" as const };
     const itens = data.itens.map((i) => {
       const qtd = Number(i.quantidade || 0);
-      const linhaSap = Number(sim.get(chave(i.codigo))?.pesoLiquido ?? 0);
+      const reg = sim.get(chave(i.codigo));
+      const linhaSap = Number(reg?.pesoLiquido ?? 0) || Number(reg?.pesoBruto ?? 0);
       const unit = linhaSap > 0 && qtd > 0 ? linhaSap / qtd : 0;
+
       return {
         codigo: String(i.codigo),
         nome: String(i.nome ?? ""),
