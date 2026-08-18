@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusLegend, StatusPicker } from "@/components/proposta-status-ui";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,7 @@ type Row = {
   numero_sap?: string | null;
 
   cliente_nome: string;
+  cliente_doc?: string | null;
   cliente_telefone: string | null;
   cliente_email: string | null;
   uf: string;
@@ -79,6 +80,9 @@ function HistoricoCpoPage() {
   const [detalheId, setDetalheId] = useState<string | null>(null);
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
+  const [sap, setSap] = useState("todos");
+  const [pagina, setPagina] = useState(1);
+  const [porPagina, setPorPagina] = useState(10);
   const [vendedor, setVendedor] = useState("__all__");
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const podeExcluir = useCanDelete();
@@ -105,20 +109,49 @@ function HistoricoCpoPage() {
   const rows = q.data ?? [];
   const ufs = useMemo(() => Array.from(new Set(rows.map((r) => r.uf))).sort(), [rows]);
 
-  const filtered = rows.filter((r) => {
-    if (status !== "todos" && r.status !== status) return false;
-    if (uf !== "todos" && r.uf !== uf) return false;
-    if (!vend.matches(vendedor, r.created_by)) return false;
-    const t = busca.trim().toLowerCase();
-    if (
-      t &&
-      !`${r.cliente_nome} ${r.numero ?? ""} ${r.nome ?? ""} ${r.numero_sap ?? ""}`
-        .toLowerCase()
-        .includes(t)
-    )
+  /** Busca tolerante: ignora acento/pontuação para casar Nº e Nº SAP digitados de qualquer jeito. */
+  const norm = (v: string) =>
+    v
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  const soDigitos = (v: string) => v.replace(/\D/g, "");
+
+  const filtered = useMemo(() => {
+    const t = norm(busca.trim());
+    const tDig = soDigitos(busca);
+    return rows.filter((r) => {
+      if (status !== "todos" && r.status !== status) return false;
+      if (uf !== "todos" && r.uf !== uf) return false;
+      if (!vend.matches(vendedor, r.created_by)) return false;
+      const temSap = !!(r.numero_sap ?? "").trim();
+      if (sap === "com" && !temSap) return false;
+      if (sap === "sem" && temSap) return false;
+      if (!t) return true;
+      // Propostas abertas não têm Nº SAP: a busca continua válida pelos demais campos.
+      const alvo = norm(
+        [r.cliente_nome, r.numero, r.nome, r.numero_sap, r.cliente_doc, r.consultor_nome]
+          .filter(Boolean)
+          .join(" ")
+      );
+      if (alvo.includes(t)) return true;
+      if (tDig) {
+        const alvoDig = soDigitos(
+          [r.numero, r.numero_sap, r.cliente_doc].filter(Boolean).join(" ")
+        );
+        if (alvoDig.includes(tDig)) return true;
+      }
       return false;
-    return true;
-  });
+    });
+  }, [rows, busca, status, uf, sap, vendedor, vend]);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [busca, status, uf, sap, vendedor, porPagina]);
+
+  const totalPaginas = Math.max(1, Math.ceil(filtered.length / porPagina));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const visiveis = filtered.slice((paginaAtual - 1) * porPagina, paginaAtual * porPagina);
 
   const detalheIdx = detalheId ? filtered.findIndex((r) => r.id === detalheId) : -1;
 
@@ -191,6 +224,14 @@ function HistoricoCpoPage() {
               {ufs.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={sap} onValueChange={setSap}>
+            <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Nº SAP: todos</SelectItem>
+              <SelectItem value="com">Com Nº SAP</SelectItem>
+              <SelectItem value="sem">Sem Nº SAP (abertas)</SelectItem>
+            </SelectContent>
+          </Select>
           <VendedorNamesFilter
             value={vendedor}
             onChange={setVendedor}
@@ -223,7 +264,7 @@ function HistoricoCpoPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => (
+                {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
                     <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
@@ -288,6 +329,43 @@ function HistoricoCpoPage() {
               </tbody>
             </table>
           </div>
+          {filtered.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
+              <div className="text-muted-foreground">
+                Mostrando {(paginaAtual - 1) * porPagina + 1}–
+                {Math.min(paginaAtual * porPagina, filtered.length)} de {filtered.length}
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={String(porPagina)} onValueChange={(v) => setPorPagina(Number(v))}>
+                  <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 / pág.</SelectItem>
+                    <SelectItem value="25">25 / pág.</SelectItem>
+                    <SelectItem value="50">50 / pág.</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={paginaAtual <= 1}
+                  onClick={() => setPagina(paginaAtual - 1)}
+                >
+                  Anterior
+                </Button>
+                <span className="text-muted-foreground">
+                  {paginaAtual} / {totalPaginas}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={paginaAtual >= totalPaginas}
+                  onClick={() => setPagina(paginaAtual + 1)}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
