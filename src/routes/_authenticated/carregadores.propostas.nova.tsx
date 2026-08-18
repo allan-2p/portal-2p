@@ -1017,6 +1017,20 @@ function PropostaCarregadoresPage() {
     setTimeout(() => w.print(), 600);
   }
 
+  // Aviso sobre a cobrança emitida no checkout (boleto à vista / Pix).
+  function avisarCobranca(c?: { gerada?: boolean; meio?: string | null; motivo?: string | null; erro?: string | null } | null) {
+    if (!c) return;
+    if (c.gerada) {
+      toast.success(c.meio === "pix" ? "Cobrança Pix gerada." : "Boleto emitido (vencimento em 5 dias).");
+      return;
+    }
+    if (c.erro) {
+      toast.error("Não foi possível emitir a cobrança. Entre em contato com o suporte.");
+      return;
+    }
+    if (c.motivo) toast.info(c.motivo);
+  }
+
   async function salvar(status: string = "Salvo") {
     // Lock síncrono: bloqueia envios repetidos mesmo antes do estado re-renderizar
     if (submitLock.current) return;
@@ -1090,7 +1104,7 @@ function PropostaCarregadoresPage() {
         if (concluindo) {
           // Lock idempotente no banco: só conclui se ainda estiver "Salvo"
           // O servidor valida a etapa de finalização como 4 (última etapa do fluxo).
-          const linha = await concluirPropostaFn({
+          const linhaConclusaoRef = await concluirPropostaFn({
             data: { id: propostaId, status, origem: "portal", etapa: etapa === 5 ? 4 : etapa },
           });
           if (linha?.already_concluded) {
@@ -1109,6 +1123,7 @@ function PropostaCarregadoresPage() {
 
 
         toast.success(concluindo ? `Pedido ${numero} concluído.` : `Proposta ${numero} atualizada.`);
+        if (concluindo) avisarCobranca((linhaConclusao as any)?.cobranca);
         setNumeroAtual(numero);
         invalidate();
         limparRascunho();
