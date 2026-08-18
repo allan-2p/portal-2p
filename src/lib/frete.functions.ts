@@ -32,12 +32,12 @@ export const cotarFrete = createServerFn({ method: "POST" })
       pesosPorCodigo(codigos),
     ]);
 
-    let origemPeso: "sap" | "catalogo" | "informado" = "catalogo";
+    const origem = { peso: "catalogo" as "sap" | "catalogo" };
     const itens = data.itens.map((i) => {
       const qtd = Number(i.quantidade || 0);
       const linhaSap = Number(sim.get(chave(i.codigo))?.pesoLiquido ?? 0);
       const unitSap = linhaSap > 0 && qtd > 0 ? linhaSap / qtd : 0;
-      if (unitSap > 0) origemPeso = "sap";
+      if (unitSap > 0) origem.peso = "sap";
       const unit =
         unitSap > 0
           ? unitSap
@@ -75,12 +75,12 @@ export const cotarFrete = createServerFn({ method: "POST" })
         slug: "fretefy",
         level: "info",
         event: "cotacao",
-        message: `Cotação concluída: ${r.opcoes.length} opção(ões) para ${data.destino.cidade}/${data.destino.uf}. Peso ${r.peso} kg (origem: ${origemPeso === "sap" ? "simulação SAP" : "catálogo de produtos"}).`,
+        message: `Cotação concluída: ${r.opcoes.length} opção(ões) para ${data.destino.cidade}/${data.destino.uf}. Peso ${r.peso} kg (origem: ${origem.peso === "sap" ? "simulação SAP" : "catálogo de produtos"}).`,
         durationMs: Date.now() - started,
         actorId: context.userId,
         actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
       });
-      return { ...r, origemPeso };
+      return { ...r, origemPeso: origem.peso };
 
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro ao cotar o frete.";
