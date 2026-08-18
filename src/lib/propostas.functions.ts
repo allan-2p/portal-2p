@@ -322,7 +322,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     if (data.indicacao && !padrinhoId) throw new Error("Selecione ou cadastre o padrinho da indicação.");
 
     const payload = {
-      numero: data.numero,
+      numero: numeroProposta,
       nome: data.propostaNome,
       numero_sap: numeroSap,
       cliente_nome: data.cliente.nome,
@@ -426,7 +426,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       await db.atualizarProposta(data.propostaId, patch);
       return {
         id: data.propostaId,
-        numero: data.numero,
+        numero: numeroProposta,
         numeroSap,
         duplicada: false,
         totais: payload.totais,
@@ -450,10 +450,10 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     } catch (e) {
       const err = e as Error & { status?: number; body?: string };
       if (err.status === 409 || /duplicate key|23505/i.test(err.body ?? err.message)) {
-        const existente = await db.getPropostaPorNumero(data.numero);
+        const existente = await db.getPropostaPorNumero(numeroProposta);
         return {
           id: existente?.id ?? null,
-          numero: data.numero,
+          numero: numeroProposta,
           numeroSap,
           duplicada: true,
           totais: payload.totais,
@@ -464,7 +464,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     }
     return {
       id: inserida!.id,
-      numero: data.numero,
+      numero: numeroProposta,
       numeroSap,
       duplicada: false,
       totais: payload.totais,
