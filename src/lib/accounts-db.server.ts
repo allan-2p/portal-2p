@@ -1,23 +1,14 @@
-// Leitura das contas (Account) a partir dos bancos espelho do Salesforce.
-// Cada instância tem seu próprio projeto/base: Solar e Carregadores.
+// Leitura das contas (Account) do espelho do Salesforce no banco do Grupo 2P.
+// As duas unidades (Solar e Carregadores) leem a mesma tabela `account_sf`.
+
+import { grupo2pConfig } from "./grupo2p-db.server";
 
 export type AccountsInstance = "solar" | "carregadores";
 
 type DbConfig = { url: string; key: string };
 
-function configFor(instance: AccountsInstance): DbConfig | null {
-  const url =
-    instance === "carregadores"
-      ? process.env["ACCOUNTS_CARREGADORES_SUPABASE_URL"] ||
-        process.env["ACCOUNTS_CPO_SUPABASE_URL"] ||
-        "https://awvvdqdwzcnqbswxnpto.supabase.co"
-      : process.env["ACCOUNTS_SOLAR_SUPABASE_URL"] || "https://latnvmczyediznkyncmn.supabase.co";
-  const key =
-    instance === "carregadores"
-      ? process.env["ACCOUNTS_CARREGADORES_SUPABASE_KEY"] || process.env["ACCOUNTS_CPO_SUPABASE_KEY"]
-      : process.env["ACCOUNTS_SOLAR_SUPABASE_KEY"];
-  if (!url || !key) return null;
-  return { url: url.replace(/\/+$/, ""), key };
+function configFor(_instance: AccountsInstance): DbConfig | null {
+  return grupo2pConfig();
 }
 
 export type AccountDbRow = {

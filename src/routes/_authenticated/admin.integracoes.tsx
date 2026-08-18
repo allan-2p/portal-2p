@@ -172,7 +172,7 @@ function IntegracoesPage() {
 const SLUG_FOR_NAME: Record<string, string> = {
   Salesforce: "salesforce",
   "Lovable Cloud (banco do Portal)": "lovable-cloud",
-  "Base de Contas — Carregadores": "base-contas-carregadores",
+  "Base do Grupo 2P": "base-contas-carregadores",
   "SAP — listar_material": "sap",
   Metricool: "metricool",
   Notion: "notion",

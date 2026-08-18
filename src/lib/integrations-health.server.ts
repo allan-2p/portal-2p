@@ -110,7 +110,7 @@ export async function collectIntegrationsHealth(): Promise<IntegrationHealth[]> 
   results.push({ ...storage, slug: "top20" });
 
   results.push(
-    envOk("base-contas-carregadores", "Base de Contas", ["ACCOUNTS_CARREGADORES_SUPABASE_KEY"], "Espelho de contas configurado."),
+    envOk("base-contas-carregadores", "Base do Grupo 2P", ["GRUPO2P_SUPABASE_SERVICE_ROLE_KEY"], "Banco do Grupo 2P configurado."),
     envOk("metricool", "Metricool", ["METRICOOL_USER_TOKEN", "METRICOOL_USER_ID"], "Credenciais configuradas."),
     envOk("notion", "Notion", ["NOTION_API_KEY"], "Credenciais configuradas."),
     envOk("lovable-ai", "Lovable AI", ["LOVABLE_API_KEY"], "Gateway de IA disponível."),

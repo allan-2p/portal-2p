@@ -95,11 +95,12 @@ export const INTEGRATIONS: IntegrationDef[] = [
   },
   {
     slug: "base-contas-carregadores",
-    name: "Base de Contas — Carregadores",
+    name: "Base do Grupo 2P",
     category: "Dados e Arquivos",
-    description: "Espelho de contas/leads usado na criação de tarefas de Carregadores.",
+    description: "Banco único do Grupo 2P: contas/oportunidades do Salesforce, clientes e leads (Solar e Carregadores).",
     credentials: [
-      { env: "ACCOUNTS_CARREGADORES_SUPABASE_KEY", label: "Chave de acesso à base espelho", required: true, secret: true },
+      { env: "GRUPO2P_SUPABASE_URL", label: "URL do banco do Grupo 2P", required: true, secret: false },
+      { env: "GRUPO2P_SUPABASE_SERVICE_ROLE_KEY", label: "Chave de serviço do Grupo 2P", required: true, secret: true },
     ],
   },
   {

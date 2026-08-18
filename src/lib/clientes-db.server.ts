@@ -1,35 +1,24 @@
-// Acesso à tabela `clientes` nos projetos externos (Solar e Carregadores).
-// Cada instância grava no seu próprio banco; os esquemas são idênticos.
+// Acesso à tabela `clientes` no banco do Grupo 2P.
+// As duas unidades (Solar e Carregadores) compartilham a mesma tabela e são
+// separadas pelas colunas `instancia` / `organizacao`.
+
+import { grupo2pConfig, grupo2pRest, ORGANIZACAO as ORG } from "./grupo2p-db.server";
 
 export type ClientesInstance = "solar" | "carregadores";
 
-export const ORGANIZACAO: Record<ClientesInstance, string> = {
-  solar: "2P Solar",
-  carregadores: "2P Carregadores",
-};
+export const ORGANIZACAO: Record<ClientesInstance, string> = ORG;
 
 type DbConfig = { url: string; key: string };
 
-export function clientesConfig(instance: ClientesInstance): DbConfig | null {
-  const url =
-    instance === "carregadores"
-      ? process.env["ACCOUNTS_CARREGADORES_SUPABASE_URL"] ||
-        process.env["ACCOUNTS_CPO_SUPABASE_URL"] ||
-        "https://awvvdqdwzcnqbswxnpto.supabase.co"
-      : process.env["ACCOUNTS_SOLAR_SUPABASE_URL"] || "https://latnvmczyediznkyncmn.supabase.co";
-  const key =
-    instance === "carregadores"
-      ? process.env["ACCOUNTS_CARREGADORES_SUPABASE_KEY"] || process.env["ACCOUNTS_CPO_SUPABASE_KEY"]
-      : process.env["ACCOUNTS_SOLAR_SUPABASE_KEY"];
-  if (!url || !key) return null;
-  return { url: url.replace(/\/+$/, ""), key };
+export function clientesConfig(_instance?: ClientesInstance): DbConfig | null {
+  return grupo2pConfig();
 }
 
 export type ClienteRow = Record<string, any> & { id: string };
 
 export class ClientesTableMissing extends Error {
   constructor(instance: ClientesInstance) {
-    super(`A tabela "clientes" ainda não existe no banco de ${instance}.`);
+    super(`A tabela "clientes" ainda não existe no banco do Grupo 2P (${instance}).`);
     this.name = "ClientesTableMissing";
   }
 }
@@ -39,21 +28,12 @@ async function rest(
   path: string,
   init: RequestInit & { prefer?: string } = {},
 ): Promise<any> {
-  const cfg = clientesConfig(instance);
-  if (!cfg) throw new Error(`Banco de clientes não configurado para ${instance}.`);
-  const headers: Record<string, string> = {
-    apikey: cfg.key,
-    Authorization: `Bearer ${cfg.key}`,
-    "Content-Type": "application/json",
-  };
-  if (init.prefer) headers["Prefer"] = init.prefer;
-  const res = await fetch(`${cfg.url}/rest/v1/${path}`, { ...init, headers });
-  const text = await res.text();
-  if (!res.ok) {
-    if (res.status === 404 || /relation .*clientes.* does not exist/i.test(text)) {
+  const { ok, status, text } = await grupo2pRest(path, init);
+  if (!ok) {
+    if (status === 404 || /relation .*clientes.* does not exist/i.test(text)) {
       throw new ClientesTableMissing(instance);
     }
-    throw new Error(`Erro no banco (${res.status}): ${text.slice(0, 300)}`);
+    throw new Error(`Erro no banco (${status}): ${text.slice(0, 300)}`);
   }
   return text ? JSON.parse(text) : null;
 }
@@ -61,25 +41,31 @@ async function rest(
 const SELECT = "*";
 
 export async function listClientes(instance: ClientesInstance): Promise<ClienteRow[]> {
-  const params = new URLSearchParams({ select: SELECT, order: "razao_social.asc", limit: "5000" });
+  const params = new URLSearchParams({
+    select: SELECT,
+    instancia: `eq.${instance}`,
+    order: "razao_social.asc",
+    limit: "5000",
+  });
   return (await rest(instance, `clientes?${params}`)) ?? [];
 }
 
-/** Procura o documento nas duas bases; devolve onde já existe. */
+/** Procura o documento nas duas unidades; devolve onde já existe. */
 export async function findClienteByDoc(doc: string): Promise<
   Array<{ instancia: ClientesInstance; cliente: ClienteRow }>
 > {
   const digits = doc.replace(/\D/g, "");
   const out: Array<{ instancia: ClientesInstance; cliente: ClienteRow }> = [];
-  for (const instancia of ["solar", "carregadores"] as ClientesInstance[]) {
-    try {
-      const params = new URLSearchParams({ select: SELECT, doc: `eq.${digits}`, limit: "1" });
-      const rows = (await rest(instancia, `clientes?${params}`)) ?? [];
-      if (rows[0]) out.push({ instancia, cliente: rows[0] });
-    } catch (e) {
-      if (e instanceof ClientesTableMissing) continue;
-      throw e;
+  try {
+    const params = new URLSearchParams({ select: SELECT, doc: `eq.${digits}`, limit: "10" });
+    const rows: ClienteRow[] = (await rest("solar", `clientes?${params}`)) ?? [];
+    for (const cliente of rows) {
+      const inst = cliente["instancia"] === "carregadores" ? "carregadores" : "solar";
+      out.push({ instancia: inst, cliente });
     }
+  } catch (e) {
+    if (e instanceof ClientesTableMissing) return out;
+    throw e;
   }
   return out;
 }
@@ -89,7 +75,12 @@ export async function getClienteById(
   instance: ClientesInstance,
   id: string,
 ): Promise<ClienteRow | null> {
-  const params = new URLSearchParams({ select: SELECT, id: `eq.${id}`, limit: "1" });
+  const params = new URLSearchParams({
+    select: SELECT,
+    id: `eq.${id}`,
+    instancia: `eq.${instance}`,
+    limit: "1",
+  });
   const rows = (await rest(instance, `clientes?${params}`)) ?? [];
   return rows[0] ?? null;
 }
@@ -100,7 +91,11 @@ export async function insertCliente(
 ): Promise<ClienteRow> {
   const rows = await rest(instance, "clientes", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      ...payload,
+      instancia: payload["instancia"] ?? instance,
+      organizacao: payload["organizacao"] ?? ORGANIZACAO[instance],
+    }),
     prefer: "return=representation",
   });
   return rows[0];
@@ -111,7 +106,7 @@ export async function updateCliente(
   id: string,
   payload: Record<string, any>,
 ): Promise<ClienteRow | null> {
-  const rows = await rest(instance, `clientes?id=eq.${id}`, {
+  const rows = await rest(instance, `clientes?id=eq.${id}&instancia=eq.${instance}`, {
     method: "PATCH",
     body: JSON.stringify({ ...payload, updated_at: new Date().toISOString() }),
     prefer: "return=representation",
@@ -120,7 +115,7 @@ export async function updateCliente(
 }
 
 export async function deleteCliente(instance: ClientesInstance, id: string): Promise<void> {
-  await rest(instance, `clientes?id=eq.${id}`, { method: "DELETE" });
+  await rest(instance, `clientes?id=eq.${id}&instancia=eq.${instance}`, { method: "DELETE" });
 }
 
 export async function clientesTableExists(instance: ClientesInstance): Promise<boolean> {
