@@ -36,6 +36,10 @@ export type CpoProduct = {
   custo: number;
   preco_sugerido?: number;
   ativo: boolean;
+  /** Peso bruto unitário (kg) usado na cotação de frete. */
+  peso_bruto_kg?: number;
+  /** Cubagem unitária (m³) usada na cotação de frete. */
+  cubagem_m3?: number;
   ncm_id?: string | null;
   ncm_codigo?: string | null;
   imagem_path?: string | null;
