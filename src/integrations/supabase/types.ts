@@ -71,6 +71,183 @@ export type Database = {
         }
         Relationships: []
       }
+      clientes: {
+        Row: {
+          ativo: boolean
+          bairro: string | null
+          capital_social: number | null
+          cep: string | null
+          cidade: string | null
+          cnae_principal_codigo: string | null
+          cnae_principal_descricao: string | null
+          cnaes_secundarios: Json
+          complemento: string | null
+          condicao_pagamento: string | null
+          condicao_pgto_sap: string | null
+          contato_cargo: string | null
+          contato_email: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
+          contatos: Json
+          contribuinte: boolean
+          created_at: string
+          created_by: string | null
+          created_by_email: string | null
+          created_by_nome: string | null
+          data_abertura: string | null
+          doc: string
+          email: string | null
+          enriquecimento: Json | null
+          finalidade: string | null
+          id: string
+          ie: string | null
+          ie_situacao: string | null
+          instancia: string
+          logradouro: string | null
+          municipio_ibge: string | null
+          natureza_juridica: string | null
+          nome_fantasia: string | null
+          numero: string | null
+          numero_sap: string | null
+          observacoes: string | null
+          organizacao: string
+          porte: string | null
+          razao_social: string
+          regime_tributario: string | null
+          sap_erro: string | null
+          sap_status: string | null
+          sf_account_id: string | null
+          sf_contact_id: string | null
+          sf_erro: string | null
+          sf_status: string | null
+          sincronizado_em: string | null
+          site: string | null
+          situacao_cadastral: string | null
+          suframa: string | null
+          suframa_situacao: string | null
+          tabela_preco: string | null
+          telefone: string | null
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          bairro?: string | null
+          capital_social?: number | null
+          cep?: string | null
+          cidade?: string | null
+          cnae_principal_codigo?: string | null
+          cnae_principal_descricao?: string | null
+          cnaes_secundarios?: Json
+          complemento?: string | null
+          condicao_pagamento?: string | null
+          condicao_pgto_sap?: string | null
+          contato_cargo?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contatos?: Json
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          created_by_nome?: string | null
+          data_abertura?: string | null
+          doc: string
+          email?: string | null
+          enriquecimento?: Json | null
+          finalidade?: string | null
+          id?: string
+          ie?: string | null
+          ie_situacao?: string | null
+          instancia: string
+          logradouro?: string | null
+          municipio_ibge?: string | null
+          natureza_juridica?: string | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          numero_sap?: string | null
+          observacoes?: string | null
+          organizacao: string
+          porte?: string | null
+          razao_social: string
+          regime_tributario?: string | null
+          sap_erro?: string | null
+          sap_status?: string | null
+          sf_account_id?: string | null
+          sf_contact_id?: string | null
+          sf_erro?: string | null
+          sf_status?: string | null
+          sincronizado_em?: string | null
+          site?: string | null
+          situacao_cadastral?: string | null
+          suframa?: string | null
+          suframa_situacao?: string | null
+          tabela_preco?: string | null
+          telefone?: string | null
+          uf: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          bairro?: string | null
+          capital_social?: number | null
+          cep?: string | null
+          cidade?: string | null
+          cnae_principal_codigo?: string | null
+          cnae_principal_descricao?: string | null
+          cnaes_secundarios?: Json
+          complemento?: string | null
+          condicao_pagamento?: string | null
+          condicao_pgto_sap?: string | null
+          contato_cargo?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          contatos?: Json
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          created_by_nome?: string | null
+          data_abertura?: string | null
+          doc?: string
+          email?: string | null
+          enriquecimento?: Json | null
+          finalidade?: string | null
+          id?: string
+          ie?: string | null
+          ie_situacao?: string | null
+          instancia?: string
+          logradouro?: string | null
+          municipio_ibge?: string | null
+          natureza_juridica?: string | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          numero_sap?: string | null
+          observacoes?: string | null
+          organizacao?: string
+          porte?: string | null
+          razao_social?: string
+          regime_tributario?: string | null
+          sap_erro?: string | null
+          sap_status?: string | null
+          sf_account_id?: string | null
+          sf_contact_id?: string | null
+          sf_erro?: string | null
+          sf_status?: string | null
+          sincronizado_em?: string | null
+          site?: string | null
+          situacao_cadastral?: string | null
+          suframa?: string | null
+          suframa_situacao?: string | null
+          tabela_preco?: string | null
+          telefone?: string | null
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       commission_settings: {
         Row: {
           config: Json
