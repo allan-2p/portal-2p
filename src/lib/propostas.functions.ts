@@ -602,7 +602,23 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { runJob } = await import("@/lib/job-runs.server");
-    const executar = async () => {
+    type CobrancaOut = {
+      gerada: boolean;
+      meio: string | null;
+      motivo: string | null;
+      erro: string | null;
+      txid: string | null;
+      linhaDigitavel: string | null;
+      vencimento: string | null;
+      pixCopiaCola: string | null;
+    };
+    type ConclusaoOut = {
+      id: string;
+      status: string;
+      already_concluded: boolean;
+      cobranca: CobrancaOut | null;
+    };
+    const executar = async (): Promise<ConclusaoOut> => {
     const { supabase, userId } = context as any;
     const db = await repo();
 
@@ -666,7 +682,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         resultado: "duplicada",
         detalhe: "Tentativa repetida de conclusão",
       });
-      return { id: row.id, status: row["status"] as string, already_concluded: true };
+      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null };
     }
 
     const atualizada = await db.atualizarProposta(
@@ -687,11 +703,48 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         resultado: "duplicada",
         detalhe: "Tentativa repetida de conclusão",
       });
-      return { id: row.id, status: row["status"] as string, already_concluded: true };
+      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null };
     }
 
     await db.registrarConclusaoLog({ ...base, status: data.status, resultado: "concluida" });
-    return { id: row.id, status: data.status, already_concluded: false };
+
+    // Cobrança automática (boleto à vista ou Pix). Falha aqui não trava o pedido.
+    let cobranca: CobrancaOut | null = null;
+    try {
+      const { gerarCobrancaCheckout } = await import("@/lib/pagamentos-cobranca.server");
+      const r = await gerarCobrancaCheckout(row.id);
+      cobranca = {
+        gerada: r.gerada,
+        meio: r.meio ?? null,
+        motivo: r.motivo ?? null,
+        erro: r.erro ?? null,
+        txid: r.txid ?? null,
+        linhaDigitavel: r.linhaDigitavel ?? null,
+        vencimento: r.vencimento ?? null,
+        pixCopiaCola: r.pixCopiaCola ?? null,
+      };
+      if (cobranca.erro) {
+        await db.registrarConclusaoLog({
+          ...base,
+          status: data.status,
+          resultado: "cobranca_falhou",
+          detalhe: String(cobranca.erro).slice(0, 500),
+        });
+      }
+    } catch (e) {
+      cobranca = {
+        gerada: false,
+        meio: null,
+        motivo: null,
+        erro: (e as Error).message,
+        txid: null,
+        linhaDigitavel: null,
+        vencimento: null,
+        pixCopiaCola: null,
+      };
+    }
+
+    return { id: row.id, status: data.status, already_concluded: false, cobranca };
     };
 
     // Monitoramento: cada finalização vira uma execução auditável em job_runs.

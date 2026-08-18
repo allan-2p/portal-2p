@@ -26,8 +26,10 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     "Motor de consulta ZNFE_OV_CONSULTAR ainda não ativado — a execução foi registrada para auditoria.",
   ),
 
+  // Boleto não tem baixa automática: a confirmação vem do SAP/financeiro e o
+  // cron de NFs é quem avança o pedido. Aqui só auditamos a verificação.
   "cron.pagamento-link": pendente(
-    "Motor do boleto Itaú aguardando credenciais — a execução foi registrada para auditoria.",
+    "Boleto não possui baixa automática pela plataforma — confirmação vem do SAP/financeiro.",
   ),
 
   // Motor real: aplica o evento Pix no pedido (pago / expirado / cancelado).

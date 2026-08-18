@@ -1017,6 +1017,20 @@ function PropostaCarregadoresPage() {
     setTimeout(() => w.print(), 600);
   }
 
+  // Aviso sobre a cobrança emitida no checkout (boleto à vista / Pix).
+  function avisarCobranca(c?: { gerada?: boolean; meio?: string | null; motivo?: string | null; erro?: string | null } | null) {
+    if (!c) return;
+    if (c.gerada) {
+      toast.success(c.meio === "pix" ? "Cobrança Pix gerada." : "Boleto emitido (vencimento em 5 dias).");
+      return;
+    }
+    if (c.erro) {
+      toast.error("Não foi possível emitir a cobrança. Entre em contato com o suporte.");
+      return;
+    }
+    if (c.motivo) toast.info(c.motivo);
+  }
+
   async function salvar(status: string = "Salvo") {
     // Lock síncrono: bloqueia envios repetidos mesmo antes do estado re-renderizar
     if (submitLock.current) return;
@@ -1087,6 +1101,7 @@ function PropostaCarregadoresPage() {
 
       if (propostaId) {
         const concluindo = status !== "Salvo";
+        let cobrancaAviso: Parameters<typeof avisarCobranca>[0] = null;
         if (concluindo) {
           // Lock idempotente no banco: só conclui se ainda estiver "Salvo"
           // O servidor valida a etapa de finalização como 4 (última etapa do fluxo).
@@ -1098,6 +1113,7 @@ function PropostaCarregadoresPage() {
             invalidate();
             return;
           }
+          cobrancaAviso = (linha as { cobranca?: Parameters<typeof avisarCobranca>[0] }).cobranca ?? null;
           // Nº SAP só existe após a conclusão.
           try {
             const { numeroSap } = await atribuirNumeroSap({ data: { propostaId } });
@@ -1109,6 +1125,7 @@ function PropostaCarregadoresPage() {
 
 
         toast.success(concluindo ? `Pedido ${numero} concluído.` : `Proposta ${numero} atualizada.`);
+        if (concluindo) avisarCobranca(cobrancaAviso);
         setNumeroAtual(numero);
         invalidate();
         limparRascunho();
@@ -1130,7 +1147,7 @@ function PropostaCarregadoresPage() {
 
       if (status !== "Salvo") {
         if (!inserida?.id) throw new Error("Não foi possível concluir: proposta não localizada.");
-        let linha: { status?: string; already_concluded?: boolean };
+        let linha: { status?: string; already_concluded?: boolean; cobranca?: { gerada?: boolean; meio?: string | null; motivo?: string | null; erro?: string | null } | null };
         try {
           linha = await concluirPropostaFn({
             data: { id: inserida.id, status, origem: "portal", etapa: etapa === 5 ? 4 : etapa },
@@ -1145,6 +1162,7 @@ function PropostaCarregadoresPage() {
           invalidate();
           return;
         }
+        avisarCobranca(linha?.cobranca);
         try {
           const { numeroSap } = await atribuirNumeroSap({ data: { propostaId: inserida.id } });
           if (numeroSap) setState((s) => ({ ...s, numeroSap }));
