@@ -1289,6 +1289,48 @@ export type Database = {
         }
         Relationships: []
       }
+      notificacoes: {
+        Row: {
+          chave: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          lida_em: string | null
+          link: string | null
+          ref_id: string | null
+          ref_tipo: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          chave?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          lida_em?: string | null
+          link?: string | null
+          ref_id?: string | null
+          ref_tipo?: string | null
+          tipo?: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          chave?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          lida_em?: string | null
+          link?: string | null
+          ref_id?: string | null
+          ref_tipo?: string | null
+          tipo?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       permission_profile_features: {
         Row: {
           created_at: string
