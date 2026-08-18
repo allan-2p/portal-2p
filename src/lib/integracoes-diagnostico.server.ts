@@ -12,15 +12,23 @@ export type TesteResultado = {
   alvo: TesteAlvo;
   ok: boolean;
   mensagem: string;
-  detalhe?: unknown;
+  detalhe?: string | null;
   duracaoMs: number;
 };
 
-async function medir(alvo: TesteAlvo, fn: () => Promise<{ ok: boolean; mensagem: string; detalhe?: unknown }>): Promise<TesteResultado> {
+function texto(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  return typeof v === "string" ? v : JSON.stringify(v, null, 2);
+}
+
+async function medir(
+  alvo: TesteAlvo,
+  fn: () => Promise<{ ok: boolean; mensagem: string; detalhe?: unknown }>,
+): Promise<TesteResultado> {
   const inicio = Date.now();
   try {
     const r = await fn();
-    return { alvo, ...r, duracaoMs: Date.now() - inicio };
+    return { alvo, ok: r.ok, mensagem: r.mensagem, detalhe: texto(r.detalhe), duracaoMs: Date.now() - inicio };
   } catch (err) {
     return {
       alvo,
