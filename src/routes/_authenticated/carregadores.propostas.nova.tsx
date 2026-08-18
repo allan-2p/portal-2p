@@ -2329,7 +2329,7 @@ function PropostaCpoPage() {
           onNext={avancarEtapa}
           backDisabled={etapa === 1 || saving}
           nextDisabled={etapa === 5 || saving}
-          errors={errosFechamento}
+          errors={errosConclusao}
           showErrors={!podeFechar && tentouAvancar}
           savedAt={autosaveAt}
           savedLabel="Salvo"
