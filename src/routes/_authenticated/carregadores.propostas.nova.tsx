@@ -1631,6 +1631,7 @@ function PropostaCpoPage() {
                       <Field label="Produto">
                         <Select
                           value={it.produtoId}
+                          disabled={!!it.produtoId}
                           onValueChange={(v) => {
                             const sugerido = precoSugeridoItem(v, state);
                             setItem(
@@ -1642,7 +1643,10 @@ function PropostaCpoPage() {
                           }}
                         >
                           <SelectTrigger
-                            className={cn(semProduto && "border-destructive focus-visible:ring-destructive")}
+                            className={cn(
+                              semProduto && "border-destructive focus-visible:ring-destructive",
+                              it.produtoId && "disabled:opacity-100 disabled:cursor-not-allowed",
+                            )}
                           >
                             <SelectValue placeholder="Selecione o produto" />
                           </SelectTrigger>
@@ -1655,6 +1659,12 @@ function PropostaCpoPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        {it.produtoId ? (
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            Para trocar o produto, exclua o item e adicione outro.
+                          </p>
+                        ) : null}
+
                         {semProduto ? (
                           <p className="text-[11px] text-destructive mt-1">Selecione o produto ou remova a linha.</p>
                         ) : null}
@@ -1748,9 +1758,13 @@ function PropostaCpoPage() {
                           onClick={() =>
                             setState((s) => ({
                               ...s,
-                              itens: s.itens.length > 1 ? s.itens.filter((x) => x.key !== it.key) : s.itens,
+                              itens:
+                                s.itens.length > 1
+                                  ? s.itens.filter((x) => x.key !== it.key)
+                                  : [novoItem()],
                             }))
                           }
+
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
