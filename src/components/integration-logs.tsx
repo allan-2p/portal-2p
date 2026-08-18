@@ -1,8 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, CheckCircle2, Info, Loader2, RefreshCw, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Info,
+  Loader2,
+  RefreshCw,
+  Search,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { listIntegrationLogs, type IntegrationLogRow } from "@/lib/integration-logs.functions";
 
 const LEVELS = [
@@ -20,18 +31,56 @@ function LevelIcon({ level }: { level: IntegrationLogRow["level"] }) {
   return <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />;
 }
 
-/** Histórico de sincronizações e erros. Sem slug, mostra todas as integrações. */
-export function IntegrationLogsPanel({ slug, title = "Histórico de sincronizações e erros" }: { slug?: string; title?: string }) {
+/** Bloco de auditoria: payload enviado e resposta recebida da integração. */
+function LogDetail({ detail }: { detail: Record<string, unknown> }) {
+  const { payload, resposta, ...contexto } = detail as Record<string, unknown>;
+  const blocos: Array<[string, unknown]> = [];
+  if (Object.keys(contexto).length > 0) blocos.push(["Contexto", contexto]);
+  if (payload !== undefined) blocos.push(["Payload enviado", payload]);
+  if (resposta !== undefined) blocos.push(["Resposta recebida", resposta]);
+
+  return (
+    <div className="mt-2 grid gap-2 md:grid-cols-3">
+      {blocos.map(([titulo, valor]) => (
+        <div key={titulo} className="rounded-lg border border-border bg-muted/40 p-2 min-w-0">
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">{titulo}</div>
+          <pre className="text-[11px] leading-relaxed whitespace-pre-wrap break-words max-h-56 overflow-auto">
+            {JSON.stringify(valor, null, 2)}
+          </pre>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Histórico de sincronizações e erros. Sem slug, mostra todas as integrações.
+ * `clienteId` restringe a auditoria às tentativas/respostas de um cliente.
+ */
+export function IntegrationLogsPanel({
+  slug,
+  clienteId,
+  title = "Histórico de sincronizações e erros",
+}: {
+  slug?: string;
+  clienteId?: string;
+  title?: string;
+}) {
   const [level, setLevel] = useState<Level>("all");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(0);
+  const [busca, setBusca] = useState("");
+  const [termo, setTermo] = useState("");
+  const [aberto, setAberto] = useState<Record<string, boolean>>({});
 
   const fetchLogs = useServerFn(listIntegrationLogs);
   const q = useQuery({
-    queryKey: ["integration-logs", slug ?? "all", level, pageSize, page],
-    queryFn: () => fetchLogs({ data: { slug, level, limit: pageSize, offset: page * pageSize } }),
+    queryKey: ["integration-logs", slug ?? "all", clienteId ?? "", level, termo, pageSize, page],
+    queryFn: () =>
+      fetchLogs({ data: { slug, clienteId, level, search: termo, limit: pageSize, offset: page * pageSize } }),
     refetchOnWindowFocus: false,
   });
+
 
   const rows = q.data?.rows ?? [];
   const total = q.data?.total ?? 0;
