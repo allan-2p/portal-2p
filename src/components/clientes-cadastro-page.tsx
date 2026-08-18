@@ -145,6 +145,7 @@ function comLegado(f: Form): Form {
   const principal = (f.contatos ?? []).find((c) => c.tipo === "principal");
   return {
     ...f,
+    tabela_preco: f.tabela_preco?.trim() || "2P-0001",
     contato_nome: principal?.nome?.trim() || null,
     contato_cargo: principal?.cargo?.trim() || null,
     contato_email: principal?.emails.find((v) => v.trim())?.trim() || null,
