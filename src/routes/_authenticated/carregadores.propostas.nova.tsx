@@ -540,6 +540,40 @@ function PropostaCarregadoresPage() {
     cep: entregaEfetiva.cep,
   };
 
+  /**
+   * Endereço/destinatário fiscal efetivo: quando a nota é emitida para outro
+   * destinatário, valem os dados de faturamento; senão, o cadastro do cliente.
+   */
+  const faturamentoEfetivo = state.faturarClienteFinal
+    ? {
+        nome: state.faturamento.nome || state.nome,
+        doc: state.faturamento.doc || "",
+        ie: state.faturamento.ie || "",
+        ...state.faturamento,
+      }
+    : {
+        nome: state.nome,
+        doc: state.doc,
+        ie: state.ie,
+        ...(enderecoPadraoCliente ?? novoEndereco(state.uf)),
+      };
+
+  /** Formata um endereço em linhas legíveis (usado no resumo e no PDF). */
+  const linhasEndereco = (e: {
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade?: string;
+    uf?: string;
+    cep?: string;
+  }) =>
+    [
+      [e.logradouro, e.numero].filter(Boolean).join(", "),
+      [e.complemento, e.bairro].filter(Boolean).join(" · "),
+      [[e.cidade, e.uf || state.uf].filter(Boolean).join(" / "), e.cep].filter(Boolean).join(" · "),
+    ].filter((l) => l && l.trim());
+
 
   const setItem = (key: string, patch: Partial<CarregadoresItem>) =>
     setState((s) => ({
