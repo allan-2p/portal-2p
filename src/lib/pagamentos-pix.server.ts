@@ -132,6 +132,17 @@ export type PixIO = {
     origem: string;
     detalhe: string;
   }): Promise<void>;
+  /** Notifica o dono do pedido sobre a mudança de status do pagamento. */
+  notificar?(entry: {
+    tipo: "pago" | "expirado" | "cancelado";
+    user_id: string;
+    proposta_id: string;
+    numero: string | null;
+    cliente: string | null;
+    txid: string;
+    de: string;
+    para: string;
+  }): Promise<void>;
 };
 
 export const pixIOBanco: PixIO = {
@@ -139,6 +150,10 @@ export const pixIOBanco: PixIO = {
   buscarPorNumero: (numero) => db.getPropostaPorNumero(numero) as Promise<PropostaLike | null>,
   atualizar: (id, patch) => db.atualizarProposta(id, patch as any).then(() => undefined),
   log: (entry) => db.registrarConclusaoLog(entry as any),
+  async notificar(entry) {
+    const { criarNotificacao, montarNotificacaoPix } = await import("./notificacoes.server");
+    await criarNotificacao(montarNotificacaoPix(entry));
+  },
 };
 
 /**
@@ -149,6 +164,7 @@ export function criarPixIOSimulado(propostas: PropostaLike[]) {
   const rows = propostas.map((p) => ({ ...p }));
   const escritas: { proposta_id: string; patch: Record<string, unknown> }[] = [];
   const logs: Record<string, unknown>[] = [];
+  const notificacoes: Record<string, unknown>[] = [];
   const io: PixIO = {
     async buscarPorTxid(txid) {
       return rows.find((r) => String(r["pagamento_txid"] ?? "") === txid) ?? null;
@@ -164,9 +180,13 @@ export function criarPixIOSimulado(propostas: PropostaLike[]) {
     async log(entry) {
       logs.push(entry);
     },
+    async notificar(entry) {
+      notificacoes.push(entry);
+    },
   };
-  return { io, rows, escritas, logs };
+  return { io, rows, escritas, logs, notificacoes };
 }
+
 
 /** Localiza a proposta pelo txid gravado nela ou pelo nº embutido no txid. */
 async function localizarProposta(txid: string, io: PixIO): Promise<PropostaLike | null> {
