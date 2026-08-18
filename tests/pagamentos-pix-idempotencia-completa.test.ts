@@ -132,4 +132,31 @@ describe("Pix — idempotência completa (status e logs)", () => {
     expect(logs).toHaveLength(1);
     expect(rows[0].pagamento_txid).toBe("2P050004XYZ");
   });
+
+  it("notifica o dono do pedido uma única vez por evento", async () => {
+    const { io, notificacoes } = criarPixIOSimulado([pedido({ created_by: "u1", cliente_nome: "ACME" })]);
+    for (let i = 0; i < 5; i++) await processarWebhookPix(pagoPayload(), io);
+    expect(notificacoes).toHaveLength(1);
+    expect(notificacoes[0]).toMatchObject({ tipo: "pago", user_id: "u1", numero: "050004" });
+  });
+
+  it("expiração e cancelamento também geram notificação (uma cada)", async () => {
+    const exp = criarPixIOSimulado([pedido({ created_by: "u1" })]);
+    await processarWebhookPix({ cob: { txid: "2P050004ABC", status: "EXPIRADA" } }, exp.io);
+    await processarWebhookPix({ cob: { txid: "2P050004ABC", status: "EXPIRADA" } }, exp.io);
+    expect(exp.notificacoes.map((n: any) => n.tipo)).toEqual(["expirado"]);
+
+    const can = criarPixIOSimulado([pedido({ created_by: "u1" })]);
+    await processarWebhookPix({ txid: "2P050004ABC", status: "CANCELADA" }, can.io);
+    await processarWebhookPix({ txid: "2P050004ABC", status: "CANCELADA" }, can.io);
+    expect(can.notificacoes.map((n: any) => n.tipo)).toEqual(["cancelado"]);
+  });
+
+  it("pedido sem dono não gera notificação", async () => {
+    const { io, notificacoes, escritas } = criarPixIOSimulado([pedido()]);
+    await processarWebhookPix(pagoPayload(), io);
+    expect(escritas).toHaveLength(1);
+    expect(notificacoes).toHaveLength(0);
+  });
 });
+
