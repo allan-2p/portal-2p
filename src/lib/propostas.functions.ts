@@ -484,3 +484,219 @@ export const atribuirNumeroSapFn = createServerFn({ method: "POST" })
     await db.atualizarProposta(data.propostaId, { numero_sap: numeroSap });
     return { numeroSap };
   });
+
+// ---------------------------------------------------------------------------
+// Leitura/escrita das propostas (banco do Grupo 2P — sempre via servidor)
+// ---------------------------------------------------------------------------
+
+/** Lista propostas de uma organização. */
+export const listarPropostasFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { organizacao?: unknown; select?: unknown; statusIn?: unknown };
+    return {
+      organizacao: typeof i.organizacao === "string" ? i.organizacao : undefined,
+      select: typeof i.select === "string" ? i.select : undefined,
+      statusIn: Array.isArray(i.statusIn) ? i.statusIn.map(String) : undefined,
+    };
+  })
+  .handler(async ({ data }) => {
+    const db = await repo();
+    return await db.listarPropostas(data);
+  });
+
+/** Carrega uma proposta pelo id. */
+export const obterPropostaFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const id = (input as { id?: unknown })?.id;
+    if (typeof id !== "string" || !id) throw new Error("Proposta inválida.");
+    return { id };
+  })
+  .handler(async ({ data }) => {
+    const db = await repo();
+    return await db.getProposta(data.id);
+  });
+
+/** Atualiza apenas o status da proposta. */
+export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { id?: unknown; status?: unknown };
+    if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
+    if (typeof i.status !== "string" || !i.status) throw new Error("Status inválido.");
+    return { id: i.id, status: i.status };
+  })
+  .handler(async ({ data }) => {
+    const db = await repo();
+    await db.atualizarProposta(data.id, { status: data.status });
+    return { ok: true };
+  });
+
+/** Exclui uma proposta (somente administrador do sistema). */
+export const excluirPropostaFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const id = (input as { id?: unknown })?.id;
+    if (typeof id !== "string" || !id) throw new Error("Proposta inválida.");
+    return { id };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!roles) throw new Error("Apenas o administrador do sistema pode excluir propostas.");
+    const db = await repo();
+    await db.excluirProposta(data.id);
+    return { ok: true };
+  });
+
+/**
+ * Conclui o pedido com trava idempotente (só conclui se ainda estiver "Salvo")
+ * e grava a auditoria. Substitui o antigo RPC `concluir_proposta`.
+ */
+export const concluirPropostaFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { id?: unknown; status?: unknown; origem?: unknown; etapa?: unknown };
+    if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
+    if (typeof i.status !== "string" || !i.status) throw new Error("Status inválido.");
+    return {
+      id: i.id,
+      status: i.status,
+      origem: typeof i.origem === "string" ? i.origem : "portal",
+      etapa: typeof i.etapa === "number" ? i.etapa : null,
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    const db = await repo();
+
+    const { data: perfil } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .maybeSingle();
+    const actor = {
+      actor_id: userId as string,
+      actor_email: (perfil as any)?.email ?? null,
+      actor_nome: (perfil as any)?.full_name ?? (perfil as any)?.email ?? null,
+      origem: data.origem,
+    };
+
+    const row = await db.getProposta(data.id);
+    if (!row) {
+      await db.registrarConclusaoLog({
+        ...actor,
+        proposta_id: data.id,
+        resultado: "erro",
+        detalhe: "Proposta não encontrada",
+      });
+      throw new Error("Proposta não encontrada");
+    }
+
+    const base = { ...actor, proposta_id: row.id, numero: row["numero"] ?? null };
+
+    if (data.etapa !== 4) {
+      await db.registrarConclusaoLog({
+        ...base,
+        status: row["status"],
+        resultado: "bloqueada",
+        detalhe: `Conclusão fora da etapa 4 (Finalização): etapa recebida = ${data.etapa ?? "nenhuma"}`,
+      });
+      throw new Error("Conclua o pedido apenas na etapa 4 (Finalização).");
+    }
+
+    const itens = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
+    const totais = (row["totais"] ?? {}) as Record<string, number>;
+    let erro: string | null = null;
+    if (!String(row["cliente_nome"] ?? "").trim()) erro = "Cliente não informado.";
+    else if (!String(row["uf"] ?? "").trim()) erro = "UF de faturamento não informada.";
+    else if (!String(row["finalidade_uso"] ?? "").trim()) erro = "Finalidade de uso não informada.";
+    else if (!String(row["frete_mod"] ?? "").trim()) erro = "Modalidade de frete não informada.";
+    else if (Number(row["frete_valor"] ?? 0) < 0) erro = "Valor de frete inválido.";
+    else if (!itens.length) erro = "A proposta não possui itens.";
+    else if (itens.some((i) => Number(i?.qtd ?? 0) <= 0)) erro = "Existe item com quantidade inválida.";
+    else if (itens.some((i) => Number(i?.valor ?? 0) <= 0)) erro = "Existe item sem valor unitário.";
+    else if (Number(totais["valorTotal"] ?? 0) <= 0) erro = "Total da proposta inválido.";
+
+    if (erro) {
+      await db.registrarConclusaoLog({ ...base, status: row["status"], resultado: "bloqueada", detalhe: erro });
+      throw new Error(erro);
+    }
+
+    if (row["status"] !== "Salvo") {
+      await db.registrarConclusaoLog({
+        ...base,
+        status: row["status"],
+        resultado: "duplicada",
+        detalhe: "Tentativa repetida de conclusão",
+      });
+      return { id: row.id, status: row["status"] as string, already_concluded: true };
+    }
+
+    const atualizada = await db.atualizarProposta(
+      row.id,
+      {
+        status: data.status,
+        finalizado_por: userId,
+        finalizado_por_nome: actor.actor_nome,
+        finalizado_em: new Date().toISOString(),
+      },
+      { status: "eq.Salvo" },
+    );
+
+    if (!atualizada) {
+      await db.registrarConclusaoLog({
+        ...base,
+        status: row["status"],
+        resultado: "duplicada",
+        detalhe: "Tentativa repetida de conclusão",
+      });
+      return { id: row.id, status: row["status"] as string, already_concluded: true };
+    }
+
+    await db.registrarConclusaoLog({ ...base, status: data.status, resultado: "concluida" });
+    return { id: row.id, status: data.status, already_concluded: false };
+  });
+
+/** Registra uma tentativa de conclusão (auditoria do portal). */
+export const registrarConclusaoFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => (input ?? {}) as Record<string, unknown>)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    const { data: perfil } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .maybeSingle();
+    const db = await repo();
+    await db.registrarConclusaoLog({
+      proposta_id: (data["propostaId"] as string) ?? null,
+      numero: (data["numero"] as string) ?? null,
+      status: (data["status"] as string) ?? null,
+      resultado: String(data["resultado"] ?? "tentativa"),
+      origem: String(data["origem"] ?? "portal"),
+      actor_id: userId,
+      actor_email: (perfil as any)?.email ?? null,
+      actor_nome: (perfil as any)?.full_name ?? (perfil as any)?.email ?? null,
+      detalhe: (data["detalhe"] as string) ?? null,
+    });
+    return { ok: true };
+  });
+
+/** Lista o log de conclusões. */
+export const listarConclusoesFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => ({
+    limit: Math.min(Math.max(Number((input as any)?.limit ?? 100) || 100, 1), 500),
+  }))
+  .handler(async ({ data }) => {
+    const db = await repo();
+    return await db.listarConclusaoLog(data.limit);
+  });
