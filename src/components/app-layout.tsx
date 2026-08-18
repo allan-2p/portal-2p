@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getAdminAreas } from "@/lib/admin-guard.functions";
 
 import { AdminSidebar } from "./admin-sidebar";
+import { AccessDenied } from "./access-denied";
 import { cn } from "@/lib/utils";
 import type { AppPath } from "@/lib/routes";
 import { supabase } from "@/integrations/supabase/client";
