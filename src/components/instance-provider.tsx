@@ -98,9 +98,12 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     if (authLoading) return;
     if (user && (q.isLoading || !q.data)) return;
     if (!allowed.includes(instance)) {
-      setInstanceState(defaultInstanceForList(allowed));
+      const next = defaultInstanceForList(allowed);
+      setInstanceState(next);
+      if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, next);
     }
   }, [allowed, instance, authLoading, user, q.isLoading, q.data]);
+
 
   // Aplica atributo no <html> pra CSS reagir.
   useEffect(() => {

@@ -38,19 +38,25 @@ type ProfileGrants = {
 };
 
 function mergeAccess(instances: string[], fromProfiles: ProfileGrants) {
+  // Instâncias liberadas vêm SOMENTE do acesso direto (user_instance_access) e
+  // das instâncias do perfil. Linhas de tela antigas de outra unidade não podem
+  // reabrir uma instância que o perfil não libera (ex.: Closer Carregadores
+  // continuar enxergando a Solar).
+  const inst = new Set(instances);
+  for (const i of fromProfiles.instances) inst.add(i);
+
   const seen = new Set<string>();
   const all: { instance_id: string; feature_key: string }[] = [];
   for (const g of fromProfiles.features) {
+    if (!inst.has(g.instance_id)) continue;
     const k = `${g.instance_id}::${g.feature_key}`;
     if (seen.has(k)) continue;
     seen.add(k);
     all.push(g);
   }
-  const inst = new Set(instances);
-  for (const g of fromProfiles.features) inst.add(g.instance_id);
-  for (const i of fromProfiles.instances) inst.add(i);
   return { instances: [...inst], granted: all };
 }
+
 
 // ---- User self reads ---- //
 

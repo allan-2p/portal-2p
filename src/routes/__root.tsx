@@ -20,6 +20,8 @@ import { SimulationProvider, SimulationBanner } from "@/components/simulation";
 import { supabase } from "@/integrations/supabase/client";
 import { logUserActivity } from "@/lib/activity.functions";
 import { useIdleSignout } from "@/hooks/use-idle-signout";
+import { useAppVersionRefresh } from "@/hooks/use-app-version-refresh";
+
 import { applyAreaAttribute } from "@/lib/admin-area";
 import { AccessDenied } from "@/components/access-denied";
 import { toFriendlyError } from "@/lib/friendly-errors";
@@ -173,6 +175,9 @@ function AreaThemeSync() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useIdleSignout();
+  // Nova publicação detectada → refresh completo, sem cache antigo.
+  useAppVersionRefresh();
+
 
   useEffect(() => {
     let lastUserId: string | null = null;
