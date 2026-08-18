@@ -218,7 +218,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .total .val small{ display:block; font-size:7.6px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--accent-2); margin-bottom:2px; }
 
   /* CONDITIONS */
-  .cond{ margin-top:6mm; display:grid; grid-template-columns:repeat(3,1fr); gap:4mm; }
+  .cond{ margin-top:6mm; display:grid; grid-template-columns:repeat(4,1fr); gap:4mm; }
   .cond div{ border-left:2px solid var(--accent); padding-left:3mm; }
   .cond label{ display:block; font-size:7.2px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:2px; }
   .cond p{ font-size:8.8px; line-height:1.45; }
