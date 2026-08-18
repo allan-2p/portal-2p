@@ -691,7 +691,25 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     }
 
     await db.registrarConclusaoLog({ ...base, status: data.status, resultado: "concluida" });
-    return { id: row.id, status: data.status, already_concluded: false };
+
+    // Cobrança automática (boleto à vista ou Pix). Falha aqui não trava o pedido.
+    let cobranca: Record<string, unknown> | null = null;
+    try {
+      const { gerarCobrancaCheckout } = await import("@/lib/pagamentos-cobranca.server");
+      cobranca = (await gerarCobrancaCheckout(row.id)) as unknown as Record<string, unknown>;
+      if (cobranca?.["erro"]) {
+        await db.registrarConclusaoLog({
+          ...base,
+          status: data.status,
+          resultado: "cobranca_falhou",
+          detalhe: String(cobranca["erro"]).slice(0, 500),
+        });
+      }
+    } catch (e) {
+      cobranca = { gerada: false, erro: (e as Error).message };
+    }
+
+    return { id: row.id, status: data.status, already_concluded: false, cobranca };
     };
 
     // Monitoramento: cada finalização vira uma execução auditável em job_runs.
