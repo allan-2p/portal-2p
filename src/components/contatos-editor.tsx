@@ -232,7 +232,7 @@ export function ContatosEditor({
               <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Checkbox
                   checked={mesmoFinanceiro}
-                  onCheckedChange={(v) => copiarDoPrincipal(v === true)}
+                  onCheckedChange={(v: boolean | "indeterminate") => copiarDoPrincipal(v === true)}
                 />
                 É o mesmo do contato principal
               </label>
