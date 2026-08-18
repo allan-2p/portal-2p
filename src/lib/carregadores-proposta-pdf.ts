@@ -51,6 +51,20 @@ export type PropostaPdfData = {
     comissao: number;
     comissaoPct: number;
   };
+  /** Endereço fiscal (destinatário da nota). */
+  enderecoFaturamento?: {
+    nome?: string | null;
+    doc?: string | null;
+    ie?: string | null;
+    linhas: string[];
+  } | null;
+  /** Endereço de entrega da mercadoria. */
+  enderecoEntrega?: {
+    nome?: string | null;
+    contato?: string | null;
+    telefone?: string | null;
+    linhas: string[];
+  } | null;
   observacoes?: string;
   consultor?: string;
   validadeDias?: number;
