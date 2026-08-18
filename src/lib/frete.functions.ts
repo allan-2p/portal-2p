@@ -35,10 +35,15 @@ export const cotarFrete = createServerFn({ method: "POST" })
     const semPeso = itens.filter((i) => !(i.pesoLiquido > 0)).map((i) => i.nome || i.codigo);
 
     try {
+      if (semPeso.length)
+        throw new Error(
+          `Produtos sem peso bruto cadastrado: ${semPeso.join(", ")}. Cadastre o peso (kg) em Gestão de Produtos para cotar o frete corretamente.`,
+        );
       const r = await cotarFreteFretefy({
         itens,
         valorNota: Number(data.valorNota || 0),
         destino: data.destino,
+        cubagem,
         tipoEntrega: "S",
         ...(data.areaRural !== undefined ? { areaRural: data.areaRural } : {}),
         ...(data.documento !== undefined ? { documento: data.documento } : {}),
