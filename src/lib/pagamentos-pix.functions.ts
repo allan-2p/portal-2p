@@ -34,22 +34,28 @@ export const simularWebhookPixFn = createServerFn({ method: "POST" })
     const txids = [...new Set(eventos.map((e) => e.txid))];
     const numeros = txids.map((t) => (t.match(/\d{6}/) ?? [])[0]).filter(Boolean) as string[];
 
-    const campos =
-      "id, numero, status, organizacao, pagamento_meio, pagamento_status, pagamento_txid, pagamento_e2eid, pagamento_valor";
-    const filtros = [`pagamento_txid.in.(${txids.join(",")})`];
-    if (numeros.length) filtros.push(`numero.in.(${numeros.join(",")})`);
+    const db = await import("@/lib/propostas-db.server");
+    const encontrados: Record<string, any>[] = [];
+    const vistos = new Set<string>();
+    for (const txid of txids) {
+      const porTxid = await db.listarPropostasPorPagamentoTxid(txid);
+      if (porTxid && !vistos.has(porTxid.id)) {
+        vistos.add(porTxid.id);
+        encontrados.push(porTxid);
+      }
+    }
+    for (const numero of numeros) {
+      const row = await db.getPropostaPorNumero(numero);
+      if (row && !vistos.has(row.id)) {
+        vistos.add(row.id);
+        encontrados.push(row);
+      }
+    }
 
-    const { data: rows, error } = await context.supabase
-      .from("propostas")
-      .select(campos)
-      .or(filtros.join(","))
-      .limit(50);
-    if (error) throw new Error(error.message);
-
-    const simulacao = await simularWebhookPix(payload, (rows ?? []) as Record<string, any>[], data.repeticoes ?? 3);
+    const simulacao = await simularWebhookPix(payload, encontrados, data.repeticoes ?? 3);
     return {
       eventos: eventos.map((e) => ({ txid: e.txid, tipo: e.tipo, statusOriginal: e.statusOriginal })),
-      pedidosEncontrados: (rows ?? []).length,
+      pedidosEncontrados: encontrados.length,
       ...simulacao,
     };
   });
