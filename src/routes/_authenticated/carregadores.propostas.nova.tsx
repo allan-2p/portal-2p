@@ -987,17 +987,16 @@ function PropostaCarregadoresPage() {
     // Quem chama concluirPedido já setou saving e status; evita piscar
     if (!saving) setSaving(true);
     try {
-      // Número idempotente: reenvios reutilizam o mesmo número (índice único no banco)
-      if (!numeroRef.current) numeroRef.current = Date.now().toString().slice(-6);
-      const numero = numeroAtual ?? numeroRef.current;
+      // O número da proposta é sequencial e gerado no servidor (a partir de 050000).
       // O backend recalcula e revalida todos os totais (fiscais, MB% e comissão)
       // a partir do catálogo/alíquotas vigentes — a UI só envia os insumos.
       const salvo = await salvarProposta({
         data: {
           propostaId,
-          numero,
+          numero: numeroAtual ?? "",
           propostaNome: state.propostaNome.trim() || null,
-          numeroSap: state.numeroSap.trim() || null,
+          numeroSap: null,
+
 
           cliente: {
             nome: state.nome,
@@ -1030,6 +1029,10 @@ function PropostaCarregadoresPage() {
             .map((i) => ({ produtoId: i.produtoId, qtd: i.qtd, valor: money2(i.valor) })),
         },
       });
+
+      // Número definitivo: sempre o que o servidor gravou.
+      const numero = (salvo as { numero?: string | null }).numero ?? numeroAtual ?? "";
+      numeroRef.current = numero || null;
 
       if ((salvo as { consultor?: string | null }).consultor) {
         setConsultorProposta((salvo as { consultor?: string | null }).consultor ?? null);
