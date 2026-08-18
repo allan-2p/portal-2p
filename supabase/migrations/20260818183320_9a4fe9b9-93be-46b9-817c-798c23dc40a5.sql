@@ -1,0 +1,1 @@
+revoke all on function public.carregadores_padrinhos_lock_owner() from public, anon, authenticated;
