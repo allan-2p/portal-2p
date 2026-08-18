@@ -1,4 +1,4 @@
-import { useCanDelete } from "@/components/permission-gate";
+import { useCan, useCanDelete } from "@/components/permission-gate";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   AlertCircle, Plus, Search, Pencil, Trash2, Building2, Filter, X, Eye,
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
-  ArrowRight, RefreshCw,
+  ArrowRight, RefreshCw, History,
 } from "lucide-react";
 import { sincronizarDonosFn } from "@/lib/owner-sync.functions";
 import { ClientHistoryTab } from "@/components/client-history-tab";
@@ -33,7 +33,7 @@ import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clien
 
 import {
   listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, excluirClienteFn,
-  listConsultoresFn, reenviarClienteFn,
+  listConsultoresFn,
 
 } from "@/lib/clientes.functions";
 import {
@@ -356,18 +356,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   });
 
   // Reenvio manual das integrações (SAP + Salesforce) de um cadastro.
-  const reenviarFn = useServerFn(reenviarClienteFn);
-  const reenviar = useMutation({
-    mutationFn: (id: string) => reenviarFn({ data: { instancia, id } }),
-    onSuccess: (r: any) => {
-      if (r?.sap?.ok) toast.success(`SAP atualizado${r.sap.numero_sap ? ` — código ${r.sap.numero_sap}` : ""}.`);
-      else if (r?.sap) toast.error(`SAP: ${r.sap.erro ?? "falha no envio"}`);
-      if (r?.sf?.ok) toast.success("Salesforce sincronizado.");
-      else if (r?.sf) toast.error(`Salesforce: ${r.sf.erro ?? "falha no envio"}`);
-      qc.invalidateQueries({ queryKey: ["clientes", instancia] });
-    },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao reenviar."),
-  });
 
 
   // Transferência de carteira: realinha o consultor dos cadastros com o dono
