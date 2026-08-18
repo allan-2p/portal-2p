@@ -51,6 +51,20 @@ export type PropostaPdfData = {
     comissao: number;
     comissaoPct: number;
   };
+  /** Endereço fiscal (destinatário da nota). */
+  enderecoFaturamento?: {
+    nome?: string | null;
+    doc?: string | null;
+    ie?: string | null;
+    linhas: string[];
+  } | null;
+  /** Endereço de entrega da mercadoria. */
+  enderecoEntrega?: {
+    nome?: string | null;
+    contato?: string | null;
+    telefone?: string | null;
+    linhas: string[];
+  } | null;
   observacoes?: string;
   consultor?: string;
   validadeDias?: number;
@@ -119,6 +133,40 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
 
 
   const qtdTotal = p.itens.reduce((a, i) => a + i.qtd, 0);
+
+  const blocoEndereco = (
+    titulo: string,
+    dados?: { nome?: string | null; doc?: string | null; ie?: string | null; contato?: string | null; telefone?: string | null; linhas: string[] } | null,
+  ) => {
+    const linhas = (dados?.linhas ?? []).filter((l) => l && l.trim());
+    const meta = [
+      dados?.doc ? `CNPJ / CPF ${dados.doc}` : "",
+      dados?.ie ? `IE ${dados.ie}` : "",
+      dados?.contato ? `Contato ${dados.contato}` : "",
+      dados?.telefone ? `Tel. ${dados.telefone}` : "",
+    ].filter(Boolean);
+    return `
+      <div class="f">
+        <label>${esc(titulo)}</label>
+        <div>
+          ${dados?.nome ? `<b>${esc(dados.nome)}</b><br>` : ""}
+          ${linhas.length ? linhas.map((l) => esc(l)).join("<br>") : "—"}
+          ${meta.length ? `<br><span style="color:var(--muted)">${esc(meta.join(" · "))}</span>` : ""}
+        </div>
+      </div>`;
+  };
+
+  const enderecosHtml =
+    p.enderecoFaturamento || p.enderecoEntrega
+      ? `
+    <div class="sec">
+      <div class="sech"><span>Endereços</span></div>
+      <div class="grid" style="grid-template-columns:repeat(2,1fr)">
+        ${blocoEndereco("Endereço de faturamento", p.enderecoFaturamento)}
+        ${blocoEndereco("Endereço de entrega", p.enderecoEntrega)}
+      </div>
+    </div>`
+      : "";
 
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8">
@@ -282,6 +330,8 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
         </div>
       </div>
     </div>
+
+    ${enderecosHtml}
 
     <div class="sec">
       <div class="sech"><span>Escopo de fornecimento</span></div>

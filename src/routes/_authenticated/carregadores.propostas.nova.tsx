@@ -540,6 +540,38 @@ function PropostaCarregadoresPage() {
     cep: entregaEfetiva.cep,
   };
 
+  /**
+   * Endereço/destinatário fiscal efetivo: quando a nota é emitida para outro
+   * destinatário, valem os dados de faturamento; senão, o cadastro do cliente.
+   */
+  const faturamentoEfetivo = state.faturarClienteFinal
+    ? {
+        ...state.faturamento,
+        nome: state.faturamento.nome || state.nome,
+      }
+    : {
+        nome: state.nome,
+        doc: state.doc,
+        ie: state.ie,
+        ...(enderecoPadraoCliente ?? novoEndereco(state.uf)),
+      };
+
+  /** Formata um endereço em linhas legíveis (usado no resumo e no PDF). */
+  const linhasEndereco = (e: {
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade?: string;
+    uf?: string;
+    cep?: string;
+  }) =>
+    [
+      [e.logradouro, e.numero].filter(Boolean).join(", "),
+      [e.complemento, e.bairro].filter(Boolean).join(" · "),
+      [[e.cidade, e.uf || state.uf].filter(Boolean).join(" / "), e.cep].filter(Boolean).join(" · "),
+    ].filter((l) => l && l.trim());
+
 
   const setItem = (key: string, patch: Partial<CarregadoresItem>) =>
     setState((s) => ({
@@ -904,6 +936,17 @@ function PropostaCarregadoresPage() {
           contribuinte: state.contribuinte,
         },
         finalidadeUso: finalidadeUsoPdf,
+        enderecoFaturamento: {
+          nome: faturamentoEfetivo.nome || state.nome,
+          doc: faturamentoEfetivo.doc || state.doc,
+          ie: faturamentoEfetivo.ie || state.ie,
+          linhas: linhasEndereco(faturamentoEfetivo),
+        },
+        enderecoEntrega: {
+          contato: entregaEfetiva.contato || null,
+          telefone: entregaEfetiva.telefone || null,
+          linhas: linhasEndereco(entregaEfetiva),
+        },
 
         itens: state.itens
           .filter((i) => i.produtoId)
@@ -951,7 +994,7 @@ function PropostaCarregadoresPage() {
   const pdfHtml = useMemo(
     () => buildHtml(d),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, produtos, config, d, usarLogoCliente, logoCliente, observacoesFinal, consultorProposta],
+    [state, produtos, config, d, usarLogoCliente, logoCliente, observacoesFinal, consultorProposta, enderecoPadraoCliente],
   );
 
   function montarPdfHtml() {
@@ -2054,16 +2097,19 @@ function PropostaCarregadoresPage() {
                     v={`${labelTipoNf[state.tipoNf]} · ${labelFinalidadeUso[state.finalidadeUso]} · ${state.uf || "—"}`}
                   />
                   <ResumoLinha
-                    k="Entrega"
+                    k="Endereço de faturamento"
                     v={
                       [
-                        [entregaEfetiva.logradouro, entregaEfetiva.numero].filter(Boolean).join(", "),
-                        [entregaEfetiva.cidade, entregaEfetiva.uf || state.uf].filter(Boolean).join(" / "),
-                        entregaEfetiva.cep,
+                        faturamentoEfetivo.nome && state.faturarClienteFinal ? faturamentoEfetivo.nome : "",
+                        ...linhasEndereco(faturamentoEfetivo),
                       ]
                         .filter(Boolean)
                         .join(" · ") || "—"
                     }
+                  />
+                  <ResumoLinha
+                    k="Endereço de entrega"
+                    v={linhasEndereco(entregaEfetiva).join(" · ") || "—"}
                   />
                   <ResumoLinha
                     k="Frete"
