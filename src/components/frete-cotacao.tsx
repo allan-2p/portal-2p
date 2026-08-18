@@ -57,19 +57,33 @@ export function FreteCotacao({
     documento,
   });
   const ultima = useRef<string>("");
+  // Marca se já adotamos uma linha de base (proposta salva com frete já cotado).
+  const baseDefinida = useRef(false);
 
   useEffect(() => {
-    if (ultima.current === assinatura) return;
-    // Qualquer mudança que influencie o frete descarta a cotação anterior.
-    if (ultima.current) {
-      setOpcoes([]);
-      onInvalidate?.();
+    if (!podeCotar) return;
+
+    // Primeira vez que os dados ficam completos: se a proposta já tem uma
+    // transportadora salva, adotamos a cotação existente como válida e não
+    // recalculamos só por abrir a página.
+    if (!baseDefinida.current) {
+      baseDefinida.current = true;
+      ultima.current = assinatura;
+      if (selecionada) return;
+      void executar();
+      return;
     }
-    if (!podeCotar || loading) return;
+
+    if (ultima.current === assinatura) return;
+    // Mudou algo que interfere no frete: descarta a cotação anterior e recalcula.
+    setOpcoes([]);
+    onInvalidate?.();
+    if (loading) return;
     ultima.current = assinatura;
     void executar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assinatura, podeCotar]);
+
 
   async function executar() {
     setLoading(true);
