@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { JobRunsPanel } from "@/components/admin/job-runs-panel";
+import { PixSimuladorPanel } from "@/components/admin/pix-simulador-panel";
 
 export const Route = createFileRoute("/_authenticated/admin/logs/gatilhos")({
   head: () => ({
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/admin/logs/gatilhos")({
             </p>
           </header>
           <JobRunsPanel />
+          <PixSimuladorPanel />
         </div>
       </AppLayout>
     </AdminRouteGuard>
