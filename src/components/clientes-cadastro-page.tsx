@@ -676,10 +676,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                   <div>
                     <div className="text-sm font-semibold">Cliente contribuinte do ICMS</div>
-                    <div className="text-xs text-muted-foreground">Define o cálculo de DIFAL nas propostas.</div>
+                    <div className="text-xs text-muted-foreground">Definido automaticamente pela consulta do CNPJ (Inscrição Estadual). Não editável.</div>
                   </div>
-                  <Switch checked={form.contribuinte} onCheckedChange={(v) => set("contribuinte", v)} />
+                  <Badge variant={form.contribuinte ? "default" : "secondary"}>
+                    {form.contribuinte ? "Contribuinte" : "Não contribuinte"}
+                  </Badge>
                 </div>
+
                 {(form.cnaes_secundarios ?? []).length > 0 && (
                   <div className="sm:col-span-2">
                     <Label className="text-xs">CNAEs secundários</Label>
