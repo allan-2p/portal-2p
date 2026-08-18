@@ -2271,33 +2271,47 @@ function PropostaCpoPage() {
           ) : null}
 
           {/* TOTAIS FINAIS — recalculam a cada mudança de preço/quantidade/frete */}
-          <div className="col-span-full rounded-2xl border-2 border-primary/60 bg-background/95 backdrop-blur px-5 py-5 shadow-2xl ring-1 ring-primary/20">
-            <div className="flex items-center justify-between gap-3 mb-5">
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-widest text-primary">Totais finais</span>
-              </div>
-              <span className="text-[11px] text-muted-foreground">atualiza automaticamente</span>
-            </div>
+          {etapa >= 3 ? (
+            <div className="col-span-full rounded-2xl border border-border/70 bg-card/95 backdrop-blur px-4 py-4 shadow-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="rounded-lg bg-primary/10 p-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-wider text-primary">Totais finais</div>
+                    <div className="text-[10px] text-muted-foreground">atualiza automaticamente</div>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <TotalRow label="Itens" value={fmtBRL(d.valorItens)} hint="Valor bruto dos produtos com IPI" />
-              <TotalRow label="Valor líquido" value={fmtBRL(d.rl)} hint="Sem IPI, ICMS, PIS/COFINS" />
-              <TotalRow
-                label={`Frete (${state.freteMod || "—"})`}
-                value={fmtBRL(state.freteValor)}
-                hint={state.freteMod === "CIF" ? "Frete incluso no total" : undefined}
-              />
-              <div className="rounded-xl border-2 border-primary/70 bg-primary/10 px-4 sm:px-5 py-4 flex flex-col justify-center">
-                <div className="text-[10px] uppercase tracking-wider text-primary/80 font-semibold">Total da proposta</div>
-                <div className="text-xs text-muted-foreground mb-1">Itens + frete</div>
-                <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-primary tracking-tight">
-                  {fmtBRL(d.valorTotalProposta)}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-stretch gap-2 sm:gap-3">
+                    <TotalRow
+                      label="Valor Bruto"
+                      value={fmtBRL(d.valorItens)}
+                      hint="Produtos com IPI"
+                    />
+                    <TotalRow
+                      label="Valor líquido"
+                      value={fmtBRL(d.rl)}
+                      hint="Sem IPI/ICMS/PIS-COFINS"
+                    />
+                    <TotalRow
+                      label={`Frete (${state.freteMod || "—"})`}
+                      value={fmtBRL(state.freteValor)}
+                      hint={state.freteMod === "CIF" ? "Incluso no total" : undefined}
+                    />
+                    <TotalRow
+                      label="Total da proposta"
+                      value={fmtBRL(d.valorTotalProposta)}
+                      strong
+                      hint="Valor bruto + frete"
+                    />
+                  </div>
                 </div>
               </div>
-
             </div>
-          </div>
+          ) : null}
         </div>
 
 
@@ -2669,15 +2683,17 @@ function DreRow({
   );
 }
 
-/** Linha do bloco de totais finais (etapa de produtos). */
+/** Card compacto do bloco de totais finais (etapa de produtos). */
 function TotalRow({
   label,
   value,
   hint,
+  strong,
 }: {
   label: string;
   value: string;
   hint?: string;
+  strong?: boolean;
 }) {
   const anterior = useRef(value);
   const [flash, setFlash] = useState(false);
@@ -2692,22 +2708,28 @@ function TotalRow({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-4 rounded-xl border px-4 sm:px-5 py-4 transition-colors duration-500",
-        flash ? "border-primary/60 bg-primary/10" : "border-border/60 bg-muted/30",
+        "flex-1 min-w-[140px] rounded-xl border px-3 py-2.5 transition-colors duration-500 flex flex-col justify-center",
+        strong
+          ? "border-primary/60 bg-primary/10"
+          : flash
+            ? "border-primary/50 bg-primary/5"
+            : "border-border/60 bg-muted/30",
       )}
     >
-      <div className="min-w-0">
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium truncate">
-          {label}
-        </div>
-        {hint ? <div className="text-[10px] text-muted-foreground/70 truncate">{hint}</div> : null}
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium truncate">
+        {label}
       </div>
-      <div className="text-lg sm:text-xl font-bold tabular-nums text-foreground shrink-0">
+      <div
+        className={cn(
+          "text-base sm:text-lg font-bold tabular-nums tracking-tight truncate",
+          strong ? "text-primary" : "text-foreground",
+        )}
+      >
         {value}
       </div>
+      {hint ? <div className="text-[9px] text-muted-foreground/70 truncate">{hint}</div> : null}
     </div>
   );
-
 }
 
 /** Linha do resumo do pedido (etapa de finalização). */
