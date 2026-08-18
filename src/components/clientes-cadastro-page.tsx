@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { sincronizarDonosFn } from "@/lib/owner-sync.functions";
 import { ClientHistoryTab } from "@/components/client-history-tab";
+import { ClienteIntegracaoHistorico } from "@/components/cliente-integracao-historico";
+
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
