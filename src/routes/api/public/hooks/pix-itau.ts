@@ -8,6 +8,11 @@ import { createFileRoute } from "@tanstack/react-router";
  *   https://<dominio>/api/public/hooks/pix-itau?token=<ITAU_PIX_WEBHOOK_SECRET>
  * (o token também é aceito no header `x-webhook-token`).
  *
+ * Integridade e anti-replay: quando `ITAU_PIX_WEBHOOK_HMAC_SECRET` está
+ * configurado, o header `x-webhook-signature: t=<epoch>,v1=<hmac_sha256>`
+ * é obrigatório — HMAC de `<timestamp>.<corpo bruto>`, com janela de 5
+ * minutos e bloqueio de reenvio idêntico.
+ *
  * Toda chamada fica registrada em Gatilhos e pode ser reprocessada.
  */
 
@@ -42,9 +47,24 @@ export const Route = createFileRoute("/api/public/hooks/pix-itau")({
         if (!process.env["ITAU_PIX_WEBHOOK_SECRET"]) return json({ ok: false, erro: "webhook não configurado" }, 503);
         if (!tokenValido(request)) return new Response("Unauthorized", { status: 401 });
 
+        const rawBody = await request.text();
+
+        const { validarAssinaturaWebhook } = await import("@/lib/webhook-assinatura.server");
+        const check = await validarAssinaturaWebhook({
+          rawBody,
+          headers: request.headers,
+          segredo: process.env["ITAU_PIX_WEBHOOK_HMAC_SECRET"],
+          toleranciaSegundos: 300,
+        });
+        if (!check.ok) {
+          // Duplicado é resposta 200 de propósito: o PSP não deve reenviar.
+          if (check.status === 409) return json({ ok: true, duplicado: true, motivo: check.erro });
+          return json({ ok: false, erro: check.erro }, check.status);
+        }
+
         let payload: Record<string, unknown> = {};
         try {
-          payload = (await request.json()) as Record<string, unknown>;
+          payload = JSON.parse(rawBody) as Record<string, unknown>;
         } catch {
           return json({ ok: false, erro: "payload inválido (JSON esperado)" }, 400);
         }
