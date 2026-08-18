@@ -27,6 +27,19 @@ export async function sincronizarCliente(
   const { logIntegrationEvent } = await import("./integration-logs.server");
   const db = await import("./clientes-db.server");
 
+  // Atualização de cadastro: recupera os vínculos já gravados para que o SAP
+  // atualize o KUNNR existente e o Salesforce atualize a mesma Account/Contact
+  // em vez de criar registros duplicados.
+  let atual: Record<string, any> | null = null;
+  try {
+    atual = (await db.getClienteById(instancia, clienteId)) as Record<string, any> | null;
+  } catch (err) {
+    console.error("[clientes] não foi possível ler o cadastro atual", err);
+  }
+  const numeroSapAtual = cliente["numero_sap"] ?? atual?.["numero_sap"] ?? null;
+  const sfAccountAtual = cliente["sf_account_id"] ?? atual?.["sf_account_id"] ?? null;
+  const sfContactAtual = cliente["sf_contact_id"] ?? atual?.["sf_contact_id"] ?? null;
+
   const principal = Array.isArray(cliente["contatos"])
     ? cliente["contatos"].find((c: any) => c?.tipo === "principal")
     : null;
@@ -54,6 +67,7 @@ export async function sincronizarCliente(
     uf: base.uf,
     cep: cliente["cep"] ?? null,
     vendedor_sap: extras.vendedorSap ?? null,
+    numero_sap: numeroSapAtual,
   };
 
   await logIntegrationEvent({
@@ -87,6 +101,7 @@ export async function sincronizarCliente(
     uf: String(cliente["uf"] ?? ""),
     municipio_ibge: cliente["municipio_ibge"],
     vendedor_sap: extras.vendedorSap ?? null,
+    numero_sap: numeroSapAtual,
   });
 
   await logIntegrationEvent({
@@ -131,6 +146,8 @@ export async function sincronizarCliente(
     contato_email: cliente["contato_email"] ?? principal?.emails?.[0] ?? null,
     owner_sf_id: extras.ownerSfId ?? null,
     organizacao: cliente["organizacao"] ?? null,
+    sf_account_id: sfAccountAtual,
+    sf_contact_id: sfContactAtual,
   };
 
   await logIntegrationEvent({
@@ -209,8 +226,8 @@ export async function sincronizarCliente(
     const contatosDb = await import("./contatos-db.server");
     const { sincronizarContatosSalesforce } = await import("./salesforce-clientes.server");
 
-    const numeroSap = (patch["numero_sap"] as string | undefined) ?? cliente["numero_sap"] ?? null;
-    const sfAccountId = (patch["sf_account_id"] as string | undefined) ?? cliente["sf_account_id"] ?? null;
+    const numeroSap = (patch["numero_sap"] as string | undefined) ?? numeroSapAtual;
+    const sfAccountId = (patch["sf_account_id"] as string | undefined) ?? sfAccountAtual;
 
     const salvos = await contatosDb.salvarContatos(
       instancia,
