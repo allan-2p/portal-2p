@@ -51,3 +51,13 @@ export function docValido(v: string): boolean {
   if (d.length === 11) return cpfValido(d);
   return false;
 }
+
+/** Máscara exclusiva de CNPJ (cadastro de clientes aceita só CNPJ). */
+export function mascaraCnpj(v: string): string {
+  const d = soDigitos(v).slice(0, 14);
+  return d
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+}
