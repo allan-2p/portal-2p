@@ -921,6 +921,7 @@ function PropostaCpoPage() {
         },
         logoCliente: usarLogoCliente ? logoCliente : null,
         consultor: consultorProposta ?? undefined,
+        formaPagamento: state.formaPagamento || null,
       });
 
   const pdfHtml = useMemo(
