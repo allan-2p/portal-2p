@@ -81,7 +81,7 @@ import {
 import { ratearComissao, VALOR_INDICACAO, type Regime, type RateioLinha } from "@/lib/cpo-comissao";
 import { useAuth } from "@/hooks/use-auth";
 import { registrarConclusao } from "@/lib/cpo-conclusao-log";
-import { salvarPropostaCpo } from "@/lib/cpo-proposals.functions";
+import { salvarPropostaCpo, atribuirNumeroSapFn } from "@/lib/cpo-proposals.functions";
 
 
 import { buildPropostaPdfHtml } from "@/lib/cpo-proposta-pdf";
@@ -332,6 +332,7 @@ function PropostaCpoPage() {
 
   const listClientes = useServerFn(listClientesFn);
   const salvarProposta = useServerFn(salvarPropostaCpo);
+  const atribuirNumeroSap = useServerFn(atribuirNumeroSapFn);
   const clientesQ = useQuery({
     queryKey: ["cpo-clientes-cadastro"],
     queryFn: async () => {
@@ -1034,6 +1035,13 @@ function PropostaCpoPage() {
             invalidate();
             return;
           }
+          // Nº SAP só existe após a conclusão.
+          try {
+            const { numeroSap } = await atribuirNumeroSap({ data: { propostaId } });
+            if (numeroSap) setState((s) => ({ ...s, numeroSap }));
+          } catch {
+            /* o número pode ser atribuído depois; não bloqueia a conclusão */
+          }
         }
 
 
@@ -1075,6 +1083,12 @@ function PropostaCpoPage() {
           toast.info(`Pedido ${numero} já havia sido concluído (${linha.status}).`);
           invalidate();
           return;
+        }
+        try {
+          const { numeroSap } = await atribuirNumeroSap({ data: { propostaId: inserida.id } });
+          if (numeroSap) setState((s) => ({ ...s, numeroSap }));
+        } catch {
+          /* o número pode ser atribuído depois; não bloqueia a conclusão */
         }
       }
 

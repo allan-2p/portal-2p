@@ -269,22 +269,18 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
         `CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação da diretoria.`,
       );
 
-    // Nº SAP: gerado automaticamente quando não informado. Em atualizações,
-    // preserva o número já atribuído para manter a rastreabilidade do pedido.
+    // Nº SAP: a proposta nasce SEM número. Ele só é atribuído na conclusão
+    // (atribuirNumeroSapFn). Aqui apenas preservamos o que já existir.
     let numeroSap = data.numeroSap?.trim() || null;
-    if (!numeroSap) {
-      if (data.propostaId) {
-        const { data: atualSap } = await supabase
-          .from("cpo_proposals")
-          .select("numero_sap")
-          .eq("id", data.propostaId)
-          .maybeSingle();
-        numeroSap = (atualSap as any)?.numero_sap?.trim() || null;
-      }
-      if (!numeroSap) {
-        numeroSap = await gerarNumeroSap(supabase);
-      }
+    if (!numeroSap && data.propostaId) {
+      const { data: atualSap } = await supabase
+        .from("cpo_proposals")
+        .select("numero_sap")
+        .eq("id", data.propostaId)
+        .maybeSingle();
+      numeroSap = (atualSap as any)?.numero_sap?.trim() || null;
     }
+
 
     // Padrinho da indicação: valida o vínculo e fotografa o nome na proposta.
     let padrinhoId: string | null = null;
@@ -457,4 +453,34 @@ export const salvarPropostaCpo = createServerFn({ method: "POST" })
       totais: payload.totais,
       consultor: consultor.nome,
     };
+  });
+
+/**
+ * Atribui o Nº SAP a uma proposta no momento da conclusão.
+ * Idempotente: se a proposta já tiver número, devolve o existente.
+ */
+export const atribuirNumeroSapFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const id = (input as { propostaId?: unknown })?.propostaId;
+    if (typeof id !== "string" || !id) throw new Error("Proposta inválida.");
+    return { propostaId: id };
+  })
+  .handler(async ({ data, context }) => {
+    const supabase = (context as any).supabase;
+    const { data: atual } = await supabase
+      .from("cpo_proposals")
+      .select("numero_sap")
+      .eq("id", data.propostaId)
+      .maybeSingle();
+    const existente = (atual as any)?.numero_sap?.trim() || null;
+    if (existente) return { numeroSap: existente as string };
+
+    const numeroSap = await gerarNumeroSap(supabase);
+    const { error } = await supabase
+      .from("cpo_proposals")
+      .update({ numero_sap: numeroSap })
+      .eq("id", data.propostaId);
+    if (error) throw new Error(error.message);
+    return { numeroSap };
   });
