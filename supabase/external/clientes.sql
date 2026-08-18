@@ -71,3 +71,20 @@ create index if not exists clientes_razao_social_idx on public.clientes (razao_s
 -- Acesso apenas pelo backend do portal (chave secreta do projeto).
 grant all on public.clientes to service_role;
 alter table public.clientes enable row level security;
+
+-- ---------------------------------------------------------------------------
+-- Integração SAP + Salesforce (rodar também no projeto grupo-2p)
+-- ---------------------------------------------------------------------------
+alter table public.clientes add column if not exists finalidade text;          -- Revenda | Industrialização | Uso e Consumo
+alter table public.clientes add column if not exists tabela_preco text;        -- PLTYP (ex.: 2P-0001)
+alter table public.clientes add column if not exists condicao_pgto_sap text;   -- ZTERM
+alter table public.clientes add column if not exists numero_sap text;          -- KUNNR devolvido pelo SAP
+alter table public.clientes add column if not exists sap_status text;          -- enviado | erro
+alter table public.clientes add column if not exists sap_erro text;
+alter table public.clientes add column if not exists sf_account_id text;
+alter table public.clientes add column if not exists sf_contact_id text;
+alter table public.clientes add column if not exists sf_status text;           -- enviado | erro
+alter table public.clientes add column if not exists sf_erro text;
+alter table public.clientes add column if not exists sincronizado_em timestamptz;
+
+create index if not exists clientes_numero_sap_idx on public.clientes (numero_sap);
