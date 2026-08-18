@@ -90,6 +90,23 @@ export async function excluirProposta(id: string): Promise<void> {
   await rest(`propostas?id=eq.${id}`, { method: "DELETE" });
 }
 
+/** Nº da proposta: sequencial de 6 dígitos (zeros à esquerda) a partir de 050000. */
+export const NUMERO_PROPOSTA_INICIAL = 50000;
+
+export async function proximoNumeroProposta(organizacao = "carregadores"): Promise<string> {
+  const params = new URLSearchParams({
+    select: "numero",
+    organizacao: `eq.${organizacao}`,
+    numero: "not.is.null",
+    order: "numero.desc",
+    limit: "1",
+  });
+  const rows = (await rest(`propostas?${params}`)) ?? [];
+  const atual = Number(String(rows[0]?.numero ?? "").replace(/\D/g, "")) || 0;
+  const proximo = Math.max(atual + 1, NUMERO_PROPOSTA_INICIAL);
+  return String(proximo).padStart(6, "0");
+}
+
 /** Próximo Nº SAP: 6 dígitos, apenas números. */
 export async function proximoNumeroSap(): Promise<string> {
   const params = new URLSearchParams({
