@@ -11,6 +11,7 @@ import {
   type CarregadoresState,
   type CarregadoresUf,
 } from "@/lib/carregadores";
+import { podeCancelarProposta } from "@/lib/proposta-status";
 
 export type SalvarPropostaInput = {
   propostaId: string | null;
