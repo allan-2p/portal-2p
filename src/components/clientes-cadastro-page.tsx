@@ -873,9 +873,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
+              {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
               {!isLoading && rows.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                   <Building2 className="h-6 w-6 mx-auto mb-2 opacity-50" />
                   {clientes.length === 0
                     ? "Nenhum cadastro ainda — clique em “Novo cadastro”."
@@ -884,6 +884,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               )}
               {rows.map((c) => (
                 <tr key={c.id} className="hover:bg-surface-2/40 cursor-pointer" onClick={() => setDetalhe(c)}>
+                  <td className="px-4 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                    {c.numero_sap ?? "—"}
+                  </td>
                   <td className="px-4 py-2">
                     <div className="font-medium"><Marca texto={c.razao_social} termo={q} /></div>
                     {c.nome_fantasia && <div className="text-xs text-muted-foreground">{c.nome_fantasia}</div>}
