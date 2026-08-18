@@ -1,7 +1,9 @@
 -- Tabela universal de cadastro de clientes.
--- Rode este mesmo script nos DOIS projetos externos (Solar e Carregadores).
--- Solar        -> organizacao = '2P Solar'
--- Carregadores -> organizacao = '2P Carregadores'
+-- Rode este script no projeto único grupo-2p.
+-- As unidades são separadas pelas colunas:
+--   organizacao = '2P Solar' | '2P Carregadores'
+--   instancia   = 'solar'    | 'carregadores'
+
 
 create extension if not exists "pgcrypto";
 
