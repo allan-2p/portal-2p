@@ -58,6 +58,7 @@ import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminPerfisRouteImport } from './routes/_authenticated/admin.perfis'
 import { Route as AuthenticatedAdminModulosSolarRouteImport } from './routes/_authenticated/admin.modulos-solar'
 import { Route as AuthenticatedAdminModeracaoRouteImport } from './routes/_authenticated/admin.moderacao'
+import { Route as AuthenticatedAdminMicroinversoresSolarRouteImport } from './routes/_authenticated/admin.microinversores-solar'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
 import { Route as AuthenticatedAdminIntegracoesRouteImport } from './routes/_authenticated/admin.integracoes'
 import { Route as AuthenticatedAdminFreteRegrasRouteImport } from './routes/_authenticated/admin.frete-regras'
@@ -377,6 +378,12 @@ const AuthenticatedAdminModeracaoRoute =
     path: '/admin/moderacao',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminMicroinversoresSolarRoute =
+  AuthenticatedAdminMicroinversoresSolarRouteImport.update({
+    id: '/admin/microinversores-solar',
+    path: '/admin/microinversores-solar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminMetasRoute = AuthenticatedAdminMetasRouteImport.update({
   id: '/admin/metas',
   path: '/admin/metas',
@@ -622,6 +629,7 @@ export interface FileRoutesByFullPath {
   '/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/admin/microinversores-solar': typeof AuthenticatedAdminMicroinversoresSolarRoute
   '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/admin/modulos-solar': typeof AuthenticatedAdminModulosSolarRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
@@ -709,6 +717,7 @@ export interface FileRoutesByTo {
   '/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/admin/microinversores-solar': typeof AuthenticatedAdminMicroinversoresSolarRoute
   '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/admin/modulos-solar': typeof AuthenticatedAdminModulosSolarRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
@@ -797,6 +806,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
   '/_authenticated/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
+  '/_authenticated/admin/microinversores-solar': typeof AuthenticatedAdminMicroinversoresSolarRoute
   '/_authenticated/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/_authenticated/admin/modulos-solar': typeof AuthenticatedAdminModulosSolarRoute
   '/_authenticated/admin/perfis': typeof AuthenticatedAdminPerfisRoute
@@ -887,6 +897,7 @@ export interface FileRouteTypes {
     | '/admin/frete-regras'
     | '/admin/integracoes'
     | '/admin/metas'
+    | '/admin/microinversores-solar'
     | '/admin/moderacao'
     | '/admin/modulos-solar'
     | '/admin/perfis'
@@ -974,6 +985,7 @@ export interface FileRouteTypes {
     | '/admin/frete-regras'
     | '/admin/integracoes'
     | '/admin/metas'
+    | '/admin/microinversores-solar'
     | '/admin/moderacao'
     | '/admin/modulos-solar'
     | '/admin/perfis'
@@ -1061,6 +1073,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/frete-regras'
     | '/_authenticated/admin/integracoes'
     | '/_authenticated/admin/metas'
+    | '/_authenticated/admin/microinversores-solar'
     | '/_authenticated/admin/moderacao'
     | '/_authenticated/admin/modulos-solar'
     | '/_authenticated/admin/perfis'
@@ -1495,6 +1508,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminModeracaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/microinversores-solar': {
+      id: '/_authenticated/admin/microinversores-solar'
+      path: '/admin/microinversores-solar'
+      fullPath: '/admin/microinversores-solar'
+      preLoaderRoute: typeof AuthenticatedAdminMicroinversoresSolarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/metas': {
       id: '/_authenticated/admin/metas'
       path: '/admin/metas'
@@ -1888,6 +1908,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminFreteRegrasRoute: typeof AuthenticatedAdminFreteRegrasRoute
   AuthenticatedAdminIntegracoesRoute: typeof AuthenticatedAdminIntegracoesRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
+  AuthenticatedAdminMicroinversoresSolarRoute: typeof AuthenticatedAdminMicroinversoresSolarRoute
   AuthenticatedAdminModeracaoRoute: typeof AuthenticatedAdminModeracaoRoute
   AuthenticatedAdminModulosSolarRoute: typeof AuthenticatedAdminModulosSolarRoute
   AuthenticatedAdminPerfisRoute: typeof AuthenticatedAdminPerfisRoute
@@ -1938,6 +1959,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminFreteRegrasRoute: AuthenticatedAdminFreteRegrasRoute,
   AuthenticatedAdminIntegracoesRoute: AuthenticatedAdminIntegracoesRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
+  AuthenticatedAdminMicroinversoresSolarRoute:
+    AuthenticatedAdminMicroinversoresSolarRoute,
   AuthenticatedAdminModeracaoRoute: AuthenticatedAdminModeracaoRoute,
   AuthenticatedAdminModulosSolarRoute: AuthenticatedAdminModulosSolarRoute,
   AuthenticatedAdminPerfisRoute: AuthenticatedAdminPerfisRoute,
