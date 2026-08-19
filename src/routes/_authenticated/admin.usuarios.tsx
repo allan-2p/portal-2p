@@ -621,8 +621,10 @@ function PortalTable({
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
+
 }
 
 function UserModal({
