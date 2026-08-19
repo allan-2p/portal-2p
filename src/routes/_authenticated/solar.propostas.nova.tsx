@@ -368,10 +368,11 @@ function NovaPropostaSolarPage() {
     () => money2(itens.reduce((s, i) => s + i.valor * i.qtd, 0)),
     [itens],
   );
-  const cupom = useMemo(
-    () => (cuponsQ.data ?? []).find((c) => c.codigo === cupomCodigo && c.ativo) ?? null,
-    [cuponsQ.data, cupomCodigo],
-  );
+  const cupom = useMemo(() => {
+    const alvo = cupomCodigo.trim().toUpperCase();
+    if (!alvo) return null;
+    return (cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo && c.ativo) ?? null;
+  }, [cuponsQ.data, cupomCodigo]);
   const desconto = useMemo(() => {
     if (!cupom) return 0;
     let d = 0;
