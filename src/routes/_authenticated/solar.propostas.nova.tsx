@@ -201,6 +201,15 @@ function NovaPropostaSolarPage() {
   const [pdfHtml, setPdfHtml] = useState("");
 
   const itens = modo === "calculadora" ? itensCalc : itensLista;
+  /** No modo calculadora, itens extras (manuais) ficam agrupados no final. */
+  const itensOrdenados = useMemo(
+    () =>
+      modo === "calculadora"
+        ? [...itens.filter((i) => i.origem !== "manual"), ...itens.filter((i) => i.origem === "manual")]
+        : itens,
+    [itens, modo],
+  );
+
   const setItens = modo === "calculadora" ? setItensCalc : setItensLista;
 
   // calculadora
