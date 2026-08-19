@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
-import { ModeracaoPlaceholder, PlaceholderLink } from "@/components/admin/moderacao-placeholder";
+import { PlaceholderLink } from "@/components/admin/moderacao-placeholder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
