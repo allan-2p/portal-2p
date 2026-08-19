@@ -477,9 +477,8 @@ function NovaPropostaSolarPage() {
     cep: entregaDiferente ? String(entrega['cep'] ?? "") : String(cliente?.['cep'] ?? ""),
   };
 
-  /** Proposta em PDF (janela de impressão do navegador). */
-  function abrirPdf() {
-    if (!itens.length) return toast.error("Adicione produtos antes de gerar o PDF.");
+  /** Dados da proposta para o PDF. */
+  function montarPdfDados() {
     const linhasEnd = (o: Record<string, any>) =>
       [
         [o['logradouro'], o['numero']].filter(Boolean).join(", "),
@@ -488,7 +487,7 @@ function NovaPropostaSolarPage() {
       ].filter((l) => String(l ?? "").trim());
 
     const faturamentoBase = faturarClienteFinal ? fat : (cliente ?? {});
-    const dados = {
+    return {
       numero,
       propostaNome,
       cliente: {
@@ -533,7 +532,18 @@ function NovaPropostaSolarPage() {
         ? { distribuicao: resultado.distribuicao, comprimentos: resultado.comprimentos }
         : null,
     };
+  }
 
+  /** Abre a prévia da proposta (modal). */
+  function abrirPreviewPdf() {
+    if (!itens.length) return toast.error("Adicione produtos antes de gerar o PDF.");
+    setPdfHtml(buildSolarPropostaPdfHtml(montarPdfDados()));
+    setPreviewAberto(true);
+  }
+
+  /** Baixa/imprime a proposta em PDF. */
+  function baixarPdf() {
+    const dados = montarPdfDados();
     const html = buildSolarPropostaPdfHtml(dados);
     const win = window.open("", "_blank");
     if (!win) return toast.error("Permita pop-ups para gerar o PDF.");
@@ -543,6 +553,7 @@ function NovaPropostaSolarPage() {
     win.focus();
     setTimeout(() => win.print(), 600);
   }
+
 
   return (
     <AppLayout>
