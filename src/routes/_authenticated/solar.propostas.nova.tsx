@@ -624,17 +624,35 @@ function NovaPropostaSolarPage() {
 
         {etapa === 3 && (
           <section className="space-y-5">
-            <div className="glass rounded-2xl p-5 space-y-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <ModoBotao ativo={modo === "calculadora"} onClick={() => setModo("calculadora")} icon={Calculator}>
-                  Realizar Proposta (Calculadora 2P)
-                </ModoBotao>
-                <ModoBotao ativo={modo === "lista"} onClick={() => setModo("lista")} icon={ListPlus}>
-                  Lista de produtos
-                </ModoBotao>
-                <div className="ml-auto flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Tabela de preço</span>
-                  <Select value={listaPreco} onValueChange={trocarTabela}>
+            <div className="glass rounded-2xl p-5 space-y-4 relative overflow-hidden">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                {/* Seleção consolidada estilo slide */}
+                <div className="relative grid grid-cols-2 gap-1 rounded-2xl border border-border bg-surface-2 p-1 w-full lg:max-w-[520px]">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-primary/15 border border-primary/40 transition-transform duration-300 ease-out",
+                      modo === "lista" && "translate-x-[calc(100%+0.25rem)]",
+                    )}
+                  />
+                  <SlideOpcao
+                    ativo={modo === "calculadora"}
+                    icon={Calculator}
+                    titulo="Realizar Proposta"
+                    descricao="Calculadora 2P"
+                    onClick={() => void trocarModo("calculadora")}
+                  />
+                  <SlideOpcao
+                    ativo={modo === "lista"}
+                    icon={ListPlus}
+                    titulo="Lista de produtos"
+                    descricao="Catálogo SAP"
+                    onClick={() => void trocarModo("lista")}
+                  />
+                </div>
+                <div className="lg:ml-auto flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">Tabela de preço</span>
+                  <Select value={listaPreco} onValueChange={(v) => void trocarTabela(v)} disabled={trocando}>
                     <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {TABELAS_PRECO.map((t) => (
@@ -644,6 +662,15 @@ function NovaPropostaSolarPage() {
                   </Select>
                 </div>
               </div>
+
+              {trocando && (
+                <div className="absolute inset-0 z-20 grid place-items-center bg-background/70 backdrop-blur-sm">
+                  <div className="flex items-center gap-3 text-sm font-medium">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    Atualizando itens e valores…
+                  </div>
+                </div>
+              )}
 
               {modo === "calculadora" && (
                 <div className="grid gap-4 md:grid-cols-3">
