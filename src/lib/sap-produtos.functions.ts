@@ -422,3 +422,93 @@ export const listSapCatalogoCompleto = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return { itens: (data ?? []) as SapCatalogoRow[] };
   });
+
+/**
+ * Envia (ou remove) um material do espelho completo do SAP para o catálogo do
+ * portal. Ao entrar, o produto é criado em `sap_produtos` sem visibilidade e
+ * inativo — a instância e a ativação continuam sendo definidas na moderação.
+ */
+export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ codigo: z.string().min(1), no_catalogo: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await requireAnyFeature(context, [
+      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
+    ]);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { classificarTipo } = await import("./sap-produtos.server");
+
+    const { data: material, error: readError } = await supabaseAdmin
+      .from("sap_catalogo_sap")
+      .select("codigo, descricao, unidade, ncm_codigo, sap_raw")
+      .eq("codigo", data.codigo)
+      .maybeSingle();
+    if (readError) throw new Error(readError.message);
+    if (!material) throw new Error("Material não encontrado no espelho do SAP.");
+
+    if (data.no_catalogo) {
+      const ncm = (material as any).ncm_codigo as string | null;
+      let ncmId: string | null = null;
+      if (ncm) {
+        const { data: n } = await supabaseAdmin
+          .from("carregadores_ncm")
+          .select("id")
+          .eq("codigo", ncm)
+          .maybeSingle();
+        ncmId = (n as any)?.id ?? null;
+      }
+      const { data: existente } = await supabaseAdmin
+        .from("sap_produtos")
+        .select("id")
+        .eq("codigo", material.codigo)
+        .maybeSingle();
+
+      if (existente) {
+        const { error } = await supabaseAdmin
+          .from("sap_produtos")
+          .update({ descricao: material.descricao, ...(ncm ? { ncm_codigo: ncm } : {}), ...(ncmId ? { ncm_id: ncmId } : {}) })
+          .eq("codigo", material.codigo);
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await supabaseAdmin.from("sap_produtos").insert({
+          codigo: material.codigo,
+          descricao: material.descricao ?? "",
+          tipo: classificarTipo(material.descricao ?? ""),
+          permissao: "Todos",
+          origem: "sap",
+          ativo: false,
+          visibilidade: null,
+          last_synced_at: new Date().toISOString(),
+          sap_raw: (material as any).sap_raw ?? null,
+          ...(ncm ? { ncm_codigo: ncm } : {}),
+          ...(ncmId ? { ncm_id: ncmId } : {}),
+        });
+        if (error) throw new Error(error.message);
+      }
+    } else {
+      const { error } = await supabaseAdmin
+        .from("sap_produtos")
+        .update({ ativo: false, visibilidade: null })
+        .eq("codigo", material.codigo);
+      if (error) throw new Error(error.message);
+    }
+
+    const { error: flagError } = await supabaseAdmin
+      .from("sap_catalogo_sap")
+      .update({ no_catalogo: data.no_catalogo })
+      .eq("codigo", material.codigo);
+    if (flagError) throw new Error(flagError.message);
+
+    await recordModeration(context, {
+      area: "produtos",
+      action: data.no_catalogo ? "adicionou ao catálogo" : "removeu do catálogo",
+      target: material.codigo,
+      summary: `${material.codigo} ${data.no_catalogo ? "enviado para" : "removido do"} catálogo do portal: ${material.descricao ?? ""}`,
+    });
+
+    return { ok: true };
+  });
+
