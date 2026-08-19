@@ -202,6 +202,14 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
           out.ie = daUf.numero || null;
           out.ie_situacao = daUf.habilitada ? "Habilitada" : (daUf.situacao ?? "Não habilitada");
         }
+        // Simples Nacional / SIMEI (só vem com ?simples=true)
+        const simples = d.company?.simples ?? d.simples;
+        const simei = d.company?.simei ?? d.simei;
+        if (simples && typeof simples.optant === "boolean") out.simples_optante = simples.optant;
+        if (simei && typeof simei.optant === "boolean") out.simei_optante = simei.optant;
+        if (out.simei_optante) out.regime_tributario = "MEI";
+        else if (out.simples_optante === true) out.regime_tributario = "Simples Nacional";
+        else if (out.simples_optante === false) out.regime_tributario = "Lucro Presumido";
         const suf = Array.isArray(d.suframa) ? d.suframa[0] : null;
         if (suf) {
           out.suframa = limpa(suf.number);
