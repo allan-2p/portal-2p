@@ -180,7 +180,7 @@ async function criarCobrancaPix(row: Record<string, any>, valor: number) {
     escopo: "pix",
     cred,
     metodo: "PUT",
-    caminho: `/pix_recebimentos/v2/cob/${txid}`,
+    caminho: `/cob/${txid}`,
     body,
     correlationId: correlation("pix", String(row["id"])),
   });
