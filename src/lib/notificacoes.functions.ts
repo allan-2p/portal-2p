@@ -14,13 +14,30 @@ export type NotificacaoDTO = {
 };
 
 /** Notificações do usuário logado (mais recentes primeiro). */
-export const listarMinhasNotificacoesFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<NotificacaoDTO[]> => {
-    const { data, error } = await context.supabase
+export const listarMinhasNotificacoesFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<NotificacaoDTO[]> => {
+    // O sino é opcional: sem sessão válida devolvemos lista vazia em vez de
+    // estourar 401/500 (que derrubava a tela durante SSR/rota pública).
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const token = getRequest()?.headers?.get("authorization")?.replace(/^Bearer\s+/i, "");
+    if (!token) return [];
+
+    const { createClient } = await import("@supabase/supabase-js");
+    const url = process.env["SUPABASE_URL"];
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    if (!url || !key) return [];
+    const supabase = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { apikey: key, Authorization: `Bearer ${token}` } },
+    });
+    const { data: userRes } = await supabase.auth.getUser(token);
+    const userId = userRes?.user?.id;
+    if (!userId) return [];
+
+    const { data, error } = await supabase
       .from("notificacoes")
       .select("id,tipo,titulo,descricao,link,ref_tipo,ref_id,lida_em,created_at")
-      .eq("user_id", context.userId)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(30);
     if (error) return [];
@@ -35,7 +52,8 @@ export const listarMinhasNotificacoesFn = createServerFn({ method: "GET" })
       lida: Boolean(r.lida_em),
       created_at: r.created_at,
     }));
-  });
+  },
+);
 
 /** Marca notificações como lidas (todas, ou apenas os ids informados). */
 export const marcarNotificacoesLidasFn = createServerFn({ method: "POST" })
