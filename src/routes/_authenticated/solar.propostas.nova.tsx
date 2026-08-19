@@ -710,6 +710,7 @@ function NovaPropostaSolarPage() {
         }),
       );
       const avisos = ((r as { avisos?: string[] }).avisos ?? []).filter(Boolean);
+      setAvisosPreco(avisos);
       if (avisos.length)
         toast.error(`SAP não precificou os itens: ${avisos.join(" • ")}`, { duration: 12000 });
       else if (semPreco.length)
@@ -717,9 +718,9 @@ function NovaPropostaSolarPage() {
           `Sem preço no SAP para a tabela ${tabela}: ${semPreco.join(", ")}. Informe o valor manualmente.`,
         );
     } catch (e) {
-      toast.error(
-        `Não foi possível buscar os preços no SAP: ${(e as Error).message || "erro desconhecido"}.`,
-      );
+      const msg = (e as Error).message || "erro desconhecido";
+      setAvisosPreco([msg]);
+      toast.error(`Não foi possível buscar os preços no SAP: ${msg}.`);
     }
   }
 
