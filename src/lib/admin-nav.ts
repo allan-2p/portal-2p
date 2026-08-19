@@ -24,6 +24,9 @@ import {
   LayoutDashboard,
   LayoutGrid,
   Truck,
+  Rows3,
+  Anchor,
+  Cpu,
 } from "lucide-react";
 import type { FeatureKey } from "@/lib/instances";
 import type { AppPath } from "@/lib/routes";
