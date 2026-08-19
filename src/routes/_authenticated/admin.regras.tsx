@@ -55,7 +55,9 @@ export const Route = createFileRoute("/_authenticated/admin/regras")({
 function Calculadora2P() {
   const qc = useQueryClient();
   const cfgQ = useSolarCalcConfig();
+  const catalogo = useSapCatalogoCodigos().data ?? [];
   const [form, setForm] = useState<Record<string, string>>({});
+
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
