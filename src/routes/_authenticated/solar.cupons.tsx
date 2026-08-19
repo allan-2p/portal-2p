@@ -346,7 +346,9 @@ function CuponsPage() {
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button onClick={handleCreate}>Criar cupom</Button>
+                <Button onClick={handleCreate} disabled={salvando}>
+                  {salvando ? "Salvando..." : "Criar cupom"}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
