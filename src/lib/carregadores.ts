@@ -297,8 +297,10 @@ export function finalidadeGeraDifal(finalidade: CarregadoresFinalidadeUso) {
 }
 
 /**
- * Em revenda o DIFAL é sempre apenas informativo: é apurado e exibido,
- * mas não é absorvido pela 2P e não afeta a receita líquida nem a margem.
+ * Em revenda para cliente CONTRIBUINTE o DIFAL é apenas informativo: é apurado
+ * e exibido, mas não é absorvido pela 2P. Para não contribuinte a
+ * responsabilidade do recolhimento é do remetente, então o DIFAL entra como
+ * custo (afeta receita líquida, margem e comissão) mesmo em revenda.
  */
 export function difalSempreInformativoPorFinalidade(finalidade: CarregadoresFinalidadeUso) {
   return finalidade === "revenda";
