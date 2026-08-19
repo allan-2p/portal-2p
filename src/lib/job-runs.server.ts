@@ -14,6 +14,11 @@ export const JOBS = {
     descricao: "Conclusão do pedido pelo vendedor (etapa 4).",
     reprocessavel: false,
   },
+  "sap.ov-criar": {
+    label: "SAP • Criar ordem de venda",
+    descricao: "Envia o pedido concluído ao SAP (ZNFE_OV_CRIAR) e grava o nº da ordem.",
+    reprocessavel: true,
+  },
   "cron.sap-nfs": {
     label: "Cron • Notas fiscais (SAP)",
     descricao: "Consulta o SAP e move Processando → Separação → Faturado.",
