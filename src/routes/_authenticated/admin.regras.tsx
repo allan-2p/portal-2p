@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
-import { ModeracaoPlaceholder, PlaceholderLink } from "@/components/admin/moderacao-placeholder";
+import { PlaceholderLink } from "@/components/admin/moderacao-placeholder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,21 +26,27 @@ export const Route = createFileRoute("/_authenticated/admin/regras")({
   component: () => (
     <AdminRouteGuard feature="admin.regras" area="moderacao">
       <AppLayout>
-        <ModeracaoPlaceholder
-          unidade="2P Solar"
-          titulo="Regras de Propostas"
-          descricao="Documentação e parâmetros do cálculo das propostas da unidade 2P Solar."
-        >
-          <p className="text-sm text-muted-foreground">
-            As propostas de 2P Solar hoje seguem as tabelas de{" "}
-            <PlaceholderLink to="/admin/tabelas">Configurações › Tabelas</PlaceholderLink> e as metas em{" "}
-            <PlaceholderLink to="/admin/metas">Regras de Metas</PlaceholderLink>.
-          </p>
-        </ModeracaoPlaceholder>
-        <div className="max-w-[1100px] mx-auto mt-5 space-y-5">
+        <div className="max-w-[1100px] mx-auto space-y-5">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-primary font-semibold">
+              Moderação • 2P Solar
+            </div>
+            <h1 className="text-3xl font-bold mt-1">Regras de Propostas</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Regras ativas do cálculo das propostas da unidade 2P Solar. Os parâmetros abaixo são
+              aplicados na Calculadora 2P em “Realizar Proposta”.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Complementos: tabelas de preço em{" "}
+              <PlaceholderLink to="/admin/tabelas">Configurações › Tabelas</PlaceholderLink>, metas em{" "}
+              <PlaceholderLink to="/admin/metas">Regras de Metas</PlaceholderLink> e transportadoras em{" "}
+              <PlaceholderLink to="/admin/frete-regras">Regras de Fretes</PlaceholderLink>.
+            </p>
+          </div>
           <Calculadora2P />
         </div>
       </AppLayout>
+
     </AdminRouteGuard>
   ),
 });
