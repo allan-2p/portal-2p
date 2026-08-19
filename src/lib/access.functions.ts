@@ -190,6 +190,19 @@ export const adminListAccessMatrix = createServerFn({ method: "GET" })
       }
       grantByUser.set(uid, arr);
     }
+    // Permissões extras concedidas no cadastro do usuário.
+    for (const r of extraRows ?? []) {
+      const uid = (r as any).user_id as string;
+      const arr = grantByUser.get(uid) ?? [];
+      const k = `${(r as any).instance_id}::${(r as any).feature_key}`;
+      if (!arr.some((g) => `${g.instance_id}::${g.feature_key}` === k)) {
+        arr.push({ instance_id: (r as any).instance_id, feature_key: (r as any).feature_key });
+      }
+      grantByUser.set(uid, arr);
+      const insts = instByUser.get(uid) ?? [];
+      if (!insts.includes((r as any).instance_id)) insts.push((r as any).instance_id);
+      instByUser.set(uid, insts);
+    }
     const users: AdminUserRow[] = (profiles ?? []).map((p: any) => ({
       id: p.id,
       email: p.email,
