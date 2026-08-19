@@ -963,6 +963,30 @@ export type Database = {
         }
         Relationships: []
       }
+      frete_regras_config: {
+        Row: {
+          config: Json
+          created_at: string
+          id: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       group_kpi_goals: {
         Row: {
           goal: number
