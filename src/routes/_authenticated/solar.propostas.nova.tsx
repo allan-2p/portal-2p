@@ -1630,7 +1630,7 @@ function NovaPropostaSolarPage() {
                     const p = produtos.find((x) => x.id === i.produtoId);
                     const descricao = i.avulso?.descricao ?? p?.descricao ?? "—";
                     const codigo = i.avulso?.codigo ?? p?.codigo ?? "";
-                    const editavel = i.origem === "manual";
+                    
                     return (
                       <Fragment key={i.key}>
                       {modo === "calculadora" && i.origem === "manual" && arr[idx - 1]?.origem !== "manual" && (
