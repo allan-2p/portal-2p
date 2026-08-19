@@ -1367,9 +1367,11 @@ function NovaPropostaSolarPage() {
                   <div className="relative">
                     <Input
                       value={cupomCodigo}
-                      onChange={(e) => setCupomCodigo(e.target.value.toUpperCase().trim())}
-                      placeholder="Código"
+                      onChange={(e) => setCupomCodigo(normalizarCupom(e.target.value))}
+                      placeholder="Ex.: PROMO25 ou CLIENTE-10"
                       className="uppercase pr-9"
+                      maxLength={20}
+                      aria-describedby="cupom-hint"
                     />
                     {cupomCodigo && (
                       <button
@@ -1382,6 +1384,10 @@ function NovaPropostaSolarPage() {
                       </button>
                     )}
                   </div>
+                  <p id="cupom-hint" className="text-xs text-muted-foreground">
+                    Use apenas letras, números, hífen ou underscore. Máximo 20 caracteres.
+                  </p>
+
                   {(cuponsQ.data ?? []).some((c) => c.ativo) && (
                     <Select
                       value={cupomCodigo || "__none__"}
