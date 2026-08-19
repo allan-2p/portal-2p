@@ -129,7 +129,7 @@ export type ItauCall = {
 /** Chamada autenticada; devolve o JSON de resposta ou lança erro legível. */
 export async function chamarItau(call: ItauCall): Promise<Record<string, any>> {
   const token = await obterToken(call.escopo, call.cred);
-  const res = await itauFetch(`${apiBase()}${call.caminho}`, {
+  const res = await itauFetch(`${apiBase(call.escopo)}${call.caminho}`, {
     method: call.metodo,
     headers: {
       authorization: `Bearer ${token}`,
