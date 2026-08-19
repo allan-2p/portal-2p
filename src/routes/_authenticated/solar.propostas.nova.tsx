@@ -64,6 +64,7 @@ import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn } from "@/lib/propostas.functions";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
+import { resolverProduto } from "@/lib/solar-sku";
 import { buildSolarPropostaPdfHtml, solarPropostaPdfFileName } from "@/lib/solar-proposta-pdf";
 import {
   useSolarCalcConfig,
@@ -632,9 +633,7 @@ function NovaPropostaSolarPage() {
     const novos: Item[] = [];
     const faltando: string[] = [];
     for (const c of agregado.componentes) {
-      const prod = c.codigo
-        ? produtos.find((p) => normCod(p.codigo) === normCod(c.codigo as string))
-        : undefined;
+      const prod = resolverProduto(produtos as any, c.codigo) as (typeof produtos)[number] | undefined;
       if (!prod) {
         faltando.push(c.descricao);
         novos.push({
