@@ -26,7 +26,6 @@ import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { useCarregadoresUfs } from "@/hooks/use-carregadores";
 import { cnpjValido, mascaraCnpj, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
 
@@ -206,7 +205,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [form, setForm] = useState<Form>(vazio());
   const [detalhe, setDetalhe] = useState<Cliente | null>(null);
   const [tentouSalvar, setTentouSalvar] = useState(false);
-  const [bloqueados, setBloqueados] = useState<Set<keyof Form>>(new Set());
   // Consultor responsável pelo cadastro (gravado em created_by/created_by_nome)
   const [consultorId, setConsultorId] = useState<string | null>(null);
   const listarConsultores = useServerFn(listConsultoresFn);
