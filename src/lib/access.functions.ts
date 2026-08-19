@@ -244,7 +244,10 @@ export const adminGetUserAccess = createServerFn({ method: "GET" })
       supabaseAdmin.from("user_instance_access").select("instance_id").eq("user_id", data.user_id),
       supabaseAdmin.from("user_roles").select("role").eq("user_id", data.user_id),
     ]);
-    const fromProfiles = await profileGrantsFor(supabaseAdmin, data.user_id);
+    const fromProfiles = withExtras(
+      await profileGrantsFor(supabaseAdmin, data.user_id),
+      await extraGrantsFor(supabaseAdmin, data.user_id),
+    );
     const merged = mergeAccess(
       (inst ?? []).map((r: any) => r.instance_id as string),
       fromProfiles,
