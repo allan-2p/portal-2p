@@ -1562,6 +1562,225 @@ export type Database = {
         }
         Relationships: []
       }
+      propostas: {
+        Row: {
+          cliente_doc: string | null
+          cliente_email: string | null
+          cliente_ie: string | null
+          cliente_nome: string
+          cliente_telefone: string | null
+          consultor_id: string | null
+          consultor_nome: string | null
+          contribuinte: boolean
+          created_at: string
+          created_by: string | null
+          criado_por_nome: string | null
+          entrega: Json
+          entrega_diferente: boolean
+          faturamento: Json
+          faturar_cliente_final: boolean
+          finalidade_uso: string
+          finalizado_em: string | null
+          finalizado_por: string | null
+          finalizado_por_nome: string | null
+          forma_pagamento: string | null
+          frete_area_rural: boolean
+          frete_mod: string
+          frete_prazo: number | null
+          frete_valor: number
+          id: string
+          indicacao: boolean
+          itens: Json
+          nome: string | null
+          numero: string | null
+          numero_sap: string | null
+          observacoes: string | null
+          organizacao: string
+          padrinho_id: string | null
+          padrinho_nome: string | null
+          pagamento_atualizado_em: string | null
+          pagamento_codigo_barras: string | null
+          pagamento_e2eid: string | null
+          pagamento_linha_digitavel: string | null
+          pagamento_meio: string | null
+          pagamento_nosso_numero: string | null
+          pagamento_pix_copia_cola: string | null
+          pagamento_status: string | null
+          pagamento_txid: string | null
+          pagamento_url: string | null
+          pagamento_valor: number | null
+          pagamento_vencimento: string | null
+          pago_em: string | null
+          previsao_fechamento: string | null
+          status: string
+          tipo_nf: string
+          totais: Json
+          transportadora: string | null
+          transportadora_documento: string | null
+          transportadora_id: string | null
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          cliente_doc?: string | null
+          cliente_email?: string | null
+          cliente_ie?: string | null
+          cliente_nome: string
+          cliente_telefone?: string | null
+          consultor_id?: string | null
+          consultor_nome?: string | null
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string | null
+          criado_por_nome?: string | null
+          entrega?: Json
+          entrega_diferente?: boolean
+          faturamento?: Json
+          faturar_cliente_final?: boolean
+          finalidade_uso?: string
+          finalizado_em?: string | null
+          finalizado_por?: string | null
+          finalizado_por_nome?: string | null
+          forma_pagamento?: string | null
+          frete_area_rural?: boolean
+          frete_mod?: string
+          frete_prazo?: number | null
+          frete_valor?: number
+          id?: string
+          indicacao?: boolean
+          itens?: Json
+          nome?: string | null
+          numero?: string | null
+          numero_sap?: string | null
+          observacoes?: string | null
+          organizacao?: string
+          padrinho_id?: string | null
+          padrinho_nome?: string | null
+          pagamento_atualizado_em?: string | null
+          pagamento_codigo_barras?: string | null
+          pagamento_e2eid?: string | null
+          pagamento_linha_digitavel?: string | null
+          pagamento_meio?: string | null
+          pagamento_nosso_numero?: string | null
+          pagamento_pix_copia_cola?: string | null
+          pagamento_status?: string | null
+          pagamento_txid?: string | null
+          pagamento_url?: string | null
+          pagamento_valor?: number | null
+          pagamento_vencimento?: string | null
+          pago_em?: string | null
+          previsao_fechamento?: string | null
+          status?: string
+          tipo_nf?: string
+          totais?: Json
+          transportadora?: string | null
+          transportadora_documento?: string | null
+          transportadora_id?: string | null
+          uf?: string
+          updated_at?: string
+        }
+        Update: {
+          cliente_doc?: string | null
+          cliente_email?: string | null
+          cliente_ie?: string | null
+          cliente_nome?: string
+          cliente_telefone?: string | null
+          consultor_id?: string | null
+          consultor_nome?: string | null
+          contribuinte?: boolean
+          created_at?: string
+          created_by?: string | null
+          criado_por_nome?: string | null
+          entrega?: Json
+          entrega_diferente?: boolean
+          faturamento?: Json
+          faturar_cliente_final?: boolean
+          finalidade_uso?: string
+          finalizado_em?: string | null
+          finalizado_por?: string | null
+          finalizado_por_nome?: string | null
+          forma_pagamento?: string | null
+          frete_area_rural?: boolean
+          frete_mod?: string
+          frete_prazo?: number | null
+          frete_valor?: number
+          id?: string
+          indicacao?: boolean
+          itens?: Json
+          nome?: string | null
+          numero?: string | null
+          numero_sap?: string | null
+          observacoes?: string | null
+          organizacao?: string
+          padrinho_id?: string | null
+          padrinho_nome?: string | null
+          pagamento_atualizado_em?: string | null
+          pagamento_codigo_barras?: string | null
+          pagamento_e2eid?: string | null
+          pagamento_linha_digitavel?: string | null
+          pagamento_meio?: string | null
+          pagamento_nosso_numero?: string | null
+          pagamento_pix_copia_cola?: string | null
+          pagamento_status?: string | null
+          pagamento_txid?: string | null
+          pagamento_url?: string | null
+          pagamento_valor?: number | null
+          pagamento_vencimento?: string | null
+          pago_em?: string | null
+          previsao_fechamento?: string | null
+          status?: string
+          tipo_nf?: string
+          totais?: Json
+          transportadora?: string | null
+          transportadora_documento?: string | null
+          transportadora_id?: string | null
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      propostas_conclusao_log: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          actor_nome: string | null
+          created_at: string
+          detalhe: string | null
+          id: string
+          numero: string | null
+          origem: string
+          proposta_id: string | null
+          resultado: string
+          status: string | null
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_nome?: string | null
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          numero?: string | null
+          origem?: string
+          proposta_id?: string | null
+          resultado: string
+          status?: string | null
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_nome?: string | null
+          created_at?: string
+          detalhe?: string | null
+          id?: string
+          numero?: string | null
+          origem?: string
+          proposta_id?: string | null
+          resultado?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
       rate_limit_hits: {
         Row: {
           bucket_key: string
