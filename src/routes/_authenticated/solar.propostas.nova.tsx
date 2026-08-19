@@ -161,6 +161,7 @@ function NovaPropostaSolarPage() {
 
   // Etapa 5
   const [cupomCodigo, setCupomCodigo] = useState("");
+  const [recalculandoTotais, setRecalculandoTotais] = useState(false);
 
   const clientesQ = useQueryClientes();
   const produtosQ = useSolarProdutos();
