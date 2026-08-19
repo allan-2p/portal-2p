@@ -19,7 +19,8 @@ function validar(input: unknown): PrecoSolarInput {
   return {
     itens,
     documento: String(i.documento ?? "").replace(/\D/g, ""),
-    listaPreco: /^\d{2}$/.test(String(i.listaPreco)) ? String(i.listaPreco) : "01",
+    // "2P-0001" (cadastro do cliente) vira "01" — o SAP só aceita 01..05 no PLTYP.
+    listaPreco: pltypDaTabela(i.listaPreco),
   };
 }
 
