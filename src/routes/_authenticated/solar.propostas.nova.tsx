@@ -65,6 +65,7 @@ import { obterPropostaFn } from "@/lib/propostas.functions";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
 import { resolverProduto } from "@/lib/solar-sku";
+import { pltypDaTabela } from "@/lib/sap-clientes-map";
 import { buildSolarPropostaPdfHtml, solarPropostaPdfFileName } from "@/lib/solar-proposta-pdf";
 import {
   useSolarCalcConfig,
@@ -194,6 +195,8 @@ function NovaPropostaSolarPage() {
   // Etapa 3
   const [modo, setModo] = useState<"calculadora" | "lista">("calculadora");
   const [listaPreco, setListaPreco] = useState("01");
+  /** Recusas do SAP na precificação (ex.: CNPJ sem parceiro) — bloqueiam o avanço. */
+  const [avisosPreco, setAvisosPreco] = useState<string[]>([]);
   /** Listas independentes: o que está na calculadora não reflete na lista manual. */
   const [itensCalc, setItensCalc] = useState<Item[]>([]);
   const [itensLista, setItensLista] = useState<Item[]>([]);
@@ -278,6 +281,19 @@ function NovaPropostaSolarPage() {
     const ids = (combQ.data ?? {})[tid] ?? [];
     return (suportesQ.data ?? []).filter((s) => ids.includes(s.id));
   };
+
+  /**
+   * Tabela de preço do cadastro do cliente ("2P-0001") vira o PLTYP do SAP ("01").
+   * O vendedor ainda pode trocar manualmente depois.
+   */
+  const tabelaAplicada = useRef<string>("");
+  useEffect(() => {
+    const doc = String(cliente?.['doc'] ?? "");
+    if (!doc || tabelaAplicada.current === doc) return;
+    tabelaAplicada.current = doc;
+    const pltyp = pltypDaTabela((cliente as any)?.['tabela_preco']);
+    setListaPreco((atual) => (atual === pltyp ? atual : pltyp));
+  }, [cliente]);
 
 
   // Carrega proposta existente para edição/duplicação
@@ -707,6 +723,7 @@ function NovaPropostaSolarPage() {
         }),
       );
       const avisos = ((r as { avisos?: string[] }).avisos ?? []).filter(Boolean);
+      setAvisosPreco(avisos);
       if (avisos.length)
         toast.error(`SAP não precificou os itens: ${avisos.join(" • ")}`, { duration: 12000 });
       else if (semPreco.length)
@@ -714,9 +731,9 @@ function NovaPropostaSolarPage() {
           `Sem preço no SAP para a tabela ${tabela}: ${semPreco.join(", ")}. Informe o valor manualmente.`,
         );
     } catch (e) {
-      toast.error(
-        `Não foi possível buscar os preços no SAP: ${(e as Error).message || "erro desconhecido"}.`,
-      );
+      const msg = (e as Error).message || "erro desconhecido";
+      setAvisosPreco([msg]);
+      toast.error(`Não foi possível buscar os preços no SAP: ${msg}.`);
     }
   }
 
@@ -881,6 +898,11 @@ function NovaPropostaSolarPage() {
         else if (!itensCalc.some((i) => i.origem === "calculadora"))
           e.push("O cálculo não gerou itens de estrutura. Revise os dados e calcule novamente.");
       }
+      // SAP recusou a precificação (ex.: CNPJ sem parceiro cadastrado): não avança.
+      if (avisosPreco.length)
+        e.push(`SAP recusou a precificação: ${avisosPreco[0]} Corrija e calcule novamente.`);
+      if (itens.some((i) => !i.valor))
+        e.push("Há itens sem preço. Resolva a precificação no SAP antes de avançar.");
     }
     if (etapa === 4) {
       if (!freteMod) e.push("Escolha a modalidade de frete.");
@@ -893,7 +915,7 @@ function NovaPropostaSolarPage() {
   }, [
     etapa, propostaNome, cliente, vendido, previsao, faturarClienteFinal, fat,
     itens, freteMod, transportadora, freteGratis, entregaDiferente, entrega,
-    modo, assinaturaCalc, calcDesatualizado, itensCalc,
+    modo, assinaturaCalc, calcDesatualizado, itensCalc, avisosPreco,
   ]);
 
 
