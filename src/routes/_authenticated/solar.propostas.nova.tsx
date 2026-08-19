@@ -106,6 +106,12 @@ type ClienteCad = Record<string, any>;
 
 const money2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100;
 const normCod = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
+const normalizarCupom = (c: string) =>
+  String(c ?? "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9\-_]/g, "")
+    .slice(0, 20);
+
 
 function NovaPropostaSolarPage() {
   const { id: editId, dup: dupId } = Route.useSearch();
@@ -405,8 +411,9 @@ function NovaPropostaSolarPage() {
     if (cuponsQ.isLoading) return { status: "carregando", cupom: null, mensagem: "Validando cupom..." };
     if (cuponsQ.isError)
       return { status: "erro", cupom: null, mensagem: "Não foi possível validar o cupom agora. Tente novamente." };
-    if (!/^[A-Z0-9-]{3,20}$/.test(alvo))
-      return { status: "erro", cupom: null, mensagem: "Código inválido: use de 3 a 20 caracteres (letras, números ou hífen)." };
+    if (!/^[A-Z0-9\-_]{3,20}$/.test(alvo))
+      return { status: "erro", cupom: null, mensagem: "Código inválido: use de 3 a 20 caracteres (letras, números, hífen ou underscore)." };
+
 
     const achado = (cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo) ?? null;
     if (!achado) return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" não existe.` };
@@ -1361,9 +1368,11 @@ function NovaPropostaSolarPage() {
                   <div className="relative">
                     <Input
                       value={cupomCodigo}
-                      onChange={(e) => setCupomCodigo(e.target.value.toUpperCase().trim())}
-                      placeholder="Código"
+                      onChange={(e) => setCupomCodigo(normalizarCupom(e.target.value))}
+                      placeholder="Ex.: PROMO25 ou CLIENTE-10"
                       className="uppercase pr-9"
+                      maxLength={20}
+                      aria-describedby="cupom-hint"
                     />
                     {cupomCodigo && (
                       <button
@@ -1376,10 +1385,11 @@ function NovaPropostaSolarPage() {
                       </button>
                     )}
                   </div>
+
                   {(cuponsQ.data ?? []).some((c) => c.ativo) && (
                     <Select
                       value={cupomCodigo || "__none__"}
-                      onValueChange={(v) => (v === "__none__" ? removerCupom() : setCupomCodigo(v))}
+                      onValueChange={(v) => (v === "__none__" ? removerCupom() : setCupomCodigo(normalizarCupom(v)))}
                     >
                       <SelectTrigger><SelectValue placeholder="Ou escolha um cupom" /></SelectTrigger>
                       <SelectContent>
@@ -1395,6 +1405,10 @@ function NovaPropostaSolarPage() {
                     </Select>
                   )}
                 </div>
+                <p id="cupom-hint" className="text-xs text-muted-foreground">
+                  Use apenas letras, números, hífen ou underscore. Máximo 20 caracteres.
+                </p>
+
 
                 {cupomCheck.status === "carregando" && (
                   <p className="flex items-center gap-2 text-xs text-muted-foreground">
