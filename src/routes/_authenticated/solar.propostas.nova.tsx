@@ -18,23 +18,29 @@ import { WizardActionBar } from "@/components/wizard-action-bar";
 import { FreteCotacao } from "@/components/frete-cotacao";
 import { toast } from "sonner";
 import {
+  Building2,
   Calculator,
   Check,
+  FileText,
   ListPlus,
   Loader2,
   Minus,
   Plus,
   Save,
+  Sparkles,
   Sun,
   Tag,
   Trash2,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { fmtBRL, type CarregadoresTransportadora } from "@/lib/carregadores";
-import { listClientesFn } from "@/lib/clientes.functions";
+import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn } from "@/lib/propostas.functions";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
+import { buildSolarPropostaPdfHtml, solarPropostaPdfFileName } from "@/lib/solar-proposta-pdf";
 import {
   useSolarCalcConfig,
   useSolarCupons,
