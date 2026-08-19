@@ -43,8 +43,10 @@ type Row = {
   tipo: string;
   ativo: boolean;
   visibilidade: string;
+  preco_sugerido: number;
   last_synced_at: string | null;
 };
+
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
@@ -156,12 +158,13 @@ function ProdutosSolarPage() {
 
         <div className="glass rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[720px]">
+            <table className="w-full text-sm min-w-[860px]">
               <thead>
                 <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-4 py-3">Código (SKU)</th>
                   <th className="text-left px-4 py-3">Descrição</th>
                   <th className="text-left px-4 py-3">Tipo</th>
+                  <th className="text-right px-4 py-3">Preço sugerido (R$)</th>
                   <th className="text-center px-4 py-3">Ativo</th>
                 </tr>
               </thead>
@@ -171,6 +174,18 @@ function ProdutosSolarPage() {
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.codigo}</td>
                     <td className="px-4 py-3 font-medium">{p.descricao}</td>
                     <td className="px-4 py-3 text-muted-foreground">{p.tipo}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        className="h-8 w-32 ml-auto text-right"
+                        defaultValue={Number(p.preco_sugerido ?? 0) || ""}
+                        placeholder="0,00"
+                        onBlur={(e) => void salvarPreco(p, e.currentTarget.value)}
+                        aria-label={`Preço sugerido de ${p.codigo}`}
+                      />
+                    </td>
                     <td className="px-4 py-3 text-center">
                       <Switch checked={p.ativo} onCheckedChange={() => toggleAtivo(p)} aria-label="Ativar produto" />
                     </td>
@@ -178,7 +193,7 @@ function ProdutosSolarPage() {
                 ))}
                 {visiveis.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
                       {isLoading ? "Carregando…" : "Nenhum produto encontrado."}
                     </td>
                   </tr>
@@ -186,6 +201,7 @@ function ProdutosSolarPage() {
               </tbody>
             </table>
           </div>
+
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <span>{filtrados.length} produto(s)</span>

@@ -6,7 +6,7 @@
  * portal cai para o preço sugerido do catálogo (`sap_produtos.preco_sugerido`).
  */
 
-import { simularPrecosSap } from "./sap-precos.server";
+import { simularSap } from "./sap-precos.server";
 
 export type PrecoItem = { codigo: string; quantidade: number };
 
@@ -15,6 +15,8 @@ export type PrecoResultado = {
   precos: Record<string, number>;
   /** Códigos cujo preço veio do catálogo (SAP não respondeu). */
   fallback: string[];
+  /** Mensagens do SAP que explicam preços zerados (CNPJ sem parceiro, etc). */
+  avisos: string[];
 };
 
 const norm = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
@@ -36,7 +38,8 @@ export async function precosSolar(
 ): Promise<PrecoResultado> {
   const precos: Record<string, number> = {};
   const fallback: string[] = [];
-  if (!itens.length) return { precos, fallback };
+  const avisos: string[] = [];
+  if (!itens.length) return { precos, fallback, avisos };
 
   /** Valor unitário por código, preenchido pela primeira filial que precificar. */
   const unitario = new Map<string, number>();
@@ -46,15 +49,20 @@ export async function precosSolar(
     if (!pendentes.length) break;
     let sim = new Map<string, { valor: number | null }>();
     try {
-      sim = (await simularPrecosSap(
+      const r = await simularSap(
         pendentes.map((i) => ({ codigo: i.codigo, quantidade: i.quantidade })),
         {
           ...(opts.documento ? { documento: opts.documento } : {}),
           listaPreco: opts.listaPreco || "01",
           filial,
         },
-      )) as unknown as Map<string, { valor: number | null }>;
-    } catch {
+      );
+      sim = r.valores as unknown as Map<string, { valor: number | null }>;
+      for (const m of [...r.erros, ...(r.motivo ? [r.motivo] : [])])
+        if (!avisos.includes(m)) avisos.push(m);
+    } catch (e) {
+      const m = `Falha ao consultar preços no SAP (filial ${filial}): ${(e as Error).message}`;
+      if (!avisos.includes(m)) avisos.push(m);
       sim = new Map();
     }
     const restantes: PrecoItem[] = [];
@@ -78,6 +86,7 @@ export async function precosSolar(
       fallback.push(codigo);
     }
   }
-  return { precos, fallback };
+  return { precos, fallback, avisos };
 }
+
 

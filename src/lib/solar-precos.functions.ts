@@ -27,7 +27,9 @@ export const precosSolarFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validar)
   .handler(async ({ data, context }) => {
-    if (!data.itens.length) return { precos: {} as Record<string, number>, fallback: [] as string[] };
+    if (!data.itens.length)
+      return { precos: {} as Record<string, number>, fallback: [] as string[], avisos: [] as string[] };
+
 
     const { data: prods } = await context.supabase
       .from("sap_produtos")

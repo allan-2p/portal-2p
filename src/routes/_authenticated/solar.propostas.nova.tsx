@@ -626,8 +626,11 @@ function NovaPropostaSolarPage() {
       })),
     };
     setResultado(agregado);
-    setCalculando(false);
-    if (!agregado.ok) return toast.error(agregado.erros[0] ?? "Revise os dados da estrutura.");
+    if (!agregado.ok) {
+      setCalculando(false);
+      return toast.error(agregado.erros[0] ?? "Revise os dados da estrutura.");
+    }
+
 
     // Converte os componentes calculados em itens do catálogo (por código SAP)
     const novos: Item[] = [];
@@ -660,8 +663,11 @@ function NovaPropostaSolarPage() {
     setEditandoCalc(false);
     if (faltando.length)
       toast.warning(`Itens sem correspondência no catálogo foram incluídos sem preço: ${faltando.join(", ")}.`);
-    else toast.success("Estrutura calculada e itens adicionados.");
-    void atualizarPrecos([...novos, ...extras], listaPreco, setItensCalc);
+    // Espera os preços do SAP antes de liberar a etapa: nunca seguir com zero calado.
+    await atualizarPrecos([...novos, ...extras], listaPreco, setItensCalc);
+    setCalculando(false);
+    if (!faltando.length) toast.success("Estrutura calculada e itens precificados.");
+
 
   }
 
@@ -673,15 +679,18 @@ function NovaPropostaSolarPage() {
     tabela: string,
     setter: React.Dispatch<React.SetStateAction<Item[]>> = setItens,
   ) {
-    const comCatalogo = lista.filter((i) => !i.avulso);
-    if (!comCatalogo.length) return;
+    /** Código SAP do item: do catálogo ou, no avulso calculado, o próprio código. */
+    const codigoDoItem = (i: Item) =>
+      i.avulso
+        ? normCod(i.avulso.codigo === "AVULSO" ? "" : i.avulso.codigo)
+        : normCod(produtos.find((p) => p.id === i.produtoId)?.codigo ?? "");
+
+    const precificaveis = lista.filter((i) => codigoDoItem(i));
+    if (!precificaveis.length) return;
     try {
       const r = await precos({
         data: {
-          itens: comCatalogo.map((i) => ({
-            codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? "",
-            quantidade: i.qtd,
-          })),
+          itens: precificaveis.map((i) => ({ codigo: codigoDoItem(i), quantidade: i.qtd })),
           documento: String(cliente?.['doc'] ?? clienteDoc ?? ""),
           listaPreco: tabela,
         },
@@ -689,23 +698,28 @@ function NovaPropostaSolarPage() {
       const semPreco: string[] = [];
       setter((prev) =>
         prev.map((i) => {
-          if (i.avulso) return i;
-          const prod = produtos.find((p) => p.id === i.produtoId);
-          const cod = normCod(prod?.codigo ?? "");
+          const cod = codigoDoItem(i);
+          if (!cod) return i;
           const v = (r.precos as Record<string, number>)[cod];
           if (v === undefined) return i;
-          if (!v) semPreco.push(prod?.codigo ?? cod);
+          if (!v) semPreco.push(cod);
           return { ...i, valor: money2(v) };
         }),
       );
-      if (semPreco.length)
+      const avisos = ((r as { avisos?: string[] }).avisos ?? []).filter(Boolean);
+      if (avisos.length)
+        toast.error(`SAP não precificou os itens: ${avisos.join(" • ")}`, { duration: 12000 });
+      else if (semPreco.length)
         toast.warning(
           `Sem preço no SAP para a tabela ${tabela}: ${semPreco.join(", ")}. Informe o valor manualmente.`,
         );
-    } catch {
-      /* mantém preços atuais quando o SAP não responde */
+    } catch (e) {
+      toast.error(
+        `Não foi possível buscar os preços no SAP: ${(e as Error).message || "erro desconhecido"}.`,
+      );
     }
   }
+
 
 
   async function trocarTabela(t: string) {
