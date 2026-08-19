@@ -26,11 +26,18 @@ const money2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
  * Filiais consultadas, na ordem de preferência.
  *
  * O SAP só devolve VALOR_LIQUIDO para o material quando a filial da simulação
- * é a que possui a condição de preço daquele item: parte do catálogo 2P Solar
- * é precificada em 9800 e parte em 9802. Consultar apenas uma filial devolvia
- * zero para a maioria dos itens.
+ * é a que possui a condição de preço daquele item. A lista pode ser ajustada
+ * por SAP_FILIAIS (ex.: "9802,9801"); filiais recusadas pelo SAP ("código da
+ * filial X é inválido") são apenas ignoradas — nunca bloqueiam a proposta.
  */
-const FILIAIS = ["9800", "9802"];
+const FILIAIS = (process.env["SAP_FILIAIS"] ?? "9802")
+  .split(",")
+  .map((f) => f.trim())
+  .filter(Boolean);
+
+/** Mensagem de filial inexistente no SAP — tentativa descartada, sem bloquear. */
+const filialInvalida = (m: string) => /filial\s+\d+\s+(é|e)\s+inv[áa]lid/i.test(m);
+
 
 export async function precosSolar(
   itens: PrecoItem[],
