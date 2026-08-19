@@ -773,54 +773,90 @@ function NovaPropostaSolarPage() {
         )}
 
         {etapa === 3 && (
-          <section className="space-y-5">
-            <div className="glass rounded-2xl p-5 space-y-4 relative overflow-hidden">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                {/* Seleção consolidada estilo slide */}
-                <div className="relative grid grid-cols-2 gap-1 rounded-2xl border border-border bg-surface-2 p-1 w-full lg:max-w-[520px]">
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-primary/15 border border-primary/40 transition-transform duration-300 ease-out",
-                      modo === "lista" && "translate-x-[calc(100%+0.25rem)]",
-                    )}
-                  />
-                  <SlideOpcao
-                    ativo={modo === "calculadora"}
-                    icon={Calculator}
-                    titulo="Realizar Proposta"
-                    descricao="Calculadora 2P"
-                    onClick={() => void trocarModo("calculadora")}
-                  />
-                  <SlideOpcao
-                    ativo={modo === "lista"}
-                    icon={ListPlus}
-                    titulo="Lista de produtos"
-                    descricao="Catálogo SAP"
-                    onClick={() => void trocarModo("lista")}
-                  />
+          <section className="space-y-5 relative">
+            {trocando && (
+              <div className="absolute inset-0 z-30 grid place-items-start justify-center rounded-2xl bg-background/70 backdrop-blur-sm">
+                <div className="sticky top-24 flex items-center gap-3 rounded-full border border-border bg-card px-5 py-3 text-sm font-medium shadow-lg">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  Atualizando itens e valores…
                 </div>
-                <div className="lg:ml-auto flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">Tabela de preço</span>
-                  <Select value={listaPreco} onValueChange={(v) => void trocarTabela(v)} disabled={trocando}>
-                    <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {TABELAS_PRECO.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              </div>
+            )}
+
+            <div className="glass rounded-2xl p-5 space-y-4">
+              <div className="grid gap-4 lg:grid-cols-2">
+                {/* Seleção consolidada estilo slide */}
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                    Como montar a proposta
+                  </div>
+                  <div className="relative grid grid-cols-2 gap-1 rounded-2xl border border-border bg-surface-2 p-1">
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-primary/15 border border-primary/40 transition-transform duration-300 ease-out",
+                        modo === "lista" && "translate-x-[calc(100%+0.25rem)]",
+                      )}
+                    />
+                    <SlideOpcao
+                      ativo={modo === "calculadora"}
+                      icon={Calculator}
+                      titulo="Realizar Proposta"
+                      descricao="Calculadora 2P"
+                      onClick={() => void trocarModo("calculadora")}
+                    />
+                    <SlideOpcao
+                      ativo={modo === "lista"}
+                      icon={ListPlus}
+                      titulo="Lista de produtos"
+                      descricao="Catálogo SAP"
+                      onClick={() => void trocarModo("lista")}
+                    />
+                  </div>
+                </div>
+
+                {/* Tabela de preço — mesmo padrão visual do seletor acima */}
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                    Tabela de preço
+                  </div>
+                  <div className="relative grid grid-cols-5 gap-1 rounded-2xl border border-border bg-surface-2 p-1">
+                    <span
+                      aria-hidden
+                      className="absolute inset-y-1 left-1 w-[calc(20%-0.2rem)] rounded-xl bg-primary/15 border border-primary/40 transition-transform duration-300 ease-out"
+                      style={{
+                        transform: `translateX(calc(${TABELAS_PRECO.findIndex((t) => t.value === listaPreco)} * (100% + 0.25rem)))`,
+                      }}
+                    />
+                    {TABELAS_PRECO.map((t) => (
+                      <button
+                        key={t.value}
+                        type="button"
+                        aria-pressed={listaPreco === t.value}
+                        disabled={trocando}
+                        onClick={() => void trocarTabela(t.value)}
+                        className={cn(
+                          "relative z-10 rounded-xl px-2 py-2.5 text-center transition-colors",
+                          listaPreco === t.value
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "block text-sm tabular-nums",
+                            listaPreco === t.value && "font-semibold",
+                          )}
+                        >
+                          {t.value}
+                        </span>
+                        <span className="block text-[10px] text-muted-foreground">Tabela</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {trocando && (
-                <div className="absolute inset-0 z-20 grid place-items-center bg-background/70 backdrop-blur-sm">
-                  <div className="flex items-center gap-3 text-sm font-medium">
-                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                    Atualizando itens e valores…
-                  </div>
-                </div>
-              )}
 
               {modo === "calculadora" && (
                 <div className="grid gap-4 md:grid-cols-3">
