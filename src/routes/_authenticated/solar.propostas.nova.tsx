@@ -1276,7 +1276,7 @@ function NovaPropostaSolarPage() {
                   <Input
                     value={cupomCodigo}
                     onChange={(e) => setCupomCodigo(e.target.value.toUpperCase().trim())}
-                    placeholder="Digite o código do cupom"
+                    placeholder="Código"
                     className="uppercase"
                   />
                   {(cuponsQ.data ?? []).some((c) => c.ativo) && (
