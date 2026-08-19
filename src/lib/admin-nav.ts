@@ -23,6 +23,7 @@ import {
   ScrollText,
   LayoutDashboard,
   LayoutGrid,
+  Truck,
 } from "lucide-react";
 import type { FeatureKey } from "@/lib/instances";
 import type { AppPath } from "@/lib/routes";
@@ -178,6 +179,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
             ],
           },
           { to: "/admin/regras", label: "Regras de Propostas", icon: BookOpen, feature: "admin.regras" },
+          { to: "/admin/frete-regras", label: "Regras de Fretes", icon: Truck, feature: "admin.regras" },
           { to: "/admin/metas", label: "Regras de Metas", icon: Target, feature: "admin.metas" },
           { to: "/admin/comissoes", label: "Regras de Comissões", icon: Percent, feature: "admin.comissoes" },
         ],
