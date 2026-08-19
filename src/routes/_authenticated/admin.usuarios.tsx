@@ -450,7 +450,9 @@ function PortalTable({
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
+      <div className="w-full overflow-x-auto">
+      <table className="w-full min-w-[1100px] text-sm">
+
         <thead className="bg-surface/50 text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
             <th className="px-4 py-3"></th>
