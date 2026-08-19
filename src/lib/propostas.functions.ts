@@ -632,12 +632,20 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       mensagem: string | null;
       motivo: string | null;
     };
+    type SalesforceOut = {
+      enviado: boolean;
+      ok: boolean;
+      opportunityId: string | null;
+      mensagem: string | null;
+      motivo: string | null;
+    };
     type ConclusaoOut = {
       id: string;
       status: string;
       already_concluded: boolean;
       cobranca: CobrancaOut | null;
       sapOv: SapOvOut | null;
+      salesforce: SalesforceOut | null;
     };
     const executar = async (): Promise<ConclusaoOut> => {
     const { supabase, userId } = context as any;
