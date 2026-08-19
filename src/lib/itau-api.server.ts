@@ -182,19 +182,36 @@ export type ItauCall = {
 /** Chamada autenticada; devolve o JSON de resposta ou lança erro legível. */
 export async function chamarItau(call: ItauCall): Promise<Record<string, any>> {
   const token = await obterToken(call.escopo, call.cred);
-  const res = await itauFetch(`${apiBase(call.escopo)}${call.caminho}`, {
-    method: call.metodo,
-    headers: {
-      authorization: `Bearer ${token}`,
-      "content-type": "application/json",
-      accept: "application/json",
-      "x-itau-apikey": call.cred.clientId,
-      "x-itau-correlationID": call.correlationId,
-    },
-    ...(call.body === undefined ? {} : { body: JSON.stringify(call.body) }),
-  });
-  const text = await res.text();
-  if (!res.ok) {
+  const url = `${apiBase(call.escopo)}${call.caminho}`;
+
+  // 5xx do Itaú costuma ser instabilidade/janela de manutenção: tenta de novo.
+  let res: Response | null = null;
+  let text = "";
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    res = await itauFetch(url, {
+      method: call.metodo,
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+        accept: "application/json",
+        "x-itau-apikey": call.cred.clientId,
+        "x-itau-correlationID": call.correlationId,
+      },
+      ...(call.body === undefined ? {} : { body: JSON.stringify(call.body) }),
+    });
+    text = await res.text();
+    if (res.ok || res.status < 500) break;
+    if (tentativa < 3) await new Promise((r) => setTimeout(r, tentativa * 1500));
+  }
+
+  if (res && !res.ok) {
+    if (res.status >= 500) {
+      throw new ItauIndisponivel(
+        `O serviço do Itaú está indisponível no momento (HTTP ${res.status}). ` +
+          "Isso costuma ser manutenção ou janela de funcionamento do Pix — tente novamente em alguns minutos. " +
+          `Detalhe: ${text.slice(0, 300)}`,
+      );
+    }
     throw new Error(`Itaú respondeu ${res.status}: ${text.slice(0, 400)}`);
   }
   return text ? (JSON.parse(text) as Record<string, any>) : {};
