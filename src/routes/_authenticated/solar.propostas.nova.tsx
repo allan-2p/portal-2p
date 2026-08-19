@@ -398,6 +398,14 @@ function NovaPropostaSolarPage() {
   const freteValor = freteMod === "FOB" || freteMod === "" || freteGratis ? 0 : (transportadora?.total ?? 0);
   const total = money2(subtotal - desconto + freteValor);
 
+  // Carregamento visual durante recálculo de cupom / frete
+  useEffect(() => {
+    setRecalculandoTotais(true);
+    const t = setTimeout(() => setRecalculandoTotais(false), 450);
+    return () => clearTimeout(t);
+  }, [cupomCodigo, freteMod, transportadora?.total, itens]);
+
+
   // ------------------------------------------------------------------
   // Validações por etapa
   // ------------------------------------------------------------------
