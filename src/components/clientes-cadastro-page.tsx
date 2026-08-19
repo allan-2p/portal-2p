@@ -699,36 +699,21 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
               <Section title="Endereço">
                 <F label="CEP *" id="campo-cep" error={erros.cep}>
-                  <CepInput
-                    value={form.cep ?? ""}
-                    onChange={(v: string) => set("cep", v)}
-                    onFound={(end: EnderecoCep) => {
-                      setForm((f) => ({
-                        ...f,
-                        cep: end.cep,
-                        logradouro: end.logradouro || f.logradouro,
-                        bairro: end.bairro || f.bairro,
-                        cidade: end.cidade || f.cidade,
-                        complemento: f.complemento || end.complemento,
-                        uf: end.uf || f.uf,
-                      }));
-                    }}
-                  />
+                  <Input value={form.cep ?? ""} readOnly disabled placeholder="—" />
                 </F>
-                <F label="Logradouro *" id="campo-logradouro" error={erros.logradouro}><Input value={form.logradouro ?? ""} onChange={(e) => set("logradouro", e.target.value)} /></F>
-                <F label="Número *" id="campo-numero" error={erros.numero}><Input value={form.numero ?? ""} onChange={(e) => set("numero", e.target.value)} /></F>
-                <F label="Complemento"><Input value={form.complemento ?? ""} onChange={(e) => set("complemento", e.target.value)} /></F>
-                <F label="Bairro"><Input value={form.bairro ?? ""} onChange={(e) => set("bairro", e.target.value)} /></F>
-                <F label="Cidade *" id="campo-cidade" error={erros.cidade}><Input value={form.cidade ?? ""} onChange={(e) => set("cidade", e.target.value)} /></F>
+                <F label="Logradouro *" id="campo-logradouro" error={erros.logradouro}><Input value={form.logradouro ?? ""} readOnly disabled /></F>
+                <F label="Número *" id="campo-numero" error={erros.numero}><Input value={form.numero ?? ""} readOnly disabled /></F>
+                <F label="Complemento"><Input value={form.complemento ?? ""} readOnly disabled /></F>
+                <F label="Bairro"><Input value={form.bairro ?? ""} readOnly disabled /></F>
+                <F label="Cidade *" id="campo-cidade" error={erros.cidade}><Input value={form.cidade ?? ""} readOnly disabled /></F>
                 <F label="UF de destino *" id="campo-uf" error={erros.uf}>
-                  <Select value={form.uf} onValueChange={(v) => set("uf", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ufs.map((u) => <SelectItem key={u.uf} value={u.uf}>{u.uf} — {u.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <Input value={form.uf ?? ""} readOnly disabled />
                 </F>
+                <div className="sm:col-span-2 text-[11px] text-muted-foreground">
+                  Endereço obtido automaticamente pela consulta do CNPJ.
+                </div>
               </Section>
+
 
               <Section title="Comercial">
                 <F label="Consultor">
