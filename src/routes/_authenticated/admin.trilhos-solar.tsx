@@ -84,6 +84,8 @@ const FAMILIAS = [
 function TrilhosSolarPage() {
   const qc = useQueryClient();
   const trilhosQ = useSolarTrilhos(true);
+  const catalogo = useSapCatalogoCodigos().data ?? [];
+
   const [busca, setBusca] = useState("");
   const [form, setForm] = useState<Form | null>(null);
 
