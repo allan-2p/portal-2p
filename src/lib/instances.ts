@@ -192,6 +192,9 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/admin/logs": "admin.area.logs",
   "/admin/produtos-solar": "admin.produtos",
   "/admin/modulos-solar": "admin.produtos",
+  "/admin/trilhos-solar": "admin.produtos",
+  "/admin/suportes-solar": "admin.produtos",
+  "/admin/microinversores-solar": "admin.produtos",
   "/admin/metas": "admin.metas",
 
   "/admin/regras": "admin.regras",
