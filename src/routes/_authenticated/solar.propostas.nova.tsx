@@ -749,6 +749,25 @@ function NovaPropostaSolarPage() {
     toast.info(`Tabela ${t}: valores recalculados.`);
   }
 
+  /** Nova tentativa de precificação a partir do diagnóstico do bloqueio. */
+  async function recalcularPrecos() {
+    if (trocando || !itens.length) return;
+    setTrocando(true);
+    await atualizarPrecos(itens, listaPreco);
+    setTrocando(false);
+  }
+
+  /** Explicação do bloqueio da etapa 3 (causa provável + ações sugeridas). */
+  const diagnosticoBloqueio = useMemo(() => {
+    const semPreco = itens.filter((i) => !(i.valor > 0)).map((i) => i.nome || i.codigo || "item");
+    return diagnosticarBloqueio({
+      mensagensSap: avisosPreco,
+      itensSemPreco: semPreco,
+      documento: String(cliente?.['doc'] ?? clienteDoc ?? ""),
+      tabelaPreco: listaPreco,
+    });
+  }, [itens, avisosPreco, cliente, clienteDoc, listaPreco]);
+
   async function trocarModo(m: "calculadora" | "lista") {
     if (m === modo || trocando) return;
     setTrocando(true);
