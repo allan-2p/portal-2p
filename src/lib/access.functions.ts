@@ -152,13 +152,14 @@ export const adminListAccessMatrix = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<{ users: AdminUserRow[] }> => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [{ data: profiles }, { data: instRows }, { data: linkRows }, { data: profFeatRows }, { data: roleRows }] =
+    const [{ data: profiles }, { data: instRows }, { data: linkRows }, { data: profFeatRows }, { data: roleRows }, { data: extraRows }] =
       await Promise.all([
         supabaseAdmin.from("profiles").select("id, email, full_name").order("full_name"),
         supabaseAdmin.from("user_instance_access").select("user_id, instance_id"),
         supabaseAdmin.from("user_permission_profiles").select("user_id, profile_id"),
         supabaseAdmin.from("permission_profile_features").select("profile_id, instance_id, feature_key"),
         supabaseAdmin.from("user_roles").select("user_id, role"),
+        supabaseAdmin.from("user_extra_features").select("user_id, instance_id, feature_key"),
       ]);
     const adminSet = new Set(
       (roleRows ?? []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id),
