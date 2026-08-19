@@ -11,6 +11,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSolarCalcConfig } from "@/hooks/use-solar-catalogo";
 import { SOLAR_CALC_CONFIG_FALLBACK } from "@/lib/solar-calculadora";
+import { resolverProduto } from "@/lib/solar-sku";
+import { sugerirMaterial, useSapCatalogoCodigos } from "@/components/solar/sap-codigo";
+
 
 export const Route = createFileRoute("/_authenticated/admin/regras")({
   head: () => ({
