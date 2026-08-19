@@ -100,7 +100,53 @@ const TABELAS_PRECO = [
   { value: "05", label: "Tabela 05" },
 ];
 
-type Item = { key: string; produtoId: string; qtd: number; valor: number; origem: "calculadora" | "manual" };
+type Item = {
+  key: string;
+  produtoId: string;
+  qtd: number;
+  valor: number;
+  origem: "calculadora" | "manual";
+  /** Item digitado manualmente (fora do catálogo SAP). */
+  avulso?: { codigo: string; descricao: string };
+};
+
+/** Fileira da disposição dos painéis (uma linha da tabela da calculadora). */
+type FileiraCalc = {
+  key: string;
+  trilhoId: string;
+  suporteId: string;
+  fileiras: string;
+  modulos: string;
+  orientacao: Orientacao;
+  /** Espaçamento máximo entre apoios, em metros. */
+  distMax: string;
+  /** Balanço nas pontas, em metros. */
+  balanco: string;
+};
+
+const novaFileira = (): FileiraCalc => ({
+  key: Math.random().toString(36).slice(2),
+  trilhoId: "",
+  suporteId: "",
+  fileiras: "1",
+  modulos: "",
+  orientacao: "R",
+  distMax: "",
+  balanco: "",
+});
+
+/** Modelos de microinversor e quantos módulos cada unidade atende. */
+const MICRO_MODELOS = [
+  { id: "deye", nome: "Deye", porUnidade: 2 },
+  { id: "hoymiles", nome: "Hoymiles", porUnidade: 2 },
+  { id: "apsystems-qt2", nome: "ApSystems QT2", porUnidade: 2 },
+];
+
+const TAMANHOS_TRILHO = [
+  { value: "longo", label: "Até 4,80 m" },
+  { value: "curto", label: "Até 2,40 m / 2,70 m" },
+];
+
 
 type ClienteCad = Record<string, any>;
 
@@ -142,25 +188,31 @@ function NovaPropostaSolarPage() {
   // Etapa 3
   const [modo, setModo] = useState<"calculadora" | "lista">("calculadora");
   const [listaPreco, setListaPreco] = useState("01");
-  const [itens, setItens] = useState<Item[]>([]);
+  /** Listas independentes: o que está na calculadora não reflete na lista manual. */
+  const [itensCalc, setItensCalc] = useState<Item[]>([]);
+  const [itensLista, setItensLista] = useState<Item[]>([]);
   const [calculando, setCalculando] = useState(false);
   const [trocando, setTrocando] = useState(false);
   const [resultado, setResultado] = useState<CalcResultado | null>(null);
   const [previewAberto, setPreviewAberto] = useState(false);
   const [pdfHtml, setPdfHtml] = useState("");
 
-
-
+  const itens = modo === "calculadora" ? itensCalc : itensLista;
+  const setItens = modo === "calculadora" ? setItensCalc : setItensLista;
 
   // calculadora
   const [geradorId, setGeradorId] = useState("");
+  const [microModelo, setMicroModelo] = useState("");
+  const [microQtd, setMicroQtd] = useState("");
   const [moduloId, setModuloId] = useState("");
   const [modPersonalizado, setModPersonalizado] = useState({ largura: "", altura: "", espessura: "" });
   const [paineis, setPaineis] = useState("");
-  const [fileiras, setFileiras] = useState("1");
-  const [orientacao, setOrientacao] = useState<Orientacao>("R");
-  const [trilhoId, setTrilhoId] = useState("");
-  const [suporteId, setSuporteId] = useState("");
+  const [tamanhoTrilho, setTamanhoTrilho] = useState("longo");
+  const [linhas, setLinhas] = useState<FileiraCalc[]>([novaFileira()]);
+  // produto avulso (lista de produtos)
+  const [avulsoDesc, setAvulsoDesc] = useState("");
+  const [avulsoQtd, setAvulsoQtd] = useState("1");
+
 
   // Etapa 4
   const [entregaDiferente, setEntregaDiferente] = useState(false);
@@ -202,10 +254,11 @@ function NovaPropostaSolarPage() {
     [clientesQ.data, clienteDoc],
   );
 
-  const suportesDoTrilho = useMemo(() => {
-    const ids = (combQ.data ?? {})[trilhoId] ?? [];
+  const suportesDe = (tid: string) => {
+    const ids = (combQ.data ?? {})[tid] ?? [];
     return (suportesQ.data ?? []).filter((s) => ids.includes(s.id));
-  }, [combQ.data, suportesQ.data, trilhoId]);
+  };
+
 
   // Carrega proposta existente para edição/duplicação
   useEffect(() => {
@@ -232,7 +285,8 @@ function NovaPropostaSolarPage() {
       setVendido(totais['vendidoClienteFinal'] ? "sim" : "nao");
       setCupomCodigo(String(totais['cupom'] ?? ""));
       setModo("lista");
-      setItens(
+      setItensLista(
+
         ((p['itens'] as any[]) ?? []).map((i) => ({
           key: Math.random().toString(36).slice(2),
           produtoId: String(i.produtoId),
@@ -263,33 +317,156 @@ function NovaPropostaSolarPage() {
     };
   }, [modulosQ.data, moduloId, modPersonalizado]);
 
+  /** "Personalizado" sempre em primeiro na lista (sem vir marcado). */
+  const modulosOrdenados = useMemo(
+    () =>
+      [...(modulosQ.data ?? [])].sort(
+        (a, b) => Number(b.personalizado) - Number(a.personalizado) || a.ordem - b.ordem,
+      ),
+    [modulosQ.data],
+  );
+
+  const geradorSel = useMemo(
+    () => (geradoresQ.data ?? []).find((g) => g.id === geradorId) ?? null,
+    [geradoresQ.data, geradorId],
+  );
+  const geradorEhMicro = !!geradorSel?.exige_microinversor;
+  const geradorPedeQuantidade =
+    geradorEhMicro || /otimizador/i.test(geradorSel?.nome ?? "");
+
+  /** Inclui um produto do catálogo na lista do modo indicado. */
+  function adicionarProdutoEm(id: string, alvo: "calculadora" | "lista") {
+    const p = produtos.find((x) => x.id === id);
+    if (!p) return;
+    const setter = alvo === "calculadora" ? setItensCalc : setItensLista;
+    const atual = alvo === "calculadora" ? itensCalc : itensLista;
+    const novos: Item[] = [
+      ...atual,
+      {
+        key: Math.random().toString(36).slice(2),
+        produtoId: p.id,
+        qtd: 1,
+        valor: p.preco_sugerido,
+        origem: "manual",
+      },
+    ];
+    setter(novos);
+    void atualizarPrecos(novos, listaPreco, setter);
+  }
+
+  /** Inclui um produto digitado manualmente (fora do catálogo). */
+  function adicionarAvulso() {
+    const desc = avulsoDesc.trim();
+    if (!desc) return toast.error("Descreva o produto que deseja incluir.");
+    setItensLista((prev) => [
+      ...prev,
+      {
+        key: Math.random().toString(36).slice(2),
+        produtoId: "",
+        qtd: Math.max(1, Number(avulsoQtd) || 1),
+        valor: 0,
+        origem: "manual",
+        avulso: { codigo: "AVULSO", descricao: desc },
+      },
+    ]);
+    setAvulsoDesc("");
+    setAvulsoQtd("1");
+    toast.success("Produto incluído. Informe o valor unitário na lista.");
+  }
+
+
+
+  /** Total de painéis previsto nas fileiras (fileiras × módulos por fileira). */
+  const paineisNasLinhas = useMemo(
+    () =>
+      linhas.reduce(
+        (s, l) => s + (Number(l.fileiras) || 0) * (Number(l.modulos) || 0),
+        0,
+      ),
+    [linhas],
+  );
+
+  const microSugerido = useMemo(() => {
+    const m = MICRO_MODELOS.find((x) => x.id === microModelo);
+    if (!m) return 0;
+    return Math.ceil((Number(paineis) || 0) / m.porUnidade);
+  }, [microModelo, paineis]);
+
   async function realizarProposta() {
-    const trilho = (trilhosQ.data ?? []).find((t) => t.id === trilhoId) ?? null;
-    const suporte = (suportesQ.data ?? []).find((s) => s.id === suporteId) ?? null;
     if (!modulo) return toast.error("Selecione o módulo.");
+    if (!linhas.length) return toast.error("Adicione ao menos uma fileira.");
 
     setCalculando(true);
     setResultado(null);
     // Animação característica da Calculadora 2P
     await new Promise((r) => setTimeout(r, 1400));
 
-    const r = calcularEstrutura({
-      modulo,
-      paineis: Number(paineis) || 0,
-      fileiras: Number(fileiras) || 0,
-      orientacao,
-      trilho,
-      suporte,
-      config,
-    });
-    setResultado(r);
+    const barrasLongas =
+      tamanhoTrilho === "curto"
+        ? []
+        : config.barras_longas.filter((b) => b <= 4800);
+
+    const agregado: CalcResultado = {
+      ok: true,
+      erros: [],
+      avisos: [],
+      distribuicao: [],
+      comprimentos: [],
+      componentes: [],
+    };
+    const mapa = new Map<string, { codigo: string | null; descricao: string; quantidade: number }>();
+
+    for (const l of linhas) {
+      const trilho = (trilhosQ.data ?? []).find((t) => t.id === l.trilhoId) ?? null;
+      const suporte = (suportesQ.data ?? []).find((s) => s.id === l.suporteId) ?? null;
+      const nFileiras = Number(l.fileiras) || 0;
+      const nModulos = Number(l.modulos) || 0;
+      const cfgLinha = {
+        ...config,
+        barras_longas: barrasLongas.length ? barrasLongas : config.barras_longas,
+        ...(Number(l.distMax) ? { largura_limite: Number(l.distMax) * 1000 } : {}),
+        ...(Number(l.balanco) ? { balanco_ponta: Number(l.balanco) * 1000 } : {}),
+      };
+      const r = calcularEstrutura({
+        modulo,
+        paineis: nFileiras * nModulos,
+        fileiras: nFileiras,
+        orientacao: l.orientacao,
+        trilho,
+        suporte,
+        config: cfgLinha,
+      });
+      if (!r.ok) {
+        agregado.ok = false;
+        agregado.erros.push(...r.erros);
+        continue;
+      }
+      agregado.avisos.push(...r.avisos);
+      agregado.distribuicao.push(...r.distribuicao);
+      agregado.comprimentos.push(...r.comprimentos);
+      for (const c of r.componentes) {
+        const k = `${c.chave}|${c.codigo ?? ""}`;
+        const at = mapa.get(k);
+        if (at) at.quantidade += c.quantidade;
+        else mapa.set(k, { codigo: c.codigo, descricao: c.descricao, quantidade: c.quantidade });
+      }
+    }
+
+    agregado.componentes = [...mapa.entries()].map(([k, v]) => ({
+      chave: k,
+      codigo: v.codigo,
+      descricao: v.descricao,
+      quantidade: v.quantidade,
+    }));
+    agregado.avisos = [...new Set(agregado.avisos)];
+    setResultado(agregado);
     setCalculando(false);
-    if (!r.ok) return toast.error(r.erros[0] ?? "Revise os dados da estrutura.");
+    if (!agregado.ok) return toast.error(agregado.erros[0] ?? "Revise os dados da estrutura.");
 
     // Converte os componentes calculados em itens do catálogo (por código SAP)
     const novos: Item[] = [];
     const faltando: string[] = [];
-    for (const c of r.componentes) {
+    for (const c of agregado.componentes) {
       const prod = c.codigo
         ? produtos.find((p) => normCod(p.codigo) === normCod(c.codigo as string))
         : undefined;
@@ -305,22 +482,28 @@ function NovaPropostaSolarPage() {
         origem: "calculadora",
       });
     }
-    setItens((prev) => [...prev.filter((i) => i.origem === "manual"), ...novos]);
+    const extras = itensCalc.filter((i) => i.origem === "manual");
+    setItensCalc([...extras, ...novos]);
     if (faltando.length)
       toast.warning(`Sem código no catálogo: ${faltando.join(", ")}. Inclua manualmente.`);
     else toast.success("Estrutura calculada e itens adicionados.");
-    void atualizarPrecos([...itens.filter((i) => i.origem === "manual"), ...novos], listaPreco);
+    void atualizarPrecos([...extras, ...novos], listaPreco, setItensCalc);
   }
 
   // ------------------------------------------------------------------
   // Preços por tabela de preço (recalcula tudo ao trocar)
   // ------------------------------------------------------------------
-  async function atualizarPrecos(lista: Item[], tabela: string) {
-    if (!lista.length) return;
+  async function atualizarPrecos(
+    lista: Item[],
+    tabela: string,
+    setter: React.Dispatch<React.SetStateAction<Item[]>> = setItens,
+  ) {
+    const comCatalogo = lista.filter((i) => !i.avulso);
+    if (!comCatalogo.length) return;
     try {
       const r = await precos({
         data: {
-          itens: lista.map((i) => ({
+          itens: comCatalogo.map((i) => ({
             codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? "",
             quantidade: i.qtd,
           })),
@@ -328,17 +511,27 @@ function NovaPropostaSolarPage() {
           listaPreco: tabela,
         },
       });
-      setItens((prev) =>
+      const semPreco: string[] = [];
+      setter((prev) =>
         prev.map((i) => {
-          const cod = normCod(produtos.find((p) => p.id === i.produtoId)?.codigo ?? "");
+          if (i.avulso) return i;
+          const prod = produtos.find((p) => p.id === i.produtoId);
+          const cod = normCod(prod?.codigo ?? "");
           const v = (r.precos as Record<string, number>)[cod];
-          return v ? { ...i, valor: money2(v) } : i;
+          if (v === undefined) return i;
+          if (!v) semPreco.push(prod?.codigo ?? cod);
+          return { ...i, valor: money2(v) };
         }),
       );
+      if (semPreco.length)
+        toast.warning(
+          `Sem preço no SAP para a tabela ${tabela}: ${semPreco.join(", ")}. Informe o valor manualmente.`,
+        );
     } catch {
       /* mantém preços atuais quando o SAP não responde */
     }
   }
+
 
   async function trocarTabela(t: string) {
     if (t === listaPreco) return;
@@ -594,8 +787,14 @@ function NovaPropostaSolarPage() {
       consultor: String(cliente?.['created_by_nome'] ?? ""),
       itens: itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId);
-        return { codigo: p?.codigo ?? null, nome: p?.descricao ?? "Item", qtd: i.qtd, valor: i.valor };
+        return {
+          codigo: i.avulso?.codigo ?? p?.codigo ?? null,
+          nome: i.avulso?.descricao ?? p?.descricao ?? "Item",
+          qtd: i.qtd,
+          valor: i.valor,
+        };
       }),
+
       subtotal,
       desconto,
       cupom: cupomCodigo || null,
@@ -948,103 +1147,320 @@ function NovaPropostaSolarPage() {
 
 
               {modo === "calculadora" && (
-                <div className="grid gap-4 md:grid-cols-3">
-                  <Campo label="Gerador">
-                    <Select value={geradorId} onValueChange={setGeradorId}>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        {(geradoresQ.data ?? []).map((g) => (
-                          <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Campo>
-                  <Campo label="Módulo">
-                    <Select value={moduloId} onValueChange={setModuloId}>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent className="max-h-[320px]">
-                        {(modulosQ.data ?? []).map((m) => (
-                          <SelectItem key={m.id} value={m.id}>
-                            {m.nome}
-                            {m.personalizado ? "" : ` (${m.largura}×${m.altura}×${m.espessura} mm)`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Campo>
-                  <Campo label="Orientação">
-                    <Select value={orientacao} onValueChange={(v) => setOrientacao(v as Orientacao)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="R">Retrato</SelectItem>
-                        <SelectItem value="P">Paisagem</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Campo>
+                <div className="space-y-5">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Campo label="Módulo">
+                      <Select value={moduloId} onValueChange={setModuloId}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent className="max-h-[320px]">
+                          {modulosOrdenados.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.nome}
+                              {m.personalizado ? "" : ` (${m.largura}×${m.altura}×${m.espessura} mm)`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Campo>
+                    <Campo label="Altura (mm)">
+                      <Input
+                        value={modulo?.personalizado ? modPersonalizado.altura : String(modulo?.altura ?? "")}
+                        disabled={!modulo?.personalizado}
+                        onChange={(e) =>
+                          setModPersonalizado((p) => ({ ...p, altura: e.target.value.replace(/\D/g, "") }))
+                        }
+                      />
+                    </Campo>
+                    <Campo label="Largura (mm)">
+                      <Input
+                        value={modulo?.personalizado ? modPersonalizado.largura : String(modulo?.largura ?? "")}
+                        disabled={!modulo?.personalizado}
+                        onChange={(e) =>
+                          setModPersonalizado((p) => ({ ...p, largura: e.target.value.replace(/\D/g, "") }))
+                        }
+                      />
+                    </Campo>
+                    <Campo label="Espessura (mm)">
+                      <Input
+                        value={
+                          modulo?.personalizado ? modPersonalizado.espessura : String(modulo?.espessura ?? "")
+                        }
+                        disabled={!modulo?.personalizado}
+                        onChange={(e) =>
+                          setModPersonalizado((p) => ({ ...p, espessura: e.target.value.replace(/\D/g, "") }))
+                        }
+                      />
+                    </Campo>
+                    <Campo label="Quantidade de painéis">
+                      <Input value={paineis} onChange={(e) => setPaineis(e.target.value.replace(/\D/g, ""))} />
+                    </Campo>
+                    <Campo label="Tipo de gerador">
+                      <Select
+                        value={geradorId}
+                        onValueChange={(v) => {
+                          setGeradorId(v);
+                          setMicroModelo("");
+                          setMicroQtd("");
+                        }}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {(geradoresQ.data ?? []).map((g) => (
+                            <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Campo>
 
-                  {modulo?.personalizado && (
-                    <>
-                      <Campo label="Largura (mm)">
-                        <Input
-                          value={modPersonalizado.largura}
-                          onChange={(e) => setModPersonalizado((p) => ({ ...p, largura: e.target.value }))}
-                        />
-                      </Campo>
-                      <Campo label="Altura (mm)">
-                        <Input
-                          value={modPersonalizado.altura}
-                          onChange={(e) => setModPersonalizado((p) => ({ ...p, altura: e.target.value }))}
-                        />
-                      </Campo>
-                      <Campo label="Espessura (mm)">
-                        <Input
-                          value={modPersonalizado.espessura}
-                          onChange={(e) => setModPersonalizado((p) => ({ ...p, espessura: e.target.value }))}
-                        />
-                      </Campo>
-                    </>
-                  )}
+                    {geradorPedeQuantidade && (
+                      <>
+                        {geradorEhMicro && (
+                          <Campo label="Modelo do microinversor">
+                            <Select
+                              value={microModelo}
+                              onValueChange={(v) => {
+                                setMicroModelo(v);
+                                const m = MICRO_MODELOS.find((x) => x.id === v);
+                                if (m && paineis)
+                                  setMicroQtd(String(Math.ceil((Number(paineis) || 0) / m.porUnidade)));
+                              }}
+                            >
+                              <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                              <SelectContent>
+                                {MICRO_MODELOS.map((m) => (
+                                  <SelectItem key={m.id} value={m.id}>
+                                    {m.nome} ({m.porUnidade})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </Campo>
+                        )}
+                        <Campo
+                          label={`Quantidade de ${geradorEhMicro ? "microinversores" : "otimizadores"}`}
+                        >
+                          <Input
+                            value={microQtd}
+                            placeholder={microSugerido ? `Sugerido: ${microSugerido}` : ""}
+                            onChange={(e) => setMicroQtd(e.target.value.replace(/\D/g, ""))}
+                          />
+                        </Campo>
+                      </>
+                    )}
 
-                  <Campo label="Quantidade de painéis">
-                    <Input value={paineis} onChange={(e) => setPaineis(e.target.value.replace(/\D/g, ""))} />
-                  </Campo>
-                  <Campo label="Fileiras">
-                    <Input value={fileiras} onChange={(e) => setFileiras(e.target.value.replace(/\D/g, ""))} />
-                  </Campo>
-                  <Campo label="Trilho">
-                    <Select
-                      value={trilhoId}
-                      onValueChange={(v) => {
-                        setTrilhoId(v);
-                        setSuporteId("");
-                      }}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        {(trilhosQ.data ?? []).map((t) => (
-                          <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Campo>
-                  <Campo label="Fixação / suporte">
-                    <Select value={suporteId} onValueChange={setSuporteId} disabled={!trilhoId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={trilhoId ? "Selecione" : "Escolha o trilho antes"} />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[320px]">
-                        {suportesDoTrilho.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Campo>
-                  <div className="md:col-span-3">
+                    <Campo label="Tamanho dos trilhos">
+                      <Select value={tamanhoTrilho} onValueChange={setTamanhoTrilho}>
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {TAMANHOS_TRILHO.map((t) => (
+                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Campo>
+                  </div>
+
+                  {/* Disposição dos painéis nas fileiras */}
+                  <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold">Disposição dos painéis nas fileiras</div>
+                        <div className="text-xs text-muted-foreground">
+                          {paineisNasLinhas} painel(is) distribuído(s)
+                          {paineis ? ` de ${paineis} informado(s)` : ""}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => setLinhas((p) => [...p, novaFileira()])}
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Adicionar fileira
+                      </Button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm min-w-[900px]">
+                        <thead>
+                          <tr className="text-[11px] uppercase text-muted-foreground border-b border-border">
+                            <th className="text-left py-2 pr-2">Trilhos</th>
+                            <th className="text-left py-2 px-2">Suporte</th>
+                            <th className="text-left py-2 px-2">Fileiras</th>
+                            <th className="text-left py-2 px-2">Módulos</th>
+                            <th className="text-left py-2 px-2">Orientação</th>
+                            <th className="text-left py-2 px-2">Vão máx. (m)</th>
+                            <th className="text-left py-2 px-2">Balanço (m)</th>
+                            <th className="py-2 pl-2" />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {linhas.map((l) => (
+                            <tr key={l.key} className="border-b border-border/50 align-top">
+                              <td className="py-2 pr-2">
+                                <Select
+                                  value={l.trilhoId}
+                                  onValueChange={(v) =>
+                                    setLinhas((p) =>
+                                      p.map((x) =>
+                                        x.key === l.key ? { ...x, trilhoId: v, suporteId: "" } : x,
+                                      ),
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger className="h-9"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                                  <SelectContent>
+                                    {(trilhosQ.data ?? []).map((t) => (
+                                      <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="py-2 px-2">
+                                <Select
+                                  value={l.suporteId}
+                                  disabled={!l.trilhoId}
+                                  onValueChange={(v) =>
+                                    setLinhas((p) =>
+                                      p.map((x) => (x.key === l.key ? { ...x, suporteId: v } : x)),
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder={l.trilhoId ? "Selecione" : "Escolha o trilho"} />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-h-[320px]">
+                                    {suportesDe(l.trilhoId).map((s) => (
+                                      <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="py-2 px-2">
+                                <Input
+                                  className="h-9 w-20"
+                                  value={l.fileiras}
+                                  onChange={(e) =>
+                                    setLinhas((p) =>
+                                      p.map((x) =>
+                                        x.key === l.key
+                                          ? { ...x, fileiras: e.target.value.replace(/\D/g, "") }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                />
+                              </td>
+                              <td className="py-2 px-2">
+                                <Input
+                                  className="h-9 w-20"
+                                  value={l.modulos}
+                                  onChange={(e) =>
+                                    setLinhas((p) =>
+                                      p.map((x) =>
+                                        x.key === l.key
+                                          ? { ...x, modulos: e.target.value.replace(/\D/g, "") }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                />
+                              </td>
+                              <td className="py-2 px-2">
+                                <Select
+                                  value={l.orientacao}
+                                  onValueChange={(v) =>
+                                    setLinhas((p) =>
+                                      p.map((x) =>
+                                        x.key === l.key ? { ...x, orientacao: v as Orientacao } : x,
+                                      ),
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger className="h-9 w-32"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="R">Retrato</SelectItem>
+                                    <SelectItem value="P">Paisagem</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="py-2 px-2">
+                                <Input
+                                  className="h-9 w-24"
+                                  value={l.distMax}
+                                  placeholder="auto"
+                                  onChange={(e) =>
+                                    setLinhas((p) =>
+                                      p.map((x) =>
+                                        x.key === l.key
+                                          ? { ...x, distMax: e.target.value.replace(/[^\d.,]/g, "").replace(",", ".") }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                />
+                              </td>
+                              <td className="py-2 px-2">
+                                <Input
+                                  className="h-9 w-24"
+                                  value={l.balanco}
+                                  placeholder="auto"
+                                  onChange={(e) =>
+                                    setLinhas((p) =>
+                                      p.map((x) =>
+                                        x.key === l.key
+                                          ? { ...x, balanco: e.target.value.replace(/[^\d.,]/g, "").replace(",", ".") }
+                                          : x,
+                                      ),
+                                    )
+                                  }
+                                />
+                              </td>
+                              <td className="py-2 pl-2 text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Remover fileira"
+                                  disabled={linhas.length === 1}
+                                  onClick={() => setLinhas((p) => p.filter((x) => x.key !== l.key))}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Itens extras (não calculados) */}
+                  <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
+                    <div className="text-sm font-semibold">Itens extras</div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <Campo label="Adicionar produto do catálogo">
+                        <Select value="" onValueChange={(id) => adicionarProdutoEm(id, "calculadora")}>
+                          <SelectTrigger><SelectValue placeholder="Buscar produto" /></SelectTrigger>
+                          <SelectContent className="max-h-[320px]">
+                            {produtos.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.codigo} — {p.descricao}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Campo>
+                    </div>
+                  </div>
+
+                  <div>
                     <Button onClick={() => void realizarProposta()} disabled={calculando} className="gap-2">
                       {calculando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
                       Realizar proposta
                     </Button>
                   </div>
+
 
                   {resultado?.ok && (
                     <div className="md:col-span-3 rounded-xl border border-border bg-surface-2 p-4 text-sm space-y-1 animate-fade-in">
@@ -1062,39 +1478,45 @@ function NovaPropostaSolarPage() {
               )}
 
               {modo === "lista" && (
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Campo label="Adicionar produto do catálogo">
-                    <Select
-                      value=""
-                      onValueChange={(id) => {
-                        const p = produtos.find((x) => x.id === id);
-                        if (!p) return;
-                        const novos: Item[] = [
-                          ...itens,
-                          {
-                            key: Math.random().toString(36).slice(2),
-                            produtoId: p.id,
-                            qtd: 1,
-                            valor: p.preco_sugerido,
-                            origem: "manual",
-                          },
-                        ];
-                        setItens(novos);
-                        void atualizarPrecos(novos, listaPreco);
-                      }}
-                    >
-                      <SelectTrigger><SelectValue placeholder="Buscar produto" /></SelectTrigger>
-                      <SelectContent className="max-h-[320px]">
-                        {produtos.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.codigo} — {p.descricao}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Campo>
+                <div className="space-y-3">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Campo label="Adicionar produto do catálogo">
+                      <Select value="" onValueChange={(id) => adicionarProdutoEm(id, "lista")}>
+                        <SelectTrigger><SelectValue placeholder="Buscar produto" /></SelectTrigger>
+                        <SelectContent className="max-h-[320px]">
+                          {produtos.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.codigo} — {p.descricao}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Campo>
+                  </div>
+                  <div className="rounded-xl border border-border bg-surface-2 p-4">
+                    <div className="text-sm font-semibold mb-3">Produto fora do catálogo</div>
+                    <div className="grid gap-3 md:grid-cols-[1fr_120px_auto] md:items-end">
+                      <Campo label="Descrição do produto">
+                        <Input
+                          value={avulsoDesc}
+                          placeholder="Escreva o produto que deseja incluir"
+                          onChange={(e) => setAvulsoDesc(e.target.value)}
+                        />
+                      </Campo>
+                      <Campo label="Quantidade">
+                        <Input
+                          value={avulsoQtd}
+                          onChange={(e) => setAvulsoQtd(e.target.value.replace(/\D/g, ""))}
+                        />
+                      </Campo>
+                      <Button type="button" variant="outline" className="gap-1" onClick={adicionarAvulso}>
+                        <Plus className="h-4 w-4" /> Incluir
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
+
             </div>
 
             <div className="glass rounded-2xl overflow-hidden">
@@ -1111,12 +1533,16 @@ function NovaPropostaSolarPage() {
                 <tbody>
                   {itens.map((i) => {
                     const p = produtos.find((x) => x.id === i.produtoId);
+                    const descricao = i.avulso?.descricao ?? p?.descricao ?? "—";
+                    const codigo = i.avulso?.codigo ?? p?.codigo ?? "";
+                    const editavel = i.origem === "manual";
                     return (
                       <tr key={i.key} className="border-b border-border/50">
                         <td className="px-4 py-3">
-                          <div className="font-medium">{p?.descricao ?? "—"}</div>
+                          <div className="font-medium">{descricao}</div>
                           <div className="text-xs text-muted-foreground">
-                            {p?.codigo} {i.origem === "calculadora" ? "· Calculadora 2P" : ""}
+                            {codigo} {i.origem === "calculadora" ? "· Calculadora 2P" : ""}
+                            {!i.valor && !i.avulso ? " · sem preço no SAP" : ""}
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -1135,7 +1561,24 @@ function NovaPropostaSolarPage() {
                             >
                               <Minus className="h-3.5 w-3.5" />
                             </Button>
-                            <span className="w-10 text-center tabular-nums">{i.qtd}</span>
+                            <Input
+                              className="h-8 w-16 text-center tabular-nums"
+                              aria-label="Quantidade"
+                              value={String(i.qtd)}
+                              onChange={(e) => {
+                                const q = Number(e.target.value.replace(/\D/g, ""));
+                                setItens((prev) =>
+                                  prev.map((x) => (x.key === i.key ? { ...x, qtd: q } : x)),
+                                );
+                              }}
+                              onBlur={() =>
+                                setItens((prev) =>
+                                  prev.map((x) =>
+                                    x.key === i.key ? { ...x, qtd: Math.max(1, x.qtd || 1) } : x,
+                                  ),
+                                )
+                              }
+                            />
                             <Button
                               variant="ghost"
                               size="icon"
@@ -1150,10 +1593,29 @@ function NovaPropostaSolarPage() {
                             </Button>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right tabular-nums">{fmtBRL(i.valor)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">
+                          {editavel ? (
+                            <Input
+                              className="h-8 w-28 text-right tabular-nums ml-auto"
+                              aria-label="Valor unitário"
+                              value={String(i.valor)}
+                              onChange={(e) => {
+                                const v = Number(e.target.value.replace(/[^\d.,]/g, "").replace(",", "."));
+                                setItens((prev) =>
+                                  prev.map((x) =>
+                                    x.key === i.key ? { ...x, valor: money2(v) } : x,
+                                  ),
+                                );
+                              }}
+                            />
+                          ) : (
+                            fmtBRL(i.valor)
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-right font-semibold tabular-nums">
                           {fmtBRL(i.valor * i.qtd)}
                         </td>
+
                         <td className="px-4 py-3 text-right">
                           <Button
                             variant="ghost"
@@ -1263,11 +1725,14 @@ function NovaPropostaSolarPage() {
 
             {(freteMod === "CIF" || freteMod === "DEDICADO") && (
               <FreteCotacao
-                itens={itens.map((i) => ({
-                  codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? "",
-                  quantidade: i.qtd,
-                  nome: produtos.find((p) => p.id === i.produtoId)?.descricao ?? "",
-                }))}
+                itens={itens
+                  .filter((i) => !i.avulso)
+                  .map((i) => ({
+                    codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? "",
+                    quantidade: i.qtd,
+                    nome: produtos.find((p) => p.id === i.produtoId)?.descricao ?? "",
+                  }))}
+
                 valorNota={subtotal - desconto}
                 destino={destino}
                 areaRural={areaRural}
@@ -1328,8 +1793,9 @@ function NovaPropostaSolarPage() {
                       return (
                         <tr key={i.key} className="border-b border-border/50 last:border-0">
                           <td className="px-4 py-2.5">
-                            <div className="font-medium">{p?.descricao ?? "—"}</div>
-                            <div className="text-xs text-muted-foreground">{p?.codigo}</div>
+                            <div className="font-medium">{i.avulso?.descricao ?? p?.descricao ?? "—"}</div>
+                            <div className="text-xs text-muted-foreground">{i.avulso?.codigo ?? p?.codigo}</div>
+
                           </td>
                           <td className="px-4 py-2.5 text-center tabular-nums">{i.qtd}</td>
                           <td className="px-4 py-2.5 text-right tabular-nums">{fmtBRL(i.valor)}</td>

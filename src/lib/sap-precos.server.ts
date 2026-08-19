@@ -99,13 +99,20 @@ function envelope(itens: SimulacaoItem[], opts: SimulacaoOpts) {
         <VTWEG>10</VTWEG>
         <SPART>10</SPART>
         <ZTERM>B000</ZTERM>
-        <DT_DOC>${hoje}</DT_DOC>
-        <DT_ENTREGA>${hoje}</DT_ENTREGA>
+        <VLR_FRETE>0</VLR_FRETE>
+        <PURCH_DATE>${hoje}</PURCH_DATE>
+        <DATA_REMESSA>${hoje}</DATA_REMESSA>
       </I_S_OV>
       <I_S_PARCEIRO>
         <PLTYP>${esc(opts.listaPreco ?? "01")}</PLTYP>
-        <CNPJ_CPF>${esc(String(opts.documento ?? "").replace(/\D/g, ""))}</CNPJ_CPF>
+        ${(() => {
+          const d = String(opts.documento ?? "").replace(/\D/g, "");
+          if (d.length === 14) return `<CNPJ>${esc(d)}</CNPJ>`;
+          if (d.length === 11) return `<CPF>${esc(d)}</CPF>`;
+          return "";
+        })()}
       </I_S_PARCEIRO>
+
       <I_T_ITENS>${linhas}</I_T_ITENS>
     </urn:ZNFE_OV_SIMULAR>
   </soap:Body>
