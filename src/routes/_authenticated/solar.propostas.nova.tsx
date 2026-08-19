@@ -282,6 +282,19 @@ function NovaPropostaSolarPage() {
     return (suportesQ.data ?? []).filter((s) => ids.includes(s.id));
   };
 
+  /**
+   * Tabela de preço do cadastro do cliente ("2P-0001") vira o PLTYP do SAP ("01").
+   * O vendedor ainda pode trocar manualmente depois.
+   */
+  const tabelaAplicada = useRef<string>("");
+  useEffect(() => {
+    const doc = String(cliente?.['doc'] ?? "");
+    if (!doc || tabelaAplicada.current === doc) return;
+    tabelaAplicada.current = doc;
+    const pltyp = pltypDaTabela((cliente as any)?.['tabela_preco']);
+    setListaPreco((atual) => (atual === pltyp ? atual : pltyp));
+  }, [cliente]);
+
 
   // Carrega proposta existente para edição/duplicação
   useEffect(() => {
