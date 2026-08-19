@@ -105,7 +105,7 @@ function envelope(itens: SimulacaoItem[], opts: SimulacaoOpts) {
         <DATA_REMESSA>${hoje}</DATA_REMESSA>
       </I_S_OV>
       <I_S_PARCEIRO>
-        <PLTYP>${esc(opts.listaPreco ?? "01")}</PLTYP>
+        <PLTYP>${esc(pltypDaTabela(opts.listaPreco))}</PLTYP>
         ${(() => {
           const d = String(opts.documento ?? "").replace(/\D/g, "");
           if (d.length === 14) return `<CNPJ>${esc(d)}</CNPJ>`;
