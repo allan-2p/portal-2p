@@ -272,6 +272,116 @@ function mensagens(doc: any): { erro: string | null; texto: string | null } {
   return { erro: erro?.texto || (erro ? "Erro retornado pelo SAP." : null), texto };
 }
 
+/** Valida CNPJ pelos dígitos verificadores. */
+function cnpjValido(v: unknown): boolean {
+  const d = digitos(v);
+  if (d.length !== 14 || /^(\d)\1{13}$/.test(d)) return false;
+  const calc = (base: string) => {
+    let peso = base.length - 7;
+    let soma = 0;
+    for (let i = 0; i < base.length; i++) {
+      soma += Number(base[i]) * peso--;
+      if (peso < 2) peso = 9;
+    }
+    const r = soma % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  return calc(d.slice(0, 12)) === Number(d[12]) && calc(d.slice(0, 13)) === Number(d[13]);
+}
+
+/**
+ * Validação prévia ao `ZNFE_OV_CRIAR`: campos obrigatórios do cabeçalho,
+ * documento do cliente/emissor, itens (código SAP, quantidade e valor) e
+ * coerência dos totais. Evita gastar uma tentativa em erro do SAP.
+ */
+export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
+  const pendencias: string[] = [];
+  const avisos: string[] = [];
+
+  const numero = String(row["numero"] ?? "").trim();
+  if (!numero) pendencias.push("Número do pedido não definido.");
+  if (!String(row["cliente_nome"] ?? "").trim()) pendencias.push("Cliente sem nome/razão social.");
+
+  const docCliente = digitos(row["cliente_doc"]);
+  if (!docCliente) pendencias.push("Cliente sem CNPJ informado.");
+  else if (docCliente.length !== 14) pendencias.push("CNPJ do cliente inválido (são necessários 14 dígitos).");
+  else if (!cnpjValido(docCliente)) pendencias.push(`CNPJ do cliente inválido (${docCliente}).`);
+
+  if (row["faturar_cliente_final"]) {
+    const fat = (row["faturamento"] ?? {}) as Record<string, any>;
+    const docFat = digitos(fat["doc"]);
+    if (!docFat) pendencias.push("Faturamento para cliente final marcado, mas sem CPF/CNPJ do emissor.");
+    else if (docFat.length === 14 && !cnpjValido(docFat)) pendencias.push(`CNPJ de faturamento inválido (${docFat}).`);
+    else if (docFat.length !== 14 && docFat.length !== 11)
+      pendencias.push("CPF/CNPJ de faturamento com quantidade de dígitos inválida.");
+    if (!String(fat["nome"] ?? "").trim()) avisos.push("Faturamento sem nome — será usado o nome do cliente.");
+  }
+
+  const mod = String(row["frete_mod"] ?? "").trim().toUpperCase();
+  if (!mod) pendencias.push("Modalidade de frete (CIF/FOB) não definida.");
+  else if (!["CIF", "FOB"].includes(mod)) pendencias.push(`Modalidade de frete inválida para o SAP: "${mod}".`);
+  if (mod === "CIF" && !(Number(row["frete_valor"] ?? 0) > 0))
+    avisos.push("Frete CIF sem valor calculado — a ordem irá com frete zerado.");
+
+  if (!String(row["forma_pagamento"] ?? "").trim()) pendencias.push("Forma de pagamento não definida.");
+  if (!String(row["consultor_codigo_sap"] ?? "").trim())
+    avisos.push("Vendedor sem código SAP cadastrado — a ordem irá sem o vendedor.");
+
+  const venc = String(row["pagamento_vencimento"] ?? "").slice(0, 10);
+  if (venc && !/^\d{4}-\d{2}-\d{2}$/.test(venc)) pendencias.push(`Data de vencimento inválida: "${venc}".`);
+
+  // Itens
+  const brutos = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
+  const itens = brutos.filter((i) => Number(i?.qtd ?? 0) > 0);
+  if (!itens.length) pendencias.push("Pedido sem itens com quantidade maior que zero.");
+
+  const semCodigo = itens.filter((i) => !norm(i?.codigo));
+  if (semCodigo.length)
+    pendencias.push(
+      `${semCodigo.length} item(ns) sem código SAP (de-para do material): ${semCodigo
+        .map((i) => String(i?.descricao ?? i?.nome ?? "item").slice(0, 40))
+        .slice(0, 5)
+        .join(", ")}.`,
+    );
+
+  const qtdInvalida = itens.filter((i) => !Number.isFinite(Number(i?.qtd)) || Number(i?.qtd) <= 0);
+  if (qtdInvalida.length) pendencias.push(`${qtdInvalida.length} item(ns) com quantidade inválida.`);
+
+  const semValor = itens.filter((i) => !(Number(i?.valor ?? 0) > 0));
+  if (semValor.length)
+    pendencias.push(
+      `${semValor.length} item(ns) sem valor (preço não retornado do SAP): ${semValor
+        .map((i) => norm(i?.codigo) || String(i?.descricao ?? "item").slice(0, 30))
+        .slice(0, 5)
+        .join(", ")}.`,
+    );
+
+  const duplicados = new Map<string, number>();
+  for (const i of itens) {
+    const k = norm(i?.codigo);
+    if (k) duplicados.set(k, (duplicados.get(k) ?? 0) + 1);
+  }
+  const repetidos = [...duplicados.entries()].filter(([, n]) => n > 1).map(([k]) => k);
+  if (repetidos.length) avisos.push(`Material repetido em mais de uma linha: ${repetidos.slice(0, 5).join(", ")}.`);
+
+  // Totais
+  const totais = (row["totais"] ?? {}) as Record<string, any>;
+  const valorTotal = Number(totais["valorTotal"] ?? 0);
+  if (!(valorTotal > 0)) pendencias.push("Valor total do pedido zerado ou ausente.");
+  else {
+    const somaItens = itens.reduce((a, i) => a + Number(i?.valor ?? 0), 0);
+    const esperado = somaItens + Number(row["frete_valor"] ?? 0);
+    if (somaItens > 0 && Math.abs(esperado - valorTotal) > Math.max(1, valorTotal * 0.02))
+      avisos.push(
+        `Total do pedido (${valorTotal.toFixed(2)}) difere da soma dos itens + frete (${esperado.toFixed(2)}).`,
+      );
+  }
+
+  return { ok: pendencias.length === 0, pendencias, avisos };
+}
+
+
+
 /**
  * Envia a ordem de venda ao SAP e grava o retorno na proposta.
  * Nunca lança: devolve o resultado para o chamador registrar/exibir.
