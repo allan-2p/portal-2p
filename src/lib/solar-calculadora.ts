@@ -32,6 +32,11 @@ export type SolarTrilho = {
   suporte_fixo_legado: number | null;
   ativo: boolean;
   ordem: number;
+  /** Códigos de produto por comprimento de barra (de-para do quantificador). */
+  cod_4800?: string | null;
+  cod_3600?: string | null;
+  cod_2400?: string | null;
+  cod_2700?: string | null;
 };
 
 export type SolarSuporte = {
@@ -45,6 +50,12 @@ export type SolarSuporte = {
   usa_barra: boolean;
   ativo: boolean;
   ordem: number;
+  /** Telhado Smart / mini-trilho (não usa barras 2P-TC). */
+  smart?: boolean;
+  /** Código complementar do fixador (ex.: 2P-LPM10). */
+  cod_extra?: string | null;
+  /** Código do mini-trilho usado nos suportes Smart. */
+  cod_mini_trilho?: string | null;
 };
 
 export type SolarCalcConfig = {
@@ -63,6 +74,9 @@ export type SolarCalcConfig = {
   cod_grampo_final: string;
   cod_terminal_aterramento: string;
   cod_juncao: string;
+  cod_kit_parafuso_smart: string;
+  cod_terminal_m8: string;
+  cod_terminal_zmi: string;
 };
 
 export const SOLAR_CALC_CONFIG_FALLBACK: SolarCalcConfig = {
@@ -81,7 +95,11 @@ export const SOLAR_CALC_CONFIG_FALLBACK: SolarCalcConfig = {
   cod_grampo_final: "2P-GF3035",
   cod_terminal_aterramento: "2P-GAT",
   cod_juncao: "2P-J",
+  cod_kit_parafuso_smart: "100000052",
+  cod_terminal_m8: "2P-M8*20",
+  cod_terminal_zmi: "2P-ZMI",
 };
+
 
 /** Retrato (painel em pé) ou Paisagem (painel deitado). */
 export type Orientacao = "R" | "P";

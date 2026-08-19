@@ -2108,7 +2108,10 @@ export type Database = {
           cod_grampo_final: string
           cod_grampo_intermediario: string
           cod_juncao: string
+          cod_kit_parafuso_smart: string
           cod_terminal_aterramento: string
+          cod_terminal_m8: string
+          cod_terminal_zmi: string
           espessura_max: number
           espessura_min: number
           folga_paineis: number
@@ -2127,7 +2130,10 @@ export type Database = {
           cod_grampo_final?: string
           cod_grampo_intermediario?: string
           cod_juncao?: string
+          cod_kit_parafuso_smart?: string
           cod_terminal_aterramento?: string
+          cod_terminal_m8?: string
+          cod_terminal_zmi?: string
           espessura_max?: number
           espessura_min?: number
           folga_paineis?: number
@@ -2146,7 +2152,10 @@ export type Database = {
           cod_grampo_final?: string
           cod_grampo_intermediario?: string
           cod_juncao?: string
+          cod_kit_parafuso_smart?: string
           cod_terminal_aterramento?: string
+          cod_terminal_m8?: string
+          cod_terminal_zmi?: string
           espessura_max?: number
           espessura_min?: number
           folga_paineis?: number
@@ -2245,6 +2254,42 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_microinversores: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          fixadores_por_unidade: number
+          id: string
+          modelo_legado: number
+          modulos_por_unidade: number
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          fixadores_por_unidade?: number
+          id?: string
+          modelo_legado: number
+          modulos_por_unidade?: number
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          fixadores_por_unidade?: number
+          id?: string
+          modelo_legado?: number
+          modulos_por_unidade?: number
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       solar_modulos: {
         Row: {
           altura: number | null
@@ -2287,6 +2332,8 @@ export type Database = {
       solar_suportes: {
         Row: {
           ativo: boolean
+          cod_extra: string | null
+          cod_mini_trilho: string | null
           codigo_sap: string | null
           created_at: string
           id: string
@@ -2294,11 +2341,14 @@ export type Database = {
           multiplo: number
           nome: string
           ordem: number
+          smart: boolean
           updated_at: string
           usa_barra: boolean
         }
         Insert: {
           ativo?: boolean
+          cod_extra?: string | null
+          cod_mini_trilho?: string | null
           codigo_sap?: string | null
           created_at?: string
           id?: string
@@ -2306,11 +2356,14 @@ export type Database = {
           multiplo?: number
           nome: string
           ordem?: number
+          smart?: boolean
           updated_at?: string
           usa_barra?: boolean
         }
         Update: {
           ativo?: boolean
+          cod_extra?: string | null
+          cod_mini_trilho?: string | null
           codigo_sap?: string | null
           created_at?: string
           id?: string
@@ -2318,6 +2371,7 @@ export type Database = {
           multiplo?: number
           nome?: string
           ordem?: number
+          smart?: boolean
           updated_at?: string
           usa_barra?: boolean
         }
@@ -2359,6 +2413,10 @@ export type Database = {
       solar_trilhos: {
         Row: {
           ativo: boolean
+          cod_2400: string | null
+          cod_2700: string | null
+          cod_3600: string | null
+          cod_4800: string | null
           codigo_sap: string | null
           created_at: string
           familia: string
@@ -2373,6 +2431,10 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          cod_2400?: string | null
+          cod_2700?: string | null
+          cod_3600?: string | null
+          cod_4800?: string | null
           codigo_sap?: string | null
           created_at?: string
           familia?: string
@@ -2387,6 +2449,10 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          cod_2400?: string | null
+          cod_2700?: string | null
+          cod_3600?: string | null
+          cod_4800?: string | null
           codigo_sap?: string | null
           created_at?: string
           familia?: string
