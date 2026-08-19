@@ -55,7 +55,21 @@ function pem(value: string, nome: string): string {
         "Salve o conteúdo do arquivo .pem/.key (ou o mesmo conteúdo em base64).",
     );
   }
-  return v.endsWith("\n") ? v : `${v}\n`;
+
+  // Reconstrói as quebras de linha: segredos colados em linha única perdem os
+  // "\n" e o OpenSSL rejeita com ERR_OSSL_PEM_NO_START_LINE.
+  const blocos = [...v.matchAll(/-----BEGIN ([^-]+)-----([\s\S]*?)-----END \1-----/g)];
+  if (blocos.length === 0) {
+    throw new ItauIndisponivel(`${nome} está incompleto (falta a linha "-----END ...-----").`);
+  }
+  const saida = blocos
+    .map(([, tipo, corpo]) => {
+      const b64 = (corpo ?? "").replace(/\s+/g, "");
+      const linhas = b64.match(/.{1,64}/g) ?? [];
+      return `-----BEGIN ${tipo}-----\n${linhas.join("\n")}\n-----END ${tipo}-----`;
+    })
+    .join("\n");
+  return `${saida}\n`;
 }
 
 let dispatcherPromise: Promise<unknown> | null = null;
