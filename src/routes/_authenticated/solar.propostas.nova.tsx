@@ -1265,68 +1265,110 @@ function NovaPropostaSolarPage() {
               </div>
             </div>
 
-            <div className="glass rounded-2xl p-5 space-y-4">
+            <div className="glass rounded-2xl p-5 space-y-6">
               <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Tag className="h-4 w-4 text-primary" /> Cupom de desconto
+                <Tag className="h-4 w-4 text-primary" /> Cupom, pagamento e observações
               </h2>
-              <div className="grid gap-3 md:grid-cols-2">
-                <Input
-                  value={cupomCodigo}
-                  onChange={(e) => setCupomCodigo(e.target.value.toUpperCase().trim())}
-                  placeholder="Digite o código do cupom"
-                  className="uppercase"
-                />
-                {(cuponsQ.data ?? []).some((c) => c.ativo) && (
-                  <Select
-                    value={cupomCodigo || "__none__"}
-                    onValueChange={(v) => setCupomCodigo(v === "__none__" ? "" : v)}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Ou escolha um cupom" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Sem cupom</SelectItem>
-                      {(cuponsQ.data ?? [])
-                        .filter((c) => c.ativo)
-                        .map((c) => (
-                          <SelectItem key={c.id} value={c.codigo}>
-                            {c.codigo} — {c.tipos.join(", ")}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Cupom de desconto</div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Input
+                    value={cupomCodigo}
+                    onChange={(e) => setCupomCodigo(e.target.value.toUpperCase().trim())}
+                    placeholder="Digite o código do cupom"
+                    className="uppercase"
+                  />
+                  {(cuponsQ.data ?? []).some((c) => c.ativo) && (
+                    <Select
+                      value={cupomCodigo || "__none__"}
+                      onValueChange={(v) => setCupomCodigo(v === "__none__" ? "" : v)}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Ou escolha um cupom" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Sem cupom</SelectItem>
+                        {(cuponsQ.data ?? [])
+                          .filter((c) => c.ativo)
+                          .map((c) => (
+                            <SelectItem key={c.id} value={c.codigo}>
+                              {c.codigo} — {c.tipos.join(", ")}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                {cupomCodigo && !cupom && (
+                  <p className="text-xs text-amber-500">
+                    Cupom não encontrado na lista — será validado no servidor ao salvar.
+                  </p>
+                )}
+                {cupom && (
+                  <p className="text-xs text-emerald-500">
+                    Cupom {cupom.codigo} aplicado ({cupom.tipos.join(", ")}).
+                  </p>
                 )}
               </div>
-              {cupomCodigo && !cupom && (
-                <p className="text-xs text-amber-500">
-                  Cupom não encontrado na lista — será validado no servidor ao salvar.
-                </p>
-              )}
-              {cupom && (
-                <p className="text-xs text-emerald-500">
-                  Cupom {cupom.codigo} aplicado ({cupom.tipos.join(", ")}).
-                </p>
-              )}
-            </div>
 
-            <div className="glass rounded-2xl p-5 space-y-3">
-              <h2 className="text-lg font-semibold">Forma de pagamento</h2>
-              <Select value={formaPagamento} onValueChange={setFormaPagamento}>
-                <SelectTrigger className="md:max-w-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="boleto_vista">Boleto à vista</SelectItem>
-                  <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>
-                  <SelectItem value="pix">Pix</SelectItem>
-                  <SelectItem value="cartao_credito">Cartão de crédito</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Obrigatória apenas para concluir o pedido.
-              </p>
-              {tentou && !formaPagamento && <Erro>Obrigatória para concluir.</Erro>}
-            </div>
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Forma de pagamento</div>
+                <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                  <SelectTrigger className="md:max-w-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="boleto_vista">Boleto à vista</SelectItem>
+                    <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>
+                    <SelectItem value="pix">Pix</SelectItem>
+                    <SelectItem value="cartao_credito">Cartão de crédito</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Obrigatória apenas para concluir o pedido.
+                </p>
+                {tentou && !formaPagamento && <Erro>Obrigatória para concluir.</Erro>}
+              </div>
 
-            <div className="glass rounded-2xl p-5 space-y-3">
-              <h2 className="text-lg font-semibold">Observações</h2>
-              <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} />
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Observações</div>
+                <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEtapa(4)}
+                >
+                  Voltar
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void salvarProposta(false)}
+                  disabled={salvando || !itens.length || !cliente}
+                  className="gap-2"
+                >
+                  {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Salvar
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void abrirPreviewPdf()}
+                  disabled={!itens.length || salvando}
+                  className="gap-2"
+                >
+                  <Eye className="h-4 w-4" /> Prévia da proposta
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => void salvarProposta(true)}
+                  disabled={salvando}
+                  className="gap-2"
+                >
+                  {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  Concluir pedido
+                </Button>
+              </div>
             </div>
           </section>
         )}
