@@ -98,12 +98,14 @@ function quantificarFileira(
   m: QuantModulo,
   ctx: QuantContexto,
   cfg: SolarCalcConfig,
+  primeira: boolean,
 ): QuantItem[] {
   const out: QuantItem[] = [];
   const add = (chave: string, codigo: string | null, descricao: string, q: number) => {
     if (q > 0) out.push({ chave, codigo, descricao, quantidade: q });
   };
   const qf = f.qtd_fileiras;
+
 
   // Trilhos solo/paisagem (legado 4 e 5) não usam distância/balanço. php:2408-2411
   let distancia = f.distancia;
