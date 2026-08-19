@@ -979,6 +979,7 @@ export const statusIntegracoesPedidoFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<PedidoIntegracoesStatus> => {
     const db = await repo();
+    const { validarPedidoParaSap } = await import("@/lib/sap-ov.server");
     const row = await db.getProposta(data.propostaId);
     if (!row) throw new Error("Proposta não encontrada.");
     const s = (k: string) => {
