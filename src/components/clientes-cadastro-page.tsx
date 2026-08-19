@@ -295,7 +295,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         if (e.cnae_principal?.codigo) bloq.add("cnae_principal_codigo");
         if (e.cnaes_secundarios?.length) bloq.add("cnaes_secundarios");
       }
-      setBloqueados(bloq);
+
       setFontes(e?.fontes ?? []);
       setAvisos(e?.avisos ?? []);
       setEtapa("formulario");
@@ -408,7 +408,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
     setConsultorId(consultoresQ.data?.eu.id ?? null);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
-    setFontes([]); setAvisos([]); setBloqueados(new Set());
+    setFontes([]); setAvisos([]);
   }
   const abrirNovo = () => { fechar(); setOpen(true); };
   const abrirEdicao = (c: Cliente) => {
@@ -425,7 +425,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       }),
     });
     setConsultorId(c.created_by ?? consultoresQ.data?.eu.id ?? null);
-    setTentouSalvar(false); setFontes([]); setAvisos([]); setBloqueados(new Set());
+    setTentouSalvar(false); setFontes([]); setAvisos([]);
     setEtapa("formulario"); setOpen(true);
   };
   const focarCampo = (campo: string) => {
