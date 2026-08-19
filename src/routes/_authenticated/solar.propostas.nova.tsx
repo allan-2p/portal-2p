@@ -77,7 +77,6 @@ import {
 } from "@/hooks/use-solar-catalogo";
 import { quantificarProjeto } from "@/lib/solar-quantificador";
 import {
-  calcularEstrutura,
   SOLAR_CALC_CONFIG_FALLBACK,
   type CalcResultado,
   type Orientacao,
@@ -2113,6 +2112,60 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
       <Label className="text-xs text-muted-foreground">{label}</Label>
       {children}
     </div>
+  );
+}
+
+function SeletorPesquisavel({
+  value,
+  onValueChange,
+  opcoes,
+  placeholder,
+  vazio,
+}: {
+  value: string;
+  onValueChange: (value: string) => void;
+  opcoes: { value: string; label: string }[];
+  placeholder: string;
+  vazio: string;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const selecionada = opcoes.find((o) => o.value === value);
+  return (
+    <Popover open={aberto} onOpenChange={setAberto}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={aberto}
+          className="w-full justify-between font-normal"
+        >
+          <span className="truncate">{selecionada?.label ?? placeholder}</span>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
+        <Command>
+          <CommandInput placeholder={placeholder} />
+          <CommandList>
+            <CommandEmpty>{vazio}</CommandEmpty>
+            {opcoes.map((opcao) => (
+              <CommandItem
+                key={opcao.value}
+                value={opcao.label}
+                onSelect={() => {
+                  onValueChange(opcao.value);
+                  setAberto(false);
+                }}
+              >
+                <Check className={cn("h-4 w-4", value === opcao.value ? "opacity-100" : "opacity-0")} />
+                <span className="truncate">{opcao.label}</span>
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
