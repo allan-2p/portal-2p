@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Minus,
+  Pencil,
   Plus,
+
   Save,
   Sparkles,
   Sun,
@@ -195,12 +197,25 @@ function NovaPropostaSolarPage() {
   const [itensCalc, setItensCalc] = useState<Item[]>([]);
   const [itensLista, setItensLista] = useState<Item[]>([]);
   const [calculando, setCalculando] = useState(false);
+  /** Assinatura dos inputs no momento do último cálculo (null = nunca calculou). */
+  const [assinaturaCalc, setAssinaturaCalc] = useState<string | null>(null);
+  const [editandoCalc, setEditandoCalc] = useState(false);
+
   const [trocando, setTrocando] = useState(false);
   const [resultado, setResultado] = useState<CalcResultado | null>(null);
   const [previewAberto, setPreviewAberto] = useState(false);
   const [pdfHtml, setPdfHtml] = useState("");
 
   const itens = modo === "calculadora" ? itensCalc : itensLista;
+  /** No modo calculadora, itens extras (manuais) ficam agrupados no final. */
+  const itensOrdenados = useMemo(
+    () =>
+      modo === "calculadora"
+        ? [...itens.filter((i) => i.origem !== "manual"), ...itens.filter((i) => i.origem === "manual")]
+        : itens,
+    [itens, modo],
+  );
+
   const setItens = modo === "calculadora" ? setItensCalc : setItensLista;
 
   // calculadora
@@ -396,11 +411,72 @@ function NovaPropostaSolarPage() {
     return Math.ceil((paineisNasLinhas || Number(paineis) || 0) / Math.max(1, m.modulos_por_unidade));
   }, [microinversoresQ.data, microModelo, paineis, paineisNasLinhas]);
 
+  /** Trilhos Smart/Zipado não usam vão entre apoios nem balanço. */
+  function semVao(l: FileiraCalc) {
+    const t = (trilhosQ.data ?? []).find((x) => x.id === l.trilhoId);
+    return /smart|zipad/i.test(`${t?.nome ?? ""} ${t?.familia ?? ""}`);
+  }
+
+  /** Preenche vão máximo e balanço com os padrões da calculadora (editáveis). */
+  useEffect(() => {
+    setLinhas((prev) => {
+      let mudou = false;
+      const next = prev.map((l) => {
+        const t = (trilhosQ.data ?? []).find((x) => x.id === l.trilhoId);
+        if (!t) return l;
+        const sem = /smart|zipad/i.test(`${t.nome ?? ""} ${t.familia ?? ""}`);
+        if (sem) {
+          if (l.distMax || l.balanco) {
+            mudou = true;
+            return { ...l, distMax: "", balanco: "" };
+          }
+          return l;
+        }
+        const distPadrao = ((config.barras_longas?.[0] ?? 6650) / 1000 / 4).toFixed(2);
+        const balancoPadrao = (config.balanco_ponta / 1000).toFixed(2);
+        if (!l.distMax || !l.balanco) {
+          mudou = true;
+          return { ...l, distMax: l.distMax || distPadrao, balanco: l.balanco || balancoPadrao };
+        }
+        return l;
+      });
+      return mudou ? next : prev;
+    });
+  }, [trilhosQ.data, config]);
+
+
+  /** Assinatura dos inputs que alimentam o cálculo — muda ⇒ cálculo desatualizado. */
+  const assinaturaAtual = useMemo(
+    () =>
+      JSON.stringify({
+        modulo: modulo?.id ?? null,
+        paineis,
+        geradorId,
+        microModelo,
+        microQtd,
+        tamanhoTrilho,
+        linhas: linhas.map((l) => [l.trilhoId, l.suporteId, l.fileiras, l.modulos, l.orientacao, l.distMax, l.balanco]),
+      }),
+    [modulo, paineis, geradorId, microModelo, microQtd, tamanhoTrilho, linhas],
+  );
+  const calcDesatualizado = !!assinaturaCalc && assinaturaCalc !== assinaturaAtual;
+  const calcTravado = !!assinaturaCalc && !editandoCalc;
+  function liberarEdicaoCalculo() {
+    setEditandoCalc(true);
+  }
+
   async function realizarProposta() {
     if (!modulo) return toast.error("Selecione o módulo.");
     if (!linhas.length) return toast.error("Adicione ao menos uma fileira.");
-    if (Number(paineis) > 0 && paineisNasLinhas !== Number(paineis))
-      return toast.error(`A disposição possui ${paineisNasLinhas} painel(is), mas o projeto informa ${paineis}.`);
+    if (Number(paineis) > 0 && paineisNasLinhas !== Number(paineis)) {
+      const diff = paineisNasLinhas - Number(paineis);
+      return toast.error(
+        diff > 0
+          ? `A disposição das fileiras tem ${diff} módulo(s) a mais que os ${paineis} do projeto. Remova ${diff} para calcular.`
+          : `Faltam ${Math.abs(diff)} módulo(s) na disposição das fileiras (${paineisNasLinhas} de ${paineis}).`,
+      );
+    }
+
     const microSelecionado = (microinversoresQ.data ?? []).find((m) => m.id === microModelo);
     if (geradorEhMicro && !microSelecionado) return toast.error("Selecione o modelo do microinversor.");
 
@@ -488,11 +564,14 @@ function NovaPropostaSolarPage() {
       });
     }
     const extras = itensCalc.filter((i) => i.origem === "manual");
-    setItensCalc([...extras, ...novos]);
+    setItensCalc([...novos, ...extras]);
+    setAssinaturaCalc(assinaturaAtual);
+    setEditandoCalc(false);
     if (faltando.length)
       toast.warning(`Itens sem correspondência no catálogo foram incluídos sem preço: ${faltando.join(", ")}.`);
     else toast.success("Estrutura calculada e itens adicionados.");
-    void atualizarPrecos([...extras, ...novos], listaPreco, setItensCalc);
+    void atualizarPrecos([...novos, ...extras], listaPreco, setItensCalc);
+
   }
 
   // ------------------------------------------------------------------
@@ -690,6 +769,13 @@ function NovaPropostaSolarPage() {
     }
     if (etapa === 3) {
       if (!itens.length) e.push("Adicione ao menos um produto.");
+      if (modo === "calculadora") {
+        if (!assinaturaCalc) e.push("Execute o cálculo da estrutura antes de avançar.");
+        else if (calcDesatualizado)
+          e.push("Os dados do cálculo foram alterados. Calcule novamente antes de avançar.");
+        else if (!itensCalc.some((i) => i.origem === "calculadora"))
+          e.push("O cálculo não gerou itens de estrutura. Revise os dados e calcule novamente.");
+      }
     }
     if (etapa === 4) {
       if (!freteMod) e.push("Escolha a modalidade de frete.");
@@ -702,7 +788,9 @@ function NovaPropostaSolarPage() {
   }, [
     etapa, propostaNome, cliente, vendido, previsao, faturarClienteFinal, fat,
     itens, freteMod, transportadora, freteGratis, entregaDiferente, entrega,
+    modo, assinaturaCalc, calcDesatualizado, itensCalc,
   ]);
+
 
   function avancar() {
     setTentou(true);
@@ -1153,7 +1241,9 @@ function NovaPropostaSolarPage() {
 
               {modo === "calculadora" && (
                 <div className="space-y-5">
+                  <fieldset disabled={calcTravado} className={cn("space-y-5", calcTravado && "opacity-70")}>
                   <div className="grid gap-4 md:grid-cols-3">
+
                     <Campo label="Módulo">
                       <SeletorPesquisavel
                         value={moduloId}
@@ -1393,7 +1483,8 @@ function NovaPropostaSolarPage() {
                                 <Input
                                   className="h-9 w-24"
                                   value={l.distMax}
-                                  placeholder="auto"
+                                  disabled={semVao(l)}
+                                  placeholder={semVao(l) ? "—" : "auto"}
                                   onChange={(e) =>
                                     setLinhas((p) =>
                                       p.map((x) =>
@@ -1409,7 +1500,8 @@ function NovaPropostaSolarPage() {
                                 <Input
                                   className="h-9 w-24"
                                   value={l.balanco}
-                                  placeholder="auto"
+                                  disabled={semVao(l)}
+                                  placeholder={semVao(l) ? "—" : "auto"}
                                   onChange={(e) =>
                                     setLinhas((p) =>
                                       p.map((x) =>
@@ -1421,6 +1513,7 @@ function NovaPropostaSolarPage() {
                                   }
                                 />
                               </td>
+
                               <td className="py-2 pl-2 text-right">
                                 <Button
                                   variant="ghost"
@@ -1439,12 +1532,29 @@ function NovaPropostaSolarPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <Button onClick={() => void realizarProposta()} disabled={calculando} className="gap-2">
+                  </fieldset>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      onClick={() => void realizarProposta()}
+                      disabled={calculando || calcTravado}
+                      className="gap-2"
+                    >
                       {calculando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
-                      Calcular
+                      {calcTravado ? "Cálculo concluído" : "Calcular"}
                     </Button>
+                    {calcTravado && (
+                      <Button type="button" variant="outline" className="gap-2" onClick={liberarEdicaoCalculo}>
+                        <Pencil className="h-4 w-4" /> Editar inputs de cálculo
+                      </Button>
+                    )}
+                    {calcDesatualizado && (
+                      <span className="text-xs font-medium text-destructive">
+                        Os dados mudaram desde o último cálculo. Clique em Calcular novamente.
+                      </span>
+                    )}
                   </div>
+
 
 
                   {resultado?.ok && (
@@ -1516,13 +1626,22 @@ function NovaPropostaSolarPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {itens.map((i) => {
+                  {itensOrdenados.map((i, idx, arr) => {
                     const p = produtos.find((x) => x.id === i.produtoId);
                     const descricao = i.avulso?.descricao ?? p?.descricao ?? "—";
                     const codigo = i.avulso?.codigo ?? p?.codigo ?? "";
                     const editavel = i.origem === "manual";
                     return (
-                      <tr key={i.key} className="border-b border-border/50">
+                      <Fragment key={i.key}>
+                      {modo === "calculadora" && i.origem === "manual" && arr[idx - 1]?.origem !== "manual" && (
+                        <tr className="bg-surface-2/70">
+                          <td colSpan={5} className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Itens extras — fora do cálculo da estrutura
+                          </td>
+                        </tr>
+                      )}
+                      <tr className="border-b border-border/50">
+
                         <td className="px-4 py-3">
                           <div className="font-medium">{descricao}</div>
                           <div className="text-xs text-muted-foreground">
@@ -1612,7 +1731,9 @@ function NovaPropostaSolarPage() {
                           </Button>
                         </td>
                       </tr>
+                      </Fragment>
                     );
+
                   })}
                   {!itens.length && (
                     <tr>
