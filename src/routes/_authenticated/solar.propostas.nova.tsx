@@ -632,9 +632,7 @@ function NovaPropostaSolarPage() {
     const novos: Item[] = [];
     const faltando: string[] = [];
     for (const c of agregado.componentes) {
-      const prod = c.codigo
-        ? produtos.find((p) => normCod(p.codigo) === normCod(c.codigo as string))
-        : undefined;
+      const prod = resolverProduto(produtos as any, c.codigo) as (typeof produtos)[number] | undefined;
       if (!prod) {
         faltando.push(c.descricao);
         novos.push({
