@@ -98,12 +98,14 @@ function quantificarFileira(
   m: QuantModulo,
   ctx: QuantContexto,
   cfg: SolarCalcConfig,
+  primeira: boolean,
 ): QuantItem[] {
   const out: QuantItem[] = [];
   const add = (chave: string, codigo: string | null, descricao: string, q: number) => {
     if (q > 0) out.push({ chave, codigo, descricao, quantidade: q });
   };
   const qf = f.qtd_fileiras;
+
 
   // Trilhos solo/paisagem (legado 4 e 5) não usam distância/balanço. php:2408-2411
   let distancia = f.distancia;
@@ -204,17 +206,34 @@ function quantificarFileira(
       add("grampo_final", cfg.cod_grampo_final, "Grampo final", fim);
       totGrampo = inter + fim; // soma grampos EXCETO GAT. php:2853-2859
     }
-    add("terminal_aterramento", cfg.cod_terminal_aterramento, "Terminal de aterramento", qf);
+
+    // 1ª fileira com microinversor no suporte legado 9 (modelos 1..4):
+    // GAT, mini-trilho e kit somam +microinversores. php:2808-2867
+    const extraMicro =
+      primeira &&
+      (f.suporte.legado_id ?? 0) === 9 &&
+      ctx.tipo_gerador === 1 &&
+      [1, 2, 3, 4].includes(ctx.modelo_gerador)
+        ? ctx.microinversores
+        : 0;
+
+    add(
+      "terminal_aterramento",
+      cfg.cod_terminal_aterramento,
+      "Terminal de aterramento",
+      qf + extraMicro,
+    );
 
     // mini-trilho + kit parafuso = tot_grampo. php:2861-2909
     add(
       "mini_trilho",
       f.suporte.cod_mini_trilho ?? f.suporte.codigo_sap,
       `${f.suporte.nome} — mini trilho`,
-      totGrampo,
+      totGrampo + extraMicro,
     );
-    add("kit_parafuso_smart", cfg.cod_kit_parafuso_smart, "Kit parafuso Smart", totGrampo);
+    add("kit_parafuso_smart", cfg.cod_kit_parafuso_smart, "Kit parafuso Smart", totGrampo + extraMicro);
   }
+
 
   // Terminais de microinversor (uma vez por projeto; ver quantificarProjeto). php:2720-2735
   if ((ctx.tipo_gerador === 1 && ctx.modelo_gerador === 5) || ctx.tipo_gerador === 2) {
@@ -284,11 +303,12 @@ export function quantificarProjeto(
   // Terminais de microinversor são calculados UMA vez no projeto. php:!isset(qtd)
   const feito = { terminal_m8: false, terminal_zmi: false };
 
-  for (const f of fileiras) {
+  fileiras.forEach((f, idx) => {
     for (let k = 0; k < f.qtd_fileiras; k++) distribuicao.push(f.qtd_paineis);
     comprimentos.push(calcularNt(f, modulo));
 
-    for (const c of quantificarFileira(f, modulo, ctxFinal, cfg)) {
+    for (const c of quantificarFileira(f, modulo, ctxFinal, cfg, idx === 0)) {
+
       if (c.chave === "terminal_m8" || c.chave === "terminal_zmi") {
         if (feito[c.chave]) continue;
         feito[c.chave] = true;
@@ -297,7 +317,8 @@ export function quantificarProjeto(
       if (at) at.quantidade += c.quantidade;
       else acc.set(c.chave, { ...c });
     }
-  }
+  });
+
 
   const itens = [...acc.values()].filter((i) => i.quantidade > 0);
   const semCodigo = itens.filter((i) => !i.codigo).map((i) => i.descricao);
