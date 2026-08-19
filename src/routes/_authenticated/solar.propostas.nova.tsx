@@ -465,6 +465,92 @@ function NovaPropostaSolarPage() {
     setEditandoCalc(true);
   }
 
+  /** Campos obrigatórios das etapas 1 e 2 que ainda não foram preenchidos. */
+  const faltandoInputs = useMemo(() => {
+    const f: string[] = [];
+    if (!modulo) f.push("Selecione o módulo (Etapa 1).");
+    else if (!Number(modulo.largura) || !Number(modulo.altura) || !Number(modulo.espessura))
+      f.push("Informe largura, altura e espessura do módulo (Etapa 1).");
+    if (!geradorId) f.push("Selecione o tipo de gerador (Etapa 1).");
+    if (geradorEhMicro && !microModelo) f.push("Selecione o modelo do microinversor (Etapa 1).");
+    if (!linhas.length) f.push("Adicione ao menos uma fileira (Etapa 2).");
+    linhas.forEach((l, i) => {
+      if (!l.trilhoId) f.push(`Fileira ${i + 1}: selecione o trilho (Etapa 2).`);
+      if (!l.suporteId) f.push(`Fileira ${i + 1}: selecione o suporte (Etapa 2).`);
+      if (!(Number(l.modulos) > 0)) f.push(`Fileira ${i + 1}: informe os módulos por fileira (Etapa 2).`);
+      if (!(Number(l.fileiras) > 0)) f.push(`Fileira ${i + 1}: informe a quantidade de fileiras (Etapa 2).`);
+    });
+    if (Number(paineis) > 0 && paineisNasLinhas && paineisNasLinhas !== Number(paineis)) {
+      const diff = paineisNasLinhas - Number(paineis);
+      f.push(
+        diff > 0
+          ? `A disposição tem ${diff} módulo(s) a mais que os ${paineis} do projeto.`
+          : `Faltam ${Math.abs(diff)} módulo(s) na disposição (${paineisNasLinhas} de ${paineis}).`,
+      );
+    }
+    return f;
+  }, [modulo, geradorId, geradorEhMicro, microModelo, linhas, paineis, paineisNasLinhas]);
+
+  /**
+   * De/para de códigos: simula a quantificação com os inputs atuais e lista os
+   * componentes que sairiam sem código SAP cadastrado (trilho, suporte, config).
+   */
+  const pendenciasCodigos = useMemo(() => {
+    if (faltandoInputs.length || !modulo) return [];
+    const fileiras = linhas.map((l) => ({
+      trilho: (trilhosQ.data ?? []).find((t) => t.id === l.trilhoId),
+      suporte: (suportesQ.data ?? []).find((s) => s.id === l.suporteId),
+      qtd_paineis: Number(l.modulos) || 0,
+      qtd_fileiras: Number(l.fileiras) || 0,
+      orientacao: l.orientacao,
+      distancia: Number(l.distMax) || 0,
+      balanco: Number(l.balanco) || config.balanco_ponta / 1000,
+    }));
+    if (fileiras.some((f) => !f.trilho || !f.suporte)) return [];
+    const micro = (microinversoresQ.data ?? []).find((m) => m.id === microModelo);
+    const tipoGerador = geradorEhMicro ? 1 : /otimizador/i.test(geradorSel?.nome ?? "") ? 2 : 3;
+    try {
+      return pendenciasDePara(
+        fileiras.map((f) => ({
+          ...f,
+          trilho: f.trilho as NonNullable<typeof f.trilho>,
+          suporte: f.suporte as NonNullable<typeof f.suporte>,
+        })),
+        {
+          largura: Number(modulo.largura) || 0,
+          altura: Number(modulo.altura) || 0,
+          espessura: Number(modulo.espessura) || 0,
+        },
+        {
+          todos_trilhos: tamanhoTrilho === "longo" ? "S" : "N",
+          tipo_gerador: tipoGerador,
+          modelo_gerador: micro?.modelo_legado ?? 0,
+          microinversores: Number(microQtd) || microSugerido,
+        },
+        config,
+      );
+    } catch {
+      return [];
+    }
+  }, [
+    faltandoInputs,
+    modulo,
+    linhas,
+    trilhosQ.data,
+    suportesQ.data,
+    microinversoresQ.data,
+    microModelo,
+    microQtd,
+    microSugerido,
+    geradorEhMicro,
+    geradorSel,
+    tamanhoTrilho,
+    config,
+  ]);
+
+  const bloqueiaCalculo = faltandoInputs.length > 0 || pendenciasCodigos.length > 0;
+
+
   async function realizarProposta() {
     if (!modulo) return toast.error("Selecione o módulo.");
     if (!linhas.length) return toast.error("Adicione ao menos uma fileira.");
