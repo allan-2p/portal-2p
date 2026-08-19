@@ -1317,6 +1317,16 @@ function NovaPropostaSolarPage() {
               </div>
             )}
 
+            {diagnosticoBloqueio && (
+              <BloqueioPrecificacaoAlert
+                diagnostico={diagnosticoBloqueio}
+                onRecalcular={() => void recalcularPrecos()}
+                recalculando={trocando}
+              />
+            )}
+
+
+
             <div className="glass rounded-2xl p-5 space-y-4">
               <div className="grid gap-4 lg:grid-cols-2">
                 {/* Seleção consolidada estilo slide */}
