@@ -371,6 +371,110 @@ export const reenviarClienteFn = createServerFn({ method: "POST" })
     });
   });
 
+/**
+ * Revalida o CNPJ de um cadastro nas fontes oficiais (Serpro + CNPJá).
+ * `aplicar = false` só compara (dry-run); `aplicar = true` grava as diferenças.
+ */
+export const revalidarCnpjClienteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        instancia: instanciaSchema,
+        id: z.string().uuid(),
+        aplicar: z.boolean().default(false),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const cliente = await assertPodeAlterarCliente(context as any, data.instancia, data.id);
+    const doc = String((cliente as any)?.doc ?? "").replace(/\D/g, "");
+    if (doc.length !== 14) {
+      return {
+        ok: false as const,
+        doc,
+        fontes: [] as string[],
+        avisos: ["Cadastro sem CNPJ válido — revalidação disponível apenas para CNPJ."],
+        alteracoes: [] as Array<{ campo: string; de: string; para: string }>,
+        aplicado: false as const,
+      };
+    }
+
+    const { enrichCnpj } = await import("./cnpj-enrich.server");
+    const { logIntegrationEvent } = await import("./integration-logs.server");
+    const e = await enrichCnpj(doc);
+
+    const novos: Record<string, unknown> = {
+      razao_social: e.razao_social,
+      situacao_cadastral: e.situacao_cadastral,
+      data_abertura: e.data_abertura,
+      natureza_juridica: e.natureza_juridica,
+      porte: e.porte,
+      cnae_principal_codigo: e.cnae_principal?.codigo ?? null,
+      cnae_principal_descricao: e.cnae_principal?.descricao ?? null,
+      cnaes_secundarios: e.cnaes_secundarios,
+      ie: e.ie,
+      ie_situacao: e.ie_situacao,
+      suframa: e.suframa,
+      suframa_situacao: e.suframa_situacao,
+      contribuinte: !!e.ie,
+      regime_tributario: e.regime_tributario,
+      cep: e.cep,
+      logradouro: e.logradouro,
+      numero: e.numero,
+      complemento: e.complemento,
+      bairro: e.bairro,
+      cidade: e.cidade,
+      uf: e.uf,
+      municipio_ibge: e.municipio_ibge,
+    };
+
+    const norm = (v: unknown) =>
+      v === null || v === undefined || v === "" ? "" : typeof v === "object" ? JSON.stringify(v) : String(v);
+    const alteracoes = Object.entries(novos)
+      .filter(([, v]) => norm(v) !== "")
+      .filter(([campo, v]) => norm((cliente as any)?.[campo]) !== norm(v))
+      .map(([campo, v]) => ({ campo, de: norm((cliente as any)?.[campo]), para: norm(v), valor: v }));
+
+    let aplicado = false;
+    if (data.aplicar && alteracoes.length > 0 && e.fontes.length > 0) {
+      const db = await import("./clientes-db.server");
+      const patch: Record<string, unknown> = {};
+      for (const a of alteracoes) patch[a.campo] = a.valor;
+      await db.updateCliente(data.instancia, data.id, patch);
+      aplicado = true;
+    }
+
+    await logIntegrationEvent({
+      slug: "clientes-cadastro",
+      level: e.fontes.length === 0 ? "error" : e.avisos.length ? "warn" : "info",
+      event: aplicado ? "cadastro.cnpj.revalidado" : "cadastro.cnpj.consultado",
+      message:
+        e.fontes.length === 0
+          ? `Revalidação do CNPJ ${doc} falhou: nenhuma fonte respondeu.`
+          : `${aplicado ? "Revalidação aplicada" : "Revalidação consultada"} para ${(cliente as any)?.razao_social ?? doc} (${doc}) — ${alteracoes.length} divergência(s). Fontes: ${e.fontes.join(", ")}.`,
+      actorId: context.userId,
+      detail: {
+        cliente_id: data.id,
+        instancia: data.instancia,
+        doc,
+        fontes: e.fontes,
+        avisos: e.avisos,
+        alteracoes: alteracoes.map(({ campo, de, para }) => ({ campo, de, para })),
+        aplicado,
+      },
+    });
+
+    return {
+      ok: e.fontes.length > 0,
+      doc,
+      fontes: e.fontes,
+      avisos: e.avisos,
+      alteracoes: alteracoes.map(({ campo, de, para }) => ({ campo, de, para })),
+      aplicado,
+    };
+  });
+
 /** Testa isoladamente banco, SAP, Salesforce ou contatos (sem alterar dados). */
 export const testarIntegracoesClienteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
