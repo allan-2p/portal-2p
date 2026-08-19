@@ -695,7 +695,7 @@ function UserModal({
             setSubmitting(false);
           }
         }}
-        className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-3"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-card border border-border rounded-2xl p-4 sm:p-6 space-y-3"
       >
         <h2 className="font-display font-bold text-lg flex items-center gap-2">
           {mode === "create" ? "Criar usuário" : external ? "Convidar externo" : "Convidar usuário"}
