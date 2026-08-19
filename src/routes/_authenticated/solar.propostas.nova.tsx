@@ -417,6 +417,34 @@ function NovaPropostaSolarPage() {
     return /smart|zipad/i.test(`${t?.nome ?? ""} ${t?.familia ?? ""}`);
   }
 
+  /** Preenche vão máximo e balanço com os padrões da calculadora (editáveis). */
+  useEffect(() => {
+    setLinhas((prev) => {
+      let mudou = false;
+      const next = prev.map((l) => {
+        const t = (trilhosQ.data ?? []).find((x) => x.id === l.trilhoId);
+        if (!t) return l;
+        const sem = /smart|zipad/i.test(`${t.nome ?? ""} ${t.familia ?? ""}`);
+        if (sem) {
+          if (l.distMax || l.balanco) {
+            mudou = true;
+            return { ...l, distMax: "", balanco: "" };
+          }
+          return l;
+        }
+        const distPadrao = ((config.barras_longas?.[0] ?? 6650) / 1000 / 4).toFixed(2);
+        const balancoPadrao = (config.balanco_ponta / 1000).toFixed(2);
+        if (!l.distMax || !l.balanco) {
+          mudou = true;
+          return { ...l, distMax: l.distMax || distPadrao, balanco: l.balanco || balancoPadrao };
+        }
+        return l;
+      });
+      return mudou ? next : prev;
+    });
+  }, [trilhosQ.data, config]);
+
+
   /** Assinatura dos inputs que alimentam o cálculo — muda ⇒ cálculo desatualizado. */
   const assinaturaAtual = useMemo(
     () =>
