@@ -1697,25 +1697,8 @@ function NovaPropostaSolarPage() {
                             </Button>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right tabular-nums">
-                          {editavel ? (
-                            <Input
-                              className="h-8 w-28 text-right tabular-nums ml-auto"
-                              aria-label="Valor unitário"
-                              value={String(i.valor)}
-                              onChange={(e) => {
-                                const v = Number(e.target.value.replace(/[^\d.,]/g, "").replace(",", "."));
-                                setItens((prev) =>
-                                  prev.map((x) =>
-                                    x.key === i.key ? { ...x, valor: money2(v) } : x,
-                                  ),
-                                );
-                              }}
-                            />
-                          ) : (
-                            fmtBRL(i.valor)
-                          )}
-                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums">{fmtBRL(i.valor)}</td>
+
                         <td className="px-4 py-3 text-right font-semibold tabular-nums">
                           {fmtBRL(i.valor * i.qtd)}
                         </td>
