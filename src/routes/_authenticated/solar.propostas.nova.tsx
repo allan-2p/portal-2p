@@ -476,6 +476,73 @@ function NovaPropostaSolarPage() {
     cep: entregaDiferente ? String(entrega['cep'] ?? "") : String(cliente?.['cep'] ?? ""),
   };
 
+  /** Proposta em PDF (janela de impressão do navegador). */
+  function abrirPdf() {
+    if (!itens.length) return toast.error("Adicione produtos antes de gerar o PDF.");
+    const linhasEnd = (o: Record<string, any>) =>
+      [
+        [o['logradouro'], o['numero']].filter(Boolean).join(", "),
+        [o['complemento'], o['bairro']].filter(Boolean).join(" · "),
+        [[o['cidade'], o['uf']].filter(Boolean).join("/"), o['cep']].filter(Boolean).join(" — "),
+      ].filter((l) => String(l ?? "").trim());
+
+    const faturamentoBase = faturarClienteFinal ? fat : (cliente ?? {});
+    const dados = {
+      numero,
+      propostaNome,
+      cliente: {
+        nome: String(cliente?.['razao_social'] ?? "—"),
+        doc: String(cliente?.['doc'] ?? ""),
+        ie: String(cliente?.['ie'] ?? ""),
+        email: String(cliente?.['email'] ?? ""),
+        telefone: String(cliente?.['telefone'] ?? ""),
+        uf: String(cliente?.['uf'] ?? ""),
+        cidade: String(cliente?.['cidade'] ?? ""),
+      },
+      consultor: String(cliente?.['created_by_nome'] ?? ""),
+      itens: itens.map((i) => {
+        const p = produtos.find((x) => x.id === i.produtoId);
+        return { codigo: p?.codigo ?? null, nome: p?.descricao ?? "Item", qtd: i.qtd, valor: i.valor };
+      }),
+      subtotal,
+      desconto,
+      cupom: cupomCodigo || null,
+      freteMod,
+      freteValor,
+      freteGratis,
+      transportadora: transportadora?.nome ?? null,
+      total,
+      listaPreco,
+      tipoNf,
+      formaPagamento: formaPagamento || null,
+      observacoes,
+      enderecoFaturamento: {
+        nome: String(faturamentoBase['nome'] ?? faturamentoBase['razao_social'] ?? cliente?.['razao_social'] ?? ""),
+        doc: String(faturamentoBase['doc'] ?? ""),
+        linhas: linhasEnd(faturamentoBase),
+      },
+      enderecoEntrega: entregaDiferente
+        ? {
+            contato: String(entrega['contato'] ?? ""),
+            telefone: String(entrega['telefone'] ?? ""),
+            linhas: linhasEnd(entrega),
+          }
+        : { nome: "Mesmo do faturamento", linhas: linhasEnd(faturamentoBase) },
+      estrutura: resultado?.ok
+        ? { distribuicao: resultado.distribuicao, comprimentos: resultado.comprimentos }
+        : null,
+    };
+
+    const html = buildSolarPropostaPdfHtml(dados);
+    const win = window.open("", "_blank");
+    if (!win) return toast.error("Permita pop-ups para gerar o PDF.");
+    win.document.write(html);
+    win.document.title = solarPropostaPdfFileName(dados);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 600);
+  }
+
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-5 pb-4">
