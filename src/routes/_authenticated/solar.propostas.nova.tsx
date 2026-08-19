@@ -462,7 +462,7 @@ function NovaPropostaSolarPage() {
                 />
                 {tentou && !propostaNome.trim() && <Erro>Obrigatório.</Erro>}
               </Campo>
-              <Campo label="Cliente (cadastro) *">
+              <Campo label="Cliente *">
                 <Select value={clienteDoc} onValueChange={setClienteDoc}>
                   <SelectTrigger><SelectValue placeholder="Pesquisar no cadastro de clientes" /></SelectTrigger>
                   <SelectContent className="max-h-[320px]">
