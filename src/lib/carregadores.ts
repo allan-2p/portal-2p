@@ -683,7 +683,7 @@ export function precoParaMargem(
   const carga = (ufRow?.aliq_interna ?? 0.18) + (ufRow?.fcp ?? 0);
   const informativo =
     difalEhInformativo({ contribuinte: destino.contribuinte, ie: destino.ie }) ||
-    difalSempreInformativoPorFinalidade(state.finalidadeUso);
+    (destino.contribuinte && difalSempreInformativoPorFinalidade(state.finalidadeUso));
   const aplicaDifal =
     geraDifal &&
     finalidadeGeraDifal(state.finalidadeUso) &&
