@@ -129,15 +129,19 @@ function quantificarFileira(
   if (!ehSmart(f.suporte)) {
     // ===================== TELHADO COM TRILHO (2P-TC) =====================
 
-    // Barra longa 4800 — só com todos_trilhos = 'S' e módulo estreito. php:2511-2564
-    if (ctx.todos_trilhos === "S" && larguraEstreita) {
-      trilho_4800 = Math.round(nt / 4800) * 2 * qf; // *2 = 2 trilhos por linha (topo + base)
+    // Barra longa 4800 — liberada por todos_trilhos = 'S' sempre que o de-para
+    // existir, independente da largura. php:2511-2564 (estreito) / php:2601 (largo)
+    const temCod4800 = !!codigoBarra(f.trilho, 4800);
+    if (ctx.todos_trilhos === "S" && temCod4800) {
+      trilho_4800 = larguraEstreita
+        ? Math.round(nt / 4800) * 2 * qf // *2 = 2 trilhos por linha (topo + base)
+        : Math.ceil(Math.ceil((nt * 2) / 4800)) * qf;
     }
 
     // Resíduo por trilho após as barras de 4800. php:2488
     const ult = qf > 0 ? nt - (trilho_4800 * 4800) / (2 * qf) : nt;
 
-    if (ctx.todos_trilhos === "S" && larguraEstreita) {
+    if (ctx.todos_trilhos === "S" && larguraEstreita && temCod4800) {
       // Branch A — resto em barras curtas. php:2526-2529 / 2551-2554
       trilho_curto = Math.ceil(((nt - (trilho_4800 / 2) * 4800) / barraCurta) * 2) * qf;
     } else if (ult < 1200) {
