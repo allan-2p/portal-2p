@@ -24,7 +24,6 @@ import { ClienteIntegracoesDialog } from "@/components/cliente-integracoes-dialo
 
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
-import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { useCarregadoresUfs } from "@/hooks/use-carregadores";
