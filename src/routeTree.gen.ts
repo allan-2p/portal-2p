@@ -44,6 +44,7 @@ import { Route as AuthenticatedCarregadoresPropostasRouteImport } from './routes
 import { Route as AuthenticatedCarregadoresProdutosRouteImport } from './routes/_authenticated/carregadores.produtos'
 import { Route as AuthenticatedCarregadoresPedidosRouteImport } from './routes/_authenticated/carregadores.pedidos'
 import { Route as AuthenticatedCarregadoresMetasRouteImport } from './routes/_authenticated/carregadores.metas'
+import { Route as AuthenticatedCarregadoresFreteRegrasRouteImport } from './routes/_authenticated/carregadores.frete-regras'
 import { Route as AuthenticatedCarregadoresComissoesRouteImport } from './routes/_authenticated/carregadores.comissoes'
 import { Route as AuthenticatedCarregadoresClientesRouteImport } from './routes/_authenticated/carregadores.clientes'
 import { Route as AuthenticatedAdminVinculosRouteImport } from './routes/_authenticated/admin.vinculos'
@@ -288,6 +289,12 @@ const AuthenticatedCarregadoresMetasRoute =
   AuthenticatedCarregadoresMetasRouteImport.update({
     id: '/carregadores/metas',
     path: '/carregadores/metas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCarregadoresFreteRegrasRoute =
+  AuthenticatedCarregadoresFreteRegrasRouteImport.update({
+    id: '/carregadores/frete-regras',
+    path: '/carregadores/frete-regras',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCarregadoresComissoesRoute =
@@ -612,6 +619,7 @@ export interface FileRoutesByFullPath {
   '/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
   '/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
   '/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
@@ -695,6 +703,7 @@ export interface FileRoutesByTo {
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
   '/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
   '/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
@@ -781,6 +790,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/_authenticated/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/_authenticated/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/_authenticated/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
   '/_authenticated/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
   '/_authenticated/carregadores/pedidos': typeof AuthenticatedCarregadoresPedidosRoute
   '/_authenticated/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
@@ -868,6 +878,7 @@ export interface FileRouteTypes {
     | '/admin/vinculos'
     | '/carregadores/clientes'
     | '/carregadores/comissoes'
+    | '/carregadores/frete-regras'
     | '/carregadores/metas'
     | '/carregadores/pedidos'
     | '/carregadores/produtos'
@@ -951,6 +962,7 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/admin/vinculos'
     | '/carregadores/comissoes'
+    | '/carregadores/frete-regras'
     | '/carregadores/metas'
     | '/carregadores/pedidos'
     | '/carregadores/produtos'
@@ -1036,6 +1048,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/vinculos'
     | '/_authenticated/carregadores/clientes'
     | '/_authenticated/carregadores/comissoes'
+    | '/_authenticated/carregadores/frete-regras'
     | '/_authenticated/carregadores/metas'
     | '/_authenticated/carregadores/pedidos'
     | '/_authenticated/carregadores/produtos'
@@ -1356,6 +1369,13 @@ declare module '@tanstack/react-router' {
       path: '/carregadores/metas'
       fullPath: '/carregadores/metas'
       preLoaderRoute: typeof AuthenticatedCarregadoresMetasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/carregadores/frete-regras': {
+      id: '/_authenticated/carregadores/frete-regras'
+      path: '/carregadores/frete-regras'
+      fullPath: '/carregadores/frete-regras'
+      preLoaderRoute: typeof AuthenticatedCarregadoresFreteRegrasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/carregadores/comissoes': {
@@ -1839,6 +1859,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminVinculosRoute: typeof AuthenticatedAdminVinculosRoute
   AuthenticatedCarregadoresClientesRoute: typeof AuthenticatedCarregadoresClientesRouteWithChildren
   AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
+  AuthenticatedCarregadoresFreteRegrasRoute: typeof AuthenticatedCarregadoresFreteRegrasRoute
   AuthenticatedCarregadoresMetasRoute: typeof AuthenticatedCarregadoresMetasRoute
   AuthenticatedCarregadoresPedidosRoute: typeof AuthenticatedCarregadoresPedidosRoute
   AuthenticatedCarregadoresProdutosRoute: typeof AuthenticatedCarregadoresProdutosRoute
@@ -1888,6 +1909,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCarregadoresClientesRouteWithChildren,
   AuthenticatedCarregadoresComissoesRoute:
     AuthenticatedCarregadoresComissoesRoute,
+  AuthenticatedCarregadoresFreteRegrasRoute:
+    AuthenticatedCarregadoresFreteRegrasRoute,
   AuthenticatedCarregadoresMetasRoute: AuthenticatedCarregadoresMetasRoute,
   AuthenticatedCarregadoresPedidosRoute: AuthenticatedCarregadoresPedidosRoute,
   AuthenticatedCarregadoresProdutosRoute:
