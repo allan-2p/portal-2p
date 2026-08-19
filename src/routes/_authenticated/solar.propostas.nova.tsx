@@ -29,6 +29,7 @@ import {
   Building2,
   Calculator,
   Check,
+  ChevronsUpDown,
   Eye,
   FileDown,
   ListPlus,
@@ -45,6 +46,14 @@ import {
   User,
   X,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 import { cn } from "@/lib/utils";
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
@@ -59,14 +68,15 @@ import {
   useSolarCupons,
   type SolarCupom,
   useSolarGeradores,
+  useSolarMicroinversores,
   useSolarModulos,
   useSolarProdutos,
   useSolarSuportes,
   useSolarTrilhoSuportes,
   useSolarTrilhos,
 } from "@/hooks/use-solar-catalogo";
+import { quantificarProjeto } from "@/lib/solar-quantificador";
 import {
-  calcularEstrutura,
   SOLAR_CALC_CONFIG_FALLBACK,
   type CalcResultado,
   type Orientacao,
@@ -134,13 +144,6 @@ const novaFileira = (): FileiraCalc => ({
   distMax: "",
   balanco: "",
 });
-
-/** Modelos de microinversor e quantos módulos cada unidade atende. */
-const MICRO_MODELOS = [
-  { id: "deye", nome: "Deye", porUnidade: 2 },
-  { id: "hoymiles", nome: "Hoymiles", porUnidade: 2 },
-  { id: "apsystems-qt2", nome: "ApSystems QT2", porUnidade: 2 },
-];
 
 const TAMANHOS_TRILHO = [
   { value: "longo", label: "Até 4,80 m" },
@@ -237,6 +240,7 @@ function NovaPropostaSolarPage() {
   const produtosQ = useSolarProdutos();
   const modulosQ = useSolarModulos();
   const geradoresQ = useSolarGeradores();
+  const microinversoresQ = useSolarMicroinversores();
   const trilhosQ = useSolarTrilhos();
   const suportesQ = useSolarSuportes();
   const combQ = useSolarTrilhoSuportes();
@@ -387,78 +391,71 @@ function NovaPropostaSolarPage() {
   );
 
   const microSugerido = useMemo(() => {
-    const m = MICRO_MODELOS.find((x) => x.id === microModelo);
+    const m = (microinversoresQ.data ?? []).find((x) => x.id === microModelo);
     if (!m) return 0;
-    return Math.ceil((Number(paineis) || 0) / m.porUnidade);
-  }, [microModelo, paineis]);
+    return Math.ceil((paineisNasLinhas || Number(paineis) || 0) / Math.max(1, m.modulos_por_unidade));
+  }, [microinversoresQ.data, microModelo, paineis, paineisNasLinhas]);
 
   async function realizarProposta() {
     if (!modulo) return toast.error("Selecione o módulo.");
     if (!linhas.length) return toast.error("Adicione ao menos uma fileira.");
+    if (Number(paineis) > 0 && paineisNasLinhas !== Number(paineis))
+      return toast.error(`A disposição possui ${paineisNasLinhas} painel(is), mas o projeto informa ${paineis}.`);
+    const microSelecionado = (microinversoresQ.data ?? []).find((m) => m.id === microModelo);
+    if (geradorEhMicro && !microSelecionado) return toast.error("Selecione o modelo do microinversor.");
 
     setCalculando(true);
     setResultado(null);
     // Animação característica da Calculadora 2P
     await new Promise((r) => setTimeout(r, 1400));
 
-    const barrasLongas =
-      tamanhoTrilho === "curto"
-        ? []
-        : config.barras_longas.filter((b) => b <= 4800);
-
-    const agregado: CalcResultado = {
-      ok: true,
-      erros: [],
-      avisos: [],
-      distribuicao: [],
-      comprimentos: [],
-      componentes: [],
-    };
-    const mapa = new Map<string, { codigo: string | null; descricao: string; quantidade: number }>();
-
-    for (const l of linhas) {
-      const trilho = (trilhosQ.data ?? []).find((t) => t.id === l.trilhoId) ?? null;
-      const suporte = (suportesQ.data ?? []).find((s) => s.id === l.suporteId) ?? null;
-      const nFileiras = Number(l.fileiras) || 0;
-      const nModulos = Number(l.modulos) || 0;
-      const cfgLinha = {
-        ...config,
-        barras_longas: barrasLongas.length ? barrasLongas : config.barras_longas,
-        ...(Number(l.distMax) ? { largura_limite: Number(l.distMax) * 1000 } : {}),
-        ...(Number(l.balanco) ? { balanco_ponta: Number(l.balanco) * 1000 } : {}),
-      };
-      const r = calcularEstrutura({
-        modulo,
-        paineis: nFileiras * nModulos,
-        fileiras: nFileiras,
-        orientacao: l.orientacao,
-        trilho,
-        suporte,
-        config: cfgLinha,
-      });
-      if (!r.ok) {
-        agregado.ok = false;
-        agregado.erros.push(...r.erros);
-        continue;
-      }
-      agregado.avisos.push(...r.avisos);
-      agregado.distribuicao.push(...r.distribuicao);
-      agregado.comprimentos.push(...r.comprimentos);
-      for (const c of r.componentes) {
-        const k = `${c.chave}|${c.codigo ?? ""}`;
-        const at = mapa.get(k);
-        if (at) at.quantidade += c.quantidade;
-        else mapa.set(k, { codigo: c.codigo, descricao: c.descricao, quantidade: c.quantidade });
-      }
-    }
-
-    agregado.componentes = [...mapa.entries()].map(([k, v]) => ({
-      chave: k,
-      codigo: v.codigo,
-      descricao: v.descricao,
-      quantidade: v.quantidade,
+    const fileirasQuant = linhas.map((l) => ({
+      trilho: (trilhosQ.data ?? []).find((t) => t.id === l.trilhoId),
+      suporte: (suportesQ.data ?? []).find((s) => s.id === l.suporteId),
+      qtd_paineis: Number(l.modulos) || 0,
+      qtd_fileiras: Number(l.fileiras) || 0,
+      orientacao: l.orientacao,
+      distancia: Number(l.distMax) || 0,
+      balanco: Number(l.balanco) || config.balanco_ponta / 1000,
     }));
-    agregado.avisos = [...new Set(agregado.avisos)];
+    const incompleta = fileirasQuant.find((l) => !l.trilho || !l.suporte);
+    if (incompleta) {
+      setCalculando(false);
+      return toast.error("Selecione o trilho e o suporte de todas as fileiras.");
+    }
+    const tipoGerador = geradorEhMicro ? 1 : /otimizador/i.test(geradorSel?.nome ?? "") ? 2 : 3;
+    const quantificado = quantificarProjeto(
+      fileirasQuant.map((l) => ({
+        ...l,
+        trilho: l.trilho as NonNullable<typeof l.trilho>,
+        suporte: l.suporte as NonNullable<typeof l.suporte>,
+      })),
+      {
+        largura: Number(modulo.largura) || 0,
+        altura: Number(modulo.altura) || 0,
+        espessura: Number(modulo.espessura) || 0,
+      },
+      {
+        todos_trilhos: tamanhoTrilho === "longo" ? "S" : "N",
+        tipo_gerador: tipoGerador,
+        modelo_gerador: microSelecionado?.modelo_legado ?? 0,
+        microinversores: Number(microQtd) || microSugerido,
+      },
+      config,
+    );
+    const agregado: CalcResultado = {
+      ok: quantificado.ok,
+      erros: quantificado.erros,
+      avisos: quantificado.avisos,
+      distribuicao: quantificado.distribuicao,
+      comprimentos: quantificado.comprimentos,
+      componentes: quantificado.itens.map((i) => ({
+        chave: i.chave,
+        codigo: i.codigo,
+        descricao: i.descricao,
+        quantidade: i.quantidade,
+      })),
+    };
     setResultado(agregado);
     setCalculando(false);
     if (!agregado.ok) return toast.error(agregado.erros[0] ?? "Revise os dados da estrutura.");
@@ -472,6 +469,14 @@ function NovaPropostaSolarPage() {
         : undefined;
       if (!prod) {
         faltando.push(c.descricao);
+        novos.push({
+          key: Math.random().toString(36).slice(2),
+          produtoId: "",
+          qtd: c.quantidade,
+          valor: 0,
+          origem: "calculadora",
+          avulso: { codigo: c.codigo ?? "SEM-CODIGO", descricao: c.descricao },
+        });
         continue;
       }
       novos.push({
@@ -485,7 +490,7 @@ function NovaPropostaSolarPage() {
     const extras = itensCalc.filter((i) => i.origem === "manual");
     setItensCalc([...extras, ...novos]);
     if (faltando.length)
-      toast.warning(`Sem código no catálogo: ${faltando.join(", ")}. Inclua manualmente.`);
+      toast.warning(`Itens sem correspondência no catálogo foram incluídos sem preço: ${faltando.join(", ")}.`);
     else toast.success("Estrutura calculada e itens adicionados.");
     void atualizarPrecos([...extras, ...novos], listaPreco, setItensCalc);
   }
@@ -1089,7 +1094,7 @@ function NovaPropostaSolarPage() {
                     <SlideOpcao
                       ativo={modo === "calculadora"}
                       icon={Calculator}
-                      titulo="Realizar Proposta"
+                      titulo="Calcular"
                       descricao="Calculadora 2P"
                       onClick={() => void trocarModo("calculadora")}
                     />
@@ -1150,17 +1155,16 @@ function NovaPropostaSolarPage() {
                 <div className="space-y-5">
                   <div className="grid gap-4 md:grid-cols-3">
                     <Campo label="Módulo">
-                      <Select value={moduloId} onValueChange={setModuloId}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent className="max-h-[320px]">
-                          {modulosOrdenados.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.nome}
-                              {m.personalizado ? "" : ` (${m.largura}×${m.altura}×${m.espessura} mm)`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SeletorPesquisavel
+                        value={moduloId}
+                        onValueChange={setModuloId}
+                        placeholder="Pesquisar módulo"
+                        vazio="Nenhum módulo encontrado."
+                        opcoes={modulosOrdenados.map((m) => ({
+                          value: m.id,
+                          label: `${m.nome}${m.personalizado ? "" : ` (${m.largura}×${m.altura}×${m.espessura} mm)`}`,
+                        }))}
+                      />
                     </Campo>
                     <Campo label="Altura (mm)">
                       <Input
@@ -1220,16 +1224,16 @@ function NovaPropostaSolarPage() {
                               value={microModelo}
                               onValueChange={(v) => {
                                 setMicroModelo(v);
-                                const m = MICRO_MODELOS.find((x) => x.id === v);
+                                 const m = (microinversoresQ.data ?? []).find((x) => x.id === v);
                                 if (m && paineis)
-                                  setMicroQtd(String(Math.ceil((Number(paineis) || 0) / m.porUnidade)));
+                                   setMicroQtd(String(Math.ceil((paineisNasLinhas || Number(paineis) || 0) / Math.max(1, m.modulos_por_unidade))));
                               }}
                             >
                               <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                               <SelectContent>
-                                {MICRO_MODELOS.map((m) => (
+                                {(microinversoresQ.data ?? []).map((m) => (
                                   <SelectItem key={m.id} value={m.id}>
-                                    {m.nome} ({m.porUnidade})
+                                    {m.nome} ({m.modulos_por_unidade} módulos/un.)
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1435,29 +1439,10 @@ function NovaPropostaSolarPage() {
                     </div>
                   </div>
 
-                  {/* Itens extras (não calculados) */}
-                  <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
-                    <div className="text-sm font-semibold">Itens extras</div>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <Campo label="Adicionar produto do catálogo">
-                        <Select value="" onValueChange={(id) => adicionarProdutoEm(id, "calculadora")}>
-                          <SelectTrigger><SelectValue placeholder="Buscar produto" /></SelectTrigger>
-                          <SelectContent className="max-h-[320px]">
-                            {produtos.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.codigo} — {p.descricao}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </Campo>
-                    </div>
-                  </div>
-
                   <div>
                     <Button onClick={() => void realizarProposta()} disabled={calculando} className="gap-2">
                       {calculando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
-                      Realizar proposta
+                      Calcular
                     </Button>
                   </div>
 
@@ -1638,6 +1623,23 @@ function NovaPropostaSolarPage() {
                   )}
                 </tbody>
               </table>
+              {modo === "calculadora" && (
+                <div className="border-t border-border bg-surface-2 p-4 space-y-3">
+                  <div>
+                    <div className="text-sm font-semibold">Itens extras</div>
+                    <div className="text-xs text-muted-foreground">Produtos adicionais que não fazem parte do cálculo da estrutura.</div>
+                  </div>
+                  <div className="max-w-xl">
+                    <SeletorPesquisavel
+                      value=""
+                      onValueChange={(id) => adicionarProdutoEm(id, "calculadora")}
+                      placeholder="Pesquisar produto por código ou nome"
+                      vazio="Nenhum produto encontrado."
+                      opcoes={produtos.map((p) => ({ value: p.id, label: `${p.codigo} — ${p.descricao}` }))}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -2110,6 +2112,60 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
       <Label className="text-xs text-muted-foreground">{label}</Label>
       {children}
     </div>
+  );
+}
+
+function SeletorPesquisavel({
+  value,
+  onValueChange,
+  opcoes,
+  placeholder,
+  vazio,
+}: {
+  value: string;
+  onValueChange: (value: string) => void;
+  opcoes: { value: string; label: string }[];
+  placeholder: string;
+  vazio: string;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const selecionada = opcoes.find((o) => o.value === value);
+  return (
+    <Popover open={aberto} onOpenChange={setAberto}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={aberto}
+          className="w-full justify-between font-normal"
+        >
+          <span className="truncate">{selecionada?.label ?? placeholder}</span>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
+        <Command>
+          <CommandInput placeholder={placeholder} />
+          <CommandList>
+            <CommandEmpty>{vazio}</CommandEmpty>
+            {opcoes.map((opcao) => (
+              <CommandItem
+                key={opcao.value}
+                value={opcao.label}
+                onSelect={() => {
+                  onValueChange(opcao.value);
+                  setAberto(false);
+                }}
+              >
+                <Check className={cn("h-4 w-4", value === opcao.value ? "opacity-100" : "opacity-0")} />
+                <span className="truncate">{opcao.label}</span>
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
