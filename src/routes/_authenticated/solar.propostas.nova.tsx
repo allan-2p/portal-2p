@@ -1359,16 +1359,24 @@ function NovaPropostaSolarPage() {
                     </Select>
                   )}
                 </div>
-                {cupomCodigo && !cupom && (
-                  <p className="text-xs text-amber-500">
-                    Cupom não encontrado na lista — será validado no servidor ao salvar.
+                {cupomCheck.status === "carregando" && (
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> {cupomCheck.mensagem}
                   </p>
                 )}
-                {cupom && (
-                  <p className="text-xs text-emerald-500">
-                    Cupom {cupom.codigo} aplicado ({cupom.tipos.join(", ")}).
-                  </p>
+                {cupomCheck.status === "erro" && (
+                  <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                    <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
+                    <span>{cupomCheck.mensagem}</span>
+                  </div>
                 )}
+                {cupomCheck.status === "ok" && (
+                  <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-500">
+                    <CheckCircle2 className="mt-px h-3.5 w-3.5 shrink-0" />
+                    <span>{cupomCheck.mensagem}</span>
+                  </div>
+                )}
+
               </div>
 
               <div className="space-y-3">
