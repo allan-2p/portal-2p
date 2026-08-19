@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { JobRunsPanel } from "@/components/admin/job-runs-panel";
 import { PixSimuladorPanel } from "@/components/admin/pix-simulador-panel";
+import { PixWebhookItauPanel } from "@/components/admin/pix-webhook-itau-panel";
 
 export const Route = createFileRoute("/_authenticated/admin/logs/gatilhos")({
   head: () => ({
