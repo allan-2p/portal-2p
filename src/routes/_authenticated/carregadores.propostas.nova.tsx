@@ -1031,6 +1031,17 @@ function PropostaCarregadoresPage() {
     if (c.motivo) toast.info(c.motivo);
   }
 
+  /** Retorno da criação da ordem de venda no SAP (ZNFE_OV_CRIAR). */
+  function avisarSapOv(r?: { ok?: boolean; vbeln?: string | null; mensagem?: string | null; motivo?: string | null } | null) {
+    if (!r) return;
+    if (r.ok && r.vbeln) {
+      toast.success(`Ordem de venda ${r.vbeln} criada no SAP.`);
+      return;
+    }
+    if (r.motivo === "nao_configurado") return;
+    toast.error(r.mensagem ?? "Não foi possível criar a ordem de venda no SAP. O pedido foi salvo e pode ser reenviado.");
+  }
+
   async function salvar(status: string = "Salvo") {
     // Lock síncrono: bloqueia envios repetidos mesmo antes do estado re-renderizar
     if (submitLock.current) return;
@@ -1114,6 +1125,7 @@ function PropostaCarregadoresPage() {
             return;
           }
           cobrancaAviso = (linha as { cobranca?: Parameters<typeof avisarCobranca>[0] }).cobranca ?? null;
+          avisarSapOv((linha as { sapOv?: Parameters<typeof avisarSapOv>[0] }).sapOv ?? null);
           // Nº SAP só existe após a conclusão.
           try {
             const { numeroSap } = await atribuirNumeroSap({ data: { propostaId } });
@@ -1163,6 +1175,7 @@ function PropostaCarregadoresPage() {
           return;
         }
         avisarCobranca(linha?.cobranca);
+        avisarSapOv((linha as { sapOv?: Parameters<typeof avisarSapOv>[0] })?.sapOv ?? null);
         try {
           const { numeroSap } = await atribuirNumeroSap({ data: { propostaId: inserida.id } });
           if (numeroSap) setState((s) => ({ ...s, numeroSap }));
