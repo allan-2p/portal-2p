@@ -223,10 +223,16 @@ function TrilhosSolarPage() {
                     <td className="px-4 py-3 text-muted-foreground">
                       {FAMILIAS.find((f) => f.value === t.familia)?.label ?? t.familia}
                     </td>
-                    <td className="px-4 py-3">{t.cod_4800 ?? "—"}</td>
-                    <td className="px-4 py-3">{t.cod_3600 ?? "—"}</td>
-                    <td className="px-4 py-3">{t.cod_2400 ?? "—"}</td>
-                    <td className="px-4 py-3">{t.cod_2700 ?? "—"}</td>
+                    {(["cod_4800", "cod_3600", "cod_2400", "cod_2700"] as const).map((k) => (
+                      <td className="px-4 py-3" key={k}>
+                        <SapCodigoCell
+                          codigo={(t as any)[k]}
+                          nomeRef={`${t.nome} ${k.replace("cod_", "")}`}
+                          produtos={catalogo}
+                        />
+                      </td>
+                    ))}
+
                     <td className="px-4 py-3 text-center">
                       <Switch checked={t.ativo} onCheckedChange={() => void alternarAtivo(t)} />
                     </td>
