@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/select";
 import {
   listSapCatalogoCompleto,
+  setSapCatalogoNoPortal,
+
   listSapProdutos,
   listSapSyncRuns,
   setSapProdutoVisibilidade,
