@@ -1626,15 +1626,48 @@ function NovaPropostaSolarPage() {
 
                   </fieldset>
 
+                  {!calcTravado && faltandoInputs.length > 0 && (
+                    <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm space-y-1">
+                      <div className="font-semibold text-amber-600 dark:text-amber-400">
+                        Complete as etapas 1 e 2 para calcular
+                      </div>
+                      <ul className="list-disc pl-5 text-muted-foreground space-y-0.5">
+                        {faltandoInputs.map((f) => (
+                          <li key={f}>{f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {!calcTravado && !faltandoInputs.length && pendenciasCodigos.length > 0 && (
+                    <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm space-y-2">
+                      <div className="font-semibold text-destructive">
+                        De/para incompleto — cadastre os códigos de produto antes de calcular
+                      </div>
+                      <ul className="space-y-1">
+                        {pendenciasCodigos.map((p) => (
+                          <li key={p.chave} className="text-muted-foreground">
+                            <span className="font-medium text-foreground">{p.origem}</span> · {p.campo}
+                            <span className="text-xs"> — {p.descricao}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="text-xs text-muted-foreground">
+                        Preencha em Gestão de Produtos 2P Solar (Trilhos / Suportes) ou na Configuração da calculadora.
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex flex-wrap items-center gap-3">
                     <Button
                       onClick={() => void realizarProposta()}
-                      disabled={calculando || calcTravado}
+                      disabled={calculando || calcTravado || bloqueiaCalculo}
                       className="gap-2"
                     >
                       {calculando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
                       {calcTravado ? "Cálculo concluído" : "Calcular"}
                     </Button>
+
                     {calcTravado && (
                       <Button type="button" variant="outline" className="gap-2" onClick={liberarEdicaoCalculo}>
                         <Pencil className="h-4 w-4" /> Editar inputs de cálculo
