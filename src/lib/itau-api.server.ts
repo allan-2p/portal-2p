@@ -16,8 +16,15 @@ function env(name: string): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
-/** Base da API (produção por padrão; sandbox via ITAU_API_BASE). */
-function apiBase(): string {
+/**
+ * Base da API por escopo (produção por padrão; sandbox via env).
+ *  - boleto: modelo `secure.api.itau`
+ *  - pix:    modelo novo `pix-pj.api.itau.com/regulatorio-pix/v2` (Recebimentos Pix 2.x)
+ */
+function apiBase(escopo: "boleto" | "pix"): string {
+  if (escopo === "pix") {
+    return env("ITAU_PIX_API_BASE") ?? "https://pix-pj.api.itau.com/regulatorio-pix/v2";
+  }
   return env("ITAU_API_BASE") ?? "https://secure.api.itau";
 }
 
