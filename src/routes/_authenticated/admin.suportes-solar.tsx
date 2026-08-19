@@ -88,6 +88,18 @@ function SuportesSolarPage() {
     return (suportesQ.data ?? []).filter((s) => !q || s.nome.toLowerCase().includes(q));
   }, [suportesQ.data, busca]);
 
+  const pendencias = useMemo(() => {
+    const out: string[] = [];
+    for (const s of suportesQ.data ?? []) {
+      for (const k of ["codigo_sap", "cod_extra", "cod_mini_trilho"] as const) {
+        const cod = (s as any)[k] as string | null;
+        if (cod && !resolverProduto(catalogo, cod)) out.push(`${s.nome} · ${k}: ${cod}`);
+      }
+    }
+    return out;
+  }, [suportesQ.data, catalogo]);
+
+
   function abrir(s?: SolarSuporte) {
     setForm(
       s
