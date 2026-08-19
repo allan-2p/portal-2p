@@ -961,45 +961,68 @@ function NovaPropostaSolarPage() {
 
         {etapa === 5 && (
           <section className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-            <div className="glass rounded-2xl p-5 space-y-4">
-              <h2 className="text-lg font-semibold">Resumo do pedido</h2>
-              <div className="grid gap-2 text-sm sm:grid-cols-2">
-                <Info label="Proposta" value={propostaNome || "—"} />
-                <Info label="Cliente" value={String(cliente?.['razao_social'] ?? "—")} />
-                <Info label="CNPJ" value={String(cliente?.['doc'] ?? "—")} />
-                <Info label="Tabela de preço" value={`Tabela ${listaPreco}`} />
-                <Info label="Tipo de NF" value={tipoNf} />
-                <Info label="Forma de pagamento" value={formaPagamento || "—"} />
-                <Info
-                  label="Endereço de faturamento"
-                  value={
-                    faturarClienteFinal
-                      ? `${fat['logradouro'] ?? ""} ${fat['numero'] ?? ""} — ${fat['cidade'] ?? ""}/${fat['uf'] ?? ""}`
-                      : `${cliente?.['logradouro'] ?? ""} ${cliente?.['numero'] ?? ""} — ${cliente?.['cidade'] ?? ""}/${cliente?.['uf'] ?? ""}`
-                  }
-                />
-                <Info
-                  label="Endereço de entrega"
-                  value={
-                    entregaDiferente
-                      ? `${entrega['logradouro'] ?? ""} ${entrega['numero'] ?? ""} — ${entrega['cidade'] ?? ""}/${entrega['uf'] ?? ""}`
-                      : "Mesmo do faturamento"
-                  }
-                />
-                <Info label="Frete" value={freteMod || "—"} />
-                <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
+            <div className="space-y-5">
+              <div className="glass rounded-2xl p-5 space-y-4">
+                <h2 className="text-lg font-semibold">Resumo do pedido</h2>
+                <div className="grid gap-2 text-sm sm:grid-cols-2">
+                  <Info label="Proposta" value={propostaNome || "—"} />
+                  <Info label="Cliente" value={String(cliente?.['razao_social'] ?? "—")} />
+                  <Info label="CNPJ" value={String(cliente?.['doc'] ?? "—")} />
+                  <Info label="Tabela de preço" value={`Tabela ${listaPreco}`} />
+                  <Info label="Tipo de NF" value={tipoNf} />
+                  <Info label="Forma de pagamento" value={formaPagamento || "—"} />
+                  <Info
+                    label="Endereço de faturamento"
+                    value={
+                      faturarClienteFinal
+                        ? `${fat['logradouro'] ?? ""} ${fat['numero'] ?? ""} — ${fat['cidade'] ?? ""}/${fat['uf'] ?? ""}`
+                        : `${cliente?.['logradouro'] ?? ""} ${cliente?.['numero'] ?? ""} — ${cliente?.['cidade'] ?? ""}/${cliente?.['uf'] ?? ""}`
+                    }
+                  />
+                  <Info
+                    label="Endereço de entrega"
+                    value={
+                      entregaDiferente
+                        ? `${entrega['logradouro'] ?? ""} ${entrega['numero'] ?? ""} — ${entrega['cidade'] ?? ""}/${entrega['uf'] ?? ""}`
+                        : "Mesmo do faturamento"
+                    }
+                  />
+                  <Info label="Frete" value={freteMod || "—"} />
+                  <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
+                </div>
+
+                <div className="rounded-xl border border-border divide-y divide-border/60">
+                  {itens.map((i) => {
+                    const p = produtos.find((x) => x.id === i.produtoId);
+                    return (
+                      <div key={i.key} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                        <span className="truncate">{i.qtd}× {p?.descricao}</span>
+                        <span className="tabular-nums font-medium">{fmtBRL(i.valor * i.qtd)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="rounded-xl border border-border divide-y divide-border/60">
-                {itens.map((i) => {
-                  const p = produtos.find((x) => x.id === i.produtoId);
-                  return (
-                    <div key={i.key} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                      <span className="truncate">{i.qtd}× {p?.descricao}</span>
-                      <span className="tabular-nums font-medium">{fmtBRL(i.valor * i.qtd)}</span>
-                    </div>
-                  );
-                })}
+              <div className="glass rounded-2xl p-5 grid gap-4 md:grid-cols-2">
+                <Campo label="Forma de pagamento">
+                  <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="boleto_vista">Boleto à vista</SelectItem>
+                      <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>
+                      <SelectItem value="pix">Pix</SelectItem>
+                      <SelectItem value="cartao_credito">Cartão de crédito</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Obrigatória apenas para concluir o pedido.
+                  </p>
+                  {tentou && !formaPagamento && <Erro>Obrigatória para concluir.</Erro>}
+                </Campo>
+                <Campo label="Observações">
+                  <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} />
+                </Campo>
               </div>
             </div>
 
@@ -1007,19 +1030,40 @@ function NovaPropostaSolarPage() {
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Tag className="h-4 w-4 text-primary" /> Cupom de desconto
               </h2>
-              <Select value={cupomCodigo || "__none__"} onValueChange={(v) => setCupomCodigo(v === "__none__" ? "" : v)}>
-                <SelectTrigger><SelectValue placeholder="Sem cupom" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Sem cupom</SelectItem>
-                  {(cuponsQ.data ?? [])
-                    .filter((c) => c.ativo)
-                    .map((c) => (
-                      <SelectItem key={c.id} value={c.codigo}>
-                        {c.codigo} — {c.tipos.join(", ")}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={cupomCodigo}
+                onChange={(e) => setCupomCodigo(e.target.value.toUpperCase().trim())}
+                placeholder="Digite o código do cupom"
+                className="uppercase"
+              />
+              {(cuponsQ.data ?? []).some((c) => c.ativo) && (
+                <Select
+                  value={cupomCodigo || "__none__"}
+                  onValueChange={(v) => setCupomCodigo(v === "__none__" ? "" : v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="Ou escolha um cupom" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Sem cupom</SelectItem>
+                    {(cuponsQ.data ?? [])
+                      .filter((c) => c.ativo)
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.codigo}>
+                          {c.codigo} — {c.tipos.join(", ")}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {cupomCodigo && !cupom && (
+                <p className="text-xs text-amber-500">
+                  Cupom não encontrado na lista — será validado no servidor ao salvar.
+                </p>
+              )}
+              {cupom && (
+                <p className="text-xs text-emerald-500">
+                  Cupom {cupom.codigo} aplicado ({cupom.tipos.join(", ")}).
+                </p>
+              )}
 
               <div className="space-y-1 text-sm">
                 <Linha label="Subtotal" value={fmtBRL(subtotal)} />
@@ -1031,9 +1075,13 @@ function NovaPropostaSolarPage() {
                 </div>
               </div>
 
+              <Button variant="outline" className="w-full gap-2" onClick={abrirPdf} disabled={!itens.length}>
+                <FileText className="h-4 w-4" /> Gerar proposta em PDF
+              </Button>
+
               {!formaPagamento && (
                 <p className="text-xs text-destructive">
-                  Escolha a forma de pagamento (etapa 2) para concluir o pedido.
+                  Escolha a forma de pagamento para concluir o pedido.
                 </p>
               )}
             </div>
