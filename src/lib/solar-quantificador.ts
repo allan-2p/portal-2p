@@ -206,17 +206,34 @@ function quantificarFileira(
       add("grampo_final", cfg.cod_grampo_final, "Grampo final", fim);
       totGrampo = inter + fim; // soma grampos EXCETO GAT. php:2853-2859
     }
-    add("terminal_aterramento", cfg.cod_terminal_aterramento, "Terminal de aterramento", qf);
+
+    // 1ª fileira com microinversor no suporte legado 9 (modelos 1..4):
+    // GAT, mini-trilho e kit somam +microinversores. php:2808-2867
+    const extraMicro =
+      primeira &&
+      (f.suporte.legado_id ?? 0) === 9 &&
+      ctx.tipo_gerador === 1 &&
+      [1, 2, 3, 4].includes(ctx.modelo_gerador)
+        ? ctx.microinversores
+        : 0;
+
+    add(
+      "terminal_aterramento",
+      cfg.cod_terminal_aterramento,
+      "Terminal de aterramento",
+      qf + extraMicro,
+    );
 
     // mini-trilho + kit parafuso = tot_grampo. php:2861-2909
     add(
       "mini_trilho",
       f.suporte.cod_mini_trilho ?? f.suporte.codigo_sap,
       `${f.suporte.nome} — mini trilho`,
-      totGrampo,
+      totGrampo + extraMicro,
     );
-    add("kit_parafuso_smart", cfg.cod_kit_parafuso_smart, "Kit parafuso Smart", totGrampo);
+    add("kit_parafuso_smart", cfg.cod_kit_parafuso_smart, "Kit parafuso Smart", totGrampo + extraMicro);
   }
+
 
   // Terminais de microinversor (uma vez por projeto; ver quantificarProjeto). php:2720-2735
   if ((ctx.tipo_gerador === 1 && ctx.modelo_gerador === 5) || ctx.tipo_gerador === 2) {
