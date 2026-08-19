@@ -611,13 +611,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
               <Section title="Dados da empresa">
                 <F label="Razão social *" id="campo-razao_social" error={erros.razao_social}>
-                  <Input value={form.razao_social} onChange={(e) => set("razao_social", e.target.value)} disabled={bloqueados.has("razao_social")} />
+                  <Input value={form.razao_social} readOnly disabled />
                 </F>
                 <F label="Nome fantasia">
-                  <Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} disabled={bloqueados.has("nome_fantasia")} />
+                  <Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} />
                 </F>
                 <F label="CNPJ *" id="campo-doc" error={erros.doc}>
-                  <Input value={form.doc ?? ""} onChange={(e) => set("doc", mascaraCnpj(e.target.value))} disabled />
+                  <Input value={form.doc ?? ""} readOnly disabled />
                 </F>
                 <F label="Regime tributário">
                   <Select value={form.regime_tributario ?? ""} onValueChange={(v) => set("regime_tributario", v)}>
@@ -625,26 +625,31 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <SelectContent>{REGIMES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                   </Select>
                 </F>
-                <F label="Natureza jurídica"><Input value={form.natureza_juridica ?? ""} onChange={(e) => set("natureza_juridica", e.target.value)} disabled={bloqueados.has("natureza_juridica")} /></F>
-                <F label="Porte"><Input value={form.porte ?? ""} onChange={(e) => set("porte", e.target.value)} disabled={bloqueados.has("porte")} /></F>
-                <F label="Situação cadastral"><Input value={form.situacao_cadastral ?? ""} onChange={(e) => set("situacao_cadastral", e.target.value)} disabled={bloqueados.has("situacao_cadastral")} /></F>
-                <F label="Data de abertura"><Input value={form.data_abertura ?? ""} onChange={(e) => set("data_abertura", e.target.value)} placeholder="AAAA-MM-DD" disabled={bloqueados.has("data_abertura")} /></F>
+                <F label="Natureza jurídica"><Input value={form.natureza_juridica ?? ""} readOnly disabled /></F>
+                <F label="Porte"><Input value={form.porte ?? ""} readOnly disabled /></F>
+                <F label="Situação cadastral"><Input value={form.situacao_cadastral ?? ""} readOnly disabled /></F>
+                <F label="Data de abertura"><Input value={form.data_abertura ?? ""} readOnly disabled placeholder="—" /></F>
+                <div className="sm:col-span-2 text-[11px] text-muted-foreground">
+                  Os dados da empresa são preenchidos automaticamente pela consulta do CNPJ. Apenas o nome fantasia pode ser ajustado.
+                </div>
               </Section>
 
               <Section title="Situação fiscal">
                 <F label="Inscrição Estadual" id="campo-ie" error={erros.ie}>
                   <Input
                     value={form.ie ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, ie: e.target.value, contribuinte: !!e.target.value.trim() }))}
+                    readOnly
+                    disabled
                     placeholder="Isento / não contribuinte"
                   />
 
                   {form.ie_situacao && <p className="mt-1 text-[11px] text-muted-foreground">Situação da IE: {form.ie_situacao}</p>}
                 </F>
                 <F label="Suframa">
-                  <Input value={form.suframa ?? ""} onChange={(e) => set("suframa", e.target.value)} placeholder="Não localizado" />
+                  <Input value={form.suframa ?? ""} readOnly disabled placeholder="Não localizado" />
                   {form.suframa_situacao && <p className="mt-1 text-[11px] text-muted-foreground">{form.suframa_situacao}</p>}
                 </F>
+
                 <F label="CNAE principal">
                   <Input
                     value={[form.cnae_principal_codigo, form.cnae_principal_descricao].filter(Boolean).join(" — ")}
