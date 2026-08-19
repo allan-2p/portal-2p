@@ -35,6 +35,7 @@ export const Route = createFileRoute("/_authenticated/admin/logs/gatilhos")({
             </p>
           </header>
           <JobRunsPanel />
+          <PixWebhookItauPanel />
           <PixSimuladorPanel />
         </div>
       </AppLayout>
