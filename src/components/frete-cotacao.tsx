@@ -15,6 +15,8 @@ type Props = {
   areaRural: boolean;
   documento: string;
   selecionada: CarregadoresTransportadora | null;
+  /** Unidade de negócio — define quais regras de frete se aplicam. */
+  unidade?: "solar" | "carregadores";
   onSelect: (t: CarregadoresTransportadora) => void;
   /** Chamado quando algum dado muda e a cotação anterior deixa de valer. */
   onInvalidate?: () => void;
@@ -37,6 +39,7 @@ export function FreteCotacao({
   areaRural,
   documento,
   selecionada,
+  unidade,
   onSelect,
   onInvalidate,
 }: Props) {
@@ -56,6 +59,7 @@ export function FreteCotacao({
     destino,
     areaRural,
     documento,
+    unidade,
   });
   const ultima = useRef<string>("");
   // Marca se já adotamos uma linha de base (proposta salva com frete já cotado).
@@ -98,6 +102,7 @@ export function FreteCotacao({
           areaRural,
           documento,
           ...(selecionada?.id ? { idTransportadora: selecionada.id } : {}),
+          ...(unidade ? { unidade } : {}),
         },
       });
       setOpcoes(r.opcoes as Opcao[]);

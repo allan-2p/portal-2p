@@ -1725,6 +1725,7 @@ function NovaPropostaSolarPage() {
 
             {(freteMod === "CIF" || freteMod === "DEDICADO") && (
               <FreteCotacao
+                unidade="solar"
                 itens={itens
                   .filter((i) => !i.avulso)
                   .map((i) => ({

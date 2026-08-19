@@ -190,6 +190,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         items: [
           { to: "/carregadores/produtos", label: "Gestão de Produtos", icon: Package, feature: "carregadores.produtos" },
           { to: "/carregadores/regras", label: "Regras de Propostas", icon: BookOpen, feature: "carregadores.regras" },
+          { to: "/carregadores/frete-regras", label: "Regras de Fretes", icon: Truck, feature: "carregadores.regras" },
           { to: "/carregadores/metas", label: "Regras de Metas", icon: Target, feature: "carregadores.metas" },
           { to: "/carregadores/comissoes", label: "Regras de Comissões", icon: Percent, feature: "carregadores.comissoes" },
         ],
