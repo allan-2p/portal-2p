@@ -43,6 +43,7 @@ import {
   Tag,
   Trash2,
   User,
+  X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
