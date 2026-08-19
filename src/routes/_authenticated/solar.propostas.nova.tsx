@@ -308,11 +308,57 @@ function NovaPropostaSolarPage() {
     }
   }
 
-  function trocarTabela(t: string) {
+  async function trocarTabela(t: string) {
+    if (t === listaPreco) return;
     setListaPreco(t);
-    void atualizarPrecos(itens, t);
     setTransportadora(null);
+    setTrocando(true);
+    await atualizarPrecos(itens, t);
+    setTrocando(false);
     toast.info(`Tabela ${t}: valores recalculados.`);
+  }
+
+  async function trocarModo(m: "calculadora" | "lista") {
+    if (m === modo || trocando) return;
+    setTrocando(true);
+    setModo(m);
+    await new Promise((r) => setTimeout(r, 420));
+    setTrocando(false);
+  }
+
+  /** Faturamento direto ao cliente final: busca dados do CNPJ (Serpro/CNPJá). */
+  async function enriquecerFaturamento() {
+    const doc = String(fat['doc'] ?? "").replace(/\D/g, "");
+    if (fatTipoDoc !== "cnpj" || doc.length !== 14) {
+      toast.error("Informe um CNPJ válido (14 dígitos).");
+      return;
+    }
+    setEnriquecendo(true);
+    try {
+      const e = await enriquecer({ data: { cnpj: doc } });
+      if (!e) {
+        toast.warning("Não encontramos dados públicos — preencha manualmente.");
+        return;
+      }
+      setFat((p) => ({
+        ...p,
+        nome: e.razao_social ?? p['nome'] ?? "",
+        ie: e.ie ?? p['ie'] ?? "",
+        cep: e.cep ?? p['cep'] ?? "",
+        logradouro: e.logradouro ?? p['logradouro'] ?? "",
+        numero: e.numero ?? p['numero'] ?? "",
+        complemento: e.complemento ?? p['complemento'] ?? "",
+        bairro: e.bairro ?? p['bairro'] ?? "",
+        cidade: e.cidade ?? p['cidade'] ?? "",
+        uf: e.uf ?? p['uf'] ?? "",
+        telefone: e.telefone ?? p['telefone'] ?? "",
+      }));
+      toast.success("Dados do CNPJ preenchidos. Você ainda pode editá-los.");
+    } catch (err) {
+      toast.error((err as Error).message || "Não foi possível consultar o CNPJ.");
+    } finally {
+      setEnriquecendo(false);
+    }
   }
 
   // ------------------------------------------------------------------
