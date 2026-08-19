@@ -51,6 +51,7 @@ import { Route as AuthenticatedAdminVinculosRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminTrilhosSolarRouteImport } from './routes/_authenticated/admin.trilhos-solar'
 import { Route as AuthenticatedAdminTabelasRouteImport } from './routes/_authenticated/admin.tabelas'
+import { Route as AuthenticatedAdminSuportesSolarRouteImport } from './routes/_authenticated/admin.suportes-solar'
 import { Route as AuthenticatedAdminRegrasRouteImport } from './routes/_authenticated/admin.regras'
 import { Route as AuthenticatedAdminProdutosSolarRouteImport } from './routes/_authenticated/admin.produtos-solar'
 import { Route as AuthenticatedAdminProdutosRouteImport } from './routes/_authenticated/admin.produtos'
@@ -332,6 +333,12 @@ const AuthenticatedAdminTabelasRoute =
   AuthenticatedAdminTabelasRouteImport.update({
     id: '/admin/tabelas',
     path: '/admin/tabelas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminSuportesSolarRoute =
+  AuthenticatedAdminSuportesSolarRouteImport.update({
+    id: '/admin/suportes-solar',
+    path: '/admin/suportes-solar',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminRegrasRoute =
@@ -621,6 +628,7 @@ export interface FileRoutesByFullPath {
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
   '/admin/regras': typeof AuthenticatedAdminRegrasRoute
+  '/admin/suportes-solar': typeof AuthenticatedAdminSuportesSolarRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/trilhos-solar': typeof AuthenticatedAdminTrilhosSolarRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
@@ -707,6 +715,7 @@ export interface FileRoutesByTo {
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
   '/admin/regras': typeof AuthenticatedAdminRegrasRoute
+  '/admin/suportes-solar': typeof AuthenticatedAdminSuportesSolarRoute
   '/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/admin/trilhos-solar': typeof AuthenticatedAdminTrilhosSolarRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
@@ -794,6 +803,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
   '/_authenticated/admin/produtos-solar': typeof AuthenticatedAdminProdutosSolarRoute
   '/_authenticated/admin/regras': typeof AuthenticatedAdminRegrasRoute
+  '/_authenticated/admin/suportes-solar': typeof AuthenticatedAdminSuportesSolarRoute
   '/_authenticated/admin/tabelas': typeof AuthenticatedAdminTabelasRoute
   '/_authenticated/admin/trilhos-solar': typeof AuthenticatedAdminTrilhosSolarRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
@@ -883,6 +893,7 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/admin/produtos-solar'
     | '/admin/regras'
+    | '/admin/suportes-solar'
     | '/admin/tabelas'
     | '/admin/trilhos-solar'
     | '/admin/usuarios'
@@ -969,6 +980,7 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/admin/produtos-solar'
     | '/admin/regras'
+    | '/admin/suportes-solar'
     | '/admin/tabelas'
     | '/admin/trilhos-solar'
     | '/admin/usuarios'
@@ -1055,6 +1067,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/produtos'
     | '/_authenticated/admin/produtos-solar'
     | '/_authenticated/admin/regras'
+    | '/_authenticated/admin/suportes-solar'
     | '/_authenticated/admin/tabelas'
     | '/_authenticated/admin/trilhos-solar'
     | '/_authenticated/admin/usuarios'
@@ -1431,6 +1444,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/tabelas'
       fullPath: '/admin/tabelas'
       preLoaderRoute: typeof AuthenticatedAdminTabelasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/suportes-solar': {
+      id: '/_authenticated/admin/suportes-solar'
+      path: '/admin/suportes-solar'
+      fullPath: '/admin/suportes-solar'
+      preLoaderRoute: typeof AuthenticatedAdminSuportesSolarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/regras': {
@@ -1874,6 +1894,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminProdutosRoute: typeof AuthenticatedAdminProdutosRoute
   AuthenticatedAdminProdutosSolarRoute: typeof AuthenticatedAdminProdutosSolarRoute
   AuthenticatedAdminRegrasRoute: typeof AuthenticatedAdminRegrasRoute
+  AuthenticatedAdminSuportesSolarRoute: typeof AuthenticatedAdminSuportesSolarRoute
   AuthenticatedAdminTabelasRoute: typeof AuthenticatedAdminTabelasRoute
   AuthenticatedAdminTrilhosSolarRoute: typeof AuthenticatedAdminTrilhosSolarRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
@@ -1923,6 +1944,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminProdutosRoute: AuthenticatedAdminProdutosRoute,
   AuthenticatedAdminProdutosSolarRoute: AuthenticatedAdminProdutosSolarRoute,
   AuthenticatedAdminRegrasRoute: AuthenticatedAdminRegrasRoute,
+  AuthenticatedAdminSuportesSolarRoute: AuthenticatedAdminSuportesSolarRoute,
   AuthenticatedAdminTabelasRoute: AuthenticatedAdminTabelasRoute,
   AuthenticatedAdminTrilhosSolarRoute: AuthenticatedAdminTrilhosSolarRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
