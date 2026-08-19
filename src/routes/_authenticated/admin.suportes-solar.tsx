@@ -78,6 +78,8 @@ const vazio: Form = {
 function SuportesSolarPage() {
   const qc = useQueryClient();
   const suportesQ = useSolarSuportes(true);
+  const catalogo = useSapCatalogoCodigos().data ?? [];
+
   const [busca, setBusca] = useState("");
   const [form, setForm] = useState<Form | null>(null);
 
