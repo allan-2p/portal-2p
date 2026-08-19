@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Copy, Eye, Pencil, Plus, Search, Plug, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
@@ -32,6 +32,7 @@ import {
 import { fmtBRL } from "@/lib/carregadores";
 import { PermissionGate, useCanDelete } from "@/components/permission-gate";
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
+import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 
 export const Route = createFileRoute("/_authenticated/solar/propostas/")({
   head: () => ({
@@ -72,6 +73,7 @@ function PropostasSolarPage() {
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(10);
   const [detalheId, setDetalheId] = useState<string | null>(null);
+  const [integracoesId, setIntegracoesId] = useState<string | null>(null);
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const podeExcluir = useCanDelete();
 
@@ -225,6 +227,16 @@ function PropostasSolarPage() {
                           </Link>
                         </Button>
                         {podeExcluir && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Integrações do pedido"
+                            onClick={() => setIntegracoesId(r.id)}
+                          >
+                            <Plug className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {podeExcluir && (
                           <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -275,6 +287,12 @@ function PropostasSolarPage() {
           )}
         </div>
       </div>
+
+      <PedidoIntegracoesDialog
+        propostaId={integracoesId}
+        open={!!integracoesId}
+        onOpenChange={(open) => !open && setIntegracoesId(null)}
+      />
 
       <PropostaDetalheDialog
         id={detalheId ?? undefined}

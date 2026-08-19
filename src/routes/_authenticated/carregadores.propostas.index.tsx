@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Calculator, Copy, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Calculator, Copy, Eye, Pencil, Plus, Search, Plug, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { listarPropostasFn, excluirPropostaFn } from "@/lib/propostas.functions";
@@ -33,6 +33,7 @@ import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PermissionGate, useCanDelete } from "@/components/permission-gate";
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
+import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
   head: () => ({
@@ -79,6 +80,7 @@ const STATUS = PROPOSTA_STATUS;
 function HistoricoCarregadoresPage() {
   const [busca, setBusca] = useState("");
   const [detalheId, setDetalheId] = useState<string | null>(null);
+  const [integracoesId, setIntegracoesId] = useState<string | null>(null);
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
   const [sap, setSap] = useState("todos");
@@ -294,6 +296,16 @@ function HistoricoCarregadoresPage() {
                           </Link>
                         </Button>
                         {podeExcluir && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Integrações do pedido"
+                            onClick={() => setIntegracoesId(r.id)}
+                          >
+                            <Plug className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {podeExcluir && (
                           <>
                             <Button variant="ghost" size="icon" aria-label="Auditoria de cálculo" asChild>
                               <Link to="/carregadores/propostas/auditoria" search={{ id: r.id }}>
@@ -358,6 +370,12 @@ function HistoricoCarregadoresPage() {
           )}
         </div>
       </div>
+
+      <PedidoIntegracoesDialog
+        propostaId={integracoesId}
+        open={!!integracoesId}
+        onOpenChange={(open) => !open && setIntegracoesId(null)}
+      />
 
       <PropostaDetalheDialog
         id={detalheId ?? undefined}
