@@ -1384,8 +1384,14 @@ function NovaPropostaSolarPage() {
 
         {/* TOTAIS FINAIS — recalculam a cada mudança de item, cupom ou frete */}
         {etapa >= 3 && (
-          <div className="rounded-2xl border border-border/70 bg-card/95 backdrop-blur px-4 py-4 shadow-lg">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="relative rounded-2xl border border-border/70 bg-card/95 backdrop-blur px-4 py-4 shadow-lg overflow-hidden">
+            {recalculandoTotais && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-card/70 backdrop-blur-sm">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span className="text-sm font-medium text-primary">Recalculando totais...</span>
+              </div>
+            )}
+            <div className={cn("flex flex-col sm:flex-row sm:items-center gap-4", recalculandoTotais && "opacity-60")}>
               <div className="flex items-center gap-2 shrink-0">
                 <div className="rounded-lg bg-primary/10 p-2">
                   <Sparkles className="h-4 w-4 text-primary" />
