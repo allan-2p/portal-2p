@@ -63,7 +63,7 @@ function ProdutosSolarPage() {
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("sap_produtos")
-        .select("id, codigo, descricao, tipo, ativo, visibilidade, last_synced_at")
+        .select("id, codigo, descricao, tipo, ativo, visibilidade, preco_sugerido, last_synced_at")
         .in("visibilidade", ["solar", "ambos"])
         .order("descricao");
       if (error) throw error;
@@ -93,6 +93,22 @@ function ProdutosSolarPage() {
   const visiveis = filtrados.slice((pageSafe - 1) * pageSize, pageSafe * pageSize);
 
   const ativos = produtos.filter((p) => p.ativo).length;
+
+  /** Preço sugerido: rede de segurança quando o SAP não precifica o material. */
+  async function salvarPreco(p: Row, valor: string) {
+    const novo = Math.max(0, Math.round((Number(String(valor).replace(",", ".")) || 0) * 100) / 100);
+    if (novo === Number(p.preco_sugerido ?? 0)) return;
+    const { error } = await supabase.from("sap_produtos").update({ preco_sugerido: novo }).eq("id", p.id);
+    if (error) return toast.error(error.message);
+    void logModeration({
+      area: "produtos",
+      action: "atualizou preço",
+      target: p.codigo,
+      summary: `Preço sugerido de ${p.codigo} alterado para R$ ${novo.toFixed(2)} no 2P Solar.`,
+    });
+    toast.success(`Preço de ${p.codigo} salvo.`);
+    void qc.invalidateQueries({ queryKey: ["produtos-solar"] });
+  }
 
   async function toggleAtivo(p: Row) {
     const { error } = await supabase.from("sap_produtos").update({ ativo: !p.ativo }).eq("id", p.id);
