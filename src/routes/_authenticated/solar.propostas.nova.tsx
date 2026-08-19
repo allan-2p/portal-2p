@@ -552,8 +552,14 @@ function NovaPropostaSolarPage() {
 
 
   async function realizarProposta() {
+    if (faltandoInputs.length) return toast.error(faltandoInputs[0] as string);
+    if (pendenciasCodigos.length)
+      return toast.error(
+        `De/para incompleto: ${pendenciasCodigos[0]?.origem} — ${pendenciasCodigos[0]?.campo} (${pendenciasCodigos[0]?.descricao}).`,
+      );
     if (!modulo) return toast.error("Selecione o módulo.");
     if (!linhas.length) return toast.error("Adicione ao menos uma fileira.");
+
     if (Number(paineis) > 0 && paineisNasLinhas !== Number(paineis)) {
       const diff = paineisNasLinhas - Number(paineis);
       return toast.error(
