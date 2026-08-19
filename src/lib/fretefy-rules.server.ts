@@ -6,17 +6,12 @@
  */
 
 import {
-  ADICIONAL_AREA_RURAL,
   CNPJ,
   COD_TRILHOS,
-  POTENCIA_MAX_BRASPRESS_KW,
-  TDE_SCHREIBER,
-  TDE_TRANSCARAPIA,
-  TRILHOS_BRASPRESS,
-  TRILHOS_SAO_MIGUEL,
-  TRILHOS_SCHREIBER_TDE,
-  TRILHOS_TRANSCARAPIA,
+  FRETE_REGRAS_PADRAO,
+  mesclarFreteRegras,
   temCarregadorAcimaDe,
+  type FreteRegrasConfig,
 } from "./fretefy-regras";
 
 export * from "./fretefy-regras";
@@ -38,14 +33,31 @@ export function filtraFretes(
   codigosCarrinho: string[],
   cnpj: string,
   nomesCarrinho: string[] = [],
+  cfg: FreteRegrasConfig = FRETE_REGRAS_PADRAO,
 ): boolean {
+  const regra = cfg.transportadoras[cnpj];
   const tem = (lista: string[]) => codigosCarrinho.some((c) => lista.includes(c));
   if (cnpj === CNPJ.BRASPRESS) {
-    if (tem(TRILHOS_BRASPRESS)) return false;
-    if (temCarregadorAcimaDe(nomesCarrinho, POTENCIA_MAX_BRASPRESS_KW)) return false;
+    if (regra?.ativa !== false && tem(regra?.trilhos ?? [])) return false;
+    if (temCarregadorAcimaDe(nomesCarrinho, cfg.potenciaMaxBraspressKw)) return false;
   }
-  if (cnpj === CNPJ.SAO_MIGUEL && tem(TRILHOS_SAO_MIGUEL)) return false;
+  if (cnpj === CNPJ.SAO_MIGUEL && regra?.ativa !== false && tem(regra?.trilhos ?? [])) return false;
   return true;
+}
+
+/** Lê as regras personalizadas no banco; cai no padrão em qualquer falha. */
+export async function carregarFreteRegras(): Promise<FreteRegrasConfig> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await (supabaseAdmin as any)
+      .from("frete_regras_config")
+      .select("config")
+      .eq("id", 1)
+      .maybeSingle();
+    return mesclarFreteRegras(data?.config);
+  } catch {
+    return FRETE_REGRAS_PADRAO;
+  }
 }
 
 export type ContextoFrete = {
@@ -77,7 +89,11 @@ export type OpcaoFrete = {
 };
 
 /** Aplica SLA → prazo em dias e as taxas específicas da 2P. */
-export function aplicarRegras(opt: OpcaoBruta, ctx: ContextoFrete): OpcaoFrete {
+export function aplicarRegras(
+  opt: OpcaoBruta,
+  ctx: ContextoFrete,
+  cfg: FreteRegrasConfig = FRETE_REGRAS_PADRAO,
+): OpcaoFrete {
   const cnpj = String(opt.transportadoraDocumento ?? "");
   const sla = Number(opt.sla ?? 0);
   const prazo = sla > 24 ? Math.round(sla / 24) : 1;
@@ -85,24 +101,30 @@ export function aplicarRegras(opt: OpcaoBruta, ctx: ContextoFrete): OpcaoFrete {
   let total = round2(Number(opt.total ?? 0));
 
   const doc = soDigitos(ctx.documento);
-  if (cnpj === CNPJ.BRASPRESS && doc.length > 0 && doc.length <= 11) {
+  if (cnpj === CNPJ.BRASPRESS && cfg.despachoBraspressCpf && doc.length > 0 && doc.length <= 11) {
     const desp = (opt.componentes ?? []).find((c) => c.descricao === "DESPACHO");
     if (desp) {
       total += Number(desp.valor ?? 0);
       ajustes.push(`Despacho Braspress (CPF): +${round2(Number(desp.valor ?? 0))}`);
     }
   }
-  if (cnpj === CNPJ.SCHREIBER && ctx.codigosCarrinho.some((c) => TRILHOS_SCHREIBER_TDE.includes(c))) {
-    total += TDE_SCHREIBER;
-    ajustes.push(`TDE Schreiber: +${TDE_SCHREIBER}`);
-  }
-  if (cnpj === CNPJ.TRANSCARAPIA && ctx.codigosCarrinho.some((c) => TRILHOS_TRANSCARAPIA.includes(c))) {
-    total += TDE_TRANSCARAPIA;
-    ajustes.push(`TDE Transcarapia: +${TDE_TRANSCARAPIA}`);
+  for (const [alvo, nome] of [
+    [CNPJ.SCHREIBER, "Schreiber"],
+    [CNPJ.TRANSCARAPIA, "Transcarapia"],
+  ] as const) {
+    const regra = cfg.transportadoras[alvo];
+    if (
+      cnpj === alvo &&
+      regra?.ativa !== false &&
+      ctx.codigosCarrinho.some((c) => (regra?.trilhos ?? []).includes(c))
+    ) {
+      total += regra?.adicional ?? 0;
+      ajustes.push(`TDE ${nome}: +${regra?.adicional ?? 0}`);
+    }
   }
   if (ctx.tipoEntrega === "S" && ctx.areaRural) {
-    total += ADICIONAL_AREA_RURAL;
-    ajustes.push(`Área rural: +${ADICIONAL_AREA_RURAL}`);
+    total += cfg.adicionalAreaRural;
+    ajustes.push(`Área rural: +${cfg.adicionalAreaRural}`);
   }
 
   return {

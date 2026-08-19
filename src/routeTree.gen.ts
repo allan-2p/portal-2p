@@ -57,6 +57,7 @@ import { Route as AuthenticatedAdminModulosSolarRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminModeracaoRouteImport } from './routes/_authenticated/admin.moderacao'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
 import { Route as AuthenticatedAdminIntegracoesRouteImport } from './routes/_authenticated/admin.integracoes'
+import { Route as AuthenticatedAdminFreteRegrasRouteImport } from './routes/_authenticated/admin.frete-regras'
 import { Route as AuthenticatedAdminEstoqueRouteImport } from './routes/_authenticated/admin.estoque'
 import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
 import { Route as AuthenticatedAdminComissoesRouteImport } from './routes/_authenticated/admin.comissoes'
@@ -366,6 +367,12 @@ const AuthenticatedAdminIntegracoesRoute =
     path: '/admin/integracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminFreteRegrasRoute =
+  AuthenticatedAdminFreteRegrasRouteImport.update({
+    id: '/admin/frete-regras',
+    path: '/admin/frete-regras',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminEstoqueRoute =
   AuthenticatedAdminEstoqueRouteImport.update({
     id: '/admin/estoque',
@@ -591,6 +598,7 @@ export interface FileRoutesByFullPath {
   '/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
@@ -674,6 +682,7 @@ export interface FileRoutesByTo {
   '/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
@@ -758,6 +767,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/_authenticated/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
   '/_authenticated/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
+  '/_authenticated/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
   '/_authenticated/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/_authenticated/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
@@ -844,6 +854,7 @@ export interface FileRouteTypes {
     | '/admin/comissoes'
     | '/admin/configuracoes'
     | '/admin/estoque'
+    | '/admin/frete-regras'
     | '/admin/integracoes'
     | '/admin/metas'
     | '/admin/moderacao'
@@ -927,6 +938,7 @@ export interface FileRouteTypes {
     | '/admin/comissoes'
     | '/admin/configuracoes'
     | '/admin/estoque'
+    | '/admin/frete-regras'
     | '/admin/integracoes'
     | '/admin/metas'
     | '/admin/moderacao'
@@ -1010,6 +1022,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/comissoes'
     | '/_authenticated/admin/configuracoes'
     | '/_authenticated/admin/estoque'
+    | '/_authenticated/admin/frete-regras'
     | '/_authenticated/admin/integracoes'
     | '/_authenticated/admin/metas'
     | '/_authenticated/admin/moderacao'
@@ -1436,6 +1449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIntegracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/frete-regras': {
+      id: '/_authenticated/admin/frete-regras'
+      path: '/admin/frete-regras'
+      fullPath: '/admin/frete-regras'
+      preLoaderRoute: typeof AuthenticatedAdminFreteRegrasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/estoque': {
       id: '/_authenticated/admin/estoque'
       path: '/admin/estoque'
@@ -1805,6 +1825,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminComissoesRoute: typeof AuthenticatedAdminComissoesRoute
   AuthenticatedAdminConfiguracoesRoute: typeof AuthenticatedAdminConfiguracoesRoute
   AuthenticatedAdminEstoqueRoute: typeof AuthenticatedAdminEstoqueRoute
+  AuthenticatedAdminFreteRegrasRoute: typeof AuthenticatedAdminFreteRegrasRoute
   AuthenticatedAdminIntegracoesRoute: typeof AuthenticatedAdminIntegracoesRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
   AuthenticatedAdminModeracaoRoute: typeof AuthenticatedAdminModeracaoRoute
@@ -1851,6 +1872,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminComissoesRoute: AuthenticatedAdminComissoesRoute,
   AuthenticatedAdminConfiguracoesRoute: AuthenticatedAdminConfiguracoesRoute,
   AuthenticatedAdminEstoqueRoute: AuthenticatedAdminEstoqueRoute,
+  AuthenticatedAdminFreteRegrasRoute: AuthenticatedAdminFreteRegrasRoute,
   AuthenticatedAdminIntegracoesRoute: AuthenticatedAdminIntegracoesRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
   AuthenticatedAdminModeracaoRoute: AuthenticatedAdminModeracaoRoute,
