@@ -184,9 +184,12 @@ function SuportesSolarPage() {
                 {lista.map((s) => (
                   <tr key={s.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 font-medium">{s.nome}</td>
-                    <td className="px-4 py-3">{s.codigo_sap ?? "—"}</td>
-                    <td className="px-4 py-3">{s.cod_extra ?? "—"}</td>
-                    <td className="px-4 py-3">{s.cod_mini_trilho ?? "—"}</td>
+                    {(["codigo_sap", "cod_extra", "cod_mini_trilho"] as const).map((k) => (
+                      <td className="px-4 py-3" key={k}>
+                        <SapCodigoCell codigo={(s as any)[k]} nomeRef={s.nome} produtos={catalogo} />
+                      </td>
+                    ))}
+
                     <td className="px-4 py-3 text-right tabular-nums">{s.multiplo}</td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       {s.smart ? "Sim" : "—"}
