@@ -50,13 +50,36 @@ export const cotarFrete = createServerFn({ method: "POST" })
     const cubagem = 0;
     const semPeso = itens.filter((i) => !(i.pesoLiquido > 0)).map((i) => i.nome || i.codigo);
 
+    const { auditarBloqueio, auditarTentativaSap } = await import("./proposta-auditoria.server");
+    const auditCtx = {
+      doc: data.documento ?? null,
+      ...(data.unidade ? { unidade: data.unidade } : {}),
+      actorId: context.userId,
+      actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
+    };
+    await auditarTentativaSap(auditCtx, {
+      etapa: "frete",
+      itens: data.itens.map((i) => ({ codigo: String(i.codigo), quantidade: Number(i.quantidade || 0) })),
+      resposta: {
+        pesos: itens.map((i) => ({ codigo: i.codigo, peso_unitario: i.pesoLiquido })),
+        erros: simRes.erros,
+        motivo: simRes.motivo ?? null,
+      },
+      erros: sapMsgs,
+    });
+
     try {
-      if (sapMsgs.length && semPeso.length)
-        throw new Error(`SAP recusou a simulação: ${sapMsgs.join(" • ")}`);
-      if (semPeso.length)
-        throw new Error(
-          `A simulação de preço do SAP não retornou peso para: ${semPeso.join(", ")}. Tente novamente ou verifique o cadastro do material no SAP.`,
-        );
+      if (sapMsgs.length && semPeso.length) {
+        const motivo = `SAP recusou a simulação: ${sapMsgs.join(" • ")}`;
+        await auditarBloqueio(auditCtx, { etapa: "frete", motivo, dados: { sap: sapMsgs, sem_peso: semPeso } });
+        throw new Error(motivo);
+      }
+      if (semPeso.length) {
+        const motivo = `A simulação de preço do SAP não retornou peso para: ${semPeso.join(", ")}. Tente novamente ou verifique o cadastro do material no SAP.`;
+        await auditarBloqueio(auditCtx, { etapa: "frete", motivo, dados: { sem_peso: semPeso } });
+        throw new Error(motivo);
+      }
+
 
 
 
