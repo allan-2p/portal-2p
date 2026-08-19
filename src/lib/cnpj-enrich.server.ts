@@ -223,6 +223,9 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
     out.avisos.push("Falha ao consultar a CNPJá.");
   }
 
+  if (out.simples_optante === null) {
+    out.avisos.push("Não foi possível apurar o Simples Nacional — confira o regime tributário manualmente.");
+  }
   if (out.fontes.length === 0) out.avisos.push("Nenhuma fonte respondeu — preencha manualmente.");
   return out;
 }
