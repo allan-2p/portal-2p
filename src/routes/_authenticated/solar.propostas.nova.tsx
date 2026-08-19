@@ -77,7 +77,7 @@ import {
   useSolarTrilhoSuportes,
   useSolarTrilhos,
 } from "@/hooks/use-solar-catalogo";
-import { quantificarProjeto } from "@/lib/solar-quantificador";
+import { quantificarProjeto, pendenciasDePara } from "@/lib/solar-quantificador";
 import {
   SOLAR_CALC_CONFIG_FALLBACK,
   type CalcResultado,
