@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/select";
 import {
   listSapCatalogoCompleto,
+  setSapCatalogoNoPortal,
+
   listSapProdutos,
   listSapSyncRuns,
   setSapProdutoVisibilidade,
@@ -84,17 +86,38 @@ function duracao(inicio: string, fim: string | null) {
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
-function CatalogoSapCompleto() {
+function CatalogoSapCompleto({ onPropagar }: { onPropagar: () => void }) {
   const listAll = useServerFn(listSapCatalogoCompleto);
+  const setNoPortal = useServerFn(setSapCatalogoNoPortal);
   const [q, setQ] = useState("");
   const [escopo, setEscopo] = useState<"todos" | "catalogo" | "fora" | "sem_ncm">("todos");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
+  const [salvando, setSalvando] = useState<string | null>(null);
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["sap-catalogo-completo"],
     queryFn: () => listAll({}),
   });
+
+  const alternarCatalogo = async (codigo: string, no_catalogo: boolean) => {
+    setSalvando(codigo);
+    try {
+      await setNoPortal({ data: { codigo, no_catalogo } });
+      toast.success(
+        no_catalogo
+          ? `${codigo} enviado ao catálogo do portal (inativo, defina a visibilidade em Produtos).`
+          : `${codigo} removido do catálogo do portal.`,
+      );
+      await refetch();
+      onPropagar();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao atualizar o catálogo.");
+    } finally {
+      setSalvando(null);
+    }
+  };
+
 
   const itens = data?.itens ?? [];
   const semNcm = useMemo(() => itens.filter((i) => !i.ncm_codigo), [itens]);
@@ -202,18 +225,20 @@ function CatalogoSapCompleto() {
               <th className="text-left px-3 py-2">NCM (SAP)</th>
               <th className="text-left px-3 py-2">No catálogo</th>
               <th className="text-left px-3 py-2">Sincronizado</th>
+              <th className="text-right px-3 py-2">Ação</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin inline" />
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+
                   Nenhum material. Clique em “Sinc. SAP” para importar o catálogo completo.
                 </td>
               </tr>
@@ -228,9 +253,31 @@ function CatalogoSapCompleto() {
                     <Badge variant={i.no_catalogo ? "default" : "outline"}>{i.no_catalogo ? "Sim" : "Não"}</Badge>
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{fmt(i.last_synced_at)}</td>
+                  <td className="px-3 py-2 text-right">
+                    <Button
+                      variant={i.no_catalogo ? "ghost" : "outline"}
+                      size="sm"
+                      disabled={salvando === i.codigo}
+                      onClick={() => alternarCatalogo(i.codigo, !i.no_catalogo)}
+                      title={
+                        i.no_catalogo
+                          ? "Remover do catálogo do portal"
+                          : "Enviar este material para o catálogo do portal (entra inativo)"
+                      }
+                    >
+                      {salvando === i.codigo ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : i.no_catalogo ? (
+                        "Remover"
+                      ) : (
+                        "Enviar ao catálogo"
+                      )}
+                    </Button>
+                  </td>
                 </tr>
               ))
             )}
+
           </tbody>
         </table>
       </div>
@@ -981,7 +1028,7 @@ function ProdutosPage() {
         </div>
         </>
         ) : (
-          <CatalogoSapCompleto />
+          <CatalogoSapCompleto onPropagar={propagar} />
         )}
 
       </div>
