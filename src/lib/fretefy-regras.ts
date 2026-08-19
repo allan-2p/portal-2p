@@ -69,7 +69,12 @@ export const ADICIONAL_AREA_RURAL = 300;
 /** Potência (kW) a partir da qual a Braspress não transporta o carregador. */
 export const POTENCIA_MAX_BRASPRESS_KW = 60;
 
+/** Unidade de negócio à qual a regra se aplica. */
+export type UnidadeFrete = "solar" | "carregadores";
+
 export type RegraTransportadora = {
+  /** Unidade em que a regra é aplicada e exibida. */
+  unidade: UnidadeFrete;
   razaoSocial: string;
   codigoSap: string;
   cnpj: string;
@@ -84,18 +89,17 @@ export type RegraTransportadora = {
 /** Regras exibidas no painel de Integrações e aplicadas na cotação. */
 export const REGRAS_TRANSPORTADORAS: RegraTransportadora[] = [
   {
+    unidade: "solar",
     razaoSocial: "BRASPRESS TRANSPORTES URGENTES LTDA",
     codigoSap: "2000000812",
     cnpj: CNPJ.BRASPRESS,
     tipo: "bloqueio",
     resumo: "Não transporta nenhum dos trilhos listados.",
     trilhos: TRILHOS_BRASPRESS,
-    extras: [
-      `Não transporta carregador veicular acima de ${POTENCIA_MAX_BRASPRESS_KW} kW.`,
-      "Para cliente pessoa física (CPF), a taxa de despacho é somada ao valor da cotação.",
-    ],
+    extras: ["Para cliente pessoa física (CPF), a taxa de despacho é somada ao valor da cotação."],
   },
   {
+    unidade: "solar",
     razaoSocial: "EXPRESSO SÃO MIGUEL S/A",
     codigoSap: "1000001407",
     cnpj: CNPJ.SAO_MIGUEL,
@@ -104,6 +108,7 @@ export const REGRAS_TRANSPORTADORAS: RegraTransportadora[] = [
     trilhos: TRILHOS_SAO_MIGUEL,
   },
   {
+    unidade: "solar",
     razaoSocial: "SCHREIBER LOGÍSTICA LTDA",
     codigoSap: "2000002588",
     cnpj: CNPJ.SCHREIBER,
@@ -113,6 +118,7 @@ export const REGRAS_TRANSPORTADORAS: RegraTransportadora[] = [
     trilhos: TRILHOS_SCHREIBER_TDE,
   },
   {
+    unidade: "solar",
     razaoSocial: "TRANSCARAPIA TRANSPORTES LTDA",
     codigoSap: "2000005188",
     cnpj: CNPJ.TRANSCARAPIA,
@@ -122,6 +128,25 @@ export const REGRAS_TRANSPORTADORAS: RegraTransportadora[] = [
     trilhos: TRILHOS_TRANSCARAPIA,
   },
 ];
+
+/**
+ * Regras de frete específicas da 2P Carregadores.
+ * Não usam trilhos: o critério é a potência do carregador no carrinho.
+ */
+export const REGRAS_CARREGADORES = [
+  {
+    unidade: "carregadores" as const,
+    razaoSocial: "BRASPRESS TRANSPORTES URGENTES LTDA",
+    codigoSap: "2000000812",
+    cnpj: CNPJ.BRASPRESS,
+    resumo: `Não transporta carregadores acima de ${POTENCIA_MAX_BRASPRESS_KW} kW (ex.: 80 kW) — a Braspress sai da lista de opções.`,
+    extras: ["Para cliente pessoa física (CPF), a taxa de despacho é somada ao valor da cotação."],
+  },
+];
+
+/** Regras de transportadora exibidas/aplicadas em uma unidade. */
+export const regrasDaUnidade = (unidade: UnidadeFrete) =>
+  REGRAS_TRANSPORTADORAS.filter((r) => r.unidade === unidade);
 
 /** Regras gerais, válidas para qualquer transportadora. */
 export const REGRAS_GERAIS = [
@@ -164,6 +189,8 @@ export type FreteRegraOverride = {
 export type FreteRegrasConfig = {
   adicionalAreaRural: number;
   potenciaMaxBraspressKw: number;
+  /** Bloqueio da Braspress por potência do carregador (2P Carregadores). */
+  bloqueioCarregadorBraspress: boolean;
   /** Cobrar a taxa de despacho da Braspress quando o cliente é CPF. */
   despachoBraspressCpf: boolean;
   /** CNPJ da transportadora → regra. */
@@ -174,6 +201,7 @@ export type FreteRegrasConfig = {
 export const FRETE_REGRAS_PADRAO: FreteRegrasConfig = {
   adicionalAreaRural: ADICIONAL_AREA_RURAL,
   potenciaMaxBraspressKw: POTENCIA_MAX_BRASPRESS_KW,
+  bloqueioCarregadorBraspress: true,
   despachoBraspressCpf: true,
   transportadoras: Object.fromEntries(
     REGRAS_TRANSPORTADORAS.map((r) => [
@@ -204,6 +232,10 @@ export function mesclarFreteRegras(raw: unknown): FreteRegrasConfig {
   return {
     adicionalAreaRural: num(c.adicionalAreaRural, FRETE_REGRAS_PADRAO.adicionalAreaRural),
     potenciaMaxBraspressKw: num(c.potenciaMaxBraspressKw, FRETE_REGRAS_PADRAO.potenciaMaxBraspressKw),
+    bloqueioCarregadorBraspress:
+      typeof c.bloqueioCarregadorBraspress === "boolean"
+        ? c.bloqueioCarregadorBraspress
+        : FRETE_REGRAS_PADRAO.bloqueioCarregadorBraspress,
     despachoBraspressCpf:
       typeof c.despachoBraspressCpf === "boolean"
         ? c.despachoBraspressCpf

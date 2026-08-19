@@ -8,6 +8,7 @@ export type CotarFreteData = {
   areaRural?: boolean;
   documento?: string;
   idTransportadora?: string;
+  unidade?: "solar" | "carregadores";
 };
 
 /** Cota o frete no Fretefy aplicando as regras comerciais da 2P. */
@@ -61,6 +62,7 @@ export const cotarFrete = createServerFn({ method: "POST" })
         ...(data.areaRural !== undefined ? { areaRural: data.areaRural } : {}),
         ...(data.documento !== undefined ? { documento: data.documento } : {}),
         ...(data.idTransportadora !== undefined ? { idTransportadora: data.idTransportadora } : {}),
+        ...(data.unidade !== undefined ? { unidade: data.unidade } : {}),
       });
       await logIntegrationEvent({
         slug: "fretefy",

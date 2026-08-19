@@ -31,6 +31,7 @@ export type CotarFreteInput = {
   documento?: string;
   idTransportadora?: string;
   freteDedicado?: number;
+  unidade?: "solar" | "carregadores";
 };
 
 export type CotarFreteResultado = {
@@ -106,6 +107,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     documento: data.documento,
     tipoEntrega: data.tipoEntrega,
     areaRural: data.areaRural,
+    unidade: data.unidade,
   };
 
   const cfgRegras = await carregarFreteRegras();
@@ -121,7 +123,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
 
     opcoes = (Array.isArray(res.json) ? (res.json as OpcaoBruta[]) : [])
       .filter((o) =>
-        filtraFretes(codigosCarrinho, String(o.transportadoraDocumento ?? ""), nomesCarrinho, cfgRegras),
+        filtraFretes(codigosCarrinho, String(o.transportadoraDocumento ?? ""), nomesCarrinho, cfgRegras, data.unidade),
       )
       .map((o) => aplicarRegras(o, ctx, cfgRegras))
       .sort((a, b) => a.total - b.total);

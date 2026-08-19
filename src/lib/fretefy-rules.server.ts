@@ -12,6 +12,7 @@ import {
   mesclarFreteRegras,
   temCarregadorAcimaDe,
   type FreteRegrasConfig,
+  type UnidadeFrete,
 } from "./fretefy-regras";
 
 export * from "./fretefy-regras";
@@ -34,14 +35,29 @@ export function filtraFretes(
   cnpj: string,
   nomesCarrinho: string[] = [],
   cfg: FreteRegrasConfig = FRETE_REGRAS_PADRAO,
+  unidade?: UnidadeFrete,
 ): boolean {
   const regra = cfg.transportadoras[cnpj];
   const tem = (lista: string[]) => codigosCarrinho.some((c) => lista.includes(c));
+  // Regras de trilho valem na 2P Solar; a regra de potência vale nos carregadores.
+  const usaTrilhos = unidade !== "carregadores";
+  const usaCarregadores = unidade !== "solar";
   if (cnpj === CNPJ.BRASPRESS) {
-    if (regra?.ativa !== false && tem(regra?.trilhos ?? [])) return false;
-    if (temCarregadorAcimaDe(nomesCarrinho, cfg.potenciaMaxBraspressKw)) return false;
+    if (usaTrilhos && regra?.ativa !== false && tem(regra?.trilhos ?? [])) return false;
+    if (
+      usaCarregadores &&
+      cfg.bloqueioCarregadorBraspress &&
+      temCarregadorAcimaDe(nomesCarrinho, cfg.potenciaMaxBraspressKw)
+    )
+      return false;
   }
-  if (cnpj === CNPJ.SAO_MIGUEL && regra?.ativa !== false && tem(regra?.trilhos ?? [])) return false;
+  if (
+    usaTrilhos &&
+    cnpj === CNPJ.SAO_MIGUEL &&
+    regra?.ativa !== false &&
+    tem(regra?.trilhos ?? [])
+  )
+    return false;
   return true;
 }
 
@@ -67,6 +83,8 @@ export type ContextoFrete = {
   /** S = entrega normal · D = dedicado · G = grátis · N = retirada */
   tipoEntrega: "S" | "D" | "G" | "N";
   areaRural?: boolean | undefined;
+  /** Unidade de negócio da proposta — define quais regras se aplicam. */
+  unidade?: UnidadeFrete | undefined;
 };
 
 export type OpcaoBruta = {
@@ -114,6 +132,7 @@ export function aplicarRegras(
   ] as const) {
     const regra = cfg.transportadoras[alvo];
     if (
+      ctx.unidade !== "carregadores" &&
       cnpj === alvo &&
       regra?.ativa !== false &&
       ctx.codigosCarrinho.some((c) => (regra?.trilhos ?? []).includes(c))
