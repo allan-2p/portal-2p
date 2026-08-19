@@ -136,16 +136,41 @@ export function PedidoIntegracoesDialog({
               <Linha rot="Nº da ordem (VBELN)" val={d.sap.numero} />
               <Linha rot="Enviado em" val={dataHora(d.sap.enviado_em)} />
               <Linha rot="Mensagem" val={d.sap.mensagem} />
+              {d.validacao && !d.validacao.ok && (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-sm">
+                  <p className="font-semibold text-destructive">Pendências que impedem o envio</p>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4 text-destructive">
+                    {d.validacao.pendencias.map((m) => (
+                      <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {d.validacao?.avisos?.length > 0 && (
+                <div className="rounded-lg border border-border bg-muted/40 p-2 text-sm">
+                  <p className="font-semibold">Avisos</p>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
+                    {d.validacao.avisos.map((m) => (
+                      <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <div className="flex flex-wrap gap-2 pt-1">
-                <Button size="sm" variant="outline" disabled={ocupado} onClick={() => sap.mutate({ testrun: true })}>
+                <Button size="sm" variant="outline" disabled={ocupado || !d.validacao?.ok} onClick={() => sap.mutate({ testrun: true })}>
                   {sap.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
                   Validar (test run)
                 </Button>
-                <Button size="sm" disabled={ocupado} onClick={() => sap.mutate({})}>
+                <Button size="sm" disabled={ocupado || !d.validacao?.ok} onClick={() => sap.mutate({})}>
                   <RefreshCw className="mr-2 h-3.5 w-3.5" /> Enviar / reenviar
                 </Button>
                 {d.sap.numero && (
-                  <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => sap.mutate({ forcar: true })}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={ocupado || !d.validacao?.ok}
+                    onClick={() => sap.mutate({ forcar: true })}
+                  >
                     Forçar novo envio
                   </Button>
                 )}
