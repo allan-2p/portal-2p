@@ -120,7 +120,7 @@ export function credenciaisPix(): Credenciais | null {
 export type ItauCall = {
   escopo: "boleto" | "pix";
   cred: Credenciais;
-  metodo: "GET" | "POST" | "PUT";
+  metodo: "GET" | "POST" | "PUT" | "DELETE";
   caminho: string;
   body?: unknown;
   correlationId: string;
