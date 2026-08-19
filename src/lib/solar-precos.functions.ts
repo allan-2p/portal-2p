@@ -49,5 +49,12 @@ export const precosSolarFn = createServerFn({ method: "POST" })
       documento: data.documento,
       listaPreco: data.listaPreco,
       sugeridos,
+      auditoria: {
+        etapa: "precos",
+        doc: data.documento,
+        unidade: "solar",
+        actorId: context.userId,
+        actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
+      },
     });
   });

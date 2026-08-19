@@ -34,7 +34,13 @@ const FILIAIS = ["9800", "9802"];
 
 export async function precosSolar(
   itens: PrecoItem[],
-  opts: { documento?: string; listaPreco?: string; sugeridos?: Record<string, number> },
+  opts: {
+    documento?: string;
+    listaPreco?: string;
+    sugeridos?: Record<string, number>;
+    /** Quando informado, cada tentativa no SAP entra na auditoria da proposta. */
+    auditoria?: import("./proposta-auditoria.server").AuditoriaContexto & { etapa?: string };
+  },
 ): Promise<PrecoResultado> {
   const precos: Record<string, number> = {};
   const fallback: string[] = [];
@@ -48,22 +54,45 @@ export async function precosSolar(
   for (const filial of FILIAIS) {
     if (!pendentes.length) break;
     let sim = new Map<string, { valor: number | null }>();
+    const tentativaItens = pendentes.map((i) => ({ codigo: i.codigo, quantidade: i.quantidade }));
+    const iniciado = Date.now();
+    const errosTentativa: string[] = [];
+    let respostaAudit: Record<string, unknown> = {};
     try {
-      const r = await simularSap(
-        pendentes.map((i) => ({ codigo: i.codigo, quantidade: i.quantidade })),
-        {
-          ...(opts.documento ? { documento: opts.documento } : {}),
-          listaPreco: opts.listaPreco || "01",
-          filial,
-        },
-      );
+      const r = await simularSap(tentativaItens, {
+        ...(opts.documento ? { documento: opts.documento } : {}),
+        listaPreco: opts.listaPreco || "01",
+        filial,
+      });
       sim = r.valores as unknown as Map<string, { valor: number | null }>;
-      for (const m of [...r.erros, ...(r.motivo ? [r.motivo] : [])])
+      for (const m of [...r.erros, ...(r.motivo ? [r.motivo] : [])]) {
+        errosTentativa.push(m);
         if (!avisos.includes(m)) avisos.push(m);
+      }
+      respostaAudit = {
+        valores: Object.fromEntries([...sim.entries()].map(([k, v]) => [k, v])),
+        erros: r.erros,
+        motivo: r.motivo ?? null,
+      };
     } catch (e) {
       const m = `Falha ao consultar preços no SAP (filial ${filial}): ${(e as Error).message}`;
+      errosTentativa.push(m);
       if (!avisos.includes(m)) avisos.push(m);
       sim = new Map();
+      respostaAudit = { erro: m };
+    }
+    if (opts.auditoria) {
+      const { auditarTentativaSap } = await import("./proposta-auditoria.server");
+      const { etapa = "precos", ...ctx } = opts.auditoria;
+      await auditarTentativaSap(ctx, {
+        etapa,
+        filial,
+        ...(opts.listaPreco ? { listaPreco: opts.listaPreco } : {}),
+        itens: tentativaItens,
+        resposta: respostaAudit,
+        erros: errosTentativa,
+        durationMs: Date.now() - iniciado,
+      });
     }
     const restantes: PrecoItem[] = [];
     for (const item of pendentes) {
