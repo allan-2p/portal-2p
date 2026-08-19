@@ -176,6 +176,9 @@ export const ADMIN_SECTIONS: AdminSection[] = [
             exact: true,
             children: [
               { to: "/admin/modulos-solar", label: "Módulos", icon: LayoutGrid, feature: "admin.produtos" },
+              { to: "/admin/trilhos-solar", label: "Trilhos", icon: Rows3, feature: "admin.produtos" },
+              { to: "/admin/suportes-solar", label: "Suportes", icon: Anchor, feature: "admin.produtos" },
+              { to: "/admin/microinversores-solar", label: "Microinversores", icon: Cpu, feature: "admin.produtos" },
             ],
           },
           { to: "/admin/regras", label: "Regras de Propostas", icon: BookOpen, feature: "admin.regras" },
