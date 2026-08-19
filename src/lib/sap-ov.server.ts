@@ -31,7 +31,14 @@ export type SapOvResultado = {
   mensagem: string | null;
   motivo?: string;
   testrun: boolean;
+  /** Problemas encontrados na validação prévia (bloqueiam o envio). */
+  pendencias?: string[];
+  /** Avisos que não impedem o envio. */
+  avisos?: string[];
 };
+
+export type SapOvValidacao = { ok: boolean; pendencias: string[]; avisos: string[] };
+
 
 const esc = (v: unknown) =>
   String(v ?? "")
