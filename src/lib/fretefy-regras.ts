@@ -147,3 +147,67 @@ export function temCarregadorAcimaDe(nomes: string[], kwLimite: number) {
     });
   });
 }
+
+/* ------------------------------------------------------------------ *
+ * Personalização pelo painel (Moderação › 2P Solar › Regras de Fretes)
+ * ------------------------------------------------------------------ */
+
+export type FreteRegraOverride = {
+  /** Regra ligada/desligada — desligada, a transportadora cota sem restrição. */
+  ativa: boolean;
+  /** Valor do adicional (TDE) por envio; ignorado em regras de bloqueio. */
+  adicional: number;
+  /** Códigos SAP de trilho que disparam o bloqueio ou o adicional. */
+  trilhos: string[];
+};
+
+export type FreteRegrasConfig = {
+  adicionalAreaRural: number;
+  potenciaMaxBraspressKw: number;
+  /** Cobrar a taxa de despacho da Braspress quando o cliente é CPF. */
+  despachoBraspressCpf: boolean;
+  /** CNPJ da transportadora → regra. */
+  transportadoras: Record<string, FreteRegraOverride>;
+};
+
+/** Configuração padrão (o que está codificado no catálogo acima). */
+export const FRETE_REGRAS_PADRAO: FreteRegrasConfig = {
+  adicionalAreaRural: ADICIONAL_AREA_RURAL,
+  potenciaMaxBraspressKw: POTENCIA_MAX_BRASPRESS_KW,
+  despachoBraspressCpf: true,
+  transportadoras: Object.fromEntries(
+    REGRAS_TRANSPORTADORAS.map((r) => [
+      r.cnpj,
+      { ativa: true, adicional: r.adicional ?? 0, trilhos: [...r.trilhos] } as FreteRegraOverride,
+    ]),
+  ),
+};
+
+const num = (v: unknown, fallback: number) => {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+};
+
+/** Mescla o que está salvo no banco com o padrão — nunca devolve campos vazios. */
+export function mesclarFreteRegras(raw: unknown): FreteRegrasConfig {
+  const c = (raw ?? {}) as Partial<FreteRegrasConfig>;
+  const salvas = (c.transportadoras ?? {}) as Record<string, Partial<FreteRegraOverride>>;
+  const transportadoras: Record<string, FreteRegraOverride> = {};
+  for (const [cnpj, padrao] of Object.entries(FRETE_REGRAS_PADRAO.transportadoras)) {
+    const s = salvas[cnpj] ?? {};
+    transportadoras[cnpj] = {
+      ativa: typeof s.ativa === "boolean" ? s.ativa : padrao.ativa,
+      adicional: num(s.adicional, padrao.adicional),
+      trilhos: Array.isArray(s.trilhos) ? s.trilhos.map(String) : [...padrao.trilhos],
+    };
+  }
+  return {
+    adicionalAreaRural: num(c.adicionalAreaRural, FRETE_REGRAS_PADRAO.adicionalAreaRural),
+    potenciaMaxBraspressKw: num(c.potenciaMaxBraspressKw, FRETE_REGRAS_PADRAO.potenciaMaxBraspressKw),
+    despachoBraspressCpf:
+      typeof c.despachoBraspressCpf === "boolean"
+        ? c.despachoBraspressCpf
+        : FRETE_REGRAS_PADRAO.despachoBraspressCpf,
+    transportadoras,
+  };
+}
