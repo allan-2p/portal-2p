@@ -382,11 +382,61 @@ function NovaPropostaSolarPage() {
     () => money2(itens.reduce((s, i) => s + i.valor * i.qtd, 0)),
     [itens],
   );
-  const cupom = useMemo(() => {
+  // Validação do cupom (código, status, validade, uso e vínculo com cliente)
+  const cupomCheck = useMemo((): {
+    status: "vazio" | "carregando" | "ok" | "erro";
+    cupom: SolarCupom | null;
+    mensagem: string;
+  } => {
     const alvo = cupomCodigo.trim().toUpperCase();
-    if (!alvo) return null;
-    return (cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo && c.ativo) ?? null;
-  }, [cuponsQ.data, cupomCodigo]);
+    if (!alvo) return { status: "vazio", cupom: null, mensagem: "" };
+    if (cuponsQ.isLoading) return { status: "carregando", cupom: null, mensagem: "Validando cupom..." };
+    if (cuponsQ.isError)
+      return { status: "erro", cupom: null, mensagem: "Não foi possível validar o cupom agora. Tente novamente." };
+    if (!/^[A-Z0-9-]{3,20}$/.test(alvo))
+      return { status: "erro", cupom: null, mensagem: "Código inválido: use de 3 a 20 caracteres (letras, números ou hífen)." };
+
+    const achado = (cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo) ?? null;
+    if (!achado) return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" não existe.` };
+    if (!achado.ativo) return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" está inativo.` };
+
+    if (achado.validade) {
+      const venc = new Date(`${String(achado.validade).slice(0, 10)}T23:59:59`);
+      if (!Number.isNaN(venc.getTime()) && venc.getTime() < Date.now())
+        return {
+          status: "erro",
+          cupom: null,
+          mensagem: `Cupom expirado em ${venc.toLocaleDateString("pt-BR")}.`,
+        };
+    }
+    if (!achado.reutilizavel && (achado.usos ?? 0) > 0)
+      return { status: "erro", cupom: null, mensagem: "Cupom de uso único já utilizado." };
+
+    const soDigitos = (v: string) => v.replace(/\D/g, "");
+    if (achado.cliente_doc) {
+      const docAtual = soDigitos(String(cliente?.['doc'] ?? clienteDoc ?? ""));
+      if (!docAtual)
+        return { status: "erro", cupom: null, mensagem: "Cupom exclusivo de um cliente — selecione o cliente da proposta." };
+      if (soDigitos(achado.cliente_doc) !== docAtual)
+        return {
+          status: "erro",
+          cupom: null,
+          mensagem: `Cupom exclusivo de ${achado.cliente_nome ?? "outro cliente"} e não vale para este cliente.`,
+        };
+    }
+
+    const detalhes: string[] = [];
+    if (achado.tipos.includes("percentual") && achado.percentual > 0) detalhes.push(`${achado.percentual}% de desconto`);
+    if (achado.tipos.includes("valor") && achado.valor > 0) detalhes.push(`${brl(achado.valor)} de desconto`);
+    if (achado.tipos.includes("frete")) detalhes.push("frete grátis");
+    return {
+      status: "ok",
+      cupom: achado,
+      mensagem: `Cupom ${achado.codigo} aplicado${detalhes.length ? `: ${detalhes.join(" + ")}` : ""}.`,
+    };
+  }, [cuponsQ.data, cuponsQ.isLoading, cuponsQ.isError, cupomCodigo, cliente, clienteDoc]);
+
+  const cupom = cupomCheck.cupom;
   const desconto = useMemo(() => {
     if (!cupom) return 0;
     let d = 0;
@@ -395,6 +445,7 @@ function NovaPropostaSolarPage() {
     return money2(Math.min(d, subtotal));
   }, [cupom, subtotal]);
   const freteGratis = !!cupom?.tipos.includes("frete");
+
   const freteValor = freteMod === "FOB" || freteMod === "" || freteGratis ? 0 : (transportadora?.total ?? 0);
   const total = money2(subtotal - desconto + freteValor);
 
