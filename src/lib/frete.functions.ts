@@ -17,17 +17,21 @@ export const cotarFrete = createServerFn({ method: "POST" })
   .inputValidator((input: CotarFreteData) => input)
   .handler(async ({ data, context }) => {
     const { cotarFreteFretefy } = await import("./frete.server");
-    const { simularPrecosSap } = await import("./sap-precos.server");
+    const { simularSap } = await import("./sap-precos.server");
     const { logIntegrationEvent } = await import("./integration-logs.server");
     const started = Date.now();
 
     const chave = (c: string) => String(c).replace(/^0+/, "");
 
     // Fonte única do peso: PESO_LIQUIDO devolvido pela simulação de preço do SAP.
-    const sim = await simularPrecosSap(
+    const simRes = await simularSap(
       data.itens.map((i) => ({ codigo: String(i.codigo), quantidade: Number(i.quantidade || 0) })),
       { ...(data.documento ? { documento: data.documento } : {}) },
-    ).catch(() => new Map());
+    ).catch((e: Error) => ({ valores: new Map(), erros: [] as string[], motivo: e.message }));
+    const sim = simRes.valores;
+    // Mensagens de negócio do SAP (ex.: CNPJ sem parceiro cadastrado) não podem
+    // ser engolidas — sem elas o portal cotaria com peso zerado.
+    const sapMsgs = [...simRes.erros, ...(simRes.motivo ? [simRes.motivo] : [])];
 
     const origem = { peso: "sap" as const };
     const itens = data.itens.map((i) => {
@@ -47,10 +51,13 @@ export const cotarFrete = createServerFn({ method: "POST" })
     const semPeso = itens.filter((i) => !(i.pesoLiquido > 0)).map((i) => i.nome || i.codigo);
 
     try {
+      if (sapMsgs.length && semPeso.length)
+        throw new Error(`SAP recusou a simulação: ${sapMsgs.join(" • ")}`);
       if (semPeso.length)
         throw new Error(
           `A simulação de preço do SAP não retornou peso para: ${semPeso.join(", ")}. Tente novamente ou verifique o cadastro do material no SAP.`,
         );
+
 
 
       const r = await cotarFreteFretefy({
