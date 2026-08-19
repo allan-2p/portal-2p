@@ -75,7 +75,18 @@ async function itauFetch(url: string, init: RequestInit): Promise<Response> {
       "Certificado mTLS do Itaú indisponível neste ambiente (ITAU_MTLS_CERT_PEM/ITAU_MTLS_KEY_PEM).",
     );
   }
-  return await fetch(url, { ...init, dispatcher } as RequestInit);
+  try {
+    return await fetch(url, { ...init, dispatcher } as RequestInit);
+  } catch (e) {
+    // "fetch failed" cru não diz nada ao usuário: normalmente é bloqueio de
+    // rede ou handshake mTLS recusado (certificado inválido/expirado).
+    const causa = (e as { cause?: { code?: string; message?: string } })?.cause;
+    const detalhe = causa?.code ?? causa?.message ?? (e as Error)?.message ?? "erro desconhecido";
+    throw new ItauIndisponivel(
+      `Não foi possível conectar ao Itaú (${new URL(url).host}): ${detalhe}. ` +
+        "Verifique a liberação de rede do ambiente e o certificado mTLS.",
+    );
+  }
 }
 
 const tokenCache = new Map<string, { token: string; exp: number }>();
