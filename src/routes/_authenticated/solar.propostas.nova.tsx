@@ -1793,8 +1793,9 @@ function NovaPropostaSolarPage() {
                       return (
                         <tr key={i.key} className="border-b border-border/50 last:border-0">
                           <td className="px-4 py-2.5">
-                            <div className="font-medium">{p?.descricao ?? "—"}</div>
-                            <div className="text-xs text-muted-foreground">{p?.codigo}</div>
+                            <div className="font-medium">{i.avulso?.descricao ?? p?.descricao ?? "—"}</div>
+                            <div className="text-xs text-muted-foreground">{i.avulso?.codigo ?? p?.codigo}</div>
+
                           </td>
                           <td className="px-4 py-2.5 text-center tabular-nums">{i.qtd}</td>
                           <td className="px-4 py-2.5 text-right tabular-nums">{fmtBRL(i.valor)}</td>
