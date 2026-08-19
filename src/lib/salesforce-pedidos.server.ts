@@ -1,0 +1,258 @@
+/**
+ * Envio do pedido (proposta concluída) ao Salesforce.
+ *
+ * O pedido vira uma **Opportunity** vinculada à Account do cliente (busca por
+ * CNPJ__c, com fallback por nome). É idempotente: se a proposta já tem
+ * `sf_opp_id`, o registro é atualizado (PATCH) em vez de duplicado.
+ *
+ * Tudo é registrado em `integration_logs` (slug `salesforce`, evento
+ * `pedido.sync`) com `detail.proposta_id`, o que alimenta o painel de
+ * integrações na linha do pedido.
+ */
+
+import * as db from "./propostas-db.server";
+import { logIntegrationEvent } from "./integration-logs.server";
+
+const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
+
+export type SalesforcePedidoResultado = {
+  enviado: boolean;
+  ok: boolean;
+  opportunityId: string | null;
+  accountId: string | null;
+  mensagem: string | null;
+  motivo?: string;
+};
+
+function secrets() {
+  const lovableKey = process.env["LOVABLE_API_KEY"];
+  const sfKey = process.env["SALESFORCE_API_KEY"];
+  if (!lovableKey || !sfKey) return null;
+  return { lovableKey, sfKey };
+}
+
+export function salesforcePedidosConfigurado() {
+  return Boolean(secrets());
+}
+
+async function sf(path: string, init?: RequestInit): Promise<any> {
+  const s = secrets();
+  if (!s) throw new Error("Conector do Salesforce não está configurado.");
+  const res = await fetch(`${GATEWAY_URL}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${s.lovableKey}`,
+      "X-Connection-Api-Key": s.sfKey,
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+  });
+  const text = await res.text();
+  let body: any = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = text;
+  }
+  if (!res.ok) {
+    const msg = typeof body === "object" ? JSON.stringify(body) : String(body);
+    throw new Error(`Salesforce ${res.status}: ${msg.slice(0, 400)}`);
+  }
+  return body;
+}
+
+const esc = (v: string) => String(v).replace(/'/g, "\\'");
+const so = (v: unknown) => String(v ?? "").trim();
+const digitos = (v: unknown) => so(v).replace(/\D/g, "");
+
+/** Estágio da Opportunity a partir do status universal do portal. */
+function stage(status: unknown): string {
+  const s = so(status).toLowerCase();
+  if (s.includes("cancel")) return "Closed Lost";
+  if (s.includes("entregue") || s.includes("faturad")) return "Closed Won";
+  if (s.includes("pagamento")) return "Negotiation/Review";
+  if (s.includes("process") || s.includes("separa") || s.includes("transport")) return "Closed Won";
+  return "Proposal/Price Quote";
+}
+
+async function acharAccount(doc: string, nome: string): Promise<string | null> {
+  const d = digitos(doc);
+  if (d) {
+    try {
+      const q = `SELECT Id FROM Account WHERE CNPJ__c = '${esc(d)}' LIMIT 1`;
+      const r = await sf(`/query?q=${encodeURIComponent(q)}`);
+      if (r?.records?.[0]?.Id) return r.records[0].Id;
+    } catch {
+      // Org sem CNPJ__c — cai no fallback por nome.
+    }
+  }
+  if (!nome) return null;
+  const q2 = `SELECT Id FROM Account WHERE Name = '${esc(nome)}' LIMIT 1`;
+  const r2 = await sf(`/query?q=${encodeURIComponent(q2)}`);
+  return r2?.records?.[0]?.Id ?? null;
+}
+
+/** Descrição legível do pedido (itens, frete, SAP) para o campo Description. */
+function descricao(row: Record<string, any>): string {
+  const linhas: string[] = [];
+  const itens = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
+  for (const i of itens) {
+    const qtd = Number(i?.qtd ?? 0);
+    if (!qtd) continue;
+    linhas.push(`• ${qtd}x ${so(i?.nome) || so(i?.codigo) || "Item"} — ${so(i?.codigo)}`);
+  }
+  const frete = so(row["frete_mod"]).toUpperCase();
+  if (frete) linhas.push(`Frete: ${frete}${row["frete_valor"] ? ` (R$ ${Number(row["frete_valor"]).toFixed(2)})` : ""}`);
+  if (so(row["forma_pagamento"])) linhas.push(`Pagamento: ${so(row["forma_pagamento"])}`);
+  if (so(row["sap_ov_numero"])) linhas.push(`Ordem de venda SAP: ${so(row["sap_ov_numero"])}`);
+  if (so(row["numero_sap"])) linhas.push(`Nº SAP: ${so(row["numero_sap"])}`);
+  if (so(row["observacoes"])) linhas.push(`Observações: ${so(row["observacoes"])}`);
+  return linhas.join("\n").slice(0, 30000);
+}
+
+/** OwnerId do vendedor (profiles.sf_user_id), quando cadastrado. */
+async function ownerSfId(userId: unknown): Promise<string | null> {
+  const id = so(userId);
+  if (!id) return null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.from("profiles").select("sf_user_id").eq("id", id).maybeSingle();
+    return so((data as any)?.sf_user_id) || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Gravação tolerante: colunas ausentes não podem derrubar o checkout. */
+async function gravar(id: string, patch: Record<string, unknown>) {
+  try {
+    await db.atualizarProposta(id, patch);
+  } catch (e) {
+    if (!/sf_opp|sf_status|sf_mensagem|sf_enviado|42703|PGRST204/i.test((e as Error).message)) throw e;
+  }
+}
+
+/**
+ * Cria/atualiza a Opportunity do pedido no Salesforce. Nunca lança:
+ * devolve o resultado para o chamador registrar/exibir.
+ */
+export async function sincronizarPedidoSalesforce(
+  propostaId: string,
+  opts: { forcar?: boolean } = {},
+): Promise<SalesforcePedidoResultado> {
+  const inicio = Date.now();
+  const base = { slug: "salesforce", event: "pedido.sync" } as const;
+
+  const row = await db.getProposta(propostaId);
+  if (!row)
+    return { enviado: false, ok: false, opportunityId: null, accountId: null, mensagem: "Proposta não encontrada." };
+
+  if (!secrets()) {
+    return {
+      enviado: false,
+      ok: false,
+      opportunityId: null,
+      accountId: null,
+      mensagem: "Conector do Salesforce não está configurado.",
+      motivo: "nao_configurado",
+    };
+  }
+
+  const existente = so(row["sf_opp_id"]);
+  const numero = so(row["numero"]);
+  const clienteNome = so(row["cliente_nome"]);
+
+  try {
+    const accountId = so(row["sf_account_id"]) || (await acharAccount(row["cliente_doc"], clienteNome));
+    if (!accountId) {
+      const mensagem = "Conta do cliente não encontrada no Salesforce — sincronize o cadastro do cliente primeiro.";
+      await gravar(propostaId, { sf_status: "erro", sf_mensagem: mensagem });
+      await logIntegrationEvent({
+        ...base,
+        level: "error",
+        message: mensagem,
+        detail: { proposta_id: propostaId, numero, cliente: clienteNome },
+        durationMs: Date.now() - inicio,
+      });
+      return { enviado: false, ok: false, opportunityId: null, accountId: null, mensagem, motivo: "sem_conta" };
+    }
+
+    const totais = (row["totais"] ?? {}) as Record<string, any>;
+    const valor = Number(totais["valorTotal"] ?? totais["valor_total"] ?? 0) || 0;
+    const fechamento =
+      so(row["previsao_fechamento"]).slice(0, 10) ||
+      String(row["created_at"] ?? new Date().toISOString()).slice(0, 10);
+
+    const nomeOpp = [numero ? `Pedido ${numero}` : "Pedido", so(row["nome"]) || clienteNome]
+      .filter(Boolean)
+      .join(" — ")
+      .slice(0, 120);
+
+    const corpoBase: Record<string, unknown> = {
+      Name: nomeOpp,
+      AccountId: accountId,
+      StageName: stage(row["status"]),
+      CloseDate: fechamento,
+      Amount: valor,
+      Description: descricao(row),
+    };
+    const owner = await ownerSfId(row["created_by"]);
+    if (owner) corpoBase["OwnerId"] = owner;
+
+    // Campos customizados podem não existir na org: tentamos com eles e,
+    // se o Salesforce recusar, repetimos apenas com os padrões.
+    const comCustom = {
+      ...corpoBase,
+      Numero_Pedido_Portal__c: numero || null,
+      Numero_SAP__c: so(row["sap_ov_numero"]) || so(row["numero_sap"]) || null,
+    };
+
+    let oppId = existente && !opts.forcar ? existente : existente || null;
+    const enviar = (corpo: Record<string, unknown>) =>
+      oppId
+        ? sf(`/sobjects/Opportunity/${oppId}`, { method: "PATCH", body: JSON.stringify(corpo) })
+        : sf(`/sobjects/Opportunity`, { method: "POST", body: JSON.stringify(corpo) });
+
+    let res: any;
+    try {
+      res = await enviar(comCustom);
+    } catch (err) {
+      if (/No such column|INVALID_FIELD|Unable to create\/update fields/i.test((err as Error).message)) {
+        res = await enviar(corpoBase);
+      } else {
+        throw err;
+      }
+    }
+    oppId = oppId ?? res?.id ?? null;
+    if (!oppId) throw new Error("Salesforce não retornou o ID da oportunidade.");
+
+    const mensagem = existente ? `Oportunidade ${oppId} atualizada.` : `Oportunidade ${oppId} criada.`;
+    await gravar(propostaId, {
+      sf_opp_id: oppId,
+      sf_account_id: accountId,
+      sf_status: "sincronizado",
+      sf_mensagem: mensagem,
+      sf_enviado_em: new Date().toISOString(),
+    });
+    await logIntegrationEvent({
+      ...base,
+      level: "info",
+      message: mensagem,
+      detail: { proposta_id: propostaId, numero, cliente: clienteNome, opportunity_id: oppId, account_id: accountId },
+      durationMs: Date.now() - inicio,
+    });
+
+    return { enviado: true, ok: true, opportunityId: oppId, accountId, mensagem };
+  } catch (err) {
+    const mensagem = (err as Error).message.slice(0, 500);
+    await gravar(propostaId, { sf_status: "erro", sf_mensagem: mensagem });
+    await logIntegrationEvent({
+      ...base,
+      level: "error",
+      message: mensagem,
+      detail: { proposta_id: propostaId, numero, cliente: clienteNome },
+      durationMs: Date.now() - inicio,
+    });
+    return { enviado: true, ok: false, opportunityId: null, accountId: null, mensagem };
+  }
+}

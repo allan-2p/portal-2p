@@ -632,12 +632,20 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       mensagem: string | null;
       motivo: string | null;
     };
+    type SalesforceOut = {
+      enviado: boolean;
+      ok: boolean;
+      opportunityId: string | null;
+      mensagem: string | null;
+      motivo: string | null;
+    };
     type ConclusaoOut = {
       id: string;
       status: string;
       already_concluded: boolean;
       cobranca: CobrancaOut | null;
       sapOv: SapOvOut | null;
+      salesforce: SalesforceOut | null;
     };
     const executar = async (): Promise<ConclusaoOut> => {
     const { supabase, userId } = context as any;
@@ -703,7 +711,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         resultado: "duplicada",
         detalhe: "Tentativa repetida de conclusão",
       });
-      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null };
+      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
     const atualizada = await db.atualizarProposta(
@@ -724,7 +732,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         resultado: "duplicada",
         detalhe: "Tentativa repetida de conclusão",
       });
-      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null };
+      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
     await db.registrarConclusaoLog({ ...base, status: data.status, resultado: "concluida" });
@@ -790,7 +798,32 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       sapOv = { enviado: false, ok: false, vbeln: null, mensagem: (e as Error).message, motivo: null };
     }
 
-    return { id: row.id, status: data.status, already_concluded: false, cobranca, sapOv };
+    // Pedido no Salesforce (Opportunity). Falha aqui não desfaz o pedido:
+    // fica registrada e pode ser reenviada pelo job "salesforce.pedido".
+    let salesforce: SalesforceOut | null = null;
+    try {
+      const { sincronizarPedidoSalesforce } = await import("@/lib/salesforce-pedidos.server");
+      const r = await sincronizarPedidoSalesforce(row.id);
+      salesforce = {
+        enviado: r.enviado,
+        ok: r.ok,
+        opportunityId: r.opportunityId,
+        mensagem: r.mensagem,
+        motivo: r.motivo ?? null,
+      };
+      if (!r.ok) {
+        await db.registrarConclusaoLog({
+          ...base,
+          status: data.status,
+          resultado: "salesforce_falhou",
+          detalhe: String(r.mensagem ?? "Falha ao enviar o pedido ao Salesforce.").slice(0, 500),
+        });
+      }
+    } catch (e) {
+      salesforce = { enviado: false, ok: false, opportunityId: null, mensagem: (e as Error).message, motivo: null };
+    }
+
+    return { id: row.id, status: data.status, already_concluded: false, cobranca, sapOv, salesforce };
     };
 
     // Monitoramento: cada finalização vira uma execução auditável em job_runs.
@@ -887,4 +920,86 @@ export const criarOrdemVendaSapFn = createServerFn({ method: "POST" })
     );
     if (!run.ok) throw new Error(run.error);
     return run.result;
+  });
+
+/** Reenvia (ou atualiza) o pedido no Salesforce — painel de integrações. */
+export const sincronizarPedidoSalesforceFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { propostaId?: unknown; forcar?: unknown };
+    if (typeof i.propostaId !== "string" || !i.propostaId) throw new Error("Proposta inválida.");
+    return { propostaId: i.propostaId, forcar: Boolean(i.forcar) };
+  })
+  .handler(async ({ data, context }) => {
+    const { runJob } = await import("@/lib/job-runs.server");
+    const run = await runJob(
+      {
+        job: "salesforce.pedido",
+        trigger: "manual",
+        refType: "proposta",
+        refId: data.propostaId,
+        payload: { propostaId: data.propostaId, forcar: data.forcar },
+        actorId: (context as any).userId ?? null,
+      },
+      async () => {
+        const { sincronizarPedidoSalesforce } = await import("@/lib/salesforce-pedidos.server");
+        const r = await sincronizarPedidoSalesforce(data.propostaId, { forcar: data.forcar });
+        if (!r.ok) throw new Error(r.mensagem ?? "Falha ao enviar o pedido ao Salesforce.");
+        return { ...r };
+      },
+    );
+    if (!run.ok) throw new Error(run.error);
+    return run.result;
+  });
+
+export type PedidoIntegracoesStatus = {
+  id: string;
+  numero: string | null;
+  cliente_nome: string | null;
+  status: string | null;
+  sap: { numero: string | null; status: string | null; mensagem: string | null; enviado_em: string | null };
+  salesforce: {
+    opportunityId: string | null;
+    accountId: string | null;
+    status: string | null;
+    mensagem: string | null;
+    enviado_em: string | null;
+  };
+};
+
+/** Situação das integrações (SAP + Salesforce) de um pedido. */
+export const statusIntegracoesPedidoFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { propostaId?: unknown };
+    if (typeof i.propostaId !== "string" || !i.propostaId) throw new Error("Proposta inválida.");
+    return { propostaId: i.propostaId };
+  })
+  .handler(async ({ data }): Promise<PedidoIntegracoesStatus> => {
+    const db = await repo();
+    const row = await db.getProposta(data.propostaId);
+    if (!row) throw new Error("Proposta não encontrada.");
+    const s = (k: string) => {
+      const v = (row as Record<string, any>)[k];
+      return v === undefined || v === null || v === "" ? null : String(v);
+    };
+    return {
+      id: String(row["id"]),
+      numero: s("numero"),
+      cliente_nome: s("cliente_nome"),
+      status: s("status"),
+      sap: {
+        numero: s("sap_ov_numero"),
+        status: s("sap_ov_status"),
+        mensagem: s("sap_ov_mensagem"),
+        enviado_em: s("sap_ov_enviado_em"),
+      },
+      salesforce: {
+        opportunityId: s("sf_opp_id"),
+        accountId: s("sf_account_id"),
+        status: s("sf_status"),
+        mensagem: s("sf_mensagem"),
+        enviado_em: s("sf_enviado_em"),
+      },
+    };
   });

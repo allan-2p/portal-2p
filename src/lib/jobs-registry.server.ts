@@ -32,6 +32,16 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     return { ...r };
   },
 
+  // Motor real: cria/atualiza a oportunidade do pedido no Salesforce.
+  "salesforce.pedido": async (payload) => {
+    const id = String((payload as Record<string, unknown>)["propostaId"] ?? "");
+    if (!id) return { skipped: true, motivo: "Sem propostaId no payload." };
+    const { sincronizarPedidoSalesforce } = await import("@/lib/salesforce-pedidos.server");
+    const r = await sincronizarPedidoSalesforce(id, { forcar: Boolean((payload as any)["forcar"]) });
+    if (!r.ok) throw new Error(r.mensagem ?? "Falha ao enviar o pedido ao Salesforce.");
+    return { ...r };
+  },
+
   "cron.sap-nfs": pendente(
     "Motor de consulta ZNFE_OV_CONSULTAR ainda não ativado — a execução foi registrada para auditoria.",
   ),
