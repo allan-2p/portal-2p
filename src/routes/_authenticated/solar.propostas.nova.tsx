@@ -521,11 +521,14 @@ function NovaPropostaSolarPage() {
       });
     }
     const extras = itensCalc.filter((i) => i.origem === "manual");
-    setItensCalc([...extras, ...novos]);
+    setItensCalc([...novos, ...extras]);
+    setAssinaturaCalc(assinaturaAtual);
+    setEditandoCalc(false);
     if (faltando.length)
       toast.warning(`Itens sem correspondência no catálogo foram incluídos sem preço: ${faltando.join(", ")}.`);
     else toast.success("Estrutura calculada e itens adicionados.");
-    void atualizarPrecos([...extras, ...novos], listaPreco, setItensCalc);
+    void atualizarPrecos([...novos, ...extras], listaPreco, setItensCalc);
+
   }
 
   // ------------------------------------------------------------------
