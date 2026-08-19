@@ -76,7 +76,11 @@ function Calculadora2P() {
       cod_grampo_final: c.cod_grampo_final,
       cod_terminal_aterramento: c.cod_terminal_aterramento,
       cod_juncao: c.cod_juncao,
+      cod_kit_parafuso_smart: (c as any).cod_kit_parafuso_smart ?? "",
+      cod_terminal_m8: (c as any).cod_terminal_m8 ?? "",
+      cod_terminal_zmi: (c as any).cod_terminal_zmi ?? "",
     });
+
   }, [cfgQ.data]);
 
   async function salvar() {
