@@ -106,6 +106,12 @@ type ClienteCad = Record<string, any>;
 
 const money2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100;
 const normCod = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
+const normalizarCupom = (c: string) =>
+  String(c ?? "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9\-_]/g, "")
+    .slice(0, 20);
+
 
 function NovaPropostaSolarPage() {
   const { id: editId, dup: dupId } = Route.useSearch();
