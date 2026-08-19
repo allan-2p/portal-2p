@@ -9,6 +9,7 @@ import { calcularFrete } from "./fretefy-client.server";
 import {
   ORIGEM,
   aplicarRegras,
+  carregarFreteRegras,
   detectarTrilho,
   filtraFretes,
   normalizarCodigo,
@@ -107,6 +108,8 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     areaRural: data.areaRural,
   };
 
+  const cfgRegras = await carregarFreteRegras();
+
   let opcoes: OpcaoFrete[] = [];
   // Duas passadas: a segunda recota com o valor da nota "grossado" pelo frete.
   for (let pass = 0; pass < 2; pass++) {
@@ -118,9 +121,9 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
 
     opcoes = (Array.isArray(res.json) ? (res.json as OpcaoBruta[]) : [])
       .filter((o) =>
-        filtraFretes(codigosCarrinho, String(o.transportadoraDocumento ?? ""), nomesCarrinho),
+        filtraFretes(codigosCarrinho, String(o.transportadoraDocumento ?? ""), nomesCarrinho, cfgRegras),
       )
-      .map((o) => aplicarRegras(o, ctx))
+      .map((o) => aplicarRegras(o, ctx, cfgRegras))
       .sort((a, b) => a.total - b.total);
 
     if (opcoes.length === 0)
