@@ -1373,6 +1373,35 @@ function NovaPropostaSolarPage() {
         </div>
       )}
 
+      {/* Prévia da proposta em PDF */}
+      <Dialog open={previewAberto} onOpenChange={setPreviewAberto}>
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>Proposta em PDF</DialogTitle>
+            <DialogDescription>
+              Prévia gerada com os dados atuais. Revise antes de baixar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl border border-border overflow-hidden bg-white">
+            <iframe title="Proposta 2P Solar" srcDoc={pdfHtml} className="w-full h-[65vh]" />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPreviewAberto(false)}>
+              Continuar editando
+            </Button>
+            <Button
+              className="gap-2"
+              onClick={() => {
+                setPreviewAberto(false);
+                baixarPdf();
+              }}
+            >
+              <FileDown className="h-4 w-4" /> Baixar PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <WizardActionBar
         step={etapa}
         totalSteps={5}
@@ -1389,7 +1418,14 @@ function NovaPropostaSolarPage() {
             loading: salvando,
             disabled: salvando || !itens.length || !cliente,
           },
+          {
+            label: "Gerar proposta",
+            onClick: abrirPreviewPdf,
+            icon: <Eye className="h-4 w-4" />,
+            disabled: !itens.length || salvando,
+          },
         ]}
+
         primary={
           etapa === 5
             ? {
