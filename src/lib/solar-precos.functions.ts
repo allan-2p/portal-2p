@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { pltypDaTabela } from "@/lib/sap-clientes-map";
 
 export type PrecoSolarInput = {
   itens: { codigo: string; quantidade: number }[];
