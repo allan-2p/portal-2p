@@ -261,6 +261,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               suframa: e.suframa,
               suframa_situacao: e.suframa_situacao,
               contribuinte: !!e.ie,
+              regime_tributario: e.regime_tributario ?? base.regime_tributario,
               natureza_juridica: e.natureza_juridica,
               porte: e.porte,
               situacao_cadastral: e.situacao_cadastral,
