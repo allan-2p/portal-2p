@@ -64,6 +64,7 @@ import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn } from "@/lib/propostas.functions";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
+import { resolverProduto } from "@/lib/solar-sku";
 import { buildSolarPropostaPdfHtml, solarPropostaPdfFileName } from "@/lib/solar-proposta-pdf";
 import {
   useSolarCalcConfig,
