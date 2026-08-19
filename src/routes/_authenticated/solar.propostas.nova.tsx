@@ -160,6 +160,8 @@ function NovaPropostaSolarPage() {
   const cuponsQ = useSolarCupons();
   const precos = useServerFn(precosSolarFn);
   const salvar = useServerFn(salvarPropostaSolar);
+  const enriquecer = useServerFn(enriquecerCnpjFn);
+
 
   const produtos = produtosQ.data ?? [];
   const config = cfgQ.data ?? SOLAR_CALC_CONFIG_FALLBACK;
