@@ -84,17 +84,38 @@ function duracao(inicio: string, fim: string | null) {
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
-function CatalogoSapCompleto() {
+function CatalogoSapCompleto({ onPropagar }: { onPropagar: () => void }) {
   const listAll = useServerFn(listSapCatalogoCompleto);
+  const setNoPortal = useServerFn(setSapCatalogoNoPortal);
   const [q, setQ] = useState("");
   const [escopo, setEscopo] = useState<"todos" | "catalogo" | "fora" | "sem_ncm">("todos");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
+  const [salvando, setSalvando] = useState<string | null>(null);
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["sap-catalogo-completo"],
     queryFn: () => listAll({}),
   });
+
+  const alternarCatalogo = async (codigo: string, no_catalogo: boolean) => {
+    setSalvando(codigo);
+    try {
+      await setNoPortal({ data: { codigo, no_catalogo } });
+      toast.success(
+        no_catalogo
+          ? `${codigo} enviado ao catálogo do portal (inativo, defina a visibilidade em Produtos).`
+          : `${codigo} removido do catálogo do portal.`,
+      );
+      await refetch();
+      onPropagar();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao atualizar o catálogo.");
+    } finally {
+      setSalvando(null);
+    }
+  };
+
 
   const itens = data?.itens ?? [];
   const semNcm = useMemo(() => itens.filter((i) => !i.ncm_codigo), [itens]);
