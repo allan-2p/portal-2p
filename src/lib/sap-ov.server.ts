@@ -422,17 +422,44 @@ export async function criarOrdemVendaSap(
   const itens = (Array.isArray(row["itens"]) ? (row["itens"] as any[]) : []).filter(
     (i) => Number(i?.qtd ?? 0) > 0,
   );
-  if (!itens.length)
-    return { enviado: false, ok: false, vbeln: null, mensagem: "Pedido sem itens.", testrun: false };
-  const semCodigo = itens.filter((i) => !norm(i?.codigo));
-  if (semCodigo.length)
+
+  const validacao = validarPedidoParaSap(row);
+  if (!validacao.ok) {
+    const mensagem = `Pedido não passou na validação prévia: ${validacao.pendencias.join(" ")}`.slice(0, 500);
+    await gravar(propostaId, { sap_ov_status: "erro", sap_ov_mensagem: mensagem });
+    await logIntegrationEvent({
+      ...base,
+      level: "error",
+      message: mensagem,
+      detail: {
+        proposta_id: propostaId,
+        numero: row["numero"] ?? null,
+        pendencias: validacao.pendencias,
+        avisos: validacao.avisos,
+        etapa: "validacao",
+      },
+      durationMs: Date.now() - inicio,
+    });
     return {
       enviado: false,
       ok: false,
       vbeln: null,
-      mensagem: `Há ${semCodigo.length} item(ns) sem código SAP (de-para do material).`,
+      mensagem,
+      motivo: "validacao",
       testrun: false,
+      pendencias: validacao.pendencias,
+      avisos: validacao.avisos,
     };
+  }
+  if (validacao.avisos.length) {
+    await logIntegrationEvent({
+      ...base,
+      level: "warn",
+      message: `Avisos na validação do pedido: ${validacao.avisos.join(" ")}`.slice(0, 500),
+      detail: { proposta_id: propostaId, numero: row["numero"] ?? null, avisos: validacao.avisos },
+    });
+  }
+
 
   const testrun = opts.testrun ?? String(process.env["SAP_OV_TESTRUN"] ?? "").toUpperCase() === "X";
   const peso = await pesosDoPedido(itens);
