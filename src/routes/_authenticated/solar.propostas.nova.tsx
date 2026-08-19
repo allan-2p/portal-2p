@@ -167,6 +167,14 @@ function NovaPropostaSolarPage() {
   const [cupomCodigo, setCupomCodigo] = useState("");
   const [recalculandoTotais, setRecalculandoTotais] = useState(false);
 
+  const removerCupom = () => {
+    if (!cupomCodigo) return;
+    setCupomCodigo("");
+    setRecalculandoTotais(true);
+    toast.info("Cupom removido. Valores recalculados sem desconto.");
+  };
+
+
   const clientesQ = useQueryClientes();
   const produtosQ = useSolarProdutos();
   const modulosQ = useSolarModulos();
