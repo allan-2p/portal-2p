@@ -251,9 +251,31 @@ function CatalogoSapCompleto({ onPropagar }: { onPropagar: () => void }) {
                     <Badge variant={i.no_catalogo ? "default" : "outline"}>{i.no_catalogo ? "Sim" : "Não"}</Badge>
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{fmt(i.last_synced_at)}</td>
+                  <td className="px-3 py-2 text-right">
+                    <Button
+                      variant={i.no_catalogo ? "ghost" : "outline"}
+                      size="sm"
+                      disabled={salvando === i.codigo}
+                      onClick={() => alternarCatalogo(i.codigo, !i.no_catalogo)}
+                      title={
+                        i.no_catalogo
+                          ? "Remover do catálogo do portal"
+                          : "Enviar este material para o catálogo do portal (entra inativo)"
+                      }
+                    >
+                      {salvando === i.codigo ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : i.no_catalogo ? (
+                        "Remover"
+                      ) : (
+                        "Enviar ao catálogo"
+                      )}
+                    </Button>
+                  </td>
                 </tr>
               ))
             )}
+
           </tbody>
         </table>
       </div>
