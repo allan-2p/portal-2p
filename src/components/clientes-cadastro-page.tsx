@@ -24,10 +24,8 @@ import { ClienteIntegracoesDialog } from "@/components/cliente-integracoes-dialo
 
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
-import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { useCarregadoresUfs } from "@/hooks/use-carregadores";
 import { cnpjValido, mascaraCnpj, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
 
@@ -174,7 +172,6 @@ type OrdemKey = "sap" | "cliente" | "doc" | "fiscal" | "cidade" | "contato";
 
 export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const qc = useQueryClient();
-  const ufs = useCarregadoresUfs().data ?? [];
   const listar = useServerFn(listClientesFn);
   const verificarDoc = useServerFn(verificarDocFn);
   const enriquecer = useServerFn(enriquecerCnpjFn);
@@ -208,7 +205,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [form, setForm] = useState<Form>(vazio());
   const [detalhe, setDetalhe] = useState<Cliente | null>(null);
   const [tentouSalvar, setTentouSalvar] = useState(false);
-  const [bloqueados, setBloqueados] = useState<Set<keyof Form>>(new Set());
   // Consultor responsável pelo cadastro (gravado em created_by/created_by_nome)
   const [consultorId, setConsultorId] = useState<string | null>(null);
   const listarConsultores = useServerFn(listConsultoresFn);
@@ -299,7 +295,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         if (e.cnae_principal?.codigo) bloq.add("cnae_principal_codigo");
         if (e.cnaes_secundarios?.length) bloq.add("cnaes_secundarios");
       }
-      setBloqueados(bloq);
+
       setFontes(e?.fontes ?? []);
       setAvisos(e?.avisos ?? []);
       setEtapa("formulario");
@@ -412,7 +408,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
     setConsultorId(consultoresQ.data?.eu.id ?? null);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
-    setFontes([]); setAvisos([]); setBloqueados(new Set());
+    setFontes([]); setAvisos([]);
   }
   const abrirNovo = () => { fechar(); setOpen(true); };
   const abrirEdicao = (c: Cliente) => {
@@ -429,7 +425,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       }),
     });
     setConsultorId(c.created_by ?? consultoresQ.data?.eu.id ?? null);
-    setTentouSalvar(false); setFontes([]); setAvisos([]); setBloqueados(new Set());
+    setTentouSalvar(false); setFontes([]); setAvisos([]);
     setEtapa("formulario"); setOpen(true);
   };
   const focarCampo = (campo: string) => {
@@ -611,13 +607,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
               <Section title="Dados da empresa">
                 <F label="Razão social *" id="campo-razao_social" error={erros.razao_social}>
-                  <Input value={form.razao_social} onChange={(e) => set("razao_social", e.target.value)} disabled={bloqueados.has("razao_social")} />
+                  <Input value={form.razao_social} readOnly disabled />
                 </F>
                 <F label="Nome fantasia">
-                  <Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} disabled={bloqueados.has("nome_fantasia")} />
+                  <Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} />
                 </F>
                 <F label="CNPJ *" id="campo-doc" error={erros.doc}>
-                  <Input value={form.doc ?? ""} onChange={(e) => set("doc", mascaraCnpj(e.target.value))} disabled />
+                  <Input value={form.doc ?? ""} readOnly disabled />
                 </F>
                 <F label="Regime tributário">
                   <Select value={form.regime_tributario ?? ""} onValueChange={(v) => set("regime_tributario", v)}>
@@ -625,26 +621,31 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <SelectContent>{REGIMES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                   </Select>
                 </F>
-                <F label="Natureza jurídica"><Input value={form.natureza_juridica ?? ""} onChange={(e) => set("natureza_juridica", e.target.value)} disabled={bloqueados.has("natureza_juridica")} /></F>
-                <F label="Porte"><Input value={form.porte ?? ""} onChange={(e) => set("porte", e.target.value)} disabled={bloqueados.has("porte")} /></F>
-                <F label="Situação cadastral"><Input value={form.situacao_cadastral ?? ""} onChange={(e) => set("situacao_cadastral", e.target.value)} disabled={bloqueados.has("situacao_cadastral")} /></F>
-                <F label="Data de abertura"><Input value={form.data_abertura ?? ""} onChange={(e) => set("data_abertura", e.target.value)} placeholder="AAAA-MM-DD" disabled={bloqueados.has("data_abertura")} /></F>
+                <F label="Natureza jurídica"><Input value={form.natureza_juridica ?? ""} readOnly disabled /></F>
+                <F label="Porte"><Input value={form.porte ?? ""} readOnly disabled /></F>
+                <F label="Situação cadastral"><Input value={form.situacao_cadastral ?? ""} readOnly disabled /></F>
+                <F label="Data de abertura"><Input value={form.data_abertura ?? ""} readOnly disabled placeholder="—" /></F>
+                <div className="sm:col-span-2 text-[11px] text-muted-foreground">
+                  Os dados da empresa são preenchidos automaticamente pela consulta do CNPJ. Apenas o nome fantasia pode ser ajustado.
+                </div>
               </Section>
 
               <Section title="Situação fiscal">
                 <F label="Inscrição Estadual" id="campo-ie" error={erros.ie}>
                   <Input
                     value={form.ie ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, ie: e.target.value, contribuinte: !!e.target.value.trim() }))}
+                    readOnly
+                    disabled
                     placeholder="Isento / não contribuinte"
                   />
 
                   {form.ie_situacao && <p className="mt-1 text-[11px] text-muted-foreground">Situação da IE: {form.ie_situacao}</p>}
                 </F>
                 <F label="Suframa">
-                  <Input value={form.suframa ?? ""} onChange={(e) => set("suframa", e.target.value)} placeholder="Não localizado" />
+                  <Input value={form.suframa ?? ""} readOnly disabled placeholder="Não localizado" />
                   {form.suframa_situacao && <p className="mt-1 text-[11px] text-muted-foreground">{form.suframa_situacao}</p>}
                 </F>
+
                 <F label="CNAE principal">
                   <Input
                     value={[form.cnae_principal_codigo, form.cnae_principal_descricao].filter(Boolean).join(" — ")}
@@ -694,36 +695,21 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
               <Section title="Endereço">
                 <F label="CEP *" id="campo-cep" error={erros.cep}>
-                  <CepInput
-                    value={form.cep ?? ""}
-                    onChange={(v: string) => set("cep", v)}
-                    onFound={(end: EnderecoCep) => {
-                      setForm((f) => ({
-                        ...f,
-                        cep: end.cep,
-                        logradouro: end.logradouro || f.logradouro,
-                        bairro: end.bairro || f.bairro,
-                        cidade: end.cidade || f.cidade,
-                        complemento: f.complemento || end.complemento,
-                        uf: end.uf || f.uf,
-                      }));
-                    }}
-                  />
+                  <Input value={form.cep ?? ""} readOnly disabled placeholder="—" />
                 </F>
-                <F label="Logradouro *" id="campo-logradouro" error={erros.logradouro}><Input value={form.logradouro ?? ""} onChange={(e) => set("logradouro", e.target.value)} /></F>
-                <F label="Número *" id="campo-numero" error={erros.numero}><Input value={form.numero ?? ""} onChange={(e) => set("numero", e.target.value)} /></F>
-                <F label="Complemento"><Input value={form.complemento ?? ""} onChange={(e) => set("complemento", e.target.value)} /></F>
-                <F label="Bairro"><Input value={form.bairro ?? ""} onChange={(e) => set("bairro", e.target.value)} /></F>
-                <F label="Cidade *" id="campo-cidade" error={erros.cidade}><Input value={form.cidade ?? ""} onChange={(e) => set("cidade", e.target.value)} /></F>
+                <F label="Logradouro *" id="campo-logradouro" error={erros.logradouro}><Input value={form.logradouro ?? ""} readOnly disabled /></F>
+                <F label="Número *" id="campo-numero" error={erros.numero}><Input value={form.numero ?? ""} readOnly disabled /></F>
+                <F label="Complemento"><Input value={form.complemento ?? ""} readOnly disabled /></F>
+                <F label="Bairro"><Input value={form.bairro ?? ""} readOnly disabled /></F>
+                <F label="Cidade *" id="campo-cidade" error={erros.cidade}><Input value={form.cidade ?? ""} readOnly disabled /></F>
                 <F label="UF de destino *" id="campo-uf" error={erros.uf}>
-                  <Select value={form.uf} onValueChange={(v) => set("uf", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ufs.map((u) => <SelectItem key={u.uf} value={u.uf}>{u.uf} — {u.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <Input value={form.uf ?? ""} readOnly disabled />
                 </F>
+                <div className="sm:col-span-2 text-[11px] text-muted-foreground">
+                  Endereço obtido automaticamente pela consulta do CNPJ.
+                </div>
               </Section>
+
 
               <Section title="Comercial">
                 <F label="Consultor">
