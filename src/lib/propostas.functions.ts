@@ -625,11 +625,19 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       vencimento: string | null;
       pixCopiaCola: string | null;
     };
+    type SapOvOut = {
+      enviado: boolean;
+      ok: boolean;
+      vbeln: string | null;
+      mensagem: string | null;
+      motivo: string | null;
+    };
     type ConclusaoOut = {
       id: string;
       status: string;
       already_concluded: boolean;
       cobranca: CobrancaOut | null;
+      sapOv: SapOvOut | null;
     };
     const executar = async (): Promise<ConclusaoOut> => {
     const { supabase, userId } = context as any;
@@ -695,7 +703,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         resultado: "duplicada",
         detalhe: "Tentativa repetida de conclusão",
       });
-      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null };
+      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null };
     }
 
     const atualizada = await db.atualizarProposta(
@@ -716,7 +724,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         resultado: "duplicada",
         detalhe: "Tentativa repetida de conclusão",
       });
-      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null };
+      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null };
     }
 
     await db.registrarConclusaoLog({ ...base, status: data.status, resultado: "concluida" });
@@ -757,7 +765,32 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       };
     }
 
-    return { id: row.id, status: data.status, already_concluded: false, cobranca };
+    // Ordem de venda no SAP (ZNFE_OV_CRIAR). Falha aqui não desfaz o pedido:
+    // fica registrada e pode ser reprocessada pelo job "sap.ov-criar".
+    let sapOv: SapOvOut | null = null;
+    try {
+      const { criarOrdemVendaSap } = await import("@/lib/sap-ov.server");
+      const r = await criarOrdemVendaSap(row.id);
+      sapOv = {
+        enviado: r.enviado,
+        ok: r.ok,
+        vbeln: r.vbeln,
+        mensagem: r.mensagem,
+        motivo: r.motivo ?? null,
+      };
+      if (!r.ok) {
+        await db.registrarConclusaoLog({
+          ...base,
+          status: data.status,
+          resultado: "sap_ov_falhou",
+          detalhe: String(r.mensagem ?? "Falha ao criar a ordem de venda no SAP.").slice(0, 500),
+        });
+      }
+    } catch (e) {
+      sapOv = { enviado: false, ok: false, vbeln: null, mensagem: (e as Error).message, motivo: null };
+    }
+
+    return { id: row.id, status: data.status, already_concluded: false, cobranca, sapOv };
     };
 
     // Monitoramento: cada finalização vira uma execução auditável em job_runs.
@@ -811,4 +844,47 @@ export const listarConclusoesFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const db = await repo();
     return await db.listarConclusaoLog(data.limit);
+  });
+
+/**
+ * Reenvia (ou valida) a ordem de venda no SAP para um pedido já concluído.
+ * Usado no painel de integrações quando o envio automático do checkout falha.
+ */
+export const criarOrdemVendaSapFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { propostaId?: unknown; testrun?: unknown; forcar?: unknown };
+    if (typeof i.propostaId !== "string" || !i.propostaId) throw new Error("Proposta inválida.");
+    return { propostaId: i.propostaId, testrun: Boolean(i.testrun), forcar: Boolean(i.forcar) };
+  })
+  .handler(async ({ data, context }) => {
+    const { runJob } = await import("@/lib/job-runs.server");
+    const run = await runJob(
+      {
+        job: "sap.ov-criar",
+        trigger: "manual",
+        refType: "proposta",
+        refId: data.propostaId,
+        payload: { propostaId: data.propostaId, testrun: data.testrun, forcar: data.forcar },
+        actorId: (context as any).userId ?? null,
+      },
+      async () => {
+        const { criarOrdemVendaSap } = await import("@/lib/sap-ov.server");
+        const r = await criarOrdemVendaSap(data.propostaId, {
+          testrun: data.testrun,
+          forcar: data.forcar,
+        });
+        if (!r.ok && r.enviado) throw new Error(r.mensagem ?? "Falha ao criar a ordem de venda no SAP.");
+        return {
+          enviado: r.enviado,
+          ok: r.ok,
+          vbeln: r.vbeln,
+          mensagem: r.mensagem,
+          motivo: r.motivo ?? null,
+          testrun: r.testrun,
+        };
+      },
+    );
+    if (!run.ok) throw new Error(run.error);
+    return run.result;
   });

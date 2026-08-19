@@ -22,6 +22,16 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     motivo: "A finalização do pedido só pode ser refeita pelo vendedor no portal.",
   }),
 
+  // Motor real: cria a ordem de venda no SAP (idempotente por proposta).
+  "sap.ov-criar": async (payload) => {
+    const id = String((payload as Record<string, unknown>)["propostaId"] ?? "");
+    if (!id) return { skipped: true, motivo: "Sem propostaId no payload." };
+    const { criarOrdemVendaSap } = await import("@/lib/sap-ov.server");
+    const r = await criarOrdemVendaSap(id, { forcar: Boolean((payload as any)["forcar"]) });
+    if (!r.ok && r.enviado) throw new Error(r.mensagem ?? "Falha ao criar a ordem de venda no SAP.");
+    return { ...r };
+  },
+
   "cron.sap-nfs": pendente(
     "Motor de consulta ZNFE_OV_CONSULTAR ainda não ativado — a execução foi registrada para auditoria.",
   ),
