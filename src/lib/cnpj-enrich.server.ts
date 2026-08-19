@@ -87,6 +87,7 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
     cidade: null, uf: null, municipio_ibge: null,
     ie: null, ie_situacao: null, inscricoes_estaduais: [],
     suframa: null, suframa_situacao: null,
+    simples_optante: null, simei_optante: null, regime_tributario: null,
     fontes: [], avisos: [],
   };
   if (doc.length !== 14) {
