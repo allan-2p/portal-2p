@@ -73,15 +73,38 @@ export function useSolarGeradores() {
   });
 }
 
-export function useSolarTrilhos() {
+export type SolarMicroinversor = {
+  id: string;
+  nome: string;
+  modelo_legado: number;
+  modulos_por_unidade: number;
+  fixadores_por_unidade: number;
+  ativo: boolean;
+  ordem: number;
+};
+
+/** Modelos de microinversor cadastrados (Gestão de Produtos → Microinversores). */
+export function useSolarMicroinversores(incluirInativos = false) {
   return useQuery({
-    queryKey: ["solar-trilhos"],
+    queryKey: ["solar-microinversores", incluirInativos],
+    queryFn: async (): Promise<SolarMicroinversor[]> => {
+      let q = supabase.from("solar_microinversores").select("*").order("ordem");
+      if (!incluirInativos) q = q.eq("ativo", true);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as unknown as SolarMicroinversor[];
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useSolarTrilhos(incluirInativos = false) {
+  return useQuery({
+    queryKey: ["solar-trilhos", incluirInativos],
     queryFn: async (): Promise<SolarTrilho[]> => {
-      const { data, error } = await supabase
-        .from("solar_trilhos")
-        .select("*")
-        .eq("ativo", true)
-        .order("ordem");
+      let q = supabase.from("solar_trilhos").select("*").order("ordem");
+      if (!incluirInativos) q = q.eq("ativo", true);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as SolarTrilho[];
     },
@@ -89,21 +112,20 @@ export function useSolarTrilhos() {
   });
 }
 
-export function useSolarSuportes() {
+export function useSolarSuportes(incluirInativos = false) {
   return useQuery({
-    queryKey: ["solar-suportes"],
+    queryKey: ["solar-suportes", incluirInativos],
     queryFn: async (): Promise<SolarSuporte[]> => {
-      const { data, error } = await supabase
-        .from("solar_suportes")
-        .select("*")
-        .eq("ativo", true)
-        .order("ordem");
+      let q = supabase.from("solar_suportes").select("*").order("ordem");
+      if (!incluirInativos) q = q.eq("ativo", true);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as SolarSuporte[];
     },
     staleTime: 5 * 60_000,
   });
 }
+
 
 /** Combinações válidas trilho → suportes. */
 export function useSolarTrilhoSuportes() {
