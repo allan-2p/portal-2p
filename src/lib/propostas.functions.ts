@@ -965,6 +965,8 @@ export type PedidoIntegracoesStatus = {
     mensagem: string | null;
     enviado_em: string | null;
   };
+  /** Validação prévia antes de enviar a ordem ao SAP. */
+  validacao: { ok: boolean; pendencias: string[]; avisos: string[] };
 };
 
 /** Situação das integrações (SAP + Salesforce) de um pedido. */
@@ -1001,5 +1003,6 @@ export const statusIntegracoesPedidoFn = createServerFn({ method: "POST" })
         mensagem: s("sf_mensagem"),
         enviado_em: s("sf_enviado_em"),
       },
+      validacao: validarPedidoParaSap(row as Record<string, any>),
     };
   });
