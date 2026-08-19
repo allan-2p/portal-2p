@@ -20,6 +20,16 @@ export type PrecoResultado = {
 const norm = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
 const money2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
 
+/**
+ * Filiais consultadas, na ordem de preferência.
+ *
+ * O SAP só devolve VALOR_LIQUIDO para o material quando a filial da simulação
+ * é a que possui a condição de preço daquele item: parte do catálogo 2P Solar
+ * é precificada em 9800 e parte em 9802. Consultar apenas uma filial devolvia
+ * zero para a maioria dos itens.
+ */
+const FILIAIS = ["9800", "9802"];
+
 export async function precosSolar(
   itens: PrecoItem[],
   opts: { documento?: string; listaPreco?: string; sugeridos?: Record<string, number> },
@@ -28,26 +38,41 @@ export async function precosSolar(
   const fallback: string[] = [];
   if (!itens.length) return { precos, fallback };
 
-  let sim = new Map<string, { valor: number | null }>();
-  try {
-    sim = (await simularPrecosSap(
-      itens.map((i) => ({ codigo: i.codigo, quantidade: i.quantidade })),
-      {
-        ...(opts.documento ? { documento: opts.documento } : {}),
-        listaPreco: opts.listaPreco || "01",
-      },
-    )) as unknown as Map<string, { valor: number | null }>;
-  } catch {
-    sim = new Map();
+  /** Valor unitário por código, preenchido pela primeira filial que precificar. */
+  const unitario = new Map<string, number>();
+  let pendentes = itens;
+
+  for (const filial of FILIAIS) {
+    if (!pendentes.length) break;
+    let sim = new Map<string, { valor: number | null }>();
+    try {
+      sim = (await simularPrecosSap(
+        pendentes.map((i) => ({ codigo: i.codigo, quantidade: i.quantidade })),
+        {
+          ...(opts.documento ? { documento: opts.documento } : {}),
+          listaPreco: opts.listaPreco || "01",
+          filial,
+        },
+      )) as unknown as Map<string, { valor: number | null }>;
+    } catch {
+      sim = new Map();
+    }
+    const restantes: PrecoItem[] = [];
+    for (const item of pendentes) {
+      const codigo = norm(item.codigo);
+      const qtd = Math.max(1, Number(item.quantidade) || 1);
+      const valorLinha = sim.get(codigo)?.valor ?? null;
+      if (valorLinha && valorLinha > 0) unitario.set(codigo, money2(valorLinha / qtd));
+      else restantes.push(item);
+    }
+    pendentes = restantes;
   }
 
   for (const item of itens) {
     const codigo = norm(item.codigo);
-    const linha = sim.get(codigo);
-    const qtd = Math.max(1, Number(item.quantidade) || 1);
-    const valorLinha = linha?.valor ?? null;
-    if (valorLinha && valorLinha > 0) {
-      precos[codigo] = money2(valorLinha / qtd);
+    const v = unitario.get(codigo);
+    if (v !== undefined && v > 0) {
+      precos[codigo] = v;
     } else {
       precos[codigo] = money2(opts.sugeridos?.[codigo] ?? 0);
       fallback.push(codigo);
@@ -55,3 +80,4 @@ export async function precosSolar(
   }
   return { precos, fallback };
 }
+
