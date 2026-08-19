@@ -297,8 +297,10 @@ export function finalidadeGeraDifal(finalidade: CarregadoresFinalidadeUso) {
 }
 
 /**
- * Em revenda o DIFAL é sempre apenas informativo: é apurado e exibido,
- * mas não é absorvido pela 2P e não afeta a receita líquida nem a margem.
+ * Em revenda para cliente CONTRIBUINTE o DIFAL é apenas informativo: é apurado
+ * e exibido, mas não é absorvido pela 2P. Para não contribuinte a
+ * responsabilidade do recolhimento é do remetente, então o DIFAL entra como
+ * custo (afeta receita líquida, margem e comissão) mesmo em revenda.
  */
 export function difalSempreInformativoPorFinalidade(finalidade: CarregadoresFinalidadeUso) {
   return finalidade === "revenda";
@@ -531,7 +533,8 @@ export function calcularCarregadores(
   // Contribuinte com IE recolhe o DIFAL por guia no Estado dele → informativo, sem impacto na margem.
   const difal = { base: difalBase, valor: difalValor };
   const informativo =
-    difalEhInformativo(destino) || difalSempreInformativoPorFinalidade(state.finalidadeUso);
+    difalEhInformativo(destino) ||
+    (destino.contribuinte && difalSempreInformativoPorFinalidade(state.finalidadeUso));
 
   const difalAbs = informativo ? 0 : difal.valor;
   const difalEstimado = informativo ? difal.valor : 0;
@@ -683,7 +686,7 @@ export function precoParaMargem(
   const carga = (ufRow?.aliq_interna ?? 0.18) + (ufRow?.fcp ?? 0);
   const informativo =
     difalEhInformativo({ contribuinte: destino.contribuinte, ie: destino.ie }) ||
-    difalSempreInformativoPorFinalidade(state.finalidadeUso);
+    (destino.contribuinte && difalSempreInformativoPorFinalidade(state.finalidadeUso));
   const aplicaDifal =
     geraDifal &&
     finalidadeGeraDifal(state.finalidadeUso) &&
