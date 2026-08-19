@@ -114,7 +114,9 @@ function NovaPropostaSolarPage() {
   // Etapa 2
   const [tipoNf, setTipoNf] = useState("venda");
   const [faturarClienteFinal, setFaturarClienteFinal] = useState(false);
+  const [fatTipoDoc, setFatTipoDoc] = useState<"cnpj" | "cpf">("cnpj");
   const [fat, setFat] = useState<Record<string, string>>({});
+  const [enriquecendo, setEnriquecendo] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<string>("");
 
   // Etapa 3
@@ -122,7 +124,10 @@ function NovaPropostaSolarPage() {
   const [listaPreco, setListaPreco] = useState("01");
   const [itens, setItens] = useState<Item[]>([]);
   const [calculando, setCalculando] = useState(false);
+  const [trocando, setTrocando] = useState(false);
   const [resultado, setResultado] = useState<CalcResultado | null>(null);
+
+
 
   // calculadora
   const [geradorId, setGeradorId] = useState("");
