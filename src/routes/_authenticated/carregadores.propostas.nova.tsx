@@ -2050,6 +2050,7 @@ function PropostaCarregadoresPage() {
 
             {state.freteMod === "CIF" ? (
               <FreteCotacao
+                unidade="carregadores"
                 itens={state.itens
                   .filter((i) => i.produtoId && i.qtd > 0)
                   .map((i) => ({
