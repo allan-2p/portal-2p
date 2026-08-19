@@ -1725,11 +1725,14 @@ function NovaPropostaSolarPage() {
 
             {(freteMod === "CIF" || freteMod === "DEDICADO") && (
               <FreteCotacao
-                itens={itens.map((i) => ({
-                  codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? "",
-                  quantidade: i.qtd,
-                  nome: produtos.find((p) => p.id === i.produtoId)?.descricao ?? "",
-                }))}
+                itens={itens
+                  .filter((i) => !i.avulso)
+                  .map((i) => ({
+                    codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? "",
+                    quantidade: i.qtd,
+                    nome: produtos.find((p) => p.id === i.produtoId)?.descricao ?? "",
+                  }))}
+
                 valorNota={subtotal - desconto}
                 destino={destino}
                 areaRural={areaRural}
