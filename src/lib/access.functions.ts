@@ -316,3 +316,57 @@ export const adminImpersonateUser = createServerFn({ method: "POST" })
 
     return { email: target.email, token_hash };
   });
+
+// ---- Admin: permissões extras por usuário (fora do perfil) ---- //
+
+const ExtraFeature = z.object({
+  instance_id: z.enum(["solar", "carregadores", "marketing"]),
+  feature_key: z.string().min(1),
+});
+
+export const adminGetUserExtraFeatures = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ features: { instance_id: string; feature_key: string }[] }> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("user_extra_features")
+      .select("instance_id, feature_key")
+      .eq("user_id", data.user_id);
+    if (error) throw new Error(error.message);
+    return {
+      features: (rows ?? []).map((r: any) => ({
+        instance_id: r.instance_id as string,
+        feature_key: r.feature_key as string,
+      })),
+    };
+  });
+
+export const adminSetUserExtraFeatures = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ user_id: z.string().uuid(), features: z.array(ExtraFeature).max(500) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: delErr } = await supabaseAdmin
+      .from("user_extra_features")
+      .delete()
+      .eq("user_id", data.user_id);
+    if (delErr) throw new Error(delErr.message);
+    if (data.features.length) {
+      const rows = data.features.map((f) => ({
+        user_id: data.user_id,
+        instance_id: f.instance_id,
+        feature_key: f.feature_key,
+        created_by: context.userId,
+      }));
+      const { error } = await supabaseAdmin
+        .from("user_extra_features")
+        .upsert(rows, { onConflict: "user_id,instance_id,feature_key" });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
