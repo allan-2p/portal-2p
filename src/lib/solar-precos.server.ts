@@ -74,8 +74,9 @@ export async function precosSolar(
       sim = r.valores as unknown as Map<string, { valor: number | null }>;
       for (const m of [...r.erros, ...(r.motivo ? [r.motivo] : [])]) {
         errosTentativa.push(m);
-        if (!avisos.includes(m)) avisos.push(m);
+        if (!filialInvalida(m) && !avisos.includes(m)) avisos.push(m);
       }
+
       respostaAudit = {
         valores: Object.fromEntries([...sim.entries()].map(([k, v]) => [k, v])),
         erros: r.erros,
