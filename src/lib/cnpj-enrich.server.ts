@@ -30,6 +30,12 @@ export type EnriquecimentoCnpj = {
   inscricoes_estaduais: Array<{ uf: string; numero: string; habilitada: boolean; situacao: string | null }>;
   suframa: string | null;
   suframa_situacao: string | null;
+  /** Optante pelo Simples Nacional (CNPJá). null = não foi possível apurar. */
+  simples_optante: boolean | null;
+  /** Enquadrado no SIMEI/MEI (CNPJá). */
+  simei_optante: boolean | null;
+  /** Regime tributário sugerido a partir do Simples/SIMEI. */
+  regime_tributario: string | null;
   fontes: string[];
   avisos: string[];
 };
