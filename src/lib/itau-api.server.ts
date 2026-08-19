@@ -67,12 +67,15 @@ async function mtlsDispatcher(): Promise<unknown | null> {
   if (!cert || !key) return null;
   if (!dispatcherPromise) {
     dispatcherPromise = (async () => {
+      // Erros de PEM inválido devem subir com mensagem legível, não virar null.
+      const certPem = pem(cert, "ITAU_MTLS_CERT_PEM");
+      const keyPem = pem(key, "ITAU_MTLS_KEY_PEM");
       try {
         const undici = await import("undici");
         return new undici.Agent({
           connect: {
-            cert: pem(cert),
-            key: pem(key),
+            cert: certPem,
+            key: keyPem,
             ...(env("ITAU_MTLS_KEY_PASSPHRASE")
               ? { passphrase: env("ITAU_MTLS_KEY_PASSPHRASE") as string }
               : {}),
