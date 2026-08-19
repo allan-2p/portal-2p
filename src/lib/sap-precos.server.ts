@@ -15,6 +15,7 @@
  */
 
 import { XMLParser } from "fast-xml-parser";
+import { pltypDaTabela } from "./sap-clientes-map";
 
 export type SimulacaoItem = {
   codigo: string;
