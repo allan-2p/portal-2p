@@ -91,12 +91,12 @@ export const SOLAR_CALC_CONFIG_FALLBACK: SolarCalcConfig = {
   espessura_min: 30,
   espessura_max: 35,
   limite_paineis_todos_trilhos: 50,
-  cod_grampo_intermediario: "2P-G",
-  cod_grampo_final: "2P-GF3035",
+  cod_grampo_intermediario: "2P-GI35",
+  cod_grampo_final: "2P-GFA",
   cod_terminal_aterramento: "2P-GAT",
-  cod_juncao: "2P-J",
+  cod_juncao: "2P-J100",
   cod_kit_parafuso_smart: "100000052",
-  cod_terminal_m8: "2P-M8*20",
+  cod_terminal_m8: "2P-M8",
   cod_terminal_zmi: "2P-ZMI",
 };
 
