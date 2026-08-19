@@ -152,7 +152,7 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
     if (!apiKey) {
       out.avisos.push("CNPJá indisponível (chave não configurada).");
     } else {
-      const res = await fetch(`https://api.cnpja.com/office/${doc}?registrations=BR&suframa=true`, {
+      const res = await fetch(`https://api.cnpja.com/office/${doc}?registrations=BR&suframa=true&simples=true`, {
         headers: { Authorization: apiKey },
       });
       if (res.ok) {
