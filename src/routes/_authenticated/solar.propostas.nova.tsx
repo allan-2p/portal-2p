@@ -396,11 +396,44 @@ function NovaPropostaSolarPage() {
     return Math.ceil((paineisNasLinhas || Number(paineis) || 0) / Math.max(1, m.modulos_por_unidade));
   }, [microinversoresQ.data, microModelo, paineis, paineisNasLinhas]);
 
+  /** Trilhos Smart/Zipado não usam vão entre apoios nem balanço. */
+  function semVao(l: FileiraCalc) {
+    const t = (trilhosQ.data ?? []).find((x) => x.id === l.trilhoId);
+    return /smart|zipad/i.test(`${t?.nome ?? ""} ${t?.familia ?? ""}`);
+  }
+
+  /** Assinatura dos inputs que alimentam o cálculo — muda ⇒ cálculo desatualizado. */
+  const assinaturaAtual = useMemo(
+    () =>
+      JSON.stringify({
+        modulo: modulo?.id ?? null,
+        paineis,
+        geradorId,
+        microModelo,
+        microQtd,
+        tamanhoTrilho,
+        linhas: linhas.map((l) => [l.trilhoId, l.suporteId, l.fileiras, l.modulos, l.orientacao, l.distMax, l.balanco]),
+      }),
+    [modulo, paineis, geradorId, microModelo, microQtd, tamanhoTrilho, linhas],
+  );
+  const calcDesatualizado = !!assinaturaCalc && assinaturaCalc !== assinaturaAtual;
+  const calcTravado = !!assinaturaCalc && !editandoCalc;
+  function liberarEdicaoCalculo() {
+    setEditandoCalc(true);
+  }
+
   async function realizarProposta() {
     if (!modulo) return toast.error("Selecione o módulo.");
     if (!linhas.length) return toast.error("Adicione ao menos uma fileira.");
-    if (Number(paineis) > 0 && paineisNasLinhas !== Number(paineis))
-      return toast.error(`A disposição possui ${paineisNasLinhas} painel(is), mas o projeto informa ${paineis}.`);
+    if (Number(paineis) > 0 && paineisNasLinhas !== Number(paineis)) {
+      const diff = paineisNasLinhas - Number(paineis);
+      return toast.error(
+        diff > 0
+          ? `A disposição das fileiras tem ${diff} módulo(s) a mais que os ${paineis} do projeto. Remova ${diff} para calcular.`
+          : `Faltam ${Math.abs(diff)} módulo(s) na disposição das fileiras (${paineisNasLinhas} de ${paineis}).`,
+      );
+    }
+
     const microSelecionado = (microinversoresQ.data ?? []).find((m) => m.id === microModelo);
     if (geradorEhMicro && !microSelecionado) return toast.error("Selecione o modelo do microinversor.");
 
