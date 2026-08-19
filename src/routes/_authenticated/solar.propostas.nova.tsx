@@ -892,8 +892,28 @@ function NovaPropostaSolarPage() {
             </label>
             {entregaDiferente && (
               <div className="grid gap-3 md:grid-cols-3">
+                <Campo label="CEP">
+                  <CepInput
+                    value={entrega['cep'] ?? ""}
+                    onChange={(v) => setEntrega((p) => ({ ...p, cep: v }))}
+                    onFound={(e: EnderecoCep) => {
+                      setEntrega((p) => ({
+                        ...p,
+                        cep: e.cep,
+                        logradouro: e.logradouro || (p['logradouro'] ?? ""),
+                        complemento: e.complemento || (p['complemento'] ?? ""),
+                        bairro: e.bairro || (p['bairro'] ?? ""),
+                        cidade: e.cidade || (p['cidade'] ?? ""),
+                        uf: e.uf || (p['uf'] ?? ""),
+                      }));
+                      setTransportadora(null);
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Preenchimento automático; campos abaixo continuam editáveis.
+                  </p>
+                </Campo>
                 {[
-                  ["cep", "CEP"],
                   ["logradouro", "Logradouro"],
                   ["numero", "Número"],
                   ["complemento", "Complemento"],
