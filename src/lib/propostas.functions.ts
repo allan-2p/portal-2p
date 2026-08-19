@@ -711,7 +711,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         resultado: "duplicada",
         detalhe: "Tentativa repetida de conclusão",
       });
-      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null };
+      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
     const atualizada = await db.atualizarProposta(
@@ -732,7 +732,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         resultado: "duplicada",
         detalhe: "Tentativa repetida de conclusão",
       });
-      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null };
+      return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
     await db.registrarConclusaoLog({ ...base, status: data.status, resultado: "concluida" });
@@ -798,7 +798,32 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       sapOv = { enviado: false, ok: false, vbeln: null, mensagem: (e as Error).message, motivo: null };
     }
 
-    return { id: row.id, status: data.status, already_concluded: false, cobranca, sapOv };
+    // Pedido no Salesforce (Opportunity). Falha aqui não desfaz o pedido:
+    // fica registrada e pode ser reenviada pelo job "salesforce.pedido".
+    let salesforce: SalesforceOut | null = null;
+    try {
+      const { sincronizarPedidoSalesforce } = await import("@/lib/salesforce-pedidos.server");
+      const r = await sincronizarPedidoSalesforce(row.id);
+      salesforce = {
+        enviado: r.enviado,
+        ok: r.ok,
+        opportunityId: r.opportunityId,
+        mensagem: r.mensagem,
+        motivo: r.motivo ?? null,
+      };
+      if (!r.ok) {
+        await db.registrarConclusaoLog({
+          ...base,
+          status: data.status,
+          resultado: "salesforce_falhou",
+          detalhe: String(r.mensagem ?? "Falha ao enviar o pedido ao Salesforce.").slice(0, 500),
+        });
+      }
+    } catch (e) {
+      salesforce = { enviado: false, ok: false, opportunityId: null, mensagem: (e as Error).message, motivo: null };
+    }
+
+    return { id: row.id, status: data.status, already_concluded: false, cobranca, sapOv, salesforce };
     };
 
     // Monitoramento: cada finalização vira uma execução auditável em job_runs.
