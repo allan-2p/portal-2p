@@ -1313,27 +1313,35 @@ function Linha({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ModoBotao({
+/** Opção do seletor consolidado (estilo slide) da etapa de produtos. */
+function SlideOpcao({
   ativo,
   onClick,
   icon: Icon,
-  children,
+  titulo,
+  descricao,
 }: {
   ativo: boolean;
   onClick: () => void;
   icon: typeof Calculator;
-  children: React.ReactNode;
+  titulo: string;
+  descricao: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={ativo}
       className={cn(
-        "flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm transition-colors",
-        ativo ? "border-primary bg-primary/10 font-semibold" : "border-border hover:border-primary/40",
+        "relative z-10 flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+        ativo ? "text-foreground" : "text-muted-foreground hover:text-foreground",
       )}
     >
-      <Icon className="h-4 w-4" /> {children}
+      <Icon className={cn("h-5 w-5 shrink-0", ativo && "text-primary")} />
+      <span className="min-w-0">
+        <span className={cn("block text-sm truncate", ativo && "font-semibold")}>{titulo}</span>
+        <span className="block text-xs text-muted-foreground truncate">{descricao}</span>
+      </span>
     </button>
   );
 }
