@@ -120,7 +120,10 @@ export const getMyAccess = createServerFn({ method: "GET" })
         .eq("user_id", context.userId),
       context.supabase.rpc("is_admin"),
     ]);
-    const fromProfiles = await profileGrantsFor(context.supabase, context.userId);
+    const fromProfiles = withExtras(
+      await profileGrantsFor(context.supabase, context.userId),
+      await extraGrantsFor(context.supabase, context.userId),
+    );
     const merged = mergeAccess(
       (inst ?? []).map((r: any) => r.instance_id as string),
       fromProfiles,
