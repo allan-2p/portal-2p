@@ -11,6 +11,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSolarCalcConfig } from "@/hooks/use-solar-catalogo";
 import { SOLAR_CALC_CONFIG_FALLBACK } from "@/lib/solar-calculadora";
+import { resolverProduto } from "@/lib/solar-sku";
+import { sugerirMaterial, useSapCatalogoCodigos } from "@/components/solar/sap-codigo";
+
 
 export const Route = createFileRoute("/_authenticated/admin/regras")({
   head: () => ({
@@ -55,7 +58,9 @@ export const Route = createFileRoute("/_authenticated/admin/regras")({
 function Calculadora2P() {
   const qc = useQueryClient();
   const cfgQ = useSolarCalcConfig();
+  const catalogo = useSapCatalogoCodigos().data ?? [];
   const [form, setForm] = useState<Record<string, string>>({});
+
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -76,7 +81,11 @@ function Calculadora2P() {
       cod_grampo_final: c.cod_grampo_final,
       cod_terminal_aterramento: c.cod_terminal_aterramento,
       cod_juncao: c.cod_juncao,
+      cod_kit_parafuso_smart: (c as any).cod_kit_parafuso_smart ?? "",
+      cod_terminal_m8: (c as any).cod_terminal_m8 ?? "",
+      cod_terminal_zmi: (c as any).cod_terminal_zmi ?? "",
     });
+
   }, [cfgQ.data]);
 
   async function salvar() {
@@ -100,6 +109,9 @@ function Calculadora2P() {
       cod_grampo_final: form['cod_grampo_final'] ?? "",
       cod_terminal_aterramento: form['cod_terminal_aterramento'] ?? "",
       cod_juncao: form['cod_juncao'] ?? "",
+      cod_kit_parafuso_smart: form['cod_kit_parafuso_smart'] ?? "",
+      cod_terminal_m8: form['cod_terminal_m8'] ?? "",
+      cod_terminal_zmi: form['cod_terminal_zmi'] ?? "",
     };
     const { error } = await supabase.from("solar_calc_config").update(payload).eq("id", 1);
     setSalvando(false);
@@ -108,14 +120,34 @@ function Calculadora2P() {
     toast.success("Parâmetros da Calculadora 2P atualizados.");
   }
 
-  const campo = (k: string, label: string) => (
-    <div className="space-y-1.5" key={k}>
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Input value={form[k] ?? ""} onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))} />
-    </div>
-  );
+  const campo = (k: string, label: string) => {
+    const codigo = k.startsWith("cod_");
+    const valor = form[k] ?? "";
+    const invalido = codigo && !!valor.trim() && !resolverProduto(catalogo, valor);
+    const sugestao = invalido ? sugerirMaterial(catalogo, valor, label) : undefined;
+    return (
+      <div className="space-y-1.5" key={k}>
+        <Label className={`text-xs ${invalido ? "text-destructive" : "text-muted-foreground"}`}>
+          {label}
+        </Label>
+        <Input
+          value={valor}
+          className={invalido ? "border-destructive focus-visible:ring-destructive" : ""}
+          onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))}
+        />
+        {invalido && (
+          <p className="text-[11px] text-destructive">
+            {sugestao
+              ? `Sem material no SAP. Sugestão: ${sugestao.codigo} — ${sugestao.descricao}`
+              : "Sem material correspondente no catálogo SAP."}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
+
     <>
       <section className="glass rounded-2xl p-5 space-y-4">
         <div>
@@ -204,6 +236,10 @@ function Calculadora2P() {
           {campo("cod_grampo_final", "Código — grampo final")}
           {campo("cod_terminal_aterramento", "Código — terminal de aterramento")}
           {campo("cod_juncao", "Código — junção de trilho")}
+          {campo("cod_kit_parafuso_smart", "Código — kit parafuso Smart")}
+          {campo("cod_terminal_m8", "Código — terminal M8")}
+          {campo("cod_terminal_zmi", "Código — terminal ZMI")}
+
         </div>
         <Button onClick={() => void salvar()} disabled={salvando}>
           {salvando ? "Salvando…" : "Salvar parâmetros"}

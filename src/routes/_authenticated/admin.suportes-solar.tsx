@@ -20,6 +20,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { useSolarSuportes } from "@/hooks/use-solar-catalogo";
 import type { SolarSuporte } from "@/lib/solar-calculadora";
+import { resolverProduto } from "@/lib/solar-sku";
+import {
+  SapCodigoCell,
+  SapDeParaResumo,
+  useSapCatalogoCodigos,
+} from "@/components/solar/sap-codigo";
+
 
 export const Route = createFileRoute("/_authenticated/admin/suportes-solar")({
   head: () => ({
@@ -71,6 +78,8 @@ const vazio: Form = {
 function SuportesSolarPage() {
   const qc = useQueryClient();
   const suportesQ = useSolarSuportes(true);
+  const catalogo = useSapCatalogoCodigos().data ?? [];
+
   const [busca, setBusca] = useState("");
   const [form, setForm] = useState<Form | null>(null);
 
@@ -78,6 +87,18 @@ function SuportesSolarPage() {
     const q = busca.trim().toLowerCase();
     return (suportesQ.data ?? []).filter((s) => !q || s.nome.toLowerCase().includes(q));
   }, [suportesQ.data, busca]);
+
+  const pendencias = useMemo(() => {
+    const out: string[] = [];
+    for (const s of suportesQ.data ?? []) {
+      for (const k of ["codigo_sap", "cod_extra", "cod_mini_trilho"] as const) {
+        const cod = (s as any)[k] as string | null;
+        if (cod && !resolverProduto(catalogo, cod)) out.push(`${s.nome} · ${k}: ${cod}`);
+      }
+    }
+    return out;
+  }, [suportesQ.data, catalogo]);
+
 
   function abrir(s?: SolarSuporte) {
     setForm(
@@ -165,7 +186,10 @@ function SuportesSolarPage() {
           />
         </div>
 
+        <SapDeParaResumo pendencias={pendencias} />
+
         <div className="glass rounded-2xl overflow-hidden">
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[820px]">
               <thead>
@@ -184,9 +208,12 @@ function SuportesSolarPage() {
                 {lista.map((s) => (
                   <tr key={s.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 font-medium">{s.nome}</td>
-                    <td className="px-4 py-3">{s.codigo_sap ?? "—"}</td>
-                    <td className="px-4 py-3">{s.cod_extra ?? "—"}</td>
-                    <td className="px-4 py-3">{s.cod_mini_trilho ?? "—"}</td>
+                    {(["codigo_sap", "cod_extra", "cod_mini_trilho"] as const).map((k) => (
+                      <td className="px-4 py-3" key={k}>
+                        <SapCodigoCell codigo={(s as any)[k]} nomeRef={s.nome} produtos={catalogo} />
+                      </td>
+                    ))}
+
                     <td className="px-4 py-3 text-right tabular-nums">{s.multiplo}</td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       {s.smart ? "Sim" : "—"}

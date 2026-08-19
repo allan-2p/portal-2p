@@ -27,6 +27,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { useSolarTrilhos } from "@/hooks/use-solar-catalogo";
 import type { SolarTrilho } from "@/lib/solar-calculadora";
+import { resolverProduto } from "@/lib/solar-sku";
+import {
+  SapCodigoCell,
+  SapDeParaResumo,
+  useSapCatalogoCodigos,
+} from "@/components/solar/sap-codigo";
+
 
 export const Route = createFileRoute("/_authenticated/admin/trilhos-solar")({
   head: () => ({
@@ -84,6 +91,8 @@ const FAMILIAS = [
 function TrilhosSolarPage() {
   const qc = useQueryClient();
   const trilhosQ = useSolarTrilhos(true);
+  const catalogo = useSapCatalogoCodigos().data ?? [];
+
   const [busca, setBusca] = useState("");
   const [form, setForm] = useState<Form | null>(null);
 
@@ -146,7 +155,19 @@ function TrilhosSolarPage() {
     void qc.invalidateQueries({ queryKey: ["solar-trilhos"] });
   }
 
+  const pendencias = useMemo(() => {
+    const out: string[] = [];
+    for (const t of trilhosQ.data ?? []) {
+      for (const k of ["cod_4800", "cod_3600", "cod_2400", "cod_2700"] as const) {
+        const cod = (t as any)[k] as string | null;
+        if (cod && !resolverProduto(catalogo, cod)) out.push(`${t.nome} · ${k.replace("cod_", "")}: ${cod}`);
+      }
+    }
+    return out;
+  }, [trilhosQ.data, catalogo]);
+
   return (
+
     <AppLayout>
       <div className="max-w-[1200px] mx-auto space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -177,7 +198,10 @@ function TrilhosSolarPage() {
           />
         </div>
 
+        <SapDeParaResumo pendencias={pendencias} />
+
         <div className="glass rounded-2xl overflow-hidden">
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[820px]">
               <thead>
@@ -199,10 +223,16 @@ function TrilhosSolarPage() {
                     <td className="px-4 py-3 text-muted-foreground">
                       {FAMILIAS.find((f) => f.value === t.familia)?.label ?? t.familia}
                     </td>
-                    <td className="px-4 py-3">{t.cod_4800 ?? "—"}</td>
-                    <td className="px-4 py-3">{t.cod_3600 ?? "—"}</td>
-                    <td className="px-4 py-3">{t.cod_2400 ?? "—"}</td>
-                    <td className="px-4 py-3">{t.cod_2700 ?? "—"}</td>
+                    {(["cod_4800", "cod_3600", "cod_2400", "cod_2700"] as const).map((k) => (
+                      <td className="px-4 py-3" key={k}>
+                        <SapCodigoCell
+                          codigo={(t as any)[k]}
+                          nomeRef={`${t.nome} ${k.replace("cod_", "")}`}
+                          produtos={catalogo}
+                        />
+                      </td>
+                    ))}
+
                     <td className="px-4 py-3 text-center">
                       <Switch checked={t.ativo} onCheckedChange={() => void alternarAtivo(t)} />
                     </td>
