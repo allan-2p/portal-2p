@@ -54,6 +54,7 @@ import { buildSolarPropostaPdfHtml, solarPropostaPdfFileName } from "@/lib/solar
 import {
   useSolarCalcConfig,
   useSolarCupons,
+  type SolarCupom,
   useSolarGeradores,
   useSolarModulos,
   useSolarProdutos,
@@ -427,7 +428,7 @@ function NovaPropostaSolarPage() {
 
     const detalhes: string[] = [];
     if (achado.tipos.includes("percentual") && achado.percentual > 0) detalhes.push(`${achado.percentual}% de desconto`);
-    if (achado.tipos.includes("valor") && achado.valor > 0) detalhes.push(`${brl(achado.valor)} de desconto`);
+    if (achado.tipos.includes("valor") && achado.valor > 0) detalhes.push(`${fmtBRL(achado.valor)} de desconto`);
     if (achado.tipos.includes("frete")) detalhes.push("frete grátis");
     return {
       status: "ok",
