@@ -126,6 +126,9 @@ function NovaPropostaSolarPage() {
   const [calculando, setCalculando] = useState(false);
   const [trocando, setTrocando] = useState(false);
   const [resultado, setResultado] = useState<CalcResultado | null>(null);
+  const [previewAberto, setPreviewAberto] = useState(false);
+  const [pdfHtml, setPdfHtml] = useState("");
+
 
 
 
