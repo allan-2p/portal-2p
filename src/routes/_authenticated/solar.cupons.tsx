@@ -21,6 +21,8 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/permission-gate";
+import { supabase } from "@/integrations/supabase/client";
+import { useSolarCupons, useSolarInvalidate } from "@/hooks/use-solar-catalogo";
 
 export const Route = createFileRoute("/_authenticated/solar/cupons")({
   head: () => ({
