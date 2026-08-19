@@ -27,6 +27,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { useSolarTrilhos } from "@/hooks/use-solar-catalogo";
 import type { SolarTrilho } from "@/lib/solar-calculadora";
+import { resolverProduto } from "@/lib/solar-sku";
+import {
+  SapCodigoCell,
+  SapDeParaResumo,
+  useSapCatalogoCodigos,
+} from "@/components/solar/sap-codigo";
+
 
 export const Route = createFileRoute("/_authenticated/admin/trilhos-solar")({
   head: () => ({
