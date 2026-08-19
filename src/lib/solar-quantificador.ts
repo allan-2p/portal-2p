@@ -317,7 +317,8 @@ export function quantificarProjeto(
       if (at) at.quantidade += c.quantidade;
       else acc.set(c.chave, { ...c });
     }
-  }
+  });
+
 
   const itens = [...acc.values()].filter((i) => i.quantidade > 0);
   const semCodigo = itens.filter((i) => !i.codigo).map((i) => i.descricao);
