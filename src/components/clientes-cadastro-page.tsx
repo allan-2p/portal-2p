@@ -99,7 +99,7 @@ type Form = Omit<Cliente, "id">;
 const vazio = (): Form => ({
   razao_social: "", nome_fantasia: "", doc: "", ie: "", ie_situacao: null,
   suframa: null, suframa_situacao: null, contribuinte: false,
-  regime_tributario: "Simples Nacional", natureza_juridica: null, porte: null,
+  regime_tributario: null, natureza_juridica: null, porte: null,
   situacao_cadastral: null, data_abertura: null,
   cnae_principal_codigo: null, cnae_principal_descricao: null, cnaes_secundarios: [],
   email: "", telefone: "", site: "",
