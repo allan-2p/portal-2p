@@ -1454,42 +1454,33 @@ function NovaPropostaSolarPage() {
         </DialogContent>
       </Dialog>
 
-      <WizardActionBar
-        step={etapa}
-        totalSteps={5}
-        stepLabel={ETAPAS[etapa - 1]}
-        onBack={etapa > 1 ? () => setEtapa((s) => (Math.max(1, s - 1) as typeof s)) : undefined}
-        onNext={etapa < 5 ? avancar : undefined}
-        errors={erros}
-        showErrors={tentou}
-        actions={[
-          {
-            label: "Salvar",
-            onClick: () => void salvarProposta(false),
-            icon: <Save className="h-4 w-4" />,
-            loading: salvando,
-            disabled: salvando || !itens.length || !cliente,
-          },
-          {
-            label: "Gerar proposta",
-            onClick: abrirPreviewPdf,
-            icon: <Eye className="h-4 w-4" />,
-            disabled: !itens.length || salvando,
-          },
-        ]}
-
-        primary={
-          etapa === 5
-            ? {
-                label: "Concluir pedido",
-                onClick: () => void salvarProposta(true),
-                icon: <Check className="h-4 w-4" />,
-                loading: salvando,
-                disabled: salvando,
-              }
-            : null
-        }
-      />
+      {etapa !== 5 && (
+        <WizardActionBar
+          step={etapa}
+          totalSteps={5}
+          stepLabel={ETAPAS[etapa - 1]}
+          onBack={etapa > 1 ? () => setEtapa((s) => (Math.max(1, s - 1) as typeof s)) : undefined}
+          onNext={etapa < 5 ? avancar : undefined}
+          errors={erros}
+          showErrors={tentou}
+          actions={[
+            {
+              label: "Salvar",
+              onClick: () => void salvarProposta(false),
+              icon: <Save className="h-4 w-4" />,
+              loading: salvando,
+              disabled: salvando || !itens.length || !cliente,
+            },
+            {
+              label: "Gerar proposta",
+              onClick: abrirPreviewPdf,
+              icon: <Eye className="h-4 w-4" />,
+              disabled: !itens.length || salvando,
+            },
+          ]}
+          primary={null}
+        />
+      )}
     </AppLayout>
   );
 }
