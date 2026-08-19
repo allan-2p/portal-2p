@@ -45,6 +45,8 @@ export const listIntegrationLogs = createServerFn({ method: "GET" })
     search?: string;
     /** Auditoria de um cliente específico (integration_logs.detail->>cliente_id). */
     clienteId?: string;
+    /** Integrações de um pedido específico (integration_logs.detail->>proposta_id). */
+    propostaId?: string;
   }) => input)
   .handler(async ({ data, context }) => {
     await assertLogRead(context, "admin.integracoes");
@@ -61,6 +63,7 @@ export const listIntegrationLogs = createServerFn({ method: "GET" })
     if (data.slug) q = q.eq("slug", data.slug);
     if (data.level && data.level !== "all") q = q.eq("level", data.level);
     if (data.clienteId) q = q.eq("detail->>cliente_id", data.clienteId);
+    if (data.propostaId) q = q.eq("detail->>proposta_id", data.propostaId);
 
     const termo = (data.search ?? "").trim().replace(/[,()*]/g, " ");
     if (termo) {
