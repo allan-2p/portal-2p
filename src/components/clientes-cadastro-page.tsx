@@ -173,7 +173,6 @@ type OrdemKey = "sap" | "cliente" | "doc" | "fiscal" | "cidade" | "contato";
 
 export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const qc = useQueryClient();
-  const ufs = useCarregadoresUfs().data ?? [];
   const listar = useServerFn(listClientesFn);
   const verificarDoc = useServerFn(verificarDocFn);
   const enriquecer = useServerFn(enriquecerCnpjFn);
