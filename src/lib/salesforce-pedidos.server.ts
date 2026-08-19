@@ -294,7 +294,7 @@ export async function sincronizarPropostasSalesforceLote(
 ): Promise<SalesforceLoteResultado> {
   const linhas = await db.listarPropostas({
     ...(opts.organizacao ? { organizacao: opts.organizacao } : {}),
-    select: "id, numero, sf_opp_id, sf_status",
+    select: "*",
     limit: opts.limite ?? 2000,
   });
   const alvo = opts.somentePendentes
