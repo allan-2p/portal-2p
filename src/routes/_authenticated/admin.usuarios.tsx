@@ -450,7 +450,9 @@ function PortalTable({
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
+      <div className="w-full overflow-x-auto">
+      <table className="w-full min-w-[1100px] text-sm">
+
         <thead className="bg-surface/50 text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
             <th className="px-4 py-3"></th>
@@ -619,8 +621,10 @@ function PortalTable({
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
+
 }
 
 function UserModal({
@@ -691,7 +695,7 @@ function UserModal({
             setSubmitting(false);
           }
         }}
-        className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-3"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-card border border-border rounded-2xl p-4 sm:p-6 space-y-3"
       >
         <h2 className="font-display font-bold text-lg flex items-center gap-2">
           {mode === "create" ? "Criar usuário" : external ? "Convidar externo" : "Convidar usuário"}
