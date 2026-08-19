@@ -327,3 +327,62 @@ export function quantificarProjeto(
 
   return { ok: true, erros: [], avisos: [...new Set(avisos)], distribuicao, comprimentos, itens };
 }
+
+/** Pendência de de/para: componente que o cálculo geraria sem código de produto. */
+export type PendenciaDePara = {
+  chave: string;
+  descricao: string;
+  /** Onde o código precisa ser cadastrado. */
+  origem: "Trilhos" | "Suportes" | "Configuração da calculadora";
+  /** Campo exato que está vazio. */
+  campo: string;
+};
+
+/** Traduz a chave do componente no campo de cadastro que está sem código. */
+function campoDePara(chave: string): Pick<PendenciaDePara, "origem" | "campo"> {
+  if (/_4800$/.test(chave)) return { origem: "Trilhos", campo: "Código SAP da barra 4.800 mm" };
+  if (/_3600$/.test(chave)) return { origem: "Trilhos", campo: "Código SAP da barra 3.600 mm" };
+  if (/_2700$/.test(chave)) return { origem: "Trilhos", campo: "Código SAP da barra 2.700 mm" };
+  if (/_2400$/.test(chave)) return { origem: "Trilhos", campo: "Código SAP da barra 2.400 mm" };
+  if (chave.startsWith("fixador_extra_")) return { origem: "Suportes", campo: "Código complemento" };
+  if (chave.startsWith("fixador_sup")) return { origem: "Suportes", campo: "Código SAP" };
+  if (chave === "mini_trilho") return { origem: "Suportes", campo: "Código do mini trilho" };
+  const cfgCampos: Record<string, string> = {
+    juncao: "Código da junção",
+    grampo_intermediario: "Código do grampo intermediário",
+    grampo_final: "Código do grampo final",
+    terminal_aterramento: "Código do terminal de aterramento",
+    kit_parafuso_smart: "Código do kit parafuso Smart",
+    terminal_m8: "Código do terminal M8",
+    terminal_zmi: "Código do terminal ZMI",
+  };
+  return {
+    origem: "Configuração da calculadora",
+    campo: cfgCampos[chave] ?? `Código de ${chave}`,
+  };
+}
+
+/**
+ * Pré-checagem do de/para: simula a quantificação e devolve os componentes que
+ * sairiam sem código de produto, apontando o cadastro/campo a preencher.
+ * Retorna lista vazia quando os inputs ainda não permitem quantificar.
+ */
+export function pendenciasDePara(
+  fileiras: QuantFileira[],
+  modulo: QuantModulo,
+  ctx: QuantContexto,
+  cfg: SolarCalcConfig,
+): PendenciaDePara[] {
+  const r = quantificarProjeto(fileiras, modulo, ctx, cfg);
+  if (!r.ok) return [];
+  const vistos = new Set<string>();
+  const out: PendenciaDePara[] = [];
+  for (const i of r.itens) {
+    if (i.codigo && String(i.codigo).trim()) continue;
+    if (vistos.has(i.chave)) continue;
+    vistos.add(i.chave);
+    out.push({ chave: i.chave, descricao: i.descricao, ...campoDePara(i.chave) });
+  }
+  return out;
+}
+
