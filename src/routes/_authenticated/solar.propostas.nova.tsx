@@ -14,6 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { WizardActionBar } from "@/components/wizard-action-bar";
 import { FreteCotacao } from "@/components/frete-cotacao";
 import { toast } from "sonner";
@@ -21,7 +29,8 @@ import {
   Building2,
   Calculator,
   Check,
-  FileText,
+  Eye,
+  FileDown,
   ListPlus,
   Loader2,
   Minus,
@@ -33,6 +42,7 @@ import {
   Trash2,
   User,
 } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { fmtBRL, type CarregadoresTransportadora } from "@/lib/carregadores";
