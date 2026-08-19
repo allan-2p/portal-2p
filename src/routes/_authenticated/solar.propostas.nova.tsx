@@ -1527,12 +1527,16 @@ function NovaPropostaSolarPage() {
                 <tbody>
                   {itens.map((i) => {
                     const p = produtos.find((x) => x.id === i.produtoId);
+                    const descricao = i.avulso?.descricao ?? p?.descricao ?? "—";
+                    const codigo = i.avulso?.codigo ?? p?.codigo ?? "";
+                    const editavel = i.origem === "manual";
                     return (
                       <tr key={i.key} className="border-b border-border/50">
                         <td className="px-4 py-3">
-                          <div className="font-medium">{p?.descricao ?? "—"}</div>
+                          <div className="font-medium">{descricao}</div>
                           <div className="text-xs text-muted-foreground">
-                            {p?.codigo} {i.origem === "calculadora" ? "· Calculadora 2P" : ""}
+                            {codigo} {i.origem === "calculadora" ? "· Calculadora 2P" : ""}
+                            {!i.valor && !i.avulso ? " · sem preço no SAP" : ""}
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -1551,7 +1555,24 @@ function NovaPropostaSolarPage() {
                             >
                               <Minus className="h-3.5 w-3.5" />
                             </Button>
-                            <span className="w-10 text-center tabular-nums">{i.qtd}</span>
+                            <Input
+                              className="h-8 w-16 text-center tabular-nums"
+                              aria-label="Quantidade"
+                              value={String(i.qtd)}
+                              onChange={(e) => {
+                                const q = Number(e.target.value.replace(/\D/g, ""));
+                                setItens((prev) =>
+                                  prev.map((x) => (x.key === i.key ? { ...x, qtd: q } : x)),
+                                );
+                              }}
+                              onBlur={() =>
+                                setItens((prev) =>
+                                  prev.map((x) =>
+                                    x.key === i.key ? { ...x, qtd: Math.max(1, x.qtd || 1) } : x,
+                                  ),
+                                )
+                              }
+                            />
                             <Button
                               variant="ghost"
                               size="icon"
@@ -1566,10 +1587,29 @@ function NovaPropostaSolarPage() {
                             </Button>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right tabular-nums">{fmtBRL(i.valor)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">
+                          {editavel ? (
+                            <Input
+                              className="h-8 w-28 text-right tabular-nums ml-auto"
+                              aria-label="Valor unitário"
+                              value={String(i.valor)}
+                              onChange={(e) => {
+                                const v = Number(e.target.value.replace(/[^\d.,]/g, "").replace(",", "."));
+                                setItens((prev) =>
+                                  prev.map((x) =>
+                                    x.key === i.key ? { ...x, valor: money2(v) } : x,
+                                  ),
+                                );
+                              }}
+                            />
+                          ) : (
+                            fmtBRL(i.valor)
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-right font-semibold tabular-nums">
                           {fmtBRL(i.valor * i.qtd)}
                         </td>
+
                         <td className="px-4 py-3 text-right">
                           <Button
                             variant="ghost"
