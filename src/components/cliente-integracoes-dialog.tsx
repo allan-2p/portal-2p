@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Plug, RefreshCw, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Plug, RefreshCw, ScanSearch, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ClienteIntegracaoHistorico } from "@/components/cliente-integracao-historico";
-import { reenviarClienteFn, testarIntegracoesClienteFn } from "@/lib/clientes.functions";
+import { reenviarClienteFn, revalidarCnpjClienteFn, testarIntegracoesClienteFn } from "@/lib/clientes.functions";
 type Instancia = "solar" | "carregadores";
 
 type ClienteResumo = {
@@ -54,6 +54,14 @@ export function ClienteIntegracoesDialog({
   const qc = useQueryClient();
   const reenviarFn = useServerFn(reenviarClienteFn);
   const testarFn = useServerFn(testarIntegracoesClienteFn);
+  const revalidarFn = useServerFn(revalidarCnpjClienteFn);
+  const [cnpjRes, setCnpjRes] = useState<{
+    ok: boolean;
+    fontes: string[];
+    avisos: string[];
+    alteracoes: { campo: string; de: string; para: string }[];
+    aplicado: boolean;
+  } | null>(null);
   const [testes, setTestes] = useState<Record<string, { ok: boolean; mensagem: string; detalhe?: string | null }>>({});
   const [alvoAtivo, setAlvoAtivo] = useState<string | null>(null);
 
@@ -74,6 +82,24 @@ export function ClienteIntegracoesDialog({
       else toast.success("Teste concluído com sucesso.");
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha no teste."),
+    onSettled: () => setAlvoAtivo(null),
+  });
+
+  const revalidar = useMutation({
+    mutationFn: async (aplicar: boolean) => {
+      setAlvoAtivo(aplicar ? "cnpj:aplicar" : "cnpj:consultar");
+      return revalidarFn({ data: { instancia, id: cliente!.id, aplicar } });
+    },
+    onSuccess: (r) => {
+      setCnpjRes({ ok: r.ok, fontes: r.fontes, avisos: r.avisos, alteracoes: r.alteracoes, aplicado: r.aplicado });
+      if (!r.ok) toast.error(r.avisos[0] ?? "Não foi possível consultar as fontes oficiais.");
+      else if (r.aplicado) toast.success(`Cadastro atualizado — ${r.alteracoes.length} campo(s).`);
+      else if (r.alteracoes.length === 0) toast.success("Dados do CNPJ conferem com o cadastro.");
+      else toast.warning(`${r.alteracoes.length} divergência(s) encontradas na Receita.`);
+      if (r.aplicado) qc.invalidateQueries({ queryKey: ["clientes"] });
+      qc.invalidateQueries({ queryKey: ["cliente-integracao-historico"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao revalidar o CNPJ."),
     onSettled: () => setAlvoAtivo(null),
   });
 
@@ -126,6 +152,81 @@ export function ClienteIntegracoesDialog({
             </DialogHeader>
 
             <div className="space-y-5">
+              <div className="rounded-xl border border-border bg-surface/40 p-3 space-y-2">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                  Receita / CNPJ (Serpro + CNPJá)
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Consulta as fontes oficiais e compara com o cadastro. Aplicar grava as diferenças e registra no histórico.
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 h-8"
+                    onClick={() => revalidar.mutate(false)}
+                    disabled={Boolean(alvoAtivo)}
+                  >
+                    <ScanSearch className={`h-3.5 w-3.5 ${alvoAtivo === "cnpj:consultar" ? "animate-pulse" : ""}`} />
+                    Buscar dados novamente
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="gap-2 h-8"
+                    onClick={() => revalidar.mutate(true)}
+                    disabled={Boolean(alvoAtivo)}
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${alvoAtivo === "cnpj:aplicar" ? "animate-spin" : ""}`} />
+                    Revalidar e atualizar
+                  </Button>
+                </div>
+                {cnpjRes && (
+                  <div
+                    className={`rounded-lg border p-2 text-xs space-y-2 ${
+                      !cnpjRes.ok
+                        ? "border-destructive/40 bg-destructive/10 text-destructive"
+                        : cnpjRes.alteracoes.length === 0
+                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2 font-medium">
+                      {!cnpjRes.ok ? (
+                        <XCircle className="h-3.5 w-3.5 mt-0.5" />
+                      ) : cnpjRes.alteracoes.length === 0 ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 mt-0.5" />
+                      ) : (
+                        <AlertTriangle className="h-3.5 w-3.5 mt-0.5" />
+                      )}
+                      <span>
+                        {!cnpjRes.ok
+                          ? "Nenhuma fonte oficial respondeu."
+                          : cnpjRes.alteracoes.length === 0
+                            ? `Tudo certo — cadastro igual à Receita. Fontes: ${cnpjRes.fontes.join(", ")}.`
+                            : `${cnpjRes.alteracoes.length} divergência(s)${cnpjRes.aplicado ? " aplicada(s) ao cadastro" : " — clique em “Revalidar e atualizar” para gravar"}.`}
+                      </span>
+                    </div>
+                    {cnpjRes.alteracoes.length > 0 && (
+                      <ul className="space-y-1 text-[11px] text-foreground/80">
+                        {cnpjRes.alteracoes.map((a) => (
+                          <li key={a.campo} className="break-words">
+                            <span className="font-semibold">{a.campo}</span>: {a.de || "—"} → {a.para || "—"}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {cnpjRes.avisos.length > 0 && (
+                      <ul className="space-y-0.5 text-[11px] opacity-80">
+                        {cnpjRes.avisos.map((v) => (
+                          <li key={v}>• {v}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="rounded-xl border border-border bg-surface/40 p-3 space-y-2">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-primary">Banco (cadastro)</div>
                 <Linha rot="ID do cadastro" val={cliente.id} />
