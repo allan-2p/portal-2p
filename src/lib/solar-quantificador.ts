@@ -89,8 +89,11 @@ function codigoBarra(t: SolarTrilho, tamanho: number): string | null {
     2400: t.cod_2400,
     2700: t.cod_2700,
   };
-  return map[tamanho] ?? null;
+  // Sem de-para do comprimento, cai no código SAP do próprio trilho para o
+  // item ainda nascer com código (e ser precificado) em vez de virar avulso.
+  return map[tamanho] || t.codigo_sap || null;
 }
+
 
 /** Quantifica UMA fileira -> componentes lógicos com quantidade. */
 function quantificarFileira(

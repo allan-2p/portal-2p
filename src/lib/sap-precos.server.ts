@@ -119,20 +119,36 @@ function envelope(itens: SimulacaoItem[], opts: SimulacaoOpts) {
 </soap:Envelope>`;
 }
 
+export type SimulacaoResultado = {
+  /** Valores por código de material (vazio quando o SAP recusou a simulação). */
+  valores: Map<string, SimulacaoValores>;
+  /** Mensagens de erro devolvidas pelo SAP (E_T_MSG tipo E/A). */
+  erros: string[];
+  /** Motivo técnico quando nem chegamos a receber uma resposta válida. */
+  motivo: string | null;
+};
+
 /**
  * Chama a simulação e devolve, por código de material, o peso líquido/bruto da
- * linha e o valor. Devolve mapa vazio quando a RFC não está disponível.
+ * linha e o valor — junto das mensagens de erro do SAP, para que a origem de um
+ * preço zerado nunca fique silenciosa.
  */
-export async function simularPrecosSap(
+export async function simularSap(
   itens: SimulacaoItem[],
   opts?: SimulacaoOpts,
-): Promise<Map<string, SimulacaoValores>> {
+): Promise<SimulacaoResultado> {
   const mapa = new Map<string, SimulacaoValores>();
-  if (!itens.length) return mapa;
+  const erros: string[] = [];
+  if (!itens.length) return { valores: mapa, erros, motivo: null };
 
   const url = process.env["SAP_SIMULAR_URL"] ?? URL_PADRAO;
   const auth = credencial();
-  if (!auth) return mapa;
+  if (!auth)
+    return {
+      valores: mapa,
+      erros,
+      motivo: "Credencial do SAP não configurada (SAP_BRIDGE_AUTH ou SAP_BRIDGE_USER/PASSWORD).",
+    };
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
@@ -151,9 +167,9 @@ export async function simularPrecosSap(
       signal: controller.signal,
     });
     xml = await res.text();
-    if (!res.ok) return mapa;
-  } catch {
-    return mapa;
+    if (!res.ok) return { valores: mapa, erros, motivo: `SAP respondeu ${res.status}.` };
+  } catch (e) {
+    return { valores: mapa, erros, motivo: `Falha de conexão com o SAP: ${(e as Error).message}` };
   } finally {
     clearTimeout(timer);
   }
@@ -163,9 +179,18 @@ export async function simularPrecosSap(
   try {
     doc = parser.parse(xml);
   } catch {
-    return mapa;
+    return { valores: mapa, erros, motivo: "Resposta do SAP em formato inesperado." };
   }
-  if (achar(doc, "Fault")) return mapa;
+  if (achar(doc, "Fault")) return { valores: mapa, erros, motivo: "SAP devolveu SOAP Fault." };
+
+  // Mensagens de negócio (ex.: CNPJ sem parceiro cadastrado no SAP).
+  let msgs = achar(doc, "E_T_MSG")?.item ?? [];
+  if (!Array.isArray(msgs)) msgs = msgs ? [msgs] : [];
+  for (const m of msgs as any[]) {
+    const tipo = String(m?.TYPE ?? "").trim().toUpperCase();
+    const texto = String(m?.MESSAGE ?? "").trim();
+    if (texto && (tipo === "E" || tipo === "A" || tipo === "X")) erros.push(texto);
+  }
 
   let linhas = achar(doc, "E_T_VALORES")?.item ?? achar(doc, "e_t_valores")?.item ?? [];
   if (!Array.isArray(linhas)) linhas = linhas ? [linhas] : [];
@@ -195,5 +220,14 @@ export async function simularPrecosSap(
     });
   }
 
-  return mapa;
+  return { valores: mapa, erros, motivo: null };
 }
+
+/** Compatibilidade: apenas os valores, sem diagnóstico. */
+export async function simularPrecosSap(
+  itens: SimulacaoItem[],
+  opts?: SimulacaoOpts,
+): Promise<Map<string, SimulacaoValores>> {
+  return (await simularSap(itens, opts)).valores;
+}
+
