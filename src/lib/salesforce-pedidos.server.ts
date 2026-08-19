@@ -256,3 +256,59 @@ export async function sincronizarPedidoSalesforce(
     return { enviado: true, ok: false, opportunityId: null, accountId: null, mensagem };
   }
 }
+
+/**
+ * Sincronização "best effort" usada no salvamento da proposta: nunca lança e
+ * nunca trava a gravação — o erro fica no `integration_logs` e nos campos
+ * `sf_status`/`sf_mensagem` da proposta para reenvio manual.
+ */
+export async function sincronizarPedidoSalesforceSeguro(
+  propostaId: string,
+): Promise<SalesforcePedidoResultado> {
+  try {
+    return await sincronizarPedidoSalesforce(propostaId);
+  } catch (e) {
+    return {
+      enviado: false,
+      ok: false,
+      opportunityId: null,
+      accountId: null,
+      mensagem: (e as Error).message.slice(0, 500),
+    };
+  }
+}
+
+export type SalesforceLoteResultado = {
+  total: number;
+  sincronizados: number;
+  falhas: number;
+  detalhes: { id: string; numero: string | null; ok: boolean; mensagem: string | null }[];
+};
+
+/**
+ * Backfill: envia/atualiza no Salesforce todas as propostas já existentes.
+ * Sequencial para não estourar os limites da API do Salesforce.
+ */
+export async function sincronizarPropostasSalesforceLote(
+  opts: { organizacao?: string; somentePendentes?: boolean; limite?: number } = {},
+): Promise<SalesforceLoteResultado> {
+  const linhas = await db.listarPropostas({
+    ...(opts.organizacao ? { organizacao: opts.organizacao } : {}),
+    select: "id, numero, sf_opp_id, sf_status",
+    limit: opts.limite ?? 2000,
+  });
+  const alvo = opts.somentePendentes
+    ? linhas.filter((r) => !so((r as any)["sf_opp_id"]) || so((r as any)["sf_status"]) === "erro")
+    : linhas;
+
+  const detalhes: SalesforceLoteResultado["detalhes"] = [];
+  let sincronizados = 0;
+  for (const row of alvo) {
+    const id = so((row as any)["id"]);
+    if (!id) continue;
+    const r = await sincronizarPedidoSalesforceSeguro(id);
+    if (r.ok) sincronizados += 1;
+    detalhes.push({ id, numero: so((row as any)["numero"]) || null, ok: r.ok, mensagem: r.mensagem });
+  }
+  return { total: alvo.length, sincronizados, falhas: alvo.length - sincronizados, detalhes };
+}
