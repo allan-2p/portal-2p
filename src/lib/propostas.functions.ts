@@ -875,7 +875,14 @@ export const criarOrdemVendaSapFn = createServerFn({ method: "POST" })
           forcar: data.forcar,
         });
         if (!r.ok && r.enviado) throw new Error(r.mensagem ?? "Falha ao criar a ordem de venda no SAP.");
-        return { ...r } as Record<string, unknown>;
+        return {
+          enviado: r.enviado,
+          ok: r.ok,
+          vbeln: r.vbeln,
+          mensagem: r.mensagem,
+          motivo: r.motivo ?? null,
+          testrun: r.testrun,
+        };
       },
     );
     if (!run.ok) throw new Error(run.error);
