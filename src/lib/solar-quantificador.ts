@@ -303,11 +303,12 @@ export function quantificarProjeto(
   // Terminais de microinversor são calculados UMA vez no projeto. php:!isset(qtd)
   const feito = { terminal_m8: false, terminal_zmi: false };
 
-  for (const f of fileiras) {
+  fileiras.forEach((f, idx) => {
     for (let k = 0; k < f.qtd_fileiras; k++) distribuicao.push(f.qtd_paineis);
     comprimentos.push(calcularNt(f, modulo));
 
-    for (const c of quantificarFileira(f, modulo, ctxFinal, cfg)) {
+    for (const c of quantificarFileira(f, modulo, ctxFinal, cfg, idx === 0)) {
+
       if (c.chave === "terminal_m8" || c.chave === "terminal_zmi") {
         if (feito[c.chave]) continue;
         feito[c.chave] = true;
