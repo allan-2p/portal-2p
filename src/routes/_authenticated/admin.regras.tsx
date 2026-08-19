@@ -236,6 +236,10 @@ function Calculadora2P() {
           {campo("cod_grampo_final", "Código — grampo final")}
           {campo("cod_terminal_aterramento", "Código — terminal de aterramento")}
           {campo("cod_juncao", "Código — junção de trilho")}
+          {campo("cod_kit_parafuso_smart", "Código — kit parafuso Smart")}
+          {campo("cod_terminal_m8", "Código — terminal M8")}
+          {campo("cod_terminal_zmi", "Código — terminal ZMI")}
+
         </div>
         <Button onClick={() => void salvar()} disabled={salvando}>
           {salvando ? "Salvando…" : "Salvar parâmetros"}
