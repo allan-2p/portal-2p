@@ -28,9 +28,34 @@ function apiBase(escopo: "boleto" | "pix"): string {
   return env("ITAU_API_BASE") ?? "https://secure.api.itau";
 }
 
-/** Normaliza PEM colado em uma linha só (\n escapado). */
-function pem(value: string): string {
-  return value.includes("\\n") ? value.replace(/\\n/g, "\n") : value;
+/**
+ * Normaliza o PEM salvo no segredo. Aceita:
+ *  - PEM normal;
+ *  - PEM colado em uma linha só (\n escapado) ou entre aspas;
+ *  - PEM inteiro codificado em base64 (formato comum ao exportar arquivos).
+ * Sem isso o OpenSSL falha com ERR_OSSL_PEM_NO_START_LINE.
+ */
+function pem(value: string, nome: string): string {
+  let v = value.trim().replace(/^['"]|['"]$/g, "");
+  if (v.includes("\\n")) v = v.replace(/\\n/g, "\n");
+  v = v.replace(/\r\n/g, "\n");
+
+  if (!v.includes("-----BEGIN")) {
+    try {
+      const decoded = Buffer.from(v.replace(/\s+/g, ""), "base64").toString("utf8");
+      if (decoded.includes("-----BEGIN")) v = decoded.replace(/\r\n/g, "\n");
+    } catch {
+      /* ignora: cai no erro abaixo */
+    }
+  }
+
+  if (!v.includes("-----BEGIN")) {
+    throw new ItauIndisponivel(
+      `${nome} não está em formato PEM (falta a linha "-----BEGIN ...-----"). ` +
+        "Salve o conteúdo do arquivo .pem/.key (ou o mesmo conteúdo em base64).",
+    );
+  }
+  return v.endsWith("\n") ? v : `${v}\n`;
 }
 
 let dispatcherPromise: Promise<unknown> | null = null;
