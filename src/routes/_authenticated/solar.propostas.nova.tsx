@@ -64,6 +64,7 @@ import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn } from "@/lib/propostas.functions";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
+import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
 import { resolverProduto } from "@/lib/solar-sku";
 import { pltypDaTabela } from "@/lib/sap-clientes-map";
 import { buildSolarPropostaPdfHtml, solarPropostaPdfFileName } from "@/lib/solar-proposta-pdf";
@@ -749,6 +750,31 @@ function NovaPropostaSolarPage() {
     toast.info(`Tabela ${t}: valores recalculados.`);
   }
 
+  /** Nova tentativa de precificação a partir do diagnóstico do bloqueio. */
+  async function recalcularPrecos() {
+    if (trocando || !itens.length) return;
+    setTrocando(true);
+    await atualizarPrecos(itens, listaPreco);
+    setTrocando(false);
+  }
+
+  /** Explicação do bloqueio da etapa 3 (causa provável + ações sugeridas). */
+  const diagnosticoBloqueio = useMemo(() => {
+    const semPreco = itens.filter((i) => !(i.valor > 0)).map(
+      (i) =>
+        i.avulso?.descricao ||
+        produtos.find((p) => p.id === i.produtoId)?.descricao ||
+        i.avulso?.codigo ||
+        "item",
+    );
+    return diagnosticarBloqueio({
+      mensagensSap: avisosPreco,
+      itensSemPreco: semPreco,
+      documento: String(cliente?.['doc'] ?? clienteDoc ?? ""),
+      tabelaPreco: listaPreco,
+    });
+  }, [itens, avisosPreco, cliente, clienteDoc, listaPreco, produtos]);
+
   async function trocarModo(m: "calculadora" | "lista") {
     if (m === modo || trocando) return;
     setTrocando(true);
@@ -1290,6 +1316,16 @@ function NovaPropostaSolarPage() {
                 </div>
               </div>
             )}
+
+            {diagnosticoBloqueio && (
+              <BloqueioPrecificacaoAlert
+                diagnostico={diagnosticoBloqueio}
+                onRecalcular={() => void recalcularPrecos()}
+                recalculando={trocando}
+              />
+            )}
+
+
 
             <div className="glass rounded-2xl p-5 space-y-4">
               <div className="grid gap-4 lg:grid-cols-2">
