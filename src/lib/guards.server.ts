@@ -43,14 +43,26 @@ type Resolved = {
 
 /** Resolve tudo que o usuário pode, a partir dos perfis vinculados. */
 export async function resolveAccess(ctx: GuardContext): Promise<Resolved> {
-  const [admin, { data: links }, { data: userInst }] = await Promise.all([
+  const [admin, { data: links }, { data: userInst }, { data: extras }] = await Promise.all([
     isAdmin(ctx),
     ctx.supabase.from("user_permission_profiles").select("profile_id").eq("user_id", ctx.userId),
     ctx.supabase.from("user_instance_access").select("instance_id").eq("user_id", ctx.userId),
+    ctx.supabase
+      .from("user_extra_features")
+      .select("instance_id, feature_key")
+      .eq("user_id", ctx.userId),
   ]);
 
   const instances = new Set<string>((userInst ?? []).map((r: any) => r.instance_id as string));
   const features = new Set<string>();
+  // Permissões extras concedidas direto no cadastro do usuário.
+  for (const r of extras ?? []) {
+    const inst = (r as any).instance_id as string;
+    const key = (r as any).feature_key as FeatureKey;
+    instances.add(inst);
+    features.add(`${inst}::${key}`);
+    for (const sub of featuresForAreaAccessKey(key)) features.add(`${inst}::${sub}`);
+  }
   const ids = (links ?? []).map((r: any) => r.profile_id as string);
   if (!ids.length) return { admin, fullAccess: false, instances, features };
 

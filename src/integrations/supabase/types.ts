@@ -2560,6 +2560,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_extra_features: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          feature_key: string
+          instance_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          feature_key: string
+          instance_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          feature_key?: string
+          instance_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_extra_features_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_instance_access: {
         Row: {
           granted_at: string

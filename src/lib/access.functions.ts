@@ -43,6 +43,31 @@ async function profileGrantsFor(client: any, userId: string) {
   };
 }
 
+/** Permissões extras concedidas direto no cadastro do usuário (fora do perfil). */
+async function extraGrantsFor(client: any, userId: string) {
+  const { data } = await client
+    .from("user_extra_features")
+    .select("instance_id, feature_key")
+    .eq("user_id", userId);
+  return (data ?? []).map((r: any) => ({
+    instance_id: r.instance_id as string,
+    feature_key: r.feature_key as string,
+  }));
+}
+
+/** Soma perfis + permissões extras (extras também liberam a unidade). */
+function withExtras(
+  fromProfiles: ProfileGrants,
+  extras: { instance_id: string; feature_key: string }[],
+): ProfileGrants {
+  if (!extras.length) return fromProfiles;
+  return {
+    ...fromProfiles,
+    features: [...fromProfiles.features, ...extras],
+    instances: [...new Set([...fromProfiles.instances, ...extras.map((e) => e.instance_id)])],
+  };
+}
+
 type ProfileGrants = {
   features: { instance_id: string; feature_key: string }[];
   instances: string[];
@@ -95,7 +120,10 @@ export const getMyAccess = createServerFn({ method: "GET" })
         .eq("user_id", context.userId),
       context.supabase.rpc("is_admin"),
     ]);
-    const fromProfiles = await profileGrantsFor(context.supabase, context.userId);
+    const fromProfiles = withExtras(
+      await profileGrantsFor(context.supabase, context.userId),
+      await extraGrantsFor(context.supabase, context.userId),
+    );
     const merged = mergeAccess(
       (inst ?? []).map((r: any) => r.instance_id as string),
       fromProfiles,
@@ -124,13 +152,14 @@ export const adminListAccessMatrix = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<{ users: AdminUserRow[] }> => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [{ data: profiles }, { data: instRows }, { data: linkRows }, { data: profFeatRows }, { data: roleRows }] =
+    const [{ data: profiles }, { data: instRows }, { data: linkRows }, { data: profFeatRows }, { data: roleRows }, { data: extraRows }] =
       await Promise.all([
         supabaseAdmin.from("profiles").select("id, email, full_name").order("full_name"),
         supabaseAdmin.from("user_instance_access").select("user_id, instance_id"),
         supabaseAdmin.from("user_permission_profiles").select("user_id, profile_id"),
         supabaseAdmin.from("permission_profile_features").select("profile_id, instance_id, feature_key"),
         supabaseAdmin.from("user_roles").select("user_id, role"),
+        supabaseAdmin.from("user_extra_features").select("user_id, instance_id, feature_key"),
       ]);
     const adminSet = new Set(
       (roleRows ?? []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id),
@@ -160,6 +189,19 @@ export const adminListAccessMatrix = createServerFn({ method: "GET" })
         arr.push(f);
       }
       grantByUser.set(uid, arr);
+    }
+    // Permissões extras concedidas no cadastro do usuário.
+    for (const r of extraRows ?? []) {
+      const uid = (r as any).user_id as string;
+      const arr = grantByUser.get(uid) ?? [];
+      const k = `${(r as any).instance_id}::${(r as any).feature_key}`;
+      if (!arr.some((g) => `${g.instance_id}::${g.feature_key}` === k)) {
+        arr.push({ instance_id: (r as any).instance_id, feature_key: (r as any).feature_key });
+      }
+      grantByUser.set(uid, arr);
+      const insts = instByUser.get(uid) ?? [];
+      if (!insts.includes((r as any).instance_id)) insts.push((r as any).instance_id);
+      instByUser.set(uid, insts);
     }
     const users: AdminUserRow[] = (profiles ?? []).map((p: any) => ({
       id: p.id,
@@ -216,7 +258,10 @@ export const adminGetUserAccess = createServerFn({ method: "GET" })
       supabaseAdmin.from("user_instance_access").select("instance_id").eq("user_id", data.user_id),
       supabaseAdmin.from("user_roles").select("role").eq("user_id", data.user_id),
     ]);
-    const fromProfiles = await profileGrantsFor(supabaseAdmin, data.user_id);
+    const fromProfiles = withExtras(
+      await profileGrantsFor(supabaseAdmin, data.user_id),
+      await extraGrantsFor(supabaseAdmin, data.user_id),
+    );
     const merged = mergeAccess(
       (inst ?? []).map((r: any) => r.instance_id as string),
       fromProfiles,
@@ -270,4 +315,58 @@ export const adminImpersonateUser = createServerFn({ method: "POST" })
     });
 
     return { email: target.email, token_hash };
+  });
+
+// ---- Admin: permissões extras por usuário (fora do perfil) ---- //
+
+const ExtraFeature = z.object({
+  instance_id: z.enum(["solar", "carregadores", "marketing"]),
+  feature_key: z.string().min(1),
+});
+
+export const adminGetUserExtraFeatures = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<{ features: { instance_id: string; feature_key: string }[] }> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("user_extra_features")
+      .select("instance_id, feature_key")
+      .eq("user_id", data.user_id);
+    if (error) throw new Error(error.message);
+    return {
+      features: (rows ?? []).map((r: any) => ({
+        instance_id: r.instance_id as string,
+        feature_key: r.feature_key as string,
+      })),
+    };
+  });
+
+export const adminSetUserExtraFeatures = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ user_id: z.string().uuid(), features: z.array(ExtraFeature).max(500) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: delErr } = await supabaseAdmin
+      .from("user_extra_features")
+      .delete()
+      .eq("user_id", data.user_id);
+    if (delErr) throw new Error(delErr.message);
+    if (data.features.length) {
+      const rows = data.features.map((f) => ({
+        user_id: data.user_id,
+        instance_id: f.instance_id,
+        feature_key: f.feature_key,
+        created_by: context.userId,
+      }));
+      const { error } = await supabaseAdmin
+        .from("user_extra_features")
+        .upsert(rows, { onConflict: "user_id,instance_id,feature_key" });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
   });

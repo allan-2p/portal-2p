@@ -30,7 +30,8 @@ import { toast } from "sonner";
 import {
   Loader2, UserPlus, Shield, Camera, Cloud, Pencil, Stethoscope, LogIn,
 } from "lucide-react";
-import { adminImpersonateUser } from "@/lib/access.functions";
+import { adminImpersonateUser, adminSetUserExtraFeatures } from "@/lib/access.functions";
+import { UserExtraPermissions, type ExtraFeature } from "@/components/admin/user-extra-permissions";
 import { UserDetailSheet } from "@/components/user-detail-sheet";
 import { uploadAvatar } from "@/lib/avatar";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
@@ -905,6 +906,8 @@ function EditUserModal({
 }) {
   const listProfilesFn = useServerFn(adminListPermissionProfiles);
   const setUserProfilesFn = useServerFn(adminSetUserProfiles);
+  const setExtraFeaturesFn = useServerFn(adminSetUserExtraFeatures);
+  const [extraFeatures, setExtraFeatures] = useState<ExtraFeature[]>([]);
   const [permProfiles, setPermProfiles] = useState<{ id: string; name: string }[]>([]);
   const [profileId, setProfileId] = useState<string>("");
   const [profilesLoading, setProfilesLoading] = useState(true);
@@ -958,6 +961,15 @@ function EditUserModal({
           setSubmitting(true);
           try {
             await setUserProfilesFn({ data: { user_id: row.id, profile_ids: [profileId] } });
+            await setExtraFeaturesFn({
+              data: {
+                user_id: row.id,
+                features: extraFeatures.map((f) => ({
+                  instance_id: f.instance_id as "solar" | "carregadores" | "marketing",
+                  feature_key: f.feature_key,
+                })),
+              },
+            });
             await onSubmit({
               email: form.email,
               full_name: form.full_name,
@@ -1069,6 +1081,8 @@ function EditUserModal({
             </>
           )}
         </div>
+
+        <UserExtraPermissions userId={row.id} value={extraFeatures} onChange={setExtraFeatures} />
 
         <div className="flex items-center gap-6 pt-1">
           <label className="flex items-center gap-2 text-sm">
