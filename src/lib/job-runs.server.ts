@@ -19,6 +19,11 @@ export const JOBS = {
     descricao: "Envia o pedido concluído ao SAP (ZNFE_OV_CRIAR) e grava o nº da ordem.",
     reprocessavel: true,
   },
+  "salesforce.pedido": {
+    label: "Salesforce • Enviar pedido",
+    descricao: "Cria/atualiza a oportunidade do pedido no Salesforce.",
+    reprocessavel: true,
+  },
   "cron.sap-nfs": {
     label: "Cron • Notas fiscais (SAP)",
     descricao: "Consulta o SAP e move Processando → Separação → Faturado.",
