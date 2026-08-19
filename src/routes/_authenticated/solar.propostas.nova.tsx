@@ -1666,7 +1666,7 @@ function NovaPropostaSolarPage() {
                                   className="h-9 w-24"
                                   value={l.distMax}
                                   disabled={semVao(l)}
-                                  placeholder={semVao(l) ? "—" : "auto"}
+                                  placeholder={semVao(l) ? "—" : padroesLinha(l).dist}
                                   onChange={(e) =>
                                     setLinhas((p) =>
                                       p.map((x) =>
@@ -1677,13 +1677,26 @@ function NovaPropostaSolarPage() {
                                     )
                                   }
                                 />
+                                {!semVao(l) && (
+                                  <button
+                                    type="button"
+                                    className="mt-1 block text-[11px] text-muted-foreground hover:text-foreground hover:underline"
+                                    onClick={() =>
+                                      setLinhas((p) =>
+                                        p.map((x) => (x.key === l.key ? { ...x, distMax: padroesLinha(l).dist } : x)),
+                                      )
+                                    }
+                                  >
+                                    padrão {padroesLinha(l).dist.replace(".", ",")} m
+                                  </button>
+                                )}
                               </td>
                               <td className="py-2 px-2">
                                 <Input
                                   className="h-9 w-24"
                                   value={l.balanco}
                                   disabled={semVao(l)}
-                                  placeholder={semVao(l) ? "—" : "auto"}
+                                  placeholder={semVao(l) ? "—" : padroesLinha(l).balanco}
                                   onChange={(e) =>
                                     setLinhas((p) =>
                                       p.map((x) =>
@@ -1694,7 +1707,23 @@ function NovaPropostaSolarPage() {
                                     )
                                   }
                                 />
+                                {!semVao(l) && (
+                                  <button
+                                    type="button"
+                                    className="mt-1 block text-[11px] text-muted-foreground hover:text-foreground hover:underline"
+                                    onClick={() =>
+                                      setLinhas((p) =>
+                                        p.map((x) =>
+                                          x.key === l.key ? { ...x, balanco: padroesLinha(l).balanco } : x,
+                                        ),
+                                      )
+                                    }
+                                  >
+                                    padrão {padroesLinha(l).balanco.replace(".", ",")} m
+                                  </button>
+                                )}
                               </td>
+
 
                               <td className="py-2 pl-2 text-right">
                                 <Button
