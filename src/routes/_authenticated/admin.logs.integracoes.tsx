@@ -4,6 +4,7 @@ import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ExportLogsButton } from "@/components/admin/export-logs-button";
 import { IntegrationLogsPanel } from "@/components/integration-logs";
 import { ClientesIntegracaoStatus } from "@/components/admin/clientes-integracao-status";
+import { SincronizarPropostasSalesforce } from "@/components/admin/sincronizar-propostas-salesforce";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/admin/logs/integracoes")({
@@ -52,7 +53,8 @@ function LogIntegracoesPage() {
               <TabsTrigger value="cadastros">Status por cliente</TabsTrigger>
               <TabsTrigger value="logs">Histórico de logs</TabsTrigger>
             </TabsList>
-            <TabsContent value="cadastros" className="mt-4">
+            <TabsContent value="cadastros" className="mt-4 space-y-4">
+              <SincronizarPropostasSalesforce />
               <ClientesIntegracaoStatus />
             </TabsContent>
             <TabsContent value="logs" className="mt-4">

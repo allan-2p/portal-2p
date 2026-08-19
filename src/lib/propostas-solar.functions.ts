@@ -114,6 +114,16 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   };
 }
 
+/** Espelha a proposta no Salesforce ao salvar. Nunca lança. */
+async function espelharNoSalesforce(propostaId: string) {
+  try {
+    const { sincronizarPedidoSalesforceSeguro } = await import("./salesforce-pedidos.server");
+    await sincronizarPedidoSalesforceSeguro(propostaId);
+  } catch {
+    /* falha fica registrada no log de integrações */
+  }
+}
+
 export const salvarPropostaSolar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validar)
@@ -254,6 +264,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
 
     if (data.propostaId) {
       await repo.atualizarProposta(data.propostaId, payload);
+      await espelharNoSalesforce(data.propostaId);
       return { id: data.propostaId, numero: numeroProposta, totais };
     }
 
@@ -281,6 +292,8 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       consultor_id: consultorId,
       consultor_nome: consultorNome,
     })) as { id: string };
+
+    await espelharNoSalesforce(inserida.id);
 
     return { id: inserida.id, numero: numeroProposta, totais };
   });

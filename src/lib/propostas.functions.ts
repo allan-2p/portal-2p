@@ -183,6 +183,46 @@ function validar(input: any): SalvarPropostaInput {
  * os valores persistidos — ela só envia cliente, itens e frete. Regras de
  * política (MB mínima e CMV máximo) são revalidadas aqui.
  */
+/**
+ * Espelha a proposta no Salesforce sempre que ela é salva/atualizada.
+ * Nunca lança: uma falha de integração não pode perder a gravação.
+ */
+async function sincronizarSalesforceAoSalvar(propostaId: string) {
+  try {
+    const { sincronizarPedidoSalesforceSeguro } = await import("@/lib/salesforce-pedidos.server");
+    await sincronizarPedidoSalesforceSeguro(propostaId);
+  } catch {
+    /* registrado no integration_logs pela própria integração */
+  }
+}
+
+/** Backfill: sincroniza no Salesforce as propostas já existentes (admin). */
+export const sincronizarPropostasSalesforceLoteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { organizacao?: unknown; somentePendentes?: unknown };
+    return {
+      organizacao: typeof i.organizacao === "string" ? i.organizacao : undefined,
+      somentePendentes: Boolean(i.somentePendentes),
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    const { data: admin } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!admin) throw new Error("Apenas o administrador pode sincronizar em lote.");
+
+    const { sincronizarPropostasSalesforceLote } = await import("@/lib/salesforce-pedidos.server");
+    return await sincronizarPropostasSalesforceLote({
+      ...(data.organizacao ? { organizacao: data.organizacao } : {}),
+      somentePendentes: data.somentePendentes,
+    });
+  });
+
 export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(validar)
@@ -425,6 +465,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       if (!(atual as any)?.criado_por_nome) patch["criado_por_nome"] = nomeAtual;
 
       await db.atualizarProposta(data.propostaId, patch);
+      await sincronizarSalesforceAoSalvar(data.propostaId);
       return {
         id: data.propostaId,
         numero: numeroProposta,
@@ -463,6 +504,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       }
       throw err;
     }
+    await sincronizarSalesforceAoSalvar(inserida!.id);
     return {
       id: inserida!.id,
       numero: numeroProposta,
@@ -571,6 +613,7 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
     }
 
     await db.atualizarProposta(data.id, { status: "Cancelado" });
+    await sincronizarSalesforceAoSalvar(data.id);
     return { ok: true };
   });
 
