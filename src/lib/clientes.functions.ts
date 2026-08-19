@@ -395,7 +395,7 @@ export const revalidarCnpjClienteFn = createServerFn({ method: "POST" })
         doc,
         fontes: [] as string[],
         avisos: ["Cadastro sem CNPJ válido — revalidação disponível apenas para CNPJ."],
-        alteracoes: [] as Array<{ campo: string; de: unknown; para: unknown }>,
+        alteracoes: [] as Array<{ campo: string; de: string; para: string }>,
         aplicado: false as const,
       };
     }
@@ -434,13 +434,13 @@ export const revalidarCnpjClienteFn = createServerFn({ method: "POST" })
     const alteracoes = Object.entries(novos)
       .filter(([, v]) => norm(v) !== "")
       .filter(([campo, v]) => norm((cliente as any)?.[campo]) !== norm(v))
-      .map(([campo, v]) => ({ campo, de: (cliente as any)?.[campo] ?? null, para: v }));
+      .map(([campo, v]) => ({ campo, de: norm((cliente as any)?.[campo]), para: norm(v), valor: v }));
 
     let aplicado = false;
     if (data.aplicar && alteracoes.length > 0 && e.fontes.length > 0) {
       const db = await import("./clientes-db.server");
       const patch: Record<string, unknown> = {};
-      for (const a of alteracoes) patch[a.campo] = a.para;
+      for (const a of alteracoes) patch[a.campo] = a.valor;
       await db.updateCliente(data.instancia, data.id, patch);
       aplicado = true;
     }
@@ -460,7 +460,7 @@ export const revalidarCnpjClienteFn = createServerFn({ method: "POST" })
         doc,
         fontes: e.fontes,
         avisos: e.avisos,
-        alteracoes,
+        alteracoes: alteracoes.map(({ campo, de, para }) => ({ campo, de, para })),
         aplicado,
       },
     });
@@ -470,7 +470,7 @@ export const revalidarCnpjClienteFn = createServerFn({ method: "POST" })
       doc,
       fontes: e.fontes,
       avisos: e.avisos,
-      alteracoes,
+      alteracoes: alteracoes.map(({ campo, de, para }) => ({ campo, de, para })),
       aplicado,
     };
   });
