@@ -143,18 +143,40 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     for (const p of produtos) sugeridos[normCod(p.codigo)] = Number(p.preco_sugerido ?? 0);
 
     const { precosSolar } = await import("./solar-precos.server");
-    const { precos, avisos } = await precosSolar(
+    const { auditarBloqueio } = await import("./proposta-auditoria.server");
+    const auditCtx = {
+      propostaId: data.propostaId ?? null,
+      doc: data.cliente.doc.replace(/\D/g, ""),
+      clienteNome: data.cliente.nome ?? null,
+      unidade: "solar" as const,
+      actorId: userId,
+      actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
+    };
+
+    const { precos, avisos, fallback } = await precosSolar(
       data.itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId)!;
         return { codigo: String(p.codigo), quantidade: i.qtd };
       }),
-      { documento: data.cliente.doc.replace(/\D/g, ""), listaPreco: data.listaPreco, sugeridos },
+      {
+        documento: data.cliente.doc.replace(/\D/g, ""),
+        listaPreco: data.listaPreco,
+        sugeridos,
+        auditoria: { ...auditCtx, etapa: "salvar" },
+      },
     );
 
     // O SAP recusou a precificação (ex.: CNPJ sem parceiro cadastrado). Nunca
     // gravar a proposta com valores zerados — o erro precisa aparecer.
-    if (avisos.length)
-      throw new Error(`SAP não precificou os itens: ${avisos.join(" • ")}`);
+    if (avisos.length) {
+      const motivo = `SAP não precificou os itens: ${avisos.join(" • ")}`;
+      await auditarBloqueio(auditCtx, {
+        etapa: "salvar",
+        motivo,
+        dados: { avisos, precos, fallback, lista_preco: data.listaPreco },
+      });
+      throw new Error(motivo);
+    }
 
     const itens = data.itens.map((i) => {
       const p = produtos.find((x) => x.id === i.produtoId)!;
@@ -172,10 +194,16 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     });
 
     const semPreco = itens.filter((i) => !(i.valor > 0)).map((i) => i.nome || i.codigo);
-    if (semPreco.length)
-      throw new Error(
-        `Sem preço no SAP nem preço sugerido no catálogo para: ${semPreco.slice(0, 8).join(", ")}.`,
-      );
+    if (semPreco.length) {
+      const motivo = `Sem preço no SAP nem preço sugerido no catálogo para: ${semPreco.slice(0, 8).join(", ")}.`;
+      await auditarBloqueio(auditCtx, {
+        etapa: "salvar",
+        motivo,
+        dados: { sem_preco: semPreco, precos, fallback, sugeridos },
+      });
+      throw new Error(motivo);
+    }
+
 
 
     const subtotal = money2(itens.reduce((s, i) => s + i.total, 0));
