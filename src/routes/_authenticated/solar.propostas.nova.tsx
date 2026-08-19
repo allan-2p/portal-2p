@@ -18,23 +18,29 @@ import { WizardActionBar } from "@/components/wizard-action-bar";
 import { FreteCotacao } from "@/components/frete-cotacao";
 import { toast } from "sonner";
 import {
+  Building2,
   Calculator,
   Check,
+  FileText,
   ListPlus,
   Loader2,
   Minus,
   Plus,
   Save,
+  Sparkles,
   Sun,
   Tag,
   Trash2,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { fmtBRL, type CarregadoresTransportadora } from "@/lib/carregadores";
-import { listClientesFn } from "@/lib/clientes.functions";
+import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn } from "@/lib/propostas.functions";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
+import { buildSolarPropostaPdfHtml, solarPropostaPdfFileName } from "@/lib/solar-proposta-pdf";
 import {
   useSolarCalcConfig,
   useSolarCupons,
@@ -108,7 +114,9 @@ function NovaPropostaSolarPage() {
   // Etapa 2
   const [tipoNf, setTipoNf] = useState("venda");
   const [faturarClienteFinal, setFaturarClienteFinal] = useState(false);
+  const [fatTipoDoc, setFatTipoDoc] = useState<"cnpj" | "cpf">("cnpj");
   const [fat, setFat] = useState<Record<string, string>>({});
+  const [enriquecendo, setEnriquecendo] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<string>("");
 
   // Etapa 3
@@ -116,7 +124,10 @@ function NovaPropostaSolarPage() {
   const [listaPreco, setListaPreco] = useState("01");
   const [itens, setItens] = useState<Item[]>([]);
   const [calculando, setCalculando] = useState(false);
+  const [trocando, setTrocando] = useState(false);
   const [resultado, setResultado] = useState<CalcResultado | null>(null);
+
+
 
   // calculadora
   const [geradorId, setGeradorId] = useState("");
@@ -149,6 +160,8 @@ function NovaPropostaSolarPage() {
   const cuponsQ = useSolarCupons();
   const precos = useServerFn(precosSolarFn);
   const salvar = useServerFn(salvarPropostaSolar);
+  const enriquecer = useServerFn(enriquecerCnpjFn);
+
 
   const produtos = produtosQ.data ?? [];
   const config = cfgQ.data ?? SOLAR_CALC_CONFIG_FALLBACK;
@@ -295,11 +308,57 @@ function NovaPropostaSolarPage() {
     }
   }
 
-  function trocarTabela(t: string) {
+  async function trocarTabela(t: string) {
+    if (t === listaPreco) return;
     setListaPreco(t);
-    void atualizarPrecos(itens, t);
     setTransportadora(null);
+    setTrocando(true);
+    await atualizarPrecos(itens, t);
+    setTrocando(false);
     toast.info(`Tabela ${t}: valores recalculados.`);
+  }
+
+  async function trocarModo(m: "calculadora" | "lista") {
+    if (m === modo || trocando) return;
+    setTrocando(true);
+    setModo(m);
+    await new Promise((r) => setTimeout(r, 420));
+    setTrocando(false);
+  }
+
+  /** Faturamento direto ao cliente final: busca dados do CNPJ (Serpro/CNPJá). */
+  async function enriquecerFaturamento() {
+    const doc = String(fat['doc'] ?? "").replace(/\D/g, "");
+    if (fatTipoDoc !== "cnpj" || doc.length !== 14) {
+      toast.error("Informe um CNPJ válido (14 dígitos).");
+      return;
+    }
+    setEnriquecendo(true);
+    try {
+      const e = await enriquecer({ data: { cnpj: doc } });
+      if (!e) {
+        toast.warning("Não encontramos dados públicos — preencha manualmente.");
+        return;
+      }
+      setFat((p) => ({
+        ...p,
+        nome: e.razao_social ?? p['nome'] ?? "",
+        ie: e.ie ?? p['ie'] ?? "",
+        cep: e.cep ?? p['cep'] ?? "",
+        logradouro: e.logradouro ?? p['logradouro'] ?? "",
+        numero: e.numero ?? p['numero'] ?? "",
+        complemento: e.complemento ?? p['complemento'] ?? "",
+        bairro: e.bairro ?? p['bairro'] ?? "",
+        cidade: e.cidade ?? p['cidade'] ?? "",
+        uf: e.uf ?? p['uf'] ?? "",
+        telefone: e.telefone ?? p['telefone'] ?? "",
+      }));
+      toast.success("Dados do CNPJ preenchidos. Você ainda pode editá-los.");
+    } catch (err) {
+      toast.error((err as Error).message || "Não foi possível consultar o CNPJ.");
+    } finally {
+      setEnriquecendo(false);
+    }
   }
 
   // ------------------------------------------------------------------
@@ -309,10 +368,11 @@ function NovaPropostaSolarPage() {
     () => money2(itens.reduce((s, i) => s + i.valor * i.qtd, 0)),
     [itens],
   );
-  const cupom = useMemo(
-    () => (cuponsQ.data ?? []).find((c) => c.codigo === cupomCodigo && c.ativo) ?? null,
-    [cuponsQ.data, cupomCodigo],
-  );
+  const cupom = useMemo(() => {
+    const alvo = cupomCodigo.trim().toUpperCase();
+    if (!alvo) return null;
+    return (cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo && c.ativo) ?? null;
+  }, [cuponsQ.data, cupomCodigo]);
   const desconto = useMemo(() => {
     if (!cupom) return 0;
     let d = 0;
@@ -417,6 +477,73 @@ function NovaPropostaSolarPage() {
     cep: entregaDiferente ? String(entrega['cep'] ?? "") : String(cliente?.['cep'] ?? ""),
   };
 
+  /** Proposta em PDF (janela de impressão do navegador). */
+  function abrirPdf() {
+    if (!itens.length) return toast.error("Adicione produtos antes de gerar o PDF.");
+    const linhasEnd = (o: Record<string, any>) =>
+      [
+        [o['logradouro'], o['numero']].filter(Boolean).join(", "),
+        [o['complemento'], o['bairro']].filter(Boolean).join(" · "),
+        [[o['cidade'], o['uf']].filter(Boolean).join("/"), o['cep']].filter(Boolean).join(" — "),
+      ].filter((l) => String(l ?? "").trim());
+
+    const faturamentoBase = faturarClienteFinal ? fat : (cliente ?? {});
+    const dados = {
+      numero,
+      propostaNome,
+      cliente: {
+        nome: String(cliente?.['razao_social'] ?? "—"),
+        doc: String(cliente?.['doc'] ?? ""),
+        ie: String(cliente?.['ie'] ?? ""),
+        email: String(cliente?.['email'] ?? ""),
+        telefone: String(cliente?.['telefone'] ?? ""),
+        uf: String(cliente?.['uf'] ?? ""),
+        cidade: String(cliente?.['cidade'] ?? ""),
+      },
+      consultor: String(cliente?.['created_by_nome'] ?? ""),
+      itens: itens.map((i) => {
+        const p = produtos.find((x) => x.id === i.produtoId);
+        return { codigo: p?.codigo ?? null, nome: p?.descricao ?? "Item", qtd: i.qtd, valor: i.valor };
+      }),
+      subtotal,
+      desconto,
+      cupom: cupomCodigo || null,
+      freteMod,
+      freteValor,
+      freteGratis,
+      transportadora: transportadora?.nome ?? null,
+      total,
+      listaPreco,
+      tipoNf,
+      formaPagamento: formaPagamento || null,
+      observacoes,
+      enderecoFaturamento: {
+        nome: String(faturamentoBase['nome'] ?? faturamentoBase['razao_social'] ?? cliente?.['razao_social'] ?? ""),
+        doc: String(faturamentoBase['doc'] ?? ""),
+        linhas: linhasEnd(faturamentoBase),
+      },
+      enderecoEntrega: entregaDiferente
+        ? {
+            contato: String(entrega['contato'] ?? ""),
+            telefone: String(entrega['telefone'] ?? ""),
+            linhas: linhasEnd(entrega),
+          }
+        : { nome: "Mesmo do faturamento", linhas: linhasEnd(faturamentoBase) },
+      estrutura: resultado?.ok
+        ? { distribuicao: resultado.distribuicao, comprimentos: resultado.comprimentos }
+        : null,
+    };
+
+    const html = buildSolarPropostaPdfHtml(dados);
+    const win = window.open("", "_blank");
+    if (!win) return toast.error("Permita pop-ups para gerar o PDF.");
+    win.document.write(html);
+    win.document.title = solarPropostaPdfFileName(dados);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 600);
+  }
+
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-5 pb-4">
@@ -497,9 +624,6 @@ function NovaPropostaSolarPage() {
                 <div><b>Consultor:</b> {String(cliente['created_by_nome'] ?? "—")}</div>
               </div>
             )}
-            <Campo label="Observações">
-              <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={3} />
-            </Campo>
           </section>
         )}
 
@@ -516,20 +640,6 @@ function NovaPropostaSolarPage() {
                   </SelectContent>
                 </Select>
               </Campo>
-              <Campo label="Forma de pagamento">
-                <Select value={formaPagamento} onValueChange={setFormaPagamento}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="boleto_vista">Boleto à vista</SelectItem>
-                    <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>
-                    <SelectItem value="pix">Pix</SelectItem>
-                    <SelectItem value="cartao_credito">Cartão de crédito</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Obrigatória apenas para concluir o pedido.
-                </p>
-              </Campo>
             </div>
             <label className="flex items-center gap-2 text-sm">
               <Checkbox
@@ -539,25 +649,110 @@ function NovaPropostaSolarPage() {
               Faturar direto para o cliente final
             </label>
             {faturarClienteFinal && (
-              <div className="grid gap-3 md:grid-cols-3">
-                {[
-                  ["nome", "Razão social"],
-                  ["doc", "CNPJ/CPF"],
-                  ["ie", "Inscrição estadual"],
-                  ["cep", "CEP"],
-                  ["logradouro", "Logradouro"],
-                  ["numero", "Número"],
-                  ["bairro", "Bairro"],
-                  ["cidade", "Cidade"],
-                  ["uf", "UF"],
-                ].map(([k, label]) => (
-                  <Campo key={k} label={label as string}>
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">O cliente final é:</span>
+                  <div className="inline-flex rounded-xl border border-border bg-surface-2 p-1">
+                    {([
+                      ["cnpj", "CNPJ", Building2],
+                      ["cpf", "CPF", User],
+                    ] as const).map(([v, label, Icon]) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setFatTipoDoc(v)}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+                          fatTipoDoc === v
+                            ? "bg-primary text-primary-foreground font-semibold"
+                            : "text-muted-foreground hover:bg-surface-3",
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5" /> {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Campo label={fatTipoDoc === "cnpj" ? "CNPJ" : "CPF"}>
+                    <div className="flex gap-2">
+                      <Input
+                        value={fat['doc'] ?? ""}
+                        inputMode="numeric"
+                        placeholder={fatTipoDoc === "cnpj" ? "00.000.000/0000-00" : "000.000.000-00"}
+                        onChange={(e) => setFat((p) => ({ ...p, doc: e.target.value }))}
+                      />
+                      {fatTipoDoc === "cnpj" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="gap-2 whitespace-nowrap"
+                          disabled={enriquecendo}
+                          onClick={() => void enriquecerFaturamento()}
+                        >
+                          {enriquecendo ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                          Buscar
+                        </Button>
+                      )}
+                    </div>
+                  </Campo>
+                  <Campo label={fatTipoDoc === "cnpj" ? "Razão social" : "Nome completo"}>
                     <Input
-                      value={fat[k as string] ?? ""}
-                      onChange={(e) => setFat((p) => ({ ...p, [k as string]: e.target.value }))}
+                      value={fat['nome'] ?? ""}
+                      onChange={(e) => setFat((p) => ({ ...p, nome: e.target.value }))}
                     />
                   </Campo>
-                ))}
+                  {fatTipoDoc === "cnpj" && (
+                    <Campo label="Inscrição estadual">
+                      <Input
+                        value={fat['ie'] ?? ""}
+                        onChange={(e) => setFat((p) => ({ ...p, ie: e.target.value }))}
+                      />
+                    </Campo>
+                  )}
+                  <Campo label="CEP">
+                    <CepInput
+                      value={fat['cep'] ?? ""}
+                      onChange={(v) => setFat((p) => ({ ...p, cep: v }))}
+                      onFound={(e: EnderecoCep) =>
+                        setFat((p) => ({
+                          ...p,
+                          cep: e.cep,
+                          logradouro: e.logradouro || (p['logradouro'] ?? ""),
+                          complemento: e.complemento || (p['complemento'] ?? ""),
+                          bairro: e.bairro || (p['bairro'] ?? ""),
+                          cidade: e.cidade || (p['cidade'] ?? ""),
+                          uf: e.uf || (p['uf'] ?? ""),
+                        }))
+                      }
+                    />
+                  </Campo>
+                  {[
+                    ["logradouro", "Logradouro"],
+                    ["numero", "Número"],
+                    ["complemento", "Complemento"],
+                    ["bairro", "Bairro"],
+                    ["cidade", "Cidade"],
+                    ["uf", "UF"],
+                    ["telefone", "Telefone"],
+                  ].map(([k, label]) => (
+                    <Campo key={k} label={label as string}>
+                      <Input
+                        value={fat[k as string] ?? ""}
+                        onChange={(e) => setFat((p) => ({ ...p, [k as string]: e.target.value }))}
+                      />
+                    </Campo>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Dados buscados automaticamente (CNPJ e CEP) continuam editáveis. Sem retorno das
+                  consultas, preencha manualmente.
+                </p>
               </div>
             )}
           </section>
@@ -565,17 +760,35 @@ function NovaPropostaSolarPage() {
 
         {etapa === 3 && (
           <section className="space-y-5">
-            <div className="glass rounded-2xl p-5 space-y-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <ModoBotao ativo={modo === "calculadora"} onClick={() => setModo("calculadora")} icon={Calculator}>
-                  Realizar Proposta (Calculadora 2P)
-                </ModoBotao>
-                <ModoBotao ativo={modo === "lista"} onClick={() => setModo("lista")} icon={ListPlus}>
-                  Lista de produtos
-                </ModoBotao>
-                <div className="ml-auto flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Tabela de preço</span>
-                  <Select value={listaPreco} onValueChange={trocarTabela}>
+            <div className="glass rounded-2xl p-5 space-y-4 relative overflow-hidden">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                {/* Seleção consolidada estilo slide */}
+                <div className="relative grid grid-cols-2 gap-1 rounded-2xl border border-border bg-surface-2 p-1 w-full lg:max-w-[520px]">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-primary/15 border border-primary/40 transition-transform duration-300 ease-out",
+                      modo === "lista" && "translate-x-[calc(100%+0.25rem)]",
+                    )}
+                  />
+                  <SlideOpcao
+                    ativo={modo === "calculadora"}
+                    icon={Calculator}
+                    titulo="Realizar Proposta"
+                    descricao="Calculadora 2P"
+                    onClick={() => void trocarModo("calculadora")}
+                  />
+                  <SlideOpcao
+                    ativo={modo === "lista"}
+                    icon={ListPlus}
+                    titulo="Lista de produtos"
+                    descricao="Catálogo SAP"
+                    onClick={() => void trocarModo("lista")}
+                  />
+                </div>
+                <div className="lg:ml-auto flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">Tabela de preço</span>
+                  <Select value={listaPreco} onValueChange={(v) => void trocarTabela(v)} disabled={trocando}>
                     <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {TABELAS_PRECO.map((t) => (
@@ -585,6 +798,15 @@ function NovaPropostaSolarPage() {
                   </Select>
                 </div>
               </div>
+
+              {trocando && (
+                <div className="absolute inset-0 z-20 grid place-items-center bg-background/70 backdrop-blur-sm">
+                  <div className="flex items-center gap-3 text-sm font-medium">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    Atualizando itens e valores…
+                  </div>
+                </div>
+              )}
 
               {modo === "calculadora" && (
                 <div className="grid gap-4 md:grid-cols-3">
@@ -833,8 +1055,28 @@ function NovaPropostaSolarPage() {
             </label>
             {entregaDiferente && (
               <div className="grid gap-3 md:grid-cols-3">
+                <Campo label="CEP">
+                  <CepInput
+                    value={entrega['cep'] ?? ""}
+                    onChange={(v) => setEntrega((p) => ({ ...p, cep: v }))}
+                    onFound={(e: EnderecoCep) => {
+                      setEntrega((p) => ({
+                        ...p,
+                        cep: e.cep,
+                        logradouro: e.logradouro || (p['logradouro'] ?? ""),
+                        complemento: e.complemento || (p['complemento'] ?? ""),
+                        bairro: e.bairro || (p['bairro'] ?? ""),
+                        cidade: e.cidade || (p['cidade'] ?? ""),
+                        uf: e.uf || (p['uf'] ?? ""),
+                      }));
+                      setTransportadora(null);
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Preenchimento automático; campos abaixo continuam editáveis.
+                  </p>
+                </Campo>
                 {[
-                  ["cep", "CEP"],
                   ["logradouro", "Logradouro"],
                   ["numero", "Número"],
                   ["complemento", "Complemento"],
@@ -902,45 +1144,68 @@ function NovaPropostaSolarPage() {
 
         {etapa === 5 && (
           <section className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-            <div className="glass rounded-2xl p-5 space-y-4">
-              <h2 className="text-lg font-semibold">Resumo do pedido</h2>
-              <div className="grid gap-2 text-sm sm:grid-cols-2">
-                <Info label="Proposta" value={propostaNome || "—"} />
-                <Info label="Cliente" value={String(cliente?.['razao_social'] ?? "—")} />
-                <Info label="CNPJ" value={String(cliente?.['doc'] ?? "—")} />
-                <Info label="Tabela de preço" value={`Tabela ${listaPreco}`} />
-                <Info label="Tipo de NF" value={tipoNf} />
-                <Info label="Forma de pagamento" value={formaPagamento || "—"} />
-                <Info
-                  label="Endereço de faturamento"
-                  value={
-                    faturarClienteFinal
-                      ? `${fat['logradouro'] ?? ""} ${fat['numero'] ?? ""} — ${fat['cidade'] ?? ""}/${fat['uf'] ?? ""}`
-                      : `${cliente?.['logradouro'] ?? ""} ${cliente?.['numero'] ?? ""} — ${cliente?.['cidade'] ?? ""}/${cliente?.['uf'] ?? ""}`
-                  }
-                />
-                <Info
-                  label="Endereço de entrega"
-                  value={
-                    entregaDiferente
-                      ? `${entrega['logradouro'] ?? ""} ${entrega['numero'] ?? ""} — ${entrega['cidade'] ?? ""}/${entrega['uf'] ?? ""}`
-                      : "Mesmo do faturamento"
-                  }
-                />
-                <Info label="Frete" value={freteMod || "—"} />
-                <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
+            <div className="space-y-5">
+              <div className="glass rounded-2xl p-5 space-y-4">
+                <h2 className="text-lg font-semibold">Resumo do pedido</h2>
+                <div className="grid gap-2 text-sm sm:grid-cols-2">
+                  <Info label="Proposta" value={propostaNome || "—"} />
+                  <Info label="Cliente" value={String(cliente?.['razao_social'] ?? "—")} />
+                  <Info label="CNPJ" value={String(cliente?.['doc'] ?? "—")} />
+                  <Info label="Tabela de preço" value={`Tabela ${listaPreco}`} />
+                  <Info label="Tipo de NF" value={tipoNf} />
+                  <Info label="Forma de pagamento" value={formaPagamento || "—"} />
+                  <Info
+                    label="Endereço de faturamento"
+                    value={
+                      faturarClienteFinal
+                        ? `${fat['logradouro'] ?? ""} ${fat['numero'] ?? ""} — ${fat['cidade'] ?? ""}/${fat['uf'] ?? ""}`
+                        : `${cliente?.['logradouro'] ?? ""} ${cliente?.['numero'] ?? ""} — ${cliente?.['cidade'] ?? ""}/${cliente?.['uf'] ?? ""}`
+                    }
+                  />
+                  <Info
+                    label="Endereço de entrega"
+                    value={
+                      entregaDiferente
+                        ? `${entrega['logradouro'] ?? ""} ${entrega['numero'] ?? ""} — ${entrega['cidade'] ?? ""}/${entrega['uf'] ?? ""}`
+                        : "Mesmo do faturamento"
+                    }
+                  />
+                  <Info label="Frete" value={freteMod || "—"} />
+                  <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
+                </div>
+
+                <div className="rounded-xl border border-border divide-y divide-border/60">
+                  {itens.map((i) => {
+                    const p = produtos.find((x) => x.id === i.produtoId);
+                    return (
+                      <div key={i.key} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                        <span className="truncate">{i.qtd}× {p?.descricao}</span>
+                        <span className="tabular-nums font-medium">{fmtBRL(i.valor * i.qtd)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="rounded-xl border border-border divide-y divide-border/60">
-                {itens.map((i) => {
-                  const p = produtos.find((x) => x.id === i.produtoId);
-                  return (
-                    <div key={i.key} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                      <span className="truncate">{i.qtd}× {p?.descricao}</span>
-                      <span className="tabular-nums font-medium">{fmtBRL(i.valor * i.qtd)}</span>
-                    </div>
-                  );
-                })}
+              <div className="glass rounded-2xl p-5 grid gap-4 md:grid-cols-2">
+                <Campo label="Forma de pagamento">
+                  <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="boleto_vista">Boleto à vista</SelectItem>
+                      <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>
+                      <SelectItem value="pix">Pix</SelectItem>
+                      <SelectItem value="cartao_credito">Cartão de crédito</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Obrigatória apenas para concluir o pedido.
+                  </p>
+                  {tentou && !formaPagamento && <Erro>Obrigatória para concluir.</Erro>}
+                </Campo>
+                <Campo label="Observações">
+                  <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} />
+                </Campo>
               </div>
             </div>
 
@@ -948,19 +1213,40 @@ function NovaPropostaSolarPage() {
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Tag className="h-4 w-4 text-primary" /> Cupom de desconto
               </h2>
-              <Select value={cupomCodigo || "__none__"} onValueChange={(v) => setCupomCodigo(v === "__none__" ? "" : v)}>
-                <SelectTrigger><SelectValue placeholder="Sem cupom" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Sem cupom</SelectItem>
-                  {(cuponsQ.data ?? [])
-                    .filter((c) => c.ativo)
-                    .map((c) => (
-                      <SelectItem key={c.id} value={c.codigo}>
-                        {c.codigo} — {c.tipos.join(", ")}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={cupomCodigo}
+                onChange={(e) => setCupomCodigo(e.target.value.toUpperCase().trim())}
+                placeholder="Digite o código do cupom"
+                className="uppercase"
+              />
+              {(cuponsQ.data ?? []).some((c) => c.ativo) && (
+                <Select
+                  value={cupomCodigo || "__none__"}
+                  onValueChange={(v) => setCupomCodigo(v === "__none__" ? "" : v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="Ou escolha um cupom" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Sem cupom</SelectItem>
+                    {(cuponsQ.data ?? [])
+                      .filter((c) => c.ativo)
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.codigo}>
+                          {c.codigo} — {c.tipos.join(", ")}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {cupomCodigo && !cupom && (
+                <p className="text-xs text-amber-500">
+                  Cupom não encontrado na lista — será validado no servidor ao salvar.
+                </p>
+              )}
+              {cupom && (
+                <p className="text-xs text-emerald-500">
+                  Cupom {cupom.codigo} aplicado ({cupom.tipos.join(", ")}).
+                </p>
+              )}
 
               <div className="space-y-1 text-sm">
                 <Linha label="Subtotal" value={fmtBRL(subtotal)} />
@@ -972,9 +1258,13 @@ function NovaPropostaSolarPage() {
                 </div>
               </div>
 
+              <Button variant="outline" className="w-full gap-2" onClick={abrirPdf} disabled={!itens.length}>
+                <FileText className="h-4 w-4" /> Gerar proposta em PDF
+              </Button>
+
               {!formaPagamento && (
                 <p className="text-xs text-destructive">
-                  Escolha a forma de pagamento (etapa 2) para concluir o pedido.
+                  Escolha a forma de pagamento para concluir o pedido.
                 </p>
               )}
             </div>
@@ -1091,27 +1381,35 @@ function Linha({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ModoBotao({
+/** Opção do seletor consolidado (estilo slide) da etapa de produtos. */
+function SlideOpcao({
   ativo,
   onClick,
   icon: Icon,
-  children,
+  titulo,
+  descricao,
 }: {
   ativo: boolean;
   onClick: () => void;
   icon: typeof Calculator;
-  children: React.ReactNode;
+  titulo: string;
+  descricao: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={ativo}
       className={cn(
-        "flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm transition-colors",
-        ativo ? "border-primary bg-primary/10 font-semibold" : "border-border hover:border-primary/40",
+        "relative z-10 flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+        ativo ? "text-foreground" : "text-muted-foreground hover:text-foreground",
       )}
     >
-      <Icon className="h-4 w-4" /> {children}
+      <Icon className={cn("h-5 w-5 shrink-0", ativo && "text-primary")} />
+      <span className="min-w-0">
+        <span className={cn("block text-sm truncate", ativo && "font-semibold")}>{titulo}</span>
+        <span className="block text-xs text-muted-foreground truncate">{descricao}</span>
+      </span>
     </button>
   );
 }
