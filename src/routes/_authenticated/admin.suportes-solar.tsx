@@ -186,7 +186,10 @@ function SuportesSolarPage() {
           />
         </div>
 
+        <SapDeParaResumo pendencias={pendencias} />
+
         <div className="glass rounded-2xl overflow-hidden">
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[820px]">
               <thead>
