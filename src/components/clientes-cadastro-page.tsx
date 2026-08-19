@@ -99,7 +99,7 @@ type Form = Omit<Cliente, "id">;
 const vazio = (): Form => ({
   razao_social: "", nome_fantasia: "", doc: "", ie: "", ie_situacao: null,
   suframa: null, suframa_situacao: null, contribuinte: false,
-  regime_tributario: "Simples Nacional", natureza_juridica: null, porte: null,
+  regime_tributario: null, natureza_juridica: null, porte: null,
   situacao_cadastral: null, data_abertura: null,
   cnae_principal_codigo: null, cnae_principal_descricao: null, cnaes_secundarios: [],
   email: "", telefone: "", site: "",
@@ -261,6 +261,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               suframa: e.suframa,
               suframa_situacao: e.suframa_situacao,
               contribuinte: !!e.ie,
+              regime_tributario: e.regime_tributario ?? base.regime_tributario,
               natureza_juridica: e.natureza_juridica,
               porte: e.porte,
               situacao_cadastral: e.situacao_cadastral,

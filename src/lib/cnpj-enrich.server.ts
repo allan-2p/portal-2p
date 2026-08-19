@@ -30,6 +30,12 @@ export type EnriquecimentoCnpj = {
   inscricoes_estaduais: Array<{ uf: string; numero: string; habilitada: boolean; situacao: string | null }>;
   suframa: string | null;
   suframa_situacao: string | null;
+  /** Optante pelo Simples Nacional (CNPJá). null = não foi possível apurar. */
+  simples_optante: boolean | null;
+  /** Enquadrado no SIMEI/MEI (CNPJá). */
+  simei_optante: boolean | null;
+  /** Regime tributário sugerido a partir do Simples/SIMEI. */
+  regime_tributario: string | null;
   fontes: string[];
   avisos: string[];
 };
@@ -81,6 +87,7 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
     cidade: null, uf: null, municipio_ibge: null,
     ie: null, ie_situacao: null, inscricoes_estaduais: [],
     suframa: null, suframa_situacao: null,
+    simples_optante: null, simei_optante: null, regime_tributario: null,
     fontes: [], avisos: [],
   };
   if (doc.length !== 14) {
@@ -145,7 +152,7 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
     if (!apiKey) {
       out.avisos.push("CNPJá indisponível (chave não configurada).");
     } else {
-      const res = await fetch(`https://api.cnpja.com/office/${doc}?registrations=BR&suframa=true`, {
+      const res = await fetch(`https://api.cnpja.com/office/${doc}?registrations=BR&suframa=true&simples=true`, {
         headers: { Authorization: apiKey },
       });
       if (res.ok) {
@@ -195,6 +202,14 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
           out.ie = daUf.numero || null;
           out.ie_situacao = daUf.habilitada ? "Habilitada" : (daUf.situacao ?? "Não habilitada");
         }
+        // Simples Nacional / SIMEI (só vem com ?simples=true)
+        const simples = d.company?.simples ?? d.simples;
+        const simei = d.company?.simei ?? d.simei;
+        if (simples && typeof simples.optant === "boolean") out.simples_optante = simples.optant;
+        if (simei && typeof simei.optant === "boolean") out.simei_optante = simei.optant;
+        if (out.simei_optante) out.regime_tributario = "MEI";
+        else if (out.simples_optante === true) out.regime_tributario = "Simples Nacional";
+        else if (out.simples_optante === false) out.regime_tributario = "Lucro Presumido";
         const suf = Array.isArray(d.suframa) ? d.suframa[0] : null;
         if (suf) {
           out.suframa = limpa(suf.number);
@@ -208,6 +223,9 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
     out.avisos.push("Falha ao consultar a CNPJá.");
   }
 
+  if (out.simples_optante === null) {
+    out.avisos.push("Não foi possível apurar o Simples Nacional — confira o regime tributário manualmente.");
+  }
   if (out.fontes.length === 0) out.avisos.push("Nenhuma fonte respondeu — preencha manualmente.");
   return out;
 }
