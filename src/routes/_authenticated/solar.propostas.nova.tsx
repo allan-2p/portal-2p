@@ -77,7 +77,7 @@ import {
   useSolarTrilhoSuportes,
   useSolarTrilhos,
 } from "@/hooks/use-solar-catalogo";
-import { quantificarProjeto } from "@/lib/solar-quantificador";
+import { quantificarProjeto, pendenciasDePara } from "@/lib/solar-quantificador";
 import {
   SOLAR_CALC_CONFIG_FALLBACK,
   type CalcResultado,
@@ -465,9 +465,101 @@ function NovaPropostaSolarPage() {
     setEditandoCalc(true);
   }
 
+  /** Campos obrigatórios das etapas 1 e 2 que ainda não foram preenchidos. */
+  const faltandoInputs = useMemo(() => {
+    const f: string[] = [];
+    if (!modulo) f.push("Selecione o módulo (Etapa 1).");
+    else if (!Number(modulo.largura) || !Number(modulo.altura) || !Number(modulo.espessura))
+      f.push("Informe largura, altura e espessura do módulo (Etapa 1).");
+    if (!geradorId) f.push("Selecione o tipo de gerador (Etapa 1).");
+    if (geradorEhMicro && !microModelo) f.push("Selecione o modelo do microinversor (Etapa 1).");
+    if (!linhas.length) f.push("Adicione ao menos uma fileira (Etapa 2).");
+    linhas.forEach((l, i) => {
+      if (!l.trilhoId) f.push(`Fileira ${i + 1}: selecione o trilho (Etapa 2).`);
+      if (!l.suporteId) f.push(`Fileira ${i + 1}: selecione o suporte (Etapa 2).`);
+      if (!(Number(l.modulos) > 0)) f.push(`Fileira ${i + 1}: informe os módulos por fileira (Etapa 2).`);
+      if (!(Number(l.fileiras) > 0)) f.push(`Fileira ${i + 1}: informe a quantidade de fileiras (Etapa 2).`);
+    });
+    if (Number(paineis) > 0 && paineisNasLinhas && paineisNasLinhas !== Number(paineis)) {
+      const diff = paineisNasLinhas - Number(paineis);
+      f.push(
+        diff > 0
+          ? `A disposição tem ${diff} módulo(s) a mais que os ${paineis} do projeto.`
+          : `Faltam ${Math.abs(diff)} módulo(s) na disposição (${paineisNasLinhas} de ${paineis}).`,
+      );
+    }
+    return f;
+  }, [modulo, geradorId, geradorEhMicro, microModelo, linhas, paineis, paineisNasLinhas]);
+
+  /**
+   * De/para de códigos: simula a quantificação com os inputs atuais e lista os
+   * componentes que sairiam sem código SAP cadastrado (trilho, suporte, config).
+   */
+  const pendenciasCodigos = useMemo(() => {
+    if (faltandoInputs.length || !modulo) return [];
+    const fileiras = linhas.map((l) => ({
+      trilho: (trilhosQ.data ?? []).find((t) => t.id === l.trilhoId),
+      suporte: (suportesQ.data ?? []).find((s) => s.id === l.suporteId),
+      qtd_paineis: Number(l.modulos) || 0,
+      qtd_fileiras: Number(l.fileiras) || 0,
+      orientacao: l.orientacao,
+      distancia: Number(l.distMax) || 0,
+      balanco: Number(l.balanco) || config.balanco_ponta / 1000,
+    }));
+    if (fileiras.some((f) => !f.trilho || !f.suporte)) return [];
+    const micro = (microinversoresQ.data ?? []).find((m) => m.id === microModelo);
+    const tipoGerador = geradorEhMicro ? 1 : /otimizador/i.test(geradorSel?.nome ?? "") ? 2 : 3;
+    try {
+      return pendenciasDePara(
+        fileiras.map((f) => ({
+          ...f,
+          trilho: f.trilho as NonNullable<typeof f.trilho>,
+          suporte: f.suporte as NonNullable<typeof f.suporte>,
+        })),
+        {
+          largura: Number(modulo.largura) || 0,
+          altura: Number(modulo.altura) || 0,
+          espessura: Number(modulo.espessura) || 0,
+        },
+        {
+          todos_trilhos: tamanhoTrilho === "longo" ? "S" : "N",
+          tipo_gerador: tipoGerador,
+          modelo_gerador: micro?.modelo_legado ?? 0,
+          microinversores: Number(microQtd) || microSugerido,
+        },
+        config,
+      );
+    } catch {
+      return [];
+    }
+  }, [
+    faltandoInputs,
+    modulo,
+    linhas,
+    trilhosQ.data,
+    suportesQ.data,
+    microinversoresQ.data,
+    microModelo,
+    microQtd,
+    microSugerido,
+    geradorEhMicro,
+    geradorSel,
+    tamanhoTrilho,
+    config,
+  ]);
+
+  const bloqueiaCalculo = faltandoInputs.length > 0 || pendenciasCodigos.length > 0;
+
+
   async function realizarProposta() {
+    if (faltandoInputs.length) return toast.error(faltandoInputs[0] as string);
+    if (pendenciasCodigos.length)
+      return toast.error(
+        `De/para incompleto: ${pendenciasCodigos[0]?.origem} — ${pendenciasCodigos[0]?.campo} (${pendenciasCodigos[0]?.descricao}).`,
+      );
     if (!modulo) return toast.error("Selecione o módulo.");
     if (!linhas.length) return toast.error("Adicione ao menos uma fileira.");
+
     if (Number(paineis) > 0 && paineisNasLinhas !== Number(paineis)) {
       const diff = paineisNasLinhas - Number(paineis);
       return toast.error(
@@ -1534,15 +1626,48 @@ function NovaPropostaSolarPage() {
 
                   </fieldset>
 
+                  {!calcTravado && faltandoInputs.length > 0 && (
+                    <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm space-y-1">
+                      <div className="font-semibold text-amber-600 dark:text-amber-400">
+                        Complete as etapas 1 e 2 para calcular
+                      </div>
+                      <ul className="list-disc pl-5 text-muted-foreground space-y-0.5">
+                        {faltandoInputs.map((f) => (
+                          <li key={f}>{f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {!calcTravado && !faltandoInputs.length && pendenciasCodigos.length > 0 && (
+                    <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm space-y-2">
+                      <div className="font-semibold text-destructive">
+                        De/para incompleto — cadastre os códigos de produto antes de calcular
+                      </div>
+                      <ul className="space-y-1">
+                        {pendenciasCodigos.map((p) => (
+                          <li key={p.chave} className="text-muted-foreground">
+                            <span className="font-medium text-foreground">{p.origem}</span> · {p.campo}
+                            <span className="text-xs"> — {p.descricao}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="text-xs text-muted-foreground">
+                        Preencha em Gestão de Produtos 2P Solar (Trilhos / Suportes) ou na Configuração da calculadora.
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex flex-wrap items-center gap-3">
                     <Button
                       onClick={() => void realizarProposta()}
-                      disabled={calculando || calcTravado}
+                      disabled={calculando || calcTravado || bloqueiaCalculo}
                       className="gap-2"
                     >
                       {calculando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
                       {calcTravado ? "Cálculo concluído" : "Calcular"}
                     </Button>
+
                     {calcTravado && (
                       <Button type="button" variant="outline" className="gap-2" onClick={liberarEdicaoCalculo}>
                         <Pencil className="h-4 w-4" /> Editar inputs de cálculo
