@@ -60,9 +60,45 @@ function gerarCodigo() {
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+/** Máscara de moeda: digita só números, formata como 1.234,56 */
+function maskMoeda(raw: string) {
+  const digits = raw.replace(/\D/g, "").slice(0, 11);
+  if (!digits) return "";
+  const n = Number(digits) / 100;
+  return n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+const parseMoeda = (masked: string) => Number(masked.replace(/\./g, "").replace(",", ".")) || 0;
+
+/** Máscara de percentual: 0 a 100 com até 2 casas. */
+function maskPercentual(raw: string) {
+  let v = raw.replace(/[^\d,.]/g, "").replace(/\./g, ",");
+  const [int = "", dec] = v.split(",");
+  v = dec === undefined ? int : `${int},${dec.slice(0, 2)}`;
+  if (parsePercentual(v) > 100) return "100";
+  return v;
+}
+const parsePercentual = (masked: string) => Number(masked.replace(",", ".")) || 0;
+
 function CuponsPage() {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const cuponsQ = useSolarCupons();
   const invalidateSolar = useSolarInvalidate();
+  const clientesQ = useQuery({
+    queryKey: ["cupons-clientes-solar"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("doc, razao_social, nome_fantasia")
+        .eq("instancia", "solar")
+        .eq("ativo", true)
+        .order("razao_social", { ascending: true })
+        .limit(2000);
+      if (error) throw error;
+      return (data ?? []) as { doc: string; razao_social: string; nome_fantasia: string | null }[];
+    },
+    staleTime: 60_000,
+  });
   const cupons: Cupom[] = (cuponsQ.data ?? []).map((c: any) => ({
     id: c.id,
     codigo: c.codigo,
