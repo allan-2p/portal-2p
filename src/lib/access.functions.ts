@@ -43,6 +43,31 @@ async function profileGrantsFor(client: any, userId: string) {
   };
 }
 
+/** Permissões extras concedidas direto no cadastro do usuário (fora do perfil). */
+async function extraGrantsFor(client: any, userId: string) {
+  const { data } = await client
+    .from("user_extra_features")
+    .select("instance_id, feature_key")
+    .eq("user_id", userId);
+  return (data ?? []).map((r: any) => ({
+    instance_id: r.instance_id as string,
+    feature_key: r.feature_key as string,
+  }));
+}
+
+/** Soma perfis + permissões extras (extras também liberam a unidade). */
+function withExtras(
+  fromProfiles: ProfileGrants,
+  extras: { instance_id: string; feature_key: string }[],
+): ProfileGrants {
+  if (!extras.length) return fromProfiles;
+  return {
+    ...fromProfiles,
+    features: [...fromProfiles.features, ...extras],
+    instances: [...new Set([...fromProfiles.instances, ...extras.map((e) => e.instance_id)])],
+  };
+}
+
 type ProfileGrants = {
   features: { instance_id: string; feature_key: string }[];
   instances: string[];
