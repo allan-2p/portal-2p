@@ -46,7 +46,7 @@ type Cupom = {
   criadoEm: string;
 };
 
-const ALFA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const ALFA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 function gerarCodigo() {
   let out = "";
@@ -59,7 +59,20 @@ function gerarCodigo() {
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function CuponsPage() {
-  const [cupons, setCupons] = useState<Cupom[]>([]);
+  const cuponsQ = useSolarCupons();
+  const invalidateSolar = useSolarInvalidate();
+  const cupons: Cupom[] = (cuponsQ.data ?? []).map((c: any) => ({
+    id: c.id,
+    codigo: c.codigo,
+    tipos: (c.tipos ?? []) as TipoCupom[],
+    valor: Number(c.valor) > 0 ? Number(c.valor) : undefined,
+    percentual: Number(c.percentual) > 0 ? Number(c.percentual) : undefined,
+    validade: c.validade ? format(new Date(`${c.validade}T00:00:00`), "dd/MM/yyyy") : "—",
+    reutilizavel: !!c.reutilizavel,
+    cliente: c.cliente_nome || undefined,
+    criadoEm: c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : "—",
+  }));
+  const [salvando, setSalvando] = useState(false);
   const [open, setOpen] = useState(false);
 
   // form
