@@ -195,6 +195,10 @@ function NovaPropostaSolarPage() {
   const [itensCalc, setItensCalc] = useState<Item[]>([]);
   const [itensLista, setItensLista] = useState<Item[]>([]);
   const [calculando, setCalculando] = useState(false);
+  /** Assinatura dos inputs no momento do último cálculo (null = nunca calculou). */
+  const [assinaturaCalc, setAssinaturaCalc] = useState<string | null>(null);
+  const [editandoCalc, setEditandoCalc] = useState(false);
+
   const [trocando, setTrocando] = useState(false);
   const [resultado, setResultado] = useState<CalcResultado | null>(null);
   const [previewAberto, setPreviewAberto] = useState(false);
