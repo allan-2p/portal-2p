@@ -1500,14 +1500,46 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Linha({ label, value }: { label: string; value: string }) {
+/** Cartão de total (mesmo padrão da proposta 2P Carregadores). */
+function TotalRow({
+  label,
+  value,
+  hint,
+  strong,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  strong?: boolean;
+}) {
+  const anterior = useRef(value);
+  const [flash, setFlash] = useState(false);
+  useEffect(() => {
+    if (anterior.current === value) return;
+    anterior.current = value;
+    setFlash(true);
+    const t = setTimeout(() => setFlash(false), 600);
+    return () => clearTimeout(t);
+  }, [value]);
+
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="tabular-nums font-medium">{value}</span>
+    <div
+      className={cn(
+        "flex-1 min-w-[140px] rounded-xl border px-3 py-2.5 transition-colors duration-500 flex flex-col justify-center",
+        strong
+          ? "border-primary/60 bg-primary/10"
+          : flash
+            ? "border-primary/50 bg-primary/5"
+            : "border-border/60 bg-muted/30",
+      )}
+    >
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</div>
+      <div className={cn("tabular-nums", strong ? "text-lg font-bold" : "text-sm font-semibold")}>{value}</div>
+      {hint ? <div className="text-[10px] text-muted-foreground truncate">{hint}</div> : null}
     </div>
   );
 }
+
 
 /** Opção do seletor consolidado (estilo slide) da etapa de produtos. */
 function SlideOpcao({
