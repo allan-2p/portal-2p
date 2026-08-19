@@ -43,6 +43,7 @@ import {
   Tag,
   Trash2,
   User,
+  X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -165,6 +166,14 @@ function NovaPropostaSolarPage() {
   // Etapa 5
   const [cupomCodigo, setCupomCodigo] = useState("");
   const [recalculandoTotais, setRecalculandoTotais] = useState(false);
+
+  const removerCupom = () => {
+    if (!cupomCodigo) return;
+    setCupomCodigo("");
+    setRecalculandoTotais(true);
+    toast.info("Cupom removido. Valores recalculados sem desconto.");
+  };
+
 
   const clientesQ = useQueryClientes();
   const produtosQ = useSolarProdutos();
@@ -1334,18 +1343,43 @@ function NovaPropostaSolarPage() {
               </h2>
 
               <div className="space-y-3">
-                <div className="text-sm font-medium">Cupom de desconto</div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-medium">Cupom de desconto</div>
+                  {cupomCodigo && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-destructive"
+                      onClick={removerCupom}
+                    >
+                      <X className="h-3.5 w-3.5" /> Remover cupom
+                    </Button>
+                  )}
+                </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <Input
-                    value={cupomCodigo}
-                    onChange={(e) => setCupomCodigo(e.target.value.toUpperCase().trim())}
-                    placeholder="Código"
-                    className="uppercase"
-                  />
+                  <div className="relative">
+                    <Input
+                      value={cupomCodigo}
+                      onChange={(e) => setCupomCodigo(e.target.value.toUpperCase().trim())}
+                      placeholder="Código"
+                      className="uppercase pr-9"
+                    />
+                    {cupomCodigo && (
+                      <button
+                        type="button"
+                        onClick={removerCupom}
+                        aria-label="Remover cupom"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                   {(cuponsQ.data ?? []).some((c) => c.ativo) && (
                     <Select
                       value={cupomCodigo || "__none__"}
-                      onValueChange={(v) => setCupomCodigo(v === "__none__" ? "" : v)}
+                      onValueChange={(v) => (v === "__none__" ? removerCupom() : setCupomCodigo(v))}
                     >
                       <SelectTrigger><SelectValue placeholder="Ou escolha um cupom" /></SelectTrigger>
                       <SelectContent>
@@ -1361,6 +1395,7 @@ function NovaPropostaSolarPage() {
                     </Select>
                   )}
                 </div>
+
                 {cupomCheck.status === "carregando" && (
                   <p className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" /> {cupomCheck.mensagem}
