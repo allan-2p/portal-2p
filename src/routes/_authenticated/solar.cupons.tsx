@@ -21,6 +21,8 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/permission-gate";
+import { supabase } from "@/integrations/supabase/client";
+import { useSolarCupons, useSolarInvalidate } from "@/hooks/use-solar-catalogo";
 
 export const Route = createFileRoute("/_authenticated/solar/cupons")({
   head: () => ({
@@ -46,7 +48,7 @@ type Cupom = {
   criadoEm: string;
 };
 
-const ALFA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const ALFA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 function gerarCodigo() {
   let out = "";
@@ -59,7 +61,20 @@ function gerarCodigo() {
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function CuponsPage() {
-  const [cupons, setCupons] = useState<Cupom[]>([]);
+  const cuponsQ = useSolarCupons();
+  const invalidateSolar = useSolarInvalidate();
+  const cupons: Cupom[] = (cuponsQ.data ?? []).map((c: any) => ({
+    id: c.id,
+    codigo: c.codigo,
+    tipos: (c.tipos ?? []) as TipoCupom[],
+    valor: Number(c.valor) > 0 ? Number(c.valor) : undefined,
+    percentual: Number(c.percentual) > 0 ? Number(c.percentual) : undefined,
+    validade: c.validade ? format(new Date(`${c.validade}T00:00:00`), "dd/MM/yyyy") : "—",
+    reutilizavel: !!c.reutilizavel,
+    cliente: c.cliente_nome || undefined,
+    criadoEm: c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : "—",
+  }));
+  const [salvando, setSalvando] = useState(false);
   const [open, setOpen] = useState(false);
 
   // form
@@ -98,10 +113,14 @@ function CuponsPage() {
     setErrors({});
   };
 
-  const handleCreate = () => {
-    const codeFinal = aleatorio ? codigo : codigo.trim();
+  const handleCreate = async () => {
+    const codeFinal = (aleatorio ? codigo : codigo.trim()).toUpperCase();
     const next: Errors = {};
     if (!codeFinal) next.codigo = "Informe o código do cupom.";
+    else if (!/^[A-Z0-9_-]{3,20}$/.test(codeFinal))
+      next.codigo = "Use de 3 a 20 caracteres (letras, números, hífen ou underscore).";
+    else if (cupons.some((c) => c.codigo.trim().toUpperCase() === codeFinal))
+      next.codigo = `O código "${codeFinal}" já existe. Escolha outro.`;
     if (tipos.length === 0) next.tipos = "Selecione ao menos um tipo de desconto.";
     if (tipos.includes("valor") && !valor) next.valor = "Informe o valor em R$.";
     if (tipos.includes("percentual") && !percentual) next.percentual = "Informe o percentual.";
@@ -109,25 +128,43 @@ function CuponsPage() {
 
     if (Object.keys(next).length > 0) {
       setErrors(next);
-      toast.error("Preencha os campos obrigatórios.");
+      toast.error(next.codigo ?? "Preencha os campos obrigatórios.");
       return;
     }
 
-    const novo: Cupom = {
-      id: crypto.randomUUID(),
-      codigo: codeFinal,
-      tipos,
-      valor: tipos.includes("valor") ? Number(valor) : undefined,
-      percentual: tipos.includes("percentual") ? Number(percentual) : undefined,
-      validade: format(validade!, "dd/MM/yyyy"),
-      reutilizavel,
-      cliente: cliente.trim() || undefined,
-      criadoEm: new Date().toLocaleDateString("pt-BR"),
-    };
-    setCupons((prev) => [novo, ...prev]);
-    setOpen(false);
-    resetForm();
-    toast.success("Cupom criado.");
+    setSalvando(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const clienteNome = cliente.trim();
+      const { error } = await supabase.from("solar_cupons").insert({
+        codigo: codeFinal,
+        tipos,
+        valor: tipos.includes("valor") ? Number(valor) : 0,
+        percentual: tipos.includes("percentual") ? Number(percentual) : 0,
+        validade: format(validade!, "yyyy-MM-dd"),
+        reutilizavel,
+        cliente_nome: clienteNome || null,
+        cliente_doc: clienteNome.replace(/\D/g, "") || null,
+        ativo: true,
+        created_by: userData.user?.id ?? null,
+      });
+      if (error) {
+        if (error.code === "23505" || /duplicate key|unique/i.test(error.message)) {
+          setErrors({ codigo: `O código "${codeFinal}" já existe. Escolha outro.` });
+          toast.error(`O código "${codeFinal}" já existe.`);
+          return;
+        }
+        throw error;
+      }
+      invalidateSolar();
+      setOpen(false);
+      resetForm();
+      toast.success("Cupom criado.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível criar o cupom.");
+    } finally {
+      setSalvando(false);
+    }
   };
 
   return (
@@ -309,7 +346,9 @@ function CuponsPage() {
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button onClick={handleCreate}>Criar cupom</Button>
+                <Button onClick={handleCreate} disabled={salvando}>
+                  {salvando ? "Salvando..." : "Criar cupom"}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

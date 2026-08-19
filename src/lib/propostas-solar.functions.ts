@@ -214,7 +214,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       const { data: c } = await supabase
         .from("solar_cupons")
         .select("*")
-        .eq("codigo", data.cupomCodigo)
+        .ilike("codigo", data.cupomCodigo.trim())
         .eq("ativo", true)
         .maybeSingle();
       if (!c) throw new Error("Cupom inválido ou inativo.");
