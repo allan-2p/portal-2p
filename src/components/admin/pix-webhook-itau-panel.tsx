@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CheckCircle2, Copy, Loader2, RefreshCw, Trash2, Upload } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Copy, Loader2, RefreshCw, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ export function PixWebhookItauPanel() {
   const cadastrar = useServerFn(cadastrarWebhookPixFn);
   const excluir = useServerFn(excluirWebhookPixFn);
   const [url, setUrl] = useState("");
+  const [indisponibilidade, setIndisponibilidade] = useState<string | null>(null);
 
   const sugestao = useQuery({ queryKey: ["pix-webhook-url"], queryFn: () => sugerida({}) });
 
@@ -27,16 +28,40 @@ export function PixWebhookItauPanel() {
 
   const atual = useMutation({
     mutationFn: () => consultar({}),
+    onSuccess: (result) => {
+      if (!result.ok) {
+        setIndisponibilidade(result.message);
+        toast.warning("O serviço Pix do Itaú está temporariamente indisponível.");
+        return;
+      }
+      setIndisponibilidade(null);
+    },
     onError: (e: any) => toast.error(e?.message ?? "Falha ao consultar o webhook."),
   });
   const salvar = useMutation({
     mutationFn: () => cadastrar({ data: { webhookUrl: url } }),
-    onSuccess: () => toast.success("Webhook cadastrado no Itaú."),
+    onSuccess: (result) => {
+      if (!result.ok) {
+        setIndisponibilidade(result.message);
+        toast.warning("O serviço Pix do Itaú está temporariamente indisponível.");
+        return;
+      }
+      setIndisponibilidade(null);
+      toast.success("Webhook cadastrado no Itaú.");
+    },
     onError: (e: any) => toast.error(e?.message ?? "Falha ao cadastrar o webhook."),
   });
   const remover = useMutation({
     mutationFn: () => excluir({}),
-    onSuccess: () => toast.success("Webhook removido no Itaú."),
+    onSuccess: (result) => {
+      if (!result.ok) {
+        setIndisponibilidade(result.message);
+        toast.warning("O serviço Pix do Itaú está temporariamente indisponível.");
+        return;
+      }
+      setIndisponibilidade(null);
+      toast.success("Webhook removido no Itaú.");
+    },
     onError: (e: any) => toast.error(e?.message ?? "Falha ao remover o webhook."),
   });
 
@@ -78,6 +103,19 @@ export function PixWebhookItauPanel() {
           </p>
         )}
 
+        {indisponibilidade && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <div>
+              <p className="font-medium">Serviço Pix temporariamente indisponível</p>
+              <p className="mt-1 text-muted-foreground">
+                O Itaú respondeu HTTP 503 mesmo após as tentativas automáticas. O cadastro não foi alterado;
+                tente novamente quando a manutenção terminar.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => salvar.mutate()} disabled={salvar.isPending || !url}>
             {salvar.isPending ? (
@@ -100,13 +138,25 @@ export function PixWebhookItauPanel() {
           </Button>
         </div>
 
-        {(atual.data || salvar.data || remover.data) && (
+        {((atual.data?.ok && atual.data.data) ||
+          (salvar.data?.ok && salvar.data.data) ||
+          (remover.data?.ok && remover.data.data)) && (
           <pre className="max-h-64 overflow-auto rounded-lg border bg-muted/40 p-3 text-xs">
-            {JSON.stringify(remover.data ?? salvar.data ?? atual.data, null, 2)}
+            {JSON.stringify(
+              remover.data?.ok
+                ? remover.data.data
+                : salvar.data?.ok
+                  ? salvar.data.data
+                  : atual.data?.ok
+                    ? atual.data.data
+                    : null,
+              null,
+              2,
+            )}
           </pre>
         )}
 
-        {salvar.isSuccess && (
+        {salvar.data?.ok && (
           <p className="flex items-center gap-2 text-sm text-emerald-600">
             <CheckCircle2 className="h-4 w-4" /> O Itaú passará a chamar {url}/pix
           </p>
