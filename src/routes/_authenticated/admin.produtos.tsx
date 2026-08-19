@@ -1002,7 +1002,7 @@ function ProdutosPage() {
         </div>
         </>
         ) : (
-          <CatalogoSapCompleto />
+          <CatalogoSapCompleto onPropagar={propagar} />
         )}
 
       </div>
