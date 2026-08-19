@@ -52,7 +52,8 @@ export const listarMinhasNotificacoesFn = createServerFn({ method: "GET" }).hand
       lida: Boolean(r.lida_em),
       created_at: r.created_at,
     }));
-  });
+  },
+);
 
 /** Marca notificações como lidas (todas, ou apenas os ids informados). */
 export const marcarNotificacoesLidasFn = createServerFn({ method: "POST" })
@@ -62,7 +63,7 @@ export const marcarNotificacoesLidasFn = createServerFn({ method: "POST" })
     let q = context.supabase
       .from("notificacoes")
       .update({ lida_em: new Date().toISOString() } as any)
-      .eq("user_id", userId)
+      .eq("user_id", context.userId)
       .is("lida_em", null);
     if (data.ids?.length) q = q.in("id", data.ids);
     const { error } = await q;
