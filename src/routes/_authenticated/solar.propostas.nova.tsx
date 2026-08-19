@@ -556,9 +556,6 @@ function NovaPropostaSolarPage() {
                 <div><b>Consultor:</b> {String(cliente['created_by_nome'] ?? "—")}</div>
               </div>
             )}
-            <Campo label="Observações">
-              <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={3} />
-            </Campo>
           </section>
         )}
 
@@ -575,20 +572,6 @@ function NovaPropostaSolarPage() {
                   </SelectContent>
                 </Select>
               </Campo>
-              <Campo label="Forma de pagamento">
-                <Select value={formaPagamento} onValueChange={setFormaPagamento}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="boleto_vista">Boleto à vista</SelectItem>
-                    <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>
-                    <SelectItem value="pix">Pix</SelectItem>
-                    <SelectItem value="cartao_credito">Cartão de crédito</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Obrigatória apenas para concluir o pedido.
-                </p>
-              </Campo>
             </div>
             <label className="flex items-center gap-2 text-sm">
               <Checkbox
@@ -598,25 +581,110 @@ function NovaPropostaSolarPage() {
               Faturar direto para o cliente final
             </label>
             {faturarClienteFinal && (
-              <div className="grid gap-3 md:grid-cols-3">
-                {[
-                  ["nome", "Razão social"],
-                  ["doc", "CNPJ/CPF"],
-                  ["ie", "Inscrição estadual"],
-                  ["cep", "CEP"],
-                  ["logradouro", "Logradouro"],
-                  ["numero", "Número"],
-                  ["bairro", "Bairro"],
-                  ["cidade", "Cidade"],
-                  ["uf", "UF"],
-                ].map(([k, label]) => (
-                  <Campo key={k} label={label as string}>
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">O cliente final é:</span>
+                  <div className="inline-flex rounded-xl border border-border bg-surface-2 p-1">
+                    {([
+                      ["cnpj", "CNPJ", Building2],
+                      ["cpf", "CPF", User],
+                    ] as const).map(([v, label, Icon]) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setFatTipoDoc(v)}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+                          fatTipoDoc === v
+                            ? "bg-primary text-primary-foreground font-semibold"
+                            : "text-muted-foreground hover:bg-surface-3",
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5" /> {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Campo label={fatTipoDoc === "cnpj" ? "CNPJ" : "CPF"}>
+                    <div className="flex gap-2">
+                      <Input
+                        value={fat['doc'] ?? ""}
+                        inputMode="numeric"
+                        placeholder={fatTipoDoc === "cnpj" ? "00.000.000/0000-00" : "000.000.000-00"}
+                        onChange={(e) => setFat((p) => ({ ...p, doc: e.target.value }))}
+                      />
+                      {fatTipoDoc === "cnpj" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="gap-2 whitespace-nowrap"
+                          disabled={enriquecendo}
+                          onClick={() => void enriquecerFaturamento()}
+                        >
+                          {enriquecendo ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                          Buscar
+                        </Button>
+                      )}
+                    </div>
+                  </Campo>
+                  <Campo label={fatTipoDoc === "cnpj" ? "Razão social" : "Nome completo"}>
                     <Input
-                      value={fat[k as string] ?? ""}
-                      onChange={(e) => setFat((p) => ({ ...p, [k as string]: e.target.value }))}
+                      value={fat['nome'] ?? ""}
+                      onChange={(e) => setFat((p) => ({ ...p, nome: e.target.value }))}
                     />
                   </Campo>
-                ))}
+                  {fatTipoDoc === "cnpj" && (
+                    <Campo label="Inscrição estadual">
+                      <Input
+                        value={fat['ie'] ?? ""}
+                        onChange={(e) => setFat((p) => ({ ...p, ie: e.target.value }))}
+                      />
+                    </Campo>
+                  )}
+                  <Campo label="CEP">
+                    <CepInput
+                      value={fat['cep'] ?? ""}
+                      onChange={(v) => setFat((p) => ({ ...p, cep: v }))}
+                      onFound={(e: EnderecoCep) =>
+                        setFat((p) => ({
+                          ...p,
+                          cep: e.cep,
+                          logradouro: e.logradouro || (p['logradouro'] ?? ""),
+                          complemento: e.complemento || (p['complemento'] ?? ""),
+                          bairro: e.bairro || (p['bairro'] ?? ""),
+                          cidade: e.cidade || (p['cidade'] ?? ""),
+                          uf: e.uf || (p['uf'] ?? ""),
+                        }))
+                      }
+                    />
+                  </Campo>
+                  {[
+                    ["logradouro", "Logradouro"],
+                    ["numero", "Número"],
+                    ["complemento", "Complemento"],
+                    ["bairro", "Bairro"],
+                    ["cidade", "Cidade"],
+                    ["uf", "UF"],
+                    ["telefone", "Telefone"],
+                  ].map(([k, label]) => (
+                    <Campo key={k} label={label as string}>
+                      <Input
+                        value={fat[k as string] ?? ""}
+                        onChange={(e) => setFat((p) => ({ ...p, [k as string]: e.target.value }))}
+                      />
+                    </Campo>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Dados buscados automaticamente (CNPJ e CEP) continuam editáveis. Sem retorno das
+                  consultas, preencha manualmente.
+                </p>
               </div>
             )}
           </section>
