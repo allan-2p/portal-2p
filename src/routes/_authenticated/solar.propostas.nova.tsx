@@ -787,8 +787,14 @@ function NovaPropostaSolarPage() {
       consultor: String(cliente?.['created_by_nome'] ?? ""),
       itens: itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId);
-        return { codigo: p?.codigo ?? null, nome: p?.descricao ?? "Item", qtd: i.qtd, valor: i.valor };
+        return {
+          codigo: i.avulso?.codigo ?? p?.codigo ?? null,
+          nome: i.avulso?.descricao ?? p?.descricao ?? "Item",
+          qtd: i.qtd,
+          valor: i.valor,
+        };
       }),
+
       subtotal,
       desconto,
       cupom: cupomCodigo || null,
