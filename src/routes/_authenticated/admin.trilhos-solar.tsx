@@ -146,7 +146,19 @@ function TrilhosSolarPage() {
     void qc.invalidateQueries({ queryKey: ["solar-trilhos"] });
   }
 
+  const pendencias = useMemo(() => {
+    const out: string[] = [];
+    for (const t of trilhosQ.data ?? []) {
+      for (const k of ["cod_4800", "cod_3600", "cod_2400", "cod_2700"] as const) {
+        const cod = (t as any)[k] as string | null;
+        if (cod && !resolverProduto(catalogo, cod)) out.push(`${t.nome} · ${k.replace("cod_", "")}: ${cod}`);
+      }
+    }
+    return out;
+  }, [trilhosQ.data, catalogo]);
+
   return (
+
     <AppLayout>
       <div className="max-w-[1200px] mx-auto space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
