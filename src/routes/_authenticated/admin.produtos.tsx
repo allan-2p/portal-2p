@@ -225,18 +225,20 @@ function CatalogoSapCompleto({ onPropagar }: { onPropagar: () => void }) {
               <th className="text-left px-3 py-2">NCM (SAP)</th>
               <th className="text-left px-3 py-2">No catálogo</th>
               <th className="text-left px-3 py-2">Sincronizado</th>
+              <th className="text-right px-3 py-2">Ação</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin inline" />
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+
                   Nenhum material. Clique em “Sinc. SAP” para importar o catálogo completo.
                 </td>
               </tr>
