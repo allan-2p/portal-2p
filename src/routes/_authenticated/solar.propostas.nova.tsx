@@ -885,6 +885,11 @@ function NovaPropostaSolarPage() {
         else if (!itensCalc.some((i) => i.origem === "calculadora"))
           e.push("O cálculo não gerou itens de estrutura. Revise os dados e calcule novamente.");
       }
+      // SAP recusou a precificação (ex.: CNPJ sem parceiro cadastrado): não avança.
+      if (avisosPreco.length)
+        e.push(`SAP recusou a precificação: ${avisosPreco[0]} Corrija e calcule novamente.`);
+      if (itens.some((i) => !i.valor))
+        e.push("Há itens sem preço. Resolva a precificação no SAP antes de avançar.");
     }
     if (etapa === 4) {
       if (!freteMod) e.push("Escolha a modalidade de frete.");
