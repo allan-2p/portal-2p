@@ -435,6 +435,16 @@ function NovaPropostaSolarPage() {
     return /smart|zipad/i.test(`${t?.nome ?? ""} ${t?.familia ?? ""}`);
   }
 
+  /** Valores padrão (editáveis) de vão máximo e balanço para a fileira. */
+  function padroesLinha(l: FileiraCalc) {
+    const t = (trilhosQ.data ?? []).find((x) => x.id === l.trilhoId);
+    const famT = String(t?.familia ?? "").toLowerCase();
+    const orientR = l.orientacao !== "P";
+    const dist = famT.includes("light") ? (orientR ? "1.50" : "1.70") : orientR ? "1.70" : "2.00";
+    return { dist, balanco: (config.balanco_ponta / 1000).toFixed(2) };
+  }
+
+
   /** Preenche vão máximo e balanço com os padrões da calculadora (editáveis). */
   useEffect(() => {
     setLinhas((prev) => {
