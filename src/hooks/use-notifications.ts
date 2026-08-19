@@ -81,6 +81,11 @@ const vistos = new Set<string>();
 
 async function sincronizarServidor(primeiraCarga: boolean) {
   try {
+    // Sem sessão ativa a server fn responde 401/500 — nem chamamos.
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session?.access_token) return;
+
     const remotas = await listarMinhasNotificacoesFn();
     const novas = remotas.filter((r) => !vistos.has(r.id));
     if (!novas.length) return;
