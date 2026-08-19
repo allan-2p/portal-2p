@@ -450,7 +450,16 @@ function NovaPropostaSolarPage() {
           }
           return l;
         }
-        const distPadrao = ((config.barras_longas?.[0] ?? 6650) / 1000 / 4).toFixed(2);
+        // Distância padrão por família + orientação (calculadora.js:2123-2127).
+        const famT = String(t.familia ?? "").toLowerCase();
+        const orientR = l.orientacao !== "P";
+        const distPadrao = famT.includes("light")
+          ? orientR
+            ? "1.50"
+            : "1.70"
+          : orientR
+            ? "1.70"
+            : "2.00";
         const balancoPadrao = (config.balanco_ponta / 1000).toFixed(2);
         if (!l.distMax || !l.balanco) {
           mudou = true;
