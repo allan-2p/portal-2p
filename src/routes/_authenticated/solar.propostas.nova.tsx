@@ -1384,14 +1384,11 @@ function NovaPropostaSolarPage() {
                       </button>
                     )}
                   </div>
-                  <p id="cupom-hint" className="text-xs text-muted-foreground">
-                    Use apenas letras, números, hífen ou underscore. Máximo 20 caracteres.
-                  </p>
 
                   {(cuponsQ.data ?? []).some((c) => c.ativo) && (
                     <Select
                       value={cupomCodigo || "__none__"}
-                      onValueChange={(v) => (v === "__none__" ? removerCupom() : setCupomCodigo(v))}
+                      onValueChange={(v) => (v === "__none__" ? removerCupom() : setCupomCodigo(normalizarCupom(v)))}
                     >
                       <SelectTrigger><SelectValue placeholder="Ou escolha um cupom" /></SelectTrigger>
                       <SelectContent>
@@ -1407,6 +1404,10 @@ function NovaPropostaSolarPage() {
                     </Select>
                   )}
                 </div>
+                <p id="cupom-hint" className="text-xs text-muted-foreground">
+                  Use apenas letras, números, hífen ou underscore. Máximo 20 caracteres.
+                </p>
+
 
                 {cupomCheck.status === "carregando" && (
                   <p className="flex items-center gap-2 text-xs text-muted-foreground">
