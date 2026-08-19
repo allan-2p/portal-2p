@@ -135,7 +135,15 @@ export function PedidoIntegracoesDialog({
               </div>
               <Linha rot="Nº da ordem (VBELN)" val={d.sap.numero} />
               <Linha rot="Enviado em" val={dataHora(d.sap.enviado_em)} />
-              <Linha rot="Mensagem" val={d.sap.mensagem} />
+              {d.sap.status === "erro" && d.sap.mensagem ? (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-sm text-destructive">
+                  <p className="font-semibold">Retorno do SAP</p>
+                  <p className="mt-0.5 break-words">{d.sap.mensagem}</p>
+                </div>
+              ) : (
+                <Linha rot="Mensagem" val={d.sap.mensagem} />
+              )}
+
               {d.validacao && !d.validacao.ok && (
                 <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-sm">
                   <p className="font-semibold text-destructive">Pendências que impedem o envio</p>
