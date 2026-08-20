@@ -1,3 +1,4 @@
+import { cidadeUf } from "@/lib/local-format";
 import { useCan, useCanDelete } from "@/components/permission-gate";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,7 +36,6 @@ import {
 
 } from "@/lib/clientes.functions";
 import {
-import { cidadeUf } from "@/lib/local-format";
   ContatosEditor, contatosPadrao, normalizarContatos, validarContatos, rotuloErroContato,
   TIPO_ROTULO, type Contato,
 } from "@/components/contatos-editor";

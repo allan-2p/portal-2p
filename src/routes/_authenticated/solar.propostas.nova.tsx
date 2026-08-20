@@ -1,3 +1,4 @@
+import { cidadeUf, cidadeUfCep } from "@/lib/local-format";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -83,7 +84,6 @@ import {
 } from "@/hooks/use-solar-catalogo";
 import { quantificarProjeto, pendenciasDePara } from "@/lib/solar-quantificador";
 import {
-import { cidadeUf, cidadeUfCep } from "@/lib/local-format";
   SOLAR_CALC_CONFIG_FALLBACK,
   type CalcResultado,
   type Orientacao,
