@@ -1022,9 +1022,10 @@ export const statusIntegracoesPedidoFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<PedidoIntegracoesStatus> => {
     const db = await repo();
-    const { validarPedidoParaSap } = await import("@/lib/sap-ov.server");
-    const row = await db.getProposta(data.propostaId);
-    if (!row) throw new Error("Proposta não encontrada.");
+    const { validarPedidoParaSap, enriquecerVendedorSap } = await import("@/lib/sap-ov.server");
+    const bruto = await db.getProposta(data.propostaId);
+    if (!bruto) throw new Error("Proposta não encontrada.");
+    const row = await enriquecerVendedorSap(bruto as Record<string, any>);
     const s = (k: string) => {
       const v = (row as Record<string, any>)[k];
       return v === undefined || v === null || v === "" ? null : String(v);
