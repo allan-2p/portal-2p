@@ -124,7 +124,16 @@ function CuponsPage() {
     valor: Number(c.valor) > 0 ? Number(c.valor) : undefined,
     percentual: Number(c.percentual) > 0 ? Number(c.percentual) : undefined,
     validade: c.validade ? format(new Date(`${c.validade}T00:00:00`), "dd/MM/yyyy") : "—",
+    inicio: c.validade_inicio
+      ? format(new Date(`${c.validade_inicio}T00:00:00`), "dd/MM/yyyy")
+      : undefined,
     reutilizavel: !!c.reutilizavel,
+    usos: Number(c.usos ?? 0),
+    limiteUsos: c.limite_usos == null ? null : Number(c.limite_usos),
+    esgotado:
+      c.limite_usos != null
+        ? Number(c.usos ?? 0) >= Number(c.limite_usos)
+        : !c.reutilizavel && Number(c.usos ?? 0) > 0,
     cliente: c.cliente_nome || undefined,
     criadoEm: c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : "—",
   }));
