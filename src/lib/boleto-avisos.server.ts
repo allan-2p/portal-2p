@@ -47,7 +47,7 @@ export async function avisarBoletos(): Promise<BoletoAvisosResultado> {
   const { data, error } = await supabaseAdmin
     .from("propostas")
     .select(
-      "id, numero, created_by, cliente_nome, cliente_email, pagamento_valor, pagamento_vencimento, pagamento_linha_digitavel, pagamento_url",
+      "id, numero, created_by, cliente_nome, cliente_doc, cliente_email, pagamento_valor, pagamento_vencimento, pagamento_linha_digitavel, pagamento_url",
     )
     .eq("pagamento_meio", "boleto")
     .eq("pagamento_status", "pendente")
