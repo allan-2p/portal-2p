@@ -138,6 +138,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "admin.area.logs",
       "admin.atividade",
       "admin.logs.integracoes",
+      "admin.logs.sap",
       "admin.logs.moderacao",
       "admin.logs.retencao",
       "admin.logs.jobs",

@@ -91,6 +91,7 @@ import { Route as AuthenticatedCarregadoresPropostasVisualizarRouteImport } from
 import { Route as AuthenticatedCarregadoresPropostasNovaRouteImport } from './routes/_authenticated/carregadores.propostas.nova'
 import { Route as AuthenticatedCarregadoresPropostasAuditoriaRouteImport } from './routes/_authenticated/carregadores.propostas.auditoria'
 import { Route as AuthenticatedCarregadoresClientesCadastrosRouteImport } from './routes/_authenticated/carregadores.clientes.cadastros'
+import { Route as AuthenticatedAdminLogsSapRouteImport } from './routes/_authenticated/admin.logs.sap'
 import { Route as AuthenticatedAdminLogsRetencaoRouteImport } from './routes/_authenticated/admin.logs.retencao'
 import { Route as AuthenticatedAdminLogsModeracaoRouteImport } from './routes/_authenticated/admin.logs.moderacao'
 import { Route as AuthenticatedAdminLogsIntegracoesRouteImport } from './routes/_authenticated/admin.logs.integracoes'
@@ -570,6 +571,12 @@ const AuthenticatedCarregadoresClientesCadastrosRoute =
     path: '/cadastros',
     getParentRoute: () => AuthenticatedCarregadoresClientesRoute,
   } as any)
+const AuthenticatedAdminLogsSapRoute =
+  AuthenticatedAdminLogsSapRouteImport.update({
+    id: '/admin/logs/sap',
+    path: '/admin/logs/sap',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminLogsRetencaoRoute =
   AuthenticatedAdminLogsRetencaoRouteImport.update({
     id: '/admin/logs/retencao',
@@ -672,6 +679,7 @@ export interface FileRoutesByFullPath {
   '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
   '/admin/logs/moderacao': typeof AuthenticatedAdminLogsModeracaoRoute
   '/admin/logs/retencao': typeof AuthenticatedAdminLogsRetencaoRoute
+  '/admin/logs/sap': typeof AuthenticatedAdminLogsSapRoute
   '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
@@ -758,6 +766,7 @@ export interface FileRoutesByTo {
   '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
   '/admin/logs/moderacao': typeof AuthenticatedAdminLogsModeracaoRoute
   '/admin/logs/retencao': typeof AuthenticatedAdminLogsRetencaoRoute
+  '/admin/logs/sap': typeof AuthenticatedAdminLogsSapRoute
   '/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
@@ -849,6 +858,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
   '/_authenticated/admin/logs/moderacao': typeof AuthenticatedAdminLogsModeracaoRoute
   '/_authenticated/admin/logs/retencao': typeof AuthenticatedAdminLogsRetencaoRoute
+  '/_authenticated/admin/logs/sap': typeof AuthenticatedAdminLogsSapRoute
   '/_authenticated/carregadores/clientes/cadastros': typeof AuthenticatedCarregadoresClientesCadastrosRoute
   '/_authenticated/carregadores/propostas/auditoria': typeof AuthenticatedCarregadoresPropostasAuditoriaRoute
   '/_authenticated/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
@@ -940,6 +950,7 @@ export interface FileRouteTypes {
     | '/admin/logs/integracoes'
     | '/admin/logs/moderacao'
     | '/admin/logs/retencao'
+    | '/admin/logs/sap'
     | '/carregadores/clientes/cadastros'
     | '/carregadores/propostas/auditoria'
     | '/carregadores/propostas/nova'
@@ -1026,6 +1037,7 @@ export interface FileRouteTypes {
     | '/admin/logs/integracoes'
     | '/admin/logs/moderacao'
     | '/admin/logs/retencao'
+    | '/admin/logs/sap'
     | '/carregadores/clientes/cadastros'
     | '/carregadores/propostas/auditoria'
     | '/carregadores/propostas/nova'
@@ -1116,6 +1128,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/logs/integracoes'
     | '/_authenticated/admin/logs/moderacao'
     | '/_authenticated/admin/logs/retencao'
+    | '/_authenticated/admin/logs/sap'
     | '/_authenticated/carregadores/clientes/cadastros'
     | '/_authenticated/carregadores/propostas/auditoria'
     | '/_authenticated/carregadores/propostas/nova'
@@ -1739,6 +1752,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarregadoresClientesCadastrosRouteImport
       parentRoute: typeof AuthenticatedCarregadoresClientesRoute
     }
+    '/_authenticated/admin/logs/sap': {
+      id: '/_authenticated/admin/logs/sap'
+      path: '/admin/logs/sap'
+      fullPath: '/admin/logs/sap'
+      preLoaderRoute: typeof AuthenticatedAdminLogsSapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/logs/retencao': {
       id: '/_authenticated/admin/logs/retencao'
       path: '/admin/logs/retencao'
@@ -1942,6 +1962,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminLogsIntegracoesRoute: typeof AuthenticatedAdminLogsIntegracoesRoute
   AuthenticatedAdminLogsModeracaoRoute: typeof AuthenticatedAdminLogsModeracaoRoute
   AuthenticatedAdminLogsRetencaoRoute: typeof AuthenticatedAdminLogsRetencaoRoute
+  AuthenticatedAdminLogsSapRoute: typeof AuthenticatedAdminLogsSapRoute
   AuthenticatedSolarPropostasNovaRoute: typeof AuthenticatedSolarPropostasNovaRoute
   AuthenticatedAdminLogsIndexRoute: typeof AuthenticatedAdminLogsIndexRoute
   AuthenticatedSolarPropostasIndexRoute: typeof AuthenticatedSolarPropostasIndexRoute
@@ -2002,6 +2023,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAdminLogsIntegracoesRoute,
   AuthenticatedAdminLogsModeracaoRoute: AuthenticatedAdminLogsModeracaoRoute,
   AuthenticatedAdminLogsRetencaoRoute: AuthenticatedAdminLogsRetencaoRoute,
+  AuthenticatedAdminLogsSapRoute: AuthenticatedAdminLogsSapRoute,
   AuthenticatedSolarPropostasNovaRoute: AuthenticatedSolarPropostasNovaRoute,
   AuthenticatedAdminLogsIndexRoute: AuthenticatedAdminLogsIndexRoute,
   AuthenticatedSolarPropostasIndexRoute: AuthenticatedSolarPropostasIndexRoute,

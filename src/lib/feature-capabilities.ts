@@ -83,6 +83,7 @@ const MAP: Partial<Record<FeatureKey, CapabilityId[]>> = {
   "admin.area.logs": VECM,
   "admin.atividade": V,
   "admin.logs.integracoes": V,
+  "admin.logs.sap": VE,
   "admin.logs.moderacao": V,
   "admin.logs.retencao": VE,
   "admin.logs.jobs": VE,
