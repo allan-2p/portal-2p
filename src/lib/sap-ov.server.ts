@@ -48,6 +48,37 @@ const esc = (v: unknown) =>
     .replace(/"/g, "&quot;");
 
 const digitos = (v: unknown) => String(v ?? "").replace(/\D+/g, "");
+
+/**
+ * O SAP só aceita FOB ou CIF em INCO1. "DEDICADO" é conceito do portal e vai
+ * como CIF (igual à plataforma antiga, calculadora.php:1299).
+ */
+const incoterm = (mod: unknown) =>
+  String(mod ?? "").trim().toUpperCase() === "FOB" ? "FOB" : "CIF";
+
+/** Modalidades aceitas no portal (todas traduzíveis para INCO1). */
+const MODALIDADES_FRETE = ["CIF", "FOB", "DEDICADO"];
+
+/**
+ * O código SAP do vendedor fica no cadastro de usuários (`profiles.numero_sap`),
+ * não na proposta. Completa `consultor_codigo_sap` quando estiver vazio.
+ */
+export async function enriquecerVendedorSap(row: Record<string, any>): Promise<Record<string, any>> {
+  if (String(row["consultor_codigo_sap"] ?? "").trim()) return row;
+  const id = String(row["consultor_id"] ?? "").trim();
+  const nome = String(row["consultor_nome"] ?? "").trim();
+  if (!id && !nome) return row;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const q = supabaseAdmin.from("profiles").select("numero_sap").limit(1);
+    const { data } = id ? await q.eq("id", id) : await q.eq("full_name", nome);
+    const codigo = String((data?.[0] as any)?.numero_sap ?? "").trim();
+    if (codigo) return { ...row, consultor_codigo_sap: codigo };
+  } catch {
+    /* sem código: a validação apenas avisa */
+  }
+  return row;
+}
 const norm = (c: unknown) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
 const hojeIso = () => new Date().toISOString().slice(0, 10);
 
@@ -195,7 +226,7 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         <EMPRESA>${c.empresa}</EMPRESA>
         <FILIAL>${c.filial}</FILIAL>
         <TP_OV>${c.tpOv}</TP_OV>
-        <INCO1>${esc(String(row["frete_mod"] ?? "FOB").toUpperCase())}</INCO1>
+        <INCO1>${incoterm(row["frete_mod"])}</INCO1>
         <INCO2></INCO2>
         <PURCH_DATE>${hoje}</PURCH_DATE>
         <DATA_REMESSA>${hoje}</DATA_REMESSA>
@@ -319,8 +350,9 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
 
   const mod = String(row["frete_mod"] ?? "").trim().toUpperCase();
   if (!mod) pendencias.push("Modalidade de frete (CIF/FOB) não definida.");
-  else if (!["CIF", "FOB"].includes(mod)) pendencias.push(`Modalidade de frete inválida para o SAP: "${mod}".`);
-  if (mod === "CIF" && !(Number(row["frete_valor"] ?? 0) > 0))
+  else if (!MODALIDADES_FRETE.includes(mod))
+    pendencias.push(`Modalidade de frete inválida para o SAP: "${mod}".`);
+  if ((mod === "CIF" || mod === "DEDICADO") && !(Number(row["frete_valor"] ?? 0) > 0))
     avisos.push("Frete CIF sem valor calculado — a ordem irá com frete zerado.");
 
   if (!String(row["forma_pagamento"] ?? "").trim()) pendencias.push("Forma de pagamento não definida.");
@@ -392,8 +424,10 @@ export async function criarOrdemVendaSap(
 ): Promise<SapOvResultado> {
   const inicio = Date.now();
   const base = { slug: "sap", event: "ov.criar" } as const;
-  const row = await db.getProposta(propostaId);
-  if (!row) return { enviado: false, ok: false, vbeln: null, mensagem: "Proposta não encontrada.", testrun: false };
+  const base0 = await db.getProposta(propostaId);
+  if (!base0)
+    return { enviado: false, ok: false, vbeln: null, mensagem: "Proposta não encontrada.", testrun: false };
+  const row: Record<string, any> = base0;
 
   const jaEnviada = String(row["sap_ov_numero"] ?? "").trim();
   if (jaEnviada && !opts.forcar) {
@@ -423,6 +457,7 @@ export async function criarOrdemVendaSap(
     (i) => Number(i?.qtd ?? 0) > 0,
   );
 
+  Object.assign(row, await enriquecerVendedorSap(row));
   const validacao = validarPedidoParaSap(row);
   if (!validacao.ok) {
     const mensagem = `Pedido não passou na validação prévia: ${validacao.pendencias.join(" ")}`.slice(0, 500);
