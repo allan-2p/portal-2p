@@ -326,19 +326,21 @@ function CuponsPage() {
                     {tipos.includes("valor") && (
                       <div className="space-y-1">
                         <Label htmlFor="v-valor" className="text-xs">Valor R$</Label>
-                        <Input
-                          id="v-valor"
-                          type="number"
-                          min="0"
-                          value={valor}
-                          onChange={(e) => {
-                            setValor(e.target.value);
-                            setErrors((er) => ({ ...er, valor: undefined }));
-                          }}
-                          placeholder="0,00"
-                          className={cn(errors.valor && "border-destructive focus-visible:ring-destructive")}
-                          aria-invalid={!!errors.valor}
-                        />
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                          <Input
+                            id="v-valor"
+                            inputMode="numeric"
+                            value={valor}
+                            onChange={(e) => {
+                              setValor(maskMoeda(e.target.value));
+                              setErrors((er) => ({ ...er, valor: undefined }));
+                            }}
+                            placeholder="0,00"
+                            className={cn("pl-9 text-right", errors.valor && "border-destructive focus-visible:ring-destructive")}
+                            aria-invalid={!!errors.valor}
+                          />
+                        </div>
                         {errors.valor && <p className="text-xs text-destructive">{errors.valor}</p>}
                       </div>
                     )}
