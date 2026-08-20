@@ -778,12 +778,14 @@ function CuponsPage() {
                     )}
                   </tr>
                 ))}
-                {cupons.length === 0 && (
+                {cuponsFiltrados.length === 0 && (
                   <tr>
                     <td colSpan={isAdmin ? 8 : 7} className="px-4 py-10 text-center text-muted-foreground">
                       {cuponsQ.isLoading
                         ? "Carregando cupons..."
-                        : "Nenhum cupom criado ainda. Clique em Criar cupom para começar."}
+                        : cupons.length === 0
+                          ? "Nenhum cupom criado ainda. Clique em Criar cupom para começar."
+                          : "Nenhum cupom encontrado para os filtros selecionados."}
                     </td>
                   </tr>
                 )}
