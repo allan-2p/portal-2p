@@ -1,21 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { cronSecretValido } from "@/lib/cron-auth.server";
 
 /**
  * Webhook da Fretefy (rastreio de coleta/entrega).
  *
- * Autenticação: header `x-fretefy-token` (segredo FRETEFY_TOKEN) ou o header
- * `apikey` com a chave pública do projeto. Toda chamada — inclusive as
- * recusadas por assinatura — fica registrada em job_runs.
+ * Autenticação: header `x-fretefy-token` (segredo FRETEFY_TOKEN) para o
+ * webhook externo, ou `x-cron-secret` (CRON_HOOK_SECRET) para chamadas
+ * internas/reprocessamento. Toda chamada — inclusive as recusadas por
+ * assinatura — fica registrada em job_runs.
  */
 export const Route = createFileRoute("/api/public/hooks/fretefy-tracking")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const token = request.headers.get("x-fretefy-token") ?? "";
-        const apikey = request.headers.get("apikey") ?? "";
         const fretefy = process.env["FRETEFY_TOKEN"] ?? "";
-        const anon = process.env["SUPABASE_ANON_KEY"] ?? process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "";
-        const autorizado = (!!fretefy && token === fretefy) || (!!anon && apikey === anon);
+        const autorizado = (!!fretefy && token === fretefy) || cronSecretValido(request);
 
         let payload: Record<string, unknown> = {};
         try {

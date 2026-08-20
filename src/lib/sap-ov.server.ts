@@ -753,6 +753,15 @@ export async function criarOrdemVendaSap(
       sap_vendedor_codigo: String(row["consultor_codigo_sap"] ?? "").trim() || null,
       sap_vendedor_nome: String(row["consultor_nome"] ?? "").trim() || null,
     });
+
+    // Reserva local do estoque (espelha a reserva do SAP até o próximo sync).
+    const itensPedido = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
+    if (itensPedido.length) {
+      const { reservarEstoquePedido } = await import("./estoque-sync.server");
+      await reservarEstoquePedido(
+        itensPedido.map((i) => ({ codigo: String(i?.codigo ?? i?.material ?? ""), qtd: Number(i?.qtd ?? 0) })),
+      );
+    }
   } else {
     await gravar(propostaId, {
       sap_ov_status: "validada",

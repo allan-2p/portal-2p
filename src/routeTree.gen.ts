@@ -80,9 +80,12 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksSapNfsRouteImport } from './routes/api/public/hooks/sap-nfs'
+import { Route as ApiPublicHooksPixReconsultaRouteImport } from './routes/api/public/hooks/pix-reconsulta'
 import { Route as ApiPublicHooksPixItauRouteImport } from './routes/api/public/hooks/pix-itau'
 import { Route as ApiPublicHooksPagamentoLinkRouteImport } from './routes/api/public/hooks/pagamento-link'
 import { Route as ApiPublicHooksFretefyTrackingRouteImport } from './routes/api/public/hooks/fretefy-tracking'
+import { Route as ApiPublicHooksEstoqueSyncRouteImport } from './routes/api/public/hooks/estoque-sync'
+import { Route as ApiPublicHooksBoletoAvisosRouteImport } from './routes/api/public/hooks/boleto-avisos'
 import { Route as AuthenticatedSolarPropostasNovaRouteImport } from './routes/_authenticated/solar.propostas.nova'
 import { Route as AuthenticatedSolarDashboardsMetasRouteImport } from './routes/_authenticated/solar.dashboards.metas'
 import { Route as AuthenticatedSolarClientesSugestoesRouteImport } from './routes/_authenticated/solar.clientes.sugestoes'
@@ -508,6 +511,12 @@ const ApiPublicHooksSapNfsRoute = ApiPublicHooksSapNfsRouteImport.update({
   path: '/api/public/hooks/sap-nfs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPixReconsultaRoute =
+  ApiPublicHooksPixReconsultaRouteImport.update({
+    id: '/api/public/hooks/pix-reconsulta',
+    path: '/api/public/hooks/pix-reconsulta',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPixItauRoute = ApiPublicHooksPixItauRouteImport.update({
   id: '/api/public/hooks/pix-itau',
   path: '/api/public/hooks/pix-itau',
@@ -523,6 +532,18 @@ const ApiPublicHooksFretefyTrackingRoute =
   ApiPublicHooksFretefyTrackingRouteImport.update({
     id: '/api/public/hooks/fretefy-tracking',
     path: '/api/public/hooks/fretefy-tracking',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksEstoqueSyncRoute =
+  ApiPublicHooksEstoqueSyncRouteImport.update({
+    id: '/api/public/hooks/estoque-sync',
+    path: '/api/public/hooks/estoque-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksBoletoAvisosRoute =
+  ApiPublicHooksBoletoAvisosRouteImport.update({
+    id: '/api/public/hooks/boleto-avisos',
+    path: '/api/public/hooks/boleto-avisos',
     getParentRoute: () => rootRouteImport,
   } as any)
 const AuthenticatedSolarPropostasNovaRoute =
@@ -714,9 +735,12 @@ export interface FileRoutesByFullPath {
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
+  '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
+  '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -803,9 +827,12 @@ export interface FileRoutesByTo {
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
+  '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
+  '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -898,9 +925,12 @@ export interface FileRoutesById {
   '/_authenticated/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/_authenticated/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/_authenticated/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
+  '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
+  '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -993,9 +1023,12 @@ export interface FileRouteTypes {
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
     | '/solar/propostas/nova'
+    | '/api/public/hooks/boleto-avisos'
+    | '/api/public/hooks/estoque-sync'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
+    | '/api/public/hooks/pix-reconsulta'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1082,9 +1115,12 @@ export interface FileRouteTypes {
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
     | '/solar/propostas/nova'
+    | '/api/public/hooks/boleto-avisos'
+    | '/api/public/hooks/estoque-sync'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
+    | '/api/public/hooks/pix-reconsulta'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1176,9 +1212,12 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/clientes/sugestoes'
     | '/_authenticated/solar/dashboards/metas'
     | '/_authenticated/solar/propostas/nova'
+    | '/api/public/hooks/boleto-avisos'
+    | '/api/public/hooks/estoque-sync'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
+    | '/api/public/hooks/pix-reconsulta'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1203,9 +1242,12 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAppVersionRoute: typeof ApiPublicAppVersionRoute
+  ApiPublicHooksBoletoAvisosRoute: typeof ApiPublicHooksBoletoAvisosRoute
+  ApiPublicHooksEstoqueSyncRoute: typeof ApiPublicHooksEstoqueSyncRoute
   ApiPublicHooksFretefyTrackingRoute: typeof ApiPublicHooksFretefyTrackingRoute
   ApiPublicHooksPagamentoLinkRoute: typeof ApiPublicHooksPagamentoLinkRoute
   ApiPublicHooksPixItauRoute: typeof ApiPublicHooksPixItauRouteWithChildren
+  ApiPublicHooksPixReconsultaRoute: typeof ApiPublicHooksPixReconsultaRoute
   ApiPublicHooksSapNfsRoute: typeof ApiPublicHooksSapNfsRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1711,6 +1753,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSapNfsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/pix-reconsulta': {
+      id: '/api/public/hooks/pix-reconsulta'
+      path: '/api/public/hooks/pix-reconsulta'
+      fullPath: '/api/public/hooks/pix-reconsulta'
+      preLoaderRoute: typeof ApiPublicHooksPixReconsultaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/pix-itau': {
       id: '/api/public/hooks/pix-itau'
       path: '/api/public/hooks/pix-itau'
@@ -1730,6 +1779,20 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/fretefy-tracking'
       fullPath: '/api/public/hooks/fretefy-tracking'
       preLoaderRoute: typeof ApiPublicHooksFretefyTrackingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/estoque-sync': {
+      id: '/api/public/hooks/estoque-sync'
+      path: '/api/public/hooks/estoque-sync'
+      fullPath: '/api/public/hooks/estoque-sync'
+      preLoaderRoute: typeof ApiPublicHooksEstoqueSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/boleto-avisos': {
+      id: '/api/public/hooks/boleto-avisos'
+      path: '/api/public/hooks/boleto-avisos'
+      fullPath: '/api/public/hooks/boleto-avisos'
+      preLoaderRoute: typeof ApiPublicHooksBoletoAvisosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/solar/propostas/nova': {
@@ -2135,9 +2198,12 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAppVersionRoute: ApiPublicAppVersionRoute,
+  ApiPublicHooksBoletoAvisosRoute: ApiPublicHooksBoletoAvisosRoute,
+  ApiPublicHooksEstoqueSyncRoute: ApiPublicHooksEstoqueSyncRoute,
   ApiPublicHooksFretefyTrackingRoute: ApiPublicHooksFretefyTrackingRoute,
   ApiPublicHooksPagamentoLinkRoute: ApiPublicHooksPagamentoLinkRoute,
   ApiPublicHooksPixItauRoute: ApiPublicHooksPixItauRouteWithChildren,
+  ApiPublicHooksPixReconsultaRoute: ApiPublicHooksPixReconsultaRoute,
   ApiPublicHooksSapNfsRoute: ApiPublicHooksSapNfsRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,

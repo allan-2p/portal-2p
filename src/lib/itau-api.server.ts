@@ -29,6 +29,25 @@ function apiBase(escopo: "boleto" | "pix"): string {
 }
 
 /**
+ * Junta base + caminho sem duplicar prefixos: se a base já terminar com o
+ * mesmo segmento inicial do caminho (ex.: base `.../cash_management/v2` e
+ * caminho `/cash_management/v2/boletos`), o trecho repetido é removido.
+ */
+function montarUrl(base: string, caminho: string): string {
+  const b = base.replace(/\/+$/, "");
+  const partesBase = b.split("/").filter(Boolean);
+  const partesCam = caminho.replace(/^\/+/, "").split("/").filter(Boolean);
+  let overlap = 0;
+  for (let n = Math.min(partesBase.length, partesCam.length); n > 0; n--) {
+    if (partesBase.slice(-n).join("/") === partesCam.slice(0, n).join("/")) {
+      overlap = n;
+      break;
+    }
+  }
+  return `${b}/${partesCam.slice(overlap).join("/")}`;
+}
+
+/**
  * Normaliza o PEM salvo no segredo. Aceita:
  *  - PEM normal;
  *  - PEM colado em uma linha só (\n escapado) ou entre aspas;
@@ -182,7 +201,7 @@ export type ItauCall = {
 /** Chamada autenticada; devolve o JSON de resposta ou lança erro legível. */
 export async function chamarItau(call: ItauCall): Promise<Record<string, any>> {
   const token = await obterToken(call.escopo, call.cred);
-  const url = `${apiBase(call.escopo)}${call.caminho}`;
+  const url = montarUrl(apiBase(call.escopo), call.caminho);
 
   // 5xx do Itaú costuma ser instabilidade/janela de manutenção: tenta de novo.
   let res: Response | null = null;
