@@ -254,6 +254,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       valorTotal,
       cupom: cupom?.codigo ?? null,
       listaPreco: data.listaPreco,
+      ehKit: data.ehKit,
       vendidoClienteFinal: data.vendidoClienteFinal,
     };
 
