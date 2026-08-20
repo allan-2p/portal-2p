@@ -28,7 +28,7 @@ import { toFriendlyError } from "@/lib/friendly-errors";
 
 // Origem do backend — sempre derivada da configuração, nunca hardcoded.
 const SUPABASE_ORIGIN =
-  (import.meta.env['VITE_SUPABASE_URL'] as string | undefined) ?? "";
+  x
 
 
 function NotFoundComponent() {
