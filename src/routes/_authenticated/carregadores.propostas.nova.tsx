@@ -797,9 +797,8 @@ function PropostaCarregadoresPage() {
   if (temProduto && d.cmvExcedido)
     errosPdf.push(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)} — exige aprovação da diretoria.`);
 
-  // Conclusão do pedido exige forma de pagamento; PDF não exige.
+  // Conclusão do pedido herda os mesmos bloqueios (inclui forma de pagamento).
   const errosConclusao: string[] = [...errosPdf];
-  if (!state.formaPagamento) errosConclusao.push("Selecione a forma de pagamento.");
   const podeFechar = errosConclusao.length === 0;
 
   // ---- Bloqueios de salvamento ----
