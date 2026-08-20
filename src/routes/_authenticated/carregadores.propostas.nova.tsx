@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useBlocker } from "@tanstack/react-router";
+import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { propostaStatusStyle } from "@/lib/proposta-status";
 import { WizardActionBar } from "@/components/wizard-action-bar";
@@ -200,7 +200,17 @@ function PropostaCarregadoresPage() {
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
   const [revisao, setRevisao] = useState<null | "concluir">(null);
+  const navigate = useNavigate();
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
+  /** Resultado do "Concluir pedido": mostrado num pop-up de confirmação/erro. */
+  const [resultadoConclusao, setResultadoConclusao] = useState<null | {
+    numero: string;
+    status: string;
+    erro?: string | null;
+    sapOv?: { ok?: boolean; enviado?: boolean; vbeln?: string | null; mensagem?: string | null; motivo?: string | null } | null;
+    salesforce?: { ok?: boolean; enviado?: boolean; mensagem?: string | null; opportunityId?: string | null } | null;
+    cobranca?: { gerada?: boolean; meio?: string | null; motivo?: string | null; erro?: string | null } | null;
+  }>(null);
   const [previewAberto, setPreviewAberto] = useState(false);
   const [usarLogoCliente, setUsarLogoCliente] = useState(true);
   // Consultor da proposta: vem do cadastro do cliente e é congelado ao salvar.
@@ -1127,6 +1137,13 @@ function PropostaCarregadoresPage() {
           }
           cobrancaAviso = (linha as { cobranca?: Parameters<typeof avisarCobranca>[0] }).cobranca ?? null;
           avisarSapOv((linha as { sapOv?: Parameters<typeof avisarSapOv>[0] }).sapOv ?? null);
+          setResultadoConclusao({
+            numero,
+            status: (linha as { status?: string }).status ?? status,
+            sapOv: (linha as any).sapOv ?? null,
+            salesforce: (linha as any).salesforce ?? null,
+            cobranca: (linha as any).cobranca ?? null,
+          });
           // Nº SAP só existe após a conclusão.
           try {
             const { numeroSap } = await atribuirNumeroSap({ data: { propostaId } });
@@ -1177,6 +1194,13 @@ function PropostaCarregadoresPage() {
         }
         avisarCobranca(linha?.cobranca);
         avisarSapOv((linha as { sapOv?: Parameters<typeof avisarSapOv>[0] })?.sapOv ?? null);
+        setResultadoConclusao({
+          numero,
+          status: linha?.status ?? status,
+          sapOv: (linha as any)?.sapOv ?? null,
+          salesforce: (linha as any)?.salesforce ?? null,
+          cobranca: (linha as any)?.cobranca ?? null,
+        });
         try {
           const { numeroSap } = await atribuirNumeroSap({ data: { propostaId: inserida.id } });
           if (numeroSap) setState((s) => ({ ...s, numeroSap }));
@@ -1212,7 +1236,14 @@ function PropostaCarregadoresPage() {
         });
       }
       // Em caso de falha no "Concluir pedido", reverte o status para o anterior
-      if (status !== "Salvo") setStatusProposta("Salvo");
+      if (status !== "Salvo") {
+        setStatusProposta("Salvo");
+        setResultadoConclusao({
+          numero: numeroAtual ?? numeroRef.current ?? "",
+          status: "Salvo",
+          erro: e instanceof Error ? e.message : "Erro ao concluir pedido.",
+        });
+      }
     } finally {
 
       submitLock.current = false;
@@ -2520,6 +2551,79 @@ function PropostaCarregadoresPage() {
                 className="gap-2"
               >
                 <FileDown className="h-4 w-4" /> Baixar PDF
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+
+        {/* Resultado da conclusão: confirmação (ou erro) com o status das integrações */}
+        <Dialog open={!!resultadoConclusao} onOpenChange={(o) => !o && setResultadoConclusao(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {resultadoConclusao?.erro ? (
+                  <TriangleAlert className="h-5 w-5 text-destructive" />
+                ) : (
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                )}
+                {resultadoConclusao?.erro
+                  ? "Não foi possível concluir o pedido"
+                  : `Pedido ${resultadoConclusao?.numero ?? ""} concluído`}
+              </DialogTitle>
+              <DialogDescription>
+                {resultadoConclusao?.erro
+                  ? resultadoConclusao.erro
+                  : `Status aplicado: ${resultadoConclusao?.status ?? ""}. Veja abaixo o resultado de cada integração.`}
+              </DialogDescription>
+            </DialogHeader>
+            {!resultadoConclusao?.erro && (
+              <div className="space-y-2 text-sm">
+                {[
+                  {
+                    nome: "Ordem de venda no SAP",
+                    ok: !!resultadoConclusao?.sapOv?.ok,
+                    detalhe:
+                      resultadoConclusao?.sapOv?.motivo === "nao_configurado"
+                        ? "Integração de ordem de venda não configurada — envie pelo painel de integrações do pedido."
+                        : (resultadoConclusao?.sapOv?.vbeln
+                            ? `Ordem ${resultadoConclusao.sapOv.vbeln} criada.`
+                            : resultadoConclusao?.sapOv?.mensagem) ?? "Não enviado.",
+                  },
+                  {
+                    nome: "Oportunidade no Salesforce",
+                    ok: !!resultadoConclusao?.salesforce?.ok,
+                    detalhe: resultadoConclusao?.salesforce?.mensagem ?? "Não enviado.",
+                  },
+                  {
+                    nome: "Cobrança",
+                    ok: !!resultadoConclusao?.cobranca?.gerada,
+                    detalhe:
+                      resultadoConclusao?.cobranca?.erro ??
+                      resultadoConclusao?.cobranca?.motivo ??
+                      (resultadoConclusao?.cobranca?.gerada
+                        ? `Gerada (${resultadoConclusao.cobranca.meio ?? "—"}).`
+                        : "Não gerada."),
+                  },
+                ].map((l) => (
+                  <div key={l.nome} className="rounded-lg border border-border bg-muted/30 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-medium">{l.nome}</span>
+                      <span className={cn("text-xs font-semibold", l.ok ? "text-emerald-600" : "text-amber-600")}>
+                        {l.ok ? "OK" : "Pendente"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{l.detalhe}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setResultadoConclusao(null)}>
+                Fechar
+              </Button>
+              <Button onClick={() => { setResultadoConclusao(null); void navigate({ to: "/carregadores/propostas" }); }}>
+                Ir para propostas
               </Button>
             </DialogFooter>
           </DialogContent>
