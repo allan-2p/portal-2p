@@ -683,7 +683,7 @@ function CuponsPage() {
                 </tr>
               </thead>
               <tbody>
-                {cupons.map((c) => (
+                {cuponsFiltrados.map((c) => (
                   <tr key={c.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 font-mono font-semibold">
                       <div className="flex items-center gap-2">
