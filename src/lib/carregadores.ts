@@ -213,6 +213,8 @@ export type CarregadoresState = {
   /** Destinatário fiscal alternativo (quando não é o cliente final). */
   faturamento: CarregadoresFaturamento;
   formaPagamento: CarregadoresFormaPagamento | "";
+  /** Condição de pagamento (ZTERM) escolhida no checkout. */
+  condicaoPagamento: string;
   /** Entrega em endereço diferente do faturamento (mesmo estado). */
   entregaDiferente: boolean;
   entrega: CarregadoresEndereco;
@@ -401,6 +403,7 @@ export function novoEstado(): CarregadoresState {
     faturarClienteFinal: false,
     faturamento: novoFaturamento("SP"),
     formaPagamento: "",
+    condicaoPagamento: "",
     entregaDiferente: false,
     entrega: novoEndereco("SP"),
     freteMod: "",
