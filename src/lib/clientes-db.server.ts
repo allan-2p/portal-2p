@@ -118,6 +118,22 @@ export async function deleteCliente(instance: ClientesInstance, id: string): Pro
   await rest(instance, `clientes?id=eq.${id}&instancia=eq.${instance}`, { method: "DELETE" });
 }
 
+/**
+ * Espelho do cadastro no SAP (`clientes_sap`), com o que foi enviado e o que o
+ * SAP devolveu. Falha silenciosa quando a tabela ainda não existe.
+ */
+export async function upsertClienteSap(row: Record<string, any>): Promise<void> {
+  const { ok, status, text } = await grupo2pRest("clientes_sap?on_conflict=cliente_id", {
+    method: "POST",
+    body: JSON.stringify(row),
+    prefer: "resolution=merge-duplicates,return=minimal",
+  });
+  if (!ok && status !== 404) {
+    throw new Error(`Erro ao gravar clientes_sap (${status}): ${text.slice(0, 300)}`);
+  }
+}
+
+
 export async function clientesTableExists(instance: ClientesInstance): Promise<boolean> {
   try {
     await rest(instance, "clientes?select=id&limit=1");
