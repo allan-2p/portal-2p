@@ -59,7 +59,42 @@ export type ClienteSapInput = {
   vendedor_sap?: string | null;
   /** KUNNR já existente: quando presente, o SAP atualiza em vez de criar. */
   numero_sap?: string | null;
+  /** Unidade (organização) do cliente — define equipe/escritório de vendas. */
+  escopo_org?: EscopoOrg | null;
+  /** Valores explícitos (espelho do SAP); sobrepõem o cálculo pelo escopo. */
+  equipe_vendas?: string | null;
+  escritorio_vendas?: string | null;
 };
+
+/** Escopo comercial do cliente no SAP. */
+export type EscopoOrg = "solar" | "carregadores" | "grupo";
+
+/** EQUIPE_VENDAS (VKGRP) e ESCRITORIO (VKBUR) por unidade. */
+export const VENDAS_POR_ESCOPO: Record<EscopoOrg, { equipe: string; escritorio: string }> = {
+  solar: { equipe: "001", escritorio: "0002" },
+  carregadores: { equipe: "002", escritorio: "0003" },
+  grupo: { equipe: "003", escritorio: "0004" },
+};
+
+/** Normaliza organização/instância ("2P Solar", "carregadores", "Grupo 2P"…). */
+export function escopoOrg(valor: unknown): EscopoOrg {
+  const v = String(valor ?? "").toLowerCase();
+  if (v.includes("grupo")) return "grupo";
+  if (v.includes("carregad")) return "carregadores";
+  return "solar";
+}
+
+export function vendasDoEscopo(c: {
+  escopo_org?: EscopoOrg | null;
+  equipe_vendas?: string | null;
+  escritorio_vendas?: string | null;
+}): { EQUIPE_VENDAS: string; ESCRITORIO: string } {
+  const base = VENDAS_POR_ESCOPO[c.escopo_org ?? "solar"] ?? VENDAS_POR_ESCOPO.solar;
+  return {
+    EQUIPE_VENDAS: so(c.equipe_vendas) || base.equipe,
+    ESCRITORIO: so(c.escritorio_vendas) || base.escritorio,
+  };
+}
 
 const so = (v: unknown) => String(v ?? "").trim();
 const digitos = (v: unknown) => so(v).replace(/\D/g, "");
