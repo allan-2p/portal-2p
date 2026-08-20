@@ -99,7 +99,16 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         <div className="glass rounded-2xl p-5 space-y-3">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Faturamento</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <Campo label="UF de destino" value={String(p['uf'] ?? "—")} />
+            <Campo
+              label="Cidade / UF de destino"
+              value={(() => {
+                const fat = (p['faturamento'] ?? {}) as Record<string, string>;
+                const ent = (p['entrega'] ?? {}) as Record<string, string>;
+                const cidade = fat['cidade'] || ent['cidade'] || "";
+                const uf = fat['uf'] || ent['uf'] || String(p['uf'] ?? "");
+                return [cidade, uf].filter(Boolean).join(" / ") || "—";
+              })()}
+            />
             <Campo label="Contribuinte" value={p['contribuinte'] ? "Sim" : "Não"} />
             <Campo label="Finalidade de uso" value={finalidadeCadastro ? labelFinalidadeUso[finalidadeUsoDoCadastro(finalidadeCadastro)] : labelFinalidade(p['finalidade_uso'])} />
             <Campo label="Frete" value={`${p['frete_mod'] ?? "—"} · ${fmtBRL(frete)}`} />

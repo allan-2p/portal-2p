@@ -925,7 +925,6 @@ function PropostaCarregadoresPage() {
         propostaNome: state.propostaNome.trim() || null,
         numeroSap: state.numeroSap.trim() || null,
         cliente: {
-
           nome: state.nome,
           nomeFantasia: state.nome,
           doc: state.doc,
@@ -933,6 +932,7 @@ function PropostaCarregadoresPage() {
           email: state.email,
           telefone: state.telefone,
           uf: state.uf,
+          cidade: faturamentoEfetivo.cidade || entregaEfetiva.cidade || null,
           contribuinte: state.contribuinte,
         },
         finalidadeUso: finalidadeUsoPdf,
@@ -2126,7 +2126,7 @@ function PropostaCarregadoresPage() {
                   <ResumoLinha k="Consultor" v={consultorProposta ?? "—"} />
                   <ResumoLinha
                     k="Nota"
-                    v={`${labelTipoNf[state.tipoNf]} · ${labelFinalidadeUso[state.finalidadeUso]} · ${state.uf || "—"}`}
+                    v={`${labelTipoNf[state.tipoNf]} · ${labelFinalidadeUso[state.finalidadeUso]} · ${[faturamentoEfetivo.cidade, state.uf].filter(Boolean).join(" / ") || "—"}`}
                   />
                   <ResumoLinha
                     k="Endereço de faturamento"
