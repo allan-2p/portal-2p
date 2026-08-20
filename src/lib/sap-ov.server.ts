@@ -708,6 +708,8 @@ export async function criarOrdemVendaSap(
     xml = await res.text();
   } catch (e) {
     const mensagem = `Falha de comunicação com o SAP: ${(e as Error).message}`;
+    // libera o claim para a próxima tentativa
+    await gravar(propostaId, { sap_ov_status: "erro", sap_ov_mensagem: mensagem.slice(0, 500) });
     await logIntegrationEvent({
       ...base,
       level: "error",
