@@ -8,7 +8,15 @@ import { XMLParser } from "fast-xml-parser";
 import { camposSapCliente, validarParaSap, type ClienteSapInput } from "./sap-clientes-map";
 
 export type SapClienteResultado =
-  | { ok: true; numero_sap: string | null; mensagem: string | null; raw: unknown }
+  | {
+      ok: true;
+      numero_sap: string | null;
+      mensagem: string | null;
+      /** Espelho do que foi enviado/retornado (VKGRP / VKBUR). */
+      equipe_vendas: string | null;
+      escritorio_vendas: string | null;
+      raw: unknown;
+    }
   | { ok: false; erro: string; raw?: unknown };
 
 function escXml(v: string) {
@@ -69,6 +77,7 @@ function montarEnvelope(cliente: ClienteSapInput): string {
         ${tag("CFOPC", c.CFOPC)}${tag("ICMSTAXPAY", c.ICMSTAXPAY)}${tag("VENDEDOR", c.VENDEDOR)}
         <BZIRK>SOUTH</BZIRK><KALKS>01</KALKS><VZSKZ>01</VZSKZ>
         ${tag("PLTYP", c.PLTYP)}${tag("KONDA", c.KONDA)}${tag("CRT", c.CRT)}${tag("ZTERM", c.ZTERM)}
+        ${tag("EQUIPE_VENDAS", c.EQUIPE_VENDAS)}${tag("ESCRITORIO", c.ESCRITORIO)}
         ${indSector}
       </I_S_CLIENTE>
       <WERKS/>
@@ -167,10 +176,16 @@ export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<Sa
     };
   }
 
+  const enviados = camposSapCliente(cliente);
+  const equipe = achar(json, "E_EQUIPE_VENDAS") ?? achar(json, "EQUIPE_VENDAS") ?? achar(json, "VKGRP");
+  const escritorio = achar(json, "E_ESCRITORIO") ?? achar(json, "ESCRITORIO") ?? achar(json, "VKBUR");
+
   return {
     ok: true,
     numero_sap: String(numero).replace(/^0+/, "") || String(numero),
     mensagem: mensagem ? String(mensagem) : null,
+    equipe_vendas: String(equipe ?? enviados.EQUIPE_VENDAS) || null,
+    escritorio_vendas: String(escritorio ?? enviados.ESCRITORIO) || null,
     raw: json,
   };
 }

@@ -75,6 +75,19 @@ export async function sincronizarCliente(
     uf: cliente["uf"] ?? null,
   };
 
+  // Escritório/equipe de vendas: definidos pela organização do cliente
+  // (2P Solar 001/0002, 2P Carregadores 002/0003, Grupo 2P 003/0004).
+  const { escopoOrg, vendasDoEscopo } = await import("./sap-clientes-map");
+  const escopo = escopoOrg(
+    cliente["escopo_org"] ?? cliente["organizacao"] ?? atual?.["organizacao"] ?? instancia,
+  );
+  const { EQUIPE_VENDAS, ESCRITORIO } = vendasDoEscopo({ escopo_org: escopo });
+  const vendas = {
+    escopo_org: escopo,
+    equipe_vendas: EQUIPE_VENDAS,
+    escritorio_vendas: ESCRITORIO,
+  };
+
   const sapPayload = {
     doc: base.doc,
     razao_social: base.razao_social,
@@ -94,6 +107,7 @@ export async function sincronizarCliente(
     cep: cliente["cep"] ?? null,
     vendedor_sap: extras.vendedorSap ?? null,
     numero_sap: numeroSapAtual,
+    ...vendas,
   };
 
   if (fazSap) await logIntegrationEvent({
@@ -106,7 +120,14 @@ export async function sincronizarCliente(
 
   const sapIniciadoEm = Date.now();
   const sap = !fazSap
-    ? { ok: true, numero_sap: numeroSapAtual, erro: null as string | null, mensagem: "ignorado" }
+    ? {
+        ok: true as const,
+        numero_sap: numeroSapAtual,
+        erro: null as string | null,
+        mensagem: "ignorado",
+        equipe_vendas: null as string | null,
+        escritorio_vendas: null as string | null,
+      }
     : await enviarClienteParaSap({
 
     doc: String(cliente["doc"] ?? ""),
@@ -131,6 +152,9 @@ export async function sincronizarCliente(
     municipio_ibge: cliente["municipio_ibge"],
     vendedor_sap: extras.vendedorSap ?? null,
     numero_sap: numeroSapAtual,
+    escopo_org: escopo,
+    equipe_vendas: EQUIPE_VENDAS,
+    escritorio_vendas: ESCRITORIO,
   });
 
   if (fazSap) await logIntegrationEvent({
@@ -158,6 +182,9 @@ export async function sincronizarCliente(
       sap_status: sap.ok ? "enviado" : "erro",
       sap_erro: sap.ok ? null : sap.erro,
       ...(sap.ok && sap.numero_sap ? { numero_sap: sap.numero_sap } : {}),
+      // Campos espelhados do SAP (não editáveis no portal).
+      equipe_vendas: (sap.ok ? sap.equipe_vendas : null) ?? EQUIPE_VENDAS,
+      escritorio_vendas: (sap.ok ? sap.escritorio_vendas : null) ?? ESCRITORIO,
     });
   } catch (err) {
     console.error("[clientes] falha ao gravar retorno do SAP", err);
