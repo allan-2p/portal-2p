@@ -80,6 +80,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksSapNfsRouteImport } from './routes/api/public/hooks/sap-nfs'
+import { Route as ApiPublicHooksPixReconsultaRouteImport } from './routes/api/public/hooks/pix-reconsulta'
 import { Route as ApiPublicHooksPixItauRouteImport } from './routes/api/public/hooks/pix-itau'
 import { Route as ApiPublicHooksPagamentoLinkRouteImport } from './routes/api/public/hooks/pagamento-link'
 import { Route as ApiPublicHooksFretefyTrackingRouteImport } from './routes/api/public/hooks/fretefy-tracking'
@@ -509,6 +510,12 @@ const ApiPublicHooksSapNfsRoute = ApiPublicHooksSapNfsRouteImport.update({
   path: '/api/public/hooks/sap-nfs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPixReconsultaRoute =
+  ApiPublicHooksPixReconsultaRouteImport.update({
+    id: '/api/public/hooks/pix-reconsulta',
+    path: '/api/public/hooks/pix-reconsulta',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPixItauRoute = ApiPublicHooksPixItauRouteImport.update({
   id: '/api/public/hooks/pix-itau',
   path: '/api/public/hooks/pix-itau',
@@ -725,6 +732,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
+  '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -815,6 +823,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
+  '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -911,6 +920,7 @@ export interface FileRoutesById {
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
+  '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -1007,6 +1017,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
+    | '/api/public/hooks/pix-reconsulta'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1097,6 +1108,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
+    | '/api/public/hooks/pix-reconsulta'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1192,6 +1204,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
+    | '/api/public/hooks/pix-reconsulta'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1220,6 +1233,7 @@ export interface RootRouteChildren {
   ApiPublicHooksFretefyTrackingRoute: typeof ApiPublicHooksFretefyTrackingRoute
   ApiPublicHooksPagamentoLinkRoute: typeof ApiPublicHooksPagamentoLinkRoute
   ApiPublicHooksPixItauRoute: typeof ApiPublicHooksPixItauRouteWithChildren
+  ApiPublicHooksPixReconsultaRoute: typeof ApiPublicHooksPixReconsultaRoute
   ApiPublicHooksSapNfsRoute: typeof ApiPublicHooksSapNfsRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1725,6 +1739,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSapNfsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/pix-reconsulta': {
+      id: '/api/public/hooks/pix-reconsulta'
+      path: '/api/public/hooks/pix-reconsulta'
+      fullPath: '/api/public/hooks/pix-reconsulta'
+      preLoaderRoute: typeof ApiPublicHooksPixReconsultaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/pix-itau': {
       id: '/api/public/hooks/pix-itau'
       path: '/api/public/hooks/pix-itau'
@@ -2160,6 +2181,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksFretefyTrackingRoute: ApiPublicHooksFretefyTrackingRoute,
   ApiPublicHooksPagamentoLinkRoute: ApiPublicHooksPagamentoLinkRoute,
   ApiPublicHooksPixItauRoute: ApiPublicHooksPixItauRouteWithChildren,
+  ApiPublicHooksPixReconsultaRoute: ApiPublicHooksPixReconsultaRoute,
   ApiPublicHooksSapNfsRoute: ApiPublicHooksSapNfsRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
