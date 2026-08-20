@@ -2167,6 +2167,11 @@ function NovaPropostaSolarPage() {
                 <Info label="Tabela de preço" value={`Tabela ${listaPreco}`} />
                 <Info label="Venda em kit" value={ehKit ? "Sim" : "Não"} />
                 <Info label="Tipo de NF" value={tipoNf} />
+                <Info
+                  label="Cidade / UF de destino"
+                  value={[destino.cidade, destino.uf].filter(Boolean).join(" / ") || "—"}
+                />
+
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
                 <Info label="Frete" value={freteMod || "—"} />
                 <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
