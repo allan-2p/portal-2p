@@ -19,6 +19,7 @@
  */
 
 import { XMLParser } from "fast-xml-parser";
+import { tpOvDoPedido, contribuinteDoFaturamento } from "./sap-tp-ov";
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 import { simularPrecosSap } from "./sap-precos.server";
@@ -119,12 +120,20 @@ export function sapOvConfigurado() {
 }
 
 /** Constantes por unidade (ver docs/sap/README.md). */
-function constantes(organizacao: string) {
+function constantes(organizacao: string, row: Record<string, any> = {}) {
   const carregadores = String(organizacao ?? "").toLowerCase().includes("carregador");
   return {
     empresa: "9800",
     filial: carregadores ? "9802" : "9800",
-    tpOv: carregadores ? "ZC2P" : "ZV2P",
+    // TP_OV pela condição fiscal do parceiro faturado (IE), não pela unidade.
+    tpOv: tpOvDoPedido(
+      row["tipo_nf"],
+      contribuinteDoFaturamento({
+        contribuinte: row["contribuinte"],
+        faturarClienteFinal: row["faturar_cliente_final"],
+        faturamento: (row["faturamento"] ?? {}) as { contribuinte?: unknown },
+      }),
+    ),
     vkorg: "9800",
     vtweg: "10",
     spart: "10",
@@ -185,7 +194,7 @@ function parceiro(role: "AG" | "CL", doc: string, nome: string) {
 type Peso = { bruto: number; liquido: number };
 
 function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): string {
-  const c = constantes(String(row["organizacao"] ?? "carregadores"));
+  const c = constantes(String(row["organizacao"] ?? "carregadores"), row);
   const hoje = hojeIso();
   const itens = (Array.isArray(row["itens"]) ? (row["itens"] as any[]) : []).filter(
     (i) => norm(i?.codigo) && Number(i?.qtd ?? 0) > 0,
