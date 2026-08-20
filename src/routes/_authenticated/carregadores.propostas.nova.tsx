@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useBlocker } from "@tanstack/react-router";
+import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { propostaStatusStyle } from "@/lib/proposta-status";
 import { WizardActionBar } from "@/components/wizard-action-bar";
@@ -200,6 +200,7 @@ function PropostaCarregadoresPage() {
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
   const [revisao, setRevisao] = useState<null | "concluir">(null);
+  const navigate = useNavigate();
   const [confirmarConclusao, setConfirmarConclusao] = useState(false);
   /** Resultado do "Concluir pedido": mostrado num pop-up de confirmação/erro. */
   const [resultadoConclusao, setResultadoConclusao] = useState<null | {
