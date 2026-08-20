@@ -182,7 +182,7 @@ export type ItauCall = {
 /** Chamada autenticada; devolve o JSON de resposta ou lança erro legível. */
 export async function chamarItau(call: ItauCall): Promise<Record<string, any>> {
   const token = await obterToken(call.escopo, call.cred);
-  const url = `${apiBase(call.escopo)}${call.caminho}`;
+  const url = montarUrl(apiBase(call.escopo), call.caminho);
 
   // 5xx do Itaú costuma ser instabilidade/janela de manutenção: tenta de novo.
   let res: Response | null = null;
