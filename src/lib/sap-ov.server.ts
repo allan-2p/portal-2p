@@ -749,18 +749,44 @@ export async function criarOrdemVendaSap(
     return { enviado: true, ok: false, vbeln: null, mensagem, testrun };
   }
 
-  const { erro, aviso, texto, numeroSucesso } = mensagens(doc);
-  const vbeln =
+  const { erro, aviso, texto, numeroSucesso, itens: msgItens, detalhado, duplicado } = mensagens(doc);
+  let vbeln =
     String(achar(doc, "E_VBELN") ?? achar(doc, "E_VBELN_VA") ?? achar(doc, "E_NRO_OV") ?? "").trim() ||
     numeroSucesso ||
     null;
 
+  // Auto-recuperação: o SAP diz que já existe ordem para este NROPED — a ordem
+  // existe, só não veio o número. Busca no ZNFE_OV_CONSULTAR pelo mesmo pedido.
+  if (!vbeln && !testrun && duplicado) {
+    const nroped = String(row["sap_nroped"] ?? row["numero"] ?? "").trim();
+    if (nroped) {
+      const { consultarVbelnPorPedido } = await import("./sap-nfs.server");
+      const achado = await consultarVbelnPorPedido(nroped);
+      if (achado) {
+        vbeln = achado;
+        await logIntegrationEvent({
+          ...base,
+          level: "warn",
+          message: `Ordem já existia no SAP para o pedido ${nroped}: recuperada ${achado}`,
+          detail: { proposta_id: propostaId, numero: row["numero"] ?? null, t_msg: msgItens },
+        });
+      }
+    }
+  }
 
   // Em test run o SAP valida o pedido sem gravar a ordem: não devolve VBELN.
   // Fora do test run, sem VBELN é falha — inclusive quando o SAP só devolve
   // avisos (W), que nesse caso explicam por que a ordem não foi criada.
-  if (erro || (!vbeln && !testrun)) {
-    const mensagem = erro ?? aviso ?? texto ?? "O SAP não devolveu o número da ordem de venda.";
+  if ((erro && !vbeln) || (!vbeln && !testrun)) {
+    // A mensagem gravada é SEMPRE o conteúdo completo do T_MSG — sem isso não
+    // dá para diagnosticar nada em produção. A genérica só entra se o SAP não
+    // devolveu nenhum item (T_MSG vazio).
+    const mensagem =
+      detalhado ??
+      erro ??
+      aviso ??
+      texto ??
+      `O SAP não devolveu o número da ordem de venda nem mensagens (T_MSG vazio, HTTP ${httpStatus}).`;
 
     await gravar(propostaId, { sap_ov_status: "erro", sap_ov_mensagem: mensagem.slice(0, 500) });
     await logIntegrationEvent({
@@ -771,6 +797,7 @@ export async function criarOrdemVendaSap(
         proposta_id: propostaId,
         numero: row["numero"] ?? null,
         testrun,
+        t_msg: msgItens,
         payload_resumo: {
           tipo: row["tipo_nf"] ?? null,
           modalidade_frete: row["frete_mod"] ?? null,
@@ -784,6 +811,8 @@ export async function criarOrdemVendaSap(
     });
     return { enviado: true, ok: false, vbeln: null, mensagem, testrun };
   }
+
+
 
 
   if (!testrun) {
