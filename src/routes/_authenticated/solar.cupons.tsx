@@ -57,7 +57,11 @@ type Cupom = {
   valor?: number;
   percentual?: number;
   validade: string;
+  inicio?: string;
   reutilizavel: boolean;
+  usos: number;
+  limiteUsos?: number | null;
+  esgotado: boolean;
   cliente?: string;
   criadoEm: string;
 };
