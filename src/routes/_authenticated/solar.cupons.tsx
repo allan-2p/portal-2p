@@ -137,6 +137,7 @@ function CuponsPage() {
       c.limite_usos != null
         ? Number(c.usos ?? 0) >= Number(c.limite_usos)
         : !c.reutilizavel && Number(c.usos ?? 0) > 0,
+    ativo: c.ativo !== false,
     cliente: c.cliente_nome || undefined,
     criadoEm: c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : "—",
   }));
