@@ -617,6 +617,27 @@ export async function criarOrdemVendaSap(
     };
   }
 
+  // Claim atômico: com o fluxo do Pix, o webhook e a reconsulta de 15min podem
+  // disparar a criação do mesmo pedido quase ao mesmo tempo. Só um envio ganha
+  // o lock; o outro sai sem erro (o SAP recusaria por NROPED duplicado).
+  if (!opts.forcar) {
+    const ganhou = await db
+      .atualizarProposta(propostaId, { sap_ov_status: "enviando" }, {
+        or: '(sap_ov_status.is.null,sap_ov_status.not.in.("enviando","criada"))',
+      })
+      .catch(() => undefined);
+    if (ganhou === null) {
+      return {
+        enviado: false,
+        ok: true,
+        vbeln: null,
+        mensagem: "Envio da ordem de venda já em andamento.",
+        motivo: "em_andamento",
+        testrun: false,
+      };
+    }
+  }
+
   const itens = (Array.isArray(row["itens"]) ? (row["itens"] as any[]) : []).filter(
     (i) => Number(i?.qtd ?? 0) > 0,
   );
