@@ -203,14 +203,26 @@ export function criarPixIOSimulado(propostas: PropostaLike[]) {
 }
 
 
-/** Localiza a proposta pelo txid gravado nela ou pelo nº embutido no txid. */
+/**
+ * Localiza a proposta pelo txid gravado nela; se não achar, usa o número do
+ * pedido embutido no txid gerado pelo portal (`2P<numero><uuid-sem-hífens>`).
+ * O fallback só vale para esse formato: procurar "qualquer 6 dígitos" em um
+ * txid de outra origem pode dar baixa no pedido errado.
+ */
 async function localizarProposta(txid: string, io: PixIO): Promise<PropostaLike | null> {
   const porTxid = await io.buscarPorTxid(txid);
   if (porTxid) return porTxid;
-  const numero = (txid.match(/\d{6}/) ?? [])[0];
-  if (numero) return await io.buscarPorNumero(numero);
-  return null;
+
+  const m = /^2P(\d{1,10})([0-9a-fA-F]{32})/.exec(txid);
+  if (!m) return null;
+  const candidato = await io.buscarPorNumero(m[1]!);
+  if (!candidato) return null;
+  // Confere o UUID do pedido embutido no txid — sem isso, dois pedidos com o
+  // mesmo número (organizações diferentes) poderiam se confundir.
+  const idHex = String(candidato["id"] ?? "").replace(/-/g, "").toLowerCase();
+  return idHex && idHex === m[2]!.toLowerCase() ? candidato : null;
 }
+
 
 export type PixAplicacao = {
   txid: string;
