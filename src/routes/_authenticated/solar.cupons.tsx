@@ -402,10 +402,39 @@ function CuponsPage() {
                   {errors.validade && <p className="text-xs text-destructive">{errors.validade}</p>}
                 </div>
 
-                {/* Reutilizável */}
-                <div className="flex items-center gap-2">
-                  <Checkbox id="reuso" checked={reutilizavel} onCheckedChange={(v) => setReutilizavel(Boolean(v))} />
-                  <Label htmlFor="reuso" className="cursor-pointer">Reutilizável (mais de um uso)</Label>
+                {/* Reutilizável + limite de usos */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="reuso"
+                      checked={reutilizavel}
+                      onCheckedChange={(v) => {
+                        setReutilizavel(Boolean(v));
+                        if (!v) setLimiteUsos("");
+                      }}
+                    />
+                    <Label htmlFor="reuso" className="cursor-pointer">Reutilizável (mais de um uso)</Label>
+                  </div>
+                  {reutilizavel && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="limite">Limite de usos (opcional)</Label>
+                      <Input
+                        id="limite"
+                        inputMode="numeric"
+                        placeholder="Ilimitado"
+                        value={limiteUsos}
+                        onChange={(e) => setLimiteUsos(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                        className={cn(errors.limiteUsos && "border-destructive")}
+                      />
+                      {errors.limiteUsos ? (
+                        <p className="text-xs text-destructive">{errors.limiteUsos}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Deixe em branco para uso ilimitado dentro da vigência.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Cliente específico */}
