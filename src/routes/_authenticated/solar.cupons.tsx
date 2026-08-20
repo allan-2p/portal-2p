@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CalendarIcon, Copy, Plus, RefreshCw, Tag } from "lucide-react";
+import { CalendarIcon, Copy, Plus, RefreshCw, Search, Tag, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -66,6 +66,7 @@ type Cupom = {
   esgotado: boolean;
   ativo: boolean;
   cliente?: string;
+  clienteDoc?: string;
   criadoEm: string;
 };
 
@@ -139,10 +140,33 @@ function CuponsPage() {
         : !c.reutilizavel && Number(c.usos ?? 0) > 0,
     ativo: c.ativo !== false,
     cliente: c.cliente_nome || undefined,
+    clienteDoc: c.cliente_doc || undefined,
     criadoEm: c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : "—",
   }));
   const [salvando, setSalvando] = useState(false);
   const [open, setOpen] = useState(false);
+
+  // filtros
+  const [busca, setBusca] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState<"todos" | TipoCupom>("todos");
+  const [filtroStatus, setFiltroStatus] = useState<"todos" | "ativo" | "inativo">("todos");
+  const [filtroCliente, setFiltroCliente] = useState<string>("todos");
+
+  const cuponsFiltrados = cupons.filter((c) => {
+    const termo = busca.trim().toUpperCase();
+    const bateBusca =
+      !termo ||
+      c.codigo.toUpperCase().includes(termo) ||
+      (c.cliente?.toUpperCase() ?? "").includes(termo);
+    const bateTipo =
+      filtroTipo === "todos" ||
+      (filtroTipo === "valor" && c.valor !== undefined) ||
+      (filtroTipo === "percentual" && c.percentual !== undefined) ||
+      (filtroTipo === "frete" && c.tipos.includes("frete"));
+    const bateStatus = filtroStatus === "todos" || (filtroStatus === "ativo" ? c.ativo : !c.ativo);
+    const bateCliente = filtroCliente === "todos" || c.clienteDoc === filtroCliente;
+    return bateBusca && bateTipo && bateStatus && bateCliente;
+  });
 
   // form
   const [aleatorio, setAleatorio] = useState(true);
@@ -587,6 +611,62 @@ function CuponsPage() {
           </Dialog>
         </div>
 
+        {/* Filtros */}
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por código ou cliente"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="pl-9"
+            />
+            {busca && (
+              <button
+                type="button"
+                onClick={() => setBusca("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v as any)}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os tipos</SelectItem>
+              <SelectItem value="valor">Valor R$</SelectItem>
+              <SelectItem value="percentual">Percentual %</SelectItem>
+              <SelectItem value="frete">Frete grátis</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filtroStatus} onValueChange={(v) => setFiltroStatus(v as any)}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="ativo">Ativo</SelectItem>
+              <SelectItem value="inativo">Inativo</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filtroCliente} onValueChange={(v) => setFiltroCliente(v)}>
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <SelectValue placeholder="Cliente" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="todos">Todos os clientes</SelectItem>
+              {(clientesQ.data ?? []).map((c) => (
+                <SelectItem key={c.doc} value={c.doc}>
+                  {c.razao_social}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="glass rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -603,7 +683,7 @@ function CuponsPage() {
                 </tr>
               </thead>
               <tbody>
-                {cupons.map((c) => (
+                {cuponsFiltrados.map((c) => (
                   <tr key={c.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 font-mono font-semibold">
                       <div className="flex items-center gap-2">
@@ -698,12 +778,14 @@ function CuponsPage() {
                     )}
                   </tr>
                 ))}
-                {cupons.length === 0 && (
+                {cuponsFiltrados.length === 0 && (
                   <tr>
                     <td colSpan={isAdmin ? 8 : 7} className="px-4 py-10 text-center text-muted-foreground">
                       {cuponsQ.isLoading
                         ? "Carregando cupons..."
-                        : "Nenhum cupom criado ainda. Clique em Criar cupom para começar."}
+                        : cupons.length === 0
+                          ? "Nenhum cupom criado ainda. Clique em Criar cupom para começar."
+                          : "Nenhum cupom encontrado para os filtros selecionados."}
                     </td>
                   </tr>
                 )}
