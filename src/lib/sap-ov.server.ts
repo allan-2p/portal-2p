@@ -226,7 +226,7 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         <EMPRESA>${c.empresa}</EMPRESA>
         <FILIAL>${c.filial}</FILIAL>
         <TP_OV>${c.tpOv}</TP_OV>
-        <INCO1>${esc(String(row["frete_mod"] ?? "FOB").toUpperCase())}</INCO1>
+        <INCO1>${incoterm(row["frete_mod"])}</INCO1>
         <INCO2></INCO2>
         <PURCH_DATE>${hoje}</PURCH_DATE>
         <DATA_REMESSA>${hoje}</DATA_REMESSA>
@@ -350,8 +350,9 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
 
   const mod = String(row["frete_mod"] ?? "").trim().toUpperCase();
   if (!mod) pendencias.push("Modalidade de frete (CIF/FOB) não definida.");
-  else if (!["CIF", "FOB"].includes(mod)) pendencias.push(`Modalidade de frete inválida para o SAP: "${mod}".`);
-  if (mod === "CIF" && !(Number(row["frete_valor"] ?? 0) > 0))
+  else if (!MODALIDADES_FRETE.includes(mod))
+    pendencias.push(`Modalidade de frete inválida para o SAP: "${mod}".`);
+  if ((mod === "CIF" || mod === "DEDICADO") && !(Number(row["frete_valor"] ?? 0) > 0))
     avisos.push("Frete CIF sem valor calculado — a ordem irá com frete zerado.");
 
   if (!String(row["forma_pagamento"] ?? "").trim()) pendencias.push("Forma de pagamento não definida.");
@@ -423,7 +424,7 @@ export async function criarOrdemVendaSap(
 ): Promise<SapOvResultado> {
   const inicio = Date.now();
   const base = { slug: "sap", event: "ov.criar" } as const;
-  const row = await db.getProposta(propostaId);
+  let row = await db.getProposta(propostaId);
   if (!row) return { enviado: false, ok: false, vbeln: null, mensagem: "Proposta não encontrada.", testrun: false };
 
   const jaEnviada = String(row["sap_ov_numero"] ?? "").trim();
@@ -454,6 +455,7 @@ export async function criarOrdemVendaSap(
     (i) => Number(i?.qtd ?? 0) > 0,
   );
 
+  row = await enriquecerVendedorSap(row);
   const validacao = validarPedidoParaSap(row);
   if (!validacao.ok) {
     const mensagem = `Pedido não passou na validação prévia: ${validacao.pendencias.join(" ")}`.slice(0, 500);
