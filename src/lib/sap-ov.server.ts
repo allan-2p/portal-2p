@@ -615,13 +615,16 @@ export async function criarOrdemVendaSap(
   try {
     const res = await fetch(url, {
       method: "POST",
+      // SOAP 1.2 + accept-language: sem eles este gateway devolve HTTP 200 com
+      // tabelas vazias (mesmo padrão do sap-precos/sap-produtos, que funcionam).
       headers: {
-        "content-type": "text/xml; charset=utf-8",
-        accept: "text/xml, */*",
-        soapaction: '"urn:sap-com:document:sap:rfc:functions:ZNFE_OV_CRIAR"',
+        "content-type": "application/soap+xml; charset=utf-8",
+        accept: "application/soap+xml, text/xml, */*",
+        "accept-language": "pt-BR",
         authorization: auth,
         cookie: "sap-usercontext=sap-client=500",
       },
+
       body: corpo,
       signal: controller.signal,
     });
