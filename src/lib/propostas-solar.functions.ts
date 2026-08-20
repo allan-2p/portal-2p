@@ -79,6 +79,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     vendidoClienteFinal,
     previsaoFechamento: previsao,
     listaPreco: /^\d{2}$/.test(String(i.listaPreco)) ? String(i.listaPreco) : "01",
+    ehKit: i.ehKit === true,
     cliente: {
       nome,
       doc: String(i.cliente?.doc ?? ""),
