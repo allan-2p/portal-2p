@@ -57,7 +57,11 @@ type Cupom = {
   valor?: number;
   percentual?: number;
   validade: string;
+  inicio?: string;
   reutilizavel: boolean;
+  usos: number;
+  limiteUsos?: number | null;
+  esgotado: boolean;
   cliente?: string;
   criadoEm: string;
 };
@@ -120,7 +124,16 @@ function CuponsPage() {
     valor: Number(c.valor) > 0 ? Number(c.valor) : undefined,
     percentual: Number(c.percentual) > 0 ? Number(c.percentual) : undefined,
     validade: c.validade ? format(new Date(`${c.validade}T00:00:00`), "dd/MM/yyyy") : "—",
+    inicio: c.validade_inicio
+      ? format(new Date(`${c.validade_inicio}T00:00:00`), "dd/MM/yyyy")
+      : undefined,
     reutilizavel: !!c.reutilizavel,
+    usos: Number(c.usos ?? 0),
+    limiteUsos: c.limite_usos == null ? null : Number(c.limite_usos),
+    esgotado:
+      c.limite_usos != null
+        ? Number(c.usos ?? 0) >= Number(c.limite_usos)
+        : !c.reutilizavel && Number(c.usos ?? 0) > 0,
     cliente: c.cliente_nome || undefined,
     criadoEm: c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : "—",
   }));
@@ -134,7 +147,9 @@ function CuponsPage() {
   const [valor, setValor] = useState("");
   const [percentual, setPercentual] = useState("");
   const [validade, setValidade] = useState<Date | undefined>();
+  const [inicio, setInicio] = useState<Date | undefined>();
   const [reutilizavel, setReutilizavel] = useState(false);
+  const [limiteUsos, setLimiteUsos] = useState("");
   const [clienteDoc, setClienteDoc] = useState("");
   const [excluindo, setExcluindo] = useState<Cupom | null>(null);
 
@@ -144,6 +159,7 @@ function CuponsPage() {
     valor?: string;
     percentual?: string;
     validade?: string;
+    limiteUsos?: string;
   };
   const [errors, setErrors] = useState<Errors>({});
 
@@ -159,7 +175,9 @@ function CuponsPage() {
     setValor("");
     setPercentual("");
     setValidade(undefined);
+    setInicio(undefined);
     setReutilizavel(false);
+    setLimiteUsos("");
     setClienteDoc("");
     setErrors({});
   };
@@ -192,7 +210,11 @@ function CuponsPage() {
       if (p <= 0) next.percentual = "Informe o percentual.";
       else if (p > 100) next.percentual = "O desconto não pode ser maior que 100%.";
     }
-    if (!validade) next.validade = "Data de validade é obrigatória.";
+    if (!validade) next.validade = "Data final de validade é obrigatória.";
+    else if (inicio && inicio > validade)
+      next.validade = "A data final deve ser posterior à data inicial.";
+    if (limiteUsos && Number(limiteUsos) < 1)
+      next.limiteUsos = "O limite de usos deve ser ao menos 1.";
 
     if (Object.keys(next).length > 0) {
       setErrors(next);
@@ -210,7 +232,9 @@ function CuponsPage() {
         valor: tipos.includes("valor") ? parseMoeda(valor) : 0,
         percentual: tipos.includes("percentual") ? parsePercentual(percentual) : 0,
         validade: format(validade!, "yyyy-MM-dd"),
+        validade_inicio: inicio ? format(inicio, "yyyy-MM-dd") : null,
         reutilizavel,
+        limite_usos: reutilizavel && limiteUsos ? Number(limiteUsos) : null,
         cliente_nome: cli?.razao_social ?? null,
         cliente_doc: cli?.doc ?? null,
         ativo: true,
@@ -368,9 +392,49 @@ function CuponsPage() {
                   </div>
                 </div>
 
+                {/* Início da validade */}
+                <div className="space-y-1.5">
+                  <Label>Início da validade (opcional)</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !inicio && "text-muted-foreground",
+                        )}
+                      >
+                        <CalendarIcon className="h-4 w-4 mr-2" />
+                        {inicio ? format(inicio, "dd/MM/yyyy") : <span>Válido imediatamente</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={inicio}
+                        onSelect={(d) => {
+                          setInicio(d);
+                          setErrors((er) => ({ ...er, validade: undefined }));
+                        }}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {inicio && (
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground underline"
+                      onClick={() => setInicio(undefined)}
+                    >
+                      Limpar data inicial
+                    </button>
+                  )}
+                </div>
+
                 {/* Validade */}
                 <div className="space-y-1.5">
-                  <Label>Data de validade *</Label>
+                  <Label>Válido até *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -402,10 +466,39 @@ function CuponsPage() {
                   {errors.validade && <p className="text-xs text-destructive">{errors.validade}</p>}
                 </div>
 
-                {/* Reutilizável */}
-                <div className="flex items-center gap-2">
-                  <Checkbox id="reuso" checked={reutilizavel} onCheckedChange={(v) => setReutilizavel(Boolean(v))} />
-                  <Label htmlFor="reuso" className="cursor-pointer">Reutilizável (mais de um uso)</Label>
+                {/* Reutilizável + limite de usos */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="reuso"
+                      checked={reutilizavel}
+                      onCheckedChange={(v) => {
+                        setReutilizavel(Boolean(v));
+                        if (!v) setLimiteUsos("");
+                      }}
+                    />
+                    <Label htmlFor="reuso" className="cursor-pointer">Reutilizável (mais de um uso)</Label>
+                  </div>
+                  {reutilizavel && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="limite">Limite de usos (opcional)</Label>
+                      <Input
+                        id="limite"
+                        inputMode="numeric"
+                        placeholder="Ilimitado"
+                        value={limiteUsos}
+                        onChange={(e) => setLimiteUsos(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                        className={cn(errors.limiteUsos && "border-destructive")}
+                      />
+                      {errors.limiteUsos ? (
+                        <p className="text-xs text-destructive">{errors.limiteUsos}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Deixe em branco para uso ilimitado dentro da vigência.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Cliente específico */}
@@ -447,9 +540,9 @@ function CuponsPage() {
                 <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-4 py-3">Código</th>
                   <th className="text-left px-4 py-3">Desconto</th>
-                  <th className="text-left px-4 py-3">Validade</th>
+                  <th className="text-left px-4 py-3">Vigência</th>
                   <th className="text-left px-4 py-3">Cliente</th>
-                  <th className="text-left px-4 py-3">Reutilizável</th>
+                  <th className="text-left px-4 py-3">Usos</th>
                   <th className="text-left px-4 py-3">Criado em</th>
                   {isAdmin && <th className="text-right px-4 py-3">Ações</th>}
                 </tr>
@@ -498,9 +591,19 @@ function CuponsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.validade}</td>
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                      {c.inicio ? `${c.inicio} → ${c.validade}` : `até ${c.validade}`}
+                    </td>
                     <td className="px-4 py-3">{c.cliente ?? <span className="text-muted-foreground">Todos</span>}</td>
-                    <td className="px-4 py-3">{c.reutilizavel ? "Sim" : "Não"}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {c.usos}
+                      {c.limiteUsos != null ? ` / ${c.limiteUsos}` : c.reutilizavel ? " / ∞" : " / 1"}
+                      {c.esgotado && (
+                        <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-destructive/15 text-destructive">
+                          Esgotado
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{c.criadoEm}</td>
                     {isAdmin && (
                       <td className="px-4 py-3 text-right">

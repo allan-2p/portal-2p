@@ -2176,12 +2176,14 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          limite_usos: number | null
           percentual: number
           reutilizavel: boolean
           tipos: string[]
           updated_at: string
           usos: number
           validade: string
+          validade_inicio: string | null
           valor: number
         }
         Insert: {
@@ -2192,12 +2194,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          limite_usos?: number | null
           percentual?: number
           reutilizavel?: boolean
           tipos?: string[]
           updated_at?: string
           usos?: number
           validade: string
+          validade_inicio?: string | null
           valor?: number
         }
         Update: {
@@ -2208,12 +2212,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          limite_usos?: number | null
           percentual?: number
           reutilizavel?: boolean
           tipos?: string[]
           updated_at?: string
           usos?: number
           validade?: string
+          validade_inicio?: string | null
           valor?: number
         }
         Relationships: []
