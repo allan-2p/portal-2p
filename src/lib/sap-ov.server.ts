@@ -298,13 +298,14 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
     )
     .join("");
 
+  // Envelope SOAP 1.2 e ordem dos campos idênticos aos da plataforma antiga,
+  // que roda em produção na mesma RFC (binding literal é sensível à ordem).
   return `<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
-  <soapenv:Header/>
-  <soapenv:Body>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
+  <soap:Header/>
+  <soap:Body>
     <urn:ZNFE_OV_CRIAR>
-      <!-- I_CARGA vazio = criação síncrona (com "S" o SAP enfileira e devolve resposta vazia) -->
-      <I_CARGA></I_CARGA>
+      <I_CARGA>S</I_CARGA>
       <I_JOB></I_JOB>
       <I_JOBNAME></I_JOBNAME>
       <I_ORIG_PEDIDO>4</I_ORIG_PEDIDO>
@@ -312,6 +313,8 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         <EMPRESA>${c.empresa}</EMPRESA>
         <FILIAL>${c.filial}</FILIAL>
         <TP_OV>${c.tpOv}</TP_OV>
+        <VKBUR></VKBUR>
+        <VKGRP></VKGRP>
         <INCO1>${incoterm(row["frete_mod"])}</INCO1>
         <INCO2>${bonificado ? "CIF BONIFICADO" : ""}</INCO2>
         <PURCH_DATE>${hoje}</PURCH_DATE>
@@ -320,8 +323,10 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
              Confirmado com o negócio que não colide com a faixa antiga (~10000-45000). -->
         <NROPED>${esc(String(row["numero"] ?? "").trim())}</NROPED>
         <VALOR_DESC>${desconto > 0 ? desconto.toFixed(2) : ""}</VALOR_DESC>
+        <PERC_DESC></PERC_DESC>
         <VLR_FRETE>${freteValor.toFixed(2)}</VLR_FRETE>
         <ZTERM>${esc(zterm(row))}</ZTERM>
+        <NRO_BANCO></NRO_BANCO>
         <XPED>${esc(String(row["numero"] ?? "").trim())}</XPED>
         <QVOL></QVOL>
         <PESO_BRUTO>${peso.bruto ? peso.bruto.toFixed(3) : ""}</PESO_BRUTO>
@@ -334,6 +339,7 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         <VENDEDOR>${esc(String(row["consultor_codigo_sap"] ?? "").trim())}</VENDEDOR>
       </I_S_OV>
       <I_S_TRANSP>
+
         <QVOL></QVOL>
         <PESO_BRUTO>${peso.bruto ? peso.bruto.toFixed(3) : ""}</PESO_BRUTO>
         <PESO_LIQ>${peso.liquido ? peso.liquido.toFixed(3) : ""}</PESO_LIQ>
@@ -374,22 +380,35 @@ async function pesosDoPedido(itens: any[]): Promise<Peso> {
   }
 }
 
-function mensagens(doc: any): { erro: string | null; aviso: string | null; texto: string | null } {
+function mensagens(doc: any): {
+  erro: string | null;
+  aviso: string | null;
+  texto: string | null;
+  /** Nº da OV extraído de T_MSG (TYPE=S, MSGNR=000) — como faz a plataforma antiga. */
+  numeroSucesso: string | null;
+} {
   let msgs = achar(doc, "T_MSG")?.item ?? [];
   if (!Array.isArray(msgs)) msgs = msgs ? [msgs] : [];
   const linhas = (msgs as any[]).map((m) => ({
     tipo: String(m?.TYPE ?? "").toUpperCase(),
+    msgnr: String(m?.MSGNR ?? "").trim(),
     texto: String(m?.MESSAGE ?? "").trim(),
   }));
   const erro = linhas.find((l) => l.tipo === "E" || l.tipo === "A" || l.tipo === "X");
   const aviso = linhas.find((l) => l.tipo === "W");
   const texto = linhas.map((l) => l.texto).filter(Boolean).join(" | ").slice(0, 500) || null;
+
+  const sucesso = linhas.find((l) => l.tipo === "S" && /^0*0$/.test(l.msgnr || "0"));
+  const numeroSucesso = sucesso ? (/(\d{6,12})/.exec(sucesso.texto)?.[1] ?? null) : null;
+
   return {
     erro: erro?.texto || (erro ? "Erro retornado pelo SAP." : null),
     aviso: aviso?.texto || (aviso ? "Aviso retornado pelo SAP." : null),
     texto,
+    numeroSucesso,
   };
 }
+
 
 
 /** Valida CNPJ pelos dígitos verificadores. */
@@ -596,13 +615,16 @@ export async function criarOrdemVendaSap(
   try {
     const res = await fetch(url, {
       method: "POST",
+      // SOAP 1.2 + accept-language: sem eles este gateway devolve HTTP 200 com
+      // tabelas vazias (mesmo padrão do sap-precos/sap-produtos, que funcionam).
       headers: {
-        "content-type": "text/xml; charset=utf-8",
-        accept: "text/xml, */*",
-        soapaction: '"urn:sap-com:document:sap:rfc:functions:ZNFE_OV_CRIAR"',
+        "content-type": "application/soap+xml; charset=utf-8",
+        accept: "application/soap+xml, text/xml, */*",
+        "accept-language": "pt-BR",
         authorization: auth,
         cookie: "sap-usercontext=sap-client=500",
       },
+
       body: corpo,
       signal: controller.signal,
     });
@@ -649,10 +671,12 @@ export async function criarOrdemVendaSap(
     return { enviado: true, ok: false, vbeln: null, mensagem, testrun };
   }
 
+  const { erro, aviso, texto, numeroSucesso } = mensagens(doc);
   const vbeln =
     String(achar(doc, "E_VBELN") ?? achar(doc, "E_VBELN_VA") ?? achar(doc, "E_NRO_OV") ?? "").trim() ||
+    numeroSucesso ||
     null;
-  const { erro, aviso, texto } = mensagens(doc);
+
 
   // Em test run o SAP valida o pedido sem gravar a ordem: não devolve VBELN.
   // Fora do test run, sem VBELN é falha — inclusive quando o SAP só devolve
