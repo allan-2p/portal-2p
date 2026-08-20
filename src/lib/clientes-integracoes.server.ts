@@ -88,6 +88,21 @@ export async function sincronizarCliente(
     escritorio_vendas: ESCRITORIO,
   };
 
+  // Grava equipe/escritório já na primeira passada (antes de falar com o SAP).
+  // Assim o cadastro nasce com os valores corretos mesmo que o envio falhe.
+  try {
+    if (
+      atual?.["equipe_vendas"] !== EQUIPE_VENDAS ||
+      atual?.["escritorio_vendas"] !== ESCRITORIO ||
+      atual?.["escopo_org"] !== escopo
+    ) {
+      await db.updateCliente(instancia, clienteId, vendas);
+    }
+  } catch (err) {
+    console.error("[clientes] falha ao gravar equipe/escritório de vendas", err);
+  }
+
+
   const sapPayload = {
     doc: base.doc,
     razao_social: base.razao_social,
