@@ -1125,15 +1125,31 @@ function NovaPropostaSolarPage() {
     };
   }
 
+  /** Bloqueios para emitir a proposta em PDF. */
+  function validarParaPdf(): string | null {
+    if (!itens.length) return "Adicione produtos antes de gerar o PDF.";
+    if (!formaPagamento) return "Selecione a forma de pagamento antes de gerar a proposta.";
+    return null;
+  }
+
   /** Abre a prévia da proposta (modal). */
   function abrirPreviewPdf() {
-    if (!itens.length) return toast.error("Adicione produtos antes de gerar o PDF.");
+    const erro = validarParaPdf();
+    if (erro) {
+      setTentou(true);
+      return toast.error(erro);
+    }
     setPdfHtml(buildSolarPropostaPdfHtml(montarPdfDados()));
     setPreviewAberto(true);
   }
 
   /** Baixa/imprime a proposta em PDF. */
   function baixarPdf() {
+    const erro = validarParaPdf();
+    if (erro) {
+      setTentou(true);
+      return toast.error(erro);
+    }
     const dados = montarPdfDados();
     const html = buildSolarPropostaPdfHtml(dados);
     const win = window.open("", "_blank");
