@@ -6,14 +6,17 @@ import {
 } from "@/lib/pagamentos-pix.server";
 
 const pedido = () => ({
-  id: "p1",
+  id: "11111111-1111-1111-1111-111111111111",
   numero: "050004",
   status: "Aguardando Pagamento",
   pagamento_meio: "pix",
   pagamento_status: "pendente",
   pagamento_txid: "2P050004ABC",
   pagamento_e2eid: null,
+  // Valor da cobrança: sem ele o pagamento não é confirmado automaticamente.
+  pagamento_valor: 1000,
 });
+
 
 const pago = {
   pix: [{ txid: "2P050004ABC", endToEndId: "E1", valor: "1000.00", horario: "2026-08-18T18:00:00Z" }],
