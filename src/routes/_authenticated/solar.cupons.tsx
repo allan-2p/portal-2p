@@ -660,8 +660,30 @@ function CuponsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{c.criadoEm}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={cn(
+                          "text-[11px] px-2 py-0.5 rounded font-medium",
+                          c.ativo
+                            ? "bg-emerald-500/15 text-emerald-500"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {c.ativo ? "Ativo" : "Inativo"}
+                      </span>
+                    </td>
                     {isAdmin && (
                       <td className="px-4 py-3 text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title={c.ativo ? "Desativar cupom" : "Ativar cupom"}
+                          onClick={() => void handleToggleAtivo(c)}
+                        >
+                          <Power className={cn("h-4 w-4", c.ativo ? "text-emerald-500" : "text-muted-foreground")} />
+                        </Button>
                         <Button
                           type="button"
                           variant="ghost"
