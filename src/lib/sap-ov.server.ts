@@ -60,11 +60,17 @@ const incoterm = (mod: unknown) =>
 const MODALIDADES_FRETE = ["CIF", "FOB", "DEDICADO"];
 
 /**
- * O código SAP do vendedor fica no cadastro de usuários (`profiles.numero_sap`),
- * não na proposta. Completa `consultor_codigo_sap` quando estiver vazio.
+ * Vendedor da ordem no SAP.
+ *
+ * Enquanto o pedido está aberto (status "Salvo"), o vendedor é sempre o dono
+ * atual da proposta — se a conta for transferida, a oportunidade em aberto vai
+ * junto. Ao concluir (envio ao SAP), o código é gravado em
+ * `sap_vendedor_codigo` e fica travado para sempre naquele pedido.
  */
 export async function enriquecerVendedorSap(row: Record<string, any>): Promise<Record<string, any>> {
-  if (String(row["consultor_codigo_sap"] ?? "").trim()) return row;
+  const travado = String(row["sap_vendedor_codigo"] ?? "").trim();
+  if (travado) return { ...row, consultor_codigo_sap: travado };
+
   const id = String(row["consultor_id"] ?? "").trim();
   const nome = String(row["consultor_nome"] ?? "").trim();
   if (!id && !nome) return row;
@@ -584,6 +590,9 @@ export async function criarOrdemVendaSap(
       sap_ov_status: "criada",
       sap_ov_mensagem: texto,
       sap_ov_enviado_em: new Date().toISOString(),
+      // vendedor travado no pedido concluído
+      sap_vendedor_codigo: String(row["consultor_codigo_sap"] ?? "").trim() || null,
+      sap_vendedor_nome: String(row["consultor_nome"] ?? "").trim() || null,
     });
   }
 
