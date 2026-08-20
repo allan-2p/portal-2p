@@ -380,22 +380,35 @@ async function pesosDoPedido(itens: any[]): Promise<Peso> {
   }
 }
 
-function mensagens(doc: any): { erro: string | null; aviso: string | null; texto: string | null } {
+function mensagens(doc: any): {
+  erro: string | null;
+  aviso: string | null;
+  texto: string | null;
+  /** Nº da OV extraído de T_MSG (TYPE=S, MSGNR=000) — como faz a plataforma antiga. */
+  numeroSucesso: string | null;
+} {
   let msgs = achar(doc, "T_MSG")?.item ?? [];
   if (!Array.isArray(msgs)) msgs = msgs ? [msgs] : [];
   const linhas = (msgs as any[]).map((m) => ({
     tipo: String(m?.TYPE ?? "").toUpperCase(),
+    msgnr: String(m?.MSGNR ?? "").trim(),
     texto: String(m?.MESSAGE ?? "").trim(),
   }));
   const erro = linhas.find((l) => l.tipo === "E" || l.tipo === "A" || l.tipo === "X");
   const aviso = linhas.find((l) => l.tipo === "W");
   const texto = linhas.map((l) => l.texto).filter(Boolean).join(" | ").slice(0, 500) || null;
+
+  const sucesso = linhas.find((l) => l.tipo === "S" && /^0*0$/.test(l.msgnr || "0"));
+  const numeroSucesso = sucesso ? (/(\d{6,12})/.exec(sucesso.texto)?.[1] ?? null) : null;
+
   return {
     erro: erro?.texto || (erro ? "Erro retornado pelo SAP." : null),
     aviso: aviso?.texto || (aviso ? "Aviso retornado pelo SAP." : null),
     texto,
+    numeroSucesso,
   };
 }
+
 
 
 /** Valida CNPJ pelos dígitos verificadores. */
