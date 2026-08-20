@@ -260,26 +260,37 @@ export async function aplicarEventoPix(ev: PixEvento, io: PixIO = pixIOBanco): P
   }
 
   // Conferência de valor: o Pix pago precisa bater com o valor da cobrança
-  // (tolerância de R$ 0,02 para arredondamento do PSP). Divergência não é
-  // aplicada automaticamente — fica registrada para o financeiro conferir.
+  // (tolerância de R$ 0,02 para arredondamento do PSP). Divergência — ou
+  // impossibilidade de conferir — não é aplicada automaticamente: fica
+  // registrada para o financeiro, senão bastaria pagar R$ 1 para o pedido
+  // seguir para Processando.
   const esperado = Number(proposta["pagamento_valor"] ?? 0);
-  if (ev.tipo === "pago" && esperado > 0 && ev.valor != null && Math.abs(ev.valor - esperado) > 0.02) {
-    await io.log({
-      proposta_id: proposta["id"],
-      numero: proposta["numero"] ?? null,
-      status: de,
-      resultado: "pix:valor_divergente",
-      origem: "webhook-pix",
-      detalhe: `txid ${ev.txid} • recebido R$ ${ev.valor.toFixed(2)} ≠ esperado R$ ${esperado.toFixed(2)}`,
-    });
-    return {
-      ...base,
-      proposta_id: proposta["id"],
-      numero: proposta["numero"] ?? null,
-      de,
-      skipped: true,
-      motivo: `Valor pago (R$ ${ev.valor.toFixed(2)}) diferente do valor da cobrança (R$ ${esperado.toFixed(2)}).`,
-    };
+  if (ev.tipo === "pago") {
+    const semConferencia = !(esperado > 0) || ev.valor == null;
+    const divergente = !semConferencia && Math.abs(ev.valor! - esperado) > 0.02;
+    if (semConferencia || divergente) {
+      const detalhe = semConferencia
+        ? `txid ${ev.txid} • não foi possível conferir o valor (recebido ${ev.valor ?? "—"}, esperado ${esperado || "—"})`
+        : `txid ${ev.txid} • recebido R$ ${ev.valor!.toFixed(2)} ≠ esperado R$ ${esperado.toFixed(2)}`;
+      await io.log({
+        proposta_id: proposta["id"],
+        numero: proposta["numero"] ?? null,
+        status: de,
+        resultado: "pix:valor_divergente",
+        origem: "webhook-pix",
+        detalhe,
+      });
+      return {
+        ...base,
+        proposta_id: proposta["id"],
+        numero: proposta["numero"] ?? null,
+        de,
+        skipped: true,
+        motivo: semConferencia
+          ? "Pagamento não confirmado automaticamente: valor da cobrança ou do Pix indisponível para conferência."
+          : `Valor pago (R$ ${ev.valor!.toFixed(2)}) diferente do valor da cobrança (R$ ${esperado.toFixed(2)}).`,
+      };
+    }
   }
 
   const patch: Record<string, unknown> = {
@@ -287,9 +298,11 @@ export async function aplicarEventoPix(ev: PixEvento, io: PixIO = pixIOBanco): P
     pagamento_status: ev.tipo,
     pagamento_txid: ev.txid,
     pagamento_e2eid: ev.endToEndId,
-    pagamento_valor: ev.valor,
+    // No pago, o valor da cobrança é a referência: já foi conferido acima.
+    pagamento_valor: ev.tipo === "pago" ? esperado : (ev.valor ?? esperado ?? null),
     pagamento_atualizado_em: new Date().toISOString(),
   };
+
 
   let para = de;
   if (ev.tipo === "pago") {
