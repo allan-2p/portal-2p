@@ -40,6 +40,25 @@ CREATE TABLE IF NOT EXISTS public.clientes_sap (
   created_at        timestamptz NOT NULL DEFAULT now()
 );
 
+-- 2b) Garante as colunas mesmo se a tabela já existia com outro formato
+ALTER TABLE public.clientes_sap
+  ADD COLUMN IF NOT EXISTS doc               text,
+  ADD COLUMN IF NOT EXISTS razao_social      text,
+  ADD COLUMN IF NOT EXISTS organizacao       text,
+  ADD COLUMN IF NOT EXISTS instancia         text,
+  ADD COLUMN IF NOT EXISTS numero_sap        text,
+  ADD COLUMN IF NOT EXISTS escopo_org        text,
+  ADD COLUMN IF NOT EXISTS equipe_vendas     text,
+  ADD COLUMN IF NOT EXISTS escritorio_vendas text,
+  ADD COLUMN IF NOT EXISTS vendedor_sap      text,
+  ADD COLUMN IF NOT EXISTS tabela_preco      text,
+  ADD COLUMN IF NOT EXISTS condicao_pgto_sap text,
+  ADD COLUMN IF NOT EXISTS status            text,
+  ADD COLUMN IF NOT EXISTS mensagem          text,
+  ADD COLUMN IF NOT EXISTS payload           jsonb,
+  ADD COLUMN IF NOT EXISTS sincronizado_em   timestamptz,
+  ADD COLUMN IF NOT EXISTS created_at        timestamptz NOT NULL DEFAULT now();
+
 CREATE INDEX IF NOT EXISTS clientes_sap_doc_idx    ON public.clientes_sap (doc);
 CREATE INDEX IF NOT EXISTS clientes_sap_status_idx ON public.clientes_sap (status);
 
@@ -89,6 +108,9 @@ BEGIN
     IF EXISTS (
       SELECT 1 FROM information_schema.columns
       WHERE table_schema = 'public' AND table_name = 'clientes' AND column_name = c
+    ) AND EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'clientes_sap' AND column_name = c
     ) THEN
       insert_cols := insert_cols || ', ' || quote_ident(c);
       select_cols := select_cols || ', c.' || quote_ident(c);
