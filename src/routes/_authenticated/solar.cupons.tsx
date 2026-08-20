@@ -35,8 +35,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { Trash2, Power } from "lucide-react";
 import { useSolarCupons, useSolarInvalidate } from "@/hooks/use-solar-catalogo";
+import { logModeration } from "@/lib/moderation-audit";
+import { ModerationAuditLog } from "@/components/moderation-audit-log";
 
 export const Route = createFileRoute("/_authenticated/solar/cupons")({
   head: () => ({
