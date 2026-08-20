@@ -609,6 +609,62 @@ function CuponsPage() {
           </Dialog>
         </div>
 
+        {/* Filtros */}
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por código ou cliente"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="pl-9"
+            />
+            {busca && (
+              <button
+                type="button"
+                onClick={() => setBusca("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v as any)}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os tipos</SelectItem>
+              <SelectItem value="valor">Valor R$</SelectItem>
+              <SelectItem value="percentual">Percentual %</SelectItem>
+              <SelectItem value="frete">Frete grátis</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filtroStatus} onValueChange={(v) => setFiltroStatus(v as any)}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="ativo">Ativo</SelectItem>
+              <SelectItem value="inativo">Inativo</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filtroCliente} onValueChange={(v) => setFiltroCliente(v)}>
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <SelectValue placeholder="Cliente" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="todos">Todos os clientes</SelectItem>
+              {(clientesQ.data ?? []).map((c) => (
+                <SelectItem key={c.doc} value={c.razao_social}>
+                  {c.razao_social}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="glass rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
