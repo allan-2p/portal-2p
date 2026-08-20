@@ -175,6 +175,9 @@ export async function sincronizarCliente(
       sap_status: sap.ok ? "enviado" : "erro",
       sap_erro: sap.ok ? null : sap.erro,
       ...(sap.ok && sap.numero_sap ? { numero_sap: sap.numero_sap } : {}),
+      // Campos espelhados do SAP (não editáveis no portal).
+      equipe_vendas: (sap.ok ? sap.equipe_vendas : null) ?? EQUIPE_VENDAS,
+      escritorio_vendas: (sap.ok ? sap.escritorio_vendas : null) ?? ESCRITORIO,
     });
   } catch (err) {
     console.error("[clientes] falha ao gravar retorno do SAP", err);
