@@ -217,7 +217,8 @@ export async function simularSap(
     mapa.set(codigo, {
       pesoLiquido,
       pesoBruto,
-      valor: valorTxt !== undefined ? num(valorTxt) : null,
+      // a antiga usa VALOR_LIQUIDO + VALOR_IMPOSTO (calculadora.php:894); só líquido subestima ~15%
+      valor: valorTxt !== undefined ? num(valorTxt) + num(reg["VALOR_IMPOSTO"]) : null,
     });
   }
 
