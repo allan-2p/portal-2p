@@ -235,7 +235,10 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
   <soapenv:Header/>
   <soapenv:Body>
     <urn:ZNFE_OV_CRIAR>
-      <I_CARGA>S</I_CARGA>
+      <!-- I_CARGA vazio = criação síncrona (com "S" o SAP enfileira e devolve resposta vazia) -->
+      <I_CARGA></I_CARGA>
+      <I_JOB></I_JOB>
+      <I_JOBNAME></I_JOBNAME>
       <I_ORIG_PEDIDO>4</I_ORIG_PEDIDO>
       <I_S_OV>
         <EMPRESA>${c.empresa}</EMPRESA>
@@ -580,18 +583,27 @@ export async function criarOrdemVendaSap(
     null;
   const { erro, texto } = mensagens(doc);
 
-  if (erro || !vbeln) {
+  // Em test run o SAP valida o pedido sem gravar a ordem: não devolve VBELN.
+  // Só é erro quando há mensagem de erro (E/A/X) na resposta.
+  if (erro || (!vbeln && !testrun)) {
     const mensagem = erro ?? texto ?? "O SAP não devolveu o número da ordem de venda.";
     await gravar(propostaId, { sap_ov_status: "erro", sap_ov_mensagem: mensagem.slice(0, 500) });
     await logIntegrationEvent({
       ...base,
       level: "error",
       message: mensagem,
-      detail: { proposta_id: propostaId, numero: row["numero"] ?? null, testrun },
+      detail: {
+        proposta_id: propostaId,
+        numero: row["numero"] ?? null,
+        testrun,
+        resposta: xml.replace(/\s+/g, " ").slice(0, 1500),
+        requisicao: corpo.replace(/\s+/g, " ").slice(0, 3000),
+      },
       durationMs: Date.now() - inicio,
     });
     return { enviado: true, ok: false, vbeln: null, mensagem, testrun };
   }
+
 
   if (!testrun) {
     await gravar(propostaId, {
@@ -603,7 +615,13 @@ export async function criarOrdemVendaSap(
       sap_vendedor_codigo: String(row["consultor_codigo_sap"] ?? "").trim() || null,
       sap_vendedor_nome: String(row["consultor_nome"] ?? "").trim() || null,
     });
+  } else {
+    await gravar(propostaId, {
+      sap_ov_status: "validada",
+      sap_ov_mensagem: texto ?? "Validação OK no SAP (test run).",
+    });
   }
+
 
   await logIntegrationEvent({
     ...base,
