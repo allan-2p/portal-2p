@@ -13,6 +13,8 @@ export type SalvarPropostaSolarInput = {
   vendidoClienteFinal: boolean;
   previsaoFechamento: string | null;
   listaPreco: string;
+  /** Venda em formato de kit (afeta regras comerciais/fiscais adiante). */
+  ehKit: boolean;
   cliente: { nome: string; doc: string; ie: string; telefone: string; email: string };
   uf: string;
   contribuinte: boolean;
