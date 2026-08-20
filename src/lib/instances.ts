@@ -49,6 +49,7 @@ export type FeatureKey =
   | "admin.area.integracoes"
   | "admin.area.logs"
   | "admin.logs.integracoes"
+  | "admin.logs.sap"
   | "admin.logs.moderacao"
   | "admin.logs.retencao"
   | "admin.logs.jobs"
@@ -209,6 +210,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/admin/auditoria": "admin.auditoria",
   "/admin/atividade": "admin.atividade",
   "/admin/logs/integracoes": "admin.logs.integracoes",
+  "/admin/logs/sap": "admin.logs.sap",
   "/admin/logs/moderacao": "admin.logs.moderacao",
   "/admin/logs/retencao": "admin.logs.retencao",
   "/admin/logs/gatilhos": "admin.logs.jobs",
@@ -258,6 +260,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.auditoria": "Admin • Auditoria de Acessos",
   "admin.atividade": "Logs • Log de Usuários",
   "admin.logs.integracoes": "Logs • Integrações",
+  "admin.logs.sap": "Logs • Monitor de Sync SAP",
   "admin.logs.moderacao": "Logs • Moderação",
   "admin.logs.retencao": "Logs • Retenção e limpeza",
   "admin.logs.jobs": "Logs • Gatilhos automáticos (monitoramento)",

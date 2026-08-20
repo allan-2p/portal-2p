@@ -219,6 +219,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         items: [
           { to: "/admin/atividade", label: "Log de Usuários", icon: ActivityIcon, feature: "admin.atividade" },
           { to: "/admin/logs/integracoes", label: "Log de Integrações", icon: Plug, feature: "admin.logs.integracoes" },
+          { to: "/admin/logs/sap", label: "Monitor de Sync SAP", icon: RefreshCw, feature: "admin.logs.sap" },
           { to: "/admin/logs/moderacao", label: "Log de Moderação", icon: ShieldCheck, feature: "admin.logs.moderacao" },
           { to: "/admin/logs/gatilhos", label: "Gatilhos e reprocessamento", icon: RefreshCw, feature: "admin.logs.jobs" },
           { to: "/admin/logs/retencao", label: "Retenção e limpeza", icon: ScrollText, feature: "admin.logs.retencao" },

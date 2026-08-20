@@ -216,6 +216,7 @@ export async function adminAreasFor(ctx: GuardContext): Promise<{
     logs: areaOr("logs", [
       "admin.atividade",
       "admin.logs.integracoes",
+      "admin.logs.sap",
       "admin.logs.moderacao",
       "admin.logs.retencao",
       "admin.logs.jobs",
