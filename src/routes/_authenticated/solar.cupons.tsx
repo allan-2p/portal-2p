@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CalendarIcon, Copy, Plus, RefreshCw, Search, Tag, X } from "lucide-react";
+import { CalendarIcon, Copy, History, Plus, RefreshCw, Search, Tag, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ import { Trash2, Power } from "lucide-react";
 import { useSolarCupons, useSolarInvalidate } from "@/hooks/use-solar-catalogo";
 import { logModeration } from "@/lib/moderation-audit";
 import { ModerationAuditLog } from "@/components/moderation-audit-log";
+import { CupomHistoricoDialog } from "@/components/solar/cupom-historico-dialog";
 
 export const Route = createFileRoute("/_authenticated/solar/cupons")({
   head: () => ({
@@ -824,6 +825,13 @@ function CuponsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <CupomHistoricoDialog
+          cupomId={historico?.id ?? null}
+          codigo={historico?.codigo ?? null}
+          open={!!historico}
+          onOpenChange={(v) => !v && setHistorico(null)}
+        />
 
         <ModerationAuditLog
           area="solar_cupons"
