@@ -190,6 +190,20 @@ function CuponsPage() {
     try {
       const { error } = await supabase.from("solar_cupons").delete().eq("id", c.id);
       if (error) throw error;
+      void logModeration({
+        area: "solar_cupons",
+        action: "excluiu",
+        target: c.codigo,
+        summary: `Cupom ${c.codigo} excluído.`,
+        details: {
+          desconto: [c.valor ? fmt(c.valor) : null, c.percentual ? `${c.percentual}%` : null, c.tipos.includes("frete") ? "frete grátis" : null]
+            .filter(Boolean)
+            .join(" + "),
+          validade: c.inicio ? `${c.inicio} → ${c.validade}` : `até ${c.validade}`,
+          usos: c.usos,
+          cliente: c.cliente ?? "todos",
+        },
+      });
       invalidateSolar();
       toast.success(`Cupom ${c.codigo} excluído.`);
     } catch (e: any) {
