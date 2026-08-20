@@ -310,11 +310,51 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       .maybeSingle();
     const nomeAtual = (perfil as any)?.full_name ?? (perfil as any)?.email ?? null;
 
+    /** Histórico de uso do cupom: 1 registro por proposta, removido se o cupom sair. */
+    const registrarUsoCupom = async (propostaId: string) => {
+      try {
+        let limpar = supabase.from("solar_cupom_usos").delete().eq("proposta_id", propostaId);
+        if (cupom) limpar = limpar.neq("cupom_id", cupom.id);
+        await limpar;
+        if (!cupom) return;
+        const { data: existente } = await supabase
+          .from("solar_cupom_usos")
+          .select("id")
+          .eq("proposta_id", propostaId)
+          .eq("cupom_id", cupom.id)
+          .maybeSingle();
+        const registro = {
+          codigo: cupom.codigo,
+          proposta_numero: numeroProposta,
+          cliente_nome: data.cliente.nome,
+          cliente_doc: data.cliente.doc,
+          desconto: cupom.desconto,
+          frete_gratis: cupom.freteGratis,
+          valor_total: valorTotal,
+        };
+        if (existente) {
+          await supabase.from("solar_cupom_usos").update(registro).eq("id", (existente as any).id);
+        } else {
+          await supabase.from("solar_cupom_usos").insert({
+            ...registro,
+            cupom_id: cupom.id,
+            proposta_id: propostaId,
+            user_id: userId,
+            user_nome: nomeAtual,
+          });
+        }
+      } catch {
+        /* histórico é auditoria: não bloqueia o salvamento */
+      }
+    };
+
     if (data.propostaId) {
       await repo.atualizarProposta(data.propostaId, payload);
+      await registrarUsoCupom(data.propostaId);
       await espelharNoSalesforce(data.propostaId);
       return { id: data.propostaId, numero: numeroProposta, totais };
     }
+
 
     // Consultor: fotografado do cadastro do cliente no momento da criação.
     let consultorId: string | null = null;
