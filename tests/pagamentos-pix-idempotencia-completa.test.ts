@@ -10,6 +10,8 @@ import {
 const ID_P1 = "11111111-1111-1111-1111-111111111111";
 const HEX_P1 = ID_P1.replace(/-/g, "");
 const TXID_P1 = `2P050004${HEX_P1}`;
+const ID_P2 = "22222222-2222-2222-2222-222222222222";
+const TXID_P2 = `2P050005${ID_P2.replace(/-/g, "")}`;
 
 const pedido = (over: Partial<PropostaLike> = {}): PropostaLike => ({
   id: ID_P1,
@@ -44,9 +46,9 @@ describe("Pix — idempotência completa (status e logs)", () => {
     const r = await processarWebhookPix(
       {
         pix: [
-          { txid: "2P050004ABC", endToEndId: "E1", valor: "1000.00" },
-          { txid: "2P050004ABC", endToEndId: "E1", valor: "1000.00" },
-          { txid: "2P050004ABC", endToEndId: "E1", valor: "1000.00" },
+          { txid: TXID_P1, endToEndId: "E1", valor: "1000.00" },
+          { txid: TXID_P1, endToEndId: "E1", valor: "1000.00" },
+          { txid: TXID_P1, endToEndId: "E1", valor: "1000.00" },
         ],
       },
       io,
@@ -60,7 +62,7 @@ describe("Pix — idempotência completa (status e logs)", () => {
   it("reentrega tardia de 'expirada' após o pagamento não reverte o status", async () => {
     const { io, rows, escritas, logs } = criarPixIOSimulado([pedido()]);
     await processarWebhookPix(pagoPayload(), io);
-    const expirada = { cob: { txid: "2P050004ABC", status: "EXPIRADA", valor: { original: "1000.00" } } };
+    const expirada = { cob: { txid: TXID_P1, status: "EXPIRADA", valor: { original: "1000.00" } } };
     for (let i = 0; i < 3; i++) {
       const r = await processarWebhookPix(expirada, io);
       expect(r.atualizados).toBe(0);
@@ -73,7 +75,7 @@ describe("Pix — idempotência completa (status e logs)", () => {
   });
 
   it("reentregas de cancelamento após cancelar não geram novos logs", async () => {
-    const cancel = { txid: "2P050004ABC", status: "REMOVIDA_PELO_USUARIO_RECEBEDOR" };
+    const cancel = { txid: TXID_P1, status: "REMOVIDA_PELO_USUARIO_RECEBEDOR" };
     const { io, rows, escritas, logs } = criarPixIOSimulado([pedido()]);
     for (let i = 0; i < 4; i++) await processarWebhookPix(cancel, io);
     expect(rows[0].status).toBe("Cancelado");
@@ -84,13 +86,13 @@ describe("Pix — idempotência completa (status e logs)", () => {
   it("payload com vários pedidos aplica um log por pedido e nada nas reentregas", async () => {
     const propostas = [
       pedido(),
-      pedido({ id: "p2", numero: "050005", pagamento_txid: "2P050005DEF" }),
+      pedido({ id: ID_P2, numero: "050005", pagamento_txid: TXID_P2, pagamento_valor: 500 }),
     ];
     const { io, rows, escritas, logs } = criarPixIOSimulado(propostas);
     const payload = {
       pix: [
-        { txid: "2P050004ABC", endToEndId: "E1", valor: "1000.00" },
-        { txid: "2P050005DEF", endToEndId: "E2", valor: "500.00" },
+        { txid: TXID_P1, endToEndId: "E1", valor: "1000.00" },
+        { txid: TXID_P2, endToEndId: "E2", valor: "500.00" },
       ],
     };
     const r1 = await processarWebhookPix(payload, io);
@@ -115,7 +117,7 @@ describe("Pix — idempotência completa (status e logs)", () => {
   it("evento desconhecido repetido nunca escreve nem registra log", async () => {
     const { io, escritas, logs } = criarPixIOSimulado([pedido()]);
     for (let i = 0; i < 3; i++) {
-      const r = await processarWebhookPix({ txid: "2P050004ABC", status: "ATIVA" }, io);
+      const r = await processarWebhookPix({ txid: TXID_P1, status: "ATIVA" }, io);
       expect(r.atualizados).toBe(0);
     }
     expect(escritas).toHaveLength(0);
@@ -134,11 +136,11 @@ describe("Pix — idempotência completa (status e logs)", () => {
     const { io, rows, escritas, logs } = criarPixIOSimulado([
       pedido({ pagamento_txid: null }),
     ]);
-    await processarWebhookPix(pagoPayload("2P050004XYZ", "E9"), io);
-    await processarWebhookPix(pagoPayload("2P050004XYZ", "E9"), io);
+    await processarWebhookPix(pagoPayload(TXID_P1, "E9"), io);
+    await processarWebhookPix(pagoPayload(TXID_P1, "E9"), io);
     expect(escritas).toHaveLength(1);
     expect(logs).toHaveLength(1);
-    expect(rows[0].pagamento_txid).toBe("2P050004XYZ");
+    expect(rows[0].pagamento_txid).toBe(TXID_P1);
   });
 
   it("notifica o dono do pedido uma única vez por evento", async () => {
@@ -150,13 +152,13 @@ describe("Pix — idempotência completa (status e logs)", () => {
 
   it("expiração e cancelamento também geram notificação (uma cada)", async () => {
     const exp = criarPixIOSimulado([pedido({ created_by: "u1" })]);
-    await processarWebhookPix({ cob: { txid: "2P050004ABC", status: "EXPIRADA" } }, exp.io);
-    await processarWebhookPix({ cob: { txid: "2P050004ABC", status: "EXPIRADA" } }, exp.io);
+    await processarWebhookPix({ cob: { txid: TXID_P1, status: "EXPIRADA" } }, exp.io);
+    await processarWebhookPix({ cob: { txid: TXID_P1, status: "EXPIRADA" } }, exp.io);
     expect(exp.notificacoes.map((n: any) => n.tipo)).toEqual(["expirado"]);
 
     const can = criarPixIOSimulado([pedido({ created_by: "u1" })]);
-    await processarWebhookPix({ txid: "2P050004ABC", status: "CANCELADA" }, can.io);
-    await processarWebhookPix({ txid: "2P050004ABC", status: "CANCELADA" }, can.io);
+    await processarWebhookPix({ txid: TXID_P1, status: "CANCELADA" }, can.io);
+    await processarWebhookPix({ txid: TXID_P1, status: "CANCELADA" }, can.io);
     expect(can.notificacoes.map((n: any) => n.tipo)).toEqual(["cancelado"]);
   });
 
