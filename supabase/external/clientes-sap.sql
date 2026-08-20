@@ -108,6 +108,9 @@ BEGIN
     IF EXISTS (
       SELECT 1 FROM information_schema.columns
       WHERE table_schema = 'public' AND table_name = 'clientes' AND column_name = c
+    ) AND EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'clientes_sap' AND column_name = c
     ) THEN
       insert_cols := insert_cols || ', ' || quote_ident(c);
       select_cols := select_cols || ', c.' || quote_ident(c);
