@@ -3060,6 +3060,10 @@ export type Database = {
         }
         Returns: number
       }
+      portal_cron_post: {
+        Args: { _body?: Json; _path: string }
+        Returns: number
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {

@@ -1,0 +1,1 @@
+select cron.schedule('portal-teste-unico', '* * * * *', $$select public.portal_cron_post('/api/public/hooks/pix-reconsulta', jsonb_build_object('minutos', 15))$$);
