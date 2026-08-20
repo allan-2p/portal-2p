@@ -135,7 +135,8 @@ function CuponsPage() {
   const [percentual, setPercentual] = useState("");
   const [validade, setValidade] = useState<Date | undefined>();
   const [reutilizavel, setReutilizavel] = useState(false);
-  const [cliente, setCliente] = useState("");
+  const [clienteDoc, setClienteDoc] = useState("");
+  const [excluindo, setExcluindo] = useState<Cupom | null>(null);
 
   type Errors = {
     codigo?: string;
