@@ -76,7 +76,15 @@ export async function avisarBoletos(): Promise<BoletoAvisosResultado> {
     const valor = Number(row["pagamento_valor"] ?? 0);
     const chave = `boleto:${row["id"]}:${tipo}:${venc}`;
 
-    // 1) Notificação interna para o consultor dono do pedido
+    // E-mail de cobrança: 1) pedido, 2) contato financeiro/principal do cliente.
+    let email = String(row["cliente_email"] ?? "").trim();
+    if (!email.includes("@")) {
+      const { emailCobrancaPorDoc } = await import("./contatos-db.server");
+      email = (await emailCobrancaPorDoc(String(row["cliente_doc"] ?? ""))) ?? "";
+    }
+    const semEmail = !email.includes("@");
+
+    // 1) Notificação interna para o consultor dono do pedido (sempre)
     if (row["created_by"]) {
       const ok = await criarNotificacao({
         user_id: String(row["created_by"]),
@@ -85,7 +93,11 @@ export async function avisarBoletos(): Promise<BoletoAvisosResultado> {
           tipo === "vencido"
             ? `Boleto vencido · pedido ${numero}`
             : `Boleto vence em ${DIAS_AVISO} dias · pedido ${numero}`,
-        descricao: `${row["cliente_nome"] ?? "Cliente"} · ${brl(valor)} · vencimento ${dataBR(venc)}.`,
+        descricao:
+          `${row["cliente_nome"] ?? "Cliente"} · ${brl(valor)} · vencimento ${dataBR(venc)}.` +
+          (semEmail
+            ? " Pedido sem e-mail de cobrança — o cliente NÃO foi avisado por e-mail; atualize o cadastro."
+            : ` Aviso enviado ao cliente (${email}).`),
         ref_tipo: "proposta",
         ref_id: String(row["id"]),
         chave,
@@ -93,9 +105,8 @@ export async function avisarBoletos(): Promise<BoletoAvisosResultado> {
       if (ok) out.notificacoes++;
     }
 
-    // 2) E-mail para o cliente
-    const email = String(row["cliente_email"] ?? "").trim();
-    if (email) {
+    // 2) E-mail para o cliente (quando houver destinatário)
+    if (!semEmail) {
       const linha = row["pagamento_linha_digitavel"]
         ? `<p style="margin:16px 0 0"><strong>Linha digitável:</strong><br><code style="font-size:13px">${row["pagamento_linha_digitavel"]}</code></p>`
         : "";
