@@ -22,6 +22,20 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { PermissionGate } from "@/components/permission-gate";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 import { useSolarCupons, useSolarInvalidate } from "@/hooks/use-solar-catalogo";
 
 export const Route = createFileRoute("/_authenticated/solar/cupons")({
@@ -60,9 +74,45 @@ function gerarCodigo() {
 
 const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+/** Máscara de moeda: digita só números, formata como 1.234,56 */
+function maskMoeda(raw: string) {
+  const digits = raw.replace(/\D/g, "").slice(0, 11);
+  if (!digits) return "";
+  const n = Number(digits) / 100;
+  return n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+const parseMoeda = (masked: string) => Number(masked.replace(/\./g, "").replace(",", ".")) || 0;
+
+/** Máscara de percentual: 0 a 100 com até 2 casas. */
+function maskPercentual(raw: string) {
+  let v = raw.replace(/[^\d,.]/g, "").replace(/\./g, ",");
+  const [int = "", dec] = v.split(",");
+  v = dec === undefined ? int : `${int},${dec.slice(0, 2)}`;
+  if (parsePercentual(v) > 100) return "100";
+  return v;
+}
+const parsePercentual = (masked: string) => Number(masked.replace(",", ".")) || 0;
+
 function CuponsPage() {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
   const cuponsQ = useSolarCupons();
   const invalidateSolar = useSolarInvalidate();
+  const clientesQ = useQuery({
+    queryKey: ["cupons-clientes-solar"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("doc, razao_social, nome_fantasia")
+        .eq("instancia", "solar")
+        .eq("ativo", true)
+        .order("razao_social", { ascending: true })
+        .limit(2000);
+      if (error) throw error;
+      return (data ?? []) as { doc: string; razao_social: string; nome_fantasia: string | null }[];
+    },
+    staleTime: 60_000,
+  });
   const cupons: Cupom[] = (cuponsQ.data ?? []).map((c: any) => ({
     id: c.id,
     codigo: c.codigo,
@@ -85,7 +135,8 @@ function CuponsPage() {
   const [percentual, setPercentual] = useState("");
   const [validade, setValidade] = useState<Date | undefined>();
   const [reutilizavel, setReutilizavel] = useState(false);
-  const [cliente, setCliente] = useState("");
+  const [clienteDoc, setClienteDoc] = useState("");
+  const [excluindo, setExcluindo] = useState<Cupom | null>(null);
 
   type Errors = {
     codigo?: string;
@@ -109,8 +160,21 @@ function CuponsPage() {
     setPercentual("");
     setValidade(undefined);
     setReutilizavel(false);
-    setCliente("");
+    setClienteDoc("");
     setErrors({});
+  };
+
+  const handleDelete = async (c: Cupom) => {
+    try {
+      const { error } = await supabase.from("solar_cupons").delete().eq("id", c.id);
+      if (error) throw error;
+      invalidateSolar();
+      toast.success(`Cupom ${c.codigo} excluído.`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível excluir o cupom.");
+    } finally {
+      setExcluindo(null);
+    }
   };
 
   const handleCreate = async () => {
@@ -122,8 +186,12 @@ function CuponsPage() {
     else if (cupons.some((c) => c.codigo.trim().toUpperCase() === codeFinal))
       next.codigo = `O código "${codeFinal}" já existe. Escolha outro.`;
     if (tipos.length === 0) next.tipos = "Selecione ao menos um tipo de desconto.";
-    if (tipos.includes("valor") && !valor) next.valor = "Informe o valor em R$.";
-    if (tipos.includes("percentual") && !percentual) next.percentual = "Informe o percentual.";
+    if (tipos.includes("valor") && parseMoeda(valor) <= 0) next.valor = "Informe o valor em R$.";
+    if (tipos.includes("percentual")) {
+      const p = parsePercentual(percentual);
+      if (p <= 0) next.percentual = "Informe o percentual.";
+      else if (p > 100) next.percentual = "O desconto não pode ser maior que 100%.";
+    }
     if (!validade) next.validade = "Data de validade é obrigatória.";
 
     if (Object.keys(next).length > 0) {
@@ -135,16 +203,16 @@ function CuponsPage() {
     setSalvando(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
-      const clienteNome = cliente.trim();
+      const cli = (clientesQ.data ?? []).find((c) => c.doc === clienteDoc);
       const { error } = await supabase.from("solar_cupons").insert({
         codigo: codeFinal,
         tipos,
-        valor: tipos.includes("valor") ? Number(valor) : 0,
-        percentual: tipos.includes("percentual") ? Number(percentual) : 0,
+        valor: tipos.includes("valor") ? parseMoeda(valor) : 0,
+        percentual: tipos.includes("percentual") ? parsePercentual(percentual) : 0,
         validade: format(validade!, "yyyy-MM-dd"),
         reutilizavel,
-        cliente_nome: clienteNome || null,
-        cliente_doc: clienteNome.replace(/\D/g, "") || null,
+        cliente_nome: cli?.razao_social ?? null,
+        cliente_doc: cli?.doc ?? null,
         ativo: true,
         created_by: userData.user?.id ?? null,
       });
@@ -258,39 +326,42 @@ function CuponsPage() {
                     {tipos.includes("valor") && (
                       <div className="space-y-1">
                         <Label htmlFor="v-valor" className="text-xs">Valor R$</Label>
-                        <Input
-                          id="v-valor"
-                          type="number"
-                          min="0"
-                          value={valor}
-                          onChange={(e) => {
-                            setValor(e.target.value);
-                            setErrors((er) => ({ ...er, valor: undefined }));
-                          }}
-                          placeholder="0,00"
-                          className={cn(errors.valor && "border-destructive focus-visible:ring-destructive")}
-                          aria-invalid={!!errors.valor}
-                        />
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                          <Input
+                            id="v-valor"
+                            inputMode="numeric"
+                            value={valor}
+                            onChange={(e) => {
+                              setValor(maskMoeda(e.target.value));
+                              setErrors((er) => ({ ...er, valor: undefined }));
+                            }}
+                            placeholder="0,00"
+                            className={cn("pl-9 text-right", errors.valor && "border-destructive focus-visible:ring-destructive")}
+                            aria-invalid={!!errors.valor}
+                          />
+                        </div>
                         {errors.valor && <p className="text-xs text-destructive">{errors.valor}</p>}
                       </div>
                     )}
                     {tipos.includes("percentual") && (
                       <div className="space-y-1">
                         <Label htmlFor="v-perc" className="text-xs">Percentual %</Label>
-                        <Input
-                          id="v-perc"
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={percentual}
-                          onChange={(e) => {
-                            setPercentual(e.target.value);
-                            setErrors((er) => ({ ...er, percentual: undefined }));
-                          }}
-                          placeholder="0"
-                          className={cn(errors.percentual && "border-destructive focus-visible:ring-destructive")}
-                          aria-invalid={!!errors.percentual}
-                        />
+                        <div className="relative">
+                          <Input
+                            id="v-perc"
+                            inputMode="decimal"
+                            value={percentual}
+                            onChange={(e) => {
+                              setPercentual(maskPercentual(e.target.value));
+                              setErrors((er) => ({ ...er, percentual: undefined }));
+                            }}
+                            placeholder="0"
+                            className={cn("pr-8 text-right", errors.percentual && "border-destructive focus-visible:ring-destructive")}
+                            aria-invalid={!!errors.percentual}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                        </div>
                         {errors.percentual && <p className="text-xs text-destructive">{errors.percentual}</p>}
                       </div>
                     )}
@@ -340,7 +411,22 @@ function CuponsPage() {
                 {/* Cliente específico */}
                 <div className="space-y-1.5">
                   <Label htmlFor="cli">Cliente específico (opcional)</Label>
-                  <Input id="cli" value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Deixe em branco para todos" />
+                  <Select value={clienteDoc || "todos"} onValueChange={(v) => setClienteDoc(v === "todos" ? "" : v)}>
+                    <SelectTrigger id="cli">
+                      <SelectValue placeholder="Todos os clientes" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      <SelectItem value="todos">Todos os clientes</SelectItem>
+                      {clientesQ.isLoading && (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">Carregando clientes...</div>
+                      )}
+                      {(clientesQ.data ?? []).map((c) => (
+                        <SelectItem key={c.doc} value={c.doc}>
+                          {c.razao_social}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -365,6 +451,7 @@ function CuponsPage() {
                   <th className="text-left px-4 py-3">Cliente</th>
                   <th className="text-left px-4 py-3">Reutilizável</th>
                   <th className="text-left px-4 py-3">Criado em</th>
+                  {isAdmin && <th className="text-right px-4 py-3">Ações</th>}
                 </tr>
               </thead>
               <tbody>
@@ -415,12 +502,28 @@ function CuponsPage() {
                     <td className="px-4 py-3">{c.cliente ?? <span className="text-muted-foreground">Todos</span>}</td>
                     <td className="px-4 py-3">{c.reutilizavel ? "Sim" : "Não"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.criadoEm}</td>
+                    {isAdmin && (
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          title="Excluir cupom"
+                          onClick={() => setExcluindo(c)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))}
                 {cupons.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
-                      Nenhum cupom criado ainda. Clique em <b>Criar cupom</b> para começar.
+                    <td colSpan={isAdmin ? 7 : 6} className="px-4 py-10 text-center text-muted-foreground">
+                      {cuponsQ.isLoading
+                        ? "Carregando cupons..."
+                        : "Nenhum cupom criado ainda. Clique em Criar cupom para começar."}
                     </td>
                   </tr>
                 )}
@@ -428,6 +531,26 @@ function CuponsPage() {
             </table>
           </div>
         </div>
+
+        <AlertDialog open={!!excluindo} onOpenChange={(v) => !v && setExcluindo(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir cupom {excluindo?.codigo}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação não pode ser desfeita. O código ficará disponível para uso novamente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => excluindo && handleDelete(excluindo)}
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
