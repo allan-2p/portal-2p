@@ -120,7 +120,14 @@ export async function sincronizarCliente(
 
   const sapIniciadoEm = Date.now();
   const sap = !fazSap
-    ? { ok: true, numero_sap: numeroSapAtual, erro: null as string | null, mensagem: "ignorado" }
+    ? {
+        ok: true as const,
+        numero_sap: numeroSapAtual,
+        erro: null as string | null,
+        mensagem: "ignorado",
+        equipe_vendas: null as string | null,
+        escritorio_vendas: null as string | null,
+      }
     : await enviarClienteParaSap({
 
     doc: String(cliente["doc"] ?? ""),
