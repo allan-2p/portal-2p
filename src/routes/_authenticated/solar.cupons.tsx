@@ -733,14 +733,23 @@ function CuponsPage() {
                     </td>
                     <td className="px-4 py-3">{c.cliente ?? <span className="text-muted-foreground">Todos</span>}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {c.usos}
-                      {c.limiteUsos != null ? ` / ${c.limiteUsos}` : c.reutilizavel ? " / ∞" : " / 1"}
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 rounded px-1 -mx-1 underline-offset-2 hover:underline"
+                        title="Ver histórico de uso"
+                        onClick={() => setHistorico(c)}
+                      >
+                        <History className="h-3.5 w-3.5 text-muted-foreground" />
+                        {c.usos}
+                        {c.limiteUsos != null ? ` / ${c.limiteUsos}` : c.reutilizavel ? " / ∞" : " / 1"}
+                      </button>
                       {c.esgotado && (
                         <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-destructive/15 text-destructive">
                           Esgotado
                         </span>
                       )}
                     </td>
+
                     <td className="px-4 py-3 text-muted-foreground">{c.criadoEm}</td>
                     <td className="px-4 py-3">
                       <span
