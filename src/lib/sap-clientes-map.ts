@@ -140,6 +140,8 @@ export type CamposSapCliente = {
   CRT: string;
   ZTERM: string;
   IND_SECTOR: string;
+  EQUIPE_VENDAS: string;
+  ESCRITORIO: string;
 };
 
 const UFS_KONDA_04 = ["SP", "RJ", "ES", "MG", "RS", "PR", "SC"];
