@@ -156,3 +156,30 @@ export async function contatosTableExists(): Promise<boolean> {
     throw e;
   }
 }
+
+/**
+ * E-mail de cobrança do cliente: usa apenas contatos do tipo
+ * financeiro (preferência) ou principal — nunca "outro".
+ */
+export async function emailCobrancaPorDoc(clienteDoc: string): Promise<string | null> {
+  const doc = String(clienteDoc ?? "").replace(/\D/g, "");
+  if (!doc) return null;
+  try {
+    const params = new URLSearchParams({
+      select: "tipo,emails,ativo",
+      cliente_doc: `eq.${doc}`,
+      tipo: "in.(financeiro,principal)",
+      ativo: "is.true",
+    });
+    const rows: ContatoRow[] = (await rest(`contatos?${params}`)) ?? [];
+    const ordem = ["financeiro", "principal"];
+    for (const tipo of ordem) {
+      const c = rows.find((r) => r.tipo === tipo && (r.emails ?? []).some((e) => e.includes("@")));
+      const email = c?.emails?.find((e) => e.includes("@"));
+      if (email) return email.trim();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
