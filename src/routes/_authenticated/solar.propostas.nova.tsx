@@ -2140,6 +2140,7 @@ function NovaPropostaSolarPage() {
                 <Info label="Cliente" value={String(cliente?.['razao_social'] ?? "—")} />
                 <Info label="CNPJ" value={String(cliente?.['doc'] ?? "—")} />
                 <Info label="Tabela de preço" value={`Tabela ${listaPreco}`} />
+                <Info label="Venda em kit" value={ehKit ? "Sim" : "Não"} />
                 <Info label="Tipo de NF" value={tipoNf} />
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
                 <Info label="Frete" value={freteMod || "—"} />
