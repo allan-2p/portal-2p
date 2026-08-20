@@ -171,7 +171,10 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
 /**
  * Reserva local pós-OV: soma a quantidade do pedido em `qtd_pend_faturar`,
  * espelhando a reserva feita no SAP até o próximo sync (que sobrescreve com o
- * valor oficial). Best effort — nunca desfaz a ordem de venda.
+ * valor oficial). O incremento roda numa RPC (`UPDATE ... SET x = x + n`), e
+ * não em read-modify-write, senão dois pedidos simultâneos do mesmo material
+ * sobrescrevem um ao outro e o estoque fica com reserva a menos.
+ * Best effort — nunca desfaz a ordem de venda, mas devolve o erro para log.
  */
 export async function reservarEstoquePedido(
   itens: { codigo: string; qtd: number }[],
@@ -187,24 +190,13 @@ export async function reservarEstoquePedido(
     }
     if (!agregado.size) return { materiais: 0 };
 
-    const codigos = [...agregado.keys()];
-    const { data } = await supabaseAdmin
-      .from("estoque")
-      .select("material, qtd_pend_faturar")
-      .in("material", codigos);
-
-    let alterados = 0;
-    for (const row of data ?? []) {
-      const atual = Number((row as any).qtd_pend_faturar ?? 0);
-      const add = agregado.get((row as any).material as string) ?? 0;
-      const { error } = await supabaseAdmin
-        .from("estoque")
-        .update({ qtd_pend_faturar: atual + add })
-        .eq("material", (row as any).material);
-      if (!error) alterados++;
-    }
-    return { materiais: alterados };
+    const { data, error } = await supabaseAdmin.rpc("reservar_estoque_pendente", {
+      p_itens: [...agregado].map(([material, qtd]) => ({ material, qtd })),
+    });
+    if (error) return { materiais: 0, erro: error.message };
+    return { materiais: Number(data ?? 0) };
   } catch (e) {
     return { materiais: 0, erro: (e as Error).message };
   }
 }
+

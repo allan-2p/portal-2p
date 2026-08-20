@@ -61,7 +61,53 @@ function correlation(prefix: string, id: string): string {
 // Boleto à vista
 // --------------------------------------------------------------------------
 
+/**
+ * Consulta se já existe boleto para este nosso-número. Devolve os dados do
+ * boleto existente (para reaproveitar) ou null quando não há nenhum. Falha na
+ * consulta devolve null: a emissão segue, para não travar o checkout por uma
+ * indisponibilidade de leitura.
+ */
+async function consultarBoletoExistente(
+  cred: NonNullable<ReturnType<typeof credenciaisBoleto>>,
+  beneficiario: string,
+  nossoNumero: string,
+  propostaId: string,
+): Promise<{
+  nossoNumero: string;
+  linhaDigitavel: string | null;
+  codigoBarras: string | null;
+  url: string | null;
+  vencimento: string | null;
+} | null> {
+  try {
+    const resp = await chamarItau({
+      escopo: "boleto",
+      cred,
+      metodo: "GET",
+      caminho: `/cash_management/v2/boletos?id_beneficiario=${encodeURIComponent(beneficiario)}&nosso_numero=${encodeURIComponent(nossoNumero)}`,
+      correlationId: correlation("boleto-consulta", propostaId),
+    });
+    const lista = Array.isArray(resp["data"]) ? resp["data"] : resp["data"] ? [resp["data"]] : [];
+    const item = lista[0];
+    const dado = item?.["dado_boleto"] ?? item;
+    if (!dado) return null;
+    const ind = Array.isArray(dado?.["dados_individuais_boleto"]) ? dado["dados_individuais_boleto"][0] : dado;
+    const linha = ind?.["numero_linha_digitavel"] ?? null;
+    if (!linha && !ind?.["numero_nosso_numero"]) return null;
+    return {
+      nossoNumero: ind?.["numero_nosso_numero"] ?? nossoNumero,
+      linhaDigitavel: linha,
+      codigoBarras: ind?.["codigo_barras"] ?? null,
+      url: ind?.["url_acesso_boleto"] ?? null,
+      vencimento: ind?.["data_vencimento"] ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function emitirBoleto(row: Record<string, any>, valor: number) {
+
   const cred = credenciaisBoleto();
   const beneficiario = itauEnv("ITAU_BOLETO_BENEFICIARIO");
   const agencia = itauEnv("ITAU_BOLETO_AGENCIA");
@@ -120,6 +166,12 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
     dados_qrcode: {},
   };
 
+  // Antes de emitir: o boleto pode já existir no Itaú (retentativa do checkout,
+  // ou POST que respondeu com timeout depois de gravar). Emitir de novo geraria
+  // duas cobranças para o mesmo pedido.
+  const existente = await consultarBoletoExistente(cred, beneficiario, nossoNumero, String(row["id"]));
+  if (existente) return { ...existente, vencimento: existente.vencimento ?? isoData(venc), agencia, conta };
+
   const resp = await chamarItau({
     escopo: "boleto",
     cred,
@@ -128,6 +180,7 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
     body,
     correlationId: correlation("boleto", String(row["id"])),
   });
+
 
   const dado = (resp["data"] ?? resp)?.["dado_boleto"] ?? resp["dado_boleto"] ?? {};
   const individual = Array.isArray(dado?.["dados_individuais_boleto"])
@@ -217,8 +270,25 @@ export async function gerarCobrancaCheckout(propostaId: string): Promise<Cobranc
     return { gerada: false, meio: null, motivo: `Forma de pagamento "${forma || "não informada"}" sem emissão automática.` };
   }
 
+  // Idempotência: pedido que já tem cobrança emitida não gera outra.
+  const jaEmitida =
+    String(row["pagamento_linha_digitavel"] ?? "").trim() || String(row["pagamento_txid"] ?? "").trim();
+  if (jaEmitida && String(row["pagamento_status"] ?? "") !== "cancelado") {
+    return {
+      gerada: false,
+      meio: (String(row["pagamento_meio"] ?? "") || null) as CobrancaResultado["meio"],
+      motivo: "Cobrança já emitida para este pedido.",
+      txid: (row["pagamento_txid"] as string) ?? undefined,
+      linhaDigitavel: (row["pagamento_linha_digitavel"] as string) ?? undefined,
+      vencimento: (row["pagamento_vencimento"] as string) ?? undefined,
+      pixCopiaCola: (row["pagamento_pix_copia_cola"] as string) ?? undefined,
+    };
+  }
+
   const valor = valorTotalPedido(row);
   if (!(valor > 0)) return { gerada: false, meio: null, erro: "Valor total do pedido inválido." };
+
+
 
   try {
     if (forma === "boleto_vista") {

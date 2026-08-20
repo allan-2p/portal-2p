@@ -39,18 +39,24 @@ export type ListarPropostasOpts = {
   select?: string;
   statusIn?: string[];
   limit?: number;
+  /** Ordenação por created_at (default desc). */
+  order?: "asc" | "desc";
+  /** Colunas que precisam estar preenchidas (filtro no banco, não em memória). */
+  naoVazio?: string[];
 };
 
 export async function listarPropostas(opts: ListarPropostasOpts = {}): Promise<PropostaRow[]> {
   const params = new URLSearchParams({
     select: opts.select ?? "*",
-    order: "created_at.desc",
+    order: `created_at.${opts.order ?? "desc"}`,
     limit: String(opts.limit ?? 5000),
   });
   if (opts.organizacao) params.set("organizacao", `eq.${opts.organizacao}`);
   if (opts.statusIn?.length) params.set("status", `in.(${opts.statusIn.map((s) => `"${s}"`).join(",")})`);
+  for (const col of opts.naoVazio ?? []) params.append(col, "not.is.null");
   return (await rest(`propostas?${params}`)) ?? [];
 }
+
 
 export async function getProposta(id: string, select = "*"): Promise<PropostaRow | null> {
   const params = new URLSearchParams({ select, id: `eq.${id}`, limit: "1" });

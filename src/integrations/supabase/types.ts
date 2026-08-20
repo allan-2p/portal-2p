@@ -3072,6 +3072,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      reservar_estoque_pendente: { Args: { p_itens: Json }; Returns: number }
       sync_user_role_from_profiles: {
         Args: { _user_id: string }
         Returns: undefined

@@ -13,8 +13,10 @@
  * no SAP não muda nada. Quando o SAP devolve a DANFE em base64, o PDF é
  * guardado no bucket privado `danfes` e o caminho fica em `danfe_path`.
  *
- * Contrato: SOAP 1.1 (`text/xml`), namespace `urn:sap-com:document:sap:rfc:functions`
- * — envelope de referência em `docs/sap/znfe_ov_consultar.request.xml`.
+ * Contrato: SOAP 1.2 (`application/soap+xml`), namespace
+ * `urn:sap-com:document:sap:rfc:functions` — mesma receita validada em
+ * produção na criação da OV (só os headers `authorization` e `content-type`).
+
  *
  * Variáveis de ambiente:
  *   SAP_NFS_URL               endpoint da RFC (obrigatório para ativar o motor)
@@ -64,7 +66,7 @@ export function sapNfsConfigurado() {
 
 function envelope(nroped: string): string {
   return `<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
+<soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
   <soapenv:Header/>
   <soapenv:Body>
     <urn:ZNFE_OV_CONSULTAR>
@@ -87,22 +89,38 @@ export type ConsultaSap = {
   danfeBase64: string | null;
 };
 
+/**
+ * Número de documento válido? O SAP devolve `0000000000` (só zeros) quando
+ * NÃO existe nota — sem esta guarda todo pedido em Processando seria
+ * "faturado" com NF de zeros.
+ */
+export function documentoValido(v: unknown): boolean {
+  const s = String(v ?? "").trim();
+  return /\d/.test(s) && !/^0+$/.test(s.replace(/\D/g, ""));
+}
+
 /** Extrai da resposta do SAP só o que o portal usa. */
 export function lerConsulta(doc: any): ConsultaSap {
   const txt = (v: unknown) => {
     const s = String(v ?? "").trim();
     return s && s !== "undefined" ? s : null;
   };
+  /** Texto de número de documento: zeros/vazio = ausente. */
+  const num = (v: unknown) => {
+    const s = txt(v);
+    return s && documentoValido(s) ? s : null;
+  };
   const dados = achar(doc, "E_S_DADOS") ?? achar(doc, "ZNFE_OV_CONSULTARResponse") ?? doc;
   return {
     picking: txt(achar(dados, "STATUS_PICKING")),
     romaneio: txt(achar(dados, "STATUS_ROMANEIO")),
-    nfNumero: txt(achar(dados, "NUM_NF")),
+    nfNumero: num(achar(dados, "NUM_NF") ?? achar(dados, "DOCNUM")),
     nfSerie: txt(achar(dados, "SERIE_NF") ?? achar(dados, "SERIE")),
-    nfChave: txt(achar(dados, "CHAVE_NFE") ?? achar(dados, "CHAVE") ?? achar(dados, "NFE_CHAVE")),
+    nfChave: num(achar(dados, "CHAVE_NFE") ?? achar(dados, "CHAVE") ?? achar(dados, "NFE_CHAVE")),
     danfeBase64: txt(achar(doc, "E_DANFE") ?? achar(doc, "DANFE")),
   };
 }
+
 
 /** Próximo status conforme as regras da plataforma antiga (só avança). */
 export function proximoStatus(atual: string, c: ConsultaSap): StatusNf | null {
@@ -125,12 +143,11 @@ async function chamarSap(nroped: string): Promise<{ doc: any; xml: string }> {
   try {
     const res = await fetch(url!, {
       method: "POST",
+      // Mesma receita validada em produção na criação da OV: SOAP 1.2 e só
+      // dois headers (sem SOAPAction, accept ou cookie sap-usercontext).
       headers: {
-        "content-type": "text/xml; charset=utf-8",
-        accept: "text/xml, */*",
-        soapaction: '"urn:sap-com:document:sap:rfc:functions:ZNFE_OV_CONSULTAR"',
+        "content-type": "application/soap+xml; charset=utf-8",
         authorization: auth!,
-        cookie: "sap-usercontext=sap-client=500",
       },
       body: envelope(nroped),
       signal: controller.signal,
@@ -157,7 +174,7 @@ export async function consultarVbelnPorPedido(nroped: string): Promise<string | 
     const v = String(
       achar(dados, "VBELN_VA") ?? achar(doc, "VBELN_VA") ?? achar(doc, "E_VBELN_VA") ?? "",
     ).trim();
-    return v && v !== "undefined" && /\d/.test(v) ? v : null;
+    return documentoValido(v) ? v : null;
   } catch {
     return null;
   }
@@ -165,20 +182,38 @@ export async function consultarVbelnPorPedido(nroped: string): Promise<string | 
 
 /** Guarda a DANFE no bucket privado e devolve o caminho. */
 async function salvarDanfe(propostaId: string, base64: string): Promise<string | null> {
+  const avisar = async (motivo: string) => {
+    await logIntegrationEvent({
+      slug: "cron.sap-nfs",
+      level: "warn",
+      event: "danfe-upload",
+      message: `Não foi possível guardar a DANFE: ${motivo}`.slice(0, 500),
+      detail: { proposta_id: propostaId },
+    });
+  };
   try {
     const limpo = base64.replace(/\s+/g, "");
-    if (limpo.length < 100) return null;
+    if (limpo.length < 100) {
+      await avisar("conteúdo base64 muito curto/inválido");
+      return null;
+    }
     const bytes = Buffer.from(limpo, "base64");
     const path = `propostas/${propostaId}/danfe.pdf`;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.storage
       .from("danfes")
       .upload(path, bytes, { contentType: "application/pdf", upsert: true });
-    return error ? null : path;
-  } catch {
+    if (error) {
+      await avisar(error.message);
+      return null;
+    }
+    return path;
+  } catch (e) {
+    await avisar((e as Error).message);
     return null;
   }
 }
+
 
 const TITULOS: Record<StatusNf, string> = {
   Processando: "Pedido em processamento",
@@ -279,16 +314,20 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
     return { verificados: 0, atualizados: 0, detalhes: [], skipped: true, motivo: "SAP_NFS_URL/credencial não configurada." };
   }
 
+  // Ordenação e filtro no banco: com backlog grande, ordenar em memória
+  // deixaria os pedidos mais antigos sem nunca serem processados.
   const rows = await db.listarPropostas({
     statusIn: ["Processando", "Separação", "Faturado"],
     select: "id,numero,status,created_by,sap_ov_numero,nf_numero,danfe_path,created_at",
-    limit: 500,
+    order: "asc",
+    naoVazio: ["sap_ov_numero"],
+    limit: limite,
   });
 
   const fila = rows
     .filter((r) => String(r["sap_ov_numero"] ?? "").trim() && String(r["numero"] ?? "").trim())
-    .sort((a, b) => String(a["created_at"] ?? "").localeCompare(String(b["created_at"] ?? "")))
     .slice(0, limite);
+
 
   const detalhes: NfAplicacao[] = [];
   const erros: { proposta_id: string; erro: string }[] = [];
