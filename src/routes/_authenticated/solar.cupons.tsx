@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CalendarIcon, Copy, Plus, RefreshCw, Search, Tag, X } from "lucide-react";
+import { CalendarIcon, Copy, History, Plus, RefreshCw, Search, Tag, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ import { Trash2, Power } from "lucide-react";
 import { useSolarCupons, useSolarInvalidate } from "@/hooks/use-solar-catalogo";
 import { logModeration } from "@/lib/moderation-audit";
 import { ModerationAuditLog } from "@/components/moderation-audit-log";
+import { CupomHistoricoDialog } from "@/components/solar/cupom-historico-dialog";
 
 export const Route = createFileRoute("/_authenticated/solar/cupons")({
   head: () => ({
@@ -180,6 +181,8 @@ function CuponsPage() {
   const [limiteUsos, setLimiteUsos] = useState("");
   const [clienteDoc, setClienteDoc] = useState("");
   const [excluindo, setExcluindo] = useState<Cupom | null>(null);
+  const [historico, setHistorico] = useState<Cupom | null>(null);
+
 
   type Errors = {
     codigo?: string;
@@ -731,14 +734,23 @@ function CuponsPage() {
                     </td>
                     <td className="px-4 py-3">{c.cliente ?? <span className="text-muted-foreground">Todos</span>}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {c.usos}
-                      {c.limiteUsos != null ? ` / ${c.limiteUsos}` : c.reutilizavel ? " / ∞" : " / 1"}
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 rounded px-1 -mx-1 underline-offset-2 hover:underline"
+                        title="Ver histórico de uso"
+                        onClick={() => setHistorico(c)}
+                      >
+                        <History className="h-3.5 w-3.5 text-muted-foreground" />
+                        {c.usos}
+                        {c.limiteUsos != null ? ` / ${c.limiteUsos}` : c.reutilizavel ? " / ∞" : " / 1"}
+                      </button>
                       {c.esgotado && (
                         <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-destructive/15 text-destructive">
                           Esgotado
                         </span>
                       )}
                     </td>
+
                     <td className="px-4 py-3 text-muted-foreground">{c.criadoEm}</td>
                     <td className="px-4 py-3">
                       <span
@@ -813,6 +825,13 @@ function CuponsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <CupomHistoricoDialog
+          cupomId={historico?.id ?? null}
+          codigo={historico?.codigo ?? null}
+          open={!!historico}
+          onOpenChange={(v) => !v && setHistorico(null)}
+        />
 
         <ModerationAuditLog
           area="solar_cupons"

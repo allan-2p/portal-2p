@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.solar_cupom_usos_sync_contador() FROM PUBLIC, anon, authenticated;

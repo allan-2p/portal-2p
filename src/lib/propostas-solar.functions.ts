@@ -212,7 +212,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     const subtotal = money2(itens.reduce((s, i) => s + i.total, 0));
 
     // Cupom: validado no servidor (existe, ativo e dentro da validade).
-    let cupom: { codigo: string; desconto: number; freteGratis: boolean } | null = null;
+    let cupom: { id: string; codigo: string; desconto: number; freteGratis: boolean } | null = null;
     if (data.cupomCodigo) {
       const { data: c } = await supabase
         .from("solar_cupons")
@@ -228,7 +228,14 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
           `Cupom ainda não está válido (início em ${new Date(`${row.validade_inicio}T00:00:00`).toLocaleDateString("pt-BR")}).`,
         );
       if (new Date(`${row.validade}T00:00:00`) < hoje) throw new Error("Cupom expirado.");
-      const usos = Number(row.usos ?? 0);
+      // Usos reais = histórico registrado, desconsiderando a própria proposta em edição.
+      let q = supabase
+        .from("solar_cupom_usos")
+        .select("id", { count: "exact", head: true })
+        .eq("cupom_id", row.id);
+      if (data.propostaId) q = q.neq("proposta_id", data.propostaId);
+      const { count } = await q;
+      const usos = Math.max(Number(count ?? 0), 0);
       if (!row.reutilizavel && usos > 0) throw new Error("Cupom já utilizado.");
       if (row.limite_usos != null && usos >= Number(row.limite_usos))
         throw new Error(`Cupom atingiu o limite de ${row.limite_usos} uso(s).`);
@@ -240,11 +247,13 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       if (tipos.includes("percentual")) desconto += subtotal * (Number(row.percentual ?? 0) / 100);
       if (tipos.includes("valor")) desconto += Number(row.valor ?? 0);
       cupom = {
+        id: row.id as string,
         codigo: row.codigo,
         desconto: money2(Math.min(desconto, subtotal)),
         freteGratis: tipos.includes("frete"),
       };
     }
+
 
     const freteValor = cupom?.freteGratis ? 0 : data.freteValor;
     const valorTotal = money2(subtotal - (cupom?.desconto ?? 0) + freteValor);
@@ -301,11 +310,51 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       .maybeSingle();
     const nomeAtual = (perfil as any)?.full_name ?? (perfil as any)?.email ?? null;
 
+    /** Histórico de uso do cupom: 1 registro por proposta, removido se o cupom sair. */
+    const registrarUsoCupom = async (propostaId: string) => {
+      try {
+        let limpar = supabase.from("solar_cupom_usos").delete().eq("proposta_id", propostaId);
+        if (cupom) limpar = limpar.neq("cupom_id", cupom.id);
+        await limpar;
+        if (!cupom) return;
+        const { data: existente } = await supabase
+          .from("solar_cupom_usos")
+          .select("id")
+          .eq("proposta_id", propostaId)
+          .eq("cupom_id", cupom.id)
+          .maybeSingle();
+        const registro = {
+          codigo: cupom.codigo,
+          proposta_numero: numeroProposta,
+          cliente_nome: data.cliente.nome,
+          cliente_doc: data.cliente.doc,
+          desconto: cupom.desconto,
+          frete_gratis: cupom.freteGratis,
+          valor_total: valorTotal,
+        };
+        if (existente) {
+          await supabase.from("solar_cupom_usos").update(registro).eq("id", (existente as any).id);
+        } else {
+          await supabase.from("solar_cupom_usos").insert({
+            ...registro,
+            cupom_id: cupom.id,
+            proposta_id: propostaId,
+            user_id: userId,
+            user_nome: nomeAtual,
+          });
+        }
+      } catch {
+        /* histórico é auditoria: não bloqueia o salvamento */
+      }
+    };
+
     if (data.propostaId) {
       await repo.atualizarProposta(data.propostaId, payload);
+      await registrarUsoCupom(data.propostaId);
       await espelharNoSalesforce(data.propostaId);
       return { id: data.propostaId, numero: numeroProposta, totais };
     }
+
 
     // Consultor: fotografado do cadastro do cliente no momento da criação.
     let consultorId: string | null = null;
@@ -332,7 +381,9 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       consultor_nome: consultorNome,
     })) as { id: string };
 
+    await registrarUsoCupom(inserida.id);
     await espelharNoSalesforce(inserida.id);
+
 
     return { id: inserida.id, numero: numeroProposta, totais };
   });

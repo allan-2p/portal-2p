@@ -2167,6 +2167,62 @@ export type Database = {
         }
         Relationships: []
       }
+      solar_cupom_usos: {
+        Row: {
+          cliente_doc: string | null
+          cliente_nome: string | null
+          codigo: string
+          created_at: string
+          cupom_id: string
+          desconto: number
+          frete_gratis: boolean
+          id: string
+          proposta_id: string | null
+          proposta_numero: string | null
+          user_id: string | null
+          user_nome: string | null
+          valor_total: number
+        }
+        Insert: {
+          cliente_doc?: string | null
+          cliente_nome?: string | null
+          codigo: string
+          created_at?: string
+          cupom_id: string
+          desconto?: number
+          frete_gratis?: boolean
+          id?: string
+          proposta_id?: string | null
+          proposta_numero?: string | null
+          user_id?: string | null
+          user_nome?: string | null
+          valor_total?: number
+        }
+        Update: {
+          cliente_doc?: string | null
+          cliente_nome?: string | null
+          codigo?: string
+          created_at?: string
+          cupom_id?: string
+          desconto?: number
+          frete_gratis?: boolean
+          id?: string
+          proposta_id?: string | null
+          proposta_numero?: string | null
+          user_id?: string | null
+          user_nome?: string | null
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solar_cupom_usos_cupom_id_fkey"
+            columns: ["cupom_id"]
+            isOneToOne: false
+            referencedRelation: "solar_cupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solar_cupons: {
         Row: {
           ativo: boolean
