@@ -57,6 +57,25 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     "Boleto não possui baixa automática pela plataforma — confirmação vem do SAP/financeiro.",
   ),
 
+  // Motor real: mesma sincronização do botão manual de estoque/produtos.
+  "cron.estoque": async () => {
+    const { executarSyncEstoque } = await import("@/lib/estoque-sync.server");
+    return { ...(await executarSyncEstoque(null)) };
+  },
+
+  // Motor real: reconsulta no Itaú as cobranças Pix pendentes.
+  "cron.pix-reconsulta": async (payload) => {
+    const { reconsultarPixPendentes } = await import("@/lib/pagamentos-pix-reconsulta.server");
+    const minutos = Number((payload as Record<string, unknown>)["minutos"] ?? 15) || 15;
+    return { ...(await reconsultarPixPendentes(minutos)) };
+  },
+
+  // Motor real: avisa consultor (notificação) e cliente (e-mail) sobre boletos.
+  "cron.boleto-avisos": async () => {
+    const { avisarBoletos } = await import("@/lib/boleto-avisos.server");
+    return { ...(await avisarBoletos()) };
+  },
+
   // Motor real: aplica o evento Pix no pedido (pago / expirado / cancelado).
   "webhook.pix-itau": async (payload) => {
     const { processarWebhookPix } = await import("@/lib/pagamentos-pix.server");
