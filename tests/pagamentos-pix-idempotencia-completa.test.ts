@@ -6,20 +6,28 @@ import {
   type PropostaLike,
 } from "@/lib/pagamentos-pix.server";
 
+/** UUID do pedido usado no txid do portal (`2P<numero><uuid sem hífens>`). */
+const ID_P1 = "11111111-1111-1111-1111-111111111111";
+const HEX_P1 = ID_P1.replace(/-/g, "");
+const TXID_P1 = `2P050004${HEX_P1}`;
+
 const pedido = (over: Partial<PropostaLike> = {}): PropostaLike => ({
-  id: "p1",
+  id: ID_P1,
   numero: "050004",
   status: "Aguardando Pagamento",
   pagamento_meio: "pix",
   pagamento_status: "pendente",
-  pagamento_txid: "2P050004ABC",
+  pagamento_txid: TXID_P1,
   pagamento_e2eid: null,
+  // Valor da cobrança: o pagamento só é confirmado quando bate com o recebido.
+  pagamento_valor: 1000,
   ...over,
 });
 
-const pagoPayload = (txid = "2P050004ABC", e2e = "E1") => ({
+const pagoPayload = (txid = TXID_P1, e2e = "E1") => ({
   pix: [{ txid, endToEndId: e2e, valor: "1000.00", horario: "2026-08-18T18:00:00Z" }],
 });
+
 
 describe("Pix — idempotência completa (status e logs)", () => {
   it("10 reentregas do mesmo evento geram exatamente 1 escrita e 1 log", async () => {
