@@ -742,7 +742,10 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     const itens = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
     const totais = (row["totais"] ?? {}) as Record<string, number>;
     let erro: string | null = null;
+    const emailCliente = String(row["cliente_email"] ?? "").trim();
     if (!String(row["cliente_nome"] ?? "").trim()) erro = "Cliente não informado.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailCliente))
+      erro = "Informe um e-mail válido do cliente (usado para cobrança e avisos de boleto).";
     else if (!String(row["uf"] ?? "").trim()) erro = "UF de faturamento não informada.";
     else if (!String(row["finalidade_uso"] ?? "").trim()) erro = "Finalidade de uso não informada.";
     else if (!String(row["frete_mod"] ?? "").trim()) erro = "Modalidade de frete não informada.";
