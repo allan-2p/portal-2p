@@ -196,6 +196,8 @@ function NovaPropostaSolarPage() {
   // Etapa 3
   const [modo, setModo] = useState<"calculadora" | "lista">("calculadora");
   const [listaPreco, setListaPreco] = useState("01");
+  /** Venda em formato de kit — impacta regras comerciais/fiscais nas etapas seguintes. */
+  const [ehKit, setEhKit] = useState<boolean | null>(null);
   /** Recusas do SAP na precificação (ex.: CNPJ sem parceiro) — bloqueiam o avanço. */
   const [avisosPreco, setAvisosPreco] = useState<string[]>([]);
   /** Listas independentes: o que está na calculadora não reflete na lista manual. */
