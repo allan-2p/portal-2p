@@ -66,6 +66,7 @@ type Cupom = {
   esgotado: boolean;
   ativo: boolean;
   cliente?: string;
+  clienteDoc?: string;
   criadoEm: string;
 };
 
