@@ -1,110 +1,121 @@
--- Script para criar a tabela espelho clientes_sap e sincronizar dados do SAP
--- Execute este SQL no banco de dados do projeto grupo-2p (onde residem os clientes).
+-- ============================================================================
+-- Projeto de destino: https://npzlinbglznnnwxxcawh.supabase.co  (grupo-2p)
+-- Rode este script no SQL Editor DESSE projeto.
+--
+-- O script é idempotente e defensivo: só faz o backfill das colunas que
+-- realmente existirem em public.clientes (foi isso que causou o erro
+-- 42703: column "doc" does not exist na execução anterior).
+-- ============================================================================
 
--- 1) Adiciona colunas de escopo na tabela clientes, se ainda não existirem
-ALTER TABLE public.clientes
-  ADD COLUMN IF NOT EXISTS escopo_org text,
-  ADD COLUMN IF NOT EXISTS equipe_vendas text,
-  ADD COLUMN IF NOT EXISTS escritorio_vendas text;
+-- 1) Colunas de escopo em public.clientes (só se a tabela existir)
+DO $$
+BEGIN
+  IF to_regclass('public.clientes') IS NOT NULL THEN
+    ALTER TABLE public.clientes
+      ADD COLUMN IF NOT EXISTS escopo_org        text,
+      ADD COLUMN IF NOT EXISTS equipe_vendas     text,
+      ADD COLUMN IF NOT EXISTS escritorio_vendas text;
+  END IF;
+END
+$$;
 
--- 2) Cria tabela espelho clientes_sap
+-- 2) Tabela espelho do SAP
 CREATE TABLE IF NOT EXISTS public.clientes_sap (
-    cliente_id uuid NOT NULL REFERENCES public.clientes(id) ON DELETE CASCADE,
-    doc text NOT NULL,
-    razao_social text,
-    organizacao text NOT NULL,
-    instancia text NOT NULL,
-    numero_sap text,
-    escopo_org text,
-    equipe_vendas text,
-    escritorio_vendas text,
-    vendedor_sap text,
-    tabela_preco text,
-    condicao_pgto_sap text,
-    status text,
-    mensagem text,
-    payload jsonb,
-    sincronizado_em timestamp with time zone,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    PRIMARY KEY (cliente_id)
+  cliente_id        uuid PRIMARY KEY,
+  doc               text,
+  razao_social      text,
+  organizacao       text,
+  instancia         text,
+  numero_sap        text,
+  escopo_org        text,
+  equipe_vendas     text,
+  escritorio_vendas text,
+  vendedor_sap      text,
+  tabela_preco      text,
+  condicao_pgto_sap text,
+  status            text,
+  mensagem          text,
+  payload           jsonb,
+  sincronizado_em   timestamptz,
+  created_at        timestamptz NOT NULL DEFAULT now()
 );
 
--- 3) Garante acesso ao Data API (service_role gerencia a tabela; anon/authenticated não acessam diretamente)
+CREATE INDEX IF NOT EXISTS clientes_sap_doc_idx    ON public.clientes_sap (doc);
+CREATE INDEX IF NOT EXISTS clientes_sap_status_idx ON public.clientes_sap (status);
+
+-- 3) Grants (tabela gerenciada pelo backend; sem acesso direto do app)
 GRANT ALL ON public.clientes_sap TO service_role;
 
--- 4) Ativa RLS e bloqueia acesso direto de anon/authenticated
+-- 4) RLS bloqueando anon/authenticated
 ALTER TABLE public.clientes_sap ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies
-        WHERE schemaname = 'public' AND tablename = 'clientes_sap' AND policyname = 'Bloqueia acesso direto de anon e authenticated'
-    ) THEN
-        CREATE POLICY "Bloqueia acesso direto de anon e authenticated"
-        ON public.clientes_sap
-        FOR ALL
-        TO anon, authenticated
-        USING (false)
-        WITH CHECK (false);
-    END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename  = 'clientes_sap'
+      AND policyname = 'clientes_sap_sem_acesso_direto'
+  ) THEN
+    CREATE POLICY "clientes_sap_sem_acesso_direto"
+      ON public.clientes_sap
+      FOR ALL TO anon, authenticated
+      USING (false) WITH CHECK (false);
+  END IF;
 END
 $$;
 
--- 5) Backfill: preenche clientes_sap a partir de clientes já existentes
-INSERT INTO public.clientes_sap (
-    cliente_id,
-    doc,
-    razao_social,
-    organizacao,
-    instancia,
-    numero_sap,
-    escopo_org,
-    equipe_vendas,
-    escritorio_vendas,
-    vendedor_sap,
-    tabela_preco,
-    condicao_pgto_sap,
-    status,
-    mensagem,
-    payload,
-    sincronizado_em,
-    created_at
-)
-SELECT
-    c.id,
-    c.doc,
-    c.razao_social,
-    c.organizacao,
-    c.instancia,
-    c.numero_sap,
-    c.escopo_org,
-    c.equipe_vendas,
-    c.escritorio_vendas,
-    NULL,
-    c.tabela_preco,
-    c.condicao_pgto_sap,
-    c.sap_status,
-    c.sap_erro,
-    NULL,
-    c.sincronizado_em,
-    COALESCE(c.created_at, now())
-FROM public.clientes c
-WHERE c.organizacao IN ('2P Solar', '2P Carregadores', 'Grupo 2P')
-  AND NOT EXISTS (
-      SELECT 1 FROM public.clientes_sap cs WHERE cs.cliente_id = c.id
-  )
-ON CONFLICT (cliente_id) DO UPDATE SET
-    doc = EXCLUDED.doc,
-    razao_social = EXCLUDED.razao_social,
-    organizacao = EXCLUDED.organizacao,
-    instancia = EXCLUDED.instancia,
-    numero_sap = EXCLUDED.numero_sap,
-    escopo_org = EXCLUDED.escopo_org,
-    equipe_vendas = EXCLUDED.equipe_vendas,
-    escritorio_vendas = EXCLUDED.escritorio_vendas,
-    tabela_preco = EXCLUDED.tabela_preco,
-    condicao_pgto_sap = EXCLUDED.condicao_pgto_sap,
-    status = EXCLUDED.status,
-    mensagem = EXCLUDED.mensagem,
-    sincronizado_em = EXCLUDED.sincronizado_em;
+-- 5) Backfill dinâmico a partir de public.clientes
+DO $$
+DECLARE
+  cols text[] := ARRAY[
+    'doc','razao_social','organizacao','instancia','numero_sap',
+    'escopo_org','equipe_vendas','escritorio_vendas',
+    'tabela_preco','condicao_pgto_sap','sincronizado_em'
+  ];
+  c            text;
+  insert_cols  text := 'cliente_id';
+  select_cols  text := 'c.id';
+  update_set   text := '';
+  status_expr  text := 'NULL::text';
+  msg_expr     text := 'NULL::text';
+BEGIN
+  IF to_regclass('public.clientes') IS NULL THEN
+    RAISE NOTICE 'public.clientes não existe — backfill ignorado.';
+    RETURN;
+  END IF;
+
+  FOREACH c IN ARRAY cols LOOP
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'clientes' AND column_name = c
+    ) THEN
+      insert_cols := insert_cols || ', ' || quote_ident(c);
+      select_cols := select_cols || ', c.' || quote_ident(c);
+      update_set  := update_set  || ', ' || quote_ident(c) || ' = EXCLUDED.' || quote_ident(c);
+    END IF;
+  END LOOP;
+
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_schema='public' AND table_name='clientes' AND column_name='sap_status') THEN
+    status_expr := 'c.sap_status';
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_schema='public' AND table_name='clientes' AND column_name='sap_erro') THEN
+    msg_expr := 'c.sap_erro';
+  END IF;
+
+  insert_cols := insert_cols || ', status, mensagem';
+  select_cols := select_cols || ', ' || status_expr || ', ' || msg_expr;
+  update_set  := update_set  || ', status = EXCLUDED.status, mensagem = EXCLUDED.mensagem';
+
+  EXECUTE format(
+    'INSERT INTO public.clientes_sap (%s) SELECT %s FROM public.clientes c
+     ON CONFLICT (cliente_id) DO UPDATE SET %s',
+    insert_cols, select_cols, ltrim(update_set, ', ')
+  );
+END
+$$;
+
+-- 6) Conferência
+SELECT count(*) AS total_clientes_sap FROM public.clientes_sap;

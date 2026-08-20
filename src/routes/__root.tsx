@@ -26,6 +26,12 @@ import { applyAreaAttribute } from "@/lib/admin-area";
 import { AccessDenied } from "@/components/access-denied";
 import { toFriendlyError } from "@/lib/friendly-errors";
 
+// Origem do backend — sempre derivada da configuração, nunca hardcoded.
+const SUPABASE_ORIGIN: string =
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ||
+  "https://npzlinbglznnnwxxcawh.supabase.co";
+
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -130,9 +136,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      // Warm up the TLS connection to Supabase — first auth check happens right after hydration.
-      { rel: "preconnect", href: "https://zleqqrcvcwipgvudtlde.supabase.co", crossOrigin: "anonymous" },
-      { rel: "dns-prefetch", href: "https://zleqqrcvcwipgvudtlde.supabase.co" },
+      // Warm up the TLS connection to the backend — first auth check happens right after hydration.
+      { rel: "preconnect", href: SUPABASE_ORIGIN, crossOrigin: "anonymous" },
+      { rel: "dns-prefetch", href: SUPABASE_ORIGIN },
       // Preload only the two font files needed above the fold on first paint.
       // The remaining weights load via the CSS @font-face rules (font-display: swap).
       { rel: "preload", href: inter400, as: "font", type: "font/woff2", crossOrigin: "anonymous" },

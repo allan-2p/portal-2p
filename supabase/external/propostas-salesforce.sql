@@ -1,6 +1,6 @@
 -- ---------------------------------------------------------------------------
 -- Pedido no Salesforce (Opportunity) — retorno gravado na proposta.
--- Rode este script no projeto único grupo-2p (SQL Editor).
+-- Rode este script no projeto grupo-2p (https://npzlinbglznnnwxxcawh.supabase.co) (SQL Editor).
 -- ---------------------------------------------------------------------------
 
 alter table public.propostas
