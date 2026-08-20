@@ -347,20 +347,21 @@ function CuponsPage() {
                     {tipos.includes("percentual") && (
                       <div className="space-y-1">
                         <Label htmlFor="v-perc" className="text-xs">Percentual %</Label>
-                        <Input
-                          id="v-perc"
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={percentual}
-                          onChange={(e) => {
-                            setPercentual(e.target.value);
-                            setErrors((er) => ({ ...er, percentual: undefined }));
-                          }}
-                          placeholder="0"
-                          className={cn(errors.percentual && "border-destructive focus-visible:ring-destructive")}
-                          aria-invalid={!!errors.percentual}
-                        />
+                        <div className="relative">
+                          <Input
+                            id="v-perc"
+                            inputMode="decimal"
+                            value={percentual}
+                            onChange={(e) => {
+                              setPercentual(maskPercentual(e.target.value));
+                              setErrors((er) => ({ ...er, percentual: undefined }));
+                            }}
+                            placeholder="0"
+                            className={cn("pr-8 text-right", errors.percentual && "border-destructive focus-visible:ring-destructive")}
+                            aria-invalid={!!errors.percentual}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                        </div>
                         {errors.percentual && <p className="text-xs text-destructive">{errors.percentual}</p>}
                       </div>
                     )}
