@@ -366,8 +366,11 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       padrinhoNome = (pad as any).nome as string;
     }
     if (data.indicacao && !padrinhoId) throw new Error("Selecione ou cadastre o padrinho da indicação.");
+    const { resolverCondicaoPagamento } = await import("./condicoes-pagamento.server");
+    const cond = await resolverCondicaoPagamento(supabase, data.condicaoPagamento);
 
     const payload = {
+
       numero: numeroProposta,
       nome: data.propostaNome,
       numero_sap: numeroSap,
