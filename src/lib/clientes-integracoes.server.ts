@@ -145,6 +145,9 @@ export async function sincronizarCliente(
     municipio_ibge: cliente["municipio_ibge"],
     vendedor_sap: extras.vendedorSap ?? null,
     numero_sap: numeroSapAtual,
+    escopo_org: escopo,
+    equipe_vendas: EQUIPE_VENDAS,
+    escritorio_vendas: ESCRITORIO,
   });
 
   if (fazSap) await logIntegrationEvent({
