@@ -176,10 +176,16 @@ export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<Sa
     };
   }
 
+  const enviados = camposSapCliente(cliente);
+  const equipe = achar(json, "E_EQUIPE_VENDAS") ?? achar(json, "EQUIPE_VENDAS") ?? achar(json, "VKGRP");
+  const escritorio = achar(json, "E_ESCRITORIO") ?? achar(json, "ESCRITORIO") ?? achar(json, "VKBUR");
+
   return {
     ok: true,
     numero_sap: String(numero).replace(/^0+/, "") || String(numero),
     mensagem: mensagem ? String(mensagem) : null,
+    equipe_vendas: String(equipe ?? enviados.EQUIPE_VENDAS) || null,
+    escritorio_vendas: String(escritorio ?? enviados.ESCRITORIO) || null,
     raw: json,
   };
 }
