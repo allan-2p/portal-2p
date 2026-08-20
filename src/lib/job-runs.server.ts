@@ -34,6 +34,21 @@ export const JOBS = {
     descricao: "Verifica a liquidação do boleto e libera o pedido.",
     reprocessavel: true,
   },
+  "cron.estoque": {
+    label: "Cron • Estoque (SAP)",
+    descricao: "Sincroniza estoque, containers e produtos com o SAP a cada 6h.",
+    reprocessavel: true,
+  },
+  "cron.pix-reconsulta": {
+    label: "Cron • Reconsulta Pix (Itaú)",
+    descricao: "Consulta no Itaú as cobranças Pix pendentes (fallback do webhook).",
+    reprocessavel: true,
+  },
+  "cron.boleto-avisos": {
+    label: "Cron • Avisos de boleto",
+    descricao: "Avisa consultor e cliente sobre boletos vencendo ou vencidos.",
+    reprocessavel: true,
+  },
   "webhook.pix-itau": {
     label: "Webhook • Pix (Itaú)",
     descricao: "Notificação do PSP: cobrança paga, expirada, removida ou devolvida.",
