@@ -164,7 +164,7 @@ function CuponsPage() {
       (filtroTipo === "percentual" && c.percentual !== undefined) ||
       (filtroTipo === "frete" && c.tipos.includes("frete"));
     const bateStatus = filtroStatus === "todos" || (filtroStatus === "ativo" ? c.ativo : !c.ativo);
-    const bateCliente = filtroCliente === "todos" || c.cliente === filtroCliente;
+    const bateCliente = filtroCliente === "todos" || c.clienteDoc === filtroCliente;
     return bateBusca && bateTipo && bateStatus && bateCliente;
   });
 
