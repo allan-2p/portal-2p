@@ -193,6 +193,7 @@ export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
     CRT: crtDoRegime(c.regime_tributario),
     ZTERM: digitos(c.numero_sap) ? so(c.condicao_pgto_sap) : "2P00",
     IND_SECTOR: uf === "SC" && finalidade === "Industrialização" ? "04" : "",
+    ...vendasDoEscopo(c),
   };
 }
 
