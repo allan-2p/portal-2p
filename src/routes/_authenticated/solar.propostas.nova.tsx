@@ -321,6 +321,7 @@ function NovaPropostaSolarPage() {
       setAreaRural(!!p['frete_area_rural']);
       const totais = (p['totais'] ?? {}) as Record<string, any>;
       setListaPreco(String(totais['listaPreco'] ?? "01"));
+      if (typeof totais['ehKit'] === "boolean") setEhKit(totais['ehKit'] as boolean);
       setVendido(totais['vendidoClienteFinal'] ? "sim" : "nao");
       setCupomCodigo(String(totais['cupom'] ?? ""));
       setModo("lista");
