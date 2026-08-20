@@ -730,6 +730,10 @@ function NovaPropostaSolarPage() {
           itens: precificaveis.map((i) => ({ codigo: codigoDoItem(i), quantidade: i.qtd })),
           documento: String(cliente?.['doc'] ?? clienteDoc ?? ""),
           listaPreco: tabela,
+          tipoNf,
+          contribuinte: faturarClienteFinal
+            ? String(fat['contribuinte'] ?? "") === "true" || Boolean(String(fat['ie'] ?? "").trim())
+            : cliente?.['contribuinte'] === true,
         },
       });
       const semPreco: string[] = [];

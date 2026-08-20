@@ -1,11 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { pltypDaTabela } from "@/lib/sap-clientes-map";
+import { tpOvDoPedido } from "@/lib/sap-tp-ov";
 
 export type PrecoSolarInput = {
   itens: { codigo: string; quantidade: number }[];
   documento: string;
   listaPreco: string;
+  tipoOv: string;
 };
 
 function validar(input: unknown): PrecoSolarInput {
@@ -21,6 +23,7 @@ function validar(input: unknown): PrecoSolarInput {
     documento: String(i.documento ?? "").replace(/\D/g, ""),
     // "2P-0001" (cadastro do cliente) vira "01" — o SAP só aceita 01..05 no PLTYP.
     listaPreco: pltypDaTabela(i.listaPreco),
+    tipoOv: tpOvDoPedido(i.tipoNf, i.contribuinte === true),
   };
 }
 
@@ -48,6 +51,7 @@ export const precosSolarFn = createServerFn({ method: "POST" })
     return await precosSolar(data.itens, {
       documento: data.documento,
       listaPreco: data.listaPreco,
+      tipoOv: data.tipoOv,
       sugeridos,
       auditoria: {
         etapa: "precos",
