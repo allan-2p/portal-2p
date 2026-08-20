@@ -178,11 +178,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const dashboardsActive = pathname.startsWith("/solar/dashboards");
   const moderacaoActive = pathname.startsWith("/carregadores/produtos") || pathname.startsWith("/carregadores/comissoes") || pathname.startsWith("/carregadores/regras") || pathname.startsWith("/carregadores/metas");
   const marketingActive = pathname.startsWith("/marketing");
+  const financeiroActive = pathname.startsWith("/financeiro");
 
   // Filtragem de itens por feature — cada bloco só aparece na sua própria
   // instância (nada de item Solar sob o título Carregadores, e vice-versa).
-  const instanceOf = (k: FeatureKey): "solar" | "carregadores" | "marketing" | "any" =>
-    k.startsWith("carregadores.") ? "carregadores" : k.startsWith("marketing.") ? "marketing" : k.startsWith("admin.") ? "any" : "solar";
+  const instanceOf = (k: FeatureKey): "solar" | "carregadores" | "marketing" | "financeiro" | "any" =>
+    k.startsWith("carregadores.")
+      ? "carregadores"
+      : k.startsWith("marketing.")
+        ? "marketing"
+        : k.startsWith("financeiro.")
+          ? "financeiro"
+          : k.startsWith("admin.")
+            ? "any"
+            : "solar";
   const show = (k: FeatureKey) => {
     const owner = instanceOf(k);
     if (owner !== "any" && owner !== instance) return false;
@@ -410,7 +419,31 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </div>
               )
             )}
-  
+
+            {/* Financeiro — só na instância financeiro */}
+            {show("financeiro.home") && (
+              collapsed ? (
+                <Link
+                  to="/financeiro"
+                  preload="intent"
+                  title="Financeiro"
+                  className={cn(
+                    "flex items-center justify-center px-2 py-2.5 rounded-lg text-sm mb-1",
+                    financeiroActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                  )}
+                >
+                  <Building2 className="h-4 w-4" />
+                </Link>
+              ) : (
+                <div className="mb-1 space-y-0.5">
+                  <NavLink item={{ to: "/financeiro", label: "Home", icon: Building2 }} active={pathname === "/financeiro"} collapsed={false} />
+                  {show("financeiro.condicoes") && (
+                    <NavLink item={{ to: "/financeiro/condicoes", label: "Condições de Pagamento", icon: Percent }} active={pathname.startsWith("/financeiro/condicoes")} collapsed={false} />
+                  )}
+                </div>
+              )
+            )}
+
           </nav>
   );
 

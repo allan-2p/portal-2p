@@ -16,6 +16,7 @@ export type FeatureGroupId =
   | "moderacao"
   | "integracoes"
   | "logs"
+  | "financeiro"
   | "sistema";
 
 export type FeatureGroup = {
@@ -144,6 +145,13 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "admin.logs.jobs",
       "admin.logs.exportar",
     ],
+  },
+  {
+    id: "financeiro",
+    label: "Financeiro",
+    description: "Painel financeiro do Grupo 2P — condições de pagamento (ZTERM) enviadas ao SAP.",
+    area: "instancia",
+    keys: ["financeiro.home", "financeiro.condicoes"],
   },
   {
     id: "sistema",

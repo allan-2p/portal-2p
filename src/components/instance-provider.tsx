@@ -22,11 +22,13 @@ const HOME_FEATURE: Record<InstanceId, FeatureKey> = {
   solar: "home",
   carregadores: "carregadores.home",
   marketing: "marketing.home",
+  financeiro: "financeiro.home",
 };
 const HOME_ROUTE: Record<InstanceId, string> = {
   solar: "/",
   carregadores: "/carregadores",
   marketing: "/marketing",
+  financeiro: "/financeiro",
 };
 
 export type MarketingUnit = "solar" | "carregadores" | "station";
@@ -56,7 +58,7 @@ const InstanceContext = createContext<Ctx | null>(null);
 function readSavedInstance(): InstanceId | null {
   if (typeof window === "undefined") return null;
   const v = window.localStorage.getItem(STORAGE_KEY);
-  if (v === "solar" || v === "carregadores" || v === "marketing") return v;
+  if (v === "solar" || v === "carregadores" || v === "marketing" || v === "financeiro") return v;
   return null;
 }
 
@@ -81,14 +83,17 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
   const allowed: InstanceId[] = useMemo(() => {
     const list = (effective?.instances ?? []) as string[];
     return list.filter(
-      (v): v is InstanceId => v === "solar" || v === "carregadores" || v === "marketing",
+      (v): v is InstanceId =>
+        v === "solar" || v === "carregadores" || v === "marketing" || v === "financeiro",
     );
   }, [effective]);
 
   // Página inicial definida no perfil de permissão do usuário.
   const perfilInstance = useMemo(() => {
     const v = effective?.default_instance;
-    return v === "solar" || v === "carregadores" || v === "marketing" ? (v as InstanceId) : null;
+    return v === "solar" || v === "carregadores" || v === "marketing" || v === "financeiro"
+      ? (v as InstanceId)
+      : null;
   }, [effective]);
   const perfilRoute = effective?.default_route ?? null;
 
