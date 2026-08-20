@@ -732,7 +732,7 @@ function NovaPropostaSolarPage() {
           listaPreco: tabela,
           tipoNf,
           contribuinte: faturarClienteFinal
-            ? fat['contribuinte'] === true
+            ? String(fat['contribuinte'] ?? "") === "true" || Boolean(String(fat['ie'] ?? "").trim())
             : cliente?.['contribuinte'] === true,
         },
       });
