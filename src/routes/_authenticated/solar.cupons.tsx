@@ -144,6 +144,28 @@ function CuponsPage() {
   const [salvando, setSalvando] = useState(false);
   const [open, setOpen] = useState(false);
 
+  // filtros
+  const [busca, setBusca] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState<"todos" | TipoCupom>("todos");
+  const [filtroStatus, setFiltroStatus] = useState<"todos" | "ativo" | "inativo">("todos");
+  const [filtroCliente, setFiltroCliente] = useState<string>("todos");
+
+  const cuponsFiltrados = cupons.filter((c) => {
+    const termo = busca.trim().toUpperCase();
+    const bateBusca =
+      !termo ||
+      c.codigo.toUpperCase().includes(termo) ||
+      (c.cliente?.toUpperCase() ?? "").includes(termo);
+    const bateTipo =
+      filtroTipo === "todos" ||
+      (filtroTipo === "valor" && c.valor !== undefined) ||
+      (filtroTipo === "percentual" && c.percentual !== undefined) ||
+      (filtroTipo === "frete" && c.tipos.includes("frete"));
+    const bateStatus = filtroStatus === "todos" || (filtroStatus === "ativo" ? c.ativo : !c.ativo);
+    const bateCliente = filtroCliente === "todos" || c.cliente === filtroCliente;
+    return bateBusca && bateTipo && bateStatus && bateCliente;
+  });
+
   // form
   const [aleatorio, setAleatorio] = useState(true);
   const [codigo, setCodigo] = useState(gerarCodigo());
