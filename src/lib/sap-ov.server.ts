@@ -120,11 +120,12 @@ export function sapOvConfigurado() {
 }
 
 /** Constantes por unidade (ver docs/sap/README.md). */
-function constantes(organizacao: string, row: Record<string, any> = {}) {
-  const carregadores = String(organizacao ?? "").toLowerCase().includes("carregador");
+function constantes(_organizacao: string, row: Record<string, any> = {}) {
   return {
     empresa: "9800",
-    filial: carregadores ? "9802" : "9800",
+    // 9800 é a EMPRESA, não uma filial — o SAP recusa ("código da filial 9800 é
+    // inválido"). A filial de venda é 9802 para todas as organizações.
+    filial: String(process.env["SAP_OV_FILIAL"] ?? "9802").trim() || "9802",
     // TP_OV pela condição fiscal do parceiro faturado (IE), não pela unidade.
     tpOv: tpOvDoPedido(
       row["tipo_nf"],
@@ -140,13 +141,55 @@ function constantes(organizacao: string, row: Record<string, any> = {}) {
   };
 }
 
-/** Condição de pagamento (ZTERM) a partir da forma escolhida no checkout. */
-function zterm(formaPagamento: unknown): string {
-  const f = String(formaPagamento ?? "").toLowerCase();
-  const prazo = process.env["SAP_OV_ZTERM_PRAZO"] ?? "B000";
+/**
+ * Condição de pagamento (ZTERM).
+ *
+ * À vista 2P00 · Pix 2PPX · Cartão de crédito 2PCC. Boleto a prazo não tem
+ * código fixo: o vendedor escolhe a condição no catálogo
+ * (`condicoes_pagamento`) e o código escolhido é gravado na proposta em
+ * `condicao_pagamento_codigo`. Sem escolha, cai em 2P00.
+ */
+function zterm(row: Record<string, any>): string {
+  const escolhido = String(row["condicao_pagamento_codigo"] ?? "").trim().toUpperCase();
+  if (escolhido) return escolhido;
+
+  const f = String(row["forma_pagamento"] ?? "").toLowerCase();
   const vista = process.env["SAP_OV_ZTERM_VISTA"] ?? "2P00";
-  return f.includes("prazo") ? prazo : vista;
+  if (f.includes("pix")) return process.env["SAP_OV_ZTERM_PIX"] ?? "2PPX";
+  if (f.includes("cart")) return process.env["SAP_OV_ZTERM_CARTAO"] ?? "2PCC";
+  return vista;
 }
+
+/**
+ * Parcelas de `T_PAGTO`.
+ *
+ * As parcelas derivam da descrição da condição escolhida (ex.: "30/60/90 DDL"
+ * = 3 parcelas com vencimento em +30/+60/+90 dias da data de faturamento).
+ * Sem descrição com prazos, envia uma única parcela com o total.
+ */
+export function parcelasDoPedido(
+  row: Record<string, any>,
+  total: number,
+  hoje = hojeIso(),
+): { parcela: number; vencimento: string; valor: number }[] {
+  const desc = String(row["condicao_pagamento_descricao"] ?? "").trim();
+  const dias = (desc.match(/\d{1,3}/g) ?? []).map(Number).filter((n) => n > 0 && n <= 720);
+
+  if (!dias.length) {
+    const venc = String(row["pagamento_vencimento"] ?? "").slice(0, 10) || hoje;
+    return [{ parcela: 1, vencimento: venc, valor: Math.round(total * 100) / 100 }];
+  }
+
+  const centavos = Math.round(total * 100);
+  const base = Math.floor(centavos / dias.length);
+  return dias.map((d, i) => {
+    const dt = new Date(`${hoje}T00:00:00Z`);
+    dt.setUTCDate(dt.getUTCDate() + d);
+    const valor = (i === dias.length - 1 ? centavos - base * (dias.length - 1) : base) / 100;
+    return { parcela: i + 1, vencimento: dt.toISOString().slice(0, 10), valor };
+  });
+}
+
 
 function observacoes(row: Record<string, any>): string[] {
   const obs: string[] = [];
@@ -180,16 +223,21 @@ function observacoes(row: Record<string, any>): string[] {
 
 function parceiro(role: "AG" | "CL", doc: string, nome: string) {
   const d = digitos(doc);
+  // Documento pode chegar sem o zero à esquerda (13 dígitos): o SAP exige
+  // 14 posições no CNPJ e 11 no CPF, senão não encontra o parceiro.
+  const cnpj = d.length > 11 ? d.padStart(14, "0") : "";
+  const cpf = d && d.length <= 11 ? d.padStart(11, "0") : "";
   return (
     `<item>` +
     `<PARTN_ROLE>${role}</PARTN_ROLE>` +
-    `<CNPJ>${d.length === 14 ? esc(d) : ""}</CNPJ>` +
-    `<CPF>${d.length === 11 ? esc(d) : ""}</CPF>` +
+    `<CNPJ>${esc(cnpj)}</CNPJ>` +
+    `<CPF>${esc(cpf)}</CPF>` +
     `<NAME>${esc(String(nome ?? "").slice(0, 35))}</NAME>` +
     `<PAIS>BR</PAIS>` +
     `</item>`
   );
 }
+
 
 type Peso = { bruto: number; liquido: number };
 
@@ -200,6 +248,8 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
     (i) => norm(i?.codigo) && Number(i?.qtd ?? 0) > 0,
   );
 
+  // TODO (kit fotovoltaico): quando o recurso for implementado, o material do
+  // kit-base troca 100000350 → 100000278 antes do envio (regra da plataforma antiga).
   const linhas = itens
     .map(
       (i, idx) =>
@@ -213,6 +263,7 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         `</item>`,
     )
     .join("");
+
 
   const docCliente = digitos(row["cliente_doc"]);
   const nomeCliente = String(row["cliente_nome"] ?? "");
@@ -228,7 +279,24 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
   const email = String(row["cliente_email"] ?? "").trim();
   const totais = (row["totais"] ?? {}) as Record<string, number>;
   const valorTotal = Number(totais["valorTotal"] ?? 0);
-  const vencimento = String(row["pagamento_vencimento"] ?? "").slice(0, 10) || hoje;
+  const freteValor = Number(row["frete_valor"] ?? 0);
+
+  // Frete bonificado: INCO2 = "CIF BONIFICADO" e o valor do frete entra como
+  // desconto do pedido (mesma regra da plataforma antiga).
+  const bonificado = Boolean(row["frete_bonificado"]);
+  const desconto = Number(totais["desconto"] ?? 0) + (bonificado ? freteValor : 0);
+
+  const parcelas = parcelasDoPedido(row, valorTotal, hoje)
+    .map(
+      (p) =>
+        `<item>` +
+        `<PARCELA>${p.parcela}</PARCELA>` +
+        `<DT_VENCTO>${esc(p.vencimento)}</DT_VENCTO>` +
+        `<VALOR>${p.valor.toFixed(2)}</VALOR>` +
+        `<TIPO_PG></TIPO_PG>` +
+        `</item>`,
+    )
+    .join("");
 
   return `<?xml version="1.0" encoding="utf-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
@@ -245,12 +313,15 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         <FILIAL>${c.filial}</FILIAL>
         <TP_OV>${c.tpOv}</TP_OV>
         <INCO1>${incoterm(row["frete_mod"])}</INCO1>
-        <INCO2></INCO2>
+        <INCO2>${bonificado ? "CIF BONIFICADO" : ""}</INCO2>
         <PURCH_DATE>${hoje}</PURCH_DATE>
         <DATA_REMESSA>${hoje}</DATA_REMESSA>
+        <!-- NROPED: número do pedido do portal (6 dígitos, faixa 0500xx+).
+             Confirmado com o negócio que não colide com a faixa antiga (~10000-45000). -->
         <NROPED>${esc(String(row["numero"] ?? "").trim())}</NROPED>
-        <VLR_FRETE>${Number(row["frete_valor"] ?? 0).toFixed(2)}</VLR_FRETE>
-        <ZTERM>${esc(zterm(row["forma_pagamento"]))}</ZTERM>
+        <VALOR_DESC>${desconto > 0 ? desconto.toFixed(2) : ""}</VALOR_DESC>
+        <VLR_FRETE>${freteValor.toFixed(2)}</VLR_FRETE>
+        <ZTERM>${esc(zterm(row))}</ZTERM>
         <XPED>${esc(String(row["numero"] ?? "").trim())}</XPED>
         <QVOL></QVOL>
         <PESO_BRUTO>${peso.bruto ? peso.bruto.toFixed(3) : ""}</PESO_BRUTO>
@@ -272,18 +343,12 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
       <T_EMAIL>${email ? `<item><EMAIL>${esc(email)}</EMAIL></item>` : ""}</T_EMAIL>
       <T_ITEM>${linhas}</T_ITEM>
       <T_OBS>${obs}</T_OBS>
-      <T_PAGTO>
-        <item>
-          <PARCELA>1</PARCELA>
-          <DT_VENCTO>${esc(vencimento)}</DT_VENCTO>
-          <VALOR>${valorTotal.toFixed(2)}</VALOR>
-          <TIPO_PG></TIPO_PG>
-        </item>
-      </T_PAGTO>
+      <T_PAGTO>${parcelas}</T_PAGTO>
       <T_PARCEIRO>
         ${emissor}
         ${parceiro("CL", docCliente, nomeCliente)}
       </T_PARCEIRO>
+
     </urn:ZNFE_OV_CRIAR>
   </soapenv:Body>
 </soapenv:Envelope>`;
@@ -309,7 +374,7 @@ async function pesosDoPedido(itens: any[]): Promise<Peso> {
   }
 }
 
-function mensagens(doc: any): { erro: string | null; texto: string | null } {
+function mensagens(doc: any): { erro: string | null; aviso: string | null; texto: string | null } {
   let msgs = achar(doc, "T_MSG")?.item ?? [];
   if (!Array.isArray(msgs)) msgs = msgs ? [msgs] : [];
   const linhas = (msgs as any[]).map((m) => ({
@@ -317,9 +382,15 @@ function mensagens(doc: any): { erro: string | null; texto: string | null } {
     texto: String(m?.MESSAGE ?? "").trim(),
   }));
   const erro = linhas.find((l) => l.tipo === "E" || l.tipo === "A" || l.tipo === "X");
+  const aviso = linhas.find((l) => l.tipo === "W");
   const texto = linhas.map((l) => l.texto).filter(Boolean).join(" | ").slice(0, 500) || null;
-  return { erro: erro?.texto || (erro ? "Erro retornado pelo SAP." : null), texto };
+  return {
+    erro: erro?.texto || (erro ? "Erro retornado pelo SAP." : null),
+    aviso: aviso?.texto || (aviso ? "Aviso retornado pelo SAP." : null),
+    texto,
+  };
 }
+
 
 /** Valida CNPJ pelos dígitos verificadores. */
 function cnpjValido(v: unknown): boolean {
@@ -581,12 +652,14 @@ export async function criarOrdemVendaSap(
   const vbeln =
     String(achar(doc, "E_VBELN") ?? achar(doc, "E_VBELN_VA") ?? achar(doc, "E_NRO_OV") ?? "").trim() ||
     null;
-  const { erro, texto } = mensagens(doc);
+  const { erro, aviso, texto } = mensagens(doc);
 
   // Em test run o SAP valida o pedido sem gravar a ordem: não devolve VBELN.
-  // Só é erro quando há mensagem de erro (E/A/X) na resposta.
+  // Fora do test run, sem VBELN é falha — inclusive quando o SAP só devolve
+  // avisos (W), que nesse caso explicam por que a ordem não foi criada.
   if (erro || (!vbeln && !testrun)) {
-    const mensagem = erro ?? texto ?? "O SAP não devolveu o número da ordem de venda.";
+    const mensagem = erro ?? aviso ?? texto ?? "O SAP não devolveu o número da ordem de venda.";
+
     await gravar(propostaId, { sap_ov_status: "erro", sap_ov_mensagem: mensagem.slice(0, 500) });
     await logIntegrationEvent({
       ...base,
