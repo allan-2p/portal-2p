@@ -1,6 +1,6 @@
 -- ---------------------------------------------------------------------------
 -- Propostas universais do portal (Grupo 2P)
--- Rode este script no projeto único grupo-2p (SQL Editor).
+-- Rode este script no projeto grupo-2p (https://npzlinbglznnnwxxcawh.supabase.co) (SQL Editor).
 -- A separação das unidades é feita pela coluna `organizacao`
 -- ('carregadores' | 'solar').
 -- ---------------------------------------------------------------------------

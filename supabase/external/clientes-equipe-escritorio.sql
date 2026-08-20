@@ -1,4 +1,4 @@
--- Rode no projeto grupo-2p (banco do portal).
+-- Rode no projeto grupo-2p (https://npzlinbglznnnwxxcawh.supabase.co).
 -- Campos espelhados do SAP: equipe de vendas (VKGRP / EQUIPE_VENDAS) e
 -- escritório de vendas (VKBUR / ESCRITORIO). Não são editáveis no portal —
 -- o portal grava conforme a organização do cliente e sobrescreve com o retorno

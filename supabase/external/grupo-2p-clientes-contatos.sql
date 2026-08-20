@@ -19,7 +19,7 @@ alter table public.clientes add column if not exists sincronizado_em timestamptz
 create index if not exists clientes_numero_sap_idx on public.clientes (numero_sap);
 
 -- Tabela de contatos dos clientes.
--- Rode este script no projeto único grupo-2p (mesmo banco da tabela `clientes`).
+-- Rode este script no projeto grupo-2p (https://npzlinbglznnnwxxcawh.supabase.co) (mesmo banco da tabela `clientes`).
 -- Cada contato é um registro próprio, vinculado à conta pelo id do cadastro e,
 -- principalmente, pelo CÓDIGO SAP (numero_sap) e pelo ID Salesforce da conta
 -- (sf_account_id). O id do Contact no Salesforce fica em sf_contact_id.

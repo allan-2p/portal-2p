@@ -1,5 +1,5 @@
 -- Tabela universal de cadastro de clientes.
--- Rode este script no projeto único grupo-2p.
+-- Rode este script no projeto grupo-2p (https://npzlinbglznnnwxxcawh.supabase.co).
 -- As unidades são separadas pelas colunas:
 --   organizacao = '2P Solar' | '2P Carregadores'
 --   instancia   = 'solar'    | 'carregadores'
