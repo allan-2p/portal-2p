@@ -199,7 +199,7 @@ export function criarPixIOSimulado(propostas: PropostaLike[]) {
       notificacoes.push(entry);
     },
   };
-  return { io, rows, escritas, logs, notificacoes };
+  return { io, rows, escritas, logs, notificacoes, ordensVenda };
 }
 
 
