@@ -210,7 +210,11 @@ function CuponsPage() {
       if (p <= 0) next.percentual = "Informe o percentual.";
       else if (p > 100) next.percentual = "O desconto não pode ser maior que 100%.";
     }
-    if (!validade) next.validade = "Data de validade é obrigatória.";
+    if (!validade) next.validade = "Data final de validade é obrigatória.";
+    else if (inicio && inicio > validade)
+      next.validade = "A data final deve ser posterior à data inicial.";
+    if (limiteUsos && Number(limiteUsos) < 1)
+      next.limiteUsos = "O limite de usos deve ser ao menos 1.";
 
     if (Object.keys(next).length > 0) {
       setErrors(next);
