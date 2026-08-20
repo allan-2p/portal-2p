@@ -83,6 +83,7 @@ import {
 } from "@/hooks/use-solar-catalogo";
 import { quantificarProjeto, pendenciasDePara } from "@/lib/solar-quantificador";
 import {
+import { cidadeUf, cidadeUfCep } from "@/lib/local-format";
   SOLAR_CALC_CONFIG_FALLBACK,
   type CalcResultado,
   type Orientacao,
@@ -1060,7 +1061,7 @@ function NovaPropostaSolarPage() {
       [
         [o['logradouro'], o['numero']].filter(Boolean).join(", "),
         [o['complemento'], o['bairro']].filter(Boolean).join(" · "),
-        [[o['cidade'], o['uf']].filter(Boolean).join("/"), o['cep']].filter(Boolean).join(" — "),
+        cidadeUfCep(o['cidade'], o['uf'], o['cep'], ""),
       ].filter((l) => String(l ?? "").trim());
 
     const faturamentoBase = faturarClienteFinal ? fat : (cliente ?? {});
@@ -2169,7 +2170,7 @@ function NovaPropostaSolarPage() {
                 <Info label="Tipo de NF" value={tipoNf} />
                 <Info
                   label="Cidade / UF de destino"
-                  value={[destino.cidade, destino.uf].filter(Boolean).join(" / ") || "—"}
+                  value={cidadeUf(destino.cidade, destino.uf)}
                 />
 
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
@@ -2179,15 +2180,15 @@ function NovaPropostaSolarPage() {
                   label="Endereço de faturamento"
                   value={
                     faturarClienteFinal
-                      ? `${fat['logradouro'] ?? ""} ${fat['numero'] ?? ""} — ${fat['cidade'] ?? ""}/${fat['uf'] ?? ""}`
-                      : `${cliente?.['logradouro'] ?? ""} ${cliente?.['numero'] ?? ""} — ${cliente?.['cidade'] ?? ""}/${cliente?.['uf'] ?? ""}`
+                      ? `${fat['logradouro'] ?? ""} ${fat['numero'] ?? ""} — ${cidadeUf(fat['cidade'], fat['uf'])}`
+                      : `${cliente?.['logradouro'] ?? ""} ${cliente?.['numero'] ?? ""} — ${cidadeUf(String(cliente?.['cidade'] ?? ""), String(cliente?.['uf'] ?? ""))}`
                   }
                 />
                 <Info
                   label="Endereço de entrega"
                   value={
                     entregaDiferente
-                      ? `${entrega['logradouro'] ?? ""} ${entrega['numero'] ?? ""} — ${entrega['cidade'] ?? ""}/${entrega['uf'] ?? ""}`
+                      ? `${entrega['logradouro'] ?? ""} ${entrega['numero'] ?? ""} — ${cidadeUf(entrega['cidade'], entrega['uf'])}`
                       : "Mesmo do faturamento"
                   }
                 />
