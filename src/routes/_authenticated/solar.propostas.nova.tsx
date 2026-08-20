@@ -1346,9 +1346,9 @@ function NovaPropostaSolarPage() {
 
 
             <div className="glass rounded-2xl p-5 space-y-4">
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-12">
                 {/* Seleção consolidada estilo slide */}
-                <div>
+                <div className="lg:col-span-5">
                   <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
                     Como montar a proposta
                   </div>
