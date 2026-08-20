@@ -785,6 +785,7 @@ function PropostaCarregadoresPage() {
   if (itensSemQtd.length)
     errosPdf.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
   if (!state.freteMod) errosPdf.push("Selecione a modalidade de frete.");
+  if (!state.formaPagamento) errosPdf.push("Selecione a forma de pagamento.");
   if (state.freteMod === "CIF" && !state.transportadora)
     errosPdf.push("Cotação de frete pendente — selecione a transportadora.");
   if (state.freteMod === "DEDICADO" && !(state.freteValor > 0))
