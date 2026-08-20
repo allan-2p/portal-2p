@@ -1016,7 +1016,17 @@ function NovaPropostaSolarPage() {
           faturamento: fat,
           formaPagamento: formaPagamento || null,
           entregaDiferente,
-          entrega,
+          entrega: entregaDiferente
+            ? entrega
+            : {
+                cep: String(cliente?.['cep'] ?? ""),
+                logradouro: String(cliente?.['logradouro'] ?? ""),
+                numero: String(cliente?.['numero'] ?? ""),
+                complemento: String(cliente?.['complemento'] ?? ""),
+                bairro: String(cliente?.['bairro'] ?? ""),
+                cidade: String(cliente?.['cidade'] ?? ""),
+                uf: String(cliente?.['uf'] ?? ""),
+              },
           freteMod,
           freteAreaRural: areaRural,
           freteValor,
