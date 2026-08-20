@@ -180,6 +180,8 @@ function CuponsPage() {
   const [limiteUsos, setLimiteUsos] = useState("");
   const [clienteDoc, setClienteDoc] = useState("");
   const [excluindo, setExcluindo] = useState<Cupom | null>(null);
+  const [historico, setHistorico] = useState<Cupom | null>(null);
+
 
   type Errors = {
     codigo?: string;
