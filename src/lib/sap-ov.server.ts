@@ -424,8 +424,10 @@ export async function criarOrdemVendaSap(
 ): Promise<SapOvResultado> {
   const inicio = Date.now();
   const base = { slug: "sap", event: "ov.criar" } as const;
-  let row = await db.getProposta(propostaId);
-  if (!row) return { enviado: false, ok: false, vbeln: null, mensagem: "Proposta não encontrada.", testrun: false };
+  const base0 = await db.getProposta(propostaId);
+  if (!base0)
+    return { enviado: false, ok: false, vbeln: null, mensagem: "Proposta não encontrada.", testrun: false };
+  const row: Record<string, any> = base0;
 
   const jaEnviada = String(row["sap_ov_numero"] ?? "").trim();
   if (jaEnviada && !opts.forcar) {
@@ -455,7 +457,7 @@ export async function criarOrdemVendaSap(
     (i) => Number(i?.qtd ?? 0) > 0,
   );
 
-  row = await enriquecerVendedorSap(row);
+  Object.assign(row, await enriquecerVendedorSap(row));
   const validacao = validarPedidoParaSap(row);
   if (!validacao.ok) {
     const mensagem = `Pedido não passou na validação prévia: ${validacao.pendencias.join(" ")}`.slice(0, 500);
