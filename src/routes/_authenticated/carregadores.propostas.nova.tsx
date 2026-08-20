@@ -43,6 +43,7 @@ import { useImagensPorPath } from "@/lib/produto-imagens";
 
 
 import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
+import { CondicaoPagamentoSelect } from "@/components/condicao-pagamento-select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -299,6 +300,7 @@ function PropostaCarregadoresPage() {
           ...(((data as any).faturamento as Record<string, string | boolean>) ?? {}),
         } as CarregadoresState["faturamento"],
         formaPagamento: (((data as any).forma_pagamento as string | null) ?? "") as CarregadoresState["formaPagamento"],
+        condicaoPagamento: ((data as any).condicao_pagamento_codigo as string | null) ?? "",
         entregaDiferente: !!(data as any).entrega_diferente,
         entrega: { ...novoEndereco(data.uf), ...(((data as any).entrega as Record<string, string>) ?? {}) },
         freteMod: (data.frete_mod === "FOB" || data.frete_mod === "DEDICADO" || data.frete_mod === "CIF"
@@ -786,6 +788,7 @@ function PropostaCarregadoresPage() {
     errosPdf.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
   if (!state.freteMod) errosPdf.push("Selecione a modalidade de frete.");
   if (!state.formaPagamento) errosPdf.push("Selecione a forma de pagamento.");
+  if (!state.condicaoPagamento) errosPdf.push("Selecione a condição de pagamento (ZTERM).");
   if (state.freteMod === "CIF" && !state.transportadora)
     errosPdf.push("Cotação de frete pendente — selecione a transportadora.");
   if (state.freteMod === "DEDICADO" && !(state.freteValor > 0))
@@ -1095,6 +1098,7 @@ function PropostaCarregadoresPage() {
           faturarClienteFinal: state.faturarClienteFinal,
           faturamento: state.faturamento as unknown as Record<string, string | boolean>,
           formaPagamento: state.formaPagamento || null,
+          condicaoPagamento: state.condicaoPagamento || null,
           entregaDiferente: state.entregaDiferente,
           entrega: entregaEfetiva,
           freteMod: state.freteMod,
@@ -2285,6 +2289,13 @@ function PropostaCarregadoresPage() {
                       <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
                     </SelectContent>
                   </Select>
+                </Field>
+
+                <Field label="Condição de pagamento (ZTERM)">
+                  <CondicaoPagamentoSelect
+                    value={state.condicaoPagamento}
+                    onChange={(v) => set("condicaoPagamento", v)}
+                  />
                 </Field>
 
                 <Field label="Observações finais">
