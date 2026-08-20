@@ -175,7 +175,9 @@ function CuponsPage() {
     setValor("");
     setPercentual("");
     setValidade(undefined);
+    setInicio(undefined);
     setReutilizavel(false);
+    setLimiteUsos("");
     setClienteDoc("");
     setErrors({});
   };
