@@ -318,7 +318,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="client">
         <div class="cname">${esc(p.cliente.nome)}</div>
         <div class="tags">
-          <div class="tag">UF ${esc(p.cliente.uf)}</div>
+          <div class="tag">${esc([p.cliente.cidade, p.cliente.uf].filter(Boolean).join(" / ")) || `UF ${esc(p.cliente.uf)}`}</div>
           <div class="tag ${p.cliente.contribuinte ? "on" : ""}">${p.cliente.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}</div>
           ${p.finalidadeUso ? `<div class="tag on">Finalidade: ${esc(p.finalidadeUso)}</div>` : ""}
         </div>
