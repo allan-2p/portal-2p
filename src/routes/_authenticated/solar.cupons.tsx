@@ -659,7 +659,7 @@ function CuponsPage() {
             <SelectContent className="max-h-72">
               <SelectItem value="todos">Todos os clientes</SelectItem>
               {(clientesQ.data ?? []).map((c) => (
-                <SelectItem key={c.doc} value={c.razao_social}>
+                <SelectItem key={c.doc} value={c.doc}>
                   {c.razao_social}
                 </SelectItem>
               ))}
