@@ -568,6 +568,12 @@ function PerfisPage() {
                   )}
                 </div>
 
+                <ObjectPermsEditor
+                  profileId={selected.id}
+                  instancia={instance}
+                  instanciaLabel={INSTANCES[instance].label}
+                />
+
 
                 <div className="glass rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
