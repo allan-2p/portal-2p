@@ -859,6 +859,15 @@ function NovaPropostaSolarPage() {
     if (!achado) return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" não existe.` };
     if (!achado.ativo) return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" está inativo.` };
 
+    if (achado.validade_inicio) {
+      const ini = new Date(`${String(achado.validade_inicio).slice(0, 10)}T00:00:00`);
+      if (!Number.isNaN(ini.getTime()) && ini.getTime() > Date.now())
+        return {
+          status: "erro",
+          cupom: null,
+          mensagem: `Cupom válido somente a partir de ${ini.toLocaleDateString("pt-BR")}.`,
+        };
+    }
     if (achado.validade) {
       const venc = new Date(`${String(achado.validade).slice(0, 10)}T23:59:59`);
       if (!Number.isNaN(venc.getTime()) && venc.getTime() < Date.now())
