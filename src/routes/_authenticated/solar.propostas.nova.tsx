@@ -879,6 +879,12 @@ function NovaPropostaSolarPage() {
     }
     if (!achado.reutilizavel && (achado.usos ?? 0) > 0)
       return { status: "erro", cupom: null, mensagem: "Cupom de uso único já utilizado." };
+    if (achado.limite_usos != null && (achado.usos ?? 0) >= Number(achado.limite_usos))
+      return {
+        status: "erro",
+        cupom: null,
+        mensagem: `Cupom esgotado (limite de ${achado.limite_usos} uso(s) atingido).`,
+      };
 
     const soDigitos = (v: string) => v.replace(/\D/g, "");
     if (achado.cliente_doc) {
