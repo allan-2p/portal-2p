@@ -381,7 +381,9 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       consultor_nome: consultorNome,
     })) as { id: string };
 
+    await registrarUsoCupom(inserida.id);
     await espelharNoSalesforce(inserida.id);
+
 
     return { id: inserida.id, numero: numeroProposta, totais };
   });
