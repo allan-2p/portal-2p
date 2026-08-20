@@ -94,6 +94,7 @@ export async function sincronizarCliente(
     cep: cliente["cep"] ?? null,
     vendedor_sap: extras.vendedorSap ?? null,
     numero_sap: numeroSapAtual,
+    ...vendas,
   };
 
   if (fazSap) await logIntegrationEvent({
