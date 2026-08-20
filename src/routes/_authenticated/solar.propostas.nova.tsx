@@ -40,6 +40,7 @@ import {
   Pencil,
   Plus,
 
+  Package,
   Save,
   Sparkles,
   Sun,
