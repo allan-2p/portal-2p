@@ -7,6 +7,7 @@ export const MODERATION_AREAS = [
   { key: "tabelas", label: "Tabelas (Solar)", instance: "solar" },
   { key: "solar_regras", label: "Regras de Propostas (Solar)", instance: "solar" },
   { key: "solar_comissoes", label: "Regras de Comissões (Solar)", instance: "solar" },
+  { key: "solar_cupons", label: "Cupons (Solar)", instance: "solar" },
   { key: "carregadores_metas", label: "Regras de Metas (Carregadores)", instance: "carregadores" },
   { key: "carregadores_produtos", label: "Produtos e Alíquotas (Carregadores)", instance: "carregadores" },
   { key: "carregadores_comissoes", label: "Comissões (Carregadores)", instance: "carregadores" },
