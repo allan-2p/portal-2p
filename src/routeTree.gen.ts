@@ -23,6 +23,7 @@ import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authentic
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
+import { Route as AuthenticatedFinanceiroIndexRouteImport } from './routes/_authenticated/financeiro.index'
 import { Route as AuthenticatedCarregadoresIndexRouteImport } from './routes/_authenticated/carregadores.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ApiPublicAppVersionRouteImport } from './routes/api/public/app-version'
@@ -39,6 +40,7 @@ import { Route as AuthenticatedMarketingMetasRouteImport } from './routes/_authe
 import { Route as AuthenticatedMarketingGargaloRouteImport } from './routes/_authenticated/marketing.gargalo'
 import { Route as AuthenticatedMarketingCohortRouteImport } from './routes/_authenticated/marketing.cohort'
 import { Route as AuthenticatedMarketingCacRouteImport } from './routes/_authenticated/marketing.cac'
+import { Route as AuthenticatedFinanceiroCondicoesRouteImport } from './routes/_authenticated/financeiro.condicoes'
 import { Route as AuthenticatedCarregadoresTarefasRouteImport } from './routes/_authenticated/carregadores.tarefas'
 import { Route as AuthenticatedCarregadoresRegrasRouteImport } from './routes/_authenticated/carregadores.regras'
 import { Route as AuthenticatedCarregadoresPropostasRouteImport } from './routes/_authenticated/carregadores.propostas'
@@ -172,6 +174,12 @@ const AuthenticatedMarketingIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedMarketingRoute,
   } as any)
+const AuthenticatedFinanceiroIndexRoute =
+  AuthenticatedFinanceiroIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedFinanceiroRoute,
+  } as any)
 const AuthenticatedCarregadoresIndexRoute =
   AuthenticatedCarregadoresIndexRouteImport.update({
     id: '/carregadores/',
@@ -264,6 +272,12 @@ const AuthenticatedMarketingCacRoute =
     id: '/cac',
     path: '/cac',
     getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
+const AuthenticatedFinanceiroCondicoesRoute =
+  AuthenticatedFinanceiroCondicoesRouteImport.update({
+    id: '/condicoes',
+    path: '/condicoes',
+    getParentRoute: () => AuthenticatedFinanceiroRoute,
   } as any)
 const AuthenticatedCarregadoresTarefasRoute =
   AuthenticatedCarregadoresTarefasRouteImport.update({
@@ -630,7 +644,7 @@ export interface FileRoutesByFullPath {
   '/tv-geral': typeof TvGeralRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/financeiro': typeof AuthenticatedFinanceiroRoute
+  '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/perfil': typeof AuthenticatedPerfilRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -664,6 +678,7 @@ export interface FileRoutesByFullPath {
   '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   '/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
+  '/financeiro/condicoes': typeof AuthenticatedFinanceiroCondicoesRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -680,6 +695,7 @@ export interface FileRoutesByFullPath {
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
+  '/financeiro/': typeof AuthenticatedFinanceiroIndexRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/admin/integracoes/$slug': typeof AuthenticatedAdminIntegracoesSlugRoute
   '/admin/logs/gatilhos': typeof AuthenticatedAdminLogsGatilhosRoute
@@ -720,7 +736,6 @@ export interface FileRoutesByTo {
   '/tv-geral': typeof TvGeralRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/financeiro': typeof AuthenticatedFinanceiroRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/': typeof AuthenticatedIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -752,6 +767,7 @@ export interface FileRoutesByTo {
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
   '/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
+  '/financeiro/condicoes': typeof AuthenticatedFinanceiroCondicoesRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -768,6 +784,7 @@ export interface FileRoutesByTo {
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/carregadores': typeof AuthenticatedCarregadoresIndexRoute
+  '/financeiro': typeof AuthenticatedFinanceiroIndexRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
   '/admin/integracoes/$slug': typeof AuthenticatedAdminIntegracoesSlugRoute
   '/admin/logs/gatilhos': typeof AuthenticatedAdminLogsGatilhosRoute
@@ -810,7 +827,7 @@ export interface FileRoutesById {
   '/tv-geral': typeof TvGeralRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRoute
+  '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/_authenticated/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -845,6 +862,7 @@ export interface FileRoutesById {
   '/_authenticated/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   '/_authenticated/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/_authenticated/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
+  '/_authenticated/financeiro/condicoes': typeof AuthenticatedFinanceiroCondicoesRoute
   '/_authenticated/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/_authenticated/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/_authenticated/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -861,6 +879,7 @@ export interface FileRoutesById {
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/carregadores/': typeof AuthenticatedCarregadoresIndexRoute
+  '/_authenticated/financeiro/': typeof AuthenticatedFinanceiroIndexRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/_authenticated/admin/integracoes_/$slug': typeof AuthenticatedAdminIntegracoesSlugRoute
   '/_authenticated/admin/logs/gatilhos': typeof AuthenticatedAdminLogsGatilhosRoute
@@ -938,6 +957,7 @@ export interface FileRouteTypes {
     | '/carregadores/propostas'
     | '/carregadores/regras'
     | '/carregadores/tarefas'
+    | '/financeiro/condicoes'
     | '/marketing/cac'
     | '/marketing/cohort'
     | '/marketing/gargalo'
@@ -954,6 +974,7 @@ export interface FileRouteTypes {
     | '/api/public/app-version'
     | '/admin/'
     | '/carregadores/'
+    | '/financeiro/'
     | '/marketing/'
     | '/admin/integracoes/$slug'
     | '/admin/logs/gatilhos'
@@ -994,7 +1015,6 @@ export interface FileRouteTypes {
     | '/tv-geral'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/financeiro'
     | '/perfil'
     | '/'
     | '/.lovable/oauth/consent'
@@ -1026,6 +1046,7 @@ export interface FileRouteTypes {
     | '/carregadores/produtos'
     | '/carregadores/regras'
     | '/carregadores/tarefas'
+    | '/financeiro/condicoes'
     | '/marketing/cac'
     | '/marketing/cohort'
     | '/marketing/gargalo'
@@ -1042,6 +1063,7 @@ export interface FileRouteTypes {
     | '/api/public/app-version'
     | '/admin'
     | '/carregadores'
+    | '/financeiro'
     | '/marketing'
     | '/admin/integracoes/$slug'
     | '/admin/logs/gatilhos'
@@ -1118,6 +1140,7 @@ export interface FileRouteTypes {
     | '/_authenticated/carregadores/propostas'
     | '/_authenticated/carregadores/regras'
     | '/_authenticated/carregadores/tarefas'
+    | '/_authenticated/financeiro/condicoes'
     | '/_authenticated/marketing/cac'
     | '/_authenticated/marketing/cohort'
     | '/_authenticated/marketing/gargalo'
@@ -1134,6 +1157,7 @@ export interface FileRouteTypes {
     | '/api/public/app-version'
     | '/_authenticated/admin/'
     | '/_authenticated/carregadores/'
+    | '/_authenticated/financeiro/'
     | '/_authenticated/marketing/'
     | '/_authenticated/admin/integracoes_/$slug'
     | '/_authenticated/admin/logs/gatilhos'
@@ -1288,6 +1312,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMarketingIndexRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
     }
+    '/_authenticated/financeiro/': {
+      id: '/_authenticated/financeiro/'
+      path: '/'
+      fullPath: '/financeiro/'
+      preLoaderRoute: typeof AuthenticatedFinanceiroIndexRouteImport
+      parentRoute: typeof AuthenticatedFinanceiroRoute
+    }
     '/_authenticated/carregadores/': {
       id: '/_authenticated/carregadores/'
       path: '/carregadores'
@@ -1399,6 +1430,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/marketing/cac'
       preLoaderRoute: typeof AuthenticatedMarketingCacRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
+    }
+    '/_authenticated/financeiro/condicoes': {
+      id: '/_authenticated/financeiro/condicoes'
+      path: '/condicoes'
+      fullPath: '/financeiro/condicoes'
+      preLoaderRoute: typeof AuthenticatedFinanceiroCondicoesRouteImport
+      parentRoute: typeof AuthenticatedFinanceiroRoute
     }
     '/_authenticated/carregadores/tarefas': {
       id: '/_authenticated/carregadores/tarefas'
@@ -1823,6 +1861,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedFinanceiroRouteChildren {
+  AuthenticatedFinanceiroCondicoesRoute: typeof AuthenticatedFinanceiroCondicoesRoute
+  AuthenticatedFinanceiroIndexRoute: typeof AuthenticatedFinanceiroIndexRoute
+}
+
+const AuthenticatedFinanceiroRouteChildren: AuthenticatedFinanceiroRouteChildren =
+  {
+    AuthenticatedFinanceiroCondicoesRoute:
+      AuthenticatedFinanceiroCondicoesRoute,
+    AuthenticatedFinanceiroIndexRoute: AuthenticatedFinanceiroIndexRoute,
+  }
+
+const AuthenticatedFinanceiroRouteWithChildren =
+  AuthenticatedFinanceiroRoute._addFileChildren(
+    AuthenticatedFinanceiroRouteChildren,
+  )
+
 interface AuthenticatedMarketingRouteChildren {
   AuthenticatedMarketingCacRoute: typeof AuthenticatedMarketingCacRoute
   AuthenticatedMarketingCohortRoute: typeof AuthenticatedMarketingCohortRoute
@@ -1936,7 +1991,7 @@ const AuthenticatedSolarDashboardsRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRoute
+  AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRouteWithChildren
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRouteWithChildren
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -1989,7 +2044,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRoute,
+  AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRouteWithChildren,
   AuthenticatedMarketingRoute: AuthenticatedMarketingRouteWithChildren,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
