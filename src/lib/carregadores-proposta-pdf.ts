@@ -27,6 +27,7 @@ export type PropostaPdfData = {
     email?: string;
     telefone?: string;
     uf: string;
+    cidade?: string | null;
     contribuinte: boolean;
   };
   /** Finalidade de uso herdada do cadastro do cliente (somente leitura). */
