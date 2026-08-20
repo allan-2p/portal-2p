@@ -48,6 +48,37 @@ const esc = (v: unknown) =>
     .replace(/"/g, "&quot;");
 
 const digitos = (v: unknown) => String(v ?? "").replace(/\D+/g, "");
+
+/**
+ * O SAP só aceita FOB ou CIF em INCO1. "DEDICADO" é conceito do portal e vai
+ * como CIF (igual à plataforma antiga, calculadora.php:1299).
+ */
+const incoterm = (mod: unknown) =>
+  String(mod ?? "").trim().toUpperCase() === "FOB" ? "FOB" : "CIF";
+
+/** Modalidades aceitas no portal (todas traduzíveis para INCO1). */
+const MODALIDADES_FRETE = ["CIF", "FOB", "DEDICADO"];
+
+/**
+ * O código SAP do vendedor fica no cadastro de usuários (`profiles.numero_sap`),
+ * não na proposta. Completa `consultor_codigo_sap` quando estiver vazio.
+ */
+export async function enriquecerVendedorSap(row: Record<string, any>): Promise<Record<string, any>> {
+  if (String(row["consultor_codigo_sap"] ?? "").trim()) return row;
+  const id = String(row["consultor_id"] ?? "").trim();
+  const nome = String(row["consultor_nome"] ?? "").trim();
+  if (!id && !nome) return row;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const q = supabaseAdmin.from("profiles").select("numero_sap").limit(1);
+    const { data } = id ? await q.eq("id", id) : await q.eq("full_name", nome);
+    const codigo = String((data?.[0] as any)?.numero_sap ?? "").trim();
+    if (codigo) return { ...row, consultor_codigo_sap: codigo };
+  } catch {
+    /* sem código: a validação apenas avisa */
+  }
+  return row;
+}
 const norm = (c: unknown) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
 const hojeIso = () => new Date().toISOString().slice(0, 10);
 
