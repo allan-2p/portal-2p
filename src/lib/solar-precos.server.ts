@@ -44,6 +44,8 @@ export async function precosSolar(
   opts: {
     documento?: string;
     listaPreco?: string;
+    /** Tipo de ordem (ZV2P / ZC2P / VBON) — muda condição de preço no SAP. */
+    tipoOv?: string;
     sugeridos?: Record<string, number>;
     /** Quando informado, cada tentativa no SAP entra na auditoria da proposta. */
     auditoria?: import("./proposta-auditoria.server").AuditoriaContexto & { etapa?: string };
@@ -69,6 +71,7 @@ export async function precosSolar(
       const r = await simularSap(tentativaItens, {
         ...(opts.documento ? { documento: opts.documento } : {}),
         listaPreco: opts.listaPreco || "01",
+        ...(opts.tipoOv ? { tipoOv: opts.tipoOv } : {}),
         filial,
       });
       sim = r.valores as unknown as Map<string, { valor: number | null }>;

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { tpOvDoPedido, contribuinteDoFaturamento } from "@/lib/sap-tp-ov";
 
 /**
  * Proposta 2P Solar — os valores NUNCA vêm da tela: o servidor recalcula tudo
@@ -164,6 +165,14 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       {
         documento: data.cliente.doc.replace(/\D/g, ""),
         listaPreco: data.listaPreco,
+        tipoOv: tpOvDoPedido(
+          data.tipoNf,
+          contribuinteDoFaturamento({
+            contribuinte: data.contribuinte,
+            faturarClienteFinal: data.faturarClienteFinal,
+            faturamento: data.faturamento as { contribuinte?: unknown },
+          }),
+        ),
         sugeridos,
         auditoria: { ...auditCtx, etapa: "salvar" },
       },
