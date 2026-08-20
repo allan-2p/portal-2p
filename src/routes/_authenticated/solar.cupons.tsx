@@ -266,6 +266,27 @@ function CuponsPage() {
         }
         throw error;
       }
+      void logModeration({
+        area: "solar_cupons",
+        action: "criou",
+        target: codeFinal,
+        summary: `Cupom ${codeFinal} criado.`,
+        details: {
+          desconto: [
+            tipos.includes("valor") ? fmt(parseMoeda(valor)) : null,
+            tipos.includes("percentual") ? `${parsePercentual(percentual)}%` : null,
+            tipos.includes("frete") ? "frete grátis" : null,
+          ]
+            .filter(Boolean)
+            .join(" + "),
+          validade: inicio
+            ? `${format(inicio, "dd/MM/yyyy")} → ${format(validade!, "dd/MM/yyyy")}`
+            : `até ${format(validade!, "dd/MM/yyyy")}`,
+          reutilizavel: reutilizavel ? "sim" : "não",
+          limite_usos: reutilizavel && limiteUsos ? Number(limiteUsos) : "sem limite",
+          cliente: cli?.razao_social ?? "todos",
+        },
+      });
       invalidateSolar();
       setOpen(false);
       resetForm();
