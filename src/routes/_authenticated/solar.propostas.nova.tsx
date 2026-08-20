@@ -40,6 +40,7 @@ import {
   Pencil,
   Plus,
 
+  Package,
   Save,
   Sparkles,
   Sun,
@@ -196,6 +197,8 @@ function NovaPropostaSolarPage() {
   // Etapa 3
   const [modo, setModo] = useState<"calculadora" | "lista">("calculadora");
   const [listaPreco, setListaPreco] = useState("01");
+  /** Venda em formato de kit — impacta regras comerciais/fiscais nas etapas seguintes. */
+  const [ehKit, setEhKit] = useState<boolean | null>(null);
   /** Recusas do SAP na precificação (ex.: CNPJ sem parceiro) — bloqueiam o avanço. */
   const [avisosPreco, setAvisosPreco] = useState<string[]>([]);
   /** Listas independentes: o que está na calculadora não reflete na lista manual. */
@@ -319,6 +322,7 @@ function NovaPropostaSolarPage() {
       setAreaRural(!!p['frete_area_rural']);
       const totais = (p['totais'] ?? {}) as Record<string, any>;
       setListaPreco(String(totais['listaPreco'] ?? "01"));
+      if (typeof totais['ehKit'] === "boolean") setEhKit(totais['ehKit'] as boolean);
       setVendido(totais['vendidoClienteFinal'] ? "sim" : "nao");
       setCupomCodigo(String(totais['cupom'] ?? ""));
       setModo("lista");
@@ -931,6 +935,7 @@ function NovaPropostaSolarPage() {
         e.push("Complete os dados de faturamento do cliente final.");
     }
     if (etapa === 3) {
+      if (ehKit === null) e.push("Informe se a venda é kit.");
       if (!itens.length) e.push("Adicione ao menos um produto.");
       if (modo === "calculadora") {
         if (!assinaturaCalc) e.push("Execute o cálculo da estrutura antes de avançar.");
@@ -956,7 +961,7 @@ function NovaPropostaSolarPage() {
   }, [
     etapa, propostaNome, cliente, vendido, previsao, faturarClienteFinal, fat,
     itens, freteMod, transportadora, freteGratis, entregaDiferente, entrega,
-    modo, assinaturaCalc, calcDesatualizado, itensCalc, avisosPreco,
+    modo, assinaturaCalc, calcDesatualizado, itensCalc, avisosPreco, ehKit,
   ]);
 
 
@@ -981,6 +986,7 @@ function NovaPropostaSolarPage() {
           vendidoClienteFinal: vendido === "sim",
           previsaoFechamento: previsao || null,
           listaPreco,
+          ehKit: ehKit === true,
           cliente: {
             nome: String(cliente?.['razao_social'] ?? ""),
             doc: String(cliente?.['doc'] ?? ""),
@@ -1343,9 +1349,9 @@ function NovaPropostaSolarPage() {
 
 
             <div className="glass rounded-2xl p-5 space-y-4">
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-12">
                 {/* Seleção consolidada estilo slide */}
-                <div>
+                <div className="lg:col-span-5">
                   <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
                     Como montar a proposta
                   </div>
@@ -1374,17 +1380,56 @@ function NovaPropostaSolarPage() {
                   </div>
                 </div>
 
-                {/* Tabela de preço — mesmo padrão visual do seletor acima */}
-                <div>
+                {/* É kit? — resposta obrigatória, impacta as etapas seguintes */}
+                <div className="lg:col-span-4">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+                    A venda é kit?
+                  </div>
+                  <div
+                    className={cn(
+                      "relative grid grid-cols-2 gap-1 rounded-2xl border bg-surface-2 p-1",
+                      ehKit === null ? "border-amber-500/50" : "border-border",
+                    )}
+                  >
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-primary/15 border border-primary/40 transition-all duration-300 ease-out",
+                        ehKit === null && "opacity-0",
+                        ehKit === false && "translate-x-[calc(100%+0.25rem)]",
+                      )}
+                    />
+                    <SlideOpcao
+                      ativo={ehKit === true}
+                      icon={Package}
+                      titulo="Sim, é kit"
+                      descricao="Venda em kit"
+                      onClick={() => setEhKit(true)}
+                    />
+                    <SlideOpcao
+                      ativo={ehKit === false}
+                      icon={ListPlus}
+                      titulo="Não"
+                      descricao="Itens avulsos"
+                      onClick={() => setEhKit(false)}
+                    />
+                  </div>
+                  {ehKit === null && (
+                    <p className="text-[11px] text-amber-500 mt-1">Responda para avançar.</p>
+                  )}
+                </div>
+
+                {/* Tabela de preço — versão compacta */}
+                <div className="lg:col-span-3">
                   <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
                     Tabela de preço
                   </div>
-                  <div className="relative grid grid-cols-5 gap-1 rounded-2xl border border-border bg-surface-2 p-1">
+                  <div className="relative grid grid-cols-5 gap-0.5 rounded-2xl border border-border bg-surface-2 p-1">
                     <span
                       aria-hidden
-                      className="absolute inset-y-1 left-1 w-[calc(20%-0.2rem)] rounded-xl bg-primary/15 border border-primary/40 transition-transform duration-300 ease-out"
+                      className="absolute inset-y-1 left-1 w-[calc(20%-0.1rem)] rounded-xl bg-primary/15 border border-primary/40 transition-transform duration-300 ease-out"
                       style={{
-                        transform: `translateX(calc(${TABELAS_PRECO.findIndex((t) => t.value === listaPreco)} * (100% + 0.25rem)))`,
+                        transform: `translateX(calc(${TABELAS_PRECO.findIndex((t) => t.value === listaPreco)} * (100% + 0.125rem)))`,
                       }}
                     />
                     {TABELAS_PRECO.map((t) => (
@@ -1392,24 +1437,17 @@ function NovaPropostaSolarPage() {
                         key={t.value}
                         type="button"
                         aria-pressed={listaPreco === t.value}
+                        title={`Tabela ${t.value}`}
                         disabled={trocando}
                         onClick={() => void trocarTabela(t.value)}
                         className={cn(
-                          "relative z-10 rounded-xl px-2 py-2.5 text-center transition-colors",
+                          "relative z-10 rounded-xl px-1 py-3 text-center text-sm tabular-nums transition-colors",
                           listaPreco === t.value
-                            ? "text-foreground"
+                            ? "text-foreground font-semibold"
                             : "text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        <span
-                          className={cn(
-                            "block text-sm tabular-nums",
-                            listaPreco === t.value && "font-semibold",
-                          )}
-                        >
-                          {t.value}
-                        </span>
-                        <span className="block text-[10px] text-muted-foreground">Tabela</span>
+                        {t.value}
                       </button>
                     ))}
                   </div>
@@ -2102,6 +2140,7 @@ function NovaPropostaSolarPage() {
                 <Info label="Cliente" value={String(cliente?.['razao_social'] ?? "—")} />
                 <Info label="CNPJ" value={String(cliente?.['doc'] ?? "—")} />
                 <Info label="Tabela de preço" value={`Tabela ${listaPreco}`} />
+                <Info label="Venda em kit" value={ehKit ? "Sim" : "Não"} />
                 <Info label="Tipo de NF" value={tipoNf} />
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
                 <Info label="Frete" value={freteMod || "—"} />

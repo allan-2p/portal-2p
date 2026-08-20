@@ -13,6 +13,8 @@ export type SalvarPropostaSolarInput = {
   vendidoClienteFinal: boolean;
   previsaoFechamento: string | null;
   listaPreco: string;
+  /** Venda em formato de kit (afeta regras comerciais/fiscais adiante). */
+  ehKit: boolean;
   cliente: { nome: string; doc: string; ie: string; telefone: string; email: string };
   uf: string;
   contribuinte: boolean;
@@ -77,6 +79,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     vendidoClienteFinal,
     previsaoFechamento: previsao,
     listaPreco: /^\d{2}$/.test(String(i.listaPreco)) ? String(i.listaPreco) : "01",
+    ehKit: i.ehKit === true,
     cliente: {
       nome,
       doc: String(i.cliente?.doc ?? ""),
@@ -251,6 +254,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       valorTotal,
       cupom: cupom?.codigo ?? null,
       listaPreco: data.listaPreco,
+      ehKit: data.ehKit,
       vendidoClienteFinal: data.vendidoClienteFinal,
     };
 
