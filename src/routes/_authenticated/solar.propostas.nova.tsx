@@ -986,6 +986,7 @@ function NovaPropostaSolarPage() {
           vendidoClienteFinal: vendido === "sim",
           previsaoFechamento: previsao || null,
           listaPreco,
+          ehKit: ehKit === true,
           cliente: {
             nome: String(cliente?.['razao_social'] ?? ""),
             doc: String(cliente?.['doc'] ?? ""),
