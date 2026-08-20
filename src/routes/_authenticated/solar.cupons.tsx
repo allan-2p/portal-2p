@@ -213,6 +213,21 @@ function CuponsPage() {
     }
   };
 
+  const handleToggleAtivo = async (c: Cupom) => {
+    const novo = !c.ativo;
+    const { error } = await supabase.from("solar_cupons").update({ ativo: novo }).eq("id", c.id);
+    if (error) return toast.error(error.message);
+    void logModeration({
+      area: "solar_cupons",
+      action: novo ? "ativou" : "desativou",
+      target: c.codigo,
+      summary: `Cupom ${c.codigo} ${novo ? "ativado" : "desativado"}.`,
+      details: { de: c.ativo ? "ativo" : "inativo", para: novo ? "ativo" : "inativo" },
+    });
+    invalidateSolar();
+    toast.success(`Cupom ${c.codigo} ${novo ? "ativado" : "desativado"}.`);
+  };
+
   const handleCreate = async () => {
     const codeFinal = (aleatorio ? codigo : codigo.trim()).toUpperCase();
     const next: Errors = {};
