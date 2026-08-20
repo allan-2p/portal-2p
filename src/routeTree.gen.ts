@@ -85,6 +85,7 @@ import { Route as ApiPublicHooksPixItauRouteImport } from './routes/api/public/h
 import { Route as ApiPublicHooksPagamentoLinkRouteImport } from './routes/api/public/hooks/pagamento-link'
 import { Route as ApiPublicHooksFretefyTrackingRouteImport } from './routes/api/public/hooks/fretefy-tracking'
 import { Route as ApiPublicHooksEstoqueSyncRouteImport } from './routes/api/public/hooks/estoque-sync'
+import { Route as ApiPublicHooksBoletoAvisosRouteImport } from './routes/api/public/hooks/boleto-avisos'
 import { Route as AuthenticatedSolarPropostasNovaRouteImport } from './routes/_authenticated/solar.propostas.nova'
 import { Route as AuthenticatedSolarDashboardsMetasRouteImport } from './routes/_authenticated/solar.dashboards.metas'
 import { Route as AuthenticatedSolarClientesSugestoesRouteImport } from './routes/_authenticated/solar.clientes.sugestoes'
@@ -539,6 +540,12 @@ const ApiPublicHooksEstoqueSyncRoute =
     path: '/api/public/hooks/estoque-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBoletoAvisosRoute =
+  ApiPublicHooksBoletoAvisosRouteImport.update({
+    id: '/api/public/hooks/boleto-avisos',
+    path: '/api/public/hooks/boleto-avisos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedSolarPropostasNovaRoute =
   AuthenticatedSolarPropostasNovaRouteImport.update({
     id: '/solar/propostas/nova',
@@ -728,6 +735,7 @@ export interface FileRoutesByFullPath {
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
@@ -819,6 +827,7 @@ export interface FileRoutesByTo {
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
@@ -916,6 +925,7 @@ export interface FileRoutesById {
   '/_authenticated/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/_authenticated/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/_authenticated/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
@@ -1013,6 +1023,7 @@ export interface FileRouteTypes {
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
     | '/solar/propostas/nova'
+    | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/estoque-sync'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
@@ -1104,6 +1115,7 @@ export interface FileRouteTypes {
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
     | '/solar/propostas/nova'
+    | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/estoque-sync'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
@@ -1200,6 +1212,7 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/clientes/sugestoes'
     | '/_authenticated/solar/dashboards/metas'
     | '/_authenticated/solar/propostas/nova'
+    | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/estoque-sync'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/pagamento-link'
@@ -1229,6 +1242,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAppVersionRoute: typeof ApiPublicAppVersionRoute
+  ApiPublicHooksBoletoAvisosRoute: typeof ApiPublicHooksBoletoAvisosRoute
   ApiPublicHooksEstoqueSyncRoute: typeof ApiPublicHooksEstoqueSyncRoute
   ApiPublicHooksFretefyTrackingRoute: typeof ApiPublicHooksFretefyTrackingRoute
   ApiPublicHooksPagamentoLinkRoute: typeof ApiPublicHooksPagamentoLinkRoute
@@ -1774,6 +1788,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEstoqueSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/boleto-avisos': {
+      id: '/api/public/hooks/boleto-avisos'
+      path: '/api/public/hooks/boleto-avisos'
+      fullPath: '/api/public/hooks/boleto-avisos'
+      preLoaderRoute: typeof ApiPublicHooksBoletoAvisosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/solar/propostas/nova': {
       id: '/_authenticated/solar/propostas/nova'
       path: '/solar/propostas/nova'
@@ -2177,6 +2198,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAppVersionRoute: ApiPublicAppVersionRoute,
+  ApiPublicHooksBoletoAvisosRoute: ApiPublicHooksBoletoAvisosRoute,
   ApiPublicHooksEstoqueSyncRoute: ApiPublicHooksEstoqueSyncRoute,
   ApiPublicHooksFretefyTrackingRoute: ApiPublicHooksFretefyTrackingRoute,
   ApiPublicHooksPagamentoLinkRoute: ApiPublicHooksPagamentoLinkRoute,
