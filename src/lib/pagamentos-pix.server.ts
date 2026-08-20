@@ -143,6 +143,8 @@ export type PixIO = {
     de: string;
     para: string;
   }): Promise<void>;
+  /** Disparado quando o Pix é confirmado — cria a ordem de venda no SAP. */
+  aoConfirmarPagamento?(propostaId: string): Promise<void>;
 };
 
 export const pixIOBanco: PixIO = {
@@ -153,6 +155,14 @@ export const pixIOBanco: PixIO = {
   async notificar(entry) {
     const { criarNotificacao, montarNotificacaoPix } = await import("./notificacoes.server");
     await criarNotificacao(montarNotificacaoPix(entry));
+  },
+  async aoConfirmarPagamento(propostaId) {
+    const { runJob } = await import("./job-runs.server");
+    const { executorFor } = await import("./jobs-registry.server");
+    await runJob(
+      { job: "sap.ov-criar", trigger: "webhook", payload: { propostaId, origem: "pix-pago" } },
+      () => executorFor("sap.ov-criar")({ propostaId }),
+    );
   },
 };
 
