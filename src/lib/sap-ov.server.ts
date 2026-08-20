@@ -135,9 +135,6 @@ function constantes(_organizacao: string, row: Record<string, any> = {}) {
         faturamento: (row["faturamento"] ?? {}) as { contribuinte?: unknown },
       }),
     ),
-    vkorg: "9800",
-    vtweg: "10",
-    spart: "10",
   };
 }
 
@@ -163,17 +160,31 @@ function zterm(row: Record<string, any>): string {
 /**
  * Parcelas de `T_PAGTO`.
  *
- * As parcelas derivam da descrição da condição escolhida (ex.: "30/60/90 DDL"
- * = 3 parcelas com vencimento em +30/+60/+90 dias da data de faturamento).
- * Sem descrição com prazos, envia uma única parcela com o total.
+ * Fonte da verdade: o JSONB `parcelas` da condição escolhida
+ * (`condicoes_pagamento.parcelas`, ex.: `[{"dias":30},{"dias":60}]`), carregado
+ * em `condicao_pagamento_parcelas`. `dias: 0` é parcela válida (à vista no
+ * faturamento). Só quando não houver JSONB é que os prazos são inferidos da
+ * descrição por regex ("30/60/90 DDL"); sem nada, uma parcela com o total.
  */
 export function parcelasDoPedido(
   row: Record<string, any>,
   total: number,
   hoje = hojeIso(),
 ): { parcela: number; vencimento: string; valor: number }[] {
-  const desc = String(row["condicao_pagamento_descricao"] ?? "").trim();
-  const dias = (desc.match(/\d{1,3}/g) ?? []).map(Number).filter((n) => n > 0 && n <= 720);
+  const jsonb = row["condicao_pagamento_parcelas"];
+  const doJson = Array.isArray(jsonb)
+    ? jsonb
+        .map((p: any) => Number(typeof p === "number" ? p : (p?.dias ?? p?.days ?? NaN)))
+        .filter((n) => Number.isFinite(n) && n >= 0 && n <= 720)
+    : [];
+
+  const dias = doJson.length
+    ? doJson
+    : (String(row["condicao_pagamento_descricao"] ?? "")
+        .trim()
+        .match(/\d{1,3}/g) ?? [])
+        .map(Number)
+        .filter((n) => n > 0 && n <= 720);
 
   if (!dias.length) {
     const venc = String(row["pagamento_vencimento"] ?? "").slice(0, 10) || hoje;
@@ -189,6 +200,25 @@ export function parcelasDoPedido(
     return { parcela: i + 1, vencimento: dt.toISOString().slice(0, 10), valor };
   });
 }
+
+/** Carrega o JSONB `parcelas` da condição de pagamento escolhida no pedido. */
+export async function carregarParcelasCondicao(row: Record<string, any>): Promise<unknown[] | null> {
+  const codigo = String(row["condicao_pagamento_codigo"] ?? "").trim();
+  if (!codigo) return null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("condicoes_pagamento")
+      .select("parcelas")
+      .eq("codigo", codigo)
+      .maybeSingle();
+    const p = (data as any)?.parcelas;
+    return Array.isArray(p) && p.length ? p : null;
+  } catch {
+    return null;
+  }
+}
+
 
 
 function observacoes(row: Record<string, any>): string[] {
@@ -620,12 +650,24 @@ export async function criarOrdemVendaSap(
   // Claim atômico: com o fluxo do Pix, o webhook e a reconsulta de 15min podem
   // disparar a criação do mesmo pedido quase ao mesmo tempo. Só um envio ganha
   // o lock; o outro sai sem erro (o SAP recusaria por NROPED duplicado).
+  // Falha FECHADO: erro no claim aborta o envio (uma retentativa depois é
+  // sempre mais barata que uma ordem duplicada no SAP).
   if (!opts.forcar) {
-    const ganhou = await db
-      .atualizarProposta(propostaId, { sap_ov_status: "enviando" }, {
+    let ganhou: unknown;
+    try {
+      ganhou = await db.atualizarProposta(propostaId, { sap_ov_status: "enviando" }, {
         or: '(sap_ov_status.is.null,sap_ov_status.not.in.("enviando","criada"))',
-      })
-      .catch(() => undefined);
+      });
+    } catch (e) {
+      const mensagem = `Não foi possível reservar o envio da ordem de venda: ${(e as Error).message}`;
+      await logIntegrationEvent({
+        ...base,
+        level: "error",
+        message: mensagem.slice(0, 500),
+        detail: { proposta_id: propostaId, numero: row["numero"] ?? null, etapa: "claim" },
+      });
+      return { enviado: false, ok: false, vbeln: null, mensagem, motivo: "claim_falhou", testrun: false };
+    }
     if (ganhou === null) {
       return {
         enviado: false,
@@ -643,6 +685,9 @@ export async function criarOrdemVendaSap(
   );
 
   Object.assign(row, await enriquecerVendedorSap(row));
+  // T_PAGTO usa o JSONB `parcelas` da condição escolhida (fallback: descrição).
+  row["condicao_pagamento_parcelas"] = await carregarParcelasCondicao(row);
+
   const validacao = validarPedidoParaSap(row);
   if (!validacao.ok) {
     const mensagem = `Pedido não passou na validação prévia: ${validacao.pendencias.join(" ")}`.slice(0, 500);
@@ -830,10 +875,22 @@ export async function criarOrdemVendaSap(
     const itensPedido = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
     if (itensPedido.length) {
       const { reservarEstoquePedido } = await import("./estoque-sync.server");
-      await reservarEstoquePedido(
+      const reserva = await reservarEstoquePedido(
         itensPedido.map((i) => ({ codigo: String(i?.codigo ?? i?.material ?? ""), qtd: Number(i?.qtd ?? 0) })),
       );
+      // Best effort, mas nunca em silêncio: sem log, uma reserva perdida vira
+      // estoque disponível fantasma até o próximo sync.
+      if (reserva.erro) {
+        await logIntegrationEvent({
+          ...base,
+          level: "warn",
+          event: "reserva-estoque",
+          message: `Ordem ${vbeln} criada, mas a reserva local de estoque falhou: ${reserva.erro}`.slice(0, 500),
+          detail: { proposta_id: propostaId, numero: row["numero"] ?? null, vbeln },
+        });
+      }
     }
+
   } else {
     await gravar(propostaId, {
       sap_ov_status: "validada",

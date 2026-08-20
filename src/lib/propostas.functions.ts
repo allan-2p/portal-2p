@@ -787,6 +787,15 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
+    // O status de destino não é escolha do cliente: precisa ser uma transição
+    // válida da máquina de estados a partir de "Salvo".
+    const { transicaoPermitida } = await import("@/lib/proposta-status");
+    if (!transicaoPermitida(String(row["status"]), data.status)) {
+      const detalhe = `Transição inválida: ${row["status"]} → ${data.status}.`;
+      await db.registrarConclusaoLog({ ...base, status: row["status"], resultado: "bloqueada", detalhe });
+      throw new Error(detalhe);
+    }
+
     const atualizada = await db.atualizarProposta(
       row.id,
       {
@@ -810,47 +819,15 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
 
     await db.registrarConclusaoLog({ ...base, status: data.status, resultado: "concluida" });
 
-    // Cobrança automática (boleto à vista ou Pix). Falha aqui não trava o pedido.
-    let cobranca: CobrancaOut | null = null;
-    try {
-      const { gerarCobrancaCheckout } = await import("@/lib/pagamentos-cobranca.server");
-      const r = await gerarCobrancaCheckout(row.id);
-      cobranca = {
-        gerada: r.gerada,
-        meio: r.meio ?? null,
-        motivo: r.motivo ?? null,
-        erro: r.erro ?? null,
-        txid: r.txid ?? null,
-        linhaDigitavel: r.linhaDigitavel ?? null,
-        vencimento: r.vencimento ?? null,
-        pixCopiaCola: r.pixCopiaCola ?? null,
-      };
-      if (cobranca.erro) {
-        await db.registrarConclusaoLog({
-          ...base,
-          status: data.status,
-          resultado: "cobranca_falhou",
-          detalhe: String(cobranca.erro).slice(0, 500),
-        });
-      }
-    } catch (e) {
-      cobranca = {
-        gerada: false,
-        meio: null,
-        motivo: null,
-        erro: (e as Error).message,
-        txid: null,
-        linhaDigitavel: null,
-        vencimento: null,
-        pixCopiaCola: null,
-      };
-    }
-
     // Ordem de venda no SAP (ZNFE_OV_CRIAR). Falha aqui não desfaz o pedido:
     // fica registrada e pode ser reprocessada pelo job "sap.ov-criar".
     //
     // Pix: a OV só é criada quando o pagamento é confirmado (webhook/reconsulta),
     // igual à plataforma legada — aqui o pedido apenas aguarda o pagamento.
+    //
+    // Boleto: a OV vem ANTES da cobrança. Se o SAP recusar o pedido, emitir o
+    // boleto primeiro deixaria uma cobrança órfã no Itaú, cobrada de um pedido
+    // que não existe no ERP.
     const aguardaPix = String((row as any)["forma_pagamento"] ?? "") === "pix";
     let sapOv: SapOvOut | null = null;
     if (aguardaPix) {
@@ -884,6 +861,58 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         sapOv = { enviado: false, ok: false, vbeln: null, mensagem: (e as Error).message, motivo: null };
       }
     }
+
+    // Cobrança automática (boleto à vista ou Pix). Falha aqui não trava o pedido.
+    let cobranca: CobrancaOut | null = null;
+    const semOv = !aguardaPix && !(sapOv?.ok ?? false);
+    if (semOv) {
+      cobranca = {
+        gerada: false,
+        meio: null,
+        motivo:
+          "Cobrança não emitida: a ordem de venda não foi criada no SAP. Reprocesse a OV e a cobrança sai em seguida.",
+        erro: null,
+        txid: null,
+        linhaDigitavel: null,
+        vencimento: null,
+        pixCopiaCola: null,
+      };
+    } else {
+      try {
+        const { gerarCobrancaCheckout } = await import("@/lib/pagamentos-cobranca.server");
+        const r = await gerarCobrancaCheckout(row.id);
+        cobranca = {
+          gerada: r.gerada,
+          meio: r.meio ?? null,
+          motivo: r.motivo ?? null,
+          erro: r.erro ?? null,
+          txid: r.txid ?? null,
+          linhaDigitavel: r.linhaDigitavel ?? null,
+          vencimento: r.vencimento ?? null,
+          pixCopiaCola: r.pixCopiaCola ?? null,
+        };
+        if (cobranca.erro) {
+          await db.registrarConclusaoLog({
+            ...base,
+            status: data.status,
+            resultado: "cobranca_falhou",
+            detalhe: String(cobranca.erro).slice(0, 500),
+          });
+        }
+      } catch (e) {
+        cobranca = {
+          gerada: false,
+          meio: null,
+          motivo: null,
+          erro: (e as Error).message,
+          txid: null,
+          linhaDigitavel: null,
+          vencimento: null,
+          pixCopiaCola: null,
+        };
+      }
+    }
+
 
     // Pedido no Salesforce (Opportunity). Falha aqui não desfaz o pedido:
     // fica registrada e pode ser reenviada pelo job "salesforce.pedido".
