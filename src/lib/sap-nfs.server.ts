@@ -144,6 +144,25 @@ async function chamarSap(nroped: string): Promise<{ doc: any; xml: string }> {
   }
 }
 
+/**
+ * Recupera o nº da ordem de venda (VBELN_VA) já existente no SAP para um
+ * NROPED. Usado quando a criação falha por pedido duplicado: a ordem existe,
+ * só não voltou o número na resposta do CRIAR.
+ */
+export async function consultarVbelnPorPedido(nroped: string): Promise<string | null> {
+  if (!sapNfsConfigurado()) return null;
+  try {
+    const { doc } = await chamarSap(nroped);
+    const dados = achar(doc, "E_S_DADOS") ?? doc;
+    const v = String(
+      achar(dados, "VBELN_VA") ?? achar(doc, "VBELN_VA") ?? achar(doc, "E_VBELN_VA") ?? "",
+    ).trim();
+    return v && v !== "undefined" && /\d/.test(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Guarda a DANFE no bucket privado e devolve o caminho. */
 async function salvarDanfe(propostaId: string, base64: string): Promise<string | null> {
   try {
