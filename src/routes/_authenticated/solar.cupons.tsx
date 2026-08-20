@@ -520,8 +520,10 @@ function CuponsPage() {
                 ))}
                 {cupons.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
-                      Nenhum cupom criado ainda. Clique em <b>Criar cupom</b> para começar.
+                    <td colSpan={isAdmin ? 7 : 6} className="px-4 py-10 text-center text-muted-foreground">
+                      {cuponsQ.isLoading
+                        ? "Carregando cupons..."
+                        : "Nenhum cupom criado ainda. Clique em Criar cupom para começar."}
                     </td>
                   </tr>
                 )}
@@ -529,6 +531,26 @@ function CuponsPage() {
             </table>
           </div>
         </div>
+
+        <AlertDialog open={!!excluindo} onOpenChange={(v) => !v && setExcluindo(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir cupom {excluindo?.codigo}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação não pode ser desfeita. O código ficará disponível para uso novamente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => excluindo && handleDelete(excluindo)}
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
