@@ -140,6 +140,7 @@ function CuponsPage() {
         : !c.reutilizavel && Number(c.usos ?? 0) > 0,
     ativo: c.ativo !== false,
     cliente: c.cliente_nome || undefined,
+    clienteDoc: c.cliente_doc || undefined,
     criadoEm: c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : "—",
   }));
   const [salvando, setSalvando] = useState(false);
