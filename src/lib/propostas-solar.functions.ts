@@ -23,6 +23,7 @@ export type SalvarPropostaSolarInput = {
   faturarClienteFinal: boolean;
   faturamento: Record<string, string | boolean>;
   formaPagamento: string | null;
+  condicaoPagamento: string | null;
   entregaDiferente: boolean;
   entrega: Record<string, string>;
   freteMod: string;
@@ -96,6 +97,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     formaPagamento: ["boleto_vista", "boleto_prazo", "pix", "cartao_credito"].includes(String(i.formaPagamento))
       ? String(i.formaPagamento)
       : null,
+    condicaoPagamento: i.condicaoPagamento ? String(i.condicaoPagamento).trim().toUpperCase() : null,
     entregaDiferente: !!i.entregaDiferente,
     entrega,
     freteMod,
@@ -267,6 +269,8 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     const freteValor = cupom?.freteGratis ? 0 : data.freteValor;
     const valorTotal = money2(subtotal - (cupom?.desconto ?? 0) + freteValor);
 
+    const { resolverCondicaoPagamento } = await import("./condicoes-pagamento.server");
+    const cond = await resolverCondicaoPagamento(supabase, data.condicaoPagamento);
     const repo = await import("./propostas-db.server");
     const numeroProposta = data.propostaId
       ? ((await repo.getProposta(data.propostaId, "numero"))?.["numero"] as string) ?? ""
@@ -298,6 +302,8 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       faturar_cliente_final: data.faturarClienteFinal,
       faturamento: data.faturarClienteFinal ? data.faturamento : {},
       forma_pagamento: data.formaPagamento,
+      condicao_pagamento_codigo: cond.codigo,
+      condicao_pagamento_descricao: cond.descricao,
       entrega_diferente: data.entregaDiferente,
       entrega: data.entrega,
       frete_mod: data.freteMod,

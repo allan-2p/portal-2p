@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { WizardActionBar } from "@/components/wizard-action-bar";
 import { FreteCotacao } from "@/components/frete-cotacao";
+import { CondicaoPagamentoSelect } from "@/components/condicao-pagamento-select";
 import { toast } from "sonner";
 import {
   Building2,
@@ -196,6 +197,7 @@ function NovaPropostaSolarPage() {
   const [fat, setFat] = useState<Record<string, string>>({});
   const [enriquecendo, setEnriquecendo] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<string>("");
+  const [condicaoPagamento, setCondicaoPagamento] = useState<string>("");
 
   // Etapa 3
   const [modo, setModo] = useState<"calculadora" | "lista">("calculadora");
@@ -319,6 +321,7 @@ function NovaPropostaSolarPage() {
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
       setFat((p['faturamento'] as Record<string, string>) ?? {});
       setFormaPagamento(String(p['forma_pagamento'] ?? ""));
+      setCondicaoPagamento(String(p['condicao_pagamento_codigo'] ?? ""));
       setEntregaDiferente(!!p['entrega_diferente']);
       setEntrega((p['entrega'] as Record<string, string>) ?? {});
       setFreteMod(String(p['frete_mod'] ?? ""));
@@ -999,6 +1002,10 @@ function NovaPropostaSolarPage() {
       setTentou(true);
       return toast.error("Forma de pagamento é obrigatória para concluir o pedido.");
     }
+    if (concluir && !condicaoPagamento) {
+      setTentou(true);
+      return toast.error("Condição de pagamento (ZTERM) é obrigatória para concluir o pedido.");
+    }
     setSalvando(true);
     try {
       const r = await salvar({
@@ -1022,6 +1029,7 @@ function NovaPropostaSolarPage() {
           faturarClienteFinal,
           faturamento: fat,
           formaPagamento: formaPagamento || null,
+          condicaoPagamento: condicaoPagamento || null,
           entregaDiferente,
           entrega: entregaDiferente
             ? entrega
@@ -1129,6 +1137,7 @@ function NovaPropostaSolarPage() {
   function validarParaPdf(): string | null {
     if (!itens.length) return "Adicione produtos antes de gerar o PDF.";
     if (!formaPagamento) return "Selecione a forma de pagamento antes de gerar a proposta.";
+    if (!condicaoPagamento) return "Selecione a condição de pagamento (ZTERM) antes de gerar a proposta.";
     return null;
   }
 
@@ -2197,6 +2206,7 @@ function NovaPropostaSolarPage() {
                 />
 
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
+                <Info label="Condição de pagamento" value={condicaoPagamento || "—"} />
                 <Info label="Frete" value={freteMod || "—"} />
                 <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
                 <Info
@@ -2351,6 +2361,19 @@ function NovaPropostaSolarPage() {
                   Obrigatória apenas para concluir o pedido.
                 </p>
                 {tentou && !formaPagamento && <Erro>Obrigatória para concluir.</Erro>}
+              </div>
+
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Condição de pagamento (ZTERM)</div>
+                <CondicaoPagamentoSelect
+                  value={condicaoPagamento}
+                  onChange={setCondicaoPagamento}
+                  className="md:max-w-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  É o prazo enviado ao SAP — só aparecem as condições ativas com parcelas automáticas.
+                </p>
+                {tentou && !condicaoPagamento && <Erro>Obrigatória para concluir.</Erro>}
               </div>
 
               <div className="space-y-3">
