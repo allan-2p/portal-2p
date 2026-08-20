@@ -235,7 +235,10 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
   <soapenv:Header/>
   <soapenv:Body>
     <urn:ZNFE_OV_CRIAR>
-      <I_CARGA>S</I_CARGA>
+      <!-- I_CARGA vazio = criação síncrona (com "S" o SAP enfileira e devolve resposta vazia) -->
+      <I_CARGA></I_CARGA>
+      <I_JOB></I_JOB>
+      <I_JOBNAME></I_JOBNAME>
       <I_ORIG_PEDIDO>4</I_ORIG_PEDIDO>
       <I_S_OV>
         <EMPRESA>${c.empresa}</EMPRESA>
