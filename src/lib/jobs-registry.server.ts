@@ -42,9 +42,14 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     return { ...r };
   },
 
-  "cron.sap-nfs": pendente(
-    "Motor de consulta ZNFE_OV_CONSULTAR ainda não ativado — a execução foi registrada para auditoria.",
-  ),
+  // Motor real: consulta ZNFE_OV_CONSULTAR e avança Processando → Separação →
+  // Faturado → Coletado (com NF e DANFE).
+  "cron.sap-nfs": async (payload) => {
+    const { sincronizarNotasFiscais } = await import("@/lib/sap-nfs.server");
+    const limite = Number((payload as Record<string, unknown>)["limite"] ?? 50) || 50;
+    return { ...(await sincronizarNotasFiscais(limite)) };
+  },
+
 
   // Boleto não tem baixa automática: a confirmação vem do SAP/financeiro e o
   // cron de NFs é quem avança o pedido. Aqui só auditamos a verificação.

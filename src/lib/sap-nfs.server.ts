@@ -1,0 +1,286 @@
+/**
+ * Motor do cron de notas fiscais — RFC `ZNFE_OV_CONSULTAR`.
+ *
+ * Depois que a ordem de venda é criada (`sap-ov.server.ts`), o pedido fica em
+ * "Processando". Este motor consulta o SAP pelo mesmo `NROPED` usado na criação
+ * e avança o status do pedido conforme o andamento no ERP:
+ *
+ *   STATUS_PICKING = AOK/OK → Separação   (separado_em)
+ *   NUM_NF presente         → Faturado    (faturado_em + nf_numero/serie/chave)
+ *   STATUS_ROMANEIO = OK    → Coletado    (enviado_em)
+ *
+ * As transições são sempre para frente e idempotentes: reexecutar sem novidade
+ * no SAP não muda nada. Quando o SAP devolve a DANFE em base64, o PDF é
+ * guardado no bucket privado `danfes` e o caminho fica em `danfe_path`.
+ *
+ * Contrato: SOAP 1.1 (`text/xml`), namespace `urn:sap-com:document:sap:rfc:functions`
+ * — envelope de referência em `docs/sap/znfe_ov_consultar.request.xml`.
+ *
+ * Variáveis de ambiente:
+ *   SAP_NFS_URL               endpoint da RFC (obrigatório para ativar o motor)
+ *   SAP_BRIDGE_USER/PASSWORD ou SAP_BRIDGE_AUTH / SAP_NFS_AUTH
+ */
+
+import { XMLParser } from "fast-xml-parser";
+import * as db from "./propostas-db.server";
+import { logIntegrationEvent } from "./integration-logs.server";
+import { criarNotificacao } from "./notificacoes.server";
+
+/** Status do portal em ordem de avanço (nunca regride). */
+const ORDEM = ["Processando", "Separação", "Faturado", "Coletado"] as const;
+export type StatusNf = (typeof ORDEM)[number];
+
+const esc = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+function achar(o: any, chave: string): any {
+  if (o == null || typeof o !== "object") return undefined;
+  if (chave in o) return o[chave];
+  for (const k of Object.keys(o)) {
+    const r = achar(o[k], chave);
+    if (r !== undefined) return r;
+  }
+  return undefined;
+}
+
+function credenciais() {
+  const url = process.env["SAP_NFS_URL"];
+  const user = process.env["SAP_BRIDGE_USER"];
+  const pass = process.env["SAP_BRIDGE_PASSWORD"];
+  const bruto = process.env["SAP_NFS_AUTH"] ?? process.env["SAP_BRIDGE_AUTH"];
+  const auth = bruto
+    ? bruto.startsWith("Basic ") || bruto.startsWith("Bearer ")
+      ? bruto
+      : `Basic ${bruto}`
+    : user && pass
+      ? `Basic ${Buffer.from(`${user}:${pass}`).toString("base64")}`
+      : undefined;
+  return { url, auth };
+}
+
+export function sapNfsConfigurado() {
+  const { url, auth } = credenciais();
+  return Boolean(url && auth);
+}
+
+function envelope(nroped: string): string {
+  return `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <urn:ZNFE_OV_CONSULTAR>
+      <I_BOLETO></I_BOLETO>
+      <I_DADOS>X</I_DADOS>
+      <I_DANFE>X</I_DANFE>
+      <I_NROPED>${esc(nroped)}</I_NROPED>
+      <I_XML_NFE></I_XML_NFE>
+    </urn:ZNFE_OV_CONSULTAR>
+  </soapenv:Body>
+</soapenv:Envelope>`;
+}
+
+export type ConsultaSap = {
+  picking: string | null;
+  romaneio: string | null;
+  nfNumero: string | null;
+  nfSerie: string | null;
+  nfChave: string | null;
+  danfeBase64: string | null;
+};
+
+/** Extrai da resposta do SAP só o que o portal usa. */
+export function lerConsulta(doc: any): ConsultaSap {
+  const txt = (v: unknown) => {
+    const s = String(v ?? "").trim();
+    return s && s !== "undefined" ? s : null;
+  };
+  const dados = achar(doc, "E_S_DADOS") ?? achar(doc, "ZNFE_OV_CONSULTARResponse") ?? doc;
+  return {
+    picking: txt(achar(dados, "STATUS_PICKING")),
+    romaneio: txt(achar(dados, "STATUS_ROMANEIO")),
+    nfNumero: txt(achar(dados, "NUM_NF")),
+    nfSerie: txt(achar(dados, "SERIE_NF") ?? achar(dados, "SERIE")),
+    nfChave: txt(achar(dados, "CHAVE_NFE") ?? achar(dados, "CHAVE") ?? achar(dados, "NFE_CHAVE")),
+    danfeBase64: txt(achar(doc, "E_DANFE") ?? achar(doc, "DANFE")),
+  };
+}
+
+/** Próximo status conforme as regras da plataforma antiga (só avança). */
+export function proximoStatus(atual: string, c: ConsultaSap): StatusNf | null {
+  const idxAtual = ORDEM.indexOf(atual as StatusNf);
+  const base = idxAtual < 0 ? 0 : idxAtual;
+
+  let alvo = base;
+  const picking = (c.picking ?? "").toUpperCase();
+  if (picking === "AOK" || picking === "OK") alvo = Math.max(alvo, ORDEM.indexOf("Separação"));
+  if (c.nfNumero) alvo = Math.max(alvo, ORDEM.indexOf("Faturado"));
+  if ((c.romaneio ?? "").toUpperCase() === "OK") alvo = Math.max(alvo, ORDEM.indexOf("Coletado"));
+
+  return alvo > base ? (ORDEM[alvo] as StatusNf) : null;
+}
+
+async function chamarSap(nroped: string): Promise<{ doc: any; xml: string }> {
+  const { url, auth } = credenciais();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60_000);
+  try {
+    const res = await fetch(url!, {
+      method: "POST",
+      headers: {
+        "content-type": "text/xml; charset=utf-8",
+        accept: "text/xml, */*",
+        soapaction: '"urn:sap-com:document:sap:rfc:functions:ZNFE_OV_CONSULTAR"',
+        authorization: auth!,
+        cookie: "sap-usercontext=sap-client=500",
+      },
+      body: envelope(nroped),
+      signal: controller.signal,
+    });
+    const xml = await res.text();
+    if (!res.ok) throw new Error(`SAP respondeu HTTP ${res.status}: ${xml.replace(/\s+/g, " ").slice(0, 300)}`);
+    const parser = new XMLParser({ removeNSPrefix: true, ignoreAttributes: true, parseTagValue: false });
+    return { doc: parser.parse(xml), xml };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Guarda a DANFE no bucket privado e devolve o caminho. */
+async function salvarDanfe(propostaId: string, base64: string): Promise<string | null> {
+  try {
+    const limpo = base64.replace(/\s+/g, "");
+    if (limpo.length < 100) return null;
+    const bytes = Buffer.from(limpo, "base64");
+    const path = `propostas/${propostaId}/danfe.pdf`;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.storage
+      .from("danfes")
+      .upload(path, bytes, { contentType: "application/pdf", upsert: true });
+    return error ? null : path;
+  } catch {
+    return null;
+  }
+}
+
+const TITULOS: Record<StatusNf, string> = {
+  Processando: "Pedido em processamento",
+  Separação: "Pedido em separação",
+  Faturado: "Pedido faturado",
+  Coletado: "Pedido coletado",
+};
+
+export type NfAplicacao = {
+  proposta_id: string;
+  numero: string | null;
+  de: string;
+  para: string | null;
+  nf: string | null;
+};
+
+async function processarProposta(row: Record<string, any>): Promise<NfAplicacao> {
+  const id = String(row["id"]);
+  const de = String(row["status"] ?? "");
+  const nroped = String(row["numero"] ?? "").trim();
+  const { doc } = await chamarSap(nroped);
+  const c = lerConsulta(doc);
+  const para = proximoStatus(de, c);
+
+  const patch: Record<string, unknown> = {};
+  if (c.nfNumero && !row["nf_numero"]) {
+    patch["nf_numero"] = c.nfNumero;
+    patch["nf_serie"] = c.nfSerie;
+    patch["nf_chave"] = c.nfChave;
+  }
+  if (c.danfeBase64 && !row["danfe_path"]) {
+    const path = await salvarDanfe(id, c.danfeBase64);
+    if (path) patch["danfe_path"] = path;
+  }
+  if (para) {
+    patch["status"] = para;
+    if (para === "Separação") patch["separado_em"] = new Date().toISOString();
+    if (para === "Faturado") patch["faturado_em"] = new Date().toISOString();
+    if (para === "Coletado") patch["enviado_em"] = new Date().toISOString();
+  }
+
+  if (Object.keys(patch).length) {
+    try {
+      await db.atualizarProposta(id, patch);
+    } catch (e) {
+      // Colunas ainda não criadas no banco: registra e segue (não derruba o lote).
+      if (!/42703|PGRST204/i.test((e as Error).message)) throw e;
+      await logIntegrationEvent({
+        slug: "cron.sap-nfs",
+        level: "warn",
+        event: "coluna-ausente",
+        message: `Rode supabase/external/propostas-nf.sql: ${(e as Error).message}`,
+        detail: { proposta_id: id },
+      });
+    }
+  }
+
+  if (para) {
+    // Efeitos colaterais nunca derrubam o avanço de status.
+    try {
+      const { sincronizarPedidoSalesforce } = await import("./salesforce-pedidos.server");
+      await sincronizarPedidoSalesforce(id, { forcar: true });
+    } catch {
+      /* best effort */
+    }
+    const dono = row["created_by"] ? String(row["created_by"]) : null;
+    if (dono) {
+      await criarNotificacao({
+        user_id: dono,
+        tipo: "info",
+        titulo: `${TITULOS[para]} • ${row["numero"] ?? ""}`.trim(),
+        descricao: c.nfNumero ? `NF ${c.nfNumero}${c.nfSerie ? `/${c.nfSerie}` : ""}` : `${de} → ${para}`,
+        ref_tipo: "proposta",
+        ref_id: id,
+        chave: `nf:${id}:${para}`,
+      });
+    }
+  }
+
+  return { proposta_id: id, numero: row["numero"] ?? null, de, para, nf: c.nfNumero };
+}
+
+export type NfResultado = {
+  verificados: number;
+  atualizados: number;
+  detalhes: NfAplicacao[];
+  erros?: { proposta_id: string; erro: string }[];
+  skipped?: boolean;
+  motivo?: string;
+};
+
+/**
+ * Varre os pedidos em andamento e sincroniza o status com o SAP.
+ * Lote de até 50 por execução, mais antigos primeiro.
+ */
+export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado> {
+  if (!sapNfsConfigurado()) {
+    return { verificados: 0, atualizados: 0, detalhes: [], skipped: true, motivo: "SAP_NFS_URL/credencial não configurada." };
+  }
+
+  const rows = await db.listarPropostas({
+    statusIn: ["Processando", "Separação", "Faturado"],
+    select: "id,numero,status,created_by,sap_ov_numero,nf_numero,danfe_path,created_at",
+    limit: 500,
+  });
+
+  const fila = rows
+    .filter((r) => String(r["sap_ov_numero"] ?? "").trim() && String(r["numero"] ?? "").trim())
+    .sort((a, b) => String(a["created_at"] ?? "").localeCompare(String(b["created_at"] ?? "")))
+    .slice(0, limite);
+
+  const detalhes: NfAplicacao[] = [];
+  const erros: { proposta_id: string; erro: string }[] = [];
+  for (const row of fila) {
+    try {
+      detalhes.push(await processarProposta(row));
+    } catch (e) {
+      erros.push({ proposta_id: String(row["id"]), erro: (e as Error).message.slice(0, 300) });
+    }
+  }
+
+  const atualizados = detalhes.filter((d) => d.para).length;
+  return { verificados: fila.length, atualizados, detalhes, ...(erros.length ? { erros } : {}) };
+}
