@@ -24,7 +24,18 @@ function mirrorClient(): SupabaseClient | null {
 async function upsertChunks(sb: SupabaseClient, table: string, rows: any[], onConflict: string) {
   for (let i = 0; i < rows.length; i += 500) {
     const { error } = await sb.from(table).upsert(rows.slice(i, i + 500), { onConflict });
-    if (error) throw new Error(`${table}: ${error.message}`);
+    if (error) {
+      const faltando =
+        error.code === "PGRST205" || /Could not find the table/i.test(error.message ?? "");
+      if (faltando) {
+        const err: any = new Error(
+          `Tabela "${table}" não existe no banco do Grupo 2P. Rode uma vez o script supabase/external/produtos-espelho.sql nesse projeto.`,
+        );
+        err.faltando = true;
+        throw err;
+      }
+      throw new Error(`${table}: ${error.message}`);
+    }
   }
 }
 
@@ -46,12 +57,28 @@ export async function espelharProdutos(payload: {
       },
     ];
   }
-  try {
-    await upsertChunks(sb, "produtos", payload.produtos, "codigo");
-    await upsertChunks(sb, "estoque", payload.estoque, "material");
-    await upsertChunks(sb, "containers", payload.containers, "id_container,material");
-    return [{ target, ok: true }];
-  } catch (e: any) {
-    return [{ target, ok: false, message: String(e?.message ?? e).slice(0, 300) }];
+
+  // Cada tabela é independente: se uma faltar no destino, as outras seguem.
+  const tabelas: { nome: string; rows: any[]; onConflict: string }[] = [
+    { nome: "produtos", rows: payload.produtos, onConflict: "codigo" },
+    { nome: "estoque", rows: payload.estoque, onConflict: "material" },
+    { nome: "containers", rows: payload.containers, onConflict: "id_container,material" },
+  ];
+
+  const resultados: MirrorResult[] = [];
+  for (const t of tabelas) {
+    try {
+      await upsertChunks(sb, t.nome, t.rows, t.onConflict);
+      resultados.push({ target, ok: true, message: `${t.nome}: ${t.rows.length} linhas` });
+    } catch (e: any) {
+      resultados.push({
+        target,
+        ok: false,
+        skipped: Boolean(e?.faltando),
+        message: String(e?.message ?? e).slice(0, 300),
+      });
+    }
   }
+  return resultados;
 }
+
