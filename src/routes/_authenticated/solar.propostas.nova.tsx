@@ -961,7 +961,7 @@ function NovaPropostaSolarPage() {
   }, [
     etapa, propostaNome, cliente, vendido, previsao, faturarClienteFinal, fat,
     itens, freteMod, transportadora, freteGratis, entregaDiferente, entrega,
-    modo, assinaturaCalc, calcDesatualizado, itensCalc, avisosPreco,
+    modo, assinaturaCalc, calcDesatualizado, itensCalc, avisosPreco, ehKit,
   ]);
 
 
