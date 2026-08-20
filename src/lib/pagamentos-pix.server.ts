@@ -232,6 +232,29 @@ export async function aplicarEventoPix(ev: PixEvento, io: PixIO = pixIOBanco): P
     return { ...base, proposta_id: proposta["id"], numero: proposta["numero"], de, skipped: true, motivo: "Pedido já está pago." };
   }
 
+  // Conferência de valor: o Pix pago precisa bater com o valor da cobrança
+  // (tolerância de R$ 0,02 para arredondamento do PSP). Divergência não é
+  // aplicada automaticamente — fica registrada para o financeiro conferir.
+  const esperado = Number(proposta["pagamento_valor"] ?? 0);
+  if (ev.tipo === "pago" && esperado > 0 && ev.valor != null && Math.abs(ev.valor - esperado) > 0.02) {
+    await io.log({
+      proposta_id: proposta["id"],
+      numero: proposta["numero"] ?? null,
+      status: de,
+      resultado: "pix:valor_divergente",
+      origem: "webhook-pix",
+      detalhe: `txid ${ev.txid} • recebido R$ ${ev.valor.toFixed(2)} ≠ esperado R$ ${esperado.toFixed(2)}`,
+    });
+    return {
+      ...base,
+      proposta_id: proposta["id"],
+      numero: proposta["numero"] ?? null,
+      de,
+      skipped: true,
+      motivo: `Valor pago (R$ ${ev.valor.toFixed(2)}) diferente do valor da cobrança (R$ ${esperado.toFixed(2)}).`,
+    };
+  }
+
   const patch: Record<string, unknown> = {
     pagamento_meio: "pix",
     pagamento_status: ev.tipo,
@@ -253,6 +276,15 @@ export async function aplicarEventoPix(ev: PixEvento, io: PixIO = pixIOBanco): P
   if (para !== de) patch["status"] = para;
 
   await io.atualizar(proposta["id"], patch);
+
+  // Pix confirmado → só agora a ordem de venda é criada no SAP (regra legada).
+  if (ev.tipo === "pago" && io.aoConfirmarPagamento) {
+    try {
+      await io.aoConfirmarPagamento(String(proposta["id"]));
+    } catch {
+      // a OV falha é registrada no job_runs; nunca quebra o webhook
+    }
+  }
   await io.log({
     proposta_id: proposta["id"],
     numero: proposta["numero"] ?? null,
