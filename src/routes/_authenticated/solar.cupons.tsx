@@ -368,9 +368,49 @@ function CuponsPage() {
                   </div>
                 </div>
 
+                {/* Início da validade */}
+                <div className="space-y-1.5">
+                  <Label>Início da validade (opcional)</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !inicio && "text-muted-foreground",
+                        )}
+                      >
+                        <CalendarIcon className="h-4 w-4 mr-2" />
+                        {inicio ? format(inicio, "dd/MM/yyyy") : <span>Válido imediatamente</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={inicio}
+                        onSelect={(d) => {
+                          setInicio(d);
+                          setErrors((er) => ({ ...er, validade: undefined }));
+                        }}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {inicio && (
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground underline"
+                      onClick={() => setInicio(undefined)}
+                    >
+                      Limpar data inicial
+                    </button>
+                  )}
+                </div>
+
                 {/* Validade */}
                 <div className="space-y-1.5">
-                  <Label>Data de validade *</Label>
+                  <Label>Válido até *</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
