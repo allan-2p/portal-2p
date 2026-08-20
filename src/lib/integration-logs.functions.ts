@@ -18,6 +18,13 @@ async function assertLogRead(ctx: { supabase: any; userId: string }, fallback: a
   await requireAdminFeature(ctx, fallback, "visualizar");
 }
 
+async function assertProposalLogRead(ctx: { supabase: any; userId: string }) {
+  const { canAdminFeature, requireAdminFeature } = await import("@/lib/guards.server");
+  if (await canAdminFeature(ctx, "admin.logs.integracoes", "visualizar")) return;
+  if (await canAdminFeature(ctx, "propostas", "visualizar")) return;
+  await requireAdminFeature(ctx, "carregadores.propostas", "visualizar");
+}
+
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
 
@@ -51,8 +58,8 @@ export const listIntegrationLogs = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     // O painel faz parte da própria proposta. Não exigir permissão administrativa
     // de integrações de quem já pode visualizar propostas.
-    const unidade = String(data.propostaId ?? "").startsWith("solar:") ? "propostas" : "carregadores.propostas";
-    await assertLogRead(context, unidade);
+    if (data.propostaId) await assertProposalLogRead(context);
+    else await assertLogRead(context, "admin.integracoes");
 
     const limit = Math.min(Math.max(data.limit ?? 10, 1), 100);
     const offset = Math.max(data.offset ?? 0, 0);
