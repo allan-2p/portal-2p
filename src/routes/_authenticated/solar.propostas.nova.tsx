@@ -540,8 +540,8 @@ function NovaPropostaSolarPage() {
       qtd_paineis: Number(l.modulos) || 0,
       qtd_fileiras: Number(l.fileiras) || 0,
       orientacao: l.orientacao,
-      distancia: Number(l.distMax) || 0,
-      balanco: Number(l.balanco) || config.balanco_ponta / 1000,
+      distancia: Number(l.distMax) || (semVao(l) ? 0 : Number(padroesLinha(l).dist)),
+      balanco: Number(l.balanco) || (semVao(l) ? 0 : 0.5),
     }));
     if (fileiras.some((f) => !f.trilho || !f.suporte)) return [];
     const micro = (microinversoresQ.data ?? []).find((m) => m.id === microModelo);
@@ -620,8 +620,8 @@ function NovaPropostaSolarPage() {
       qtd_paineis: Number(l.modulos) || 0,
       qtd_fileiras: Number(l.fileiras) || 0,
       orientacao: l.orientacao,
-      distancia: Number(l.distMax) || 0,
-      balanco: Number(l.balanco) || config.balanco_ponta / 1000,
+      distancia: Number(l.distMax) || (semVao(l) ? 0 : Number(padroesLinha(l).dist)),
+      balanco: Number(l.balanco) || (semVao(l) ? 0 : 0.5),
     }));
     const incompleta = fileirasQuant.find((l) => !l.trilho || !l.suporte);
     if (incompleta) {
