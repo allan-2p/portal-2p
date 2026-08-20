@@ -212,7 +212,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     const subtotal = money2(itens.reduce((s, i) => s + i.total, 0));
 
     // Cupom: validado no servidor (existe, ativo e dentro da validade).
-    let cupom: { codigo: string; desconto: number; freteGratis: boolean } | null = null;
+    let cupom: { id: string; codigo: string; desconto: number; freteGratis: boolean } | null = null;
     if (data.cupomCodigo) {
       const { data: c } = await supabase
         .from("solar_cupons")
@@ -228,7 +228,14 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
           `Cupom ainda não está válido (início em ${new Date(`${row.validade_inicio}T00:00:00`).toLocaleDateString("pt-BR")}).`,
         );
       if (new Date(`${row.validade}T00:00:00`) < hoje) throw new Error("Cupom expirado.");
-      const usos = Number(row.usos ?? 0);
+      // Usos reais = histórico registrado, desconsiderando a própria proposta em edição.
+      let q = supabase
+        .from("solar_cupom_usos")
+        .select("id", { count: "exact", head: true })
+        .eq("cupom_id", row.id);
+      if (data.propostaId) q = q.neq("proposta_id", data.propostaId);
+      const { count } = await q;
+      const usos = Math.max(Number(count ?? 0), 0);
       if (!row.reutilizavel && usos > 0) throw new Error("Cupom já utilizado.");
       if (row.limite_usos != null && usos >= Number(row.limite_usos))
         throw new Error(`Cupom atingiu o limite de ${row.limite_usos} uso(s).`);
@@ -240,11 +247,13 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       if (tipos.includes("percentual")) desconto += subtotal * (Number(row.percentual ?? 0) / 100);
       if (tipos.includes("valor")) desconto += Number(row.valor ?? 0);
       cupom = {
+        id: row.id as string,
         codigo: row.codigo,
         desconto: money2(Math.min(desconto, subtotal)),
         freteGratis: tipos.includes("frete"),
       };
     }
+
 
     const freteValor = cupom?.freteGratis ? 0 : data.freteValor;
     const valorTotal = money2(subtotal - (cupom?.desconto ?? 0) + freteValor);
