@@ -411,12 +411,20 @@ async function pesosDoPedido(itens: any[]): Promise<Peso> {
   }
 }
 
+export type SapMsgItem = { tipo: string; msgnr: string; texto: string };
+
 function mensagens(doc: any): {
   erro: string | null;
   aviso: string | null;
   texto: string | null;
   /** Nº da OV extraído de T_MSG (TYPE=S, MSGNR=000) — como faz a plataforma antiga. */
   numeroSucesso: string | null;
+  /** Todos os itens do T_MSG, para diagnóstico. */
+  itens: SapMsgItem[];
+  /** Texto completo (TYPE/MSGNR: MESSAGE) de todos os itens do T_MSG. */
+  detalhado: string | null;
+  /** O SAP indicou que já existe ordem para este NROPED. */
+  duplicado: boolean;
 } {
   let msgs = achar(doc, "T_MSG")?.item ?? [];
   if (!Array.isArray(msgs)) msgs = msgs ? [msgs] : [];
@@ -432,6 +440,15 @@ function mensagens(doc: any): {
   );
   const aviso = linhas.find((l) => l.tipo === "W" && num(l.msgnr) !== 36);
   const texto = linhas.map((l) => l.texto).filter(Boolean).join(" | ").slice(0, 500) || null;
+  const detalhado =
+    linhas
+      .map((l) => `${l.tipo || "?"}${l.msgnr ? `/${l.msgnr}` : ""}: ${l.texto}`)
+      .filter((s) => s.trim().length > 3)
+      .join(" | ") || null;
+
+  const duplicado = linhas.some((l) =>
+    /(j[áa]\s+existe|duplicad|already exists|pedido\s+j[áa]\s+(criado|cadastrado))/i.test(l.texto),
+  );
 
   // Nº da OV: item com MSGNR=000 (MSGNR=017 é só a confirmação textual).
   const sucesso = linhas.find((l) => num(l.msgnr) === 0 && /\d{4,}/.test(l.texto));
@@ -442,6 +459,9 @@ function mensagens(doc: any): {
     aviso: aviso?.texto || (aviso ? "Aviso retornado pelo SAP." : null),
     texto,
     numeroSucesso,
+    itens: linhas,
+    detalhado,
+    duplicado,
   };
 }
 
