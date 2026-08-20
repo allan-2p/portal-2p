@@ -2126,7 +2126,7 @@ function PropostaCarregadoresPage() {
                   <ResumoLinha k="Consultor" v={consultorProposta ?? "—"} />
                   <ResumoLinha
                     k="Nota"
-                    v={`${labelTipoNf[state.tipoNf]} · ${labelFinalidadeUso[state.finalidadeUso]} · ${state.uf || "—"}`}
+                    v={`${labelTipoNf[state.tipoNf]} · ${labelFinalidadeUso[state.finalidadeUso]} · ${[faturamentoEfetivo.cidade, state.uf].filter(Boolean).join(" / ") || "—"}`}
                   />
                   <ResumoLinha
                     k="Endereço de faturamento"
