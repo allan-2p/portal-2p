@@ -95,6 +95,7 @@ import { MoneyInput } from "@/components/money-input";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { cn } from "@/lib/utils";
+import { cidadeUf } from "@/lib/local-format";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
   validateSearch: (s: Record<string, unknown>): { id?: string; dup?: string } => ({
@@ -569,7 +570,7 @@ function PropostaCarregadoresPage() {
     [
       [e.logradouro, e.numero].filter(Boolean).join(", "),
       [e.complemento, e.bairro].filter(Boolean).join(" · "),
-      [[e.cidade, e.uf || state.uf].filter(Boolean).join(" / "), e.cep].filter(Boolean).join(" · "),
+      [cidadeUf(e.cidade, e.uf || state.uf, ""), e.cep].filter(Boolean).join(" · "),
     ].filter((l) => l && l.trim());
 
 
@@ -1893,7 +1894,7 @@ function PropostaCarregadoresPage() {
                     : [
                         [entregaEfetiva.logradouro, entregaEfetiva.numero].filter(Boolean).join(", "),
                         entregaEfetiva.bairro,
-                        [entregaEfetiva.cidade, entregaEfetiva.uf || state.uf].filter(Boolean).join(" / "),
+                        cidadeUf(entregaEfetiva.cidade, entregaEfetiva.uf || state.uf, ""),
                         entregaEfetiva.cep,
                       ]
                         .filter(Boolean)
@@ -2126,7 +2127,7 @@ function PropostaCarregadoresPage() {
                   <ResumoLinha k="Consultor" v={consultorProposta ?? "—"} />
                   <ResumoLinha
                     k="Nota"
-                    v={`${labelTipoNf[state.tipoNf]} · ${labelFinalidadeUso[state.finalidadeUso]} · ${[faturamentoEfetivo.cidade, state.uf].filter(Boolean).join(" / ") || "—"}`}
+                    v={`${labelTipoNf[state.tipoNf]} · ${labelFinalidadeUso[state.finalidadeUso]} · ${cidadeUf(faturamentoEfetivo.cidade, state.uf)}`}
                   />
                   <ResumoLinha
                     k="Endereço de faturamento"

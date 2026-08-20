@@ -1,4 +1,5 @@
 import { fmtBRL, fmtPct } from "@/lib/carregadores";
+import { cidadeUf } from "./local-format";
 
 export type PropostaPdfItem = {
   codigo?: string | null;
@@ -318,7 +319,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="client">
         <div class="cname">${esc(p.cliente.nome)}</div>
         <div class="tags">
-          <div class="tag">${esc([p.cliente.cidade, p.cliente.uf].filter(Boolean).join(" / ")) || `UF ${esc(p.cliente.uf)}`}</div>
+          <div class="tag">${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}</div>
           <div class="tag ${p.cliente.contribuinte ? "on" : ""}">${p.cliente.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}</div>
           ${p.finalidadeUso ? `<div class="tag on">Finalidade: ${esc(p.finalidadeUso)}</div>` : ""}
         </div>
@@ -389,7 +390,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
     <div class="cond">
       <div><label>Validade</label><p>Proposta válida até ${esc(validade)}, sujeita a disponibilidade de estoque.</p></div>
       <div><label>Prazo de entrega</label><p>A confirmar na aprovação do pedido, conforme modalidade de frete ${esc(p.freteMod)}.</p></div>
-      <div><label>Condições</label><p>Valores em reais, impostos conforme legislação vigente em ${esc([p.cliente.cidade, p.cliente.uf].filter(Boolean).join(" / ")) || `UF ${esc(p.cliente.uf)}`}.</p></div>
+      <div><label>Condições</label><p>Valores em reais, impostos conforme legislação vigente em ${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}.</p></div>
       <div><label>Forma de pagamento</label><p>${esc(p.formaPagamento) || "—"}</p></div>
     </div>
   </div>

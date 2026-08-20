@@ -1,3 +1,4 @@
+import { cidadeUf } from "@/lib/local-format";
 import { useCan, useCanDelete } from "@/components/permission-gate";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -887,7 +888,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                       {!c.ativo && <Badge variant="destructive" className="text-[10px]">Inativo</Badge>}
                     </div>
                   </td>
-                  <td className="px-4 py-2">{[c.cidade, c.uf].filter(Boolean).join(" / ") || "—"}</td>
+                  <td className="px-4 py-2">{cidadeUf(c.cidade, c.uf)}</td>
                   <td className="px-4 py-2 text-xs text-muted-foreground">{c.created_by_nome || "—"}</td>
                   <td className="px-4 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" aria-label="Ver detalhes" onClick={() => setDetalhe(c)}><Eye className="h-4 w-4" /></Button>
@@ -981,7 +982,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <Bloco titulo="Endereço">
                   <Linha rot="Logradouro" val={[detalhe.logradouro, detalhe.numero, detalhe.complemento].filter(Boolean).join(", ")} />
                   <Linha rot="Bairro" val={detalhe.bairro} />
-                  <Linha rot="Cidade / UF" val={[detalhe.cidade, detalhe.uf].filter(Boolean).join(" / ")} />
+                  <Linha rot="Cidade / UF" val={cidadeUf(detalhe.cidade, detalhe.uf, "")} />
                   <Linha rot="CEP" val={detalhe.cep} />
                 </Bloco>
 

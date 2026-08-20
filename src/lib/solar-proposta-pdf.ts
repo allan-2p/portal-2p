@@ -1,4 +1,5 @@
 import { fmtBRL } from "@/lib/carregadores";
+import { cidadeUf } from "./local-format";
 
 export type SolarPdfItem = {
   codigo?: string | null;
@@ -232,7 +233,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
           <div class="f"><label>Inscrição estadual</label><div>${esc(p.cliente.ie) || "—"}</div></div>
           <div class="f"><label>E-mail</label><div>${esc(p.cliente.email) || "—"}</div></div>
           <div class="f"><label>Telefone</label><div>${esc(p.cliente.telefone) || "—"}</div></div>
-          <div class="f"><label>Cidade / UF</label><div>${esc([p.cliente.cidade, p.cliente.uf].filter(Boolean).join(" / ")) || "—"}</div></div>
+          <div class="f"><label>Cidade / UF</label><div>${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}</div></div>
           <div class="f"><label>Tipo de NF</label><div>${esc(p.tipoNf) || "—"}</div></div>
           <div class="f"><label>Tabela de preço</label><div>${p.listaPreco ? `Tabela ${esc(p.listaPreco)}` : "—"}</div></div>
           <div class="f"><label>Forma de pagamento</label><div>${esc(p.formaPagamento ? (LABEL_PAGAMENTO[p.formaPagamento] ?? p.formaPagamento) : "") || "—"}</div></div>
