@@ -40,6 +40,36 @@ async function perfisPorSfId(supabase: any) {
   return map;
 }
 
+/**
+ * Oportunidades ainda em aberto (status "Salvo", sem ordem no SAP e sem
+ * vendedor travado) acompanham a transferência da conta. Pedidos concluídos
+ * mantêm o vendedor original para sempre.
+ */
+async function transferirPropostasAbertas(
+  doc: string,
+  dono: { id: string; nome: string | null },
+): Promise<number> {
+  try {
+    const db = await import("./propostas-db.server");
+    const abertas = (await db.listarPropostas({ statusIn: ["Salvo"] })).filter(
+      (p: any) =>
+        digits(p["cliente_doc"]) === doc &&
+        !String(p["sap_ov_numero"] ?? "").trim() &&
+        !String(p["sap_vendedor_codigo"] ?? "").trim() &&
+        p["consultor_id"] !== dono.id,
+    );
+    for (const p of abertas) {
+      await db.atualizarProposta(String((p as any)["id"]), {
+        consultor_id: dono.id,
+        consultor_nome: dono.nome,
+      });
+    }
+    return abertas.length;
+  } catch {
+    return 0;
+  }
+}
+
 async function registrar(
   ctx: Ctx,
   instancia: AccountsInstance,
@@ -109,6 +139,7 @@ export async function sincronizarDonos(
       created_by_nome: dono.nome,
       created_by_email: dono.email,
     });
+    await transferirPropostasAbertas(cnpj, dono);
     const info = {
       cliente: String(cliente["razao_social"] ?? conta.name ?? cnpj),
       doc: cnpj,
@@ -157,6 +188,7 @@ export async function sincronizarDonoDaConta(
     created_by_nome: dono.nome,
     created_by_email: dono.email,
   });
+  await transferirPropostasAbertas(cnpj, dono);
   const info = {
     cliente: String(cliente["razao_social"] ?? conta.name ?? cnpj),
     doc: cnpj,
