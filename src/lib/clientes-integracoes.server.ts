@@ -198,6 +198,7 @@ export async function sincronizarCliente(
       sap_erro: sap.ok ? null : sap.erro,
       ...(sap.ok && sap.numero_sap ? { numero_sap: sap.numero_sap } : {}),
       // Campos espelhados do SAP (não editáveis no portal).
+      escopo_org: escopo,
       equipe_vendas: (sap.ok ? sap.equipe_vendas : null) ?? EQUIPE_VENDAS,
       escritorio_vendas: (sap.ok ? sap.escritorio_vendas : null) ?? ESCRITORIO,
     });
@@ -211,6 +212,32 @@ export async function sincronizarCliente(
       detail: { ...base, erro: (err as Error)?.message ?? String(err) },
     });
   }
+
+  // Espelho do cadastro no SAP (tabela `clientes_sap`): o que foi enviado e o
+  // que o SAP devolveu, para consulta/auditoria fora do fluxo de integração.
+  if (fazSap) try {
+    await db.upsertClienteSap({
+      cliente_id: clienteId,
+      doc: base.doc,
+      razao_social: base.razao_social,
+      organizacao: base.organizacao,
+      instancia,
+      numero_sap: (sap.ok ? sap.numero_sap : null) ?? numeroSapAtual,
+      escopo_org: escopo,
+      equipe_vendas: (sap.ok ? sap.equipe_vendas : null) ?? EQUIPE_VENDAS,
+      escritorio_vendas: (sap.ok ? sap.escritorio_vendas : null) ?? ESCRITORIO,
+      vendedor_sap: extras.vendedorSap ?? null,
+      tabela_preco: cliente["tabela_preco"] ?? null,
+      condicao_pgto_sap: cliente["condicao_pgto_sap"] ?? null,
+      status: sap.ok ? "enviado" : "erro",
+      mensagem: sap.ok ? (sap.mensagem ?? null) : (sap.erro ?? null),
+      payload: sapPayload,
+      sincronizado_em: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error("[clientes] falha ao gravar espelho clientes_sap", err);
+  }
+
 
   const sfPayload = {
     doc: base.doc,
