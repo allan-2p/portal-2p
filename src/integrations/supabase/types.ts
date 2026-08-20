@@ -502,6 +502,9 @@ export type Database = {
           doc: string
           email: string | null
           enriquecimento: Json | null
+          equipe_vendas: string | null
+          escopo_org: string | null
+          escritorio_vendas: string | null
           finalidade: string | null
           id: string
           ie: string | null
@@ -560,6 +563,9 @@ export type Database = {
           doc: string
           email?: string | null
           enriquecimento?: Json | null
+          equipe_vendas?: string | null
+          escopo_org?: string | null
+          escritorio_vendas?: string | null
           finalidade?: string | null
           id?: string
           ie?: string | null
@@ -618,6 +624,9 @@ export type Database = {
           doc?: string
           email?: string | null
           enriquecimento?: Json | null
+          equipe_vendas?: string | null
+          escopo_org?: string | null
+          escritorio_vendas?: string | null
           finalidade?: string | null
           id?: string
           ie?: string | null
@@ -649,6 +658,66 @@ export type Database = {
           telefone?: string | null
           uf?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      clientes_sap: {
+        Row: {
+          cliente_id: string
+          condicao_pgto_sap: string | null
+          created_at: string
+          doc: string
+          equipe_vendas: string | null
+          escopo_org: string | null
+          escritorio_vendas: string | null
+          instancia: string | null
+          mensagem: string | null
+          numero_sap: string | null
+          organizacao: string | null
+          payload: Json | null
+          razao_social: string | null
+          sincronizado_em: string | null
+          status: string | null
+          tabela_preco: string | null
+          vendedor_sap: string | null
+        }
+        Insert: {
+          cliente_id: string
+          condicao_pgto_sap?: string | null
+          created_at?: string
+          doc: string
+          equipe_vendas?: string | null
+          escopo_org?: string | null
+          escritorio_vendas?: string | null
+          instancia?: string | null
+          mensagem?: string | null
+          numero_sap?: string | null
+          organizacao?: string | null
+          payload?: Json | null
+          razao_social?: string | null
+          sincronizado_em?: string | null
+          status?: string | null
+          tabela_preco?: string | null
+          vendedor_sap?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          condicao_pgto_sap?: string | null
+          created_at?: string
+          doc?: string
+          equipe_vendas?: string | null
+          escopo_org?: string | null
+          escritorio_vendas?: string | null
+          instancia?: string | null
+          mensagem?: string | null
+          numero_sap?: string | null
+          organizacao?: string | null
+          payload?: Json | null
+          razao_social?: string | null
+          sincronizado_em?: string | null
+          status?: string | null
+          tabela_preco?: string | null
+          vendedor_sap?: string | null
         }
         Relationships: []
       }
