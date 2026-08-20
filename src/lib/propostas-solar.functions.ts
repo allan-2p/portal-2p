@@ -269,6 +269,8 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     const freteValor = cupom?.freteGratis ? 0 : data.freteValor;
     const valorTotal = money2(subtotal - (cupom?.desconto ?? 0) + freteValor);
 
+    const { resolverCondicaoPagamento } = await import("./condicoes-pagamento.server");
+    const cond = await resolverCondicaoPagamento(supabase, data.condicaoPagamento);
     const repo = await import("./propostas-db.server");
     const numeroProposta = data.propostaId
       ? ((await repo.getProposta(data.propostaId, "numero"))?.["numero"] as string) ?? ""
