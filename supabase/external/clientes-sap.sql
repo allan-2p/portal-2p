@@ -20,6 +20,22 @@ END
 $$;
 
 -- 2) Tabela espelho do SAP
+-- 2a) Se já existir uma clientes_sap antiga SEM cliente_id, arquiva antes de recriar
+DO $$
+BEGIN
+  IF to_regclass('public.clientes_sap') IS NOT NULL
+     AND NOT EXISTS (
+       SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'clientes_sap' AND column_name = 'cliente_id'
+     ) THEN
+    EXECUTE format(
+      'ALTER TABLE public.clientes_sap RENAME TO %I',
+      'clientes_sap_legado_' || to_char(now(), 'YYYYMMDDHH24MISS')
+    );
+  END IF;
+END
+$$;
+
 CREATE TABLE IF NOT EXISTS public.clientes_sap (
   cliente_id        uuid PRIMARY KEY,
   doc               text,
