@@ -828,27 +828,41 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
 
     // Ordem de venda no SAP (ZNFE_OV_CRIAR). Falha aqui não desfaz o pedido:
     // fica registrada e pode ser reprocessada pelo job "sap.ov-criar".
+    //
+    // Pix: a OV só é criada quando o pagamento é confirmado (webhook/reconsulta),
+    // igual à plataforma legada — aqui o pedido apenas aguarda o pagamento.
+    const aguardaPix = String(row["forma_pagamento"] ?? "") === "pix";
     let sapOv: SapOvOut | null = null;
-    try {
-      const { criarOrdemVendaSap } = await import("@/lib/sap-ov.server");
-      const r = await criarOrdemVendaSap(row.id);
+    if (aguardaPix) {
       sapOv = {
-        enviado: r.enviado,
-        ok: r.ok,
-        vbeln: r.vbeln,
-        mensagem: r.mensagem,
-        motivo: r.motivo ?? null,
+        enviado: false,
+        ok: true,
+        vbeln: null,
+        mensagem: null,
+        motivo: "Pix: a ordem de venda será criada automaticamente na confirmação do pagamento.",
       };
-      if (!r.ok) {
-        await db.registrarConclusaoLog({
-          ...base,
-          status: data.status,
-          resultado: "sap_ov_falhou",
-          detalhe: String(r.mensagem ?? "Falha ao criar a ordem de venda no SAP.").slice(0, 500),
-        });
+    } else {
+      try {
+        const { criarOrdemVendaSap } = await import("@/lib/sap-ov.server");
+        const r = await criarOrdemVendaSap(row.id);
+        sapOv = {
+          enviado: r.enviado,
+          ok: r.ok,
+          vbeln: r.vbeln,
+          mensagem: r.mensagem,
+          motivo: r.motivo ?? null,
+        };
+        if (!r.ok) {
+          await db.registrarConclusaoLog({
+            ...base,
+            status: data.status,
+            resultado: "sap_ov_falhou",
+            detalhe: String(r.mensagem ?? "Falha ao criar a ordem de venda no SAP.").slice(0, 500),
+          });
+        }
+      } catch (e) {
+        sapOv = { enviado: false, ok: false, vbeln: null, mensagem: (e as Error).message, motivo: null };
       }
-    } catch (e) {
-      sapOv = { enviado: false, ok: false, vbeln: null, mensagem: (e as Error).message, motivo: null };
     }
 
     // Pedido no Salesforce (Opportunity). Falha aqui não desfaz o pedido:
