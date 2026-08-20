@@ -671,10 +671,12 @@ export async function criarOrdemVendaSap(
     return { enviado: true, ok: false, vbeln: null, mensagem, testrun };
   }
 
+  const { erro, aviso, texto, numeroSucesso } = mensagens(doc);
   const vbeln =
     String(achar(doc, "E_VBELN") ?? achar(doc, "E_VBELN_VA") ?? achar(doc, "E_NRO_OV") ?? "").trim() ||
+    numeroSucesso ||
     null;
-  const { erro, aviso, texto } = mensagens(doc);
+
 
   // Em test run o SAP valida o pedido sem gravar a ordem: não devolve VBELN.
   // Fora do test run, sem VBELN é falha — inclusive quando o SAP só devolve
