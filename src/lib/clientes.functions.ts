@@ -1,12 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  assertPodeCriar,
+  assertPodeEditar,
+  assertPodeLer,
+  filtrarPorDono,
+  getPerm,
+} from "./object-perms.server";
 
 const instanciaSchema = z.enum(["solar", "carregadores"]);
 const docSchema = z.string().min(11).max(20);
 
 /**
- * Garante que o usuário é dono do cadastro (created_by) ou administrador.
+ * Garante que o usuário pode alterar o cadastro: precisa de "Editar" em Contas
+ * e, quando o cadastro é de outro consultor, de "Modify All Records".
  * A base de clientes é externa e acessada com chave de serviço, então a
  * checagem de propriedade precisa acontecer aqui no servidor.
  */
@@ -19,35 +27,33 @@ async function assertPodeAlterarCliente(
   const atual = await db.getClienteById(instancia, id);
   if (!atual) throw new Error("Cadastro não encontrado.");
   const dono = (atual["created_by"] as string | null) ?? null;
-  if (dono && dono === context.userId) return atual;
-  const { data: isAdmin } = await context.supabase.rpc("is_admin");
-  if (!isAdmin) {
-    throw new Error("Você não tem permissão para alterar este cadastro.");
-  }
+  const perm = await getPerm(context as any, instancia, "contas");
+  assertPodeEditar(perm, "contas", dono, context.userId);
   return atual;
 }
 
 /**
- * Só administradores (ou quem tem visão geral) podem escolher o consultor
+ * Só quem tem "Modify All Records" em Contas pode escolher o consultor
  * responsável por um cadastro. Um consultor comum sempre fica com o próprio.
  */
-async function podeEscolherConsultor(context: { supabase: any; userId: string }) {
-  const { data: isAdmin } = await context.supabase.rpc("is_admin");
-  if (isAdmin) return true;
-  const { data: perfil } = await context.supabase
-    .from("profiles")
-    .select("filter_scope")
-    .eq("id", context.userId)
-    .maybeSingle();
-  return perfil?.filter_scope === "geral";
+async function podeEscolherConsultor(
+  context: { supabase: any; userId: string },
+  instancia: "solar" | "carregadores",
+) {
+  const perm = await getPerm(context as any, instancia, "contas");
+  return perm.modify_all;
 }
 
-/** Consultores elegíveis para receber cadastros da instância. */
+/**
+ * Consultores elegíveis para receber cadastros da instância.
+ * Regra universal do portal: usuário ativo + marcado como consultor +
+ * com código SAP cadastrado. Quem não atende não aparece em lugar nenhum.
+ */
 export const listConsultoresFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ instancia: instanciaSchema }).parse(input))
   .handler(async ({ data, context }) => {
-    const podeEscolher = await podeEscolherConsultor(context as any);
+    const podeEscolher = await podeEscolherConsultor(context as any, data.instancia);
     const { data: eu } = await context.supabase
       .from("profiles")
       .select("id, full_name, email")
@@ -65,29 +71,32 @@ export const listConsultoresFn = createServerFn({ method: "POST" })
 
     const { data: perfis } = await context.supabase
       .from("profiles")
-      .select("id, full_name, email, organizacao, ativo")
+      .select("id, full_name, email, organizacao, ativo, is_consultor, numero_sap")
       .eq("ativo", true)
+      .eq("is_consultor", true)
       .in("organizacao", [data.instancia, "grupo"])
       .order("full_name", { ascending: true });
 
-    const consultores = (perfis ?? []).map((p: any) => ({
-      id: p.id as string,
-      nome: (p.full_name || p.email || "—") as string,
-    }));
-    if (!consultores.some((c: { id: string }) => c.id === context.userId)) {
-      consultores.unshift({ id: context.userId, nome: meuNome });
-    }
+    const consultores = (perfis ?? [])
+      .filter((p: any) => String(p.numero_sap ?? "").trim() !== "")
+      .map((p: any) => ({
+        id: p.id as string,
+        nome: (p.full_name || p.email || "—") as string,
+      }));
     return { podeEscolher: true as const, eu: { id: context.userId, nome: meuNome }, consultores };
   });
 
-/** Consulta a tabela `clientes` da instância. */
+/** Consulta a tabela `clientes` da instância, respeitando View All Records. */
 export const listClientesFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ instancia: instanciaSchema }).parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await import("./clientes-db.server");
+    const perm = await getPerm(context as any, data.instancia, "contas");
+    assertPodeLer(perm, "contas");
     try {
-      return { ok: true as const, clientes: await db.listClientes(data.instancia) };
+      const todos = await db.listClientes(data.instancia);
+      return { ok: true as const, clientes: filtrarPorDono(todos, perm, context.userId) };
     } catch (e) {
       if (e instanceof db.ClientesTableMissing) {
         return { ok: false as const, motivo: "tabela-ausente" as const, clientes: [] };
@@ -95,6 +104,7 @@ export const listClientesFn = createServerFn({ method: "POST" })
       throw e;
     }
   });
+
 
 /** Verifica se o CNPJ/CPF já existe em qualquer instância (Solar ou Carregadores). */
 export const verificarDocFn = createServerFn({ method: "POST" })
@@ -243,9 +253,11 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
-    // Consultor responsável: quem cria assume o cadastro; usuários com visão
-    // geral (ou admin) podem atribuir a outro consultor.
-    const podeEscolher = await podeEscolherConsultor(context as any);
+    // Consultor responsável: quem cria assume o cadastro; quem tem
+    // "Modify All Records" em Contas pode atribuir a outro consultor.
+    const permContas = await getPerm(context as any, data.instancia, "contas");
+    if (!data.id) assertPodeCriar(permContas, "contas");
+    const podeEscolher = permContas.modify_all;
     const consultorId = podeEscolher && data.consultor_id ? data.consultor_id : context.userId;
     let consultorNome = perfil?.full_name ?? perfil?.email ?? null;
     let consultorEmail = perfil?.email ?? null;
@@ -254,9 +266,21 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     if (consultorId !== context.userId) {
       const { data: alvo } = await context.supabase
         .from("profiles")
-        .select("full_name, email, numero_sap, sf_user_id")
+        .select("full_name, email, numero_sap, sf_user_id, ativo, is_consultor")
         .eq("id", consultorId)
         .maybeSingle();
+      // Só um consultor válido (ativo + marcado + com código SAP) pode
+      // responder por um cadastro.
+      if (
+        !alvo ||
+        alvo.ativo !== true ||
+        (alvo as any).is_consultor !== true ||
+        String((alvo as any).numero_sap ?? "").trim() === ""
+      ) {
+        throw new Error(
+          "O consultor selecionado não está habilitado (precisa estar ativo, marcado como consultor e com código SAP).",
+        );
+      }
       consultorNome = alvo?.full_name ?? alvo?.email ?? null;
       consultorEmail = alvo?.email ?? null;
       consultorSap = (alvo as any)?.numero_sap ?? null;

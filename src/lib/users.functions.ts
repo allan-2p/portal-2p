@@ -181,6 +181,8 @@ const UpdateInput = z.object({
   sf_user_id: z.string().trim().max(32).nullable().optional(),
   /** Código do vendedor no SAP (campo VENDEDOR no cadastro de clientes). */
   numero_sap: z.string().trim().max(20).nullable().optional(),
+  /** Marca o usuário como consultor: só assim ele pode ser dono de clientes/propostas. */
+  is_consultor: z.boolean().optional(),
 
   ativo: z.boolean().optional(),
   role: RoleEnum.optional(),
@@ -208,8 +210,11 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
       ativo?: boolean;
       sf_user_id?: string | null;
       numero_sap?: string | null;
+      is_consultor?: boolean;
     } = {};
     if (data.numero_sap !== undefined) profilePatch.numero_sap = (data.numero_sap ?? "").trim() || null;
+    if (data.is_consultor !== undefined) profilePatch.is_consultor = data.is_consultor;
+
 
     if (data.email !== undefined) profilePatch.email = data.email;
     if (data.full_name !== undefined) profilePatch.full_name = data.full_name;

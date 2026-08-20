@@ -1526,6 +1526,66 @@ export type Database = {
           },
         ]
       }
+      permission_profile_object_perms: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_read: boolean
+          created_at: string
+          instance_id: string
+          modify_all: boolean
+          object_key: string
+          profile_id: string
+          updated_at: string
+          view_all: boolean
+          view_all_fields: boolean
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_read?: boolean
+          created_at?: string
+          instance_id: string
+          modify_all?: boolean
+          object_key: string
+          profile_id: string
+          updated_at?: string
+          view_all?: boolean
+          view_all_fields?: boolean
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_read?: boolean
+          created_at?: string
+          instance_id?: string
+          modify_all?: boolean
+          object_key?: string
+          profile_id?: string
+          updated_at?: string
+          view_all?: boolean
+          view_all_fields?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_profile_object_perms_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_profile_object_perms_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "permission_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permission_profiles: {
         Row: {
           created_at: string
@@ -1637,6 +1697,7 @@ export type Database = {
           filter_scope: Database["public"]["Enums"]["filter_scope"]
           full_name: string | null
           id: string
+          is_consultor: boolean
           is_external: boolean
           meta_mensal: number | null
           numero_sap: string | null
@@ -1657,6 +1718,7 @@ export type Database = {
           filter_scope?: Database["public"]["Enums"]["filter_scope"]
           full_name?: string | null
           id: string
+          is_consultor?: boolean
           is_external?: boolean
           meta_mensal?: number | null
           numero_sap?: string | null
@@ -1677,6 +1739,7 @@ export type Database = {
           filter_scope?: Database["public"]["Enums"]["filter_scope"]
           full_name?: string | null
           id?: string
+          is_consultor?: boolean
           is_external?: boolean
           meta_mensal?: number | null
           numero_sap?: string | null
