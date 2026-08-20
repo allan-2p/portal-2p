@@ -147,7 +147,9 @@ function CuponsPage() {
   const [valor, setValor] = useState("");
   const [percentual, setPercentual] = useState("");
   const [validade, setValidade] = useState<Date | undefined>();
+  const [inicio, setInicio] = useState<Date | undefined>();
   const [reutilizavel, setReutilizavel] = useState(false);
+  const [limiteUsos, setLimiteUsos] = useState("");
   const [clienteDoc, setClienteDoc] = useState("");
   const [excluindo, setExcluindo] = useState<Cupom | null>(null);
 
@@ -157,6 +159,7 @@ function CuponsPage() {
     valor?: string;
     percentual?: string;
     validade?: string;
+    limiteUsos?: string;
   };
   const [errors, setErrors] = useState<Errors>({});
 
