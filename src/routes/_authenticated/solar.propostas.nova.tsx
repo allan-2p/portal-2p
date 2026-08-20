@@ -2,6 +2,7 @@ import { cidadeUf, cidadeUfCep } from "@/lib/local-format";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -172,6 +173,7 @@ const normalizarCupom = (c: string) =>
 function NovaPropostaSolarPage() {
   const { id: editId, dup: dupId } = Route.useSearch();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [etapa, setEtapa] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [tentou, setTentou] = useState(false);
@@ -1044,6 +1046,7 @@ function NovaPropostaSolarPage() {
       });
       setPropostaId(r.id);
       setNumero(r.numero);
+      await queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
       toast.success(concluir ? "Proposta concluída." : `Proposta ${r.numero} salva.`);
       if (concluir) void navigate({ to: "/solar/propostas" });
     } catch (e) {
