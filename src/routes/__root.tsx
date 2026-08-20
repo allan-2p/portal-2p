@@ -26,6 +26,11 @@ import { applyAreaAttribute } from "@/lib/admin-area";
 import { AccessDenied } from "@/components/access-denied";
 import { toFriendlyError } from "@/lib/friendly-errors";
 
+// Origem do backend — sempre derivada da configuração, nunca hardcoded.
+const SUPABASE_ORIGIN =
+  (import.meta.env['VITE_SUPABASE_URL'] as string | undefined) ?? "";
+
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
