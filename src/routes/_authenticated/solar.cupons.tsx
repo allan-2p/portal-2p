@@ -186,8 +186,12 @@ function CuponsPage() {
     else if (cupons.some((c) => c.codigo.trim().toUpperCase() === codeFinal))
       next.codigo = `O código "${codeFinal}" já existe. Escolha outro.`;
     if (tipos.length === 0) next.tipos = "Selecione ao menos um tipo de desconto.";
-    if (tipos.includes("valor") && !valor) next.valor = "Informe o valor em R$.";
-    if (tipos.includes("percentual") && !percentual) next.percentual = "Informe o percentual.";
+    if (tipos.includes("valor") && parseMoeda(valor) <= 0) next.valor = "Informe o valor em R$.";
+    if (tipos.includes("percentual")) {
+      const p = parsePercentual(percentual);
+      if (p <= 0) next.percentual = "Informe o percentual.";
+      else if (p > 100) next.percentual = "O desconto não pode ser maior que 100%.";
+    }
     if (!validade) next.validade = "Data de validade é obrigatória.";
 
     if (Object.keys(next).length > 0) {
