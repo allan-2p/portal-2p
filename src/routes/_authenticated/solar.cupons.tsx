@@ -35,8 +35,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { Trash2, Power } from "lucide-react";
 import { useSolarCupons, useSolarInvalidate } from "@/hooks/use-solar-catalogo";
+import { logModeration } from "@/lib/moderation-audit";
+import { ModerationAuditLog } from "@/components/moderation-audit-log";
 
 export const Route = createFileRoute("/_authenticated/solar/cupons")({
   head: () => ({
@@ -62,6 +64,7 @@ type Cupom = {
   usos: number;
   limiteUsos?: number | null;
   esgotado: boolean;
+  ativo: boolean;
   cliente?: string;
   criadoEm: string;
 };
@@ -134,6 +137,7 @@ function CuponsPage() {
       c.limite_usos != null
         ? Number(c.usos ?? 0) >= Number(c.limite_usos)
         : !c.reutilizavel && Number(c.usos ?? 0) > 0,
+    ativo: c.ativo !== false,
     cliente: c.cliente_nome || undefined,
     criadoEm: c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : "—",
   }));
@@ -186,6 +190,20 @@ function CuponsPage() {
     try {
       const { error } = await supabase.from("solar_cupons").delete().eq("id", c.id);
       if (error) throw error;
+      void logModeration({
+        area: "solar_cupons",
+        action: "excluiu",
+        target: c.codigo,
+        summary: `Cupom ${c.codigo} excluído.`,
+        details: {
+          desconto: [c.valor ? fmt(c.valor) : null, c.percentual ? `${c.percentual}%` : null, c.tipos.includes("frete") ? "frete grátis" : null]
+            .filter(Boolean)
+            .join(" + "),
+          validade: c.inicio ? `${c.inicio} → ${c.validade}` : `até ${c.validade}`,
+          usos: c.usos,
+          cliente: c.cliente ?? "todos",
+        },
+      });
       invalidateSolar();
       toast.success(`Cupom ${c.codigo} excluído.`);
     } catch (e: any) {
@@ -193,6 +211,21 @@ function CuponsPage() {
     } finally {
       setExcluindo(null);
     }
+  };
+
+  const handleToggleAtivo = async (c: Cupom) => {
+    const novo = !c.ativo;
+    const { error } = await supabase.from("solar_cupons").update({ ativo: novo }).eq("id", c.id);
+    if (error) return toast.error(error.message);
+    void logModeration({
+      area: "solar_cupons",
+      action: novo ? "ativou" : "desativou",
+      target: c.codigo,
+      summary: `Cupom ${c.codigo} ${novo ? "ativado" : "desativado"}.`,
+      details: { de: c.ativo ? "ativo" : "inativo", para: novo ? "ativo" : "inativo" },
+    });
+    invalidateSolar();
+    toast.success(`Cupom ${c.codigo} ${novo ? "ativado" : "desativado"}.`);
   };
 
   const handleCreate = async () => {
@@ -248,6 +281,27 @@ function CuponsPage() {
         }
         throw error;
       }
+      void logModeration({
+        area: "solar_cupons",
+        action: "criou",
+        target: codeFinal,
+        summary: `Cupom ${codeFinal} criado.`,
+        details: {
+          desconto: [
+            tipos.includes("valor") ? fmt(parseMoeda(valor)) : null,
+            tipos.includes("percentual") ? `${parsePercentual(percentual)}%` : null,
+            tipos.includes("frete") ? "frete grátis" : null,
+          ]
+            .filter(Boolean)
+            .join(" + "),
+          validade: inicio
+            ? `${format(inicio, "dd/MM/yyyy")} → ${format(validade!, "dd/MM/yyyy")}`
+            : `até ${format(validade!, "dd/MM/yyyy")}`,
+          reutilizavel: reutilizavel ? "sim" : "não",
+          limite_usos: reutilizavel && limiteUsos ? Number(limiteUsos) : "sem limite",
+          cliente: cli?.razao_social ?? "todos",
+        },
+      });
       invalidateSolar();
       setOpen(false);
       resetForm();
@@ -544,6 +598,7 @@ function CuponsPage() {
                   <th className="text-left px-4 py-3">Cliente</th>
                   <th className="text-left px-4 py-3">Usos</th>
                   <th className="text-left px-4 py-3">Criado em</th>
+                  <th className="text-left px-4 py-3">Status</th>
                   {isAdmin && <th className="text-right px-4 py-3">Ações</th>}
                 </tr>
               </thead>
@@ -605,8 +660,30 @@ function CuponsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{c.criadoEm}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={cn(
+                          "text-[11px] px-2 py-0.5 rounded font-medium",
+                          c.ativo
+                            ? "bg-emerald-500/15 text-emerald-500"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {c.ativo ? "Ativo" : "Inativo"}
+                      </span>
+                    </td>
                     {isAdmin && (
                       <td className="px-4 py-3 text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title={c.ativo ? "Desativar cupom" : "Ativar cupom"}
+                          onClick={() => void handleToggleAtivo(c)}
+                        >
+                          <Power className={cn("h-4 w-4", c.ativo ? "text-emerald-500" : "text-muted-foreground")} />
+                        </Button>
                         <Button
                           type="button"
                           variant="ghost"
@@ -623,7 +700,7 @@ function CuponsPage() {
                 ))}
                 {cupons.length === 0 && (
                   <tr>
-                    <td colSpan={isAdmin ? 7 : 6} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={isAdmin ? 8 : 7} className="px-4 py-10 text-center text-muted-foreground">
                       {cuponsQ.isLoading
                         ? "Carregando cupons..."
                         : "Nenhum cupom criado ainda. Clique em Criar cupom para começar."}
@@ -654,6 +731,12 @@ function CuponsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <ModerationAuditLog
+          area="solar_cupons"
+          title="Histórico de cupons"
+          description="Quem criou, alterou e excluiu cada cupom, com data e detalhes."
+        />
       </div>
     </AppLayout>
   );
