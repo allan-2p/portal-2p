@@ -646,15 +646,14 @@ export async function criarOrdemVendaSap(
   try {
     const res = await fetch(url, {
       method: "POST",
-      // SOAP 1.2 + accept-language: sem eles este gateway devolve HTTP 200 com
-      // tabelas vazias (mesmo padrão do sap-precos/sap-produtos, que funcionam).
+      // Exatamente os headers do request validado: só Authorization e
+      // Content-Type (o mandante 500 vem na própria URL). Nada de SOAPAction,
+      // accept-language ou cookie sap-usercontext.
       headers: {
         "content-type": "application/soap+xml; charset=utf-8",
-        accept: "application/soap+xml, text/xml, */*",
-        "accept-language": "pt-BR",
         authorization: auth,
-        cookie: "sap-usercontext=sap-client=500",
       },
+
 
       body: corpo,
       signal: controller.signal,
