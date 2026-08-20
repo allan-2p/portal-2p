@@ -831,7 +831,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     //
     // Pix: a OV só é criada quando o pagamento é confirmado (webhook/reconsulta),
     // igual à plataforma legada — aqui o pedido apenas aguarda o pagamento.
-    const aguardaPix = String(row["forma_pagamento"] ?? "") === "pix";
+    const aguardaPix = String((row as any)["forma_pagamento"] ?? "") === "pix";
     let sapOv: SapOvOut | null = null;
     if (aguardaPix) {
       sapOv = {
