@@ -227,13 +227,30 @@ function parceiro(role: "AG" | "CL", doc: string, nome: string) {
   // 14 posições no CNPJ e 11 no CPF, senão não encontra o parceiro.
   const cnpj = d.length > 11 ? d.padStart(14, "0") : "";
   const cpf = d && d.length <= 11 ? d.padStart(11, "0") : "";
+  // Ordem e conjunto de campos idênticos ao request validado (ov-testrun.xml):
+  // o deserializador do SAP é estrito quanto à ordem/presença dos elementos.
   return (
     `<item>` +
     `<PARTN_ROLE>${role}</PARTN_ROLE>` +
     `<CNPJ>${esc(cnpj)}</CNPJ>` +
     `<CPF>${esc(cpf)}</CPF>` +
     `<NAME>${esc(String(nome ?? "").slice(0, 35))}</NAME>` +
-    `<PAIS>BR</PAIS>` +
+    `<NAME_2></NAME_2>` +
+    `<NAME_3></NAME_3>` +
+    `<NAME_4></NAME_4>` +
+    `<STREET></STREET>` +
+    `<POSTL_CODE></POSTL_CODE>` +
+    `<CITY></CITY>` +
+    `<DISTRICT></DISTRICT>` +
+    `<REGION></REGION>` +
+    `<TELEPHONE></TELEPHONE>` +
+    `<FAX_NUMBER></FAX_NUMBER>` +
+    `<E_MAIL></E_MAIL>` +
+    `<PAIS></PAIS>` +
+    `<NUMERO></NUMERO>` +
+    `<COMPLEMENTO></COMPLEMENTO>` +
+    `<KUNNR></KUNNR>` +
+    `<PLTYP>01</PLTYP>` +
     `</item>`
   );
 }
@@ -250,16 +267,26 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
 
   // TODO (kit fotovoltaico): quando o recurso for implementado, o material do
   // kit-base troca 100000350 → 100000278 antes do envio (regra da plataforma antiga).
+  // VALOR_PROD vai VAZIO: o preço vem da condição do SAP (igual à antiga).
   const linhas = itens
     .map(
       (i, idx) =>
         `<item>` +
-        `<ITM_NUMBER>${String((idx + 1) * 10).padStart(6, "0")}</ITM_NUMBER>` +
+        `<ITM_NUMBER>${idx + 1}</ITM_NUMBER>` +
         `<MATERIAL>${esc(norm(i.codigo))}</MATERIAL>` +
         `<BILL_DATE>${hoje}</BILL_DATE>` +
         `<UM>UN</UM>` +
         `<QTDE>${Number(i.qtd)}</QTDE>` +
-        `<VALOR_PROD>${Number(i.valor ?? 0).toFixed(2)}</VALOR_PROD>` +
+        `<PESO_BRUTO></PESO_BRUTO>` +
+        `<PESO_LIQ></PESO_LIQ>` +
+        `<UM_PESO></UM_PESO>` +
+        `<VALOR_PROD></VALOR_PROD>` +
+        `<VALOR_DESC></VALOR_DESC>` +
+        `<PERC_DESC></PERC_DESC>` +
+        `<NCM></NCM>` +
+        `<FCI></FCI>` +
+        `<EAN></EAN>` +
+        `<DEPOSITO></DEPOSITO>` +
         `</item>`,
     )
     .join("");
@@ -298,13 +325,14 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
     )
     .join("");
 
-  // Envelope SOAP 1.2 e ordem dos campos idênticos aos da plataforma antiga,
-  // que roda em produção na mesma RFC (binding literal é sensível à ordem).
+  // Espelho byte a byte do request validado em produção (docs: ov-testrun.xml).
+  // O deserializador do SAP é estrito: ordem, presença dos elementos e prefixo
+  // `n0` do nome da função precisam ser exatamente estes.
   return `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
   <soap:Header/>
   <soap:Body>
-    <urn:ZNFE_OV_CRIAR>
+    <n0:ZNFE_OV_CRIAR xmlns:n0="urn:sap-com:document:sap:rfc:functions">
       <I_CARGA>S</I_CARGA>
       <I_JOB></I_JOB>
       <I_JOBNAME></I_JOBNAME>
@@ -319,45 +347,48 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         <INCO2>${bonificado ? "CIF BONIFICADO" : ""}</INCO2>
         <PURCH_DATE>${hoje}</PURCH_DATE>
         <DATA_REMESSA>${hoje}</DATA_REMESSA>
-        <!-- NROPED: número do pedido do portal (6 dígitos, faixa 0500xx+).
-             Confirmado com o negócio que não colide com a faixa antiga (~10000-45000). -->
         <NROPED>${esc(String(row["numero"] ?? "").trim())}</NROPED>
-        <VALOR_DESC>${desconto > 0 ? desconto.toFixed(2) : ""}</VALOR_DESC>
+        <VALOR_DESC>${desconto > 0 ? desconto.toFixed(2) : "0"}</VALOR_DESC>
         <PERC_DESC></PERC_DESC>
         <VLR_FRETE>${freteValor.toFixed(2)}</VLR_FRETE>
         <ZTERM>${esc(zterm(row))}</ZTERM>
         <NRO_BANCO></NRO_BANCO>
         <XPED>${esc(String(row["numero"] ?? "").trim())}</XPED>
         <QVOL></QVOL>
-        <PESO_BRUTO>${peso.bruto ? peso.bruto.toFixed(3) : ""}</PESO_BRUTO>
-        <PESO_LIQ>${peso.liquido ? peso.liquido.toFixed(3) : ""}</PESO_LIQ>
+        <PESO_BRUTO></PESO_BRUTO>
+        <PESO_LIQ></PESO_LIQ>
         <ESP></ESP>
-        <VKORG>${c.vkorg}</VKORG>
-        <VTWEG>${c.vtweg}</VTWEG>
-        <SPART>${c.spart}</SPART>
-        <NOME_VENDEDOR>${esc(String(row["consultor_nome"] ?? "").slice(0, 35))}</NOME_VENDEDOR>
+        <VKORG></VKORG>
+        <VTWEG></VTWEG>
+        <SPART></SPART>
+        <AUGRU></AUGRU>
         <VENDEDOR>${esc(String(row["consultor_codigo_sap"] ?? "").trim())}</VENDEDOR>
+        <IMEI_VENDEDOR></IMEI_VENDEDOR>
+        <NOME_VENDEDOR>${esc(String(row["consultor_nome"] ?? "").slice(0, 35))}</NOME_VENDEDOR>
+        <EMAIL_VENDEDOR></EMAIL_VENDEDOR>
+        <CPF_VENDEDOR></CPF_VENDEDOR>
       </I_S_OV>
       <I_S_TRANSP>
-
         <QVOL></QVOL>
         <PESO_BRUTO>${peso.bruto ? peso.bruto.toFixed(3) : ""}</PESO_BRUTO>
         <PESO_LIQ>${peso.liquido ? peso.liquido.toFixed(3) : ""}</PESO_LIQ>
         <ESP></ESP>
       </I_S_TRANSP>
       <I_TESTRUN>${testrun ? "X" : ""}</I_TESTRUN>
-      <T_EMAIL>${email ? `<item><EMAIL>${esc(email)}</EMAIL></item>` : ""}</T_EMAIL>
+      <I_USUARIO></I_USUARIO>
+      <I_XMLNFE></I_XMLNFE>
+      <T_EMAIL><item><EMAIL>${esc(email)}</EMAIL></item></T_EMAIL>
       <T_ITEM>${linhas}</T_ITEM>
+      <T_MSG><item><TYPE>S</TYPE><MSGNR>000</MSGNR><MESSAGE></MESSAGE><MSGID></MSGID></item></T_MSG>
       <T_OBS>${obs}</T_OBS>
       <T_PAGTO>${parcelas}</T_PAGTO>
       <T_PARCEIRO>
         ${emissor}
         ${parceiro("CL", docCliente, nomeCliente)}
       </T_PARCEIRO>
-
-    </urn:ZNFE_OV_CRIAR>
-  </soapenv:Body>
-</soapenv:Envelope>`;
+    </n0:ZNFE_OV_CRIAR>
+  </soap:Body>
+</soap:Envelope>`;
 }
 
 /** Soma os pesos dos itens usando a própria simulação do SAP. */
