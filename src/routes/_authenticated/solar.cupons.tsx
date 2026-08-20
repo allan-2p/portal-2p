@@ -160,8 +160,21 @@ function CuponsPage() {
     setPercentual("");
     setValidade(undefined);
     setReutilizavel(false);
-    setCliente("");
+    setClienteDoc("");
     setErrors({});
+  };
+
+  const handleDelete = async (c: Cupom) => {
+    try {
+      const { error } = await supabase.from("solar_cupons").delete().eq("id", c.id);
+      if (error) throw error;
+      invalidateSolar();
+      toast.success(`Cupom ${c.codigo} excluído.`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível excluir o cupom.");
+    } finally {
+      setExcluindo(null);
+    }
   };
 
   const handleCreate = async () => {
