@@ -5,9 +5,9 @@ import type { AppPath } from "@/lib/routes";
 import solarLogoRaw from "@/assets/2p-logo.jpg";
 import carregadoresAsset from "@/assets/2p-carregadores-logo.png.asset.json";
 
-export type InstanceId = "solar" | "carregadores" | "marketing";
+export type InstanceId = "solar" | "carregadores" | "marketing" | "financeiro";
 
-export const INSTANCE_IDS: readonly InstanceId[] = ["solar", "carregadores", "marketing"] as const;
+export const INSTANCE_IDS: readonly InstanceId[] = ["solar", "carregadores", "marketing", "financeiro"] as const;
 
 export type FeatureKey =
   | "home"
@@ -63,7 +63,9 @@ export type FeatureKey =
   | "marketing.cac"
   | "marketing.gargalo"
   | "marketing.prevendas"
-  | "marketing.metas";
+  | "marketing.metas"
+  | "financeiro.home"
+  | "financeiro.condicoes";
 
 
 export type InstanceMeta = {
@@ -159,6 +161,24 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "admin.vinculos",
     ],
   },
+  financeiro: {
+    id: "financeiro",
+    label: "Financeiro",
+    short: "FIN",
+    description: "Controles financeiros do Grupo 2P — condições de pagamento (ZTERM).",
+    logo: solarLogoRaw,
+    swatch: "oklch(0.55 0.13 165)",
+    routes: [
+      "financeiro.home",
+      "financeiro.condicoes",
+      "admin.usuarios",
+      "admin.perfis",
+      "admin.integracoes",
+      "admin.auditoria",
+      "admin.atividade",
+      "admin.vinculos",
+    ],
+  },
 };
 
 // Mapa: rota do TanStack → feature key (para gate de menu e roteamento).
@@ -223,6 +243,8 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/marketing/gargalo": "marketing.gargalo",
   "/marketing/pre-vendas": "marketing.prevendas",
   "/marketing/metas": "marketing.metas",
+  "/financeiro": "financeiro.home",
+  "/financeiro/condicoes": "financeiro.condicoes",
 };
 
 export const FEATURE_LABELS: Record<FeatureKey, string> = {
@@ -280,6 +302,8 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "marketing.gargalo": "Marketing • Mapa de Gargalo",
   "marketing.prevendas": "Marketing • Pré-Vendas",
   "marketing.metas": "Marketing • Metas",
+  "financeiro.home": "Financeiro • Home",
+  "financeiro.condicoes": "Financeiro • Condições de Pagamento",
 };
 
 export const ALL_FEATURES: FeatureKey[] = Object.keys(FEATURE_LABELS) as FeatureKey[];

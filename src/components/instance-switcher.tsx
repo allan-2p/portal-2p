@@ -13,6 +13,7 @@ const INSTANCE_HOME: Record<InstanceId, string> = {
   solar: "/",
   carregadores: "/carregadores",
   marketing: "/marketing",
+  financeiro: "/financeiro",
 };
 
 /** Área do Grupo 2P — não é uma instância, é o ambiente neutro (preto). */

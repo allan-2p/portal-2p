@@ -739,6 +739,39 @@ export type Database = {
         }
         Relationships: []
       }
+      condicoes_pagamento: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          descricao: string
+          num_parcelas: number | null
+          parcelas: Json | null
+          parse_automatico: boolean
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          descricao: string
+          num_parcelas?: number | null
+          parcelas?: Json | null
+          parse_automatico?: boolean
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          num_parcelas?: number | null
+          parcelas?: Json | null
+          parse_automatico?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       containers: {
         Row: {
           atualizado_em: string

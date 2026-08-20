@@ -11,6 +11,7 @@ export const INSTANCE_HOME: Record<InstanceId, FeatureKey> = {
   solar: "home",
   carregadores: "carregadores.home",
   marketing: "marketing.home",
+  financeiro: "financeiro.home",
 };
 
 export type AccessUser = {

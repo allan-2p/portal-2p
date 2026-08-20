@@ -418,3 +418,20 @@ html[data-area="admin"].dark {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
+
+/* === Instância Financeiro — verde sóbrio === */
+:root[data-instance="financeiro"] {
+  --primary: oklch(0.52 0.12 165);
+  --accent: oklch(0.52 0.12 165);
+  --ring: oklch(0.52 0.12 165);
+  --atlas: oklch(0.56 0.12 165);
+  --chart-1: oklch(0.52 0.12 165);
+}
+.dark[data-instance="financeiro"],
+:root[data-instance="financeiro"] .dark {
+  --primary: oklch(0.66 0.12 165);
+  --accent: oklch(0.66 0.12 165);
+  --ring: oklch(0.66 0.12 165);
+  --atlas: oklch(0.7 0.12 165);
+  --chart-1: oklch(0.66 0.12 165);
+}
