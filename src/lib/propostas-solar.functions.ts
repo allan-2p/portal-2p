@@ -219,9 +219,16 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
         .maybeSingle();
       if (!c) throw new Error("Cupom inválido ou inativo.");
       const row = c as any;
-      if (new Date(row.validade) < new Date(new Date().toDateString()))
-        throw new Error("Cupom expirado.");
-      if (!row.reutilizavel && Number(row.usos ?? 0) > 0) throw new Error("Cupom já utilizado.");
+      const hoje = new Date(new Date().toDateString());
+      if (row.validade_inicio && new Date(`${row.validade_inicio}T00:00:00`) > hoje)
+        throw new Error(
+          `Cupom ainda não está válido (início em ${new Date(`${row.validade_inicio}T00:00:00`).toLocaleDateString("pt-BR")}).`,
+        );
+      if (new Date(`${row.validade}T00:00:00`) < hoje) throw new Error("Cupom expirado.");
+      const usos = Number(row.usos ?? 0);
+      if (!row.reutilizavel && usos > 0) throw new Error("Cupom já utilizado.");
+      if (row.limite_usos != null && usos >= Number(row.limite_usos))
+        throw new Error(`Cupom atingiu o limite de ${row.limite_usos} uso(s).`);
       const docCupom = String(row.cliente_doc ?? "").replace(/\D/g, "");
       if (docCupom && docCupom !== data.cliente.doc.replace(/\D/g, ""))
         throw new Error("Cupom válido apenas para outro cliente.");
