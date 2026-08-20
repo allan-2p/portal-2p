@@ -75,6 +75,19 @@ export async function sincronizarCliente(
     uf: cliente["uf"] ?? null,
   };
 
+  // Escritório/equipe de vendas: definidos pela organização do cliente
+  // (2P Solar 001/0002, 2P Carregadores 002/0003, Grupo 2P 003/0004).
+  const { escopoOrg, vendasDoEscopo } = await import("./sap-clientes-map");
+  const escopo = escopoOrg(
+    cliente["escopo_org"] ?? cliente["organizacao"] ?? atual?.["organizacao"] ?? instancia,
+  );
+  const { EQUIPE_VENDAS, ESCRITORIO } = vendasDoEscopo({ escopo_org: escopo });
+  const vendas = {
+    escopo_org: escopo,
+    equipe_vendas: EQUIPE_VENDAS,
+    escritorio_vendas: ESCRITORIO,
+  };
+
   const sapPayload = {
     doc: base.doc,
     razao_social: base.razao_social,
