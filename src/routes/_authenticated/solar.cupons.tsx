@@ -64,6 +64,7 @@ type Cupom = {
   usos: number;
   limiteUsos?: number | null;
   esgotado: boolean;
+  ativo: boolean;
   cliente?: string;
   criadoEm: string;
 };
