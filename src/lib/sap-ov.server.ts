@@ -425,12 +425,17 @@ function mensagens(doc: any): {
     msgnr: String(m?.MSGNR ?? "").trim(),
     texto: String(m?.MESSAGE ?? "").trim(),
   }));
-  const erro = linhas.find((l) => l.tipo === "E" || l.tipo === "A" || l.tipo === "X");
-  const aviso = linhas.find((l) => l.tipo === "W");
+  const num = (v: string) => Number(v.replace(/\D+/g, "") || "-1");
+  // Erro = TYPE E/A/X, ou W com MSGNR 036 (rejeição disfarçada de aviso).
+  const erro = linhas.find(
+    (l) => l.tipo === "E" || l.tipo === "A" || l.tipo === "X" || (l.tipo === "W" && num(l.msgnr) === 36),
+  );
+  const aviso = linhas.find((l) => l.tipo === "W" && num(l.msgnr) !== 36);
   const texto = linhas.map((l) => l.texto).filter(Boolean).join(" | ").slice(0, 500) || null;
 
-  const sucesso = linhas.find((l) => l.tipo === "S" && /^0*0$/.test(l.msgnr || "0"));
-  const numeroSucesso = sucesso ? (/(\d{6,12})/.exec(sucesso.texto)?.[1] ?? null) : null;
+  // Nº da OV: item com MSGNR=000 (MSGNR=017 é só a confirmação textual).
+  const sucesso = linhas.find((l) => num(l.msgnr) === 0 && /\d{4,}/.test(l.texto));
+  const numeroSucesso = sucesso ? (/(\d{4,12})/.exec(sucesso.texto)?.[1] ?? null) : null;
 
   return {
     erro: erro?.texto || (erro ? "Erro retornado pelo SAP." : null),
