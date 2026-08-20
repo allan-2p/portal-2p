@@ -562,10 +562,15 @@ export const listarPropostasFn = createServerFn({ method: "POST" })
       statusIn: Array.isArray(i.statusIn) ? i.statusIn.map(String) : undefined,
     };
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await repo();
-    return await db.listarPropostas(data);
+    const { assertPodeLer, filtrarPorDono, getPerm } = await import("./object-perms.server");
+    const perm = await getPerm(context as any, data.organizacao ?? "solar", "propostas");
+    assertPodeLer(perm, "propostas");
+    const rows = await db.listarPropostas(data);
+    return filtrarPorDono(rows as any[], perm, (context as any).userId);
   });
+
 
 /** Resumo de pagamento (Pix/boleto) dos pedidos de uma organização. */
 export const listarPagamentosFn = createServerFn({ method: "POST" })
@@ -588,10 +593,21 @@ export const obterPropostaFn = createServerFn({ method: "POST" })
     if (typeof id !== "string" || !id) throw new Error("Proposta inválida.");
     return { id };
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await repo();
-    return await db.getProposta(data.id);
+    const prop = (await db.getProposta(data.id)) as Record<string, any> | null;
+    if (!prop) return prop;
+    const { assertPodeLer, getPerm } = await import("./object-perms.server");
+    const inst = String(prop["organizacao"] ?? "solar");
+    const perm = await getPerm(context as any, inst, "propostas");
+    assertPodeLer(perm, "propostas");
+    const dono = (prop["created_by"] as string | null) ?? null;
+    if (!perm.view_all && dono && dono !== (context as any).userId) {
+      throw new Error("Esta proposta pertence a outro consultor.");
+    }
+    return prop;
   });
+
 
 /**
  * Atualiza o status da proposta.
@@ -608,10 +624,14 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
     if (typeof i.status !== "string" || !i.status) throw new Error("Status inválido.");
     return { id: i.id, status: i.status };
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const db = await repo();
-    const atual = await db.getProposta(data.id);
-    const de = String((atual as Record<string, unknown> | null)?.["status"] ?? "Salvo");
+    const atual = (await db.getProposta(data.id)) as Record<string, any> | null;
+    const de = String(atual?.["status"] ?? "Salvo");
+
+    const { assertPodeEditar, getPerm } = await import("./object-perms.server");
+    const perm = await getPerm(context as any, String(atual?.["organizacao"] ?? "solar"), "propostas");
+    assertPodeEditar(perm, "propostas", (atual?.["created_by"] as string | null) ?? null, (context as any).userId);
 
     if (data.status !== "Cancelado") {
       throw new Error(
@@ -627,7 +647,7 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Exclui uma proposta (somente administrador do sistema). */
+/** Exclui uma proposta (exige "Excluir" em Propostas; de outro consultor, "Modify All Records"). */
 export const excluirPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
@@ -636,18 +656,15 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
     return { id };
   })
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context as any;
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!roles) throw new Error("Apenas o administrador do sistema pode excluir propostas.");
     const db = await repo();
+    const atual = (await db.getProposta(data.id)) as Record<string, any> | null;
+    const { assertPodeExcluir, getPerm } = await import("./object-perms.server");
+    const perm = await getPerm(context as any, String(atual?.["organizacao"] ?? "solar"), "propostas");
+    assertPodeExcluir(perm, "propostas", (atual?.["created_by"] as string | null) ?? null, (context as any).userId);
     await db.excluirProposta(data.id);
     return { ok: true };
   });
+
 
 /**
  * Conclui o pedido com trava idempotente (só conclui se ainda estiver "Salvo")

@@ -88,6 +88,7 @@ type Row = {
   avatar_url: string | null;
   sf_user_id: string | null;
   numero_sap: string | null;
+  is_consultor: boolean;
   is_external: boolean;
   filter_scope: FilterScope;
   roles: AppRole[];
@@ -136,7 +137,7 @@ function UsuariosPage() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id,email,full_name,cargo,cargo_tipo,equipe,telefone,meta_mensal,regime_contratacao,organizacao,ativo,avatar_url,sf_user_id,numero_sap,is_external,filter_scope")
+      .select("id,email,full_name,cargo,cargo_tipo,equipe,telefone,meta_mensal,regime_contratacao,organizacao,ativo,avatar_url,sf_user_id,numero_sap,is_consultor,is_external,filter_scope")
       .order("full_name");
     const { data: rolesData } = await supabase.from("user_roles").select("user_id,role");
     const { data: linkData } = await supabase
@@ -891,6 +892,7 @@ type EditPayload = {
   filter_scope: FilterScope;
   sf_user_id: string | null;
   numero_sap: string | null;
+  is_consultor: boolean;
   ativo: boolean;
 };
 
@@ -946,6 +948,7 @@ function EditUserModal({
     filter_scope: (row.filter_scope ?? "individual") as FilterScope,
     sf_user_id: row.sf_user_id ?? "",
     numero_sap: row.numero_sap ?? "",
+    is_consultor: row.is_consultor ?? false,
     ativo: row.ativo,
   });
 
@@ -988,6 +991,7 @@ function EditUserModal({
               filter_scope: form.filter_scope,
               sf_user_id: form.sf_user_id.trim() || null,
               numero_sap: form.numero_sap.trim() || null,
+              is_consultor: form.is_consultor,
               ativo: form.ativo,
             });
           } catch (err) {
@@ -1053,6 +1057,25 @@ function EditUserModal({
               placeholder="Ex.: 1000123"
             />
           </Field>
+        </div>
+
+        <div className="flex items-start justify-between gap-4 rounded-xl border border-border p-3">
+          <div>
+            <div className="text-sm font-medium">É consultor</div>
+            <p className="text-xs text-muted-foreground">
+              Só usuários marcados como consultor e com número SAP podem ser responsáveis por
+              clientes e propostas.
+            </p>
+            {form.is_consultor && !form.numero_sap.trim() && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                Sem número SAP ele continua fora da lista de consultores.
+              </p>
+            )}
+          </div>
+          <Switch
+            checked={form.is_consultor}
+            onCheckedChange={(v) => setForm({ ...form, is_consultor: v })}
+          />
         </div>
 
         {form.filter_scope === "individual" && !form.sf_user_id.trim() && (

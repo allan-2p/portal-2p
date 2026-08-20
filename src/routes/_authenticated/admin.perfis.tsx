@@ -28,6 +28,7 @@ import {
 } from "@/lib/instances";
 import { groupFeatures, shortFeatureLabel, featureScopeLabel } from "@/lib/feature-groups";
 import { PermissionMatrix } from "@/components/admin/permission-matrix";
+import { ObjectPermsEditor } from "@/components/admin/object-perms-editor";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
 export const Route = createFileRoute("/_authenticated/admin/perfis")({
@@ -567,6 +568,12 @@ function PerfisPage() {
                     </div>
                   )}
                 </div>
+
+                <ObjectPermsEditor
+                  profileId={selected.id}
+                  instancia={instance}
+                  instanciaLabel={INSTANCES[instance].label}
+                />
 
 
                 <div className="glass rounded-xl p-4 space-y-3">
