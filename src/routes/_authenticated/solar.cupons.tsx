@@ -203,16 +203,16 @@ function CuponsPage() {
     setSalvando(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
-      const clienteNome = cliente.trim();
+      const cli = (clientesQ.data ?? []).find((c) => c.doc === clienteDoc);
       const { error } = await supabase.from("solar_cupons").insert({
         codigo: codeFinal,
         tipos,
-        valor: tipos.includes("valor") ? Number(valor) : 0,
-        percentual: tipos.includes("percentual") ? Number(percentual) : 0,
+        valor: tipos.includes("valor") ? parseMoeda(valor) : 0,
+        percentual: tipos.includes("percentual") ? parsePercentual(percentual) : 0,
         validade: format(validade!, "yyyy-MM-dd"),
         reutilizavel,
-        cliente_nome: clienteNome || null,
-        cliente_doc: clienteNome.replace(/\D/g, "") || null,
+        cliente_nome: cli?.razao_social ?? null,
+        cliente_doc: cli?.doc ?? null,
         ativo: true,
         created_by: userData.user?.id ?? null,
       });
