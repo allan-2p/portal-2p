@@ -175,7 +175,12 @@ export function criarPixIOSimulado(propostas: PropostaLike[]) {
   const escritas: { proposta_id: string; patch: Record<string, unknown> }[] = [];
   const logs: Record<string, unknown>[] = [];
   const notificacoes: Record<string, unknown>[] = [];
+  const ordensVenda: string[] = [];
   const io: PixIO = {
+    // Simulação nunca chama o SAP: apenas registra que a OV seria criada.
+    async aoConfirmarPagamento(propostaId) {
+      ordensVenda.push(propostaId);
+    },
     async buscarPorTxid(txid) {
       return rows.find((r) => String(r["pagamento_txid"] ?? "") === txid) ?? null;
     },
