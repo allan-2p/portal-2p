@@ -27,8 +27,9 @@ import { AccessDenied } from "@/components/access-denied";
 import { toFriendlyError } from "@/lib/friendly-errors";
 
 // Origem do backend — sempre derivada da configuração, nunca hardcoded.
-const SUPABASE_ORIGIN =
-  x
+const SUPABASE_ORIGIN: string =
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ||
+  "https://npzlinbglznnnwxxcawh.supabase.co";
 
 
 function NotFoundComponent() {
