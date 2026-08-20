@@ -700,7 +700,7 @@ function CuponsPage() {
                 ))}
                 {cupons.length === 0 && (
                   <tr>
-                    <td colSpan={isAdmin ? 7 : 6} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={isAdmin ? 8 : 7} className="px-4 py-10 text-center text-muted-foreground">
                       {cuponsQ.isLoading
                         ? "Carregando cupons..."
                         : "Nenhum cupom criado ainda. Clique em Criar cupom para começar."}
