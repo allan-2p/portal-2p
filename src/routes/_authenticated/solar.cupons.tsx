@@ -408,7 +408,22 @@ function CuponsPage() {
                 {/* Cliente específico */}
                 <div className="space-y-1.5">
                   <Label htmlFor="cli">Cliente específico (opcional)</Label>
-                  <Input id="cli" value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Deixe em branco para todos" />
+                  <Select value={clienteDoc || "todos"} onValueChange={(v) => setClienteDoc(v === "todos" ? "" : v)}>
+                    <SelectTrigger id="cli">
+                      <SelectValue placeholder="Todos os clientes" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      <SelectItem value="todos">Todos os clientes</SelectItem>
+                      {clientesQ.isLoading && (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">Carregando clientes...</div>
+                      )}
+                      {(clientesQ.data ?? []).map((c) => (
+                        <SelectItem key={c.doc} value={c.doc}>
+                          {c.razao_social}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
