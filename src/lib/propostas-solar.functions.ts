@@ -380,15 +380,26 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       /* cadastro indisponível */
     }
 
-    const inserida = (await repo.inserirProposta({
-      ...payload,
-      organizacao: "solar",
-      status: "Salvo",
-      created_by: userId,
-      criado_por_nome: nomeAtual,
-      consultor_id: consultorId,
-      consultor_nome: consultorNome,
-    })) as { id: string };
+    let inserida: { id: string };
+    try {
+      inserida = (await repo.inserirProposta({
+        ...payload,
+        organizacao: "solar",
+        status: "Salvo",
+        created_by: userId,
+        criado_por_nome: nomeAtual,
+        consultor_id: consultorId,
+        consultor_nome: consultorNome,
+      })) as { id: string };
+      if (!inserida?.id) throw new Error("O banco não devolveu o identificador da proposta.");
+    } catch (error) {
+      await auditarBloqueio(auditCtx, {
+        etapa: "salvar.persistencia",
+        motivo: error instanceof Error ? error.message : "Falha desconhecida ao gravar a proposta Solar.",
+        dados: { numero: numeroProposta, organizacao: "solar", total: valorTotal, itens: itens.length },
+      });
+      throw error;
+    }
 
     await registrarUsoCupom(inserida.id);
     await espelharNoSalesforce(inserida.id);

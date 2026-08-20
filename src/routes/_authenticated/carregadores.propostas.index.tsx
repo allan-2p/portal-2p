@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Calculator, Copy, Eye, Pencil, Plus, Search, Plug, Trash2 } from "lucide-react";
+import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { listarPropostasFn, excluirPropostaFn } from "@/lib/propostas.functions";
@@ -72,6 +72,8 @@ type Row = {
   criado_por_nome?: string | null;
   finalizado_por_nome?: string | null;
   finalizado_em?: string | null;
+  sap_ov_status?: string | null;
+  sf_status?: string | null;
 };
 
 /** Status universais do portal (mesma lista e cores em todas as instâncias). */
@@ -295,27 +297,20 @@ function HistoricoCarregadoresPage() {
                             <Copy className="h-4 w-4" />
                           </Link>
                         </Button>
+                         <Button
+                           variant="ghost"
+                           size="icon"
+                           aria-label="Integrações e auditoria"
+                           title="Integrações e auditoria"
+                           className={cn(r.sap_ov_status === "criada" && r.sf_status === "sincronizado" ? "text-success" : "text-warning")}
+                           onClick={() => setIntegracoesId(r.id)}
+                         >
+                           <RefreshCw className="h-4 w-4" />
+                         </Button>
                         {podeExcluir && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Integrações do pedido"
-                            onClick={() => setIntegracoesId(r.id)}
-                          >
-                            <Plug className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {podeExcluir && (
-                          <>
-                            <Button variant="ghost" size="icon" aria-label="Auditoria de cálculo" asChild>
-                              <Link to="/carregadores/propostas/auditoria" search={{ id: r.id }}>
-                                <Calculator className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                            <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </>
+                           <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
+                             <Trash2 className="h-4 w-4 text-destructive" />
+                           </Button>
                         )}
                       </div>
                     </td>
