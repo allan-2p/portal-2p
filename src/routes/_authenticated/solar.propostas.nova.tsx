@@ -435,13 +435,18 @@ function NovaPropostaSolarPage() {
     return /smart|zipad/i.test(`${t?.nome ?? ""} ${t?.familia ?? ""}`);
   }
 
-  /** Valores padrão (editáveis) de vão máximo e balanço para a fileira. */
+  /**
+   * Valores padrão (editáveis) de vão máximo e balanço, iguais à calculadora antiga:
+   *  - Trilho (light/padrão 2P-TC): Retrato 1,50 / Paisagem 1,70
+   *  - Reforçado (2P-TCR):          Retrato 1,70 / Paisagem 2,00
+   *  - Balanço da ponta da string: sempre 0,50 m (não confundir com balanco_ponta = 40 mm do nt)
+   */
   function padroesLinha(l: FileiraCalc) {
     const t = (trilhosQ.data ?? []).find((x) => x.id === l.trilhoId);
-    const famT = String(t?.familia ?? "").toLowerCase();
+    const reforcado = /refor/i.test(`${t?.nome ?? ""} ${t?.familia ?? ""}`);
     const orientR = l.orientacao !== "P";
-    const dist = famT.includes("light") ? (orientR ? "1.50" : "1.70") : orientR ? "1.70" : "2.00";
-    return { dist, balanco: (config.balanco_ponta / 1000).toFixed(2) };
+    const dist = reforcado ? (orientR ? "1.70" : "2.00") : orientR ? "1.50" : "1.70";
+    return { dist, balanco: "0.50" };
   }
 
 
@@ -460,17 +465,8 @@ function NovaPropostaSolarPage() {
           }
           return l;
         }
-        // Distância padrão por família + orientação (calculadora.js:2123-2127).
-        const famT = String(t.familia ?? "").toLowerCase();
-        const orientR = l.orientacao !== "P";
-        const distPadrao = famT.includes("light")
-          ? orientR
-            ? "1.50"
-            : "1.70"
-          : orientR
-            ? "1.70"
-            : "2.00";
-        const balancoPadrao = (config.balanco_ponta / 1000).toFixed(2);
+        // Distância padrão por trilho + orientação; balanço fixo 0,50 m (calculadora antiga).
+        const { dist: distPadrao, balanco: balancoPadrao } = padroesLinha(l);
         if (!l.distMax || !l.balanco) {
           mudou = true;
           return { ...l, distMax: l.distMax || distPadrao, balanco: l.balanco || balancoPadrao };
