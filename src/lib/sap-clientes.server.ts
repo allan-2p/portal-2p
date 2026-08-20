@@ -8,7 +8,15 @@ import { XMLParser } from "fast-xml-parser";
 import { camposSapCliente, validarParaSap, type ClienteSapInput } from "./sap-clientes-map";
 
 export type SapClienteResultado =
-  | { ok: true; numero_sap: string | null; mensagem: string | null; raw: unknown }
+  | {
+      ok: true;
+      numero_sap: string | null;
+      mensagem: string | null;
+      /** Espelho do que foi enviado/retornado (VKGRP / VKBUR). */
+      equipe_vendas: string | null;
+      escritorio_vendas: string | null;
+      raw: unknown;
+    }
   | { ok: false; erro: string; raw?: unknown };
 
 function escXml(v: string) {
