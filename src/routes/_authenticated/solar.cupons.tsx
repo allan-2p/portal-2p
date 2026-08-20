@@ -502,6 +502,20 @@ function CuponsPage() {
                     <td className="px-4 py-3">{c.cliente ?? <span className="text-muted-foreground">Todos</span>}</td>
                     <td className="px-4 py-3">{c.reutilizavel ? "Sim" : "Não"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.criadoEm}</td>
+                    {isAdmin && (
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          title="Excluir cupom"
+                          onClick={() => setExcluindo(c)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))}
                 {cupons.length === 0 && (
