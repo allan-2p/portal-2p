@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Copy, Eye, Pencil, Plus, Search, Plug, Trash2 } from "lucide-react";
+import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
@@ -62,6 +62,8 @@ type Row = {
   created_by: string | null;
   consultor_nome?: string | null;
   criado_por_nome?: string | null;
+  sap_ov_status?: string | null;
+  sf_status?: string | null;
 };
 
 const STATUS = PROPOSTA_STATUS;
@@ -226,16 +228,16 @@ function PropostasSolarPage() {
                             <Copy className="h-4 w-4" />
                           </Link>
                         </Button>
-                        {podeExcluir && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Integrações do pedido"
-                            onClick={() => setIntegracoesId(r.id)}
-                          >
-                            <Plug className="h-4 w-4" />
-                          </Button>
-                        )}
+                         <Button
+                           variant="ghost"
+                           size="icon"
+                           aria-label="Integrações e auditoria"
+                           title="Integrações e auditoria"
+                           className={r.sap_ov_status === "criada" && r.sf_status === "sincronizado" ? "text-success" : "text-warning"}
+                           onClick={() => setIntegracoesId(r.id)}
+                         >
+                           <RefreshCw className="h-4 w-4" />
+                         </Button>
                         {podeExcluir && (
                           <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />

@@ -596,8 +596,14 @@ export async function criarOrdemVendaSap(
         proposta_id: propostaId,
         numero: row["numero"] ?? null,
         testrun,
+        payload_resumo: {
+          tipo: row["tipo_nf"] ?? null,
+          modalidade_frete: row["frete_mod"] ?? null,
+          uf: row["uf"] ?? null,
+          itens: Array.isArray(row["itens"]) ? row["itens"].length : 0,
+          testrun,
+        },
         resposta: xml.replace(/\s+/g, " ").slice(0, 1500),
-        requisicao: corpo.replace(/\s+/g, " ").slice(0, 3000),
       },
       durationMs: Date.now() - inicio,
     });

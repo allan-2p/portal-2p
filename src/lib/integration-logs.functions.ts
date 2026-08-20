@@ -49,7 +49,10 @@ export const listIntegrationLogs = createServerFn({ method: "GET" })
     propostaId?: string;
   }) => input)
   .handler(async ({ data, context }) => {
-    await assertLogRead(context, "admin.integracoes");
+    // O painel faz parte da própria proposta. Não exigir permissão administrativa
+    // de integrações de quem já pode visualizar propostas.
+    const unidade = String(data.propostaId ?? "").startsWith("solar:") ? "propostas" : "carregadores.propostas";
+    await assertLogRead(context, unidade);
 
     const limit = Math.min(Math.max(data.limit ?? 10, 1), 100);
     const offset = Math.max(data.offset ?? 0, 0);

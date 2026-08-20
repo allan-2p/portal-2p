@@ -1000,6 +1000,7 @@ export type PedidoIntegracoesStatus = {
   numero: string | null;
   cliente_nome: string | null;
   status: string | null;
+  organizacao: string | null;
   sap: { numero: string | null; status: string | null; mensagem: string | null; enviado_em: string | null };
   salesforce: {
     opportunityId: string | null;
@@ -1035,6 +1036,7 @@ export const statusIntegracoesPedidoFn = createServerFn({ method: "POST" })
       numero: s("numero"),
       cliente_nome: s("cliente_nome"),
       status: s("status"),
+      organizacao: s("organizacao"),
       sap: {
         numero: s("sap_ov_numero"),
         status: s("sap_ov_status"),
