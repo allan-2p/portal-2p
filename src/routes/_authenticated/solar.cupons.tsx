@@ -447,9 +447,9 @@ function CuponsPage() {
                 <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-4 py-3">Código</th>
                   <th className="text-left px-4 py-3">Desconto</th>
-                  <th className="text-left px-4 py-3">Validade</th>
+                  <th className="text-left px-4 py-3">Vigência</th>
                   <th className="text-left px-4 py-3">Cliente</th>
-                  <th className="text-left px-4 py-3">Reutilizável</th>
+                  <th className="text-left px-4 py-3">Usos</th>
                   <th className="text-left px-4 py-3">Criado em</th>
                   {isAdmin && <th className="text-right px-4 py-3">Ações</th>}
                 </tr>
