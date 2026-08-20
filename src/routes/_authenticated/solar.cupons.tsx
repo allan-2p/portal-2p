@@ -498,9 +498,19 @@ function CuponsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.validade}</td>
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                      {c.inicio ? `${c.inicio} → ${c.validade}` : `até ${c.validade}`}
+                    </td>
                     <td className="px-4 py-3">{c.cliente ?? <span className="text-muted-foreground">Todos</span>}</td>
-                    <td className="px-4 py-3">{c.reutilizavel ? "Sim" : "Não"}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {c.usos}
+                      {c.limiteUsos != null ? ` / ${c.limiteUsos}` : c.reutilizavel ? " / ∞" : " / 1"}
+                      {c.esgotado && (
+                        <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-destructive/15 text-destructive">
+                          Esgotado
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{c.criadoEm}</td>
                     {isAdmin && (
                       <td className="px-4 py-3 text-right">
