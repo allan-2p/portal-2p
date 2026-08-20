@@ -36,6 +36,7 @@ export type SalvarPropostaInput = {
   faturarClienteFinal: boolean;
   faturamento: Record<string, string | boolean>;
   formaPagamento: string | null;
+  condicaoPagamento: string | null;
   entregaDiferente: boolean;
   entrega: Record<string, string>;
   freteMod: string;
@@ -162,6 +163,9 @@ function validar(input: any): SalvarPropostaInput {
       String(input.formaPagamento),
     )
       ? String(input.formaPagamento)
+      : null,
+    condicaoPagamento: input.condicaoPagamento
+      ? String(input.condicaoPagamento).trim().toUpperCase()
       : null,
     entregaDiferente: !!input.entregaDiferente,
     entrega: entregaNormalizada,
@@ -301,6 +305,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       faturarClienteFinal: data.faturarClienteFinal,
       faturamento: data.faturamento as unknown as CarregadoresState["faturamento"],
       formaPagamento: (data.formaPagamento ?? "") as CarregadoresState["formaPagamento"],
+      condicaoPagamento: data.condicaoPagamento ?? "",
       entregaDiferente: data.entregaDiferente,
       entrega: data.entrega as unknown as CarregadoresState["entrega"],
       freteMod: data.freteMod as CarregadoresState["freteMod"],
@@ -380,6 +385,8 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       faturar_cliente_final: data.faturarClienteFinal,
       faturamento: data.faturarClienteFinal ? data.faturamento : {},
       forma_pagamento: data.formaPagamento,
+      condicao_pagamento_codigo: cond.codigo,
+      condicao_pagamento_descricao: cond.descricao,
       entrega_diferente: data.entregaDiferente,
       entrega: data.entrega,
       frete_mod: data.freteMod,
