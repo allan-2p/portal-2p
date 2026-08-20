@@ -35,6 +35,8 @@ export type SolarCupom = {
   valor: number;
   percentual: number;
   validade: string;
+  validade_inicio: string | null;
+  limite_usos: number | null;
   reutilizavel: boolean;
   cliente_doc: string | null;
   cliente_nome: string | null;
