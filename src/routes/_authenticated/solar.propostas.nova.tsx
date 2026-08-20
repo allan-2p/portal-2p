@@ -935,6 +935,7 @@ function NovaPropostaSolarPage() {
         e.push("Complete os dados de faturamento do cliente final.");
     }
     if (etapa === 3) {
+      if (ehKit === null) e.push("Informe se a venda é kit.");
       if (!itens.length) e.push("Adicione ao menos um produto.");
       if (modo === "calculadora") {
         if (!assinaturaCalc) e.push("Execute o cálculo da estrutura antes de avançar.");
