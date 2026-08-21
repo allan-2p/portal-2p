@@ -136,9 +136,13 @@ export function proximoStatus(atual: string, c: ConsultaSap): StatusNf | null {
 
   let alvo = base;
   const picking = (c.picking ?? "").toUpperCase();
+  // Qualquer sinal de picking no SAP significa que a ordem já está liberada:
+  // NOK = liberada mas ainda não separada → Processando.
+  if (picking) alvo = Math.max(alvo, ORDEM.indexOf("Processando"));
   if (picking === "AOK" || picking === "OK") alvo = Math.max(alvo, ORDEM.indexOf("Separação"));
   if (c.nfNumero) alvo = Math.max(alvo, ORDEM.indexOf("Faturado"));
   if ((c.romaneio ?? "").toUpperCase() === "OK") alvo = Math.max(alvo, ORDEM.indexOf("Coletado"));
+
 
   return alvo > base ? (ORDEM[alvo] as StatusNf) : null;
 }
