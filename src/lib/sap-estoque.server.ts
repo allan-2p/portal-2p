@@ -44,14 +44,17 @@ export type ContainerRow = {
   n_weight_un: number;
 };
 
-/** SAP devolve negativos com o sinal no fim ("123-"). */
+/** SAP devolve negativos com o sinal no fim ("123-") e decimal com PONTO. */
 export function num(v: unknown): number {
   if (v == null) return 0;
   let s = String(v).trim();
   if (s.endsWith("-")) s = "-" + s.slice(0, -1);
-  const n = parseFloat(s.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, ""));
+  s = s.replace(/[^\d.,-]/g, "");
+  // Ponto só é milhar quando há vírgula decimal junto ("1.234,56").
+  const n = parseFloat(s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : s);
   return Number.isFinite(n) ? n : 0;
 }
+
 
 const str = (v: unknown) => (v == null ? "" : String(v).trim());
 
