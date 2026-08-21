@@ -223,26 +223,27 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
 <body>
 <div class="page">
   <div class="hero">
-    <div class="brand">
-      <div class="mark">2P</div>
-      <div>
-        <div class="brandname">2P Solar</div>
-        <div class="brandsub">Estruturas e soluções fotovoltaicas</div>
+    <div class="heroin">
+      <div class="brand">
+        <img src="${LOGO_2P_DATA_URI}" alt="2P">
+        <div>
+          <div class="brandname">2P Solar</div>
+          <div class="brandsub">Estruturas e soluções fotovoltaicas</div>
+        </div>
+      </div>
+      <div class="hmeta">
+        Emissão <b>${esc(dataStr)}</b><br>
+        Validade <b>${esc(validade)}</b><br>
+        Consultor <b>${esc(p.consultor || "—")}</b>
       </div>
     </div>
-    <div class="hmeta">
-      Emissão <b>${esc(dataStr)}</b><br>
-      Validade <b>${esc(validade)}</b><br>
-      Consultor <b>${esc(p.consultor || "—")}</b>
+    <div class="herotitle">
+      <div class="kicker">Proposta comercial</div>
+      <div class="htitle">${esc(p.propostaNome?.trim() || "Proposta 2P Solar")}</div>
+      <div class="hnum">Nº ${esc(numero)}</div>
     </div>
   </div>
 
-  <div class="title">
-    <div class="kicker">Proposta comercial</div>
-    <div class="htitle">${esc(p.propostaNome?.trim() || "Proposta 2P Solar")}</div>
-    <div class="hnum">Nº ${esc(numero)}</div>
-  </div>
-  <div class="rule"></div>
 
   <div class="body">
     <div class="sec">
