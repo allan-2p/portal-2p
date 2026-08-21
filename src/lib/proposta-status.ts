@@ -67,10 +67,20 @@ export type PropostaMotor =
   | "webhook-fretefy"
   | "humano";
 
-/** Transições permitidas: destino → motor que dispara. */
-export const PROPOSTA_TRANSICOES: Record<PropostaStatus, Partial<Record<PropostaStatus, PropostaMotor>>> = {
+/**
+ * Transições permitidas: destino → motor (ou motores) que podem dispará-la.
+ *
+ * "Aguardando Pagamento" → "Processando" tem três motores: o pagamento
+ * (webhook/reconsulta do Pix), o cron do SAP (boleto a prazo/cartão, em que a
+ * ordem já existe e o financeiro libera direto no ERP) e a confirmação manual
+ * de pagamento feita no portal.
+ */
+export const PROPOSTA_TRANSICOES: Record<
+  PropostaStatus,
+  Partial<Record<PropostaStatus, PropostaMotor | PropostaMotor[]>>
+> = {
   "Salvo": { "Aguardando Pagamento": "checkout", "Processando": "checkout", "Cancelado": "humano" },
-  "Aguardando Pagamento": { "Processando": "pagamento", "Cancelado": "humano" },
+  "Aguardando Pagamento": { "Processando": ["pagamento", "cron-sap", "humano"], "Cancelado": "humano" },
   "Processando": { "Separação": "cron-sap", "Cancelado": "humano" },
   "Separação": { "Faturado": "cron-sap", "Cancelado": "humano" },
   "Faturado": { "Coletado": "cron-sap", "Cancelado": "humano" },
@@ -79,6 +89,9 @@ export const PROPOSTA_TRANSICOES: Record<PropostaStatus, Partial<Record<Proposta
   "Cancelado": {},
 };
 
+const motores = (v: PropostaMotor | PropostaMotor[] | undefined): PropostaMotor[] =>
+  v == null ? [] : Array.isArray(v) ? v : [v];
+
 /** A proposta só é editável enquanto rascunho (id 1). */
 export function propostaEditavel(status: string): boolean {
   return propostaStatusId(status) === PROPOSTA_STATUS_ID["Salvo"];
@@ -86,15 +99,16 @@ export function propostaEditavel(status: string): boolean {
 
 /** Cancelar é a única transição humana; não cancela pedido entregue/cancelado. */
 export function podeCancelarProposta(status: string): boolean {
-  return PROPOSTA_TRANSICOES[status as PropostaStatus]?.["Cancelado"] === "humano";
+  return motores(PROPOSTA_TRANSICOES[status as PropostaStatus]?.["Cancelado"]).includes("humano");
 }
 
 export function transicaoPermitida(de: string, para: string, motor?: PropostaMotor): PropostaMotor | null {
-  const m = PROPOSTA_TRANSICOES[de as PropostaStatus]?.[para as PropostaStatus] ?? null;
-  if (!m) return null;
-  if (motor && m !== motor) return null;
-  return m;
+  const lista = motores(PROPOSTA_TRANSICOES[de as PropostaStatus]?.[para as PropostaStatus]);
+  if (!lista.length) return null;
+  if (motor) return lista.includes(motor) ? motor : null;
+  return lista[0] ?? null;
 }
+
 
 export type PropostaStatusStyle = {
   /** classe de fundo para o "dot" */
