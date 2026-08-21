@@ -280,6 +280,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
     display:flex; justify-content:space-between; align-items:center; font-size:7.6px; color:var(--muted); letter-spacing:.05em; }
   .foot b{ color:var(--accent); font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
 
+  .card div, .client div, .f div, .cond p, td { overflow-wrap:anywhere; }
   /* Quebra de página segura — nada é cortado ao meio */
   .client, .panel, .rows, .total, .cond div, .f, tr, tfoot { break-inside:avoid; page-break-inside:avoid; }
   .sech { break-after:avoid; page-break-after:avoid; }
