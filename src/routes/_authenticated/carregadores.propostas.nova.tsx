@@ -722,6 +722,12 @@ function PropostaCarregadoresPage() {
   const errosFaturamento: { campo: string; msg: string }[] = [];
   if (state.faturarClienteFinal) {
     const fatDoc = soDigitos(state.faturamento.doc);
+    if (!finalidadeFat)
+      errosFaturamento.push({
+        campo: "fat_finalidade",
+        msg: "Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).",
+      });
+
     if (!state.faturamento.nome.trim())
       errosFaturamento.push({ campo: "fat_nome", msg: "Informe o cliente do faturamento." });
     if (fatDoc.length !== 11 && fatDoc.length !== 14)
