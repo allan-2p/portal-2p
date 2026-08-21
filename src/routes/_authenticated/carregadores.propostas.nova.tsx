@@ -85,7 +85,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { registrarConclusao } from "@/lib/carregadores-conclusao-log";
 import {
   salvarPropostaCarregadores,
-  atribuirNumeroSapFn,
+  consultarNumeroSapFn,
   obterPropostaFn,
   concluirPropostaFn,
 } from "@/lib/propostas.functions";
@@ -279,7 +279,7 @@ function PropostaCarregadoresPage() {
 
       setState({
         propostaNome: ((data as any).nome as string | null) ?? "",
-        numeroSap: dupId ? "" : (((data as any).numero_sap as string | null) ?? ""),
+        numeroSap: dupId ? "" : (((data as any).sap_ov_numero as string | null) ?? ""),
         nome: dupId ? `${data.cliente_nome}` : data.cliente_nome,
 
         telefone: data.cliente_telefone ?? "",
@@ -349,7 +349,7 @@ function PropostaCarregadoresPage() {
 
   const listClientes = useServerFn(listClientesFn);
   const salvarProposta = useServerFn(salvarPropostaCarregadores);
-  const atribuirNumeroSap = useServerFn(atribuirNumeroSapFn);
+  const consultarNumeroSap = useServerFn(consultarNumeroSapFn);
   const clientesQ = useQuery({
     queryKey: ["carregadores-clientes-cadastro"],
     queryFn: async () => {
@@ -1148,12 +1148,17 @@ function PropostaCarregadoresPage() {
             salesforce: (linha as any).salesforce ?? null,
             cobranca: (linha as any).cobranca ?? null,
           });
-          // Nº SAP só existe após a conclusão.
-          try {
-            const { numeroSap } = await atribuirNumeroSap({ data: { propostaId } });
-            if (numeroSap) setState((s) => ({ ...s, numeroSap }));
-          } catch {
-            /* o número pode ser atribuído depois; não bloqueia a conclusão */
+          // Nº SAP = VBELN devolvido pelo SAP na criação da OV. O portal nunca
+          // gera esse número: se o SAP não respondeu, o campo fica vazio.
+          const vbeln = String((linha as any)?.sapOv?.vbeln ?? "").trim();
+          if (vbeln) setState((s) => ({ ...s, numeroSap: vbeln }));
+          else {
+            try {
+              const { numeroSap } = await consultarNumeroSap({ data: { propostaId } });
+              setState((s) => ({ ...s, numeroSap: numeroSap ?? "" }));
+            } catch {
+              /* sem número por enquanto: o cron/reenvio grava quando o SAP responder */
+            }
           }
         }
 
@@ -1205,11 +1210,15 @@ function PropostaCarregadoresPage() {
           salesforce: (linha as any)?.salesforce ?? null,
           cobranca: (linha as any)?.cobranca ?? null,
         });
-        try {
-          const { numeroSap } = await atribuirNumeroSap({ data: { propostaId: inserida.id } });
-          if (numeroSap) setState((s) => ({ ...s, numeroSap }));
-        } catch {
-          /* o número pode ser atribuído depois; não bloqueia a conclusão */
+        const vbeln = String((linha as any)?.sapOv?.vbeln ?? "").trim();
+        if (vbeln) setState((s) => ({ ...s, numeroSap: vbeln }));
+        else {
+          try {
+            const { numeroSap } = await consultarNumeroSap({ data: { propostaId: inserida.id } });
+            setState((s) => ({ ...s, numeroSap: numeroSap ?? "" }));
+          } catch {
+            /* sem número por enquanto: o cron/reenvio grava quando o SAP responder */
+          }
         }
       }
 
