@@ -1152,6 +1152,26 @@ export const statusIntegracoesPedidoFn = createServerFn({ method: "POST" })
       const v = (row as Record<string, any>)[k];
       return v === undefined || v === null || v === "" ? null : String(v);
     };
+    // Última mensagem da auditoria de cobrança (o banco de propostas é externo
+    // e não tem coluna de erro; o histórico fica em integration_logs).
+    let cobrancaMensagem: string | null = null;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: logs } = await supabaseAdmin
+        .from("integration_logs")
+        .select("message, created_at")
+        .eq("slug", "pagamento.cobranca")
+        .contains("detail", { proposta_id: String(row["id"]) })
+        .order("created_at", { ascending: false })
+        .limit(1);
+      cobrancaMensagem = (logs?.[0]?.message as string | undefined) ?? null;
+    } catch {
+      cobrancaMensagem = null;
+    }
+
+    const forma = s("forma_pagamento");
+    const valorPag = Number((row as Record<string, any>)["pagamento_valor"] ?? 0);
+
     return {
       id: String(row["id"]),
       numero: s("numero"),
@@ -1171,9 +1191,55 @@ export const statusIntegracoesPedidoFn = createServerFn({ method: "POST" })
         mensagem: s("sf_mensagem"),
         enviado_em: s("sf_enviado_em"),
       },
+      cobranca: {
+        forma,
+        meio: s("pagamento_meio"),
+        status: s("pagamento_status"),
+        valor: valorPag > 0 ? valorPag : null,
+        vencimento: s("pagamento_vencimento"),
+        linhaDigitavel: s("pagamento_linha_digitavel"),
+        codigoBarras: s("pagamento_codigo_barras"),
+        nossoNumero: s("pagamento_nosso_numero"),
+        pixCopiaCola: s("pagamento_pix_copia_cola"),
+        url: s("pagamento_url"),
+        atualizado_em: s("pagamento_atualizado_em"),
+        mensagem: cobrancaMensagem,
+        aplicavel: forma === "boleto_vista" || forma === "pix",
+      },
       validacao: validarPedidoParaSap(row as Record<string, any>),
     };
   });
+
+/**
+ * Emissão / reemissão manual da cobrança do pedido (boleto à vista ou Pix).
+ * Usada pela tela de Integrações quando a emissão automática do checkout falha.
+ */
+export const gerarCobrancaPedidoFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { propostaId?: unknown; forcar?: unknown };
+    if (typeof i.propostaId !== "string" || !i.propostaId) throw new Error("Proposta inválida.");
+    return { propostaId: i.propostaId, forcar: i.forcar === true };
+  })
+  .handler(async ({ data, context }) => {
+    const { userId, claims } = context as { userId: string; claims?: { email?: string } };
+    const { gerarCobrancaCheckout } = await import("@/lib/pagamentos-cobranca.server");
+    const r = await gerarCobrancaCheckout(data.propostaId, {
+      forcar: data.forcar,
+      ator: { id: userId, email: claims?.email ?? null },
+    });
+    return {
+      gerada: r.gerada,
+      meio: r.meio ?? null,
+      motivo: r.motivo ?? null,
+      erro: r.erro ?? null,
+      txid: r.txid ?? null,
+      linhaDigitavel: r.linhaDigitavel ?? null,
+      vencimento: r.vencimento ?? null,
+      pixCopiaCola: r.pixCopiaCola ?? null,
+    };
+  });
+
 
 /**
  * Confirmação manual de pagamento (boleto a prazo e cartão de crédito, que não
