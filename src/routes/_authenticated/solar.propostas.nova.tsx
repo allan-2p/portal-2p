@@ -209,7 +209,7 @@ function NovaPropostaSolarPage() {
   const [modo, setModo] = useState<"calculadora" | "lista">("calculadora");
   const [listaPreco, setListaPreco] = useState("01");
   /** Venda em formato de kit — impacta regras comerciais/fiscais nas etapas seguintes. */
-  const [ehKit, setEhKit] = useState<boolean | null>(null);
+  const [ehKit, setEhKit] = useState<boolean>(false);
   /** Recusas do SAP na precificação (ex.: CNPJ sem parceiro) — bloqueiam o avanço. */
   const [avisosPreco, setAvisosPreco] = useState<string[]>([]);
   /** Listas independentes: o que está na calculadora não reflete na lista manual. */
@@ -994,7 +994,6 @@ function NovaPropostaSolarPage() {
         e.push("Cliente final marcado como contribuinte: informe a inscrição estadual.");
     }
     if (etapa === 3) {
-      if (ehKit === null) e.push("Informe se a venda é kit.");
       if (!itens.length) e.push("Adicione ao menos um produto.");
       if (modo === "calculadora") {
         if (!assinaturaCalc) e.push("Execute o cálculo da estrutura antes de avançar.");
@@ -1530,17 +1529,11 @@ function NovaPropostaSolarPage() {
                   <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
                     A venda é kit?
                   </div>
-                  <div
-                    className={cn(
-                      "relative grid grid-cols-2 gap-1 rounded-2xl border bg-surface-2 p-1",
-                      ehKit === null ? "border-amber-500/50" : "border-border",
-                    )}
-                  >
+                  <div className="relative grid grid-cols-2 gap-1 rounded-2xl border border-border bg-surface-2 p-1">
                     <span
                       aria-hidden
                       className={cn(
                         "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-primary/15 border border-primary/40 transition-all duration-300 ease-out",
-                        ehKit === null && "opacity-0",
                         ehKit === false && "translate-x-[calc(100%+0.25rem)]",
                       )}
                     />
@@ -1557,9 +1550,6 @@ function NovaPropostaSolarPage() {
                       onClick={() => setEhKit(false)}
                     />
                   </div>
-                  {ehKit === null && (
-                    <p className="text-[11px] text-amber-500 mt-1">Responda para avançar.</p>
-                  )}
                 </div>
 
                 {/* Tabela de preço — versão compacta */}
