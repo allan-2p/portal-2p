@@ -1547,15 +1547,13 @@ function NovaPropostaSolarPage() {
                     <SlideOpcao
                       ativo={ehKit === true}
                       icon={Package}
-                      titulo="Sim, é kit"
-                      descricao="Venda em kit"
+                      titulo="Sim"
                       onClick={() => setEhKit(true)}
                     />
                     <SlideOpcao
                       ativo={ehKit === false}
                       icon={ListPlus}
                       titulo="Não"
-                      descricao="Itens avulsos"
                       onClick={() => setEhKit(false)}
                     />
                   </div>
@@ -2785,7 +2783,7 @@ function SlideOpcao({
   onClick: () => void;
   icon: typeof Calculator;
   titulo: string;
-  descricao: string;
+  descricao?: string;
 }) {
   return (
     <button
@@ -2800,7 +2798,7 @@ function SlideOpcao({
       <Icon className={cn("h-5 w-5 shrink-0", ativo && "text-primary")} />
       <span className="min-w-0">
         <span className={cn("block text-sm truncate", ativo && "font-semibold")}>{titulo}</span>
-        <span className="block text-xs text-muted-foreground truncate">{descricao}</span>
+        {descricao && <span className="block text-xs text-muted-foreground truncate">{descricao}</span>}
       </span>
     </button>
   );
