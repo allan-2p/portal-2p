@@ -16,6 +16,7 @@ import { ArrowLeft, Calculator, ChevronLeft, ChevronRight, Pencil } from "lucide
 import { cidadeUf } from "@/lib/local-format";
 import { formatSapNumero } from "@/lib/sap-numero";
 import { NfDocumentosCard } from "@/components/nf-documentos-card";
+import { CobrancaCard } from "@/components/cobranca-card";
 
 
 type Item = { codigo?: string | null; nome?: string; qtd?: number; valor?: number };
