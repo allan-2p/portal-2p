@@ -32,16 +32,45 @@ export type OfertaResultado = {
 const SELECT =
   "id,numero,nome,cliente_nome,cliente_doc,entrega,frete_mod,frete_valor,transportadora_id,itens,totais,sap_ov_numero,fretefy_oferta_id,nf_numero,nf_serie,nf_chave";
 
-function enderecoDaProposta(row: Record<string, any>): Endereco {
+/**
+ * Endereço de entrega do pedido. Se o pedido não tiver entrega preenchida,
+ * cai para o endereço cadastrado do cliente (nunca envia destino vazio).
+ */
+async function enderecoDaProposta(row: Record<string, any>): Promise<Endereco> {
   const e = (row["entrega"] ?? {}) as Record<string, any>;
+  if (String(e["cidade"] ?? "").trim() && String(e["uf"] ?? "").trim()) {
+    return {
+      logradouro: e["logradouro"] ?? null,
+      numero: e["numero"] ?? null,
+      complemento: e["complemento"] ?? null,
+      cidade: e["cidade"] ?? null,
+      uf: e["uf"] ?? null,
+    };
+  }
+  try {
+    const { findClienteByDoc } = await import("./clientes-db.server");
+    const achado = await findClienteByDoc(String(row["cliente_doc"] ?? ""));
+    const c = (achado as any)?.cliente ?? achado ?? null;
+    if (c)
+      return {
+        logradouro: c["logradouro"] ?? null,
+        numero: c["numero"] ?? null,
+        complemento: c["complemento"] ?? null,
+        cidade: c["cidade"] ?? null,
+        uf: c["uf"] ?? null,
+      };
+  } catch {
+    /* sem cadastro: segue com o que o pedido tem */
+  }
   return {
     logradouro: e["logradouro"] ?? null,
     numero: e["numero"] ?? null,
     complemento: e["complemento"] ?? null,
     cidade: e["cidade"] ?? null,
-    uf: e["uf"] ?? row["uf"] ?? null,
+    uf: row["uf"] ?? null,
   };
 }
+
 
 /** Peso bruto total do pedido, pela mesma simulação do SAP usada na cotação. */
 async function pesoDoPedido(itens: any[]): Promise<number> {
