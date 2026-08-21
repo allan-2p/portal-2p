@@ -1262,16 +1262,17 @@ function NovaPropostaSolarPage() {
                 {tentou && !propostaNome.trim() && <Erro>Obrigatório.</Erro>}
               </Campo>
               <Campo label="Cliente *">
-                <Select value={clienteDoc} onValueChange={setClienteDoc}>
-                  <SelectTrigger><SelectValue placeholder="Pesquisar no cadastro de clientes" /></SelectTrigger>
-                  <SelectContent className="max-h-[320px]">
-                    {(clientesQ.data ?? []).map((c: any) => (
-                      <SelectItem key={String(c.id)} value={String(c.doc)}>
-                        {c.razao_social} — {c.doc}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SeletorPesquisavel
+                  value={clienteDoc}
+                  onValueChange={setClienteDoc}
+                  opcoes={(clientesQ.data ?? []).map((c: any) => ({
+                    value: String(c.doc),
+                    label: `${c.razao_social} — ${c.doc}`,
+                  }))}
+                  placeholder="Digite para pesquisar no cadastro de clientes"
+                  vazio="Nenhum cliente encontrado."
+                />
+
                 {tentou && !cliente && <Erro>Selecione o cliente.</Erro>}
               </Campo>
               <Campo label="O projeto já foi vendido para o cliente final?">
