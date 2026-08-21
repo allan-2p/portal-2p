@@ -95,11 +95,18 @@ export function PedidoIntegracoesDialog({
     mutationFn: async (opts: { testrun?: boolean; forcar?: boolean }) =>
       sapFn({ data: { propostaId: propostaId!, ...opts } }),
     onSuccess: (r: any) => {
-      toast.success(r?.vbeln ? `Ordem de venda ${r.vbeln} no SAP.` : (r?.mensagem ?? "SAP respondeu com sucesso."));
+      // O envio ao SAP não lança: falha vem como ok=false. Sem esta checagem
+      // o usuário via "sucesso" mesmo quando a ordem não foi criada.
+      if (r && r.ok === false) {
+        toast.error(r?.mensagem ?? "O SAP recusou a ordem de venda.", { duration: 12000 });
+      } else {
+        toast.success(r?.vbeln ? `Ordem de venda ${r.vbeln} no SAP.` : (r?.mensagem ?? "SAP respondeu com sucesso."));
+      }
       atualizar();
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha no envio ao SAP."),
   });
+
 
   const sf = useMutation({
     mutationFn: async (forcar: boolean) => sfFn({ data: { propostaId: propostaId!, forcar } }),

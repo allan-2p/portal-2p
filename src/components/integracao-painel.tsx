@@ -127,12 +127,15 @@ function Acao({ item, painel }: { item: PendenciaItem; painel: "sap" | "salesfor
       if (item.acao === "cron" && item.job) return rodarJob({ data: { job: item.job as never } });
       throw new Error("Nada a reprocessar neste item.");
     },
-    onSuccess: () => {
-      toast.success("Reprocessamento executado");
+    onSuccess: (r: any) => {
+      // Reprocessos que não lançam (SAP/Salesforce) devolvem ok=false.
+      if (r && r.ok === false) toast.error(r?.mensagem ?? "O reprocessamento falhou.", { duration: 12000 });
+      else toast.success("Reprocessamento executado");
       qc.invalidateQueries({ queryKey: ["painel-integracao", painel] });
       qc.invalidateQueries({ queryKey: ["integration-logs"] });
       qc.invalidateQueries({ queryKey: ["job-runs"] });
     },
+
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha no reprocessamento"),
   });
 
