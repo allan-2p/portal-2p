@@ -237,10 +237,8 @@ export async function sincronizarPedidoSalesforce(
       so(row["previsao_fechamento"]).slice(0, 10) ||
       String(row["created_at"] ?? new Date().toISOString()).slice(0, 10);
 
-    const nomeOpp = [numero ? `Pedido ${numero}` : "Pedido", so(row["nome"]) || clienteNome]
-      .filter(Boolean)
-      .join(" — ")
-      .slice(0, 120);
+    // Padrão do Opportunity Name: "número da proposta - nome da proposta".
+    const nomeOpp = [numero, so(row["nome"]) || clienteNome].filter(Boolean).join(" - ").slice(0, 120);
 
     const corpoBase: Record<string, unknown> = {
       Name: nomeOpp,
@@ -253,42 +251,57 @@ export async function sincronizarPedidoSalesforce(
     const owner = await ownerSfId(row["created_by"]);
     if (owner) corpoBase["OwnerId"] = owner;
 
-    // Campos customizados podem não existir na org: tentamos com eles e,
-    // se o Salesforce recusar, repetimos apenas com os padrões.
-    const comCustom = {
-      ...corpoBase,
+    // Campos customizados: se a org recusar um deles, ele é removido e o envio
+    // é refeito — os demais continuam sendo gravados.
+    const custom: Record<string, unknown> = {
       Numero_Pedido_Portal__c: numero || null,
       Numero_SAP__c: so(row["sap_ov_numero"]) || so(row["numero_sap"]) || null,
+      Status_do_Pedido__c: so(row["status"]) || null,
     };
+    const org = orgOportunidade(row);
+    if (org) custom["Org_Oportunidade__c"] = org;
 
-    // Com "Forçar", o envio é refeito por completo: atualiza a Opportunity
-    // existente (PATCH) ou recria quando a proposta não tem sf_opp_id válido.
-    let oppId: string | null = existente || null;
+    // Vínculo: usa o sf_opp_id da proposta; se não houver, procura a
+    // oportunidade já existente do mesmo pedido antes de criar uma nova.
+    let oppId: string | null = existente || (await acharOpp(numero, nomeOpp));
+
     const enviar = (corpo: Record<string, unknown>) =>
       oppId
         ? sf(`/sobjects/Opportunity/${oppId}`, { method: "PATCH", body: JSON.stringify(corpo) })
         : sf(`/sobjects/Opportunity`, { method: "POST", body: JSON.stringify(corpo) });
 
+    let corpo: Record<string, unknown> = { ...corpoBase, ...custom };
     let res: any;
-    try {
-      res = await enviar(comCustom);
-    } catch (err) {
-      const msg = (err as Error).message;
-      if (/No such column|INVALID_FIELD|Unable to create\/update fields/i.test(msg)) {
-        res = await enviar(corpoBase);
-      } else if (oppId && /NOT_FOUND|INVALID_CROSS_REFERENCE_KEY|entity is deleted/i.test(msg)) {
-        // A Opportunity gravada na proposta não existe mais na org: recria.
-        oppId = null;
-        res = await enviar(comCustom);
-      } else {
+    for (let tentativa = 1; ; tentativa++) {
+      try {
+        res = await enviar(corpo);
+        break;
+      } catch (err) {
+        const msg = (err as Error).message;
+        const campoInvalido = camposInvalidos(msg).filter((c) => c in corpo);
+        if (campoInvalido.length && tentativa <= 6) {
+          corpo = { ...corpo };
+          for (const c of campoInvalido) delete corpo[c];
+          continue;
+        }
+        if (/No such column|INVALID_FIELD|Unable to create\/update fields/i.test(msg) && tentativa <= 6) {
+          corpo = { ...corpoBase };
+          continue;
+        }
+        if (oppId && /NOT_FOUND|INVALID_CROSS_REFERENCE_KEY|entity is deleted/i.test(msg) && tentativa <= 6) {
+          // A oportunidade vinculada não existe mais na org: cria outra.
+          oppId = null;
+          continue;
+        }
         throw err;
       }
     }
+    const atualizou = Boolean(oppId);
     oppId = oppId ?? res?.id ?? null;
     if (!oppId) throw new Error("Salesforce não retornou o ID da oportunidade.");
 
+    const mensagem = atualizou ? `Oportunidade ${oppId} atualizada.` : `Oportunidade ${oppId} criada.`;
 
-    const mensagem = existente ? `Oportunidade ${oppId} atualizada.` : `Oportunidade ${oppId} criada.`;
     await gravar(propostaId, {
       sf_opp_id: oppId,
       sf_account_id: accountId,
