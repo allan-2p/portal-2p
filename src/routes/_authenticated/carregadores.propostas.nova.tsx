@@ -79,6 +79,8 @@ import {
   avisoDifalUsoConsumo,
   operacaoInterna,
   precoParaMargem,
+  aliquotasDoItem,
+  destinoFiscal,
 } from "@/lib/carregadores";
 import { ratearComissao, VALOR_INDICACAO, type Regime, type RateioLinha } from "@/lib/carregadores-comissao";
 import { useAuth } from "@/hooks/use-auth";
