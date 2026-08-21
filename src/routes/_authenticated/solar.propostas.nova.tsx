@@ -2556,8 +2556,14 @@ function NovaPropostaSolarPage() {
                 />
                 <TotalRow
                   label={`Frete (${freteMod || "—"})`}
-                  value={bonificado ? `Frete grátis (${fmtBRL(freteValor)})` : freteGratis ? "Grátis" : fmtBRL(freteValor)}
-                  hint={transportadora?.nome ?? undefined}
+                  value={bonificado || freteGratis ? "Frete grátis" : fmtBRL(freteValor)}
+                  hint={
+                    bonificado
+                      ? `Frete grátis · ${fmtBRL(freteValor)} absorvido pela 2P${transportadora?.nome ? ` · ${transportadora.nome}` : ""}`
+                      : freteGratis
+                        ? `Frete grátis pelo cupom${transportadora?.nome ? ` · ${transportadora.nome}` : ""}`
+                        : (transportadora?.nome ?? undefined)
+                  }
                 />
                 <TotalRow label="Total da proposta" value={fmtBRL(total)} strong hint="Subtotal - desconto + frete" />
               </div>
