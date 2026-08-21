@@ -153,9 +153,10 @@ describe("Recalculo dos itens", () => {
     const comFrete = calc(estado({ freteMod: "CIF", freteValor: 300 }));
     expect(comFrete.valorItens).toBeCloseTo(semFrete.valorItens, 10);
     expect(comFrete.valorTotalProposta).toBeCloseTo(semFrete.valorTotalProposta + 300, 6);
-    // frete entra na base do ICMS → imposto maior e margem menor
-    expect(comFrete.icms).toBeGreaterThan(semFrete.icms);
-    expect(comFrete.mb).toBeLessThan(semFrete.mb);
+    // frete vai por fora: não entra na base de ICMS/DIFAL nem na MB
+    expect(comFrete.icms).toBeCloseTo(semFrete.icms, 10);
+    expect(comFrete.mb).toBeCloseTo(semFrete.mb, 10);
+
   });
 
   it("zera totais quando não há itens válidos", () => {
