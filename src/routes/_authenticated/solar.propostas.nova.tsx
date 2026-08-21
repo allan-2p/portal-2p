@@ -255,6 +255,9 @@ function NovaPropostaSolarPage() {
   const [freteBonificado, setFreteBonificado] = useState(false);
   const [areaRural, setAreaRural] = useState(false);
   const [transportadora, setTransportadora] = useState<CarregadoresTransportadora | null>(null);
+  // Cotação de frete em andamento — trava avanço/salvamento para não gravar sem o frete.
+  const [freteCotando, setFreteCotando] = useState(false);
+
 
   // Etapa 5
   const [cupomCodigo, setCupomCodigo] = useState("");
