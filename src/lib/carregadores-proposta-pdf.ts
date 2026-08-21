@@ -1,4 +1,4 @@
-import { fmtBRL, fmtPct } from "@/lib/carregadores";
+import { fmtBRL, fmtPct, FRETE_ABSORVIDO } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
 
 export type PropostaPdfItem = {
@@ -356,7 +356,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
         <tfoot><tr>
           <td colspan="${temFoto ? 3 : 2}">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
 
-          <td colspan="3" class="r">Frete ${esc(p.freteMod)} · <b style="color:var(--ink)">${fmtBRL(p.freteValor)}</b></td>
+          <td colspan="3" class="r">Frete ${esc(p.freteMod)}${FRETE_ABSORVIDO.includes(p.freteMod as any) ? " · <b>Frete grátis</b>" : ""}</td>
         </tr></tfoot>
       </table>
     </div>
@@ -374,7 +374,11 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
         <h4>Resumo</h4>
         <div class="rows">
           <div class="row"><span>Equipamentos</span><b>${fmtBRL(p.totalNf - p.freteValor)}</b></div>
-          <div class="row"><span>Frete (${esc(p.freteMod)})</span><b>${fmtBRL(p.freteValor)}</b></div>
+          <div class="row"><span>Frete (${esc(p.freteMod)})</span><b>${
+            FRETE_ABSORVIDO.includes(p.freteMod as any)
+              ? `Frete grátis${p.freteValor > 0 ? ` <span style="font-weight:400;text-decoration:line-through;opacity:.6">${fmtBRL(p.freteValor)}</span>` : ""}`
+              : fmtBRL(p.freteValor)
+          }</b></div>
           <div class="row"><span>Total da nota fiscal</span><b>${fmtBRL(p.totalNf)}</b></div>
         </div>
       </div>
