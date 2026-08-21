@@ -441,10 +441,17 @@ function NovaPropostaSolarPage() {
     return Math.ceil((paineisNasLinhas || Number(paineis) || 0) / Math.max(1, m.modulos_por_unidade));
   }, [microinversoresQ.data, microModelo, paineis, paineisNasLinhas]);
 
-  /** Trilhos Smart/Zipado não usam vão entre apoios nem balanço. */
+  /** Trilhos Smart 10 / Zipado / Laje 10 / Smart 3.4 não usam vão nem balanço. */
+  const SEM_VAO_LEGADOS = [3, 4, 5, 7];
   function semVao(l: FileiraCalc) {
     const t = (trilhosQ.data ?? []).find((x) => x.id === l.trilhoId);
-    return /smart|zipad/i.test(`${t?.nome ?? ""} ${t?.familia ?? ""}`);
+    return SEM_VAO_LEGADOS.includes(t?.legado_id ?? 0);
+  }
+
+  /** Orientação travada pelo trilho (Laje 10 = Paisagem). */
+  function orientacaoTravada(l: FileiraCalc): "R" | "P" | null {
+    const t = (trilhosQ.data ?? []).find((x) => x.id === l.trilhoId);
+    return (t?.orientacao_fixa as "R" | "P" | null) || null;
   }
 
   /**
@@ -462,6 +469,38 @@ function NovaPropostaSolarPage() {
   }
 
 
+  /**
+   * Trilhos com suporte único (Zipado, Laje 10) auto-selecionam o suporte e,
+   * quando o trilho define orientação fixa, ela é aplicada e fica travada.
+   */
+  useEffect(() => {
+    const trilhos = trilhosQ.data ?? [];
+    const suportes = suportesQ.data ?? [];
+    if (!trilhos.length || !suportes.length) return;
+    setLinhas((prev) => {
+      let mudou = false;
+      const next = prev.map((l) => {
+        const t = trilhos.find((x) => x.id === l.trilhoId);
+        if (!t) return l;
+        let out = l;
+        if (t.suporte_fixo_legado) {
+          const s = suportes.find((x) => x.legado_id === t.suporte_fixo_legado);
+          if (s && out.suporteId !== s.id) {
+            out = { ...out, suporteId: s.id };
+            mudou = true;
+          }
+        }
+        const fixa = (t.orientacao_fixa as "R" | "P" | null) || null;
+        if (fixa && out.orientacao !== fixa) {
+          out = { ...out, orientacao: fixa };
+          mudou = true;
+        }
+        return out;
+      });
+      return mudou ? next : prev;
+    });
+  }, [trilhosQ.data, suportesQ.data, linhas.map((l) => l.trilhoId).join("|")]);
+
   /** Preenche vão máximo e balanço com os padrões da calculadora (editáveis). */
   useEffect(() => {
     setLinhas((prev) => {
@@ -469,7 +508,7 @@ function NovaPropostaSolarPage() {
       const next = prev.map((l) => {
         const t = (trilhosQ.data ?? []).find((x) => x.id === l.trilhoId);
         if (!t) return l;
-        const sem = /smart|zipad/i.test(`${t.nome ?? ""} ${t.familia ?? ""}`);
+        const sem = SEM_VAO_LEGADOS.includes(t.legado_id ?? 0);
         if (sem) {
           if (l.distMax || l.balanco) {
             mudou = true;
@@ -1744,6 +1783,7 @@ function NovaPropostaSolarPage() {
                               <td className="py-2 px-2">
                                 <Select
                                   value={l.orientacao}
+                                  disabled={!!orientacaoTravada(l)}
                                   onValueChange={(v) =>
                                     setLinhas((p) =>
                                       p.map((x) =>

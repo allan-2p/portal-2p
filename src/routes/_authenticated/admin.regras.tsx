@@ -84,6 +84,7 @@ function Calculadora2P() {
       cod_kit_parafuso_smart: (c as any).cod_kit_parafuso_smart ?? "",
       cod_terminal_m8: (c as any).cod_terminal_m8 ?? "",
       cod_terminal_zmi: (c as any).cod_terminal_zmi ?? "",
+      cod_terminal_zmil: (c as any).cod_terminal_zmil ?? "",
     });
 
   }, [cfgQ.data]);
@@ -112,6 +113,7 @@ function Calculadora2P() {
       cod_kit_parafuso_smart: form['cod_kit_parafuso_smart'] ?? "",
       cod_terminal_m8: form['cod_terminal_m8'] ?? "",
       cod_terminal_zmi: form['cod_terminal_zmi'] ?? "",
+      cod_terminal_zmil: form['cod_terminal_zmil'] ?? "",
     };
     const { error } = await supabase.from("solar_calc_config").update(payload).eq("id", 1);
     setSalvando(false);
@@ -239,6 +241,7 @@ function Calculadora2P() {
           {campo("cod_kit_parafuso_smart", "Código — kit parafuso Smart")}
           {campo("cod_terminal_m8", "Código — terminal M8")}
           {campo("cod_terminal_zmi", "Código — terminal ZMI")}
+          {campo("cod_terminal_zmil", "Código — terminal ZMIL (LAJE 10)")}
 
         </div>
         <Button onClick={() => void salvar()} disabled={salvando}>

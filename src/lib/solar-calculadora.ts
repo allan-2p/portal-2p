@@ -77,6 +77,7 @@ export type SolarCalcConfig = {
   cod_kit_parafuso_smart: string;
   cod_terminal_m8: string;
   cod_terminal_zmi: string;
+  cod_terminal_zmil: string;
 };
 
 export const SOLAR_CALC_CONFIG_FALLBACK: SolarCalcConfig = {
@@ -98,6 +99,7 @@ export const SOLAR_CALC_CONFIG_FALLBACK: SolarCalcConfig = {
   cod_kit_parafuso_smart: "100000052",
   cod_terminal_m8: "2P-M8",
   cod_terminal_zmi: "2P-ZMI",
+  cod_terminal_zmil: "2P-ZMIL",
 };
 
 

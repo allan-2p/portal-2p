@@ -205,6 +205,7 @@ function quantificarFileira(
   } else {
     // ===================== TELHADO SMART / MINI-TRILHO =====================
     // Não usa barras 2P-TC; os grampos alimentam tot_grampo. php:2794-2909
+    const leg = f.suporte.legado_id ?? 0;
     let totGrampo = 0;
     if (m.espessura >= cfg.espessura_min && m.espessura <= cfg.espessura_max) {
       const inter = (f.qtd_paineis - 1) * 2 * qf;
@@ -214,15 +215,13 @@ function quantificarFileira(
       totGrampo = inter + fim; // soma grampos EXCETO GAT. php:2853-2859
     }
 
-    // 1ª fileira com microinversor no suporte legado 9 (modelos 1..4):
-    // GAT, mini-trilho e kit somam +microinversores. php:2808-2867
-    const extraMicro =
-      primeira &&
-      (f.suporte.legado_id ?? 0) === 9 &&
-      ctx.tipo_gerador === 1 &&
-      [1, 2, 3, 4].includes(ctx.modelo_gerador)
+    // 1ª fileira com microinversor modelo 1..4: GAT, mini-trilho (famílias MTL/
+    // MINI300) e kit parafuso somam +microinversores. php:2808-2903
+    const micro1a =
+      primeira && ctx.tipo_gerador === 1 && [1, 2, 3, 4].includes(ctx.modelo_gerador)
         ? ctx.microinversores
         : 0;
+    const extraMicro = leg === 9 ? micro1a : 0; // GAT só no suporte 9. php:2808
 
     add(
       "terminal_aterramento",
@@ -231,31 +230,50 @@ function quantificarFileira(
       qf + extraMicro,
     );
 
-    // mini-trilho + kit parafuso = tot_grampo. php:2861-2909
-    add(
-      "mini_trilho",
-      f.suporte.cod_mini_trilho ?? f.suporte.codigo_sap,
-      `${f.suporte.nome} — mini trilho`,
-      totGrampo + extraMicro,
-    );
-    add("kit_parafuso_smart", cfg.cod_kit_parafuso_smart, "Kit parafuso Smart", totGrampo + extraMicro);
+    if (leg === 13) {
+      // LAJE 10 — dois itens próprios, tot_grampo / 2 cada. php:2954-2955
+      const metade = totGrampo / 2;
+      add("laje10_a", f.suporte.codigo_sap, `${f.suporte.nome} — A`, metade);
+      add("laje10_b", f.suporte.cod_extra ?? null, `${f.suporte.nome} — B`, metade);
+    } else if (leg === 14) {
+      // Zipado — produto próprio; +micro quando gerador 1, 2 ou 4. php:2956-2957
+      const extraZip = [1, 2, 4].includes(ctx.tipo_gerador) ? ctx.microinversores : 0;
+      add("zipado", f.suporte.codigo_sap, f.suporte.nome, totGrampo + extraZip);
+    } else {
+      // Mini-trilho POR suporte. As famílias 2P-MTL* e 2P-MINI300 somam +micro
+      // na 1ª fileira; os minis 3.4 (100000317/318/319) não. php:2870-2909
+      const codMini = f.suporte.cod_mini_trilho ?? f.suporte.codigo_sap;
+      const somaMicro = /^2P-(MTL|MINI)/i.test(String(codMini ?? "")) ? micro1a : 0;
+      add("mini_trilho", codMini, `${f.suporte.nome} — mini trilho`, totGrampo + somaMicro);
+    }
+
+    // Kit parafuso Smart — só suportes 9, 10, 15, 16, 17 e 20. php:2861
+    if ([9, 10, 15, 16, 17, 20].includes(leg)) {
+      add("kit_parafuso_smart", cfg.cod_kit_parafuso_smart, "Kit parafuso Smart", totGrampo + micro1a);
+    }
   }
 
 
   // Terminais de microinversor (uma vez por projeto; ver quantificarProjeto). php:2720-2735
-  if ((ctx.tipo_gerador === 1 && ctx.modelo_gerador === 5) || ctx.tipo_gerador === 2) {
+  if ((f.suporte.legado_id ?? 0) === 13) {
+    // LAJE 10 não recebe ZMI nem M8*20 — recebe ZMIL. php:2931-2938
+    if (ctx.tipo_gerador !== 3) {
+      const q =
+        ctx.tipo_gerador === 1 && [1, 2, 3].includes(ctx.modelo_gerador)
+          ? ctx.microinversores * 2
+          : ctx.microinversores;
+      add("terminal_zmil", cfg.cod_terminal_zmil, "Terminal ZMIL", q);
+    }
+  } else if ((ctx.tipo_gerador === 1 && ctx.modelo_gerador === 5) || ctx.tipo_gerador === 2) {
     add("terminal_m8", cfg.cod_terminal_m8, "Terminal M8", ctx.microinversores);
-  } else if (
-    (f.suporte.legado_id ?? 0) !== 13 &&
-    ctx.tipo_gerador !== 3 &&
-    ctx.tipo_gerador !== 2
-  ) {
+  } else if (ctx.tipo_gerador !== 3 && ctx.tipo_gerador !== 2) {
     const q =
       ctx.tipo_gerador === 1 && [1, 2, 3].includes(ctx.modelo_gerador)
         ? ctx.microinversores * 2
         : ctx.microinversores;
     add("terminal_zmi", cfg.cod_terminal_zmi, "Terminal ZMI", q);
   }
+
 
   return out;
 }
@@ -308,7 +326,7 @@ export function quantificarProjeto(
   const distribuicao: number[] = [];
   const comprimentos: number[] = [];
   // Terminais de microinversor são calculados UMA vez no projeto. php:!isset(qtd)
-  const feito = { terminal_m8: false, terminal_zmi: false };
+  const feito: Record<string, boolean> = {};
 
   fileiras.forEach((f, idx) => {
     for (let k = 0; k < f.qtd_fileiras; k++) distribuicao.push(f.qtd_paineis);
@@ -316,7 +334,7 @@ export function quantificarProjeto(
 
     for (const c of quantificarFileira(f, modulo, ctxFinal, cfg, idx === 0)) {
 
-      if (c.chave === "terminal_m8" || c.chave === "terminal_zmi") {
+      if (c.chave === "terminal_m8" || c.chave === "terminal_zmi" || c.chave === "terminal_zmil") {
         if (feito[c.chave]) continue;
         feito[c.chave] = true;
       }
@@ -354,6 +372,8 @@ function campoDePara(chave: string): Pick<PendenciaDePara, "origem" | "campo"> {
   if (chave.startsWith("fixador_extra_")) return { origem: "Suportes", campo: "Código complemento" };
   if (chave.startsWith("fixador_sup")) return { origem: "Suportes", campo: "Código SAP" };
   if (chave === "mini_trilho") return { origem: "Suportes", campo: "Código do mini trilho" };
+  if (chave === "laje10_a" || chave === "zipado") return { origem: "Suportes", campo: "Código SAP" };
+  if (chave === "laje10_b") return { origem: "Suportes", campo: "Código complemento" };
   const cfgCampos: Record<string, string> = {
     juncao: "Código da junção",
     grampo_intermediario: "Código do grampo intermediário",
@@ -362,6 +382,7 @@ function campoDePara(chave: string): Pick<PendenciaDePara, "origem" | "campo"> {
     kit_parafuso_smart: "Código do kit parafuso Smart",
     terminal_m8: "Código do terminal M8",
     terminal_zmi: "Código do terminal ZMI",
+    terminal_zmil: "Código do terminal ZMIL",
   };
   return {
     origem: "Configuração da calculadora",
