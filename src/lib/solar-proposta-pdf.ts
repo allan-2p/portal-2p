@@ -132,12 +132,14 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4; margin: 0; }
+  @page { size: A4; margin: 12mm 0 14mm; }
+  @page :first { margin-top: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root{ --ink:#101418; --muted:#7A838F; --line:#E7EAEF; --accent:#F5A524; --accent-2:#FFCE5C; --soft:#FBF8F2; }
   html,body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body{ font-family:'Inter',Arial,Helvetica,sans-serif; color:var(--ink); background:#fff; font-size:9.6px; }
-  .page{ width:210mm; min-height:297mm; margin:0 auto; padding:0 0 18mm; position:relative; display:flex; flex-direction:column; }
+  .page{ width:210mm; margin:0 auto; padding:0; position:relative; }
+
 
   .hero{ padding:12mm 14mm 7mm; display:flex; justify-content:space-between; align-items:flex-start; }
   .brand{ display:flex; align-items:center; gap:9px; }
@@ -154,7 +156,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
   .hnum{ font-size:9px; color:var(--muted); margin-top:3px; letter-spacing:.12em; }
   .rule{ height:2px; margin:0 14mm; background:linear-gradient(90deg,var(--accent),var(--accent-2),rgba(245,165,36,.05)); border-radius:2px; }
 
-  .body{ padding:7mm 14mm 0; flex:1; }
+  .body{ padding:7mm 14mm 0; }
   .sec{ margin-top:6mm; }
   .sech{ display:flex; align-items:center; gap:7px; margin-bottom:3mm; }
   .sech span{ font-size:7.6px; letter-spacing:.26em; text-transform:uppercase; color:var(--muted); font-weight:700; white-space:nowrap; }
@@ -194,10 +196,20 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
   .cond label{ display:block; font-size:7.2px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:2px; }
   .cond p{ font-size:8.8px; line-height:1.5; }
 
-  .foot{ position:absolute; left:0; right:0; bottom:0; padding:4mm 14mm; border-top:1px solid var(--line);
+  
+  .foot{ margin-top:8mm; padding:4mm 14mm 0; border-top:1px solid var(--line);
     display:flex; justify-content:space-between; align-items:center; font-size:7.6px; color:var(--muted); letter-spacing:.05em; }
   .foot b{ color:var(--accent); font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
-  @media print{ .page{ margin:0 } }
+
+  .card div, .client div, .f div, .cond p, td { overflow-wrap:anywhere; }
+  .idx, .c, .r, tfoot td { white-space:nowrap; overflow-wrap:normal; }
+  /* Quebra de página segura — nada é cortado ao meio */
+  .card, .rows, .total, .cond div, .f, tr, tfoot { break-inside:avoid; page-break-inside:avoid; }
+  .sech { break-after:avoid; page-break-after:avoid; }
+  thead { display:table-header-group; }
+  tfoot { display:table-row-group; }
+  @media print{ .page{ margin:0; width:auto } }
+
 </style></head>
 <body>
 <div class="page">

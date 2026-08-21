@@ -435,3 +435,18 @@ html[data-area="admin"].dark {
   --atlas: oklch(0.7 0.12 165);
   --chart-1: oklch(0.66 0.12 165);
 }
+
+/* === Tabelas em telas estreitas (janela reduzida / tela dividida) ===
+   Em vez de espremer colunas e quebrar texto caractere a caractere,
+   a tabela ganha rolagem horizontal própria e as células não quebram.
+   Células que precisam quebrar podem usar `whitespace-normal`. */
+:where(table) :where(th, td) {
+  white-space: nowrap;
+}
+:where(table.w-full) {
+  display: block;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}

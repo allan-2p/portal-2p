@@ -177,7 +177,8 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4; margin: 0; }
+  @page { size: A4; margin: 12mm 0 14mm; }
+  @page :first { margin-top: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root{
     --ink:#060B18; --ink-2:#16213c; --muted:#78859C; --line:#E2E8F2;
@@ -185,7 +186,8 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   }
   html,body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body{ font-family:'Inter',Arial,Helvetica,sans-serif; color:var(--ink); background:#fff; font-size:9.6px; }
-  .page{ width:210mm; min-height:297mm; margin:0 auto; padding:0 0 16mm; position:relative; display:flex; flex-direction:column; }
+  .page{ width:210mm; margin:0 auto; padding:0; position:relative; }
+
 
   /* HEADER */
   .hero{ background:linear-gradient(120deg,#060B18 0%,#0C1730 55%,#12224A 100%); color:#fff; padding:10mm 14mm 8mm; position:relative; overflow:hidden; }
@@ -210,7 +212,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .hmeta b{ color:#fff; font-weight:600; }
   .accentbar{ height:3px; background:linear-gradient(90deg,var(--accent),var(--accent-2),rgba(47,107,255,.1)); }
 
-  .body{ padding:7mm 14mm 0; flex:1; }
+  .body{ padding:7mm 14mm 0; }
 
   /* SECTIONS */
   .sec{ margin-top:6mm; }
@@ -274,10 +276,19 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .cond p{ font-size:8.8px; line-height:1.45; }
 
   /* FOOTER */
-  .foot{ position:absolute; left:0; right:0; bottom:0; padding:4mm 14mm; border-top:1px solid var(--line);
+  .foot{ margin-top:8mm; padding:4mm 14mm 0; border-top:1px solid var(--line);
     display:flex; justify-content:space-between; align-items:center; font-size:7.6px; color:var(--muted); letter-spacing:.05em; }
   .foot b{ color:var(--accent); font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
-  @media print{ .page{ margin:0 } }
+
+  .card div, .client div, .f div, .cond p, td { overflow-wrap:anywhere; }
+  .idx, .c, .r, tfoot td { white-space:nowrap; overflow-wrap:normal; }
+  /* Quebra de página segura — nada é cortado ao meio */
+  .client, .panel, .rows, .total, .cond div, .f, tr, tfoot { break-inside:avoid; page-break-inside:avoid; }
+  .sech { break-after:avoid; page-break-after:avoid; }
+  thead { display:table-header-group; }
+  tfoot { display:table-row-group; }
+  @media print{ .page{ margin:0; width:auto } }
+
 
 </style></head>
 <body>
