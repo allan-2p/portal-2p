@@ -7,6 +7,7 @@
  */
 import { XMLParser } from "fast-xml-parser";
 import { numSap } from "./sap-num.server";
+import { SAP_ACCEPT_LANGUAGE, comIdiomaPT } from "./sap-lang.server";
 
 /** Depósitos considerados estoque livre vendável (mesmo recorte do legado). */
 export const DEPOSITOS_LIVRE = ["0001", "0002", "0003", "0005", "0007"];
@@ -92,12 +93,12 @@ export async function fetchEstoqueSap(opts?: { grupos?: string }): Promise<any[]
   const timer = setTimeout(() => controller.abort(), 120_000);
   let res: Response;
   try {
-    res = await fetch(url, {
+    res = await fetch(comIdiomaPT(url), {
       method: "POST",
       headers: {
         authorization: credencial(),
         "content-type": "text/xml;charset=UTF-8",
-        "accept-language": "pt-BR",
+        "accept-language": SAP_ACCEPT_LANGUAGE,
         cookie: "sap-usercontext=sap-client=500",
       },
       body: soapBody(opts?.grupos ?? GRUPOS_MERCADORIA),

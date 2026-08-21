@@ -1,4 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
+import { SAP_ACCEPT_LANGUAGE, comIdiomaPT } from "./sap-lang.server";
 
 export {
   classificarTipo,
@@ -114,14 +115,14 @@ async function fetchMateriaisSap(): Promise<any[]> {
     const timer = setTimeout(() => controller.abort(), 90_000);
     let res: Response;
     try {
-      res = await fetch(url!, {
+      res = await fetch(comIdiomaPT(url!), {
         method: "POST",
         headers: {
           "content-type": "application/soap+xml; charset=utf-8",
           accept: "application/soap+xml, text/xml, */*",
           // Sem isto o runtime envia "Accept-Language: *", que o SAP trata como
           // idioma inválido e responde com as tabelas vazias (HTTP 200).
-          "accept-language": "pt-BR",
+          "accept-language": SAP_ACCEPT_LANGUAGE,
           authorization: credencial.header,
         },
         body: SOAP_BODY,
