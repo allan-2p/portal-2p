@@ -16,10 +16,12 @@ import {
 } from "@/components/ui/dialog";
 import {
   criarOrdemVendaSapFn,
+  gerarCobrancaPedidoFn,
   sincronizarPedidoSalesforceFn,
   statusIntegracoesPedidoFn,
 } from "@/lib/propostas.functions";
 import { listIntegrationLogs, type IntegrationLogRow } from "@/lib/integration-logs.functions";
+import { CobrancaCard } from "@/components/cobranca-card";
 import { formatSapNumero } from "@/lib/sap-numero";
 
 function dataHora(iso?: string | null) {
