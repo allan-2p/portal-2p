@@ -132,12 +132,14 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4; margin: 0; }
+  @page { size: A4; margin: 12mm 0 14mm; }
+  @page :first { margin-top: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root{ --ink:#101418; --muted:#7A838F; --line:#E7EAEF; --accent:#F5A524; --accent-2:#FFCE5C; --soft:#FBF8F2; }
   html,body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body{ font-family:'Inter',Arial,Helvetica,sans-serif; color:var(--ink); background:#fff; font-size:9.6px; }
-  .page{ width:210mm; min-height:297mm; margin:0 auto; padding:0 0 18mm; position:relative; display:flex; flex-direction:column; }
+  .page{ width:210mm; margin:0 auto; padding:0; position:relative; }
+
 
   .hero{ padding:12mm 14mm 7mm; display:flex; justify-content:space-between; align-items:flex-start; }
   .brand{ display:flex; align-items:center; gap:9px; }
