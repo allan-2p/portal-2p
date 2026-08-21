@@ -14,6 +14,7 @@ import { IntegrationLogsPanel } from "@/components/integration-logs";
 import { IntegrationAlertBadge, IntegrationAlertSettingsCard, useIntegrationAlerts } from "@/components/integration-alerts";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { FreteRegrasPanel } from "@/components/frete-regras-panel";
+import { IntegracaoPainel } from "@/components/integracao-painel";
 
 export const Route = createFileRoute("/_authenticated/admin/integracoes_/$slug")({
   head: () => ({
@@ -79,7 +80,7 @@ function IntegracaoConfigPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className={`${slug === "sap" || slug === "salesforce" ? "max-w-6xl" : "max-w-3xl"} mx-auto space-y-6`}>
         <Button asChild variant="ghost" size="sm" className="-ml-2">
           <Link to="/admin/integracoes">
             <ArrowLeft className="h-4 w-4 mr-1" /> Integrações
@@ -168,6 +169,8 @@ function IntegracaoConfigPage() {
         </section>
 
         {slug === "fretefy" ? <FreteRegrasPanel /> : null}
+
+        {slug === "sap" || slug === "salesforce" ? <IntegracaoPainel painel={slug} /> : null}
 
         <section className="rounded-2xl border border-border bg-card p-6 space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
