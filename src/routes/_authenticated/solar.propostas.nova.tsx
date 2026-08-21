@@ -323,6 +323,8 @@ function NovaPropostaSolarPage() {
       setTipoNf(String(p['tipo_nf'] ?? "venda"));
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
       setFat((p['faturamento'] as Record<string, string>) ?? {});
+      setFatContribuinte(!!(p['faturamento'] as Record<string, unknown> | null)?.['contribuinte']);
+      setFinalidadeUso(String(p['finalidade_uso'] ?? ""));
       setFormaPagamento(String(p['forma_pagamento'] ?? ""));
       setCondicaoPagamento(String(p['condicao_pagamento_codigo'] ?? ""));
       setEntregaDiferente(!!p['entrega_diferente']);
