@@ -1152,3 +1152,95 @@ export const statusIntegracoesPedidoFn = createServerFn({ method: "POST" })
       validacao: validarPedidoParaSap(row as Record<string, any>),
     };
   });
+
+/**
+ * Confirmação manual de pagamento (boleto a prazo e cartão de crédito, que não
+ * têm baixa automática pelo Itaú).
+ *
+ * Restrita a admin/gerente/diretor, auditada em `propostas_conclusao_log` e
+ * limitada à transição "Aguardando Pagamento" → "Processando".
+ */
+export const confirmarPagamentoFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { propostaId?: unknown; observacao?: unknown };
+    if (typeof i.propostaId !== "string" || !i.propostaId) throw new Error("Proposta inválida.");
+    return {
+      propostaId: i.propostaId,
+      observacao: typeof i.observacao === "string" ? i.observacao.slice(0, 300) : "",
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+
+    const { data: papeis } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const podeConfirmar = (papeis ?? []).some((p: any) =>
+      ["admin", "gerente", "diretor"].includes(String(p?.role)),
+    );
+    if (!podeConfirmar)
+      throw new Error("Apenas admin, gerente ou diretor podem confirmar o pagamento manualmente.");
+
+    const { data: perfil } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .maybeSingle();
+    const nomeAtor = (perfil as any)?.full_name ?? (perfil as any)?.email ?? userId;
+
+    const db = await repo();
+    const row = await db.getProposta(data.propostaId);
+    if (!row) throw new Error("Proposta não encontrada.");
+
+    const { transicaoPermitida } = await import("@/lib/proposta-status");
+    if (!transicaoPermitida(String(row["status"] ?? ""), "Processando", "humano"))
+      throw new Error(
+        `Só é possível confirmar o pagamento de um pedido em "Aguardando Pagamento" (atual: ${row["status"]}).`,
+      );
+
+    const atualizada = await db.atualizarProposta(
+      row.id,
+      { status: "Processando" },
+      { status: "eq.Aguardando Pagamento" },
+    );
+    if (!atualizada) throw new Error("O pedido mudou de status enquanto a confirmação era registrada.");
+
+    const detalhe = `Pagamento confirmado manualmente por ${nomeAtor}${
+      data.observacao ? ` — ${data.observacao}` : ""
+    }`;
+    await db.registrarConclusaoLog({
+      proposta_id: row.id,
+      numero: (row["numero"] as string) ?? null,
+      status: "Processando",
+      resultado: "pagamento_confirmado_manual",
+      origem: "portal",
+      actor_id: userId,
+      actor_email: (perfil as any)?.email ?? null,
+      actor_nome: nomeAtor,
+      detalhe: detalhe.slice(0, 500),
+    });
+
+    const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+    await logIntegrationEvent({
+      slug: "pagamentos",
+      event: "confirmacao-manual",
+      level: "warn",
+      message: detalhe.slice(0, 500),
+      detail: { proposta_id: row.id, numero: row["numero"] ?? null, forma_pagamento: row["forma_pagamento"] ?? null },
+    });
+
+    const dono = String(row["created_by"] ?? "");
+    if (dono) {
+      const { criarNotificacao } = await import("@/lib/notificacoes.server");
+      await criarNotificacao({
+        user_id: dono,
+        tipo: "pagamento",
+        titulo: `Pagamento confirmado — pedido ${row["numero"] ?? ""}`,
+        descricao: detalhe,
+        ref_tipo: "proposta",
+        ref_id: row.id,
+        chave: `pagamento-manual:${row.id}`,
+      });
+    }
+
+    return { ok: true, status: "Processando" as const };
+  });
