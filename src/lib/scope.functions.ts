@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getScopeForUser } from "./scope.server";
+import { getScopeForUser, invalidateScopeCache } from "./scope.server";
 export type { FilterScope, MyScope, SFTeam } from "./scope.types";
 import type { FilterScope, MyScope, SFTeam } from "./scope.types";
 
@@ -34,6 +34,7 @@ export const adminSetUserScope = createServerFn({ method: "POST" })
       .update({ filter_scope: data.scope })
       .eq("id", data.user_id);
     if (error) throw new Error(error.message);
+    invalidateScopeCache(data.user_id);
     return { ok: true };
   });
 
@@ -54,6 +55,7 @@ export const adminSetUserSfId = createServerFn({ method: "POST" })
       .update({ sf_user_id: value })
       .eq("id", data.user_id);
     if (error) throw new Error(error.message);
+    invalidateScopeCache(data.user_id);
     return { ok: true };
   });
 
@@ -92,5 +94,7 @@ export const adminSetSfTeam = createServerFn({ method: "POST" })
       );
       if (error) throw new Error(error.message);
     }
+    // Equipe muda o escopo de todos os membros: limpa o cache inteiro.
+    invalidateScopeCache();
     return { ok: true };
   });
