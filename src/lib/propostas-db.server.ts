@@ -57,6 +57,24 @@ export async function listarPropostas(opts: ListarPropostasOpts = {}): Promise<P
   return (await rest(`propostas?${params}`)) ?? [];
 }
 
+/**
+ * Consulta livre na tabela `propostas` do Grupo 2P (filtros PostgREST crus).
+ * Use sempre isto — `supabaseAdmin.from("propostas")` aponta para o banco do
+ * portal, onde a tabela é legado e está vazia.
+ */
+export async function consultarPropostas(
+  filtros: Record<string, string>,
+  opts: { select?: string; order?: string; limit?: number } = {},
+): Promise<PropostaRow[]> {
+  const params = new URLSearchParams({
+    select: opts.select ?? "*",
+    limit: String(opts.limit ?? 200),
+  });
+  if (opts.order) params.set("order", opts.order);
+  for (const [k, v] of Object.entries(filtros)) params.append(k, v);
+  return (await rest(`propostas?${params}`)) ?? [];
+}
+
 
 export async function getProposta(id: string, select = "*"): Promise<PropostaRow | null> {
   const params = new URLSearchParams({ select, id: `eq.${id}`, limit: "1" });

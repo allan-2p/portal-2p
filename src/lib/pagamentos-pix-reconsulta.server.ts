@@ -28,22 +28,23 @@ export async function reconsultarPixPendentes(minutos = 15): Promise<PixReconsul
     return { pendentes: 0, consultados: 0, atualizados: 0, detalhes: [], skipped: true, motivo: "Credenciais Pix não configuradas." };
   }
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { consultarPropostas } = await import("./propostas-db.server");
   const corte = new Date(Date.now() - minutos * 60_000).toISOString();
 
-  const { data, error } = await supabaseAdmin
-    .from("propostas")
-    .select("id, numero, pagamento_txid, pagamento_atualizado_em")
-    .eq("pagamento_meio", "pix")
-    .eq("pagamento_status", "pendente")
-    .not("pagamento_txid", "is", null)
-    .lt("pagamento_atualizado_em", corte)
-    .order("pagamento_atualizado_em", { ascending: true })
-    .limit(50);
+  const pendentes = await consultarPropostas(
+    {
+      pagamento_meio: "eq.pix",
+      pagamento_status: "eq.pendente",
+      pagamento_txid: "not.is.null",
+      pagamento_atualizado_em: `lt.${corte}`,
+    },
+    {
+      select: "id, numero, pagamento_txid, pagamento_atualizado_em",
+      order: "pagamento_atualizado_em.asc",
+      limit: 50,
+    },
+  );
 
-  if (error) throw new Error(`Falha ao listar cobranças Pix pendentes: ${error.message}`);
-
-  const pendentes = data ?? [];
   const detalhes: PixAplicacao[] = [];
   let consultados = 0;
   let atualizados = 0;

@@ -39,23 +39,24 @@ function dataBR(iso: string): string {
 }
 
 export async function avisarBoletos(): Promise<BoletoAvisosResultado> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { consultarPropostas } = await import("./propostas-db.server");
 
   const hoje = new Date();
   const limite = new Date(hoje.getTime() + DIAS_AVISO * 86_400_000);
 
-  const { data, error } = await supabaseAdmin
-    .from("propostas")
-    .select(
-      "id, numero, created_by, cliente_nome, cliente_doc, cliente_email, pagamento_valor, pagamento_vencimento, pagamento_linha_digitavel, pagamento_url",
-    )
-    .eq("pagamento_meio", "boleto")
-    .eq("pagamento_status", "pendente")
-    .not("pagamento_vencimento", "is", null)
-    .lte("pagamento_vencimento", dataISO(limite))
-    .limit(200);
+  const data = await consultarPropostas(
+    {
+      pagamento_meio: "eq.boleto",
+      pagamento_status: "eq.pendente",
+      pagamento_vencimento: `lte.${dataISO(limite)}`,
+    },
+    {
+      select:
+        "id, numero, created_by, cliente_nome, cliente_doc, cliente_email, pagamento_valor, pagamento_vencimento, pagamento_linha_digitavel, pagamento_url",
+      limit: 200,
+    },
+  );
 
-  if (error) throw new Error(`Falha ao listar boletos pendentes: ${error.message}`);
 
   const rows = (data ?? []) as Record<string, any>[];
   const out: BoletoAvisosResultado = {
