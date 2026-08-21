@@ -78,6 +78,7 @@ function montarEnvelope(cliente: ClienteSapInput): string {
         ${tag("CFOPC", c.CFOPC)}${tag("ICMSTAXPAY", c.ICMSTAXPAY)}${tag("VENDEDOR", c.VENDEDOR)}
         <BZIRK>SOUTH</BZIRK><KALKS>01</KALKS><VZSKZ>01</VZSKZ>
         ${tag("PLTYP", c.PLTYP)}${tag("KONDA", c.KONDA)}${tag("CRT", c.CRT)}${tag("ZTERM", c.ZTERM)}
+        ${c.INTEGRADOR ? tag("INTEGRADOR", c.INTEGRADOR) : ""}
         ${tag("EQUIPE_VENDAS", c.EQUIPE_VENDAS)}${tag("ESCRITORIO", c.ESCRITORIO)}
         ${indSector}
       </I_S_CLIENTE>
