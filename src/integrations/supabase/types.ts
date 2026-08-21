@@ -1089,6 +1089,39 @@ export type Database = {
         }
         Relationships: []
       }
+      frete_transportadoras_dedicadas: {
+        Row: {
+          ativo: boolean
+          cnpj: string
+          created_at: string
+          fretefy_transportadora_id: string
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cnpj: string
+          created_at?: string
+          fretefy_transportadora_id: string
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cnpj?: string
+          created_at?: string
+          fretefy_transportadora_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       group_kpi_goals: {
         Row: {
           goal: number
