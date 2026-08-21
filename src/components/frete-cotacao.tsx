@@ -20,6 +20,9 @@ type Props = {
   onSelect: (t: CarregadoresTransportadora) => void;
   /** Chamado quando algum dado muda e a cotação anterior deixa de valer. */
   onInvalidate?: () => void;
+  /** Informa ao formulário que há uma cotação em andamento (trava o avanço). */
+  onLoadingChange?: (loading: boolean) => void;
+
 };
 
 type Opcao = {
