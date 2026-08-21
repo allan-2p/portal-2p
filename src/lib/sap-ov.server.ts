@@ -134,8 +134,10 @@ function constantes(_organizacao: string, row: Record<string, any> = {}) {
       contribuinteDoFaturamento({
         contribuinte: row["contribuinte"],
         faturarClienteFinal: row["faturar_cliente_final"],
-        faturamento: (row["faturamento"] ?? {}) as { contribuinte?: unknown },
+        faturamento: (row["faturamento"] ?? {}) as { contribuinte?: unknown; doc?: unknown },
+        clienteDoc: row["cliente_doc"],
       }),
+
     ),
   };
 }
@@ -759,8 +761,28 @@ export async function criarOrdemVendaSap(
     });
   }
 
-
   const testrun = opts.testrun ?? String(process.env["SAP_OV_TESTRUN"] ?? "").toUpperCase() === "X";
+
+  // Faturamento para cliente final: o parceiro (AG) precisa existir no SAP
+  // antes da ordem. Cadastra/atualiza pela mesma RFC de clientes; se falhar, a
+  // ordem NÃO é enviada (o SAP recusaria com erro de parceiro inexistente).
+  if (!testrun && row["faturar_cliente_final"]) {
+    const r = await cadastrarParceiroFaturamento(row);
+    if (!r.ok) {
+      const mensagem = `Cliente final não pôde ser cadastrado no SAP: ${r.erro}`.slice(0, 500);
+      await gravar(propostaId, { sap_ov_status: "erro", sap_ov_mensagem: mensagem });
+      await logIntegrationEvent({
+        ...base,
+        level: "error",
+        message: mensagem,
+        detail: { proposta_id: propostaId, numero: row["numero"] ?? null, etapa: "parceiro-faturamento" },
+        durationMs: Date.now() - inicio,
+      });
+      return { enviado: false, ok: false, vbeln: null, mensagem, motivo: "parceiro_faturamento", testrun: false };
+    }
+  }
+
+
   const peso = await pesosDoPedido(itens);
   const corpo = envelope(row, peso, testrun);
 
@@ -968,4 +990,55 @@ async function gravar(id: string, patch: Record<string, unknown>) {
   } catch (e) {
     if (!/sap_ov_|42703|PGRST204/i.test((e as Error).message)) throw e;
   }
+}
+
+/**
+ * Cadastra/atualiza no SAP o parceiro faturado quando o pedido fatura o
+ * cliente final (ZHDIT_CLIENTES_CADASTRO). Reaproveita a mesma integração do
+ * cadastro de clientes do portal.
+ */
+async function cadastrarParceiroFaturamento(
+  row: Record<string, any>,
+): Promise<{ ok: true; numeroSap: string | null } | { ok: false; erro: string }> {
+  const fat = (row["faturamento"] ?? {}) as Record<string, any>;
+  const doc = digitos(fat["doc"]);
+  if (!doc) return { ok: false, erro: "CPF/CNPJ do cliente final não informado." };
+
+  const { sapClientesConfigurado, enviarClienteParaSap } = await import("./sap-clientes.server");
+  if (!sapClientesConfigurado())
+    return { ok: false, erro: "Integração de cadastro de clientes do SAP não configurada (SAP_CLIENTES_URL)." };
+
+  const org = String(row["organizacao"] ?? "solar");
+  const escopo = org === "carregadores" ? "carregadores" : org === "grupo" ? "grupo" : "solar";
+
+  const r = await enviarClienteParaSap({
+    doc,
+    razao_social: String(fat["nome"] ?? row["cliente_nome"] ?? "").trim(),
+    ie: String(fat["ie"] ?? ""),
+    contribuinte: doc.length === 11 ? false : fat["contribuinte"] === true,
+    finalidade: String(row["finalidade_uso"] ?? "") || null,
+    email: String(row["cliente_email"] ?? ""),
+    telefone: String(fat["telefone"] ?? row["cliente_telefone"] ?? ""),
+    cep: String(fat["cep"] ?? ""),
+    logradouro: String(fat["logradouro"] ?? ""),
+    numero: String(fat["numero"] ?? ""),
+    complemento: String(fat["complemento"] ?? ""),
+    bairro: String(fat["bairro"] ?? ""),
+    cidade: String(fat["cidade"] ?? ""),
+    uf: String(fat["uf"] ?? row["uf"] ?? ""),
+    vendedor_sap: String(row["consultor_codigo_sap"] ?? "") || null,
+    condicao_pgto_sap: String(row["condicao_pagamento_codigo"] ?? "") || null,
+    escopo_org: escopo as "solar" | "carregadores" | "grupo",
+  });
+
+  if (!r.ok) return { ok: false, erro: r.erro };
+
+  await logIntegrationEvent({
+    slug: "sap",
+    event: "cliente-final.cadastro",
+    level: "info",
+    message: `Cliente final ${doc} cadastrado/atualizado no SAP para o pedido ${row["numero"] ?? ""}`,
+    detail: { proposta_id: row["id"] ?? null, numero_sap: r.numero_sap, mensagem: r.mensagem },
+  });
+  return { ok: true, numeroSap: r.numero_sap };
 }

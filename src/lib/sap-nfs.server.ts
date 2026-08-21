@@ -28,9 +28,16 @@ import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 import { criarNotificacao } from "./notificacoes.server";
 
-/** Status do portal em ordem de avanço (nunca regride). */
-const ORDEM = ["Processando", "Separação", "Faturado", "Coletado"] as const;
+/**
+ * Status do portal em ordem de avanço (nunca regride).
+ *
+ * "Aguardando Pagamento" entra na fila porque boleto a prazo e cartão criam a
+ * ordem já no checkout: quando o financeiro libera a ordem no SAP, o pedido
+ * anda sozinho (STATUS_PICKING NOK → Processando; AOK/OK → Separação).
+ */
+const ORDEM = ["Aguardando Pagamento", "Processando", "Separação", "Faturado", "Coletado"] as const;
 export type StatusNf = (typeof ORDEM)[number];
+
 
 const esc = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -129,9 +136,13 @@ export function proximoStatus(atual: string, c: ConsultaSap): StatusNf | null {
 
   let alvo = base;
   const picking = (c.picking ?? "").toUpperCase();
+  // Qualquer sinal de picking no SAP significa que a ordem já está liberada:
+  // NOK = liberada mas ainda não separada → Processando.
+  if (picking) alvo = Math.max(alvo, ORDEM.indexOf("Processando"));
   if (picking === "AOK" || picking === "OK") alvo = Math.max(alvo, ORDEM.indexOf("Separação"));
   if (c.nfNumero) alvo = Math.max(alvo, ORDEM.indexOf("Faturado"));
   if ((c.romaneio ?? "").toUpperCase() === "OK") alvo = Math.max(alvo, ORDEM.indexOf("Coletado"));
+
 
   return alvo > base ? (ORDEM[alvo] as StatusNf) : null;
 }
@@ -216,11 +227,13 @@ async function salvarDanfe(propostaId: string, base64: string): Promise<string |
 
 
 const TITULOS: Record<StatusNf, string> = {
+  "Aguardando Pagamento": "Pedido aguardando pagamento",
   Processando: "Pedido em processamento",
   Separação: "Pedido em separação",
   Faturado: "Pedido faturado",
   Coletado: "Pedido coletado",
 };
+
 
 export type NfAplicacao = {
   proposta_id: string;
@@ -361,7 +374,10 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
   // Ordenação e filtro no banco: com backlog grande, ordenar em memória
   // deixaria os pedidos mais antigos sem nunca serem processados.
   const rows = await db.listarPropostas({
-    statusIn: ["Processando", "Separação", "Faturado"],
+    // "Aguardando Pagamento" só entra com ordem criada (boleto a prazo/cartão);
+    // o `naoVazio` abaixo já exclui os pedidos Pix, que ainda não têm OV.
+    statusIn: ["Aguardando Pagamento", "Processando", "Separação", "Faturado"],
+
     select:
       "id,numero,status,created_by,sap_ov_numero,nf_numero,danfe_path,created_at,fretefy_oferta_id",
 

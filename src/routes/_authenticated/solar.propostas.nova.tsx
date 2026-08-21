@@ -65,7 +65,8 @@ import { cn } from "@/lib/utils";
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import { fmtBRL, type CarregadoresTransportadora } from "@/lib/carregadores";
 import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
-import { obterPropostaFn } from "@/lib/propostas.functions";
+import { obterPropostaFn, concluirPropostaFn } from "@/lib/propostas.functions";
+import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/resultado-conclusao-dialog";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
 import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
@@ -195,6 +196,11 @@ function NovaPropostaSolarPage() {
   const [faturarClienteFinal, setFaturarClienteFinal] = useState(false);
   const [fatTipoDoc, setFatTipoDoc] = useState<"cnpj" | "cpf">("cnpj");
   const [fat, setFat] = useState<Record<string, string>>({});
+  /** Cliente final CNPJ contribuinte de ICMS (define CFOP/IE no SAP). */
+  const [fatContribuinte, setFatContribuinte] = useState(false);
+  /** Finalidade de uso — obrigatória quando o pedido fatura o cliente final. */
+  const [finalidadeUso, setFinalidadeUso] = useState<string>("");
+  const [resultadoConclusao, setResultadoConclusao] = useState<ResultadoConclusao | null>(null);
   const [enriquecendo, setEnriquecendo] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<string>("");
   const [condicaoPagamento, setCondicaoPagamento] = useState<string>("");
@@ -318,6 +324,8 @@ function NovaPropostaSolarPage() {
       setTipoNf(String(p['tipo_nf'] ?? "venda"));
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
       setFat((p['faturamento'] as Record<string, string>) ?? {});
+      setFatContribuinte(!!(p['faturamento'] as Record<string, unknown> | null)?.['contribuinte']);
+      setFinalidadeUso(String(p['finalidade_uso'] ?? ""));
       setFormaPagamento(String(p['forma_pagamento'] ?? ""));
       setCondicaoPagamento(String(p['condicao_pagamento_codigo'] ?? ""));
       setEntregaDiferente(!!p['entrega_diferente']);
@@ -978,8 +986,12 @@ function NovaPropostaSolarPage() {
       if (vendido === "sim" && !previsao) e.push("Previsão de fechamento é obrigatória.");
     }
     if (etapa === 2) {
-      if (faturarClienteFinal && (!fat['nome'] || !fat['doc'] || !fat['logradouro'] || !fat['cidade']))
+      if (faturarClienteFinal && (!fat['nome'] || !fat['doc'] || !fat['logradouro'] || !fat['cidade'] || !fat['uf']))
         e.push("Complete os dados de faturamento do cliente final.");
+      if (faturarClienteFinal && !finalidadeUso)
+        e.push("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
+      if (faturarClienteFinal && fatTipoDoc === "cnpj" && fatContribuinte && !String(fat['ie'] ?? "").trim())
+        e.push("Cliente final marcado como contribuinte: informe a inscrição estadual.");
     }
     if (etapa === 3) {
       if (ehKit === null) e.push("Informe se a venda é kit.");
@@ -1049,7 +1061,8 @@ function NovaPropostaSolarPage() {
           contribuinte: !!cliente?.['contribuinte'],
           tipoNf,
           faturarClienteFinal,
-          faturamento: fat,
+          finalidadeUso: finalidadeUso || null,
+          faturamento: { ...fat, contribuinte: fatTipoDoc === "cnpj" ? fatContribuinte : false },
           formaPagamento: formaPagamento || null,
           condicaoPagamento: condicaoPagamento || null,
           entregaDiferente,
@@ -1078,14 +1091,41 @@ function NovaPropostaSolarPage() {
       setPropostaId(r.id);
       setNumero(r.numero);
       await queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
-      toast.success(concluir ? "Proposta concluída." : `Proposta ${r.numero} salva.`);
-      if (concluir) void navigate({ to: "/solar/propostas" });
+
+      if (!concluir) {
+        toast.success(`Proposta ${r.numero} salva.`);
+        return;
+      }
+
+      // Conclusão real: cria a ordem no SAP, gera a cobrança e envia ao Salesforce.
+      // Nada é silencioso — o resultado (ou o erro) aparece no pop-up.
+      try {
+        const linha = await concluirPropostaFn({ data: { id: r.id, origem: "portal", etapa: 5 } });
+        await queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
+        if (linha?.already_concluded) {
+          toast.info(`Pedido ${r.numero} já havia sido concluído (${linha.status}).`);
+          void navigate({ to: "/solar/propostas" });
+          return;
+        }
+        setResultadoConclusao({
+          numero: r.numero,
+          status: String(linha?.status ?? "Aguardando Pagamento"),
+          sapOv: (linha?.sapOv ?? null) as ResultadoConclusao["sapOv"],
+          salesforce: (linha?.salesforce ?? null) as ResultadoConclusao["salesforce"],
+          cobranca: (linha?.cobranca ?? null) as ResultadoConclusao["cobranca"],
+        });
+      } catch (e) {
+        const msg = (e as Error).message || "Falha ao concluir o pedido.";
+        setResultadoConclusao({ numero: r.numero, status: "", erro: msg });
+        toast.error(msg, { duration: 12000 });
+      }
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error((e as Error).message, { duration: 12000 });
     } finally {
       setSalvando(false);
     }
   }
+
 
   const destino = {
     uf: entregaDiferente ? String(entrega['uf'] ?? "") : String(cliente?.['uf'] ?? ""),
@@ -1399,6 +1439,29 @@ function NovaPropostaSolarPage() {
                       />
                     </Campo>
                   ))}
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Campo label="Finalidade de uso">
+                    <Select value={finalidadeUso} onValueChange={setFinalidadeUso}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Revenda">Revenda</SelectItem>
+                        <SelectItem value="Industrialização">Industrialização</SelectItem>
+                        <SelectItem value="Uso e Consumo">Uso e Consumo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {tentou && !finalidadeUso && <Erro>Obrigatória para faturar o cliente final.</Erro>}
+                  </Campo>
+                  {fatTipoDoc === "cnpj" && (
+                    <label className="flex items-end gap-2 text-sm pb-2">
+                      <Checkbox
+                        checked={fatContribuinte}
+                        onCheckedChange={(v) => setFatContribuinte(v === true)}
+                      />
+                      Cliente final é contribuinte de ICMS
+                    </label>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Dados buscados automaticamente (CNPJ e CEP) continuam editáveis. Sem retorno das
@@ -2496,6 +2559,16 @@ function NovaPropostaSolarPage() {
           </div>
         </div>
       )}
+
+      {/* Resultado da conclusão: SAP, cobrança e Salesforce — nunca fecha em silêncio */}
+      <ResultadoConclusaoDialog
+        resultado={resultadoConclusao}
+        onClose={() => setResultadoConclusao(null)}
+        onIrParaLista={() => {
+          setResultadoConclusao(null);
+          void navigate({ to: "/solar/propostas" });
+        }}
+      />
 
       {/* Prévia da proposta em PDF */}
       <Dialog open={previewAberto} onOpenChange={setPreviewAberto}>

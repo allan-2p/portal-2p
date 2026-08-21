@@ -96,6 +96,7 @@ import { MoneyInput } from "@/components/money-input";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { cn } from "@/lib/utils";
+import { ResultadoConclusaoDialog } from "@/components/resultado-conclusao-dialog";
 import { cidadeUf } from "@/lib/local-format";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
@@ -2578,76 +2579,15 @@ function PropostaCarregadoresPage() {
 
 
         {/* Resultado da conclusão: confirmação (ou erro) com o status das integrações */}
-        <Dialog open={!!resultadoConclusao} onOpenChange={(o) => !o && setResultadoConclusao(null)}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {resultadoConclusao?.erro ? (
-                  <TriangleAlert className="h-5 w-5 text-destructive" />
-                ) : (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                )}
-                {resultadoConclusao?.erro
-                  ? "Não foi possível concluir o pedido"
-                  : `Pedido ${resultadoConclusao?.numero ?? ""} concluído`}
-              </DialogTitle>
-              <DialogDescription>
-                {resultadoConclusao?.erro
-                  ? resultadoConclusao.erro
-                  : `Status aplicado: ${resultadoConclusao?.status ?? ""}. Veja abaixo o resultado de cada integração.`}
-              </DialogDescription>
-            </DialogHeader>
-            {!resultadoConclusao?.erro && (
-              <div className="space-y-2 text-sm">
-                {[
-                  {
-                    nome: "Ordem de venda no SAP",
-                    ok: !!resultadoConclusao?.sapOv?.ok,
-                    detalhe:
-                      resultadoConclusao?.sapOv?.motivo === "nao_configurado"
-                        ? "Integração de ordem de venda não configurada — envie pelo painel de integrações do pedido."
-                        : (resultadoConclusao?.sapOv?.vbeln
-                            ? `Ordem ${resultadoConclusao.sapOv.vbeln} criada.`
-                            : resultadoConclusao?.sapOv?.mensagem) ?? "Não enviado.",
-                  },
-                  {
-                    nome: "Oportunidade no Salesforce",
-                    ok: !!resultadoConclusao?.salesforce?.ok,
-                    detalhe: resultadoConclusao?.salesforce?.mensagem ?? "Não enviado.",
-                  },
-                  {
-                    nome: "Cobrança",
-                    ok: !!resultadoConclusao?.cobranca?.gerada,
-                    detalhe:
-                      resultadoConclusao?.cobranca?.erro ??
-                      resultadoConclusao?.cobranca?.motivo ??
-                      (resultadoConclusao?.cobranca?.gerada
-                        ? `Gerada (${resultadoConclusao.cobranca.meio ?? "—"}).`
-                        : "Não gerada."),
-                  },
-                ].map((l) => (
-                  <div key={l.nome} className="rounded-lg border border-border bg-muted/30 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-medium">{l.nome}</span>
-                      <span className={cn("text-xs font-semibold", l.ok ? "text-emerald-600" : "text-amber-600")}>
-                        {l.ok ? "OK" : "Pendente"}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">{l.detalhe}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setResultadoConclusao(null)}>
-                Fechar
-              </Button>
-              <Button onClick={() => { setResultadoConclusao(null); void navigate({ to: "/carregadores/propostas" }); }}>
-                Ir para propostas
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ResultadoConclusaoDialog
+          resultado={resultadoConclusao}
+          onClose={() => setResultadoConclusao(null)}
+          onIrParaLista={() => {
+            setResultadoConclusao(null);
+            void navigate({ to: "/carregadores/propostas" });
+          }}
+        />
+
 
         {/* Confirmação antes de concluir o pedido */}
         <Dialog open={confirmarConclusao} onOpenChange={(o) => !saving && !o && setConfirmarConclusao(false)}>

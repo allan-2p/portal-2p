@@ -683,16 +683,17 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
 export const concluirPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
-    const i = (input ?? {}) as { id?: unknown; status?: unknown; origem?: unknown; etapa?: unknown };
+    const i = (input ?? {}) as { id?: unknown; origem?: unknown; etapa?: unknown };
     if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
-    if (typeof i.status !== "string" || !i.status) throw new Error("Status inválido.");
+    // O status de destino NÃO vem do cliente: é derivado da forma de pagamento
+    // no servidor (ver `statusDestino` abaixo).
     return {
       id: i.id,
-      status: i.status,
       origem: typeof i.origem === "string" ? i.origem : "portal",
       etapa: typeof i.etapa === "number" ? i.etapa : null,
     };
   })
+
   .handler(async ({ data, context }) => {
     const { runJob } = await import("@/lib/job-runs.server");
     type CobrancaOut = {
@@ -770,11 +771,16 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     const totais = (row["totais"] ?? {}) as Record<string, number>;
     let erro: string | null = null;
     const emailCliente = String(row["cliente_email"] ?? "").trim();
+    // Finalidade de uso: sempre obrigatória em Carregadores; no Solar só quando
+    // o pedido fatura o cliente final (é ele quem entra como parceiro no SAP).
+    const org = String(row["organizacao"] ?? "solar");
+    const exigeFinalidade = org !== "solar" || row["faturar_cliente_final"] === true;
     if (!String(row["cliente_nome"] ?? "").trim()) erro = "Cliente não informado.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailCliente))
       erro = "Informe um e-mail válido do cliente (usado para cobrança e avisos de boleto).";
     else if (!String(row["uf"] ?? "").trim()) erro = "UF de faturamento não informada.";
-    else if (!String(row["finalidade_uso"] ?? "").trim()) erro = "Finalidade de uso não informada.";
+    else if (exigeFinalidade && !String(row["finalidade_uso"] ?? "").trim())
+      erro = "Finalidade de uso não informada.";
     else if (!String(row["frete_mod"] ?? "").trim()) erro = "Modalidade de frete não informada.";
     else if (Number(row["frete_valor"] ?? 0) < 0) erro = "Valor de frete inválido.";
     else if (!itens.length) erro = "A proposta não possui itens.";
@@ -797,11 +803,14 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
-    // O status de destino não é escolha do cliente: precisa ser uma transição
-    // válida da máquina de estados a partir de "Salvo".
+    // Status de destino derivado da forma de pagamento (nunca da UI): todas as
+    // formas suportadas (Pix, boleto à vista/a prazo e cartão) entram como
+    // "Aguardando Pagamento"; o avanço vem do pagamento, do cron do SAP ou da
+    // confirmação manual.
+    const statusDestino = "Aguardando Pagamento";
     const { transicaoPermitida } = await import("@/lib/proposta-status");
-    if (!transicaoPermitida(String(row["status"]), data.status)) {
-      const detalhe = `Transição inválida: ${row["status"]} → ${data.status}.`;
+    if (!transicaoPermitida(String(row["status"]), statusDestino, "checkout")) {
+      const detalhe = `Transição inválida: ${row["status"]} → ${statusDestino}.`;
       await db.registrarConclusaoLog({ ...base, status: row["status"], resultado: "bloqueada", detalhe });
       throw new Error(detalhe);
     }
@@ -809,7 +818,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     const atualizada = await db.atualizarProposta(
       row.id,
       {
-        status: data.status,
+        status: statusDestino,
         finalizado_por: userId,
         finalizado_por_nome: actor.actor_nome,
         finalizado_em: new Date().toISOString(),
@@ -827,7 +836,8 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
-    await db.registrarConclusaoLog({ ...base, status: data.status, resultado: "concluida" });
+    await db.registrarConclusaoLog({ ...base, status: statusDestino, resultado: "concluida" });
+
 
     // Ordem de venda no SAP (ZNFE_OV_CRIAR). Falha aqui não desfaz o pedido:
     // fica registrada e pode ser reprocessada pelo job "sap.ov-criar".
@@ -862,7 +872,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         if (!r.ok) {
           await db.registrarConclusaoLog({
             ...base,
-            status: data.status,
+            status: statusDestino,
             resultado: "sap_ov_falhou",
             detalhe: String(r.mensagem ?? "Falha ao criar a ordem de venda no SAP.").slice(0, 500),
           });
@@ -904,7 +914,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         if (cobranca.erro) {
           await db.registrarConclusaoLog({
             ...base,
-            status: data.status,
+            status: statusDestino,
             resultado: "cobranca_falhou",
             detalhe: String(cobranca.erro).slice(0, 500),
           });
@@ -940,7 +950,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       if (!r.ok) {
         await db.registrarConclusaoLog({
           ...base,
-          status: data.status,
+          status: statusDestino,
           resultado: "salesforce_falhou",
           detalhe: String(r.mensagem ?? "Falha ao enviar o pedido ao Salesforce.").slice(0, 500),
         });
@@ -955,7 +965,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       await avisarKitFotovoltaico({ ...row, sap_ov_numero: sapOv?.vbeln ?? row["sap_ov_numero"] });
     }
 
-    return { id: row.id, status: data.status, already_concluded: false, cobranca, sapOv, salesforce };
+    return { id: row.id, status: statusDestino, already_concluded: false, cobranca, sapOv, salesforce };
     };
 
     // Monitoramento: cada finalização vira uma execução auditável em job_runs.
@@ -965,7 +975,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         trigger: "portal",
         refType: "proposta",
         refId: data.id,
-        payload: { id: data.id, status: data.status, etapa: data.etapa, origem: data.origem },
+        payload: { id: data.id, etapa: data.etapa, origem: data.origem },
         actorId: (context as any).userId ?? null,
       },
       executar,
@@ -1141,4 +1151,96 @@ export const statusIntegracoesPedidoFn = createServerFn({ method: "POST" })
       },
       validacao: validarPedidoParaSap(row as Record<string, any>),
     };
+  });
+
+/**
+ * Confirmação manual de pagamento (boleto a prazo e cartão de crédito, que não
+ * têm baixa automática pelo Itaú).
+ *
+ * Restrita a admin/gerente/diretor, auditada em `propostas_conclusao_log` e
+ * limitada à transição "Aguardando Pagamento" → "Processando".
+ */
+export const confirmarPagamentoFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { propostaId?: unknown; observacao?: unknown };
+    if (typeof i.propostaId !== "string" || !i.propostaId) throw new Error("Proposta inválida.");
+    return {
+      propostaId: i.propostaId,
+      observacao: typeof i.observacao === "string" ? i.observacao.slice(0, 300) : "",
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+
+    const { data: papeis } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const podeConfirmar = (papeis ?? []).some((p: any) =>
+      ["admin", "gerente", "diretor"].includes(String(p?.role)),
+    );
+    if (!podeConfirmar)
+      throw new Error("Apenas admin, gerente ou diretor podem confirmar o pagamento manualmente.");
+
+    const { data: perfil } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", userId)
+      .maybeSingle();
+    const nomeAtor = (perfil as any)?.full_name ?? (perfil as any)?.email ?? userId;
+
+    const db = await repo();
+    const row = await db.getProposta(data.propostaId);
+    if (!row) throw new Error("Proposta não encontrada.");
+
+    const { transicaoPermitida } = await import("@/lib/proposta-status");
+    if (!transicaoPermitida(String(row["status"] ?? ""), "Processando", "humano"))
+      throw new Error(
+        `Só é possível confirmar o pagamento de um pedido em "Aguardando Pagamento" (atual: ${row["status"]}).`,
+      );
+
+    const atualizada = await db.atualizarProposta(
+      row.id,
+      { status: "Processando" },
+      { status: "eq.Aguardando Pagamento" },
+    );
+    if (!atualizada) throw new Error("O pedido mudou de status enquanto a confirmação era registrada.");
+
+    const detalhe = `Pagamento confirmado manualmente por ${nomeAtor}${
+      data.observacao ? ` — ${data.observacao}` : ""
+    }`;
+    await db.registrarConclusaoLog({
+      proposta_id: row.id,
+      numero: (row["numero"] as string) ?? null,
+      status: "Processando",
+      resultado: "pagamento_confirmado_manual",
+      origem: "portal",
+      actor_id: userId,
+      actor_email: (perfil as any)?.email ?? null,
+      actor_nome: nomeAtor,
+      detalhe: detalhe.slice(0, 500),
+    });
+
+    const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+    await logIntegrationEvent({
+      slug: "pagamentos",
+      event: "confirmacao-manual",
+      level: "warn",
+      message: detalhe.slice(0, 500),
+      detail: { proposta_id: row.id, numero: row["numero"] ?? null, forma_pagamento: row["forma_pagamento"] ?? null },
+    });
+
+    const dono = String(row["created_by"] ?? "");
+    if (dono) {
+      const { criarNotificacao } = await import("@/lib/notificacoes.server");
+      await criarNotificacao({
+        user_id: dono,
+        tipo: "pagamento",
+        titulo: `Pagamento confirmado — pedido ${row["numero"] ?? ""}`,
+        descricao: detalhe,
+        ref_tipo: "proposta",
+        ref_id: row.id,
+        chave: `pagamento-manual:${row.id}`,
+      });
+    }
+
+    return { ok: true, status: "Processando" as const };
   });
