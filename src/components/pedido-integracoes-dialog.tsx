@@ -120,10 +120,26 @@ export function PedidoIntegracoesDialog({
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha no envio ao Salesforce."),
   });
 
+  const cobrancaFn = useServerFn(gerarCobrancaPedidoFn);
+  const cobranca = useMutation({
+    mutationFn: async (forcar: boolean) => cobrancaFn({ data: { propostaId: propostaId!, forcar } }),
+    onSuccess: (r: any) => {
+      if (r?.gerada) {
+        toast.success(r.meio === "pix" ? "Cobrança Pix criada." : "Boleto emitido.");
+      } else {
+        toast.error(r?.erro ?? r?.motivo ?? "A cobrança não foi emitida.", { duration: 14000 });
+      }
+      atualizar();
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Falha ao emitir a cobrança.", { duration: 14000 }),
+  });
+
   const d = status.data;
   const rows = (logs.data?.rows ?? []) as IntegrationLogRow[];
   const total = logs.data?.total ?? 0;
-  const ocupado = sap.isPending || sf.isPending;
+  const ocupado = sap.isPending || sf.isPending || cobranca.isPending;
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
