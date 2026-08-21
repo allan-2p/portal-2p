@@ -936,9 +936,10 @@ function PropostaCarregadoresPage() {
   }
 
 
-  // Finalidade de uso do PDF: sempre a do cadastro atual do cliente (nunca
-  // editável na proposta). Só cai no estado quando o cadastro não foi achado.
+  // Finalidade de uso do PDF: a do cadastro atual do cliente, salvo quando o
+  // pedido fatura o cliente final — aí vale a escolhida na aba de faturamento.
   const finalidadeUsoPdf = (() => {
+    if (state.faturarClienteFinal) return labelFinalidadeUso[state.finalidadeUso] ?? null;
     const soDigitos = (v?: string | null) => (v ?? "").replace(/\D/g, "");
     const atual = (clientesQ.data ?? []).find(
       (c) =>
@@ -946,6 +947,7 @@ function PropostaCarregadoresPage() {
         c.cliente_nome.trim().toLowerCase() === state.nome.trim().toLowerCase(),
     );
     const chave = atual ? finalidadeUsoDoCadastro(atual.finalidade) : state.finalidadeUso;
+
     return labelFinalidadeUso[chave] ?? null;
   })();
 
