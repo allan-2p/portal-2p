@@ -1,0 +1,2 @@
+UPDATE public.solar_suportes SET codigo_sap = '200000693', cod_extra = '200000111', updated_at = now() WHERE legado_id = 4;
+UPDATE public.solar_suportes SET cod_extra = '200000111', updated_at = now() WHERE legado_id = 19;
