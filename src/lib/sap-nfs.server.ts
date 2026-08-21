@@ -292,13 +292,17 @@ async function salvarDanfe(propostaId: string, base64: string): Promise<string |
     });
   };
   try {
-    const limpo = base64.replace(/\s+/g, "");
-    if (limpo.length < 100) {
+    const bytes = bytesDocumentoSap(base64);
+    if (!bytes) {
       await avisar("conteúdo base64 muito curto/inválido");
       return null;
     }
-    const bytes = Buffer.from(limpo, "base64");
+    if (!pdfIntegro(bytes)) {
+      await avisar("PDF incompleto na resposta do SAP (sem %PDF/%%EOF) — não gravado");
+      return null;
+    }
     const path = `propostas/${propostaId}/danfe.pdf`;
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.storage
       .from("danfes")
