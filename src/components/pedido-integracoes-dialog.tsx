@@ -265,6 +265,32 @@ export function PedidoIntegracoesDialog({
               </div>
             </section>
 
+            {/* Cobrança (Itaú) */}
+            <CobrancaCard
+              cobranca={d.cobranca}
+              acoes={
+                d.cobranca.aplicavel ? (
+                  <>
+                    <Button size="sm" disabled={ocupado} onClick={() => cobranca.mutate(false)}>
+                      {cobranca.isPending ? (
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                      )}
+                      {d.cobranca.linhaDigitavel || d.cobranca.pixCopiaCola ? "Reenviar" : "Emitir cobrança"}
+                    </Button>
+                    {(d.cobranca.linhaDigitavel || d.cobranca.pixCopiaCola) && (
+                      <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => cobranca.mutate(true)}>
+                        Forçar nova emissão
+                      </Button>
+                    )}
+                  </>
+                ) : null
+              }
+            />
+
+
+
             </TabsContent>
             <TabsContent value="auditoria" className="space-y-4">
             <section className="space-y-2 rounded-xl border border-border bg-surface/40 p-3">
