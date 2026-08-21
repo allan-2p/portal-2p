@@ -520,10 +520,12 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
   });
 
 /**
- * Atribui o Nº SAP a uma proposta no momento da conclusão.
- * Idempotente: se a proposta já tiver número, devolve o existente.
+ * Nº SAP (VBELN) de uma proposta — apenas LEITURA.
+ * O número nasce no SAP (resposta da ZNFE_OV_CRIAR ou auto-recuperação via
+ * ZNFE_OV_CONSULTAR) e é gravado em `sap_ov_numero` por `sap-ov.server.ts`.
+ * O portal nunca gera, incrementa ou reserva esse número.
  */
-export const atribuirNumeroSapFn = createServerFn({ method: "POST" })
+export const consultarNumeroSapFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
     const id = (input as { propostaId?: unknown })?.propostaId;
@@ -532,14 +534,14 @@ export const atribuirNumeroSapFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const db = await repo();
-    const atual = await db.getProposta(data.propostaId, "numero_sap");
-    const existente = (atual as any)?.numero_sap?.trim() || null;
-    if (existente) return { numeroSap: existente as string };
-
-    const numeroSap = await gerarNumeroSap();
-    await db.atualizarProposta(data.propostaId, { numero_sap: numeroSap });
-    return { numeroSap };
+    const atual = await db.getProposta(data.propostaId, "sap_ov_numero, sap_ov_status, sap_ov_mensagem");
+    return {
+      numeroSap: (String((atual as any)?.sap_ov_numero ?? "").trim() || null) as string | null,
+      status: ((atual as any)?.sap_ov_status ?? null) as string | null,
+      mensagem: ((atual as any)?.sap_ov_mensagem ?? null) as string | null,
+    };
   });
+
 
 // ---------------------------------------------------------------------------
 // Leitura/escrita das propostas (banco do Grupo 2P — sempre via servidor)
