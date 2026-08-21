@@ -65,14 +65,8 @@ async function repo() {
   return await import("./propostas-db.server");
 }
 
-/** Gera um número SAP único: 6 dígitos, apenas números. */
-async function gerarNumeroSap() {
-  try {
-    return await (await repo()).proximoNumeroSap();
-  } catch {
-    return Date.now().toString().slice(-6);
-  }
-}
+
+
 
 
 function validar(input: any): SalvarPropostaInput {
