@@ -15,6 +15,8 @@ import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, Calculator, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { cidadeUf } from "@/lib/local-format";
 import { formatSapNumero } from "@/lib/sap-numero";
+import { NfDocumentosCard } from "@/components/nf-documentos-card";
+
 
 type Item = { codigo?: string | null; nome?: string; qtd?: number; valor?: number };
 
@@ -96,6 +98,9 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         </h3>
         <PropostaTimeline status={status} proposta={p} />
       </div>
+
+      <NfDocumentosCard proposta={p} />
+
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="glass rounded-2xl p-5 space-y-3">
