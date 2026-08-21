@@ -82,13 +82,12 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     return await processarWebhookPix(payload);
   },
 
-  // O webhook apenas registra o retorno recebido enquanto o motor de rastreio
-  // não estiver ligado; o payload fica auditável e pode ser reprocessado.
-  "webhook.fretefy": async (payload) => ({
-    skipped: true,
-    motivo: "Motor de rastreio Fretefy ainda não ativado — retorno registrado para auditoria.",
-    payload_recebido: payload,
-  }),
+  // Motor real: aplica o rastreio da Fretefy (entrega concluída → Entregue).
+  "webhook.fretefy": async (payload) => {
+    const { processarWebhookFretefy } = await import("@/lib/fretefy-tracking.server");
+    return await processarWebhookFretefy(payload);
+  },
+
 };
 
 export function executorFor(job: JobSlug): JobExecutor {

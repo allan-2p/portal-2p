@@ -642,7 +642,9 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
       throw new Error(`Não é possível cancelar um pedido com status "${de}".`);
     }
 
-    await db.atualizarProposta(data.id, { status: "Cancelado" });
+    const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
+    const t = await aplicarTransicao(data.id, "Cancelado", "humano", { de });
+    if (!t.ok) throw new Error(t.motivo ?? "Não foi possível cancelar o pedido.");
     await sincronizarSalesforceAoSalvar(data.id);
     return { ok: true };
   });

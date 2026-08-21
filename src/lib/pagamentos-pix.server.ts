@@ -12,6 +12,7 @@
  * Nunca grave credenciais ou certificados nos logs.
  */
 
+import { transicaoPermitida } from "./proposta-status";
 import * as db from "./propostas-db.server";
 
 export type PixEventoTipo = "pago" | "expirado" | "cancelado" | "desconhecido";
@@ -311,6 +312,8 @@ export async function aplicarEventoPix(ev: PixEvento, io: PixIO = pixIOBanco): P
   } else if (ev.tipo === "cancelado") {
     if (de !== "Entregue" && de !== "Cancelado") para = "Cancelado";
   }
+  // A máquina de status é a autoridade: transição não prevista não é gravada.
+  if (para !== de && !transicaoPermitida(de, para)) para = de;
   // expirado: pedido permanece em Aguardando Pagamento para reemissão da cobrança.
 
   if (para !== de) patch["status"] = para;
