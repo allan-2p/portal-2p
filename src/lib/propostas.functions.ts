@@ -144,7 +144,15 @@ function validar(input: any): SalvarPropostaInput {
     uf,
     contribuinte: !!input.contribuinte,
     regimeTributario: input.regimeTributario ?? null,
-    finalidadeUso: String(input.finalidadeUso ?? "uso_consumo"),
+    finalidadeUso: (() => {
+      const v = String(input.finalidadeUso ?? "");
+      const valida = ["revenda", "industrializacao", "uso_consumo"].includes(v);
+      // Faturando o cliente final, a finalidade vem da tela e é obrigatória.
+      if (faturarClienteFinal && !valida)
+        throw new Error("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
+      return valida ? v : "uso_consumo";
+    })(),
+
     previsaoFechamento: /^\d{4}-\d{2}-\d{2}$/.test(String(input.previsaoFechamento ?? ""))
       ? String(input.previsaoFechamento)
       : null,
