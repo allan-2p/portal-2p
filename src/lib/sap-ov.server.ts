@@ -1057,6 +1057,13 @@ async function cadastrarParceiroFaturamento(
   const org = String(row["organizacao"] ?? "solar");
   const escopo = org === "carregadores" ? "carregadores" : org === "grupo" ? "grupo" : "solar";
 
+  // Tabela de preço: o cliente final não tem cadastro no portal, então vale a
+  // tabela escolhida na própria proposta (totais.listaPreco → PLTYP).
+  const totaisRow = (row["totais"] ?? {}) as Record<string, any>;
+  const listaPreco = String(totaisRow["listaPreco"] ?? "").trim();
+  const tabelaPreco = /^\d{1,2}$/.test(listaPreco) ? listaPreco.padStart(2, "0") : "01";
+
+
   const r = await enviarClienteParaSap({
     doc,
     razao_social: String(fat["nome"] ?? row["cliente_nome"] ?? "").trim(),
@@ -1074,6 +1081,7 @@ async function cadastrarParceiroFaturamento(
     uf: String(fat["uf"] ?? row["uf"] ?? ""),
     vendedor_sap: String(row["consultor_codigo_sap"] ?? "") || null,
     condicao_pgto_sap: String(row["condicao_pagamento_codigo"] ?? "") || null,
+    tabela_preco: tabelaPreco,
     escopo_org: escopo as "solar" | "carregadores" | "grupo",
   });
 
