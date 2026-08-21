@@ -151,6 +151,20 @@ export async function simularSap(
   const erros: string[] = [];
   if (!itens.length) return { valores: mapa, erros, motivo: null };
 
+  // O SAP só aceita o material numérico (ex.: 200000690). Se algum item vier
+  // com o SKU comercial (2P-PSI250+LPM10-45), é falha de de/para no catálogo:
+  // bloqueia antes de gastar a chamada e mostra o material com problema.
+  const alfa = itens.map((i) => norm(i.codigo)).filter((c) => c && !/^\d+$/.test(c));
+  if (alfa.length)
+    return {
+      valores: mapa,
+      erros: [
+        `Produto sem código SAP numérico no catálogo (de/para pendente): ${[...new Set(alfa)].slice(0, 8).join(", ")}.`,
+      ],
+      motivo: null,
+    };
+
+
   const url = process.env["SAP_SIMULAR_URL"] ?? URL_PADRAO;
   const auth = credencial();
   if (!auth)
