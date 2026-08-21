@@ -403,25 +403,6 @@ function NovaPropostaSolarPage() {
     void atualizarPrecos(novos, listaPreco, setter);
   }
 
-  /** Inclui um produto digitado manualmente (fora do catálogo). */
-  function adicionarAvulso() {
-    const desc = avulsoDesc.trim();
-    if (!desc) return toast.error("Descreva o produto que deseja incluir.");
-    setItensLista((prev) => [
-      ...prev,
-      {
-        key: Math.random().toString(36).slice(2),
-        produtoId: "",
-        qtd: Math.max(1, Number(avulsoQtd) || 1),
-        valor: 0,
-        origem: "manual",
-        avulso: { codigo: "AVULSO", descricao: desc },
-      },
-    ]);
-    setAvulsoDesc("");
-    setAvulsoQtd("1");
-    toast.success("Produto incluído. Informe o valor unitário na lista.");
-  }
 
 
 
