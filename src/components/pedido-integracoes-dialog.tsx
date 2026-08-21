@@ -16,10 +16,12 @@ import {
 } from "@/components/ui/dialog";
 import {
   criarOrdemVendaSapFn,
+  gerarCobrancaPedidoFn,
   sincronizarPedidoSalesforceFn,
   statusIntegracoesPedidoFn,
 } from "@/lib/propostas.functions";
 import { listIntegrationLogs, type IntegrationLogRow } from "@/lib/integration-logs.functions";
+import { CobrancaCard } from "@/components/cobranca-card";
 import { formatSapNumero } from "@/lib/sap-numero";
 
 function dataHora(iso?: string | null) {
@@ -118,10 +120,26 @@ export function PedidoIntegracoesDialog({
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha no envio ao Salesforce."),
   });
 
+  const cobrancaFn = useServerFn(gerarCobrancaPedidoFn);
+  const cobranca = useMutation({
+    mutationFn: async (forcar: boolean) => cobrancaFn({ data: { propostaId: propostaId!, forcar } }),
+    onSuccess: (r: any) => {
+      if (r?.gerada) {
+        toast.success(r.meio === "pix" ? "Cobrança Pix criada." : "Boleto emitido.");
+      } else {
+        toast.error(r?.erro ?? r?.motivo ?? "A cobrança não foi emitida.", { duration: 14000 });
+      }
+      atualizar();
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Falha ao emitir a cobrança.", { duration: 14000 }),
+  });
+
   const d = status.data;
   const rows = (logs.data?.rows ?? []) as IntegrationLogRow[];
   const total = logs.data?.total ?? 0;
-  const ocupado = sap.isPending || sf.isPending;
+  const ocupado = sap.isPending || sf.isPending || cobranca.isPending;
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -246,6 +264,32 @@ export function PedidoIntegracoesDialog({
                 )}
               </div>
             </section>
+
+            {/* Cobrança (Itaú) */}
+            <CobrancaCard
+              cobranca={d.cobranca}
+              acoes={
+                d.cobranca.aplicavel ? (
+                  <>
+                    <Button size="sm" disabled={ocupado} onClick={() => cobranca.mutate(false)}>
+                      {cobranca.isPending ? (
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                      )}
+                      {d.cobranca.linhaDigitavel || d.cobranca.pixCopiaCola ? "Reenviar" : "Emitir cobrança"}
+                    </Button>
+                    {(d.cobranca.linhaDigitavel || d.cobranca.pixCopiaCola) && (
+                      <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => cobranca.mutate(true)}>
+                        Forçar nova emissão
+                      </Button>
+                    )}
+                  </>
+                ) : null
+              }
+            />
+
+
 
             </TabsContent>
             <TabsContent value="auditoria" className="space-y-4">

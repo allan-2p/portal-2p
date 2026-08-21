@@ -62,52 +62,20 @@ function correlation(prefix: string, id: string): string {
 // --------------------------------------------------------------------------
 
 /**
- * Consulta se já existe boleto para este nosso-número. Devolve os dados do
- * boleto existente (para reaproveitar) ou null quando não há nenhum. Falha na
- * consulta devolve null: a emissão segue, para não travar o checkout por uma
- * indisponibilidade de leitura.
+ * Emite o boleto à vista no Itaú.
+ *
+ * Contrato validado contra a API (cash_management v2):
+ *  - o corpo vai SEMPRE envelopado em `{ data: { ... } }` (sem isso o Itaú
+ *    responde 400 "O campo data da request não pode ser nulo");
+ *  - `desconto_expresso` é obrigatório;
+ *  - boleto "a vista" NÃO aceita `quantidade_parcelas`;
+ *  - `dados_qrcode` só é permitido quando o instrumento é boleto+pix.
+ *
+ * A consulta prévia de boleto existente não é usada: a rota GET /boletos não
+ * está liberada para estas credenciais (403). A idempotência é garantida pelo
+ * próprio pedido (cobrança já gravada não é reemitida).
  */
-async function consultarBoletoExistente(
-  cred: NonNullable<ReturnType<typeof credenciaisBoleto>>,
-  beneficiario: string,
-  nossoNumero: string,
-  propostaId: string,
-): Promise<{
-  nossoNumero: string;
-  linhaDigitavel: string | null;
-  codigoBarras: string | null;
-  url: string | null;
-  vencimento: string | null;
-} | null> {
-  try {
-    const resp = await chamarItau({
-      escopo: "boleto",
-      cred,
-      metodo: "GET",
-      caminho: `/cash_management/v2/boletos?id_beneficiario=${encodeURIComponent(beneficiario)}&nosso_numero=${encodeURIComponent(nossoNumero)}`,
-      correlationId: correlation("boleto-consulta", propostaId),
-    });
-    const lista = Array.isArray(resp["data"]) ? resp["data"] : resp["data"] ? [resp["data"]] : [];
-    const item = lista[0];
-    const dado = item?.["dado_boleto"] ?? item;
-    if (!dado) return null;
-    const ind = Array.isArray(dado?.["dados_individuais_boleto"]) ? dado["dados_individuais_boleto"][0] : dado;
-    const linha = ind?.["numero_linha_digitavel"] ?? null;
-    if (!linha && !ind?.["numero_nosso_numero"]) return null;
-    return {
-      nossoNumero: ind?.["numero_nosso_numero"] ?? nossoNumero,
-      linhaDigitavel: linha,
-      codigoBarras: ind?.["codigo_barras"] ?? null,
-      url: ind?.["url_acesso_boleto"] ?? null,
-      vencimento: ind?.["data_vencimento"] ?? null,
-    };
-  } catch {
-    return null;
-  }
-}
-
 async function emitirBoleto(row: Record<string, any>, valor: number) {
-
   const cred = credenciaisBoleto();
   const beneficiario = itauEnv("ITAU_BOLETO_BENEFICIARIO");
   const agencia = itauEnv("ITAU_BOLETO_AGENCIA");
@@ -124,53 +92,65 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
   const nossoNumero = soDigitos(row["numero"]).padStart(8, "0").slice(-8);
   const docPagador = soDigitos(row["cliente_doc"]);
 
-  const body = {
-    etapa_processo_boleto: "efetivacao",
-    beneficiario: { id_beneficiario: beneficiario },
-    dado_boleto: {
-      descricao_instrumento_cobranca: "boleto",
-      forma_envio: "impressa",
-      tipo_boleto: "a vista",
-      codigo_carteira: carteira,
-      valor_total_titulo: valor17(valor),
-      codigo_especie: "01",
-      data_emissao: isoData(hoje),
-      // Sempre 1 boleto único do valor total — a plataforma não emite carnê.
-      quantidade_parcelas: 1,
-      pagador: {
-        pessoa: {
-          nome_pessoa: String(row["cliente_nome"] ?? "").slice(0, 50),
-          tipo_pessoa: {
-            codigo_tipo_pessoa: docPagador.length > 11 ? "J" : "F",
-            ...(docPagador.length > 11
-              ? { numero_cadastro_nacional_pessoa_juridica: docPagador }
-              : { numero_cadastro_pessoa_fisica: docPagador }),
-          },
-        },
-        endereco: {
-          nome_logradouro: String(row["logradouro"] ?? row["endereco"] ?? "").slice(0, 45),
-          nome_bairro: String(row["bairro"] ?? "").slice(0, 15),
-          nome_cidade: String(row["cidade"] ?? "").slice(0, 20),
-          sigla_UF: String(row["uf"] ?? "").slice(0, 2),
-          numero_CEP: soDigitos(row["cep"]),
-        },
-      },
-      dados_individuais_boleto: [
-        {
-          numero_nosso_numero: nossoNumero,
-          data_vencimento: isoData(venc),
-          valor_titulo: valor17(valor),
-        },
-      ],
-    },
-    dados_qrcode: {},
+  const fat = (row["faturamento"] ?? {}) as Record<string, unknown>;
+  const ent = (row["entrega"] ?? {}) as Record<string, unknown>;
+  const end = (...chaves: string[]): string => {
+    for (const k of chaves) {
+      for (const fonte of [row, fat, ent] as Record<string, unknown>[]) {
+        const v = fonte?.[k];
+        if (v !== undefined && v !== null && String(v).trim()) return String(v).trim();
+      }
+    }
+    return "";
   };
 
-  // Antes de emitir: o boleto pode já existir no Itaú (retentativa do checkout,
-  // ou POST que respondeu com timeout depois de gravar). Emitir de novo geraria
-  // duas cobranças para o mesmo pedido.
-  const existente = await consultarBoletoExistente(cred, beneficiario, nossoNumero, String(row["id"]));
-  if (existente) return { ...existente, vencimento: existente.vencimento ?? isoData(venc), agencia, conta };
+
+
+  const body = {
+    data: {
+      etapa_processo_boleto: "efetivacao",
+      beneficiario: { id_beneficiario: beneficiario },
+      dado_boleto: {
+        descricao_instrumento_cobranca: "boleto",
+        forma_envio: "impressa",
+        tipo_boleto: "a vista",
+        codigo_carteira: carteira,
+        valor_total_titulo: valor17(valor),
+        codigo_especie: "01",
+        data_emissao: isoData(hoje),
+        desconto_expresso: false,
+        pagador: {
+          pessoa: {
+            nome_pessoa: String(row["cliente_nome"] ?? "").slice(0, 50),
+            tipo_pessoa: {
+              codigo_tipo_pessoa: docPagador.length > 11 ? "J" : "F",
+              ...(docPagador.length > 11
+                ? { numero_cadastro_nacional_pessoa_juridica: docPagador }
+                : { numero_cadastro_pessoa_fisica: docPagador }),
+            },
+          },
+          // O endereço plano da proposta costuma vir vazio: o cadastro real
+          // está em `faturamento` (ou `entrega`).
+          endereco: {
+            nome_logradouro: String(end("logradouro", "endereco", "rua")).slice(0, 45),
+            nome_bairro: String(end("bairro")).slice(0, 15),
+            nome_cidade: String(end("cidade", "municipio")).slice(0, 20),
+            sigla_UF: String(end("uf", "estado")).slice(0, 2),
+            numero_CEP: soDigitos(end("cep")),
+          },
+
+        },
+        // Sempre 1 boleto único do valor total — a plataforma não emite carnê.
+        dados_individuais_boleto: [
+          {
+            numero_nosso_numero: nossoNumero,
+            data_vencimento: isoData(venc),
+            valor_titulo: valor17(valor),
+          },
+        ],
+      },
+    },
+  };
 
   const resp = await chamarItau({
     escopo: "boleto",
@@ -180,7 +160,6 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
     body,
     correlationId: correlation("boleto", String(row["id"])),
   });
-
 
   const dado = (resp["data"] ?? resp)?.["dado_boleto"] ?? resp["dado_boleto"] ?? {};
   const individual = Array.isArray(dado?.["dados_individuais_boleto"])
@@ -197,6 +176,8 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
     conta,
   };
 }
+
+
 
 // --------------------------------------------------------------------------
 // Pix
@@ -253,10 +234,36 @@ async function criarCobrancaPix(row: Record<string, any>, valor: number) {
 /**
  * Gera a cobrança do pedido logo após a finalização (equivalente ao
  * `geraBoletoPagamento` da plataforma atual, agora com Pix também).
+ *
+ * `forcar` reemite mesmo quando já existe cobrança gravada (reenvio manual
+ * pela tela de integrações do pedido).
  */
-export async function gerarCobrancaCheckout(propostaId: string): Promise<CobrancaResultado> {
+export async function gerarCobrancaCheckout(
+  propostaId: string,
+  opts: { forcar?: boolean; ator?: { id?: string | null; email?: string | null } } = {},
+): Promise<CobrancaResultado> {
+  const t0 = Date.now();
   const row = await db.getProposta(propostaId);
   if (!row) return { gerada: false, meio: null, motivo: "Pedido não encontrado." };
+
+  const registrar = async (
+    level: "info" | "warn" | "error",
+    event: string,
+    message: string,
+    detail: Record<string, unknown> = {},
+  ) => {
+    const { logIntegrationEvent } = await import("./integration-logs.server");
+    await logIntegrationEvent({
+      slug: "pagamento.cobranca",
+      level,
+      event,
+      message: message.slice(0, 500),
+      detail: { proposta_id: propostaId, numero: row["numero"] ?? null, ...detail },
+      durationMs: Date.now() - t0,
+      actorId: opts.ator?.id ?? null,
+      actorEmail: opts.ator?.email ?? null,
+    });
+  };
 
   const forma = String(row["forma_pagamento"] ?? "");
   if (forma === "boleto_prazo") {
@@ -273,7 +280,7 @@ export async function gerarCobrancaCheckout(propostaId: string): Promise<Cobranc
   // Idempotência: pedido que já tem cobrança emitida não gera outra.
   const jaEmitida =
     String(row["pagamento_linha_digitavel"] ?? "").trim() || String(row["pagamento_txid"] ?? "").trim();
-  if (jaEmitida && String(row["pagamento_status"] ?? "") !== "cancelado") {
+  if (jaEmitida && !opts.forcar && String(row["pagamento_status"] ?? "") !== "cancelado") {
     return {
       gerada: false,
       meio: (String(row["pagamento_meio"] ?? "") || null) as CobrancaResultado["meio"],
@@ -286,9 +293,10 @@ export async function gerarCobrancaCheckout(propostaId: string): Promise<Cobranc
   }
 
   const valor = valorTotalPedido(row);
-  if (!(valor > 0)) return { gerada: false, meio: null, erro: "Valor total do pedido inválido." };
-
-
+  if (!(valor > 0)) {
+    await registrar("error", "valor_invalido", "Valor total do pedido inválido para emissão de cobrança.");
+    return { gerada: false, meio: null, erro: "Valor total do pedido inválido." };
+  }
 
   try {
     if (forma === "boleto_vista") {
@@ -303,6 +311,10 @@ export async function gerarCobrancaCheckout(propostaId: string): Promise<Cobranc
         pagamento_codigo_barras: b.codigoBarras,
         pagamento_url: b.url,
         pagamento_atualizado_em: new Date().toISOString(),
+      });
+      await registrar("info", "boleto_emitido", `Boleto emitido (nosso número ${b.nossoNumero}).`, {
+        vencimento: b.vencimento,
+        valor,
       });
       return {
         gerada: true,
@@ -322,15 +334,29 @@ export async function gerarCobrancaCheckout(propostaId: string): Promise<Cobranc
       pagamento_url: p.location,
       pagamento_atualizado_em: new Date().toISOString(),
     });
+    await registrar("info", "pix_criado", `Cobrança Pix criada (txid ${p.txid}).`, { valor });
     return { gerada: true, meio: "pix", txid: p.txid, pixCopiaCola: p.copiaCola };
   } catch (e) {
     const msg = (e as Error).message ?? String(e);
-    // O pedido não trava: apenas fica sem cobrança emitida.
+    // O pedido não trava: fica marcado como erro de cobrança, com o retorno
+    // do Itaú registrado na auditoria e reenvio manual pela tela do pedido.
+    try {
+      await db.atualizarProposta(row.id, {
+        pagamento_meio: forma === "pix" ? "pix" : "boleto",
+        pagamento_status: "erro",
+        pagamento_valor: valor,
+        pagamento_atualizado_em: new Date().toISOString(),
+      });
+    } catch {
+      /* gravação de estado nunca derruba o retorno do erro */
+    }
+    await registrar("error", forma === "pix" ? "pix_falhou" : "boleto_falhou", msg, { resposta: msg });
     return {
       gerada: false,
       meio: forma === "pix" ? "pix" : "boleto",
       erro: msg,
-      motivo: "Não foi possível emitir a cobrança. Entre em contato com o suporte.",
+      motivo: "Não foi possível emitir a cobrança. Reenvie pela tela de Integrações do pedido.",
     };
   }
 }
+
