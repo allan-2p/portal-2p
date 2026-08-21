@@ -119,13 +119,13 @@ type Erros = Record<string, string>;
 const ROTULOS: Record<string, string> = {
   razao_social: "Razão social", doc: "CNPJ", uf: "UF de destino",
   ie: "Inscrição Estadual", cep: "CEP", logradouro: "Logradouro",
-  numero: "Número", cidade: "Cidade",
+  numero: "Número", cidade: "Cidade", consultor: "Consultor",
   finalidade: "Finalidade de uso", tabela_preco: "Tabela de preço",
 };
 const rotuloCampo = (chave: string, contatos: Contato[]) =>
   ROTULOS[chave] ?? rotuloErroContato(chave, contatos) ?? chave;
 
-function validarCampos(f: Form): Erros {
+function validarCampos(f: Form, consultorId?: string | null): Erros {
   const e: Erros = {};
   if (!f.razao_social?.trim()) e.razao_social = "Informe a razão social.";
   if (!cnpjValido(f.doc ?? "")) e.doc = "CNPJ inválido.";
@@ -136,11 +136,13 @@ function validarCampos(f: Form): Erros {
   if (!f.logradouro?.trim()) e.logradouro = "Informe o logradouro.";
   if (!f.numero?.trim()) e.numero = "Informe o número do endereço.";
   if (!f.cidade?.trim()) e.cidade = "Informe a cidade.";
+  if (!consultorId?.trim()) e.consultor = "Selecione o consultor responsável.";
   if (!f.finalidade?.trim()) e.finalidade = "Selecione a finalidade de uso (exigida pelo SAP).";
   // Tabela de preço tem padrão automático (2P-0001) — não bloqueia o cadastro.
 
   return e;
 }
+
 
 function comLegado(f: Form): Form {
   const principal = (f.contatos ?? []).find((c) => c.tipo === "principal");
@@ -214,12 +216,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     queryFn: () => listarConsultores({ data: { instancia } }),
     staleTime: 5 * 60_000,
   });
+  const consultorEfetivo = consultorId ?? consultoresQ.data?.eu.id ?? null;
   const consultorNomeAtual =
     (consultoresQ.data?.consultores ?? []).find((c: { id: string; nome: string }) => c.id === consultorId)?.nome ??
     consultoresQ.data?.eu.nome ??
     "—";
 
-  const errosAtuais = useMemo(() => validarCampos(form), [form]);
+  const errosAtuais = useMemo(() => validarCampos(form, consultorEfetivo), [form, consultorEfetivo]);
+
   const erros: Erros = tentouSalvar ? errosAtuais : {};
   const listaErros = Object.keys(erros).map((k) => ({ campo: k, msg: erros[k]! }));
 
@@ -319,7 +323,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             cnaes_secundarios: p.cnaes_secundarios ?? [],
             contatos: p.contatos ?? [],
           } as never,
-          consultor_id: consultorId ?? consultoresQ.data?.eu.id ?? null,
+          consultor_id: consultorEfetivo,
         },
       });
     },
@@ -457,7 +461,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   };
   const tentarSalvar = () => {
     setTentouSalvar(true);
-    const e = validarCampos(form);
+    const e = validarCampos(form, consultorEfetivo);
     const chaves = Object.keys(e);
     if (chaves.length > 0) {
       toast.error(`Corrija ${chaves.length} campo(s) para salvar.`);
@@ -714,9 +718,10 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
 
               <Section title="Comercial">
-                <F label="Consultor">
+                <F label="Consultor *" id="campo-consultor" error={erros.consultor}>
                   {consultoresQ.data?.podeEscolher ? (
-                    <Select value={consultorId ?? consultoresQ.data?.eu.id ?? ""} onValueChange={(v) => setConsultorId(v)}>
+                    <Select value={consultorEfetivo ?? ""} onValueChange={(v) => setConsultorId(v)}>
+
                       <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
                       <SelectContent>
                         {(consultoresQ.data?.consultores ?? []).map((c: { id: string; nome: string }) => (
