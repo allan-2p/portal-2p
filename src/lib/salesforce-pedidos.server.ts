@@ -156,7 +156,39 @@ async function ownerSfId(userId: unknown): Promise<string | null> {
   }
 }
 
+/** Nomes de campos recusados pela org, extraídos da mensagem de erro. */
+function camposInvalidos(msg: string): string[] {
+  const achados = new Set<string>();
+  for (const m of msg.matchAll(/([A-Za-z0-9_]+__c)/g)) achados.add(m[1]!);
+  return [...achados];
+}
+
 /**
+ * Procura a oportunidade já existente do pedido (propostas anteriores ao
+ * vínculo persistido), evitando duplicar no Salesforce.
+ */
+async function acharOpp(numero: string, nomeOpp: string): Promise<string | null> {
+  if (numero) {
+    try {
+      const q = `SELECT Id FROM Opportunity WHERE Numero_Pedido_Portal__c = '${esc(numero)}' ORDER BY CreatedDate DESC LIMIT 1`;
+      const r = await sf(`/query?q=${encodeURIComponent(q)}`);
+      if (r?.records?.[0]?.Id) return r.records[0].Id;
+    } catch {
+      // Org sem o campo customizado — cai no fallback por nome.
+    }
+  }
+  if (!nomeOpp) return null;
+  try {
+    const q = `SELECT Id FROM Opportunity WHERE Name = '${esc(nomeOpp)}' ORDER BY CreatedDate DESC LIMIT 1`;
+    const r = await sf(`/query?q=${encodeURIComponent(q)}`);
+    return r?.records?.[0]?.Id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+
  * Organização da oportunidade (picklist `Org_Oportunidade__c`).
  * 2P Solar → "Acessórios 2P" · 2P Carregadores → "2P Carregadores".
  */
