@@ -55,15 +55,18 @@ function LogDetail({ detail }: { detail: Record<string, unknown> }) {
 
 /**
  * Histórico de sincronizações e erros. Sem slug, mostra todas as integrações.
- * `clienteId` restringe a auditoria às tentativas/respostas de um cliente.
+ * `clienteId` restringe a auditoria às tentativas/respostas de um cliente e
+ * `propostaId` às integrações de um pedido (payload enviado e resposta crua).
  */
 export function IntegrationLogsPanel({
   slug,
   clienteId,
+  propostaId,
   title = "Histórico de sincronizações e erros",
 }: {
   slug?: string;
   clienteId?: string;
+  propostaId?: string;
   title?: string;
 }) {
   const [level, setLevel] = useState<Level>("all");
@@ -75,11 +78,14 @@ export function IntegrationLogsPanel({
 
   const fetchLogs = useServerFn(listIntegrationLogs);
   const q = useQuery({
-    queryKey: ["integration-logs", slug ?? "all", clienteId ?? "", level, termo, pageSize, page],
+    queryKey: ["integration-logs", slug ?? "all", clienteId ?? "", propostaId ?? "", level, termo, pageSize, page],
     queryFn: () =>
-      fetchLogs({ data: { slug, clienteId, level, search: termo, limit: pageSize, offset: page * pageSize } }),
+      fetchLogs({
+        data: { slug, clienteId, propostaId, level, search: termo, limit: pageSize, offset: page * pageSize },
+      }),
     refetchOnWindowFocus: false,
   });
+
 
 
   const rows = q.data?.rows ?? [];
