@@ -78,6 +78,7 @@ function montarEnvelope(cliente: ClienteSapInput): string {
         ${tag("CFOPC", c.CFOPC)}${tag("ICMSTAXPAY", c.ICMSTAXPAY)}${tag("VENDEDOR", c.VENDEDOR)}
         <BZIRK>SOUTH</BZIRK><KALKS>01</KALKS><VZSKZ>01</VZSKZ>
         ${tag("PLTYP", c.PLTYP)}${tag("KONDA", c.KONDA)}${tag("CRT", c.CRT)}${tag("ZTERM", c.ZTERM)}
+        ${c.INTEGRADOR ? tag("INTEGRADOR", c.INTEGRADOR) : ""}
         ${tag("EQUIPE_VENDAS", c.EQUIPE_VENDAS)}${tag("ESCRITORIO", c.ESCRITORIO)}
         ${indSector}
       </I_S_CLIENTE>
@@ -94,7 +95,10 @@ function resumoFalha(texto: string) {
 }
 
 /** Cria/atualiza o cliente no SAP e devolve o código (KUNNR) quando houver. */
-export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<SapClienteResultado> {
+export async function enviarClienteParaSap(
+  cliente: ClienteSapInput,
+  opts: { tentativas?: number; retentarHttp5xx?: boolean } = {},
+): Promise<SapClienteResultado> {
   const faltando = validarParaSap(cliente);
   if (faltando.length > 0) {
     return { ok: false, erro: `Dados obrigatórios para o SAP ausentes: ${faltando.join(", ")}.` };
@@ -108,8 +112,11 @@ export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<Sa
   const body = montarEnvelope(cliente);
   let texto = "";
   // O SAP às vezes devolve 500 `env:Receiver` (dump momentâneo do provedor).
-  // Nesses casos vale reenviar: a RFC é idempotente pelo CNPJ.
-  const tentativas = 3;
+  // Reenviar só é seguro no cadastro do integrador (idempotente pelo CNPJ);
+  // no cliente final a criação de BP NÃO é idempotente, então o chamador passa
+  // `retentarHttp5xx: false` e no máximo 1 retentativa (só falha de rede).
+  const tentativas = Math.max(1, opts.tentativas ?? 3);
+  const retentarHttp = opts.retentarHttp5xx !== false;
   for (let i = 1; i <= tentativas; i++) {
     try {
       const res = await fetch(comIdiomaPT(url), {
@@ -123,7 +130,8 @@ export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<Sa
       });
       texto = await res.text();
       if (res.ok) break;
-      const transitorio = res.status >= 500 || /Receiver|processamento do Web Service/i.test(texto);
+      const transitorio =
+        retentarHttp && (res.status >= 500 || /Receiver|processamento do Web Service/i.test(texto));
       if (transitorio && i < tentativas) {
         await new Promise((r) => setTimeout(r, 1500 * i));
         continue;

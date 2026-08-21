@@ -771,24 +771,28 @@ export async function criarOrdemVendaSap(
 
   const testrun = opts.testrun ?? String(process.env["SAP_OV_TESTRUN"] ?? "").toUpperCase() === "X";
 
-  // Faturamento para cliente final: o parceiro (AG) precisa existir no SAP
-  // antes da ordem. Cadastra/atualiza pela mesma RFC de clientes; se falhar, a
-  // ordem NÃO é enviada (o SAP recusaria com erro de parceiro inexistente).
+  // Faturamento para cliente final: tenta cadastrar/atualizar o parceiro (AG)
+  // antes da ordem. Se falhar, NÃO bloqueia — registra aviso e segue: o SAP
+  // recusa a OV com T_MSG claro caso o parceiro realmente não exista, e
+  // repetir o cadastro só criaria BPs duplicados.
   if (!testrun && row["faturar_cliente_final"]) {
     const r = await cadastrarParceiroFaturamento(row);
     if (!r.ok) {
-      const mensagem = `Cliente final não pôde ser cadastrado no SAP: ${r.erro}`.slice(0, 500);
-      await gravar(propostaId, { sap_ov_status: "erro", sap_ov_mensagem: mensagem });
       await logIntegrationEvent({
         ...base,
-        level: "error",
-        message: mensagem,
-        detail: { proposta_id: propostaId, numero: row["numero"] ?? null, etapa: "parceiro-faturamento" },
-        durationMs: Date.now() - inicio,
+        event: "cliente-final.cadastro",
+        level: "warn",
+        message: `Cliente final não pôde ser cadastrado no SAP: ${r.erro}`.slice(0, 500),
+        detail: {
+          proposta_id: propostaId,
+          numero: row["numero"] ?? null,
+          etapa: "parceiro-faturamento",
+          raw: r.erro,
+        },
       });
-      return { enviado: false, ok: false, vbeln: null, mensagem, motivo: "parceiro_faturamento", testrun: false };
     }
   }
+
 
 
   const peso = await pesosDoPedido(itens);
@@ -1025,10 +1029,30 @@ async function gravar(id: string, patch: Record<string, unknown>) {
 }
 
 
+/** KUNNR já usado antes para este documento (evita criar BP duplicado). */
+async function numeroSapDoClienteFinal(doc: string, row: Record<string, any>): Promise<string> {
+  const atual = digitos((row["faturamento"] ?? {})["numero_sap"]);
+  if (atual) return atual;
+  try {
+    const anteriores = await db.consultarPropostas(
+      { "faturamento->>doc": `eq.${doc}`, "faturamento->>numero_sap": "not.is.null" },
+      { select: "faturamento", order: "created_at.desc", limit: 5 },
+    );
+    for (const p of anteriores) {
+      const n = digitos(((p as any)["faturamento"] ?? {})["numero_sap"]);
+      if (n) return n;
+    }
+  } catch {
+    /* consulta é só otimização — sem ela o SAP cria/atualiza pelo documento */
+  }
+  return "";
+}
+
 /**
  * Cadastra/atualiza no SAP o parceiro faturado quando o pedido fatura o
- * cliente final (ZHDIT_CLIENTES_CADASTRO). Reaproveita a mesma integração do
- * cadastro de clientes do portal.
+ * cliente final (ZHDIT_CLIENTES_CADASTRO). Espelha a plataforma antiga:
+ * CFOPC fixo pelo documento, PLTYP/vendedor/condição do integrador, vínculo
+ * INTEGRADOR e reaproveitamento do KUNNR (ATUALIZAR=X) quando já existe.
  */
 async function cadastrarParceiroFaturamento(
   row: Record<string, any>,
@@ -1037,19 +1061,6 @@ async function cadastrarParceiroFaturamento(
   const doc = digitos(fat["doc"]);
   if (!doc) return { ok: false, erro: "CPF/CNPJ do cliente final não informado." };
 
-  // A finalidade do cliente final vem exclusivamente da tela (CPF não tem
-  // cadastro no portal). Sem um valor válido o SAP receberia "Revenda" por
-  // omissão e gravaria o CFOP errado — melhor falhar de forma explícita.
-  const { finalidadeDaTela } = await import("./sap-clientes-map");
-  const finalidade = finalidadeDaTela(row["finalidade_uso"]);
-  if (!finalidade)
-    return {
-      ok: false,
-      erro:
-        "Finalidade de uso do cliente final ausente ou inválida. " +
-        "Informe Revenda, Industrialização ou Uso e Consumo na aba de faturamento.",
-    };
-
   const { sapClientesConfigurado, enviarClienteParaSap } = await import("./sap-clientes.server");
   if (!sapClientesConfigurado())
     return { ok: false, erro: "Integração de cadastro de clientes do SAP não configurada (SAP_CLIENTES_URL)." };
@@ -1057,42 +1068,80 @@ async function cadastrarParceiroFaturamento(
   const org = String(row["organizacao"] ?? "solar");
   const escopo = org === "carregadores" ? "carregadores" : org === "grupo" ? "grupo" : "solar";
 
-  // Tabela de preço: o cliente final não tem cadastro no portal, então vale a
-  // tabela escolhida na própria proposta (totais.listaPreco → PLTYP).
+  // Dados do integrador (cliente da proposta): tabela de preço, vendedor,
+  // condição de pagamento e KUNNR para o vínculo.
+  let integrador: Record<string, any> | null = null;
+  try {
+    const clientes = await import("./clientes-db.server");
+    const achados = await clientes.findClienteByDoc(digitos(row["cliente_doc"]));
+    integrador = achados[0]?.cliente ?? null;
+  } catch {
+    /* sem cadastro acessível: cai nos valores da própria proposta */
+  }
+
+  // Tabela de preço: a do integrador; na falta, a escolhida na proposta.
   const totaisRow = (row["totais"] ?? {}) as Record<string, any>;
   const listaPreco = String(totaisRow["listaPreco"] ?? "").trim();
-  const tabelaPreco = /^\d{1,2}$/.test(listaPreco) ? listaPreco.padStart(2, "0") : "01";
+  const tabelaPreco =
+    String(integrador?.["tabela_preco"] ?? "").trim() ||
+    (/^\d{1,2}$/.test(listaPreco) ? listaPreco.padStart(2, "0") : "01");
 
+  const vendedor =
+    String(row["consultor_codigo_sap"] ?? "").trim() ||
+    String(integrador?.["vendedor_sap"] ?? "").trim();
+  if (!vendedor) return { ok: false, erro: "Consultor sem código SAP na proposta e no cadastro do cliente." };
 
-  const r = await enviarClienteParaSap({
-    doc,
-    razao_social: String(fat["nome"] ?? row["cliente_nome"] ?? "").trim(),
-    ie: String(fat["ie"] ?? ""),
-    contribuinte: doc.length === 11 ? false : fat["contribuinte"] === true,
-    finalidade,
-    email: String(row["cliente_email"] ?? ""),
-    telefone: String(fat["telefone"] ?? row["cliente_telefone"] ?? ""),
-    cep: String(fat["cep"] ?? ""),
-    logradouro: String(fat["logradouro"] ?? ""),
-    numero: String(fat["numero"] ?? ""),
-    complemento: String(fat["complemento"] ?? ""),
-    bairro: String(fat["bairro"] ?? ""),
-    cidade: String(fat["cidade"] ?? ""),
-    uf: String(fat["uf"] ?? row["uf"] ?? ""),
-    vendedor_sap: String(row["consultor_codigo_sap"] ?? "") || null,
-    condicao_pgto_sap: String(row["condicao_pagamento_codigo"] ?? "") || null,
-    tabela_preco: tabelaPreco,
-    escopo_org: escopo as "solar" | "carregadores" | "grupo",
-  });
+  const numeroSapExistente = await numeroSapDoClienteFinal(doc, row);
+
+  const r = await enviarClienteParaSap(
+    {
+      doc,
+      razao_social: String(fat["nome"] ?? row["cliente_nome"] ?? "").trim(),
+      ie: String(fat["ie"] ?? ""),
+      contribuinte: doc.length === 11 ? false : fat["contribuinte"] === true,
+      cliente_final: true,
+      email: String(row["cliente_email"] ?? ""),
+      telefone: String(fat["telefone"] ?? row["cliente_telefone"] ?? ""),
+      cep: String(fat["cep"] ?? ""),
+      logradouro: String(fat["logradouro"] ?? ""),
+      numero: String(fat["numero"] ?? ""),
+      complemento: String(fat["complemento"] ?? ""),
+      bairro: String(fat["bairro"] ?? ""),
+      cidade: String(fat["cidade"] ?? ""),
+      uf: String(fat["uf"] ?? row["uf"] ?? ""),
+      vendedor_sap: vendedor,
+      condicao_pgto_sap:
+        String(integrador?.["condicao_pgto_sap"] ?? "").trim() ||
+        String(row["condicao_pagamento_codigo"] ?? "") ||
+        null,
+      tabela_preco: tabelaPreco,
+      numero_sap: numeroSapExistente || null,
+      integrador_sap: String(integrador?.["numero_sap"] ?? "") || null,
+      escopo_org: escopo as "solar" | "carregadores" | "grupo",
+    },
+    // Criação de BP não é idempotente: nada de reenviar em HTTP 500.
+    { tentativas: 2, retentarHttp5xx: false },
+  );
 
   if (!r.ok) return { ok: false, erro: r.erro };
+
+  const numeroSap = digitos(r.numero_sap) || numeroSapExistente || null;
+  if (numeroSap && numeroSap !== digitos(fat["numero_sap"])) {
+    await gravar(String(row["id"]), { faturamento: { ...fat, numero_sap: numeroSap } });
+  }
 
   await logIntegrationEvent({
     slug: "sap",
     event: "cliente-final.cadastro",
     level: "info",
     message: `Cliente final ${doc} cadastrado/atualizado no SAP para o pedido ${row["numero"] ?? ""}`,
-    detail: { proposta_id: row["id"] ?? null, numero_sap: r.numero_sap, mensagem: r.mensagem },
+    detail: {
+      proposta_id: row["id"] ?? null,
+      numero_sap: numeroSap,
+      atualizacao: Boolean(numeroSapExistente),
+      mensagem: r.mensagem,
+    },
   });
-  return { ok: true, numeroSap: r.numero_sap };
+  return { ok: true, numeroSap };
 }
+

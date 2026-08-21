@@ -102,7 +102,17 @@ export type ClienteSapInput = {
   /** Valores explícitos (espelho do SAP); sobrepõem o cálculo pelo escopo. */
   equipe_vendas?: string | null;
   escritorio_vendas?: string | null;
+  /**
+   * Cadastro do CLIENTE FINAL (faturamento direto), não do integrador.
+   * Muda as regras fiscais: CFOPC fixo (90 CNPJ / 06 CPF), ICMSTAXPAY pela IE
+   * e nome de pessoa física quebrado em 1º nome + restante.
+   */
+  cliente_final?: boolean;
+  /** KUNNR do integrador (cliente da proposta) — vínculo no SAP. */
+  integrador_sap?: string | null;
 };
+
+
 
 /** Escopo comercial do cliente no SAP. */
 export type EscopoOrg = "solar" | "carregadores" | "grupo";
@@ -180,9 +190,19 @@ export type CamposSapCliente = {
   IND_SECTOR: string;
   EQUIPE_VENDAS: string;
   ESCRITORIO: string;
+  INTEGRADOR: string;
 };
 
 const UFS_KONDA_04 = ["SP", "RJ", "ES", "MG", "RS", "PR", "SC"];
+
+/** Nome de pessoa física: NAME1 = primeiro nome, NAME2 = restante. */
+function nomePessoaFisica(nome: string): string[] {
+  const partes = so(nome).split(/\s+/).filter(Boolean);
+  if (!partes.length) return [];
+  const primeiro = partes[0]!.slice(0, 40);
+  const resto = partes.slice(1).join(" ").slice(0, 40);
+  return resto ? [primeiro, resto] : [primeiro];
+}
 
 /** Monta os campos da estrutura I_S_CLIENTE conforme as regras do SAP. */
 export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
@@ -190,11 +210,19 @@ export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
   const pessoaFisica = doc.length === 11;
   const finalidade = normalizarFinalidade(c.finalidade);
   const contribuinte = c.contribuinte === true;
+  const clienteFinal = c.cliente_final === true;
 
   let ie = so(c.ie).replace(/[.\-/]/g, "").slice(0, 18);
   let icmstaxpay = "01";
   let cfopc: string;
-  if (contribuinte && finalidade === "Revenda") cfopc = "08";
+  if (clienteFinal) {
+    // Cliente final (faturamento direto): CFOPC é FIXO pelo tipo de documento —
+    // a finalidade de uso só vale para o cadastro do integrador.
+    cfopc = pessoaFisica ? "06" : "90";
+    const temIe = !pessoaFisica && ie && ie.toUpperCase() !== "ISENTO";
+    icmstaxpay = temIe ? "01" : "09";
+    if (!temIe) ie = ie || "ISENTO";
+  } else if (contribuinte && finalidade === "Revenda") cfopc = "08";
   else if (contribuinte && finalidade === "Industrialização") cfopc = "00";
   else if (contribuinte && finalidade === "Uso e Consumo") cfopc = "90";
   else {
@@ -212,7 +240,7 @@ export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
     CNPJ: pessoaFisica ? "" : doc.padStart(14, "0"),
     CPF: pessoaFisica ? doc : "",
     CODCLI: digitos(c.numero_sap),
-    NAMES: quebrarNome(c.razao_social),
+    NAMES: clienteFinal && pessoaFisica ? nomePessoaFisica(c.razao_social) : quebrarNome(c.razao_social),
     IE: ie,
     CIDADE: so(c.cidade).slice(0, 40),
     BAIRRO: so(c.bairro).slice(0, 40),
@@ -229,11 +257,17 @@ export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
     PLTYP: pltypDaTabela(c.tabela_preco),
     KONDA: UFS_KONDA_04.includes(uf) ? "04" : "03",
     CRT: crtDoRegime(c.regime_tributario),
-    ZTERM: digitos(c.numero_sap) ? so(c.condicao_pgto_sap) : "2P00",
-    IND_SECTOR: uf === "SC" && finalidade === "Industrialização" ? "04" : "",
+    ZTERM: clienteFinal
+      ? so(c.condicao_pgto_sap) || "2P00"
+      : digitos(c.numero_sap)
+        ? so(c.condicao_pgto_sap)
+        : "2P00",
+    IND_SECTOR: !clienteFinal && uf === "SC" && finalidade === "Industrialização" ? "04" : "",
+    INTEGRADOR: digitos(c.integrador_sap),
     ...vendasDoEscopo(c),
   };
 }
+
 
 /** Validações que precisam existir antes de tentar o envio ao SAP. */
 export function validarParaSap(c: ClienteSapInput): string[] {
@@ -246,7 +280,8 @@ export function validarParaSap(c: ClienteSapInput): string[] {
   if (!so(c.cidade)) faltando.push("Cidade");
   if (!so(c.uf)) faltando.push("UF");
   if (digitos(c.cep).length !== 8) faltando.push("CEP");
-  if (!so(c.finalidade)) faltando.push("Finalidade de uso");
+  // Cliente final não usa finalidade de uso (CFOPC é fixo pelo documento).
+  if (!c.cliente_final && !so(c.finalidade)) faltando.push("Finalidade de uso");
   if (!so(c.tabela_preco)) faltando.push("Tabela de preço");
   if (!so(c.vendedor_sap)) faltando.push("Código SAP do vendedor");
   if (quebrarNome(c.razao_social).join(" ").length < so(c.razao_social).length) {
