@@ -45,10 +45,14 @@ const URL_PADRAO =
 
 const norm = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
 const num = (v: unknown) => {
-  const s = String(v ?? "").replace(/\s/g, "").replace(/\.(?=\d{3}\b)/g, "").replace(",", ".");
-  const n = Number(s);
+  const s = String(v ?? "").replace(/\s/g, "");
+  if (!s) return 0;
+  // SAP devolve decimal com PONTO ("8.856" = 8,856 kg; "1234.56").
+  // Ponto só é separador de milhar quando há vírgula decimal junto ("1.234,56").
+  const n = s.includes(",") ? Number(s.replace(/\./g, "").replace(",", ".")) : Number(s);
   return Number.isFinite(n) ? n : 0;
 };
+
 
 function achar(o: any, chave: string): any {
   if (o == null || typeof o !== "object") return undefined;
