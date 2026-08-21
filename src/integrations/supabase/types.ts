@@ -2283,6 +2283,7 @@ export type Database = {
           cod_terminal_aterramento: string
           cod_terminal_m8: string
           cod_terminal_zmi: string
+          cod_terminal_zmil: string | null
           espessura_max: number
           espessura_min: number
           folga_paineis: number
@@ -2305,6 +2306,7 @@ export type Database = {
           cod_terminal_aterramento?: string
           cod_terminal_m8?: string
           cod_terminal_zmi?: string
+          cod_terminal_zmil?: string | null
           espessura_max?: number
           espessura_min?: number
           folga_paineis?: number
@@ -2327,6 +2329,7 @@ export type Database = {
           cod_terminal_aterramento?: string
           cod_terminal_m8?: string
           cod_terminal_zmi?: string
+          cod_terminal_zmil?: string | null
           espessura_max?: number
           espessura_min?: number
           folga_paineis?: number
