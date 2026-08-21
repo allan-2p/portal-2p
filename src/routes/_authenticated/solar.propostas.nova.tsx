@@ -1331,6 +1331,19 @@ function NovaPropostaSolarPage() {
     setPreviewAberto(true);
   }
 
+  // Prévia em tempo real: enquanto o modal está aberto, o HTML é regerado a
+  // cada mudança de dados (setState com string idêntica não re-renderiza).
+  useEffect(() => {
+    if (!previewAberto) return;
+    try {
+      const html = buildSolarPropostaPdfHtml(montarPdfDados());
+      setPdfHtml((atual) => (atual === html ? atual : html));
+    } catch {
+      /* dados incompletos durante a edição — mantém a última prévia válida */
+    }
+  });
+
+
   /** Baixa/imprime a proposta em PDF. */
   function baixarPdf() {
     const erro = validarParaPdf();
