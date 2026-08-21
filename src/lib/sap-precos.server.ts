@@ -152,6 +152,7 @@ export async function simularSap(
 ): Promise<SimulacaoResultado> {
   const mapa = new Map<string, SimulacaoValores>();
   const erros: string[] = [];
+  iniciarColetaNumerica();
   if (!itens.length) return { valores: mapa, erros, motivo: null };
 
   // O SAP só aceita o material numérico (ex.: 200000690). Se algum item vier
