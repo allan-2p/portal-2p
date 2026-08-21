@@ -1,4 +1,4 @@
-import { fmtBRL, fmtPct } from "@/lib/carregadores";
+import { fmtBRL, fmtPct, FRETE_ABSORVIDO } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
 
 export type PropostaPdfItem = {
