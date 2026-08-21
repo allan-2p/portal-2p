@@ -28,9 +28,16 @@ import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 import { criarNotificacao } from "./notificacoes.server";
 
-/** Status do portal em ordem de avanço (nunca regride). */
-const ORDEM = ["Processando", "Separação", "Faturado", "Coletado"] as const;
+/**
+ * Status do portal em ordem de avanço (nunca regride).
+ *
+ * "Aguardando Pagamento" entra na fila porque boleto a prazo e cartão criam a
+ * ordem já no checkout: quando o financeiro libera a ordem no SAP, o pedido
+ * anda sozinho (STATUS_PICKING NOK → Processando; AOK/OK → Separação).
+ */
+const ORDEM = ["Aguardando Pagamento", "Processando", "Separação", "Faturado", "Coletado"] as const;
 export type StatusNf = (typeof ORDEM)[number];
+
 
 const esc = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
