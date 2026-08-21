@@ -65,14 +65,8 @@ async function repo() {
   return await import("./propostas-db.server");
 }
 
-/** Gera um número SAP único: 6 dígitos, apenas números. */
-async function gerarNumeroSap() {
-  try {
-    return await (await repo()).proximoNumeroSap();
-  } catch {
-    return Date.now().toString().slice(-6);
-  }
-}
+
+
 
 
 function validar(input: any): SalvarPropostaInput {
@@ -334,16 +328,16 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
         `CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação da diretoria.`,
       );
 
-    // Nº SAP: a proposta nasce SEM número. Ele só é atribuído na conclusão
-    // (atribuirNumeroSapFn). O cliente nunca envia esse dado — só preservamos
-    // o que já estiver gravado no banco.
+    // Nº SAP (VBELN): nasce no SAP, nunca no portal. Aqui é só leitura de
+    // `sap_ov_numero` para exibir/imprimir; nada é gerado nem gravado.
     let numeroSap: string | null = null;
     let numeroExistente: string | null = null;
     if (data.propostaId) {
-      const atualSap = await (await repo()).getProposta(data.propostaId, "numero_sap, numero");
-      numeroSap = (atualSap as any)?.numero_sap?.trim() || null;
+      const atualSap = await (await repo()).getProposta(data.propostaId, "sap_ov_numero, numero");
+      numeroSap = String((atualSap as any)?.sap_ov_numero ?? "").trim() || null;
       numeroExistente = (atualSap as any)?.numero?.trim() || null;
     }
+
 
     // Nº da proposta: sequencial no servidor (6 dígitos, a partir de 050000).
     const numeroProposta = data.propostaId
@@ -373,7 +367,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
 
       numero: numeroProposta,
       nome: data.propostaNome,
-      numero_sap: numeroSap,
+      // `numero_sap` NÃO é escrito pelo portal: só o SAP define o VBELN.
       cliente_nome: data.cliente.nome,
 
       cliente_telefone: data.cliente.telefone,
@@ -526,10 +520,12 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
   });
 
 /**
- * Atribui o Nº SAP a uma proposta no momento da conclusão.
- * Idempotente: se a proposta já tiver número, devolve o existente.
+ * Nº SAP (VBELN) de uma proposta — apenas LEITURA.
+ * O número nasce no SAP (resposta da ZNFE_OV_CRIAR ou auto-recuperação via
+ * ZNFE_OV_CONSULTAR) e é gravado em `sap_ov_numero` por `sap-ov.server.ts`.
+ * O portal nunca gera, incrementa ou reserva esse número.
  */
-export const atribuirNumeroSapFn = createServerFn({ method: "POST" })
+export const consultarNumeroSapFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
     const id = (input as { propostaId?: unknown })?.propostaId;
@@ -538,14 +534,14 @@ export const atribuirNumeroSapFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const db = await repo();
-    const atual = await db.getProposta(data.propostaId, "numero_sap");
-    const existente = (atual as any)?.numero_sap?.trim() || null;
-    if (existente) return { numeroSap: existente as string };
-
-    const numeroSap = await gerarNumeroSap();
-    await db.atualizarProposta(data.propostaId, { numero_sap: numeroSap });
-    return { numeroSap };
+    const atual = await db.getProposta(data.propostaId, "sap_ov_numero, sap_ov_status, sap_ov_mensagem");
+    return {
+      numeroSap: (String((atual as any)?.sap_ov_numero ?? "").trim() || null) as string | null,
+      status: ((atual as any)?.sap_ov_status ?? null) as string | null,
+      mensagem: ((atual as any)?.sap_ov_mensagem ?? null) as string | null,
+    };
   });
+
 
 // ---------------------------------------------------------------------------
 // Leitura/escrita das propostas (banco do Grupo 2P — sempre via servidor)
@@ -663,8 +659,20 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
     const { assertPodeExcluir, getPerm } = await import("./object-perms.server");
     const perm = await getPerm(context as any, String(atual?.["organizacao"] ?? "solar"), "propostas");
     assertPodeExcluir(perm, "propostas", (atual?.["created_by"] as string | null) ?? null, (context as any).userId);
+    // Pedido que já foi ao SAP não é apagado: o par NROPED↔VBELN precisa
+    // sobreviver para a auditoria e para o cron de NFs. Vira "Cancelado".
+    const vbeln = String(atual?.["sap_ov_numero"] ?? "").trim();
+    if (vbeln) {
+      await db.atualizarProposta(data.id, { status: "Cancelado" });
+      return {
+        ok: true,
+        cancelada: true,
+        aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal.`,
+      };
+    }
     await db.excluirProposta(data.id);
-    return { ok: true };
+    return { ok: true, cancelada: false, aviso: null as string | null };
+
   });
 
 

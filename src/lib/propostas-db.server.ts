@@ -116,10 +116,30 @@ export async function excluirProposta(id: string): Promise<void> {
   await rest(`propostas?id=eq.${id}`, { method: "DELETE" });
 }
 
-/** Nº da proposta: sequencial de 6 dígitos (zeros à esquerda) a partir de 050000. */
+/** Nº da proposta (NROPED): sequencial de 6 dígitos a partir de 050000. */
 export const NUMERO_PROPOSTA_INICIAL = 50000;
 
+/**
+ * Próximo número de pedido (NROPED). Sai de uma sequence do Postgres no banco
+ * do Grupo 2P (`public.proximo_numero_proposta`): monotônica, nunca reutilizada
+ * e à prova de concorrência — excluir um pedido NÃO devolve o número.
+ *
+ * O fallback por `max(numero)+1` existe só para não travar o portal caso o
+ * script `supabase/external/propostas-numeracao.sql` ainda não tenha sido
+ * aplicado; ele reutiliza número e deve ser considerado degradado.
+ */
 export async function proximoNumeroProposta(organizacao = "carregadores"): Promise<string> {
+  try {
+    const out = await rest(`rpc/proximo_numero_proposta`, {
+      method: "POST",
+      body: JSON.stringify({ p_organizacao: organizacao }),
+    });
+    const numero = String(typeof out === "string" ? out : (out?.numero ?? out ?? "")).trim();
+    if (/^\d{6,}$/.test(numero)) return numero;
+  } catch {
+    /* sequence ainda não criada no banco do Grupo 2P — cai no fallback */
+  }
+
   const params = new URLSearchParams({
     select: "numero",
     organizacao: `eq.${organizacao}`,
@@ -133,18 +153,6 @@ export async function proximoNumeroProposta(organizacao = "carregadores"): Promi
   return String(proximo).padStart(6, "0");
 }
 
-/** Próximo Nº SAP: 6 dígitos, apenas números. */
-export async function proximoNumeroSap(): Promise<string> {
-  const params = new URLSearchParams({
-    select: "numero_sap",
-    numero_sap: "not.is.null",
-    order: "numero_sap.desc",
-    limit: "1",
-  });
-  const rows = (await rest(`propostas?${params}`)) ?? [];
-  const atual = Number(String(rows[0]?.numero_sap ?? "").replace(/\D/g, "")) || 0;
-  return String((atual + 1) % 1000000).padStart(6, "0");
-}
 
 // --------------------------------------------------------------------------
 // Log de conclusão

@@ -53,6 +53,7 @@ type Row = {
   numero: string | null;
   nome?: string | null;
   numero_sap?: string | null;
+  sap_ov_numero?: string | null;
   cliente_nome: string;
   cliente_doc?: string | null;
   uf: string;
@@ -104,7 +105,7 @@ function PropostasSolarPage() {
       if (uf !== "todos" && r.uf !== uf) return false;
       if (!t) return true;
       return norm(
-        [r.cliente_nome, r.numero, r.nome, r.numero_sap, r.cliente_doc, r.consultor_nome]
+        [r.cliente_nome, r.numero, r.nome, (r.sap_ov_numero || r.numero_sap), r.cliente_doc, r.consultor_nome]
           .filter(Boolean)
           .join(" "),
       ).includes(t);
@@ -122,13 +123,16 @@ function PropostasSolarPage() {
   async function confirmarExclusao() {
     if (!excluirId) return;
     try {
-      await excluirPropostaFn({ data: { id: excluirId } });
+      const r = await excluirPropostaFn({ data: { id: excluirId } });
+      setExcluirId(null);
+      if (r?.aviso) toast.warning(r.aviso, { duration: 10000 });
+      else toast.success("Proposta excluída.");
+      q.refetch();
+      return;
     } catch (e) {
       setExcluirId(null);
       return toast.error((e as Error).message);
     }
-    setExcluirId(null);
-    toast.success("Proposta excluída.");
     q.refetch();
   }
 
@@ -202,7 +206,7 @@ function PropostasSolarPage() {
                     <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
                     <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
                     <td className="px-4 py-3">{r.nome || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.numero_sap || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{(r.sap_ov_numero || r.numero_sap) || "—"}</td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {fmtBRL(r.totais['valorTotal'] ?? 0)}
                     </td>
