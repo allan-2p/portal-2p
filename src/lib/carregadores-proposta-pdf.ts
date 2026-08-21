@@ -374,7 +374,11 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
         <h4>Resumo</h4>
         <div class="rows">
           <div class="row"><span>Equipamentos</span><b>${fmtBRL(p.totalNf - p.freteValor)}</b></div>
-          <div class="row"><span>Frete (${esc(p.freteMod)})</span><b>${fmtBRL(p.freteValor)}</b></div>
+          <div class="row"><span>Frete (${esc(p.freteMod)})</span><b>${
+            FRETE_ABSORVIDO.includes(p.freteMod as any)
+              ? `Frete grátis${p.freteValor > 0 ? ` <span style="font-weight:400;text-decoration:line-through;opacity:.6">${fmtBRL(p.freteValor)}</span>` : ""}`
+              : fmtBRL(p.freteValor)
+          }</b></div>
           <div class="row"><span>Total da nota fiscal</span><b>${fmtBRL(p.totalNf)}</b></div>
         </div>
       </div>
