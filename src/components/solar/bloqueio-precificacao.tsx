@@ -9,7 +9,7 @@
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export type CausaBloqueio = "parceiro" | "conexao" | "tabela" | "sem-preco" | "outro";
+export type CausaBloqueio = "parceiro" | "conexao" | "tabela" | "de-para" | "sem-preco" | "outro";
 
 export type DiagnosticoBloqueio = {
   causa: CausaBloqueio;
