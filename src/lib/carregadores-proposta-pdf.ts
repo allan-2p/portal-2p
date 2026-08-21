@@ -212,7 +212,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .hmeta b{ color:#fff; font-weight:600; }
   .accentbar{ height:3px; background:linear-gradient(90deg,var(--accent),var(--accent-2),rgba(47,107,255,.1)); }
 
-  .body{ padding:7mm 14mm 0; flex:1; }
+  .body{ padding:7mm 14mm 0; }
 
   /* SECTIONS */
   .sec{ margin-top:6mm; }
