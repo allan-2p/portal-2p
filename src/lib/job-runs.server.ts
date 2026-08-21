@@ -59,6 +59,12 @@ export const JOBS = {
     descricao: "Retorno de coleta/entrega enviado pela Fretefy.",
     reprocessavel: true,
   },
+  "fretefy.oferta-carga": {
+    label: "Fretefy • Oferta de carga",
+    descricao: "Cria a oferta de carga após a OV (frete CIF/dedicado) e atualiza a NF no faturamento.",
+    reprocessavel: true,
+  },
+
 } as const;
 
 export type JobSlug = keyof typeof JOBS;

@@ -298,6 +298,30 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
     } catch {
       /* best effort */
     }
+    // Faturou: a carga na Fretefy troca o documento placeholder pela NF real.
+    if (c.nfNumero && String(row["fretefy_oferta_id"] ?? "").trim()) {
+      try {
+        const { runJob } = await import("./job-runs.server");
+        const { atualizarDocumentoOferta } = await import("./fretefy-oferta.server");
+        await runJob(
+          {
+            job: "fretefy.oferta-carga",
+            trigger: "cron",
+            payload: { propostaId: id, acao: "documento" },
+            refId: id,
+          },
+          () =>
+            atualizarDocumentoOferta(id, {
+              nfNumero: c.nfNumero,
+              nfSerie: c.nfSerie,
+              nfChave: c.nfChave,
+            }),
+        );
+      } catch {
+        /* best effort */
+      }
+    }
+
     const dono = row["created_by"] ? String(row["created_by"]) : null;
     if (dono) {
       await criarNotificacao({
@@ -337,7 +361,9 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
   // deixaria os pedidos mais antigos sem nunca serem processados.
   const rows = await db.listarPropostas({
     statusIn: ["Processando", "Separação", "Faturado"],
-    select: "id,numero,status,created_by,sap_ov_numero,nf_numero,danfe_path,created_at",
+    select:
+      "id,numero,status,created_by,sap_ov_numero,nf_numero,danfe_path,created_at,fretefy_oferta_id",
+
     order: "asc",
     naoVazio: ["sap_ov_numero"],
     limit: limite,

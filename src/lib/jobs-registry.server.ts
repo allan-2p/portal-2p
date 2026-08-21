@@ -88,6 +88,21 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     return await processarWebhookFretefy(payload);
   },
 
+  // Motor real: cria a oferta de carga na Fretefy (ou atualiza a NF da carga).
+  "fretefy.oferta-carga": async (payload) => {
+    const p = payload as Record<string, unknown>;
+    const id = String(p["propostaId"] ?? "");
+    if (!id) return { skipped: true, motivo: "Sem propostaId no payload." };
+    if (String(p["acao"] ?? "criar") === "documento") {
+      const { atualizarDocumentoOferta } = await import("@/lib/fretefy-oferta.server");
+      return { ...(await atualizarDocumentoOferta(id)) };
+    }
+    const { criarOfertaCarga } = await import("@/lib/fretefy-oferta.server");
+    return { ...(await criarOfertaCarga(id, { forcar: Boolean(p["forcar"]) })) };
+  },
+
+
+
 };
 
 export function executorFor(job: JobSlug): JobExecutor {
