@@ -216,12 +216,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     queryFn: () => listarConsultores({ data: { instancia } }),
     staleTime: 5 * 60_000,
   });
+  const consultorEfetivo = consultorId ?? consultoresQ.data?.eu.id ?? null;
   const consultorNomeAtual =
     (consultoresQ.data?.consultores ?? []).find((c: { id: string; nome: string }) => c.id === consultorId)?.nome ??
     consultoresQ.data?.eu.nome ??
     "—";
 
-  const errosAtuais = useMemo(() => validarCampos(form), [form]);
+  const errosAtuais = useMemo(() => validarCampos(form, consultorEfetivo), [form, consultorEfetivo]);
+
   const erros: Erros = tentouSalvar ? errosAtuais : {};
   const listaErros = Object.keys(erros).map((k) => ({ campo: k, msg: erros[k]! }));
 
