@@ -872,7 +872,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         if (!r.ok) {
           await db.registrarConclusaoLog({
             ...base,
-            status: data.status,
+            status: statusDestino,
             resultado: "sap_ov_falhou",
             detalhe: String(r.mensagem ?? "Falha ao criar a ordem de venda no SAP.").slice(0, 500),
           });
@@ -914,7 +914,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         if (cobranca.erro) {
           await db.registrarConclusaoLog({
             ...base,
-            status: data.status,
+            status: statusDestino,
             resultado: "cobranca_falhou",
             detalhe: String(cobranca.erro).slice(0, 500),
           });
@@ -950,7 +950,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       if (!r.ok) {
         await db.registrarConclusaoLog({
           ...base,
-          status: data.status,
+          status: statusDestino,
           resultado: "salesforce_falhou",
           detalhe: String(r.mensagem ?? "Falha ao enviar o pedido ao Salesforce.").slice(0, 500),
         });
@@ -965,7 +965,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       await avisarKitFotovoltaico({ ...row, sap_ov_numero: sapOv?.vbeln ?? row["sap_ov_numero"] });
     }
 
-    return { id: row.id, status: data.status, already_concluded: false, cobranca, sapOv, salesforce };
+    return { id: row.id, status: statusDestino, already_concluded: false, cobranca, sapOv, salesforce };
     };
 
     // Monitoramento: cada finalização vira uma execução auditável em job_runs.
@@ -975,7 +975,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         trigger: "portal",
         refType: "proposta",
         refId: data.id,
-        payload: { id: data.id, status: data.status, etapa: data.etapa, origem: data.origem },
+        payload: { id: data.id, status: statusDestino, etapa: data.etapa, origem: data.origem },
         actorId: (context as any).userId ?? null,
       },
       executar,
