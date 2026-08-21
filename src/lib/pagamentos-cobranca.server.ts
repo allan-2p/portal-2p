@@ -217,10 +217,36 @@ async function criarCobrancaPix(row: Record<string, any>, valor: number) {
 /**
  * Gera a cobrança do pedido logo após a finalização (equivalente ao
  * `geraBoletoPagamento` da plataforma atual, agora com Pix também).
+ *
+ * `forcar` reemite mesmo quando já existe cobrança gravada (reenvio manual
+ * pela tela de integrações do pedido).
  */
-export async function gerarCobrancaCheckout(propostaId: string): Promise<CobrancaResultado> {
+export async function gerarCobrancaCheckout(
+  propostaId: string,
+  opts: { forcar?: boolean; ator?: { id?: string | null; email?: string | null } } = {},
+): Promise<CobrancaResultado> {
+  const t0 = Date.now();
   const row = await db.getProposta(propostaId);
   if (!row) return { gerada: false, meio: null, motivo: "Pedido não encontrado." };
+
+  const registrar = async (
+    level: "info" | "warn" | "error",
+    event: string,
+    message: string,
+    detail: Record<string, unknown> = {},
+  ) => {
+    const { logIntegrationEvent } = await import("./integration-logs.server");
+    await logIntegrationEvent({
+      slug: "pagamento.cobranca",
+      level,
+      event,
+      message: message.slice(0, 500),
+      detail: { proposta_id: propostaId, numero: row["numero"] ?? null, ...detail },
+      durationMs: Date.now() - t0,
+      actorId: opts.ator?.id ?? null,
+      actorEmail: opts.ator?.email ?? null,
+    });
+  };
 
   const forma = String(row["forma_pagamento"] ?? "");
   if (forma === "boleto_prazo") {
@@ -237,7 +263,7 @@ export async function gerarCobrancaCheckout(propostaId: string): Promise<Cobranc
   // Idempotência: pedido que já tem cobrança emitida não gera outra.
   const jaEmitida =
     String(row["pagamento_linha_digitavel"] ?? "").trim() || String(row["pagamento_txid"] ?? "").trim();
-  if (jaEmitida && String(row["pagamento_status"] ?? "") !== "cancelado") {
+  if (jaEmitida && !opts.forcar && String(row["pagamento_status"] ?? "") !== "cancelado") {
     return {
       gerada: false,
       meio: (String(row["pagamento_meio"] ?? "") || null) as CobrancaResultado["meio"],
@@ -250,9 +276,10 @@ export async function gerarCobrancaCheckout(propostaId: string): Promise<Cobranc
   }
 
   const valor = valorTotalPedido(row);
-  if (!(valor > 0)) return { gerada: false, meio: null, erro: "Valor total do pedido inválido." };
-
-
+  if (!(valor > 0)) {
+    await registrar("error", "valor_invalido", "Valor total do pedido inválido para emissão de cobrança.");
+    return { gerada: false, meio: null, erro: "Valor total do pedido inválido." };
+  }
 
   try {
     if (forma === "boleto_vista") {
@@ -267,6 +294,10 @@ export async function gerarCobrancaCheckout(propostaId: string): Promise<Cobranc
         pagamento_codigo_barras: b.codigoBarras,
         pagamento_url: b.url,
         pagamento_atualizado_em: new Date().toISOString(),
+      });
+      await registrar("info", "boleto_emitido", `Boleto emitido (nosso número ${b.nossoNumero}).`, {
+        vencimento: b.vencimento,
+        valor,
       });
       return {
         gerada: true,
@@ -286,15 +317,29 @@ export async function gerarCobrancaCheckout(propostaId: string): Promise<Cobranc
       pagamento_url: p.location,
       pagamento_atualizado_em: new Date().toISOString(),
     });
+    await registrar("info", "pix_criado", `Cobrança Pix criada (txid ${p.txid}).`, { valor });
     return { gerada: true, meio: "pix", txid: p.txid, pixCopiaCola: p.copiaCola };
   } catch (e) {
     const msg = (e as Error).message ?? String(e);
-    // O pedido não trava: apenas fica sem cobrança emitida.
+    // O pedido não trava: fica marcado como erro de cobrança, com o retorno
+    // do Itaú registrado na auditoria e reenvio manual pela tela do pedido.
+    try {
+      await db.atualizarProposta(row.id, {
+        pagamento_meio: forma === "pix" ? "pix" : "boleto",
+        pagamento_status: "erro",
+        pagamento_valor: valor,
+        pagamento_atualizado_em: new Date().toISOString(),
+      });
+    } catch {
+      /* gravação de estado nunca derruba o retorno do erro */
+    }
+    await registrar("error", forma === "pix" ? "pix_falhou" : "boleto_falhou", msg, { resposta: msg });
     return {
       gerada: false,
       meio: forma === "pix" ? "pix" : "boleto",
       erro: msg,
-      motivo: "Não foi possível emitir a cobrança. Entre em contato com o suporte.",
+      motivo: "Não foi possível emitir a cobrança. Reenvie pela tela de Integrações do pedido.",
     };
   }
 }
+
