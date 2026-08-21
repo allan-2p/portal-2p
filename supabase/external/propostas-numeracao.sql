@@ -40,3 +40,7 @@ begin
 end $$;
 
 grant execute on function public.proximo_numero_proposta(text) to service_role;
+
+-- Unicidade GLOBAL do número: nenhuma unidade (solar, carregadores, station…)
+-- pode repetir um NROPED, pois todas compartilham a mesma tabela e sequence.
+create unique index if not exists propostas_numero_unico on public.propostas (numero);
