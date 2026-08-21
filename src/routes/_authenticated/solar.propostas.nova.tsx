@@ -1200,6 +1200,7 @@ function NovaPropostaSolarPage() {
       freteMod,
       freteValor,
       freteGratis,
+      freteBonificado: bonificado,
       transportadora: transportadora?.nome ?? null,
       total,
       listaPreco,
