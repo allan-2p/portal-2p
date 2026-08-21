@@ -93,6 +93,7 @@ import {
 
 import { buildPropostaPdfHtml } from "@/lib/carregadores-proposta-pdf";
 import { MoneyInput } from "@/components/money-input";
+import { FreteDedicado } from "@/components/frete-dedicado";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { cn } from "@/lib/utils";
@@ -2132,6 +2133,18 @@ function PropostaCarregadoresPage() {
                       ? { ...s, transportadora: null, freteValor: 0 }
                       : s,
                   )
+                }
+              />
+            ) : null}
+            {state.freteMod === "DEDICADO" ? (
+              <FreteDedicado
+                selecionada={state.transportadora}
+                onSelect={(t) =>
+                  setState((s) => ({
+                    ...s,
+                    transportadora: t,
+                    freteValor: t ? money2(t.total) : s.freteValor,
+                  }))
                 }
               />
             ) : null}
