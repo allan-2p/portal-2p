@@ -173,3 +173,70 @@ export const diagnosticarFretefy = createServerFn({ method: "POST" })
       };
     }
   });
+
+export type DedicadaRow = {
+  id?: string;
+  nome: string;
+  fretefy_transportadora_id: string;
+  cnpj: string;
+  ativo: boolean;
+  ordem: number;
+};
+
+/** Lista completa (inclusive inativas) para o painel administrativo. */
+export const adminListarDedicadas = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { requireAdminFeature } = await import("@/lib/guards.server");
+    await requireAdminFeature(context, "admin.regras", "visualizar");
+    const { data, error } = await context.supabase
+      .from("frete_transportadoras_dedicadas")
+      .select("id, nome, fretefy_transportadora_id, cnpj, ativo, ordem")
+      .order("ordem", { ascending: true })
+      .order("nome", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as DedicadaRow[];
+  });
+
+/** Salva a lista inteira (upsert) e remove as excluídas no painel. */
+export const adminSalvarDedicadas = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { linhas: DedicadaRow[]; removidos: string[] }) => input)
+  .handler(async ({ data, context }) => {
+    const { requireAdminFeature } = await import("@/lib/guards.server");
+    await requireAdminFeature(context, "admin.regras", "editar");
+
+    const linhas = data.linhas.map((l) => ({
+      ...(l.id ? { id: l.id } : {}),
+      nome: String(l.nome ?? "").trim(),
+      fretefy_transportadora_id: String(l.fretefy_transportadora_id ?? "").trim(),
+      cnpj: String(l.cnpj ?? "").replace(/\D/g, ""),
+      ativo: !!l.ativo,
+      ordem: Number(l.ordem ?? 0),
+      updated_at: new Date().toISOString(),
+    }));
+
+    for (const l of linhas) {
+      if (!l.nome) throw new Error("Todas as transportadoras precisam de nome.");
+      if (!l.fretefy_transportadora_id) throw new Error(`Informe o ID Fretefy de ${l.nome}.`);
+      if (l.cnpj.length !== 14) throw new Error(`CNPJ inválido em ${l.nome}.`);
+    }
+    const ids = linhas.map((l) => l.fretefy_transportadora_id);
+    const dup = ids.find((v, i) => ids.indexOf(v) !== i);
+    if (dup) throw new Error(`ID Fretefy repetido: ${dup}.`);
+
+    if (data.removidos.length) {
+      const { error } = await context.supabase
+        .from("frete_transportadoras_dedicadas")
+        .delete()
+        .in("id", data.removidos);
+      if (error) throw new Error(error.message);
+    }
+    if (linhas.length) {
+      const { error } = await context.supabase
+        .from("frete_transportadoras_dedicadas")
+        .upsert(linhas as never, { onConflict: "id" });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
