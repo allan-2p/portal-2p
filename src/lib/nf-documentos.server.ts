@@ -101,7 +101,7 @@ export async function obterDocumentoNf(
       : caminhoDocumento(propostaId, tipo);
 
   let origem: "storage" | "sap" = "storage";
-  if (!(await existeNoStorage(path))) {
+  if (!(await cacheUtilizavel(path, tipo))) {
     const nroped = String(row["numero"] ?? "").trim();
     if (!nroped) throw new Error("Pedido sem número — não é possível consultar o SAP.");
     const { base64 } = await consultarDocumentoNfSap(nroped, tipo);
