@@ -36,6 +36,8 @@ export type SolarPropostaPdfData = {
   freteMod?: string | null;
   freteValor: number;
   freteGratis?: boolean;
+  /** Frete absorvido pela 2P (cliente não paga). */
+  freteBonificado?: boolean;
   transportadora?: string | null;
   total: number;
   listaPreco?: string | null;
