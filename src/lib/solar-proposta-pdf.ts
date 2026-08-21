@@ -197,9 +197,17 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
   .cond p{ font-size:8.8px; line-height:1.5; }
 
   .foot{ position:absolute; left:0; right:0; bottom:0; padding:4mm 14mm; border-top:1px solid var(--line);
+  .foot{ margin-top:8mm; padding:4mm 14mm 0; border-top:1px solid var(--line);
     display:flex; justify-content:space-between; align-items:center; font-size:7.6px; color:var(--muted); letter-spacing:.05em; }
   .foot b{ color:var(--accent); font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
-  @media print{ .page{ margin:0 } }
+
+  /* Quebra de página segura — nada é cortado ao meio */
+  .sec, .card, .rows, .total, .totais, .cond, .cond div, .f, tr, tfoot { break-inside:avoid; page-break-inside:avoid; }
+  .sech { break-after:avoid; page-break-after:avoid; }
+  thead { display:table-header-group; }
+  tfoot { display:table-row-group; }
+  @media print{ .page{ margin:0; width:auto } }
+
 </style></head>
 <body>
 <div class="page">
