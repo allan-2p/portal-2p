@@ -72,21 +72,30 @@ export function sapNfsConfigurado() {
   return Boolean(url && auth);
 }
 
-function envelope(nroped: string): string {
+export type DocumentoNfTipo = "danfe" | "xml" | "boleto";
+
+/**
+ * Envelope da RFC. `docs` liga os flags de documento (I_DANFE / I_XML_NFE /
+ * I_BOLETO); o cron pede só a DANFE, o download sob demanda pede o que o
+ * usuário clicou.
+ */
+function envelope(nroped: string, docs: DocumentoNfTipo[] = ["danfe"]): string {
+  const on = (t: DocumentoNfTipo) => (docs.includes(t) ? "X" : "");
   return `<?xml version="1.0" encoding="utf-8"?>
 <soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
   <soapenv:Header/>
   <soapenv:Body>
     <urn:ZNFE_OV_CONSULTAR>
-      <I_BOLETO></I_BOLETO>
+      <I_BOLETO>${on("boleto")}</I_BOLETO>
       <I_DADOS>X</I_DADOS>
-      <I_DANFE>X</I_DANFE>
+      <I_DANFE>${on("danfe")}</I_DANFE>
       <I_NROPED>${esc(nroped)}</I_NROPED>
-      <I_XML_NFE></I_XML_NFE>
+      <I_XML_NFE>${on("xml")}</I_XML_NFE>
     </urn:ZNFE_OV_CONSULTAR>
   </soapenv:Body>
 </soapenv:Envelope>`;
 }
+
 
 export type ConsultaSap = {
   picking: string | null;
