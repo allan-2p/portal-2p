@@ -285,7 +285,13 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
       <div class="rows">
         <div class="row"><span>Subtotal dos itens</span><b>${fmtBRL(p.subtotal)}</b></div>
         ${p.desconto > 0 ? `<div class="row"><span>Desconto${p.cupom ? ` · cupom ${esc(p.cupom)}` : ""}</span><b>- ${fmtBRL(p.desconto)}</b></div>` : ""}
-        <div class="row"><span>Frete ${esc(p.freteMod || "—")}</span><b>${p.freteGratis ? "Grátis" : fmtBRL(p.freteValor)}</b></div>
+        <div class="row"><span>Frete ${esc(p.freteMod || "—")}</span><b>${
+          p.freteGratis
+            ? "Frete grátis"
+            : p.freteBonificado
+              ? `Frete grátis${p.freteValor > 0 ? ` <span style="font-weight:400;text-decoration:line-through;opacity:.6">${fmtBRL(p.freteValor)}</span>` : ""}`
+              : fmtBRL(p.freteValor)
+        }</b></div>
       </div>
       <div class="total">
         <small>Investimento total</small>
