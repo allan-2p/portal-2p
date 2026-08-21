@@ -353,17 +353,49 @@ function NovaPropostaSolarPage() {
       if (typeof totais['ehKit'] === "boolean") setEhKit(totais['ehKit'] as boolean);
       setVendido(totais['vendidoClienteFinal'] ? "sim" : "nao");
       setCupomCodigo(String(totais['cupom'] ?? ""));
-      setModo("lista");
-      setItensLista(
+      // Restaura exatamente o que foi salvo: modo (calculadora/lista) e, no modo
+      // calculadora, todas as entradas + os itens gerados. Sem isso, reabrir a
+      // proposta a convertia silenciosamente em "lista de produtos".
+      const calc = (totais['calculo'] ?? {}) as Record<string, any>;
+      const itensSalvos: Item[] = ((p['itens'] as any[]) ?? []).map((i) => ({
+        key: Math.random().toString(36).slice(2),
+        produtoId: String(i.produtoId ?? ""),
+        qtd: Number(i.qtd ?? 1),
+        valor: money2(i.valor),
+        origem: "manual" as const,
+      }));
 
-        ((p['itens'] as any[]) ?? []).map((i) => ({
-          key: Math.random().toString(36).slice(2),
-          produtoId: String(i.produtoId),
-          qtd: Number(i.qtd ?? 1),
-          valor: money2(i.valor),
-          origem: "manual" as const,
-        })),
-      );
+      if (calc['modo'] === "calculadora") {
+        const e = (calc['entrada'] ?? {}) as Record<string, any>;
+        setGeradorId(String(e['geradorId'] ?? ""));
+        setMicroModelo(String(e['microModelo'] ?? ""));
+        setMicroQtd(String(e['microQtd'] ?? ""));
+        setModuloId(String(e['moduloId'] ?? ""));
+        if (e['modPersonalizado']) setModPersonalizado(e['modPersonalizado']);
+        setPaineis(String(e['paineis'] ?? ""));
+        setTamanhoTrilho(String(e['tamanhoTrilho'] ?? "longo"));
+        if (Array.isArray(e['linhas']) && e['linhas'].length) setLinhas(e['linhas'] as FileiraCalc[]);
+        if (calc['assinatura']) setAssinaturaCalc(String(calc['assinatura']));
+        if (calc['resultado']) setResultado(calc['resultado'] as CalcResultado);
+        const guardados = Array.isArray(calc['itens']) ? (calc['itens'] as any[]) : null;
+        setItensCalc(
+          guardados
+            ? guardados.map((i) => ({
+                key: Math.random().toString(36).slice(2),
+                produtoId: String(i.produtoId ?? ""),
+                qtd: Number(i.qtd ?? 1),
+                valor: money2(i.valor),
+                origem: i.origem === "manual" ? ("manual" as const) : ("calculadora" as const),
+                ...(i.avulso ? { avulso: i.avulso } : {}),
+              }))
+            : itensSalvos.map((i) => ({ ...i, origem: "calculadora" as const })),
+        );
+        setModo("calculadora");
+      } else {
+        setModo("lista");
+        setItensLista(itensSalvos);
+      }
+
       if (editId) {
         setPropostaId(editId);
         setNumero(String(p['numero'] ?? ""));
@@ -1135,7 +1167,35 @@ function NovaPropostaSolarPage() {
           transportadora,
           cupomCodigo: cupomCodigo || null,
           observacoes: observacoes || null,
-          calculo: resultado ? { distribuicao: resultado.distribuicao, comprimentos: resultado.comprimentos } : null,
+          // Guarda o estado completo da etapa 3 para que reabrir a proposta
+          // devolva exatamente o que foi salvo (modo + entradas da calculadora).
+          calculo: {
+            ...(resultado ? { distribuicao: resultado.distribuicao, comprimentos: resultado.comprimentos } : {}),
+            modo,
+            ...(modo === "calculadora"
+              ? {
+                  assinatura: assinaturaCalc,
+                  resultado,
+                  entrada: {
+                    geradorId,
+                    microModelo,
+                    microQtd,
+                    moduloId,
+                    modPersonalizado,
+                    paineis,
+                    tamanhoTrilho,
+                    linhas,
+                  },
+                  itens: itensCalc.map((i) => ({
+                    produtoId: i.produtoId,
+                    qtd: i.qtd,
+                    valor: i.valor,
+                    origem: i.origem,
+                    ...(i.avulso ? { avulso: i.avulso } : {}),
+                  })),
+                }
+              : {}),
+          },
           itens: itens.map((i) => ({ produtoId: i.produtoId, qtd: i.qtd })),
         },
       });
