@@ -1013,6 +1013,8 @@ function NovaPropostaSolarPage() {
     }
     if (etapa === 4) {
       if (!freteMod) e.push("Escolha a modalidade de frete.");
+      if (freteCotando)
+        e.push("O frete ainda está sendo calculado. Aguarde o fim da cotação para avançar.");
       if ((freteMod === "CIF" || freteMod === "DEDICADO") && !transportadora && !freteGratis)
         e.push("Finalize a cotação e escolha a transportadora.");
       if (entregaDiferente && (!entrega['logradouro'] || !entrega['cidade']))
@@ -1023,6 +1025,7 @@ function NovaPropostaSolarPage() {
     etapa, propostaNome, cliente, vendido, previsao, faturarClienteFinal, fat,
     itens, freteMod, transportadora, freteGratis, entregaDiferente, entrega,
     modo, assinaturaCalc, calcDesatualizado, itensCalc, avisosPreco, ehKit,
+    freteCotando,
   ]);
 
 
@@ -1034,6 +1037,16 @@ function NovaPropostaSolarPage() {
   }
 
   async function salvarProposta(concluir = false) {
+    // Nunca gravar/concluir com uma cotação de frete em andamento: o valor
+    // ainda não está aplicado e a proposta iria sem o frete.
+    if (freteCotando) {
+      setTentou(true);
+      return toast.error("Aguarde o cálculo do frete terminar antes de salvar a proposta.");
+    }
+    if ((freteMod === "CIF" || freteMod === "DEDICADO") && !transportadora && !freteGratis && !bonificado) {
+      setTentou(true);
+      return toast.error("Escolha a transportadora — a proposta não pode ser salva sem o frete cotado.");
+    }
     if (concluir && !formaPagamento) {
       setTentou(true);
       return toast.error("Forma de pagamento é obrigatória para concluir o pedido.");
@@ -1043,6 +1056,7 @@ function NovaPropostaSolarPage() {
       return toast.error("Condição de pagamento (ZTERM) é obrigatória para concluir o pedido.");
     }
     setSalvando(true);
+
     try {
       const r = await salvar({
         data: {
