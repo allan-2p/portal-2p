@@ -328,16 +328,16 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
         `CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação da diretoria.`,
       );
 
-    // Nº SAP: a proposta nasce SEM número. Ele só é atribuído na conclusão
-    // (atribuirNumeroSapFn). O cliente nunca envia esse dado — só preservamos
-    // o que já estiver gravado no banco.
+    // Nº SAP (VBELN): nasce no SAP, nunca no portal. Aqui é só leitura de
+    // `sap_ov_numero` para exibir/imprimir; nada é gerado nem gravado.
     let numeroSap: string | null = null;
     let numeroExistente: string | null = null;
     if (data.propostaId) {
-      const atualSap = await (await repo()).getProposta(data.propostaId, "numero_sap, numero");
-      numeroSap = (atualSap as any)?.numero_sap?.trim() || null;
+      const atualSap = await (await repo()).getProposta(data.propostaId, "sap_ov_numero, numero");
+      numeroSap = String((atualSap as any)?.sap_ov_numero ?? "").trim() || null;
       numeroExistente = (atualSap as any)?.numero?.trim() || null;
     }
+
 
     // Nº da proposta: sequencial no servidor (6 dígitos, a partir de 050000).
     const numeroProposta = data.propostaId
