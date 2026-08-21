@@ -2216,20 +2216,22 @@ function NovaPropostaSolarPage() {
                 </Select>
                 {tentou && !freteMod && <Erro>Escolha a modalidade.</Erro>}
               </Campo>
-              {freteMod === "CIF" && (
-                <label className="flex items-end gap-2 text-sm pb-2">
-                  <Checkbox checked={areaRural} onCheckedChange={(v) => setAreaRural(v === true)} />
-                  Entrega em área rural
-                </label>
-              )}
               {(freteMod === "CIF" || freteMod === "DEDICADO") && (
-                <label className="flex items-end gap-2 text-sm pb-2 md:col-span-2">
-                  <Checkbox
-                    checked={freteBonificado}
-                    onCheckedChange={(v) => setFreteBonificado(v === true)}
-                  />
-                  Frete bonificado — a 2P assume o custo (o cliente não paga o frete)
-                </label>
+                <div className="flex flex-wrap items-end gap-x-6 gap-y-2 pb-2">
+                  {freteMod === "CIF" && (
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox checked={areaRural} onCheckedChange={(v) => setAreaRural(v === true)} />
+                      Entrega em área rural
+                    </label>
+                  )}
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={freteBonificado}
+                      onCheckedChange={(v) => setFreteBonificado(v === true)}
+                    />
+                    Frete grátis
+                  </label>
+                </div>
               )}
             </div>
 
@@ -2251,8 +2253,10 @@ function NovaPropostaSolarPage() {
                 selecionada={transportadora}
                 onSelect={setTransportadora}
                 onInvalidate={() => setTransportadora(null)}
+                onLoadingChange={setFreteCotando}
               />
             )}
+
             {tentou && erros.length > 0 && <Erro>{erros[0]}</Erro>}
           </section>
         )}
