@@ -11,8 +11,26 @@ export function isGroupFeature(key: FeatureKey): boolean {
   return key.startsWith("admin.");
 }
 
+/**
+ * Features de grupo que são permissões (capabilities) e não telas navegáveis:
+ * não têm rota própria em ROUTE_FEATURE por definição — governam botões,
+ * abas e áreas dentro de outras telas. Elas continuam sendo validadas quanto
+ * à presença em todas as instâncias e ao rótulo.
+ */
+export const CAPABILITY_FEATURES: FeatureKey[] = [
+  "admin.logs.exportar",
+  "admin.sistema.excluir",
+  "admin.clientes.integracoes",
+  "admin.area.integracoes",
+];
+
+export function isCapabilityFeature(key: FeatureKey): boolean {
+  return CAPABILITY_FEATURES.includes(key);
+}
+
 /** Baseline: features de grupo declaradas no Solar (fonte da verdade). */
 export const GROUP_FEATURES: FeatureKey[] = INSTANCES.solar.routes.filter(isGroupFeature);
+
 
 export type VisibilityIssue = {
   instance: InstanceId;
