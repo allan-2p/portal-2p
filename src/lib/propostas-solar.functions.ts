@@ -84,7 +84,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   // Finalidade de uso: no Solar só é exigida quando o pedido fatura o cliente
   // final — é ele que entra como parceiro no SAP e define CFOP/IE. Aceita tanto
   // o rótulo ("Uso e Consumo") quanto o slug ("uso_consumo"), nunca um default.
-  const { finalidadeDaTela } = await import("@/lib/sap-clientes-map");
+  
   const finalidadeUso = finalidadeDaTela(i.finalidadeUso);
   const faturarClienteFinal = i.faturarClienteFinal === true;
   if (faturarClienteFinal) {
