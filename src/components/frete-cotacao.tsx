@@ -20,6 +20,9 @@ type Props = {
   onSelect: (t: CarregadoresTransportadora) => void;
   /** Chamado quando algum dado muda e a cotação anterior deixa de valer. */
   onInvalidate?: () => void;
+  /** Informa ao formulário que há uma cotação em andamento (trava o avanço). */
+  onLoadingChange?: (loading: boolean) => void;
+
 };
 
 type Opcao = {
@@ -42,6 +45,7 @@ export function FreteCotacao({
   unidade,
   onSelect,
   onInvalidate,
+  onLoadingChange,
 }: Props) {
   const cotar = useServerFn(cotarFrete);
   const [opcoes, setOpcoes] = useState<Opcao[]>([]);
@@ -49,8 +53,16 @@ export function FreteCotacao({
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
 
+  useEffect(() => {
+    onLoadingChange?.(loading);
+    return () => onLoadingChange?.(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+
   const cepOk = (destino.cep ?? "").replace(/\D/g, "").length === 8;
   const podeCotar = cepOk && !!destino.cidade && !!destino.uf && itens.length > 0 && valorNota > 0;
+
 
   // Assinatura dos dados que mudam a cotação — dispara o cálculo automático.
   const assinatura = JSON.stringify({
@@ -157,6 +169,14 @@ export function FreteCotacao({
           Informe CEP, cidade e UF de entrega e adicione produtos com valor para cotar.
         </p>
       ) : null}
+
+      {loading ? (
+        <div className="flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary">
+          <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+          <span>Recalculando o frete — aguarde para avançar, o valor ainda não entrou na proposta.</span>
+        </div>
+      ) : null}
+
 
       {erro ? (
         <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">

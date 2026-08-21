@@ -255,6 +255,9 @@ function NovaPropostaSolarPage() {
   const [freteBonificado, setFreteBonificado] = useState(false);
   const [areaRural, setAreaRural] = useState(false);
   const [transportadora, setTransportadora] = useState<CarregadoresTransportadora | null>(null);
+  // Cotação de frete em andamento — trava avanço/salvamento para não gravar sem o frete.
+  const [freteCotando, setFreteCotando] = useState(false);
+
 
   // Etapa 5
   const [cupomCodigo, setCupomCodigo] = useState("");
@@ -1010,6 +1013,8 @@ function NovaPropostaSolarPage() {
     }
     if (etapa === 4) {
       if (!freteMod) e.push("Escolha a modalidade de frete.");
+      if (freteCotando)
+        e.push("O frete ainda está sendo calculado. Aguarde o fim da cotação para avançar.");
       if ((freteMod === "CIF" || freteMod === "DEDICADO") && !transportadora && !freteGratis)
         e.push("Finalize a cotação e escolha a transportadora.");
       if (entregaDiferente && (!entrega['logradouro'] || !entrega['cidade']))
@@ -1020,6 +1025,7 @@ function NovaPropostaSolarPage() {
     etapa, propostaNome, cliente, vendido, previsao, faturarClienteFinal, fat,
     itens, freteMod, transportadora, freteGratis, entregaDiferente, entrega,
     modo, assinaturaCalc, calcDesatualizado, itensCalc, avisosPreco, ehKit,
+    freteCotando,
   ]);
 
 
@@ -1031,6 +1037,16 @@ function NovaPropostaSolarPage() {
   }
 
   async function salvarProposta(concluir = false) {
+    // Nunca gravar/concluir com uma cotação de frete em andamento: o valor
+    // ainda não está aplicado e a proposta iria sem o frete.
+    if (freteCotando) {
+      setTentou(true);
+      return toast.error("Aguarde o cálculo do frete terminar antes de salvar a proposta.");
+    }
+    if ((freteMod === "CIF" || freteMod === "DEDICADO") && !transportadora && !freteGratis) {
+      setTentou(true);
+      return toast.error("Escolha a transportadora — a proposta não pode ser salva sem o frete cotado.");
+    }
     if (concluir && !formaPagamento) {
       setTentou(true);
       return toast.error("Forma de pagamento é obrigatória para concluir o pedido.");
@@ -1040,6 +1056,7 @@ function NovaPropostaSolarPage() {
       return toast.error("Condição de pagamento (ZTERM) é obrigatória para concluir o pedido.");
     }
     setSalvando(true);
+
     try {
       const r = await salvar({
         data: {
@@ -2216,20 +2233,22 @@ function NovaPropostaSolarPage() {
                 </Select>
                 {tentou && !freteMod && <Erro>Escolha a modalidade.</Erro>}
               </Campo>
-              {freteMod === "CIF" && (
-                <label className="flex items-end gap-2 text-sm pb-2">
-                  <Checkbox checked={areaRural} onCheckedChange={(v) => setAreaRural(v === true)} />
-                  Entrega em área rural
-                </label>
-              )}
               {(freteMod === "CIF" || freteMod === "DEDICADO") && (
-                <label className="flex items-end gap-2 text-sm pb-2 md:col-span-2">
-                  <Checkbox
-                    checked={freteBonificado}
-                    onCheckedChange={(v) => setFreteBonificado(v === true)}
-                  />
-                  Frete bonificado — a 2P assume o custo (o cliente não paga o frete)
-                </label>
+                <div className="flex flex-wrap items-end gap-x-6 gap-y-2 pb-2">
+                  {freteMod === "CIF" && (
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox checked={areaRural} onCheckedChange={(v) => setAreaRural(v === true)} />
+                      Entrega em área rural
+                    </label>
+                  )}
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={freteBonificado}
+                      onCheckedChange={(v) => setFreteBonificado(v === true)}
+                    />
+                    Frete grátis
+                  </label>
+                </div>
               )}
             </div>
 
@@ -2251,8 +2270,10 @@ function NovaPropostaSolarPage() {
                 selecionada={transportadora}
                 onSelect={setTransportadora}
                 onInvalidate={() => setTransportadora(null)}
+                onLoadingChange={setFreteCotando}
               />
             )}
+
             {tentou && erros.length > 0 && <Erro>{erros[0]}</Erro>}
           </section>
         )}
@@ -2275,7 +2296,7 @@ function NovaPropostaSolarPage() {
 
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
                 <Info label="Condição de pagamento" value={condicaoPagamento || "—"} />
-                <Info label="Frete" value={`${freteMod || "—"}${bonificado ? " (bonificado)" : ""}`} />
+                <Info label="Frete" value={`${freteMod || "—"}${bonificado ? " (frete grátis)" : ""}`} />
                 <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
                 <Info
                   label="Endereço de faturamento"
@@ -2518,7 +2539,7 @@ function NovaPropostaSolarPage() {
                 />
                 <TotalRow
                   label={`Frete (${freteMod || "—"})`}
-                  value={bonificado ? `Bonificado (${fmtBRL(freteValor)})` : freteGratis ? "Grátis" : fmtBRL(freteValor)}
+                  value={bonificado ? `Frete grátis (${fmtBRL(freteValor)})` : freteGratis ? "Grátis" : fmtBRL(freteValor)}
                   hint={transportadora?.nome ?? undefined}
                 />
                 <TotalRow label="Total da proposta" value={fmtBRL(total)} strong hint="Subtotal - desconto + frete" />
