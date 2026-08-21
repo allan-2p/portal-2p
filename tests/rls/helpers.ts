@@ -84,7 +84,7 @@ export async function createUser(opts: {
 export async function deleteUser(admin: SupabaseClient, id: string) {
   await admin.from("user_roles").delete().eq("user_id", id);
   await admin.from("user_instance_access").delete().eq("user_id", id);
-  await admin.from("user_feature_permissions").delete().eq("user_id", id);
+  await admin.from("user_extra_features").delete().eq("user_id", id);
   await admin.from("user_view_preferences").delete().eq("user_id", id);
   await admin.from("profiles").delete().eq("id", id);
   await admin.auth.admin.deleteUser(id);
