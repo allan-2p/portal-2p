@@ -10,6 +10,10 @@ export type PropostaPdfItem = {
   foto?: string | null;
   qtd: number;
   valor: number;
+  /** Alíquotas fiscais da linha (fração: 0.05 = 5%). */
+  ipiRate?: number | null;
+  icmsRate?: number | null;
+  pisCofinsRate?: number | null;
 };
 
 
@@ -111,6 +115,10 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
 
   const temFoto = p.itens.some((i) => !!i.foto);
 
+  /** Alíquota da linha em % (vazio quando o item não tem regra fiscal). */
+  const pct = (v?: number | null) =>
+    typeof v === "number" && isFinite(v) ? fmtPct(v) : "—";
+
   const linhas = p.itens
     .map(
       (i, idx) => `
@@ -127,6 +135,9 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
             : ""
         }</td>
         <td class="c">${i.qtd}</td>
+        <td class="c">${pct(i.ipiRate)}</td>
+        <td class="c">${pct(i.icmsRate)}</td>
+        <td class="c">${pct(i.pisCofinsRate)}</td>
         <td class="r">${fmtBRL(i.valor)}</td>
         <td class="r strong">${fmtBRL(i.valor * i.qtd)}</td>
       </tr>`,
@@ -350,13 +361,13 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="sech"><span>Escopo de fornecimento</span></div>
       <table>
         <thead><tr>
-          <th></th>${temFoto ? "<th></th>" : ""}<th>Produto</th><th class="c">Qtd</th><th class="r">Valor unit.</th><th class="r">Total</th>
+          <th></th>${temFoto ? "<th></th>" : ""}<th>Produto</th><th class="c">Qtd</th><th class="c">IPI</th><th class="c">ICMS</th><th class="c">PIS/COFINS</th><th class="r">Valor unit.</th><th class="r">Total</th>
         </tr></thead>
         <tbody>${linhas}</tbody>
         <tfoot><tr>
           <td colspan="${temFoto ? 3 : 2}">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
 
-          <td colspan="3" class="r">Frete ${esc(p.freteMod)}${FRETE_ABSORVIDO.includes(p.freteMod as any) ? " · <b>Frete grátis</b>" : ""}</td>
+          <td colspan="6" class="r">Frete ${esc(p.freteMod)}${FRETE_ABSORVIDO.includes(p.freteMod as any) ? " · <b>Frete grátis</b>" : ""}</td>
         </tr></tfoot>
       </table>
     </div>
