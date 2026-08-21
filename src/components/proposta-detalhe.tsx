@@ -101,6 +101,27 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
       <NfDocumentosCard proposta={p} />
 
+      {(p['pagamento_linha_digitavel'] || p['pagamento_pix_copia_cola'] || p['pagamento_status']) && (
+        <div className="glass rounded-2xl p-5">
+          <CobrancaCard
+            cobranca={{
+              forma: p['forma_pagamento'],
+              meio: p['pagamento_meio'],
+              status: p['pagamento_status'],
+              valor: Number(p['pagamento_valor'] ?? 0) || null,
+              vencimento: p['pagamento_vencimento'],
+              linhaDigitavel: p['pagamento_linha_digitavel'],
+              nossoNumero: p['pagamento_nosso_numero'],
+              pixCopiaCola: p['pagamento_pix_copia_cola'],
+              url: p['pagamento_url'],
+              atualizado_em: p['pagamento_atualizado_em'],
+            }}
+          />
+        </div>
+      )}
+
+
+
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="glass rounded-2xl p-5 space-y-3">
