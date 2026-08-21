@@ -14,6 +14,7 @@ import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, Calculator, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { cidadeUf } from "@/lib/local-format";
+import { formatSapNumero } from "@/lib/sap-numero";
 
 type Item = { codigo?: string | null; nome?: string; qtd?: number; valor?: number };
 
@@ -83,7 +84,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <Campo label="Finalizado em" value={p['finalizado_em'] ? fmtData(p['finalizado_em']) : "—"} />
           <Campo label="Finalizado por" value={p['finalizado_por_nome'] || "—"} />
           <Campo label="Consultor responsável" value={p['consultor_nome'] || "—"} />
-          <Campo label="Nº SAP" value={p['sap_ov_numero'] || p['numero_sap'] || "—"} />
+          <Campo label="Nº SAP" value={formatSapNumero(p['sap_ov_numero'] || p['numero_sap']) || "—"} />
           <Campo label="CNPJ/CPF" value={p['cliente_doc'] || "—"} />
           <Campo label="Inscrição estadual" value={p['cliente_ie'] || "—"} />
         </div>

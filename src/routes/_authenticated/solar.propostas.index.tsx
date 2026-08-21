@@ -25,6 +25,7 @@ import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react
 import { toast } from "sonner";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
+import { formatSapNumero } from "@/lib/sap-numero";
 import {
   excluirPropostaFn,
   listarPropostasFn,
@@ -226,7 +227,7 @@ function PropostasSolarPage() {
                     <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
                     <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
                     <td className="px-4 py-3">{r.nome || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{(r.sap_ov_numero || r.numero_sap) || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}</td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {fmtBRL(r.totais['valorTotal'] ?? 0)}
                     </td>

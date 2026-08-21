@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatSapNumero } from "@/lib/sap-numero";
 import { supabase } from "@/integrations/supabase/client";
 import { listarPropostasFn, excluirPropostaFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
@@ -272,7 +273,7 @@ function HistoricoCarregadoresPage() {
                     <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
                     <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
                     <td className="px-4 py-3">{r.nome || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{(r.sap_ov_numero || r.numero_sap) || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}</td>
                     <td className="px-4 py-3 text-right font-semibold">{fmtBRL(r.totais.valorTotal ?? 0)}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("pt-BR")}

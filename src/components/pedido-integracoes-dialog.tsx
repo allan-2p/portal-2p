@@ -20,6 +20,7 @@ import {
   statusIntegracoesPedidoFn,
 } from "@/lib/propostas.functions";
 import { listIntegrationLogs, type IntegrationLogRow } from "@/lib/integration-logs.functions";
+import { formatSapNumero } from "@/lib/sap-numero";
 
 function dataHora(iso?: string | null) {
   return iso ? new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";
@@ -156,7 +157,7 @@ export function PedidoIntegracoesDialog({
                   label={d.sap.status === "criada" ? "Criada" : d.sap.status === "erro" ? "Erro" : "Não enviada"}
                 />
               </div>
-              <Linha rot="Nº da ordem (VBELN)" val={d.sap.numero} />
+              <Linha rot="Nº da ordem (VBELN)" val={formatSapNumero(d.sap.numero)} />
               <Linha rot="Enviado em" val={dataHora(d.sap.enviado_em)} />
               {d.sap.status === "erro" && d.sap.mensagem ? (
                 <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-sm text-destructive">
