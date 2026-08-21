@@ -363,6 +363,8 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       contribuinte: data.contribuinte,
       previsao_fechamento: data.previsaoFechamento,
       tipo_nf: data.tipoNf,
+      finalidade_uso: data.finalidadeUso,
+
       faturar_cliente_final: data.faturarClienteFinal,
       faturamento: data.faturarClienteFinal ? data.faturamento : {},
       forma_pagamento: data.formaPagamento,
