@@ -11,7 +11,7 @@ policies **and** GRANTs are validated on every run.
 | --- | --- |
 | `profiles` | Anon blocked · vendedor sees only own · gerente/diretor/admin see all · self-update ok, others blocked · non-admin delete blocked |
 | `user_roles` | User sees only own · **cannot self-promote to admin** · cannot update/delete own row · admin sees all |
-| `user_feature_permissions`, `user_instance_access` | User reads own only · cannot write another user's access |
+| `user_extra_features`, `user_instance_access` | User reads own only · cannot write another user's access |
 | `salesperson_goals`, `salesperson_new_ab_goals`, `salesperson_retention_goals` | Vendedor sees own `sf_user_id` only · privileged roles see all · non-admin cannot insert/update/delete · anon blocked |
 | `hidden_salespeople` | Vendedor blocked · privileged roles read · only admin writes |
 | `salesforce_team_members` | Authenticated reads · anon blocked · only admin writes |

@@ -219,10 +219,10 @@ d("RLS regression suite", () => {
     });
   });
 
-  // ────────────────────────────────── user_feature_permissions / instance
-  describe("user_feature_permissions & user_instance_access", () => {
+  // ────────────────────────────────── user_extra_features / instance
+  describe("user_extra_features & user_instance_access", () => {
     it("user reads only own rows", async () => {
-      for (const tbl of ["user_feature_permissions", "user_instance_access"] as const) {
+      for (const tbl of ["user_extra_features", "user_instance_access"] as const) {
         const { data } = await vendA.client
           .from(tbl)
           .select("user_id")
@@ -240,8 +240,8 @@ d("RLS regression suite", () => {
       expect(isPermissionError(uia.error)).toBe(true);
 
       const ufp = await vendA.client
-        .from("user_feature_permissions")
-        .insert({ user_id: vendB.id, instance_id: "solar", feature_key: "dashboards", allowed: true });
+        .from("user_extra_features")
+        .insert({ user_id: vendB.id, instance_id: "solar", feature_key: "dashboards" });
       expect(isPermissionError(ufp.error)).toBe(true);
     });
   });
