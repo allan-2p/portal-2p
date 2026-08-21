@@ -170,6 +170,14 @@ export function FreteCotacao({
         </p>
       ) : null}
 
+      {loading ? (
+        <div className="flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs text-primary">
+          <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+          <span>Recalculando o frete — aguarde para avançar, o valor ainda não entrou na proposta.</span>
+        </div>
+      ) : null}
+
+
       {erro ? (
         <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
