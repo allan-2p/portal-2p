@@ -659,8 +659,20 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
     const { assertPodeExcluir, getPerm } = await import("./object-perms.server");
     const perm = await getPerm(context as any, String(atual?.["organizacao"] ?? "solar"), "propostas");
     assertPodeExcluir(perm, "propostas", (atual?.["created_by"] as string | null) ?? null, (context as any).userId);
+    // Pedido que já foi ao SAP não é apagado: o par NROPED↔VBELN precisa
+    // sobreviver para a auditoria e para o cron de NFs. Vira "Cancelado".
+    const vbeln = String(atual?.["sap_ov_numero"] ?? "").trim();
+    if (vbeln) {
+      await db.atualizarProposta(data.id, { status: "Cancelado" });
+      return {
+        ok: true,
+        cancelada: true,
+        aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal.`,
+      };
+    }
     await db.excluirProposta(data.id);
-    return { ok: true };
+    return { ok: true, cancelada: false, aviso: null as string | null };
+
   });
 
 
