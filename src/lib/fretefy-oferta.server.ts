@@ -49,8 +49,9 @@ async function enderecoDaProposta(row: Record<string, any>): Promise<Endereco> {
   }
   try {
     const { findClienteByDoc } = await import("./clientes-db.server");
-    const achado = await findClienteByDoc(String(row["cliente_doc"] ?? ""));
-    const c = (achado as any)?.cliente ?? achado ?? null;
+    const achados = await findClienteByDoc(String(row["cliente_doc"] ?? ""));
+    const c = (achados?.[0]?.cliente ?? null) as Record<string, any> | null;
+
     if (c)
       return {
         logradouro: c["logradouro"] ?? null,
