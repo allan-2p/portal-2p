@@ -274,7 +274,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
         <tbody>${linhas}</tbody>
         <tfoot><tr>
           <td colspan="2">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
-          <td colspan="3" class="r">Frete ${esc(p.freteMod || "—")}${p.transportadora ? ` · ${esc(p.transportadora)}` : ""}</td>
+          <td colspan="3" class="r">Frete ${esc(p.freteMod || "—")}${p.transportadora ? ` · ${esc(p.transportadora)}` : ""}${p.freteGratis || p.freteBonificado ? " · <b>Frete grátis</b>" : ""}</td>
         </tr></tfoot>
       </table>
     </div>
