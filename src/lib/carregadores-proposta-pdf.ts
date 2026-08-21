@@ -177,7 +177,8 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  @page { size: A4; margin: 0; }
+  @page { size: A4; margin: 12mm 0 14mm; }
+  @page :first { margin-top: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root{
     --ink:#060B18; --ink-2:#16213c; --muted:#78859C; --line:#E2E8F2;
@@ -185,7 +186,8 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   }
   html,body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body{ font-family:'Inter',Arial,Helvetica,sans-serif; color:var(--ink); background:#fff; font-size:9.6px; }
-  .page{ width:210mm; min-height:297mm; margin:0 auto; padding:0 0 16mm; position:relative; display:flex; flex-direction:column; }
+  .page{ width:210mm; margin:0 auto; padding:0; position:relative; }
+
 
   /* HEADER */
   .hero{ background:linear-gradient(120deg,#060B18 0%,#0C1730 55%,#12224A 100%); color:#fff; padding:10mm 14mm 8mm; position:relative; overflow:hidden; }
