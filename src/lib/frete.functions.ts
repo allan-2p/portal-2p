@@ -188,7 +188,7 @@ export const adminListarDedicadas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { requireAdminFeature } = await import("@/lib/guards.server");
-    await requireAdminFeature(context, "admin.regras", "ver");
+    await requireAdminFeature(context, "admin.regras", "visualizar");
     const { data, error } = await context.supabase
       .from("frete_transportadoras_dedicadas")
       .select("id, nome, fretefy_transportadora_id, cnpj, ativo, ordem")
