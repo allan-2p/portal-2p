@@ -227,11 +227,13 @@ async function salvarDanfe(propostaId: string, base64: string): Promise<string |
 
 
 const TITULOS: Record<StatusNf, string> = {
+  "Aguardando Pagamento": "Pedido aguardando pagamento",
   Processando: "Pedido em processamento",
   Separação: "Pedido em separação",
   Faturado: "Pedido faturado",
   Coletado: "Pedido coletado",
 };
+
 
 export type NfAplicacao = {
   proposta_id: string;
