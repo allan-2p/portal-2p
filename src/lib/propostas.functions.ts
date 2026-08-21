@@ -771,11 +771,16 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     const totais = (row["totais"] ?? {}) as Record<string, number>;
     let erro: string | null = null;
     const emailCliente = String(row["cliente_email"] ?? "").trim();
+    // Finalidade de uso: sempre obrigatória em Carregadores; no Solar só quando
+    // o pedido fatura o cliente final (é ele quem entra como parceiro no SAP).
+    const org = String(row["organizacao"] ?? "solar");
+    const exigeFinalidade = org !== "solar" || row["faturar_cliente_final"] === true;
     if (!String(row["cliente_nome"] ?? "").trim()) erro = "Cliente não informado.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailCliente))
       erro = "Informe um e-mail válido do cliente (usado para cobrança e avisos de boleto).";
     else if (!String(row["uf"] ?? "").trim()) erro = "UF de faturamento não informada.";
-    else if (!String(row["finalidade_uso"] ?? "").trim()) erro = "Finalidade de uso não informada.";
+    else if (exigeFinalidade && !String(row["finalidade_uso"] ?? "").trim())
+      erro = "Finalidade de uso não informada.";
     else if (!String(row["frete_mod"] ?? "").trim()) erro = "Modalidade de frete não informada.";
     else if (Number(row["frete_valor"] ?? 0) < 0) erro = "Valor de frete inválido.";
     else if (!itens.length) erro = "A proposta não possui itens.";
@@ -798,11 +803,14 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
-    // O status de destino não é escolha do cliente: precisa ser uma transição
-    // válida da máquina de estados a partir de "Salvo".
+    // Status de destino derivado da forma de pagamento (nunca da UI): todas as
+    // formas suportadas (Pix, boleto à vista/a prazo e cartão) entram como
+    // "Aguardando Pagamento"; o avanço vem do pagamento, do cron do SAP ou da
+    // confirmação manual.
+    const statusDestino = "Aguardando Pagamento";
     const { transicaoPermitida } = await import("@/lib/proposta-status");
-    if (!transicaoPermitida(String(row["status"]), data.status)) {
-      const detalhe = `Transição inválida: ${row["status"]} → ${data.status}.`;
+    if (!transicaoPermitida(String(row["status"]), statusDestino, "checkout")) {
+      const detalhe = `Transição inválida: ${row["status"]} → ${statusDestino}.`;
       await db.registrarConclusaoLog({ ...base, status: row["status"], resultado: "bloqueada", detalhe });
       throw new Error(detalhe);
     }
@@ -810,7 +818,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     const atualizada = await db.atualizarProposta(
       row.id,
       {
-        status: data.status,
+        status: statusDestino,
         finalizado_por: userId,
         finalizado_por_nome: actor.actor_nome,
         finalizado_em: new Date().toISOString(),
@@ -828,7 +836,8 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
-    await db.registrarConclusaoLog({ ...base, status: data.status, resultado: "concluida" });
+    await db.registrarConclusaoLog({ ...base, status: statusDestino, resultado: "concluida" });
+
 
     // Ordem de venda no SAP (ZNFE_OV_CRIAR). Falha aqui não desfaz o pedido:
     // fica registrada e pode ser reprocessada pelo job "sap.ov-criar".
