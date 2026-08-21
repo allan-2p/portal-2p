@@ -46,6 +46,11 @@ export async function precosSolar(
     listaPreco?: string;
     /** Tipo de ordem (ZV2P / ZC2P / VBON) — muda condição de preço no SAP. */
     tipoOv?: string;
+    /**
+     * Kit fotovoltaico: venda com isenção de ICMS e IPI. Vale para TODOS os
+     * itens da proposta — o preço passa a ser VALOR_LIQUIDO + PIS + COFINS.
+     */
+    kitFotovoltaico?: boolean;
     sugeridos?: Record<string, number>;
     /** Quando informado, cada tentativa no SAP entra na auditoria da proposta. */
     auditoria?: import("./proposta-auditoria.server").AuditoriaContexto & { etapa?: string };
@@ -62,7 +67,7 @@ export async function precosSolar(
 
   for (const filial of FILIAIS) {
     if (!pendentes.length) break;
-    let sim = new Map<string, { valor: number | null }>();
+    let sim = new Map<string, { valor: number | null; valorSemIcmsIpi?: number | null }>();
     const tentativaItens = pendentes.map((i) => ({ codigo: i.codigo, quantidade: i.quantidade }));
     const iniciado = Date.now();
     const errosTentativa: string[] = [];
@@ -74,7 +79,7 @@ export async function precosSolar(
         ...(opts.tipoOv ? { tipoOv: opts.tipoOv } : {}),
         filial,
       });
-      sim = r.valores as unknown as Map<string, { valor: number | null }>;
+      sim = r.valores as unknown as Map<string, { valor: number | null; valorSemIcmsIpi?: number | null }>;
       for (const m of [...r.erros, ...(r.motivo ? [r.motivo] : [])]) {
         errosTentativa.push(m);
         if (!filialInvalida(m) && !avisos.includes(m)) avisos.push(m);
@@ -109,7 +114,12 @@ export async function precosSolar(
     for (const item of pendentes) {
       const codigo = norm(item.codigo);
       const qtd = Math.max(1, Number(item.quantidade) || 1);
-      const valorLinha = sim.get(codigo)?.valor ?? null;
+      const reg = sim.get(codigo);
+      // Kit: usa o valor sem ICMS/IPI; se o SAP não devolveu os tributos,
+      // cai para o valor cheio (nunca precifica zerado por falta do campo).
+      const valorLinha = opts.kitFotovoltaico
+        ? (reg?.valorSemIcmsIpi ?? reg?.valor ?? null)
+        : (reg?.valor ?? null);
       if (valorLinha && valorLinha > 0) unitario.set(codigo, money2(valorLinha / qtd));
       else restantes.push(item);
     }
