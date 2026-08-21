@@ -2206,7 +2206,9 @@ function PropostaCarregadoresPage() {
                     k="Frete"
                     v={
                       state.freteMod
-                        ? `${labelFreteMod[state.freteMod]}${state.transportadora ? ` · ${state.transportadora.nome} · ${state.transportadora.prazo} dia(s)` : ""}`
+                        ? FRETE_ABSORVIDO.includes(state.freteMod)
+                          ? `Frete grátis · ${fmtBRL(state.freteValor)} absorvido pela 2P${state.transportadora ? ` · ${state.transportadora.nome}${state.transportadora.prazo > 0 ? ` · ${state.transportadora.prazo} dia(s)` : ""}` : ""}`
+                          : `${labelFreteMod[state.freteMod]}${state.transportadora ? ` · ${state.transportadora.nome} · ${state.transportadora.prazo} dia(s)` : ""}`
                         : "—"
                     }
                   />
