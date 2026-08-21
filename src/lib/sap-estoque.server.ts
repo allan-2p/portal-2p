@@ -6,6 +6,7 @@
  * as duas sincronizações é o código do material.
  */
 import { XMLParser } from "fast-xml-parser";
+import { numSap } from "./sap-num.server";
 
 /** Depósitos considerados estoque livre vendável (mesmo recorte do legado). */
 export const DEPOSITOS_LIVRE = ["0001", "0002", "0003", "0005", "0007"];
@@ -152,25 +153,25 @@ export function mapearEstoque(items: any[]): { estoque: EstoqueRow[]; containers
       descricao: str(it.DESCRICAO),
       ean: str(it.EAN),
       ncm: normalizarNcm(it.NCM),
-      cmm: num(it.CMM),
-      preco_venda: num(it.PRECO_VENDA),
-      valor_estoque: num(it.VALOR_ESTOQUE),
+      cmm: num(it.CMM, "CMM"),
+      preco_venda: num(it.PRECO_VENDA, "PRECO_VENDA"),
+      valor_estoque: num(it.VALOR_ESTOQUE, "VALOR_ESTOQUE"),
       grp_mercadorias: str(it.GRP_MERCADORIAS),
       tipo_material: str(it.TIPO_MATERIAL),
       umb: str(it.UMB),
-      est_livre: DEPOSITOS_LIVRE.reduce((s, d) => s + num(it["EST_LIVRE_" + d]), 0),
-      est_bloqueado: DEPOSITOS_LIVRE.reduce((s, d) => s + num(it["EST_BLOQ_" + d]), 0),
-      qtd_pend_faturar: num(it.QTD_PEND_FATURAR),
-      est_entreposto: num(it.EST_ENTREPOSTO),
+      est_livre: DEPOSITOS_LIVRE.reduce((s, d) => s + num(it["EST_LIVRE_" + d], "EST_LIVRE_" + d), 0),
+      est_bloqueado: DEPOSITOS_LIVRE.reduce((s, d) => s + num(it["EST_BLOQ_" + d], "EST_BLOQ_" + d), 0),
+      qtd_pend_faturar: num(it.QTD_PEND_FATURAR, "QTD_PEND_FATURAR"),
+      est_entreposto: num(it.EST_ENTREPOSTO, "EST_ENTREPOSTO"),
     });
 
     for (let i = 1; i <= 8; i++) {
       const cont = str(it["CONTAINER_" + i]);
-      const qtd = num(it["QTD_PEDIDO_" + i]);
+      const qtd = num(it["QTD_PEDIDO_" + i], "QTD_PEDIDO_" + i);
       if (!cont || qtd <= 0) continue;
       if (IGNORAR_CONTAINER.some((p) => cont.toUpperCase().startsWith(p))) continue;
-      const pbt = num(it["PESO_BRUTO_TOT_" + i]);
-      const plt = num(it["PESO_LIQ_TOT_" + i]);
+      const pbt = num(it["PESO_BRUTO_TOT_" + i], "PESO_BRUTO_TOT_" + i);
+      const plt = num(it["PESO_LIQ_TOT_" + i], "PESO_LIQ_TOT_" + i);
       containers.push({
         id_container: cont,
         material,

@@ -16,6 +16,7 @@
 
 import { XMLParser } from "fast-xml-parser";
 import { pltypDaTabela } from "./sap-clientes-map";
+import { alertarSuspeitasNumericas, iniciarColetaNumerica, numSap } from "./sap-num.server";
 
 export type SimulacaoItem = {
   codigo: string;
@@ -236,19 +237,19 @@ export async function simularSap(
   for (const reg of porItem.values()) {
     const codigo = norm(String(reg["MATERIAL"] ?? ""));
     if (!codigo) continue;
-    const pesoLiquido = num(reg["PESO_LIQUIDO"]);
-    const pesoBruto = num(reg["PESO_BRUTO"]);
+    const pesoLiquido = num(reg["PESO_LIQUIDO"], "PESO_LIQUIDO");
+    const pesoBruto = num(reg["PESO_BRUTO"], "PESO_BRUTO");
     const valorTxt = reg["VALOR_LIQUIDO"];
-    const liquido = num(valorTxt);
-    const vlPis = num(reg["VL_PIS"]);
-    const vlCofins = num(reg["VL_COFINS"]);
-    const vlIcms = num(reg["VL_ICMS"]);
-    const vlIpi = num(reg["VL_IPI"]);
+    const liquido = num(valorTxt, "VALOR_LIQUIDO");
+    const vlPis = num(reg["VL_PIS"], "VL_PIS");
+    const vlCofins = num(reg["VL_COFINS"], "VL_COFINS");
+    const vlIcms = num(reg["VL_ICMS"], "VL_ICMS");
+    const vlIpi = num(reg["VL_IPI"], "VL_IPI");
     mapa.set(codigo, {
       pesoLiquido,
       pesoBruto,
       // a antiga usa VALOR_LIQUIDO + VALOR_IMPOSTO (calculadora.php:894); só líquido subestima ~15%
-      valor: valorTxt !== undefined ? liquido + num(reg["VALOR_IMPOSTO"]) : null,
+      valor: valorTxt !== undefined ? liquido + num(reg["VALOR_IMPOSTO"], "VALOR_IMPOSTO") : null,
       // Kit fotovoltaico: isenção de ICMS e IPI → só PIS/COFINS entram
       // (calculadora.php:887-894).
       valorSemIcmsIpi: valorTxt !== undefined ? liquido + vlPis + vlCofins : null,
@@ -258,6 +259,11 @@ export async function simularSap(
       vlIpi,
     });
   }
+
+  await alertarSuspeitasNumericas("simulacao-precos-peso", {
+    itens: itens.length,
+    pesoTotal: [...mapa.values()].reduce((t, v) => t + (v.pesoLiquido || 0), 0),
+  });
 
   return { valores: mapa, erros, motivo: null };
 }
