@@ -1,14 +1,16 @@
--- ---------------------------------------------------------------------------
--- Pedido no Salesforce (Opportunity) — retorno gravado na proposta.
--- Rode este script no projeto grupo-2p (https://npzlinbglznnnwxxcawh.supabase.co) (SQL Editor).
--- ---------------------------------------------------------------------------
+-- Banco EXTERNO do Grupo 2P (não é o banco do portal).
+-- Documentação do schema exigido pelo vínculo Salesforce das propostas.
+-- Já aplicado manualmente no banco 2P — este arquivo é apenas referência.
+--
+-- Sem estas colunas o portal não consegue guardar o ID da oportunidade e
+-- recria o registro no Salesforce a cada envio (PGRST204 na auditoria).
 
-alter table public.propostas
-  add column if not exists sf_opp_id text,          -- Id da Opportunity
-  add column if not exists sf_account_id text,      -- Id da Account usada
-  add column if not exists sf_status text,          -- 'sincronizado' | 'erro'
-  add column if not exists sf_mensagem text,        -- última mensagem/erro
-  add column if not exists sf_enviado_em timestamptz;
+ALTER TABLE public.propostas
+  ADD COLUMN IF NOT EXISTS sf_opp_id      text,
+  ADD COLUMN IF NOT EXISTS sf_account_id  text,
+  ADD COLUMN IF NOT EXISTS sf_status      text,
+  ADD COLUMN IF NOT EXISTS sf_mensagem    text,
+  ADD COLUMN IF NOT EXISTS sf_enviado_em  timestamptz;
 
-create index if not exists propostas_sf_opp_id_idx on public.propostas (sf_opp_id);
-create index if not exists propostas_sf_status_idx on public.propostas (sf_status);
+CREATE INDEX IF NOT EXISTS propostas_sf_opp_id_idx ON public.propostas (sf_opp_id);
+CREATE INDEX IF NOT EXISTS propostas_sf_status_idx ON public.propostas (sf_status);
