@@ -129,10 +129,7 @@ export function FreteCotacao({
       });
       // Resposta de uma cotação superada (o usuário mudou algo no meio): ignora.
       if (meu !== runId.current) return;
-      if (alvo !== assinaturaAtual.current) {
-        void executar();
-        return;
-      }
+      if (alvo !== assinaturaAtual.current) return;
       setOpcoes(r.opcoes as Opcao[]);
       setPeso(Number(r.peso ?? 0));
       const escolhida = (r.opcoes as Opcao[])[r.escolhida];
