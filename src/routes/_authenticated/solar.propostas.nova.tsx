@@ -1043,7 +1043,7 @@ function NovaPropostaSolarPage() {
       setTentou(true);
       return toast.error("Aguarde o cálculo do frete terminar antes de salvar a proposta.");
     }
-    if ((freteMod === "CIF" || freteMod === "DEDICADO") && !transportadora && !freteGratis && !bonificado) {
+    if ((freteMod === "CIF" || freteMod === "DEDICADO") && !transportadora && !freteGratis) {
       setTentou(true);
       return toast.error("Escolha a transportadora — a proposta não pode ser salva sem o frete cotado.");
     }
@@ -2296,7 +2296,7 @@ function NovaPropostaSolarPage() {
 
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
                 <Info label="Condição de pagamento" value={condicaoPagamento || "—"} />
-                <Info label="Frete" value={`${freteMod || "—"}${bonificado ? " (bonificado)" : ""}`} />
+                <Info label="Frete" value={`${freteMod || "—"}${bonificado ? " (frete grátis)" : ""}`} />
                 <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
                 <Info
                   label="Endereço de faturamento"
@@ -2539,7 +2539,7 @@ function NovaPropostaSolarPage() {
                 />
                 <TotalRow
                   label={`Frete (${freteMod || "—"})`}
-                  value={bonificado ? `Bonificado (${fmtBRL(freteValor)})` : freteGratis ? "Grátis" : fmtBRL(freteValor)}
+                  value={bonificado ? `Frete grátis (${fmtBRL(freteValor)})` : freteGratis ? "Grátis" : fmtBRL(freteValor)}
                   hint={transportadora?.nome ?? undefined}
                 />
                 <TotalRow label="Total da proposta" value={fmtBRL(total)} strong hint="Subtotal - desconto + frete" />
