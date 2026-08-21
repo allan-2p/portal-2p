@@ -975,7 +975,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         trigger: "portal",
         refType: "proposta",
         refId: data.id,
-        payload: { id: data.id, status: statusDestino, etapa: data.etapa, origem: data.origem },
+        payload: { id: data.id, etapa: data.etapa, origem: data.origem },
         actorId: (context as any).userId ?? null,
       },
       executar,
