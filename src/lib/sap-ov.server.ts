@@ -579,6 +579,17 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
         .join(", ")}.`,
     );
 
+  // O SAP só aceita material numérico; SKU comercial (2P-...) é de/para pendente.
+  const codigoAlfa = itens.filter((i) => norm(i?.codigo) && !/^\d+$/.test(norm(i?.codigo)));
+  if (codigoAlfa.length)
+    pendencias.push(
+      `${codigoAlfa.length} item(ns) sem código SAP numérico no catálogo (de-para pendente): ${codigoAlfa
+        .map((i) => norm(i?.codigo))
+        .slice(0, 5)
+        .join(", ")}.`,
+    );
+
+
   const qtdInvalida = itens.filter((i) => !Number.isFinite(Number(i?.qtd)) || Number(i?.qtd) <= 0);
   if (qtdInvalida.length) pendencias.push(`${qtdInvalida.length} item(ns) com quantidade inválida.`);
 
