@@ -141,11 +141,10 @@ function quantificarFileira(
     // Resíduo por trilho após as barras de 4800. php:2488
     const ult = qf > 0 ? nt - (trilho_4800 * 4800) / (2 * qf) : nt;
 
-    if (ctx.todos_trilhos === "S" && larguraEstreita && temCod4800) {
-      // Branch A — resto em barras curtas. php:2526-2529 / 2551-2554
-      trilho_curto = Math.ceil(((nt - (trilho_4800 / 2) * 4800) / barraCurta) * 2) * qf;
+    if (ult <= 0) {
+      trilho_curto = 0;
     } else if (ult < 1200) {
-      // Branch B — só barras curtas. php:2586-2606
+      // Barra curta sempre pelo resíduo. php:2586-2606
       trilho_curto = Math.ceil(ult / barraCurta) * qf;
     } else {
       trilho_curto = Math.abs(Math.ceil(Math.ceil((ult * 2) / barraCurta)) * qf);
