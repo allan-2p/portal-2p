@@ -76,6 +76,11 @@ export function FreteCotacao({
   const ultima = useRef<string>("");
   // Marca se já adotamos uma linha de base (proposta salva com frete já cotado).
   const baseDefinida = useRef(false);
+  // Identifica a requisição em curso: respostas antigas são descartadas.
+  const runId = useRef(0);
+  // Guarda a assinatura mais recente para reagir a mudanças feitas durante o cálculo.
+  const assinaturaAtual = useRef(assinatura);
+  assinaturaAtual.current = assinatura;
 
   useEffect(() => {
     if (!podeCotar) return;
@@ -87,22 +92,27 @@ export function FreteCotacao({
       baseDefinida.current = true;
       ultima.current = assinatura;
       if (selecionada) return;
-      void executar();
+      void executar(assinatura);
       return;
     }
 
     if (ultima.current === assinatura) return;
     // Mudou algo que interfere no frete: descarta a cotação anterior e recalcula.
+    // Se havia uma cotação em andamento, ela é invalidada (runId) e refeita
+    // com os dados novos — antes, o resultado antigo era aplicado sem o
+    // adicional de área rural.
     setOpcoes([]);
     onInvalidate?.();
-    if (loading) return;
     ultima.current = assinatura;
-    void executar();
+    void executar(assinatura);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assinatura, podeCotar]);
 
 
-  async function executar() {
+  async function executar(assinaturaDaVez?: string) {
+    const alvo = assinaturaDaVez ?? assinaturaAtual.current;
+    ultima.current = alvo;
+    const meu = ++runId.current;
     setLoading(true);
     setErro("");
     try {
@@ -117,17 +127,22 @@ export function FreteCotacao({
           ...(unidade ? { unidade } : {}),
         },
       });
+      // Resposta de uma cotação superada (o usuário mudou algo no meio): ignora.
+      if (meu !== runId.current) return;
+      if (alvo !== assinaturaAtual.current) return;
       setOpcoes(r.opcoes as Opcao[]);
       setPeso(Number(r.peso ?? 0));
       const escolhida = (r.opcoes as Opcao[])[r.escolhida];
       if (escolhida) aplicar(escolhida);
     } catch (e) {
+      if (meu !== runId.current) return;
       setOpcoes([]);
       setErro(e instanceof Error ? e.message : "Erro ao cotar o frete.");
     } finally {
-      setLoading(false);
+      if (meu === runId.current) setLoading(false);
     }
   }
+
 
   function aplicar(o: Opcao) {
     onSelect({
