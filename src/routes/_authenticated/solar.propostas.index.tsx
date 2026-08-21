@@ -89,8 +89,28 @@ function PropostasSolarPage() {
         totais: (r.totais as Record<string, number>) ?? {},
       })) as Row[];
     },
-    staleTime: 30_000,
+    // Status muda no servidor (SAP/Salesforce/cobrança) depois da conclusão:
+    // a lista sempre revalida ao abrir e ao voltar o foco, mostrando os dados
+    // em cache enquanto atualiza (nada trava a tela).
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    placeholderData: (prev: Row[] | undefined) => prev,
+    // Enquanto houver pedido em processamento, atualiza sozinho a cada 6s —
+    // e só nesse caso, para não pesar o portal.
+    refetchInterval: (query) => {
+      const dados = (query.state.data ?? []) as Row[];
+      const pendente = dados.some(
+        (r) =>
+          r.status === "Aguardando Pagamento" ||
+          (r.sap_ov_status && r.sap_ov_status !== "criada" && r.sap_ov_status !== "erro") ||
+          (r.sf_status && r.sf_status !== "sincronizado" && r.sf_status !== "erro"),
+      );
+      return pendente ? 6000 : false;
+    },
+    refetchIntervalInBackground: false,
   });
+
 
   const rows = q.data ?? [];
   const ufs = useMemo(() => Array.from(new Set(rows.map((r) => r.uf).filter(Boolean))).sort(), [rows]);
