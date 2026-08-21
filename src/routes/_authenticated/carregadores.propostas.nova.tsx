@@ -192,6 +192,10 @@ function PropostaCarregadoresPage() {
 
   // Nova proposta sempre começa vazia; só carrega dados ao editar/duplicar uma proposta salva.
   const [state, setState] = useState<CarregadoresState>(() => novoEstado());
+  // Finalidade escolhida na tela quando o pedido fatura o cliente final
+  // (esse parceiro geralmente não tem cadastro no portal). "" = ainda não escolhida.
+  const [finalidadeFat, setFinalidadeFat] = useState<"" | CarregadoresState["finalidadeUso"]>("");
+
   // Itens cujo valor unitário acabou de ser atualizado pelo Preço Sugerido.
   const [precoChanges, setPrecoChanges] = useState<Record<string, { de: number; para: number }>>({});
 
