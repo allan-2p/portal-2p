@@ -251,6 +251,9 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
         .update(profilePatch)
         .eq("id", data.user_id);
       if (error) throw new Error(error.message);
+      // Escopo/identidade Salesforce podem ter mudado: derruba o cache curto.
+      const { invalidateScopeCache } = await import("./scope.server");
+      invalidateScopeCache(data.user_id);
     }
 
     // O papel interno é derivado do perfil de permissão (trigger no banco).
