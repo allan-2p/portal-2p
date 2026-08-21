@@ -54,6 +54,7 @@ type Row = {
   numero: string | null;
   nome?: string | null;
   numero_sap?: string | null;
+  sap_ov_numero?: string | null;
 
   cliente_nome: string;
   cliente_doc?: string | null;
@@ -125,20 +126,20 @@ function HistoricoCarregadoresPage() {
       if (status !== "todos" && r.status !== status) return false;
       if (uf !== "todos" && r.uf !== uf) return false;
       if (!vend.matches(vendedor, r.created_by)) return false;
-      const temSap = !!(r.numero_sap ?? "").trim();
+      const temSap = !!((r.sap_ov_numero || r.numero_sap) ?? "").trim();
       if (sap === "com" && !temSap) return false;
       if (sap === "sem" && temSap) return false;
       if (!t) return true;
       // Propostas abertas não têm Nº SAP: a busca continua válida pelos demais campos.
       const alvo = norm(
-        [r.cliente_nome, r.numero, r.nome, r.numero_sap, r.cliente_doc, r.consultor_nome]
+        [r.cliente_nome, r.numero, r.nome, (r.sap_ov_numero || r.numero_sap), r.cliente_doc, r.consultor_nome]
           .filter(Boolean)
           .join(" ")
       );
       if (alvo.includes(t)) return true;
       if (tDig) {
         const alvoDig = soDigitos(
-          [r.numero, r.numero_sap, r.cliente_doc].filter(Boolean).join(" ")
+          [r.numero, (r.sap_ov_numero || r.numero_sap), r.cliente_doc].filter(Boolean).join(" ")
         );
         if (alvoDig.includes(tDig)) return true;
       }
@@ -268,7 +269,7 @@ function HistoricoCarregadoresPage() {
                     <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
                     <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
                     <td className="px-4 py-3">{r.nome || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.numero_sap || "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{(r.sap_ov_numero || r.numero_sap) || "—"}</td>
                     <td className="px-4 py-3 text-right font-semibold">{fmtBRL(r.totais.valorTotal ?? 0)}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("pt-BR")}
