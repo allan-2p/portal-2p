@@ -240,9 +240,6 @@ function NovaPropostaSolarPage() {
   const [paineis, setPaineis] = useState("");
   const [tamanhoTrilho, setTamanhoTrilho] = useState("longo");
   const [linhas, setLinhas] = useState<FileiraCalc[]>([novaFileira()]);
-  // produto avulso (lista de produtos)
-  const [avulsoDesc, setAvulsoDesc] = useState("");
-  const [avulsoQtd, setAvulsoQtd] = useState("1");
 
 
   // Etapa 4
