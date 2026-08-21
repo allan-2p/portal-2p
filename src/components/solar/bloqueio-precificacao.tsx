@@ -195,8 +195,9 @@ export function BloqueioPrecificacaoAlert({
           {diagnostico.itensSemPreco.length > 0 && (
             <div>
               <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-1">
-                Itens sem preço ({diagnostico.itensSemPreco.length})
-              </div>
+                {diagnostico.causa === "de-para"
+                  ? `Itens com de-para pendente (${diagnostico.itensSemPreco.length})`
+                  : `Itens sem preço (${diagnostico.itensSemPreco.length})`}
               <div className="text-sm text-muted-foreground break-words">
                 {diagnostico.itensSemPreco.slice(0, 12).join(", ")}
                 {diagnostico.itensSemPreco.length > 12 ? "…" : ""}
