@@ -353,17 +353,49 @@ function NovaPropostaSolarPage() {
       if (typeof totais['ehKit'] === "boolean") setEhKit(totais['ehKit'] as boolean);
       setVendido(totais['vendidoClienteFinal'] ? "sim" : "nao");
       setCupomCodigo(String(totais['cupom'] ?? ""));
-      setModo("lista");
-      setItensLista(
+      // Restaura exatamente o que foi salvo: modo (calculadora/lista) e, no modo
+      // calculadora, todas as entradas + os itens gerados. Sem isso, reabrir a
+      // proposta a convertia silenciosamente em "lista de produtos".
+      const calc = (totais['calculo'] ?? {}) as Record<string, any>;
+      const itensSalvos: Item[] = ((p['itens'] as any[]) ?? []).map((i) => ({
+        key: Math.random().toString(36).slice(2),
+        produtoId: String(i.produtoId ?? ""),
+        qtd: Number(i.qtd ?? 1),
+        valor: money2(i.valor),
+        origem: "manual" as const,
+      }));
 
-        ((p['itens'] as any[]) ?? []).map((i) => ({
-          key: Math.random().toString(36).slice(2),
-          produtoId: String(i.produtoId),
-          qtd: Number(i.qtd ?? 1),
-          valor: money2(i.valor),
-          origem: "manual" as const,
-        })),
-      );
+      if (calc['modo'] === "calculadora") {
+        const e = (calc['entrada'] ?? {}) as Record<string, any>;
+        setGeradorId(String(e['geradorId'] ?? ""));
+        setMicroModelo(String(e['microModelo'] ?? ""));
+        setMicroQtd(String(e['microQtd'] ?? ""));
+        setModuloId(String(e['moduloId'] ?? ""));
+        if (e['modPersonalizado']) setModPersonalizado(e['modPersonalizado']);
+        setPaineis(String(e['paineis'] ?? ""));
+        setTamanhoTrilho(String(e['tamanhoTrilho'] ?? "longo"));
+        if (Array.isArray(e['linhas']) && e['linhas'].length) setLinhas(e['linhas'] as FileiraCalc[]);
+        if (calc['assinatura']) setAssinaturaCalc(String(calc['assinatura']));
+        if (calc['resultado']) setResultado(calc['resultado'] as CalcResultado);
+        const guardados = Array.isArray(calc['itens']) ? (calc['itens'] as any[]) : null;
+        setItensCalc(
+          guardados
+            ? guardados.map((i) => ({
+                key: Math.random().toString(36).slice(2),
+                produtoId: String(i.produtoId ?? ""),
+                qtd: Number(i.qtd ?? 1),
+                valor: money2(i.valor),
+                origem: i.origem === "manual" ? ("manual" as const) : ("calculadora" as const),
+                ...(i.avulso ? { avulso: i.avulso } : {}),
+              }))
+            : itensSalvos.map((i) => ({ ...i, origem: "calculadora" as const })),
+        );
+        setModo("calculadora");
+      } else {
+        setModo("lista");
+        setItensLista(itensSalvos);
+      }
+
       if (editId) {
         setPropostaId(editId);
         setNumero(String(p['numero'] ?? ""));
