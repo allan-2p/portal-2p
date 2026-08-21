@@ -356,7 +356,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
         <tfoot><tr>
           <td colspan="${temFoto ? 3 : 2}">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
 
-          <td colspan="3" class="r">Frete ${esc(p.freteMod)} · <b style="color:var(--ink)">${fmtBRL(p.freteValor)}</b></td>
+          <td colspan="3" class="r">Frete ${esc(p.freteMod)}${FRETE_ABSORVIDO.includes(p.freteMod as any) ? " · <b>Frete grátis</b>" : ""}</td>
         </tr></tfoot>
       </table>
     </div>
