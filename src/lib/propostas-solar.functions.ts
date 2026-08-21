@@ -350,8 +350,25 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       ehKit: data.ehKit,
       vendidoClienteFinal: data.vendidoClienteFinal,
     };
+    // Finalidade de uso: SEMPRE a do cadastro do cliente (campo "Finalidade de
+    // uso"). Quando o pedido fatura o cliente final, vale o cadastro dele.
+    const { finalidadeUsoDoCadastro } = await import("./carregadores");
+    const docFinalidade = (
+      (data.faturarClienteFinal ? String(data.faturamento?.["doc"] ?? "") : "") || data.cliente.doc || ""
+    ).replace(/\D/g, "");
+    let finalidadeUso = finalidadeUsoDoCadastro(data.finalidadeUso);
+    if (docFinalidade.length >= 11) {
+      try {
+        const db = await import("./clientes-db.server");
+        const cad = (await db.findClienteByDoc(docFinalidade))[0]?.cliente ?? null;
+        if (cad) finalidadeUso = finalidadeUsoDoCadastro(cad["finalidade"] as string | null);
+      } catch {
+        /* cadastro indisponível: mantém o valor recebido */
+      }
+    }
 
     const payload: Record<string, unknown> = {
+
       numero: numeroProposta,
       nome: data.propostaNome,
       cliente_nome: data.cliente.nome,
@@ -363,7 +380,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       contribuinte: data.contribuinte,
       previsao_fechamento: data.previsaoFechamento,
       tipo_nf: data.tipoNf,
-      finalidade_uso: data.finalidadeUso || "uso_consumo",
+      finalidade_uso: finalidadeUso,
 
       faturar_cliente_final: data.faturarClienteFinal,
       faturamento: data.faturarClienteFinal ? data.faturamento : {},
