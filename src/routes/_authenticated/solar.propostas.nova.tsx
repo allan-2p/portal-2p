@@ -1407,6 +1407,29 @@ function NovaPropostaSolarPage() {
                     </Campo>
                   ))}
                 </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Campo label="Finalidade de uso">
+                    <Select value={finalidadeUso} onValueChange={setFinalidadeUso}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Revenda">Revenda</SelectItem>
+                        <SelectItem value="Industrialização">Industrialização</SelectItem>
+                        <SelectItem value="Uso e Consumo">Uso e Consumo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {tentou && !finalidadeUso && <Erro>Obrigatória para faturar o cliente final.</Erro>}
+                  </Campo>
+                  {fatTipoDoc === "cnpj" && (
+                    <label className="flex items-end gap-2 text-sm pb-2">
+                      <Checkbox
+                        checked={fatContribuinte}
+                        onCheckedChange={(v) => setFatContribuinte(v === true)}
+                      />
+                      Cliente final é contribuinte de ICMS
+                    </label>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Dados buscados automaticamente (CNPJ e CEP) continuam editáveis. Sem retorno das
                   consultas, preencha manualmente.
