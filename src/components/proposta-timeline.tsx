@@ -1,5 +1,6 @@
 import {
   PROPOSTA_STATUS,
+  PROPOSTA_STATUS_DATA_COL,
   propostaStatusStyle,
   type PropostaStatus,
 } from "@/lib/proposta-status";
