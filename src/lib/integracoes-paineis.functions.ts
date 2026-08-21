@@ -34,6 +34,6 @@ export const executarJobIntegracaoFn = createServerFn({ method: "POST" })
       () => executorFor(data.job)({}),
     );
     if (!run.ok) throw new Error(run.error);
-    return run.result;
+    return { ok: true, resultado: JSON.stringify(run.result ?? {}) };
   });
 
