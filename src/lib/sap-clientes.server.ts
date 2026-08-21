@@ -6,6 +6,7 @@
 
 import { XMLParser } from "fast-xml-parser";
 import { camposSapCliente, validarParaSap, type ClienteSapInput } from "./sap-clientes-map";
+import { SAP_ACCEPT_LANGUAGE, comIdiomaPT } from "./sap-lang.server";
 
 export type SapClienteResultado =
   | {
@@ -111,10 +112,11 @@ export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<Sa
   const tentativas = 3;
   for (let i = 1; i <= tentativas; i++) {
     try {
-      const res = await fetch(url, {
+      const res = await fetch(comIdiomaPT(url), {
         method: "POST",
         headers: {
           "Content-Type": "text/xml;charset=UTF-8",
+          "accept-language": SAP_ACCEPT_LANGUAGE,
           ...(auth ? { Authorization: auth } : {}),
         },
         body,

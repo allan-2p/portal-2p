@@ -17,6 +17,7 @@
 import { XMLParser } from "fast-xml-parser";
 import { pltypDaTabela } from "./sap-clientes-map";
 import { alertarSuspeitasNumericas, iniciarColetaNumerica, numSap } from "./sap-num.server";
+import { SAP_ACCEPT_LANGUAGE, comIdiomaPT } from "./sap-lang.server";
 
 export type SimulacaoItem = {
   codigo: string;
@@ -182,7 +183,7 @@ export async function simularSap(
   const timer = setTimeout(() => controller.abort(), 30_000);
   let xml = "";
   try {
-    const res = await fetch(url, {
+    const res = await fetch(comIdiomaPT(url), {
       method: "POST",
       headers: {
         "content-type": "application/soap+xml; charset=utf-8",

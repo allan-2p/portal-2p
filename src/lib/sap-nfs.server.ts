@@ -27,6 +27,7 @@ import { XMLParser } from "fast-xml-parser";
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 import { criarNotificacao } from "./notificacoes.server";
+import { SAP_ACCEPT_LANGUAGE, comIdiomaPT } from "./sap-lang.server";
 
 /**
  * Status do portal em ordem de avanço (nunca regride).
@@ -152,12 +153,13 @@ async function chamarSap(nroped: string): Promise<{ doc: any; xml: string }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
   try {
-    const res = await fetch(url!, {
+    const res = await fetch(comIdiomaPT(url!), {
       method: "POST",
       // Mesma receita validada em produção na criação da OV: SOAP 1.2 e só
       // dois headers (sem SOAPAction, accept ou cookie sap-usercontext).
       headers: {
         "content-type": "application/soap+xml; charset=utf-8",
+        "accept-language": SAP_ACCEPT_LANGUAGE,
         authorization: auth!,
       },
       body: envelope(nroped),

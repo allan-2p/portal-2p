@@ -24,6 +24,7 @@ import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 import { simularPrecosSap } from "./sap-precos.server";
 import { deveCriarOferta } from "./fretefy-oferta";
+import { SAP_ACCEPT_LANGUAGE, comIdiomaPT } from "./sap-lang.server";
 
 
 export type SapOvResultado = {
@@ -798,13 +799,14 @@ export async function criarOrdemVendaSap(
   let xml = "";
   let httpStatus = 0;
   try {
-    const res = await fetch(url, {
+    const res = await fetch(comIdiomaPT(url), {
       method: "POST",
       // Exatamente os headers do request validado: só Authorization e
       // Content-Type (o mandante 500 vem na própria URL). Nada de SOAPAction,
       // accept-language ou cookie sap-usercontext.
       headers: {
         "content-type": "application/soap+xml; charset=utf-8",
+        "accept-language": SAP_ACCEPT_LANGUAGE,
         authorization: auth,
       },
 
