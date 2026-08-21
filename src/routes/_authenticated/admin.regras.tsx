@@ -13,6 +13,7 @@ import { useSolarCalcConfig } from "@/hooks/use-solar-catalogo";
 import { SOLAR_CALC_CONFIG_FALLBACK } from "@/lib/solar-calculadora";
 import { resolverProduto } from "@/lib/solar-sku";
 import { sugerirMaterial, useSapCatalogoCodigos } from "@/components/solar/sap-codigo";
+import { RegrasSuportes } from "@/components/solar/regras-suportes";
 
 
 export const Route = createFileRoute("/_authenticated/admin/regras")({
@@ -184,29 +185,40 @@ function Calculadora2P() {
         <Bloco titulo="Como a estrutura é quantificada">
           <ol className="list-decimal pl-5 space-y-1">
             <li>
-              Os painéis são distribuídos entre as fileiras de forma equilibrada
-              (ex.: 22 painéis em 4 fileiras → 6, 6, 5 e 5).
+              Cada fileira informa módulos por fileira, nº de fileiras, orientação, distância entre
+              apoios e balanço. Comprimento ={" "}
+              <code>nº painéis × lado + (nº painéis − 1) × 20 mm + 2 × 40 mm</code>, com o lado sendo
+              a largura em retrato e a altura em paisagem.
             </li>
             <li>
-              Comprimento de cada fileira ={" "}
-              <code>nº painéis × lado + (nº painéis − 1) × folga + 2 × balanço</code>, onde o lado é
-              a largura do módulo em retrato e a altura em paisagem.
+              <b>Telhado com trilho</b>: as barras usam o de/para por comprimento do trilho (4.800 e
+              a barra curta configurada abaixo, conforme a largura do módulo). Junção ={" "}
+              <code>(barras por linha − 1) × 2</code>. Grampo intermediário ={" "}
+              <code>(painéis − 1) × 2</code>, grampo final = 4 e terminal de aterramento = 1, por
+              fileira. Fixadores saem da distância entre apoios × múltiplo do suporte (piso de 4).
+              Se o suporte tiver <b>complemento</b>, ele sai junto na proporção 2×.
             </li>
             <li>
-              As barras de trilho são combinadas a partir das barras longas disponíveis, completando
-              com a barra curta. São <b>duas linhas de trilho por fileira</b>.
+              <b>Telhado Smart / mini-trilho</b>: não consome barras 2P-TC. A quantidade do
+              mini-trilho é a soma dos grampos (intermediários + finais) do projeto; os minis das
+              famílias <code>2P-MTL*</code> e <code>2P-MINI*</code> ainda somam os microinversores da
+              1ª fileira (geradores micro modelo 1–4).
             </li>
             <li>
-              Junções = (barras por linha − 1) × 2 linhas. Grampos intermediários = (painéis − 1) × 2
-              por fileira. Grampos finais = 4 por fileira. Terminal de aterramento = 1 por fileira.
+              <b>Kit parafuso Smart</b> sai nos suportes legado 9, 10, 15, 16, 17 e 20 (grampos +
+              microinversores da 1ª fileira). No suporte 9 o terminal de aterramento também soma os
+              microinversores.
             </li>
             <li>
-              Fixadores = 1 a cada intervalo configurado de trilho (mínimo 2 por linha), sempre
-              arredondados para o múltiplo definido no suporte, × 2 linhas.
+              <b>LAJE 10 (legado 13)</b> emite dois itens próprios (código SAP e complemento), cada
+              um com metade dos grampos, e usa o terminal <b>ZMIL</b> — nunca ZMI ou M8.{" "}
+              <b>Zipado (legado 14)</b> emite produto próprio somando microinversores nos geradores
+              1, 2 e 4, com terminal <b>ZMI</b>.
             </li>
             <li>
-              Suportes de laje/solo não consomem barra de trilho; nesses casos apenas os fixadores e
-              acessórios entram na proposta.
+              Terminais de microinversor entram uma única vez por projeto: <b>M8</b> para otimizador
+              ou micro modelo 5, <b>ZMI</b> nos demais casos com microinversor (dobrado nos modelos
+              1–3) e nada quando o gerador é string.
             </li>
           </ol>
         </Bloco>
@@ -214,11 +226,24 @@ function Calculadora2P() {
         <Bloco titulo="Validações">
           <ul className="list-disc pl-5 space-y-1">
             <li>Altura, largura e espessura do módulo dentro dos limites configurados abaixo.</li>
+            <li>
+              Espessura fora da faixa não impede o cálculo, mas os grampos deixam de ser
+              quantificados.
+            </li>
             <li>Módulos mais largos que o limite passam a usar a barra curta reforçada.</li>
-            <li>Acima do limite de painéis, o portal alerta sobre a disponibilidade do trilho.</li>
+            <li>
+              Acima do limite de painéis, as barras longas são liberadas automaticamente.
+            </li>
+            <li>
+              Componentes sem código no cadastro viram <b>pendência de de/para</b> apontando o campo
+              exato a preencher.
+            </li>
           </ul>
         </Bloco>
       </section>
+
+      <RegrasSuportes />
+
 
       <section className="glass rounded-2xl p-5 space-y-4">
         <h3 className="font-semibold">Parâmetros configuráveis</h3>
