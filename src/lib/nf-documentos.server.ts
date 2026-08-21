@@ -8,7 +8,12 @@
  * Caminhos: danfes/propostas/{propostaId}/{danfe.pdf|nfe.xml|boleto.pdf}
  */
 
-import { consultarDocumentoNfSap, type DocumentoNfTipo } from "./sap-nfs.server";
+import {
+  consultarDocumentoNfSap,
+  bytesDocumentoSap,
+  pdfIntegro,
+  type DocumentoNfTipo,
+} from "./sap-nfs.server";
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 
@@ -34,23 +39,41 @@ async function admin() {
   return supabaseAdmin;
 }
 
-async function existeNoStorage(path: string): Promise<boolean> {
+/**
+ * Um arquivo já em cache só vale se estiver íntegro. Arquivos gravados antes da
+ * correção da decodificação do base64 do SAP ficaram truncados; nesses casos o
+ * cache é descartado e o documento é rebuscado no SAP.
+ */
+async function cacheUtilizavel(path: string, tipo: DocumentoNfTipo): Promise<boolean> {
   const sb = await admin();
   const barra = path.lastIndexOf("/");
   const pasta = path.slice(0, barra);
   const nome = path.slice(barra + 1);
   const { data } = await sb.storage.from(BUCKET).list(pasta, { search: nome, limit: 100 });
-  return (data ?? []).some((f) => f.name === nome);
+  if (!(data ?? []).some((f) => f.name === nome)) return false;
+  if (tipo === "xml") return true;
+
+  const { data: arquivo, error } = await sb.storage.from(BUCKET).download(path);
+  if (error || !arquivo) return false;
+  const bytes = Buffer.from(await arquivo.arrayBuffer());
+  if (pdfIntegro(bytes)) return true;
+  await sb.storage.from(BUCKET).remove([path]);
+  return false;
 }
 
 async function guardar(path: string, base64: string, contentType: string): Promise<void> {
   const sb = await admin();
-  const bytes = Buffer.from(base64.replace(/\s+/g, ""), "base64");
+  const bytes = bytesDocumentoSap(base64);
+  if (!bytes) throw new Error("O SAP devolveu um documento vazio ou inválido.");
+  if (contentType === "application/pdf" && !pdfIntegro(bytes)) {
+    throw new Error("O SAP devolveu um PDF incompleto. Tente novamente em instantes.");
+  }
   const { error } = await sb.storage
     .from(BUCKET)
     .upload(path, bytes, { contentType, upsert: true });
   if (error) throw new Error(`Não foi possível guardar o documento: ${error.message}`);
 }
+
 
 export type DocumentoNfResultado = {
   tipo: DocumentoNfTipo;
@@ -78,7 +101,7 @@ export async function obterDocumentoNf(
       : caminhoDocumento(propostaId, tipo);
 
   let origem: "storage" | "sap" = "storage";
-  if (!(await existeNoStorage(path))) {
+  if (!(await cacheUtilizavel(path, tipo))) {
     const nroped = String(row["numero"] ?? "").trim();
     if (!nroped) throw new Error("Pedido sem número — não é possível consultar o SAP.");
     const { base64 } = await consultarDocumentoNfSap(nroped, tipo);

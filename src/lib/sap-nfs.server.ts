@@ -210,6 +210,46 @@ export async function consultarVbelnPorPedido(nroped: string): Promise<string | 
 }
 
 /**
+ * Limpa o base64 que vem dentro do XML do SAP.
+ *
+ * O parser é configurado com `parseTagValue: false` para não estragar números,
+ * e isso mantém as entidades XML literais (`&#xA;`, `&#13;`, `&amp;`) dentro do
+ * conteúdo. Se essas sequências forem para o `Buffer.from(..., "base64")`, o
+ * decode para no primeiro caractere inválido e o arquivo sai truncado. Aqui as
+ * entidades são resolvidas e qualquer caractere fora do alfabeto base64 é
+ * descartado antes da decodificação.
+ */
+export function limparBase64Sap(bruto: unknown): string {
+  let s = String(bruto ?? "");
+  if (!s || s === "undefined" || s === "null") return "";
+  s = s
+    .replace(/&#x([0-9a-fA-F]+);/g, (_m, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
+  return s.replace(/[^A-Za-z0-9+/=]/g, "");
+}
+
+/** Decodifica o base64 do SAP em bytes, já com as entidades XML resolvidas. */
+export function bytesDocumentoSap(bruto: unknown): Buffer | null {
+  const limpo = limparBase64Sap(bruto);
+  if (limpo.length < 100) return null;
+  const bytes = Buffer.from(limpo, "base64");
+  return bytes.length > 0 ? bytes : null;
+}
+
+/** Um PDF só é servido se tiver cabeçalho `%PDF` e o marcador final `%%EOF`. */
+export function pdfIntegro(bytes: Buffer): boolean {
+  if (bytes.length < 1000) return false;
+  if (bytes.subarray(0, 5).toString("latin1") !== "%PDF-") return false;
+  const fim = bytes.subarray(Math.max(0, bytes.length - 4096)).toString("latin1");
+  return fim.includes("%%EOF");
+}
+
+/**
  * Busca sob demanda um documento da NF no SAP (DANFE, XML da NF-e ou boleto).
  * Devolve o base64 cru — quem chama decide onde guardar.
  */
@@ -228,7 +268,7 @@ export async function consultarDocumentoNfSap(
   let base64: string | null = null;
   for (const chave of chaves[tipo]) {
     const v = achar(documentos, chave) ?? achar(doc, chave);
-    const s = String(v ?? "").replace(/\s+/g, "");
+    const s = tipo === "xml" ? String(v ?? "").replace(/\s+/g, "") : limparBase64Sap(v);
     if (s && s !== "undefined" && s.length > 100) {
       base64 = s;
       break;
@@ -236,6 +276,7 @@ export async function consultarDocumentoNfSap(
   }
   return { base64, consulta: lerConsulta(doc) };
 }
+
 
 
 
@@ -251,13 +292,17 @@ async function salvarDanfe(propostaId: string, base64: string): Promise<string |
     });
   };
   try {
-    const limpo = base64.replace(/\s+/g, "");
-    if (limpo.length < 100) {
+    const bytes = bytesDocumentoSap(base64);
+    if (!bytes) {
       await avisar("conteúdo base64 muito curto/inválido");
       return null;
     }
-    const bytes = Buffer.from(limpo, "base64");
+    if (!pdfIntegro(bytes)) {
+      await avisar("PDF incompleto na resposta do SAP (sem %PDF/%%EOF) — não gravado");
+      return null;
+    }
     const path = `propostas/${propostaId}/danfe.pdf`;
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.storage
       .from("danfes")
