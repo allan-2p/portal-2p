@@ -82,7 +82,13 @@ export async function obterDocumentoNf(
     const nroped = String(row["numero"] ?? "").trim();
     if (!nroped) throw new Error("Pedido sem número — não é possível consultar o SAP.");
     const { base64 } = await consultarDocumentoNfSap(nroped, tipo);
-    if (!base64) throw new Error("NF ainda não emitida pelo SAP.");
+    if (!base64) {
+      throw new Error(
+        tipo === "boleto"
+          ? "O SAP ainda não disponibilizou o boleto deste pedido."
+          : "NF ainda não emitida pelo SAP.",
+      );
+    }
     await guardar(path, base64, meta.contentType);
     origem = "sap";
     if (tipo === "danfe" && !String(row["danfe_path"] ?? "").trim()) {
