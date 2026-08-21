@@ -421,7 +421,8 @@ function PropostaCarregadoresPage() {
       (atual.cliente_ie ?? "") !== state.ie ||
       (atual.uf || "") !== state.uf ||
       atual.contribuinte !== state.contribuinte ||
-      finalidadeUsoDoCadastro(atual.finalidade) !== state.finalidadeUso;
+      (!state.faturarClienteFinal &&
+        finalidadeUsoDoCadastro(atual.finalidade) !== state.finalidadeUso);
     if (!mudou) return;
     setState((s) => ({
       ...s,
@@ -432,7 +433,9 @@ function PropostaCarregadoresPage() {
       ie: atual.cliente_ie ?? "",
       uf: atual.uf || s.uf,
       contribuinte: atual.contribuinte,
-      finalidadeUso: finalidadeUsoDoCadastro(atual.finalidade),
+      // Faturando o cliente final, a finalidade é a escolhida na tela.
+      finalidadeUso: s.faturarClienteFinal ? s.finalidadeUso : finalidadeUsoDoCadastro(atual.finalidade),
+
       regimeTributario: atual.regime_tributario ?? s.regimeTributario ?? null,
     }));
     toast.info("Dados do cliente atualizados conforme o cadastro atual.");
