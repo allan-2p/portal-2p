@@ -757,15 +757,18 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
 
     const base = { ...actor, proposta_id: row.id, numero: row["numero"] ?? null };
 
-    if (data.etapa !== 4) {
+    // Finalização é a etapa 5 do wizard. Aceita 4 por compatibilidade com o
+    // wizard antigo (4 passos), que ainda pode estar aberto em abas do consultor.
+    if (data.etapa !== 5 && data.etapa !== 4) {
       await db.registrarConclusaoLog({
         ...base,
         status: row["status"],
         resultado: "bloqueada",
-        detalhe: `Conclusão fora da etapa 4 (Finalização): etapa recebida = ${data.etapa ?? "nenhuma"}`,
+        detalhe: `Conclusão fora da etapa 5 (Finalização): etapa recebida = ${data.etapa ?? "nenhuma"}`,
       });
-      throw new Error("Conclua o pedido apenas na etapa 4 (Finalização).");
+      throw new Error("Conclua o pedido apenas na etapa 5 (Finalização).");
     }
+
 
     const itens = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
     const totais = (row["totais"] ?? {}) as Record<string, number>;
