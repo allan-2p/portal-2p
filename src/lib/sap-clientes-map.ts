@@ -7,6 +7,24 @@
 export const FINALIDADES = ["Revenda", "Industrialização", "Uso e Consumo"] as const;
 export type Finalidade = (typeof FINALIDADES)[number];
 
+/**
+ * Aceita tanto o rótulo do cadastro ("Uso e Consumo") quanto o slug usado nas
+ * propostas ("uso_consumo") e devolve sempre a finalidade canônica. Sem isso o
+ * slug caía no ramo "não contribuinte" (CFOP 6 / IE ISENTO) por engano.
+ */
+export function normalizarFinalidade(valor: unknown): Finalidade {
+  const v = String(valor ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
+  if (v.startsWith("revenda")) return "Revenda";
+  if (v.startsWith("industrializ")) return "Industrialização";
+  if (v.startsWith("uso")) return "Uso e Consumo";
+  return "Revenda";
+}
+
 /** Tabelas de preço do SAP (PLTYP). O código enviado ao SAP é o `pltyp`. */
 export const TABELAS_PRECO = [
   { codigo: "2P-0001", pltyp: "01", label: "2P-0001 — Varejo" },
@@ -150,7 +168,7 @@ const UFS_KONDA_04 = ["SP", "RJ", "ES", "MG", "RS", "PR", "SC"];
 export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
   const doc = digitos(c.doc);
   const pessoaFisica = doc.length === 11;
-  const finalidade = (so(c.finalidade) || "Revenda") as Finalidade;
+  const finalidade = normalizarFinalidade(c.finalidade);
   const contribuinte = c.contribuinte === true;
 
   let ie = so(c.ie).replace(/[.\-/]/g, "").slice(0, 18);

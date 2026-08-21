@@ -350,20 +350,23 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       ehKit: data.ehKit,
       vendidoClienteFinal: data.vendidoClienteFinal,
     };
-    // Finalidade de uso: SEMPRE a do cadastro do cliente (campo "Finalidade de
-    // uso"). Quando o pedido fatura o cliente final, vale o cadastro dele.
+    // Finalidade de uso:
+    //  - pedido faturado ao CLIENTE FINAL → vale o que foi preenchido na tela
+    //    (esse parceiro normalmente não tem cadastro no portal, principalmente
+    //    quando é CPF; é a tela que define CFOP/IE no cadastro do SAP);
+    //  - pedido normal → sempre a do cadastro do cliente.
     const { finalidadeUsoDoCadastro } = await import("./carregadores");
-    const docFinalidade = (
-      (data.faturarClienteFinal ? String(data.faturamento?.["doc"] ?? "") : "") || data.cliente.doc || ""
-    ).replace(/\D/g, "");
     let finalidadeUso = finalidadeUsoDoCadastro(data.finalidadeUso);
-    if (docFinalidade.length >= 11) {
-      try {
-        const db = await import("./clientes-db.server");
-        const cad = (await db.findClienteByDoc(docFinalidade))[0]?.cliente ?? null;
-        if (cad) finalidadeUso = finalidadeUsoDoCadastro(cad["finalidade"] as string | null);
-      } catch {
-        /* cadastro indisponível: mantém o valor recebido */
+    if (!data.faturarClienteFinal) {
+      const docFinalidade = (data.cliente.doc ?? "").replace(/\D/g, "");
+      if (docFinalidade.length >= 11) {
+        try {
+          const db = await import("./clientes-db.server");
+          const cad = (await db.findClienteByDoc(docFinalidade))[0]?.cliente ?? null;
+          if (cad) finalidadeUso = finalidadeUsoDoCadastro(cad["finalidade"] as string | null);
+        } catch {
+          /* cadastro indisponível: mantém o valor recebido */
+        }
       }
     }
 

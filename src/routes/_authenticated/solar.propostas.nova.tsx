@@ -69,6 +69,7 @@ import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn, concluirPropostaFn } from "@/lib/propostas.functions";
 import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/resultado-conclusao-dialog";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
+import { normalizarFinalidade } from "@/lib/sap-clientes-map";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
 import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
 import { resolverProduto } from "@/lib/solar-sku";
@@ -329,7 +330,8 @@ function NovaPropostaSolarPage() {
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
       setFat((p['faturamento'] as Record<string, string>) ?? {});
       setFatContribuinte(!!(p['faturamento'] as Record<string, unknown> | null)?.['contribuinte']);
-      setFinalidadeUso(String(p['finalidade_uso'] ?? ""));
+      // O banco guarda o slug ("uso_consumo"); a tela usa o rótulo do SAP.
+      setFinalidadeUso(p['finalidade_uso'] ? normalizarFinalidade(p['finalidade_uso']) : "");
       setFormaPagamento(String(p['forma_pagamento'] ?? ""));
       setCondicaoPagamento(String(p['condicao_pagamento_codigo'] ?? ""));
       setEntregaDiferente(!!p['entrega_diferente']);
