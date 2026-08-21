@@ -240,9 +240,6 @@ function NovaPropostaSolarPage() {
   const [paineis, setPaineis] = useState("");
   const [tamanhoTrilho, setTamanhoTrilho] = useState("longo");
   const [linhas, setLinhas] = useState<FileiraCalc[]>([novaFileira()]);
-  // produto avulso (lista de produtos)
-  const [avulsoDesc, setAvulsoDesc] = useState("");
-  const [avulsoQtd, setAvulsoQtd] = useState("1");
 
 
   // Etapa 4
@@ -403,25 +400,6 @@ function NovaPropostaSolarPage() {
     void atualizarPrecos(novos, listaPreco, setter);
   }
 
-  /** Inclui um produto digitado manualmente (fora do catálogo). */
-  function adicionarAvulso() {
-    const desc = avulsoDesc.trim();
-    if (!desc) return toast.error("Descreva o produto que deseja incluir.");
-    setItensLista((prev) => [
-      ...prev,
-      {
-        key: Math.random().toString(36).slice(2),
-        produtoId: "",
-        qtd: Math.max(1, Number(avulsoQtd) || 1),
-        valor: 0,
-        origem: "manual",
-        avulso: { codigo: "AVULSO", descricao: desc },
-      },
-    ]);
-    setAvulsoDesc("");
-    setAvulsoQtd("1");
-    toast.success("Produto incluído. Informe o valor unitário na lista.");
-  }
 
 
 
@@ -1262,16 +1240,17 @@ function NovaPropostaSolarPage() {
                 {tentou && !propostaNome.trim() && <Erro>Obrigatório.</Erro>}
               </Campo>
               <Campo label="Cliente *">
-                <Select value={clienteDoc} onValueChange={setClienteDoc}>
-                  <SelectTrigger><SelectValue placeholder="Pesquisar no cadastro de clientes" /></SelectTrigger>
-                  <SelectContent className="max-h-[320px]">
-                    {(clientesQ.data ?? []).map((c: any) => (
-                      <SelectItem key={String(c.id)} value={String(c.doc)}>
-                        {c.razao_social} — {c.doc}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SeletorPesquisavel
+                  value={clienteDoc}
+                  onValueChange={setClienteDoc}
+                  opcoes={(clientesQ.data ?? []).map((c: any) => ({
+                    value: String(c.doc),
+                    label: `${c.razao_social} — ${c.doc}`,
+                  }))}
+                  placeholder="Digite para pesquisar no cadastro de clientes"
+                  vazio="Nenhum cliente encontrado."
+                />
+
                 {tentou && !cliente && <Erro>Selecione o cliente.</Erro>}
               </Campo>
               <Campo label="O projeto já foi vendido para o cliente final?">
@@ -1958,41 +1937,24 @@ function NovaPropostaSolarPage() {
                 <div className="space-y-3">
                   <div className="grid gap-3 md:grid-cols-2">
                     <Campo label="Adicionar produto do catálogo">
-                      <Select value="" onValueChange={(id) => adicionarProdutoEm(id, "lista")}>
-                        <SelectTrigger><SelectValue placeholder="Buscar produto" /></SelectTrigger>
-                        <SelectContent className="max-h-[320px]">
-                          {produtos.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.codigo} — {p.descricao}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SeletorPesquisavel
+                        value=""
+                        onValueChange={(id) => adicionarProdutoEm(id, "lista")}
+                        opcoes={produtos.map((p) => ({
+                          value: p.id,
+                          label: `${p.codigo} — ${p.descricao}`,
+                        }))}
+                        placeholder="Digite para buscar produto"
+                        vazio="Nenhum produto no catálogo."
+                      />
                     </Campo>
                   </div>
-                  <div className="rounded-xl border border-border bg-surface-2 p-4">
-                    <div className="text-sm font-semibold mb-3">Produto fora do catálogo</div>
-                    <div className="grid gap-3 md:grid-cols-[1fr_120px_auto] md:items-end">
-                      <Campo label="Descrição do produto">
-                        <Input
-                          value={avulsoDesc}
-                          placeholder="Escreva o produto que deseja incluir"
-                          onChange={(e) => setAvulsoDesc(e.target.value)}
-                        />
-                      </Campo>
-                      <Campo label="Quantidade">
-                        <Input
-                          value={avulsoQtd}
-                          onChange={(e) => setAvulsoQtd(e.target.value.replace(/\D/g, ""))}
-                        />
-                      </Campo>
-                      <Button type="button" variant="outline" className="gap-1" onClick={adicionarAvulso}>
-                        <Plus className="h-4 w-4" /> Incluir
-                      </Button>
-                    </div>
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Só é possível incluir produtos ativos do catálogo SAP.
+                  </p>
                 </div>
               )}
+
 
             </div>
 
