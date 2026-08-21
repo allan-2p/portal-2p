@@ -76,7 +76,32 @@ export async function aplicarTransicao(
     return { ok: false, de, para, motivo, row: null };
   }
 
-  const row = await db.atualizarProposta(propostaId, { ...(opts.patch ?? {}), status: para }, { status: `eq.${de}` });
+  // Toda entrada em status carimba a data correspondente (Aguardando Pagamento
+  // → aguardando_pagamento_em, Processando → processando_em, etc.) e também
+  // `status_alterado_em`. Se as colunas ainda não existirem no banco, o update
+  // é refeito sem os carimbos para não travar o fluxo.
+  const agora = new Date().toISOString();
+  const col = propostaStatusDataCol(para);
+  const patchBase = { ...(opts.patch ?? {}), status: para };
+  const patchComData = {
+    ...patchBase,
+    status_alterado_em: agora,
+    ...(col && !(col in patchBase) ? { [col]: agora } : {}),
+  };
+
+  let row: Record<string, unknown> | null = null;
+  try {
+    row = (await db.atualizarProposta(propostaId, patchComData, { status: `eq.${de}` })) as Record<
+      string,
+      unknown
+    > | null;
+  } catch (e) {
+    if (!/42703|PGRST204/i.test((e as Error).message)) throw e;
+    row = (await db.atualizarProposta(propostaId, patchBase, { status: `eq.${de}` })) as Record<
+      string,
+      unknown
+    > | null;
+  }
   if (!row) {
     const motivo = `O status mudou durante a operação (esperado "${de}").`;
     await registrarRecusa(motor, propostaId, de, para, motivo);
