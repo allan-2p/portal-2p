@@ -190,9 +190,19 @@ export type CamposSapCliente = {
   IND_SECTOR: string;
   EQUIPE_VENDAS: string;
   ESCRITORIO: string;
+  INTEGRADOR: string;
 };
 
 const UFS_KONDA_04 = ["SP", "RJ", "ES", "MG", "RS", "PR", "SC"];
+
+/** Nome de pessoa física: NAME1 = primeiro nome, NAME2 = restante. */
+function nomePessoaFisica(nome: string): string[] {
+  const partes = so(nome).split(/\s+/).filter(Boolean);
+  if (!partes.length) return [];
+  const primeiro = partes[0]!.slice(0, 40);
+  const resto = partes.slice(1).join(" ").slice(0, 40);
+  return resto ? [primeiro, resto] : [primeiro];
+}
 
 /** Monta os campos da estrutura I_S_CLIENTE conforme as regras do SAP. */
 export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
@@ -200,11 +210,19 @@ export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
   const pessoaFisica = doc.length === 11;
   const finalidade = normalizarFinalidade(c.finalidade);
   const contribuinte = c.contribuinte === true;
+  const clienteFinal = c.cliente_final === true;
 
   let ie = so(c.ie).replace(/[.\-/]/g, "").slice(0, 18);
   let icmstaxpay = "01";
   let cfopc: string;
-  if (contribuinte && finalidade === "Revenda") cfopc = "08";
+  if (clienteFinal) {
+    // Cliente final (faturamento direto): CFOPC é FIXO pelo tipo de documento —
+    // a finalidade de uso só vale para o cadastro do integrador.
+    cfopc = pessoaFisica ? "06" : "90";
+    const temIe = !pessoaFisica && ie && ie.toUpperCase() !== "ISENTO";
+    icmstaxpay = temIe ? "01" : "09";
+    if (!temIe) ie = ie || "ISENTO";
+  } else if (contribuinte && finalidade === "Revenda") cfopc = "08";
   else if (contribuinte && finalidade === "Industrialização") cfopc = "00";
   else if (contribuinte && finalidade === "Uso e Consumo") cfopc = "90";
   else {
@@ -222,7 +240,7 @@ export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
     CNPJ: pessoaFisica ? "" : doc.padStart(14, "0"),
     CPF: pessoaFisica ? doc : "",
     CODCLI: digitos(c.numero_sap),
-    NAMES: quebrarNome(c.razao_social),
+    NAMES: clienteFinal && pessoaFisica ? nomePessoaFisica(c.razao_social) : quebrarNome(c.razao_social),
     IE: ie,
     CIDADE: so(c.cidade).slice(0, 40),
     BAIRRO: so(c.bairro).slice(0, 40),
@@ -239,11 +257,17 @@ export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
     PLTYP: pltypDaTabela(c.tabela_preco),
     KONDA: UFS_KONDA_04.includes(uf) ? "04" : "03",
     CRT: crtDoRegime(c.regime_tributario),
-    ZTERM: digitos(c.numero_sap) ? so(c.condicao_pgto_sap) : "2P00",
-    IND_SECTOR: uf === "SC" && finalidade === "Industrialização" ? "04" : "",
+    ZTERM: clienteFinal
+      ? so(c.condicao_pgto_sap) || "2P00"
+      : digitos(c.numero_sap)
+        ? so(c.condicao_pgto_sap)
+        : "2P00",
+    IND_SECTOR: !clienteFinal && uf === "SC" && finalidade === "Industrialização" ? "04" : "",
+    INTEGRADOR: digitos(c.integrador_sap),
     ...vendasDoEscopo(c),
   };
 }
+
 
 /** Validações que precisam existir antes de tentar o envio ao SAP. */
 export function validarParaSap(c: ClienteSapInput): string[] {
