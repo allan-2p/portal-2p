@@ -19,6 +19,7 @@ import {
 } from "./fretefy-rules.server";
 
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
+const round3 = (n: number) => Math.round((Number(n) || 0) * 1000) / 1000;
 
 export type CotarFreteInput = {
   itens: { codigo: string; quantidade: number; pesoLiquido?: number; nome?: string }[];
@@ -72,7 +73,8 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     (s, i) => s + Number(i.quantidade || 0) * Number(i.pesoLiquido ?? 0),
     0,
   );
-  const peso = round2(somaPeso > 0 ? somaPeso : Number(data.peso ?? 0));
+  // Peso com 3 casas (paridade com a plataforma antiga, que envia o peso cheio).
+  const peso = round3(somaPeso > 0 ? somaPeso : Number(data.peso ?? 0));
   if (!(peso > 0))
     throw new Error(
       "Não foi possível cotar: os produtos do pedido estão sem peso bruto cadastrado. Informe o peso (kg) em Gestão de Produtos.",
@@ -113,6 +115,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
   const cfgRegras = await carregarFreteRegras();
 
   let opcoes: OpcaoFrete[] = [];
+  let padrao = "";
   // Duas passadas: a segunda recota com o valor da nota "grossado" pelo frete.
   for (let pass = 0; pass < 2; pass++) {
     const res = await calcularFrete(body);
@@ -121,20 +124,29 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     if (res.status === 404) throw new Error("Não foi possível calcular o frete.");
     if (res.status >= 500) throw new Error("Erro interno do Fretefy ao calcular o frete.");
 
-    opcoes = (Array.isArray(res.json) ? (res.json as OpcaoBruta[]) : [])
+    // Ordem original do Fretefy é preservada: o gross-up da 2ª passada usa a
+    // PRIMEIRA opção remanescente após os filtros (paridade com a antiga).
+    const naOrdemDoFretefy = (Array.isArray(res.json) ? (res.json as OpcaoBruta[]) : [])
       .filter((o) =>
         filtraFretes(codigosCarrinho, String(o.transportadoraDocumento ?? ""), nomesCarrinho, cfgRegras, data.unidade),
       )
-      .map((o) => aplicarRegras(o, ctx, cfgRegras))
-      .sort((a, b) => a.total - b.total);
+      .map((o) => aplicarRegras(o, ctx, cfgRegras));
 
-    if (opcoes.length === 0)
+    if (naOrdemDoFretefy.length === 0)
       throw new Error("Nenhuma transportadora disponível para o CEP informado.");
-    if (pass === 0)
-      body["valorNota"] = round2(Number(body["valorNota"]) + (opcoes[0]?.total ?? 0));
+
+    if (pass === 0) {
+      body["valorNota"] = round2(Number(body["valorNota"]) + (naOrdemDoFretefy[0]?.total ?? 0));
+      continue;
+    }
+
+    padrao = naOrdemDoFretefy[0]?.id_transportadora ?? "";
+    // Ordenação por preço é só para exibição.
+    opcoes = [...naOrdemDoFretefy].sort((a, b) => a.total - b.total);
   }
 
-  let escolhida = 0;
+  // Default = primeira na ordem do Fretefy; o vendedor pode trocar.
+  let escolhida = Math.max(0, opcoes.findIndex((o) => o.id_transportadora === padrao));
   if (data.idTransportadora) {
     const i = opcoes.findIndex((o) => o.id_transportadora === data.idTransportadora);
     if (i >= 0) escolhida = i;
