@@ -847,6 +847,29 @@ function NovaPropostaSolarPage() {
     });
   }, [itens, avisosPreco, cliente, clienteDoc, listaPreco, produtos]);
 
+  // ------------------------------------------------------------------
+  // Itens enviados à cotação de frete: TODOS os itens com código SAP
+  // numérico entram no peso (mesmo conjunto da precificação). Item sem
+  // código numérico bloqueia a cotação — frete errado é pior que frete
+  // bloqueado.
+  // ------------------------------------------------------------------
+  const freteItens = useMemo(() => {
+    const lista: { codigo: string; quantidade: number; nome?: string }[] = [];
+    const pendencias: string[] = [];
+    for (const i of itens) {
+      const p = produtos.find((x) => x.id === i.produtoId);
+      const cod = normCod(p?.codigo ?? i.avulso?.codigo ?? "");
+      const nome = p?.descricao ?? i.avulso?.descricao ?? "item";
+      if (!/^\d+$/.test(cod)) {
+        pendencias.push(`${nome}${cod ? ` (${cod})` : ""} sem código SAP — peso não calculado`);
+        continue;
+      }
+      lista.push({ codigo: cod, quantidade: i.qtd, nome });
+    }
+    return { lista, pendencias };
+  }, [itens, produtos]);
+
+
   async function trocarModo(m: "calculadora" | "lista") {
     if (m === modo || trocando) return;
     setTrocando(true);
