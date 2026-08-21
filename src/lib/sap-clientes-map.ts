@@ -102,7 +102,15 @@ export type ClienteSapInput = {
   /** Valores explícitos (espelho do SAP); sobrepõem o cálculo pelo escopo. */
   equipe_vendas?: string | null;
   escritorio_vendas?: string | null;
-};
+  /**
+   * Cadastro do CLIENTE FINAL (faturamento direto), não do integrador.
+   * Muda as regras fiscais: CFOPC fixo (90 CNPJ / 06 CPF), ICMSTAXPAY pela IE
+   * e nome de pessoa física quebrado em 1º nome + restante.
+   */
+  cliente_final?: boolean;
+  /** KUNNR do integrador (cliente da proposta) — vínculo no SAP. */
+  integrador_sap?: string | null;
+
 
 /** Escopo comercial do cliente no SAP. */
 export type EscopoOrg = "solar" | "carregadores" | "grupo";
