@@ -140,9 +140,11 @@ export async function proximoNumeroProposta(organizacao = "carregadores"): Promi
     /* sequence ainda não criada no banco do Grupo 2P — cai no fallback */
   }
 
+  // Fallback GLOBAL: o maior número de TODAS as unidades (solar, carregadores,
+  // station…). Filtrar por organização repetiria número entre unidades, já que
+  // todas compartilham a mesma tabela.
   const params = new URLSearchParams({
     select: "numero",
-    organizacao: `eq.${organizacao}`,
     numero: "not.is.null",
     order: "numero.desc",
     limit: "1",
@@ -152,6 +154,7 @@ export async function proximoNumeroProposta(organizacao = "carregadores"): Promi
   const proximo = Math.max(atual + 1, NUMERO_PROPOSTA_INICIAL);
   return String(proximo).padStart(6, "0");
 }
+
 
 
 // --------------------------------------------------------------------------
