@@ -20,6 +20,9 @@ export type SalvarPropostaSolarInput = {
   uf: string;
   contribuinte: boolean;
   tipoNf: string;
+  /** Revenda | Industrialização | Uso e Consumo (exigida ao faturar o cliente final). */
+  finalidadeUso: string | null;
+
   faturarClienteFinal: boolean;
   faturamento: Record<string, string | boolean>;
   formaPagamento: string | null;
