@@ -67,10 +67,16 @@ function estado(over: Partial<CarregadoresState> = {}): CarregadoresState {
 const calc = (s: CarregadoresState) => calcularCarregadores(s, produtos, UFS, config, [NCM]);
 
 describe("Preço Sugerido", () => {
-  it("aplica 37% de margem sobre o custo", () => {
-    expect(precoSugeridoPadrao(1000)).toBe(1000 * (1 + MARGEM_PRECO_SUGERIDO));
-    expect(precoSugeridoPadrao(1234.56)).toBe(1691.35);
+  // 37% é margem sobre o preço de venda (divisor), não markup sobre o custo:
+  // custo / (1 - 0,37). Ver `precoSugeridoPadrao` em src/lib/carregadores.ts.
+  it("aplica 37% de margem sobre o preço (custo / (1 - 0,37))", () => {
+    expect(precoSugeridoPadrao(1000)).toBe(
+      Math.round((1000 / (1 - MARGEM_PRECO_SUGERIDO)) * 100) / 100,
+    );
+    expect(precoSugeridoPadrao(1000)).toBe(1587.3);
+    expect(precoSugeridoPadrao(1234.56)).toBe(1959.62);
   });
+
 
   it("retorna 0 para custo inválido ou zerado", () => {
     expect(precoSugeridoPadrao(0)).toBe(0);
