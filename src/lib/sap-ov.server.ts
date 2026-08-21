@@ -926,15 +926,20 @@ export async function criarOrdemVendaSap(
 
 
   if (!testrun) {
+    // O número da OV é o dado crítico: grava sozinho primeiro, para que nenhum
+    // campo acessório (ex.: vendedor) possa derrubar o UPDATE inteiro.
     await gravar(propostaId, {
       sap_ov_numero: vbeln,
       sap_ov_status: "criada",
       sap_ov_mensagem: texto,
       sap_ov_enviado_em: new Date().toISOString(),
+    });
+    await gravar(propostaId, {
       // vendedor travado no pedido concluído
       sap_vendedor_codigo: String(row["consultor_codigo_sap"] ?? "").trim() || null,
       sap_vendedor_nome: String(row["consultor_nome"] ?? "").trim() || null,
     });
+
 
     // Reserva local do estoque (espelha a reserva do SAP até o próximo sync).
     const itensPedido = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
