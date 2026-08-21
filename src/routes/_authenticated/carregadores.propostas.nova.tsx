@@ -1616,21 +1616,47 @@ function PropostaCarregadoresPage() {
                     </div>
                     <Switch
                       checked={state.faturarClienteFinal}
-                      onCheckedChange={(v) =>
+                      onCheckedChange={(v) => {
+                        if (!v) setFinalidadeFat("");
                         setState((s) => ({
                           ...s,
                           faturarClienteFinal: v,
                           faturamento: v
                             ? { ...s.faturamento, uf: s.faturamento.uf || s.uf }
                             : s.faturamento,
-                        }))
-                      }
+                        }));
+                      }}
                     />
                   </div>
 
                   {state.faturarClienteFinal ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field label="Finalidade de uso">
+                        <Select
+                          value={finalidadeFat}
+                          onValueChange={(v) => {
+                            const f = v as CarregadoresState["finalidadeUso"];
+                            setFinalidadeFat(f);
+                            setState((s) => ({ ...s, finalidadeUso: f }));
+                          }}
+                        >
+                          <SelectTrigger
+                            className={cn(campoInvalido("fat_finalidade") && "border-destructive")}
+                          >
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
+                            <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
+                            <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Define CFOP e IE no cadastro do cliente final no SAP.
+                        </p>
+                      </Field>
                       <Field label="CPF / CNPJ">
+
                         <Input
                           value={state.faturamento.doc}
                           className={cn(campoInvalido("fat_doc") && "border-destructive")}
