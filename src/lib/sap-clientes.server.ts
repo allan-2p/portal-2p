@@ -95,7 +95,10 @@ function resumoFalha(texto: string) {
 }
 
 /** Cria/atualiza o cliente no SAP e devolve o código (KUNNR) quando houver. */
-export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<SapClienteResultado> {
+export async function enviarClienteParaSap(
+  cliente: ClienteSapInput,
+  opts: { tentativas?: number; retentarHttp5xx?: boolean } = {},
+): Promise<SapClienteResultado> {
   const faltando = validarParaSap(cliente);
   if (faltando.length > 0) {
     return { ok: false, erro: `Dados obrigatórios para o SAP ausentes: ${faltando.join(", ")}.` };
@@ -109,8 +112,11 @@ export async function enviarClienteParaSap(cliente: ClienteSapInput): Promise<Sa
   const body = montarEnvelope(cliente);
   let texto = "";
   // O SAP às vezes devolve 500 `env:Receiver` (dump momentâneo do provedor).
-  // Nesses casos vale reenviar: a RFC é idempotente pelo CNPJ.
-  const tentativas = 3;
+  // Reenviar só é seguro no cadastro do integrador (idempotente pelo CNPJ);
+  // no cliente final a criação de BP NÃO é idempotente, então o chamador passa
+  // `retentarHttp5xx: false` e no máximo 1 retentativa (só falha de rede).
+  const tentativas = Math.max(1, opts.tentativas ?? 3);
+  const retentarHttp = opts.retentarHttp5xx !== false;
   for (let i = 1; i <= tentativas; i++) {
     try {
       const res = await fetch(comIdiomaPT(url), {
