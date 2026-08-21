@@ -847,6 +847,29 @@ function NovaPropostaSolarPage() {
     });
   }, [itens, avisosPreco, cliente, clienteDoc, listaPreco, produtos]);
 
+  // ------------------------------------------------------------------
+  // Itens enviados à cotação de frete: TODOS os itens com código SAP
+  // numérico entram no peso (mesmo conjunto da precificação). Item sem
+  // código numérico bloqueia a cotação — frete errado é pior que frete
+  // bloqueado.
+  // ------------------------------------------------------------------
+  const freteItens = useMemo(() => {
+    const lista: { codigo: string; quantidade: number; nome?: string }[] = [];
+    const pendencias: string[] = [];
+    for (const i of itens) {
+      const p = produtos.find((x) => x.id === i.produtoId);
+      const cod = normCod(p?.codigo ?? i.avulso?.codigo ?? "");
+      const nome = p?.descricao ?? i.avulso?.descricao ?? "item";
+      if (!/^\d+$/.test(cod)) {
+        pendencias.push(`${nome}${cod ? ` (${cod})` : ""} sem código SAP — peso não calculado`);
+        continue;
+      }
+      lista.push({ codigo: cod, quantidade: i.qtd, nome });
+    }
+    return { lista, pendencias };
+  }, [itens, produtos]);
+
+
   async function trocarModo(m: "calculadora" | "lista") {
     if (m === modo || trocando) return;
     setTrocando(true);
@@ -2270,17 +2293,16 @@ function NovaPropostaSolarPage() {
               <FreteDedicado selecionada={transportadora} onSelect={setTransportadora} />
             )}
 
-            {freteMod === "CIF" && (
+            {freteMod === "CIF" && freteItens.pendencias.length > 0 && (
+              <Erro>
+                {`Cotação bloqueada — ${freteItens.pendencias.length} item(ns) sem código SAP numérico, o peso ficaria incompleto: ${freteItens.pendencias.join("; ")}.`}
+              </Erro>
+            )}
+
+            {freteMod === "CIF" && freteItens.pendencias.length === 0 && (
               <FreteCotacao
                 unidade="solar"
-                itens={itens
-                  .filter((i) => !i.avulso)
-                  .map((i) => ({
-                    codigo: produtos.find((p) => p.id === i.produtoId)?.codigo ?? "",
-                    quantidade: i.qtd,
-                    nome: produtos.find((p) => p.id === i.produtoId)?.descricao ?? "",
-                  }))}
-
+                itens={freteItens.lista}
                 valorNota={subtotal - desconto}
                 destino={destino}
                 areaRural={areaRural}
@@ -2291,6 +2313,7 @@ function NovaPropostaSolarPage() {
                 onLoadingChange={setFreteCotando}
               />
             )}
+
 
             {tentou && erros.length > 0 && <Erro>{erros[0]}</Erro>}
           </section>
