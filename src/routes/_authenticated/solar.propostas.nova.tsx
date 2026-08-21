@@ -69,6 +69,7 @@ import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn, concluirPropostaFn } from "@/lib/propostas.functions";
 import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/resultado-conclusao-dialog";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
+import { normalizarFinalidade } from "@/lib/sap-clientes-map";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
 import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
 import { resolverProduto } from "@/lib/solar-sku";
