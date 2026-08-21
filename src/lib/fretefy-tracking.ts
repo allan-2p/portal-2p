@@ -49,7 +49,10 @@ export function classificarEventoFretefy(texto: string): FretefyEventoTipo {
   const s = norm(texto);
   if (!s) return "desconhecido";
   if (/(nao|sem|falha|insucesso|tentativa)\s+(de\s+)?entreg/.test(s)) return "ocorrencia";
+  // "saiu para entrega" / "em rota de entrega" ainda NÃO é entrega concluída.
+  if (/saiu para|em rota|a caminho|previsao de entreg|rota de entreg/.test(s)) return "em_transito";
   if (/entreg|delivered|comprovante|canhoto|pod\b/.test(s)) return "entregue";
+
   if (/coleta|coletad|collected|retirad|embarcad|expedid/.test(s)) return "coletado";
   if (/transito|transit|saiu para|em rota|a caminho|transferencia/.test(s)) return "em_transito";
   if (/ocorrenc|avaria|extravio|devolu|recusa|atraso|problema/.test(s)) return "ocorrencia";
