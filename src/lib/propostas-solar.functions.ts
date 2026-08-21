@@ -77,6 +77,26 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     faturamento[c] = String(i.faturamento?.[c] ?? "").slice(0, 160);
   faturamento['contribuinte'] = !!i.faturamento?.contribuinte;
 
+  // Finalidade de uso: no Solar só é exigida quando o pedido fatura o cliente
+  // final — é ele que entra como parceiro no SAP e define CFOP/IE.
+  const FINALIDADES = ["Revenda", "Industrialização", "Uso e Consumo"];
+  const finalidadeUso = FINALIDADES.includes(String(i.finalidadeUso)) ? String(i.finalidadeUso) : null;
+  const faturarClienteFinal = i.faturarClienteFinal === true;
+  if (faturarClienteFinal) {
+    const docFat = String(faturamento['doc'] ?? "").replace(/\D/g, "");
+    if (!String(faturamento['nome'] ?? "").trim()) throw new Error("Informe o destinatário do faturamento.");
+    if (docFat.length !== 11 && docFat.length !== 14) throw new Error("CNPJ/CPF do faturamento inválido.");
+    if (!faturamento['logradouro'] || !faturamento['cidade'] || !faturamento['uf'])
+      throw new Error("Informe o endereço de faturamento do cliente final.");
+    if (!finalidadeUso)
+      throw new Error("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
+    // CPF nunca é contribuinte; CNPJ contribuinte precisa de inscrição estadual.
+    if (docFat.length === 11) faturamento['contribuinte'] = false;
+    else if (faturamento['contribuinte'] && !String(faturamento['ie'] ?? "").trim())
+      throw new Error("Cliente final marcado como contribuinte: informe a inscrição estadual.");
+  }
+
+
   const freteMod = ["FOB", "CIF", "DEDICADO"].includes(String(i.freteMod)) ? String(i.freteMod) : "";
   const t = i.transportadora;
 
