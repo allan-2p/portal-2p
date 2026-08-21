@@ -1,5 +1,7 @@
 import { fmtBRL } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
+import { LOGO_2P_DATA_URI } from "./brand-2p-logo";
+
 
 export type SolarPdfItem = {
   codigo?: string | null;
