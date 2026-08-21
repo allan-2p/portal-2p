@@ -1803,6 +1803,11 @@ export type Database = {
           pagamento_vencimento: string | null
           pago_em: string | null
           previsao_fechamento: string | null
+          sf_account_id: string | null
+          sf_enviado_em: string | null
+          sf_mensagem: string | null
+          sf_opp_id: string | null
+          sf_status: string | null
           status: string
           tipo_nf: string
           totais: Json
@@ -1863,6 +1868,11 @@ export type Database = {
           pagamento_vencimento?: string | null
           pago_em?: string | null
           previsao_fechamento?: string | null
+          sf_account_id?: string | null
+          sf_enviado_em?: string | null
+          sf_mensagem?: string | null
+          sf_opp_id?: string | null
+          sf_status?: string | null
           status?: string
           tipo_nf?: string
           totais?: Json
@@ -1923,6 +1933,11 @@ export type Database = {
           pagamento_vencimento?: string | null
           pago_em?: string | null
           previsao_fechamento?: string | null
+          sf_account_id?: string | null
+          sf_enviado_em?: string | null
+          sf_mensagem?: string | null
+          sf_opp_id?: string | null
+          sf_status?: string | null
           status?: string
           tipo_nf?: string
           totais?: Json
