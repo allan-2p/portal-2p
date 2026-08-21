@@ -110,6 +110,8 @@ export type ClienteSapInput = {
   cliente_final?: boolean;
   /** KUNNR do integrador (cliente da proposta) — vínculo no SAP. */
   integrador_sap?: string | null;
+};
+
 
 
 /** Escopo comercial do cliente no SAP. */
