@@ -37,6 +37,28 @@ export function propostaStatusId(status: string): number {
   return PROPOSTA_STATUS_ID[status as PropostaStatus] ?? 1;
 }
 
+/**
+ * Coluna de data carimbada quando o pedido ENTRA em cada status.
+ * Fonte única: toda transição (checkout, Pix, cron do SAP, Fretefy, cancelamento)
+ * grava a data pelo `aplicarTransicao`, nunca manualmente.
+ */
+export const PROPOSTA_STATUS_DATA_COL: Record<PropostaStatus, string> = {
+  "Salvo": "salvo_em",
+  "Aguardando Pagamento": "aguardando_pagamento_em",
+  "Processando": "processando_em",
+  "Separação": "separado_em",
+  "Faturado": "faturado_em",
+  "Coletado": "coletado_em",
+  "Entregue": "entregue_em",
+  "Cancelado": "cancelado_em",
+};
+
+export const PROPOSTA_STATUS_DATA_COLS: string[] = Object.values(PROPOSTA_STATUS_DATA_COL);
+
+export function propostaStatusDataCol(status: string): string | null {
+  return PROPOSTA_STATUS_DATA_COL[status as PropostaStatus] ?? null;
+}
+
 /** Motor responsável por cada transição — nenhum é acionado manualmente. */
 export type PropostaMotor =
   | "checkout"
