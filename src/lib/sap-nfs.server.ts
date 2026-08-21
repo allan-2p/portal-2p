@@ -374,7 +374,10 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
   // Ordenação e filtro no banco: com backlog grande, ordenar em memória
   // deixaria os pedidos mais antigos sem nunca serem processados.
   const rows = await db.listarPropostas({
-    statusIn: ["Processando", "Separação", "Faturado"],
+    // "Aguardando Pagamento" só entra com ordem criada (boleto a prazo/cartão);
+    // o `naoVazio` abaixo já exclui os pedidos Pix, que ainda não têm OV.
+    statusIn: ["Aguardando Pagamento", "Processando", "Separação", "Faturado"],
+
     select:
       "id,numero,status,created_by,sap_ov_numero,nf_numero,danfe_path,created_at,fretefy_oferta_id",
 
