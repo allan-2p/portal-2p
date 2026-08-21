@@ -134,8 +134,10 @@ function constantes(_organizacao: string, row: Record<string, any> = {}) {
       contribuinteDoFaturamento({
         contribuinte: row["contribuinte"],
         faturarClienteFinal: row["faturar_cliente_final"],
-        faturamento: (row["faturamento"] ?? {}) as { contribuinte?: unknown },
+        faturamento: (row["faturamento"] ?? {}) as { contribuinte?: unknown; doc?: unknown },
+        clienteDoc: row["cliente_doc"],
       }),
+
     ),
   };
 }
