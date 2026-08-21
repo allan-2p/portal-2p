@@ -226,6 +226,9 @@ function NovaPropostaSolarPage() {
   const [resultado, setResultado] = useState<CalcResultado | null>(null);
   const [previewAberto, setPreviewAberto] = useState(false);
   const [pdfHtml, setPdfHtml] = useState("");
+  const [previewZoom, setPreviewZoom] = useState(0.75);
+  const [previewPaginas, setPreviewPaginas] = useState(1);
+
 
   const itens = modo === "calculadora" ? itensCalc : itensLista;
   /** No modo calculadora, itens extras (manuais) ficam agrupados no final. */
