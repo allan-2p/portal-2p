@@ -41,7 +41,8 @@ export const listCarregadoresMetas = createServerFn({ method: "GET" })
     const [{ data: profiles, error: pErr }, { data: metas, error: mErr }] = await Promise.all([
       context.supabase
         .from("profiles")
-        .select("id, full_name, email, cargo, ativo, organizacao")
+        .select("id, full_name, email, cargo, ativo, organizacao, is_consultor, numero_sap")
+        .eq("is_consultor", true)
         .in("organizacao", ["carregadores", "grupo"])
         .order("full_name", { ascending: true }),
       context.supabase
@@ -54,7 +55,9 @@ export const listCarregadoresMetas = createServerFn({ method: "GET" })
     if (mErr) throw new Error(mErr.message);
 
     const byUser = new Map<string, CarregadoresMetaPessoa>();
-    for (const p of (profiles ?? []) as any[]) {
+    for (const p of ((profiles ?? []) as any[]).filter(
+      (p) => String(p.numero_sap ?? "").trim() !== "",
+    )) {
       byUser.set(p.id, {
         user_id: p.id,
         nome: p.full_name || p.email,
