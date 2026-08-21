@@ -115,13 +115,16 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
                 : { numero_cadastro_pessoa_fisica: docPagador }),
             },
           },
+          // O endereço plano da proposta costuma vir vazio: o cadastro real
+          // está em `faturamento` (ou `entrega`).
           endereco: {
-            nome_logradouro: String(row["logradouro"] ?? row["endereco"] ?? "").slice(0, 45),
-            nome_bairro: String(row["bairro"] ?? "").slice(0, 15),
-            nome_cidade: String(row["cidade"] ?? "").slice(0, 20),
-            sigla_UF: String(row["uf"] ?? "").slice(0, 2),
-            numero_CEP: soDigitos(row["cep"]),
+            nome_logradouro: String(end("logradouro", "endereco", "rua")).slice(0, 45),
+            nome_bairro: String(end("bairro")).slice(0, 15),
+            nome_cidade: String(end("cidade", "municipio")).slice(0, 20),
+            sigla_UF: String(end("uf", "estado")).slice(0, 2),
+            numero_CEP: soDigitos(end("cep")),
           },
+
         },
         // Sempre 1 boleto único do valor total — a plataforma não emite carnê.
         dados_individuais_boleto: [
