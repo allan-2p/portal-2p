@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tpOvDoPedido, contribuinteDoFaturamento } from "@/lib/sap-tp-ov";
+import { finalidadeDaTela } from "@/lib/sap-clientes-map";
 
 /**
  * Proposta 2P Solar — os valores NUNCA vêm da tela: o servidor recalcula tudo
@@ -81,9 +82,10 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   faturamento['contribuinte'] = !!i.faturamento?.contribuinte;
 
   // Finalidade de uso: no Solar só é exigida quando o pedido fatura o cliente
-  // final — é ele que entra como parceiro no SAP e define CFOP/IE.
-  const FINALIDADES = ["Revenda", "Industrialização", "Uso e Consumo"];
-  const finalidadeUso = FINALIDADES.includes(String(i.finalidadeUso)) ? String(i.finalidadeUso) : null;
+  // final — é ele que entra como parceiro no SAP e define CFOP/IE. Aceita tanto
+  // o rótulo ("Uso e Consumo") quanto o slug ("uso_consumo"), nunca um default.
+  
+  const finalidadeUso = finalidadeDaTela(i.finalidadeUso);
   const faturarClienteFinal = i.faturarClienteFinal === true;
   if (faturarClienteFinal) {
     const docFat = String(faturamento['doc'] ?? "").replace(/\D/g, "");

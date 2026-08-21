@@ -25,6 +25,26 @@ export function normalizarFinalidade(valor: unknown): Finalidade {
   return "Revenda";
 }
 
+/**
+ * Versão estrita para o que vem da TELA (faturamento direto ao cliente final,
+ * principalmente CPF, que não tem cadastro no portal): devolve `null` quando o
+ * valor está vazio ou não corresponde a nenhuma finalidade conhecida, em vez
+ * de assumir "Revenda" silenciosamente e enviar o CFOP errado ao SAP.
+ */
+export function finalidadeDaTela(valor: unknown): Finalidade | null {
+  const v = String(valor ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
+  if (!v) return null;
+  if (v.startsWith("revenda")) return "Revenda";
+  if (v.startsWith("industrializ")) return "Industrialização";
+  if (v.startsWith("uso")) return "Uso e Consumo";
+  return null;
+}
+
 /** Tabelas de preço do SAP (PLTYP). O código enviado ao SAP é o `pltyp`. */
 export const TABELAS_PRECO = [
   { codigo: "2P-0001", pltyp: "01", label: "2P-0001 — Varejo" },
