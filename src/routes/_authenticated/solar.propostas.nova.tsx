@@ -17,12 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { WizardActionBar } from "@/components/wizard-action-bar";
 import { FreteCotacao } from "@/components/frete-cotacao";
@@ -2711,7 +2705,7 @@ function NovaPropostaSolarPage() {
 
       {/* Prévia da proposta em PDF — painel lateral, atualiza em tempo real */}
       {previewAberto && (
-        <div className="fixed right-0 top-0 z-50 flex h-screen w-full max-w-[640px] flex-col border-l border-border bg-background shadow-2xl animate-slide-in-right">
+        <div className="fixed right-0 top-0 z-50 flex h-screen w-full max-w-[640px] flex-col border-l border-border bg-background shadow-2xl">
           <div className="flex items-start justify-between gap-3 border-b border-border p-4">
             <div>
               <div className="font-semibold">Prévia da proposta</div>
