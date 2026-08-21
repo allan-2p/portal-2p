@@ -985,8 +985,12 @@ function NovaPropostaSolarPage() {
       if (vendido === "sim" && !previsao) e.push("Previsão de fechamento é obrigatória.");
     }
     if (etapa === 2) {
-      if (faturarClienteFinal && (!fat['nome'] || !fat['doc'] || !fat['logradouro'] || !fat['cidade']))
+      if (faturarClienteFinal && (!fat['nome'] || !fat['doc'] || !fat['logradouro'] || !fat['cidade'] || !fat['uf']))
         e.push("Complete os dados de faturamento do cliente final.");
+      if (faturarClienteFinal && !finalidadeUso)
+        e.push("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
+      if (faturarClienteFinal && fatTipoDoc === "cnpj" && fatContribuinte && !String(fat['ie'] ?? "").trim())
+        e.push("Cliente final marcado como contribuinte: informe a inscrição estadual.");
     }
     if (etapa === 3) {
       if (ehKit === null) e.push("Informe se a venda é kit.");
