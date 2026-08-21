@@ -130,7 +130,7 @@ describe("precosSolar — Venda em kit = Sim", () => {
 });
 
 describe("precosSolar — fallback quando o SAP não devolve tributos", () => {
-  it("sem PIS/COFINS, o kit cai para o valor cheio em vez de zerar", async () => {
+  it("sem PIS/COFINS, o kit usa o VALOR_LIQUIDO puro (não zera nem soma ICMS/IPI)", async () => {
     mockSap(
       envelopeValores([
         {
@@ -143,9 +143,12 @@ describe("precosSolar — fallback quando o SAP não devolve tributos", () => {
       kitFotovoltaico: true,
       sugeridos: { "100000350": 9999 },
     });
-    expect(r.precos["100000350"]).toBe(11500);
+    // Tributos ausentes viram 0 na soma: 10000 + 0 + 0. O item continua
+    // precificado pelo SAP (sem fallback de catálogo).
+    expect(r.precos["100000350"]).toBe(10000);
     expect(r.fallback).toEqual([]);
   });
+
 
   it("sem VALOR_LIQUIDO, cai para o preço sugerido do catálogo", async () => {
     mockSap(envelopeValores([{ item: "000010", attrs: { MATERIAL: "100000350", PESO_LIQUIDO: "120" } }]));
