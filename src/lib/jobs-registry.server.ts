@@ -22,6 +22,13 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     motivo: "A finalização do pedido só pode ser refeita pelo vendedor no portal.",
   }),
 
+  // Auditoria de acesso a documentos fiscais: registro histórico, não reexecutável.
+  "nf.documento": async () => ({
+    skipped: true,
+    motivo: "Registro de auditoria de download — o documento é aberto pelo usuário no pedido.",
+  }),
+
+
   // Motor real: cria a ordem de venda no SAP (idempotente por proposta).
   "sap.ov-criar": async (payload) => {
     const id = String((payload as Record<string, unknown>)["propostaId"] ?? "");

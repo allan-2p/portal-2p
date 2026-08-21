@@ -72,21 +72,30 @@ export function sapNfsConfigurado() {
   return Boolean(url && auth);
 }
 
-function envelope(nroped: string): string {
+export type DocumentoNfTipo = "danfe" | "xml" | "boleto";
+
+/**
+ * Envelope da RFC. `docs` liga os flags de documento (I_DANFE / I_XML_NFE /
+ * I_BOLETO); o cron pede só a DANFE, o download sob demanda pede o que o
+ * usuário clicou.
+ */
+function envelope(nroped: string, docs: DocumentoNfTipo[] = ["danfe"]): string {
+  const on = (t: DocumentoNfTipo) => (docs.includes(t) ? "X" : "");
   return `<?xml version="1.0" encoding="utf-8"?>
 <soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
   <soapenv:Header/>
   <soapenv:Body>
     <urn:ZNFE_OV_CONSULTAR>
-      <I_BOLETO></I_BOLETO>
+      <I_BOLETO>${on("boleto")}</I_BOLETO>
       <I_DADOS>X</I_DADOS>
-      <I_DANFE>X</I_DANFE>
+      <I_DANFE>${on("danfe")}</I_DANFE>
       <I_NROPED>${esc(nroped)}</I_NROPED>
-      <I_XML_NFE></I_XML_NFE>
+      <I_XML_NFE>${on("xml")}</I_XML_NFE>
     </urn:ZNFE_OV_CONSULTAR>
   </soapenv:Body>
 </soapenv:Envelope>`;
 }
+
 
 export type ConsultaSap = {
   picking: string | null;
@@ -148,8 +157,15 @@ export function proximoStatus(atual: string, c: ConsultaSap): StatusNf | null {
   return alvo > base ? (ORDEM[alvo] as StatusNf) : null;
 }
 
-async function chamarSap(nroped: string): Promise<{ doc: any; xml: string }> {
+async function chamarSap(
+  nroped: string,
+  docs: DocumentoNfTipo[] = ["danfe"],
+): Promise<{ doc: any; xml: string }> {
+  // O portal guarda o número com zeros à esquerda ("050019"); o SAP indexa o
+  // NROPED sem eles ("50019") e devolve vazio se enviarmos com zeros.
+  nroped = String(nroped ?? "").trim().replace(/^0+(?=\d)/, "");
   const { url, auth } = credenciais();
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
   try {
@@ -162,7 +178,7 @@ async function chamarSap(nroped: string): Promise<{ doc: any; xml: string }> {
         "accept-language": SAP_ACCEPT_LANGUAGE,
         authorization: auth!,
       },
-      body: envelope(nroped),
+      body: envelope(nroped, docs),
       signal: controller.signal,
     });
     const xml = await res.text();
@@ -192,6 +208,36 @@ export async function consultarVbelnPorPedido(nroped: string): Promise<string | 
     return null;
   }
 }
+
+/**
+ * Busca sob demanda um documento da NF no SAP (DANFE, XML da NF-e ou boleto).
+ * Devolve o base64 cru — quem chama decide onde guardar.
+ */
+export async function consultarDocumentoNfSap(
+  nroped: string,
+  tipo: DocumentoNfTipo,
+): Promise<{ base64: string | null; consulta: ConsultaSap }> {
+  if (!sapNfsConfigurado()) throw new Error("Integração SAP de notas fiscais não configurada.");
+  const { doc } = await chamarSap(nroped, [tipo]);
+  const documentos = achar(doc, "E_S_DOCUMENTOS") ?? doc;
+  const chaves: Record<DocumentoNfTipo, string[]> = {
+    danfe: ["DANFE", "E_DANFE"],
+    xml: ["XML_NFE", "E_XML_NFE"],
+    boleto: ["BOLETO", "E_BOLETO"],
+  };
+  let base64: string | null = null;
+  for (const chave of chaves[tipo]) {
+    const v = achar(documentos, chave) ?? achar(doc, chave);
+    const s = String(v ?? "").replace(/\s+/g, "");
+    if (s && s !== "undefined" && s.length > 100) {
+      base64 = s;
+      break;
+    }
+  }
+  return { base64, consulta: lerConsulta(doc) };
+}
+
+
 
 /** Guarda a DANFE no bucket privado e devolve o caminho. */
 async function salvarDanfe(propostaId: string, base64: string): Promise<string | null> {

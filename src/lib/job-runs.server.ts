@@ -64,6 +64,12 @@ export const JOBS = {
     descricao: "Cria a oferta de carga após a OV (frete CIF/dedicado) e atualiza a NF no faturamento.",
     reprocessavel: true,
   },
+  "nf.documento": {
+    label: "NF • Download de documento",
+    descricao: "Abertura da DANFE, do XML da NF-e ou do boleto pelo usuário (auditoria de acesso).",
+    reprocessavel: false,
+  },
+
 
 } as const;
 
