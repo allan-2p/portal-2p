@@ -203,8 +203,10 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
           contribuinteDoFaturamento({
             contribuinte: data.contribuinte,
             faturarClienteFinal: data.faturarClienteFinal,
-            faturamento: data.faturamento as { contribuinte?: unknown },
+            faturamento: data.faturamento as { contribuinte?: unknown; doc?: unknown },
+            clienteDoc: data.cliente.doc,
           }),
+
         ),
         kitFotovoltaico: data.ehKit,
         sugeridos,
