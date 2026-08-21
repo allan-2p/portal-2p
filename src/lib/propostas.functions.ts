@@ -941,6 +941,12 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       salesforce = { enviado: false, ok: false, opportunityId: null, mensagem: (e as Error).message, motivo: null };
     }
 
+    // Kit fotovoltaico: avisa produção/logística (não bloqueia o pedido).
+    if (row["kit_fotovoltaico"]) {
+      const { avisarKitFotovoltaico } = await import("@/lib/kit-aviso.server");
+      await avisarKitFotovoltaico({ ...row, sap_ov_numero: sapOv?.vbeln ?? row["sap_ov_numero"] });
+    }
+
     return { id: row.id, status: data.status, already_concluded: false, cobranca, sapOv, salesforce };
     };
 
