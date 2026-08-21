@@ -1200,6 +1200,7 @@ function NovaPropostaSolarPage() {
       freteMod,
       freteValor,
       freteGratis,
+      freteBonificado: bonificado,
       transportadora: transportadora?.nome ?? null,
       total,
       listaPreco,
@@ -2312,7 +2313,10 @@ function NovaPropostaSolarPage() {
 
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
                 <Info label="Condição de pagamento" value={condicaoPagamento || "—"} />
-                <Info label="Frete" value={`${freteMod || "—"}${bonificado ? " (frete grátis)" : ""}`} />
+                <Info
+                  label="Frete"
+                  value={`${freteMod || "—"}${bonificado || freteGratis ? " · Frete grátis" : ""}`}
+                />
                 <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
                 <Info
                   label="Endereço de faturamento"
@@ -2555,8 +2559,14 @@ function NovaPropostaSolarPage() {
                 />
                 <TotalRow
                   label={`Frete (${freteMod || "—"})`}
-                  value={bonificado ? `Frete grátis (${fmtBRL(freteValor)})` : freteGratis ? "Grátis" : fmtBRL(freteValor)}
-                  hint={transportadora?.nome ?? undefined}
+                  value={bonificado || freteGratis ? "Frete grátis" : fmtBRL(freteValor)}
+                  hint={
+                    bonificado
+                      ? `Frete grátis · ${fmtBRL(freteValor)} absorvido pela 2P${transportadora?.nome ? ` · ${transportadora.nome}` : ""}`
+                      : freteGratis
+                        ? `Frete grátis pelo cupom${transportadora?.nome ? ` · ${transportadora.nome}` : ""}`
+                        : (transportadora?.nome ?? undefined)
+                  }
                 />
                 <TotalRow label="Total da proposta" value={fmtBRL(total)} strong hint="Subtotal - desconto + frete" />
               </div>
