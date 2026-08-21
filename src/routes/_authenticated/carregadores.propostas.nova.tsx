@@ -2381,6 +2381,7 @@ function PropostaCarregadoresPage() {
                       <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
                       <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
                       <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
+                      <SelectItem value="financiamento">{labelFormaPagamento.financiamento}</SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
