@@ -275,7 +275,8 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
         : ""
     }
 
-    <div class="sec">
+    <div class="sec flow">
+
       <div class="sech"><span>Escopo de fornecimento</span></div>
       <table>
         <thead><tr><th></th><th>Produto</th><th class="c">Qtd</th><th class="r">Valor unit.</th><th class="r">Total</th></tr></thead>
