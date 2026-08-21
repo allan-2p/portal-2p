@@ -130,7 +130,8 @@ export async function enviarClienteParaSap(
       });
       texto = await res.text();
       if (res.ok) break;
-      const transitorio = res.status >= 500 || /Receiver|processamento do Web Service/i.test(texto);
+      const transitorio =
+        retentarHttp && (res.status >= 500 || /Receiver|processamento do Web Service/i.test(texto));
       if (transitorio && i < tentativas) {
         await new Promise((r) => setTimeout(r, 1500 * i));
         continue;
