@@ -249,6 +249,7 @@ function NovaPropostaSolarPage() {
   const [entregaDiferente, setEntregaDiferente] = useState(false);
   const [entrega, setEntrega] = useState<Record<string, string>>({});
   const [freteMod, setFreteMod] = useState("");
+  const [freteBonificado, setFreteBonificado] = useState(false);
   const [areaRural, setAreaRural] = useState(false);
   const [transportadora, setTransportadora] = useState<CarregadoresTransportadora | null>(null);
 
@@ -325,6 +326,7 @@ function NovaPropostaSolarPage() {
       setEntregaDiferente(!!p['entrega_diferente']);
       setEntrega((p['entrega'] as Record<string, string>) ?? {});
       setFreteMod(String(p['frete_mod'] ?? ""));
+      setFreteBonificado(!!p['frete_bonificado']);
       setAreaRural(!!p['frete_area_rural']);
       const totais = (p['totais'] ?? {}) as Record<string, any>;
       setListaPreco(String(totais['listaPreco'] ?? "01"));
@@ -736,6 +738,7 @@ function NovaPropostaSolarPage() {
           documento: String(cliente?.['doc'] ?? clienteDoc ?? ""),
           listaPreco: tabela,
           tipoNf,
+          kitFotovoltaico: ehKit === true,
           contribuinte: faturarClienteFinal
             ? String(fat['contribuinte'] ?? "") === "true" || Boolean(String(fat['ie'] ?? "").trim())
             : cliente?.['contribuinte'] === true,
@@ -935,7 +938,9 @@ function NovaPropostaSolarPage() {
   const freteGratis = !!cupom?.tipos.includes("frete");
 
   const freteValor = freteMod === "FOB" || freteMod === "" || freteGratis ? 0 : (transportadora?.total ?? 0);
-  const total = money2(subtotal - desconto + freteValor);
+  const bonificado = freteBonificado && (freteMod === "CIF" || freteMod === "DEDICADO");
+  // Bonificado: a 2P assume o frete — o valor continua cotado, mas não é cobrado.
+  const total = money2(subtotal - desconto + (bonificado ? 0 : freteValor));
 
   // Carregamento visual durante recálculo de cupom / frete
   useEffect(() => {
@@ -1045,6 +1050,7 @@ function NovaPropostaSolarPage() {
           freteMod,
           freteAreaRural: areaRural,
           freteValor,
+          freteBonificado: freteBonificado && (freteMod === "CIF" || freteMod === "DEDICADO"),
           transportadora,
           cupomCodigo: cupomCodigo || null,
           observacoes: observacoes || null,
@@ -2163,6 +2169,15 @@ function NovaPropostaSolarPage() {
                   Entrega em área rural
                 </label>
               )}
+              {(freteMod === "CIF" || freteMod === "DEDICADO") && (
+                <label className="flex items-end gap-2 text-sm pb-2 md:col-span-2">
+                  <Checkbox
+                    checked={freteBonificado}
+                    onCheckedChange={(v) => setFreteBonificado(v === true)}
+                  />
+                  Frete bonificado — a 2P assume o custo (o cliente não paga o frete)
+                </label>
+              )}
             </div>
 
             {(freteMod === "CIF" || freteMod === "DEDICADO") && (
@@ -2207,7 +2222,7 @@ function NovaPropostaSolarPage() {
 
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
                 <Info label="Condição de pagamento" value={condicaoPagamento || "—"} />
-                <Info label="Frete" value={freteMod || "—"} />
+                <Info label="Frete" value={`${freteMod || "—"}${bonificado ? " (bonificado)" : ""}`} />
                 <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
                 <Info
                   label="Endereço de faturamento"
@@ -2450,7 +2465,7 @@ function NovaPropostaSolarPage() {
                 />
                 <TotalRow
                   label={`Frete (${freteMod || "—"})`}
-                  value={freteGratis ? "Grátis" : fmtBRL(freteValor)}
+                  value={bonificado ? `Bonificado (${fmtBRL(freteValor)})` : freteGratis ? "Grátis" : fmtBRL(freteValor)}
                   hint={transportadora?.nome ?? undefined}
                 />
                 <TotalRow label="Total da proposta" value={fmtBRL(total)} strong hint="Subtotal - desconto + frete" />

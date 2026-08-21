@@ -8,6 +8,8 @@ export type PrecoSolarInput = {
   documento: string;
   listaPreco: string;
   tipoOv: string;
+  /** Kit fotovoltaico: preço sem ICMS/IPI. */
+  kitFotovoltaico: boolean;
 };
 
 function validar(input: unknown): PrecoSolarInput {
