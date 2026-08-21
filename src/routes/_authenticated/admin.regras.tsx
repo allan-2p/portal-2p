@@ -192,7 +192,7 @@ function Calculadora2P() {
             </li>
             <li>
               <b>Telhado com trilho</b>: as barras usam o de/para por comprimento do trilho (4.800 e
-              a barra curta de {2400} / {2700} mm conforme a largura do módulo). Junção ={" "}
+              a barra curta configurada abaixo, conforme a largura do módulo). Junção ={" "}
               <code>(barras por linha − 1) × 2</code>. Grampo intermediário ={" "}
               <code>(painéis − 1) × 2</code>, grampo final = 4 e terminal de aterramento = 1, por
               fileira. Fixadores saem da distância entre apoios × múltiplo do suporte (piso de 4).
