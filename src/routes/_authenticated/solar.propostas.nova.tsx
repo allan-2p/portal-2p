@@ -1167,7 +1167,35 @@ function NovaPropostaSolarPage() {
           transportadora,
           cupomCodigo: cupomCodigo || null,
           observacoes: observacoes || null,
-          calculo: resultado ? { distribuicao: resultado.distribuicao, comprimentos: resultado.comprimentos } : null,
+          // Guarda o estado completo da etapa 3 para que reabrir a proposta
+          // devolva exatamente o que foi salvo (modo + entradas da calculadora).
+          calculo: {
+            ...(resultado ? { distribuicao: resultado.distribuicao, comprimentos: resultado.comprimentos } : {}),
+            modo,
+            ...(modo === "calculadora"
+              ? {
+                  assinatura: assinaturaCalc,
+                  resultado,
+                  entrada: {
+                    geradorId,
+                    microModelo,
+                    microQtd,
+                    moduloId,
+                    modPersonalizado,
+                    paineis,
+                    tamanhoTrilho,
+                    linhas,
+                  },
+                  itens: itensCalc.map((i) => ({
+                    produtoId: i.produtoId,
+                    qtd: i.qtd,
+                    valor: i.valor,
+                    origem: i.origem,
+                    ...(i.avulso ? { avulso: i.avulso } : {}),
+                  })),
+                }
+              : {}),
+          },
           itens: itens.map((i) => ({ produtoId: i.produtoId, qtd: i.qtd })),
         },
       });
