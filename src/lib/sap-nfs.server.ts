@@ -248,12 +248,6 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
     const path = await salvarDanfe(id, c.danfeBase64);
     if (path) patch["danfe_path"] = path;
   }
-  if (para) {
-    patch["status"] = para;
-    if (para === "Separação") patch["separado_em"] = new Date().toISOString();
-    if (para === "Faturado") patch["faturado_em"] = new Date().toISOString();
-    if (para === "Coletado") patch["enviado_em"] = new Date().toISOString();
-  }
 
   if (Object.keys(patch).length) {
     try {
@@ -270,6 +264,31 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
       });
     }
   }
+
+  // O status vai pela máquina de estados, um passo por vez: o SAP pode indicar
+  // um salto (Processando → Coletado) e cada etapa precisa ser válida e
+  // auditável.
+  if (para) {
+    const { aplicarTransicao } = await import("./proposta-transicao.server");
+    const carimbos: Record<string, string> = {
+      "Separação": "separado_em",
+      "Faturado": "faturado_em",
+      "Coletado": "enviado_em",
+    };
+    let atual = de;
+    const alvo = ORDEM.indexOf(para);
+    for (let i = ORDEM.indexOf(atual as StatusNf) + 1; i <= alvo; i++) {
+      const passo = ORDEM[i] as StatusNf;
+      const col = carimbos[passo];
+      const r = await aplicarTransicao(id, passo, "cron-sap", {
+        de: atual,
+        ...(col ? { patch: { [col]: new Date().toISOString() } } : {}),
+      });
+      if (!r.ok) break;
+      atual = passo;
+    }
+  }
+
 
   if (para) {
     // Efeitos colaterais nunca derrubam o avanço de status.
