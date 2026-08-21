@@ -391,16 +391,32 @@ export const getSalesforceSalespeople = createServerFn({ method: "GET" })
       `SELECT Id, Name, Email FROM User ` +
       `WHERE IsActive = true AND Email LIKE '%@2pgroup.com.br' ` +
       `ORDER BY Name ASC LIMIT 200`;
-    const [res, hiddenRes] = await Promise.all([
+    const [res, hiddenRes, consultoresRes] = await Promise.all([
       sfFetch(`/query?q=${encodeURIComponent(soql)}`),
       context.supabase.from("hidden_salespeople").select("sf_user_id"),
+      // Regra universal do portal: só entram usuários da organização Solar
+      // (ou "grupo") marcados como consultores e com código SAP.
+      context.supabase
+        .from("profiles")
+        .select("sf_user_id, numero_sap, organizacao, ativo, is_consultor")
+        .eq("ativo", true)
+        .eq("is_consultor", true)
+        .in("organizacao", ["solar", "grupo"]),
     ]);
     const hidden = new Set<string>((hiddenRes.data ?? []).map((r: any) => r.sf_user_id));
+    const consultores = new Set<string>(
+      ((consultoresRes.data ?? []) as any[])
+        .filter((p) => String(p.numero_sap ?? "").trim() !== "" && p.sf_user_id)
+        .map((p) => String(p.sf_user_id)),
+    );
     // Vendedor com escopo restrito só enxerga os vendedores da própria carteira.
     const scope = await getScopeForUser(context.supabase, context.userId);
     const allowed = scope.scope === "geral" ? null : new Set(scope.allowed_sf_ids ?? []);
     const records: SalesforceSalesperson[] = (res?.records ?? [])
-      .filter((r: any) => !hidden.has(r.Id) && (!allowed || allowed.has(r.Id)))
+      .filter(
+        (r: any) =>
+          consultores.has(r.Id) && !hidden.has(r.Id) && (!allowed || allowed.has(r.Id)),
+      )
       .map((r: any) => ({
         id: r.Id,
         name: r.Name,
