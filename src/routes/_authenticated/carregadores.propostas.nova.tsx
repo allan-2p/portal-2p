@@ -479,8 +479,10 @@ function PropostaCarregadoresPage() {
       ie: c.cliente_ie ?? "",
       uf: c.uf || s.uf,
       contribuinte: c.contribuinte ?? s.contribuinte,
-      // Finalidade de uso nunca é escolhida na proposta: vem sempre do cadastro.
-      finalidadeUso: finalidadeUsoDoCadastro(c.finalidade),
+      // Finalidade vem do cadastro, exceto quando o pedido fatura o cliente final
+      // (aí vale o que foi escolhido na aba de faturamento).
+      finalidadeUso: s.faturarClienteFinal ? s.finalidadeUso : finalidadeUsoDoCadastro(c.finalidade),
+
       regimeTributario: c.regime_tributario ?? null,
       // Entrega parte do endereço do cadastro; o consultor ajusta se for diferente.
       entrega: s.entregaDiferente
