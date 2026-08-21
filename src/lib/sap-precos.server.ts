@@ -188,7 +188,7 @@ export async function simularSap(
       headers: {
         "content-type": "application/soap+xml; charset=utf-8",
         accept: "application/soap+xml, text/xml, */*",
-        "accept-language": "pt-BR",
+        "accept-language": SAP_ACCEPT_LANGUAGE,
         authorization: auth,
         cookie: "sap-usercontext=sap-client=500",
       },

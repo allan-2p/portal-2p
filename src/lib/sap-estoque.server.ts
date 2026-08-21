@@ -98,7 +98,7 @@ export async function fetchEstoqueSap(opts?: { grupos?: string }): Promise<any[]
       headers: {
         authorization: credencial(),
         "content-type": "text/xml;charset=UTF-8",
-        "accept-language": "pt-BR",
+        "accept-language": SAP_ACCEPT_LANGUAGE,
         cookie: "sap-usercontext=sap-client=500",
       },
       body: soapBody(opts?.grupos ?? GRUPOS_MERCADORIA),

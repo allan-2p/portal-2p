@@ -122,7 +122,7 @@ async function fetchMateriaisSap(): Promise<any[]> {
           accept: "application/soap+xml, text/xml, */*",
           // Sem isto o runtime envia "Accept-Language: *", que o SAP trata como
           // idioma inválido e responde com as tabelas vazias (HTTP 200).
-          "accept-language": "pt-BR",
+          "accept-language": SAP_ACCEPT_LANGUAGE,
           authorization: credencial.header,
         },
         body: SOAP_BODY,

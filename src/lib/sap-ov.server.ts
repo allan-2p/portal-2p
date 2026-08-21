@@ -803,7 +803,7 @@ export async function criarOrdemVendaSap(
       method: "POST",
       // Exatamente os headers do request validado: só Authorization e
       // Content-Type (o mandante 500 vem na própria URL). Nada de SOAPAction,
-      // accept-language ou cookie sap-usercontext.
+      // cookie sap-usercontext. O accept-language/sap-language força a sessão PT.
       headers: {
         "content-type": "application/soap+xml; charset=utf-8",
         "accept-language": SAP_ACCEPT_LANGUAGE,
