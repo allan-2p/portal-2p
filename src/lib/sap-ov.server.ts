@@ -340,6 +340,12 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
       ? parceiro("AG", (row["faturamento"] ?? {})["doc"], (row["faturamento"] ?? {})["nome"] ?? nomeCliente)
       : parceiro("AG", docCliente, nomeCliente);
 
+  // Transportadora escolhida (CIF ou dedicado) entra na OV como parceiro ZT.
+  const docTransp = digitos(row["transportadora_documento"]);
+  const transportadoraParceiro = docTransp
+    ? parceiro("ZT", docTransp, String(row["transportadora"] ?? ""))
+    : "";
+
   const obs = observacoes(row)
     .map((o) => `<item><OBS>${esc(o)}</OBS></item>`)
     .join("");
