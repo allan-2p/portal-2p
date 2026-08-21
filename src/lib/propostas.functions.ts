@@ -1111,9 +1111,28 @@ export type PedidoIntegracoesStatus = {
     mensagem: string | null;
     enviado_em: string | null;
   };
+  /** Cobrança Itaú (boleto à vista ou Pix) emitida para o pedido. */
+  cobranca: {
+    forma: string | null;
+    meio: string | null;
+    status: string | null;
+    valor: number | null;
+    vencimento: string | null;
+    linhaDigitavel: string | null;
+    codigoBarras: string | null;
+    nossoNumero: string | null;
+    pixCopiaCola: string | null;
+    url: string | null;
+    atualizado_em: string | null;
+    /** Última mensagem registrada na auditoria de cobrança. */
+    mensagem: string | null;
+    /** Emissão automática é aplicável a esta forma de pagamento? */
+    aplicavel: boolean;
+  };
   /** Validação prévia antes de enviar a ordem ao SAP. */
   validacao: { ok: boolean; pendencias: string[]; avisos: string[] };
 };
+
 
 /** Situação das integrações (SAP + Salesforce) de um pedido. */
 export const statusIntegracoesPedidoFn = createServerFn({ method: "POST" })
