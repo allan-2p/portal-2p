@@ -18,12 +18,28 @@ export function tpOvDoPedido(tipoNf: unknown, contribuinte: unknown): TpOv {
   return contribuinte === true ? "ZV2P" : "ZC2P";
 }
 
-/** Contribuinte do parceiro faturado (cliente final quando houver). */
+const digitos = (v: unknown) => String(v ?? "").replace(/\D/g, "");
+
+/**
+ * Contribuinte do parceiro faturado (cliente final quando houver).
+ *
+ * Regra de origem (igual à plataforma antiga):
+ * - faturado CPF (11 dígitos) → NUNCA contribuinte (sempre ZC2P), mesmo que a
+ *   tela tenha marcado o checkbox;
+ * - CNPJ → usa a informação de IE do parceiro faturado.
+ */
 export function contribuinteDoFaturamento(input: {
   contribuinte?: unknown;
   faturarClienteFinal?: unknown;
-  faturamento?: { contribuinte?: unknown } | null;
+  faturamento?: { contribuinte?: unknown; doc?: unknown } | null;
+  /** Documento do cliente da proposta (usado quando não há cliente final). */
+  clienteDoc?: unknown;
 }): boolean {
-  if (input.faturarClienteFinal === true) return input.faturamento?.contribuinte === true;
+  if (input.faturarClienteFinal === true) {
+    if (digitos(input.faturamento?.doc).length === 11) return false;
+    return input.faturamento?.contribuinte === true;
+  }
+  if (digitos(input.clienteDoc).length === 11) return false;
   return input.contribuinte === true;
 }
+
