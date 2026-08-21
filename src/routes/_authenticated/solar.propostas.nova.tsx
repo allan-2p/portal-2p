@@ -1101,12 +1101,17 @@ function NovaPropostaSolarPage() {
       try {
         const linha = await concluirPropostaFn({ data: { id: r.id, origem: "portal", etapa: 5 } });
         await queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
+        if (linha?.already_concluded) {
+          toast.info(`Pedido ${r.numero} já havia sido concluído (${linha.status}).`);
+          void navigate({ to: "/solar/propostas" });
+          return;
+        }
         setResultadoConclusao({
-          numero: String(linha?.['numero'] ?? r.numero),
-          status: String(linha?.['status'] ?? "Aguardando Pagamento"),
-          sapOv: (linha?.['sapOv'] ?? null) as ResultadoConclusao["sapOv"],
-          salesforce: (linha?.['salesforce'] ?? null) as ResultadoConclusao["salesforce"],
-          cobranca: (linha?.['cobranca'] ?? null) as ResultadoConclusao["cobranca"],
+          numero: r.numero,
+          status: String(linha?.status ?? "Aguardando Pagamento"),
+          sapOv: (linha?.sapOv ?? null) as ResultadoConclusao["sapOv"],
+          salesforce: (linha?.salesforce ?? null) as ResultadoConclusao["salesforce"],
+          cobranca: (linha?.cobranca ?? null) as ResultadoConclusao["cobranca"],
         });
       } catch (e) {
         const msg = (e as Error).message || "Falha ao concluir o pedido.";
