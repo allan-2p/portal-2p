@@ -117,7 +117,9 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     uf,
     contribuinte: !!i.contribuinte,
     tipoNf: ["venda", "triangulacao", "bonificacao"].includes(String(i.tipoNf)) ? String(i.tipoNf) : "venda",
-    faturarClienteFinal: i.faturarClienteFinal === true,
+    finalidadeUso,
+    faturarClienteFinal,
+
     faturamento,
     formaPagamento: ["boleto_vista", "boleto_prazo", "pix", "cartao_credito"].includes(String(i.formaPagamento))
       ? String(i.formaPagamento)
