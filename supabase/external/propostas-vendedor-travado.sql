@@ -17,5 +17,9 @@ update public.propostas p
    set sap_vendedor_nome = coalesce(p.sap_vendedor_nome, p.consultor_nome)
  where p.sap_ov_numero is not null;
 
+-- NOTE: o código SAP do vendedor (sap_vendedor_codigo) para pedidos já
+-- concluídos deve ser backfilled pelo portal, pois o cadastro de consultores
+-- (profiles.numero_sap) vive no banco do portal, não no projeto grupo-2p.
+
 create index if not exists propostas_sap_vendedor_codigo_idx
   on public.propostas (sap_vendedor_codigo);
