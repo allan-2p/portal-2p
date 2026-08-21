@@ -1774,12 +1774,14 @@ export type Database = {
           finalizado_por_nome: string | null
           forma_pagamento: string | null
           frete_area_rural: boolean
+          frete_bonificado: boolean
           frete_mod: string
           frete_prazo: number | null
           frete_valor: number
           id: string
           indicacao: boolean
           itens: Json
+          kit_fotovoltaico: boolean
           nome: string | null
           numero: string | null
           numero_sap: string | null
@@ -1832,12 +1834,14 @@ export type Database = {
           finalizado_por_nome?: string | null
           forma_pagamento?: string | null
           frete_area_rural?: boolean
+          frete_bonificado?: boolean
           frete_mod?: string
           frete_prazo?: number | null
           frete_valor?: number
           id?: string
           indicacao?: boolean
           itens?: Json
+          kit_fotovoltaico?: boolean
           nome?: string | null
           numero?: string | null
           numero_sap?: string | null
@@ -1890,12 +1894,14 @@ export type Database = {
           finalizado_por_nome?: string | null
           forma_pagamento?: string | null
           frete_area_rural?: boolean
+          frete_bonificado?: boolean
           frete_mod?: string
           frete_prazo?: number | null
           frete_valor?: number
           id?: string
           indicacao?: boolean
           itens?: Json
+          kit_fotovoltaico?: boolean
           nome?: string | null
           numero?: string | null
           numero_sap?: string | null

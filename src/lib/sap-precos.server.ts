@@ -29,6 +29,15 @@ export type SimulacaoValores = {
   pesoBruto: number;
   /** Valor líquido da linha devolvido pelo SAP, quando informado. */
   valor: number | null;
+  /**
+   * Valor da linha SEM ICMS e SEM IPI — usado no Kit Fotovoltaico, que tem
+   * isenção desses dois tributos: VALOR_LIQUIDO + VL_PIS + VL_COFINS.
+   */
+  valorSemIcmsIpi: number | null;
+  vlPis: number;
+  vlCofins: number;
+  vlIcms: number;
+  vlIpi: number;
 };
 
 const URL_PADRAO =
@@ -214,11 +223,23 @@ export async function simularSap(
     const pesoLiquido = num(reg["PESO_LIQUIDO"]);
     const pesoBruto = num(reg["PESO_BRUTO"]);
     const valorTxt = reg["VALOR_LIQUIDO"];
+    const liquido = num(valorTxt);
+    const vlPis = num(reg["VL_PIS"]);
+    const vlCofins = num(reg["VL_COFINS"]);
+    const vlIcms = num(reg["VL_ICMS"]);
+    const vlIpi = num(reg["VL_IPI"]);
     mapa.set(codigo, {
       pesoLiquido,
       pesoBruto,
       // a antiga usa VALOR_LIQUIDO + VALOR_IMPOSTO (calculadora.php:894); só líquido subestima ~15%
-      valor: valorTxt !== undefined ? num(valorTxt) + num(reg["VALOR_IMPOSTO"]) : null,
+      valor: valorTxt !== undefined ? liquido + num(reg["VALOR_IMPOSTO"]) : null,
+      // Kit fotovoltaico: isenção de ICMS e IPI → só PIS/COFINS entram
+      // (calculadora.php:887-894).
+      valorSemIcmsIpi: valorTxt !== undefined ? liquido + vlPis + vlCofins : null,
+      vlPis,
+      vlCofins,
+      vlIcms,
+      vlIpi,
     });
   }
 

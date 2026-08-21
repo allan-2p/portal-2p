@@ -247,6 +247,10 @@ function observacoes(row: Record<string, any>): string[] {
   const transp = String(row["transportadora"] ?? "").trim();
   if (transp) obs.push(`Transportadora: ${transp} (${String(row["frete_mod"] ?? "").toUpperCase()})`);
 
+  if (row["kit_fotovoltaico"]) obs.push("PEDIDO KIT FOTOVOLTAICO");
+  if (row["frete_bonificado"])
+    obs.push(`FRETE BONIFICADO - valor R$ ${Number(row["frete_valor"] ?? 0).toFixed(2)} por conta da 2P`);
+
   // O SAP corta a observação em 132 caracteres por linha.
   return obs.flatMap((o) => String(o).match(/.{1,130}/g) ?? []).slice(0, 20);
 }
@@ -295,15 +299,18 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
     (i) => norm(i?.codigo) && Number(i?.qtd ?? 0) > 0,
   );
 
-  // TODO (kit fotovoltaico): quando o recurso for implementado, o material do
-  // kit-base troca 100000350 → 100000278 antes do envio (regra da plataforma antiga).
+  // Kit fotovoltaico: o material comercial 100000350 é enviado ao SAP como o
+  // material de produção 100000278 (regra da plataforma antiga).
+  const kit = Boolean(row["kit_fotovoltaico"]);
+  const materialSap = (codigo: string) =>
+    kit && codigo === "100000350" ? "100000278" : codigo;
   // VALOR_PROD vai VAZIO: o preço vem da condição do SAP (igual à antiga).
   const linhas = itens
     .map(
       (i, idx) =>
         `<item>` +
         `<ITM_NUMBER>${idx + 1}</ITM_NUMBER>` +
-        `<MATERIAL>${esc(norm(i.codigo))}</MATERIAL>` +
+        `<MATERIAL>${esc(materialSap(norm(i.codigo)))}</MATERIAL>` +
         `<BILL_DATE>${hoje}</BILL_DATE>` +
         `<UM>UN</UM>` +
         `<QTDE>${Number(i.qtd)}</QTDE>` +
