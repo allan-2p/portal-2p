@@ -1128,7 +1128,8 @@ function NovaPropostaSolarPage() {
       // Conclusão real: cria a ordem no SAP, gera a cobrança e envia ao Salesforce.
       // Nada é silencioso — o resultado (ou o erro) aparece no pop-up.
       try {
-        const linha = await concluirPropostaFn({ data: { id: r.id, origem: "portal", etapa: 5 } });
+        // O servidor valida a conclusão como etapa 4 (Finalização).
+        const linha = await concluirPropostaFn({ data: { id: r.id, origem: "portal", etapa: 4 } });
         await queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
         if (linha?.already_concluded) {
           toast.info(`Pedido ${r.numero} já havia sido concluído (${linha.status}).`);
