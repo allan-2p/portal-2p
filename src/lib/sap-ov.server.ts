@@ -600,17 +600,31 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
   if (repetidos.length) avisos.push(`Material repetido em mais de uma linha: ${repetidos.slice(0, 5).join(", ")}.`);
 
   // Totais
+  // Carregadores grava `valor` como total da linha; Solar grava `valor`
+  // unitário e `total` da linha. O esperado desconta cupom e usa o frete
+  // efetivamente cobrado (bonificado não entra no total do cliente).
   const totais = (row["totais"] ?? {}) as Record<string, any>;
   const valorTotal = Number(totais["valorTotal"] ?? 0);
   if (!(valorTotal > 0)) pendencias.push("Valor total do pedido zerado ou ausente.");
   else {
-    const somaItens = itens.reduce((a, i) => a + Number(i?.valor ?? 0), 0);
-    const esperado = somaItens + Number(row["frete_valor"] ?? 0);
+    const somaItens = itens.reduce((a, i) => {
+      const total = Number(i?.total ?? 0);
+      return a + (Number.isFinite(total) && total > 0 ? total : Number(i?.valor ?? 0));
+    }, 0);
+    const desconto = Number(totais["desconto"] ?? 0);
+    const frete =
+      totais["freteCobrado"] !== undefined && totais["freteCobrado"] !== null
+        ? Number(totais["freteCobrado"])
+        : row["frete_bonificado"]
+          ? 0
+          : Number(row["frete_valor"] ?? 0);
+    const esperado = somaItens - desconto + frete;
     if (somaItens > 0 && Math.abs(esperado - valorTotal) > Math.max(1, valorTotal * 0.02))
       avisos.push(
         `Total do pedido (${valorTotal.toFixed(2)}) difere da soma dos itens + frete (${esperado.toFixed(2)}).`,
       );
   }
+
 
   return { ok: pendencias.length === 0, pendencias, avisos };
 }
