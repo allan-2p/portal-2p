@@ -55,8 +55,10 @@ export function FreteCotacao({
 
   useEffect(() => {
     onLoadingChange?.(loading);
+    return () => onLoadingChange?.(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
+
 
   const cepOk = (destino.cep ?? "").replace(/\D/g, "").length === 8;
   const podeCotar = cepOk && !!destino.cidade && !!destino.uf && itens.length > 0 && valorNota > 0;
