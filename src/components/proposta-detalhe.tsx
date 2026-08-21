@@ -93,7 +93,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Andamento do pedido
         </h3>
-        <PropostaTimeline status={status} />
+        <PropostaTimeline status={status} proposta={p} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

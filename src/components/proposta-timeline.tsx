@@ -22,11 +22,36 @@ export const ETAPAS_ANDAMENTO: PropostaStatus[] = [
   "Entregue",
 ];
 
+const fmtDataHora = (v?: string | null) =>
+  v
+    ? new Date(v).toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+
+/** Data em que o pedido entrou no status (coluna carimbada na transição). */
+function dataDoStatus(
+  etapa: PropostaStatus,
+  proposta?: Record<string, any> | null,
+): string | null {
+  if (!proposta) return null;
+  const col = PROPOSTA_STATUS_DATA_COL[etapa];
+  const legado = etapa === "Coletado" ? proposta["enviado_em"] : null;
+  return fmtDataHora((proposta[col] as string | null) ?? (legado as string | null));
+}
+
 export function PropostaTimeline({
   status,
+  proposta,
   className,
 }: {
   status: string;
+  /** Linha da proposta — usada para mostrar a data de cada etapa. */
+  proposta?: Record<string, any> | null;
   className?: string;
 }) {
   const cancelado = status === "Cancelado";
@@ -40,6 +65,11 @@ export function PropostaTimeline({
         style={{ color: s.bg }}
       >
         Pedido cancelado
+        {dataDoStatus("Cancelado", proposta) ? (
+          <span className="ml-2 font-normal text-muted-foreground">
+            em {dataDoStatus("Cancelado", proposta)}
+          </span>
+        ) : null}
       </div>
     );
   }
@@ -83,6 +113,9 @@ export function PropostaTimeline({
                 style={done ? { color: s.bg } : undefined}
               >
                 {etapa}
+              </div>
+              <div className="mt-0.5 text-center text-[10px] leading-tight text-muted-foreground tabular-nums">
+                {dataDoStatus(etapa, proposta) ?? ""}
               </div>
             </div>
           );
