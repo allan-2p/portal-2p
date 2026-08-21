@@ -96,6 +96,7 @@ import { MoneyInput } from "@/components/money-input";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { cn } from "@/lib/utils";
+import { ResultadoConclusaoDialog } from "@/components/resultado-conclusao-dialog";
 import { cidadeUf } from "@/lib/local-format";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
