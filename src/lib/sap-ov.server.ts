@@ -1081,6 +1081,7 @@ async function cadastrarParceiroFaturamento(
     uf: String(fat["uf"] ?? row["uf"] ?? ""),
     vendedor_sap: String(row["consultor_codigo_sap"] ?? "") || null,
     condicao_pgto_sap: String(row["condicao_pagamento_codigo"] ?? "") || null,
+    tabela_preco: tabelaPreco,
     escopo_org: escopo as "solar" | "carregadores" | "grupo",
   });
 
