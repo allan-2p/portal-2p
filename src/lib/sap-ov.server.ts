@@ -761,8 +761,28 @@ export async function criarOrdemVendaSap(
     });
   }
 
-
   const testrun = opts.testrun ?? String(process.env["SAP_OV_TESTRUN"] ?? "").toUpperCase() === "X";
+
+  // Faturamento para cliente final: o parceiro (AG) precisa existir no SAP
+  // antes da ordem. Cadastra/atualiza pela mesma RFC de clientes; se falhar, a
+  // ordem NÃO é enviada (o SAP recusaria com erro de parceiro inexistente).
+  if (!testrun && row["faturar_cliente_final"]) {
+    const r = await cadastrarParceiroFaturamento(row);
+    if (!r.ok) {
+      const mensagem = `Cliente final não pôde ser cadastrado no SAP: ${r.erro}`.slice(0, 500);
+      await gravar(propostaId, { sap_ov_status: "erro", sap_ov_mensagem: mensagem });
+      await logIntegrationEvent({
+        ...base,
+        level: "error",
+        message: mensagem,
+        detail: { proposta_id: propostaId, numero: row["numero"] ?? null, etapa: "parceiro-faturamento" },
+        durationMs: Date.now() - inicio,
+      });
+      return { enviado: false, ok: false, vbeln: null, mensagem, motivo: "parceiro_faturamento", testrun: false };
+    }
+  }
+
+
   const peso = await pesosDoPedido(itens);
   const corpo = envelope(row, peso, testrun);
 
