@@ -156,7 +156,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
   .hnum{ font-size:9px; color:var(--muted); margin-top:3px; letter-spacing:.12em; }
   .rule{ height:2px; margin:0 14mm; background:linear-gradient(90deg,var(--accent),var(--accent-2),rgba(245,165,36,.05)); border-radius:2px; }
 
-  .body{ padding:7mm 14mm 0; flex:1; }
+  .body{ padding:7mm 14mm 0; }
   .sec{ margin-top:6mm; }
   .sech{ display:flex; align-items:center; gap:7px; margin-bottom:3mm; }
   .sech span{ font-size:7.6px; letter-spacing:.26em; text-transform:uppercase; color:var(--muted); font-weight:700; white-space:nowrap; }
