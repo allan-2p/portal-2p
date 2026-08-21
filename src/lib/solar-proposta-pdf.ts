@@ -202,6 +202,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
   .foot b{ color:var(--accent); font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
 
   .card div, .client div, .f div, .cond p, td { overflow-wrap:anywhere; }
+  .idx, .c, .r, tfoot td { white-space:nowrap; overflow-wrap:normal; }
   /* Quebra de página segura — nada é cortado ao meio */
   .card, .rows, .total, .cond div, .f, tr, tfoot { break-inside:avoid; page-break-inside:avoid; }
   .sech { break-after:avoid; page-break-after:avoid; }
