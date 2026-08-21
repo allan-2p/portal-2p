@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { WizardActionBar } from "@/components/wizard-action-bar";
 import { FreteCotacao } from "@/components/frete-cotacao";
+import { FreteDedicado } from "@/components/frete-dedicado";
 import { CondicaoPagamentoSelect } from "@/components/condicao-pagamento-select";
 import { toast } from "sonner";
 import {
@@ -2263,7 +2264,11 @@ function NovaPropostaSolarPage() {
               )}
             </div>
 
-            {(freteMod === "CIF" || freteMod === "DEDICADO") && (
+            {freteMod === "DEDICADO" && (
+              <FreteDedicado selecionada={transportadora} onSelect={setTransportadora} />
+            )}
+
+            {freteMod === "CIF" && (
               <FreteCotacao
                 unidade="solar"
                 itens={itens
