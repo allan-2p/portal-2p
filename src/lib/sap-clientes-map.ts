@@ -168,7 +168,7 @@ const UFS_KONDA_04 = ["SP", "RJ", "ES", "MG", "RS", "PR", "SC"];
 export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
   const doc = digitos(c.doc);
   const pessoaFisica = doc.length === 11;
-  const finalidade = (so(c.finalidade) || "Revenda") as Finalidade;
+  const finalidade = normalizarFinalidade(c.finalidade);
   const contribuinte = c.contribuinte === true;
 
   let ie = so(c.ie).replace(/[.\-/]/g, "").slice(0, 18);
