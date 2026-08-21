@@ -1037,6 +1037,19 @@ async function cadastrarParceiroFaturamento(
   const doc = digitos(fat["doc"]);
   if (!doc) return { ok: false, erro: "CPF/CNPJ do cliente final não informado." };
 
+  // A finalidade do cliente final vem exclusivamente da tela (CPF não tem
+  // cadastro no portal). Sem um valor válido o SAP receberia "Revenda" por
+  // omissão e gravaria o CFOP errado — melhor falhar de forma explícita.
+  const { finalidadeDaTela } = await import("./sap-clientes-map");
+  const finalidade = finalidadeDaTela(row["finalidade_uso"]);
+  if (!finalidade)
+    return {
+      ok: false,
+      erro:
+        "Finalidade de uso do cliente final ausente ou inválida. " +
+        "Informe Revenda, Industrialização ou Uso e Consumo na aba de faturamento.",
+    };
+
   const { sapClientesConfigurado, enviarClienteParaSap } = await import("./sap-clientes.server");
   if (!sapClientesConfigurado())
     return { ok: false, erro: "Integração de cadastro de clientes do SAP não configurada (SAP_CLIENTES_URL)." };
