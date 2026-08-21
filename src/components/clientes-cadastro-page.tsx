@@ -323,7 +323,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             cnaes_secundarios: p.cnaes_secundarios ?? [],
             contatos: p.contatos ?? [],
           } as never,
-          consultor_id: consultorId ?? consultoresQ.data?.eu.id ?? null,
+          consultor_id: consultorEfetivo,
         },
       });
     },
@@ -461,7 +461,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   };
   const tentarSalvar = () => {
     setTentouSalvar(true);
-    const e = validarCampos(form);
+    const e = validarCampos(form, consultorEfetivo);
     const chaves = Object.keys(e);
     if (chaves.length > 0) {
       toast.error(`Corrija ${chaves.length} campo(s) para salvar.`);
@@ -718,9 +718,10 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
 
               <Section title="Comercial">
-                <F label="Consultor">
+                <F label="Consultor *" id="campo-consultor" error={erros.consultor}>
                   {consultoresQ.data?.podeEscolher ? (
-                    <Select value={consultorId ?? consultoresQ.data?.eu.id ?? ""} onValueChange={(v) => setConsultorId(v)}>
+                    <Select value={consultorEfetivo ?? ""} onValueChange={(v) => setConsultorId(v)}>
+
                       <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
                       <SelectContent>
                         {(consultoresQ.data?.consultores ?? []).map((c: { id: string; nome: string }) => (
