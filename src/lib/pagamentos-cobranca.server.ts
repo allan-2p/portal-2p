@@ -92,6 +92,20 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
   const nossoNumero = soDigitos(row["numero"]).padStart(8, "0").slice(-8);
   const docPagador = soDigitos(row["cliente_doc"]);
 
+  const fat = (row["faturamento"] ?? {}) as Record<string, unknown>;
+  const ent = (row["entrega"] ?? {}) as Record<string, unknown>;
+  const end = (...chaves: string[]): string => {
+    for (const k of chaves) {
+      for (const fonte of [row, fat, ent] as Record<string, unknown>[]) {
+        const v = fonte?.[k];
+        if (v !== undefined && v !== null && String(v).trim()) return String(v).trim();
+      }
+    }
+    return "";
+  };
+
+
+
   const body = {
     data: {
       etapa_processo_boleto: "efetivacao",
