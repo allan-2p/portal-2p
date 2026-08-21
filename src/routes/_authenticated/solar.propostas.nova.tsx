@@ -2560,6 +2560,16 @@ function NovaPropostaSolarPage() {
         </div>
       )}
 
+      {/* Resultado da conclusão: SAP, cobrança e Salesforce — nunca fecha em silêncio */}
+      <ResultadoConclusaoDialog
+        resultado={resultadoConclusao}
+        onClose={() => setResultadoConclusao(null)}
+        onIrParaLista={() => {
+          setResultadoConclusao(null);
+          void navigate({ to: "/solar/propostas" });
+        }}
+      />
+
       {/* Prévia da proposta em PDF */}
       <Dialog open={previewAberto} onOpenChange={setPreviewAberto}>
         <DialogContent className="max-w-5xl">
