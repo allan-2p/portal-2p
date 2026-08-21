@@ -16,6 +16,7 @@
 
 import { XMLParser } from "fast-xml-parser";
 import { pltypDaTabela } from "./sap-clientes-map";
+import { alertarSuspeitasNumericas, iniciarColetaNumerica, numSap } from "./sap-num.server";
 
 export type SimulacaoItem = {
   codigo: string;
@@ -44,14 +45,12 @@ const URL_PADRAO =
   "https://app.webfiori.com.br/sap/bc/srt/rfc/sap/znfe_ov_simular_ws/500/znfe_ov_simular_ws/znfe_ov_simularbinding";
 
 const norm = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
-const num = (v: unknown) => {
-  const s = String(v ?? "").replace(/\s/g, "");
-  if (!s) return 0;
-  // SAP devolve decimal com PONTO ("8.856" = 8,856 kg; "1234.56").
-  // Ponto só é separador de milhar quando há vírgula decimal junto ("1.234,56").
-  const n = s.includes(",") ? Number(s.replace(/\./g, "").replace(",", ".")) : Number(s);
-  return Number.isFinite(n) ? n : 0;
-};
+/**
+ * SAP devolve decimal com PONTO ("8.856" = 8,856 kg; "1234.56"). Ponto só é
+ * milhar quando há vírgula decimal junto ("1.234,56"). O parser central marca
+ * as leituras ambíguas para o alerta de risco de 1000×.
+ */
+const num = (v: unknown, campo?: string) => numSap(v, campo);
 
 
 function achar(o: any, chave: string): any {
@@ -153,6 +152,7 @@ export async function simularSap(
 ): Promise<SimulacaoResultado> {
   const mapa = new Map<string, SimulacaoValores>();
   const erros: string[] = [];
+  iniciarColetaNumerica();
   if (!itens.length) return { valores: mapa, erros, motivo: null };
 
   // O SAP só aceita o material numérico (ex.: 200000690). Se algum item vier
@@ -238,19 +238,19 @@ export async function simularSap(
   for (const reg of porItem.values()) {
     const codigo = norm(String(reg["MATERIAL"] ?? ""));
     if (!codigo) continue;
-    const pesoLiquido = num(reg["PESO_LIQUIDO"]);
-    const pesoBruto = num(reg["PESO_BRUTO"]);
+    const pesoLiquido = num(reg["PESO_LIQUIDO"], "PESO_LIQUIDO");
+    const pesoBruto = num(reg["PESO_BRUTO"], "PESO_BRUTO");
     const valorTxt = reg["VALOR_LIQUIDO"];
-    const liquido = num(valorTxt);
-    const vlPis = num(reg["VL_PIS"]);
-    const vlCofins = num(reg["VL_COFINS"]);
-    const vlIcms = num(reg["VL_ICMS"]);
-    const vlIpi = num(reg["VL_IPI"]);
+    const liquido = num(valorTxt, "VALOR_LIQUIDO");
+    const vlPis = num(reg["VL_PIS"], "VL_PIS");
+    const vlCofins = num(reg["VL_COFINS"], "VL_COFINS");
+    const vlIcms = num(reg["VL_ICMS"], "VL_ICMS");
+    const vlIpi = num(reg["VL_IPI"], "VL_IPI");
     mapa.set(codigo, {
       pesoLiquido,
       pesoBruto,
       // a antiga usa VALOR_LIQUIDO + VALOR_IMPOSTO (calculadora.php:894); só líquido subestima ~15%
-      valor: valorTxt !== undefined ? liquido + num(reg["VALOR_IMPOSTO"]) : null,
+      valor: valorTxt !== undefined ? liquido + num(reg["VALOR_IMPOSTO"], "VALOR_IMPOSTO") : null,
       // Kit fotovoltaico: isenção de ICMS e IPI → só PIS/COFINS entram
       // (calculadora.php:887-894).
       valorSemIcmsIpi: valorTxt !== undefined ? liquido + vlPis + vlCofins : null,
@@ -260,6 +260,11 @@ export async function simularSap(
       vlIpi,
     });
   }
+
+  await alertarSuspeitasNumericas("simulacao-precos-peso", {
+    itens: itens.length,
+    pesoTotal: [...mapa.values()].reduce((t, v) => t + (v.pesoLiquido || 0), 0),
+  });
 
   return { valores: mapa, erros, motivo: null };
 }

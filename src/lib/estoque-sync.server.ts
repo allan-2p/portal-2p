@@ -20,6 +20,10 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { fetchEstoqueSap, mapearEstoque } = await import("./sap-estoque.server");
   const { getAllMaterials, classificarTipo } = await import("./sap-produtos.server");
+  const { iniciarColetaNumerica, alertarSuspeitasNumericas, detectarSaltosDeEscala } = await import(
+    "./sap-num.server"
+  );
+  iniciarColetaNumerica();
 
   const { data: run } = await supabaseAdmin
     .from("estoque_sync_runs")
@@ -40,6 +44,29 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
     const [itens, catalogo] = await Promise.all([fetchEstoqueSap(), getAllMaterials()]);
     const { estoque, containers } = mapearEstoque(itens);
     const now = new Date().toISOString();
+
+    // Alerta 1: leituras ambíguas (ponto + 3 dígitos) vindas do SAP.
+    const ambiguos = await alertarSuspeitasNumericas("sync-estoque", { materiais: estoque.length });
+
+    // Alerta 2: saldo que mudou ~1000× em relação ao gravado — assinatura do
+    // bug de milhar, seja inflando (×1000) ou desinflando (÷1000).
+    const { data: antes } = await supabaseAdmin.from("estoque").select("material, est_livre");
+    const saltos = detectarSaltosDeEscala(
+      new Map(estoque.map((e) => [e.material, e.est_livre])),
+      new Map((antes ?? []).map((r: any) => [r.material as string, Number(r.est_livre ?? 0)])),
+    );
+    if (saltos.length) {
+      const { logIntegrationEvent } = await import("./integration-logs.server");
+      await logIntegrationEvent({
+        slug: "sap",
+        level: "warn",
+        event: "estoque-salto-escala",
+        message: `${saltos.length} material(is) com saldo variando ~1000× nesta sincronização — verificar parsing de milhar/decimal.`,
+        detail: { total: saltos.length, amostra: saltos.slice(0, 20) },
+        actorId: userId,
+      });
+      console.warn("[sap:estoque-salto-escala]", saltos.slice(0, 5));
+    }
 
     // ---- estoque: upsert + remoção do que saiu do SAP (sem janela vazia) ----
     for (let i = 0; i < estoque.length; i += 500) {
@@ -140,7 +167,14 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
       level: "info",
       event: "sync-estoque",
       message: `Estoque sincronizado: ${estoque.length} materiais, ${containers.length} containers, ${produtos.length} produtos consolidados.`,
-      detail: { materiais: estoque.length, containers: containers.length, ncmAplicado, espelho },
+      detail: {
+        materiais: estoque.length,
+        containers: containers.length,
+        ncmAplicado,
+        espelho,
+        num_ambiguos: ambiguos,
+        saltos_escala: saltos.length,
+      },
       actorId: userId,
     });
 
