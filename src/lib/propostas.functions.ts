@@ -367,7 +367,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
 
       numero: numeroProposta,
       nome: data.propostaNome,
-      numero_sap: numeroSap,
+      // `numero_sap` NÃO é escrito pelo portal: só o SAP define o VBELN.
       cliente_nome: data.cliente.nome,
 
       cliente_telefone: data.cliente.telefone,
