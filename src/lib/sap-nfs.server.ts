@@ -270,9 +270,10 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
   // auditável.
   if (para) {
     const { aplicarTransicao } = await import("./proposta-transicao.server");
+    // As datas por status (separado_em, faturado_em, coletado_em…) são
+    // carimbadas dentro do `aplicarTransicao`. Aqui só mantemos `enviado_em`,
+    // coluna legada usada por telas/integrações antigas.
     const carimbos: Record<string, string> = {
-      "Separação": "separado_em",
-      "Faturado": "faturado_em",
       "Coletado": "enviado_em",
     };
     let atual = de;
