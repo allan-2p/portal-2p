@@ -37,6 +37,7 @@ export const TRILHOS: TrilhoRef[] = [
   { codigo: "100000321", nome: "2P-Mini Trilho 3.4x4,85M Avulso" },
   { codigo: "100000327", nome: "2P-Mini Trilho 3.4x4,50M Avulso" },
   { codigo: "200000586", nome: "2P-TCL2700 Trilho 2P 2,70M" },
+  { codigo: "100000261", nome: "2P-Trilho 2P (100000261)" },
 ];
 
 export const COD_TRILHOS = TRILHOS.map((t) => t.codigo);
@@ -46,22 +47,25 @@ export const nomeTrilho = (codigo: string) =>
 
 /** Trilhos que a Braspress não transporta. */
 export const TRILHOS_BRASPRESS = [
-  "200000028", "100000024", "100000020", "200000051", "200000021", "200000080",
-  "100000260", "200000383", "200000384", "200000505", "200000522", "100000320",
-  "100000321", "100000327", "200000586",
+  "200000028", "100000024", "100000020", "100000261", "200000051", "200000021",
+  "200000080", "100000260", "200000383", "200000384", "200000505", "200000522",
+  "200000586",
 ];
 
 /** Trilhos que a Expresso São Miguel não transporta. */
 export const TRILHOS_SAO_MIGUEL = [
   "200000028", "200000051", "200000021", "200000080", "100000260", "200000384",
-  "200000505", "200000522", "100000320", "100000321", "100000327",
+  "200000505", "200000522",
 ];
 
 /** Peças acima de 2,40M — geram adicional (TDE) na Schreiber. */
-export const TRILHOS_SCHREIBER_TDE = [...TRILHOS_SAO_MIGUEL];
+export const TRILHOS_SCHREIBER_TDE = ["200000586", "100000320", "100000321"];
 
 /** Peças acima de 2,40M — geram adicional (TDE) na Transcarapia. */
-export const TRILHOS_TRANSCARAPIA = [...TRILHOS_SAO_MIGUEL];
+export const TRILHOS_TRANSCARAPIA = [
+  "200000028", "200000051", "200000021", "200000080", "100000260", "200000384",
+  "200000505", "200000522", "100000320", "100000321", "100000327",
+];
 
 export const TDE_SCHREIBER = 250;
 export const TDE_TRANSCARAPIA = 300;
@@ -114,7 +118,7 @@ export const REGRAS_TRANSPORTADORAS: RegraTransportadora[] = [
     cnpj: CNPJ.SCHREIBER,
     tipo: "tde",
     adicional: TDE_SCHREIBER,
-    resumo: "Transporta todos os trilhos, com adicional (TDE) por envio para peças acima de 2,40M.",
+    resumo: "Transporta todos os trilhos, com adicional (TDE) por envio apenas para os trilhos listados.",
     trilhos: TRILHOS_SCHREIBER_TDE,
   },
   {
