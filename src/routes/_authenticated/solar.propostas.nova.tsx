@@ -2313,7 +2313,10 @@ function NovaPropostaSolarPage() {
 
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
                 <Info label="Condição de pagamento" value={condicaoPagamento || "—"} />
-                <Info label="Frete" value={`${freteMod || "—"}${bonificado ? " (frete grátis)" : ""}`} />
+                <Info
+                  label="Frete"
+                  value={`${freteMod || "—"}${bonificado || freteGratis ? " · Frete grátis" : ""}`}
+                />
                 <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
                 <Info
                   label="Endereço de faturamento"
