@@ -170,13 +170,16 @@ function HistoricoCarregadoresPage() {
   async function confirmarExclusao() {
     if (!excluirId) return;
     try {
-      await excluirPropostaFn({ data: { id: excluirId } });
+      const r = await excluirPropostaFn({ data: { id: excluirId } });
+      setExcluirId(null);
+      if (r?.aviso) toast.warning(r.aviso, { duration: 10000 });
+      else toast.success("Proposta excluída.");
+      q.refetch();
+      return;
     } catch (e) {
       setExcluirId(null);
       return toast.error((e as Error).message);
     }
-    setExcluirId(null);
-    toast.success("Proposta excluída.");
     q.refetch();
   }
 
