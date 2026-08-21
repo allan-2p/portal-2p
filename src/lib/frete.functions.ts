@@ -120,6 +120,22 @@ export const cotarFrete = createServerFn({ method: "POST" })
     }
   });
 
+/** Transportadoras disponíveis para o frete dedicado (valor manual, prazo 2 dias). */
+export const listarTransportadorasDedicadas = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase
+      .from("frete_transportadoras_dedicadas")
+      .select("nome, fretefy_transportadora_id, cnpj")
+      .eq("ativo", true)
+      .order("ordem", { ascending: true });
+    return (data ?? []).map((t: any) => ({
+      id: String(t.fretefy_transportadora_id),
+      nome: String(t.nome),
+      documento: String(t.cnpj),
+    }));
+  });
+
 /** Diagnóstico do Fretefy usado no painel de Integrações. */
 export const diagnosticarFretefy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

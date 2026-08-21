@@ -259,7 +259,7 @@ function observacoes(row: Record<string, any>): string[] {
   return obs.flatMap((o) => String(o).match(/.{1,130}/g) ?? []).slice(0, 20);
 }
 
-function parceiro(role: "AG" | "CL", doc: string, nome: string) {
+function parceiro(role: "AG" | "CL" | "ZT", doc: string, nome: string) {
   const d = digitos(doc);
   // Documento pode chegar sem o zero à esquerda (13 dígitos): o SAP exige
   // 14 posições no CNPJ e 11 no CPF, senão não encontra o parceiro.
@@ -426,6 +426,7 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
       <T_PARCEIRO>
         ${emissor}
         ${parceiro("CL", docCliente, nomeCliente)}
+        ${transportadoraParceiro}
       </T_PARCEIRO>
     </n0:ZNFE_OV_CRIAR>
   </soap:Body>
