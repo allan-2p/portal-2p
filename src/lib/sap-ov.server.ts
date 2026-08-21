@@ -926,15 +926,20 @@ export async function criarOrdemVendaSap(
 
 
   if (!testrun) {
+    // O número da OV é o dado crítico: grava sozinho primeiro, para que nenhum
+    // campo acessório (ex.: vendedor) possa derrubar o UPDATE inteiro.
     await gravar(propostaId, {
       sap_ov_numero: vbeln,
       sap_ov_status: "criada",
       sap_ov_mensagem: texto,
       sap_ov_enviado_em: new Date().toISOString(),
+    });
+    await gravar(propostaId, {
       // vendedor travado no pedido concluído
       sap_vendedor_codigo: String(row["consultor_codigo_sap"] ?? "").trim() || null,
       sap_vendedor_nome: String(row["consultor_nome"] ?? "").trim() || null,
     });
+
 
     // Reserva local do estoque (espelha a reserva do SAP até o próximo sync).
     const itensPedido = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
@@ -992,14 +997,33 @@ export async function criarOrdemVendaSap(
   return { enviado: true, ok: true, vbeln, mensagem: texto, testrun };
 }
 
-/** Gravação tolerante: se as colunas ainda não existirem, não quebra o checkout. */
+/**
+ * Gravação tolerante a colunas ausentes: o PostgREST rejeita o UPDATE INTEIRO
+ * quando uma única coluna não existe (PGRST204). Antes isso fazia o número da
+ * OV se perder em silêncio. Agora removemos apenas a coluna reclamada e
+ * regravamos o restante, repetindo até o patch passar.
+ */
 async function gravar(id: string, patch: Record<string, unknown>) {
-  try {
-    await db.atualizarProposta(id, patch);
-  } catch (e) {
-    if (!/sap_ov_|42703|PGRST204/i.test((e as Error).message)) throw e;
+  let atual = { ...patch };
+  for (let tentativa = 0; tentativa < 6; tentativa++) {
+    if (!Object.keys(atual).length) return;
+    try {
+      await db.atualizarProposta(id, atual);
+      return;
+    } catch (e) {
+      const msg = (e as Error).message ?? "";
+      const col = /'([a-z0-9_]+)' column|column "([a-z0-9_]+)"/i.exec(msg);
+      const nome = col?.[1] ?? col?.[2];
+      if (nome && nome in atual && /PGRST204|42703|does not exist|Could not find/i.test(msg)) {
+        delete atual[nome];
+        continue;
+      }
+      if (/sap_ov_|42703|PGRST204/i.test(msg)) return;
+      throw e;
+    }
   }
 }
+
 
 /**
  * Cadastra/atualiza no SAP o parceiro faturado quando o pedido fatura o
