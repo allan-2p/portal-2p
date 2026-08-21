@@ -683,16 +683,17 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
 export const concluirPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
-    const i = (input ?? {}) as { id?: unknown; status?: unknown; origem?: unknown; etapa?: unknown };
+    const i = (input ?? {}) as { id?: unknown; origem?: unknown; etapa?: unknown };
     if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
-    if (typeof i.status !== "string" || !i.status) throw new Error("Status inválido.");
+    // O status de destino NÃO vem do cliente: é derivado da forma de pagamento
+    // no servidor (ver `statusDestino` abaixo).
     return {
       id: i.id,
-      status: i.status,
       origem: typeof i.origem === "string" ? i.origem : "portal",
       etapa: typeof i.etapa === "number" ? i.etapa : null,
     };
   })
+
   .handler(async ({ data, context }) => {
     const { runJob } = await import("@/lib/job-runs.server");
     type CobrancaOut = {
