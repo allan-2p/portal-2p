@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ModeracaoPlaceholder } from "@/components/admin/moderacao-placeholder";
 import { FreteRegrasEditor } from "@/components/admin/frete-regras-editor";
+import { FreteDedicadasEditor } from "@/components/admin/frete-dedicadas-editor";
 
 export const Route = createFileRoute("/_authenticated/admin/frete-regras")({
   head: () => ({
@@ -38,6 +39,9 @@ export const Route = createFileRoute("/_authenticated/admin/frete-regras")({
         </ModeracaoPlaceholder>
         <div className="max-w-[1100px] mx-auto mt-5">
           <FreteRegrasEditor unidade="solar" />
+          <div className="mt-5">
+            <FreteDedicadasEditor />
+          </div>
         </div>
       </AppLayout>
     </AdminRouteGuard>
