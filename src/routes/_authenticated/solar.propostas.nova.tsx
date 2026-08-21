@@ -16,14 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { WizardActionBar } from "@/components/wizard-action-bar";
 import { FreteCotacao } from "@/components/frete-cotacao";
 import { FreteDedicado } from "@/components/frete-dedicado";
@@ -226,6 +218,9 @@ function NovaPropostaSolarPage() {
   const [resultado, setResultado] = useState<CalcResultado | null>(null);
   const [previewAberto, setPreviewAberto] = useState(false);
   const [pdfHtml, setPdfHtml] = useState("");
+  const [previewZoom, setPreviewZoom] = useState(0.75);
+  const [previewPaginas, setPreviewPaginas] = useState(1);
+
 
   const itens = modo === "calculadora" ? itensCalc : itensLista;
   /** No modo calculadora, itens extras (manuais) ficam agrupados no final. */
@@ -1330,6 +1325,19 @@ function NovaPropostaSolarPage() {
     setPdfHtml(buildSolarPropostaPdfHtml(montarPdfDados()));
     setPreviewAberto(true);
   }
+
+  // Prévia em tempo real: enquanto o modal está aberto, o HTML é regerado a
+  // cada mudança de dados (setState com string idêntica não re-renderiza).
+  useEffect(() => {
+    if (!previewAberto) return;
+    try {
+      const html = buildSolarPropostaPdfHtml(montarPdfDados());
+      setPdfHtml((atual) => (atual === html ? atual : html));
+    } catch {
+      /* dados incompletos durante a edição — mantém a última prévia válida */
+    }
+  });
+
 
   /** Baixa/imprime a proposta em PDF. */
   function baixarPdf() {
@@ -2693,34 +2701,93 @@ function NovaPropostaSolarPage() {
         }}
       />
 
-      {/* Prévia da proposta em PDF */}
-      <Dialog open={previewAberto} onOpenChange={setPreviewAberto}>
-        <DialogContent className="max-w-5xl">
-          <DialogHeader>
-            <DialogTitle>Proposta em PDF</DialogTitle>
-            <DialogDescription>
-              Prévia gerada com os dados atuais. Revise antes de baixar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="rounded-xl border border-border overflow-hidden bg-white">
-            <iframe title="Proposta 2P Solar" srcDoc={pdfHtml} className="w-full h-[65vh]" />
+      {/* Prévia da proposta em PDF — painel lateral, atualiza em tempo real */}
+      {previewAberto && (
+        <div className="fixed right-0 top-0 z-50 flex h-screen w-full max-w-[640px] flex-col border-l border-border bg-background shadow-2xl">
+          <div className="flex items-start justify-between gap-3 border-b border-border p-4">
+            <div>
+              <div className="font-semibold">Prévia da proposta</div>
+              <div className="text-xs text-muted-foreground">
+                Atualiza em tempo real conforme você edita — {previewPaginas}{" "}
+                {previewPaginas === 1 ? "página" : "páginas"} (A4)
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPreviewZoom((z) => Math.max(0.4, Number((z - 0.1).toFixed(2))))}
+                aria-label="Diminuir zoom"
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <span className="w-12 text-center text-xs tabular-nums">
+                {Math.round(previewZoom * 100)}%
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPreviewZoom((z) => Math.min(1.5, Number((z + 0.1).toFixed(2))))}
+                aria-label="Aumentar zoom"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setPreviewAberto(false)}
+                aria-label="Fechar prévia"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setPreviewAberto(false)}>
-              Continuar editando
-            </Button>
-            <Button
-              className="gap-2"
-              onClick={() => {
-                setPreviewAberto(false);
-                baixarPdf();
+
+          <div className="flex-1 overflow-auto bg-muted/40 p-4">
+            <div
+              style={{
+                width: 794 * previewZoom,
+                height: 1123 * previewPaginas * previewZoom,
+                margin: "0 auto",
               }}
             >
+              <iframe
+                title="Proposta 2P Solar"
+                srcDoc={pdfHtml}
+                onLoad={(e) => {
+                  const doc = e.currentTarget.contentDocument;
+                  if (!doc) return;
+                  const altura = Math.max(
+                    doc.body?.scrollHeight ?? 0,
+                    doc.documentElement?.scrollHeight ?? 0,
+                  );
+                  // A4 útil ≈ 1123px (96dpi) menos as margens @page de 10mm.
+                  const paginas = Math.max(1, Math.ceil(altura / 1047));
+                  setPreviewPaginas((p) => (p === paginas ? p : paginas));
+                }}
+                style={{
+                  width: 794,
+                  height: 1123 * previewPaginas,
+                  border: 0,
+                  background: "#fff",
+                  transform: `scale(${previewZoom})`,
+                  transformOrigin: "top left",
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-border p-4">
+            <Button variant="outline" onClick={() => setPreviewAberto(false)}>
+              Fechar
+            </Button>
+            <Button className="gap-2" onClick={() => baixarPdf()}>
               <FileDown className="h-4 w-4" /> Baixar PDF
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      )}
+
 
       {etapa !== 5 && (
         <WizardActionBar
