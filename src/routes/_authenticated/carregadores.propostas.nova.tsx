@@ -283,7 +283,14 @@ function PropostaCarregadoresPage() {
           };
         });
 
+      setFinalidadeFat(
+        (data as any).faturar_cliente_final === true
+          ? finalidadeUsoDoCadastro(data.finalidade_uso as string | null)
+          : "",
+      );
+
       setState({
+
         propostaNome: ((data as any).nome as string | null) ?? "",
         numeroSap: dupId ? "" : (((data as any).sap_ov_numero as string | null) ?? ""),
         nome: dupId ? `${data.cliente_nome}` : data.cliente_nome,
