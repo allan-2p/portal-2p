@@ -1958,41 +1958,24 @@ function NovaPropostaSolarPage() {
                 <div className="space-y-3">
                   <div className="grid gap-3 md:grid-cols-2">
                     <Campo label="Adicionar produto do catálogo">
-                      <Select value="" onValueChange={(id) => adicionarProdutoEm(id, "lista")}>
-                        <SelectTrigger><SelectValue placeholder="Buscar produto" /></SelectTrigger>
-                        <SelectContent className="max-h-[320px]">
-                          {produtos.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.codigo} — {p.descricao}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SeletorPesquisavel
+                        value=""
+                        onValueChange={(id) => adicionarProdutoEm(id, "lista")}
+                        opcoes={produtos.map((p) => ({
+                          value: p.id,
+                          label: `${p.codigo} — ${p.descricao}`,
+                        }))}
+                        placeholder="Digite para buscar produto"
+                        vazio="Nenhum produto no catálogo."
+                      />
                     </Campo>
                   </div>
-                  <div className="rounded-xl border border-border bg-surface-2 p-4">
-                    <div className="text-sm font-semibold mb-3">Produto fora do catálogo</div>
-                    <div className="grid gap-3 md:grid-cols-[1fr_120px_auto] md:items-end">
-                      <Campo label="Descrição do produto">
-                        <Input
-                          value={avulsoDesc}
-                          placeholder="Escreva o produto que deseja incluir"
-                          onChange={(e) => setAvulsoDesc(e.target.value)}
-                        />
-                      </Campo>
-                      <Campo label="Quantidade">
-                        <Input
-                          value={avulsoQtd}
-                          onChange={(e) => setAvulsoQtd(e.target.value.replace(/\D/g, ""))}
-                        />
-                      </Campo>
-                      <Button type="button" variant="outline" className="gap-1" onClick={adicionarAvulso}>
-                        <Plus className="h-4 w-4" /> Incluir
-                      </Button>
-                    </div>
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Só é possível incluir produtos ativos do catálogo SAP.
+                  </p>
                 </div>
               )}
+
 
             </div>
 
