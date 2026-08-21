@@ -127,3 +127,20 @@ describe("cliente final CNPJ contribuinte — CFOP pela finalidade da tela", () 
     expect(c.KONDA).toBe("04");
   });
 });
+
+describe("finalidadeDaTela — nunca assume um default", () => {
+  it("recusa vazio/desconhecido em vez de cair em Revenda", async () => {
+    const { finalidadeDaTela } = await import("@/lib/sap-clientes-map");
+    expect(finalidadeDaTela("")).toBeNull();
+    expect(finalidadeDaTela(null)).toBeNull();
+    expect(finalidadeDaTela("qualquer coisa")).toBeNull();
+    expect(normalizarFinalidade("")).toBe("Revenda"); // contraste: versão tolerante
+  });
+
+  it("aceita rótulo e slug da tela", async () => {
+    const { finalidadeDaTela } = await import("@/lib/sap-clientes-map");
+    expect(finalidadeDaTela("uso_consumo")).toBe("Uso e Consumo");
+    expect(finalidadeDaTela("Uso e Consumo")).toBe("Uso e Consumo");
+    expect(finalidadeDaTela("industrializacao")).toBe("Industrialização");
+  });
+});

@@ -1062,7 +1062,7 @@ async function cadastrarParceiroFaturamento(
     razao_social: String(fat["nome"] ?? row["cliente_nome"] ?? "").trim(),
     ie: String(fat["ie"] ?? ""),
     contribuinte: doc.length === 11 ? false : fat["contribuinte"] === true,
-    finalidade: String(row["finalidade_uso"] ?? "") || null,
+    finalidade,
     email: String(row["cliente_email"] ?? ""),
     telefone: String(fat["telefone"] ?? row["cliente_telefone"] ?? ""),
     cep: String(fat["cep"] ?? ""),
