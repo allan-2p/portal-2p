@@ -283,9 +283,10 @@ function PropostaCarregadoresPage() {
           };
         });
 
+      const finalidadeCarregada = finalidadeUsoDoCadastro(data.finalidade_uso as string | null);
       setFinalidadeFat(
         (data as any).faturar_cliente_final === true
-          ? finalidadeUsoDoCadastro(data.finalidade_uso as string | null)
+          ? finalidadeCarregada
           : "",
       );
 
@@ -301,7 +302,7 @@ function PropostaCarregadoresPage() {
         ie: data.cliente_ie ?? "",
         uf: data.uf,
         contribuinte: data.contribuinte,
-        finalidadeUso: ((data.finalidade_uso as CarregadoresState["finalidadeUso"]) ?? "uso_consumo"),
+        finalidadeUso: finalidadeCarregada,
         indicacao: !!(data as any).indicacao,
         padrinhoId: ((data as any).padrinho_id as string | null) ?? null,
         padrinhoNome: ((data as any).padrinho_nome as string | null) ?? "",
@@ -343,6 +344,17 @@ function PropostaCarregadoresPage() {
       toast.success(editId ? `Proposta ${data.numero ?? ""} carregada.` : "Proposta duplicada — salve para gerar um novo número.");
     })();
   }, [editId, dupId]);
+
+  // Mantém a finalidade da tela sincronizada com o estado da proposta.
+  // Isso evita que o Select mostre um valor enquanto o payload enviado ao
+  // servidor ainda esteja vazio/inválido — situação que fazia a pendência
+  // persistir mesmo com a opção aparentemente selecionada.
+  useEffect(() => {
+    if (!state.faturarClienteFinal) return;
+    if (!finalidadeFat && state.finalidadeUso) {
+      setFinalidadeFat(state.finalidadeUso);
+    }
+  }, [state.faturarClienteFinal, finalidadeFat, state.finalidadeUso]);
 
 
   // Sem autosave local: cada nova proposta parte do zero.
@@ -1034,7 +1046,7 @@ function PropostaCarregadoresPage() {
   const pdfHtml = useMemo(
     () => buildHtml(d),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, produtos, config, d, usarLogoCliente, logoCliente, observacoesFinal, consultorProposta, enderecoPadraoCliente],
+    [state, produtos, config, d, usarLogoCliente, logoCliente, observacoesFinal, consultorProposta, enderecoPadraoCliente, finalidadeFat],
   );
 
   function montarPdfHtml() {
