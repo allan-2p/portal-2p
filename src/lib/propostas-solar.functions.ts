@@ -29,6 +29,8 @@ export type SalvarPropostaSolarInput = {
   freteMod: string;
   freteAreaRural: boolean;
   freteValor: number;
+  /** Frete bonificado: a 2P absorve o frete (cliente não paga). */
+  freteBonificado: boolean;
   transportadora: { id: string; nome: string; documento: string; total: number; prazo: number } | null;
   cupomCodigo: string | null;
   observacoes: string | null;
@@ -37,6 +39,9 @@ export type SalvarPropostaSolarInput = {
 };
 
 const money2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100;
+
+/** Material do kit gerador fotovoltaico injetado quando o kit está ativo. */
+export const KIT_FOTOVOLTAICO_MATERIAL = "100000350";
 const normCod = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
 
 function validar(input: unknown): SalvarPropostaSolarInput {
@@ -103,6 +108,8 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     freteMod,
     freteAreaRural: !!i.freteAreaRural,
     freteValor: freteMod === "FOB" || freteMod === "" ? 0 : money2(i.freteValor),
+    // Bonificar só faz sentido com CIF/DEDICADO — em FOB o cliente contrata o frete.
+    freteBonificado: i.freteBonificado === true && (freteMod === "CIF" || freteMod === "DEDICADO"),
     transportadora:
       freteMod !== "FOB" && freteMod !== "" && t && String(t.nome ?? "").trim()
         ? {
@@ -145,6 +152,30 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     if (produtos.length !== new Set(data.itens.map((i) => i.produtoId)).size)
       throw new Error("Há itens com produtos indisponíveis no catálogo.");
 
+    // Kit fotovoltaico: o servidor é a autoridade — o kit-base entra sempre com
+    // quantidade 1 e não pode ser removido nem alterado pela tela.
+    if (data.ehKit) {
+      const { data: kitRow } = await supabase
+        .from("sap_produtos")
+        .select("id, codigo, descricao, preco_sugerido, imagem_path, ativo")
+        .eq("codigo", KIT_FOTOVOLTAICO_MATERIAL)
+        .maybeSingle();
+      if (!kitRow)
+        throw new Error(
+          `O material do kit (${KIT_FOTOVOLTAICO_MATERIAL}) não está no catálogo. Sincronize os produtos do SAP antes de vender kit fotovoltaico.`,
+        );
+      const kit = kitRow as any;
+      if (!produtos.some((p) => p.id === kit.id)) produtos.push(kit);
+      const jaTem = data.itens.find((i) => i.produtoId === kit.id);
+      if (jaTem) jaTem.qtd = 1;
+      else data.itens.push({ produtoId: String(kit.id), qtd: 1 });
+    } else {
+      // Sem kit, o kit-base não pode ser vendido avulso pela tela.
+      const kitNaLista = produtos.find((p) => normCod(p.codigo) === KIT_FOTOVOLTAICO_MATERIAL);
+      if (kitNaLista)
+        throw new Error("O item de kit gerador só pode ser vendido com o kit fotovoltaico ativo.");
+    }
+
     const sugeridos: Record<string, number> = {};
     for (const p of produtos) sugeridos[normCod(p.codigo)] = Number(p.preco_sugerido ?? 0);
 
@@ -175,6 +206,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
             faturamento: data.faturamento as { contribuinte?: unknown },
           }),
         ),
+        kitFotovoltaico: data.ehKit,
         sugeridos,
         auditoria: { ...auditCtx, etapa: "salvar" },
       },
@@ -267,7 +299,10 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
 
 
     const freteValor = cupom?.freteGratis ? 0 : data.freteValor;
-    const valorTotal = money2(subtotal - (cupom?.desconto ?? 0) + freteValor);
+    // Bonificado: o frete continua gravado (o SAP precisa do valor para lançar
+    // o desconto), mas não entra no total cobrado do cliente.
+    const freteCobrado = data.freteBonificado ? 0 : freteValor;
+    const valorTotal = money2(subtotal - (cupom?.desconto ?? 0) + freteCobrado);
 
     const { resolverCondicaoPagamento } = await import("./condicoes-pagamento.server");
     const cond = await resolverCondicaoPagamento(supabase, data.condicaoPagamento);
@@ -280,6 +315,8 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       subtotal,
       desconto: cupom?.desconto ?? 0,
       frete: freteValor,
+      freteCobrado,
+      freteBonificado: data.freteBonificado,
       valorTotal,
       cupom: cupom?.codigo ?? null,
       listaPreco: data.listaPreco,
@@ -309,6 +346,8 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       frete_mod: data.freteMod,
       frete_area_rural: data.freteMod === "CIF" ? data.freteAreaRural : false,
       frete_valor: freteValor,
+      frete_bonificado: data.freteBonificado,
+      kit_fotovoltaico: data.ehKit,
       transportadora: data.transportadora?.nome ?? null,
       transportadora_documento: data.transportadora?.documento ?? null,
       transportadora_id: data.transportadora?.id ?? null,
