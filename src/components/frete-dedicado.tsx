@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Truck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoneyInput } from "@/components/ui/money-input";
+import { MoneyInput } from "@/components/money-input";
 import { listarTransportadorasDedicadas } from "@/lib/frete.functions";
 import { fmtBRL, type CarregadoresTransportadora } from "@/lib/carregadores";
 
