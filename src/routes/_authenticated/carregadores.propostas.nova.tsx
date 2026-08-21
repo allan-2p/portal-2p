@@ -192,6 +192,10 @@ function PropostaCarregadoresPage() {
 
   // Nova proposta sempre começa vazia; só carrega dados ao editar/duplicar uma proposta salva.
   const [state, setState] = useState<CarregadoresState>(() => novoEstado());
+  // Finalidade escolhida na tela quando o pedido fatura o cliente final
+  // (esse parceiro geralmente não tem cadastro no portal). "" = ainda não escolhida.
+  const [finalidadeFat, setFinalidadeFat] = useState<"" | CarregadoresState["finalidadeUso"]>("");
+
   // Itens cujo valor unitário acabou de ser atualizado pelo Preço Sugerido.
   const [precoChanges, setPrecoChanges] = useState<Record<string, { de: number; para: number }>>({});
 
@@ -279,7 +283,14 @@ function PropostaCarregadoresPage() {
           };
         });
 
+      setFinalidadeFat(
+        (data as any).faturar_cliente_final === true
+          ? finalidadeUsoDoCadastro(data.finalidade_uso as string | null)
+          : "",
+      );
+
       setState({
+
         propostaNome: ((data as any).nome as string | null) ?? "",
         numeroSap: dupId ? "" : (((data as any).sap_ov_numero as string | null) ?? ""),
         nome: dupId ? `${data.cliente_nome}` : data.cliente_nome,
@@ -410,7 +421,8 @@ function PropostaCarregadoresPage() {
       (atual.cliente_ie ?? "") !== state.ie ||
       (atual.uf || "") !== state.uf ||
       atual.contribuinte !== state.contribuinte ||
-      finalidadeUsoDoCadastro(atual.finalidade) !== state.finalidadeUso;
+      (!state.faturarClienteFinal &&
+        finalidadeUsoDoCadastro(atual.finalidade) !== state.finalidadeUso);
     if (!mudou) return;
     setState((s) => ({
       ...s,
@@ -421,7 +433,9 @@ function PropostaCarregadoresPage() {
       ie: atual.cliente_ie ?? "",
       uf: atual.uf || s.uf,
       contribuinte: atual.contribuinte,
-      finalidadeUso: finalidadeUsoDoCadastro(atual.finalidade),
+      // Faturando o cliente final, a finalidade é a escolhida na tela.
+      finalidadeUso: s.faturarClienteFinal ? s.finalidadeUso : finalidadeUsoDoCadastro(atual.finalidade),
+
       regimeTributario: atual.regime_tributario ?? s.regimeTributario ?? null,
     }));
     toast.info("Dados do cliente atualizados conforme o cadastro atual.");
@@ -465,8 +479,10 @@ function PropostaCarregadoresPage() {
       ie: c.cliente_ie ?? "",
       uf: c.uf || s.uf,
       contribuinte: c.contribuinte ?? s.contribuinte,
-      // Finalidade de uso nunca é escolhida na proposta: vem sempre do cadastro.
-      finalidadeUso: finalidadeUsoDoCadastro(c.finalidade),
+      // Finalidade vem do cadastro, exceto quando o pedido fatura o cliente final
+      // (aí vale o que foi escolhido na aba de faturamento).
+      finalidadeUso: s.faturarClienteFinal ? s.finalidadeUso : finalidadeUsoDoCadastro(c.finalidade),
+
       regimeTributario: c.regime_tributario ?? null,
       // Entrega parte do endereço do cadastro; o consultor ajusta se for diferente.
       entrega: s.entregaDiferente
@@ -706,6 +722,12 @@ function PropostaCarregadoresPage() {
   const errosFaturamento: { campo: string; msg: string }[] = [];
   if (state.faturarClienteFinal) {
     const fatDoc = soDigitos(state.faturamento.doc);
+    if (!finalidadeFat)
+      errosFaturamento.push({
+        campo: "fat_finalidade",
+        msg: "Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).",
+      });
+
     if (!state.faturamento.nome.trim())
       errosFaturamento.push({ campo: "fat_nome", msg: "Informe o cliente do faturamento." });
     if (fatDoc.length !== 11 && fatDoc.length !== 14)
@@ -920,9 +942,10 @@ function PropostaCarregadoresPage() {
   }
 
 
-  // Finalidade de uso do PDF: sempre a do cadastro atual do cliente (nunca
-  // editável na proposta). Só cai no estado quando o cadastro não foi achado.
+  // Finalidade de uso do PDF: a do cadastro atual do cliente, salvo quando o
+  // pedido fatura o cliente final — aí vale a escolhida na aba de faturamento.
   const finalidadeUsoPdf = (() => {
+    if (state.faturarClienteFinal) return labelFinalidadeUso[state.finalidadeUso] ?? null;
     const soDigitos = (v?: string | null) => (v ?? "").replace(/\D/g, "");
     const atual = (clientesQ.data ?? []).find(
       (c) =>
@@ -930,6 +953,7 @@ function PropostaCarregadoresPage() {
         c.cliente_nome.trim().toLowerCase() === state.nome.trim().toLowerCase(),
     );
     const chave = atual ? finalidadeUsoDoCadastro(atual.finalidade) : state.finalidadeUso;
+
     return labelFinalidadeUso[chave] ?? null;
   })();
 
@@ -1592,21 +1616,47 @@ function PropostaCarregadoresPage() {
                     </div>
                     <Switch
                       checked={state.faturarClienteFinal}
-                      onCheckedChange={(v) =>
+                      onCheckedChange={(v) => {
+                        if (!v) setFinalidadeFat("");
                         setState((s) => ({
                           ...s,
                           faturarClienteFinal: v,
                           faturamento: v
                             ? { ...s.faturamento, uf: s.faturamento.uf || s.uf }
                             : s.faturamento,
-                        }))
-                      }
+                        }));
+                      }}
                     />
                   </div>
 
                   {state.faturarClienteFinal ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field label="Finalidade de uso">
+                        <Select
+                          value={finalidadeFat}
+                          onValueChange={(v) => {
+                            const f = v as CarregadoresState["finalidadeUso"];
+                            setFinalidadeFat(f);
+                            setState((s) => ({ ...s, finalidadeUso: f }));
+                          }}
+                        >
+                          <SelectTrigger
+                            className={cn(campoInvalido("fat_finalidade") && "border-destructive")}
+                          >
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="revenda">{labelFinalidadeUso.revenda}</SelectItem>
+                            <SelectItem value="industrializacao">{labelFinalidadeUso.industrializacao}</SelectItem>
+                            <SelectItem value="uso_consumo">{labelFinalidadeUso.uso_consumo}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Define CFOP e IE no cadastro do cliente final no SAP.
+                        </p>
+                      </Field>
                       <Field label="CPF / CNPJ">
+
                         <Input
                           value={state.faturamento.doc}
                           className={cn(campoInvalido("fat_doc") && "border-destructive")}

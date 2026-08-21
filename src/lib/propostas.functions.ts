@@ -144,7 +144,15 @@ function validar(input: any): SalvarPropostaInput {
     uf,
     contribuinte: !!input.contribuinte,
     regimeTributario: input.regimeTributario ?? null,
-    finalidadeUso: String(input.finalidadeUso ?? "uso_consumo"),
+    finalidadeUso: (() => {
+      const v = String(input.finalidadeUso ?? "");
+      const valida = ["revenda", "industrializacao", "uso_consumo"].includes(v);
+      // Faturando o cliente final, a finalidade vem da tela e é obrigatória.
+      if (faturarClienteFinal && !valida)
+        throw new Error("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
+      return valida ? v : "uso_consumo";
+    })(),
+
     previsaoFechamento: /^\d{4}-\d{2}-\d{2}$/.test(String(input.previsaoFechamento ?? ""))
       ? String(input.previsaoFechamento)
       : null,
@@ -263,20 +271,28 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     const faltando = data.itens.filter((i) => !produtos.some((p) => p.id === i.produtoId));
     if (faltando.length) throw new Error("Há itens com produtos inexistentes ou indisponíveis no catálogo.");
 
-    // Finalidade de uso: SEMPRE a do cadastro atual do cliente (o vendedor não
-    // escolhe na proposta). Propostas antigas são migradas neste momento.
-    let finalidadeUso = data.finalidadeUso as CarregadoresState["finalidadeUso"];
-    const docDigitos = (data.cliente.doc ?? "").replace(/\D/g, "");
-    if (docDigitos.length >= 11) {
-      try {
-        const db = await import("./clientes-db.server");
-        const achados = await db.findClienteByDoc(docDigitos);
-        const cad = achados[0]?.cliente ?? null;
-        if (cad) finalidadeUso = finalidadeUsoDoCadastro(cad["finalidade"] as string | null);
-      } catch {
-        /* cadastro indisponível: mantém o valor recebido */
+    // Finalidade de uso:
+    //  - pedido faturado ao CLIENTE FINAL → vale o que foi preenchido na tela
+    //    (esse parceiro normalmente não tem cadastro no portal, principalmente
+    //    quando é CPF; é a tela que define CFOP/IE no cadastro do SAP);
+    //  - pedido normal → sempre a do cadastro atual do cliente.
+    let finalidadeUso = finalidadeUsoDoCadastro(
+      data.finalidadeUso as string,
+    ) as CarregadoresState["finalidadeUso"];
+    if (!data.faturarClienteFinal) {
+      const docDigitos = (data.cliente.doc ?? "").replace(/\D/g, "");
+      if (docDigitos.length >= 11) {
+        try {
+          const db = await import("./clientes-db.server");
+          const achados = await db.findClienteByDoc(docDigitos);
+          const cad = achados[0]?.cliente ?? null;
+          if (cad) finalidadeUso = finalidadeUsoDoCadastro(cad["finalidade"] as string | null);
+        } catch {
+          /* cadastro indisponível: mantém o valor recebido */
+        }
       }
     }
+
 
     const state: CarregadoresState = {
       propostaNome: data.propostaNome ?? "",
