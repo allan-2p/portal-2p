@@ -156,14 +156,35 @@ async function ownerSfId(userId: unknown): Promise<string | null> {
   }
 }
 
-/** Gravação tolerante: colunas ausentes não podem derrubar o checkout. */
+/**
+ * Organização da oportunidade (picklist `Org_Oportunidade__c`).
+ * 2P Solar → "Acessórios 2P" · 2P Carregadores → "2P Carregadores".
+ */
+export function orgOportunidade(row: Record<string, any>): string | null {
+  const org = so(row["organizacao"] ?? row["instancia"]).toLowerCase();
+  if (org.includes("solar") || org.includes("acess")) return "Acessórios 2P";
+  if (org.includes("carregad")) return "2P Carregadores";
+  return null;
+}
+
+/**
+ * Gravação do vínculo com o Salesforce. Se falhar, o próximo envio criaria uma
+ * oportunidade duplicada — por isso o erro é registrado explicitamente.
+ */
 async function gravar(id: string, patch: Record<string, unknown>) {
   try {
     await db.atualizarProposta(id, patch);
   } catch (e) {
-    if (!/sf_opp|sf_status|sf_mensagem|sf_enviado|42703|PGRST204/i.test((e as Error).message)) throw e;
+    await logIntegrationEvent({
+      slug: "salesforce",
+      event: "pedido.sync",
+      level: "error",
+      message: `Não foi possível gravar o vínculo do Salesforce na proposta: ${(e as Error).message.slice(0, 300)}`,
+      detail: { proposta_id: id, patch },
+    });
   }
 }
+
 
 /**
  * Cria/atualiza a Opportunity do pedido no Salesforce. Nunca lança:
