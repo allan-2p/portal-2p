@@ -79,6 +79,8 @@ import {
   avisoDifalUsoConsumo,
   operacaoInterna,
   precoParaMargem,
+  aliquotasDoItem,
+  destinoFiscal,
 } from "@/lib/carregadores";
 import { ratearComissao, VALOR_INDICACAO, type Regime, type RateioLinha } from "@/lib/carregadores-comissao";
 import { useAuth } from "@/hooks/use-auth";
@@ -1004,10 +1006,17 @@ function PropostaCarregadoresPage() {
           .filter((i) => i.produtoId)
           .map((i) => {
             const prod = produtos.find((p) => p.id === i.produtoId);
-            const ncm =
-              prod?.ncm_codigo ??
-              (ncmsQ.data ?? []).find((n) => n.id === prod?.ncm_id)?.codigo ??
-              null;
+            const ncmRow = (ncmsQ.data ?? []).find((n) => n.id === prod?.ncm_id) ?? null;
+            const ncm = prod?.ncm_codigo ?? ncmRow?.codigo ?? null;
+            const destino = destinoFiscal(state);
+            const aliq = aliquotasDoItem({
+              uf: destino.uf,
+              contribuinte: destino.contribuinte,
+              regimeTributario: state.regimeTributario ?? null,
+              finalidade: state.finalidadeUso,
+              ncm: ncmRow,
+              config,
+            });
             return {
               codigo: prod?.codigo ?? null,
               nome: prod?.nome ?? "",
@@ -1015,6 +1024,9 @@ function PropostaCarregadoresPage() {
               foto: fotoDoProduto(i.produtoId) ?? null,
               qtd: i.qtd,
               valor: i.valor,
+              ipiRate: aliq.ipi,
+              icmsRate: aliq.icms,
+              pisCofinsRate: aliq.pisCofins,
             };
 
           }),

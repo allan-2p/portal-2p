@@ -56,7 +56,13 @@ import {
 
 import { cn } from "@/lib/utils";
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
-import { fmtBRL, type CarregadoresTransportadora } from "@/lib/carregadores";
+import {
+  fmtBRL,
+  aliquotasDoItem,
+  finalidadeUsoDoCadastro,
+  type CarregadoresTransportadora,
+} from "@/lib/carregadores";
+import { useCarregadoresNcms, useCarregadoresConfig } from "@/hooks/use-carregadores";
 import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn, concluirPropostaFn } from "@/lib/propostas.functions";
 import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/resultado-conclusao-dialog";
@@ -278,6 +284,8 @@ function NovaPropostaSolarPage() {
   const combQ = useSolarTrilhoSuportes();
   const cfgQ = useSolarCalcConfig();
   const cuponsQ = useSolarCupons();
+  const ncmsQ = useCarregadoresNcms();
+  const fiscalCfgQ = useCarregadoresConfig();
   const precos = useServerFn(precosSolarFn);
   const salvar = useServerFn(salvarPropostaSolar);
   const enriquecer = useServerFn(enriquecerCnpjFn);
@@ -1244,6 +1252,29 @@ function NovaPropostaSolarPage() {
   };
 
   /** Dados da proposta para o PDF. */
+  /** Alíquotas fiscais da linha (IPI/ICMS/PIS-COFINS) pelo NCM do material. */
+  function aliquotasItem(ncmId: string | null) {
+    const cfg = fiscalCfgQ.data;
+    if (!cfg) return null;
+    const ncm = ncmId ? ((ncmsQ.data ?? []).find((n) => n.id === ncmId) ?? null) : null;
+    const uf = faturarClienteFinal
+      ? String(fat['uf'] ?? "")
+      : String(cliente?.['uf'] ?? "");
+    const contribuinte = faturarClienteFinal
+      ? fatContribuinte
+      : cliente?.['contribuinte'] === true;
+    return aliquotasDoItem({
+      uf,
+      contribuinte,
+      regimeTributario: (cliente?.['regime_tributario'] as string | null) ?? null,
+      finalidade: finalidadeUsoDoCadastro(
+        finalidadeUso || (cliente?.['finalidade_uso'] as string | null) || null,
+      ),
+      ncm,
+      config: cfg,
+    });
+  }
+
   function montarPdfDados() {
     const linhasEnd = (o: Record<string, any>) =>
       [
@@ -1268,11 +1299,15 @@ function NovaPropostaSolarPage() {
       consultor: String(cliente?.['created_by_nome'] ?? ""),
       itens: itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId);
+        const aliq = aliquotasItem(p?.ncm_id ?? null);
         return {
           codigo: i.avulso?.codigo ?? p?.codigo ?? null,
           nome: i.avulso?.descricao ?? p?.descricao ?? "Item",
           qtd: i.qtd,
           valor: i.valor,
+          ipiRate: aliq?.ipi ?? null,
+          icmsRate: aliq?.icms ?? null,
+          pisCofinsRate: aliq?.pisCofins ?? null,
         };
       }),
 

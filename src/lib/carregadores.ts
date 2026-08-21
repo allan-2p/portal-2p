@@ -724,3 +724,27 @@ export function parseMoeda(s: string | number) {
   const n = parseFloat(clean);
   return isFinite(n) ? n : 0;
 }
+
+/**
+ * Alíquotas fiscais de UM item (fração), usadas para exibir o detalhe por linha
+ * na proposta. Mesmas regras do motor de cálculo: NCM manda, config é fallback.
+ */
+export function aliquotasDoItem(args: {
+  uf: string;
+  contribuinte: boolean;
+  regimeTributario?: string | null;
+  finalidade: CarregadoresFinalidadeUso;
+  ncm?: CarregadoresNcm | null;
+  config: Pick<CarregadoresConfig, "ipi" | "pis_cofins" | "aliq_inter">;
+}) {
+  const ipi = args.ncm?.ipi ?? args.config.ipi;
+  const pisCofins = args.ncm?.pis_cofins ?? args.config.pis_cofins;
+  const icms = aliqInterOperacao({
+    uf: (args.uf || "").toUpperCase(),
+    contribuinte: args.contribuinte,
+    regimeTributario: args.regimeTributario ?? null,
+    finalidade: args.finalidade,
+    padrao: args.ncm?.aliq_inter ?? args.config.aliq_inter,
+  });
+  return { ipi, icms, pisCofins };
+}

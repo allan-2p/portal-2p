@@ -1,4 +1,4 @@
-import { fmtBRL } from "@/lib/carregadores";
+import { fmtBRL, fmtPct } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
 import { LOGO_2P_DATA_URI } from "./brand-2p-logo";
 
@@ -8,6 +8,10 @@ export type SolarPdfItem = {
   nome: string;
   qtd: number;
   valor: number;
+  /** Alíquotas fiscais da linha (fração: 0.05 = 5%). */
+  ipiRate?: number | null;
+  icmsRate?: number | null;
+  pisCofinsRate?: number | null;
 };
 
 export type SolarPdfEndereco = {
@@ -89,6 +93,10 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
   const numero = p.numero ?? "—";
   const qtdTotal = p.itens.reduce((a, i) => a + i.qtd, 0);
 
+  /** Alíquota da linha em % (vazio quando o item não tem regra fiscal). */
+  const pct = (v?: number | null) =>
+    typeof v === "number" && isFinite(v) ? fmtPct(v) : "—";
+
   const linhas = p.itens
     .map(
       (i, idx) => `
@@ -98,6 +106,9 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
           i.codigo ? `<div class="pmeta">Cód. ${esc(i.codigo)}</div>` : ""
         }</td>
         <td class="c">${i.qtd}</td>
+        <td class="c">${pct(i.ipiRate)}</td>
+        <td class="c">${pct(i.icmsRate)}</td>
+        <td class="c">${pct(i.pisCofinsRate)}</td>
         <td class="r">${fmtBRL(i.valor)}</td>
         <td class="r strong">${fmtBRL(i.valor * i.qtd)}</td>
       </tr>`,
@@ -258,7 +269,6 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
           <div class="f"><label>Telefone</label><div>${esc(p.cliente.telefone) || "—"}</div></div>
           <div class="f"><label>Cidade / UF</label><div>${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}</div></div>
           <div class="f"><label>Tipo de NF</label><div>${esc(p.tipoNf) || "—"}</div></div>
-          <div class="f"><label>Tabela de preço</label><div>${p.listaPreco ? `Tabela ${esc(p.listaPreco)}` : "—"}</div></div>
           <div class="f"><label>Forma de pagamento</label><div>${esc(p.formaPagamento ? (LABEL_PAGAMENTO[p.formaPagamento] ?? p.formaPagamento) : "") || "—"}</div></div>
         </div>
       </div>
@@ -280,11 +290,11 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
 
       <div class="sech"><span>Escopo de fornecimento</span></div>
       <table>
-        <thead><tr><th></th><th>Produto</th><th class="c">Qtd</th><th class="r">Valor unit.</th><th class="r">Total</th></tr></thead>
+        <thead><tr><th></th><th>Produto</th><th class="c">Qtd</th><th class="c">IPI</th><th class="c">ICMS</th><th class="c">PIS/COFINS</th><th class="r">Valor unit.</th><th class="r">Total</th></tr></thead>
         <tbody>${linhas}</tbody>
         <tfoot><tr>
           <td colspan="2">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
-          <td colspan="3" class="r">Frete ${esc(p.freteMod || "—")}${p.transportadora ? ` · ${esc(p.transportadora)}` : ""}${p.freteGratis || p.freteBonificado ? " · <b>Frete grátis</b>" : ""}</td>
+          <td colspan="6" class="r">Frete ${esc(p.freteMod || "—")}${p.transportadora ? ` · ${esc(p.transportadora)}` : ""}${p.freteGratis || p.freteBonificado ? " · <b>Frete grátis</b>" : ""}</td>
         </tr></tfoot>
       </table>
     </div>
@@ -322,7 +332,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
     <div class="cond">
       <div><label>Validade</label><p>Proposta válida até ${esc(validade)}, sujeita a disponibilidade de estoque.</p></div>
       <div><label>Prazo de entrega</label><p>A confirmar na aprovação, conforme modalidade ${esc(p.freteMod || "de frete")}.</p></div>
-      <div><label>Condições</label><p>Valores em reais${p.listaPreco ? `, tabela ${esc(p.listaPreco)}` : ""}.</p></div>
+      <div><label>Condições</label><p>Valores em reais.</p></div>
       <div><label>Forma de pagamento</label><p>${esc(p.formaPagamento ? (LABEL_PAGAMENTO[p.formaPagamento] ?? p.formaPagamento) : "") || "A definir"}</p></div>
     </div>
   </div>

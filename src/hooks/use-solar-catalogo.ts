@@ -26,6 +26,7 @@ export type SolarProduto = {
   custo: number;
   preco_sugerido: number;
   imagem_path: string | null;
+  ncm_id: string | null;
 };
 
 export type SolarCupom = {
@@ -177,7 +178,7 @@ export function useSolarProdutos() {
     queryFn: async (): Promise<SolarProduto[]> => {
       const { data, error } = await supabase
         .from("sap_produtos")
-        .select("id, codigo, descricao, tipo, custo, preco_sugerido, imagem_path")
+        .select("id, codigo, descricao, tipo, custo, preco_sugerido, imagem_path, ncm_id")
         .in("visibilidade", ["solar", "ambos"])
         .eq("ativo", true)
         .order("descricao");
@@ -190,6 +191,7 @@ export function useSolarProdutos() {
         custo: Number(p.custo ?? 0),
         preco_sugerido: Number(p.preco_sugerido ?? 0),
         imagem_path: p.imagem_path ?? null,
+        ncm_id: p.ncm_id ?? null,
       }));
     },
     staleTime: 60_000,
