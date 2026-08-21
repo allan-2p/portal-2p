@@ -35,44 +35,77 @@ export function salesforcePedidosConfigurado() {
   return Boolean(secrets());
 }
 
+const espera = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Chamada ao gateway com retry 3x e backoff para 429/5xx — o caminho de
+ * escrita (Opportunity) não pode falhar por indisponibilidade momentânea.
+ */
 async function sf(path: string, init?: RequestInit): Promise<any> {
   const s = secrets();
   if (!s) throw new Error("Conector do Salesforce não está configurado.");
-  const res = await fetch(`${GATEWAY_URL}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${s.lovableKey}`,
-      "X-Connection-Api-Key": s.sfKey,
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-  });
-  const text = await res.text();
-  let body: any = null;
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = text;
-  }
-  if (!res.ok) {
+
+  let ultimoErro = "";
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    const res = await fetch(`${GATEWAY_URL}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${s.lovableKey}`,
+        "X-Connection-Api-Key": s.sfKey,
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+    });
+    const text = await res.text();
+    let body: any = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      body = text;
+    }
+    if (res.ok) return body;
+
     const msg = typeof body === "object" ? JSON.stringify(body) : String(body);
-    throw new Error(`Salesforce ${res.status}: ${msg.slice(0, 400)}`);
+    ultimoErro = `Salesforce ${res.status}: ${String(msg).slice(0, 400)}`;
+    const recuperavel = res.status === 429 || res.status >= 500;
+    if (!recuperavel || tentativa === 3) throw new Error(ultimoErro);
+    await espera(500 * 2 ** (tentativa - 1));
   }
-  return body;
+  throw new Error(ultimoErro);
 }
 
 const esc = (v: string) => String(v).replace(/'/g, "\\'");
 const so = (v: unknown) => String(v ?? "").trim();
 const digitos = (v: unknown) => so(v).replace(/\D/g, "");
 
-/** Estágio da Opportunity a partir do status universal do portal. */
-function stage(status: unknown): string {
+/**
+ * Estágio da Opportunity a partir do status universal do portal.
+ *
+ * Os nomes abaixo são os valores EXATOS da picklist StageName da org do
+ * Grupo 2P: Projeto Não Fechado, Projeto Fechado, Estoque, Em Negociação,
+ * Pedido Concluído, Pedido Cancelado, Oportunidade Perdida.
+ */
+export const SF_STAGE_POR_STATUS: Record<string, string> = {
+  "Salvo": "Em Negociação",
+  "Aguardando Pagamento": "Em Negociação",
+  "Processando": "Projeto Fechado",
+  "Separação": "Estoque",
+  "Faturado": "Pedido Concluído",
+  "Coletado": "Pedido Concluído",
+  "Entregue": "Pedido Concluído",
+  "Cancelado": "Pedido Cancelado",
+};
+
+export function stage(status: unknown): string {
+  const exato = SF_STAGE_POR_STATUS[so(status)];
+  if (exato) return exato;
   const s = so(status).toLowerCase();
-  if (s.includes("cancel")) return "Closed Lost";
-  if (s.includes("entregue") || s.includes("faturad")) return "Closed Won";
-  if (s.includes("pagamento")) return "Negotiation/Review";
-  if (s.includes("process") || s.includes("separa") || s.includes("transport")) return "Closed Won";
-  return "Proposal/Price Quote";
+  if (s.includes("cancel")) return "Pedido Cancelado";
+  if (s.includes("perdid")) return "Oportunidade Perdida";
+  if (s.includes("entregue") || s.includes("coletad") || s.includes("faturad")) return "Pedido Concluído";
+  if (s.includes("separa") || s.includes("estoque")) return "Estoque";
+  if (s.includes("process")) return "Projeto Fechado";
+  return "Em Negociação";
 }
 
 async function acharAccount(doc: string, nome: string): Promise<string | null> {
@@ -207,7 +240,9 @@ export async function sincronizarPedidoSalesforce(
       Numero_SAP__c: so(row["sap_ov_numero"]) || so(row["numero_sap"]) || null,
     };
 
-    let oppId = existente && !opts.forcar ? existente : existente || null;
+    // Com "Forçar", o envio é refeito por completo: atualiza a Opportunity
+    // existente (PATCH) ou recria quando a proposta não tem sf_opp_id válido.
+    let oppId: string | null = existente || null;
     const enviar = (corpo: Record<string, unknown>) =>
       oppId
         ? sf(`/sobjects/Opportunity/${oppId}`, { method: "PATCH", body: JSON.stringify(corpo) })
