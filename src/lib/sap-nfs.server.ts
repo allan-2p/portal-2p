@@ -157,7 +157,11 @@ export function proximoStatus(atual: string, c: ConsultaSap): StatusNf | null {
   return alvo > base ? (ORDEM[alvo] as StatusNf) : null;
 }
 
-async function chamarSap(nroped: string): Promise<{ doc: any; xml: string }> {
+async function chamarSap(
+  nroped: string,
+  docs: DocumentoNfTipo[] = ["danfe"],
+): Promise<{ doc: any; xml: string }> {
+
   const { url, auth } = credenciais();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
@@ -171,7 +175,7 @@ async function chamarSap(nroped: string): Promise<{ doc: any; xml: string }> {
         "accept-language": SAP_ACCEPT_LANGUAGE,
         authorization: auth!,
       },
-      body: envelope(nroped),
+      body: envelope(nroped, docs),
       signal: controller.signal,
     });
     const xml = await res.text();
