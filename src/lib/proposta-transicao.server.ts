@@ -11,7 +11,7 @@
  */
 
 import * as db from "./propostas-db.server";
-import { transicaoPermitida, type PropostaMotor } from "./proposta-status";
+import { transicaoPermitida, propostaStatusDataCol, type PropostaMotor } from "./proposta-status";
 import { startJobRun, finishJobRun, type JobSlug } from "./job-runs.server";
 
 export type TransicaoResultado = {
