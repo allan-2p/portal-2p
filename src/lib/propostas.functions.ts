@@ -161,7 +161,7 @@ function validar(input: any): SalvarPropostaInput {
       : "venda",
     faturarClienteFinal,
     faturamento,
-    formaPagamento: ["boleto_vista", "boleto_prazo", "pix", "cartao_credito"].includes(
+    formaPagamento: ["boleto_vista", "boleto_prazo", "pix", "cartao_credito", "financiamento"].includes(
       String(input.formaPagamento),
     )
       ? String(input.formaPagamento)

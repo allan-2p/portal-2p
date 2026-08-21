@@ -78,6 +78,7 @@ const LABEL_PAGAMENTO: Record<string, string> = {
   boleto_prazo: "Boleto a prazo",
   pix: "Pix",
   cartao_credito: "Cartão de crédito",
+  financiamento: "Financiamento",
 };
 
 /** Proposta 2P Solar em HTML pronto para impressão/PDF (A4, minimalista). */

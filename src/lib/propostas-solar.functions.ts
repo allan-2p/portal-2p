@@ -126,7 +126,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     faturarClienteFinal,
 
     faturamento,
-    formaPagamento: ["boleto_vista", "boleto_prazo", "pix", "cartao_credito"].includes(String(i.formaPagamento))
+    formaPagamento: ["boleto_vista", "boleto_prazo", "pix", "cartao_credito", "financiamento"].includes(String(i.formaPagamento))
       ? String(i.formaPagamento)
       : null,
     condicaoPagamento: i.condicaoPagamento ? String(i.condicaoPagamento).trim().toUpperCase() : null,

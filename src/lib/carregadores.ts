@@ -120,13 +120,14 @@ export const labelTipoNf: Record<CarregadoresTipoNf, string> = {
 };
 
 /** Formas de pagamento aceitas na proposta. */
-export type CarregadoresFormaPagamento = "boleto_vista" | "boleto_prazo" | "pix" | "cartao_credito";
+export type CarregadoresFormaPagamento = "boleto_vista" | "boleto_prazo" | "pix" | "cartao_credito" | "financiamento";
 
 export const labelFormaPagamento: Record<CarregadoresFormaPagamento, string> = {
   boleto_vista: "Boleto à vista (5 dias)",
   boleto_prazo: "Boleto a prazo",
   pix: "Pix",
   cartao_credito: "Cartão de crédito",
+  financiamento: "Financiamento",
 };
 
 /** Endereço de entrega da proposta (usado depois no cálculo do frete). */

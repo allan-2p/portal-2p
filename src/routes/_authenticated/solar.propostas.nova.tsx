@@ -2551,6 +2551,7 @@ function NovaPropostaSolarPage() {
                     <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>
                     <SelectItem value="pix">Pix</SelectItem>
                     <SelectItem value="cartao_credito">Cartão de crédito</SelectItem>
+                    <SelectItem value="financiamento">Financiamento</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
