@@ -64,7 +64,7 @@ export function validateAdminVisibility(): VisibilityReport {
     const path = pathFor(feature);
     const label = FEATURE_LABELS[feature] ?? feature;
 
-    if (!path) {
+    if (!path && !isCapabilityFeature(feature)) {
       issues.push({
         instance: "solar",
         feature,
