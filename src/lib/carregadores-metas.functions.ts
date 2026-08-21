@@ -55,7 +55,9 @@ export const listCarregadoresMetas = createServerFn({ method: "GET" })
     if (mErr) throw new Error(mErr.message);
 
     const byUser = new Map<string, CarregadoresMetaPessoa>();
-    for (const p of (profiles ?? []) as any[]) {
+    for (const p of ((profiles ?? []) as any[]).filter(
+      (p) => String(p.numero_sap ?? "").trim() !== "",
+    )) {
       byUser.set(p.id, {
         user_id: p.id,
         nome: p.full_name || p.email,
