@@ -38,7 +38,10 @@ export function filtraFretes(
   unidade?: UnidadeFrete,
 ): boolean {
   const regra = cfg.transportadoras[cnpj];
-  const tem = (lista: string[]) => codigosCarrinho.some((c) => lista.includes(c));
+  // Paridade com a plataforma antiga: os bloqueios olham APENAS o trilho
+  // detectado no carrinho, não todos os itens.
+  const trilho = detectarTrilho(codigosCarrinho);
+  const tem = (lista: string[]) => !!trilho && lista.includes(trilho);
   // Regras de trilho valem na 2P Solar; a regra de potência vale nos carregadores.
   const usaTrilhos = unidade !== "carregadores";
   const usaCarregadores = unidade !== "solar";
@@ -135,7 +138,10 @@ export function aplicarRegras(
       ctx.unidade !== "carregadores" &&
       cnpj === alvo &&
       regra?.ativa !== false &&
-      ctx.codigosCarrinho.some((c) => (regra?.trilhos ?? []).includes(c))
+      (() => {
+        const trilho = detectarTrilho(ctx.codigosCarrinho);
+        return !!trilho && (regra?.trilhos ?? []).includes(trilho);
+      })()
     ) {
       total += regra?.adicional ?? 0;
       ajustes.push(`TDE ${nome}: +${regra?.adicional ?? 0}`);

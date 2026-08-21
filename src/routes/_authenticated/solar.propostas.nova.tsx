@@ -336,6 +336,17 @@ function NovaPropostaSolarPage() {
       setFreteMod(String(p['frete_mod'] ?? ""));
       setFreteBonificado(!!p['frete_bonificado']);
       setAreaRural(!!p['frete_area_rural']);
+      // Restaura a transportadora escolhida: sem isso, reabrir a proposta
+      // zerava o frete no salvamento e no PDF.
+      if (p['transportadora']) {
+        setTransportadora({
+          id: String(p['transportadora_id'] ?? ""),
+          nome: String(p['transportadora'] ?? ""),
+          documento: String(p['transportadora_documento'] ?? ""),
+          total: Number(p['frete_valor'] ?? 0),
+          prazo: Number(p['frete_prazo'] ?? 0),
+        });
+      }
       const totais = (p['totais'] ?? {}) as Record<string, any>;
       setListaPreco(String(totais['listaPreco'] ?? "01"));
       if (typeof totais['ehKit'] === "boolean") setEhKit(totais['ehKit'] as boolean);
