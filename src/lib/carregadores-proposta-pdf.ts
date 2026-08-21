@@ -281,7 +281,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .foot b{ color:var(--accent); font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
 
   /* Quebra de página segura — nada é cortado ao meio */
-  .sec, .client, .panel, .cols, .rows, .total, .cond, .cond div, .f, tr, tfoot { break-inside:avoid; page-break-inside:avoid; }
+  .client, .panel, .rows, .total, .cond div, .f, tr, tfoot { break-inside:avoid; page-break-inside:avoid; }
   .sech { break-after:avoid; page-break-after:avoid; }
   thead { display:table-header-group; }
   tfoot { display:table-row-group; }

@@ -202,7 +202,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
   .foot b{ color:var(--accent); font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
 
   /* Quebra de página segura — nada é cortado ao meio */
-  .sec, .card, .rows, .total, .totais, .cond, .cond div, .f, tr, tfoot { break-inside:avoid; page-break-inside:avoid; }
+  .card, .rows, .total, .cond div, .f, tr, tfoot { break-inside:avoid; page-break-inside:avoid; }
   .sech { break-after:avoid; page-break-after:avoid; }
   thead { display:table-header-group; }
   tfoot { display:table-row-group; }
