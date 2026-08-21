@@ -1134,7 +1134,7 @@ function PropostaCarregadoresPage() {
           // Lock idempotente no banco: só conclui se ainda estiver "Salvo"
           // O servidor valida a etapa de finalização como 4 (última etapa do fluxo).
           const linha = await concluirPropostaFn({
-            data: { id: propostaId, status, origem: "portal", etapa: etapa === 5 ? 4 : etapa },
+            data: { id: propostaId, status, origem: "portal", etapa },
           });
           if (linha?.already_concluded) {
             toast.info(`Pedido ${numero} já havia sido concluído (${linha.status}).`);
@@ -1191,7 +1191,7 @@ function PropostaCarregadoresPage() {
         let linha: { status?: string; already_concluded?: boolean; cobranca?: { gerada?: boolean; meio?: string | null; motivo?: string | null; erro?: string | null } | null };
         try {
           linha = await concluirPropostaFn({
-            data: { id: inserida.id, status, origem: "portal", etapa: etapa === 5 ? 4 : etapa },
+            data: { id: inserida.id, status, origem: "portal", etapa },
           });
         } catch (e) {
           setPropostaId(inserida.id);
