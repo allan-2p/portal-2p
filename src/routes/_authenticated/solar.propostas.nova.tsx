@@ -1529,17 +1529,11 @@ function NovaPropostaSolarPage() {
                   <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
                     A venda é kit?
                   </div>
-                  <div
-                    className={cn(
-                      "relative grid grid-cols-2 gap-1 rounded-2xl border bg-surface-2 p-1",
-                      ehKit === null ? "border-amber-500/50" : "border-border",
-                    )}
-                  >
+                  <div className="relative grid grid-cols-2 gap-1 rounded-2xl border border-border bg-surface-2 p-1">
                     <span
                       aria-hidden
                       className={cn(
                         "absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-primary/15 border border-primary/40 transition-all duration-300 ease-out",
-                        ehKit === null && "opacity-0",
                         ehKit === false && "translate-x-[calc(100%+0.25rem)]",
                       )}
                     />
@@ -1556,9 +1550,6 @@ function NovaPropostaSolarPage() {
                       onClick={() => setEhKit(false)}
                     />
                   </div>
-                  {ehKit === null && (
-                    <p className="text-[11px] text-amber-500 mt-1">Responda para avançar.</p>
-                  )}
                 </div>
 
                 {/* Tabela de preço — versão compacta */}
