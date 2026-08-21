@@ -45,6 +45,7 @@ export function FreteCotacao({
   unidade,
   onSelect,
   onInvalidate,
+  onLoadingChange,
 }: Props) {
   const cotar = useServerFn(cotarFrete);
   const [opcoes, setOpcoes] = useState<Opcao[]>([]);
@@ -52,8 +53,14 @@ export function FreteCotacao({
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
 
+  useEffect(() => {
+    onLoadingChange?.(loading);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
   const cepOk = (destino.cep ?? "").replace(/\D/g, "").length === 8;
   const podeCotar = cepOk && !!destino.cidade && !!destino.uf && itens.length > 0 && valorNota > 0;
+
 
   // Assinatura dos dados que mudam a cotação — dispara o cálculo automático.
   const assinatura = JSON.stringify({
