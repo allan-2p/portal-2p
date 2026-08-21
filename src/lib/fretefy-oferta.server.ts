@@ -152,7 +152,7 @@ export async function criarOfertaCarga(
     sapOvNumero: sapOv,
     clienteNome: String(row["cliente_nome"] ?? ""),
     clienteDoc: String(row["cliente_doc"] ?? ""),
-    entrega: enderecoDaProposta(row),
+    entrega: await enderecoDaProposta(row),
     pesoTotal: peso,
     valorCarga: Number(totais["valor"] ?? totais["valorTotal"] ?? 0),
     freteValor: Number(row["frete_valor"] ?? 0),
@@ -225,7 +225,7 @@ export async function atualizarDocumentoOferta(
   const payload = montarAtualizacaoDocumento({
     destinoId,
     documentoId,
-    entrega: enderecoDaProposta(row),
+    entrega: await enderecoDaProposta(row),
     clienteNome: String(row["cliente_nome"] ?? ""),
     clienteDoc: String(row["cliente_doc"] ?? ""),
     sapOvNumero: String(row["sap_ov_numero"] ?? ""),
