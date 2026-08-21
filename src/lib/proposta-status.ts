@@ -67,8 +67,11 @@ export function podeCancelarProposta(status: string): boolean {
   return PROPOSTA_TRANSICOES[status as PropostaStatus]?.["Cancelado"] === "humano";
 }
 
-export function transicaoPermitida(de: string, para: string): PropostaMotor | null {
-  return PROPOSTA_TRANSICOES[de as PropostaStatus]?.[para as PropostaStatus] ?? null;
+export function transicaoPermitida(de: string, para: string, motor?: PropostaMotor): PropostaMotor | null {
+  const m = PROPOSTA_TRANSICOES[de as PropostaStatus]?.[para as PropostaStatus] ?? null;
+  if (!m) return null;
+  if (motor && m !== motor) return null;
+  return m;
 }
 
 export type PropostaStatusStyle = {
