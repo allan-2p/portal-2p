@@ -1,3 +1,3 @@
-import { grupo2pRest } from "@/lib/grupo2p-db.server";
-const r = await grupo2pRest("propostas?numero=eq.050019&select=id,numero,sap_ov_status,sap_ov_numero,sap_ov_mensagem");
-console.log(r.status, r.text.slice(0,1500));
+import { criarOrdemVendaSap } from "@/lib/sap-ov.server";
+const r = await criarOrdemVendaSap("ac842561-beeb-4a24-a47c-94378cc90069", { forcar: true });
+console.log(JSON.stringify(r).slice(0, 2000));
