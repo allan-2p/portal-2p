@@ -161,8 +161,11 @@ async function chamarSap(
   nroped: string,
   docs: DocumentoNfTipo[] = ["danfe"],
 ): Promise<{ doc: any; xml: string }> {
-
+  // O portal guarda o número com zeros à esquerda ("050019"); o SAP indexa o
+  // NROPED sem eles ("50019") e devolve vazio se enviarmos com zeros.
+  nroped = String(nroped ?? "").trim().replace(/^0+(?=\d)/, "");
   const { url, auth } = credenciais();
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
   try {
