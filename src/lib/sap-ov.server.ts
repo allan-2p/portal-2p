@@ -23,6 +23,8 @@ import { tpOvDoPedido, contribuinteDoFaturamento } from "./sap-tp-ov";
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 import { simularPrecosSap } from "./sap-precos.server";
+import { deveCriarOferta } from "./fretefy-oferta";
+
 
 export type SapOvResultado = {
   enviado: boolean;
@@ -897,6 +899,23 @@ export async function criarOrdemVendaSap(
         });
       }
     }
+
+    // Oferta de carga na Fretefy (frete da 2P). Best effort e auditado como
+    // job próprio: uma falha aqui nunca desfaz a ordem de venda.
+    if (deveCriarOferta(row["frete_mod"])) {
+      try {
+        const { runJob } = await import("./job-runs.server");
+        const { criarOfertaCarga } = await import("./fretefy-oferta.server");
+        await runJob(
+          { job: "fretefy.oferta-carga", trigger: "portal", payload: { propostaId }, refId: propostaId },
+          () => criarOfertaCarga(propostaId),
+        );
+      } catch {
+        /* best effort */
+      }
+    }
+
+
 
   } else {
     await gravar(propostaId, {

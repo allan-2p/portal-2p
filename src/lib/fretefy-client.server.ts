@@ -23,7 +23,38 @@ export type FretefyResposta = {
   durationMs: number;
 };
 
+/** Chamada genérica à API do Fretefy (mesma base/auth do cálculo). */
+export async function fretefyRequest(
+  method: "GET" | "POST" | "PUT" | "DELETE",
+  path: string,
+  body?: unknown,
+  extraHeaders: Record<string, string> = {},
+): Promise<FretefyResposta> {
+  const token = fretefyToken();
+  if (!token) throw new Error("Fretefy não configurado: informe o token da API em Integrações.");
+
+  const started = Date.now();
+  const res = await fetch(BASE + path.replace(/^\//, ""), {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `ApiKey ${token}`,
+      ...extraHeaders,
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  const text = await res.text();
+  let json: unknown = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    json = null;
+  }
+  return { status: res.status, ok: res.ok, response: text, json, durationMs: Date.now() - started };
+}
+
 export async function calcularFrete(body: unknown): Promise<FretefyResposta> {
+
   const token = fretefyToken();
   if (!token) throw new Error("Fretefy não configurado: informe o token da API em Integrações.");
 
