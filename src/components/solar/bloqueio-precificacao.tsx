@@ -9,7 +9,7 @@
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export type CausaBloqueio = "parceiro" | "conexao" | "tabela" | "sem-preco" | "outro";
+export type CausaBloqueio = "parceiro" | "conexao" | "tabela" | "de-para" | "sem-preco" | "outro";
 
 export type DiagnosticoBloqueio = {
   causa: CausaBloqueio;
@@ -36,6 +36,33 @@ export function diagnosticarBloqueio(input: {
 
   const texto = msgs.join(" ").toLowerCase();
   const doc = input.documento ? ` (${input.documento})` : "";
+
+  // De-para pendente: a simulação nem chegou a ser enviada, então os demais
+  // itens não estão "sem preço" — listar apenas os materiais pendentes.
+  if (inclui(texto, "de/para", "de-para", "código sap numérico", "codigo sap numerico")) {
+    const pendentes = [
+      ...new Set(
+        msgs
+          .flatMap((m) => m.split(":").slice(1).join(":").split(","))
+          .map((s) => s.replace(/[.\s]+$/g, "").trim())
+          .filter((s) => s && !/^\d+$/.test(s)),
+      ),
+    ];
+    return {
+      causa: "de-para",
+      titulo: "Material sem código SAP numérico no catálogo",
+      explicacao:
+        "A simulação não foi enviada porque o item abaixo está cadastrado com o SKU comercial (2P-…) em vez do número do material. " +
+        "Os demais itens da proposta não foram simulados — só este precisa de correção.",
+      acoes: [
+        "Abra Gestão de Produtos 2P Solar (ou o cadastro de trilhos/suportes) e grave o código numérico do material.",
+        "Depois clique em “Recalcular preços”.",
+      ],
+      mensagensSap: msgs,
+      itensSemPreco: pendentes,
+    };
+  }
+
 
   if (inclui(texto, "parceiro", "cliente não encontrado", "cnpj"))
     return {
@@ -168,7 +195,9 @@ export function BloqueioPrecificacaoAlert({
           {diagnostico.itensSemPreco.length > 0 && (
             <div>
               <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-1">
-                Itens sem preço ({diagnostico.itensSemPreco.length})
+                {diagnostico.causa === "de-para"
+                  ? `Itens com de-para pendente (${diagnostico.itensSemPreco.length})`
+                  : `Itens sem preço (${diagnostico.itensSemPreco.length})`}
               </div>
               <div className="text-sm text-muted-foreground break-words">
                 {diagnostico.itensSemPreco.slice(0, 12).join(", ")}
