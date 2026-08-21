@@ -44,14 +44,12 @@ const URL_PADRAO =
   "https://app.webfiori.com.br/sap/bc/srt/rfc/sap/znfe_ov_simular_ws/500/znfe_ov_simular_ws/znfe_ov_simularbinding";
 
 const norm = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
-const num = (v: unknown) => {
-  const s = String(v ?? "").replace(/\s/g, "");
-  if (!s) return 0;
-  // SAP devolve decimal com PONTO ("8.856" = 8,856 kg; "1234.56").
-  // Ponto só é separador de milhar quando há vírgula decimal junto ("1.234,56").
-  const n = s.includes(",") ? Number(s.replace(/\./g, "").replace(",", ".")) : Number(s);
-  return Number.isFinite(n) ? n : 0;
-};
+/**
+ * SAP devolve decimal com PONTO ("8.856" = 8,856 kg; "1234.56"). Ponto só é
+ * milhar quando há vírgula decimal junto ("1.234,56"). O parser central marca
+ * as leituras ambíguas para o alerta de risco de 1000×.
+ */
+const num = (v: unknown, campo?: string) => numSap(v, campo);
 
 
 function achar(o: any, chave: string): any {
