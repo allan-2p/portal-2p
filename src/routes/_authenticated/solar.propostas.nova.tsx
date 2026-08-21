@@ -1090,14 +1090,36 @@ function NovaPropostaSolarPage() {
       setPropostaId(r.id);
       setNumero(r.numero);
       await queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
-      toast.success(concluir ? "Proposta concluída." : `Proposta ${r.numero} salva.`);
-      if (concluir) void navigate({ to: "/solar/propostas" });
+
+      if (!concluir) {
+        toast.success(`Proposta ${r.numero} salva.`);
+        return;
+      }
+
+      // Conclusão real: cria a ordem no SAP, gera a cobrança e envia ao Salesforce.
+      // Nada é silencioso — o resultado (ou o erro) aparece no pop-up.
+      try {
+        const linha = await concluirPropostaFn({ data: { id: r.id, origem: "portal", etapa: 5 } });
+        await queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
+        setResultadoConclusao({
+          numero: String(linha?.['numero'] ?? r.numero),
+          status: String(linha?.['status'] ?? "Aguardando Pagamento"),
+          sapOv: (linha?.['sapOv'] ?? null) as ResultadoConclusao["sapOv"],
+          salesforce: (linha?.['salesforce'] ?? null) as ResultadoConclusao["salesforce"],
+          cobranca: (linha?.['cobranca'] ?? null) as ResultadoConclusao["cobranca"],
+        });
+      } catch (e) {
+        const msg = (e as Error).message || "Falha ao concluir o pedido.";
+        setResultadoConclusao({ numero: r.numero, status: "", erro: msg });
+        toast.error(msg, { duration: 12000 });
+      }
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error((e as Error).message, { duration: 12000 });
     } finally {
       setSalvando(false);
     }
   }
+
 
   const destino = {
     uf: entregaDiferente ? String(entrega['uf'] ?? "") : String(cliente?.['uf'] ?? ""),
