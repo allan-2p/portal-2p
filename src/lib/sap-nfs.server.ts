@@ -206,6 +206,36 @@ export async function consultarVbelnPorPedido(nroped: string): Promise<string | 
   }
 }
 
+/**
+ * Busca sob demanda um documento da NF no SAP (DANFE, XML da NF-e ou boleto).
+ * Devolve o base64 cru — quem chama decide onde guardar.
+ */
+export async function consultarDocumentoNfSap(
+  nroped: string,
+  tipo: DocumentoNfTipo,
+): Promise<{ base64: string | null; consulta: ConsultaSap }> {
+  if (!sapNfsConfigurado()) throw new Error("Integração SAP de notas fiscais não configurada.");
+  const { doc } = await chamarSap(nroped, [tipo]);
+  const documentos = achar(doc, "E_S_DOCUMENTOS") ?? doc;
+  const chaves: Record<DocumentoNfTipo, string[]> = {
+    danfe: ["DANFE", "E_DANFE"],
+    xml: ["XML_NFE", "E_XML_NFE"],
+    boleto: ["BOLETO", "E_BOLETO"],
+  };
+  let base64: string | null = null;
+  for (const chave of chaves[tipo]) {
+    const v = achar(documentos, chave) ?? achar(doc, chave);
+    const s = String(v ?? "").replace(/\s+/g, "");
+    if (s && s !== "undefined" && s.length > 100) {
+      base64 = s;
+      break;
+    }
+  }
+  return { base64, consulta: lerConsulta(doc) };
+}
+
+
+
 /** Guarda a DANFE no bucket privado e devolve o caminho. */
 async function salvarDanfe(propostaId: string, base64: string): Promise<string | null> {
   const avisar = async (motivo: string) => {
