@@ -252,14 +252,20 @@ export async function sincronizarPedidoSalesforce(
     try {
       res = await enviar(comCustom);
     } catch (err) {
-      if (/No such column|INVALID_FIELD|Unable to create\/update fields/i.test((err as Error).message)) {
+      const msg = (err as Error).message;
+      if (/No such column|INVALID_FIELD|Unable to create\/update fields/i.test(msg)) {
         res = await enviar(corpoBase);
+      } else if (oppId && /NOT_FOUND|INVALID_CROSS_REFERENCE_KEY|entity is deleted/i.test(msg)) {
+        // A Opportunity gravada na proposta não existe mais na org: recria.
+        oppId = null;
+        res = await enviar(comCustom);
       } else {
         throw err;
       }
     }
     oppId = oppId ?? res?.id ?? null;
     if (!oppId) throw new Error("Salesforce não retornou o ID da oportunidade.");
+
 
     const mensagem = existente ? `Oportunidade ${oppId} atualizada.` : `Oportunidade ${oppId} criada.`;
     await gravar(propostaId, {
