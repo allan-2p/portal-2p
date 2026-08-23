@@ -161,7 +161,33 @@ export function CobrancaCard({ cobranca, acoes }: { cobranca: CobrancaInfo; acoe
         </div>
       ) : null}
 
+      {/* Prévia do boleto dentro do próprio modal do pedido. */}
+      {c.linhaDigitavel && previa ? (
+        <iframe
+          title="Prévia do boleto"
+          srcDoc={boletoGuiaHtml(dadosBoleto)}
+          className="h-[520px] w-full rounded-lg border border-border bg-white"
+        />
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-2">
+        {c.linhaDigitavel ? (
+          <>
+            <Button size="sm" variant="outline" onClick={() => setPrevia((v) => !v)}>
+              {previa ? "Ocultar prévia" : "Ver boleto"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (!imprimirBoletoGuia(dadosBoleto)) {
+                  toast.error("Permita pop-ups para baixar o PDF do boleto.");
+                }
+              }}
+            >
+              <FileDown className="mr-2 h-3.5 w-3.5" /> Baixar PDF do boleto
+            </Button>
+          </>
+        ) : null}
         {c.url ? (
           <Button size="sm" variant="outline" asChild>
             <a href={c.url} target="_blank" rel="noreferrer">
