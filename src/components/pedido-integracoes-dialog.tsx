@@ -92,6 +92,7 @@ export function PedidoIntegracoesDialog({
     qc.invalidateQueries({ queryKey: ["pedido-integracoes", propostaId] });
     qc.invalidateQueries({ queryKey: ["pedido-integracoes-logs", propostaId] });
     qc.invalidateQueries({ queryKey: ["propostas"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-proposta", propostaId] });
   };
 
   const sap = useMutation({
