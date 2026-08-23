@@ -202,6 +202,8 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
     vencimento: isoData(venc),
     agencia,
     conta,
+    bruto: resp,
+    idBoleto: dado?.["id_boleto"] ?? resp["id_boleto"] ?? null,
   };
 }
 
