@@ -12,11 +12,15 @@ import { PropostaTimeline } from "@/components/proposta-timeline";
 import { propostaStatusStyle } from "@/lib/proposta-status";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorCodigo } from "@/lib/produto-imagens";
-import { ArrowLeft, Calculator, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { ArrowLeft, Calculator, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
 import { cidadeUf } from "@/lib/local-format";
 import { formatSapNumero } from "@/lib/sap-numero";
 import { NfDocumentosCard } from "@/components/nf-documentos-card";
 import { CobrancaCard } from "@/components/cobranca-card";
+import { propostaPdfDaLinha } from "@/lib/proposta-pdf-row";
+import { useState } from "react";
+import { toast } from "sonner";
+
 
 
 type Item = { codigo?: string | null; nome?: string; qtd?: number; valor?: number };
