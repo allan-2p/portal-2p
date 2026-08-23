@@ -12,7 +12,7 @@ import { PropostaTimeline } from "@/components/proposta-timeline";
 import { propostaStatusStyle } from "@/lib/proposta-status";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorCodigo } from "@/lib/produto-imagens";
-import { ArrowLeft, Calculator, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
 import { cidadeUf } from "@/lib/local-format";
 import { formatSapNumero } from "@/lib/sap-numero";
 import { NfDocumentosCard } from "@/components/nf-documentos-card";
