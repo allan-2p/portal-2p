@@ -109,6 +109,23 @@ export function CobrancaCard({ cobranca, acoes }: { cobranca: CobrancaInfo; acoe
       )}
 
       {c.linhaDigitavel ? <CodigoCopiavel rot="Linha digitável" valor={c.linhaDigitavel} /> : null}
+      {c.codigoBarras && c.status !== "pago" ? (
+        <CodigoCopiavel rot="Código de barras" valor={c.codigoBarras} />
+      ) : null}
+      {/* Instruções do boleto: ficam visíveis até a confirmação do pagamento. */}
+      {c.linhaDigitavel && c.status !== "pago" ? (
+        <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
+          <p className="font-semibold text-foreground">Como pagar</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-4">
+            <li>Pague em qualquer banco, app ou lotérica usando a linha digitável acima.</li>
+            <li>Vencimento em {fmtData(c.vencimento)} — após essa data o boleto pode não ser aceito.</li>
+            <li>
+              O pedido entra em separação no próximo dia útil após a confirmação do pagamento pelo banco.
+            </li>
+            {c.nossoNumero ? <li>Informe o nosso número {c.nossoNumero} em caso de dúvida.</li> : null}
+          </ul>
+        </div>
+      ) : null}
       {c.pixCopiaCola ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           {c.status !== "pago" ? <PixQrCode valor={c.pixCopiaCola} /> : null}
