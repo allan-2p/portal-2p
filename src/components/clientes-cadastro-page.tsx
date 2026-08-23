@@ -934,15 +934,15 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         )}
       </Card>
 
-      <Sheet open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)}>
-        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+      <Dialog open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)}>
+        <DialogContent className="max-w-5xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
           {detalhe && (
             <>
-              <SheetHeader className="text-left">
-                <SheetTitle className="pr-6">{detalhe.razao_social}</SheetTitle>
-                <SheetDescription>{detalhe.nome_fantasia || "Resumo do cadastro"}</SheetDescription>
-              </SheetHeader>
-              <div className="mt-4 space-y-5">
+              <DialogHeader className="text-left">
+                <DialogTitle className="pr-6">{detalhe.razao_social}</DialogTitle>
+                <DialogDescription>{detalhe.nome_fantasia || "Resumo do cadastro"}</DialogDescription>
+              </DialogHeader>
+              <div className="mt-2 space-y-5">
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline">{detalhe.organizacao || ORGANIZACAO[instancia]}</Badge>
                   <Badge variant={detalhe.contribuinte ? "default" : "secondary"}>
@@ -951,69 +951,70 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   <Badge variant={detalhe.ativo ? "outline" : "destructive"}>{detalhe.ativo ? "Ativo" : "Inativo"}</Badge>
                 </div>
 
-                <Bloco titulo="Situação fiscal">
-                  <Linha rot="CNPJ" val={mascaraDoc(detalhe.doc ?? "")} />
-                  <Linha rot="Inscrição Estadual" val={detalhe.contribuinte ? detalhe.ie : "Isento / não contribuinte"} />
-                  <Linha rot="Situação da IE" val={detalhe.ie_situacao} />
-                  <Linha rot="Suframa" val={[detalhe.suframa, detalhe.suframa_situacao].filter(Boolean).join(" · ")} />
-                  <Linha rot="Regime tributário" val={detalhe.regime_tributario} />
-                  <Linha rot="Situação cadastral" val={detalhe.situacao_cadastral} />
-                  <Linha rot="Natureza jurídica" val={detalhe.natureza_juridica} />
-                  <Linha rot="Porte" val={detalhe.porte} />
-                  <Linha rot="Abertura" val={detalhe.data_abertura} />
-                  <Linha
-                    rot="CNAE principal"
-                    val={[detalhe.cnae_principal_codigo, detalhe.cnae_principal_descricao].filter(Boolean).join(" — ")}
-                  />
-                  <Linha rot="UF de destino" val={detalhe.uf} />
-                </Bloco>
+                <div className="grid gap-4 lg:grid-cols-2 items-start">
+                  <Bloco titulo="Situação fiscal">
+                    <Linha rot="CNPJ" val={mascaraDoc(detalhe.doc ?? "")} />
+                    <Linha rot="Inscrição Estadual" val={detalhe.contribuinte ? detalhe.ie : "Isento / não contribuinte"} />
+                    <Linha rot="Situação da IE" val={detalhe.ie_situacao} />
+                    <Linha rot="Suframa" val={[detalhe.suframa, detalhe.suframa_situacao].filter(Boolean).join(" · ")} />
+                    <Linha rot="Regime tributário" val={detalhe.regime_tributario} />
+                    <Linha rot="Situação cadastral" val={detalhe.situacao_cadastral} />
+                    <Linha rot="Natureza jurídica" val={detalhe.natureza_juridica} />
+                    <Linha rot="Porte" val={detalhe.porte} />
+                    <Linha rot="Abertura" val={detalhe.data_abertura} />
+                    <Linha
+                      rot="CNAE principal"
+                      val={[detalhe.cnae_principal_codigo, detalhe.cnae_principal_descricao].filter(Boolean).join(" — ")}
+                    />
+                    <Linha rot="UF de destino" val={detalhe.uf} />
+                  </Bloco>
 
-                <Bloco titulo="Contatos">
-                  {normalizarContatos(detalhe.contatos, {
-                    nome: detalhe.contato_nome, cargo: detalhe.contato_cargo,
-                    email: detalhe.contato_email, telefone: detalhe.contato_telefone,
-                  }).map((c, i) => (
-                    <div key={i} className="space-y-0.5">
-                      <Linha rot={TIPO_ROTULO[c.tipo]} val={[c.nome, c.cargo].filter(Boolean).join(" · ")} />
-                      <Linha rot="E-mail" val={c.emails.filter((v) => v.trim()).join(", ")} />
-                      <Linha rot="Telefone" val={c.telefones.filter((v) => v.trim()).join(", ")} />
-                    </div>
-                  ))}
-                  <Linha rot="E-mail da empresa" val={detalhe.email} />
-                  <Linha rot="Telefone da empresa" val={detalhe.telefone} />
-                  <Linha rot="Site" val={detalhe.site} />
-                </Bloco>
+                  <Bloco titulo="Contatos">
+                    {normalizarContatos(detalhe.contatos, {
+                      nome: detalhe.contato_nome, cargo: detalhe.contato_cargo,
+                      email: detalhe.contato_email, telefone: detalhe.contato_telefone,
+                    }).map((c, i) => (
+                      <div key={i} className="space-y-0.5">
+                        <Linha rot={TIPO_ROTULO[c.tipo]} val={[c.nome, c.cargo].filter(Boolean).join(" · ")} />
+                        <Linha rot="E-mail" val={c.emails.filter((v) => v.trim()).join(", ")} />
+                        <Linha rot="Telefone" val={c.telefones.filter((v) => v.trim()).join(", ")} />
+                      </div>
+                    ))}
+                    <Linha rot="E-mail da empresa" val={detalhe.email} />
+                    <Linha rot="Telefone da empresa" val={detalhe.telefone} />
+                    <Linha rot="Site" val={detalhe.site} />
+                  </Bloco>
 
-                <Bloco titulo="Endereço">
-                  <Linha rot="Logradouro" val={[detalhe.logradouro, detalhe.numero, detalhe.complemento].filter(Boolean).join(", ")} />
-                  <Linha rot="Bairro" val={detalhe.bairro} />
-                  <Linha rot="Cidade / UF" val={cidadeUf(detalhe.cidade, detalhe.uf, "")} />
-                  <Linha rot="CEP" val={detalhe.cep} />
-                </Bloco>
+                  <Bloco titulo="Endereço">
+                    <Linha rot="Logradouro" val={[detalhe.logradouro, detalhe.numero, detalhe.complemento].filter(Boolean).join(", ")} />
+                    <Linha rot="Bairro" val={detalhe.bairro} />
+                    <Linha rot="Cidade / UF" val={cidadeUf(detalhe.cidade, detalhe.uf, "")} />
+                    <Linha rot="CEP" val={detalhe.cep} />
+                  </Bloco>
 
-                <Bloco titulo="Comercial">
-                  <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
-                  <Linha rot="Finalidade de uso" val={detalhe.finalidade} />
-                  <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
-                  <Linha rot="Consultor" val={detalhe.created_by_nome} />
-                  <Linha rot="Observações" val={detalhe.observacoes} />
-                </Bloco>
-
-                <ClientHistoryTab clienteNome={detalhe.razao_social} />
-
-
-                <div className="flex gap-2 pt-1">
-                  <Button className="flex-1 gap-2" onClick={() => { const c = detalhe; setDetalhe(null); abrirEdicao(c); }}>
-                    <Pencil className="h-4 w-4" /> Editar cadastro
-                  </Button>
-                  <Button variant="outline" onClick={() => setDetalhe(null)}>Fechar</Button>
+                  <Bloco titulo="Comercial">
+                    <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
+                    <Linha rot="Finalidade de uso" val={detalhe.finalidade} />
+                    <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
+                    <Linha rot="Consultor" val={detalhe.created_by_nome} />
+                    <Linha rot="Observações" val={detalhe.observacoes} />
+                  </Bloco>
                 </div>
 
+                <ClientHistoryTab clienteNome={detalhe.razao_social} />
               </div>
+
+              <DialogFooter className="gap-2 sm:justify-end">
+                <Button variant="outline" onClick={() => setDetalhe(null)}>Fechar</Button>
+                <Button className="gap-2" onClick={() => { const c = detalhe; setDetalhe(null); abrirEdicao(c); }}>
+                  <Pencil className="h-4 w-4" /> Editar cadastro
+                </Button>
+              </DialogFooter>
             </>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
+
 
       <ClienteIntegracoesDialog
         cliente={integracoesDe}
