@@ -79,34 +79,11 @@ const so = (v: unknown) => String(v ?? "").trim();
 const digitos = (v: unknown) => so(v).replace(/\D/g, "");
 
 /**
- * Estágio da Opportunity a partir do status universal do portal.
- *
- * Os nomes abaixo são os valores EXATOS da picklist StageName da org do
- * Grupo 2P: Projeto Não Fechado, Projeto Fechado, Estoque, Em Negociação,
- * Pedido Concluído, Pedido Cancelado, Oportunidade Perdida.
+ * Estágio da Opportunity e organização: definidos em `salesforce-stage.ts`
+ * (módulo puro, compartilhado com a tela de mapeamento de campos).
  */
-export const SF_STAGE_POR_STATUS: Record<string, string> = {
-  "Salvo": "Em Negociação",
-  "Aguardando Pagamento": "Em Negociação",
-  "Processando": "Projeto Fechado",
-  "Separação": "Estoque",
-  "Faturado": "Pedido Concluído",
-  "Coletado": "Pedido Concluído",
-  "Entregue": "Pedido Concluído",
-  "Cancelado": "Pedido Cancelado",
-};
+export { SF_STAGE_POR_STATUS, stage, orgOportunidade } from "./salesforce-stage";
 
-export function stage(status: unknown): string {
-  const exato = SF_STAGE_POR_STATUS[so(status)];
-  if (exato) return exato;
-  const s = so(status).toLowerCase();
-  if (s.includes("cancel")) return "Pedido Cancelado";
-  if (s.includes("perdid")) return "Oportunidade Perdida";
-  if (s.includes("entregue") || s.includes("coletad") || s.includes("faturad")) return "Pedido Concluído";
-  if (s.includes("separa") || s.includes("estoque")) return "Estoque";
-  if (s.includes("process")) return "Projeto Fechado";
-  return "Em Negociação";
-}
 
 async function acharAccount(doc: string, nome: string): Promise<string | null> {
   const d = digitos(doc);
