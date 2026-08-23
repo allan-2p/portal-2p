@@ -12,7 +12,7 @@ import { PropostaTimeline } from "@/components/proposta-timeline";
 import { propostaStatusStyle } from "@/lib/proposta-status";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorCodigo } from "@/lib/produto-imagens";
-import { ArrowLeft, Calculator, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
 import { cidadeUf } from "@/lib/local-format";
 import { formatSapNumero } from "@/lib/sap-numero";
 import { NfDocumentosCard } from "@/components/nf-documentos-card";
@@ -293,19 +293,13 @@ export function PropostaDetalheDialog({
                 </>
               )}
               {id && (
-                <>
-                  <Button variant="outline" size="sm" className="gap-2 ml-1" asChild>
-                    <Link to="/carregadores/propostas/auditoria" search={{ id }}>
-                      <Calculator className="h-4 w-4" /> Auditoria
-                    </Link>
-                  </Button>
-                  <Button size="sm" className="gap-2" asChild>
-                    <Link to="/carregadores/propostas/nova" search={{ id }}>
-                      <Pencil className="h-4 w-4" /> Editar
-                    </Link>
-                  </Button>
-                </>
+                <Button size="sm" className="gap-2" asChild>
+                  <Link to="/carregadores/propostas/nova" search={{ id }}>
+                    <Pencil className="h-4 w-4" /> Editar
+                  </Link>
+                </Button>
               )}
+
             </span>
           </DialogTitle>
         </DialogHeader>
