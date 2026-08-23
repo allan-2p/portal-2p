@@ -101,7 +101,7 @@ export function boletoGuiaHtml(d: BoletoGuiaDados): string {
   .linha{ border:1px solid #d8dce2; border-radius:6px; padding:10px; margin-bottom:14px; text-align:center }
   .linha b{ display:block; font-size:9px; text-transform:uppercase; letter-spacing:.7px; color:#6b7280 }
   .linha code{ font-family:"Courier New",monospace; font-size:16px; font-weight:700; letter-spacing:.5px; word-break:break-all }
-  .barcode{ display:flex; align-items:flex-end; height:52px; margin:14px 0 4px }
+  .barcode{ display:flex; justify-content:center; align-items:flex-end; height:52px; margin:14px 0 4px }
   .barcode i{ display:block; height:52px }
   .obs{ border:1px solid #d8dce2; border-radius:6px; padding:10px 12px; font-size:11px; line-height:1.6; color:#374151 }
   .obs h2{ margin:0 0 4px; font-size:11px; text-transform:uppercase; letter-spacing:.7px; color:#ef6c1a }
