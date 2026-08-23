@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Check, Copy, ExternalLink, QrCode } from "lucide-react";
+import { Check, Copy, ExternalLink, FileDown, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmtBRL } from "@/lib/carregadores";
 import { PixQrCode } from "@/components/pix-qrcode";
+import { boletoGuiaHtml, imprimirBoletoGuia } from "@/lib/boleto-guia-pdf";
 
 export type CobrancaInfo = {
   forma?: string | null;
@@ -20,6 +21,9 @@ export type CobrancaInfo = {
   atualizado_em?: string | null;
   mensagem?: string | null;
   aplicavel?: boolean;
+  numeroPedido?: string | null;
+  clienteNome?: string | null;
+  clienteDoc?: string | null;
 };
 
 const fmtData = (v?: string | null) =>
@@ -78,6 +82,20 @@ export function CobrancaCard({ cobranca, acoes }: { cobranca: CobrancaInfo; acoe
   const emitida = Boolean(c.linhaDigitavel || c.pixCopiaCola);
   const erro = c.status === "erro";
   const aplicavel = c.aplicavel ?? (c.forma === "boleto_vista" || c.forma === "pix");
+  const [previa, setPrevia] = useState(false);
+
+  const dadosBoleto = {
+    numeroPedido: c.numeroPedido,
+    clienteNome: c.clienteNome,
+    clienteDoc: c.clienteDoc,
+    valor: c.valor,
+    vencimento: c.vencimento,
+    linhaDigitavel: c.linhaDigitavel,
+    codigoBarras: c.codigoBarras,
+    nossoNumero: c.nossoNumero,
+  };
+
+
 
   return (
     <section className="space-y-3 rounded-xl border border-border bg-surface/40 p-3">
@@ -143,7 +161,33 @@ export function CobrancaCard({ cobranca, acoes }: { cobranca: CobrancaInfo; acoe
         </div>
       ) : null}
 
+      {/* Prévia do boleto dentro do próprio modal do pedido. */}
+      {c.linhaDigitavel && previa ? (
+        <iframe
+          title="Prévia do boleto"
+          srcDoc={boletoGuiaHtml(dadosBoleto)}
+          className="h-[520px] w-full rounded-lg border border-border bg-white"
+        />
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-2">
+        {c.linhaDigitavel ? (
+          <>
+            <Button size="sm" variant="outline" onClick={() => setPrevia((v) => !v)}>
+              {previa ? "Ocultar prévia" : "Ver boleto"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (!imprimirBoletoGuia(dadosBoleto)) {
+                  toast.error("Permita pop-ups para baixar o PDF do boleto.");
+                }
+              }}
+            >
+              <FileDown className="mr-2 h-3.5 w-3.5" /> Baixar PDF do boleto
+            </Button>
+          </>
+        ) : null}
         {c.url ? (
           <Button size="sm" variant="outline" asChild>
             <a href={c.url} target="_blank" rel="noreferrer">
