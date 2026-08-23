@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { tpOvDoPedido, contribuinteDoFaturamento } from "@/lib/sap-tp-ov";
+import { tpOvDoPedido, contribuinteDoFaturamento, documentoDaSimulacao } from "@/lib/sap-tp-ov";
 import { finalidadeDaTela } from "@/lib/sap-clientes-map";
 
 /**
@@ -223,7 +223,12 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
         return { codigo: String(p.codigo), quantidade: i.qtd };
       }),
       {
-        documento: data.cliente.doc.replace(/\D/g, ""),
+        // Preço = impostos do parceiro faturado (cliente final quando houver).
+        documento: documentoDaSimulacao({
+          faturarClienteFinal: data.faturarClienteFinal,
+          faturamento: data.faturamento as { doc?: unknown },
+          clienteDoc: data.cliente.doc,
+        }),
         listaPreco: data.listaPreco,
         tipoOv: tpOvDoPedido(
           data.tipoNf,

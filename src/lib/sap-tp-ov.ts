@@ -43,3 +43,22 @@ export function contribuinteDoFaturamento(input: {
   return input.contribuinte === true;
 }
 
+/**
+ * Documento usado na SIMULAÇÃO de preços no SAP.
+ *
+ * A NF sai contra o parceiro faturado: quando "faturar para o cliente final"
+ * está marcado, os impostos (e portanto o preço final) são os do cliente final,
+ * não os do integrador. A plataforma antiga faz o mesmo
+ * (`calculadora.php:735-760`): documento do faturamento, TP_OV do faturamento,
+ * PLTYP (tabela) continua sendo a do cliente da proposta.
+ */
+export function documentoDaSimulacao(input: {
+  faturarClienteFinal?: unknown;
+  faturamento?: { doc?: unknown } | null;
+  clienteDoc?: unknown;
+}): string {
+  const final = digitos(input.faturamento?.doc);
+  if (input.faturarClienteFinal === true && (final.length === 11 || final.length === 14)) return final;
+  return digitos(input.clienteDoc);
+}
+
