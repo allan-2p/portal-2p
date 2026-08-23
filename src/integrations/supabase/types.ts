@@ -3333,6 +3333,11 @@ export type Database = {
           purged: number
         }[]
       }
+      can_access_proposta: {
+        Args: { _proposta_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_manage_all_propostas: { Args: { _user_id: string }; Returns: boolean }
       check_disponibilidade: {
         Args: { p_material: string; p_qtd: number }
         Returns: Json
