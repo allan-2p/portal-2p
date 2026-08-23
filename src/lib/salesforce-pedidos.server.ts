@@ -263,35 +263,34 @@ export async function sincronizarPedidoSalesforce(
       return { enviado: false, ok: false, opportunityId: null, accountId: null, mensagem, motivo: "sem_conta" };
     }
 
-    const totais = (row["totais"] ?? {}) as Record<string, any>;
-    const valor = Number(totais["valorTotal"] ?? totais["valor_total"] ?? 0) || 0;
-    const fechamento =
-      so(row["previsao_fechamento"]).slice(0, 10) ||
-      String(row["created_at"] ?? new Date().toISOString()).slice(0, 10);
-
     // Padrão do Opportunity Name: "número da proposta - nome da proposta".
     const nomeOpp = [numero, so(row["nome"]) || clienteNome].filter(Boolean).join(" - ").slice(0, 120);
 
-    const corpoBase: Record<string, unknown> = {
-      Name: nomeOpp,
-      AccountId: accountId,
-      StageName: stage(row["status"]),
-      CloseDate: fechamento,
-      Amount: valor,
-      Description: descricao(row),
-    };
+    // O corpo sai do mapeamento configurável (Admin › Integrações ›
+    // Salesforce › Campos): a tela de conferência mostra exatamente o que é
+    // gravado na org.
+    const { carregarMapeamento } = await import("./salesforce-campos.server");
+    const { montarPayload } = await import("./salesforce-campos");
+    const overrides = await carregarMapeamento("Opportunity");
     const owner = await ownerSfId(row["created_by"]);
-    if (owner) corpoBase["OwnerId"] = owner;
-
-    // Campos customizados: se a org recusar um deles, ele é removido e o envio
-    // é refeito — os demais continuam sendo gravados.
-    const custom: Record<string, unknown> = {
-      Numero_Pedido_Portal__c: numero || null,
-      Numero_SAP__c: so(row["sap_ov_numero"]) || so(row["numero_sap"]) || null,
-      Status_do_Pedido__c: so(row["status"]) || null,
+    const { payload } = montarPayload(
+      "Opportunity",
+      { ...(row as Record<string, any>), _account_id: accountId, _owner_id: owner },
+      overrides,
+    );
+    // Campos obrigatórios do Salesforce: usados como fallback se a org recusar
+    // algum campo customizado do mapeamento.
+    const corpoBase: Record<string, unknown> = {
+      Name: payload["Name"] ?? nomeOpp,
+      AccountId: accountId,
+      StageName: payload["StageName"] ?? stage(row["status"]),
+      CloseDate: payload["CloseDate"],
+      Amount: payload["Amount"],
+      Description: payload["Description"],
     };
-    const org = orgOportunidade(row);
-    if (org) custom["Org_Oportunidade__c"] = org;
+    const custom: Record<string, unknown> = { ...payload };
+    for (const k of Object.keys(corpoBase)) delete custom[k];
+
 
     // Vínculo: usa o sf_opp_id da proposta; se não houver, procura a
     // oportunidade já existente do mesmo pedido antes de criar uma nova.
