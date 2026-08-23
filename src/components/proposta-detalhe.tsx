@@ -293,19 +293,13 @@ export function PropostaDetalheDialog({
                 </>
               )}
               {id && (
-                <>
-                  <Button variant="outline" size="sm" className="gap-2 ml-1" asChild>
-                    <Link to="/carregadores/propostas/auditoria" search={{ id }}>
-                      <Calculator className="h-4 w-4" /> Auditoria
-                    </Link>
-                  </Button>
-                  <Button size="sm" className="gap-2" asChild>
-                    <Link to="/carregadores/propostas/nova" search={{ id }}>
-                      <Pencil className="h-4 w-4" /> Editar
-                    </Link>
-                  </Button>
-                </>
+                <Button size="sm" className="gap-2" asChild>
+                  <Link to="/carregadores/propostas/nova" search={{ id }}>
+                    <Pencil className="h-4 w-4" /> Editar
+                  </Link>
+                </Button>
               )}
+
             </span>
           </DialogTitle>
         </DialogHeader>
