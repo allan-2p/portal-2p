@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { pltypDaTabela } from "@/lib/sap-clientes-map";
-import { tpOvDoPedido } from "@/lib/sap-tp-ov";
+import { contribuinteDoFaturamento, documentoDaSimulacao, tpOvDoPedido } from "@/lib/sap-tp-ov";
 
 export type PrecoSolarInput = {
   itens: { codigo: string; quantidade: number }[];
@@ -20,12 +20,30 @@ function validar(input: unknown): PrecoSolarInput {
       codigo: String(x.codigo),
       quantidade: Math.max(1, Number(x.quantidade) || 1),
     }));
+  // A NF sai contra o parceiro faturado: quando o faturamento é ao cliente
+  // final, o preço tem que ser simulado com o documento e o TP_OV DELE — os
+  // impostos mudam (ex.: sem IE o IPI entra na base do ICMS). A tabela (PLTYP)
+  // continua sendo a do cliente da proposta.
+  const faturamento = (i.faturamento ?? null) as { doc?: unknown; contribuinte?: unknown } | null;
+  const clienteDoc = String(i.documento ?? "");
   return {
     itens,
-    documento: String(i.documento ?? "").replace(/\D/g, ""),
+    documento: documentoDaSimulacao({
+      faturarClienteFinal: i.faturarClienteFinal === true,
+      faturamento,
+      clienteDoc,
+    }),
     // "2P-0001" (cadastro do cliente) vira "01" — o SAP só aceita 01..05 no PLTYP.
     listaPreco: pltypDaTabela(i.listaPreco),
-    tipoOv: tpOvDoPedido(i.tipoNf, i.contribuinte === true),
+    tipoOv: tpOvDoPedido(
+      i.tipoNf,
+      contribuinteDoFaturamento({
+        contribuinte: i.contribuinte === true,
+        faturarClienteFinal: i.faturarClienteFinal === true,
+        faturamento,
+        clienteDoc,
+      }),
+    ),
     kitFotovoltaico: i.kitFotovoltaico === true,
   };
 }
