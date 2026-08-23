@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { tpOvDoPedido, contribuinteDoFaturamento } from "@/lib/sap-tp-ov";
+import { tpOvDoPedido, contribuinteDoFaturamento, documentoDaSimulacao } from "@/lib/sap-tp-ov";
 import { finalidadeDaTela } from "@/lib/sap-clientes-map";
 
 /**
