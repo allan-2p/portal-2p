@@ -75,6 +75,16 @@ const esc = (v: string) => v.replace(/'/g, "\\'");
 const so = (v: unknown) => String(v ?? "").trim();
 const digitos = (v: unknown) => so(v).replace(/\D/g, "");
 
+/** Nomes de campos recusados pela org, extraídos da mensagem de erro. */
+function camposRecusados(msg: string): string[] {
+  const achados = new Set<string>();
+  for (const m of msg.matchAll(/([A-Za-z0-9_]+__c)/g)) achados.add(m[1]!);
+  const nf = msg.match(/No such column '([A-Za-z0-9_]+)'/);
+  if (nf?.[1]) achados.add(nf[1]);
+  return [...achados];
+}
+
+
 function ruaCompleta(c: SalesforceClienteInput) {
   return [so(c.logradouro), so(c.numero), so(c.complemento), so(c.bairro)]
     .filter(Boolean)
