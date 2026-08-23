@@ -17,6 +17,7 @@ import { cidadeUf } from "@/lib/local-format";
 import { formatSapNumero } from "@/lib/sap-numero";
 import { NfDocumentosCard } from "@/components/nf-documentos-card";
 import { CobrancaCard } from "@/components/cobranca-card";
+import { BoletosSharepointCard } from "@/components/boletos-sharepoint-card";
 import { propostaPdfDaLinha } from "@/lib/proposta-pdf-row";
 import { useState } from "react";
 import { toast } from "sonner";
