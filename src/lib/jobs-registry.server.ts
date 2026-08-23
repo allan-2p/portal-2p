@@ -83,6 +83,13 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     return { ...(await avisarBoletos()) };
   },
 
+  // Motor real: busca no SharePoint os PDFs dos boletos a prazo pela NF.
+  "cron.boletos-sharepoint": async (payload) => {
+    const { sincronizarBoletosSharepoint } = await import("@/lib/boletos-sharepoint.server");
+    const limite = Number((payload as Record<string, unknown>)["limite"] ?? 100) || 100;
+    return { ...(await sincronizarBoletosSharepoint(limite)) };
+  },
+
   // Motor real: aplica o evento Pix no pedido (pago / expirado / cancelado).
   "webhook.pix-itau": async (payload) => {
     const { processarWebhookPix } = await import("@/lib/pagamentos-pix.server");
