@@ -816,9 +816,17 @@ function NovaPropostaSolarPage() {
           listaPreco: tabela,
           tipoNf,
           kitFotovoltaico: ehKit === true,
-          contribuinte: faturarClienteFinal
-            ? String(fat['contribuinte'] ?? "") === "true" || Boolean(String(fat['ie'] ?? "").trim())
-            : cliente?.['contribuinte'] === true,
+          contribuinte: cliente?.['contribuinte'] === true,
+          // A NF sai contra o cliente final: o servidor simula os preços com o
+          // documento e o TP_OV dele (impostos diferentes), mantendo a tabela.
+          faturarClienteFinal,
+          faturamento: faturarClienteFinal
+            ? {
+                doc: String(fat['doc'] ?? ""),
+                contribuinte:
+                  String(fat['contribuinte'] ?? "") === "true" || Boolean(String(fat['ie'] ?? "").trim()),
+              }
+            : null,
         },
       });
       const semPreco: string[] = [];
