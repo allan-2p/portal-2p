@@ -127,6 +127,9 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         <div className="glass rounded-2xl p-5">
           <CobrancaCard
             cobranca={{
+              numeroPedido: p['numero'] ? String(p['numero']) : null,
+              clienteNome: p['cliente_nome'],
+              clienteDoc: p['cliente_doc'],
               forma: p['forma_pagamento'],
               meio: p['pagamento_meio'],
               status: p['pagamento_status'],
