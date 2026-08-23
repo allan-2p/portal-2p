@@ -263,7 +263,7 @@ async function chamarViaProxy(
   if (res && !res.ok) {
     if (res.status === 501 && call.escopo === "boleto") {
       throw new Error(
-        "Boleto ainda não habilitado no proxy mTLS do Itaú (somente Pix está liberado). Use Pix ou avise para estender o proxy.",
+        `Rota de boleto não habilitada no proxy mTLS do Itaú. Detalhe: ${text.slice(0, 300)}`,
       );
     }
     if (res.status === 401 || res.status === 403) {

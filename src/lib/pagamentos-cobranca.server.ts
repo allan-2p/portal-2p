@@ -90,13 +90,25 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
   const hoje = new Date();
   const venc = new Date(hoje.getTime() + DIAS_EXPIRACAO * 86_400_000);
   const nossoNumero = soDigitos(row["numero"]).padStart(8, "0").slice(-8);
-  const docPagador = soDigitos(row["cliente_doc"]);
 
   const fat = (row["faturamento"] ?? {}) as Record<string, unknown>;
   const ent = (row["entrega"] ?? {}) as Record<string, unknown>;
+
+  // Faturamento direto ao cliente final: o pagador do boleto é o cliente final
+  // (mesma regra da plataforma antiga, que sobrepõe com os dados de faturamento).
+  const clienteFinal = row["faturar_cliente_final"] === true && soDigitos(fat["doc"]).length >= 11;
+  const docPagador = clienteFinal ? soDigitos(fat["doc"]) : soDigitos(row["cliente_doc"]);
+  const nomePagador = String(
+    (clienteFinal ? (fat["nome"] ?? fat["razao_social"]) : row["cliente_nome"]) ?? "",
+  );
+  const emailPagador = String(
+    (clienteFinal ? (fat["email"] ?? row["cliente_email"]) : row["cliente_email"]) ?? "",
+  ).trim();
+
   const end = (...chaves: string[]): string => {
+    const fontes = (clienteFinal ? [fat, row, ent] : [row, fat, ent]) as Record<string, unknown>[];
     for (const k of chaves) {
-      for (const fonte of [row, fat, ent] as Record<string, unknown>[]) {
+      for (const fonte of fontes) {
         const v = fonte?.[k];
         if (v !== undefined && v !== null && String(v).trim()) return String(v).trim();
       }
@@ -104,24 +116,37 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
     return "";
   };
 
-
+  const seuNumero = String(row["numero"] ?? "").trim() || nossoNumero;
 
   const body = {
     data: {
       etapa_processo_boleto: "efetivacao",
+      codigo_canal_operacao: "API",
       beneficiario: { id_beneficiario: beneficiario },
       dado_boleto: {
         descricao_instrumento_cobranca: "boleto",
-        forma_envio: "impressa",
+        forma_envio: emailPagador ? "email" : "impressa",
+        ...(emailPagador
+          ? {
+              assunto_email: `Boleto para pagamento do pedido ${seuNumero}`,
+              mensagem_email:
+                "Segue em anexo o boleto para pagamento. O pedido entrará para separação no próximo dia útil após pagamento.",
+            }
+          : {}),
         tipo_boleto: "a vista",
         codigo_carteira: carteira,
         valor_total_titulo: valor17(valor),
+        valor_abatimento: "000",
         codigo_especie: "01",
         data_emissao: isoData(hoje),
         desconto_expresso: false,
+        recebimento_divergente: { codigo_tipo_autorizacao: "01" },
+        instrucao_cobranca: [
+          { codigo_instrucao_cobranca: "4", quantidade_dias_apos_vencimento: 0, dia_util: false },
+        ],
         pagador: {
           pessoa: {
-            nome_pessoa: String(row["cliente_nome"] ?? "").slice(0, 50),
+            nome_pessoa: nomePagador.slice(0, 50),
             tipo_pessoa: {
               codigo_tipo_pessoa: docPagador.length > 11 ? "J" : "F",
               ...(docPagador.length > 11
@@ -129,6 +154,7 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
                 : { numero_cadastro_pessoa_fisica: docPagador }),
             },
           },
+          ...(emailPagador ? { texto_endereco_email: emailPagador.slice(0, 100) } : {}),
           // O endereço plano da proposta costuma vir vazio: o cadastro real
           // está em `faturamento` (ou `entrega`).
           endereco: {
@@ -146,6 +172,8 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
             numero_nosso_numero: nossoNumero,
             data_vencimento: isoData(venc),
             valor_titulo: valor17(valor),
+            texto_uso_beneficiario: seuNumero.slice(0, 25),
+            texto_seu_numero: seuNumero.slice(0, 15),
           },
         ],
       },
@@ -174,6 +202,8 @@ async function emitirBoleto(row: Record<string, any>, valor: number) {
     vencimento: isoData(venc),
     agencia,
     conta,
+    bruto: resp,
+    idBoleto: dado?.["id_boleto"] ?? resp["id_boleto"] ?? null,
   };
 }
 
@@ -321,6 +351,12 @@ export async function gerarCobrancaCheckout(
       await registrar("info", "boleto_emitido", `Boleto emitido (nosso número ${b.nossoNumero}).`, {
         vencimento: b.vencimento,
         valor,
+        modo: modoItau(),
+        via_proxy: modoItau() === "proxy",
+        linha_digitavel: b.linhaDigitavel,
+        id_boleto: b.idBoleto,
+        nosso_numero: b.nossoNumero,
+        resposta: b.bruto,
       });
       return {
         gerada: true,
