@@ -18,7 +18,7 @@ const OBJETOS: { id: SfObjeto; titulo: string; sub: string }[] = [
   { id: "Opportunity", titulo: "Opportunity (proposta / pedido)", sub: "Enviado ao salvar e ao concluir uma proposta." },
 ];
 
-function valorTexto(v: unknown) {
+function valorTexto(v: string | number | boolean | null) {
   if (v === null || v === undefined || v === "") return "—";
   if (typeof v === "number") return String(v);
   const s = String(v);

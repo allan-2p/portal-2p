@@ -8,13 +8,29 @@ import { carregarMapeamento } from "./salesforce-campos.server";
 
 const so = (v: unknown) => String(v ?? "").trim();
 
+export type SfValor = string | number | boolean | null;
+
 export type PreviewResultado = {
   objeto: SfObjeto;
   registro: { id: string | null; rotulo: string } | null;
-  payload: Record<string, unknown>;
-  linhas: { chave: string; rotulo: string; sfField: string | null; valor: unknown; enviado: boolean }[];
+  payload: Record<string, SfValor>;
+  linhas: { chave: string; rotulo: string; sfField: string | null; valor: SfValor; enviado: boolean }[];
   aviso: string | null;
 };
+
+/** Converte os valores para tipos serializáveis pelo RPC. */
+function normalizar(r: ReturnType<typeof montarPayload>) {
+  const val = (v: unknown): SfValor =>
+    v === null || v === undefined
+      ? null
+      : typeof v === "number" || typeof v === "boolean" || typeof v === "string"
+        ? v
+        : String(v);
+  return {
+    payload: Object.fromEntries(Object.entries(r.payload).map(([k, v]) => [k, val(v)])) as Record<string, SfValor>,
+    linhas: r.linhas.map((l) => ({ ...l, valor: val(l.valor) })),
+  };
+}
 
 async function amostraCliente(id: string | null): Promise<Record<string, any> | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -49,7 +65,8 @@ export async function montarPreview(
       return { objeto, registro: null, payload: {}, linhas: [], aviso: "Nenhum cadastro de cliente encontrado para a prévia." };
     const owner = await ownerSfId(c["created_by"] ?? c["owner_id"]);
     const row = { ...c, owner_sf_id: c["sf_owner_id"] ?? owner ?? null };
-    const { payload, linhas } = montarPayload(objeto, row, overrides);
+    const bruto = montarPayload(objeto, row, overrides);
+    const { payload, linhas } = normalizar(bruto);
     return {
       objeto,
       registro: { id: so(c["id"]) || null, rotulo: so(c["razao_social"]) || so(c["doc"]) || "Cliente" },
@@ -69,7 +86,7 @@ export async function montarPreview(
   const r = row as Record<string, any>;
   const owner = await ownerSfId(r["created_by"]);
   const enriquecido = { ...r, _owner_id: owner, _account_id: so(r["sf_account_id"]) || null };
-  const { payload, linhas } = montarPayload(objeto, enriquecido, overrides);
+  const { payload, linhas } = normalizar(montarPayload("Opportunity", enriquecido, overrides));
   return {
     objeto,
     registro: { id: so(r["id"]) || null, rotulo: [so(r["numero"]), so(r["cliente_nome"])].filter(Boolean).join(" · ") },
