@@ -108,7 +108,15 @@ export function CobrancaCard({ cobranca, acoes }: { cobranca: CobrancaInfo; acoe
       )}
 
       {c.linhaDigitavel ? <CodigoCopiavel rot="Linha digitável" valor={c.linhaDigitavel} /> : null}
-      {c.pixCopiaCola ? <CodigoCopiavel rot="Pix copia e cola" valor={c.pixCopiaCola} /> : null}
+      {c.pixCopiaCola ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          {c.status !== "pago" ? <PixQrCode valor={c.pixCopiaCola} /> : null}
+          <div className="min-w-0 flex-1">
+            <CodigoCopiavel rot="Pix copia e cola" valor={c.pixCopiaCola} />
+          </div>
+        </div>
+      ) : null}
+
 
       {erro && c.mensagem ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-sm text-destructive">
