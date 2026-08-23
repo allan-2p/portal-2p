@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Check, Copy, ExternalLink, QrCode } from "lucide-react";
+import { Check, Copy, ExternalLink, FileDown, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmtBRL } from "@/lib/carregadores";
 import { PixQrCode } from "@/components/pix-qrcode";
+import { boletoGuiaHtml, imprimirBoletoGuia } from "@/lib/boleto-guia-pdf";
 
 export type CobrancaInfo = {
   forma?: string | null;
@@ -20,6 +21,9 @@ export type CobrancaInfo = {
   atualizado_em?: string | null;
   mensagem?: string | null;
   aplicavel?: boolean;
+  numeroPedido?: string | null;
+  clienteNome?: string | null;
+  clienteDoc?: string | null;
 };
 
 const fmtData = (v?: string | null) =>
