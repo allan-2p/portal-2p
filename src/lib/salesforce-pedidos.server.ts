@@ -12,6 +12,7 @@
 
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
+import { stage } from "./salesforce-stage";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
 
