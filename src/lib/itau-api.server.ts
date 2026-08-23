@@ -179,17 +179,25 @@ async function obterToken(escopo: "boleto" | "pix", cred: Credenciais): Promise<
   return json.access_token;
 }
 
+/**
+ * Credenciais do Itaú. No modo proxy o token OAuth é resolvido pelo próprio
+ * proxy (que guarda client_id/secret junto do certificado), então o portal
+ * não precisa delas.
+ */
 export function credenciaisBoleto(): Credenciais | null {
   const clientId = env("ITAU_BOLETO_CLIENT_ID");
   const clientSecret = env("ITAU_BOLETO_CLIENT_SECRET");
-  return clientId && clientSecret ? { clientId, clientSecret } : null;
+  if (clientId && clientSecret) return { clientId, clientSecret };
+  return proxyConfigurado() ? { clientId: "", clientSecret: "" } : null;
 }
 
 export function credenciaisPix(): Credenciais | null {
   const clientId = env("ITAU_PIX_CLIENT_ID");
   const clientSecret = env("ITAU_PIX_CLIENT_SECRET");
-  return clientId && clientSecret ? { clientId, clientSecret } : null;
+  if (clientId && clientSecret) return { clientId, clientSecret };
+  return proxyConfigurado() ? { clientId: "", clientSecret: "" } : null;
 }
+
 
 export type ItauCall = {
   escopo: "boleto" | "pix";
