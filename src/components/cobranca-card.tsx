@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fmtBRL } from "@/lib/carregadores";
+import { PixQrCode } from "@/components/pix-qrcode";
 
 export type CobrancaInfo = {
   forma?: string | null;
