@@ -15,7 +15,7 @@
  */
 
 import * as db from "./propostas-db.server";
-import { ItauIndisponivel, chamarItau, credenciaisBoleto, credenciaisPix, itauEnv } from "./itau-api.server";
+import { ItauIndisponivel, chamarItau, credenciaisBoleto, credenciaisPix, itauEnv, modoItau } from "./itau-api.server";
 
 export type CobrancaResultado = {
   gerada: boolean;
