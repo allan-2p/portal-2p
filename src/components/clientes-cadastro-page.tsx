@@ -25,7 +25,6 @@ import { ClienteIntegracoesDialog } from "@/components/cliente-integracoes-dialo
 
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { cnpjValido, mascaraCnpj, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
