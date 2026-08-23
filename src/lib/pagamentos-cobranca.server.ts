@@ -351,6 +351,12 @@ export async function gerarCobrancaCheckout(
       await registrar("info", "boleto_emitido", `Boleto emitido (nosso número ${b.nossoNumero}).`, {
         vencimento: b.vencimento,
         valor,
+        modo: modoItau(),
+        via_proxy: modoItau() === "proxy",
+        linha_digitavel: b.linhaDigitavel,
+        id_boleto: b.idBoleto,
+        nosso_numero: b.nossoNumero,
+        resposta: b.bruto,
       });
       return {
         gerada: true,
