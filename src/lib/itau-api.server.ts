@@ -133,9 +133,11 @@ async function itauFetch(url: string, init: RequestInit): Promise<Response> {
   const dispatcher = await mtlsDispatcher();
   if (!dispatcher) {
     throw new ItauIndisponivel(
-      "Certificado mTLS do Itaú indisponível neste ambiente (ITAU_MTLS_CERT_PEM/ITAU_MTLS_KEY_PEM).",
+      "As chamadas ao Itaú exigem certificado mTLS, e este ambiente não consegue apresentá-lo. " +
+        "Configure o proxy mTLS (ITAU_PROXY_URL + ITAU_PROXY_SECRET) para emitir Pix/boleto.",
     );
   }
+
   try {
     return await fetch(url, { ...init, dispatcher } as RequestInit);
   } catch (e) {
