@@ -344,3 +344,63 @@ function Total({ label, value, destaque }: { label: string; value: string; desta
     </div>
   );
 }
+
+/** Prévia e impressão da proposta em PDF (Solar e Carregadores). */
+function PropostaPdfAcoes({ proposta }: { proposta: Record<string, any> }) {
+  const [previa, setPrevia] = useState<string | null>(null);
+
+  const gerar = () => {
+    try {
+      return propostaPdfDaLinha(proposta);
+    } catch {
+      toast.error("Não foi possível montar a proposta em PDF.");
+      return null;
+    }
+  };
+
+  const abrirPrevia = () => {
+    const r = gerar();
+    if (r) setPrevia(r.html);
+  };
+
+  const imprimir = () => {
+    const r = gerar();
+    if (!r) return;
+    const w = window.open("", "_blank");
+    if (!w) return toast.error("Permita pop-ups para gerar o PDF.");
+    w.document.write(r.html);
+    w.document.title = r.fileName;
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 600);
+  };
+
+  return (
+    <>
+      <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+        <Button variant="outline" size="sm" className="gap-2" onClick={abrirPrevia}>
+          <FileText className="h-4 w-4" /> Prévia da proposta
+        </Button>
+        <Button size="sm" className="gap-2" onClick={imprimir}>
+          <Printer className="h-4 w-4" /> Imprimir / Salvar PDF
+        </Button>
+      </div>
+
+      <Dialog open={!!previa} onOpenChange={(o) => !o && setPrevia(null)}>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-5xl h-[92dvh] max-h-[92dvh] flex flex-col gap-0 p-0">
+          <DialogHeader className="shrink-0 border-b px-4 py-3 text-left sm:px-6">
+            <DialogTitle className="flex flex-wrap items-center justify-between gap-2">
+              <span>Prévia da proposta</span>
+              <Button size="sm" className="gap-2" onClick={imprimir}>
+                <Printer className="h-4 w-4" /> Imprimir / Salvar PDF
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 bg-muted/40">
+            <iframe title="Prévia da proposta" srcDoc={previa ?? ""} className="h-full w-full border-0 bg-white" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
