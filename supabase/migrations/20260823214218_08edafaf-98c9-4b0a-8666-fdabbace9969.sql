@@ -1,0 +1,1 @@
+select cron.schedule('portal-boletos-sharepoint', '5 * * * *', $cron$select public.portal_cron_post('/api/public/hooks/boletos-sharepoint', '{}'::jsonb)$cron$);

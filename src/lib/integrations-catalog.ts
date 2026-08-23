@@ -130,6 +130,23 @@ export const INTEGRATIONS: IntegrationDef[] = [
     note: "O mesmo token autentica o webhook de rastreio no header x-fretefy-token.",
   },
   {
+    slug: "sharepoint",
+    name: "SharePoint (boletos a prazo)",
+    category: "Financeiro",
+    description:
+      "Lê os PDFs de boleto a prazo publicados pelo financeiro no site NFs-Sadas e avisa o cliente por e-mail.",
+    docsUrl: "https://learn.microsoft.com/graph/api/resources/driveitem",
+    credentials: [
+      { env: "SHAREPOINT_TENANT_ID", label: "Tenant ID (Entra ID)", required: true, secret: false },
+      { env: "SHAREPOINT_CLIENT_ID", label: "Client ID do app", required: true, secret: false },
+      { env: "SHAREPOINT_CLIENT_SECRET", label: "Client secret do app", required: true, secret: true },
+      { env: "SHAREPOINT_SITE_HOSTNAME", label: "Hostname do site", secret: false },
+      { env: "SHAREPOINT_SITE_PATH", label: "Caminho do site (/sites/NFs-Sadas)", secret: false },
+      { env: "SHAREPOINT_BOLETOS_PASTA", label: "Pasta dos boletos", secret: false },
+    ],
+    note: "App-only (client credentials) com permissão Sites.Read.All ou Files.Read.All e consentimento de administrador.",
+  },
+  {
     slug: "cron",
     name: "Gatilhos automáticos (cron)",
     category: "Plataforma",

@@ -44,6 +44,11 @@ export const JOBS = {
     descricao: "Consulta no Itaú as cobranças Pix pendentes (fallback do webhook).",
     reprocessavel: true,
   },
+  "cron.boletos-sharepoint": {
+    label: "Cron • Boletos a prazo (SharePoint)",
+    descricao: "Busca os PDFs dos boletos a prazo pela NF, guarda no portal e avisa o cliente.",
+    reprocessavel: true,
+  },
   "cron.boleto-avisos": {
     label: "Cron • Avisos de boleto",
     descricao: "Avisa consultor e cliente sobre boletos vencendo ou vencidos.",

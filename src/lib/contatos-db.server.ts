@@ -183,3 +183,30 @@ export async function emailCobrancaPorDoc(clienteDoc: string): Promise<string | 
     return null;
   }
 }
+
+/**
+ * Todos os e-mails de cobrança do cliente, na prioridade da plataforma antiga:
+ * contatos do financeiro primeiro, depois os principais.
+ */
+export async function emailsCobrancaPorDoc(clienteDoc: string): Promise<string[]> {
+  const doc = String(clienteDoc ?? "").replace(/\D/g, "");
+  if (!doc) return [];
+  try {
+    const params = new URLSearchParams({
+      select: "tipo,emails,ativo",
+      cliente_doc: `eq.${doc}`,
+      tipo: "in.(financeiro,principal)",
+      ativo: "is.true",
+    });
+    const rows: ContatoRow[] = (await rest(`contatos?${params}`)) ?? [];
+    const out: string[] = [];
+    for (const tipo of ["financeiro", "principal"]) {
+      for (const c of rows.filter((r) => r.tipo === tipo)) {
+        for (const e of c.emails ?? []) if (e.includes("@")) out.push(e.trim());
+      }
+    }
+    return [...new Set(out)];
+  } catch {
+    return [];
+  }
+}
