@@ -261,6 +261,11 @@ async function chamarViaProxy(
   }
 
   if (res && !res.ok) {
+    if (res.status === 501 && call.escopo === "boleto") {
+      throw new Error(
+        "Boleto ainda não habilitado no proxy mTLS do Itaú (somente Pix está liberado). Use Pix ou avise para estender o proxy.",
+      );
+    }
     if (res.status === 401 || res.status === 403) {
       throw new Error(
         `Proxy mTLS recusou a chamada (${res.status}). Confira ITAU_PROXY_SECRET no portal e no servidor do proxy. Detalhe: ${text.slice(0, 300)}`,
