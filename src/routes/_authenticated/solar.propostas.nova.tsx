@@ -875,6 +875,34 @@ function NovaPropostaSolarPage() {
     setTrocando(false);
   }
 
+  // Faturar ao cliente final muda os impostos da NF (ex.: sem IE o IPI entra na
+  // base do ICMS) — e, portanto, o preço. Recalcula ao marcar/desmarcar e ao
+  // alterar documento/contribuinte do faturamento, para o total da proposta
+  // bater com a OV/NF e com a cobrança.
+  const assinaturaFaturado = faturarClienteFinal
+    ? `1|${String(fat['doc'] ?? "").replace(/\D/g, "")}|${String(fat['contribuinte'] ?? "")}|${String(fat['ie'] ?? "").trim() ? 1 : 0}`
+    : "0";
+  const assinaturaAnterior = useRef<string | null>(null);
+  useEffect(() => {
+    const anterior = assinaturaAnterior.current;
+    assinaturaAnterior.current = assinaturaFaturado;
+    if (anterior === null || anterior === assinaturaFaturado) return;
+    if (!itens.length || trocando) return;
+    const docFinal = String(fat['doc'] ?? "").replace(/\D/g, "");
+    if (faturarClienteFinal && docFinal.length !== 11 && docFinal.length !== 14) return;
+    void (async () => {
+      setTrocando(true);
+      await atualizarPrecos(itens, listaPreco);
+      setTrocando(false);
+      toast.info(
+        faturarClienteFinal
+          ? "Preços recalculados com os impostos do cliente final (destinatário da NF)."
+          : "Preços recalculados com os impostos do cliente da proposta.",
+      );
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assinaturaFaturado]);
+
   /** Explicação do bloqueio da etapa 3 (causa provável + ações sugeridas). */
   const diagnosticoBloqueio = useMemo(() => {
     const semPreco = itens.filter((i) => !(i.valor > 0)).map(
