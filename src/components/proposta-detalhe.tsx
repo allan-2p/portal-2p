@@ -119,6 +119,14 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
       <NfDocumentosCard proposta={p} />
 
+      <BoletosSharepointCard
+        propostaId={String(p['id'])}
+        formaPagamento={p['forma_pagamento']}
+        nfNumero={p['nf_numero']}
+        boletos={Array.isArray(p['boletos']) ? p['boletos'] : []}
+        avisadoEm={p['boletos_avisados_em']}
+      />
+
       {(p['pagamento_linha_digitavel'] ||
         p['pagamento_pix_copia_cola'] ||
         p['pagamento_status'] ||
