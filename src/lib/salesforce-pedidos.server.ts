@@ -12,6 +12,7 @@
 
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
+import { stage } from "./salesforce-stage";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
 
@@ -79,34 +80,11 @@ const so = (v: unknown) => String(v ?? "").trim();
 const digitos = (v: unknown) => so(v).replace(/\D/g, "");
 
 /**
- * Estágio da Opportunity a partir do status universal do portal.
- *
- * Os nomes abaixo são os valores EXATOS da picklist StageName da org do
- * Grupo 2P: Projeto Não Fechado, Projeto Fechado, Estoque, Em Negociação,
- * Pedido Concluído, Pedido Cancelado, Oportunidade Perdida.
+ * Estágio da Opportunity e organização: definidos em `salesforce-stage.ts`
+ * (módulo puro, compartilhado com a tela de mapeamento de campos).
  */
-export const SF_STAGE_POR_STATUS: Record<string, string> = {
-  "Salvo": "Em Negociação",
-  "Aguardando Pagamento": "Em Negociação",
-  "Processando": "Projeto Fechado",
-  "Separação": "Estoque",
-  "Faturado": "Pedido Concluído",
-  "Coletado": "Pedido Concluído",
-  "Entregue": "Pedido Concluído",
-  "Cancelado": "Pedido Cancelado",
-};
+export { SF_STAGE_POR_STATUS, stage, orgOportunidade } from "./salesforce-stage";
 
-export function stage(status: unknown): string {
-  const exato = SF_STAGE_POR_STATUS[so(status)];
-  if (exato) return exato;
-  const s = so(status).toLowerCase();
-  if (s.includes("cancel")) return "Pedido Cancelado";
-  if (s.includes("perdid")) return "Oportunidade Perdida";
-  if (s.includes("entregue") || s.includes("coletad") || s.includes("faturad")) return "Pedido Concluído";
-  if (s.includes("separa") || s.includes("estoque")) return "Estoque";
-  if (s.includes("process")) return "Projeto Fechado";
-  return "Em Negociação";
-}
 
 async function acharAccount(doc: string, nome: string): Promise<string | null> {
   const d = digitos(doc);
@@ -187,17 +165,8 @@ async function acharOpp(numero: string, nomeOpp: string): Promise<string | null>
   }
 }
 
-/**
 
- * Organização da oportunidade (picklist `Org_Oportunidade__c`).
- * 2P Solar → "Acessórios 2P" · 2P Carregadores → "2P Carregadores".
- */
-export function orgOportunidade(row: Record<string, any>): string | null {
-  const org = so(row["organizacao"] ?? row["instancia"]).toLowerCase();
-  if (org.includes("solar") || org.includes("acess")) return "Acessórios 2P";
-  if (org.includes("carregad")) return "2P Carregadores";
-  return null;
-}
+
 
 /**
  * Gravação do vínculo com o Salesforce. Se falhar, o próximo envio criaria uma
@@ -263,35 +232,34 @@ export async function sincronizarPedidoSalesforce(
       return { enviado: false, ok: false, opportunityId: null, accountId: null, mensagem, motivo: "sem_conta" };
     }
 
-    const totais = (row["totais"] ?? {}) as Record<string, any>;
-    const valor = Number(totais["valorTotal"] ?? totais["valor_total"] ?? 0) || 0;
-    const fechamento =
-      so(row["previsao_fechamento"]).slice(0, 10) ||
-      String(row["created_at"] ?? new Date().toISOString()).slice(0, 10);
-
     // Padrão do Opportunity Name: "número da proposta - nome da proposta".
     const nomeOpp = [numero, so(row["nome"]) || clienteNome].filter(Boolean).join(" - ").slice(0, 120);
 
-    const corpoBase: Record<string, unknown> = {
-      Name: nomeOpp,
-      AccountId: accountId,
-      StageName: stage(row["status"]),
-      CloseDate: fechamento,
-      Amount: valor,
-      Description: descricao(row),
-    };
+    // O corpo sai do mapeamento configurável (Admin › Integrações ›
+    // Salesforce › Campos): a tela de conferência mostra exatamente o que é
+    // gravado na org.
+    const { carregarMapeamento } = await import("./salesforce-campos.server");
+    const { montarPayload } = await import("./salesforce-campos");
+    const overrides = await carregarMapeamento("Opportunity");
     const owner = await ownerSfId(row["created_by"]);
-    if (owner) corpoBase["OwnerId"] = owner;
-
-    // Campos customizados: se a org recusar um deles, ele é removido e o envio
-    // é refeito — os demais continuam sendo gravados.
-    const custom: Record<string, unknown> = {
-      Numero_Pedido_Portal__c: numero || null,
-      Numero_SAP__c: so(row["sap_ov_numero"]) || so(row["numero_sap"]) || null,
-      Status_do_Pedido__c: so(row["status"]) || null,
+    const { payload } = montarPayload(
+      "Opportunity",
+      { ...(row as Record<string, any>), _account_id: accountId, _owner_id: owner },
+      overrides,
+    );
+    // Campos obrigatórios do Salesforce: usados como fallback se a org recusar
+    // algum campo customizado do mapeamento.
+    const corpoBase: Record<string, unknown> = {
+      Name: payload["Name"] ?? nomeOpp,
+      AccountId: accountId,
+      StageName: payload["StageName"] ?? stage(row["status"]),
+      CloseDate: payload["CloseDate"],
+      Amount: payload["Amount"],
+      Description: payload["Description"],
     };
-    const org = orgOportunidade(row);
-    if (org) custom["Org_Oportunidade__c"] = org;
+    const custom: Record<string, unknown> = { ...payload };
+    for (const k of Object.keys(corpoBase)) delete custom[k];
+
 
     // Vínculo: usa o sf_opp_id da proposta; se não houver, procura a
     // oportunidade já existente do mesmo pedido antes de criar uma nova.

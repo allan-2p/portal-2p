@@ -15,6 +15,7 @@ import { IntegrationAlertBadge, IntegrationAlertSettingsCard, useIntegrationAler
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { FreteRegrasPanel } from "@/components/frete-regras-panel";
 import { IntegracaoPainel } from "@/components/integracao-painel";
+import { SalesforceCamposPanel } from "@/components/salesforce-campos-panel";
 
 export const Route = createFileRoute("/_authenticated/admin/integracoes_/$slug")({
   head: () => ({
@@ -169,6 +170,8 @@ function IntegracaoConfigPage() {
         </section>
 
         {slug === "fretefy" ? <FreteRegrasPanel /> : null}
+
+        {slug === "salesforce" ? <SalesforceCamposPanel /> : null}
 
         {slug === "sap" || slug === "salesforce" ? <IntegracaoPainel painel={slug} /> : null}
 

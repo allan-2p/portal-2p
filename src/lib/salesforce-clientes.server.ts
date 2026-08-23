@@ -75,6 +75,16 @@ const esc = (v: string) => v.replace(/'/g, "\\'");
 const so = (v: unknown) => String(v ?? "").trim();
 const digitos = (v: unknown) => so(v).replace(/\D/g, "");
 
+/** Nomes de campos recusados pela org, extraídos da mensagem de erro. */
+function camposRecusados(msg: string): string[] {
+  const achados = new Set<string>();
+  for (const m of msg.matchAll(/([A-Za-z0-9_]+__c)/g)) achados.add(m[1]!);
+  const nf = msg.match(/No such column '([A-Za-z0-9_]+)'/);
+  if (nf?.[1]) achados.add(nf[1]);
+  return [...achados];
+}
+
+
 function ruaCompleta(c: SalesforceClienteInput) {
   return [so(c.logradouro), so(c.numero), so(c.complemento), so(c.bairro)]
     .filter(Boolean)
@@ -104,21 +114,15 @@ export async function sincronizarClienteSalesforce(
 
   try {
     const nome = so(c.razao_social);
-    const accountBase: Record<string, unknown> = {
-      Name: nome,
-      Phone: so(c.telefone) || null,
-      Website: so(c.site) || null,
-      BillingStreet: ruaCompleta(c) || null,
-      BillingCity: so(c.cidade) || null,
-      BillingState: so(c.uf).toUpperCase() || null,
-      BillingPostalCode: digitos(c.cep) || null,
-      BillingCountry: "Brasil",
-    };
-    if (c.owner_sf_id) accountBase["OwnerId"] = c.owner_sf_id;
 
-    // Campos customizados podem não existir em todas as orgs — tentamos com
-    // eles e, se o Salesforce recusar, repetimos apenas com os padrões.
-    const comCustom = { ...accountBase, CNPJ__c: digitos(c.doc) };
+    // O corpo enviado sai do mapeamento configurável (Admin › Integrações ›
+    // Salesforce › Campos), garantindo que a tela de conferência mostre
+    // exatamente o que é gravado na org.
+    const { carregarMapeamento } = await import("./salesforce-campos.server");
+    const { montarPayload } = await import("./salesforce-campos");
+    const overrides = await carregarMapeamento("Account");
+    const { payload } = montarPayload("Account", { ...c }, overrides);
+    const accountBody: Record<string, unknown> = { ...payload };
 
     let accountId = so(c.sf_account_id) || (await acharAccount(c.doc, nome));
     const enviar = async (body: Record<string, unknown>) =>
@@ -126,16 +130,26 @@ export async function sincronizarClienteSalesforce(
         ? sf(`/sobjects/Account/${accountId}`, { method: "PATCH", body: JSON.stringify(body) })
         : sf(`/sobjects/Account`, { method: "POST", body: JSON.stringify(body) });
 
+    // Campos que a org não tem (ou não aceita) são removidos e o envio é
+    // refeito — os demais continuam sendo gravados.
+    let corpo = accountBody;
     let res: any;
-    try {
-      res = await enviar(comCustom);
-    } catch (err) {
-      if (/No such column|INVALID_FIELD/i.test((err as Error).message)) {
-        res = await enviar(accountBase);
-      } else {
+    for (let tentativa = 1; ; tentativa++) {
+      try {
+        res = await enviar(corpo);
+        break;
+      } catch (err) {
+        const msg = (err as Error).message;
+        const invalidos = camposRecusados(msg).filter((f) => f in corpo);
+        if (invalidos.length && tentativa <= 6) {
+          corpo = { ...corpo };
+          for (const f of invalidos) delete corpo[f];
+          continue;
+        }
         throw err;
       }
     }
+
     accountId = accountId ?? res?.id ?? null;
     if (!accountId) return { ok: false, erro: "Salesforce não retornou o ID da conta." };
 
