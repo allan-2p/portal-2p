@@ -9,6 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { CodigoCopiavel } from "@/components/cobranca-card";
+import { PixQrCode } from "@/components/pix-qrcode";
 
 export type ResultadoConclusao = {
   numero: string;
@@ -22,7 +24,14 @@ export type ResultadoConclusao = {
     motivo?: string | null;
   } | null;
   salesforce?: { ok?: boolean; enviado?: boolean; mensagem?: string | null; opportunityId?: string | null } | null;
-  cobranca?: { gerada?: boolean; meio?: string | null; motivo?: string | null; erro?: string | null } | null;
+  cobranca?: {
+    gerada?: boolean;
+    meio?: string | null;
+    motivo?: string | null;
+    erro?: string | null;
+    pixCopiaCola?: string | null;
+    linhaDigitavel?: string | null;
+  } | null;
 };
 
 /**
@@ -86,6 +95,20 @@ export function ResultadoConclusaoDialog({
               : `Status aplicado: ${resultado?.status ?? ""}. Veja abaixo o resultado de cada integração.`}
           </DialogDescription>
         </DialogHeader>
+        {!resultado?.erro && resultado?.cobranca?.pixCopiaCola ? (
+          <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">Pague com Pix</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+              <PixQrCode valor={resultado.cobranca.pixCopiaCola} />
+              <div className="min-w-0 flex-1">
+                <CodigoCopiavel rot="Pix copia e cola" valor={resultado.cobranca.pixCopiaCola} />
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {!resultado?.erro && resultado?.cobranca?.linhaDigitavel ? (
+          <CodigoCopiavel rot="Linha digitável do boleto" valor={resultado.cobranca.linhaDigitavel} />
+        ) : null}
         {!resultado?.erro && (
           <div className="space-y-2 text-sm">
             {linhas.map((l) => (

@@ -35,6 +35,16 @@ export function usePropostaDetalhe(id?: string) {
     queryFn: async () => {
       return await obterPropostaFn({ data: { id: id! } });
     },
+    // Enquanto a cobrança não estiver paga, o detalhe se atualiza sozinho —
+    // assim o Pix reemitido aparece sem precisar recarregar a tela.
+    refetchInterval: (q) => {
+      const row = q.state.data as Record<string, any> | undefined;
+      const forma = String(row?.["forma_pagamento"] ?? "");
+      const st = String(row?.["pagamento_status"] ?? "");
+      const aguardando = (forma === "pix" || forma === "boleto_vista") && st !== "pago" && st !== "cancelado";
+      return aguardando ? 15000 : false;
+    },
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -109,7 +119,11 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
       <NfDocumentosCard proposta={p} />
 
-      {(p['pagamento_linha_digitavel'] || p['pagamento_pix_copia_cola'] || p['pagamento_status']) && (
+      {(p['pagamento_linha_digitavel'] ||
+        p['pagamento_pix_copia_cola'] ||
+        p['pagamento_status'] ||
+        p['forma_pagamento'] === 'pix' ||
+        p['forma_pagamento'] === 'boleto_vista') && (
         <div className="glass rounded-2xl p-5">
           <CobrancaCard
             cobranca={{
