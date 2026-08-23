@@ -2042,6 +2042,36 @@ export type Database = {
         }
         Relationships: []
       }
+      salesforce_field_map: {
+        Row: {
+          ativo: boolean
+          campo_portal: string
+          id: string
+          objeto: string
+          sf_field: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          campo_portal: string
+          id?: string
+          objeto: string
+          sf_field?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          campo_portal?: string
+          id?: string
+          objeto?: string
+          sf_field?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       salesforce_team_members: {
         Row: {
           created_at: string
