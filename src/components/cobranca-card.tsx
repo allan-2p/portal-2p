@@ -82,6 +82,20 @@ export function CobrancaCard({ cobranca, acoes }: { cobranca: CobrancaInfo; acoe
   const emitida = Boolean(c.linhaDigitavel || c.pixCopiaCola);
   const erro = c.status === "erro";
   const aplicavel = c.aplicavel ?? (c.forma === "boleto_vista" || c.forma === "pix");
+  const [previa, setPrevia] = useState(false);
+
+  const dadosBoleto = {
+    numeroPedido: c.numeroPedido,
+    clienteNome: c.clienteNome,
+    clienteDoc: c.clienteDoc,
+    valor: c.valor,
+    vencimento: c.vencimento,
+    linhaDigitavel: c.linhaDigitavel,
+    codigoBarras: c.codigoBarras,
+    nossoNumero: c.nossoNumero,
+  };
+
+
 
   return (
     <section className="space-y-3 rounded-xl border border-border bg-surface/40 p-3">
