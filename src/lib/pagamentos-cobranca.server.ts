@@ -15,7 +15,7 @@
  */
 
 import * as db from "./propostas-db.server";
-import { ItauIndisponivel, chamarItau, credenciaisBoleto, credenciaisPix, itauEnv } from "./itau-api.server";
+import { ItauIndisponivel, chamarItau, credenciaisBoleto, credenciaisPix, itauEnv, modoItau } from "./itau-api.server";
 
 export type CobrancaResultado = {
   gerada: boolean;
@@ -258,7 +258,13 @@ export async function gerarCobrancaCheckout(
       level,
       event,
       message: message.slice(0, 500),
-      detail: { proposta_id: propostaId, numero: row["numero"] ?? null, ...detail },
+      detail: {
+        proposta_id: propostaId,
+        numero: row["numero"] ?? null,
+        modo: modoItau(),
+        via_proxy: modoItau() === "proxy",
+        ...detail,
+      },
       durationMs: Date.now() - t0,
       actorId: opts.ator?.id ?? null,
       actorEmail: opts.ator?.email ?? null,
