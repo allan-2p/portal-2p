@@ -133,9 +133,11 @@ async function itauFetch(url: string, init: RequestInit): Promise<Response> {
   const dispatcher = await mtlsDispatcher();
   if (!dispatcher) {
     throw new ItauIndisponivel(
-      "Certificado mTLS do Itaú indisponível neste ambiente (ITAU_MTLS_CERT_PEM/ITAU_MTLS_KEY_PEM).",
+      "As chamadas ao Itaú exigem certificado mTLS, e este ambiente não consegue apresentá-lo. " +
+        "Configure o proxy mTLS (ITAU_PROXY_URL + ITAU_PROXY_SECRET) para emitir Pix/boleto.",
     );
   }
+
   try {
     return await fetch(url, { ...init, dispatcher } as RequestInit);
   } catch (e) {
@@ -177,17 +179,25 @@ async function obterToken(escopo: "boleto" | "pix", cred: Credenciais): Promise<
   return json.access_token;
 }
 
+/**
+ * Credenciais do Itaú. No modo proxy o token OAuth é resolvido pelo próprio
+ * proxy (que guarda client_id/secret junto do certificado), então o portal
+ * não precisa delas.
+ */
 export function credenciaisBoleto(): Credenciais | null {
   const clientId = env("ITAU_BOLETO_CLIENT_ID");
   const clientSecret = env("ITAU_BOLETO_CLIENT_SECRET");
-  return clientId && clientSecret ? { clientId, clientSecret } : null;
+  if (clientId && clientSecret) return { clientId, clientSecret };
+  return proxyConfigurado() ? { clientId: "", clientSecret: "" } : null;
 }
 
 export function credenciaisPix(): Credenciais | null {
   const clientId = env("ITAU_PIX_CLIENT_ID");
   const clientSecret = env("ITAU_PIX_CLIENT_SECRET");
-  return clientId && clientSecret ? { clientId, clientSecret } : null;
+  if (clientId && clientSecret) return { clientId, clientSecret };
+  return proxyConfigurado() ? { clientId: "", clientSecret: "" } : null;
 }
+
 
 export type ItauCall = {
   escopo: "boleto" | "pix";
@@ -198,8 +208,79 @@ export type ItauCall = {
   correlationId: string;
 };
 
+/** Proxy mTLS externo (servidor que guarda o certificado do Itaú). */
+export function proxyConfigurado(): { url: string; secret: string } | null {
+  const url = env("ITAU_PROXY_URL");
+  const secret = env("ITAU_PROXY_SECRET");
+  return url && secret ? { url, secret } : null;
+}
+
+/** Modo de operação atual, para exibição no painel de Integrações. */
+export function modoItau(): "proxy" | "direto" | "indisponivel" {
+  if (proxyConfigurado()) return "proxy";
+  if (env("ITAU_MTLS_CERT_PEM") && env("ITAU_MTLS_KEY_PEM")) return "direto";
+  return "indisponivel";
+}
+
+/**
+ * Chamada via proxy mTLS: o proxy resolve o token OAuth e apresenta o
+ * certificado; o portal só envia o segredo do proxy. A resposta repassa
+ * status e corpo crus do Itaú.
+ */
+async function chamarViaProxy(
+  call: ItauCall,
+  proxy: { url: string; secret: string },
+): Promise<Record<string, any>> {
+  let res: Response | null = null;
+  let text = "";
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    try {
+      res = await fetch(proxy.url, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          accept: "application/json",
+          "x-proxy-secret": proxy.secret,
+          "x-itau-correlationID": call.correlationId,
+        },
+        body: JSON.stringify({
+          metodo: call.metodo,
+          api: call.escopo,
+          caminho: call.caminho,
+          ...(call.body === undefined ? {} : { corpo: call.body }),
+        }),
+      });
+    } catch (e) {
+      throw new ItauIndisponivel(
+        `Não foi possível falar com o proxy mTLS do Itaú: ${(e as Error)?.message ?? "erro de rede"}.`,
+      );
+    }
+    text = await res.text();
+    if (res.ok || res.status < 500) break;
+    if (tentativa < 3) await new Promise((r) => setTimeout(r, tentativa * 1500));
+  }
+
+  if (res && !res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(
+        `Proxy mTLS recusou a chamada (${res.status}). Confira ITAU_PROXY_SECRET no portal e no servidor do proxy. Detalhe: ${text.slice(0, 300)}`,
+      );
+    }
+    if (res.status >= 500) {
+      throw new ItauIndisponivel(
+        `Itaú/proxy indisponível no momento (HTTP ${res.status}). Detalhe: ${text.slice(0, 300)}`,
+      );
+    }
+    throw new Error(`Itaú respondeu ${res.status}: ${text.slice(0, 400)}`);
+  }
+  return text ? (JSON.parse(text) as Record<string, any>) : {};
+}
+
 /** Chamada autenticada; devolve o JSON de resposta ou lança erro legível. */
 export async function chamarItau(call: ItauCall): Promise<Record<string, any>> {
+  const proxy = proxyConfigurado();
+  if (proxy) return await chamarViaProxy(call, proxy);
+
   const token = await obterToken(call.escopo, call.cred);
   const url = montarUrl(apiBase(call.escopo), call.caminho);
 
@@ -237,3 +318,4 @@ export async function chamarItau(call: ItauCall): Promise<Record<string, any>> {
 }
 
 export { env as itauEnv };
+
