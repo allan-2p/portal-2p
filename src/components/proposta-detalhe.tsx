@@ -95,10 +95,13 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <Campo label="CNPJ/CPF" value={p['cliente_doc'] || "—"} />
           <Campo label="Inscrição estadual" value={p['cliente_ie'] || "—"} />
         </div>
+
+        <PropostaPdfAcoes proposta={p} />
       </div>
 
       <div className="glass rounded-2xl p-5 space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+
           Andamento do pedido
         </h3>
         <PropostaTimeline status={status} proposta={p} />
