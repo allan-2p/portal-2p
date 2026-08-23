@@ -164,17 +164,8 @@ async function acharOpp(numero: string, nomeOpp: string): Promise<string | null>
   }
 }
 
-/**
 
- * Organização da oportunidade (picklist `Org_Oportunidade__c`).
- * 2P Solar → "Acessórios 2P" · 2P Carregadores → "2P Carregadores".
- */
-export function orgOportunidade(row: Record<string, any>): string | null {
-  const org = so(row["organizacao"] ?? row["instancia"]).toLowerCase();
-  if (org.includes("solar") || org.includes("acess")) return "Acessórios 2P";
-  if (org.includes("carregad")) return "2P Carregadores";
-  return null;
-}
+
 
 /**
  * Gravação do vínculo com o Salesforce. Se falhar, o próximo envio criaria uma
