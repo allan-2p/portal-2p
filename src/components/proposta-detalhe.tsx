@@ -133,6 +133,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
               valor: Number(p['pagamento_valor'] ?? 0) || null,
               vencimento: p['pagamento_vencimento'],
               linhaDigitavel: p['pagamento_linha_digitavel'],
+              codigoBarras: p['pagamento_codigo_barras'],
               nossoNumero: p['pagamento_nosso_numero'],
               pixCopiaCola: p['pagamento_pix_copia_cola'],
               url: p['pagamento_url'],
