@@ -22,6 +22,13 @@ export type SapProdutoRow = {
   custo: number | null;
   ncm_id: string | null;
   ncm_codigo: string | null;
+  /** Tem preço vigente no SAP (VK12) na última varredura. */
+  vendavel_sap: boolean | null;
+  /** Decisão manual que vence a varredura de preço (null = automático). */
+  ativo_override: boolean | null;
+  ativo_override_motivo: string | null;
+  preco_vk12: number | null;
+  preco_checado_em: string | null;
 };
 
 
@@ -108,7 +115,9 @@ export const listSapProdutos = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<{ produtos: SapProdutoRow[]; lastRun: SapSyncRun | null }> => {
     const { data, error } = await context.supabase
       .from("sap_produtos")
-      .select("id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id, ncm_codigo")
+      .select(
+        "id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id, ncm_codigo, vendavel_sap, ativo_override, ativo_override_motivo, preco_vk12, preco_checado_em",
+      )
       .order("descricao");
     if (error) throw new Error(error.message);
 
@@ -155,6 +164,8 @@ export type SapSyncResult = {
   totalLiberados: number;
   semNcm: number;
   duracaoMs: number;
+  /** Varredura de preço no SAP disparada no fim da sincronização. */
+  vendaveis?: { verificados: number; ativados: number; desativados: number; erro?: string };
 };
 
 /** Traduz falhas técnicas do SAP Bridge em mensagens acionáveis. */
@@ -373,11 +384,45 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         },
         actorId: context.userId,
       });
+
+      // Regra permanente: depois de importar o mestre, o critério de vendável é
+      // ter preço no SAP. Aqui verificamos os materiais novos (e uma fatia dos
+      // mais antigos sem checagem); o cron diário cobre o restante.
+      let vendaveis: SapSyncResult["vendaveis"];
+      try {
+        const { runJob } = await import("@/lib/job-runs.server");
+        const { varrerCatalogoVendaveis } = await import("@/lib/sap-catalogo-vendaveis.server");
+        const codigosNovos = novos.map((n) => n.codigo);
+        const r = await runJob(
+          {
+            job: "sap.sync-produtos",
+            trigger: "portal",
+            payload: { origem: "sync-produtos", novos: codigosNovos.length },
+            actorId: context.userId,
+          },
+          () =>
+            varrerCatalogoVendaveis({
+              limite: 250,
+              ...(codigosNovos.length ? { codigos: codigosNovos } : {}),
+              actorId: context.userId,
+            }) as any,
+        );
+        const res = (r as any)?.result ?? (r as any) ?? {};
+        vendaveis = {
+          verificados: Number(res.verificados ?? 0),
+          ativados: Number(res.ativados ?? 0),
+          desativados: Number(res.desativados ?? 0),
+        };
+      } catch (e: any) {
+        vendaveis = { verificados: 0, ativados: 0, desativados: 0, erro: String(e?.message ?? e) };
+      }
+
       return {
         inserted,
         updated,
         deactivated: orfaos.length,
         unchanged,
+        vendaveis,
         catalogoAtualizado: espelho.length,
         catalogoInalterado,
         totalSap: todosMateriais.length,
@@ -512,3 +557,104 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+
+/**
+ * Override manual do "ativo": o time decide, e a varredura de preço do SAP
+ * (`sap.sync-produtos`) passa a respeitar essa decisão. `override: null` volta
+ * o material para o critério automático (tem preço na VK12 → ativo).
+ */
+export const setSapProdutoOverride = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        override: z.boolean().nullable(),
+        motivo: z.string().trim().max(300).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await requireAnyFeature(context, [
+      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
+    ]);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: atual, error: readErr } = await supabaseAdmin
+      .from("sap_produtos")
+      .select("codigo, descricao, ativo, vendavel_sap")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!atual) throw new Error("Produto não encontrado.");
+
+    // Sem override, o status volta a ser o que a varredura encontrou.
+    const ativo = data.override ?? Boolean((atual as any).vendavel_sap);
+    const { error } = await supabaseAdmin
+      .from("sap_produtos")
+      .update({
+        ativo,
+        ativo_override: data.override,
+        ativo_override_por: data.override === null ? null : ((context as any).userId ?? null),
+        ativo_override_em: data.override === null ? null : new Date().toISOString(),
+        ativo_override_motivo: data.override === null ? null : (data.motivo ?? "Definido manualmente na Gestão de Produtos."),
+      } as any)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin
+      .from("produtos")
+      .update({ ativo })
+      .eq("origem", "sap")
+      .eq("codigo", String((atual as any).codigo));
+
+    await recordModeration(context, {
+      area: "sap_produtos",
+      instanceId: "admin",
+      action: data.override === null ? "override-removido" : data.override ? "ativou" : "desativou",
+      target: (atual as any).descricao,
+      summary:
+        data.override === null
+          ? `Override manual removido: ${(atual as any).descricao} volta ao critério de preço do SAP.`
+          : `Override manual: ${(atual as any).descricao} ${data.override ? "ativado" : "desativado"} independente do preço do SAP.`,
+      details: { vendavel_sap: (atual as any).vendavel_sap ?? null, motivo: data.motivo ?? null },
+    });
+
+    return { ok: true };
+  });
+
+/** Roda a varredura de preço do SAP sob demanda (mesmo motor do cron). */
+export const varrerCatalogoVendaveisAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({ limite: z.number().int().min(1).max(900).optional(), codigos: z.array(z.string()).optional() })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await requireAnyFeature(context, [
+      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
+    ]);
+    const { runJob } = await import("@/lib/job-runs.server");
+    const { varrerCatalogoVendaveis } = await import("@/lib/sap-catalogo-vendaveis.server");
+    const r = await runJob(
+      {
+        job: "sap.sync-produtos",
+        trigger: "manual",
+        payload: { limite: data.limite ?? 250, codigos: data.codigos?.length ?? 0 },
+        actorId: (context as any).userId ?? null,
+      },
+      () =>
+        varrerCatalogoVendaveis({
+          limite: data.limite ?? 250,
+          ...(data.codigos?.length ? { codigos: data.codigos } : {}),
+          actorId: (context as any).userId ?? null,
+        }),
+    );
+    if (!r.ok) throw new Error(r.error);
+    return r.result;
+  });

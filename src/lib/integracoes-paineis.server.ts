@@ -66,6 +66,7 @@ const CRON_HORAS: Record<string, number> = {
   "cron.sap-nfs": 1,
   "cron.pix-reconsulta": 1,
   "cron.boleto-avisos": 24,
+  "sap.sync-produtos": 24,
 };
 
 type Ctx = { supabase: any; userId: string };

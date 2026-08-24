@@ -20,9 +20,22 @@ export const executarJobIntegracaoFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
     const job = String((input as { job?: unknown })?.job ?? "");
-    const permitidos = ["cron.sap-nfs", "cron.estoque", "cron.pix-reconsulta", "cron.boleto-avisos"];
+    const permitidos = [
+      "cron.sap-nfs",
+      "cron.estoque",
+      "cron.pix-reconsulta",
+      "cron.boleto-avisos",
+      "sap.sync-produtos",
+    ];
     if (!permitidos.includes(job)) throw new Error("Automação inválida.");
-    return { job: job as "cron.sap-nfs" | "cron.estoque" | "cron.pix-reconsulta" | "cron.boleto-avisos" };
+    return {
+      job: job as
+        | "cron.sap-nfs"
+        | "cron.estoque"
+        | "cron.pix-reconsulta"
+        | "cron.boleto-avisos"
+        | "sap.sync-produtos",
+    };
   })
   .handler(async ({ data, context }) => {
     const { requireAdminFeature } = await import("@/lib/guards.server");

@@ -21,6 +21,8 @@ import {
   listSapProdutos,
   listSapSyncRuns,
   setSapProdutoVisibilidade,
+  setSapProdutoOverride,
+  varrerCatalogoVendaveisAction,
   syncSapProdutos,
   type SapSyncResult,
   type SapVisibilidade,
@@ -316,6 +318,8 @@ function ProdutosPage() {
   const setVis = useServerFn(setSapProdutoVisibilidade);
   const sync = useServerFn(syncSapProdutos);
   const listRuns = useServerFn(listSapSyncRuns);
+  const setOverride = useServerFn(setSapProdutoOverride);
+  const varrerPrecos = useServerFn(varrerCatalogoVendaveisAction);
 
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState("all");
@@ -398,6 +402,35 @@ function ProdutosPage() {
       refetch();
       runsQuery.refetch();
     },
+  });
+
+  // Varredura de preço: o material só é vendável quando tem preço vigente no SAP.
+  const varrerMut = useMutation({
+    mutationFn: (codigos?: string[]) => varrerPrecos({ data: codigos?.length ? { codigos } : {} }),
+    onSuccess: (r: any) => {
+      toast.success(
+        r?.skipped
+          ? String(r?.motivo ?? "Nada para verificar.")
+          : `Preços verificados: ${r?.verificados ?? 0} materiais, ${r?.comPreco ?? 0} com preço, ${r?.ativados ?? 0} ativados, ${r?.desativados ?? 0} desativados.`,
+      );
+      refetch();
+      propagar();
+    },
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+  });
+
+  const overrideMut = useMutation({
+    mutationFn: (v: { id: string; override: boolean | null }) => setOverride({ data: v }),
+    onSuccess: (_r, v) => {
+      toast.success(
+        v.override === null
+          ? "Override removido: o status volta a seguir o preço do SAP."
+          : `Produto ${v.override ? "ativado" : "desativado"} manualmente (vence a varredura de preço).`,
+      );
+      refetch();
+      propagar();
+    },
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
   });
 
   useEffect(() => {
@@ -524,6 +557,21 @@ function ProdutosPage() {
             >
               <ShieldCheck className="h-4 w-4 mr-2" />
               Auditoria
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => varrerMut.mutate(undefined)}
+              disabled={varrerMut.isPending}
+              title="Simula preço no SAP (listas 01 e 02) e ativa/desativa o catálogo. Overrides manuais são preservados."
+            >
+              {varrerMut.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-4 w-4 mr-2" />
+              )}
+              {varrerMut.isPending ? "Verificando preços…" : "Verificar preços"}
             </Button>
 
             <Button size="sm" onClick={() => syncMut.mutate()} disabled={syncMut.isPending || errosRegras.length > 0}>
@@ -884,6 +932,7 @@ function ProdutosPage() {
                 <th className="text-left px-3 py-2">Lista de preço</th>
                 <th className="text-left px-3 py-2">Permissão</th>
                 <th className="text-left px-3 py-2">Visibilidade</th>
+                <th className="text-left px-3 py-2">Preço no SAP</th>
                 <th className="text-left px-3 py-2">Status</th>
                 {audit && <th className="text-left px-3 py-2">Regra aplicada</th>}
                 {audit && <th className="text-left px-3 py-2">Motivo</th>}
@@ -893,13 +942,13 @@ function ProdutosPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={audit ? 11 : 9} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 12 : 10} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={audit ? 11 : 9} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 12 : 10} className="px-3 py-10 text-center text-muted-foreground">
                     Nenhum produto encontrado. Clique em “Sinc. SAP” para importar o catálogo.
                   </td>
                 </tr>
@@ -945,9 +994,53 @@ function ProdutosPage() {
                       </Select>
                     </td>
                     <td className="px-3 py-2">
-                      <Badge variant={p.ativo ? "default" : "outline"}>
-                        {p.ativo ? "Ativo" : "Inativo"}
-                      </Badge>
+                      {p.vendavel_sap === null || p.vendavel_sap === undefined ? (
+                        <Badge variant="outline" title="Nunca verificado — clique em “Verificar preços”.">
+                          Não verificado
+                        </Badge>
+                      ) : p.vendavel_sap ? (
+                        <Badge
+                          variant="secondary"
+                          title={`Preço encontrado no SAP${p.preco_checado_em ? ` em ${fmt(p.preco_checado_em)}` : ""}`}
+                        >
+                          Com preço
+                          {p.preco_vk12
+                            ? ` • ${p.preco_vk12.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                            : ""}
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive" title="Sem condição de preço vigente (VK12) — não pode ser vendido.">
+                          Sem preço
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={p.ativo ? "default" : "outline"}>
+                          {p.ativo ? "Ativo" : "Inativo"}
+                        </Badge>
+                        <Select
+                          value={p.ativo_override === null || p.ativo_override === undefined ? "auto" : p.ativo_override ? "on" : "off"}
+                          onValueChange={(v) =>
+                            overrideMut.mutate({
+                              id: p.id,
+                              override: v === "auto" ? null : v === "on",
+                            })
+                          }
+                        >
+                          <SelectTrigger
+                            className="h-7 w-[132px] text-xs"
+                            title={p.ativo_override_motivo ?? "Automático: segue o preço do SAP."}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Automático</SelectItem>
+                            <SelectItem value="on">Forçar ativo</SelectItem>
+                            <SelectItem value="off">Forçar inativo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </td>
                     {audit && (
                       <td className="px-3 py-2 text-xs">

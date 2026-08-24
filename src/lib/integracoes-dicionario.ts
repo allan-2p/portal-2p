@@ -486,6 +486,40 @@ const SAP_CATALOGO: FluxoDic = {
   ],
 };
 
+const SAP_VENDAVEIS: FluxoDic = {
+  id: "sap-catalogo-vendaveis",
+  titulo: "Catálogo vendável (preço VK12)",
+  chamada: "RFC ZNFE_OV_SIMULAR (SOAP 1.2) — lotes de 40 materiais, listas 01 e 02",
+  gatilho: "Cron diário, junto da sincronização de produtos e pelo reprocesso do gatilho.",
+  operacoes: [
+    "Material com preço vigente fica ativo; sem preço em nenhuma lista fica inativo.",
+    "Material que aborta o lote é isolado por bisseção e tratado como sem preço.",
+    "Override manual na Gestão de Produtos sempre vence a varredura.",
+  ],
+  logSlug: "sap",
+  job: "sap.sync-produtos",
+  estados: {
+    ok: "Varredura concluída: flags de ativo/inativo atualizados com a contagem no log.",
+    pendente: "Nenhuma varredura no período.",
+    erro: "Credencial recusada, SOAP Fault ou falha ao gravar o catálogo.",
+  },
+  grupos: [
+    {
+      titulo: "Entrada",
+      estrutura: "I_S_PARCEIRO / I_T_ITENS",
+      campos: [
+        f("PLTYP", "lista de preço verificada (01 e depois 02)"),
+        f("MATERIAL", "código SAP numérico do material"),
+        f("QTDE", "fixo 1 (só interessa se existe preço)"),
+      ],
+    },
+  ],
+  retornos: [
+    f("VALOR_LIQUIDO / VALOR_IMPOSTO", "preço encontrado (gravado em preco_vk12)"),
+    f("E_T_MSG", "mensagem de erro do material que não simula"),
+  ],
+};
+
 export const FLUXOS_SAP: FluxoDic[] = [
   SAP_CLIENTE,
   SAP_OV,
@@ -493,6 +527,7 @@ export const FLUXOS_SAP: FluxoDic[] = [
   SAP_SIMULAR,
   SAP_ESTOQUE,
   SAP_CATALOGO,
+  SAP_VENDAVEIS,
 ];
 
 /* ----------------------------------------------------------- Salesforce */

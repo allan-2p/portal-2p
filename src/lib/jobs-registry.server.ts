@@ -70,6 +70,19 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     return { ...(await executarSyncEstoque(null)) };
   },
 
+  // Motor real: varre o preço no SAP e ativa/desativa o catálogo.
+  "sap.sync-produtos": async (payload) => {
+    const p = payload as Record<string, unknown>;
+    const { varrerCatalogoVendaveis } = await import("@/lib/sap-catalogo-vendaveis.server");
+    const codigos = Array.isArray(p["codigos"]) ? (p["codigos"] as unknown[]).map(String) : undefined;
+    return {
+      ...(await varrerCatalogoVendaveis({
+        limite: Number(p["limite"] ?? 250) || 250,
+        ...(codigos?.length ? { codigos } : {}),
+      })),
+    };
+  },
+
   // Motor real: reconsulta no Itaú as cobranças Pix pendentes.
   "cron.pix-reconsulta": async (payload) => {
     const { reconsultarPixPendentes } = await import("@/lib/pagamentos-pix-reconsulta.server");

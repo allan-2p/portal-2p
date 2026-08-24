@@ -122,6 +122,7 @@ reprocessamento usa exatamente o mesmo executor do disparo original
 | `cron.pix-reconsulta` | Reconsulta cobranças Pix pendentes no Itaú |
 | `cron.boleto-avisos` | Avisa consultor e cliente sobre boletos |
 | `cron.boletos-sharepoint` | Busca os PDFs de boletos a prazo no SharePoint pela NF |
+| `sap.sync-produtos` | Varre o preço (VK12, listas 01/02) e ativa/desativa o catálogo: sem preço no SAP não é vendável. Override manual na Gestão de Produtos vence a varredura |
 | `sap.ov-criar` | Cria a ordem de venda no SAP (idempotente por proposta, claim atômico) |
 | `salesforce.pedido` | Cria/atualiza a Opportunity do pedido |
 | `fretefy.oferta-carga` | Cria a oferta de carga ou atualiza a NF da carga |
