@@ -1,49 +1,46 @@
-# Etapa 1 — Central de Reprocessamento de Integrações
+# Cadastro de cliente em abas (visualizar + editar)
 
-Você escolheu as quatro frentes, mas com plano enxuto. Então esta etapa entrega **uma** frente completa: a que hoje mais gera trabalho manual e risco de pedido "perdido no meio do caminho". As outras três ficam listadas no fim como próximas etapas, sem implementação agora.
+Reorganiza os dois modais do cadastro de clientes com a mesma linguagem visual, em 4 abas, e cria o cadastro de endereços de entrega com favorito para uso nas propostas.
 
-## Por que esta primeiro
+## Cabeçalho comum aos dois modais
 
-O que já existe hoje no portal:
+Acima de tudo, no topo do modal (tanto no "olhinho" quanto na edição):
+- Nome do cliente (razão social) + nome fantasia
+- Consultor responsável em destaque
+- Código SAP, CNPJ e selos (unidade, contribuinte, ativo/inativo)
 
-- `job_runs` registra cada execução (sucesso/erro) dos jobs e webhooks.
-- Cada integração já tem retentativa **dentro da mesma chamada**: Itaú (3x), Salesforce (3x com backoff), SAP (auto-recuperação por documento).
-- Já há painel de status e alertas de integração parada (`integration-status`, `integration-alerts`).
+O olhinho passa a usar largura cheia (sem duas colunas) e ganha as mesmas abas da edição, então visualizar e editar viram a mesma experiência — muda só o fato de um ser leitura e o outro edição.
 
-O que falta: quando as 3 tentativas do momento falham, **nada tenta de novo**. A falha fica só no log e depende de alguém abrir a proposta e clicar em reenviar. É exatamente o que aconteceu nas falhas de OV e de cobrança que já investigamos.
+## Abas (mesma ordem nos dois modais)
 
-## O que vai ser entregue
+1. **Contatos** (aba inicial)
+   - Contato geral da empresa (e-mail / telefone / site — puxados da consulta do CNPJ)
+   - Contato principal
+   - Contato financeiro
+   - Contatos adicionais
+2. **Endereços**
+   - Endereço de faturamento (vem do CNPJ, somente leitura)
+   - Endereços de entrega: adicionar/editar/remover vários, com apelido ("Obra Campinas"), contato/telefone do local, e marcação de **favorito** (um só por cliente)
+3. **Dados cadastrais**
+   - Dados gerais da empresa, situação fiscal (IE, Suframa, CNAE, regime, contribuinte)
+   - Abaixo: dados comerciais (consultor, finalidade de uso, tabela de preço, condição de pagamento, observações, ativo) e origem do cadastro
+4. **Financeiro**
+   - Análises de crédito do portal + histórico, botão "Solicitar análise"
+   - Condição de pagamento aprovada em destaque (limite, validade)
 
-1. **Fila de reprocessamento persistente**
-   Toda falha definitiva de integração (OV no SAP, cobrança Itaú, envio Salesforce, oferta Fretefy, boleto SharePoint) passa a gravar um item pendente com: integração, proposta/pedido, motivo do erro, nº de tentativas e próximo horário de tentativa.
+Histórico do cliente sai do modal do olhinho (fica só em Perfil do Cliente).
 
-2. **Reprocessamento automático com backoff**
-   Um job cron novo processa a fila a cada poucos minutos, com espera crescente entre tentativas (ex.: 5 min, 15 min, 1 h, 4 h, 12 h) e limite de tentativas. Depois do limite o item vira "requer atenção" e para de tentar, sem travar a fila.
+## Endereços de entrega nas propostas
 
-3. **Tela "Central de Integrações"** (dentro de Integrações e auditoria)
-   Lista única de pendências e falhas, com: integração, proposta, erro real (não a mensagem genérica), tentativas, próxima tentativa. Ações por linha: **Tentar agora**, **Ignorar/Resolver manualmente**, **Ver log completo**. Contadores no topo por integração.
-
-4. **Aviso ativo de falha crítica**
-   Quando um item esgota as tentativas, gera notificação no portal (e e-mail, se você quiser) para o time responsável — hoje isso só apareceria se alguém procurasse no log.
-
-5. **Idempotência garantida**
-   Antes de retentar, cada integração confere se a operação já foi concluída do outro lado (OV já criada, cobrança já emitida, Opportunity já existente) para nunca duplicar pedido ou cobrança.
+Nas propostas (Solar e Carregadores), ao marcar "endereço de entrega diferente do cadastro", aparece um seletor com os endereços cadastrados do cliente; o favorito já vem pré-selecionado. Continua sendo possível digitar um endereço avulso.
 
 ## Detalhes técnicos
 
-- Nova tabela `integration_retry_queue` no Supabase (grupo-2p), com RLS + GRANTs, índice por `(status, next_attempt_at)` e unicidade por `(integracao, referencia_id, operacao)` para não empilhar duplicatas.
-- Novo módulo `src/lib/integration-retry.server.ts`: `enfileirar()`, `processarFila()`, `marcarResolvido()`, com o mapa de handlers reaproveitando as funções que já existem (`sap-ov.server.ts`, `pagamentos-cobranca.server.ts`, `salesforce-pedidos.server.ts`, `fretefy-oferta.server.ts`, `boletos-sharepoint.server.ts`) — nenhuma lógica de negócio reescrita.
-- Novo job `integracao.reprocessar` no registry + `cron.schedule` chamando `portal_cron_post`, no mesmo padrão dos jobs atuais, protegido por `x-cron-secret`.
-- Novo painel `src/components/integracao-fila-panel.tsx` e aba na página de Integrações; ações via `createServerFn` com `requireSupabaseAuth` e checagem de papel.
-- Testes: enfileiramento em falha, respeito ao backoff, não-duplicação por idempotência, esgotamento de tentativas.
-- `CHANGELOG.md` e `npm run readme:sync` atualizados no mesmo turno.
+- Novo arquivo `supabase/external/cliente-enderecos.sql` criando `public.cliente_enderecos` no projeto grupo-2p (cliente_id, cliente_doc, instancia, apelido, cep, logradouro, numero, complemento, bairro, cidade, uf, contato, telefone, favorito, ativo) + índice único parcial garantindo um favorito por cliente.
+- Novo `src/lib/cliente-enderecos.server.ts` (REST via `grupo2pRest`) e `src/lib/cliente-enderecos.functions.ts` (listar/salvar/excluir/definir favorito) com `requireSupabaseAuth`.
+- `clientes-cadastro-page.tsx` refatorado: cabeçalho compartilhado (`ClienteModalHeader`), abas via `@/components/ui/tabs`, blocos de leitura em largura cheia. As validações, o autosave e o bloqueio de saída atuais continuam iguais.
+- Propostas: seletor de endereço alimentado pela nova função, preenchendo o objeto `entrega` já existente — sem mudança no payload salvo nem no SAP.
 
-## Não entra nesta etapa
+## Dependência que preciso de você
 
-Sem mudança em preços, cálculo de frete, PDF, layout de checkout ou payload das integrações. O comportamento atual continua igual — só passa a ter uma segunda chance automática e visibilidade.
-
-## Próximas etapas (para aprovar depois, uma por vez)
-
-- **Etapa 2 — Velocidade do vendedor:** duplicar proposta/template, rascunho automático, busca global Cmd+K.
-- **Etapa 3 — Link público de proposta + portal do cliente:** proposta compartilhável com aceite digital e acompanhamento de pedido, NF, boleto/Pix e rastreio.
-- **Etapa 4 — Gestão e dados:** funil e conversão por consultor, margem por proposta com alerta de desconto, exportações padronizadas.
+A tabela `cliente_enderecos` vive no banco do grupo-2p, onde eu **não** aplico migração automática. Vou gerar o script SQL e você roda no grupo-2p (como fizemos com `contatos.sql`). Enquanto não rodar, a aba Endereços mostra aviso de "tabela não criada" e o restante funciona normal.
