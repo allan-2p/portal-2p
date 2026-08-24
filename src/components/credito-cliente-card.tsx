@@ -33,11 +33,19 @@ export function CreditoClienteCard({
   clienteId,
   clienteDoc,
   clienteNome,
+  contatos: contatosCliente = [],
 }: {
   instancia: "solar" | "carregadores";
   clienteId?: string | null;
   clienteDoc: string;
   clienteNome?: string | null;
+  contatos?: Array<{
+    tipo?: string | null;
+    nome?: string | null;
+    cargo?: string | null;
+    emails?: string[] | null;
+    telefones?: string[] | null;
+  }>;
 }) {
   const qc = useQueryClient();
   const doc = String(clienteDoc ?? "").replace(/\D/g, "");
@@ -46,18 +54,43 @@ export function CreditoClienteCard({
   const criar = useServerFn(solicitarCredito);
   const cancelar = useServerFn(cancelarCredito);
 
+  const contatosDisponiveis = (contatosCliente ?? []).filter((c) => String(c?.nome ?? "").trim());
+
   const [aberto, setAberto] = useState(false);
   const [valor, setValor] = useState("");
   const [condicao, setCondicao] = useState("");
   const [prioridade, setPrioridade] = useState<string>("Normal");
   const [obs, setObs] = useState("");
-  const [contatoNome, setContatoNome] = useState("");
-  const [contatoEmail, setContatoEmail] = useState("");
-  const [contatoTel, setContatoTel] = useState("");
+  const [contatoOrigem, setContatoOrigem] = useState<string>(
+    contatosDisponiveis.length ? "0" : "__novo",
+  );
+  const [contatoNome, setContatoNome] = useState(
+    contatosDisponiveis.length ? String(contatosDisponiveis[0]?.nome ?? "") : "",
+  );
+  const [contatoEmail, setContatoEmail] = useState(
+    contatosDisponiveis.length ? String(contatosDisponiveis[0]?.emails?.[0] ?? "") : "",
+  );
+  const [contatoTel, setContatoTel] = useState(
+    contatosDisponiveis.length ? String(contatosDisponiveis[0]?.telefones?.[0] ?? "") : "",
+  );
   const [temSecundaria, setTemSecundaria] = useState(false);
   const [secNome, setSecNome] = useState("");
   const [secDoc, setSecDoc] = useState("");
   const [anexos, setAnexos] = useState<CreditoAnexo[]>([]);
+
+  const escolherContato = (v: string) => {
+    setContatoOrigem(v);
+    if (v === "__novo") {
+      setContatoNome(""); setContatoEmail(""); setContatoTel("");
+      return;
+    }
+    const c = contatosDisponiveis[Number(v)];
+    if (!c) return;
+    setContatoNome(String(c.nome ?? ""));
+    setContatoEmail(String(c.emails?.[0] ?? ""));
+    setContatoTel(String(c.telefones?.[0] ?? ""));
+  };
+
 
   const analises = useQuery({
     queryKey: ["credito-analises", "cliente", doc],
