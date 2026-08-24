@@ -1025,8 +1025,17 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
                     <Linha rot="Finalidade de uso" val={detalhe.finalidade} />
                     <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
-                    <Linha rot="Consultor" val={detalhe.created_by_nome} />
+                    <Linha rot="Consultor" val={(detalhe as any).consultor_nome || detalhe.created_by_nome} />
+                    <Linha rot="Cód. do consultor (SAP)" val={(detalhe as any).consultor_sap} />
                     <Linha rot="Observações" val={detalhe.observacoes} />
+                  </Bloco>
+
+                  <Bloco titulo="Origem do cadastro">
+                    <Linha rot="Origem" val={(detalhe as any).origem} />
+                    <Linha rot="Sub-origem" val={(detalhe as any).sub_origem} />
+                    <Linha rot="Cadastrado via" val={(detalhe as any).origem_cadastro} />
+                    <Linha rot="ID na plataforma antiga" val={(detalhe as any).id_antigo} />
+                    <Linha rot="Lead do Salesforce" val={(detalhe as any).sf_lead_id} />
                   </Bloco>
                 </div>
 

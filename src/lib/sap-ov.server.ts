@@ -742,6 +742,21 @@ export async function criarOrdemVendaSap(
   const row: Record<string, any> = base0;
 
   const jaEnviada = String(row["sap_ov_numero"] ?? "").trim();
+
+  // Proposta importada da plataforma antiga que já tem OV: nunca reenviar
+  // (nem com "forçar") — a ordem existe no SAP e o portal só acompanha.
+  const { bloqueiaReenvioSap } = await import("./proposta-legado");
+  if (bloqueiaReenvioSap(row)) {
+    return {
+      enviado: false,
+      ok: true,
+      vbeln: jaEnviada || null,
+      mensagem: "Proposta importada da plataforma antiga: a ordem de venda já existe no SAP.",
+      motivo: "importada_legado",
+      testrun: false,
+    };
+  }
+
   if (jaEnviada && !opts.forcar) {
     return {
       enviado: false,
@@ -752,6 +767,7 @@ export async function criarOrdemVendaSap(
       testrun: false,
     };
   }
+
 
   const { url, auth } = credenciais();
   if (!url || !auth) {

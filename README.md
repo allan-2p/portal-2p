@@ -59,14 +59,14 @@ tests/                    testes unitários e de RLS
 ### Rotas do app
 
 <!-- readme:rotas -->
-72 páginas autenticadas em `src/routes/_authenticated` (file routes do TanStack Router).
+73 páginas autenticadas em `src/routes/_authenticated` (file routes do TanStack Router).
 
 | Área | Páginas | Rotas |
 | --- | --- | --- |
 | **admin** | 28 | `/admin/atividade`, `/admin/auditoria`, `/admin/comissoes`, `/admin/configuracoes`, `/admin/estoque`, `/admin/frete-regras`, `/admin`, `/admin/integracoes`, `/admin/integracoes/$slug`, `/admin/logs/gatilhos`, `/admin/logs`, `/admin/logs/integracoes`, `/admin/logs/moderacao`, `/admin/logs/retencao`, `/admin/logs/sap`, `/admin/metas`, `/admin/microinversores-solar`, `/admin/moderacao`, `/admin/modulos-solar`, `/admin/perfis`, `/admin/produtos`, `/admin/produtos-solar`, `/admin/regras`, `/admin/suportes-solar`, `/admin/tabelas`, `/admin/trilhos-solar`, `/admin/usuarios`, `/admin/vinculos` |
 | **carregadores** | 16 | `/carregadores/clientes`, `/carregadores/clientes/cadastros`, `/carregadores/clientes`, `/carregadores/comissoes`, `/carregadores/frete-regras`, `/carregadores`, `/carregadores/metas`, `/carregadores/pedidos`, `/carregadores/produtos`, `/carregadores/propostas`, `/carregadores/propostas/auditoria`, `/carregadores/propostas`, `/carregadores/propostas/nova`, `/carregadores/propostas/visualizar`, `/carregadores/regras`, `/carregadores/tarefas` |
 | **raiz** | 4 | `/financeiro`, `/index`, `/marketing`, `/perfil` |
-| **financeiro** | 2 | `/financeiro/condicoes`, `/financeiro` |
+| **financeiro** | 3 | `/financeiro/condicoes`, `/financeiro/credito`, `/financeiro` |
 | **marketing** | 8 | `/marketing/cac`, `/marketing/cohort`, `/marketing/gargalo`, `/marketing`, `/marketing/metas`, `/marketing/pre-vendas`, `/marketing/social`, `/marketing/trafego` |
 | **solar** | 14 | `/solar/atlas`, `/solar/clientes`, `/solar/clientes/cadastros`, `/solar/clientes/perfil`, `/solar/clientes/ranking`, `/solar/clientes/segmentacao`, `/solar/clientes/sugestoes`, `/solar/cupons`, `/solar/dashboards`, `/solar/dashboards/metas`, `/solar/pedidos`, `/solar/propostas`, `/solar/propostas/nova`, `/solar/tarefas` |
 <!-- /readme:rotas -->

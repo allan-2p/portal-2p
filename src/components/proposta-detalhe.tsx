@@ -15,6 +15,7 @@ import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
 import { cidadeUf } from "@/lib/local-format";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
+import { numeroAnterior, ehPlataformaAntiga } from "@/lib/proposta-legado";
 import { NfDocumentosCard } from "@/components/nf-documentos-card";
 import { CobrancaCard } from "@/components/cobranca-card";
 import { BoletosSharepointCard } from "@/components/boletos-sharepoint-card";
@@ -83,6 +84,16 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">
               Proposta {formatPropostaNumero(p['numero']) || "—"}
+              {numeroAnterior(p) && (
+                <span className="ml-2 normal-case tracking-normal text-muted-foreground font-normal">
+                  nº anterior {numeroAnterior(p)}
+                </span>
+              )}
+              {ehPlataformaAntiga(p) && (
+                <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold normal-case tracking-normal text-muted-foreground">
+                  Plataforma antiga
+                </span>
+              )}
             </div>
             <h2 className="text-2xl font-bold mt-1 truncate">{p['nome'] || p['cliente_nome']}</h2>
             <div className="text-sm text-muted-foreground mt-1">{p['cliente_nome']}</div>
@@ -105,7 +116,20 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <Campo label="Nº SAP" value={formatSapNumero(p['sap_ov_numero'] || p['numero_sap']) || "—"} />
           <Campo label="CNPJ/CPF" value={p['cliente_doc'] || "—"} />
           <Campo label="Inscrição estadual" value={p['cliente_ie'] || "—"} />
+          {numeroAnterior(p) ? <Campo label="Nº anterior" value={numeroAnterior(p)} /> : null}
+          {p['projeto_antigo_id'] ? (
+            <Campo label="Projeto (plataforma antiga)" value={String(p['projeto_antigo_id'])} />
+          ) : null}
         </div>
+
+        {p['observacoes_internas'] ? (
+          <div className="rounded-xl bg-muted/40 p-3 text-sm">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+              Observações internas
+            </div>
+            <p className="whitespace-pre-wrap">{String(p['observacoes_internas'])}</p>
+          </div>
+        ) : null}
 
         <PropostaPdfAcoes proposta={p} />
       </div>

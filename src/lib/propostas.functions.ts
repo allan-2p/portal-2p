@@ -355,7 +355,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     }
 
 
-    // Nº da proposta: sequencial no servidor (6 dígitos, a partir de 050000).
+    // Nº da proposta: sequencial no servidor (inteiro puro, sem zeros à esquerda).
     const numeroProposta = data.propostaId
       ? (numeroExistente ?? data.numero)
       : await (await repo()).proximoNumeroProposta("carregadores");

@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
+import { numeroAnterior } from "@/lib/proposta-legado";
 import {
   excluirPropostaFn,
   listarPropostasFn,
@@ -129,7 +130,7 @@ function PropostasSolarPage() {
       if (uf !== "todos" && r.uf !== uf) return false;
       if (!t) return true;
       return norm(
-        [r.cliente_nome, r.numero, r.nome, (r.sap_ov_numero || r.numero_sap), r.cliente_doc, r.consultor_nome]
+        [r.cliente_nome, r.numero, numeroAnterior(r), r.nome, (r.sap_ov_numero || r.numero_sap), r.cliente_doc, r.consultor_nome]
           .filter(Boolean)
           .join(" "),
       ).includes(t);

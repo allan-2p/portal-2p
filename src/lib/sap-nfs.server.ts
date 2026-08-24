@@ -79,8 +79,14 @@ export type DocumentoNfTipo = "danfe" | "xml" | "boleto";
  * I_BOLETO); o cron pede só a DANFE, o download sob demanda pede o que o
  * usuário clicou.
  */
-function envelope(nroped: string, docs: DocumentoNfTipo[] = ["danfe"]): string {
+/** Filial de faturamento usada nas consultas (mesma da criação da OV). */
+export const FILIAL_CONSULTA = String(process.env["SAP_OV_FILIAL"] ?? "9802").trim() || "9802";
+
+function envelope(vbeln: string, docs: DocumentoNfTipo[] = ["danfe"], filial = FILIAL_CONSULTA): string {
   const on = (t: DocumentoNfTipo) => (docs.includes(t) ? "X" : "");
+  // A chave de busca é SEMPRE a ordem de venda (I_VBELN_VA) + filial.
+  // I_NROPED nunca é usado: números da plataforma antiga (faixa até ~53059)
+  // colidem com pedidos existentes no SAP e contaminam NF/status.
   return `<?xml version="1.0" encoding="utf-8"?>
 <soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
   <soapenv:Header/>
@@ -89,13 +95,20 @@ function envelope(nroped: string, docs: DocumentoNfTipo[] = ["danfe"]): string {
       <I_BOLETO>${on("boleto")}</I_BOLETO>
       <I_DADOS>X</I_DADOS>
       <I_DANFE>${on("danfe")}</I_DANFE>
-      <I_NROPED>${esc(nroped)}</I_NROPED>
+      <I_NROPED></I_NROPED>
+      <I_FILIAL>${esc(filial)}</I_FILIAL>
+      <I_VBELN_VA>${esc(vbeln)}</I_VBELN_VA>
       <I_XML_NFE>${on("xml")}</I_XML_NFE>
     </urn:ZNFE_OV_CONSULTAR>
   </soapenv:Body>
 </soapenv:Envelope>`;
 }
 
+/** Compara duas ordens de venda ignorando zeros à esquerda. */
+export function mesmaOv(a: unknown, b: unknown): boolean {
+  const n = (v: unknown) => String(v ?? "").trim().replace(/^0+(?=\d)/, "");
+  return Boolean(n(a)) && n(a) === n(b);
+}
 
 export type ConsultaSap = {
   picking: string | null;
@@ -158,12 +171,12 @@ export function proximoStatus(atual: string, c: ConsultaSap): StatusNf | null {
 }
 
 async function chamarSap(
-  nroped: string,
+  vbeln: string,
   docs: DocumentoNfTipo[] = ["danfe"],
 ): Promise<{ doc: any; xml: string }> {
-  // O portal guarda o número com zeros à esquerda ("050019"); o SAP indexa o
-  // NROPED sem eles ("50019") e devolve vazio se enviarmos com zeros.
-  nroped = String(nroped ?? "").trim().replace(/^0+(?=\d)/, "");
+  // O SAP indexa a OV sem zeros à esquerda.
+  vbeln = String(vbeln ?? "").trim().replace(/^0+(?=\d)/, "");
+  if (!vbeln) throw new Error("Consulta ao SAP exige o número da ordem de venda (OV) da proposta.");
   const { url, auth } = credenciais();
 
   const controller = new AbortController();
@@ -178,27 +191,72 @@ async function chamarSap(
         "accept-language": SAP_ACCEPT_LANGUAGE,
         authorization: auth!,
       },
-      body: envelope(nroped, docs),
+      body: envelope(vbeln, docs),
       signal: controller.signal,
     });
     const xml = await res.text();
     if (!res.ok) throw new Error(`SAP respondeu HTTP ${res.status}: ${xml.replace(/\s+/g, " ").slice(0, 300)}`);
     const parser = new XMLParser({ removeNSPrefix: true, ignoreAttributes: true, parseTagValue: false });
-    return { doc: parser.parse(xml), xml };
+    const doc = parser.parse(xml);
+
+    // Guarda anti-contaminação: o retorno tem que ser da MESMA ordem de venda.
+    const devolvido = String(
+      achar(doc, "VBELN_VA") ?? achar(doc, "E_VBELN_VA") ?? "",
+    ).trim();
+    if (devolvido && !mesmaOv(devolvido, vbeln)) {
+      throw new Error(
+        `Retorno do SAP não confere com a proposta (consultado OV ${vbeln}, devolvido ${devolvido}).`,
+      );
+    }
+    return { doc, xml };
   } finally {
     clearTimeout(timer);
   }
 }
 
+/** Faixa de números da plataforma antiga já existentes no SAP. */
+export const NROPED_LEGADO_MAX = 53059;
+
 /**
  * Recupera o nº da ordem de venda (VBELN_VA) já existente no SAP para um
- * NROPED. Usado quando a criação falha por pedido duplicado: a ordem existe,
- * só não voltou o número na resposta do CRIAR.
+ * NROPED. Usado APENAS na auto-recuperação da criação da OV, quando o SAP
+ * recusa por pedido duplicado e ainda não temos VBELN.
+ *
+ * Números na faixa da plataforma antiga (até 53059) são recusados aqui: eles
+ * apontam para pedidos legados no SAP e contaminariam NF/status.
  */
 export async function consultarVbelnPorPedido(nroped: string): Promise<string | null> {
   if (!sapNfsConfigurado()) return null;
+  const numero = String(nroped ?? "").trim().replace(/^0+(?=\d)/, "");
+  if (!/^\d+$/.test(numero) || Number(numero) <= NROPED_LEGADO_MAX) return null;
+  const { url, auth } = credenciais();
+  const corpo = `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope" xmlns:urn="urn:sap-com:document:sap:rfc:functions">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <urn:ZNFE_OV_CONSULTAR>
+      <I_BOLETO></I_BOLETO>
+      <I_DADOS>X</I_DADOS>
+      <I_DANFE></I_DANFE>
+      <I_NROPED>${esc(numero)}</I_NROPED>
+      <I_FILIAL>${esc(FILIAL_CONSULTA)}</I_FILIAL>
+      <I_XML_NFE></I_XML_NFE>
+    </urn:ZNFE_OV_CONSULTAR>
+  </soapenv:Body>
+</soapenv:Envelope>`;
   try {
-    const { doc } = await chamarSap(nroped);
+    const res = await fetch(comIdiomaPT(url!), {
+      method: "POST",
+      headers: {
+        "content-type": "application/soap+xml; charset=utf-8",
+        "accept-language": SAP_ACCEPT_LANGUAGE,
+        authorization: auth!,
+      },
+      body: corpo,
+    });
+    if (!res.ok) return null;
+    const parser = new XMLParser({ removeNSPrefix: true, ignoreAttributes: true, parseTagValue: false });
+    const doc = parser.parse(await res.text());
     const dados = achar(doc, "E_S_DADOS") ?? doc;
     const v = String(
       achar(dados, "VBELN_VA") ?? achar(doc, "VBELN_VA") ?? achar(doc, "E_VBELN_VA") ?? "",
@@ -254,11 +312,11 @@ export function pdfIntegro(bytes: Buffer): boolean {
  * Devolve o base64 cru — quem chama decide onde guardar.
  */
 export async function consultarDocumentoNfSap(
-  nroped: string,
+  ovNumero: string,
   tipo: DocumentoNfTipo,
 ): Promise<{ base64: string | null; consulta: ConsultaSap }> {
   if (!sapNfsConfigurado()) throw new Error("Integração SAP de notas fiscais não configurada.");
-  const { doc } = await chamarSap(nroped, [tipo]);
+  const { doc } = await chamarSap(ovNumero, [tipo]);
   const documentos = achar(doc, "E_S_DOCUMENTOS") ?? doc;
   const chaves: Record<DocumentoNfTipo, string[]> = {
     danfe: ["DANFE", "E_DANFE"],
@@ -339,8 +397,8 @@ export type NfAplicacao = {
 async function processarProposta(row: Record<string, any>): Promise<NfAplicacao> {
   const id = String(row["id"]);
   const de = String(row["status"] ?? "");
-  const nroped = String(row["numero"] ?? "").trim();
-  const { doc } = await chamarSap(nroped);
+  const ov = String(row["sap_ov_numero"] ?? "").trim();
+  const { doc } = await chamarSap(ov);
   const c = lerConsulta(doc);
   const para = proximoStatus(de, c);
 
@@ -490,7 +548,20 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
     try {
       detalhes.push(await processarProposta(row));
     } catch (e) {
-      erros.push({ proposta_id: String(row["id"]), erro: (e as Error).message.slice(0, 300) });
+      const erro = (e as Error).message.slice(0, 300);
+      erros.push({ proposta_id: String(row["id"]), erro });
+      // Divergência de OV e demais falhas aparecem no painel Integrações.
+      await logIntegrationEvent({
+        slug: "cron.sap-nfs",
+        level: "error",
+        event: "consulta",
+        message: erro,
+        detail: {
+          proposta_id: String(row["id"]),
+          numero: row["numero"] ?? null,
+          sap_ov_numero: row["sap_ov_numero"] ?? null,
+        },
+      });
     }
   }
 

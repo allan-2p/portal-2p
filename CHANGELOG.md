@@ -34,6 +34,16 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+### Alterado
+- **Numeração de proposta definitiva**: o nº é inteiro puro, sem zeros à esquerda, e é o próprio nº de pedido enviado ao SAP (próximo = 100027). Todo preenchimento com zeros foi removido de geração, exibição, busca e comparação.
+- Propostas renumeradas mostram o **nº anterior** nos detalhes, e ele também é aceito na busca das listas (Solar e Carregadores).
+- Detalhes da proposta exibem o selo **Plataforma antiga**, o projeto de origem e as observações internas quando existirem; o cadastro do cliente mostra origem, sub-origem, cadastro de origem, ID antigo e lead do Salesforce.
+
+### Integrações
+- Consultas ao SAP (cron de NFs, atualização manual, DANFE/XML/boleto) passam a usar **ordem de venda + filial 9802** como chave, nunca o nº de pedido — números da plataforma antiga ocupam faixa já usada no SAP e contaminavam NF/status.
+- Retorno do SAP é validado antes de gravar: se a ordem devolvida não for a da proposta, o dado é descartado e a divergência aparece no painel Integrações.
+- Proposta importada da plataforma antiga que já tem ordem de venda nunca é reenviada ao SAP nem tem preço recalculado.
+
 ### Adicionado
 - **Análise de Crédito no Financeiro**: fila em `/financeiro/credito` (acesso `financeiro.credito`) para receber, assumir e concluir solicitações — limite aprovado, condição a prazo, Serasa, restrição e validade.
 - Solicitação de crédito a partir do cadastro do cliente, com histórico do portal e leitura do objeto de Análise de Crédito do Salesforce no mesmo bloco.

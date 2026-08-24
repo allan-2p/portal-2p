@@ -116,44 +116,54 @@ export async function excluirProposta(id: string): Promise<void> {
   await rest(`propostas?id=eq.${id}`, { method: "DELETE" });
 }
 
-/** Nº da proposta (NROPED): sequencial de 6 dígitos a partir de 050000. */
-export const NUMERO_PROPOSTA_INICIAL = 50000;
+/**
+ * Nº da proposta (NROPED): inteiro puro, SEM zeros à esquerda, e é o próprio
+ * número enviado ao SAP. Após a migração, a sequence do banco está em 100026
+ * (próximo = 100027).
+ */
+export const NUMERO_PROPOSTA_INICIAL = 100027;
+
+/** Faixa ocupada pelos pedidos da plataforma antiga no SAP. */
+export const NUMERO_LEGADO_MAX = 53059;
 
 /**
- * Próximo número de pedido (NROPED). Sai de uma sequence do Postgres no banco
- * do Grupo 2P (`public.proximo_numero_proposta`): monotônica, nunca reutilizada
- * e à prova de concorrência — excluir um pedido NÃO devolve o número.
+ * Próximo número de pedido (NROPED). Sai da sequence do Postgres no banco do
+ * Grupo 2P (`public.proximo_numero_proposta` → `propostas_numero_seq`):
+ * monotônica, nunca reutilizada e à prova de concorrência.
  *
- * O fallback por `max(numero)+1` existe só para não travar o portal caso o
- * script `supabase/external/propostas-numeracao.sql` ainda não tenha sido
- * aplicado; ele reutiliza número e deve ser considerado degradado.
+ * O fallback por `max(numero)+1` é degradado (pode repetir número) e existe só
+ * para não travar o portal caso a função não responda.
  */
 export async function proximoNumeroProposta(organizacao = "carregadores"): Promise<string> {
+  const puro = (v: unknown) => String(v ?? "").trim().replace(/^0+(?=\d)/, "");
   try {
     const out = await rest(`rpc/proximo_numero_proposta`, {
       method: "POST",
       body: JSON.stringify({ p_organizacao: organizacao }),
     });
-    const numero = String(typeof out === "string" ? out : (out?.numero ?? out ?? "")).trim();
-    if (/^\d{6,}$/.test(numero)) return numero;
+    const numero = puro(typeof out === "string" ? out : (out?.numero ?? out ?? ""));
+    if (/^\d+$/.test(numero)) return numero;
   } catch {
-    /* sequence ainda não criada no banco do Grupo 2P — cai no fallback */
+    /* sequence indisponível — cai no fallback */
   }
 
-  // Fallback GLOBAL: o maior número de TODAS as unidades (solar, carregadores,
-  // station…). Filtrar por organização repetiria número entre unidades, já que
-  // todas compartilham a mesma tabela.
+  // Fallback GLOBAL: maior número de TODAS as unidades (a tabela é compartilhada).
+  // A comparação é numérica: `numero` é texto e ordenar texto erraria a faixa.
   const params = new URLSearchParams({
     select: "numero",
     numero: "not.is.null",
-    order: "numero.desc",
-    limit: "1",
+    order: "created_at.desc",
+    limit: "500",
   });
   const rows = (await rest(`propostas?${params}`)) ?? [];
-  const atual = Number(String(rows[0]?.numero ?? "").replace(/\D/g, "")) || 0;
-  const proximo = Math.max(atual + 1, NUMERO_PROPOSTA_INICIAL);
-  return String(proximo).padStart(6, "0");
+  const atual = rows.reduce((max: number, r: any) => {
+    const n = Number(puro(r?.numero).replace(/\D/g, "")) || 0;
+    // Números da plataforma antiga não puxam a sequence.
+    return n > NUMERO_LEGADO_MAX ? Math.max(max, n) : max;
+  }, 0);
+  return String(Math.max(atual + 1, NUMERO_PROPOSTA_INICIAL));
 }
+
 
 
 
