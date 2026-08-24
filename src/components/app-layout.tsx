@@ -68,6 +68,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (saved !== null) setClientesOpen(saved === "1");
     const savedD = localStorage.getItem(DASHBOARDS_OPEN_KEY);
     if (savedD !== null) setDashboardsOpen(savedD === "1");
+    const savedP = localStorage.getItem(PROPOSTAS_OPEN_KEY);
+    if (savedP !== null) setPropostasOpen(savedP === "1");
   }, []);
 
   useEffect(() => {
