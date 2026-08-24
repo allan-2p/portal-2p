@@ -559,6 +559,21 @@ function ProdutosPage() {
               Auditoria
             </Button>
 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => varrerMut.mutate(undefined)}
+              disabled={varrerMut.isPending}
+              title="Simula preço no SAP (listas 01 e 02) e ativa/desativa o catálogo. Overrides manuais são preservados."
+            >
+              {varrerMut.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-4 w-4 mr-2" />
+              )}
+              {varrerMut.isPending ? "Verificando preços…" : "Verificar preços"}
+            </Button>
+
             <Button size="sm" onClick={() => syncMut.mutate()} disabled={syncMut.isPending || errosRegras.length > 0}>
               {syncMut.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
