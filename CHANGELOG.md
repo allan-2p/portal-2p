@@ -40,7 +40,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 
 ### Adicionado
+- **Skeletons e transição suave nas listas**: propostas (Solar e Carregadores) e cadastro de clientes mostram linhas "fantasma" no primeiro carregamento e, ao trocar página/filtro, a tabela atual esmaece com um indicador de atualização ao lado do contador — sem piscar tela em branco.
 - **Cadastro de consultores (`consultores_sap`)**: de-para oficial código SAP → nome com os 39 vendedores ativos. O seletor de consultor do cadastro de clientes une os usuários do portal com código SAP e esse de-para (dedupe pelo código, preferindo o usuário do portal). Leitura liberada para usuários logados; manutenção só para administradores.
+
 
 ### Alterado
 - **Consultor dos clientes 2P Carregadores**: os 10 cadastros da unidade que estavam sem consultor passaram a ter **Bruno Amaral (1000000417)** como responsável. A coluna Consultor da lista mostra só o nome, em tamanho normal (o código SAP continua visível no detalhe do cliente).

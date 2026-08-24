@@ -6,6 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { TableSkeletonRows, fetchingClass } from "@/components/ui/table-skeleton";
+
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -954,8 +956,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <th className="text-right px-4 py-2">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
-              {isLoading && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
+            <tbody className={`divide-y divide-border ${fetchingClass(isFetching, isLoading)}`}>
+              {isLoading && <TableSkeletonRows colunas={8} linhas={porPagina > 10 ? 10 : porPagina} />}
+
               {!isLoading && rows.length === 0 && (
                 <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                   <Building2 className="h-6 w-6 mx-auto mb-2 opacity-50" />
@@ -1014,9 +1017,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <SelectContent>{[10, 25, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <span className="ml-auto">
+            <span className="ml-auto flex items-center gap-2">
               {(paginaAtual - 1) * porPagina + 1}–{Math.min(paginaAtual * porPagina, total)} de {total}
+              {isFetching && !isLoading && (
+                <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-transparent" aria-label="Atualizando" />
+              )}
             </span>
+
             <div className="flex items-center gap-1">
               <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Página anterior"
                 disabled={paginaAtual <= 1} onClick={() => setPagina((p) => Math.max(1, p - 1))}>

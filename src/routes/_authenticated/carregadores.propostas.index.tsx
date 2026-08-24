@@ -6,6 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TableSkeletonRows, fetchingClass } from "@/components/ui/table-skeleton";
+
 import {
   Select,
   SelectContent,
@@ -261,7 +263,7 @@ function HistoricoCarregadoresPage() {
                   <th className="text-right px-4 py-3">Ações</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className={fetchingClass(q.isFetching, q.isLoading)}>
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 text-muted-foreground">{formatPropostaNumero(r.numero) || "—"}</td>
@@ -317,22 +319,28 @@ function HistoricoCarregadoresPage() {
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
+                {q.isLoading && <TableSkeletonRows colunas={9} linhas={porPagina > 10 ? 10 : porPagina} />}
+                {!q.isLoading && filtered.length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
-                      {q.isLoading ? "Carregando…" : "Nenhuma proposta encontrada."}
+                      Nenhuma proposta encontrada.
                     </td>
                   </tr>
                 )}
+
               </tbody>
             </table>
           </div>
           {filtered.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
-              <div className="text-muted-foreground">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 Mostrando {(paginaAtual - 1) * porPagina + 1}–
                 {Math.min(paginaAtual * porPagina, total)} de {total}
+                {q.isFetching && !q.isLoading && (
+                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-transparent" aria-label="Atualizando" />
+                )}
               </div>
+
               <div className="flex items-center gap-2">
                 <Select value={String(porPagina)} onValueChange={(v) => setPorPagina(Number(v))}>
                   <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
