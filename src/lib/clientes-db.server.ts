@@ -148,6 +148,64 @@ export async function listClientesPagina(
   return { rows, total: total ?? rows.length };
 }
 
+/**
+ * Lista para a tela "Perfil do Cliente": vem só da tabela `clientes`
+ * (nunca do Salesforce), separada por instância/organização e, quando o
+ * usuário não tem "View All Records", pelo consultor responsável
+ * (`consultor_id` / `consultor_sap` / `created_by`).
+ */
+export async function listClientesPerfil(
+  instance: ClientesInstance,
+  opts: {
+    q?: string;
+    pagina?: number;
+    porPagina?: number;
+    donoId?: string | null;
+    consultorSap?: string | null;
+  } = {},
+): Promise<{ rows: ClienteRow[]; total: number }> {
+  const porPagina = Math.min(Math.max(opts.porPagina ?? 10, 1), 200);
+  const pagina = Math.max(opts.pagina ?? 1, 1);
+
+  const params = new URLSearchParams({
+    select: SELECT,
+    instancia: `eq.${instance}`,
+    organizacao: `eq.${ORGANIZACAO[instance]}`,
+    order: "created_at.desc.nullslast,id.asc",
+  });
+
+  const grupos: string[] = [];
+  if (opts.donoId || opts.consultorSap) {
+    const alvos: string[] = [];
+    if (opts.donoId) alvos.push(`created_by.eq.${opts.donoId}`, `consultor_id.eq.${opts.donoId}`);
+    if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
+    grupos.push(`or(${alvos.join(",")})`);
+  }
+  const termo = termoSeguro(opts.q ?? "");
+  if (termo) {
+    const digitos = termo.replace(/\D/g, "");
+    const alvos = COLUNAS_BUSCA_TEXTO.map((c) => `${c}.ilike.*${termo}*`);
+    if (digitos.length >= 3) alvos.push(`doc.ilike.*${digitos}*`, `numero_sap.ilike.*${digitos}*`);
+    grupos.push(`or(${alvos.join(",")})`);
+  }
+  if (grupos.length) params.set("and", `(${grupos.join(",")})`);
+
+  const from = (pagina - 1) * porPagina;
+  const { ok, status, text, total } = await grupo2pRest(`clientes?${params}`, {
+    range: { from, to: from + porPagina - 1 },
+    count: true,
+  });
+  if (!ok) {
+    if (status === 404 || /relation .*clientes.* does not exist/i.test(text)) {
+      throw new ClientesTableMissing(instance);
+    }
+    if (status === 416) return { rows: [], total: total ?? 0 };
+    throw new Error(`Erro no banco (${status}): ${text.slice(0, 300)}`);
+  }
+  const rows: ClienteRow[] = text ? JSON.parse(text) : [];
+  return { rows, total: total ?? rows.length };
+}
+
 /** Procura o documento nas duas unidades; devolve onde já existe. */
 export async function findClienteByDoc(doc: string): Promise<
   Array<{ instancia: ClientesInstance; cliente: ClienteRow }>
