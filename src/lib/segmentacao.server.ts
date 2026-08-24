@@ -7,7 +7,7 @@
  * mais nenhuma chamada à API do Salesforce nesta tela.
  */
 
-import { grupo2pRest, ORGANIZACAO } from "./grupo2p-db.server";
+import { grupo2pRest } from "./grupo2p-db.server";
 
 export type SegmentacaoInstance = "solar" | "carregadores";
 export type Segmento = "A" | "B" | "C" | "D";
@@ -173,7 +173,6 @@ export async function calcularSegmentacao(opts: {
     select:
       "id,razao_social,nome_fantasia,cidade,uf,numero_sap,sf_account_id,observacoes,consultor_nome,consultor_sap,created_by",
     instancia: `eq.${opts.instance}`,
-    organizacao: `eq.${ORGANIZACAO[opts.instance]}`,
     order: "razao_social.asc.nullslast,id.asc",
   });
   if (opts.donoId || opts.consultorSap) {

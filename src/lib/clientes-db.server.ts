@@ -169,8 +169,9 @@ export async function listClientesPerfil(
 
   const params = new URLSearchParams({
     select: SELECT,
+    // Só `instancia`: o campo `organizacao` tem valores mistos ("solar" e
+    // "2P Solar") na base importada e filtrar por ele esconde cadastros.
     instancia: `eq.${instance}`,
-    organizacao: `eq.${ORGANIZACAO[instance]}`,
     order: "created_at.desc.nullslast,id.asc",
   });
 
