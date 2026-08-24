@@ -126,3 +126,16 @@ export function creditoVencido(validade: string | null | undefined, hoje = new D
 
 export const fmtBRL = (v: number | null | undefined) =>
   v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+export function mascaraBRLInput(v: string): string {
+  const digits = v.replace(/\D/g, "");
+  if (digits === "") return "";
+  const n = Number(digits) / 100;
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export function parseBRLInput(v: string): number | null {
+  const digits = v.replace(/\D/g, "");
+  if (digits === "") return null;
+  return Number(digits) / 100;
+}

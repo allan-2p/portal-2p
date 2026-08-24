@@ -17,7 +17,8 @@ import {
   getCreditoHistoricoSf, listCreditoAnalises, solicitarCredito, cancelarCredito,
 } from "@/lib/credito.functions";
 import {
-  CREDITO_PRIORIDADES, CREDITO_STATUS_ABERTOS, creditoStatusTom, fmtBRL, type CreditoAnexo,
+  CREDITO_PRIORIDADES, CREDITO_STATUS_ABERTOS, creditoStatusTom, fmtBRL, mascaraBRLInput, parseBRLInput,
+  type CreditoAnexo,
 } from "@/lib/credito";
 import { CreditoAnexosUpload } from "@/components/credito-anexos";
 import { Switch } from "@/components/ui/switch";
@@ -124,7 +125,7 @@ export function CreditoClienteCard({
           clienteDoc: doc,
           clienteNome: clienteNome ?? null,
           clienteId: clienteId ?? null,
-          creditoSolicitado: valor === "" ? null : Number(valor),
+          creditoSolicitado: parseBRLInput(valor),
           condicaoSolicitada: condicao || null,
           prioridade,
           observacoesVendedor: obs || null,
@@ -333,9 +334,9 @@ export function CreditoClienteCard({
                 <div className="space-y-1.5">
                   <Label>Crédito solicitado (R$)</Label>
                   <Input
-                    type="number" min="0" step="0.01" inputMode="decimal"
-                    value={valor} onChange={(e) => setValor(e.target.value)}
-                    placeholder="Ex.: 150000"
+                    type="text" inputMode="numeric"
+                    value={valor} onChange={(e) => setValor(mascaraBRLInput(e.target.value))}
+                    placeholder="R$ 0,00"
                   />
                 </div>
                 <div className="space-y-1.5">
