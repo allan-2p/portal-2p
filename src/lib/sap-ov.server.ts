@@ -620,7 +620,11 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
   else if (!MODALIDADES_FRETE.includes(mod))
     pendencias.push(`Modalidade de frete inválida para o SAP: "${mod}".`);
   if ((mod === "CIF" || mod === "DEDICADO") && !(Number(row["frete_valor"] ?? 0) > 0))
-    avisos.push("Frete CIF sem valor calculado — a ordem irá com frete zerado.");
+    avisos.push(
+      mod === "DEDICADO"
+        ? "Frete dedicado sem valor informado manualmente — a ordem irá com frete zerado."
+        : "Frete CIF sem valor calculado — a ordem irá com frete zerado.",
+    );
 
   if (!String(row["forma_pagamento"] ?? "").trim()) pendencias.push("Forma de pagamento não definida.");
   if (!String(row["consultor_codigo_sap"] ?? "").trim())
