@@ -155,6 +155,8 @@ export type SapSyncResult = {
   totalLiberados: number;
   semNcm: number;
   duracaoMs: number;
+  /** Varredura de preço no SAP disparada no fim da sincronização. */
+  vendaveis?: { verificados: number; ativados: number; desativados: number; erro?: string };
 };
 
 /** Traduz falhas técnicas do SAP Bridge em mensagens acionáveis. */
