@@ -189,7 +189,7 @@ function Marca({ texto, termo }: { texto?: string | null; termo: string }) {
   );
 }
 
-type OrdemKey = "sap" | "cliente" | "doc" | "fiscal" | "cidade" | "contato";
+type OrdemKey = "sap" | "cliente" | "doc" | "fiscal" | "cidade" | "contato" | "cliente_desde";
 
 /** Ordenação padrão do portal: mais recente primeiro. */
 type OrdemLista = OrdemKey | "recente";
@@ -203,6 +203,7 @@ const COLUNA_ORDEM: Record<OrdemLista, string> = {
   fiscal: "contribuinte",
   cidade: "cidade",
   contato: "consultor_nome",
+  cliente_desde: "created_at",
 };
 
 const UFS = [
