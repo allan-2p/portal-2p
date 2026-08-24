@@ -3,11 +3,11 @@ import { parseVendedores } from "@/components/vendedor-names-filter";
 import { useConsultores } from "@/hooks/use-consultores";
 
 /**
- * Vendedores da unidade Carregadores para filtrar registros por dono.
+ * Vendedores de uma unidade (organização) para filtrar registros por dono.
  * Só entram consultores da própria organização (regra universal do portal).
  */
-export function useCarregadoresVendedores() {
-  const q = useConsultores("carregadores");
+export function useVendedoresOrg(organizacao: "solar" | "carregadores" | "station") {
+  const q = useConsultores(organizacao);
 
   return useMemo(() => {
     const rows = q.data ?? [];
@@ -33,4 +33,9 @@ export function useCarregadoresVendedores() {
     };
     return { names, nameOf, matches, idsDe, isLoading: q.isLoading };
   }, [q.data, q.isLoading]);
+}
+
+/** Atalho para a unidade Carregadores. */
+export function useCarregadoresVendedores() {
+  return useVendedoresOrg("carregadores");
 }

@@ -34,6 +34,7 @@ import { toast } from "sonner";
 const COLLAPSE_KEY = "portal2p-sidebar-collapsed";
 const CLIENTES_OPEN_KEY = "portal2p-clientes-open";
 const DASHBOARDS_OPEN_KEY = "portal2p-dashboards-open";
+const PROPOSTAS_OPEN_KEY = "portal2p-propostas-open";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -46,6 +47,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [clientesOpen, setClientesOpen] = useState(true);
   const [dashboardsOpen, setDashboardsOpen] = useState(true);
   const [moderacaoOpen, setModeracaoOpen] = useState(true);
+  const [propostasOpen, setPropostasOpen] = useState(true);
   
 
   const { user, profile, roles, hasRole } = useAuth();
@@ -66,6 +68,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (saved !== null) setClientesOpen(saved === "1");
     const savedD = localStorage.getItem(DASHBOARDS_OPEN_KEY);
     if (savedD !== null) setDashboardsOpen(savedD === "1");
+    const savedP = localStorage.getItem(PROPOSTAS_OPEN_KEY);
+    if (savedP !== null) setPropostasOpen(savedP === "1");
   }, []);
 
   useEffect(() => {
@@ -129,6 +133,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
     });
   };
 
+  const togglePropostas = () => {
+    setPropostasOpen((v) => {
+      localStorage.setItem(PROPOSTAS_OPEN_KEY, !v ? "1" : "0");
+      return !v;
+    });
+  };
+
   const toggleDashboards = () => {
     setDashboardsOpen((v) => {
       localStorage.setItem(DASHBOARDS_OPEN_KEY, !v ? "1" : "0");
@@ -176,6 +187,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const atlasActive = pathname.startsWith("/solar/atlas");
   const clientesActive = pathname.startsWith("/solar/clientes");
   const dashboardsActive = pathname.startsWith("/solar/dashboards");
+  const propostasSolarActive = pathname.startsWith("/solar/propostas") || pathname.startsWith("/solar/pedidos");
+  const propostasCarregadoresActive = pathname.startsWith("/carregadores/propostas") || pathname.startsWith("/carregadores/pedidos");
   const moderacaoActive = pathname.startsWith("/carregadores/produtos") || pathname.startsWith("/carregadores/comissoes") || pathname.startsWith("/carregadores/regras") || pathname.startsWith("/carregadores/metas");
   const marketingActive = pathname.startsWith("/marketing");
   const financeiroActive = pathname.startsWith("/financeiro");
@@ -252,10 +265,36 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <NavLink item={{ to: "/solar/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/solar/tarefas")} collapsed={collapsed} />
             )}
             {show("propostas") && (
-              <NavLink item={{ to: "/solar/propostas", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/solar/propostas")} collapsed={collapsed} />
-            )}
-            {show("pedidos") && (
-              <NavLink item={{ to: "/solar/pedidos", label: "Pedidos", icon: KanbanSquare }} active={pathname.startsWith("/solar/pedidos")} collapsed={collapsed} />
+              collapsed ? (
+                <>
+                  <NavLink item={{ to: "/solar/propostas", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/solar/propostas")} collapsed={collapsed} />
+                  {show("pedidos") && (
+                    <NavLink item={{ to: "/solar/pedidos", label: "Acompanhamento", icon: KanbanSquare }} active={pathname.startsWith("/solar/pedidos")} collapsed={collapsed} />
+                  )}
+                </>
+              ) : (
+                <div className="mb-1">
+                  <button
+                    onClick={togglePropostas}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                      propostasSolarActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                    )}
+                  >
+                    <ClipboardList className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Propostas</span>
+                    <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !propostasOpen && "-rotate-90")} />
+                  </button>
+                  {propostasOpen && (
+                    <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
+                      <SubLink to="/solar/propostas" label="Propostas" icon={ClipboardList} active={pathname.startsWith("/solar/propostas")} />
+                      {show("pedidos") && (
+                        <SubLink to="/solar/pedidos" label="Acompanhamento" icon={KanbanSquare} active={pathname.startsWith("/solar/pedidos")} />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
             )}
             {show("cupons") && (
               <NavLink item={{ to: "/solar/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/solar/cupons")} collapsed={collapsed} />
@@ -281,10 +320,36 @@ export function AppLayout({ children }: { children: ReactNode }) {
   
   
                 {show("carregadores.propostas") && (
-                  <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
-                )}
-                {show("carregadores.pedidos") && (
-                  <NavLink item={{ to: "/carregadores/pedidos", label: "Pedidos", icon: ShoppingCart }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
+                  collapsed ? (
+                    <>
+                      <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
+                      {show("carregadores.pedidos") && (
+                        <NavLink item={{ to: "/carregadores/pedidos", label: "Acompanhamento", icon: ShoppingCart }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
+                      )}
+                    </>
+                  ) : (
+                    <div className="mb-1">
+                      <button
+                        onClick={togglePropostas}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                          propostasCarregadoresActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
+                        )}
+                      >
+                        <Zap className="h-4 w-4 shrink-0" />
+                        <span className="truncate">Propostas</span>
+                        <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !propostasOpen && "-rotate-90")} />
+                      </button>
+                      {propostasOpen && (
+                        <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
+                          <SubLink to="/carregadores/propostas" label="Propostas" icon={Zap} active={pathname.startsWith("/carregadores/propostas")} />
+                          {show("carregadores.pedidos") && (
+                            <SubLink to="/carregadores/pedidos" label="Acompanhamento" icon={ShoppingCart} active={pathname.startsWith("/carregadores/pedidos")} />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
                 )}
                 {/* Moderação foi movida para o ambiente de Administração (engrenagem no topo). */}
                 <div className={cn("h-px bg-border my-2", collapsed && "mx-1")} />
