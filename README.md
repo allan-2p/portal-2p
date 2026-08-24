@@ -172,6 +172,7 @@ Endpoints públicos (exigem `x-cron-secret`, exceto webhooks com assinatura pró
 - `/api/public/hooks/boletos-sharepoint`
 - `/api/public/hooks/estoque-sync`
 - `/api/public/hooks/fretefy-tracking`
+- `/api/public/hooks/itau-diagnostico`
 - `/api/public/hooks/pagamento-link`
 - `/api/public/hooks/pix-itau`
 - `/api/public/hooks/pix-itau/*`
