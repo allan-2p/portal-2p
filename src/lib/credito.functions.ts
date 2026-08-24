@@ -52,6 +52,15 @@ function mapRow(r: any, nomes: Map<string, string>): CreditoAnalise {
     analistaId: r.analista_id ?? null,
     analistaNome: r.analista_id ? (nomes.get(r.analista_id) ?? null) : null,
     concluidoEm: r.concluido_em ?? null,
+    contatoNome: r.contato_nome ?? null,
+    contatoEmail: r.contato_email ?? null,
+    contatoTelefone: r.contato_telefone ?? null,
+    empresaSecundaria: !!r.empresa_secundaria,
+    empresaSecundariaNome: r.empresa_secundaria_nome ?? null,
+    empresaSecundariaDoc: r.empresa_secundaria_doc ?? null,
+    anexos: Array.isArray(r.anexos) ? r.anexos : [],
+    responsavelAnalise: r.responsavel_analise ?? null,
+    autorizacaoDiretoria: r.autorizacao_diretoria ?? null,
   };
 }
 
