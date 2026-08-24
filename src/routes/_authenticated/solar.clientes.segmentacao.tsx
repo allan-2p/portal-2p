@@ -26,30 +26,7 @@ import {
   Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  getSalesforceAccounts,
-  getSalesforceOrcamentos,
-  getSalesforceVendas,
-  getSalesforceVendidoMesAtual,
-  getSalesforcePedidos,
-  getSalesforceSalespeople,
-  OPP_DEFAULTS_VENDIDO_MES,
-  OPP_DEFAULTS_GERADO_MES,
-  type SalesforceOppRow,
-} from "@/lib/salesforce.functions";
-import { useSellerScope } from "@/hooks/use-seller-scope";
-import { FORMER_OWNER_NAMES } from "@/lib/salespeople";
-import { Client360 } from "@/components/cliente-360/client-360";
-import type { SalesforceAccount } from "@/lib/salesforce.functions";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { getSegmentacaoFn } from "@/lib/segmentacao.functions";
 
 
 export const Route = createFileRoute("/_authenticated/solar/clientes/segmentacao")({
@@ -140,7 +117,6 @@ function SegBadge({ seg }: { seg: Segment }) {
 
 function SegmentacaoPage() {
   const navigate = useNavigate();
-  const [profileAccount, setProfileAccount] = useState<SalesforceAccount | null>(null);
   const [selectedSegs, setSelectedSegs] = useState<Set<Segment>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [detailClient, setDetailClient] = useState<Client | null>(null);
@@ -154,279 +130,65 @@ function SegmentacaoPage() {
 
   const baseRange = useMemo(previousQuarterRange, []);
 
-  const { scope, ready: scopeReady } = useSellerScope();
-
-  const fetchAccounts = useServerFn(getSalesforceAccounts);
-  const fetchOrc = useServerFn(getSalesforceOrcamentos);
-  const fetchVen = useServerFn(getSalesforceVendas);
-  const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
-  const fetchPedidos = useServerFn(getSalesforcePedidos);
-  const fetchSalespeople = useServerFn(getSalesforceSalespeople);
-
-  const salespeopleQ = useQuery({
-    queryKey: ["sf-salespeople"],
-    queryFn: () => fetchSalespeople(),
-    enabled: scopeReady,
-    staleTime: 5 * 60_000,
+  const fetchSeg = useServerFn(getSegmentacaoFn);
+  const segQ = useQuery({
+    queryKey: ["segmentacao", "solar", periodo],
+    queryFn: () => fetchSeg({ data: { instancia: "solar" as const, periodo } }),
+    staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
 
+  const loading = segQ.isLoading;
+  const anyError = segQ.error;
+  const baseLabel = segQ.data?.baseLabel ?? baseRange.label;
 
-  // Nomes permitidos pelo escopo (mapa SF id -> Name)
-  const allowedOwnerNames = useMemo<Set<string> | null>(() => {
-    if (!scopeReady || !scope) return new Set(); // enquanto carrega, restringe tudo
-    if (scope.scope === "geral" || !scope.allowed_sf_ids) return null; // sem restrição
-    const nameById = new Map<string, string>();
-    for (const p of salespeopleQ.data?.records ?? []) nameById.set(p.id, p.name);
-    return new Set(scope.allowed_sf_ids.map((id) => nameById.get(id) ?? "").filter(Boolean));
-  }, [scope, scopeReady, salespeopleQ.data]);
-
-  const ownOwnerName = useMemo<string | null>(() => {
-    if (!scope?.sf_user_id) return null;
-    const p = (salespeopleQ.data?.records ?? []).find((r) => r.id === scope.sf_user_id);
-    return p?.name ?? null;
-  }, [scope, salespeopleQ.data]);
-
-
-
-  const accountsQ = useQuery({
-    queryKey: ["salesforce", "accounts"],
-    queryFn: () => fetchAccounts(),
-    staleTime: 60_000,
-  });
-
-  const qOrc = useQuery({
-    queryKey: ["sf-orcamentos", baseRange.start, baseRange.end],
-    queryFn: () => fetchOrc({ data: { start: baseRange.start, end: baseRange.end } }),
-    staleTime: 60_000,
-  });
-  const qVen = useQuery({
-    queryKey: ["sf-vendas", baseRange.start, baseRange.end],
-    queryFn: () => fetchVen({ data: { start: baseRange.start, end: baseRange.end } }),
-    staleTime: 60_000,
-  });
-
-  const qVendidoMes = useQuery({
-    queryKey: ["sf-vendido", "seg", periodo],
-    queryFn: () =>
-      fetchVendidoMes({
-        data: {
-          ...OPP_DEFAULTS_VENDIDO_MES,
-          dateLiteral: periodo === "tri" ? "THIS_QUARTER" : "THIS_MONTH",
-        },
-      }),
-    staleTime: 60_000,
-  });
-  const qGeradoMes = useQuery({
-    queryKey: ["sf-gerado", "seg", periodo],
-    queryFn: () =>
-      fetchVendidoMes({
-        data: {
-          ...OPP_DEFAULTS_GERADO_MES,
-          dateLiteral: periodo === "tri" ? "THIS_QUARTER" : "THIS_MONTH",
-        },
-      }),
-    staleTime: 60_000,
-  });
-  const qPedidos = useQuery({
-    queryKey: ["sf-pedidos", "seg"],
-    queryFn: () => fetchPedidos({ data: {} }),
-    staleTime: 60_000,
-  });
-
-  const loading =
-    qOrc.isLoading ||
-    qVen.isLoading ||
-    qVendidoMes.isLoading ||
-    qGeradoMes.isLoading ||
-    accountsQ.isLoading;
-  const anyError = qOrc.error ?? qVen.error ?? qVendidoMes.error ?? qGeradoMes.error ?? accountsQ.error;
-
-  // Observações por nome de conta (para expor no expandido/modal).
-  const notesByAccount = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const a of accountsQ.data?.records ?? []) {
-      const note = a.observacoes ?? a.description ?? undefined;
-      if (a.name && note) map.set(a.name, note);
-    }
-    return map;
-  }, [accountsQ.data]);
-
-  // ================ Base: Projeção - Tri Atual ================
-  type ProjectedRow = {
-    account: string;
-    accountOwner: string | null;
+  type Linha = Client & {
+    consultor: string | null;
     prevSales: number;
-    convRate: number;
-    salesMonthly: number;
-    genMonthly: number;
-    segment: Segment;
+    pedidos: { id: string; name: string | null; status: string | null; total: number; closeDate: string | null }[];
   };
 
-  const projected: ProjectedRow[] = useMemo(() => {
-    const orcRecs = qOrc.data?.records ?? [];
-    const venRecs = qVen.data?.records ?? [];
-
-    const generatedByAccount = new Map<string, number>();
-    const closedByAccount = new Map<string, number>();
-    const salesByAccount = new Map<string, number>();
-    const ownerByAccount = new Map<string, string | null>();
-
-    for (const o of orcRecs) {
-      const key = o.account ?? "(sem cliente)";
-      generatedByAccount.set(key, (generatedByAccount.get(key) ?? 0) + 1);
-      if (!ownerByAccount.has(key)) ownerByAccount.set(key, o.accountOwner ?? null);
-    }
-    for (const v of venRecs) {
-      const key = v.account ?? "(sem cliente)";
-      generatedByAccount.set(key, (generatedByAccount.get(key) ?? 0) + 1);
-      closedByAccount.set(key, (closedByAccount.get(key) ?? 0) + 1);
-      salesByAccount.set(key, (salesByAccount.get(key) ?? 0) + (v.total ?? v.amount ?? 0));
-      if (!ownerByAccount.get(key)) ownerByAccount.set(key, v.accountOwner ?? ownerByAccount.get(key) ?? null);
-    }
-
-    const totalGen = orcRecs.length + venRecs.length;
-    const totalClosed = venRecs.length;
-    const globalConv = totalGen > 0 ? totalClosed / totalGen : 0;
-
-    const accounts = new Set<string>([...generatedByAccount.keys(), ...salesByAccount.keys()]);
-    const out: ProjectedRow[] = [];
-    for (const account of accounts) {
-      const prevSales = salesByAccount.get(account) ?? 0;
-      const generatedCount = generatedByAccount.get(account) ?? 0;
-      const closedCount = closedByAccount.get(account) ?? 0;
-      const convRate = generatedCount > 0 ? closedCount / generatedCount : globalConv;
-      const salesMonthly = prevSales / 3;
-      const genMonthly = convRate > 0 ? salesMonthly / convRate : 0;
-      out.push({
-        account,
-        accountOwner: ownerByAccount.get(account) ?? null,
-        prevSales,
-        convRate,
-        salesMonthly,
-        genMonthly,
-        segment: classifyAccount(prevSales),
-      });
-    }
-    return out;
-  }, [qOrc.data, qVen.data]);
-
-  // ================ Real do mês (Vendido / Gerado - Mês Atual) ================
-  const salesMesByAccount = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of qVendidoMes.data?.records ?? []) {
-      const key = r.account ?? "(sem cliente)";
-      map.set(key, (map.get(key) ?? 0) + (r.total ?? r.amount ?? 0));
-    }
-    return map;
-  }, [qVendidoMes.data]);
-
-  const generationMesByAccount = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of qGeradoMes.data?.records ?? []) {
-      const key = r.account ?? "(sem cliente)";
-      map.set(key, (map.get(key) ?? 0) + (r.total ?? r.amount ?? 0));
-    }
-    return map;
-  }, [qGeradoMes.data]);
-
-  // Pedidos em andamento (getSalesforcePedidos — status até "Coletado").
-  const ordersByAccount = useMemo(() => {
-    const map = new Map<string, SalesforceOppRow[]>();
-    for (const r of qPedidos.data?.records ?? []) {
-      const key = r.account ?? "(sem cliente)";
-      const list = map.get(key) ?? [];
-      list.push(r);
-      map.set(key, list);
-    }
-    return map;
-  }, [qPedidos.data]);
-
-  // ================ Combinação em Client[] ================
-  const clients: Client[] = useMemo(() => {
-    const mult = periodo === "tri" ? 3 : 1;
-    return projected.map((p) => {
-      const projection = Math.round(p.salesMonthly * mult);
-      const sales = Math.round(salesMesByAccount.get(p.account) ?? 0);
-      const generation = Math.round(generationMesByAccount.get(p.account) ?? 0);
-      const denom = projection > 0 ? projection : 1;
-      const rawHealth = projection > 0 ? Math.round((sales / denom) * 100) : 0;
-      const health = Math.max(0, Math.min(100, rawHealth));
+  const clients: Linha[] = useMemo(() => {
+    return (segQ.data?.rows ?? []).map((r) => {
+      const denom = r.projecao > 0 ? r.projecao : 1;
+      const health = r.projecao > 0 ? Math.max(0, Math.min(100, Math.round((r.vendas / denom) * 100))) : 0;
       return {
-        id: p.account,
-        name: p.account,
-        segment: p.segment,
-        projection,
-        generation,
-        sales,
+        id: r.id,
+        name: r.nome,
+        segment: r.segmento as Segment,
+        projection: r.projecao,
+        generation: r.geracao,
+        sales: r.vendas,
         trend: "stable",
         lastInteraction: "—",
         health,
-        notes: notesByAccount.get(p.account),
-      };
+        notes: r.observacoes ?? undefined,
+        consultor: r.consultor,
+        prevSales: r.vendasTriAnterior,
+        pedidos: r.pedidos,
+      } as Linha;
     });
-  }, [projected, salesMesByAccount, generationMesByAccount, notesByAccount, periodo]);
+  }, [segQ.data]);
 
-  // Vendedores disponíveis (accountOwner das linhas de projeção),
-  // filtrados pelo escopo do usuário logado.
-  const vendedores = useMemo(() => {
-    const set = new Set<string>();
-    for (const p of projected) {
-      if (!p.accountOwner) continue;
-      if (FORMER_OWNER_NAMES.has(p.accountOwner)) continue;
-      if (allowedOwnerNames && !allowedOwnerNames.has(p.accountOwner)) continue;
-      set.add(p.accountOwner);
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [projected, allowedOwnerNames]);
-
-
-  const isIndividual = !scopeReady || scope?.scope === "individual";
-
-  // Trava a seleção no próprio vendedor quando o escopo é individual.
-  // Também garante que "__all__" nunca fique selecionado fora dos escopos "geral".
-  useEffect(() => {
-    if (isIndividual && ownOwnerName && vendedor !== ownOwnerName) {
-      setVendedor(ownOwnerName);
-      return;
-    }
-    if (!isIndividual && allowedOwnerNames && vendedor !== "__all__") {
-      const kept = parseVendedores(vendedor).filter((v) => allowedOwnerNames.has(v));
-      if (kept.length === 0) {
-        const first = vendedores[0];
-        if (first) setVendedor(first);
-      } else if (kept.length !== parseVendedores(vendedor).length) {
-        setVendedor(kept.join(","));
-      }
-    }
-  }, [isIndividual, ownOwnerName, vendedor, allowedOwnerNames, vendedores]);
-
-  const ownerByAccount = useMemo(() => {
-    const map = new Map<string, string | null>();
-    for (const p of projected) map.set(p.account, p.accountOwner);
-    return map;
-  }, [projected]);
+  const vendedores = segQ.data?.consultores ?? [];
 
   const scoped = useMemo(() => {
-    let base = clients;
-    // Restringe ao escopo (nomes permitidos) antes do filtro por vendedor.
-    if (allowedOwnerNames) {
-      base = base.filter((c) => {
-        const owner = ownerByAccount.get(c.id) ?? "";
-        return allowedOwnerNames.has(owner);
-      });
-    }
     const sel = parseVendedores(vendedor);
-    if (sel.length === 0) return base;
-    return base.filter((c) => matchVendedor(sel, ownerByAccount.get(c.id) ?? ""));
-  }, [clients, vendedor, ownerByAccount, allowedOwnerNames]);
+    if (sel.length === 0) return clients;
+    return clients.filter((c) => matchVendedor(sel, c.consultor ?? ""));
+  }, [clients, vendedor]);
 
+  const ordersByAccount = useMemo(() => {
+    const map = new Map<string, Linha["pedidos"]>();
+    for (const c of clients) map.set(c.id, c.pedidos);
+    return map;
+  }, [clients]);
 
   const prevSalesByAccount = useMemo(() => {
     const map = new Map<string, number>();
-    for (const p of projected) map.set(p.account, p.prevSales);
+    for (const c of clients) map.set(c.id, c.prevSales);
     return map;
-  }, [projected]);
+  }, [clients]);
 
   const ranked = useMemo(
     () =>
@@ -515,7 +277,7 @@ function SegmentacaoPage() {
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Clientes</div>
             <h1 className="text-3xl font-bold mt-1">Perfil de Cliente</h1>
             <div className="text-xs text-muted-foreground mt-1">
-              Base: Projeção - Tri Atual · Trimestre {baseRange.label}
+              Base: Projeção - Tri Atual · Trimestre {baseLabel}
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -534,8 +296,7 @@ function SegmentacaoPage() {
                 value={vendedor}
                 onChange={setVendedor}
                 options={vendedores}
-                disabled={isIndividual}
-                allLabel={scope?.scope === "geral" ? "Todos" : "Meu escopo"}
+                allLabel="Todos"
               />
 
             </div>
@@ -558,7 +319,7 @@ function SegmentacaoPage() {
             <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <div>
               <div>
-                <b className="text-foreground">Segmentação</b> pelas vendas do trimestre anterior ({baseRange.label}):
+                <b className="text-foreground">Segmentação</b> pelas vendas do trimestre anterior ({baseLabel}):
                 {" "}<b className="text-foreground">A</b> &gt; R$ 30k ·
                 {" "}<b className="text-foreground">B</b> R$ 15k–30k ·
                 {" "}<b className="text-foreground">C</b> &lt; R$ 15k ·
@@ -570,7 +331,7 @@ function SegmentacaoPage() {
               </div>
               <div className="mt-1">
                 <b className="text-foreground">Geração</b> e <b className="text-foreground">Vendas</b> exibidas vêm das
-                tabelas <i>Gerado - Mês Atual</i> e <i>Vendido - Mês Atual</i>.
+                oportunidades registradas no banco do Grupo 2P (Gerado e Vendido do período).
               </div>
             </div>
           </div>
@@ -665,7 +426,7 @@ function SegmentacaoPage() {
                   <tr>
                     <td colSpan={8} className="px-4 py-16 text-center text-muted-foreground text-sm">
                       <Loader2 className="h-5 w-5 animate-spin inline mr-2 align-middle" />
-                      Carregando dados do Salesforce…
+                      Carregando clientes…
                     </td>
                   </tr>
                 )}
@@ -675,7 +436,7 @@ function SegmentacaoPage() {
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 mt-0.5" />
                         <div>
-                          <div className="font-medium">Não foi possível carregar os dados do Salesforce.</div>
+                          <div className="font-medium">Não foi possível carregar a segmentação.</div>
                           <div className="text-xs text-muted-foreground mt-0.5">
                             {anyError instanceof Error ? anyError.message : String(anyError)}
                           </div>
@@ -710,11 +471,7 @@ function SegmentacaoPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const acc = (accountsQ.data?.records ?? []).find(
-                                  (a) => a.name === c.name || a.id === c.id,
-                                );
-                                if (acc) setProfileAccount(acc);
-                                else navigate({ to: "/solar/clientes/perfil", search: { account: c.id } });
+                                navigate({ to: "/solar/clientes/perfil", search: { account: c.id } });
                               }}
                               className="p-1.5 rounded hover:bg-primary/15 text-muted-foreground hover:text-primary"
                               title="Abrir perfil do cliente"
@@ -757,7 +514,7 @@ function SegmentacaoPage() {
                                     <div className="space-y-1.5">
                                       {orders
                                         .slice()
-                                        .sort((a, b) => (b.total ?? b.amount ?? 0) - (a.total ?? a.amount ?? 0))
+                                        .sort((a, b) => b.total - a.total)
                                         .map((o) => (
                                           <div key={o.id} className="flex items-center gap-3 text-xs">
                                             <span className={cn(
@@ -767,14 +524,13 @@ function SegmentacaoPage() {
                                               {o.status ?? "—"}
                                             </span>
                                             <span className="truncate flex-1">{o.name}</span>
-                                            {o.owner && <span className="text-muted-foreground truncate">{o.owner}</span>}
                                             {o.closeDate && (
                                               <span className="text-muted-foreground tabular-nums">
                                                 {new Date(o.closeDate + "T00:00:00").toLocaleDateString("pt-BR")}
                                               </span>
                                             )}
                                             <span className="font-display font-semibold tabular-nums w-28 text-right">
-                                              {fmt(o.total ?? o.amount ?? 0)}
+                                              {fmt(o.total)}
                                             </span>
                                           </div>
                                         ))}
@@ -785,10 +541,10 @@ function SegmentacaoPage() {
                               <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border">
                                 <div className="flex items-center gap-2 mb-1.5">
                                   <FileText className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Observações (Salesforce)</span>
+                                  <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Observações do cadastro</span>
                                 </div>
                                 <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
-                                  {c.notes ?? "Sem observações registradas no Salesforce."}
+                                  {c.notes ?? "Sem observações registradas no cadastro."}
                                 </p>
                               </div>
                             </td>
@@ -855,14 +611,6 @@ function SegmentacaoPage() {
 
       {detailClient && <ClientDetailModal client={detailClient} onClose={() => setDetailClient(null)} />}
 
-      <Dialog open={!!profileAccount} onOpenChange={(o) => !o && setProfileAccount(null)}>
-        <DialogContent className="max-w-[96vw] w-[96vw] sm:max-w-[1400px] max-h-[92vh] overflow-y-auto p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="text-lg">{profileAccount?.name ?? "Perfil do cliente"}</DialogTitle>
-          </DialogHeader>
-          {profileAccount && <Client360 account={profileAccount} />}
-        </DialogContent>
-      </Dialog>
     </AppLayout>
   );
 }
@@ -935,10 +683,10 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
             <div className="rounded-xl bg-surface-2 border border-border p-4">
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Observações (Salesforce)</span>
+                <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Observações do cadastro</span>
               </div>
               <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
-                {client.notes ?? "Sem observações registradas no Salesforce para este cliente."}
+                {client.notes ?? "Sem observações no cadastro deste cliente."}
               </p>
             </div>
           </div>
