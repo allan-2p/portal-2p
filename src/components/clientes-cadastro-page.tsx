@@ -128,7 +128,6 @@ const vazio = (): Form => ({
   observacoes: "", ativo: true,
 });
 
-const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
 
 
 /**
