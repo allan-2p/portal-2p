@@ -404,6 +404,35 @@ function ProdutosPage() {
     },
   });
 
+  // Varredura de preço: o material só é vendável quando tem preço vigente no SAP.
+  const varrerMut = useMutation({
+    mutationFn: (codigos?: string[]) => varrerPrecos({ data: codigos?.length ? { codigos } : {} }),
+    onSuccess: (r: any) => {
+      toast.success(
+        r?.skipped
+          ? String(r?.motivo ?? "Nada para verificar.")
+          : `Preços verificados: ${r?.verificados ?? 0} materiais, ${r?.comPreco ?? 0} com preço, ${r?.ativados ?? 0} ativados, ${r?.desativados ?? 0} desativados.`,
+      );
+      refetch();
+      propagar();
+    },
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+  });
+
+  const overrideMut = useMutation({
+    mutationFn: (v: { id: string; override: boolean | null }) => setOverride({ data: v }),
+    onSuccess: (_r, v) => {
+      toast.success(
+        v.override === null
+          ? "Override removido: o status volta a seguir o preço do SAP."
+          : `Produto ${v.override ? "ativado" : "desativado"} manualmente (vence a varredura de preço).`,
+      );
+      refetch();
+      propagar();
+    },
+    onError: (e: any) => toast.error(String(e?.message ?? e)),
+  });
+
   useEffect(() => {
     if (!syncMut.isPending) return;
     setSyncEtapa(1);
