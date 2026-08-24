@@ -1,3 +1,4 @@
+import { formatPropostaNumero } from "@/lib/sap-numero";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -90,7 +91,7 @@ export function ResultadoConclusaoDialog({
             ) : (
               <CheckCircle2 className="h-5 w-5 text-emerald-500" />
             )}
-            {resultado?.erro ? "Não foi possível concluir o pedido" : `Pedido ${resultado?.numero ?? ""} concluído`}
+            {resultado?.erro ? "Não foi possível concluir o pedido" : `Pedido ${formatPropostaNumero(resultado?.numero) } concluído`}
           </DialogTitle>
           <DialogDescription>
             {resultado?.erro
