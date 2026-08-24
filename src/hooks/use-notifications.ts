@@ -103,9 +103,8 @@ async function sincronizarServidor(primeiraCarga: boolean) {
       lastPulse: state.lastPulse + (mapeadas.some((m) => !m.read) ? 1 : 0),
     });
 
-    if (!primeiraCarga) {
-      // Sem toast automático: as novidades aparecem apenas no sino.
-    }
+    // Sem toast automático: as novidades aparecem apenas no sino.
+
 
   } catch {
     // sino nunca deve quebrar a navegação
