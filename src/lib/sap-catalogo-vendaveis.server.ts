@@ -141,6 +141,8 @@ export async function varrerCatalogoVendaveis(
 
     const patch: Record<string, unknown> = {
       codigo,
+      // O upsert valida a tupla de insert, então colunas NOT NULL precisam vir no payload.
+      descricao: linha.descricao ?? codigo,
       vendavel_sap: vendavel,
       listas_com_preco: achado ? `${achado.lista}:${achado.valor.toFixed(2)}` : null,
       preco_vk12: achado ? achado.valor : null,
