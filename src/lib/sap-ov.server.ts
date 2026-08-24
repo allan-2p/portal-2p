@@ -360,7 +360,8 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
     kit && codigo === "100000350" ? "100000278" : codigo;
   // VALOR_PROD: vazio = preço vem da condição do SAP (regra de sempre, Solar).
   // Somente 2P Carregadores, e apenas com a flag SAP_VALOR_PROD_CARREGADORES=X,
-  // envia o preço manual UNITÁRIO da proposta (vira VKP0 manual no SAP).
+  // envia o preço manual UNITÁRIO LÍQUIDO da proposta (sem IPI, ICMS e
+  // PIS/COFINS) — vira VKP0 manual no SAP, que aplica os impostos por cima.
   const usaValorProd = valorProdAtivo(row);
   const linhas = itens
     .map(
@@ -374,7 +375,8 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         `<PESO_BRUTO></PESO_BRUTO>` +
         `<PESO_LIQ></PESO_LIQ>` +
         `<UM_PESO></UM_PESO>` +
-        `<VALOR_PROD>${usaValorProd && Number(i.valor) > 0 ? Number(i.valor).toFixed(2) : ""}</VALOR_PROD>` +
+        `<VALOR_PROD>${usaValorProd && valorProdUnitario(row, i) > 0 ? valorProdUnitario(row, i).toFixed(2) : ""}</VALOR_PROD>` +
+
         `<VALOR_DESC></VALOR_DESC>` +
         `<PERC_DESC></PERC_DESC>` +
         `<NCM></NCM>` +
