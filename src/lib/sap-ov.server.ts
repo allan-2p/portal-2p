@@ -314,6 +314,37 @@ export function valorProdAtivo(row: Record<string, any>): boolean {
   );
 }
 
+/**
+ * Fator que converte o preço cheio da proposta no valor LÍQUIDO, sem nenhum
+ * imposto: tira IPI (por fora) e ICMS + PIS/COFINS (por dentro).
+ *
+ *   fator = (valorItens − IPI − ICMS − PIS/COFINS) / valorItens
+ *
+ * Os impostos são proporcionais ao valor dos itens, então o fator agregado
+ * gravado em `totais` no fechamento da proposta vale para cada linha. DIFAL não
+ * entra: é custo de cabeçalho, não compõe o preço do item.
+ * Retorna null quando os totais não permitem calcular (aí o envio é bloqueado).
+ */
+export function fatorLiquidoSemImpostos(row: Record<string, any>): number | null {
+  const t = (row["totais"] ?? {}) as Record<string, any>;
+  const base = Number(t["valor"] ?? 0);
+  if (!(base > 0)) return null;
+  const impostos = Number(t["ipi"] ?? 0) + Number(t["icms"] ?? 0) + Number(t["pisCofins"] ?? 0);
+  if (!Number.isFinite(impostos) || impostos < 0) return null;
+  const fator = (base - impostos) / base;
+  if (!(fator > 0) || fator > 1) return null;
+  return fator;
+}
+
+/** Valor unitário líquido (sem imposto nenhum) enviado no VALOR_PROD. */
+export function valorProdUnitario(row: Record<string, any>, item: any): number {
+  const fator = fatorLiquidoSemImpostos(row);
+  const valor = Number(item?.valor ?? 0);
+  if (!(valor > 0) || fator === null) return 0;
+  return Math.round(valor * fator * 100) / 100;
+}
+
+
 
 function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): string {
   const c = constantes(String(row["organizacao"] ?? "carregadores"), row);
