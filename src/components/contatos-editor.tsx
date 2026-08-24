@@ -42,17 +42,30 @@ export const telefoneValido = (v: string) => {
 export function normalizarContatos(raw: unknown, legado?: {
   nome?: string | null; cargo?: string | null; email?: string | null; telefone?: string | null;
 }): Contato[] {
+  // Cadastros importados da plataforma antiga podem trazer e-mail/telefone como
+  // texto simples (ou separados por vírgula) em vez de lista.
+  const lista0 = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.map((x) => String(x ?? "")).filter((x) => x.trim());
+    const t = String(v ?? "").trim();
+    if (!t) return [];
+    return t.split(/[;,]/).map((x) => x.trim()).filter(Boolean);
+  };
   const lista: Contato[] = Array.isArray(raw)
-    ? (raw as Contato[])
+    ? (raw as Array<Record<string, any>>)
         .filter((c) => c && typeof c === "object")
-        .map((c) => ({
-          tipo: (["principal", "financeiro", "outro"].includes(String(c.tipo)) ? c.tipo : "outro") as ContatoTipo,
-          nome: c.nome ?? "",
-          cargo: c.cargo ?? "",
-          emails: Array.isArray(c.emails) && c.emails.length ? c.emails : [""],
-          telefones: Array.isArray(c.telefones) && c.telefones.length ? c.telefones : [""],
-        }))
+        .map((c) => {
+          const emails = lista0(c["emails"] ?? c["email"]);
+          const telefones = lista0(c["telefones"] ?? c["telefone"] ?? c["fone"]);
+          return {
+            tipo: (["principal", "financeiro", "outro"].includes(String(c["tipo"])) ? c["tipo"] : "outro") as ContatoTipo,
+            nome: String(c["nome"] ?? ""),
+            cargo: String(c["cargo"] ?? ""),
+            emails: emails.length ? emails : [""],
+            telefones: telefones.length ? telefones : [""],
+          };
+        })
     : [];
+
 
   let principal = lista.find((c) => c.tipo === "principal");
   let financeiro = lista.find((c) => c.tipo === "financeiro");

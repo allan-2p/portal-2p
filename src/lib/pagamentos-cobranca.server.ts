@@ -301,6 +301,17 @@ export async function gerarCobrancaCheckout(
     });
   };
 
+  // Pedido importado da plataforma antiga que já tem OV no SAP já foi faturado
+  // e cobrado lá — o portal só acompanha, nunca emite cobrança nova.
+  const { bloqueiaCobranca } = await import("./proposta-legado");
+  if (bloqueiaCobranca(row)) {
+    return {
+      gerada: false,
+      meio: null,
+      motivo: "Pedido da plataforma antiga já faturado: cobrança não é emitida pelo portal.",
+    };
+  }
+
   const forma = String(row["forma_pagamento"] ?? "");
   if (forma === "boleto_prazo") {
     return {
