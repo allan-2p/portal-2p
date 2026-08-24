@@ -101,6 +101,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/utils";
 import { ResultadoConclusaoDialog } from "@/components/resultado-conclusao-dialog";
 import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-progresso";
+import { useConfirmarSaida } from "@/components/confirmar-saida";
 import { cidadeUf } from "@/lib/local-format";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
@@ -233,6 +234,15 @@ function PropostaCarregadoresPage() {
   const submitLock = useRef(false);
   const numeroRef = useRef<string | null>(null);
   const carregado = useRef(false);
+
+  // Alterações não salvas: assinatura do estado comparada com o último
+  // salvamento. Base é definida ao montar e refeita a cada gravação.
+  const assinatura = JSON.stringify(state);
+  const baseSalva = useRef<string | null>(null);
+  useEffect(() => {
+    if (baseSalva.current === null) baseSalva.current = assinatura;
+  }, [assinatura]);
+  const sujo = baseSalva.current !== null && baseSalva.current !== assinatura && !saving;
 
   // Bloqueia navegação interna enquanto a proposta está sendo salva/concluída
   useBlocker({
