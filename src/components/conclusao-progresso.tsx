@@ -115,7 +115,7 @@ export function ConclusaoProgresso({ fase }: { fase: ConclusaoFase }) {
         </div>
 
         <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-muted">
-          <div className="h-full w-1/3 animate-[shimmer_1.4s_ease-in-out_infinite] rounded-full bg-primary/70" />
+          <div className="conclusao-bar h-full w-1/3 rounded-full bg-primary/70" />
         </div>
       </div>
     </div>
