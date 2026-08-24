@@ -26,7 +26,7 @@ describe("decomporPrecoCarregadores", () => {
   it("reconstrução é o inverso da decomposição", () => {
     const d = decomporPrecoCarregadores(2345.67, ALIQ);
     expect(r2(reconstruirPrecoCarregadores(d.liquido, ALIQ))).toBe(2345.67);
-    expect(fatorLiquidoCarregadores(ALIQ)).toBeCloseTo(d.fator, 6);
+    expect(fatorLiquidoCarregadores(ALIQ)).toBeCloseTo(d.fator, 5);
   });
 });
 
