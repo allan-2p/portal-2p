@@ -1065,15 +1065,19 @@ export async function criarOrdemVendaSap(
   const precoManual = valorProdAtivo(row)
     ? {
         campo: "VALOR_PROD",
+        base: "valor líquido unitário, sem IPI, ICMS e PIS/COFINS",
+        fator_liquido: fatorLiquidoSemImpostos(row),
         itens: (Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [])
           .filter((i) => Number(i?.qtd ?? 0) > 0)
           .map((i) => ({
             material: norm(i?.codigo),
             qtd: Number(i?.qtd ?? 0),
-            valor_unitario: Number(i?.valor ?? 0).toFixed(2),
+            valor_unitario_proposta: Number(i?.valor ?? 0).toFixed(2),
+            valor_unitario_liquido: valorProdUnitario(row, i).toFixed(2),
           })),
       }
     : null;
+
 
   await logIntegrationEvent({
     ...base,
