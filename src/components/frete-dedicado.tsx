@@ -46,9 +46,10 @@ export function FreteDedicado({ selecionada, onSelect, valor: valorExterno }: Pr
   // Ao reabrir a proposta, o valor salvo chega depois da montagem: sincroniza o
   // campo para não zerar o frete dedicado já persistido.
   useEffect(() => {
+    if (controlado) return;
     const t = selecionada?.total ?? 0;
-    if (t > 0) setValor((v) => (v === t ? v : t));
-  }, [selecionada?.total]);
+    if (t > 0) setValorInterno((v) => (v === t ? v : t));
+  }, [selecionada?.total, controlado]);
 
   const aplicar = (id: string, total: number) => {
     const t = lista.find((x) => x.id === id);
@@ -56,25 +57,35 @@ export function FreteDedicado({ selecionada, onSelect, valor: valorExterno }: Pr
     onSelect({ id: t.id, nome: t.nome, documento: t.documento, total, prazo: 2 });
   };
 
+  // Valor vindo do formulário: mantém o total da transportadora em sincronia.
+  useEffect(() => {
+    if (!controlado || !selecionada) return;
+    if (selecionada.total === valor) return;
+    onSelect({ ...selecionada, total: valor });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlado, valor, selecionada?.id, selecionada?.total]);
+
 
   return (
     <div className="glass rounded-2xl p-4 space-y-4">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Truck className="size-4" /> Frete dedicado
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Valor do frete (manual) *</label>
-          <MoneyInput
-            value={valor}
-            placeholder="R$ 0,00"
-            maxValue={1000000}
-            onValueChange={(n: number) => {
-              setValor(n);
-              if (selecionada) aplicar(selecionada.id, n);
-            }}
-          />
-        </div>
+      <div className={controlado ? "grid gap-4" : "grid gap-4 md:grid-cols-2"}>
+        {!controlado && (
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Valor do frete (manual) *</label>
+            <MoneyInput
+              value={valor}
+              placeholder="R$ 0,00"
+              maxValue={1000000}
+              onValueChange={(n: number) => {
+                setValorInterno(n);
+                if (selecionada) aplicar(selecionada.id, n);
+              }}
+            />
+          </div>
+        )}
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">Transportadora dedicada *</label>
           <Select value={selecionada?.id ?? ""} onValueChange={(v) => aplicar(v, valor)}>
@@ -87,6 +98,7 @@ export function FreteDedicado({ selecionada, onSelect, valor: valorExterno }: Pr
           </Select>
         </div>
       </div>
+
       {selecionada && (
         <p className="text-xs text-muted-foreground">
           {selecionada.nome} · CNPJ {selecionada.documento} · prazo 2 dias · {fmtBRL(selecionada.total)}
