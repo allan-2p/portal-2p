@@ -1244,7 +1244,7 @@ function PropostaCarregadoresPage() {
         invalidate();
         limparRascunho();
         ressincronizarBase.current = true;
-      ressincronizarBase.current = true;
+
         setAutosaveAt(status === "Salvo" ? new Date() : null);
         return;
       }
