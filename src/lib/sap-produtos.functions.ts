@@ -22,6 +22,13 @@ export type SapProdutoRow = {
   custo: number | null;
   ncm_id: string | null;
   ncm_codigo: string | null;
+  /** Tem preço vigente no SAP (VK12) na última varredura. */
+  vendavel_sap: boolean | null;
+  /** Decisão manual que vence a varredura de preço (null = automático). */
+  ativo_override: boolean | null;
+  ativo_override_motivo: string | null;
+  preco_vk12: number | null;
+  preco_checado_em: string | null;
 };
 
 
