@@ -312,6 +312,13 @@ html[data-area="admin"].dark {
   }
   .rise-in { animation: rise-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+  /* Barra indeterminada do overlay de conclusão do pedido */
+  @keyframes conclusao-bar {
+    0%   { transform: translateX(-110%); }
+    100% { transform: translateX(320%); }
+  }
+  .conclusao-bar { animation: conclusao-bar 1.4s ease-in-out infinite; }
+
   /* Shimmer skeleton — single gradient, low-cost */
   @keyframes shimmer {
     0%   { background-position: -400px 0; }
