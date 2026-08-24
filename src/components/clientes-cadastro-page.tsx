@@ -28,6 +28,7 @@ import { CreditoClienteCard } from "@/components/credito-cliente-card";
 import { ClienteEnderecosEditor } from "@/components/cliente-enderecos-editor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatSapNumero } from "@/lib/sap-numero";
+import { CondicaoPagamentoCatalogoSelect } from "@/components/condicao-pagamento-catalogo-select";
 
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
