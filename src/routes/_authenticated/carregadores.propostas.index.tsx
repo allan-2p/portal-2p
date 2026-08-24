@@ -333,10 +333,14 @@ function HistoricoCarregadoresPage() {
           </div>
           {filtered.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
-              <div className="text-muted-foreground">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 Mostrando {(paginaAtual - 1) * porPagina + 1}–
                 {Math.min(paginaAtual * porPagina, total)} de {total}
+                {q.isFetching && !q.isLoading && (
+                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-transparent" aria-label="Atualizando" />
+                )}
               </div>
+
               <div className="flex items-center gap-2">
                 <Select value={String(porPagina)} onValueChange={(v) => setPorPagina(Number(v))}>
                   <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
