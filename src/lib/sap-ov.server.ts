@@ -25,6 +25,12 @@ import { logIntegrationEvent } from "./integration-logs.server";
 import { simularPrecosSap } from "./sap-precos.server";
 import { deveCriarOferta } from "./fretefy-oferta";
 import { SAP_ACCEPT_LANGUAGE, comIdiomaPT } from "./sap-lang.server";
+import {
+  AVISO_FORA_CALIBRACAO,
+  dentroDaCalibracao,
+  fatorLiquidoCarregadores,
+  valorProdCarregadores,
+} from "./carregadores-impostos";
 
 
 export type SapOvResultado = {
@@ -315,39 +321,97 @@ export function valorProdAtivo(row: Record<string, any>): boolean {
 }
 
 /**
- * Fator que converte o preço cheio da proposta no valor LÍQUIDO, sem nenhum
- * imposto: tira IPI (por fora) e ICMS + PIS/COFINS (por dentro).
- *
- *   fator = (valorItens − IPI − ICMS − PIS/COFINS) / valorItens
- *
- * Os impostos são proporcionais ao valor dos itens, então o fator agregado
- * gravado em `totais` no fechamento da proposta vale para cada linha. DIFAL não
- * entra: é custo de cabeçalho, não compõe o preço do item.
+ * Fator que converte o preço cheio da proposta no valor LÍQUIDO enviado ao SAP.
+ * Mantido para compatibilidade/telemetria: é o fator agregado da proposta,
+ * derivado da mesma conta calibrada (ver `carregadores-impostos.ts`).
  * Retorna null quando os totais não permitem calcular (aí o envio é bloqueado).
  */
 export function fatorLiquidoSemImpostos(row: Record<string, any>): number | null {
   const t = (row["totais"] ?? {}) as Record<string, any>;
   const base = Number(t["valor"] ?? 0);
   if (!(base > 0)) return null;
-  const impostos = Number(t["ipi"] ?? 0) + Number(t["icms"] ?? 0) + Number(t["pisCofins"] ?? 0);
-  if (!Number.isFinite(impostos) || impostos < 0) return null;
-  // Intermediário sempre em 6 casas (nunca 2) — ver carregadores-impostos.ts.
-  const fator = Math.round(((base - impostos) / base) * 1e6) / 1e6;
+  const ipi = aliqIpiDaProposta(row);
+  const icms = aliqIcmsDaProposta(row);
+  if (ipi === null || icms === null) return null;
+  const fator = fatorLiquidoCarregadores({ ipi, icms, pisCofins: 0 });
   if (!(fator > 0) || fator > 1) return null;
   return fator;
 }
 
 /**
- * Valor unitário líquido (sem imposto nenhum) enviado no VALOR_PROD.
- * O produto é calculado em 6 casas e só o resultado final vai a 2 casas,
- * que é o limite do campo do SAP.
+ * Alíquota de IPI da proposta (fração), derivada dos totais gravados no
+ * fechamento: totais.valor é o valor com IPI e totais.ipi o IPI destacado.
+ */
+export function aliqIpiDaProposta(row: Record<string, any>): number | null {
+  const t = (row["totais"] ?? {}) as Record<string, any>;
+  const base = Number(t["valor"] ?? 0);
+  const ipi = Number(t["ipi"] ?? 0);
+  if (!(base > 0) || !Number.isFinite(ipi) || ipi < 0 || ipi >= base) return null;
+  return Math.round((ipi / (base - ipi)) * 1e6) / 1e6;
+}
+
+/** Alíquota de ICMS da operação (fração), como gravada no fechamento. */
+export function aliqIcmsDaProposta(row: Record<string, any>): number | null {
+  const t = (row["totais"] ?? {}) as Record<string, any>;
+  const direta = Number(t["icmsRate"] ?? NaN);
+  if (Number.isFinite(direta) && direta > 0 && direta < 1) {
+    return Math.round(direta * 1e6) / 1e6;
+  }
+  // Fallback: ICMS ÷ base sem IPI.
+  const base = Number(t["valor"] ?? 0);
+  const ipi = Number(t["ipi"] ?? 0);
+  const icms = Number(t["icms"] ?? 0);
+  const semIpi = base - ipi;
+  if (!(semIpi > 0) || !Number.isFinite(icms) || icms <= 0) return null;
+  return Math.round((icms / semIpi) * 1e6) / 1e6;
+}
+
+/** Alíquota de IPI do item (do NCM/cadastro do produto), com fallback na proposta. */
+export function aliqIpiDoItem(row: Record<string, any>, item: any): number | null {
+  const direta = Number(item?.aliq_ipi ?? item?.aliqIpi ?? NaN);
+  if (Number.isFinite(direta) && direta >= 0 && direta < 1) {
+    return Math.round(direta * 1e6) / 1e6;
+  }
+  return aliqIpiDaProposta(row);
+}
+
+/** Alíquota de ICMS do item, com fallback na proposta. */
+export function aliqIcmsDoItem(row: Record<string, any>, item: any): number | null {
+  const direta = Number(item?.aliq_icms ?? item?.aliqIcms ?? NaN);
+  if (Number.isFinite(direta) && direta > 0 && direta < 1) {
+    return Math.round(direta * 1e6) / 1e6;
+  }
+  return aliqIcmsDaProposta(row);
+}
+
+/**
+ * Valor unitário líquido enviado no VALOR_PROD, pela conta calibrada:
+ *   precoSemIpi = preco / (1 + aliqIPI);  VALOR_PROD = precoSemIpi × fator.
+ * Intermediários em 6 casas e só o resultado final em 2 casas (limite do campo).
+ * Retorna 0 (bloqueia) quando a operação está fora da calibração de ICMS 4%.
  */
 export function valorProdUnitario(row: Record<string, any>, item: any): number {
-  const fator = fatorLiquidoSemImpostos(row);
   const valor = Number(item?.valor ?? 0);
-  if (!(valor > 0) || fator === null) return 0;
-  const liquido = Math.round(valor * fator * 1e6) / 1e6;
-  return Math.round(liquido * 100) / 100;
+  const ipi = aliqIpiDoItem(row, item);
+  const icms = aliqIcmsDoItem(row, item);
+  if (!(valor > 0) || ipi === null || icms === null) return 0;
+  if (!dentroDaCalibracao(icms)) return 0;
+  return valorProdCarregadores(valor, ipi);
+}
+
+/**
+ * Itens cuja alíquota de ICMS está fora da faixa calibrada (≠ 4%) — ou sem
+ * alíquota apurável. Enquanto não calibrarmos o fator dessas faixas o envio
+ * ao SAP é bloqueado.
+ */
+export function itensForaDaCalibracao(row: Record<string, any>): any[] {
+  const itens = (Array.isArray(row["itens"]) ? (row["itens"] as any[]) : []).filter(
+    (i) => Number(i?.qtd ?? 0) > 0,
+  );
+  return itens.filter((i) => {
+    const icms = aliqIcmsDoItem(row, i);
+    return icms === null || !dentroDaCalibracao(icms);
+  });
 }
 
 
@@ -686,8 +750,22 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
   // líquido (sem impostos) e o SAP receberia um preço errado — bloqueia.
   if (valorProdAtivo(row) && fatorLiquidoSemImpostos(row) === null)
     pendencias.push(
-      "Não foi possível calcular o valor líquido (sem impostos) dos itens: os totais de IPI, ICMS e PIS/COFINS da proposta estão ausentes ou inconsistentes.",
+      "Não foi possível calcular o valor líquido (sem impostos) dos itens: os totais de IPI e ICMS da proposta estão ausentes ou inconsistentes.",
     );
+
+  // Guarda-corpo da calibração: o fator líquido só foi calibrado com o SAP para
+  // ICMS interestadual de 4% (produto importado). Qualquer outra alíquota
+  // (ex.: venda interna em SC) bloqueia o envio até calibrarmos essa faixa.
+  if (valorProdAtivo(row)) {
+    const fora = itensForaDaCalibracao(row);
+    if (fora.length)
+      pendencias.push(
+        `${fora.length} item(ns) com ICMS diferente de 4% — ${AVISO_FORA_CALIBRACAO}: ${fora
+          .map((i) => norm(i?.codigo) || String(i?.nome ?? i?.descricao ?? "item").slice(0, 30))
+          .slice(0, 5)
+          .join(", ")}.`,
+      );
+  }
 
 
 
