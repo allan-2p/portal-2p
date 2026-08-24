@@ -26,6 +26,7 @@ import {
 import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
+import { numeroAnterior } from "@/lib/proposta-legado";
 import { supabase } from "@/integrations/supabase/client";
 import { listarPropostasFn, excluirPropostaFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
@@ -136,14 +137,14 @@ function HistoricoCarregadoresPage() {
       if (!t) return true;
       // Propostas abertas não têm Nº SAP: a busca continua válida pelos demais campos.
       const alvo = norm(
-        [r.cliente_nome, r.numero, r.nome, (r.sap_ov_numero || r.numero_sap), r.cliente_doc, r.consultor_nome]
+        [r.cliente_nome, r.numero, numeroAnterior(r), r.nome, (r.sap_ov_numero || r.numero_sap), r.cliente_doc, r.consultor_nome]
           .filter(Boolean)
           .join(" ")
       );
       if (alvo.includes(t)) return true;
       if (tDig) {
         const alvoDig = soDigitos(
-          [r.numero, (r.sap_ov_numero || r.numero_sap), r.cliente_doc].filter(Boolean).join(" ")
+          [r.numero, numeroAnterior(r), (r.sap_ov_numero || r.numero_sap), r.cliente_doc].filter(Boolean).join(" ")
         );
         if (alvoDig.includes(tDig)) return true;
       }
