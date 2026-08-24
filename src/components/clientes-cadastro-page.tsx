@@ -436,7 +436,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const abrirEdicao = (c: Cliente) => {
     const { id: _id, ...rest } = c;
     setEditId(c.id);
-    setForm({
+    const inicial = {
       ...vazio(),
       ...rest,
       doc: mascaraDoc(c.doc ?? ""),
@@ -445,8 +445,12 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         nome: c.contato_nome, cargo: c.contato_cargo,
         email: c.contato_email, telefone: c.contato_telefone,
       }),
-    });
-    setConsultorId(c.created_by ?? consultoresQ.data?.eu.id ?? null);
+    } as Form;
+    const consultor = c.created_by ?? consultoresQ.data?.eu.id ?? null;
+    setForm(inicial);
+    setConsultorId(consultor);
+    setDocBusca("");
+    setBaseForm(JSON.stringify([inicial, "", consultor]));
     setTentouSalvar(false); setFontes([]); setAvisos([]);
     setEtapa("formulario"); setOpen(true);
   };
