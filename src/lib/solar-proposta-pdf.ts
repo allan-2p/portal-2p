@@ -1,3 +1,4 @@
+import { formatPropostaNumero } from "@/lib/sap-numero";
 import { fmtBRL, fmtPct } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
 import { LOGO_2P_DATA_URI } from "./brand-2p-logo";
@@ -72,7 +73,7 @@ const limpo = (v: string) =>
     .trim();
 
 export function solarPropostaPdfFileName(p: SolarPropostaPdfData) {
-  return [limpo(p.numero ?? "Proposta"), limpo(p.propostaNome ?? "Proposta 2P Solar"), limpo(p.cliente.nome ?? "Cliente")]
+  return [limpo(formatPropostaNumero(p.numero) || "Proposta"), limpo(p.propostaNome ?? "Proposta 2P Solar"), limpo(p.cliente.nome ?? "Cliente")]
     .filter(Boolean)
     .join(" - ");
 }
@@ -90,7 +91,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
   const hoje = new Date();
   const dataStr = hoje.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   const validade = new Date(hoje.getTime() + (p.validadeDias ?? 15) * 86400000).toLocaleDateString("pt-BR");
-  const numero = p.numero ?? "—";
+  const numero = formatPropostaNumero(p.numero) || "—";
   const qtdTotal = p.itens.reduce((a, i) => a + i.qtd, 0);
 
   /** Alíquota da linha em % (vazio quando o item não tem regra fiscal). */

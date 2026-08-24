@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { formatSapNumero } from "@/lib/sap-numero";
+import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
 import { supabase } from "@/integrations/supabase/client";
 import { listarPropostasFn, excluirPropostaFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
@@ -273,7 +273,7 @@ function HistoricoCarregadoresPage() {
               <tbody>
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
-                    <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatPropostaNumero(r.numero) || "—"}</td>
                     <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
                     <td className="px-4 py-3">{r.nome || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}</td>

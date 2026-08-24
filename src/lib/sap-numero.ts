@@ -6,3 +6,8 @@ export function formatSapNumero(v: unknown): string {
   const semZeros = s.replace(/^0+/, "");
   return semZeros || "0";
 }
+
+/** Exibe o número da proposta/pedido sem os zeros à esquerda (armazenado com padding). */
+export function formatPropostaNumero(v: unknown): string {
+  return formatSapNumero(v);
+}
