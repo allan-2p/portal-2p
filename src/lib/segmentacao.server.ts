@@ -171,14 +171,14 @@ export async function calcularSegmentacao(opts: {
   // ---------- Base: clientes do Grupo 2P ----------
   const clientesParams = new URLSearchParams({
     select:
-      "id,razao_social,nome_fantasia,cidade,uf,numero_sap,sf_account_id,observacoes,consultor_nome,consultor_sap,consultor_id,created_by",
+      "id,razao_social,nome_fantasia,cidade,uf,numero_sap,sf_account_id,observacoes,consultor_nome,consultor_sap,created_by",
     instancia: `eq.${opts.instance}`,
     organizacao: `eq.${ORGANIZACAO[opts.instance]}`,
     order: "razao_social.asc.nullslast,id.asc",
   });
   if (opts.donoId || opts.consultorSap) {
     const alvos: string[] = [];
-    if (opts.donoId) alvos.push(`created_by.eq.${opts.donoId}`, `consultor_id.eq.${opts.donoId}`);
+    if (opts.donoId) alvos.push(`created_by.eq.${opts.donoId}`);
     if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
     clientesParams.set("or", `(${alvos.join(",")})`);
   }
