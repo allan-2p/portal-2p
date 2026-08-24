@@ -25,6 +25,9 @@ function buildCsp(): string {
     "wss://*.supabase.co",
     "https://*.lovable.dev",
     "https://*.lovable.app",
+    // Busca de endereço por CEP (ViaCEP + fallback BrasilAPI).
+    "https://viacep.com.br",
+    "https://brasilapi.com.br",
   ].filter(Boolean);
 
   return [
