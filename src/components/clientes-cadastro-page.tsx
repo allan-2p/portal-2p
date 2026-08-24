@@ -94,6 +94,15 @@ export type Cliente = {
   ativo: boolean;
   created_by?: string | null;
   created_by_nome?: string | null;
+  // Campos da migração da plataforma antiga (somente leitura no portal).
+  consultor_nome?: string | null;
+  consultor_sap?: string | null;
+  origem_cadastro?: string | null;
+  origem?: string | null;
+  sub_origem?: string | null;
+  id_antigo?: string | number | null;
+  sf_lead_id?: string | null;
+  legado?: Record<string, any> | string | null;
 };
 
 type Form = Omit<Cliente, "id">;
@@ -115,6 +124,13 @@ const vazio = (): Form => ({
 
 const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pessoa Física"];
 
+
+/**
+ * Consultor da conta: nos cadastros importados vem em `consultor_nome`; o
+ * `created_by_nome` ("Importação plataforma antiga") é só origem do cadastro.
+ */
+const consultorDoCliente = (c: Cliente): string =>
+  (c.consultor_nome ?? "").trim() || (c.created_by_nome ?? "").trim();
 
 type Erros = Record<string, string>;
 const ROTULOS: Record<string, string> = {
@@ -375,7 +391,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       if (fFiscal === "contribuinte" && !c.contribuinte) return false;
       if (fFiscal === "nao" && c.contribuinte) return false;
       if (!t) return true;
-      const texto = [c.razao_social, c.nome_fantasia, c.cidade, c.uf, c.email, c.created_by_nome, c.numero_sap]
+      const texto = [c.razao_social, c.nome_fantasia, c.cidade, c.uf, c.email, consultorDoCliente(c), c.consultor_sap, c.created_by_nome, c.numero_sap]
         .some((v) => (v ?? "").toLowerCase().includes(t));
       return texto
         || (tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc))
@@ -390,7 +406,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         case "doc": return soDigitos(c.doc ?? "");
         case "fiscal": return c.contribuinte ? "1" : "0";
         case "cidade": return `${c.uf} ${c.cidade ?? ""}`;
-        case "contato": return (c.created_by_nome || "").toLowerCase();
+        case "contato": return consultorDoCliente(c).toLowerCase();
         default: return (c.razao_social ?? "").toLowerCase();
       }
     };
@@ -923,7 +939,12 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     </div>
                   </td>
                   <td className="px-4 py-2">{cidadeUf(c.cidade, c.uf)}</td>
-                  <td className="px-4 py-2 text-xs text-muted-foreground">{c.created_by_nome || "—"}</td>
+                  <td className="px-4 py-2 text-xs text-muted-foreground">
+                    {consultorDoCliente(c) || "—"}
+                    {c.consultor_sap && (
+                      <div className="text-[10px] font-mono opacity-70">{c.consultor_sap}</div>
+                    )}
+                  </td>
                   <td className="px-4 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" aria-label="Ver detalhes" onClick={() => setDetalhe(c)}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" aria-label="Editar" onClick={() => abrirEdicao(c)}><Pencil className="h-4 w-4" /></Button>
@@ -1025,18 +1046,36 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
                     <Linha rot="Finalidade de uso" val={detalhe.finalidade} />
                     <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
-                    <Linha rot="Consultor" val={(detalhe as any).consultor_nome || detalhe.created_by_nome} />
-                    <Linha rot="Cód. do consultor (SAP)" val={(detalhe as any).consultor_sap} />
+                    <Linha rot="Consultor" val={consultorDoCliente(detalhe)} />
+                    <Linha rot="Cód. do consultor (SAP)" val={detalhe.consultor_sap} />
                     <Linha rot="Observações" val={detalhe.observacoes} />
                   </Bloco>
 
                   <Bloco titulo="Origem do cadastro">
-                    <Linha rot="Origem" val={(detalhe as any).origem} />
-                    <Linha rot="Sub-origem" val={(detalhe as any).sub_origem} />
-                    <Linha rot="Cadastrado via" val={(detalhe as any).origem_cadastro} />
-                    <Linha rot="ID na plataforma antiga" val={(detalhe as any).id_antigo} />
-                    <Linha rot="Lead do Salesforce" val={(detalhe as any).sf_lead_id} />
+                    <Linha rot="Origem" val={detalhe.origem} />
+                    <Linha rot="Sub-origem" val={detalhe.sub_origem} />
+                    <Linha rot="Cadastrado via" val={detalhe.origem_cadastro} />
+                    <Linha rot="Cadastrado por" val={detalhe.created_by_nome} />
+                    <Linha rot="Lead do Salesforce" val={detalhe.sf_lead_id} />
                   </Bloco>
+
+                  {(detalhe.id_antigo || detalhe.legado) && (
+                    <Bloco titulo="Plataforma antiga">
+                      <Linha rot="ID do cliente na antiga" val={detalhe.id_antigo != null ? String(detalhe.id_antigo) : null} />
+                      {detalhe.legado ? (
+                        <details className="rounded-lg bg-muted/30 p-2 text-xs">
+                          <summary className="cursor-pointer font-semibold text-muted-foreground">
+                            Dados importados
+                          </summary>
+                          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words">
+                            {typeof detalhe.legado === "string"
+                              ? detalhe.legado
+                              : JSON.stringify(detalhe.legado, null, 2)}
+                          </pre>
+                        </details>
+                      ) : null}
+                    </Bloco>
+                  )}
                 </div>
 
                 <CreditoClienteCard
