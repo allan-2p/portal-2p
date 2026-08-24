@@ -11,19 +11,40 @@ export type ConsultorPortal = { id: string; nome: string; sap: string };
 
 const codigo = (v: unknown) => String(v ?? "").trim();
 
-/** Consultores cadastrados no portal (ativos, marcados como consultor e com código SAP). */
+/**
+ * Consultores cadastrados no portal: usuários com código SAP + o de-para
+ * oficial em `consultores_sap` (consultores que existem no SAP mas ainda não
+ * têm login). Dedupe pelo código SAP, preferindo o usuário do portal.
+ */
 export async function listarConsultoresPortal(instancia: "solar" | "carregadores"): Promise<ConsultorPortal[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("profiles")
-    .select("id, full_name, email, numero_sap, ativo, is_consultor, organizacao")
-    .eq("ativo", true)
-    .eq("is_consultor", true)
-    .in("organizacao", [instancia, "grupo"])
-    .order("full_name", { ascending: true });
-  return (data ?? [])
-    .filter((p: any) => codigo(p.numero_sap) !== "")
-    .map((p: any) => ({ id: p.id as string, nome: (p.full_name || p.email || "—") as string, sap: codigo(p.numero_sap) }));
+  const [{ data: perfis }, { data: cadastro }] = await Promise.all([
+    supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, email, numero_sap, ativo, is_consultor, organizacao")
+      .eq("ativo", true)
+      .eq("is_consultor", true)
+      .in("organizacao", [instancia, "grupo"])
+      .order("full_name", { ascending: true }),
+    supabaseAdmin
+      .from("consultores_sap")
+      .select("codigo_sap, nome, profile_id, ativo, organizacao")
+      .eq("ativo", true)
+      .in("organizacao", [instancia, "grupo"])
+      .order("nome", { ascending: true }),
+  ]);
+
+  const porSap = new Map<string, ConsultorPortal>();
+  for (const p of (perfis ?? []) as any[]) {
+    const sap = codigo(p.numero_sap);
+    if (sap) porSap.set(sap, { id: p.id as string, nome: (p.full_name || p.email || "—") as string, sap });
+  }
+  for (const c of (cadastro ?? []) as any[]) {
+    const sap = codigo(c.codigo_sap);
+    if (!sap || porSap.has(sap)) continue;
+    porSap.set(sap, { id: (c.profile_id as string | null) ?? sap, nome: String(c.nome ?? "—"), sap });
+  }
+  return [...porSap.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }
 
 /** Consultor do portal com esse código SAP (ou `null` quando o código é só importado). */
@@ -37,7 +58,22 @@ export async function consultorPorSap(sap: string | null | undefined): Promise<(
     .eq("numero_sap", alvo)
     .limit(1);
   const p: any = data?.[0];
-  if (!p) return null;
+  if (!p) {
+    const { data: cad } = await supabaseAdmin
+      .from("consultores_sap")
+      .select("codigo_sap, nome, profile_id")
+      .eq("codigo_sap", alvo)
+      .limit(1);
+    const c: any = cad?.[0];
+    if (!c) return null;
+    return {
+      id: (c.profile_id as string | null) ?? alvo,
+      nome: String(c.nome ?? "—"),
+      sap: alvo,
+      email: null,
+      sfUserId: null,
+    };
+  }
   return {
     id: p.id as string,
     nome: (p.full_name || p.email || "—") as string,
