@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Home, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAccessSuggestions } from "@/lib/access-fallback.functions";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Tela padrão de bloqueio por permissão: explica em linguagem simples
