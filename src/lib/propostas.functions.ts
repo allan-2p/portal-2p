@@ -460,20 +460,20 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: perfilAtual } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("id", userId)
-      .maybeSingle();
+    // Leituras independentes em paralelo: perfil do usuário, repositório e a
+    // proposta atual. Antes eram três idas sequenciais ao banco por salvamento.
+    const [perfilRes, db, atualProposta] = await Promise.all([
+      supabase.from("profiles").select("full_name, email").eq("id", userId).maybeSingle(),
+      repo(),
+      data.propostaId
+        ? (await repo()).getProposta(data.propostaId, "consultor_id,consultor_nome,criado_por_nome")
+        : Promise.resolve(null),
+    ]);
+    const perfilAtual = perfilRes.data;
     const nomeAtual = (perfilAtual as any)?.full_name ?? (perfilAtual as any)?.email ?? null;
 
-    const db = await repo();
-
     if (data.propostaId) {
-      const atual = await db.getProposta(
-        data.propostaId,
-        "consultor_id,consultor_nome,criado_por_nome",
-      );
+      const atual = atualProposta;
 
       const patch: Record<string, unknown> = { ...payload };
       // Preenche o consultor apenas quando a proposta ainda não tem (legado).
