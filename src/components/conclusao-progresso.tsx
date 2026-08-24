@@ -12,6 +12,21 @@ const PASSOS = [
   { chave: "salesforce", rotulo: "Sincronizando com o Salesforce", detalhe: "Atualizando a oportunidade." },
 ] as const;
 
+const FRASES = [
+  "Conectando painéis, carregadores e boas ideias…",
+  "Enquanto isso, o sol já aprovou essa proposta.",
+  "Transformando watts em negócio fechado.",
+  "Carregando a ordem de venda com energia 100% renovável.",
+  "SAP aberto, café na mesa, vamos nessa.",
+  "O Salesforce também quer saber dessa vitória.",
+  "Mais uma proposta saindo do forno — e sem emissão de carbono.",
+  "Seu cliente está prestes a economizar muito dinheiro.",
+  "Aguenta aí, estamos fazendo mágica (com muita integração).",
+  "Da 2P para o mundo: pedido em construção.",
+  "Pix no ar, boleto na fila, tudo sob controle.",
+  "Quase lá. Respira fundo e não fecha a janela.",
+] as const;
+
 /**
  * Overlay bloqueante do "Concluir pedido": cobre a tela inteira enquanto o
  * servidor executa as integrações e mostra em que passo o processo está.
@@ -24,10 +39,12 @@ const PASSOS = [
 export function ConclusaoProgresso({ fase }: { fase: ConclusaoFase }) {
   const aberto = fase !== null;
   const [ativo, setAtivo] = useState(0);
+  const [fraseIdx, setFraseIdx] = useState(0);
 
   useEffect(() => {
     if (!aberto) {
       setAtivo(0);
+      setFraseIdx(0);
       return;
     }
     if (fase === "salvando") {
@@ -37,6 +54,7 @@ export function ConclusaoProgresso({ fase }: { fase: ConclusaoFase }) {
     setAtivo((a) => (a < 1 ? 1 : a));
     const t = setInterval(() => {
       setAtivo((a) => (a < PASSOS.length - 1 ? a + 1 : a));
+      setFraseIdx((i) => (i + 1) % FRASES.length);
     }, 2600);
     return () => clearInterval(t);
   }, [aberto, fase]);
@@ -74,6 +92,13 @@ export function ConclusaoProgresso({ fase }: { fase: ConclusaoFase }) {
             </p>
           </div>
         </div>
+
+        <p
+          key={fraseIdx}
+          className="mt-4 text-center text-sm font-medium text-primary animate-in fade-in slide-in-from-bottom-2 duration-500"
+        >
+          {FRASES[fraseIdx]}
+        </p>
 
         <div className="mt-5 space-y-2">
           {PASSOS.map((p, i) => {
