@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Mail, Phone, UserPlus } from "lucide-react";
+import { Plus, Trash2, Mail, Phone, UserPlus, User, Building2, CreditCard } from "lucide-react";
 
 export type ContatoTipo = "principal" | "financeiro" | "outro";
 
@@ -219,39 +219,53 @@ export function ContatosEditor({
     );
   };
 
+  const iconeTipo = (tipo: ContatoTipo) => {
+    if (tipo === "principal") return <User className="h-3.5 w-3.5" />;
+    if (tipo === "financeiro") return <CreditCard className="h-3.5 w-3.5" />;
+    return <Building2 className="h-3.5 w-3.5" />;
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {contatos.map((c, i) => {
         const fixo = c.tipo === "principal" || c.tipo === "financeiro";
         const erroNome = erros[`contato-${i}-nome`];
         return (
-          <div key={i} className="rounded-xl border bg-card/40 p-4 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <Badge variant={fixo ? "default" : "secondary"}>
-                {TIPO_ROTULO[c.tipo]}{fixo ? " *" : ""}
-              </Badge>
+          <div key={i} className="rounded-xl border bg-card p-4 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between gap-2 pb-3 border-b">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  {iconeTipo(c.tipo)}
+                </div>
+                <div>
+                  <div className="text-sm font-semibold">{TIPO_ROTULO[c.tipo]}{fixo ? " *" : ""}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {fixo ? "Obrigatório" : "Contato adicional"}
+                  </div>
+                </div>
+              </div>
               {!fixo && (
                 <Button
                   type="button" variant="ghost" size="sm"
                   className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-destructive"
                   onClick={() => onChange(contatos.filter((_, k) => k !== i))}
                 >
-                  <Trash2 className="h-3.5 w-3.5" /> Remover contato
+                  <Trash2 className="h-3.5 w-3.5" /> Remover
                 </Button>
               )}
             </div>
 
             {c.tipo === "financeiro" && principal && (
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <label className="flex items-center gap-2.5 rounded-lg border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
                 <Checkbox
                   checked={mesmoFinanceiro}
                   onCheckedChange={(v: boolean | "indeterminate") => copiarDoPrincipal(v === true)}
                 />
-                É o mesmo do contato principal
+                <span>Copiar dados do contato principal</span>
               </label>
             )}
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground">Nome{fixo ? " *" : ""}</Label>
                 <Input
