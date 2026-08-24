@@ -121,6 +121,13 @@ export const solicitarCredito = createServerFn({ method: "POST" })
       condicaoSolicitada?: string | null;
       prioridade?: string | null;
       observacoesVendedor?: string | null;
+      contatoNome?: string | null;
+      contatoEmail?: string | null;
+      contatoTelefone?: string | null;
+      empresaSecundaria?: boolean | null;
+      empresaSecundariaNome?: string | null;
+      empresaSecundariaDoc?: string | null;
+      anexos?: { path: string; nome: string; tamanho?: number | null; tipo?: string | null }[] | null;
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ ok: true; id: string; numero: string }> => {
@@ -129,6 +136,21 @@ export const solicitarCredito = createServerFn({ method: "POST" })
     const prioridade = CREDITO_PRIORIDADES.includes(data.prioridade as any)
       ? (data.prioridade as string)
       : "Normal";
+
+    const contatoNome = data.contatoNome?.trim() || "";
+    if (!contatoNome) throw new Error("Informe o contato principal do cliente.");
+    const obsVendedor = data.observacoesVendedor?.trim() || "";
+    if (!obsVendedor) throw new Error("As observações do vendedor são obrigatórias.");
+
+    const temSecundaria = !!data.empresaSecundaria;
+    const secNome = data.empresaSecundariaNome?.trim() || "";
+    const secDoc = soDigitos(data.empresaSecundariaDoc);
+    if (temSecundaria) {
+      if (!secNome) throw new Error("Informe o nome da empresa secundária.");
+      if (secDoc.length !== 11 && secDoc.length !== 14) {
+        throw new Error("CNPJ/CPF da empresa secundária inválido.");
+      }
+    }
 
     const { data: abertas, error: eAbertas } = await (context.supabase as any)
       .from("credito_analises")
@@ -151,12 +173,26 @@ export const solicitarCredito = createServerFn({ method: "POST" })
         prioridade,
         credito_solicitado: num(data.creditoSolicitado),
         condicao_solicitada: data.condicaoSolicitada?.trim() || null,
-        observacoes_vendedor: data.observacoesVendedor?.trim() || null,
+        observacoes_vendedor: obsVendedor,
+        contato_nome: contatoNome,
+        contato_email: data.contatoEmail?.trim() || null,
+        contato_telefone: data.contatoTelefone?.trim() || null,
+        empresa_secundaria: temSecundaria,
+        empresa_secundaria_nome: temSecundaria ? secNome : null,
+        empresa_secundaria_doc: temSecundaria ? secDoc : null,
+        anexos: (data.anexos ?? []).map((a) => ({
+          path: String(a.path),
+          nome: String(a.nome),
+          tamanho: a.tamanho ?? null,
+          tipo: a.tipo ?? null,
+        })),
         solicitado_por: context.userId,
       })
       .select("id, numero")
       .single();
     if (error) throw new Error(error.message);
+    return { ok: true, id: row.id, numero: row.numero };
+  });
     return { ok: true, id: row.id, numero: row.numero };
   });
 
