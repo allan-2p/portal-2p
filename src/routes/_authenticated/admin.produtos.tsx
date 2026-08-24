@@ -316,6 +316,8 @@ function ProdutosPage() {
   const setVis = useServerFn(setSapProdutoVisibilidade);
   const sync = useServerFn(syncSapProdutos);
   const listRuns = useServerFn(listSapSyncRuns);
+  const setOverride = useServerFn(setSapProdutoOverride);
+  const varrerPrecos = useServerFn(varrerCatalogoVendaveisAction);
 
   const [q, setQ] = useState("");
   const [tipo, setTipo] = useState("all");
