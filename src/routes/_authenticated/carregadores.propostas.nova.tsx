@@ -250,6 +250,20 @@ function PropostaCarregadoresPage() {
   const sujo = baseSalva !== null && baseSalva !== assinatura && !saving;
 
 
+  // Sair com alterações pendentes sempre pede confirmação (e oferece salvar).
+  const { dialog: dialogoSaida } = useConfirmarSaida({
+    sujo,
+    salvar: async () => {
+      if (errosSalvar.length) {
+        setTentouAvancar(true);
+        toast.error(errosSalvar[0] ?? "Complete a proposta antes de salvar.");
+        throw new Error("pendencias");
+      }
+      await salvar();
+    },
+    descricao: "Esta proposta tem alterações que ainda não foram salvas. O que você quer fazer?",
+  });
+
   // Bloqueia navegação interna enquanto a proposta está sendo salva/concluída
   useBlocker({
     shouldBlockFn: () => saving,
@@ -1089,13 +1103,27 @@ function PropostaCarregadoresPage() {
     return buildHtml(calcAtual());
   }
 
-  function abrirPreviewPdf() {
+  // Prévia e PDF sempre gravam a proposta primeiro: o documento gerado é
+  // exatamente o que está salvo no portal.
+  async function salvarAntesDoPdf() {
+    if (!sujo && propostaId) return true;
+    try {
+      await salvar();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function abrirPreviewPdf() {
     if (errosPdf.length) return toast.error(errosPdf[0] ?? "Complete a proposta antes de visualizar o PDF.");
+    if (!(await salvarAntesDoPdf())) return;
     setPreviewAberto(true);
   }
 
-  function exportarPdf() {
+  async function exportarPdf() {
     if (errosPdf.length) return toast.error(errosPdf[0] ?? "Complete a proposta antes de exportar o PDF.");
+    if (!(await salvarAntesDoPdf())) return;
     const html = montarPdfHtml();
     const w = window.open("", "_blank");
     if (!w) return toast.error("Permita pop-ups para exportar o PDF.");
@@ -2619,42 +2647,35 @@ function PropostaCarregadoresPage() {
           savedLabel="Salvo"
           minimal={etapa === 1 && !temItemComValor}
           actions={
+            // Salvar existe apenas na finalização, colado no "Concluir pedido".
             etapa === 5 && temItemComValor
               ? [
+                  {
+                    label: "Proposta em PDF",
+                    onClick: () => void abrirPreviewPdf(),
+                    icon: <Eye className="h-4 w-4" />,
+                    disabled: !podeFechar || saving,
+                  },
                   {
                     label: "Salvar proposta",
                     onClick: pedirSalvar,
                     icon: <Save className="h-4 w-4" />,
                     loading: saving && statusProposta !== "Aguardando Pagamento",
                   },
-                  {
-                    label: "Proposta em PDF",
-                    onClick: abrirPreviewPdf,
-                    icon: <Eye className="h-4 w-4" />,
-                    disabled: !podeFechar || saving,
-                  },
                 ]
               : []
           }
 
           primary={
-            !temItemComValor
-              ? null
-              : etapa === 5
-                ? {
-                    label: "Concluir pedido",
-                    onClick: iniciarConclusao,
-                    icon: <CheckCircle2 className="h-4 w-4" />,
-                    loading: saving && statusProposta === "Aguardando Pagamento",
-                    disabled: saving,
-                  }
-                : {
-                    label: "Salvar proposta",
-                    onClick: pedirSalvar,
-                    icon: <Save className="h-4 w-4" />,
-                    loading: saving,
-                    disabled: saving,
-                  }
+            etapa === 5 && temItemComValor
+              ? {
+                  label: "Concluir pedido",
+                  onClick: iniciarConclusao,
+                  icon: <CheckCircle2 className="h-4 w-4" />,
+                  loading: saving && statusProposta === "Aguardando Pagamento",
+                  disabled: saving,
+                }
+              : null
           }
         />
 
@@ -2728,6 +2749,9 @@ function PropostaCarregadoresPage() {
 
         {/* Bloqueia a tela enquanto o pedido está sendo concluído */}
         <ConclusaoProgresso fase={conclusaoFase} />
+
+        {/* Confirmação ao sair com alterações não salvas */}
+        {dialogoSaida}
 
 
         {/* Confirmação antes de concluir o pedido */}
