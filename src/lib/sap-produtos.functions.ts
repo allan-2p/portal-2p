@@ -375,11 +375,45 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         },
         actorId: context.userId,
       });
+
+      // Regra permanente: depois de importar o mestre, o critério de vendável é
+      // ter preço no SAP. Aqui verificamos os materiais novos (e uma fatia dos
+      // mais antigos sem checagem); o cron diário cobre o restante.
+      let vendaveis: SapSyncResult["vendaveis"];
+      try {
+        const { runJob } = await import("@/lib/job-runs.server");
+        const { varrerCatalogoVendaveis } = await import("@/lib/sap-catalogo-vendaveis.server");
+        const codigosNovos = novos.map((n) => n.codigo);
+        const r = await runJob(
+          {
+            job: "sap.sync-produtos",
+            trigger: "portal",
+            payload: { origem: "sync-produtos", novos: codigosNovos.length },
+            actorId: context.userId,
+          },
+          () =>
+            varrerCatalogoVendaveis({
+              limite: 250,
+              ...(codigosNovos.length ? { codigos: codigosNovos } : {}),
+              actorId: context.userId,
+            }) as any,
+        );
+        const res = (r as any)?.result ?? (r as any) ?? {};
+        vendaveis = {
+          verificados: Number(res.verificados ?? 0),
+          ativados: Number(res.ativados ?? 0),
+          desativados: Number(res.desativados ?? 0),
+        };
+      } catch (e: any) {
+        vendaveis = { verificados: 0, ativados: 0, desativados: 0, erro: String(e?.message ?? e) };
+      }
+
       return {
         inserted,
         updated,
         deactivated: orfaos.length,
         unchanged,
+        vendaveis,
         catalogoAtualizado: espelho.length,
         catalogoInalterado,
         totalSap: todosMateriais.length,
