@@ -312,14 +312,17 @@ export function quantificarProjeto(
   if (erros.length)
     return { ok: false, erros: [...new Set(erros)], avisos, distribuicao: [], comprimentos: [], itens: [] };
 
-  // todos_trilhos é forçado a 'S' acima do limite configurado. php:2377
+  // A escolha do vendedor manda: "Até 2,40 m / 2,70 m" (todos_trilhos = 'N')
+  // NUNCA libera barra de 4800, mesmo acima do limite de painéis (antes o legado
+  // php:2377 forçava 'S' e contaminava o orçamento com trilho de 4,80 m).
   const totalPaineis = fileiras.reduce((s, f) => s + f.qtd_paineis * f.qtd_fileiras, 0);
-  const ctxFinal: QuantContexto =
-    totalPaineis > cfg.limite_paineis_todos_trilhos ? { ...ctx, todos_trilhos: "S" } : ctx;
+  const ctxFinal: QuantContexto = ctx;
   if (totalPaineis > cfg.limite_paineis_todos_trilhos && ctx.todos_trilhos !== "S")
     avisos.push(
-      `Acima de ${cfg.limite_paineis_todos_trilhos} painéis: barras longas liberadas automaticamente.`,
+      `Acima de ${cfg.limite_paineis_todos_trilhos} painéis com trilho curto (2,40 m / 2,70 m): ` +
+        `o cálculo mantém apenas barras curtas conforme a sua escolha — se quiser otimizar, selecione "Até 4,80 m".`,
     );
+
 
   const acc = new Map<string, QuantItem>();
   const distribuicao: number[] = [];
