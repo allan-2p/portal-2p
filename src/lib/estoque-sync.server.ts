@@ -180,12 +180,30 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
       actorId: userId,
     });
 
+    // Encadeia a varredura de preço: quem não tem preço no SAP não fica vendável.
+    // Falha aqui não invalida o estoque já gravado — vira aviso no resultado.
+    let vendaveis: { verificados: number; ativados: number; desativados: number; erro?: string } | undefined;
+    try {
+      const { runJob } = await import("@/lib/job-runs.server");
+      const { varrerCatalogoVendaveis } = await import("./sap-catalogo-vendaveis.server");
+      const r = await runJob(
+        { job: "sap.sync-produtos", trigger: "portal", payload: { origem: "cron.estoque" }, actorId: userId },
+        () => varrerCatalogoVendaveis({ limite: 250, actorId: userId }),
+      );
+      vendaveis = r.ok
+        ? { verificados: r.result.verificados, ativados: r.result.ativados, desativados: r.result.desativados }
+        : { verificados: 0, ativados: 0, desativados: 0, erro: r.error };
+    } catch (e: any) {
+      vendaveis = { verificados: 0, ativados: 0, desativados: 0, erro: String(e?.message ?? e) };
+    }
+
     return {
       materiais: estoque.length,
       containers: containers.length,
       ncmAplicado,
       produtos: produtos.length,
       espelho,
+      vendaveis,
       duracaoMs: Date.now() - inicio,
     };
   } catch (e: any) {
