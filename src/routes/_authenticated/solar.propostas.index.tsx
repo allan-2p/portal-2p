@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
-import { numeroAnterior } from "@/lib/proposta-legado";
+import { numeroAnterior, bloqueiaReenvioSap } from "@/lib/proposta-legado";
 import {
   excluirPropostaFn,
   listarPropostasFn,
@@ -247,11 +247,13 @@ function PropostasSolarPage() {
                         <Button variant="ghost" size="icon" aria-label="Detalhar" onClick={() => setDetalheId(r.id)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label="Continuar proposta" asChild>
-                          <Link to="/solar/propostas/nova" search={{ id: r.id }}>
-                            <Pencil className="h-4 w-4" />
-                          </Link>
-                        </Button>
+                        {!bloqueiaReenvioSap(r) && (
+                          <Button variant="ghost" size="icon" aria-label="Continuar proposta" asChild>
+                            <Link to="/solar/propostas/nova" search={{ id: r.id }}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" aria-label="Duplicar proposta" asChild>
                           <Link to="/solar/propostas/nova" search={{ dup: r.id }}>
                             <Copy className="h-4 w-4" />

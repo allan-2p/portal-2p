@@ -26,7 +26,7 @@ import {
 import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
-import { numeroAnterior } from "@/lib/proposta-legado";
+import { numeroAnterior, bloqueiaReenvioSap } from "@/lib/proposta-legado";
 import { supabase } from "@/integrations/supabase/client";
 import { listarPropostasFn, excluirPropostaFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
@@ -296,11 +296,13 @@ function HistoricoCarregadoresPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label="Continuar proposta" asChild>
-                          <Link to="/carregadores/propostas/nova" search={{ id: r.id }}>
-                            <Pencil className="h-4 w-4" />
-                          </Link>
-                        </Button>
+                        {!bloqueiaReenvioSap(r) && (
+                          <Button variant="ghost" size="icon" aria-label="Continuar proposta" asChild>
+                            <Link to="/carregadores/propostas/nova" search={{ id: r.id }}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" aria-label="Duplicar proposta" asChild>
                           <Link to="/carregadores/propostas/nova" search={{ dup: r.id }}>
                             <Copy className="h-4 w-4" />
