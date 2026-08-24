@@ -833,6 +833,8 @@ function PropostaCarregadoresPage() {
     errosPdf.push("Cotação de frete pendente — selecione a transportadora.");
   if (state.freteMod === "DEDICADO" && !(state.freteValor > 0))
     errosPdf.push("Frete dedicado sem valor informado — necessário para fechar os totais.");
+  if (state.freteMod === "DEDICADO" && !state.transportadora)
+    errosPdf.push("Frete dedicado sem transportadora selecionada.");
 
   if (temProduto && !(d.valorTotalProposta > 0))
     errosPdf.push("Total da proposta zerado — revise valores e quantidades.");
