@@ -305,6 +305,32 @@ function AnalisarDialog({
                     <span className="font-medium">#{formatPropostaNumero(analise.propostaNumero)}</span>
                   </div>
                 )}
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">Contato principal</span>
+                  <span className="font-medium text-right">
+                    {analise.contatoNome || "—"}
+                    {(analise.contatoEmail || analise.contatoTelefone) && (
+                      <span className="block text-xs text-muted-foreground">
+                        {[analise.contatoEmail, analise.contatoTelefone].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {analise.empresaSecundaria && (
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">Empresa secundária</span>
+                    <span className="font-medium text-right">
+                      {analise.empresaSecundariaNome || "—"}
+                      <span className="block text-xs text-muted-foreground">
+                        {analise.empresaSecundariaDoc ? mascaraDoc(analise.empresaSecundariaDoc) : ""}
+                      </span>
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">Anexos</span>
+                  <span className="text-right"><CreditoAnexosLista anexos={analise.anexos ?? []} /></span>
+                </div>
                 {analise.observacoesVendedor && (
                   <div className="pt-1 text-muted-foreground">
                     Observações do vendedor: <span className="text-foreground">{analise.observacoesVendedor}</span>
