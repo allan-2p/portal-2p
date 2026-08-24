@@ -733,11 +733,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                       <Input value={form.doc ?? ""} readOnly disabled />
                     </F>
                     <F label="Regime tributário">
-                      <Select value={form.regime_tributario ?? ""} onValueChange={(v) => set("regime_tributario", v)}>
-                        <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                        <SelectContent>{REGIMES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                      </Select>
+                      <Input value={form.regime_tributario ?? ""} readOnly disabled placeholder="—" />
                     </F>
+
                     <F label="Natureza jurídica"><Input value={form.natureza_juridica ?? ""} readOnly disabled /></F>
                     <F label="Porte"><Input value={form.porte ?? ""} readOnly disabled /></F>
                     <F label="Situação cadastral"><Input value={form.situacao_cadastral ?? ""} readOnly disabled /></F>
