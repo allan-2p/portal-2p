@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   CARREGADORES_CONFIG_FALLBACK,
+  aliquotasDoItem,
   calcularCarregadores,
   fmtPct,
   finalidadeUsoDoCadastro,
@@ -416,6 +417,16 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       padrinho_nome: data.indicacao ? padrinhoNome : null,
       itens: data.itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId)!;
+        // Alíquotas fotografadas por linha: o IPI vem do NCM do cadastro do
+        // produto e é o que converte o preço de venda no VALOR_PROD do SAP.
+        const aliq = aliquotasDoItem({
+          uf: data.uf,
+          contribuinte: data.contribuinte,
+          regimeTributario: data.regimeTributario ?? null,
+          finalidade: finalidadeUso,
+          ncm: p.ncm_id ? (ncms.find((n) => n.id === p.ncm_id) ?? null) : null,
+          config,
+        });
         return {
           produtoId: i.produtoId,
           codigo: p.codigo ?? null,
@@ -423,6 +434,9 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
           qtd: i.qtd,
           valor: i.valor,
           valorManual: true,
+          aliq_ipi: aliq.ipi,
+          aliq_icms: aliq.icms,
+          aliq_pis_cofins: aliq.pisCofins,
         };
       }),
       totais: {
