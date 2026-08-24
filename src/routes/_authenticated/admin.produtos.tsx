@@ -932,6 +932,7 @@ function ProdutosPage() {
                 <th className="text-left px-3 py-2">Lista de preço</th>
                 <th className="text-left px-3 py-2">Permissão</th>
                 <th className="text-left px-3 py-2">Visibilidade</th>
+                <th className="text-left px-3 py-2">Preço no SAP</th>
                 <th className="text-left px-3 py-2">Status</th>
                 {audit && <th className="text-left px-3 py-2">Regra aplicada</th>}
                 {audit && <th className="text-left px-3 py-2">Motivo</th>}
