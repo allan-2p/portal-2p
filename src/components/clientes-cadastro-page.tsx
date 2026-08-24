@@ -32,7 +32,7 @@ import { cnpjValido, mascaraCnpj, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
 
 import {
-  listClientesFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn,
+  listClientesPaginaFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn,
   listConsultoresFn,
 
 } from "@/lib/clientes.functions";
@@ -190,9 +190,28 @@ function Marca({ texto, termo }: { texto?: string | null; termo: string }) {
 
 type OrdemKey = "sap" | "cliente" | "doc" | "fiscal" | "cidade" | "contato";
 
+/** Ordenação padrão do portal: mais recente primeiro. */
+type OrdemLista = OrdemKey | "recente";
+
+/** Coluna real no banco para cada opção de ordenação da tabela. */
+const COLUNA_ORDEM: Record<OrdemLista, string> = {
+  recente: "created_at",
+  sap: "numero_sap",
+  cliente: "razao_social",
+  doc: "doc",
+  fiscal: "contribuinte",
+  cidade: "cidade",
+  contato: "consultor_nome",
+};
+
+const UFS = [
+  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR",
+  "PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
+];
+
 export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const qc = useQueryClient();
-  const listar = useServerFn(listClientesFn);
+  const listar = useServerFn(listClientesPaginaFn);
   const verificarDoc = useServerFn(verificarDocFn);
   const enriquecer = useServerFn(enriquecerCnpjFn);
   const salvarFn = useServerFn(salvarClienteFn);
@@ -207,10 +226,16 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [fUf, setFUf] = useState("todas");
   const [fStatus, setFStatus] = useState("ativos");
   const [fFiscal, setFFiscal] = useState("todos");
-  const [ordem, setOrdem] = useState<OrdemKey>("cliente");
-  const [dir, setDir] = useState<"asc" | "desc">("asc");
+  const [ordem, setOrdem] = useState<OrdemLista>("recente");
+  const [dir, setDir] = useState<"asc" | "desc">("desc");
   const [pagina, setPagina] = useState(1);
-  const [porPagina, setPorPagina] = useState(10);
+  const [porPagina, setPorPagina] = useState(25);
+  // A busca vai ao banco: espera o usuário parar de digitar.
+  const [qBusca, setQBusca] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setQBusca(q.trim()), 350);
+    return () => clearTimeout(t);
+  }, [q]);
 
   const [open, setOpen] = useState(false);
   const [etapa, setEtapa] = useState<"documento" | "formulario">("documento");
@@ -246,11 +271,26 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["clientes", instancia],
-    queryFn: () => listar({ data: { instancia } }),
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["clientes", instancia, { qBusca, fUf, fStatus, fFiscal, ordem, dir, pagina, porPagina }],
+    queryFn: () =>
+      listar({
+        data: {
+          instancia,
+          q: qBusca,
+          uf: fUf,
+          status: fStatus,
+          fiscal: fFiscal,
+          ordem: COLUNA_ORDEM[ordem],
+          dir,
+          pagina,
+          porPagina,
+        },
+      }),
+    placeholderData: (anterior) => anterior,
   });
   const clientes = useMemo(() => ((data?.clientes ?? []) as unknown as Cliente[]), [data]);
+  const total = data?.total ?? 0;
   const tabelaAusente = data?.ok === false;
 
   const verificar = useMutation({
@@ -380,51 +420,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao sincronizar."),
   });
 
-  const filtrados = useMemo(() => {
-    const t = q.trim().toLowerCase();
-    const tDoc = soDigitos(q);
-    const tSap = soDigitos(q);
-    return clientes.filter((c) => {
-      if (fUf !== "todas" && c.uf !== fUf) return false;
-      if (fStatus === "ativos" && !c.ativo) return false;
-      if (fStatus === "inativos" && c.ativo) return false;
-      if (fFiscal === "contribuinte" && !c.contribuinte) return false;
-      if (fFiscal === "nao" && c.contribuinte) return false;
-      if (!t) return true;
-      const texto = [c.razao_social, c.nome_fantasia, c.cidade, c.uf, c.email, consultorDoCliente(c), c.consultor_sap, c.created_by_nome, c.numero_sap]
-        .some((v) => (v ?? "").toLowerCase().includes(t));
-      return texto
-        || (tDoc.length >= 3 && soDigitos(c.doc ?? "").includes(tDoc))
-        || (tSap.length >= 3 && soDigitos(c.numero_sap ?? "").includes(tSap));
-    });
-  }, [clientes, q, fUf, fStatus, fFiscal]);
-
-  const ordenados = useMemo(() => {
-    const val = (c: Cliente) => {
-      switch (ordem) {
-        case "sap": return soDigitos(c.numero_sap ?? "");
-        case "doc": return soDigitos(c.doc ?? "");
-        case "fiscal": return c.contribuinte ? "1" : "0";
-        case "cidade": return `${c.uf} ${c.cidade ?? ""}`;
-        case "contato": return consultorDoCliente(c).toLowerCase();
-        default: return (c.razao_social ?? "").toLowerCase();
-      }
-    };
-    return [...filtrados].sort((a, b) => {
-      const r = val(a).localeCompare(val(b), "pt-BR", { numeric: true });
-      return dir === "asc" ? r : -r;
-    });
-  }, [filtrados, ordem, dir]);
-
-  const totalPaginas = Math.max(1, Math.ceil(ordenados.length / porPagina));
+  // Filtro, ordenação e paginação acontecem no banco (listClientesPaginaFn):
+  // a pesquisa alcança toda a base, não apenas a página carregada.
+  const rows = clientes;
+  const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const rows = ordenados.slice((paginaAtual - 1) * porPagina, paginaAtual * porPagina);
-  useEffect(() => { setPagina(1); }, [q, fUf, fStatus, fFiscal, porPagina, ordem, dir]);
+  useEffect(() => { setPagina(1); }, [qBusca, fUf, fStatus, fFiscal, porPagina, ordem, dir]);
 
-  const ufsDisponiveis = useMemo(
-    () => Array.from(new Set(clientes.map((c) => c.uf).filter(Boolean))).sort(),
-    [clientes],
-  );
+  const ufsDisponiveis = UFS;
   const filtrosAtivos = fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || q.trim() !== "";
 
   // Assinatura do formulário no momento em que o modal abriu: qualquer
@@ -875,7 +878,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             </Button>
           )}
           <span className="ml-auto text-xs text-muted-foreground">
-            {ordenados.length} de {clientes.length} cadastro(s)
+            {isFetching ? "Buscando…" : `${total} cadastro(s)`}
           </span>
         </CardContent>
       </Card>
@@ -957,7 +960,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             </tbody>
           </table>
         </CardContent>
-        {ordenados.length > 0 && (
+        {total > 0 && (
           <div className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
               <span>Por página</span>
@@ -967,7 +970,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               </Select>
             </div>
             <span className="ml-auto">
-              {(paginaAtual - 1) * porPagina + 1}–{Math.min(paginaAtual * porPagina, ordenados.length)} de {ordenados.length}
+              {(paginaAtual - 1) * porPagina + 1}–{Math.min(paginaAtual * porPagina, total)} de {total}
             </span>
             <div className="flex items-center gap-1">
               <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Página anterior"

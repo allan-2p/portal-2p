@@ -26,9 +26,9 @@ import {
 import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
-import { numeroAnterior, bloqueiaReenvioSap } from "@/lib/proposta-legado";
+import { bloqueiaReenvioSap } from "@/lib/proposta-legado";
 import { supabase } from "@/integrations/supabase/client";
-import { listarPropostasFn, excluirPropostaFn } from "@/lib/propostas.functions";
+import { listarPropostasPaginaFn, excluirPropostaFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
@@ -84,6 +84,11 @@ type Row = {
 /** Status universais do portal (mesma lista e cores em todas as instâncias). */
 const STATUS = PROPOSTA_STATUS;
 
+const UFS = [
+  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR",
+  "PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
+];
+
 function HistoricoCarregadoresPage() {
   const { ver } = Route.useSearch();
   const [busca, setBusca] = useState("");
@@ -93,79 +98,64 @@ function HistoricoCarregadoresPage() {
   const [uf, setUf] = useState("todos");
   const [sap, setSap] = useState("todos");
   const [pagina, setPagina] = useState(1);
-  const [porPagina, setPorPagina] = useState(10);
+  const [porPagina, setPorPagina] = useState(25);
   const [vendedor, setVendedor] = useState("__all__");
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const podeExcluir = useCanDelete();
   const vend = useCarregadoresVendedores();
 
+  // A pesquisa roda no banco (base inteira): espera parar de digitar.
+  const [buscaDb, setBuscaDb] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setBuscaDb(busca.trim()), 350);
+    return () => clearTimeout(t);
+  }, [busca]);
+
+  const createdByIn = vend.idsDe(vendedor);
+
   const q = useQuery({
-    queryKey: ["carregadores-proposals"],
-    queryFn: async (): Promise<Row[]> => {
-      const data = await listarPropostasFn({ data: { organizacao: "carregadores" } });
-      return (data ?? []).map((r: any) => ({
-        ...r,
-        frete_valor: Number(r.frete_valor),
-        itens: (r.itens as Row["itens"]) ?? [],
-        totais: (r.totais as Record<string, number>) ?? {},
-      })) as Row[];
+    queryKey: ["carregadores-proposals", { buscaDb, status, uf, sap, createdByIn, pagina, porPagina }],
+    queryFn: async (): Promise<{ rows: Row[]; total: number }> => {
+      const data = await listarPropostasPaginaFn({
+        data: {
+          organizacao: "carregadores",
+          q: buscaDb,
+          status,
+          uf,
+          comSap: sap,
+          createdByIn: createdByIn ?? undefined,
+          pagina,
+          porPagina,
+        },
+      });
+      return {
+        rows: ((data?.rows ?? []) as any[]).map((r) => ({
+          ...r,
+          frete_valor: Number(r.frete_valor),
+          itens: (r.itens as Row["itens"]) ?? [],
+          totais: (r.totais as Record<string, number>) ?? {},
+        })) as Row[],
+        total: data?.total ?? 0,
+      };
     },
     staleTime: 30_000,
+    placeholderData: (prev) => prev,
   });
 
-  const rows = q.data ?? [];
-  const ufs = useMemo(() => Array.from(new Set(rows.map((r) => r.uf))).sort(), [rows]);
-
-  /** Busca tolerante: ignora acento/pontuação para casar Nº e Nº SAP digitados de qualquer jeito. */
-  const norm = (v: string) =>
-    v
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-  const soDigitos = (v: string) => v.replace(/\D/g, "");
-
-  const filtered = useMemo(() => {
-    const t = norm(busca.trim());
-    const tDig = soDigitos(busca);
-    return rows.filter((r) => {
-      if (status !== "todos" && r.status !== status) return false;
-      if (uf !== "todos" && r.uf !== uf) return false;
-      if (!vend.matches(vendedor, r.created_by)) return false;
-      const temSap = !!((r.sap_ov_numero || r.numero_sap) ?? "").trim();
-      if (sap === "com" && !temSap) return false;
-      if (sap === "sem" && temSap) return false;
-      if (!t) return true;
-      // Propostas abertas não têm Nº SAP: a busca continua válida pelos demais campos.
-      const alvo = norm(
-        [r.cliente_nome, r.numero, numeroAnterior(r), r.nome, (r.sap_ov_numero || r.numero_sap), r.cliente_doc, r.consultor_nome]
-          .filter(Boolean)
-          .join(" ")
-      );
-      if (alvo.includes(t)) return true;
-      if (tDig) {
-        const alvoDig = soDigitos(
-          [r.numero, numeroAnterior(r), (r.sap_ov_numero || r.numero_sap), r.cliente_doc].filter(Boolean).join(" ")
-        );
-        if (alvoDig.includes(tDig)) return true;
-      }
-      return false;
-    });
-  }, [rows, busca, status, uf, sap, vendedor, vend]);
+  const rows = q.data?.rows ?? [];
+  const total = q.data?.total ?? 0;
+  // Filtro, ordenação (mais recente primeiro) e paginação vêm do banco.
+  const filtered = rows;
+  const visiveis = rows;
+  const ufs = UFS;
 
   useEffect(() => {
     setPagina(1);
-  }, [busca, status, uf, sap, vendedor, porPagina]);
+  }, [buscaDb, status, uf, sap, vendedor, porPagina]);
 
-  const totalPaginas = Math.max(1, Math.ceil(filtered.length / porPagina));
+  const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const visiveis = filtered.slice((paginaAtual - 1) * porPagina, paginaAtual * porPagina);
-
   const detalheIdx = detalheId ? filtered.findIndex((r) => r.id === detalheId) : -1;
-
-
-
-
-
 
   const propostaParaExcluir = useMemo(
     () => rows.find((r) => r.id === excluirId) ?? null,
@@ -341,7 +331,7 @@ function HistoricoCarregadoresPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
               <div className="text-muted-foreground">
                 Mostrando {(paginaAtual - 1) * porPagina + 1}–
-                {Math.min(paginaAtual * porPagina, filtered.length)} de {filtered.length}
+                {Math.min(paginaAtual * porPagina, total)} de {total}
               </div>
               <div className="flex items-center gap-2">
                 <Select value={String(porPagina)} onValueChange={(v) => setPorPagina(Number(v))}>

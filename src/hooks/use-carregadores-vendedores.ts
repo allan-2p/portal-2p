@@ -23,6 +23,14 @@ export function useCarregadoresVendedores() {
       if (selected.length === 0) return true;
       return selected.includes(nameOf(id));
     };
-    return { names, nameOf, matches, isLoading: q.isLoading };
+    /** IDs (created_by) dos vendedores selecionados — null quando é "todos". */
+    const idsDe = (value: string): string[] | null => {
+      const selected = parseVendedores(value);
+      if (selected.length === 0) return null;
+      const ids: string[] = [];
+      byId.forEach((nome, id) => { if (selected.includes(nome)) ids.push(id); });
+      return ids;
+    };
+    return { names, nameOf, matches, idsDe, isLoading: q.isLoading };
   }, [q.data, q.isLoading]);
 }

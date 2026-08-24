@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -26,10 +26,10 @@ import { toast } from "sonner";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
-import { numeroAnterior, bloqueiaReenvioSap } from "@/lib/proposta-legado";
+import { bloqueiaReenvioSap } from "@/lib/proposta-legado";
 import {
   excluirPropostaFn,
-  listarPropostasFn,
+  listarPropostasPaginaFn,
 } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
 import { PermissionGate, useCanDelete } from "@/components/permission-gate";
@@ -73,26 +73,42 @@ type Row = {
 
 const STATUS = PROPOSTA_STATUS;
 
+const UFS = [
+  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR",
+  "PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
+];
+
 function PropostasSolarPage() {
   const { ver } = Route.useSearch();
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
   const [pagina, setPagina] = useState(1);
-  const [porPagina, setPorPagina] = useState(10);
+  const [porPagina, setPorPagina] = useState(25);
+  // A pesquisa roda no banco (base inteira): espera parar de digitar.
+  const [buscaDb, setBuscaDb] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setBuscaDb(busca.trim()), 350);
+    return () => clearTimeout(t);
+  }, [busca]);
   const [detalheId, setDetalheId] = useState<string | null>(ver ?? null);
   const [integracoesId, setIntegracoesId] = useState<string | null>(null);
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const podeExcluir = useCanDelete();
 
   const q = useQuery({
-    queryKey: ["solar-proposals"],
-    queryFn: async (): Promise<Row[]> => {
-      const data = await listarPropostasFn({ data: { organizacao: "solar" } });
-      return ((data ?? []) as any[]).map((r) => ({
-        ...r,
-        totais: (r.totais as Record<string, number>) ?? {},
-      })) as Row[];
+    queryKey: ["solar-proposals", { buscaDb, status, uf, pagina, porPagina }],
+    queryFn: async (): Promise<{ rows: Row[]; total: number }> => {
+      const data = await listarPropostasPaginaFn({
+        data: { organizacao: "solar", q: buscaDb, status, uf, pagina, porPagina },
+      });
+      return {
+        rows: ((data?.rows ?? []) as any[]).map((r) => ({
+          ...r,
+          totais: (r.totais as Record<string, number>) ?? {},
+        })) as Row[],
+        total: data?.total ?? 0,
+      };
     },
     // Status muda no servidor (SAP/Salesforce/cobrança) depois da conclusão:
     // a lista sempre revalida ao abrir e ao voltar o foco, mostrando os dados
@@ -100,11 +116,11 @@ function PropostasSolarPage() {
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
-    placeholderData: (prev: Row[] | undefined) => prev,
+    placeholderData: (prev) => prev,
     // Enquanto houver pedido em processamento, atualiza sozinho a cada 6s —
     // e só nesse caso, para não pesar o portal.
     refetchInterval: (query) => {
-      const dados = (query.state.data ?? []) as Row[];
+      const dados = (query.state.data?.rows ?? []) as Row[];
       const pendente = dados.some(
         (r) =>
           r.status === "Aguardando Pagamento" ||
@@ -116,32 +132,17 @@ function PropostasSolarPage() {
     refetchIntervalInBackground: false,
   });
 
+  const rows = q.data?.rows ?? [];
+  const total = q.data?.total ?? 0;
+  // Filtro, ordenação (mais recente primeiro) e paginação vêm do banco.
+  const filtered = rows;
+  const ufs = UFS;
 
-  const rows = q.data ?? [];
-  const ufs = useMemo(() => Array.from(new Set(rows.map((r) => r.uf).filter(Boolean))).sort(), [rows]);
+  useEffect(() => setPagina(1), [buscaDb, status, uf, porPagina]);
 
-  const norm = (v: string) =>
-    v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-  const filtered = useMemo(() => {
-    const t = norm(busca.trim());
-    return rows.filter((r) => {
-      if (status !== "todos" && r.status !== status) return false;
-      if (uf !== "todos" && r.uf !== uf) return false;
-      if (!t) return true;
-      return norm(
-        [r.cliente_nome, r.numero, numeroAnterior(r), r.nome, (r.sap_ov_numero || r.numero_sap), r.cliente_doc, r.consultor_nome]
-          .filter(Boolean)
-          .join(" "),
-      ).includes(t);
-    });
-  }, [rows, busca, status, uf]);
-
-  useEffect(() => setPagina(1), [busca, status, uf, porPagina]);
-
-  const totalPaginas = Math.max(1, Math.ceil(filtered.length / porPagina));
+  const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const visiveis = filtered.slice((paginaAtual - 1) * porPagina, paginaAtual * porPagina);
+  const visiveis = rows;
   const detalheIdx = detalheId ? filtered.findIndex((r) => r.id === detalheId) : -1;
 
 
@@ -292,7 +293,7 @@ function PropostasSolarPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
               <div className="text-muted-foreground">
                 Mostrando {(paginaAtual - 1) * porPagina + 1}–
-                {Math.min(paginaAtual * porPagina, filtered.length)} de {filtered.length}
+                {Math.min(paginaAtual * porPagina, total)} de {total}
               </div>
               <div className="flex items-center gap-2">
                 <Select value={String(porPagina)} onValueChange={(v) => setPorPagina(Number(v))}>
