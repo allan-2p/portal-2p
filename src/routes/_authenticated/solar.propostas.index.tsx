@@ -36,6 +36,8 @@ import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 
 export const Route = createFileRoute("/_authenticated/solar/propostas/")({
+  validateSearch: (s: Record<string, unknown>): { ver?: string } =>
+    typeof s.ver === "string" ? { ver: s.ver } : {},
   head: () => ({
     meta: [
       { title: "Propostas — Portal 2P Solar" },
@@ -71,12 +73,13 @@ type Row = {
 const STATUS = PROPOSTA_STATUS;
 
 function PropostasSolarPage() {
+  const { ver } = Route.useSearch();
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(10);
-  const [detalheId, setDetalheId] = useState<string | null>(null);
+  const [detalheId, setDetalheId] = useState<string | null>(ver ?? null);
   const [integracoesId, setIntegracoesId] = useState<string | null>(null);
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const podeExcluir = useCanDelete();

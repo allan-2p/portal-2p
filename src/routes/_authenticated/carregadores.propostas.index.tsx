@@ -37,6 +37,8 @@ import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
+  validateSearch: (s: Record<string, unknown>): { ver?: string } =>
+    typeof s.ver === "string" ? { ver: s.ver } : {},
   head: () => ({
     meta: [
       { title: "Propostas — Portal 2P Carregadores" },
@@ -82,8 +84,9 @@ type Row = {
 const STATUS = PROPOSTA_STATUS;
 
 function HistoricoCarregadoresPage() {
+  const { ver } = Route.useSearch();
   const [busca, setBusca] = useState("");
-  const [detalheId, setDetalheId] = useState<string | null>(null);
+  const [detalheId, setDetalheId] = useState<string | null>(ver ?? null);
   const [integracoesId, setIntegracoesId] = useState<string | null>(null);
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
