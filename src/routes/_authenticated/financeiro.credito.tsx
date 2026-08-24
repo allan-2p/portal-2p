@@ -21,6 +21,7 @@ import {
 import { mascaraDoc } from "@/lib/cnpj";
 import { listCondicoesPagamento } from "@/lib/condicoes-pagamento.functions";
 import { analisarCredito, listCreditoAnalises } from "@/lib/credito.functions";
+import { CreditoAnexosLista } from "@/components/credito-anexos";
 import {
   CREDITO_CONCLUSOES, CREDITO_PRIORIDADES, CREDITO_STATUS,
   creditoStatusTom, fmtBRL, type CreditoAnalise,
