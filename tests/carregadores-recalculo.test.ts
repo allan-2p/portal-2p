@@ -106,9 +106,9 @@ describe("Recalculo dos itens", () => {
       }),
     );
     expect(dobro.valorItens).toBeCloseTo(base.valorItens * 2, 6);
-    expect(dobro.ipiValor).toBeCloseTo(base.ipiValor * 2, 6);
-    expect(dobro.icms).toBeCloseTo(base.icms * 2, 6);
-    expect(dobro.pisCofins).toBeCloseTo(base.pisCofins * 2, 6);
+    expect(dobro.ipiValor).toBeCloseTo(base.ipiValor * 2, 5);
+    expect(dobro.icms).toBeCloseTo(base.icms * 2, 5);
+    expect(dobro.pisCofins).toBeCloseTo(base.pisCofins * 2, 5);
     expect(dobro.mb).toBeGreaterThan(base.mb);
     expect(dobro.mbPct).toBeGreaterThan(base.mbPct);
     expect(dobro.comValor).not.toBe(base.comValor);
@@ -124,7 +124,9 @@ describe("Recalculo dos itens", () => {
     expect(tres.valorItens).toBeCloseTo(base.valorItens * 3, 6);
     expect(tres.custoTotal).toBeCloseTo(base.custoTotal * 3, 6);
     // MB% independe da escala quando o preço unitário não muda
-    expect(tres.mbPct).toBeCloseTo(base.mbPct, 10);
+    // Intermediários fiscais agora são arredondados a 6 casas (alinhamento SAP),
+    // então a invariância de escala vale até ~9 casas.
+    expect(tres.mbPct).toBeCloseTo(base.mbPct, 8);
   });
 
   it("soma vários itens e acompanha a alteração de um deles", () => {
