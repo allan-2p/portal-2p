@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
+import { useStickyOpen } from "@/hooks/use-sticky-open";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, KanbanSquare, List, Loader2, Search } from "lucide-react";
@@ -64,7 +65,10 @@ function datePtBr(iso: string | null) {
 }
 
 function AcompanhamentoSolarPage() {
-  const [view, setView] = useState<"kanban" | "list">("kanban");
+  // Visão Kanban/Lista persiste durante a navegação e entre sessões.
+  const [kanban, , setKanban] = useStickyOpen("portal2p-acomp-solar-kanban", true);
+  const view: "kanban" | "list" = kanban ? "kanban" : "list";
+  const setView = (v: "kanban" | "list") => setKanban(v === "kanban");
   const [search, setSearch] = useState("");
   const [vendedor, setVendedor] = useState("__all__");
   const vend = useVendedoresOrg("solar");
