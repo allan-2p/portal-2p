@@ -56,6 +56,11 @@ docs/migracao/            SQL de setup do projeto Supabase (extensões, Vault, c
 tests/                    testes unitários e de RLS
 ```
 
+### Rotas do app
+
+<!-- readme:rotas -->
+<!-- /readme:rotas -->
+
 ### Convenções importantes
 
 - Server functions ficam em arquivos **finos**: só imports, tipos e a declaração exportada.
@@ -80,23 +85,15 @@ npm run dev             # http://localhost:8080
 
 Scripts:
 
-| Comando | O que faz |
-| --- | --- |
-| `npm run dev` | Servidor de desenvolvimento |
-| `npm run build` | Build de produção |
-| `npm run build:dev` | Build em modo development (usado na validação do preview) |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier |
-| `npm test` | Todos os testes |
-| `npm run test:rls` | Somente a suíte de políticas RLS |
+<!-- readme:scripts -->
+<!-- /readme:scripts -->
 
 ---
 
 ## Variáveis de ambiente
 
-A lista completa e comentada está em [`.env.example`](./.env.example), agrupada por
-integração: Supabase, cron/hooks, SAP, Itaú (Pix, Boleto e proxy mTLS), Salesforce,
-Fretefy, SharePoint/Graph, consulta CNPJ/CPF e notificações/IA.
+<!-- readme:env -->
+<!-- /readme:env -->
 
 Regras:
 
@@ -115,19 +112,8 @@ registrado em `job_runs` e pode ser reprocessado na tela de monitoramento — o
 reprocessamento usa exatamente o mesmo executor do disparo original
 (`src/lib/jobs-registry.server.ts`).
 
-| Gatilho | Função |
-| --- | --- |
-| `cron.estoque` | Sincroniza estoque e produtos do SAP |
-| `cron.sap-nfs` | Consulta OVs e avança Processando → Separação → Faturado → Coletado |
-| `cron.pix-reconsulta` | Reconsulta cobranças Pix pendentes no Itaú |
-| `cron.boleto-avisos` | Avisa consultor e cliente sobre boletos |
-| `cron.boletos-sharepoint` | Busca os PDFs de boletos a prazo no SharePoint pela NF |
-| `sap.sync-produtos` | Varre o preço (VK12, listas 01/02) e ativa/desativa o catálogo: sem preço no SAP não é vendável. Override manual na Gestão de Produtos vence a varredura |
-| `sap.ov-criar` | Cria a ordem de venda no SAP (idempotente por proposta, claim atômico) |
-| `salesforce.pedido` | Cria/atualiza a Opportunity do pedido |
-| `fretefy.oferta-carga` | Cria a oferta de carga ou atualiza a NF da carga |
-| `webhook.pix-itau` | Aplica o evento Pix no pedido (pago / expirado / cancelado) |
-| `webhook.fretefy` | Aplica o rastreio da entrega (concluída → Entregue) |
+<!-- readme:jobs -->
+<!-- /readme:jobs -->
 
 O agendamento (`pg_cron`) chama os hooks pela função `public.portal_cron_post(path, body)`,
 que lê `site_url` e `cron_hook_secret` do Vault. O SQL de referência está em
@@ -146,6 +132,23 @@ que lê `site_url` e `cron_hook_secret` do Vault. O SQL de referência está em
 
 ## Manutenção deste README
 
-Sempre que entrar uma nova integração, gatilho, área do portal ou variável de ambiente,
-atualize as seções correspondentes (**O que o portal faz**, **Jobs, webhooks e integrações**
-e `.env.example`) no mesmo commit da mudança.
+As seções **Scripts**, **Variáveis de ambiente**, **Rotas do app** e **Jobs, webhooks e
+integrações** são geradas a partir do próprio código (`package.json`, `.env.example`,
+`src/lib/job-runs.server.ts`, `src/routes`). Não edite o conteúdo entre os marcadores
+`<!-- readme:* -->` — rode:
+
+```sh
+npm run readme:sync    # regenera as seções automáticas
+npm run readme:check   # falha se o README estiver desatualizado
+```
+
+O `readme:check` roda junto com `npm test` (`tests/readme-sync.test.ts`), então qualquer
+mudança em script, variável, gatilho ou rota quebra os testes até o README ser regenerado.
+Para regenerar automaticamente antes de cada commit local:
+
+```sh
+node scripts/install-git-hooks.mjs
+```
+
+O texto fora dos marcadores (visão geral, stack, convenções, banco) continua manual:
+atualize-o no mesmo commit quando entrar uma nova área ou integração.
