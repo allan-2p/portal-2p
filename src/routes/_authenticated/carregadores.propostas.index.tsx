@@ -261,7 +261,7 @@ function HistoricoCarregadoresPage() {
                   <th className="text-right px-4 py-3">Ações</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className={fetchingClass(q.isFetching, q.isLoading)}>
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-4 py-3 text-muted-foreground">{formatPropostaNumero(r.numero) || "—"}</td>
