@@ -19,9 +19,9 @@ import { acaoAtlasPix, normalizarPagamentoStatus, type PagamentoStatus } from "@
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
   head: () => ({
     meta: [
-      { title: "Pedidos — Portal 2P Carregadores" },
+      { title: "Acompanhamento — Portal 2P Carregadores" },
       { name: "description", content: "Acompanhamento dos pedidos de carregadores em Kanban ou lista." },
-      { property: "og:title", content: "Pedidos — Portal 2P Carregadores" },
+      { property: "og:title", content: "Acompanhamento — Portal 2P Carregadores" },
       { property: "og:description", content: "Acompanhe os pedidos de carregadores por status, cliente e valor." },
     ],
   }),
@@ -132,8 +132,8 @@ function CarregadoresPedidosPage() {
       <div className="max-w-[1700px] mx-auto space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Carregadores</div>
-            <h1 className="text-3xl font-bold mt-1">Pedidos</h1>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Propostas</div>
+            <h1 className="text-3xl font-bold mt-1">Acompanhamento</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
