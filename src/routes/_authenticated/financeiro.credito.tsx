@@ -262,6 +262,8 @@ function AnalisarDialog({
         serasa: analise.serasa != null ? String(analise.serasa) : "",
         validade: analise.validade ?? "",
         obs: analise.observacoesFinanceiro ?? "",
+        responsavel: analise.responsavelAnalise ?? "",
+        diretoria: analise.autorizacaoDiretoria ?? "",
       }
     : null);
 
