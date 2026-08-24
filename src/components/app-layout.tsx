@@ -106,34 +106,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, [isLoadingRoute]);
 
 
-  const toggleCollapsed = () => {
-    setCollapsed((v) => {
-      const next = !v;
-      localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
-      return next;
-    });
-  };
 
-  const toggleClientes = () => {
-    setClientesOpen((v) => {
-      localStorage.setItem(CLIENTES_OPEN_KEY, !v ? "1" : "0");
-      return !v;
-    });
-  };
-
-  const togglePropostas = () => {
-    setPropostasOpen((v) => {
-      localStorage.setItem(PROPOSTAS_OPEN_KEY, !v ? "1" : "0");
-      return !v;
-    });
-  };
-
-  const toggleDashboards = () => {
-    setDashboardsOpen((v) => {
-      localStorage.setItem(DASHBOARDS_OPEN_KEY, !v ? "1" : "0");
-      return !v;
-    });
-  };
 
   const initials = (profile?.full_name ?? user?.email ?? "U")
     .split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
