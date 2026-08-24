@@ -93,6 +93,13 @@ export function ConclusaoProgresso({ fase }: { fase: ConclusaoFase }) {
           </div>
         </div>
 
+        <p
+          key={fraseIdx}
+          className="mt-4 text-center text-sm font-medium text-primary animate-in fade-in slide-in-from-bottom-2 duration-500"
+        >
+          {FRASES[fraseIdx]}
+        </p>
+
         <div className="mt-5 space-y-2">
           {PASSOS.map((p, i) => {
             const feito = i < ativo;
