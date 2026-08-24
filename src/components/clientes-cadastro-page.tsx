@@ -127,11 +127,11 @@ const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pe
 
 
 /**
- * Consultor da conta: nos cadastros importados vem em `consultor_nome`; o
- * `created_by_nome` ("Importação plataforma antiga") é só origem do cadastro.
+ * Consultor da conta: par canônico `consultor_sap` + `consultor_nome`. O
+ * `created_by_nome` ("Importação plataforma antiga") é só origem do cadastro e
+ * não entra aqui.
  */
-const consultorDoCliente = (c: Cliente): string =>
-  (c.consultor_nome ?? "").trim() || (c.created_by_nome ?? "").trim();
+const consultorDoCliente = (c: Cliente): string => (c.consultor_nome ?? "").trim();
 
 type Erros = Record<string, string>;
 const ROTULOS: Record<string, string> = {
