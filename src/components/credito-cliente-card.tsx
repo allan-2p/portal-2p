@@ -17,8 +17,10 @@ import {
   getCreditoHistoricoSf, listCreditoAnalises, solicitarCredito, cancelarCredito,
 } from "@/lib/credito.functions";
 import {
-  CREDITO_PRIORIDADES, CREDITO_STATUS_ABERTOS, creditoStatusTom, fmtBRL,
+  CREDITO_PRIORIDADES, CREDITO_STATUS_ABERTOS, creditoStatusTom, fmtBRL, type CreditoAnexo,
 } from "@/lib/credito";
+import { CreditoAnexosUpload } from "@/components/credito-anexos";
+import { Switch } from "@/components/ui/switch";
 
 const dataBR = (v?: string | null) => (v ? new Date(v).toLocaleDateString("pt-BR") : "—");
 
