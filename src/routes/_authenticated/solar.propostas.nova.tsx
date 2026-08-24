@@ -1674,18 +1674,22 @@ function NovaPropostaSolarPage() {
                   <Campo label="CEP">
                     <CepInput
                       value={fat['cep'] ?? ""}
-                      onChange={(v) => setFat((p) => ({ ...p, cep: v }))}
-                      onFound={(e: EnderecoCep) =>
+                      onChange={(v) => {
+                        setFat((p) => ({ ...p, cep: v }));
+                        if (v.replace(/\D/g, "").length !== 8) setFatCepOk(false);
+                      }}
+                      onFound={(e: EnderecoCep) => {
+                        setFatCepOk(true);
                         setFat((p) => ({
                           ...p,
                           cep: e.cep,
                           logradouro: e.logradouro || (p['logradouro'] ?? ""),
                           complemento: e.complemento || (p['complemento'] ?? ""),
                           bairro: e.bairro || (p['bairro'] ?? ""),
-                          cidade: e.cidade || (p['cidade'] ?? ""),
-                          uf: e.uf || (p['uf'] ?? ""),
-                        }))
-                      }
+                          cidade: e.cidade,
+                          uf: e.uf,
+                        }));
+                      }}
                     />
                   </Campo>
                   {[
@@ -1696,14 +1700,21 @@ function NovaPropostaSolarPage() {
                     ["cidade", "Cidade"],
                     ["uf", "UF"],
                     ["telefone", "Telefone"],
-                  ].map(([k, label]) => (
-                    <Campo key={k} label={label as string}>
-                      <Input
-                        value={fat[k as string] ?? ""}
-                        onChange={(e) => setFat((p) => ({ ...p, [k as string]: e.target.value }))}
-                      />
-                    </Campo>
-                  ))}
+                  ].map(([k, label]) => {
+                    const travado = fatCepOk && (k === "cidade" || k === "uf");
+                    return (
+                      <Campo key={k} label={label as string}>
+                        <Input
+                          value={fat[k as string] ?? ""}
+                          readOnly={travado}
+                          title={travado ? "Definido pelo CEP" : undefined}
+                          className={cn(travado && "bg-muted cursor-not-allowed")}
+                          onChange={(e) => setFat((p) => ({ ...p, [k as string]: e.target.value }))}
+                        />
+                      </Campo>
+                    );
+                  })}
+
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2">
