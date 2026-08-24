@@ -672,6 +672,15 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
             .join(", ")}.`,
     );
 
+  // Preço manual: sem os totais da proposta não dá para calcular o valor
+  // líquido (sem impostos) e o SAP receberia um preço errado — bloqueia.
+  if (valorProdAtivo(row) && fatorLiquidoSemImpostos(row) === null)
+    pendencias.push(
+      "Não foi possível calcular o valor líquido (sem impostos) dos itens: os totais de IPI, ICMS e PIS/COFINS da proposta estão ausentes ou inconsistentes.",
+    );
+
+
+
 
   const duplicados = new Map<string, number>();
   for (const i of itens) {
