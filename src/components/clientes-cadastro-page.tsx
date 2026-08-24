@@ -20,12 +20,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   AlertCircle, Plus, Search, Pencil, Building2, Filter, X, Eye,
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
-  ArrowRight, RefreshCw, History,
+  ArrowRight, RefreshCw, History, Users, MapPin,
 } from "lucide-react";
 import { sincronizarDonosFn } from "@/lib/owner-sync.functions";
-import { ClientHistoryTab } from "@/components/client-history-tab";
 import { ClienteIntegracoesDialog } from "@/components/cliente-integracoes-dialog";
 import { CreditoClienteCard } from "@/components/credito-cliente-card";
+import { ClienteEnderecosEditor } from "@/components/cliente-enderecos-editor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatSapNumero } from "@/lib/sap-numero";
 
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
@@ -273,6 +275,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const consultorEfetivo = consultorSap ?? consultoresQ.data?.eu.sap ?? null;
   const consultorNomeAtual =
     opcoesConsultor.find((c) => c.sap === consultorEfetivo)?.nome ?? consultoresQ.data?.eu.nome ?? "—";
+
+  const [abaEdicao, setAbaEdicao] = useState("contatos");
+  const [abaDetalhe, setAbaDetalhe] = useState("contatos");
 
   const errosAtuais = useMemo(() => validarCampos(form, consultorEfetivo), [form, consultorEfetivo]);
 
@@ -1250,6 +1255,40 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         open={!!integracoesDe}
         onOpenChange={(v) => !v && setIntegracoesDe(null)}
       />
+    </div>
+  );
+}
+
+/** Cabeçalho compartilhado pelos modais de visualizar e editar. */
+function ClienteCabecalho({
+  nome, fantasia, consultor, doc, sap, selos,
+}: {
+  nome: string;
+  fantasia?: string | null;
+  consultor?: string | null;
+  doc?: string | null;
+  sap?: string | null;
+  selos?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-lg font-bold leading-tight break-words">{nome}</div>
+          {fantasia ? <div className="text-sm text-muted-foreground">{fantasia}</div> : null}
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {doc ? <span>CNPJ {mascaraDoc(doc)}</span> : null}
+            {sap ? <span className="font-mono">SAP {formatSapNumero(sap)}</span> : null}
+          </div>
+        </div>
+        <div className="flex flex-col items-start gap-1 sm:items-end">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Consultor responsável
+          </span>
+          <Badge variant="secondary">{consultor || "—"}</Badge>
+        </div>
+      </div>
+      {selos ? <div className="mt-3 flex flex-wrap gap-2">{selos}</div> : null}
     </div>
   );
 }
