@@ -1771,8 +1771,12 @@ function PropostaCarregadoresPage() {
                       <Field label="CEP">
                         <CepInput
                           value={state.faturamento.cep}
-                          onChange={(v) => setFaturamento({ cep: v })}
-                          onFound={(e) =>
+                          onChange={(v) => {
+                            setFaturamento({ cep: v });
+                            if (v.replace(/\D/g, "").length !== 8) setFatCepOk(false);
+                          }}
+                          onFound={(e) => {
+                            setFatCepOk(true);
                             setFaturamento({
                               cep: e.cep,
                               logradouro: e.logradouro,
@@ -1780,8 +1784,8 @@ function PropostaCarregadoresPage() {
                               bairro: e.bairro,
                               cidade: e.cidade,
                               uf: e.uf,
-                            })
-                          }
+                            });
+                          }}
                         />
                       </Field>
                       <Field label="Endereço">
@@ -1812,7 +1816,12 @@ function PropostaCarregadoresPage() {
                       <Field label="Cidade">
                         <Input
                           value={state.faturamento.cidade}
-                          className={cn(campoInvalido("fat_end") && "border-destructive")}
+                          readOnly={fatCepOk}
+                          title={fatCepOk ? "Definido pelo CEP" : undefined}
+                          className={cn(
+                            campoInvalido("fat_end") && "border-destructive",
+                            fatCepOk && "bg-muted cursor-not-allowed",
+                          )}
                           onChange={(e) => setFaturamento({ cidade: e.target.value })}
                         />
                       </Field>
@@ -1820,10 +1829,16 @@ function PropostaCarregadoresPage() {
                         <Input
                           value={state.faturamento.uf}
                           maxLength={2}
-                          className={cn(campoInvalido("fat_uf") && "border-destructive")}
+                          readOnly={fatCepOk}
+                          title={fatCepOk ? "Definido pelo CEP" : undefined}
+                          className={cn(
+                            campoInvalido("fat_uf") && "border-destructive",
+                            fatCepOk && "bg-muted cursor-not-allowed",
+                          )}
                           onChange={(e) => setFaturamento({ uf: e.target.value.toUpperCase().slice(0, 2) })}
                         />
                       </Field>
+
                     </div>
                   ) : null}
                 </div>
