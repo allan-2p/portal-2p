@@ -35,7 +35,14 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Adicionado
+
+- Verificação de saúde da cobrança Itaú: novo gatilho de diagnóstico que confere, sem
+  criar nenhuma cobrança, se o serviço de certificado (mTLS) do Itaú está no ar e se as
+  credenciais Pix continuam válidas. Protegido pelo mesmo segredo dos demais gatilhos.
+
 ### Alterado
+
 
 - Portal mais leve: logos do cabeçalho servidos em versões otimizadas (de ~270 KB para
   ~10 KB somados) e imagem de fundo de login sem uso removida.
