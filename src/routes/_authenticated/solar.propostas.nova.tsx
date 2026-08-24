@@ -67,6 +67,7 @@ import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn, concluirPropostaFn } from "@/lib/propostas.functions";
 import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/resultado-conclusao-dialog";
 import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-progresso";
+import { useConfirmarSaida } from "@/components/confirmar-saida";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
 import { normalizarFinalidade } from "@/lib/sap-clientes-map";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
@@ -267,6 +268,26 @@ function NovaPropostaSolarPage() {
   // Etapa 5
   const [cupomCodigo, setCupomCodigo] = useState("");
   const [recalculandoTotais, setRecalculandoTotais] = useState(false);
+
+  // Alterações não salvas: assinatura dos campos que compõem a proposta.
+  const assinaturaProposta = JSON.stringify([
+    propostaNome, clienteDoc, vendido, previsao, observacoes,
+    tipoNf, faturarClienteFinal, fatTipoDoc, fat, fatContribuinte, finalidadeUso,
+    formaPagamento, condicaoPagamento, modo, listaPreco, ehKit,
+    itensCalc, itensLista, geradorId, microModelo, microQtd, moduloId,
+    modPersonalizado, paineis, tamanhoTrilho, linhas,
+    entregaDiferente, entrega, freteMod, freteBonificado, areaRural,
+    transportadora, cupomCodigo,
+  ]);
+  const [baseSalva, setBaseSalva] = useState<string | null>(null);
+  const ressincronizarBase = useRef(false);
+  useEffect(() => {
+    if (baseSalva === null || ressincronizarBase.current) {
+      ressincronizarBase.current = false;
+      setBaseSalva(assinaturaProposta);
+    }
+  }, [assinaturaProposta, baseSalva, salvando]);
+  const sujo = baseSalva !== null && baseSalva !== assinaturaProposta && !salvando;
 
   const removerCupom = () => {
     if (!cupomCodigo) return;
@@ -1246,7 +1267,9 @@ function NovaPropostaSolarPage() {
       });
       setPropostaId(r.id);
       setNumero(r.numero);
-      await queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
+      ressincronizarBase.current = true;
+      // Revalida a lista em segundo plano: não faz o usuário esperar o refetch.
+      void queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
 
       if (!concluir) {
         toast.success(`Proposta ${r.numero} salva.`);
@@ -1259,7 +1282,7 @@ function NovaPropostaSolarPage() {
         // O servidor valida a conclusão como etapa 4 (Finalização).
         setConclusaoFase("integrando");
         const linha = await concluirPropostaFn({ data: { id: r.id, origem: "portal", etapa: 5 } });
-        await queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
+        void queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
         if (linha?.already_concluded) {
           toast.info(`Pedido ${r.numero} já havia sido concluído (${linha.status}).`);
           void navigate({ to: "/solar/propostas" });
@@ -1391,13 +1414,22 @@ function NovaPropostaSolarPage() {
     return null;
   }
 
+  /** Grava a proposta antes de gerar prévia/PDF: o documento é sempre o salvo. */
+  async function salvarAntesDoPdf() {
+    if (!sujo && propostaId) return true;
+    const antes = propostaId;
+    await salvarProposta(false);
+    return !!(propostaId || antes) || true;
+  }
+
   /** Abre a prévia da proposta (modal). */
-  function abrirPreviewPdf() {
+  async function abrirPreviewPdf() {
     const erro = validarParaPdf();
     if (erro) {
       setTentou(true);
       return toast.error(erro);
     }
+    await salvarAntesDoPdf();
     setPdfHtml(buildSolarPropostaPdfHtml(montarPdfDados()));
     setPreviewAberto(true);
   }
@@ -1416,12 +1448,13 @@ function NovaPropostaSolarPage() {
 
 
   /** Baixa/imprime a proposta em PDF. */
-  function baixarPdf() {
+  async function baixarPdf() {
     const erro = validarParaPdf();
     if (erro) {
       setTentou(true);
       return toast.error(erro);
     }
+    await salvarAntesDoPdf();
     const dados = montarPdfDados();
     const html = buildSolarPropostaPdfHtml(dados);
     const win = window.open("", "_blank");
@@ -2673,21 +2706,21 @@ function NovaPropostaSolarPage() {
                 <Button
                   type="button"
                   variant="outline"
+                  onClick={() => void abrirPreviewPdf()}
+                  disabled={!itens.length || salvando}
+                  className="gap-2"
+                >
+                  <Eye className="h-4 w-4" /> Prévia da proposta
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => void salvarProposta(false)}
                   disabled={salvando || !itens.length || !cliente}
                   className="gap-2"
                 >
                   {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Salvar
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void abrirPreviewPdf()}
-                  disabled={!itens.length || salvando}
-                  className="gap-2"
-                >
-                  <Eye className="h-4 w-4" /> Prévia da proposta
                 </Button>
                 <Button
                   type="button"
@@ -2788,6 +2821,9 @@ function NovaPropostaSolarPage() {
       {/* Bloqueia a tela enquanto o pedido está sendo concluído */}
       <ConclusaoProgresso fase={conclusaoFase} />
 
+      {/* Confirmação ao sair com alterações não salvas */}
+      {dialogoSaida}
+
       {/* Prévia da proposta em PDF — painel lateral, atualiza em tempo real */}
       {previewAberto && (
         <div className="fixed right-0 top-0 z-50 flex h-screen w-full max-w-[640px] flex-col border-l border-border bg-background shadow-2xl">
@@ -2868,7 +2904,7 @@ function NovaPropostaSolarPage() {
             <Button variant="outline" onClick={() => setPreviewAberto(false)}>
               Fechar
             </Button>
-            <Button className="gap-2" onClick={() => baixarPdf()}>
+            <Button className="gap-2" onClick={() => void baixarPdf()}>
               <FileDown className="h-4 w-4" /> Baixar PDF
             </Button>
           </div>
@@ -2885,21 +2921,8 @@ function NovaPropostaSolarPage() {
           onNext={etapa < 5 ? avancar : undefined}
           errors={erros}
           showErrors={tentou}
-          actions={[
-            {
-              label: "Salvar",
-              onClick: () => void salvarProposta(false),
-              icon: <Save className="h-4 w-4" />,
-              loading: salvando,
-              disabled: salvando || !itens.length || !cliente,
-            },
-            {
-              label: "Gerar proposta",
-              onClick: abrirPreviewPdf,
-              icon: <Eye className="h-4 w-4" />,
-              disabled: !itens.length || salvando,
-            },
-          ]}
+          // Salvar/gerar proposta existem apenas na etapa de Finalização.
+          actions={[]}
           primary={null}
         />
       )}
