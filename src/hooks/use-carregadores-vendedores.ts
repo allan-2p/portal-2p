@@ -6,7 +6,7 @@ import { useConsultores } from "@/hooks/use-consultores";
  * Vendedores de uma unidade (organização) para filtrar registros por dono.
  * Só entram consultores da própria organização (regra universal do portal).
  */
-export function useVendedoresOrg(organizacao: string) {
+export function useVendedoresOrg(organizacao: "solar" | "carregadores" | "station") {
   const q = useConsultores(organizacao);
 
   return useMemo(() => {
