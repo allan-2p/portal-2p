@@ -35,11 +35,19 @@ export function FreteDedicado({ selecionada, onSelect }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Ao reabrir a proposta, o valor salvo chega depois da montagem: sincroniza o
+  // campo para não zerar o frete dedicado já persistido.
+  useEffect(() => {
+    const t = selecionada?.total ?? 0;
+    if (t > 0) setValor((v) => (v === t ? v : t));
+  }, [selecionada?.total]);
+
   const aplicar = (id: string, total: number) => {
     const t = lista.find((x) => x.id === id);
     if (!t) return onSelect(null);
     onSelect({ id: t.id, nome: t.nome, documento: t.documento, total, prazo: 2 });
   };
+
 
   return (
     <div className="glass rounded-2xl p-4 space-y-4">
