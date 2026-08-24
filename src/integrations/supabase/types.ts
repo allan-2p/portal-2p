@@ -934,6 +934,8 @@ export type Database = {
       credito_analises: {
         Row: {
           analista_id: string | null
+          anexos: Json
+          autorizacao_diretoria: string | null
           cliente_doc: string
           cliente_id: string | null
           cliente_nome: string | null
@@ -941,9 +943,15 @@ export type Database = {
           conclusao: string | null
           condicao_aprovada: string | null
           condicao_solicitada: string | null
+          contato_email: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
           created_at: string
           credito_aprovado: number | null
           credito_solicitado: number | null
+          empresa_secundaria: boolean
+          empresa_secundaria_doc: string | null
+          empresa_secundaria_nome: string | null
           id: string
           instancia: string
           numero: string
@@ -952,6 +960,7 @@ export type Database = {
           prioridade: string
           proposta_id: string | null
           proposta_numero: string | null
+          responsavel_analise: string | null
           restricao: boolean | null
           serasa: number | null
           sf_id: string | null
@@ -963,6 +972,8 @@ export type Database = {
         }
         Insert: {
           analista_id?: string | null
+          anexos?: Json
+          autorizacao_diretoria?: string | null
           cliente_doc: string
           cliente_id?: string | null
           cliente_nome?: string | null
@@ -970,9 +981,15 @@ export type Database = {
           conclusao?: string | null
           condicao_aprovada?: string | null
           condicao_solicitada?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
           created_at?: string
           credito_aprovado?: number | null
           credito_solicitado?: number | null
+          empresa_secundaria?: boolean
+          empresa_secundaria_doc?: string | null
+          empresa_secundaria_nome?: string | null
           id?: string
           instancia?: string
           numero?: string
@@ -981,6 +998,7 @@ export type Database = {
           prioridade?: string
           proposta_id?: string | null
           proposta_numero?: string | null
+          responsavel_analise?: string | null
           restricao?: boolean | null
           serasa?: number | null
           sf_id?: string | null
@@ -992,6 +1010,8 @@ export type Database = {
         }
         Update: {
           analista_id?: string | null
+          anexos?: Json
+          autorizacao_diretoria?: string | null
           cliente_doc?: string
           cliente_id?: string | null
           cliente_nome?: string | null
@@ -999,9 +1019,15 @@ export type Database = {
           conclusao?: string | null
           condicao_aprovada?: string | null
           condicao_solicitada?: string | null
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
           created_at?: string
           credito_aprovado?: number | null
           credito_solicitado?: number | null
+          empresa_secundaria?: boolean
+          empresa_secundaria_doc?: string | null
+          empresa_secundaria_nome?: string | null
           id?: string
           instancia?: string
           numero?: string
@@ -1010,6 +1036,7 @@ export type Database = {
           prioridade?: string
           proposta_id?: string | null
           proposta_numero?: string | null
+          responsavel_analise?: string | null
           restricao?: boolean | null
           serasa?: number | null
           sf_id?: string | null
