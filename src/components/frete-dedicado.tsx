@@ -12,6 +12,11 @@ type Props = {
   /** Transportadora escolhida (com o valor manual já aplicado). */
   selecionada: CarregadoresTransportadora | null;
   onSelect: (t: CarregadoresTransportadora | null) => void;
+  /**
+   * Valor do frete controlado por fora (quando o formulário já tem o campo
+   * "Valor do frete (manual)"). Nesse caso o campo interno não é exibido.
+   */
+  valor?: number;
 };
 
 /**
@@ -19,10 +24,13 @@ type Props = {
  * transportadoras dedicadas cadastradas (prazo fixo de 2 dias). O CNPJ segue
  * para a ordem de venda (parceiro ZT) e para a oferta de carga.
  */
-export function FreteDedicado({ selecionada, onSelect }: Props) {
+export function FreteDedicado({ selecionada, onSelect, valor: valorExterno }: Props) {
+  const controlado = valorExterno !== undefined;
   const listar = useServerFn(listarTransportadorasDedicadas);
   const [lista, setLista] = useState<Dedicada[]>([]);
-  const [valor, setValor] = useState<number>(selecionada?.total ?? 0);
+  const [valorInterno, setValorInterno] = useState<number>(selecionada?.total ?? 0);
+  const valor = controlado ? (valorExterno ?? 0) : valorInterno;
+
 
   useEffect(() => {
     let vivo = true;
@@ -38,9 +46,10 @@ export function FreteDedicado({ selecionada, onSelect }: Props) {
   // Ao reabrir a proposta, o valor salvo chega depois da montagem: sincroniza o
   // campo para não zerar o frete dedicado já persistido.
   useEffect(() => {
+    if (controlado) return;
     const t = selecionada?.total ?? 0;
-    if (t > 0) setValor((v) => (v === t ? v : t));
-  }, [selecionada?.total]);
+    if (t > 0) setValorInterno((v) => (v === t ? v : t));
+  }, [selecionada?.total, controlado]);
 
   const aplicar = (id: string, total: number) => {
     const t = lista.find((x) => x.id === id);
@@ -48,25 +57,35 @@ export function FreteDedicado({ selecionada, onSelect }: Props) {
     onSelect({ id: t.id, nome: t.nome, documento: t.documento, total, prazo: 2 });
   };
 
+  // Valor vindo do formulário: mantém o total da transportadora em sincronia.
+  useEffect(() => {
+    if (!controlado || !selecionada) return;
+    if (selecionada.total === valor) return;
+    onSelect({ ...selecionada, total: valor });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlado, valor, selecionada?.id, selecionada?.total]);
+
 
   return (
     <div className="glass rounded-2xl p-4 space-y-4">
       <div className="flex items-center gap-2 text-sm font-medium">
         <Truck className="size-4" /> Frete dedicado
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Valor do frete (manual) *</label>
-          <MoneyInput
-            value={valor}
-            placeholder="R$ 0,00"
-            maxValue={1000000}
-            onValueChange={(n: number) => {
-              setValor(n);
-              if (selecionada) aplicar(selecionada.id, n);
-            }}
-          />
-        </div>
+      <div className={controlado ? "grid gap-4" : "grid gap-4 md:grid-cols-2"}>
+        {!controlado && (
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Valor do frete (manual) *</label>
+            <MoneyInput
+              value={valor}
+              placeholder="R$ 0,00"
+              maxValue={1000000}
+              onValueChange={(n: number) => {
+                setValorInterno(n);
+                if (selecionada) aplicar(selecionada.id, n);
+              }}
+            />
+          </div>
+        )}
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">Transportadora dedicada *</label>
           <Select value={selecionada?.id ?? ""} onValueChange={(v) => aplicar(v, valor)}>
@@ -79,6 +98,7 @@ export function FreteDedicado({ selecionada, onSelect }: Props) {
           </Select>
         </div>
       </div>
+
       {selecionada && (
         <p className="text-xs text-muted-foreground">
           {selecionada.nome} · CNPJ {selecionada.documento} · prazo 2 dias · {fmtBRL(selecionada.total)}

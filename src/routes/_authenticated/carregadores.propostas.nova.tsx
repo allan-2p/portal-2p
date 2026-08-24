@@ -2216,7 +2216,9 @@ function PropostaCarregadoresPage() {
             ) : null}
             {state.freteMod === "DEDICADO" ? (
               <FreteDedicado
+                valor={state.freteValor}
                 selecionada={state.transportadora}
+
                 onSelect={(t) =>
                   setState((s) => ({
                     ...s,
