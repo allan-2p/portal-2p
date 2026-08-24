@@ -224,6 +224,8 @@ export const analisarCredito = createServerFn({ method: "POST" })
       serasa?: number | null;
       validade?: string | null;
       observacoesFinanceiro?: string | null;
+      responsavelAnalise?: string | null;
+      autorizacaoDiretoria?: string | null;
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
@@ -236,6 +238,9 @@ export const analisarCredito = createServerFn({ method: "POST" })
     if (concluida && data.conclusao === "Liberado" && num(data.creditoAprovado) == null) {
       throw new Error("Informe o crédito aprovado para liberar o cliente.");
     }
+    if (concluida && !(data.responsavelAnalise?.trim())) {
+      throw new Error("Informe quem foi o responsável pela análise.");
+    }
 
     const patch: Record<string, unknown> = {
       status: data.status,
@@ -247,6 +252,8 @@ export const analisarCredito = createServerFn({ method: "POST" })
       serasa: num(data.serasa),
       validade: concluida && data.conclusao === "Liberado" ? (data.validade || null) : null,
       observacoes_financeiro: data.observacoesFinanceiro?.trim() || null,
+      responsavel_analise: data.responsavelAnalise?.trim() || null,
+      autorizacao_diretoria: data.autorizacaoDiretoria?.trim() || null,
       concluido_em: concluida ? new Date().toISOString() : null,
     };
     if (data.prioridade && CREDITO_PRIORIDADES.includes(data.prioridade as any)) {
