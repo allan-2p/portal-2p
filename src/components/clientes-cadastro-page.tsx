@@ -986,9 +986,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   <td className="px-4 py-2">{cidadeUf(c.cidade, c.uf)}</td>
                   <td className="px-4 py-2 text-xs text-muted-foreground">
                     {consultorDoCliente(c) || "—"}
-                    {c.consultor_sap && (
-                      <div className="text-[10px] font-mono opacity-70">{c.consultor_sap}</div>
-                    )}
+                    {null}
+
                   </td>
                   <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
                     {c.created_at
