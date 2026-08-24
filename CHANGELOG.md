@@ -34,6 +34,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+### Removido
+- **Avisos de previsão de fechamento (Salesforce)**: os toasts "Previsão vencida/próxima" saíram do portal — reapareciam a cada ciclo de polling. As notificações de tarefas do dia continuam ativas.
+
 ### Adicionado
 - **Cadastro de consultores (`consultores_sap`)**: de-para oficial código SAP → nome com os 39 vendedores ativos. O seletor de consultor do cadastro de clientes une os usuários do portal com código SAP e esse de-para (dedupe pelo código, preferindo o usuário do portal). Leitura liberada para usuários logados; manutenção só para administradores.
 

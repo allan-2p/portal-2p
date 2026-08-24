@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getSalesforceTasks, getSalesforceForecasts } from "@/lib/salesforce.functions";
+import { getSalesforceTasks } from "@/lib/salesforce.functions";
 import { pushNotification } from "./use-notifications";
 import { useAuth } from "./use-auth";
 
@@ -30,16 +30,10 @@ function saveSeen(seen: Set<string>) {
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
-function isoPlusDays(days: number) {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 export function useSalesforceNotifications() {
   const { user } = useAuth();
   const fetchTasks = useServerFn(getSalesforceTasks);
-  const fetchForecasts = useServerFn(getSalesforceForecasts);
   const seenRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -58,10 +52,9 @@ export function useSalesforceNotifications() {
       const seen = seenRef.current!;
       try {
         const today = todayIso();
-        const [tasksRes, forecastsRes] = await Promise.all([
-          fetchTasks({ data: { start: today, end: today } }).catch(() => ({ records: [] as any[] })),
-          fetchForecasts({ data: {} }).catch(() => ({ records: [] as any[] })),
-        ]);
+        const tasksRes = await fetchTasks({ data: { start: today, end: today } }).catch(() => ({
+          records: [] as any[],
+        }));
 
         const nextSeen = new Set(seen);
         const newItems: Array<() => void> = [];
@@ -82,28 +75,8 @@ export function useSalesforceNotifications() {
           }
         }
 
-        const cutoff = isoPlusDays(3);
-        for (const opp of forecastsRes.records ?? []) {
-          if (!opp.forecastDate || opp.forecastDate > cutoff) continue;
-          const key = `opp:${opp.id}`;
-          if (nextSeen.has(key)) continue;
-          nextSeen.add(key);
-          if (!firstRun) {
-            const overdue = opp.forecastDate < todayIso();
-            newItems.push(() =>
-              pushNotification({
-                kind: "atlas",
-                title: overdue
-                  ? `Previsão vencida: ${opp.name}`
-                  : `Previsão próxima: ${opp.name}`,
-                description: `Fechamento previsto ${new Date(opp.forecastDate!).toLocaleDateString("pt-BR")}${
-                  opp.amount ? ` · ${opp.amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}` : ""
-                }.`,
-                client: opp.account ?? undefined,
-              }),
-            );
-          }
-        }
+        // Avisos de previsão de fechamento (vencida/próxima) foram removidos do
+        // portal a pedido: ficavam reaparecendo a cada ciclo de polling.
 
         seenRef.current = nextSeen;
         saveSeen(nextSeen);
