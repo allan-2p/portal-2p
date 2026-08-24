@@ -114,6 +114,8 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
   const frete = num(p['frete_valor']);
   const fat = baseFaturamento(p);
   const ent = (p['entrega'] ?? {}) as Row;
+  const disposicao = ((totais['calculo'] ?? {}) as Row)['disposicao'];
+
 
   return {
     numero: txt(p['numero']) || null,
