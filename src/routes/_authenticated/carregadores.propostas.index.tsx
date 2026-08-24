@@ -6,6 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TableSkeletonRows, fetchingClass } from "@/components/ui/table-skeleton";
+
 import {
   Select,
   SelectContent,
