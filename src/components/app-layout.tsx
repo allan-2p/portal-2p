@@ -28,6 +28,7 @@ import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { useSalesforceNotifications } from "@/hooks/use-salesforce-notifications";
 import { useNewFeatures } from "@/hooks/use-new-features";
 import { bootstrapFirstAdmin } from "@/lib/users.functions";
+import { useStickyOpen } from "@/hooks/use-sticky-open";
 
 import { toast } from "sonner";
 
@@ -43,11 +44,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-  const [clientesOpen, setClientesOpen] = useState(true);
-  const [dashboardsOpen, setDashboardsOpen] = useState(true);
-  const [moderacaoOpen, setModeracaoOpen] = useState(true);
-  const [propostasOpen, setPropostasOpen] = useState(true);
+  // Menus/toggles lembram o estado durante a navegação (e entre sessões).
+  const [collapsed, toggleCollapsed] = useStickyOpen(COLLAPSE_KEY, false);
+  const [clientesOpen, toggleClientes] = useStickyOpen(CLIENTES_OPEN_KEY, true);
+  const [dashboardsOpen, toggleDashboards] = useStickyOpen(DASHBOARDS_OPEN_KEY, true);
+  const [propostasOpen, togglePropostas] = useStickyOpen(PROPOSTAS_OPEN_KEY, true);
+
   
 
   const { user, profile, roles, hasRole } = useAuth();
@@ -63,23 +65,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
     : { logo: instMeta.logo, label: instMeta.label };
 
   useEffect(() => {
-    if (localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
-    const saved = localStorage.getItem(CLIENTES_OPEN_KEY);
-    if (saved !== null) setClientesOpen(saved === "1");
-    const savedD = localStorage.getItem(DASHBOARDS_OPEN_KEY);
-    if (savedD !== null) setDashboardsOpen(savedD === "1");
-    const savedP = localStorage.getItem(PROPOSTAS_OPEN_KEY);
-    if (savedP !== null) setPropostasOpen(savedP === "1");
-  }, []);
-
-  useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
 
-  useEffect(() => {
-    if (pathname.startsWith("/solar/clientes")) setClientesOpen(true);
-    if (pathname.startsWith("/solar/dashboards")) setDashboardsOpen(true);
-  }, [pathname]);
+
 
   // Se usuário está numa rota que a instância atual não permite:
   // 1) se outra instância liberada tiver essa rota, troca de instância (link direto);
@@ -118,34 +107,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }, [isLoadingRoute]);
 
 
-  const toggleCollapsed = () => {
-    setCollapsed((v) => {
-      const next = !v;
-      localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
-      return next;
-    });
-  };
 
-  const toggleClientes = () => {
-    setClientesOpen((v) => {
-      localStorage.setItem(CLIENTES_OPEN_KEY, !v ? "1" : "0");
-      return !v;
-    });
-  };
-
-  const togglePropostas = () => {
-    setPropostasOpen((v) => {
-      localStorage.setItem(PROPOSTAS_OPEN_KEY, !v ? "1" : "0");
-      return !v;
-    });
-  };
-
-  const toggleDashboards = () => {
-    setDashboardsOpen((v) => {
-      localStorage.setItem(DASHBOARDS_OPEN_KEY, !v ? "1" : "0");
-      return !v;
-    });
-  };
 
   const initials = (profile?.full_name ?? user?.email ?? "U")
     .split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();

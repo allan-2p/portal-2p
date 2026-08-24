@@ -97,6 +97,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - Número da proposta passa a ser exibido sem os zeros à esquerda (listas, detalhe, prévia, PDF, avisos e nome do arquivo); o valor armazenado segue com o padding.
 
 ### Corrigido
+- **Menus do portal não voltam mais ao estado inicial**: o recolher da barra lateral, os toggles Propostas/Clientes/Dashboards e a visão Kanban/Lista do Acompanhamento continuam como você deixou ao navegar entre telas (antes reabriam a cada troca de página) e também entre sessões.
+
 - Campo "Valor do frete (manual)" duplicado no frete dedicado de Carregadores.
 
 
