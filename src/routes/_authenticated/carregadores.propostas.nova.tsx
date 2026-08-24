@@ -709,7 +709,9 @@ function PropostaCarregadoresPage() {
         ? "Frete CIF sem valor calculado — refaça a cotação."
         : state.freteMod === "DEDICADO" && !(state.freteValor > 0)
           ? "Informe o valor do frete dedicado."
-          : null;
+          : state.freteMod === "DEDICADO" && !state.transportadora
+            ? "Selecione a transportadora do frete dedicado."
+            : null;
   const freteInvalido = !!erroFreteMsg;
   // ---- Validação da etapa 1 (identificação) e etapa 2 (faturamento) ----
   const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
@@ -831,6 +833,8 @@ function PropostaCarregadoresPage() {
     errosPdf.push("Cotação de frete pendente — selecione a transportadora.");
   if (state.freteMod === "DEDICADO" && !(state.freteValor > 0))
     errosPdf.push("Frete dedicado sem valor informado — necessário para fechar os totais.");
+  if (state.freteMod === "DEDICADO" && !state.transportadora)
+    errosPdf.push("Frete dedicado sem transportadora selecionada.");
 
   if (temProduto && !(d.valorTotalProposta > 0))
     errosPdf.push("Total da proposta zerado — revise valores e quantidades.");
