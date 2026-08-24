@@ -1018,13 +1018,35 @@ export async function criarOrdemVendaSap(
   }
 
 
+  // REGRA ZERO: quando o pedido sobe com preço manual (Carregadores), o painel
+  // de auditoria precisa mostrar exatamente quais valores foram enviados.
+  const precoManual = valorProdAtivo(row)
+    ? {
+        campo: "VALOR_PROD",
+        itens: (Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [])
+          .filter((i) => Number(i?.qtd ?? 0) > 0)
+          .map((i) => ({
+            material: norm(i?.codigo),
+            qtd: Number(i?.qtd ?? 0),
+            valor_unitario: Number(i?.valor ?? 0).toFixed(2),
+          })),
+      }
+    : null;
+
   await logIntegrationEvent({
     ...base,
     level: "info",
     message: testrun ? `Validação OK (test run) do pedido ${row["numero"]}` : `Ordem de venda ${vbeln} criada no SAP`,
-    detail: { proposta_id: propostaId, numero: row["numero"] ?? null, vbeln, testrun },
+    detail: {
+      proposta_id: propostaId,
+      numero: row["numero"] ?? null,
+      vbeln,
+      testrun,
+      preco_manual: precoManual,
+    },
     durationMs: Date.now() - inicio,
   });
+
 
   return { enviado: true, ok: true, vbeln, mensagem: texto, testrun };
 }
