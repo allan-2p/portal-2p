@@ -627,11 +627,18 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
   const semValor = itens.filter((i) => !(Number(i?.valor ?? 0) > 0));
   if (semValor.length)
     pendencias.push(
-      `${semValor.length} item(ns) sem valor (preço não retornado do SAP): ${semValor
-        .map((i) => norm(i?.codigo) || String(i?.descricao ?? "item").slice(0, 30))
-        .slice(0, 5)
-        .join(", ")}.`,
+      valorProdAtivo(row)
+        ? // Carregadores com preço manual: nunca enviar VALOR_PROD zerado.
+          `${semValor.length} item(ns) sem valor de venda (preço manual obrigatório em Carregadores): ${semValor
+            .map((i) => norm(i?.codigo) || String(i?.descricao ?? "item").slice(0, 30))
+            .slice(0, 5)
+            .join(", ")}.`
+        : `${semValor.length} item(ns) sem valor (preço não retornado do SAP): ${semValor
+            .map((i) => norm(i?.codigo) || String(i?.descricao ?? "item").slice(0, 30))
+            .slice(0, 5)
+            .join(", ")}.`,
     );
+
 
   const duplicados = new Map<string, number>();
   for (const i of itens) {
