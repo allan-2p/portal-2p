@@ -217,3 +217,11 @@ node scripts/install-git-hooks.mjs
 
 O texto fora dos marcadores (visão geral, stack, convenções, banco) continua manual:
 atualize-o no mesmo commit quando entrar uma nova área ou integração.
+
+---
+
+## Histórico de versões
+
+Mudanças relevantes do app e do banco ficam em [`CHANGELOG.md`](./CHANGELOG.md)
+(Keep a Changelog + SemVer): registre a alteração em `[Não publicado]` no mesmo commit e,
+ao publicar, promova o bloco para `[X.Y.Z] - AAAA-MM-DD` e atualize `version` no `package.json`.
