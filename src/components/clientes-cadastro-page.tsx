@@ -1017,9 +1017,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <SelectContent>{[10, 25, 50, 100].map((n) => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <span className="ml-auto">
+            <span className="ml-auto flex items-center gap-2">
               {(paginaAtual - 1) * porPagina + 1}–{Math.min(paginaAtual * porPagina, total)} de {total}
+              {isFetching && !isLoading && (
+                <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-transparent" aria-label="Atualizando" />
+              )}
             </span>
+
             <div className="flex items-center gap-1">
               <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Página anterior"
                 disabled={paginaAtual <= 1} onClick={() => setPagina((p) => Math.max(1, p - 1))}>
