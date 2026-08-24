@@ -202,6 +202,9 @@ function NovaPropostaSolarPage() {
   const [fat, setFat] = useState<Record<string, string>>({});
   /** Cliente final CNPJ contribuinte de ICMS (define CFOP/IE no SAP). */
   const [fatContribuinte, setFatContribuinte] = useState(false);
+  /** Cidade/UF do faturamento ficam travadas quando vieram do CEP. */
+  const [fatCepOk, setFatCepOk] = useState(false);
+
   /** Finalidade de uso — obrigatória quando o pedido fatura o cliente final. */
   const [finalidadeUso, setFinalidadeUso] = useState<string>("");
   const [resultadoConclusao, setResultadoConclusao] = useState<ResultadoConclusao | null>(null);
