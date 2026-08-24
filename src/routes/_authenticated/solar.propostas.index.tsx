@@ -84,7 +84,7 @@ function PropostasSolarPage() {
   const [status, setStatus] = useState("todos");
   const [uf, setUf] = useState("todos");
   const [pagina, setPagina] = useState(1);
-  const [porPagina, setPorPagina] = useState(25);
+  const [porPagina, setPorPagina] = useState(10);
   // A pesquisa roda no banco (base inteira): espera parar de digitar.
   const [buscaDb, setBuscaDb] = useState("");
   useEffect(() => {
