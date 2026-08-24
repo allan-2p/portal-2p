@@ -244,11 +244,13 @@ function AnalisarDialog({
     id: string; status: string; prioridade?: string | null; conclusao?: string | null;
     restricao?: boolean | null; condicaoAprovada?: string | null; creditoAprovado?: number | null;
     serasa?: number | null; validade?: string | null; observacoesFinanceiro?: string | null;
+    responsavelAnalise?: string | null; autorizacaoDiretoria?: string | null;
   }) => void;
 }) {
   const [form, setForm] = useState<{
     status: string; prioridade: string; conclusao: string; restricao: boolean;
     condicaoAprovada: string; creditoAprovado: string; serasa: string; validade: string; obs: string;
+    responsavel: string; diretoria: string;
   } | null>(null);
 
   const atual = form ?? (analise
