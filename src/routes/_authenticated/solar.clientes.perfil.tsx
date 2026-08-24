@@ -178,21 +178,22 @@ function PerfilPage() {
             <div className="glass rounded-xl p-10 text-center text-muted-foreground">
               Cadastro não encontrado nesta unidade.
             </div>
-          ) : !account.id ? (
-            <div className="glass rounded-xl p-6 space-y-2">
-              <div className="flex items-center gap-2 font-medium">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                {account.name}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Este cadastro ainda não está vinculado ao Salesforce, então o histórico de negócios
-                e atividades do dossiê não pode ser carregado. Envie o cadastro pelas Integrações do
-                cliente e abra o perfil novamente.
-              </p>
-            </div>
           ) : (
-            <Client360 account={account} instancia={INSTANCIA} />
+            <>
+              {!account.id && (
+                <div className="glass rounded-xl p-4 flex items-start gap-2 text-sm">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                  <span className="text-muted-foreground">
+                    Cadastro ainda não vinculado ao Salesforce: o histórico de propostas e pedidos é
+                    exibido normalmente (vem do banco do Grupo 2P), mas casos, visitas, treinamentos,
+                    contatos e atividades do Salesforce não aparecem.
+                  </span>
+                </div>
+              )}
+              <Client360 account={account} instancia={INSTANCIA} />
+            </>
           )
+
         ) : (
           <div className="glass rounded-xl overflow-hidden">
             <div className="p-3 border-b border-border flex items-center gap-3">
