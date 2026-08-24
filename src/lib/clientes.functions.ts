@@ -381,7 +381,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     }
     const conflito = achados.find((a) => a.cliente["id"] !== data.id);
     if (conflito) {
-      const msg = `Este documento já está cadastrado em ${db.ORGANIZACAO[conflito.instancia]} (${conflito.cliente["razao_social"]}).`;
+      const msg = `Este documento já está cadastrado em ${db.ORGANIZACAO_LABEL[conflito.instancia]} (${conflito.cliente["razao_social"]}).`;
       await logErroBanco("validar", new Error(msg));
       throw new Error(msg);
     }

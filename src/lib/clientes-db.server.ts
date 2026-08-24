@@ -2,11 +2,17 @@
 // As duas unidades (Solar e Carregadores) compartilham a mesma tabela e são
 // separadas pelas colunas `instancia` / `organizacao`.
 
-import { grupo2pConfig, grupo2pRest, ORGANIZACAO as ORG } from "./grupo2p-db.server";
+import {
+  grupo2pConfig,
+  grupo2pRest,
+  ORGANIZACAO as ORG,
+  ORGANIZACAO_LABEL as ORG_LABEL,
+} from "./grupo2p-db.server";
 
 export type ClientesInstance = "solar" | "carregadores";
 
 export const ORGANIZACAO: Record<ClientesInstance, string> = ORG;
+export const ORGANIZACAO_LABEL: Record<ClientesInstance, string> = ORG_LABEL;
 
 type DbConfig = { url: string; key: string };
 
@@ -169,8 +175,8 @@ export async function listClientesPerfil(
 
   const params = new URLSearchParams({
     select: SELECT,
-    // Só `instancia`: o campo `organizacao` tem valores mistos ("solar" e
-    // "2P Solar") na base importada e filtrar por ele esconde cadastros.
+    // Filtro por `instancia` (canônico). O campo `organizacao` foi padronizado
+    // para o mesmo slug e é mantido em sincronia na gravação.
     instancia: `eq.${instance}`,
     order: "created_at.desc.nullslast,id.asc",
   });
