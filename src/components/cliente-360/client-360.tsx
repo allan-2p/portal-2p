@@ -13,8 +13,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+import { getDossieClienteFn } from "@/lib/cliente-dossie.functions";
 import {
-  getSalesforceAccountHistory,
   getSalesforceAccountContacts,
   getSalesforceAccountActivities,
   getSalesforceAccount360,
@@ -88,10 +88,11 @@ export function Client360({
   account: SalesforceAccount;
   instancia?: "solar" | "carregadores";
 }) {
+  const temSf = /^[a-zA-Z0-9]{15,18}$/.test(account.id ?? "");
   const [tab, setTab] = useState<TabKey>("visao");
   const queryClient = useQueryClient();
 
-  const fetchHistory = useServerFn(getSalesforceAccountHistory);
+  const fetchDossie = useServerFn(getDossieClienteFn);
   const fetch360 = useServerFn(getSalesforceAccount360);
   const sincronizarDono = useServerFn(sincronizarDonoContaFn);
 
@@ -101,6 +102,7 @@ export function Client360({
     queryKey: ["sync-dono-conta", instancia, account.id],
     queryFn: () => sincronizarDono({ data: { instancia, accountId: account.id } }),
     staleTime: 10 * 60_000,
+    enabled: temSf,
   });
   useEffect(() => {
     if ((syncQ.data?.transferidos ?? 0) > 0) {
@@ -109,20 +111,34 @@ export function Client360({
     }
   }, [syncQ.data, queryClient]);
 
-  const historyQ = useQuery({
-    queryKey: ["sf-account-history", account.id],
-    queryFn: () => fetchHistory({ data: { accountId: account.id } }),
-    staleTime: 5 * 60_000,
+  // Histórico (propostas e pedidos) vem do banco do Grupo 2P — não do Salesforce.
+  const dossieQ = useQuery({
+    queryKey: ["dossie-cliente", instancia, account.id, account.cnpj],
+    queryFn: () =>
+      fetchDossie({ data: { instancia, sfAccountId: account.id || null, doc: account.cnpj || null } }),
+    staleTime: 2 * 60_000,
   });
+
+  // Casos, visitas, treinamentos e crédito seguem no Salesforce (não há espelho
+  // desses objetos no banco do Grupo 2P).
   const q360 = useQuery({
     queryKey: ["sf-account-360", account.id],
     queryFn: () => fetch360({ data: { accountId: account.id } }),
     staleTime: 5 * 60_000,
+    enabled: temSf,
   });
 
-
-  const history = historyQ.data;
-  const d = q360.data;
+  const history = dossieQ.data?.historico;
+  const d = useMemo(
+    () => ({
+      opportunities: dossieQ.data?.negocios ?? [],
+      cases: q360.data?.cases ?? [],
+      visitas: q360.data?.visitas ?? [],
+      treinamentos: q360.data?.treinamentos ?? [],
+      creditos: q360.data?.creditos ?? [],
+    }),
+    [dossieQ.data, q360.data],
+  );
 
   return (
     <div className="space-y-4">
@@ -152,19 +168,19 @@ export function Client360({
 
           {tab === "visao" && (
             <div className="space-y-4">
-              <AtlasPanelTab account={account} />
-              <VisaoGeral account={account} history={history} data={d} loading={q360.isLoading} />
+              {temSf && <AtlasPanelTab account={account} />}
+              <VisaoGeral account={account} history={history} data={d} loading={dossieQ.isLoading} />
             </div>
           )}
-          {tab === "negocios" && <NegociosPanel data={d} loading={q360.isLoading} />}
+          {tab === "negocios" && <NegociosPanel data={d} loading={dossieQ.isLoading} />}
           {tab === "casos" && <CasosPanel data={d} loading={q360.isLoading} />}
           {tab === "campo" && <CampoPanel data={d} loading={q360.isLoading} />}
-          {tab === "financeiro" && <FinanceiroPanel data={d} history={history} loading={q360.isLoading} />}
+          {tab === "financeiro" && <FinanceiroPanel data={d} history={history} loading={dossieQ.isLoading} />}
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-4">
-          <ActivityRail accountId={account.id} />
-          <ContactsRail accountId={account.id} />
+          {temSf && <ActivityRail accountId={account.id} />}
+          {temSf && <ContactsRail accountId={account.id} />}
         </div>
       </div>
     </div>
