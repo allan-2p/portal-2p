@@ -9,6 +9,10 @@
 
 export type ConsultorPortal = { id: string; nome: string; sap: string };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** `consultor_id`/`created_by` só aceitam uuid de usuário do portal. */
+export const idDeUsuario = (v: string | null | undefined) => (v && UUID_RE.test(v) ? v : null);
+
 const codigo = (v: unknown) => String(v ?? "").trim();
 
 /**
