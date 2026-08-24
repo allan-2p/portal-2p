@@ -3026,15 +3026,23 @@ function SeletorPesquisavel({
   opcoes,
   placeholder,
   vazio,
+  busca,
+  onBuscaChange,
+  carregando,
 }: {
   value: string;
   onValueChange: (value: string) => void;
   opcoes: { value: string; label: string }[];
   placeholder: string;
   vazio: string;
+  /** Quando informado, a pesquisa é feita no servidor (sem filtro local). */
+  busca?: string;
+  onBuscaChange?: (busca: string) => void;
+  carregando?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const selecionada = opcoes.find((o) => o.value === value);
+  const remoto = typeof onBuscaChange === "function";
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
       <PopoverTrigger asChild>
@@ -3050,10 +3058,15 @@ function SeletorPesquisavel({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
-          <CommandInput placeholder={placeholder} />
+        <Command shouldFilter={!remoto}>
+          <CommandInput
+            placeholder={placeholder}
+            value={remoto ? busca : undefined}
+            onValueChange={remoto ? onBuscaChange : undefined}
+          />
           <CommandList>
-            <CommandEmpty>{vazio}</CommandEmpty>
+            <CommandEmpty>{carregando ? "Buscando..." : vazio}</CommandEmpty>
+
             {opcoes.map((opcao) => (
               <CommandItem
                 key={opcao.value}
