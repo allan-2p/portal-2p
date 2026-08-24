@@ -942,13 +942,13 @@ function ProdutosPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={audit ? 11 : 9} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 12 : 10} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={audit ? 11 : 9} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 12 : 10} className="px-3 py-10 text-center text-muted-foreground">
                     Nenhum produto encontrado. Clique em “Sinc. SAP” para importar o catálogo.
                   </td>
                 </tr>
