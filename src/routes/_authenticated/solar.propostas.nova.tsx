@@ -311,7 +311,8 @@ function NovaPropostaSolarPage() {
   };
 
 
-  const clientesQ = useQueryClientes();
+  const [buscaCliente, setBuscaCliente] = useState("");
+  const clientesQ = useQueryClientes(buscaCliente, clienteDoc);
   const produtosQ = useSolarProdutos();
   const modulosQ = useSolarModulos();
   const geradoresQ = useSolarGeradores();
