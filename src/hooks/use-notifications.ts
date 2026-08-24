@@ -104,11 +104,9 @@ async function sincronizarServidor(primeiraCarga: boolean) {
     });
 
     if (!primeiraCarga) {
-      const { toast } = await import("sonner");
-      mapeadas
-        .filter((m) => !m.read)
-        .forEach((m) => toast(`💳  ${m.title}`, { description: m.description, duration: 6500 }));
+      // Sem toast automático: as novidades aparecem apenas no sino.
     }
+
   } catch {
     // sino nunca deve quebrar a navegação
   }
