@@ -156,7 +156,7 @@ export function CreditoClienteCard({
                   <td className="py-1.5">
                     <Badge variant={creditoStatusTom(a.status)}>{a.conclusao ?? a.status}</Badge>
                     {a.restricao && (
-                      <AlertTriangle className="inline h-3.5 w-3.5 ml-1 text-warning" title="Restrição encontrada" />
+                      <AlertTriangle className="inline h-3.5 w-3.5 ml-1 text-warning" aria-label="Restrição encontrada" />
                     )}
                   </td>
                   <td className="py-1.5 text-right">{fmtBRL(a.creditoAprovado)}</td>
