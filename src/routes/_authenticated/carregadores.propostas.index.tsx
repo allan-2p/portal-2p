@@ -317,13 +317,15 @@ function HistoricoCarregadoresPage() {
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
+                {q.isLoading && <TableSkeletonRows colunas={9} linhas={porPagina > 10 ? 10 : porPagina} />}
+                {!q.isLoading && filtered.length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
-                      {q.isLoading ? "Carregando…" : "Nenhuma proposta encontrada."}
+                      Nenhuma proposta encontrada.
                     </td>
                   </tr>
                 )}
+
               </tbody>
             </table>
           </div>
