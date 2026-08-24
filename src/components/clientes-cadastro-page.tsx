@@ -20,12 +20,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   AlertCircle, Plus, Search, Pencil, Building2, Filter, X, Eye,
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
-  ArrowRight, RefreshCw, History,
+  ArrowRight, RefreshCw, History, Users, MapPin,
 } from "lucide-react";
 import { sincronizarDonosFn } from "@/lib/owner-sync.functions";
-import { ClientHistoryTab } from "@/components/client-history-tab";
 import { ClienteIntegracoesDialog } from "@/components/cliente-integracoes-dialog";
 import { CreditoClienteCard } from "@/components/credito-cliente-card";
+import { ClienteEnderecosEditor } from "@/components/cliente-enderecos-editor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatSapNumero } from "@/lib/sap-numero";
 
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
@@ -273,6 +275,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const consultorEfetivo = consultorSap ?? consultoresQ.data?.eu.sap ?? null;
   const consultorNomeAtual =
     opcoesConsultor.find((c) => c.sap === consultorEfetivo)?.nome ?? consultoresQ.data?.eu.nome ?? "—";
+
+  const [abaEdicao, setAbaEdicao] = useState("contatos");
+  const [abaDetalhe, setAbaDetalhe] = useState("contatos");
 
   const errosAtuais = useMemo(() => validarCampos(form, consultorEfetivo), [form, consultorEfetivo]);
 
@@ -595,29 +600,19 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       />
 
       <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : tentarFechar())}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl w-[calc(100vw-2rem)] max-h-[88vh] overflow-y-auto">
+          <DialogHeader className="text-left">
             <DialogTitle>
-              {editId && etapa === "formulario"
-                ? form.razao_social || "Editar cadastro"
-                : editId
-                  ? "Editar cadastro"
-                  : etapa === "documento"
-                    ? "Novo cadastro — identificação"
-                    : "Novo cadastro de cliente"}
+              {editId
+                ? "Editar cadastro do cliente"
+                : etapa === "documento"
+                  ? "Novo cadastro — identificação"
+                  : "Novo cadastro de cliente"}
             </DialogTitle>
             <DialogDescription>
-              {editId && etapa === "formulario" ? (
-                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="text-muted-foreground">Consultor responsável:</span>
-                  <Badge variant="secondary" className="font-medium">{consultorNomeAtual}</Badge>
-                  <span className="text-muted-foreground">· Vinculado a {ORGANIZACAO[instancia]}</span>
-                </span>
-              ) : etapa === "documento" ? (
-                "Comece pelo CNPJ. Vamos verificar duplicidade e buscar os dados na Receita antes de preencher o restante."
-              ) : (
-                `Vinculado a ${ORGANIZACAO[instancia]}.`
-              )}
+              {etapa === "documento"
+                ? "Comece pelo CNPJ. Vamos verificar duplicidade e buscar os dados na Receita antes de preencher o restante."
+                : `Vinculado a ${ORGANIZACAO[instancia]}.`}
             </DialogDescription>
           </DialogHeader>
 
@@ -665,6 +660,23 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             </div>
           ) : (
             <>
+              <ClienteCabecalho
+                nome={form.razao_social || "Novo cliente"}
+                fantasia={form.nome_fantasia}
+                consultor={consultorNomeAtual}
+                doc={form.doc}
+                sap={form.numero_sap}
+                selos={
+                  <>
+                    <Badge variant="outline">{ORGANIZACAO[instancia]}</Badge>
+                    <Badge variant={form.contribuinte ? "default" : "secondary"}>
+                      {form.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}
+                    </Badge>
+                    <Badge variant={form.ativo ? "outline" : "destructive"}>{form.ativo ? "Ativo" : "Inativo"}</Badge>
+                  </>
+                }
+              />
+
               {(fontes.length > 0 || avisos.length > 0) && (
                 <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs">
                   {fontes.length > 0 && (
@@ -700,156 +712,162 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 </div>
               )}
 
-              <Section title="Dados da empresa">
-                <F label="Razão social *" id="campo-razao_social" error={erros.razao_social}>
-                  <Input value={form.razao_social} readOnly disabled />
-                </F>
-                <F label="Nome fantasia">
-                  <Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} />
-                </F>
-                <F label="CNPJ *" id="campo-doc" error={erros.doc}>
-                  <Input value={form.doc ?? ""} readOnly disabled />
-                </F>
-                <F label="Regime tributário">
-                  <Select value={form.regime_tributario ?? ""} onValueChange={(v) => set("regime_tributario", v)}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                    <SelectContent>{REGIMES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                  </Select>
-                </F>
-                <F label="Natureza jurídica"><Input value={form.natureza_juridica ?? ""} readOnly disabled /></F>
-                <F label="Porte"><Input value={form.porte ?? ""} readOnly disabled /></F>
-                <F label="Situação cadastral"><Input value={form.situacao_cadastral ?? ""} readOnly disabled /></F>
-                <F label="Data de abertura"><Input value={form.data_abertura ?? ""} readOnly disabled placeholder="—" /></F>
-                <div className="sm:col-span-2 text-[11px] text-muted-foreground">
-                  Os dados da empresa são preenchidos automaticamente pela consulta do CNPJ. Apenas o nome fantasia pode ser ajustado.
-                </div>
-              </Section>
+              <Tabs value={abaEdicao} onValueChange={setAbaEdicao} className="w-full">
+                <TabsList className="w-full">
+                  <TabsTrigger value="contatos" className="gap-1.5"><Users className="h-3.5 w-3.5" /> Contatos</TabsTrigger>
+                  <TabsTrigger value="enderecos" className="gap-1.5"><MapPin className="h-3.5 w-3.5" /> Endereços</TabsTrigger>
+                  <TabsTrigger value="cadastrais" className="gap-1.5"><Building2 className="h-3.5 w-3.5" /> Dados cadastrais</TabsTrigger>
+                  <TabsTrigger value="financeiro" className="gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> Financeiro</TabsTrigger>
+                </TabsList>
 
-              <Section title="Situação fiscal">
-                <F label="Inscrição Estadual" id="campo-ie" error={erros.ie}>
-                  <Input
-                    value={form.ie ?? ""}
-                    readOnly
-                    disabled
-                    placeholder="Isento / não contribuinte"
-                  />
+                <TabsContent value="contatos" className="mt-4 space-y-6">
+                  <Section title="Contato geral da empresa">
+                    <F label="E-mail"><Input value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} /></F>
+                    <F label="Telefone"><Input value={form.telefone ?? ""} onChange={(e) => set("telefone", e.target.value)} /></F>
+                    <F label="Site"><Input value={form.site ?? ""} onChange={(e) => set("site", e.target.value)} placeholder="https://" /></F>
+                  </Section>
 
-                  {form.ie_situacao && <p className="mt-1 text-[11px] text-muted-foreground">Situação da IE: {form.ie_situacao}</p>}
-                </F>
-                <F label="Suframa">
-                  <Input value={form.suframa ?? ""} readOnly disabled placeholder="Não localizado" />
-                  {form.suframa_situacao && <p className="mt-1 text-[11px] text-muted-foreground">{form.suframa_situacao}</p>}
-                </F>
-
-                <F label="CNAE principal">
-                  <Input
-                    value={[form.cnae_principal_codigo, form.cnae_principal_descricao].filter(Boolean).join(" — ")}
-                    readOnly
-                    placeholder="—"
-                  />
-                </F>
-                <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
-                  <div>
-                    <div className="text-sm font-semibold">Cliente contribuinte do ICMS</div>
-                    <div className="text-xs text-muted-foreground">Definido automaticamente pela consulta do CNPJ (Inscrição Estadual). Não editável.</div>
-                  </div>
-                  <Badge variant={form.contribuinte ? "default" : "secondary"}>
-                    {form.contribuinte ? "Contribuinte" : "Não contribuinte"}
-                  </Badge>
-                </div>
-
-                {(form.cnaes_secundarios ?? []).length > 0 && (
-                  <div className="sm:col-span-2">
-                    <Label className="text-xs">CNAEs secundários</Label>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {form.cnaes_secundarios.map((c) => (
-                        <Badge key={c.codigo} variant="outline" className="text-[10px]" title={c.descricao}>
-                          {c.codigo}
-                        </Badge>
-                      ))}
+                  <Section title="Contatos do cliente">
+                    <div className="sm:col-span-2">
+                      <p className="mb-3 text-xs text-muted-foreground">
+                        O contato principal e o contato financeiro são obrigatórios. Você pode informar vários
+                        e-mails e telefones em cada contato e adicionar quantos contatos precisar.
+                      </p>
+                      <ContatosEditor contatos={form.contatos ?? []} onChange={(c) => set("contatos", c)} erros={erros} />
                     </div>
-                  </div>
-                )}
-              </Section>
+                  </Section>
+                </TabsContent>
 
-              <Section title="Contato da empresa">
-                <F label="E-mail"><Input value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} /></F>
-                <F label="Telefone"><Input value={form.telefone ?? ""} onChange={(e) => set("telefone", e.target.value)} /></F>
-                <F label="Site"><Input value={form.site ?? ""} onChange={(e) => set("site", e.target.value)} placeholder="https://" /></F>
-              </Section>
-
-              <Section title="Contatos">
-                <div className="sm:col-span-2">
-                  <p className="mb-3 text-xs text-muted-foreground">
-                    O contato principal e o contato financeiro são obrigatórios. Você pode informar vários
-                    e-mails e telefones em cada contato e adicionar quantos contatos precisar.
-                  </p>
-                  <ContatosEditor contatos={form.contatos ?? []} onChange={(c) => set("contatos", c)} erros={erros} />
-                </div>
-              </Section>
-
-              <Section title="Endereço">
-                <F label="CEP *" id="campo-cep" error={erros.cep}>
-                  <Input value={form.cep ?? ""} readOnly disabled placeholder="—" />
-                </F>
-                <F label="Logradouro *" id="campo-logradouro" error={erros.logradouro}><Input value={form.logradouro ?? ""} readOnly disabled /></F>
-                <F label="Número *" id="campo-numero" error={erros.numero}><Input value={form.numero ?? ""} readOnly disabled /></F>
-                <F label="Complemento"><Input value={form.complemento ?? ""} readOnly disabled /></F>
-                <F label="Bairro"><Input value={form.bairro ?? ""} readOnly disabled /></F>
-                <F label="Cidade *" id="campo-cidade" error={erros.cidade}><Input value={form.cidade ?? ""} readOnly disabled /></F>
-                <F label="UF de destino *" id="campo-uf" error={erros.uf}>
-                  <Input value={form.uf ?? ""} readOnly disabled />
-                </F>
-                <div className="sm:col-span-2 text-[11px] text-muted-foreground">
-                  Endereço obtido automaticamente pela consulta do CNPJ.
-                </div>
-              </Section>
-
-
-              <Section title="Comercial">
-                <F label="Consultor *" id="campo-consultor" error={erros.consultor}>
-                  {consultoresQ.data?.podeEscolher ? (
-                    <Select value={consultorEfetivo ?? ""} onValueChange={(v) => setConsultorSap(v)}>
-                      <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
-                      <SelectContent>
-                        {opcoesConsultor.map((c) => (
-                          <SelectItem key={c.sap} value={c.sap}>
-                            {c.nome}
-                            <span className="ml-2 font-mono text-[10px] opacity-60">{c.sap}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input value={consultorNomeAtual} disabled />
-                  )}
-                </F>
-                <F label="Finalidade de uso *" id="campo-finalidade" error={erros.finalidade}>
-                  <Select value={form.finalidade ?? ""} onValueChange={(v) => set("finalidade", v)}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                    <SelectContent>
-                      {FINALIDADES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </F>
-                {/* Tabela de preço: no Solar o vendedor escolhe; em Carregadores é sempre a padrão. */}
-                {instancia === "solar" ? (
-                  <F label="Tabela de preço (SAP) *" id="campo-tabela_preco" error={erros.tabela_preco}>
-                    <Select value={form.tabela_preco || TABELA_PRECO_PADRAO} onValueChange={(v) => set("tabela_preco", v)}>
-                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                      <SelectContent>
-                        {TABELAS_PRECO.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </F>
-                ) : null}
-                {ehAdmin && (
-                  <>
-                    <F label="Condição de pagamento">
-                      <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
+                <TabsContent value="enderecos" className="mt-4 space-y-6">
+                  <Section title="Endereço de faturamento">
+                    <F label="CEP *" id="campo-cep" error={erros.cep}>
+                      <Input value={form.cep ?? ""} readOnly disabled placeholder="—" />
                     </F>
-                    {instancia !== "solar" && (
-                      <F label="Tabela de preço (SAP)" id="campo-tabela_preco" error={erros.tabela_preco}>
+                    <F label="Logradouro *" id="campo-logradouro" error={erros.logradouro}><Input value={form.logradouro ?? ""} readOnly disabled /></F>
+                    <F label="Número *" id="campo-numero" error={erros.numero}><Input value={form.numero ?? ""} readOnly disabled /></F>
+                    <F label="Complemento"><Input value={form.complemento ?? ""} readOnly disabled /></F>
+                    <F label="Bairro"><Input value={form.bairro ?? ""} readOnly disabled /></F>
+                    <F label="Cidade *" id="campo-cidade" error={erros.cidade}><Input value={form.cidade ?? ""} readOnly disabled /></F>
+                    <F label="UF de destino *" id="campo-uf" error={erros.uf}>
+                      <Input value={form.uf ?? ""} readOnly disabled />
+                    </F>
+                    <div className="sm:col-span-2 text-[11px] text-muted-foreground">
+                      Endereço obtido automaticamente pela consulta do CNPJ.
+                    </div>
+                  </Section>
+
+                  <div className="space-y-3">
+                    <div className="text-xs font-bold uppercase tracking-wider text-primary">Endereços de entrega</div>
+                    <p className="text-xs text-muted-foreground">
+                      Cadastre quantos endereços de entrega precisar. O favorito já vem pré-selecionado nas propostas
+                      deste cliente.
+                    </p>
+                    <ClienteEnderecosEditor instancia={instancia} clienteId={editId} clienteDoc={soDigitos(form.doc ?? "")} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="cadastrais" className="mt-4 space-y-6">
+                  <Section title="Dados da empresa">
+                    <F label="Razão social *" id="campo-razao_social" error={erros.razao_social}>
+                      <Input value={form.razao_social} readOnly disabled />
+                    </F>
+                    <F label="Nome fantasia">
+                      <Input value={form.nome_fantasia ?? ""} onChange={(e) => set("nome_fantasia", e.target.value)} />
+                    </F>
+                    <F label="CNPJ *" id="campo-doc" error={erros.doc}>
+                      <Input value={form.doc ?? ""} readOnly disabled />
+                    </F>
+                    <F label="Regime tributário">
+                      <Select value={form.regime_tributario ?? ""} onValueChange={(v) => set("regime_tributario", v)}>
+                        <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                        <SelectContent>{REGIMES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </F>
+                    <F label="Natureza jurídica"><Input value={form.natureza_juridica ?? ""} readOnly disabled /></F>
+                    <F label="Porte"><Input value={form.porte ?? ""} readOnly disabled /></F>
+                    <F label="Situação cadastral"><Input value={form.situacao_cadastral ?? ""} readOnly disabled /></F>
+                    <F label="Data de abertura"><Input value={form.data_abertura ?? ""} readOnly disabled placeholder="—" /></F>
+                    <div className="sm:col-span-2 text-[11px] text-muted-foreground">
+                      Os dados da empresa são preenchidos automaticamente pela consulta do CNPJ. Apenas o nome fantasia pode ser ajustado.
+                    </div>
+                  </Section>
+
+                  <Section title="Situação fiscal">
+                    <F label="Inscrição Estadual" id="campo-ie" error={erros.ie}>
+                      <Input
+                        value={form.ie ?? ""}
+                        readOnly
+                        disabled
+                        placeholder="Isento / não contribuinte"
+                      />
+
+                      {form.ie_situacao && <p className="mt-1 text-[11px] text-muted-foreground">Situação da IE: {form.ie_situacao}</p>}
+                    </F>
+                    <F label="Suframa">
+                      <Input value={form.suframa ?? ""} readOnly disabled placeholder="Não localizado" />
+                      {form.suframa_situacao && <p className="mt-1 text-[11px] text-muted-foreground">{form.suframa_situacao}</p>}
+                    </F>
+
+                    <F label="CNAE principal">
+                      <Input
+                        value={[form.cnae_principal_codigo, form.cnae_principal_descricao].filter(Boolean).join(" — ")}
+                        readOnly
+                        placeholder="—"
+                      />
+                    </F>
+                    <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
+                      <div>
+                        <div className="text-sm font-semibold">Cliente contribuinte do ICMS</div>
+                        <div className="text-xs text-muted-foreground">Definido automaticamente pela consulta do CNPJ (Inscrição Estadual). Não editável.</div>
+                      </div>
+                      <Badge variant={form.contribuinte ? "default" : "secondary"}>
+                        {form.contribuinte ? "Contribuinte" : "Não contribuinte"}
+                      </Badge>
+                    </div>
+
+                    {(form.cnaes_secundarios ?? []).length > 0 && (
+                      <div className="sm:col-span-2">
+                        <Label className="text-xs">CNAEs secundários</Label>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {form.cnaes_secundarios.map((c) => (
+                            <Badge key={c.codigo} variant="outline" className="text-[10px]" title={c.descricao}>
+                              {c.codigo}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </Section>
+
+                  <Section title="Dados comerciais">
+                    <F label="Consultor *" id="campo-consultor" error={erros.consultor}>
+                      {consultoresQ.data?.podeEscolher ? (
+                        <Select value={consultorEfetivo ?? ""} onValueChange={(v) => setConsultorSap(v)}>
+                          <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
+                          <SelectContent>
+                            {opcoesConsultor.map((c) => (
+                              <SelectItem key={c.sap} value={c.sap}>
+                                {c.nome}
+                                <span className="ml-2 font-mono text-[10px] opacity-60">{c.sap}</span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input value={consultorNomeAtual} disabled />
+                      )}
+                    </F>
+                    <F label="Finalidade de uso *" id="campo-finalidade" error={erros.finalidade}>
+                      <Select value={form.finalidade ?? ""} onValueChange={(v) => set("finalidade", v)}>
+                        <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                        <SelectContent>
+                          {FINALIDADES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </F>
+                    {/* Tabela de preço: no Solar o vendedor escolhe; em Carregadores é sempre a padrão. */}
+                    {instancia === "solar" ? (
+                      <F label="Tabela de preço (SAP) *" id="campo-tabela_preco" error={erros.tabela_preco}>
                         <Select value={form.tabela_preco || TABELA_PRECO_PADRAO} onValueChange={(v) => set("tabela_preco", v)}>
                           <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                           <SelectContent>
@@ -857,25 +875,67 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                           </SelectContent>
                         </Select>
                       </F>
+                    ) : null}
+                    {ehAdmin && (
+                      <>
+                        <F label="Condição de pagamento">
+                          <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
+                        </F>
+                        {instancia !== "solar" && (
+                          <F label="Tabela de preço (SAP)" id="campo-tabela_preco" error={erros.tabela_preco}>
+                            <Select value={form.tabela_preco || TABELA_PRECO_PADRAO} onValueChange={(v) => set("tabela_preco", v)}>
+                              <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                              <SelectContent>
+                                {TABELAS_PRECO.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </F>
+                        )}
+                        <F label="Condição de pagamento SAP (ZTERM)">
+                          <Input value={form.condicao_pgto_sap ?? ""} onChange={(e) => set("condicao_pgto_sap", e.target.value)} placeholder="Ex.: 0030" />
+                        </F>
+                      </>
                     )}
-                    <F label="Condição de pagamento SAP (ZTERM)">
-                      <Input value={form.condicao_pgto_sap ?? ""} onChange={(e) => set("condicao_pgto_sap", e.target.value)} placeholder="Ex.: 0030" />
-                    </F>
-                  </>
-                )}
 
 
-                <ClienteLogoUpload doc={form.doc ?? ""} />
-                <div className="sm:col-span-2">
-                  <Label className="text-xs">Observações</Label>
-                  <Textarea rows={3} value={form.observacoes ?? ""} onChange={(e) => set("observacoes", e.target.value)} />
-                </div>
+                    <ClienteLogoUpload doc={form.doc ?? ""} />
+                    <div className="sm:col-span-2">
+                      <Label className="text-xs">Observações</Label>
+                      <Textarea rows={3} value={form.observacoes ?? ""} onChange={(e) => set("observacoes", e.target.value)} />
+                    </div>
 
-                <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-border px-4 py-3">
-                  <div className="text-sm font-medium">Cadastro ativo</div>
-                  <Switch checked={form.ativo} onCheckedChange={(v) => set("ativo", v)} />
-                </div>
-              </Section>
+                    <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-border px-4 py-3">
+                      <div className="text-sm font-medium">Cadastro ativo</div>
+                      <Switch checked={form.ativo} onCheckedChange={(v) => set("ativo", v)} />
+                    </div>
+                  </Section>
+
+                  {editId && (
+                    <Bloco titulo="Origem do cadastro">
+                      <Linha rot="Origem" val={form.origem} />
+                      <Linha rot="Sub-origem" val={form.sub_origem} />
+                      <Linha rot="Cadastrado via" val={form.origem_cadastro} />
+                      <Linha rot="Cadastrado por" val={form.created_by_nome} />
+                      <Linha rot="Lead do Salesforce" val={form.sf_lead_id} />
+                    </Bloco>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="financeiro" className="mt-4">
+                  {editId ? (
+                    <CreditoClienteCard
+                      instancia={instancia}
+                      clienteId={editId}
+                      clienteDoc={soDigitos(form.doc ?? "")}
+                      clienteNome={form.razao_social}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Salve o cadastro para solicitar análise de crédito deste cliente.
+                    </p>
+                  )}
+                </TabsContent>
+              </Tabs>
 
               <DialogFooter>
                 <Button variant="outline" onClick={tentarFechar}>Cancelar</Button>
@@ -887,6 +947,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
           )}
         </DialogContent>
       </Dialog>
+
 
       <Card>
         <CardContent className="p-3 flex flex-wrap items-center gap-2">
@@ -1044,104 +1105,137 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
           {detalhe && (
             <>
               <DialogHeader className="text-left">
-                <DialogTitle className="pr-6">{detalhe.razao_social}</DialogTitle>
-                <DialogDescription>{detalhe.nome_fantasia || "Resumo do cadastro"}</DialogDescription>
+                <DialogTitle className="pr-6">Cliente</DialogTitle>
+                <DialogDescription>Visão completa do cadastro, contatos, endereços e financeiro.</DialogDescription>
               </DialogHeader>
-              <div className="mt-2 space-y-5">
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline">{detalhe.organizacao || ORGANIZACAO[instancia]}</Badge>
-                  <Badge variant={detalhe.contribuinte ? "default" : "secondary"}>
-                    {detalhe.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}
-                  </Badge>
-                  <Badge variant={detalhe.ativo ? "outline" : "destructive"}>{detalhe.ativo ? "Ativo" : "Inativo"}</Badge>
-                </div>
 
-                <div className="grid gap-4 lg:grid-cols-2 items-start">
-                  <Bloco titulo="Situação fiscal">
-                    <Linha rot="CNPJ" val={mascaraDoc(detalhe.doc ?? "")} />
-                    <Linha rot="Inscrição Estadual" val={detalhe.contribuinte ? detalhe.ie : "Isento / não contribuinte"} />
-                    <Linha rot="Situação da IE" val={detalhe.ie_situacao} />
-                    <Linha rot="Suframa" val={[detalhe.suframa, detalhe.suframa_situacao].filter(Boolean).join(" · ")} />
-                    <Linha rot="Regime tributário" val={detalhe.regime_tributario} />
-                    <Linha rot="Situação cadastral" val={detalhe.situacao_cadastral} />
-                    <Linha rot="Natureza jurídica" val={detalhe.natureza_juridica} />
-                    <Linha rot="Porte" val={detalhe.porte} />
-                    <Linha rot="Abertura" val={detalhe.data_abertura} />
-                    <Linha
-                      rot="CNAE principal"
-                      val={[detalhe.cnae_principal_codigo, detalhe.cnae_principal_descricao].filter(Boolean).join(" — ")}
-                    />
-                    <Linha rot="UF de destino" val={detalhe.uf} />
-                  </Bloco>
+              <div className="mt-1 space-y-5">
+                <ClienteCabecalho
+                  nome={detalhe.razao_social}
+                  fantasia={detalhe.nome_fantasia}
+                  consultor={consultorDoCliente(detalhe)}
+                  doc={detalhe.doc}
+                  sap={detalhe.numero_sap}
+                  selos={
+                    <>
+                      <Badge variant="outline">{detalhe.organizacao || ORGANIZACAO[instancia]}</Badge>
+                      <Badge variant={detalhe.contribuinte ? "default" : "secondary"}>
+                        {detalhe.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}
+                      </Badge>
+                      <Badge variant={detalhe.ativo ? "outline" : "destructive"}>{detalhe.ativo ? "Ativo" : "Inativo"}</Badge>
+                    </>
+                  }
+                />
 
-                  <Bloco titulo="Contatos">
+                <Tabs value={abaDetalhe} onValueChange={setAbaDetalhe} className="w-full">
+                  <TabsList className="w-full">
+                    <TabsTrigger value="contatos" className="gap-1.5"><Users className="h-3.5 w-3.5" /> Contatos</TabsTrigger>
+                    <TabsTrigger value="enderecos" className="gap-1.5"><MapPin className="h-3.5 w-3.5" /> Endereços</TabsTrigger>
+                    <TabsTrigger value="cadastrais" className="gap-1.5"><Building2 className="h-3.5 w-3.5" /> Dados cadastrais</TabsTrigger>
+                    <TabsTrigger value="financeiro" className="gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> Financeiro</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="contatos" className="mt-4 space-y-4">
+                    <Bloco titulo="Contato geral da empresa">
+                      <Linha rot="E-mail" val={detalhe.email} />
+                      <Linha rot="Telefone" val={detalhe.telefone} />
+                      <Linha rot="Site" val={detalhe.site} />
+                    </Bloco>
                     {normalizarContatos(detalhe.contatos, {
                       nome: detalhe.contato_nome, cargo: detalhe.contato_cargo,
                       email: detalhe.contato_email, telefone: detalhe.contato_telefone,
                     }).map((c, i) => (
-                      <div key={i} className="space-y-0.5">
-                        <Linha rot={TIPO_ROTULO[c.tipo]} val={[c.nome, c.cargo].filter(Boolean).join(" · ")} />
+                      <Bloco key={i} titulo={TIPO_ROTULO[c.tipo] ?? "Contato"}>
+                        <Linha rot="Nome" val={[c.nome, c.cargo].filter(Boolean).join(" · ")} />
                         <Linha rot="E-mail" val={c.emails.filter((v) => v.trim()).join(", ")} />
                         <Linha rot="Telefone" val={c.telefones.filter((v) => v.trim()).join(", ")} />
-                      </div>
+                      </Bloco>
                     ))}
-                    <Linha rot="E-mail da empresa" val={detalhe.email} />
-                    <Linha rot="Telefone da empresa" val={detalhe.telefone} />
-                    <Linha rot="Site" val={detalhe.site} />
-                  </Bloco>
+                  </TabsContent>
 
-                  <Bloco titulo="Endereço">
-                    <Linha rot="Logradouro" val={[detalhe.logradouro, detalhe.numero, detalhe.complemento].filter(Boolean).join(", ")} />
-                    <Linha rot="Bairro" val={detalhe.bairro} />
-                    <Linha rot="Cidade / UF" val={cidadeUf(detalhe.cidade, detalhe.uf, "")} />
-                    <Linha rot="CEP" val={detalhe.cep} />
-                  </Bloco>
-
-                  <Bloco titulo="Comercial">
-                    <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
-                    <Linha rot="Finalidade de uso" val={detalhe.finalidade} />
-                    <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
-                    <Linha rot="Consultor" val={consultorDoCliente(detalhe)} />
-                    <Linha rot="Cód. do consultor (SAP)" val={detalhe.consultor_sap} />
-                    <Linha rot="Observações" val={detalhe.observacoes} />
-                  </Bloco>
-
-                  <Bloco titulo="Origem do cadastro">
-                    <Linha rot="Origem" val={detalhe.origem} />
-                    <Linha rot="Sub-origem" val={detalhe.sub_origem} />
-                    <Linha rot="Cadastrado via" val={detalhe.origem_cadastro} />
-                    <Linha rot="Cadastrado por" val={detalhe.created_by_nome} />
-                    <Linha rot="Lead do Salesforce" val={detalhe.sf_lead_id} />
-                  </Bloco>
-
-                  {(detalhe.id_antigo || detalhe.legado) && (
-                    <Bloco titulo="Plataforma antiga">
-                      <Linha rot="ID do cliente na antiga" val={detalhe.id_antigo != null ? String(detalhe.id_antigo) : null} />
-                      {detalhe.legado ? (
-                        <details className="rounded-lg bg-muted/30 p-2 text-xs">
-                          <summary className="cursor-pointer font-semibold text-muted-foreground">
-                            Dados importados
-                          </summary>
-                          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words">
-                            {typeof detalhe.legado === "string"
-                              ? detalhe.legado
-                              : JSON.stringify(detalhe.legado, null, 2)}
-                          </pre>
-                        </details>
-                      ) : null}
+                  <TabsContent value="enderecos" className="mt-4 space-y-4">
+                    <Bloco titulo="Endereço de faturamento">
+                      <Linha rot="Logradouro" val={[detalhe.logradouro, detalhe.numero, detalhe.complemento].filter(Boolean).join(", ")} />
+                      <Linha rot="Bairro" val={detalhe.bairro} />
+                      <Linha rot="Cidade / UF" val={cidadeUf(detalhe.cidade, detalhe.uf, "")} />
+                      <Linha rot="CEP" val={detalhe.cep} />
                     </Bloco>
-                  )}
-                </div>
+                    <div className="space-y-2">
+                      <div className="text-xs font-bold uppercase tracking-wider text-primary">Endereços de entrega</div>
+                      <ClienteEnderecosEditor
+                        instancia={instancia}
+                        clienteId={detalhe.id}
+                        clienteDoc={detalhe.doc}
+                        somenteLeitura
+                      />
+                    </div>
+                  </TabsContent>
 
-                <CreditoClienteCard
-                  instancia={instancia}
-                  clienteId={detalhe.id}
-                  clienteDoc={detalhe.doc}
-                  clienteNome={detalhe.razao_social}
-                />
+                  <TabsContent value="cadastrais" className="mt-4 space-y-4">
+                    <Bloco titulo="Situação fiscal">
+                      <Linha rot="CNPJ" val={mascaraDoc(detalhe.doc ?? "")} />
+                      <Linha rot="Inscrição Estadual" val={detalhe.contribuinte ? detalhe.ie : "Isento / não contribuinte"} />
+                      <Linha rot="Situação da IE" val={detalhe.ie_situacao} />
+                      <Linha rot="Suframa" val={[detalhe.suframa, detalhe.suframa_situacao].filter(Boolean).join(" · ")} />
+                      <Linha rot="Regime tributário" val={detalhe.regime_tributario} />
+                      <Linha rot="Situação cadastral" val={detalhe.situacao_cadastral} />
+                      <Linha rot="Natureza jurídica" val={detalhe.natureza_juridica} />
+                      <Linha rot="Porte" val={detalhe.porte} />
+                      <Linha rot="Abertura" val={detalhe.data_abertura} />
+                      <Linha
+                        rot="CNAE principal"
+                        val={[detalhe.cnae_principal_codigo, detalhe.cnae_principal_descricao].filter(Boolean).join(" — ")}
+                      />
+                      <Linha rot="UF de destino" val={detalhe.uf} />
+                    </Bloco>
 
-                <ClientHistoryTab clienteNome={detalhe.razao_social} />
+                    <Bloco titulo="Dados comerciais">
+                      <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
+                      <Linha rot="Finalidade de uso" val={detalhe.finalidade} />
+                      <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
+                      <Linha rot="Consultor" val={consultorDoCliente(detalhe)} />
+                      <Linha rot="Cód. do consultor (SAP)" val={detalhe.consultor_sap} />
+                      <Linha rot="Observações" val={detalhe.observacoes} />
+                    </Bloco>
+
+                    <Bloco titulo="Origem do cadastro">
+                      <Linha rot="Origem" val={detalhe.origem} />
+                      <Linha rot="Sub-origem" val={detalhe.sub_origem} />
+                      <Linha rot="Cadastrado via" val={detalhe.origem_cadastro} />
+                      <Linha rot="Cadastrado por" val={detalhe.created_by_nome} />
+                      <Linha rot="Lead do Salesforce" val={detalhe.sf_lead_id} />
+                    </Bloco>
+
+                    {(detalhe.id_antigo || detalhe.legado) && (
+                      <Bloco titulo="Plataforma antiga">
+                        <Linha rot="ID do cliente na antiga" val={detalhe.id_antigo != null ? String(detalhe.id_antigo) : null} />
+                        {detalhe.legado ? (
+                          <details className="rounded-lg bg-muted/30 p-2 text-xs">
+                            <summary className="cursor-pointer font-semibold text-muted-foreground">
+                              Dados importados
+                            </summary>
+                            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words">
+                              {typeof detalhe.legado === "string"
+                                ? detalhe.legado
+                                : JSON.stringify(detalhe.legado, null, 2)}
+                            </pre>
+                          </details>
+                        ) : null}
+                      </Bloco>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="financeiro" className="mt-4">
+                    <CreditoClienteCard
+                      instancia={instancia}
+                      clienteId={detalhe.id}
+                      clienteDoc={detalhe.doc}
+                      clienteNome={detalhe.razao_social}
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
+
 
               <DialogFooter className="gap-2 sm:justify-end">
                 <Button variant="outline" onClick={() => setDetalhe(null)}>Fechar</Button>
@@ -1161,6 +1255,40 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         open={!!integracoesDe}
         onOpenChange={(v) => !v && setIntegracoesDe(null)}
       />
+    </div>
+  );
+}
+
+/** Cabeçalho compartilhado pelos modais de visualizar e editar. */
+function ClienteCabecalho({
+  nome, fantasia, consultor, doc, sap, selos,
+}: {
+  nome: string;
+  fantasia?: string | null;
+  consultor?: string | null;
+  doc?: string | null;
+  sap?: string | null;
+  selos?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-lg font-bold leading-tight break-words">{nome}</div>
+          {fantasia ? <div className="text-sm text-muted-foreground">{fantasia}</div> : null}
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {doc ? <span>CNPJ {mascaraDoc(doc)}</span> : null}
+            {sap ? <span className="font-mono">SAP {formatSapNumero(sap)}</span> : null}
+          </div>
+        </div>
+        <div className="flex flex-col items-start gap-1 sm:items-end">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Consultor responsável
+          </span>
+          <Badge variant="secondary">{consultor || "—"}</Badge>
+        </div>
+      </div>
+      {selos ? <div className="mt-3 flex flex-wrap gap-2">{selos}</div> : null}
     </div>
   );
 }
