@@ -1,6 +1,7 @@
 import { cidadeUf } from "@/lib/local-format";
 import { useCan, useCanDelete } from "@/components/permission-gate";
 import { useEffect, useMemo, useState } from "react";
+import { ConfirmarFechamentoDialog } from "@/components/confirmar-saida";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent } from "@/components/ui/card";
@@ -539,6 +540,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         </Card>
       )}
 
+      <ConfirmarFechamentoDialog
+        aberto={confirmarFechar}
+        onCancelar={() => setConfirmarFechar(false)}
+        onDescartar={fechar}
+        descricao="Você preencheu informações do cliente que ainda não foram salvas. Se fechar agora, elas serão perdidas."
+      />
+
       <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : tentarFechar())}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -586,7 +594,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               )}
 
               <DialogFooter>
-                <Button variant="outline" onClick={fechar}>Cancelar</Button>
+                <Button variant="outline" onClick={tentarFechar}>Cancelar</Button>
                 <Button onClick={() => verificar.mutate()} disabled={verificar.isPending || !docBusca.trim()} className="gap-2">
                   {verificar.isPending
                     ? <><Loader2 className="h-4 w-4 animate-spin" /> Consultando…</>
@@ -807,7 +815,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               </Section>
 
               <DialogFooter>
-                <Button variant="outline" onClick={fechar}>Cancelar</Button>
+                <Button variant="outline" onClick={tentarFechar}>Cancelar</Button>
                 <Button onClick={tentarSalvar} disabled={salvar.isPending}>
                   {salvar.isPending ? "Salvando…" : "Salvar cadastro"}
                 </Button>
