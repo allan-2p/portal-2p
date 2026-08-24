@@ -155,6 +155,19 @@ export async function listClientesPagina(
 }
 
 /**
+ * A coluna `consultor_id` foi adicionada depois (supabase/external/clientes-consultor-id.sql).
+ * Enquanto o SQL não for aplicado no banco do Grupo 2P, o portal segue
+ * funcionando usando apenas `created_by` / `consultor_sap`.
+ */
+let _temConsultorId: boolean | null = null;
+async function temConsultorId(): Promise<boolean> {
+  if (_temConsultorId !== null) return _temConsultorId;
+  const { ok } = await grupo2pRest("clientes?select=consultor_id&limit=1");
+  _temConsultorId = ok;
+  return ok;
+}
+
+/**
  * Lista para a tela "Perfil do Cliente": vem só da tabela `clientes`
  * (nunca do Salesforce), separada por instância/organização e, quando o
  * usuário não tem "View All Records", pelo consultor responsável
@@ -184,7 +197,12 @@ export async function listClientesPerfil(
   const grupos: string[] = [];
   if (opts.donoId || opts.consultorSap) {
     const alvos: string[] = [];
-    if (opts.donoId) alvos.push(`created_by.eq.${opts.donoId}`, `consultor_id.eq.${opts.donoId}`);
+    if (opts.donoId) {
+      alvos.push(`created_by.eq.${opts.donoId}`);
+      // `consultor_id` só entra no filtro quando a coluna existe no banco:
+      // senão o PostgREST devolve 400 e a lista inteira quebra.
+      if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
+    }
     if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
     grupos.push(`or(${alvos.join(",")})`);
   }
@@ -248,20 +266,50 @@ export async function getClienteById(
   return rows[0] ?? null;
 }
 
+/**
+ * Grava tolerando colunas que ainda não existem no banco do Grupo 2P.
+ *
+ * O PostgREST responde `PGRST204 – Could not find the '<coluna>' column`
+ * quando o portal envia um campo novo antes do SQL correspondente ser
+ * aplicado (ex.: `consultor_id`). Em vez de derrubar o cadastro do cliente,
+ * removemos o campo desconhecido e repetimos a gravação.
+ */
+async function gravarTolerante(
+  instance: ClientesInstance,
+  path: string,
+  method: "POST" | "PATCH",
+  payload: Record<string, any>,
+): Promise<ClienteRow | null> {
+  let corpo = { ...payload };
+  for (let tentativa = 0; tentativa < 8; tentativa++) {
+    try {
+      const rows = await rest(instance, path, {
+        method,
+        body: JSON.stringify(corpo),
+        prefer: "return=representation",
+      });
+      return rows?.[0] ?? null;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const col = /Could not find the '([^']+)' column/i.exec(msg)?.[1];
+      if (!col || !(col in corpo)) throw e;
+      console.warn(`[clientes] coluna "${col}" ausente no banco — gravando sem ela.`);
+      delete corpo[col];
+    }
+  }
+  throw new Error("Não foi possível gravar o cliente: colunas incompatíveis com o banco.");
+}
+
 export async function insertCliente(
   instance: ClientesInstance,
   payload: Record<string, any>,
 ): Promise<ClienteRow> {
-  const rows = await rest(instance, "clientes", {
-    method: "POST",
-    body: JSON.stringify({
-      ...payload,
-      instancia: payload["instancia"] ?? instance,
-      organizacao: payload["organizacao"] ?? ORGANIZACAO[instance],
-    }),
-    prefer: "return=representation",
+  const row = await gravarTolerante(instance, "clientes", "POST", {
+    ...payload,
+    instancia: payload["instancia"] ?? instance,
+    organizacao: payload["organizacao"] ?? ORGANIZACAO[instance],
   });
-  return rows[0];
+  return row as ClienteRow;
 }
 
 export async function updateCliente(
@@ -269,12 +317,10 @@ export async function updateCliente(
   id: string,
   payload: Record<string, any>,
 ): Promise<ClienteRow | null> {
-  const rows = await rest(instance, `clientes?id=eq.${id}&instancia=eq.${instance}`, {
-    method: "PATCH",
-    body: JSON.stringify({ ...payload, updated_at: new Date().toISOString() }),
-    prefer: "return=representation",
+  return gravarTolerante(instance, `clientes?id=eq.${id}&instancia=eq.${instance}`, "PATCH", {
+    ...payload,
+    updated_at: new Date().toISOString(),
   });
-  return rows?.[0] ?? null;
 }
 
 export async function deleteCliente(instance: ClientesInstance, id: string): Promise<void> {
