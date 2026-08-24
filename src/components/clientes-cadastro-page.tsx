@@ -94,6 +94,7 @@ export type Cliente = {
   ativo: boolean;
   created_by?: string | null;
   created_by_nome?: string | null;
+  created_at?: string | null;
   // Campos da migração da plataforma antiga (somente leitura no portal).
   consultor_nome?: string | null;
   consultor_sap?: string | null;
