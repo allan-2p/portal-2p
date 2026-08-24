@@ -39,6 +39,12 @@ export const JOBS = {
     descricao: "Sincroniza estoque, containers e produtos com o SAP a cada 6h.",
     reprocessavel: true,
   },
+  "sap.sync-produtos": {
+    label: "SAP • Catálogo vendável (preço VK12)",
+    descricao:
+      "Simula preço no SAP e ativa/desativa os materiais: sem preço não entra em proposta nem na calculadora.",
+    reprocessavel: true,
+  },
   "cron.pix-reconsulta": {
     label: "Cron • Reconsulta Pix (Itaú)",
     descricao: "Consulta no Itaú as cobranças Pix pendentes (fallback do webhook).",
