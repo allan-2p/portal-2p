@@ -2691,6 +2691,8 @@ function NovaPropostaSolarPage() {
                   value={condicaoPagamento}
                   onChange={setCondicaoPagamento}
                   className="md:max-w-sm"
+                  clienteDoc={String(cliente?.['doc'] ?? clienteDoc ?? "")}
+                  valorTotal={total}
                 />
                 <p className="text-xs text-muted-foreground">
                   É o prazo enviado ao SAP — só aparecem as condições ativas com parcelas automáticas.
