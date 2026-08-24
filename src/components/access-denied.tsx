@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Home, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAccessSuggestions } from "@/lib/access-fallback.functions";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Tela padrão de bloqueio por permissão: explica em linguagem simples
@@ -16,10 +17,14 @@ export function AccessDenied({
   title?: string;
   description?: string;
 }) {
+  const { user, loading } = useAuth();
   const fetchSuggestions = useServerFn(getAccessSuggestions);
+  // Sem sessão o servidor responde 401: só busca sugestões quando há usuário.
   const { data: suggestions } = useQuery({
-    queryKey: ["access-suggestions"],
+    queryKey: ["access-suggestions", user?.id],
     queryFn: () => fetchSuggestions(),
+    enabled: !loading && !!user,
+    retry: false,
     staleTime: 5 * 60_000,
   });
 
