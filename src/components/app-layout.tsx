@@ -28,6 +28,7 @@ import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { useSalesforceNotifications } from "@/hooks/use-salesforce-notifications";
 import { useNewFeatures } from "@/hooks/use-new-features";
 import { bootstrapFirstAdmin } from "@/lib/users.functions";
+import { useStickyOpen } from "@/hooks/use-sticky-open";
 
 import { toast } from "sonner";
 
