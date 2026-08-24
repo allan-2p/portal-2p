@@ -80,6 +80,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksSapNfsRouteImport } from './routes/api/public/hooks/sap-nfs'
+import { Route as ApiPublicHooksSapCatalogoVendaveisRouteImport } from './routes/api/public/hooks/sap-catalogo-vendaveis'
 import { Route as ApiPublicHooksPixReconsultaRouteImport } from './routes/api/public/hooks/pix-reconsulta'
 import { Route as ApiPublicHooksPixItauRouteImport } from './routes/api/public/hooks/pix-itau'
 import { Route as ApiPublicHooksPagamentoLinkRouteImport } from './routes/api/public/hooks/pagamento-link'
@@ -512,6 +513,12 @@ const ApiPublicHooksSapNfsRoute = ApiPublicHooksSapNfsRouteImport.update({
   path: '/api/public/hooks/sap-nfs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSapCatalogoVendaveisRoute =
+  ApiPublicHooksSapCatalogoVendaveisRouteImport.update({
+    id: '/api/public/hooks/sap-catalogo-vendaveis',
+    path: '/api/public/hooks/sap-catalogo-vendaveis',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPixReconsultaRoute =
   ApiPublicHooksPixReconsultaRouteImport.update({
     id: '/api/public/hooks/pix-reconsulta',
@@ -749,6 +756,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
   '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
+  '/api/public/hooks/sap-catalogo-vendaveis': typeof ApiPublicHooksSapCatalogoVendaveisRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -842,6 +850,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
   '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
+  '/api/public/hooks/sap-catalogo-vendaveis': typeof ApiPublicHooksSapCatalogoVendaveisRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -941,6 +950,7 @@ export interface FileRoutesById {
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
   '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
+  '/api/public/hooks/sap-catalogo-vendaveis': typeof ApiPublicHooksSapCatalogoVendaveisRoute
   '/api/public/hooks/sap-nfs': typeof ApiPublicHooksSapNfsRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -1040,6 +1050,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
     | '/api/public/hooks/pix-reconsulta'
+    | '/api/public/hooks/sap-catalogo-vendaveis'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1133,6 +1144,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
     | '/api/public/hooks/pix-reconsulta'
+    | '/api/public/hooks/sap-catalogo-vendaveis'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1231,6 +1243,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
     | '/api/public/hooks/pix-reconsulta'
+    | '/api/public/hooks/sap-catalogo-vendaveis'
     | '/api/public/hooks/sap-nfs'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -1262,6 +1275,7 @@ export interface RootRouteChildren {
   ApiPublicHooksPagamentoLinkRoute: typeof ApiPublicHooksPagamentoLinkRoute
   ApiPublicHooksPixItauRoute: typeof ApiPublicHooksPixItauRouteWithChildren
   ApiPublicHooksPixReconsultaRoute: typeof ApiPublicHooksPixReconsultaRoute
+  ApiPublicHooksSapCatalogoVendaveisRoute: typeof ApiPublicHooksSapCatalogoVendaveisRoute
   ApiPublicHooksSapNfsRoute: typeof ApiPublicHooksSapNfsRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1767,6 +1781,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSapNfsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sap-catalogo-vendaveis': {
+      id: '/api/public/hooks/sap-catalogo-vendaveis'
+      path: '/api/public/hooks/sap-catalogo-vendaveis'
+      fullPath: '/api/public/hooks/sap-catalogo-vendaveis'
+      preLoaderRoute: typeof ApiPublicHooksSapCatalogoVendaveisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/pix-reconsulta': {
       id: '/api/public/hooks/pix-reconsulta'
       path: '/api/public/hooks/pix-reconsulta'
@@ -2226,6 +2247,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksPagamentoLinkRoute: ApiPublicHooksPagamentoLinkRoute,
   ApiPublicHooksPixItauRoute: ApiPublicHooksPixItauRouteWithChildren,
   ApiPublicHooksPixReconsultaRoute: ApiPublicHooksPixReconsultaRoute,
+  ApiPublicHooksSapCatalogoVendaveisRoute:
+    ApiPublicHooksSapCatalogoVendaveisRoute,
   ApiPublicHooksSapNfsRoute: ApiPublicHooksSapNfsRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
