@@ -35,6 +35,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 ### Alterado
+- **Impostos de Carregadores com precisão de 6 casas**: toda decomposição/reconstrução de preço (líquido ↔ preço com impostos) passa por uma única fórmula central, com IPI, ICMS e PIS/COFINS calculados em 6 casas decimais. Só o resultado por item é arredondado a 2 casas para exibição/cobrança, e o valor enviado ao SAP continua com 2 casas. As bases exatas seguem em calibração com o SAP (testes QAS 0000010462 / 0000010464).
 - **Lista de clientes**: nova coluna "Cliente desde" (data de criação do cadastro) e cabeçalhos de todas as colunas clicáveis para ordenar/inverter. Ordenação padrão continua sendo a mais recente primeiro (`created_at` descendente).
 - Filtros de status, UF, com/sem nº SAP e vendedor nas listas de propostas passam a ser aplicados no banco, junto da busca.
 
