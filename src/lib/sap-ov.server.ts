@@ -309,7 +309,10 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
   const kit = Boolean(row["kit_fotovoltaico"]);
   const materialSap = (codigo: string) =>
     kit && codigo === "100000350" ? "100000278" : codigo;
-  // VALOR_PROD vai VAZIO: o preço vem da condição do SAP (igual à antiga).
+  // VALOR_PROD: vazio = preço vem da condição do SAP (regra de sempre, Solar).
+  // Somente 2P Carregadores, e apenas com a flag SAP_VALOR_PROD_CARREGADORES=X,
+  // envia o preço manual UNITÁRIO da proposta (vira VKP0 manual no SAP).
+  const usaValorProd = valorProdAtivo(row);
   const linhas = itens
     .map(
       (i, idx) =>
@@ -322,7 +325,7 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         `<PESO_BRUTO></PESO_BRUTO>` +
         `<PESO_LIQ></PESO_LIQ>` +
         `<UM_PESO></UM_PESO>` +
-        `<VALOR_PROD></VALOR_PROD>` +
+        `<VALOR_PROD>${usaValorProd && Number(i.valor) > 0 ? Number(i.valor).toFixed(2) : ""}</VALOR_PROD>` +
         `<VALOR_DESC></VALOR_DESC>` +
         `<PERC_DESC></PERC_DESC>` +
         `<NCM></NCM>` +
