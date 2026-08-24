@@ -571,12 +571,26 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editId ? "Editar cadastro" : etapa === "documento" ? "Novo cadastro — identificação" : "Novo cadastro de cliente"}
+              {editId && etapa === "formulario"
+                ? form.razao_social || "Editar cadastro"
+                : editId
+                  ? "Editar cadastro"
+                  : etapa === "documento"
+                    ? "Novo cadastro — identificação"
+                    : "Novo cadastro de cliente"}
             </DialogTitle>
             <DialogDescription>
-              {etapa === "documento"
-                ? "Comece pelo CNPJ. Vamos verificar duplicidade e buscar os dados na Receita antes de preencher o restante."
-                : `Vinculado a ${ORGANIZACAO[instancia]}.`}
+              {editId && etapa === "formulario" ? (
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="text-muted-foreground">Consultor responsável:</span>
+                  <Badge variant="secondary" className="font-medium">{consultorNomeAtual}</Badge>
+                  <span className="text-muted-foreground">· Vinculado a {ORGANIZACAO[instancia]}</span>
+                </span>
+              ) : etapa === "documento" ? (
+                "Comece pelo CNPJ. Vamos verificar duplicidade e buscar os dados na Receita antes de preencher o restante."
+              ) : (
+                `Vinculado a ${ORGANIZACAO[instancia]}.`
+              )}
             </DialogDescription>
           </DialogHeader>
 
