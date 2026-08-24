@@ -16,10 +16,14 @@ export function AccessDenied({
   title?: string;
   description?: string;
 }) {
+  const { user, loading } = useAuth();
   const fetchSuggestions = useServerFn(getAccessSuggestions);
+  // Sem sessão o servidor responde 401: só busca sugestões quando há usuário.
   const { data: suggestions } = useQuery({
-    queryKey: ["access-suggestions"],
+    queryKey: ["access-suggestions", user?.id],
     queryFn: () => fetchSuggestions(),
+    enabled: !loading && !!user,
+    retry: false,
     staleTime: 5 * 60_000,
   });
 
