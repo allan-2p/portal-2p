@@ -184,7 +184,12 @@ export async function listClientesPerfil(
   const grupos: string[] = [];
   if (opts.donoId || opts.consultorSap) {
     const alvos: string[] = [];
-    if (opts.donoId) alvos.push(`created_by.eq.${opts.donoId}`, `consultor_id.eq.${opts.donoId}`);
+    if (opts.donoId) {
+      alvos.push(`created_by.eq.${opts.donoId}`);
+      // `consultor_id` só entra no filtro quando a coluna existe no banco:
+      // senão o PostgREST devolve 400 e a lista inteira quebra.
+      if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
+    }
     if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
     grupos.push(`or(${alvos.join(",")})`);
   }
