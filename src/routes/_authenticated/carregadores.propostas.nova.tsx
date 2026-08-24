@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/command";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listClientesFn } from "@/lib/clientes.functions";
+import { listClientesPaginaFn } from "@/lib/clientes.functions";
 import { getClienteLogo } from "@/lib/cliente-logos.functions";
 import { PropostaIndicacao } from "@/components/proposta-indicacao";
 import { CepInput } from "@/components/cep-input";
