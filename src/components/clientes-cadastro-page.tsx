@@ -409,13 +409,30 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   );
   const filtrosAtivos = fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || q.trim() !== "";
 
+  // Assinatura do formulário no momento em que o modal abriu: qualquer
+  // divergência significa alterações não salvas.
+  const assinaturaForm = JSON.stringify([form, docBusca, consultorId]);
+  const [baseForm, setBaseForm] = useState<string | null>(null);
+  const [confirmarFechar, setConfirmarFechar] = useState(false);
+  const formSujo = baseForm !== null && baseForm !== assinaturaForm;
+
+  function tentarFechar() {
+    if (formSujo) return setConfirmarFechar(true);
+    fechar();
+  }
+
   function fechar() {
+    setBaseForm(null); setConfirmarFechar(false);
     setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
     setConsultorId(consultoresQ.data?.eu.id ?? null);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
     setFontes([]); setAvisos([]);
   }
-  const abrirNovo = () => { fechar(); setOpen(true); };
+  const abrirNovo = () => {
+    fechar();
+    setOpen(true);
+    setBaseForm(JSON.stringify([vazio(), "", consultoresQ.data?.eu.id ?? null]));
+  };
   const abrirEdicao = (c: Cliente) => {
     const { id: _id, ...rest } = c;
     setEditId(c.id);
@@ -518,7 +535,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         </Card>
       )}
 
-      <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : fechar())}>
+      <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : tentarFechar())}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
