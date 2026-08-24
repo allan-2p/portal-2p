@@ -100,6 +100,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { cn } from "@/lib/utils";
 import { ResultadoConclusaoDialog } from "@/components/resultado-conclusao-dialog";
+import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-progresso";
 import { cidadeUf } from "@/lib/local-format";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/nova")({
@@ -205,6 +206,7 @@ function PropostaCarregadoresPage() {
   const [etapa, setEtapa] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [tentouAvancar, setTentouAvancar] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [conclusaoFase, setConclusaoFase] = useState<ConclusaoFase>(null);
   const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
   const [numeroAtual, setNumeroAtual] = useState<string | null>(null);
   const [autosaveAt, setAutosaveAt] = useState<Date | null>(null);
@@ -920,6 +922,7 @@ function PropostaCarregadoresPage() {
     if (!podeFechar) return toast.error(errosConclusao[0] ?? "Complete a proposta antes de concluir o pedido.");
     setStatusProposta("Aguardando Pagamento");
     setSaving(true);
+    setConclusaoFase("salvando");
     void salvar("Aguardando Pagamento");
   }
 
@@ -1185,6 +1188,7 @@ function PropostaCarregadoresPage() {
         if (concluindo) {
           // Lock idempotente no banco: só conclui se ainda estiver "Salvo"
           // O servidor valida a etapa de finalização como 4 (última etapa do fluxo).
+          setConclusaoFase("integrando");
           const linha = await concluirPropostaFn({
             data: { id: propostaId, status, origem: "portal", etapa },
           });
@@ -1242,6 +1246,7 @@ function PropostaCarregadoresPage() {
         if (!inserida?.id) throw new Error("Não foi possível concluir: proposta não localizada.");
         let linha: { status?: string; already_concluded?: boolean; cobranca?: { gerada?: boolean; meio?: string | null; motivo?: string | null; erro?: string | null } | null };
         try {
+          setConclusaoFase("integrando");
           linha = await concluirPropostaFn({
             data: { id: inserida.id, status, origem: "portal", etapa },
           });
@@ -2689,7 +2694,18 @@ function PropostaCarregadoresPage() {
             setResultadoConclusao(null);
             void navigate({ to: "/carregadores/propostas" });
           }}
+          onVerProposta={
+            propostaId
+              ? () => {
+                  setResultadoConclusao(null);
+                  void navigate({ to: "/carregadores/propostas", search: { ver: propostaId } });
+                }
+              : undefined
+          }
         />
+
+        {/* Bloqueia a tela enquanto o pedido está sendo concluído */}
+        <ConclusaoProgresso fase={conclusaoFase} />
 
 
         {/* Confirmação antes de concluir o pedido */}

@@ -66,6 +66,7 @@ import { useCarregadoresNcms, useCarregadoresConfig } from "@/hooks/use-carregad
 import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn, concluirPropostaFn } from "@/lib/propostas.functions";
 import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/resultado-conclusao-dialog";
+import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-progresso";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
 import { normalizarFinalidade } from "@/lib/sap-clientes-map";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
@@ -180,6 +181,7 @@ function NovaPropostaSolarPage() {
   const [etapa, setEtapa] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [tentou, setTentou] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [conclusaoFase, setConclusaoFase] = useState<ConclusaoFase>(null);
   const [propostaId, setPropostaId] = useState<string | null>(editId ?? null);
   const [numero, setNumero] = useState<string | null>(null);
   const carregado = useRef(false);
@@ -1165,6 +1167,7 @@ function NovaPropostaSolarPage() {
       return toast.error("Condição de pagamento (ZTERM) é obrigatória para concluir o pedido.");
     }
     setSalvando(true);
+    if (concluir) setConclusaoFase("salvando");
 
     try {
       const r = await salvar({
@@ -1254,6 +1257,7 @@ function NovaPropostaSolarPage() {
       // Nada é silencioso — o resultado (ou o erro) aparece no pop-up.
       try {
         // O servidor valida a conclusão como etapa 4 (Finalização).
+        setConclusaoFase("integrando");
         const linha = await concluirPropostaFn({ data: { id: r.id, origem: "portal", etapa: 5 } });
         await queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
         if (linha?.already_concluded) {
@@ -1277,6 +1281,7 @@ function NovaPropostaSolarPage() {
       toast.error((e as Error).message, { duration: 12000 });
     } finally {
       setSalvando(false);
+      setConclusaoFase(null);
     }
   }
 
@@ -2770,7 +2775,18 @@ function NovaPropostaSolarPage() {
           setResultadoConclusao(null);
           void navigate({ to: "/solar/propostas" });
         }}
+        onVerProposta={
+          propostaId
+            ? () => {
+                setResultadoConclusao(null);
+                void navigate({ to: "/solar/propostas", search: { ver: propostaId } });
+              }
+            : undefined
+        }
       />
+
+      {/* Bloqueia a tela enquanto o pedido está sendo concluído */}
+      <ConclusaoProgresso fase={conclusaoFase} />
 
       {/* Prévia da proposta em PDF — painel lateral, atualiza em tempo real */}
       {previewAberto && (
