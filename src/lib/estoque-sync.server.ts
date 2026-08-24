@@ -12,6 +12,8 @@ export type EstoqueSyncResult = {
   ncmAplicado: number;
   produtos: number;
   espelho: { target: string; ok: boolean; skipped?: boolean; message?: string }[];
+  /** Varredura de preço no SAP encadeada no fim da sincronização. */
+  vendaveis?: { verificados: number; ativados: number; desativados: number; erro?: string };
   duracaoMs: number;
 };
 
