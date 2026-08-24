@@ -41,7 +41,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Cadastro de consultores (`consultores_sap`)**: de-para oficial código SAP → nome com os 39 vendedores ativos. O seletor de consultor do cadastro de clientes une os usuários do portal com código SAP e esse de-para (dedupe pelo código, preferindo o usuário do portal). Leitura liberada para usuários logados; manutenção só para administradores.
 
 ### Alterado
+- **Consultor dos clientes 2P Carregadores**: os 10 cadastros da unidade que estavam sem consultor passaram a ter **Bruno Amaral (1000000417)** como responsável. A coluna Consultor da lista mostra só o nome, em tamanho normal (o código SAP continua visível no detalhe do cliente).
 - **Campo `organizacao` padronizado em toda a base**: passa a valer apenas o código da unidade (`solar`, `carregadores`, `grupo`, `station`) — os rótulos antigos ("2P Solar", "2P Carregadores", "Acessórios 2P", "Grupo 2P") foram convertidos nos dois bancos (Grupo 2P: clientes, clientes_sap, contatos, leads; portal: clientes, clientes_sap, contatos, propostas, profiles, consultores_sap, user_invites). O portal agora grava sempre o código e usa um rótulo separado só para exibição.
+
 
 - **"Pedidos" agora é "Acompanhamento", dentro de Propostas**: no menu, Propostas virou um grupo recolhível (toggle) com os itens "Propostas" e "Acompanhamento", tanto no 2P Solar quanto no 2P Carregadores. O Acompanhamento do Solar passa a ler os pedidos das propostas do banco do Grupo 2P (status, cliente, UF, data e valor), com filtro por vendedor pelos consultores da unidade — a consulta ao Salesforce foi eliminada.
 - **Paginação padrão de 10 registros** em Propostas (Solar e Carregadores) e no cadastro de clientes, mantendo as opções 25/50/100.
