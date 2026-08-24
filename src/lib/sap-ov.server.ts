@@ -297,6 +297,24 @@ function parceiro(role: "AG" | "CL" | "ZT", doc: string, nome: string) {
 
 type Peso = { bruto: number; liquido: number };
 
+/** True quando a proposta é de 2P Carregadores. */
+export function ehCarregadores(row: Record<string, any>): boolean {
+  return String(row["organizacao"] ?? "").toLowerCase().includes("carregador");
+}
+
+/**
+ * Preço manual (VALOR_PROD → VKP0) só vale para 2P Carregadores e só quando a
+ * flag SAP_VALOR_PROD_CARREGADORES=X estiver ligada (após transporte no SAP).
+ * Solar permanece SEMPRE com o campo vazio.
+ */
+export function valorProdAtivo(row: Record<string, any>): boolean {
+  return (
+    ehCarregadores(row) &&
+    String(process.env["SAP_VALOR_PROD_CARREGADORES"] ?? "").toUpperCase() === "X"
+  );
+}
+
+
 function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): string {
   const c = constantes(String(row["organizacao"] ?? "carregadores"), row);
   const hoje = hojeIso();
