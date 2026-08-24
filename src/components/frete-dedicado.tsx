@@ -12,6 +12,11 @@ type Props = {
   /** Transportadora escolhida (com o valor manual já aplicado). */
   selecionada: CarregadoresTransportadora | null;
   onSelect: (t: CarregadoresTransportadora | null) => void;
+  /**
+   * Valor do frete controlado por fora (quando o formulário já tem o campo
+   * "Valor do frete (manual)"). Nesse caso o campo interno não é exibido.
+   */
+  valor?: number;
 };
 
 /**
@@ -19,10 +24,13 @@ type Props = {
  * transportadoras dedicadas cadastradas (prazo fixo de 2 dias). O CNPJ segue
  * para a ordem de venda (parceiro ZT) e para a oferta de carga.
  */
-export function FreteDedicado({ selecionada, onSelect }: Props) {
+export function FreteDedicado({ selecionada, onSelect, valor: valorExterno }: Props) {
+  const controlado = valorExterno !== undefined;
   const listar = useServerFn(listarTransportadorasDedicadas);
   const [lista, setLista] = useState<Dedicada[]>([]);
-  const [valor, setValor] = useState<number>(selecionada?.total ?? 0);
+  const [valorInterno, setValorInterno] = useState<number>(selecionada?.total ?? 0);
+  const valor = controlado ? (valorExterno ?? 0) : valorInterno;
+
 
   useEffect(() => {
     let vivo = true;
