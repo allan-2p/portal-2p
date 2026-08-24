@@ -1100,104 +1100,137 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
           {detalhe && (
             <>
               <DialogHeader className="text-left">
-                <DialogTitle className="pr-6">{detalhe.razao_social}</DialogTitle>
-                <DialogDescription>{detalhe.nome_fantasia || "Resumo do cadastro"}</DialogDescription>
+                <DialogTitle className="pr-6">Cliente</DialogTitle>
+                <DialogDescription>Visão completa do cadastro, contatos, endereços e financeiro.</DialogDescription>
               </DialogHeader>
-              <div className="mt-2 space-y-5">
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline">{detalhe.organizacao || ORGANIZACAO[instancia]}</Badge>
-                  <Badge variant={detalhe.contribuinte ? "default" : "secondary"}>
-                    {detalhe.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}
-                  </Badge>
-                  <Badge variant={detalhe.ativo ? "outline" : "destructive"}>{detalhe.ativo ? "Ativo" : "Inativo"}</Badge>
-                </div>
 
-                <div className="grid gap-4 lg:grid-cols-2 items-start">
-                  <Bloco titulo="Situação fiscal">
-                    <Linha rot="CNPJ" val={mascaraDoc(detalhe.doc ?? "")} />
-                    <Linha rot="Inscrição Estadual" val={detalhe.contribuinte ? detalhe.ie : "Isento / não contribuinte"} />
-                    <Linha rot="Situação da IE" val={detalhe.ie_situacao} />
-                    <Linha rot="Suframa" val={[detalhe.suframa, detalhe.suframa_situacao].filter(Boolean).join(" · ")} />
-                    <Linha rot="Regime tributário" val={detalhe.regime_tributario} />
-                    <Linha rot="Situação cadastral" val={detalhe.situacao_cadastral} />
-                    <Linha rot="Natureza jurídica" val={detalhe.natureza_juridica} />
-                    <Linha rot="Porte" val={detalhe.porte} />
-                    <Linha rot="Abertura" val={detalhe.data_abertura} />
-                    <Linha
-                      rot="CNAE principal"
-                      val={[detalhe.cnae_principal_codigo, detalhe.cnae_principal_descricao].filter(Boolean).join(" — ")}
-                    />
-                    <Linha rot="UF de destino" val={detalhe.uf} />
-                  </Bloco>
+              <div className="mt-1 space-y-5">
+                <ClienteCabecalho
+                  nome={detalhe.razao_social}
+                  fantasia={detalhe.nome_fantasia}
+                  consultor={consultorDoCliente(detalhe)}
+                  doc={detalhe.doc}
+                  sap={detalhe.numero_sap}
+                  selos={
+                    <>
+                      <Badge variant="outline">{detalhe.organizacao || ORGANIZACAO[instancia]}</Badge>
+                      <Badge variant={detalhe.contribuinte ? "default" : "secondary"}>
+                        {detalhe.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}
+                      </Badge>
+                      <Badge variant={detalhe.ativo ? "outline" : "destructive"}>{detalhe.ativo ? "Ativo" : "Inativo"}</Badge>
+                    </>
+                  }
+                />
 
-                  <Bloco titulo="Contatos">
+                <Tabs value={abaDetalhe} onValueChange={setAbaDetalhe} className="w-full">
+                  <TabsList className="w-full">
+                    <TabsTrigger value="contatos" className="gap-1.5"><Users className="h-3.5 w-3.5" /> Contatos</TabsTrigger>
+                    <TabsTrigger value="enderecos" className="gap-1.5"><MapPin className="h-3.5 w-3.5" /> Endereços</TabsTrigger>
+                    <TabsTrigger value="cadastrais" className="gap-1.5"><Building2 className="h-3.5 w-3.5" /> Dados cadastrais</TabsTrigger>
+                    <TabsTrigger value="financeiro" className="gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> Financeiro</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="contatos" className="mt-4 space-y-4">
+                    <Bloco titulo="Contato geral da empresa">
+                      <Linha rot="E-mail" val={detalhe.email} />
+                      <Linha rot="Telefone" val={detalhe.telefone} />
+                      <Linha rot="Site" val={detalhe.site} />
+                    </Bloco>
                     {normalizarContatos(detalhe.contatos, {
                       nome: detalhe.contato_nome, cargo: detalhe.contato_cargo,
                       email: detalhe.contato_email, telefone: detalhe.contato_telefone,
                     }).map((c, i) => (
-                      <div key={i} className="space-y-0.5">
-                        <Linha rot={TIPO_ROTULO[c.tipo]} val={[c.nome, c.cargo].filter(Boolean).join(" · ")} />
+                      <Bloco key={i} titulo={TIPO_ROTULO[c.tipo] ?? "Contato"}>
+                        <Linha rot="Nome" val={[c.nome, c.cargo].filter(Boolean).join(" · ")} />
                         <Linha rot="E-mail" val={c.emails.filter((v) => v.trim()).join(", ")} />
                         <Linha rot="Telefone" val={c.telefones.filter((v) => v.trim()).join(", ")} />
-                      </div>
+                      </Bloco>
                     ))}
-                    <Linha rot="E-mail da empresa" val={detalhe.email} />
-                    <Linha rot="Telefone da empresa" val={detalhe.telefone} />
-                    <Linha rot="Site" val={detalhe.site} />
-                  </Bloco>
+                  </TabsContent>
 
-                  <Bloco titulo="Endereço">
-                    <Linha rot="Logradouro" val={[detalhe.logradouro, detalhe.numero, detalhe.complemento].filter(Boolean).join(", ")} />
-                    <Linha rot="Bairro" val={detalhe.bairro} />
-                    <Linha rot="Cidade / UF" val={cidadeUf(detalhe.cidade, detalhe.uf, "")} />
-                    <Linha rot="CEP" val={detalhe.cep} />
-                  </Bloco>
-
-                  <Bloco titulo="Comercial">
-                    <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
-                    <Linha rot="Finalidade de uso" val={detalhe.finalidade} />
-                    <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
-                    <Linha rot="Consultor" val={consultorDoCliente(detalhe)} />
-                    <Linha rot="Cód. do consultor (SAP)" val={detalhe.consultor_sap} />
-                    <Linha rot="Observações" val={detalhe.observacoes} />
-                  </Bloco>
-
-                  <Bloco titulo="Origem do cadastro">
-                    <Linha rot="Origem" val={detalhe.origem} />
-                    <Linha rot="Sub-origem" val={detalhe.sub_origem} />
-                    <Linha rot="Cadastrado via" val={detalhe.origem_cadastro} />
-                    <Linha rot="Cadastrado por" val={detalhe.created_by_nome} />
-                    <Linha rot="Lead do Salesforce" val={detalhe.sf_lead_id} />
-                  </Bloco>
-
-                  {(detalhe.id_antigo || detalhe.legado) && (
-                    <Bloco titulo="Plataforma antiga">
-                      <Linha rot="ID do cliente na antiga" val={detalhe.id_antigo != null ? String(detalhe.id_antigo) : null} />
-                      {detalhe.legado ? (
-                        <details className="rounded-lg bg-muted/30 p-2 text-xs">
-                          <summary className="cursor-pointer font-semibold text-muted-foreground">
-                            Dados importados
-                          </summary>
-                          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words">
-                            {typeof detalhe.legado === "string"
-                              ? detalhe.legado
-                              : JSON.stringify(detalhe.legado, null, 2)}
-                          </pre>
-                        </details>
-                      ) : null}
+                  <TabsContent value="enderecos" className="mt-4 space-y-4">
+                    <Bloco titulo="Endereço de faturamento">
+                      <Linha rot="Logradouro" val={[detalhe.logradouro, detalhe.numero, detalhe.complemento].filter(Boolean).join(", ")} />
+                      <Linha rot="Bairro" val={detalhe.bairro} />
+                      <Linha rot="Cidade / UF" val={cidadeUf(detalhe.cidade, detalhe.uf, "")} />
+                      <Linha rot="CEP" val={detalhe.cep} />
                     </Bloco>
-                  )}
-                </div>
+                    <div className="space-y-2">
+                      <div className="text-xs font-bold uppercase tracking-wider text-primary">Endereços de entrega</div>
+                      <ClienteEnderecosEditor
+                        instancia={instancia}
+                        clienteId={detalhe.id}
+                        clienteDoc={detalhe.doc}
+                        somenteLeitura
+                      />
+                    </div>
+                  </TabsContent>
 
-                <CreditoClienteCard
-                  instancia={instancia}
-                  clienteId={detalhe.id}
-                  clienteDoc={detalhe.doc}
-                  clienteNome={detalhe.razao_social}
-                />
+                  <TabsContent value="cadastrais" className="mt-4 space-y-4">
+                    <Bloco titulo="Situação fiscal">
+                      <Linha rot="CNPJ" val={mascaraDoc(detalhe.doc ?? "")} />
+                      <Linha rot="Inscrição Estadual" val={detalhe.contribuinte ? detalhe.ie : "Isento / não contribuinte"} />
+                      <Linha rot="Situação da IE" val={detalhe.ie_situacao} />
+                      <Linha rot="Suframa" val={[detalhe.suframa, detalhe.suframa_situacao].filter(Boolean).join(" · ")} />
+                      <Linha rot="Regime tributário" val={detalhe.regime_tributario} />
+                      <Linha rot="Situação cadastral" val={detalhe.situacao_cadastral} />
+                      <Linha rot="Natureza jurídica" val={detalhe.natureza_juridica} />
+                      <Linha rot="Porte" val={detalhe.porte} />
+                      <Linha rot="Abertura" val={detalhe.data_abertura} />
+                      <Linha
+                        rot="CNAE principal"
+                        val={[detalhe.cnae_principal_codigo, detalhe.cnae_principal_descricao].filter(Boolean).join(" — ")}
+                      />
+                      <Linha rot="UF de destino" val={detalhe.uf} />
+                    </Bloco>
 
-                <ClientHistoryTab clienteNome={detalhe.razao_social} />
+                    <Bloco titulo="Dados comerciais">
+                      <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
+                      <Linha rot="Finalidade de uso" val={detalhe.finalidade} />
+                      <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
+                      <Linha rot="Consultor" val={consultorDoCliente(detalhe)} />
+                      <Linha rot="Cód. do consultor (SAP)" val={detalhe.consultor_sap} />
+                      <Linha rot="Observações" val={detalhe.observacoes} />
+                    </Bloco>
+
+                    <Bloco titulo="Origem do cadastro">
+                      <Linha rot="Origem" val={detalhe.origem} />
+                      <Linha rot="Sub-origem" val={detalhe.sub_origem} />
+                      <Linha rot="Cadastrado via" val={detalhe.origem_cadastro} />
+                      <Linha rot="Cadastrado por" val={detalhe.created_by_nome} />
+                      <Linha rot="Lead do Salesforce" val={detalhe.sf_lead_id} />
+                    </Bloco>
+
+                    {(detalhe.id_antigo || detalhe.legado) && (
+                      <Bloco titulo="Plataforma antiga">
+                        <Linha rot="ID do cliente na antiga" val={detalhe.id_antigo != null ? String(detalhe.id_antigo) : null} />
+                        {detalhe.legado ? (
+                          <details className="rounded-lg bg-muted/30 p-2 text-xs">
+                            <summary className="cursor-pointer font-semibold text-muted-foreground">
+                              Dados importados
+                            </summary>
+                            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words">
+                              {typeof detalhe.legado === "string"
+                                ? detalhe.legado
+                                : JSON.stringify(detalhe.legado, null, 2)}
+                            </pre>
+                          </details>
+                        ) : null}
+                      </Bloco>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="financeiro" className="mt-4">
+                    <CreditoClienteCard
+                      instancia={instancia}
+                      clienteId={detalhe.id}
+                      clienteDoc={detalhe.doc}
+                      clienteNome={detalhe.razao_social}
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
+
 
               <DialogFooter className="gap-2 sm:justify-end">
                 <Button variant="outline" onClick={() => setDetalhe(null)}>Fechar</Button>
