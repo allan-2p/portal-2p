@@ -2967,30 +2967,46 @@ function NovaPropostaSolarPage() {
   );
 }
 
-/** Clientes do cadastro 2P Solar. */
-function useQueryClientes() {
-  const list = useServerFn(listClientesFn);
-  return useReactQuery(list);
-}
+/**
+ * Clientes do cadastro 2P Solar com busca no servidor.
+ *
+ * A base tem milhares de cadastros (dezenas de MB), então carregar tudo de uma
+ * vez estourava a resposta e a lista vinha vazia. Aqui a pesquisa vai ao banco
+ * com debounce e traz só a página necessária, além de resolver o cliente já
+ * selecionado (edição de proposta) por documento.
+ */
+function useQueryClientes(busca: string, docSelecionado: string) {
+  const buscar = useServerFn(listClientesPaginaFn);
+  const termo = useDebouncedValue(busca.trim(), 300);
 
-function useReactQuery(list: ReturnType<typeof useServerFn<typeof listClientesFn>>) {
-  const [data, setData] = useState<Record<string, any>[]>([]);
-  useEffect(() => {
-    let vivo = true;
-    (async () => {
-      try {
-        const r = await list({ data: { instancia: "solar" } });
-        if (vivo) setData((r.clientes ?? []) as Record<string, any>[]);
-      } catch {
-        if (vivo) setData([]);
-      }
-    })();
-    return () => {
-      vivo = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return { data };
+  const lista = useQuery({
+    queryKey: ["clientes-busca", "solar", termo],
+    queryFn: () =>
+      buscar({ data: { instancia: "solar", q: termo || undefined, pagina: 1, porPagina: 25 } }),
+    staleTime: 60_000,
+  });
+
+  const sel = useQuery({
+    queryKey: ["cliente-doc", "solar", docSelecionado],
+    queryFn: () =>
+      buscar({ data: { instancia: "solar", q: docSelecionado, pagina: 1, porPagina: 5 } }),
+    enabled: !!docSelecionado,
+    staleTime: 5 * 60_000,
+  });
+
+  const rows = (lista.data?.clientes ?? []) as Record<string, any>[];
+  const selecionado =
+    rows.find((c) => String(c["doc"] ?? "") === docSelecionado) ??
+    ((sel.data?.clientes ?? []) as Record<string, any>[]).find(
+      (c) => String(c["doc"] ?? "") === docSelecionado,
+    ) ??
+    null;
+
+  const data = selecionado && !rows.some((c) => c["id"] === selecionado["id"])
+    ? [selecionado, ...rows]
+    : rows;
+
+  return { data, selecionado, isLoading: lista.isLoading || lista.isFetching };
 }
 
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
