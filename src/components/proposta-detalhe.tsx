@@ -15,7 +15,13 @@ import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
 import { cidadeUf } from "@/lib/local-format";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
-import { numeroAnterior, ehPlataformaAntiga, dadosLegado, pagamentosLegado } from "@/lib/proposta-legado";
+import {
+  numeroAnterior,
+  ehPlataformaAntiga,
+  dadosLegado,
+  pagamentosLegado,
+  bloqueiaReenvioSap,
+} from "@/lib/proposta-legado";
 import { useAuth } from "@/hooks/use-auth";
 import { NfDocumentosCard } from "@/components/nf-documentos-card";
 import { CobrancaCard } from "@/components/cobranca-card";
@@ -309,6 +315,10 @@ export function PropostaDetalheDialog({
   hasPrev?: boolean;
   hasNext?: boolean;
 }) {
+  const dq = usePropostaDetalhe(id);
+  // Proposta importada que já virou pedido no SAP não é reeditada (evita
+  // recalcular preços de algo já faturado). Sem OV, o orçamento é retomável.
+  const somenteLeitura = bloqueiaReenvioSap(dq.data as Record<string, any> | null | undefined);
   return (
     <Dialog open={!!id} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100vw-1.5rem)] max-w-6xl h-[92dvh] max-h-[92dvh] flex flex-col gap-0 overflow-hidden p-0">
@@ -349,12 +359,20 @@ export function PropostaDetalheDialog({
                   </Button>
                 </>
               )}
-              {id && (
+              {id && !somenteLeitura && (
                 <Button size="sm" className="gap-2" asChild>
                   <Link to="/carregadores/propostas/nova" search={{ id }}>
                     <Pencil className="h-4 w-4" /> Editar
                   </Link>
                 </Button>
+              )}
+              {id && somenteLeitura && (
+                <span
+                  className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground"
+                  title="Pedido importado da plataforma antiga já faturado no SAP — mantido como histórico."
+                >
+                  Somente leitura
+                </span>
               )}
 
             </span>
