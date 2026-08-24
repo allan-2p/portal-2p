@@ -8,14 +8,9 @@ export const getRouter = () => {
   // Erros de permissão/sessão viram mensagem amigável em qualquer tela do portal.
   const notify = (error: unknown) => {
     const f = toFriendlyError(error);
-    if (f.kind === "desconhecido") return;
-    toast.error(f.title, {
-      description: f.description,
-      action:
-        f.kind === "sessao"
-          ? { label: "Entrar", onClick: () => (window.location.href = "/auth") }
-          : undefined,
-    });
+    // Sessão expirada não gera toast: a própria tela redireciona para /auth.
+    if (f.kind === "desconhecido" || f.kind === "sessao") return;
+    toast.error(f.title, { description: f.description });
   };
 
   const queryClient = new QueryClient({
