@@ -80,6 +80,9 @@ export function CreditoClienteCard({
 
   const emAberto = (analises.data ?? []).find((a) => CREDITO_STATUS_ABERTOS.includes(a.status));
 
+  const podeEnviar =
+    !!contatoNome.trim() && !!obs.trim() && (!temSecundaria || (!!secNome.trim() && !!secDoc.trim()));
+
   const enviar = useMutation({
     mutationFn: () =>
       criar({
@@ -92,12 +95,21 @@ export function CreditoClienteCard({
           condicaoSolicitada: condicao || null,
           prioridade,
           observacoesVendedor: obs || null,
+          contatoNome: contatoNome || null,
+          contatoEmail: contatoEmail || null,
+          contatoTelefone: contatoTel || null,
+          empresaSecundaria: temSecundaria,
+          empresaSecundariaNome: temSecundaria ? secNome : null,
+          empresaSecundariaDoc: temSecundaria ? secDoc : null,
+          anexos,
         },
       }),
     onSuccess: (r) => {
       toast.success(`Solicitação ${r.numero} enviada ao Financeiro.`);
       setAberto(false);
       setValor(""); setCondicao(""); setPrioridade("Normal"); setObs("");
+      setContatoNome(""); setContatoEmail(""); setContatoTel("");
+      setTemSecundaria(false); setSecNome(""); setSecDoc(""); setAnexos([]);
       qc.invalidateQueries({ queryKey: ["credito-analises"] });
     },
     onError: (e: Error) => toast.error(e.message),
