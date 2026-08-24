@@ -10,11 +10,24 @@
 
 export type Grupo2pInstance = "solar" | "carregadores";
 
-/** Nome da organização gravado nas tabelas compartilhadas. */
+/**
+ * Valor CANÔNICO gravado na coluna `organizacao` das tabelas compartilhadas.
+ * Padronizado em código (slug), igual ao `instancia`/`InstanceId` do portal —
+ * os rótulos antigos ("2P Solar"/"2P Carregadores") foram normalizados na base
+ * e o banco tem CHECK aceitando apenas solar | carregadores | grupo | station.
+ * Para exibir na tela use ORGANIZACAO_LABEL.
+ */
 export const ORGANIZACAO: Record<Grupo2pInstance, string> = {
+  solar: "solar",
+  carregadores: "carregadores",
+};
+
+/** Rótulo de exibição da organização (nunca gravar no banco). */
+export const ORGANIZACAO_LABEL: Record<Grupo2pInstance, string> = {
   solar: "2P Solar",
   carregadores: "2P Carregadores",
 };
+
 
 export const GRUPO2P_DEFAULT_URL = "https://npzlinbglznnnwxxcawh.supabase.co";
 
