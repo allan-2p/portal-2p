@@ -1,3 +1,4 @@
+import { decomporPrecoCarregadores } from "./carregadores-impostos";
 // ============================================================================
 // Motor de cálculo e tipos do módulo de propostas (Portal 2P Carregadores).
 // Base: planilhas "Precificação Carregadores — Memória Cálculo",
