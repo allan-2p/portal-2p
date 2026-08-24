@@ -354,6 +354,7 @@ function NovaPropostaSolarPage() {
     const alvo = editId ?? dupId;
     if (!alvo || carregado.current) return;
     carregado.current = true;
+    ressincronizarBase.current = true;
     (async () => {
       const p = await obterPropostaFn({ data: { id: alvo } }).catch(() => null);
       if (!p) return toast.error("Não foi possível carregar a proposta.");
