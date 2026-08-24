@@ -81,6 +81,24 @@ export async function enriquecerVendedorSap(row: Record<string, any>): Promise<R
   const travado = String(row["sap_vendedor_codigo"] ?? "").trim();
   if (travado) return { ...row, consultor_codigo_sap: travado };
 
+  // Origem canônica: o par consultor_sap/consultor_nome do cadastro do cliente.
+  try {
+    const { consultorDoClientePorDoc } = await import("./consultor-sap.server");
+    const org = String(row["organizacao"] ?? "").toLowerCase().includes("carregador")
+      ? ("carregadores" as const)
+      : ("solar" as const);
+    const doCliente = await consultorDoClientePorDoc(String(row["cliente_doc"] ?? ""), org);
+    if (doCliente.sap) {
+      return {
+        ...row,
+        consultor_codigo_sap: doCliente.sap,
+        consultor_nome: String(row["consultor_nome"] ?? "").trim() || doCliente.nome,
+      };
+    }
+  } catch {
+    /* sem cadastro: cai no perfil do consultor da proposta */
+  }
+
   const id = String(row["consultor_id"] ?? "").trim();
   const nome = String(row["consultor_nome"] ?? "").trim();
   if (!id && !nome) return row;
