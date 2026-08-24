@@ -178,9 +178,18 @@ export const setCarregadoresProductAtivo = createServerFn({ method: "POST" })
       if (impedimento) throw new Error(impedimento);
     }
 
+    // Decisão manual vira override: a varredura de preço do SAP (que ativa/
+    // desativa pelo critério "tem preço na VK12") não desfaz o que o time
+    // definiu aqui. O override fica registrado na auditoria de moderação.
     const { data: updated, error } = await supabaseAdmin
       .from("sap_produtos")
-      .update({ ativo: data.ativo })
+      .update({
+        ativo: data.ativo,
+        ativo_override: data.ativo,
+        ativo_override_por: (context as any).userId ?? null,
+        ativo_override_em: new Date().toISOString(),
+        ativo_override_motivo: "Definido manualmente na Gestão de Produtos.",
+      } as any)
       .eq("id", data.id)
       .select(COLS)
       .maybeSingle();
@@ -193,6 +202,10 @@ export const setCarregadoresProductAtivo = createServerFn({ method: "POST" })
       action: data.ativo ? "ativou" : "desativou",
       target: (atual as any).descricao,
       summary: `Produto ${data.ativo ? "ativado" : "desativado"}: ${(atual as any).descricao}`,
+      details: {
+        override_manual: true,
+        vendavel_sap: (atual as any).vendavel_sap ?? null,
+      },
     });
 
     return { product: toProduct(updated) };
