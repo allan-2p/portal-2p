@@ -709,7 +709,9 @@ function PropostaCarregadoresPage() {
         ? "Frete CIF sem valor calculado — refaça a cotação."
         : state.freteMod === "DEDICADO" && !(state.freteValor > 0)
           ? "Informe o valor do frete dedicado."
-          : null;
+          : state.freteMod === "DEDICADO" && !state.transportadora
+            ? "Selecione a transportadora do frete dedicado."
+            : null;
   const freteInvalido = !!erroFreteMsg;
   // ---- Validação da etapa 1 (identificação) e etapa 2 (faturamento) ----
   const soDigitos = (v: string) => (v || "").replace(/\D/g, "");
