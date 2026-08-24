@@ -118,12 +118,12 @@ export async function excluirProposta(id: string): Promise<void> {
 
 /**
  * Nº da proposta (NROPED): inteiro puro, SEM zeros à esquerda, e é o próprio
- * número enviado ao SAP. Após a migração, a sequence do banco está em 100026
- * (próximo = 100027).
+ * número enviado ao SAP. Faixa nativa do portal começa em 60001; a sequence
+ * `propostas_numero_seq` do banco está em 60026 (próximo = 60027).
  */
-export const NUMERO_PROPOSTA_INICIAL = 100027;
+export const NUMERO_PROPOSTA_INICIAL = 60027;
 
-/** Faixa ocupada pelos pedidos da plataforma antiga no SAP. */
+/** Faixa ocupada pelos pedidos da plataforma antiga no SAP (não puxa a sequence). */
 export const NUMERO_LEGADO_MAX = 53059;
 
 /**

@@ -15,7 +15,8 @@ import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
 import { cidadeUf } from "@/lib/local-format";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
-import { numeroAnterior, ehPlataformaAntiga } from "@/lib/proposta-legado";
+import { numeroAnterior, ehPlataformaAntiga, dadosLegado, pagamentosLegado } from "@/lib/proposta-legado";
+import { useAuth } from "@/hooks/use-auth";
 import { NfDocumentosCard } from "@/components/nf-documentos-card";
 import { CobrancaCard } from "@/components/cobranca-card";
 import { BoletosSharepointCard } from "@/components/boletos-sharepoint-card";
@@ -53,6 +54,9 @@ export function usePropostaDetalhe(id?: string) {
 /** Conteúdo completo da proposta — usado no pop-up e na rota de link direto. */
 export function PropostaDetalhe({ id }: { id?: string }) {
   const q = usePropostaDetalhe(id);
+  const { hasAnyRole } = useAuth();
+  // Observações internas e histórico da antiga são de uso interno — nunca do cliente.
+  const podeVerInterno = hasAnyRole(["admin", "diretor", "gerente", "vendedor"]);
   const p = q.data as Record<string, any> | null | undefined;
   const itens: Item[] = (p?.['itens'] as Item[]) ?? [];
   const totais: Record<string, number> = (p?.['totais'] as Record<string, number>) ?? {};
@@ -122,7 +126,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           ) : null}
         </div>
 
-        {p['observacoes_internas'] ? (
+        {podeVerInterno && p['observacoes_internas'] ? (
           <div className="rounded-xl bg-muted/40 p-3 text-sm">
             <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1">
               Observações internas
@@ -133,6 +137,8 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
         <PropostaPdfAcoes proposta={p} />
       </div>
+
+      {podeVerInterno && ehPlataformaAntiga(p) ? <LegadoCard proposta={p} /> : null}
 
       <div className="glass rounded-2xl p-5 space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -447,5 +453,72 @@ function PropostaPdfAcoes({ proposta }: { proposta: Record<string, any> }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+
+/** Histórico e detalhes técnicos herdados da plataforma antiga. */
+function LegadoCard({ proposta }: { proposta: Record<string, any> }) {
+  const legado = dadosLegado(proposta);
+  const pagamentos = pagamentosLegado(proposta);
+  const anterior = numeroAnterior(proposta);
+  const projeto = proposta['projeto_antigo_id'];
+  if (!legado && !pagamentos.length && !anterior && !projeto) return null;
+
+  return (
+    <div className="glass rounded-2xl p-5 space-y-4">
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        Dados da plataforma antiga
+      </h3>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        {anterior ? <Campo label="Nº anterior" value={anterior} /> : null}
+        {projeto ? <Campo label="Projeto de origem" value={String(projeto)} /> : null}
+        <Campo label="Nº do pedido (SAP)" value={formatSapNumero(proposta['sap_ov_numero'] || proposta['numero_sap']) || "—"} />
+      </div>
+
+      {pagamentos.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+            Histórico de cobranças
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-border/60">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-left font-semibold">Descrição</th>
+                  <th className="px-3 py-2 text-left font-semibold">Documento</th>
+                  <th className="px-3 py-2 text-left font-semibold">Data</th>
+                  <th className="px-3 py-2 text-left font-semibold">Situação</th>
+                  <th className="px-3 py-2 text-right font-semibold">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pagamentos.map((pg, i) => (
+                  <tr key={i} className="border-t border-border/50">
+                    <td className="px-3 py-2">{pg.descricao || "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{pg.documento || "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{pg.data ? fmtData(pg.data) : "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{pg.status || "—"}</td>
+                    <td className="px-3 py-2 text-right">{pg.valor != null ? fmtBRL(pg.valor) : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {legado ? (
+        <details className="rounded-xl bg-muted/30 p-3 text-xs">
+          <summary className="cursor-pointer font-semibold text-muted-foreground">
+            Dados técnicos importados
+          </summary>
+          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words">
+            {JSON.stringify(legado, null, 2)}
+          </pre>
+        </details>
+      ) : null}
+    </div>
   );
 }
