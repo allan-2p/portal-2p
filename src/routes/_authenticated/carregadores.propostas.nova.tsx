@@ -236,13 +236,19 @@ function PropostaCarregadoresPage() {
   const carregado = useRef(false);
 
   // Alterações não salvas: assinatura do estado comparada com o último
-  // salvamento. Base é definida ao montar e refeita a cada gravação.
+  // salvamento. A base é fixada ao montar, ao carregar uma proposta existente
+  // e sempre que a gravação termina (`ressincronizarBase`).
   const assinatura = JSON.stringify(state);
-  const baseSalva = useRef<string | null>(null);
+  const [baseSalva, setBaseSalva] = useState<string | null>(null);
+  const ressincronizarBase = useRef(false);
   useEffect(() => {
-    if (baseSalva.current === null) baseSalva.current = assinatura;
-  }, [assinatura]);
-  const sujo = baseSalva.current !== null && baseSalva.current !== assinatura && !saving;
+    if (baseSalva === null || ressincronizarBase.current) {
+      ressincronizarBase.current = false;
+      setBaseSalva(assinatura);
+    }
+  }, [assinatura, baseSalva, saving]);
+  const sujo = baseSalva !== null && baseSalva !== assinatura && !saving;
+
 
   // Bloqueia navegação interna enquanto a proposta está sendo salva/concluída
   useBlocker({
