@@ -557,3 +557,104 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+
+/**
+ * Override manual do "ativo": o time decide, e a varredura de preço do SAP
+ * (`sap.sync-produtos`) passa a respeitar essa decisão. `override: null` volta
+ * o material para o critério automático (tem preço na VK12 → ativo).
+ */
+export const setSapProdutoOverride = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        override: z.boolean().nullable(),
+        motivo: z.string().trim().max(300).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await requireAnyFeature(context, [
+      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
+    ]);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: atual, error: readErr } = await supabaseAdmin
+      .from("sap_produtos")
+      .select("codigo, descricao, ativo, vendavel_sap")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!atual) throw new Error("Produto não encontrado.");
+
+    // Sem override, o status volta a ser o que a varredura encontrou.
+    const ativo = data.override ?? Boolean((atual as any).vendavel_sap);
+    const { error } = await supabaseAdmin
+      .from("sap_produtos")
+      .update({
+        ativo,
+        ativo_override: data.override,
+        ativo_override_por: data.override === null ? null : ((context as any).userId ?? null),
+        ativo_override_em: data.override === null ? null : new Date().toISOString(),
+        ativo_override_motivo: data.override === null ? null : (data.motivo ?? "Definido manualmente na Gestão de Produtos."),
+      } as any)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin
+      .from("produtos")
+      .update({ ativo })
+      .eq("origem", "sap")
+      .eq("codigo", String((atual as any).codigo));
+
+    await recordModeration(context, {
+      area: "sap_produtos",
+      instanceId: "admin",
+      action: data.override === null ? "override-removido" : data.override ? "ativou" : "desativou",
+      target: (atual as any).descricao,
+      summary:
+        data.override === null
+          ? `Override manual removido: ${(atual as any).descricao} volta ao critério de preço do SAP.`
+          : `Override manual: ${(atual as any).descricao} ${data.override ? "ativado" : "desativado"} independente do preço do SAP.`,
+      details: { vendavel_sap: (atual as any).vendavel_sap ?? null, motivo: data.motivo ?? null },
+    });
+
+    return { ok: true };
+  });
+
+/** Roda a varredura de preço do SAP sob demanda (mesmo motor do cron). */
+export const varrerCatalogoVendaveisAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({ limite: z.number().int().min(1).max(900).optional(), codigos: z.array(z.string()).optional() })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await requireAnyFeature(context, [
+      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
+    ]);
+    const { runJob } = await import("@/lib/job-runs.server");
+    const { varrerCatalogoVendaveis } = await import("@/lib/sap-catalogo-vendaveis.server");
+    const r = await runJob(
+      {
+        job: "sap.sync-produtos",
+        trigger: "manual",
+        payload: { limite: data.limite ?? 250, codigos: data.codigos?.length ?? 0 },
+        actorId: (context as any).userId ?? null,
+      },
+      () =>
+        varrerCatalogoVendaveis({
+          limite: data.limite ?? 250,
+          ...(data.codigos?.length ? { codigos: data.codigos } : {}),
+          actorId: (context as any).userId ?? null,
+        }),
+    );
+    if (!r.ok) throw new Error(r.error);
+    return r.result;
+  });
