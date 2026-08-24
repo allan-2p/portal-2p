@@ -21,6 +21,8 @@ import {
   listSapProdutos,
   listSapSyncRuns,
   setSapProdutoVisibilidade,
+  setSapProdutoOverride,
+  varrerCatalogoVendaveisAction,
   syncSapProdutos,
   type SapSyncResult,
   type SapVisibilidade,
