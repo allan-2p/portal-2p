@@ -141,17 +141,39 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
       </div>`;
   };
 
-  const estrutura =
-    p.estrutura?.distribuicao?.length || p.estrutura?.comprimentos?.length
-      ? `
+  const fileiras = (p.estrutura?.fileiras ?? []).filter((f) => Number(f?.modulos) > 0);
+  const totalModulos = fileiras.reduce((s, f) => s + Number(f.fileiras || 0) * Number(f.modulos || 0), 0);
+  const estrutura = fileiras.length
+    ? `
     <div class="sec">
-      <div class="sech"><span>Estrutura calculada</span></div>
-      <div class="card"><div class="soft" style="font-size:9.6px;line-height:1.6">
-        ${p.estrutura?.distribuicao?.length ? `Fileiras: <b>${esc(p.estrutura.distribuicao.join(" + "))}</b> módulos<br>` : ""}
-        ${p.estrutura?.comprimentos?.length ? `Comprimentos: <b>${esc(p.estrutura.comprimentos.map((c) => `${(c / 1000).toFixed(2)} m`).join(" · "))}</b>` : ""}
-      </div></div>
+      <div class="sech"><span>Disposição dos painéis nas fileiras</span></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Trilho</th><th>Suporte</th><th class="c">Fileiras</th><th class="c">Módulos/fileira</th>
+            <th class="c">Orientação</th><th class="c">Vão máx.</th><th class="c">Balanço</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${fileiras
+            .map(
+              (f) => `<tr>
+            <td class="pname">${esc(f.trilho ?? "—")}</td>
+            <td>${esc(f.suporte ?? "—")}</td>
+            <td class="c">${esc(f.fileiras ?? "—")}</td>
+            <td class="c">${esc(f.modulos ?? "—")}</td>
+            <td class="c">${esc(f.orientacao ?? "—")}</td>
+            <td class="c">${f.vao ? `${esc(f.vao)} m` : "—"}</td>
+            <td class="c">${f.balanco ? `${esc(f.balanco)} m` : "—"}</td>
+          </tr>`,
+            )
+            .join("")}
+        </tbody>
+        <tfoot><tr><td colspan="7">Total de ${totalModulos} módulo(s) distribuído(s) em ${fileiras.reduce((s, f) => s + Number(f.fileiras || 0), 0)} fileira(s).</td></tr></tfoot>
+      </table>
     </div>`
-      : "";
+    : "";
+
 
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8">
