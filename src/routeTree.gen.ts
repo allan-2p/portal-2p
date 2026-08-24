@@ -84,6 +84,7 @@ import { Route as ApiPublicHooksSapCatalogoVendaveisRouteImport } from './routes
 import { Route as ApiPublicHooksPixReconsultaRouteImport } from './routes/api/public/hooks/pix-reconsulta'
 import { Route as ApiPublicHooksPixItauRouteImport } from './routes/api/public/hooks/pix-itau'
 import { Route as ApiPublicHooksPagamentoLinkRouteImport } from './routes/api/public/hooks/pagamento-link'
+import { Route as ApiPublicHooksItauDiagnosticoRouteImport } from './routes/api/public/hooks/itau-diagnostico'
 import { Route as ApiPublicHooksFretefyTrackingRouteImport } from './routes/api/public/hooks/fretefy-tracking'
 import { Route as ApiPublicHooksEstoqueSyncRouteImport } from './routes/api/public/hooks/estoque-sync'
 import { Route as ApiPublicHooksBoletosSharepointRouteImport } from './routes/api/public/hooks/boletos-sharepoint'
@@ -536,6 +537,12 @@ const ApiPublicHooksPagamentoLinkRoute =
     path: '/api/public/hooks/pagamento-link',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksItauDiagnosticoRoute =
+  ApiPublicHooksItauDiagnosticoRouteImport.update({
+    id: '/api/public/hooks/itau-diagnostico',
+    path: '/api/public/hooks/itau-diagnostico',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksFretefyTrackingRoute =
   ApiPublicHooksFretefyTrackingRouteImport.update({
     id: '/api/public/hooks/fretefy-tracking',
@@ -753,6 +760,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
+  '/api/public/hooks/itau-diagnostico': typeof ApiPublicHooksItauDiagnosticoRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
   '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
@@ -847,6 +855,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
+  '/api/public/hooks/itau-diagnostico': typeof ApiPublicHooksItauDiagnosticoRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
   '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
@@ -947,6 +956,7 @@ export interface FileRoutesById {
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
+  '/api/public/hooks/itau-diagnostico': typeof ApiPublicHooksItauDiagnosticoRoute
   '/api/public/hooks/pagamento-link': typeof ApiPublicHooksPagamentoLinkRoute
   '/api/public/hooks/pix-itau': typeof ApiPublicHooksPixItauRouteWithChildren
   '/api/public/hooks/pix-reconsulta': typeof ApiPublicHooksPixReconsultaRoute
@@ -1047,6 +1057,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
     | '/api/public/hooks/fretefy-tracking'
+    | '/api/public/hooks/itau-diagnostico'
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
     | '/api/public/hooks/pix-reconsulta'
@@ -1141,6 +1152,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
     | '/api/public/hooks/fretefy-tracking'
+    | '/api/public/hooks/itau-diagnostico'
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
     | '/api/public/hooks/pix-reconsulta'
@@ -1240,6 +1252,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
     | '/api/public/hooks/fretefy-tracking'
+    | '/api/public/hooks/itau-diagnostico'
     | '/api/public/hooks/pagamento-link'
     | '/api/public/hooks/pix-itau'
     | '/api/public/hooks/pix-reconsulta'
@@ -1272,6 +1285,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBoletosSharepointRoute: typeof ApiPublicHooksBoletosSharepointRoute
   ApiPublicHooksEstoqueSyncRoute: typeof ApiPublicHooksEstoqueSyncRoute
   ApiPublicHooksFretefyTrackingRoute: typeof ApiPublicHooksFretefyTrackingRoute
+  ApiPublicHooksItauDiagnosticoRoute: typeof ApiPublicHooksItauDiagnosticoRoute
   ApiPublicHooksPagamentoLinkRoute: typeof ApiPublicHooksPagamentoLinkRoute
   ApiPublicHooksPixItauRoute: typeof ApiPublicHooksPixItauRouteWithChildren
   ApiPublicHooksPixReconsultaRoute: typeof ApiPublicHooksPixReconsultaRoute
@@ -1809,6 +1823,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPagamentoLinkRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/itau-diagnostico': {
+      id: '/api/public/hooks/itau-diagnostico'
+      path: '/api/public/hooks/itau-diagnostico'
+      fullPath: '/api/public/hooks/itau-diagnostico'
+      preLoaderRoute: typeof ApiPublicHooksItauDiagnosticoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/fretefy-tracking': {
       id: '/api/public/hooks/fretefy-tracking'
       path: '/api/public/hooks/fretefy-tracking'
@@ -2244,6 +2265,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksBoletosSharepointRoute: ApiPublicHooksBoletosSharepointRoute,
   ApiPublicHooksEstoqueSyncRoute: ApiPublicHooksEstoqueSyncRoute,
   ApiPublicHooksFretefyTrackingRoute: ApiPublicHooksFretefyTrackingRoute,
+  ApiPublicHooksItauDiagnosticoRoute: ApiPublicHooksItauDiagnosticoRoute,
   ApiPublicHooksPagamentoLinkRoute: ApiPublicHooksPagamentoLinkRoute,
   ApiPublicHooksPixItauRoute: ApiPublicHooksPixItauRouteWithChildren,
   ApiPublicHooksPixReconsultaRoute: ApiPublicHooksPixReconsultaRoute,
