@@ -1605,8 +1605,13 @@ function PropostaCarregadoresPage() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
-                      <Command>
-                        <CommandInput placeholder="Buscar cliente..." />
+                      <Command shouldFilter={false}>
+                        <CommandInput
+                          placeholder="Buscar cliente por nome, CNPJ/CPF..."
+                          value={buscaCliente}
+                          onValueChange={setBuscaCliente}
+                        />
+
                         <CommandList>
                           <CommandEmpty>
                             <div className="px-3 py-4 text-center text-sm text-muted-foreground space-y-2">
