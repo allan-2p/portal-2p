@@ -39,10 +39,12 @@ const FRASES = [
 export function ConclusaoProgresso({ fase }: { fase: ConclusaoFase }) {
   const aberto = fase !== null;
   const [ativo, setAtivo] = useState(0);
+  const [fraseIdx, setFraseIdx] = useState(0);
 
   useEffect(() => {
     if (!aberto) {
       setAtivo(0);
+      setFraseIdx(0);
       return;
     }
     if (fase === "salvando") {
@@ -52,6 +54,7 @@ export function ConclusaoProgresso({ fase }: { fase: ConclusaoFase }) {
     setAtivo((a) => (a < 1 ? 1 : a));
     const t = setInterval(() => {
       setAtivo((a) => (a < PASSOS.length - 1 ? a + 1 : a));
+      setFraseIdx((i) => (i + 1) % FRASES.length);
     }, 2600);
     return () => clearInterval(t);
   }, [aberto, fase]);
