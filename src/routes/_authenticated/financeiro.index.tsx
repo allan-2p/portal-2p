@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Landmark, Receipt, ArrowRight } from "lucide-react";
+import { Landmark, Receipt, ArrowRight, ShieldCheck } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
 import { useInstance } from "@/components/instance-provider";
 
@@ -51,6 +51,25 @@ function FinanceiroHome() {
               <span className="block font-semibold">Condições de Pagamento (ZTERM)</span>
               <span className="block text-sm text-muted-foreground">
                 Catálogo de condições enviadas ao SAP — ativar, desativar e ajustar parcelas.
+              </span>
+            </span>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        )}
+
+        {hasFeature("financeiro.credito") && (
+          <Link
+            to="/financeiro/credito"
+            preload="intent"
+            className="group flex items-center gap-4 rounded-xl border border-border bg-surface p-5 hover:bg-surface-2 transition-colors"
+          >
+            <span className="h-11 w-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <ShieldCheck className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">Análise de Crédito</span>
+              <span className="block text-sm text-muted-foreground">
+                Fila de solicitações dos vendedores — analisar, liberar limite e definir condição a prazo.
               </span>
             </span>
             <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />

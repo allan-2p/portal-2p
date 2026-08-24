@@ -2463,6 +2463,8 @@ function PropostaCarregadoresPage() {
                   <CondicaoPagamentoSelect
                     value={state.condicaoPagamento}
                     onChange={(v) => set("condicaoPagamento", v)}
+                    clienteDoc={String(state.doc ?? "")}
+                    valorTotal={d.valorTotalProposta}
                   />
                 </Field>
 
