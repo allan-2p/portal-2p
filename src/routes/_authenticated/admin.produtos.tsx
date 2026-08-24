@@ -994,9 +994,53 @@ function ProdutosPage() {
                       </Select>
                     </td>
                     <td className="px-3 py-2">
-                      <Badge variant={p.ativo ? "default" : "outline"}>
-                        {p.ativo ? "Ativo" : "Inativo"}
-                      </Badge>
+                      {p.vendavel_sap === null || p.vendavel_sap === undefined ? (
+                        <Badge variant="outline" title="Nunca verificado — clique em “Verificar preços”.">
+                          Não verificado
+                        </Badge>
+                      ) : p.vendavel_sap ? (
+                        <Badge
+                          variant="secondary"
+                          title={`Preço encontrado no SAP${p.preco_checado_em ? ` em ${fmt(p.preco_checado_em)}` : ""}`}
+                        >
+                          Com preço
+                          {p.preco_vk12
+                            ? ` • ${p.preco_vk12.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`
+                            : ""}
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive" title="Sem condição de preço vigente (VK12) — não pode ser vendido.">
+                          Sem preço
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={p.ativo ? "default" : "outline"}>
+                          {p.ativo ? "Ativo" : "Inativo"}
+                        </Badge>
+                        <Select
+                          value={p.ativo_override === null || p.ativo_override === undefined ? "auto" : p.ativo_override ? "on" : "off"}
+                          onValueChange={(v) =>
+                            overrideMut.mutate({
+                              id: p.id,
+                              override: v === "auto" ? null : v === "on",
+                            })
+                          }
+                        >
+                          <SelectTrigger
+                            className="h-7 w-[132px] text-xs"
+                            title={p.ativo_override_motivo ?? "Automático: segue o preço do SAP."}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Automático</SelectItem>
+                            <SelectItem value="on">Forçar ativo</SelectItem>
+                            <SelectItem value="off">Forçar inativo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </td>
                     {audit && (
                       <td className="px-3 py-2 text-xs">
