@@ -65,7 +65,7 @@ import {
   type CarregadoresTransportadora,
 } from "@/lib/carregadores";
 import { useCarregadoresNcms, useCarregadoresConfig } from "@/hooks/use-carregadores";
-import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
+import { listClientesPaginaFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn, concluirPropostaFn } from "@/lib/propostas.functions";
 import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/resultado-conclusao-dialog";
 import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-progresso";
