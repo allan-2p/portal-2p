@@ -3,7 +3,8 @@ import { cidadeUf, cidadeUfCep } from "@/lib/local-format";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,7 +65,7 @@ import {
   type CarregadoresTransportadora,
 } from "@/lib/carregadores";
 import { useCarregadoresNcms, useCarregadoresConfig } from "@/hooks/use-carregadores";
-import { listClientesFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
+import { listClientesPaginaFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { obterPropostaFn, concluirPropostaFn } from "@/lib/propostas.functions";
 import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/resultado-conclusao-dialog";
 import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-progresso";
@@ -310,7 +311,8 @@ function NovaPropostaSolarPage() {
   };
 
 
-  const clientesQ = useQueryClientes();
+  const [buscaCliente, setBuscaCliente] = useState("");
+  const clientesQ = useQueryClientes(buscaCliente, clienteDoc);
   const produtosQ = useSolarProdutos();
   const modulosQ = useSolarModulos();
   const geradoresQ = useSolarGeradores();
@@ -329,10 +331,7 @@ function NovaPropostaSolarPage() {
 
   const produtos = produtosQ.data ?? [];
   const config = cfgQ.data ?? SOLAR_CALC_CONFIG_FALLBACK;
-  const cliente: ClienteCad | null = useMemo(
-    () => (clientesQ.data ?? []).find((c: any) => String(c.doc) === clienteDoc) ?? null,
-    [clientesQ.data, clienteDoc],
-  );
+  const cliente = (clientesQ.selecionado ?? null) as ClienteCad | null;
 
   const suportesDe = (tid: string) => {
     const ids = (combQ.data ?? {})[tid] ?? [];
@@ -1555,9 +1554,13 @@ function NovaPropostaSolarPage() {
                     value: String(c.doc),
                     label: `${c.razao_social} — ${c.doc}`,
                   }))}
+                  busca={buscaCliente}
+                  onBuscaChange={setBuscaCliente}
+                  carregando={clientesQ.isLoading}
                   placeholder="Digite para pesquisar no cadastro de clientes"
                   vazio="Nenhum cliente encontrado."
                 />
+
 
                 {tentou && !cliente && <Erro>Selecione o cliente.</Erro>}
               </Campo>
@@ -2966,30 +2969,46 @@ function NovaPropostaSolarPage() {
   );
 }
 
-/** Clientes do cadastro 2P Solar. */
-function useQueryClientes() {
-  const list = useServerFn(listClientesFn);
-  return useReactQuery(list);
-}
+/**
+ * Clientes do cadastro 2P Solar com busca no servidor.
+ *
+ * A base tem milhares de cadastros (dezenas de MB), então carregar tudo de uma
+ * vez estourava a resposta e a lista vinha vazia. Aqui a pesquisa vai ao banco
+ * com debounce e traz só a página necessária, além de resolver o cliente já
+ * selecionado (edição de proposta) por documento.
+ */
+function useQueryClientes(busca: string, docSelecionado: string) {
+  const buscar = useServerFn(listClientesPaginaFn);
+  const termo = useDebouncedValue(busca.trim(), 300);
 
-function useReactQuery(list: ReturnType<typeof useServerFn<typeof listClientesFn>>) {
-  const [data, setData] = useState<Record<string, any>[]>([]);
-  useEffect(() => {
-    let vivo = true;
-    (async () => {
-      try {
-        const r = await list({ data: { instancia: "solar" } });
-        if (vivo) setData((r.clientes ?? []) as Record<string, any>[]);
-      } catch {
-        if (vivo) setData([]);
-      }
-    })();
-    return () => {
-      vivo = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return { data };
+  const lista = useQuery({
+    queryKey: ["clientes-busca", "solar", termo],
+    queryFn: () =>
+      buscar({ data: { instancia: "solar", q: termo || undefined, pagina: 1, porPagina: 25 } }),
+    staleTime: 60_000,
+  });
+
+  const sel = useQuery({
+    queryKey: ["cliente-doc", "solar", docSelecionado],
+    queryFn: () =>
+      buscar({ data: { instancia: "solar", q: docSelecionado, pagina: 1, porPagina: 5 } }),
+    enabled: !!docSelecionado,
+    staleTime: 5 * 60_000,
+  });
+
+  const rows = (lista.data?.clientes ?? []) as Record<string, any>[];
+  const selecionado =
+    rows.find((c) => String(c["doc"] ?? "") === docSelecionado) ??
+    ((sel.data?.clientes ?? []) as Record<string, any>[]).find(
+      (c) => String(c["doc"] ?? "") === docSelecionado,
+    ) ??
+    null;
+
+  const data = selecionado && !rows.some((c) => c["id"] === selecionado["id"])
+    ? [selecionado, ...rows]
+    : rows;
+
+  return { data, selecionado, isLoading: lista.isLoading || lista.isFetching };
 }
 
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
@@ -3007,15 +3026,23 @@ function SeletorPesquisavel({
   opcoes,
   placeholder,
   vazio,
+  busca,
+  onBuscaChange,
+  carregando,
 }: {
   value: string;
   onValueChange: (value: string) => void;
   opcoes: { value: string; label: string }[];
   placeholder: string;
   vazio: string;
+  /** Quando informado, a pesquisa é feita no servidor (sem filtro local). */
+  busca?: string;
+  onBuscaChange?: (busca: string) => void;
+  carregando?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const selecionada = opcoes.find((o) => o.value === value);
+  const remoto = typeof onBuscaChange === "function";
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
       <PopoverTrigger asChild>
@@ -3031,10 +3058,15 @@ function SeletorPesquisavel({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
-          <CommandInput placeholder={placeholder} />
+        <Command shouldFilter={!remoto}>
+          <CommandInput
+            placeholder={placeholder}
+            value={remoto ? busca : undefined}
+            onValueChange={remoto ? onBuscaChange : undefined}
+          />
           <CommandList>
-            <CommandEmpty>{vazio}</CommandEmpty>
+            <CommandEmpty>{carregando ? "Buscando..." : vazio}</CommandEmpty>
+
             {opcoes.map((opcao) => (
               <CommandItem
                 key={opcao.value}
