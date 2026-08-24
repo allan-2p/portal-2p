@@ -122,7 +122,9 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
         preco_venda: est?.preco_venda ?? 0,
         visibilidade: (anterior as any)?.visibilidade ?? "solar",
         no_catalogo: !!cat?.liberado,
-        ativo: (anterior as any)?.ativo ?? true,
+        // Material novo entra inativo: só vira vendável quando a varredura de
+        // preço (sap.sync-produtos) encontrar preço vigente no SAP.
+        ativo: (anterior as any)?.ativo ?? false,
         origem: "sap",
         last_synced_at: now,
       };
