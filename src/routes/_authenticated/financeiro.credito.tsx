@@ -423,6 +423,25 @@ function AnalisarDialog({
                 </div>
               </div>
 
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Responsável pela análise{atual.status === "Análise Concluída" ? " *" : ""}</Label>
+                  <Input
+                    value={atual.responsavel}
+                    onChange={(e) => set({ responsavel: e.target.value })}
+                    placeholder="Analista do Financeiro"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Autorização da diretoria</Label>
+                  <Input
+                    value={atual.diretoria}
+                    onChange={(e) => set({ diretoria: e.target.value })}
+                    placeholder="Quem autorizou (se houve)"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <Label>Observações do Financeiro</Label>
                 <Textarea
