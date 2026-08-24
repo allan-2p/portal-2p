@@ -1554,9 +1554,13 @@ function NovaPropostaSolarPage() {
                     value: String(c.doc),
                     label: `${c.razao_social} — ${c.doc}`,
                   }))}
+                  busca={buscaCliente}
+                  onBuscaChange={setBuscaCliente}
+                  carregando={clientesQ.isLoading}
                   placeholder="Digite para pesquisar no cadastro de clientes"
                   vazio="Nenhum cliente encontrado."
                 />
+
 
                 {tentou && !cliente && <Erro>Selecione o cliente.</Erro>}
               </Campo>
