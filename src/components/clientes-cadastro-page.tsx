@@ -28,6 +28,7 @@ import { CreditoClienteCard } from "@/components/credito-cliente-card";
 import { ClienteEnderecosEditor } from "@/components/cliente-enderecos-editor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatSapNumero } from "@/lib/sap-numero";
+import { CondicaoPagamentoCatalogoSelect } from "@/components/condicao-pagamento-catalogo-select";
 
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
@@ -913,11 +914,18 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <TabsContent value="financeiro" className="mt-4 space-y-6">
                   <Section title="Condições de pagamento liberadas">
                     <F label="Condição de pagamento">
-                      <Input value={form.condicao_pagamento ?? ""} onChange={(e) => set("condicao_pagamento", e.target.value)} placeholder="Ex.: 30/60/90" />
+                      <CondicaoPagamentoCatalogoSelect
+                        codigo={form.condicao_pgto_sap ?? ""}
+                        descricao={form.condicao_pagamento ?? ""}
+                        onChange={(v) => {
+                          set("condicao_pagamento", v.descricao);
+                          set("condicao_pgto_sap", v.codigo);
+                        }}
+                      />
                     </F>
                     {ehAdmin && (
                       <F label="Condição de pagamento SAP (ZTERM)">
-                        <Input value={form.condicao_pgto_sap ?? ""} onChange={(e) => set("condicao_pgto_sap", e.target.value)} placeholder="Ex.: 0030" />
+                        <Input value={form.condicao_pgto_sap ?? ""} onChange={(e) => set("condicao_pgto_sap", e.target.value)} placeholder="Ex.: 2P00" />
                       </F>
                     )}
                     <div className="sm:col-span-2 text-[11px] text-muted-foreground">
