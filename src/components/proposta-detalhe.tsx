@@ -14,7 +14,7 @@ import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
 import { cidadeUf } from "@/lib/local-format";
-import { formatSapNumero } from "@/lib/sap-numero";
+import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
 import { NfDocumentosCard } from "@/components/nf-documentos-card";
 import { CobrancaCard } from "@/components/cobranca-card";
 import { BoletosSharepointCard } from "@/components/boletos-sharepoint-card";
@@ -82,7 +82,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">
-              Proposta {p['numero'] ?? "—"}
+              Proposta {formatPropostaNumero(p['numero']) || "—"}
             </div>
             <h2 className="text-2xl font-bold mt-1 truncate">{p['nome'] || p['cliente_nome']}</h2>
             <div className="text-sm text-muted-foreground mt-1">{p['cliente_nome']}</div>

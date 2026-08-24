@@ -1,5 +1,6 @@
 import { fmtBRL, fmtPct, FRETE_ABSORVIDO } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
+import { formatPropostaNumero } from "@/lib/sap-numero";
 
 export type PropostaPdfItem = {
   codigo?: string | null;
@@ -102,7 +103,7 @@ export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente
   const fantasia = limpo(p.cliente.nomeFantasia?.trim() || p.cliente.nome || "Cliente");
   const nome = limpo(p.propostaNome?.trim() || "Proposta");
   const sap = p.numeroSap?.trim() ? [p.numeroSap.trim()] : [];
-  return [limpo(p.numero ?? "Proposta"), nome, ...sap, fantasia].filter(Boolean).join(" - ");
+  return [limpo(formatPropostaNumero(p.numero) || "Proposta"), nome, ...sap, fantasia].filter(Boolean).join(" - ");
 }
 
 
@@ -111,7 +112,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   const hoje = new Date();
   const dataStr = hoje.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   const validade = new Date(hoje.getTime() + (p.validadeDias ?? 15) * 86400000).toLocaleDateString("pt-BR");
-  const numero = p.numero ?? hoje.getTime().toString().slice(-6);
+  const numero = formatPropostaNumero(p.numero) || hoje.getTime().toString().slice(-6);
 
   const temFoto = p.itens.some((i) => !!i.foto);
 

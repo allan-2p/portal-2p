@@ -1,3 +1,4 @@
+import { formatPropostaNumero } from "@/lib/sap-numero";
 import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { propostaStatusStyle } from "@/lib/proposta-status";
@@ -376,7 +377,7 @@ function PropostaCarregadoresPage() {
       setAutosaveAt(data.updated_at ? new Date(data.updated_at as string) : null);
       setStatusProposta((data.status as string) ?? "Salvo");
       setEtapa(2);
-      toast.success(editId ? `Proposta ${data.numero ?? ""} carregada.` : "Proposta duplicada — salve para gerar um novo número.");
+      toast.success(editId ? `Proposta ${formatPropostaNumero(data.numero)} carregada.` : "Proposta duplicada — salve para gerar um novo número.");
     })();
   }, [editId, dupId]);
 

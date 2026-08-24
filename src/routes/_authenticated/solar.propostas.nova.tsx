@@ -1,3 +1,4 @@
+import { formatPropostaNumero } from "@/lib/sap-numero";
 import { cidadeUf, cidadeUfCep } from "@/lib/local-format";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -1282,7 +1283,7 @@ function NovaPropostaSolarPage() {
       void queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
 
       if (!concluir) {
-        toast.success(`Proposta ${r.numero} salva.`);
+        toast.success(`Proposta ${formatPropostaNumero(r.numero)} salva.`);
         return;
       }
 
@@ -1294,7 +1295,7 @@ function NovaPropostaSolarPage() {
         const linha = await concluirPropostaFn({ data: { id: r.id, origem: "portal", etapa: 5 } });
         void queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
         if (linha?.already_concluded) {
-          toast.info(`Pedido ${r.numero} já havia sido concluído (${linha.status}).`);
+          toast.info(`Pedido ${formatPropostaNumero(r.numero)} já havia sido concluído (${linha.status}).`);
           void navigate({ to: "/solar/propostas" });
           return;
         }

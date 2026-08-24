@@ -1,3 +1,4 @@
+import { formatPropostaNumero } from "@/lib/sap-numero";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -297,7 +298,7 @@ function AnalisarDialog({
                 {analise.propostaNumero && (
                   <div className="flex justify-between gap-3">
                     <span className="text-muted-foreground">Proposta</span>
-                    <span className="font-medium">#{analise.propostaNumero}</span>
+                    <span className="font-medium">#{formatPropostaNumero(analise.propostaNumero)}</span>
                   </div>
                 )}
                 {analise.observacoesVendedor && (

@@ -47,6 +47,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - Sair de uma proposta com alterações pendentes pede confirmação, com opção de salvar e sair.
 - Fechar o cadastro de cliente (botão ou clique fora) pede confirmação quando há informações não salvas.
 - Salvamento de proposta mais rápido: leituras de perfil/proposta em paralelo no servidor e atualização da lista em segundo plano.
+- Número da proposta passa a ser exibido sem os zeros à esquerda (listas, detalhe, prévia, PDF, avisos e nome do arquivo); o valor armazenado segue com o padding.
 
 ### Corrigido
 - Campo "Valor do frete (manual)" duplicado no frete dedicado de Carregadores.

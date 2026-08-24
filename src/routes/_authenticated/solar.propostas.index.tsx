@@ -25,7 +25,7 @@ import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react
 import { toast } from "sonner";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
-import { formatSapNumero } from "@/lib/sap-numero";
+import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
 import {
   excluirPropostaFn,
   listarPropostasFn,
@@ -227,7 +227,7 @@ function PropostasSolarPage() {
               <tbody>
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
-                    <td className="px-4 py-3 text-muted-foreground">{r.numero ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatPropostaNumero(r.numero) || "—"}</td>
                     <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
                     <td className="px-4 py-3">{r.nome || "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}</td>
