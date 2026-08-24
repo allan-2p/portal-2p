@@ -104,6 +104,11 @@ select cron.schedule('portal-sap-nfs', '*/20 * * * *',
 select cron.schedule('portal-boletos-sharepoint', '5 * * * *',
   $cron$select public.portal_cron_post('/api/public/hooks/boletos-sharepoint', '{}'::jsonb)$cron$);
 
+-- Catálogo vendável (preço VK12 no SAP) — 4x/dia, 250 materiais por rodada
+-- (prioriza quem está há mais tempo sem verificação, cobrindo o catálogo inteiro)
+select cron.schedule('portal-sap-catalogo-vendaveis', '20 1,7,13,19 * * *',
+  $cron$select public.portal_cron_post('/api/public/hooks/sap-catalogo-vendaveis', jsonb_build_object('limite', 250))$cron$);
+
 -- ------------------------------------------------------------
 -- 5) Buckets de storage (todos privados)
 --    As policies de storage.objects vêm nas migrations do repo.
