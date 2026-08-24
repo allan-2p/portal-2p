@@ -408,45 +408,86 @@ function PropostaCarregadoresPage() {
 
   // Clientes vindos do cadastro universal (Clientes > Cadastros)
 
-  const listClientes = useServerFn(listClientesFn);
+  const listClientes = useServerFn(listClientesPaginaFn);
   const salvarProposta = useServerFn(salvarPropostaCarregadores);
   const consultarNumeroSap = useServerFn(consultarNumeroSapFn);
-  const clientesQ = useQuery({
-    queryKey: ["carregadores-clientes-cadastro"],
-    queryFn: async () => {
-      const res = await listClientes({ data: { instancia: "carregadores" } });
-      const lista: ClienteCadastro[] = (res.clientes ?? [])
-        .filter((c: Record<string, any>) => c["ativo"] !== false)
-        .map((c: Record<string, any>) => ({
-          id: String(c["id"]),
-          cliente_nome:
-            (c["nome_fantasia"] as string)?.trim() || (c["razao_social"] as string) || "—",
-          cliente_telefone: (c["telefone"] as string) ?? null,
-          cliente_email: (c["email"] as string) ?? null,
-          cliente_doc: (c["doc"] as string) ?? null,
-          cliente_ie: (c["ie"] as string) ?? null,
-          uf: (c["uf"] as string) ?? "",
-          contribuinte: c["contribuinte"] !== false,
-          finalidade: (c["finalidade"] as string) ?? null,
-          regime_tributario: (c["regime_tributario"] as string) ?? null,
-          cliente_updated_at: (c["updated_at"] as string) ?? null,
-          consultor_nome: (c["created_by_nome"] as string) ?? null,
-          cep: (c["cep"] as string) ?? "",
-          logradouro: (c["logradouro"] as string) ?? "",
-          numero: (c["numero"] as string) ?? "",
-          complemento: (c["complemento"] as string) ?? "",
-          bairro: (c["bairro"] as string) ?? "",
-          cidade: (c["cidade"] as string) ?? "",
 
-        }));
-      return lista.sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR"));
+  // Busca no servidor com debounce: nunca carrega a base inteira (mesma
+  // estratégia da proposta Solar), então a tela continua rápida se o cadastro
+  // de Carregadores crescer para milhares de clientes.
+  const [buscaCliente, setBuscaCliente] = useState("");
+  const termoCliente = useDebouncedValue(buscaCliente.trim(), 300);
+  const docSelecionado = (state.doc ?? "").replace(/\D/g, "");
 
-
-    },
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+  const mapearCliente = (c: Record<string, any>): ClienteCadastro => ({
+    id: String(c["id"]),
+    cliente_nome:
+      (c["nome_fantasia"] as string)?.trim() || (c["razao_social"] as string) || "—",
+    cliente_telefone: (c["telefone"] as string) ?? null,
+    cliente_email: (c["email"] as string) ?? null,
+    cliente_doc: (c["doc"] as string) ?? null,
+    cliente_ie: (c["ie"] as string) ?? null,
+    uf: (c["uf"] as string) ?? "",
+    contribuinte: c["contribuinte"] !== false,
+    finalidade: (c["finalidade"] as string) ?? null,
+    regime_tributario: (c["regime_tributario"] as string) ?? null,
+    cliente_updated_at: (c["updated_at"] as string) ?? null,
+    consultor_nome: (c["created_by_nome"] as string) ?? null,
+    cep: (c["cep"] as string) ?? "",
+    logradouro: (c["logradouro"] as string) ?? "",
+    numero: (c["numero"] as string) ?? "",
+    complemento: (c["complemento"] as string) ?? "",
+    bairro: (c["bairro"] as string) ?? "",
+    cidade: (c["cidade"] as string) ?? "",
   });
+
+  const clientesBuscaQ = useQuery({
+    queryKey: ["carregadores-clientes-busca", termoCliente],
+    queryFn: async () => {
+      const res = await listClientes({
+        data: {
+          instancia: "carregadores",
+          q: termoCliente || undefined,
+          pagina: 1,
+          porPagina: 25,
+        },
+      });
+      return ((res.clientes ?? []) as Record<string, any>[])
+        .filter((c) => c["ativo"] !== false)
+        .map(mapearCliente)
+        .sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR"));
+    },
+    staleTime: 60_000,
+  });
+
+  // Garante que o cliente já vinculado à proposta apareça mesmo fora da busca.
+  const clienteSelecionadoQ = useQuery({
+    queryKey: ["carregadores-cliente-doc", docSelecionado],
+    queryFn: async () => {
+      const res = await listClientes({
+        data: { instancia: "carregadores", q: docSelecionado, pagina: 1, porPagina: 5 },
+      });
+      return ((res.clientes ?? []) as Record<string, any>[]).map(mapearCliente);
+    },
+    enabled: docSelecionado.length >= 11,
+    staleTime: 5 * 60_000,
+  });
+
+  const clientesQ = useMemo(() => {
+    const rows = clientesBuscaQ.data ?? [];
+    const sel =
+      rows.find((c) => (c.cliente_doc ?? "").replace(/\D/g, "") === docSelecionado) ??
+      (clienteSelecionadoQ.data ?? []).find(
+        (c) => (c.cliente_doc ?? "").replace(/\D/g, "") === docSelecionado,
+      ) ??
+      null;
+    const data = sel && !rows.some((c) => c.id === sel.id) ? [sel, ...rows] : rows;
+    return {
+      data,
+      isLoading: clientesBuscaQ.isLoading || clientesBuscaQ.isFetching,
+    };
+  }, [clientesBuscaQ.data, clientesBuscaQ.isLoading, clientesBuscaQ.isFetching, clienteSelecionadoQ.data, docSelecionado]);
+
 
   // Revalida o cadastro do cliente ao abrir uma proposta existente (nunca usa dados antigos)
   const revalidado = useRef(false);
