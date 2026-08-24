@@ -155,6 +155,19 @@ export async function listClientesPagina(
 }
 
 /**
+ * A coluna `consultor_id` foi adicionada depois (supabase/external/clientes-consultor-id.sql).
+ * Enquanto o SQL não for aplicado no banco do Grupo 2P, o portal segue
+ * funcionando usando apenas `created_by` / `consultor_sap`.
+ */
+let _temConsultorId: boolean | null = null;
+async function temConsultorId(): Promise<boolean> {
+  if (_temConsultorId !== null) return _temConsultorId;
+  const { ok } = await grupo2pRest("clientes?select=consultor_id&limit=1");
+  _temConsultorId = ok;
+  return ok;
+}
+
+/**
  * Lista para a tela "Perfil do Cliente": vem só da tabela `clientes`
  * (nunca do Salesforce), separada por instância/organização e, quando o
  * usuário não tem "View All Records", pelo consultor responsável
