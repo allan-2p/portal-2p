@@ -574,6 +574,9 @@ function PropostaCarregadoresPage() {
     setState((s) => ({ ...s, entrega: { ...s.entrega, ...patch } }));
 
   /** Atualiza os dados do destinatário fiscal alternativo. */
+  /** Cidade/UF do faturamento ficam travadas quando vieram do CEP. */
+  const [fatCepOk, setFatCepOk] = useState(false);
+
   const setFaturamento = (patch: Partial<CarregadoresState["faturamento"]>) =>
     setState((s) => ({ ...s, faturamento: { ...s.faturamento, ...patch } }));
 
