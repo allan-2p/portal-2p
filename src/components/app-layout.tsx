@@ -64,23 +64,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
     : { logo: instMeta.logo, label: instMeta.label };
 
   useEffect(() => {
-    if (localStorage.getItem(COLLAPSE_KEY) === "1") setCollapsed(true);
-    const saved = localStorage.getItem(CLIENTES_OPEN_KEY);
-    if (saved !== null) setClientesOpen(saved === "1");
-    const savedD = localStorage.getItem(DASHBOARDS_OPEN_KEY);
-    if (savedD !== null) setDashboardsOpen(savedD === "1");
-    const savedP = localStorage.getItem(PROPOSTAS_OPEN_KEY);
-    if (savedP !== null) setPropostasOpen(savedP === "1");
-  }, []);
-
-  useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
 
-  useEffect(() => {
-    if (pathname.startsWith("/solar/clientes")) setClientesOpen(true);
-    if (pathname.startsWith("/solar/dashboards")) setDashboardsOpen(true);
-  }, [pathname]);
+
 
   // Se usuário está numa rota que a instância atual não permite:
   // 1) se outra instância liberada tiver essa rota, troca de instância (link direto);
