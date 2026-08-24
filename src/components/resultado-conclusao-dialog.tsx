@@ -44,11 +44,14 @@ export function ResultadoConclusaoDialog({
   resultado,
   onClose,
   onIrParaLista,
-  rotuloLista = "Ir para propostas",
+  onVerProposta,
+  rotuloLista = "Voltar para propostas",
 }: {
   resultado: ResultadoConclusao | null;
   onClose: () => void;
   onIrParaLista: () => void;
+  /** Abre a proposta concluída (detalhe). Quando ausente, o botão não aparece. */
+  onVerProposta?: (() => void) | undefined;
   rotuloLista?: string;
 }) {
   const linhas = [
@@ -125,10 +128,15 @@ export function ResultadoConclusaoDialog({
           </div>
         )}
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             Fechar
           </Button>
-          <Button onClick={onIrParaLista}>{rotuloLista}</Button>
+          <Button variant="outline" onClick={onIrParaLista}>
+            {rotuloLista}
+          </Button>
+          {!resultado?.erro && onVerProposta ? (
+            <Button onClick={onVerProposta}>Ver proposta concluída</Button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>

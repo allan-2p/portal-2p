@@ -34,6 +34,13 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+### Adicionado
+- Overlay bloqueante ao concluir pedido (Solar e Carregadores) com passos animados das integrações e aviso para não fechar a janela.
+- Botão "Ver proposta concluída" no resultado da conclusão, abrindo o detalhe via `/{solar|carregadores}/propostas?ver=<id>`.
+
+### Corrigido
+- Campo "Valor do frete (manual)" duplicado no frete dedicado de Carregadores.
+
 
 ### Adicionado
 
