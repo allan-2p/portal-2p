@@ -1,39 +1,150 @@
 # Portal 2P
 
-crie uma aplicação web - site para a 2P Acessórios https://2penergiasolar.com.br/ https://www.instagram.com/2penergiasolar/?hl=en
+Portal comercial do **Grupo 2P** (2P Energia Solar e 2P Carregadores): plataforma web
+única para consultores e back-office cotarem, fecharem e acompanharem pedidos, com
+integração ponta a ponta ao SAP, Salesforce, Itaú (Pix/Boleto), Fretefy e SharePoint.
 
-deve se chamar Portal 2P, pensado para vendedores
+- **App publicado:** https://portal-2p.lovable.app
+- **Domínio próprio:** https://portal.2pgroup.app
 
-estrutura deve ser de Home - sugestões dos principais clientes da carteira, quem tá bem, quem tá mal, dando insights e planos de ação para os vendedores
-Visão Geral de carteira - mostrando quando ele está e quanto deveria estar no mes 
-Detalhamento de pedidos tanto em Kanban quanto em lista
-Segmentação por A, B, C, D. Importante nessa parte conseguir fazer uma espécie de toggle list com os clientes, para poder detalhar projeção de vendas de cada um, geração, quanto estão
+---
 
-Importante é que o site esteja recheado de insights com um agente de IA chamado Atlas. Ele quem irá verificar Oportunidades (Geração), vendas, visitas, tarefas, interações, treinamentos, projeção vs realizado. Ele deve ser um assistente de fato do vendedor e auxiliar com planos de ação, sugestões, tendencias do cliente
+## O que o portal faz
 
-o site deve ser bem moderno, mas ao mesmo tempo minimalista e direto, para que facilite o trabalho do vendedor. Deve ser bem interativo, dando opções de detalhamentos.
+| Área | Recursos |
+| --- | --- |
+| **Solar** | Calculadora de proposta (módulos, microinversores, trilhos, suportes, kit parafuso), quantificador, precificação por tabela, prévia e PDF da proposta, checkout completo |
+| **Carregadores** | Catálogo de produtos, propostas, metas, comissões, auditoria de recálculo, tarefas |
+| **Clientes** | Cadastro com enriquecimento por CNPJ/CPF, consultor obrigatório, finalidade de uso, cadastro automático no SAP (`ZHDIT_CLIENTES_CADASTRO`) |
+| **Pedidos** | Ordem de venda no SAP (simular/criar/consultar), evolução de status, NF, DANFE, XML e boleto sob demanda |
+| **Pagamentos** | Pix e Boleto Itaú (mesma API de cobrança, via proxy mTLS), QR Code + copia e cola, reenvio manual, PDF do boleto, financiamento |
+| **Logística** | Cotação de frete por peso SAP, regras de frete (inclusive área rural / frete grátis), oferta de carga e rastreio Fretefy |
+| **Salesforce** | Sincronização de Account e Opportunity com mapeamento de campos configurável e máquina de estágios |
+| **Admin** | Perfis e permissões, produtos e tabelas, metas, estoque, moderação, logs (SAP, integrações, gatilhos, retenção), painéis de integração e diagnóstico |
+| **Atlas** | Assistente de IA do consultor: insights de carteira, projeção vs. realizado, planos de ação |
 
-estou deixando prints anexos de exemplos de como funciona hoje e o logo da empresa também, mas pode melhorar o quanto quiser para que seja um site com tudo unificado e dinâmico
+---
 
-This project was built with [Lovable](https://lovable.dev).
+## Stack
 
-**Live app**: https://portal-2p.lovable.app
+- **Framework:** TanStack Start v1 (React 19 + Vite 7), SSR em runtime edge
+- **Rotas:** TanStack Router com file routes em `src/routes`
+- **Dados:** TanStack Query + server functions (`createServerFn`)
+- **Backend:** Supabase (`grupo-2p`) — Postgres, Auth, Storage, RLS, `pg_cron`, `pg_net`, Vault
+- **UI:** Tailwind CSS v4 + shadcn/ui (Radix) + Recharts + Sonner
+- **Testes:** Vitest (`tests/`, incluindo suíte de RLS)
 
-## Build with Lovable
+---
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/45f64d33-d953-4646-ad95-6574eb8edf14).
+## Estrutura
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+```text
+src/
+  routes/
+    _authenticated/       páginas autenticadas (solar.*, carregadores.*, admin.*, financeiro.*, marketing.*)
+    api/public/hooks/     webhooks e endpoints de cron (sem auth de site, autenticados por segredo)
+    __root.tsx            layout raiz, head e providers
+  lib/
+    *.functions.ts        server functions chamadas pelo cliente
+    *.server.ts           código exclusivo de servidor (SAP, Itaú, Salesforce, Fretefy, SharePoint)
+    *.ts                  regras puras e helpers compartilhados (calculadora, PDFs, mapeamentos)
+  components/             componentes de UI e painéis de negócio
+  integrations/supabase/  clientes gerados (não editar)
+supabase/migrations/      histórico de migrações do banco
+docs/sap/                 envelopes SOAP de referência (SIMULAR, CRIAR, CONSULTAR)
+docs/migracao/            SQL de setup do projeto Supabase (extensões, Vault, cron, buckets)
+tests/                    testes unitários e de RLS
+```
 
-## Development
+### Convenções importantes
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+- Server functions ficam em arquivos **finos**: só imports, tipos e a declaração exportada.
+  Qualquer helper de runtime vai para um módulo importado.
+- Módulos `*.server.ts` nunca são importados por componentes; o acesso é sempre via `*.functions.ts`.
+- Cores, sombras e gradientes vêm de tokens semânticos em `src/styles.css` — nunca cores fixas nos componentes.
+- Nunca editar `src/routeTree.gen.ts` nem os arquivos gerados em `src/integrations/supabase/`.
+
+---
+
+## Rodando localmente
+
+Requisitos: Node.js 20+ (ou Bun) e acesso às variáveis de ambiente.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+git clone <repo-url>
+cd portal-2p
+npm install
+cp .env.example .env    # preencha os valores
+npm run dev             # http://localhost:8080
 ```
+
+Scripts:
+
+| Comando | O que faz |
+| --- | --- |
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm run build` | Build de produção |
+| `npm run build:dev` | Build em modo development (usado na validação do preview) |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
+| `npm test` | Todos os testes |
+| `npm run test:rls` | Somente a suíte de políticas RLS |
+
+---
+
+## Variáveis de ambiente
+
+A lista completa e comentada está em [`.env.example`](./.env.example), agrupada por
+integração: Supabase, cron/hooks, SAP, Itaú (Pix, Boleto e proxy mTLS), Salesforce,
+Fretefy, SharePoint/Graph, consulta CNPJ/CPF e notificações/IA.
+
+Regras:
+
+- `VITE_*` é público (client). Todo o resto é **server-only** e deve ser lido dentro do
+  `.handler()` da server function, nunca no escopo do módulo.
+- `CRON_HOOK_SECRET` precisa ter o **mesmo valor** do segredo `cron_hook_secret` no Vault do Supabase.
+- Nenhum valor real vai para o Git — `.env` e `.env.*` estão no `.gitignore`.
+
+---
+
+## Jobs, webhooks e integrações
+
+Endpoints públicos ficam em `src/routes/api/public/hooks/` e exigem o header
+`x-cron-secret` (webhooks de terceiros validam assinatura própria). Cada disparo é
+registrado em `job_runs` e pode ser reprocessado na tela de monitoramento — o
+reprocessamento usa exatamente o mesmo executor do disparo original
+(`src/lib/jobs-registry.server.ts`).
+
+| Gatilho | Função |
+| --- | --- |
+| `cron.estoque` | Sincroniza estoque e produtos do SAP |
+| `cron.sap-nfs` | Consulta OVs e avança Processando → Separação → Faturado → Coletado |
+| `cron.pix-reconsulta` | Reconsulta cobranças Pix pendentes no Itaú |
+| `cron.boleto-avisos` | Avisa consultor e cliente sobre boletos |
+| `cron.boletos-sharepoint` | Busca os PDFs de boletos a prazo no SharePoint pela NF |
+| `sap.ov-criar` | Cria a ordem de venda no SAP (idempotente por proposta, claim atômico) |
+| `salesforce.pedido` | Cria/atualiza a Opportunity do pedido |
+| `fretefy.oferta-carga` | Cria a oferta de carga ou atualiza a NF da carga |
+| `webhook.pix-itau` | Aplica o evento Pix no pedido (pago / expirado / cancelado) |
+| `webhook.fretefy` | Aplica o rastreio da entrega (concluída → Entregue) |
+
+O agendamento (`pg_cron`) chama os hooks pela função `public.portal_cron_post(path, body)`,
+que lê `site_url` e `cron_hook_secret` do Vault. O SQL de referência está em
+`docs/migracao/setup-novo-projeto.sql`.
+
+---
+
+## Banco de dados e segurança
+
+- Toda tabela em `public` tem RLS habilitada, políticas explícitas e `GRANT` para os papéis usados.
+- Papéis/permissões ficam em tabela separada, consultada por função `security definer` — nunca no perfil do usuário.
+- Segredos operacionais do banco ficam no **Vault** do Supabase, não em código.
+- Alterações de schema sempre por migração em `supabase/migrations/`.
+
+---
+
+## Manutenção deste README
+
+Sempre que entrar uma nova integração, gatilho, área do portal ou variável de ambiente,
+atualize as seções correspondentes (**O que o portal faz**, **Jobs, webhooks e integrações**
+e `.env.example`) no mesmo commit da mudança.
