@@ -15,7 +15,10 @@ export class PropostasTableMissing extends Error {
   }
 }
 
-async function rest(path: string, init: RequestInit & { prefer?: string } = {}): Promise<any> {
+async function rest(
+  path: string,
+  init: RequestInit & { prefer?: string; range?: { from: number; to: number } } = {},
+): Promise<any> {
   const { ok, status, text } = await grupo2pRest(path, init);
   if (!ok) {
     // Só é "tabela ausente" quando o PostgREST não encontra a relação.
@@ -45,16 +48,105 @@ export type ListarPropostasOpts = {
   naoVazio?: string[];
 };
 
+/** Teto de linhas por resposta do PostgREST. */
+const PAGINA_DB = 1000;
+
 export async function listarPropostas(opts: ListarPropostasOpts = {}): Promise<PropostaRow[]> {
   const params = new URLSearchParams({
     select: opts.select ?? "*",
-    order: `created_at.${opts.order ?? "desc"}`,
-    limit: String(opts.limit ?? 5000),
+    order: `created_at.${opts.order ?? "desc"},id.asc`,
   });
   if (opts.organizacao) params.set("organizacao", `eq.${opts.organizacao}`);
   if (opts.statusIn?.length) params.set("status", `in.(${opts.statusIn.map((s) => `"${s}"`).join(",")})`);
   for (const col of opts.naoVazio ?? []) params.append(col, "not.is.null");
-  return (await rest(`propostas?${params}`)) ?? [];
+
+  // Busca em blocos: o PostgREST corta a resposta em 1000 linhas mesmo com
+  // `limit` maior, então quem precisa da lista completa pagina por Range.
+  const teto = opts.limit ?? 20000;
+  const out: PropostaRow[] = [];
+  for (let pagina = 0; pagina < 40 && out.length < teto; pagina++) {
+    const from = pagina * PAGINA_DB;
+    const bloco: PropostaRow[] =
+      (await rest(`propostas?${params}`, { range: { from, to: from + PAGINA_DB - 1 } })) ?? [];
+    out.push(...bloco);
+    if (bloco.length < PAGINA_DB) break;
+  }
+  return out.slice(0, teto);
+}
+
+export type ListarPropostasPaginaOpts = {
+  organizacao?: string;
+  select?: string;
+  /** Texto livre: número, nº anterior, cliente, documento, OV/nº SAP, consultor. */
+  q?: string;
+  status?: string;
+  uf?: string;
+  /** "com" | "sem" — pedidos com ou sem ordem de venda no SAP. */
+  comSap?: string;
+  /** Restringe a um conjunto de vendedores (coluna created_by). */
+  createdByIn?: string[];
+  /** Restringe às propostas do usuário (sem "View All Records"). */
+  donoId?: string | null;
+  pagina?: number;
+  porPagina?: number;
+};
+
+const COLUNAS_BUSCA_PROPOSTA = [
+  "numero",
+  "cliente_nome",
+  "cliente_doc",
+  "nome",
+  "sap_ov_numero",
+  "numero_sap",
+  "consultor_nome",
+  "criado_por_nome",
+  "totais->>numeroAnterior",
+];
+
+const termoSeguro = (t: string) => t.replace(/[(),*"\\]/g, " ").trim();
+
+/**
+ * Página de propostas com busca no banco: a pesquisa alcança a base inteira
+ * (inclusive as importadas da plataforma antiga), e a ordenação é sempre da
+ * mais recente para a mais antiga.
+ */
+export async function listarPropostasPagina(
+  opts: ListarPropostasPaginaOpts = {},
+): Promise<{ rows: PropostaRow[]; total: number }> {
+  const porPagina = Math.min(Math.max(opts.porPagina ?? 25, 1), 200);
+  const pagina = Math.max(opts.pagina ?? 1, 1);
+  const params = new URLSearchParams({
+    select: opts.select ?? "*",
+    order: "created_at.desc.nullslast,id.asc",
+  });
+  if (opts.organizacao) params.set("organizacao", `eq.${opts.organizacao}`);
+  if (opts.status && opts.status !== "todos") params.set("status", `eq.${opts.status}`);
+  if (opts.uf && opts.uf !== "todos") params.set("uf", `eq.${opts.uf}`);
+  if (opts.donoId) params.set("created_by", `eq.${opts.donoId}`);
+  else if (opts.createdByIn?.length) {
+    params.set("created_by", `in.(${opts.createdByIn.join(",")})`);
+  }
+
+  // Condições compostas vão juntas em `and=(...)`: o PostgREST aceita só um
+  // parâmetro `or` por consulta.
+  const cond: string[] = [];
+  const termo = termoSeguro(opts.q ?? "");
+  if (termo) cond.push(`or(${COLUNAS_BUSCA_PROPOSTA.map((c) => `${c}.ilike.*${termo}*`).join(",")})`);
+  if (opts.comSap === "com") cond.push("or(sap_ov_numero.not.is.null,numero_sap.not.is.null)");
+  if (opts.comSap === "sem") cond.push("and(sap_ov_numero.is.null,numero_sap.is.null)");
+  if (cond.length) params.set("and", `(${cond.join(",")})`);
+
+  const from = (pagina - 1) * porPagina;
+  const { ok, status, text, total } = await grupo2pRest(`propostas?${params}`, {
+    range: { from, to: from + porPagina - 1 },
+    count: true,
+  });
+  if (!ok) {
+    if (status === 416) return { rows: [], total: total ?? 0 };
+    throw new Error(`Erro no banco (${status}): ${text.slice(0, 300)}`);
+  }
+  const rows: PropostaRow[] = text ? JSON.parse(text) : [];
+  return { rows, total: total ?? rows.length };
 }
 
 /**

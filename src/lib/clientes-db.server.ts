@@ -26,7 +26,7 @@ export class ClientesTableMissing extends Error {
 async function rest(
   instance: ClientesInstance,
   path: string,
-  init: RequestInit & { prefer?: string } = {},
+  init: RequestInit & { prefer?: string; range?: { from: number; to: number }; count?: boolean } = {},
 ): Promise<any> {
   const { ok, status, text } = await grupo2pRest(path, init);
   if (!ok) {
@@ -40,14 +40,112 @@ async function rest(
 
 const SELECT = "*";
 
+/** Teto de linhas por resposta do PostgREST — paginação usa o cabeçalho Range. */
+const PAGINA_DB = 1000;
+
+/**
+ * Lista completa da instância (usada por telas que precisam de todos os
+ * cadastros). Busca em blocos de 1000 porque o PostgREST corta a resposta
+ * nesse teto, independente do `limit`.
+ */
 export async function listClientes(instance: ClientesInstance): Promise<ClienteRow[]> {
+  const out: ClienteRow[] = [];
+  for (let pagina = 0; pagina < 40; pagina++) {
+    const params = new URLSearchParams({
+      select: SELECT,
+      instancia: `eq.${instance}`,
+      order: "created_at.desc,id.asc",
+    });
+    const from = pagina * PAGINA_DB;
+    const bloco: ClienteRow[] =
+      (await rest(instance, `clientes?${params}`, { range: { from, to: from + PAGINA_DB - 1 } })) ?? [];
+    out.push(...bloco);
+    if (bloco.length < PAGINA_DB) break;
+  }
+  return out;
+}
+
+export type ListarClientesOpts = {
+  /** Texto livre: razão social, fantasia, cidade, e-mail, consultor, doc, nº SAP. */
+  q?: string;
+  uf?: string;
+  /** "ativos" | "inativos" | "todos" */
+  status?: string;
+  /** "contribuinte" | "nao" | "todos" */
+  fiscal?: string;
+  /** Restringe aos cadastros de um consultor (sem "View All Records"). */
+  donoId?: string | null;
+  pagina?: number;
+  porPagina?: number;
+  ordem?: string;
+  dir?: "asc" | "desc";
+};
+
+const COLUNAS_BUSCA_TEXTO = [
+  "razao_social",
+  "nome_fantasia",
+  "cidade",
+  "email",
+  "consultor_nome",
+  "consultor_sap",
+  "created_by_nome",
+  "numero_sap",
+  "doc",
+];
+
+/** Escapa vírgula/parênteses para não quebrar o `or=(...)` do PostgREST. */
+const termoSeguro = (t: string) => t.replace(/[(),*"\\]/g, " ").trim();
+
+/**
+ * Busca paginada no banco: o filtro roda no Postgres, então dá para pesquisar
+ * em toda a base (7 mil+ cadastros) e não só na primeira página carregada.
+ */
+export async function listClientesPagina(
+  instance: ClientesInstance,
+  opts: ListarClientesOpts = {},
+): Promise<{ rows: ClienteRow[]; total: number }> {
+  const porPagina = Math.min(Math.max(opts.porPagina ?? 25, 1), 200);
+  const pagina = Math.max(opts.pagina ?? 1, 1);
+  const ordem = opts.ordem || "created_at";
+  const dir = opts.dir === "asc" ? "asc" : "desc";
+
   const params = new URLSearchParams({
     select: SELECT,
     instancia: `eq.${instance}`,
-    order: "razao_social.asc",
-    limit: "5000",
+    order: `${ordem}.${dir}.nullslast,id.asc`,
   });
-  return (await rest(instance, `clientes?${params}`)) ?? [];
+  if (opts.uf && opts.uf !== "todas") params.set("uf", `eq.${opts.uf}`);
+  if (opts.status === "ativos") params.set("ativo", "is.true");
+  if (opts.status === "inativos") params.set("ativo", "is.false");
+  if (opts.fiscal === "contribuinte") params.set("contribuinte", "is.true");
+  if (opts.fiscal === "nao") params.set("contribuinte", "not.is.true");
+  if (opts.donoId) params.set("created_by", `eq.${opts.donoId}`);
+
+  const termo = termoSeguro(opts.q ?? "");
+  if (termo) {
+    const digitos = termo.replace(/\D/g, "");
+    const alvos = COLUNAS_BUSCA_TEXTO.map((c) => `${c}.ilike.*${termo}*`);
+    if (digitos.length >= 3) {
+      alvos.push(`doc.ilike.*${digitos}*`, `numero_sap.ilike.*${digitos}*`, `id_antigo.ilike.*${digitos}*`);
+    }
+    params.set("or", `(${alvos.join(",")})`);
+  }
+
+  const from = (pagina - 1) * porPagina;
+  const { ok, status, text, total } = await grupo2pRest(`clientes?${params}`, {
+    range: { from, to: from + porPagina - 1 },
+    count: true,
+  });
+  if (!ok) {
+    if (status === 404 || /relation .*clientes.* does not exist/i.test(text)) {
+      throw new ClientesTableMissing(instance);
+    }
+    // 416 = página além do fim da lista.
+    if (status === 416) return { rows: [], total: total ?? 0 };
+    throw new Error(`Erro no banco (${status}): ${text.slice(0, 300)}`);
+  }
+  const rows: ClienteRow[] = text ? JSON.parse(text) : [];
+  return { rows, total: total ?? rows.length };
 }
 
 /** Procura o documento nas duas unidades; devolve onde já existe. */

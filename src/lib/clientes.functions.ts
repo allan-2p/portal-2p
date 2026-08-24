@@ -106,6 +106,53 @@ export const listClientesFn = createServerFn({ method: "POST" })
   });
 
 
+/**
+ * Lista paginada com busca no banco: permite pesquisar em toda a base, não só
+ * nos registros já carregados na tela. Ordena do mais recente para o mais
+ * antigo por padrão (regra universal do portal).
+ */
+export const listClientesPaginaFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        instancia: instanciaSchema,
+        q: z.string().optional(),
+        uf: z.string().optional(),
+        status: z.string().optional(),
+        fiscal: z.string().optional(),
+        ordem: z.string().optional(),
+        dir: z.string().optional(),
+        pagina: z.number().optional(),
+        porPagina: z.number().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const db = await import("./clientes-db.server");
+    const perm = await getPerm(context as any, data.instancia, "contas");
+    assertPodeLer(perm, "contas");
+    try {
+      const { rows, total } = await db.listClientesPagina(data.instancia, {
+        q: data.q,
+        uf: data.uf,
+        status: data.status,
+        fiscal: data.fiscal,
+        ordem: data.ordem,
+        dir: data.dir === "asc" ? "asc" : "desc",
+        pagina: data.pagina,
+        porPagina: data.porPagina,
+        donoId: perm.view_all ? null : context.userId,
+      });
+      return { ok: true as const, clientes: rows, total };
+    } catch (e) {
+      if (e instanceof db.ClientesTableMissing) {
+        return { ok: false as const, motivo: "tabela-ausente" as const, clientes: [], total: 0 };
+      }
+      throw e;
+    }
+  });
+
 /** Verifica se o CNPJ/CPF já existe em qualquer instância (Solar ou Carregadores). */
 export const verificarDocFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

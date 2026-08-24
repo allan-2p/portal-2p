@@ -39,11 +39,17 @@ export function grupo2pConfig(): Grupo2pConfig | null {
   return { url: url.replace(/\/+$/, ""), key };
 }
 
-/** Chamada REST (PostgREST) no banco do Grupo 2P. */
+/**
+ * Chamada REST (PostgREST) no banco do Grupo 2P.
+ *
+ * `range` usa o cabeçalho Range do PostgREST para paginar de verdade (o
+ * parâmetro `limit` sozinho não passa do teto de 1000 linhas por resposta) e
+ * devolve `total` a partir do Content-Range quando se pede `count=exact`.
+ */
 export async function grupo2pRest(
   path: string,
-  init: RequestInit & { prefer?: string } = {},
-): Promise<{ ok: boolean; status: number; text: string }> {
+  init: RequestInit & { prefer?: string; range?: { from: number; to: number }; count?: boolean } = {},
+): Promise<{ ok: boolean; status: number; text: string; total: number | null }> {
   const cfg = grupo2pConfig();
   if (!cfg) throw new Error("Banco do Grupo 2P não configurado (GRUPO2P_SUPABASE_SERVICE_ROLE_KEY).");
   const headers: Record<string, string> = {
@@ -52,7 +58,13 @@ export async function grupo2pRest(
     Accept: "application/json",
     "Content-Type": "application/json",
   };
-  if (init.prefer) headers["Prefer"] = init.prefer;
+  const prefer = [init.prefer, init.count ? "count=exact" : ""].filter(Boolean).join(",");
+  if (prefer) headers["Prefer"] = prefer;
+  if (init.range) headers["Range-Unit"] = "items";
+  if (init.range) headers["Range"] = `${init.range.from}-${init.range.to}`;
   const res = await fetch(`${cfg.url}/rest/v1/${path}`, { ...init, headers });
-  return { ok: res.ok, status: res.status, text: await res.text() };
+  const contentRange = res.headers.get("content-range");
+  const totalTxt = contentRange?.split("/")[1];
+  const total = totalTxt && /^\d+$/.test(totalTxt) ? Number(totalTxt) : null;
+  return { ok: res.ok, status: res.status, text: await res.text(), total };
 }

@@ -584,6 +584,39 @@ export const listarPropostasFn = createServerFn({ method: "POST" })
   });
 
 
+/**
+ * Página de propostas com busca no banco. Sempre da mais recente para a mais
+ * antiga; a pesquisa alcança toda a base (inclusive propostas importadas).
+ */
+export const listarPropostasPaginaFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as Record<string, unknown>;
+    const txt = (v: unknown) => (typeof v === "string" ? v : undefined);
+    const num = (v: unknown) => (typeof v === "number" ? v : undefined);
+    return {
+      organizacao: txt(i["organizacao"]),
+      q: txt(i["q"]),
+      status: txt(i["status"]),
+      uf: txt(i["uf"]),
+      comSap: txt(i["comSap"]),
+      createdByIn: Array.isArray(i["createdByIn"]) ? i["createdByIn"].map(String) : undefined,
+      pagina: num(i["pagina"]),
+      porPagina: num(i["porPagina"]),
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const db = await repo();
+    const { assertPodeLer, getPerm } = await import("./object-perms.server");
+    const perm = await getPerm(context as any, data.organizacao ?? "solar", "propostas");
+    assertPodeLer(perm, "propostas");
+    return await db.listarPropostasPagina({
+      ...data,
+      donoId: perm.view_all ? null : (context as any).userId,
+    });
+  });
+
+
 /** Resumo de pagamento (Pix/boleto) dos pedidos de uma organização. */
 export const listarPagamentosFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
