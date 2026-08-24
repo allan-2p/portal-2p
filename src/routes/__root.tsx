@@ -212,6 +212,8 @@ function RootComponent() {
           <SimulationBanner />
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
+          {/* Container dos avisos (toasts) — sem ele nenhuma mensagem de sucesso/erro aparece. */}
+          <Toaster />
         </InstanceProvider>
       </SimulationProvider>
     </QueryClientProvider>
