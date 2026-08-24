@@ -14,7 +14,9 @@ const SELECT =
   "id, numero, instancia, cliente_doc, cliente_nome, cliente_id, status, prioridade, conclusao, " +
   "restricao, condicao_solicitada, condicao_aprovada, credito_solicitado, credito_aprovado, serasa, " +
   "validade, observacoes_vendedor, observacoes_financeiro, proposta_id, proposta_numero, " +
-  "solicitado_por, solicitado_em, analista_id, concluido_em";
+  "solicitado_por, solicitado_em, analista_id, concluido_em, contato_nome, contato_email, " +
+  "contato_telefone, empresa_secundaria, empresa_secundaria_nome, empresa_secundaria_doc, anexos, " +
+  "responsavel_analise, autorizacao_diretoria";
 
 const soDigitos = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 const num = (v: unknown) => {
@@ -50,6 +52,15 @@ function mapRow(r: any, nomes: Map<string, string>): CreditoAnalise {
     analistaId: r.analista_id ?? null,
     analistaNome: r.analista_id ? (nomes.get(r.analista_id) ?? null) : null,
     concluidoEm: r.concluido_em ?? null,
+    contatoNome: r.contato_nome ?? null,
+    contatoEmail: r.contato_email ?? null,
+    contatoTelefone: r.contato_telefone ?? null,
+    empresaSecundaria: !!r.empresa_secundaria,
+    empresaSecundariaNome: r.empresa_secundaria_nome ?? null,
+    empresaSecundariaDoc: r.empresa_secundaria_doc ?? null,
+    anexos: Array.isArray(r.anexos) ? r.anexos : [],
+    responsavelAnalise: r.responsavel_analise ?? null,
+    autorizacaoDiretoria: r.autorizacao_diretoria ?? null,
   };
 }
 
@@ -110,6 +121,13 @@ export const solicitarCredito = createServerFn({ method: "POST" })
       condicaoSolicitada?: string | null;
       prioridade?: string | null;
       observacoesVendedor?: string | null;
+      contatoNome?: string | null;
+      contatoEmail?: string | null;
+      contatoTelefone?: string | null;
+      empresaSecundaria?: boolean | null;
+      empresaSecundariaNome?: string | null;
+      empresaSecundariaDoc?: string | null;
+      anexos?: { path: string; nome: string; tamanho?: number | null; tipo?: string | null }[] | null;
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ ok: true; id: string; numero: string }> => {
@@ -118,6 +136,21 @@ export const solicitarCredito = createServerFn({ method: "POST" })
     const prioridade = CREDITO_PRIORIDADES.includes(data.prioridade as any)
       ? (data.prioridade as string)
       : "Normal";
+
+    const contatoNome = data.contatoNome?.trim() || "";
+    if (!contatoNome) throw new Error("Informe o contato principal do cliente.");
+    const obsVendedor = data.observacoesVendedor?.trim() || "";
+    if (!obsVendedor) throw new Error("As observações do vendedor são obrigatórias.");
+
+    const temSecundaria = !!data.empresaSecundaria;
+    const secNome = data.empresaSecundariaNome?.trim() || "";
+    const secDoc = soDigitos(data.empresaSecundariaDoc);
+    if (temSecundaria) {
+      if (!secNome) throw new Error("Informe o nome da empresa secundária.");
+      if (secDoc.length !== 11 && secDoc.length !== 14) {
+        throw new Error("CNPJ/CPF da empresa secundária inválido.");
+      }
+    }
 
     const { data: abertas, error: eAbertas } = await (context.supabase as any)
       .from("credito_analises")
@@ -140,7 +173,19 @@ export const solicitarCredito = createServerFn({ method: "POST" })
         prioridade,
         credito_solicitado: num(data.creditoSolicitado),
         condicao_solicitada: data.condicaoSolicitada?.trim() || null,
-        observacoes_vendedor: data.observacoesVendedor?.trim() || null,
+        observacoes_vendedor: obsVendedor,
+        contato_nome: contatoNome,
+        contato_email: data.contatoEmail?.trim() || null,
+        contato_telefone: data.contatoTelefone?.trim() || null,
+        empresa_secundaria: temSecundaria,
+        empresa_secundaria_nome: temSecundaria ? secNome : null,
+        empresa_secundaria_doc: temSecundaria ? secDoc : null,
+        anexos: (data.anexos ?? []).map((a) => ({
+          path: String(a.path),
+          nome: String(a.nome),
+          tamanho: a.tamanho ?? null,
+          tipo: a.tipo ?? null,
+        })),
         solicitado_por: context.userId,
       })
       .select("id, numero")
@@ -177,6 +222,8 @@ export const analisarCredito = createServerFn({ method: "POST" })
       serasa?: number | null;
       validade?: string | null;
       observacoesFinanceiro?: string | null;
+      responsavelAnalise?: string | null;
+      autorizacaoDiretoria?: string | null;
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
@@ -189,6 +236,9 @@ export const analisarCredito = createServerFn({ method: "POST" })
     if (concluida && data.conclusao === "Liberado" && num(data.creditoAprovado) == null) {
       throw new Error("Informe o crédito aprovado para liberar o cliente.");
     }
+    if (concluida && !(data.responsavelAnalise?.trim())) {
+      throw new Error("Informe quem foi o responsável pela análise.");
+    }
 
     const patch: Record<string, unknown> = {
       status: data.status,
@@ -200,6 +250,8 @@ export const analisarCredito = createServerFn({ method: "POST" })
       serasa: num(data.serasa),
       validade: concluida && data.conclusao === "Liberado" ? (data.validade || null) : null,
       observacoes_financeiro: data.observacoesFinanceiro?.trim() || null,
+      responsavel_analise: data.responsavelAnalise?.trim() || null,
+      autorizacao_diretoria: data.autorizacaoDiretoria?.trim() || null,
       concluido_em: concluida ? new Date().toISOString() : null,
     };
     if (data.prioridade && CREDITO_PRIORIDADES.includes(data.prioridade as any)) {

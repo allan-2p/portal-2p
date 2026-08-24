@@ -21,6 +21,7 @@ import {
 import { mascaraDoc } from "@/lib/cnpj";
 import { listCondicoesPagamento } from "@/lib/condicoes-pagamento.functions";
 import { analisarCredito, listCreditoAnalises } from "@/lib/credito.functions";
+import { CreditoAnexosLista } from "@/components/credito-anexos";
 import {
   CREDITO_CONCLUSOES, CREDITO_PRIORIDADES, CREDITO_STATUS,
   creditoStatusTom, fmtBRL, type CreditoAnalise,
@@ -244,11 +245,13 @@ function AnalisarDialog({
     id: string; status: string; prioridade?: string | null; conclusao?: string | null;
     restricao?: boolean | null; condicaoAprovada?: string | null; creditoAprovado?: number | null;
     serasa?: number | null; validade?: string | null; observacoesFinanceiro?: string | null;
+    responsavelAnalise?: string | null; autorizacaoDiretoria?: string | null;
   }) => void;
 }) {
   const [form, setForm] = useState<{
     status: string; prioridade: string; conclusao: string; restricao: boolean;
     condicaoAprovada: string; creditoAprovado: string; serasa: string; validade: string; obs: string;
+    responsavel: string; diretoria: string;
   } | null>(null);
 
   const atual = form ?? (analise
@@ -262,6 +265,8 @@ function AnalisarDialog({
         serasa: analise.serasa != null ? String(analise.serasa) : "",
         validade: analise.validade ?? "",
         obs: analise.observacoesFinanceiro ?? "",
+        responsavel: analise.responsavelAnalise ?? "",
+        diretoria: analise.autorizacaoDiretoria ?? "",
       }
     : null);
 
@@ -301,6 +306,32 @@ function AnalisarDialog({
                     <span className="font-medium">#{formatPropostaNumero(analise.propostaNumero)}</span>
                   </div>
                 )}
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">Contato principal</span>
+                  <span className="font-medium text-right">
+                    {analise.contatoNome || "—"}
+                    {(analise.contatoEmail || analise.contatoTelefone) && (
+                      <span className="block text-xs text-muted-foreground">
+                        {[analise.contatoEmail, analise.contatoTelefone].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {analise.empresaSecundaria && (
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground">Empresa secundária</span>
+                    <span className="font-medium text-right">
+                      {analise.empresaSecundariaNome || "—"}
+                      <span className="block text-xs text-muted-foreground">
+                        {analise.empresaSecundariaDoc ? mascaraDoc(analise.empresaSecundariaDoc) : ""}
+                      </span>
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">Anexos</span>
+                  <span className="text-right"><CreditoAnexosLista anexos={analise.anexos ?? []} /></span>
+                </div>
                 {analise.observacoesVendedor && (
                   <div className="pt-1 text-muted-foreground">
                     Observações do vendedor: <span className="text-foreground">{analise.observacoesVendedor}</span>
@@ -393,6 +424,25 @@ function AnalisarDialog({
                 </div>
               </div>
 
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Responsável pela análise{atual.status === "Análise Concluída" ? " *" : ""}</Label>
+                  <Input
+                    value={atual.responsavel}
+                    onChange={(e) => set({ responsavel: e.target.value })}
+                    placeholder="Analista do Financeiro"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Autorização da diretoria</Label>
+                  <Input
+                    value={atual.diretoria}
+                    onChange={(e) => set({ diretoria: e.target.value })}
+                    placeholder="Quem autorizou (se houve)"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <Label>Observações do Financeiro</Label>
                 <Textarea
@@ -427,6 +477,8 @@ function AnalisarDialog({
                     serasa: atual.serasa === "" ? null : Number(atual.serasa),
                     validade: atual.validade || null,
                     observacoesFinanceiro: atual.obs || null,
+                    responsavelAnalise: atual.responsavel || null,
+                    autorizacaoDiretoria: atual.diretoria || null,
                   })
                 }
               >

@@ -17,8 +17,10 @@ import {
   getCreditoHistoricoSf, listCreditoAnalises, solicitarCredito, cancelarCredito,
 } from "@/lib/credito.functions";
 import {
-  CREDITO_PRIORIDADES, CREDITO_STATUS_ABERTOS, creditoStatusTom, fmtBRL,
+  CREDITO_PRIORIDADES, CREDITO_STATUS_ABERTOS, creditoStatusTom, fmtBRL, type CreditoAnexo,
 } from "@/lib/credito";
+import { CreditoAnexosUpload } from "@/components/credito-anexos";
+import { Switch } from "@/components/ui/switch";
 
 const dataBR = (v?: string | null) => (v ? new Date(v).toLocaleDateString("pt-BR") : "—");
 
@@ -49,6 +51,13 @@ export function CreditoClienteCard({
   const [condicao, setCondicao] = useState("");
   const [prioridade, setPrioridade] = useState<string>("Normal");
   const [obs, setObs] = useState("");
+  const [contatoNome, setContatoNome] = useState("");
+  const [contatoEmail, setContatoEmail] = useState("");
+  const [contatoTel, setContatoTel] = useState("");
+  const [temSecundaria, setTemSecundaria] = useState(false);
+  const [secNome, setSecNome] = useState("");
+  const [secDoc, setSecDoc] = useState("");
+  const [anexos, setAnexos] = useState<CreditoAnexo[]>([]);
 
   const analises = useQuery({
     queryKey: ["credito-analises", "cliente", doc],
@@ -71,6 +80,9 @@ export function CreditoClienteCard({
 
   const emAberto = (analises.data ?? []).find((a) => CREDITO_STATUS_ABERTOS.includes(a.status));
 
+  const podeEnviar =
+    !!contatoNome.trim() && !!obs.trim() && (!temSecundaria || (!!secNome.trim() && !!secDoc.trim()));
+
   const enviar = useMutation({
     mutationFn: () =>
       criar({
@@ -83,12 +95,21 @@ export function CreditoClienteCard({
           condicaoSolicitada: condicao || null,
           prioridade,
           observacoesVendedor: obs || null,
+          contatoNome: contatoNome || null,
+          contatoEmail: contatoEmail || null,
+          contatoTelefone: contatoTel || null,
+          empresaSecundaria: temSecundaria,
+          empresaSecundariaNome: temSecundaria ? secNome : null,
+          empresaSecundariaDoc: temSecundaria ? secDoc : null,
+          anexos,
         },
       }),
     onSuccess: (r) => {
       toast.success(`Solicitação ${r.numero} enviada ao Financeiro.`);
       setAberto(false);
       setValor(""); setCondicao(""); setPrioridade("Normal"); setObs("");
+      setContatoNome(""); setContatoEmail(""); setContatoTel("");
+      setTemSecundaria(false); setSecNome(""); setSecDoc(""); setAnexos([]);
       qc.invalidateQueries({ queryKey: ["credito-analises"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -198,7 +219,7 @@ export function CreditoClienteCard({
       </div>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader className="text-left">
             <DialogTitle>Solicitar análise de crédito</DialogTitle>
             <DialogDescription>
@@ -207,45 +228,112 @@ export function CreditoClienteCard({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label>Crédito solicitado (R$)</Label>
-              <Input
-                type="number" min="0" step="0.01" inputMode="decimal"
-                value={valor} onChange={(e) => setValor(e.target.value)}
-                placeholder="Ex.: 150000"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Condição de pagamento pretendida</Label>
-              <Select value={condicao || "__none"} onValueChange={(v) => setCondicao(v === "__none" ? "" : v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">Não informar</SelectItem>
-                  {(condicoes.data ?? []).map((c) => (
-                    <SelectItem key={c.codigo} value={c.descricao}>{c.codigo} · {c.descricao}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Prioridade</Label>
-              <Select value={prioridade} onValueChange={setPrioridade}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CREDITO_PRIORIDADES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Observações para o Financeiro</Label>
-              <Textarea rows={3} value={obs} onChange={(e) => setObs(e.target.value)} />
-            </div>
+          <div className="space-y-4">
+            <section className="rounded-xl border border-border p-3 space-y-3">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                Contato principal do cliente
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="space-y-1.5 sm:col-span-3">
+                  <Label>Nome *</Label>
+                  <Input value={contatoNome} onChange={(e) => setContatoNome(e.target.value)}
+                    placeholder="Quem o Financeiro procura no cliente" />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>E-mail</Label>
+                  <Input type="email" value={contatoEmail} onChange={(e) => setContatoEmail(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Telefone</Label>
+                  <Input value={contatoTel} onChange={(e) => setContatoTel(e.target.value)} />
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-border p-3 space-y-3">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                Pedido do vendedor
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Crédito solicitado (R$)</Label>
+                  <Input
+                    type="number" min="0" step="0.01" inputMode="decimal"
+                    value={valor} onChange={(e) => setValor(e.target.value)}
+                    placeholder="Ex.: 150000"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Condição solicitada</Label>
+                  <Select value={condicao || "__none"} onValueChange={(v) => setCondicao(v === "__none" ? "" : v)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Não informar</SelectItem>
+                      {(condicoes.data ?? []).map((c) => (
+                        <SelectItem key={c.codigo} value={c.descricao}>{c.codigo} · {c.descricao}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Prioridade</Label>
+                  <Select value={prioridade} onValueChange={setPrioridade}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CREDITO_PRIORIDADES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-border p-3 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                    Empresa secundária
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    O cliente tem outra empresa que compõe a análise?
+                  </p>
+                </div>
+                <Switch checked={temSecundaria} onCheckedChange={setTemSecundaria} />
+              </div>
+              {temSecundaria && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>Nome da empresa *</Label>
+                    <Input value={secNome} onChange={(e) => setSecNome(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>CNPJ/CPF *</Label>
+                    <Input value={secDoc} onChange={(e) => setSecDoc(e.target.value)} inputMode="numeric" />
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-xl border border-border p-3 space-y-3">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                Documentos e observações
+              </div>
+              <CreditoAnexosUpload doc={doc} anexos={anexos} onChange={setAnexos} />
+              <div className="space-y-1.5">
+                <Label>Observações do vendedor *</Label>
+                <Textarea rows={3} value={obs} onChange={(e) => setObs(e.target.value)}
+                  placeholder="Contexto da negociação, histórico de pagamento, volume previsto…" />
+              </div>
+            </section>
           </div>
 
           <DialogFooter className="gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => setAberto(false)}>Cancelar</Button>
-            <Button className="gap-2" disabled={enviar.isPending} onClick={() => enviar.mutate()}>
+            <Button
+              className="gap-2"
+              disabled={enviar.isPending || !podeEnviar}
+              title={podeEnviar ? undefined : "Preencha contato principal, observações e os dados da empresa secundária."}
+              onClick={() => enviar.mutate()}
+            >
               {enviar.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Enviar solicitação
             </Button>
           </DialogFooter>

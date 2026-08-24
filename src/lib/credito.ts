@@ -19,7 +19,26 @@ export type CreditoPrioridade = (typeof CREDITO_PRIORIDADES)[number];
 export const CREDITO_CONCLUSOES = ["Liberado", "Negado"] as const;
 export type CreditoConclusao = (typeof CREDITO_CONCLUSOES)[number];
 
+/** Documento anexado à solicitação (arquivo no bucket `credito-anexos`). */
+export type CreditoAnexo = {
+  path: string;
+  nome: string;
+  tamanho: number | null;
+  tipo: string | null;
+};
+
+export const CREDITO_ANEXOS_BUCKET = "credito-anexos";
+
 export type CreditoAnalise = {
+  contatoNome: string | null;
+  contatoEmail: string | null;
+  contatoTelefone: string | null;
+  empresaSecundaria: boolean;
+  empresaSecundariaNome: string | null;
+  empresaSecundariaDoc: string | null;
+  anexos: CreditoAnexo[];
+  responsavelAnalise: string | null;
+  autorizacaoDiretoria: string | null;
   id: string;
   numero: string;
   instancia: "solar" | "carregadores";
