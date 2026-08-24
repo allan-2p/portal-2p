@@ -780,6 +780,44 @@ export type Database = {
         }
         Relationships: []
       }
+      consultores_sap: {
+        Row: {
+          ativo: boolean
+          codigo_sap: string
+          created_at: string
+          nome: string
+          organizacao: string
+          profile_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo_sap: string
+          created_at?: string
+          nome: string
+          organizacao?: string
+          profile_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo_sap?: string
+          created_at?: string
+          nome?: string
+          organizacao?: string
+          profile_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultores_sap_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       containers: {
         Row: {
           atualizado_em: string
