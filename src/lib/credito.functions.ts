@@ -193,8 +193,6 @@ export const solicitarCredito = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, id: row.id, numero: row.numero };
   });
-    return { ok: true, id: row.id, numero: row.numero };
-  });
 
 /** Cancela a própria solicitação enquanto ela não foi analisada. */
 export const cancelarCredito = createServerFn({ method: "POST" })
