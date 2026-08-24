@@ -939,7 +939,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                       clienteId={editId}
                       clienteDoc={soDigitos(form.doc ?? "")}
                       clienteNome={form.razao_social}
+                      contatos={form.contatos ?? []}
                     />
+
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       Salve o cadastro para solicitar análise de crédito deste cliente.
