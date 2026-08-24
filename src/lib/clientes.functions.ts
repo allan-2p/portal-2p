@@ -153,6 +153,109 @@ export const listClientesPaginaFn = createServerFn({ method: "POST" })
     }
   });
 
+/** Perfil resumido usado pela lista de "Perfil do Cliente". */
+export type ClientePerfilResumo = {
+  id: string;
+  sfAccountId: string | null;
+  razaoSocial: string;
+  nomeFantasia: string | null;
+  doc: string | null;
+  numeroSap: string | null;
+  cidade: string | null;
+  uf: string | null;
+  consultor: string | null;
+  criadoEm: string | null;
+};
+
+function resumirClientePerfil(c: Record<string, any>): ClientePerfilResumo {
+  return {
+    id: String(c["id"]),
+    sfAccountId: (c["sf_account_id"] as string | null) ?? null,
+    razaoSocial: String(c["razao_social"] ?? c["nome_fantasia"] ?? "—"),
+    nomeFantasia: (c["nome_fantasia"] as string | null) ?? null,
+    doc: (c["doc"] as string | null) ?? null,
+    numeroSap: (c["numero_sap"] as string | null) ?? null,
+    cidade: (c["cidade"] as string | null) ?? null,
+    uf: (c["uf"] as string | null) ?? null,
+    consultor:
+      ((c["consultor_nome"] as string | null) || (c["created_by_nome"] as string | null)) ?? null,
+    criadoEm: (c["created_at"] as string | null) ?? null,
+  };
+}
+
+/** Nº SAP do usuário logado — usado para casar cadastros importados por consultor. */
+async function meuConsultorSap(context: { supabase: any; userId: string }) {
+  const { data } = await context.supabase
+    .from("profiles")
+    .select("numero_sap")
+    .eq("id", context.userId)
+    .maybeSingle();
+  const sap = String(data?.numero_sap ?? "").trim();
+  return sap || null;
+}
+
+/**
+ * Lista da tela "Perfil do Cliente": 100% da tabela `clientes` do Grupo 2P.
+ * Separada por instância (campo `organizacao`/`instancia`) e, sem "View All
+ * Records", pelo consultor responsável.
+ */
+export const listClientesPerfilFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        instancia: instanciaSchema,
+        q: z.string().optional(),
+        pagina: z.number().optional(),
+        porPagina: z.number().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const db = await import("./clientes-db.server");
+    const perm = await getPerm(context as any, data.instancia, "contas");
+    assertPodeLer(perm, "contas");
+    const consultorSap = perm.view_all ? null : await meuConsultorSap(context as any);
+    try {
+      const { rows, total } = await db.listClientesPerfil(data.instancia, {
+        q: data.q,
+        pagina: data.pagina,
+        porPagina: data.porPagina,
+        donoId: perm.view_all ? null : context.userId,
+        consultorSap,
+      });
+      return { ok: true as const, clientes: rows.map(resumirClientePerfil), total };
+    } catch (e) {
+      if (e instanceof db.ClientesTableMissing) {
+        return { ok: false as const, motivo: "tabela-ausente" as const, clientes: [], total: 0 };
+      }
+      throw e;
+    }
+  });
+
+/** Cadastro completo de um cliente (dossiê aberto pela lista de perfis). */
+export const getClientePerfilFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ instancia: instanciaSchema, id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const db = await import("./clientes-db.server");
+    const perm = await getPerm(context as any, data.instancia, "contas");
+    assertPodeLer(perm, "contas");
+    const cliente = await db.getClienteById(data.instancia, data.id);
+    if (!cliente) return { ok: false as const, cliente: null };
+    if (!perm.view_all) {
+      const sap = await meuConsultorSap(context as any);
+      const meu =
+        cliente["created_by"] === context.userId ||
+        cliente["consultor_id"] === context.userId ||
+        (sap !== null && String(cliente["consultor_sap"] ?? "") === sap);
+      if (!meu) throw new Error("Você não tem acesso a este cadastro.");
+    }
+    return { ok: true as const, cliente: cliente as Record<string, any> };
+  });
+
 /** Verifica se o CNPJ/CPF já existe em qualquer instância (Solar ou Carregadores). */
 export const verificarDocFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
