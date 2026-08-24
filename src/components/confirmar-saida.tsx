@@ -37,12 +37,15 @@ export function useConfirmarSaida({
   descricao?: string;
 }) {
   const [salvandoSaida, setSalvandoSaida] = useState(false);
-  const { status, proceed, reset } = useBlocker({
+  const blocker = useBlocker({
     shouldBlockFn: () => sujo,
     withResolver: true,
     enableBeforeUnload: () => sujo,
   });
 
+  const status = blocker.status;
+  const proceed = () => blocker.proceed?.();
+  const reset = () => blocker.reset?.();
   const bloqueado = status === "blocked";
 
   // Não deixa o diálogo "preso" caso as alterações sejam salvas por outro caminho.
