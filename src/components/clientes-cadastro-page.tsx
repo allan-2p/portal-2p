@@ -939,7 +939,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                       clienteId={editId}
                       clienteDoc={soDigitos(form.doc ?? "")}
                       clienteNome={form.razao_social}
+                      contatos={form.contatos ?? []}
                     />
+
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       Salve o cadastro para solicitar análise de crédito deste cliente.
@@ -1261,7 +1263,12 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                       clienteId={detalhe.id}
                       clienteDoc={detalhe.doc}
                       clienteNome={detalhe.razao_social}
+                      contatos={normalizarContatos(detalhe.contatos, {
+                        nome: detalhe.contato_nome, cargo: detalhe.contato_cargo,
+                        email: detalhe.contato_email, telefone: detalhe.contato_telefone,
+                      })}
                     />
+
                   </TabsContent>
                 </Tabs>
               </div>

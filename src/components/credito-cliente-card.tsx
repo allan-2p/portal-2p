@@ -33,11 +33,19 @@ export function CreditoClienteCard({
   clienteId,
   clienteDoc,
   clienteNome,
+  contatos: contatosCliente = [],
 }: {
   instancia: "solar" | "carregadores";
   clienteId?: string | null;
   clienteDoc: string;
   clienteNome?: string | null;
+  contatos?: Array<{
+    tipo?: string | null;
+    nome?: string | null;
+    cargo?: string | null;
+    emails?: string[] | null;
+    telefones?: string[] | null;
+  }>;
 }) {
   const qc = useQueryClient();
   const doc = String(clienteDoc ?? "").replace(/\D/g, "");
@@ -46,18 +54,43 @@ export function CreditoClienteCard({
   const criar = useServerFn(solicitarCredito);
   const cancelar = useServerFn(cancelarCredito);
 
+  const contatosDisponiveis = (contatosCliente ?? []).filter((c) => String(c?.nome ?? "").trim());
+
   const [aberto, setAberto] = useState(false);
   const [valor, setValor] = useState("");
   const [condicao, setCondicao] = useState("");
   const [prioridade, setPrioridade] = useState<string>("Normal");
   const [obs, setObs] = useState("");
-  const [contatoNome, setContatoNome] = useState("");
-  const [contatoEmail, setContatoEmail] = useState("");
-  const [contatoTel, setContatoTel] = useState("");
+  const [contatoOrigem, setContatoOrigem] = useState<string>(
+    contatosDisponiveis.length ? "0" : "__novo",
+  );
+  const [contatoNome, setContatoNome] = useState(
+    contatosDisponiveis.length ? String(contatosDisponiveis[0]?.nome ?? "") : "",
+  );
+  const [contatoEmail, setContatoEmail] = useState(
+    contatosDisponiveis.length ? String(contatosDisponiveis[0]?.emails?.[0] ?? "") : "",
+  );
+  const [contatoTel, setContatoTel] = useState(
+    contatosDisponiveis.length ? String(contatosDisponiveis[0]?.telefones?.[0] ?? "") : "",
+  );
   const [temSecundaria, setTemSecundaria] = useState(false);
   const [secNome, setSecNome] = useState("");
   const [secDoc, setSecDoc] = useState("");
   const [anexos, setAnexos] = useState<CreditoAnexo[]>([]);
+
+  const escolherContato = (v: string) => {
+    setContatoOrigem(v);
+    if (v === "__novo") {
+      setContatoNome(""); setContatoEmail(""); setContatoTel("");
+      return;
+    }
+    const c = contatosDisponiveis[Number(v)];
+    if (!c) return;
+    setContatoNome(String(c.nome ?? ""));
+    setContatoEmail(String(c.emails?.[0] ?? ""));
+    setContatoTel(String(c.telefones?.[0] ?? ""));
+  };
+
 
   const analises = useQuery({
     queryKey: ["credito-analises", "cliente", doc],
@@ -108,7 +141,7 @@ export function CreditoClienteCard({
       toast.success(`Solicitação ${r.numero} enviada ao Financeiro.`);
       setAberto(false);
       setValor(""); setCondicao(""); setPrioridade("Normal"); setObs("");
-      setContatoNome(""); setContatoEmail(""); setContatoTel("");
+      escolherContato(contatosDisponiveis.length ? "0" : "__novo");
       setTemSecundaria(false); setSecNome(""); setSecDoc(""); setAnexos([]);
       qc.invalidateQueries({ queryKey: ["credito-analises"] });
     },
@@ -229,9 +262,51 @@ export function CreditoClienteCard({
           </DialogHeader>
 
           <div className="space-y-4">
+            <section className="rounded-xl border border-border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-primary">
+                    Prioridade
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Define a ordem de atendimento na fila do Financeiro.
+                  </p>
+                </div>
+                <Select value={prioridade} onValueChange={setPrioridade}>
+                  <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CREDITO_PRIORIDADES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </section>
+
             <section className="rounded-xl border border-border p-3 space-y-3">
               <div className="text-[11px] font-bold uppercase tracking-wider text-primary">
                 Contato principal do cliente
+              </div>
+              <div className="space-y-1.5">
+                <Label>Contato</Label>
+                <Select value={contatoOrigem} onValueChange={escolherContato}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um contato do cadastro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contatosDisponiveis.map((c, i) => (
+                      <SelectItem key={`${c.nome}-${i}`} value={String(i)}>
+                        {c.nome}
+                        {c.cargo ? ` · ${c.cargo}` : ""}
+                        {c.tipo ? ` (${c.tipo})` : ""}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__novo">+ Cadastrar novo contato</SelectItem>
+                  </SelectContent>
+                </Select>
+                {contatosDisponiveis.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Este cliente ainda não tem contatos cadastrados — informe os dados abaixo.
+                  </p>
+                )}
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-1.5 sm:col-span-3">
@@ -275,17 +350,9 @@ export function CreditoClienteCard({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Prioridade</Label>
-                  <Select value={prioridade} onValueChange={setPrioridade}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {CREDITO_PRIORIDADES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
             </section>
+
 
             <section className="rounded-xl border border-border p-3 space-y-3">
               <div className="flex items-center justify-between gap-3">
