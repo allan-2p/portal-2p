@@ -44,14 +44,9 @@ export function pushNotification(n: Omit<AppNotification, "id" | "createdAt" | "
     items: [item, ...state.items].slice(0, 30),
     lastPulse: state.lastPulse + 1,
   });
-  // dynamic import to avoid SSR issues
-  import("sonner").then(({ toast }) => {
-    const icon = n.kind === "atlas" ? "✨" : n.kind === "task" ? "📌" : "🔔";
-    toast(`${icon}  ${n.title}`, {
-      description: n.client ? `${n.client} · ${n.description}` : n.description,
-      duration: 5500,
-    });
-  });
+  // Toast desativado a pedido: nada de pop-up automático no canto da tela.
+  // As notificações continuam disponíveis no sino (ícone do topo).
+
 }
 
 export function markAllRead() {
