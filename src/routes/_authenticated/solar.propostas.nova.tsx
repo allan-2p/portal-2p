@@ -289,6 +289,15 @@ function NovaPropostaSolarPage() {
   }, [assinaturaProposta, baseSalva, salvando]);
   const sujo = baseSalva !== null && baseSalva !== assinaturaProposta && !salvando;
 
+  // Sair com alterações pendentes sempre pede confirmação (e oferece salvar).
+  const { dialog: dialogoSaida } = useConfirmarSaida({
+    sujo,
+    salvar: async () => {
+      await salvarProposta(false);
+    },
+    descricao: "Esta proposta tem alterações que ainda não foram salvas. O que você quer fazer?",
+  });
+
   const removerCupom = () => {
     if (!cupomCodigo) return;
     setCupomCodigo("");
@@ -1416,10 +1425,8 @@ function NovaPropostaSolarPage() {
 
   /** Grava a proposta antes de gerar prévia/PDF: o documento é sempre o salvo. */
   async function salvarAntesDoPdf() {
-    if (!sujo && propostaId) return true;
-    const antes = propostaId;
+    if (!sujo && propostaId) return;
     await salvarProposta(false);
-    return !!(propostaId || antes) || true;
   }
 
   /** Abre a prévia da proposta (modal). */
