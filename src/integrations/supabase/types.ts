@@ -2270,6 +2270,10 @@ export type Database = {
       sap_produtos: {
         Row: {
           ativo: boolean
+          ativo_override: boolean | null
+          ativo_override_em: string | null
+          ativo_override_motivo: string | null
+          ativo_override_por: string | null
           codigo: string
           created_at: string
           custo: number
@@ -2278,18 +2282,26 @@ export type Database = {
           imagem_path: string | null
           last_synced_at: string | null
           lista_preco: string | null
+          listas_com_preco: string | null
           ncm_codigo: string | null
           ncm_id: string | null
           origem: string
           permissao: string
+          preco_checado_em: string | null
           preco_sugerido: number
+          preco_vk12: number | null
           sap_raw: Json | null
           tipo: string
           updated_at: string
+          vendavel_sap: boolean | null
           visibilidade: string | null
         }
         Insert: {
           ativo?: boolean
+          ativo_override?: boolean | null
+          ativo_override_em?: string | null
+          ativo_override_motivo?: string | null
+          ativo_override_por?: string | null
           codigo: string
           created_at?: string
           custo?: number
@@ -2298,18 +2310,26 @@ export type Database = {
           imagem_path?: string | null
           last_synced_at?: string | null
           lista_preco?: string | null
+          listas_com_preco?: string | null
           ncm_codigo?: string | null
           ncm_id?: string | null
           origem?: string
           permissao?: string
+          preco_checado_em?: string | null
           preco_sugerido?: number
+          preco_vk12?: number | null
           sap_raw?: Json | null
           tipo?: string
           updated_at?: string
+          vendavel_sap?: boolean | null
           visibilidade?: string | null
         }
         Update: {
           ativo?: boolean
+          ativo_override?: boolean | null
+          ativo_override_em?: string | null
+          ativo_override_motivo?: string | null
+          ativo_override_por?: string | null
           codigo?: string
           created_at?: string
           custo?: number
@@ -2318,14 +2338,18 @@ export type Database = {
           imagem_path?: string | null
           last_synced_at?: string | null
           lista_preco?: string | null
+          listas_com_preco?: string | null
           ncm_codigo?: string | null
           ncm_id?: string | null
           origem?: string
           permissao?: string
+          preco_checado_em?: string | null
           preco_sugerido?: number
+          preco_vk12?: number | null
           sap_raw?: Json | null
           tipo?: string
           updated_at?: string
+          vendavel_sap?: boolean | null
           visibilidade?: string | null
         }
         Relationships: [
