@@ -1,3 +1,4 @@
+import { decomporPrecoCarregadores } from "./carregadores-impostos";
 // ============================================================================
 // Motor de cálculo e tipos do módulo de propostas (Portal 2P Carregadores).
 // Base: planilhas "Precificação Carregadores — Memória Cálculo",
@@ -503,19 +504,20 @@ export function calcularCarregadores(
     });
 
 
-    const semIpi = bruto / (1 + r.ipi);
+    // Fórmula única (6 casas nos intermediários) — ver carregadores-impostos.ts.
     // Frete vai "por fora": não entra na base de ICMS/DIFAL nem na MB/comissão.
-    const baseIcms = semIpi;
-    const icmsItem = baseIcms * interItem;
-
-    const pcItem = (semIpi - icmsItem) * r.pisCofins;
+    const dec = decomporPrecoCarregadores(bruto, {
+      ipi: r.ipi,
+      icms: interItem,
+      pisCofins: r.pisCofins,
+    });
 
     valorItens += bruto;
     custoTotal += (prod?.custo || 0) * qtd;
-    valorItem += semIpi;
-    ipiValor += bruto - semIpi;
-    icms += icmsItem;
-    pisCofins += pcItem;
+    valorItem += dec.semIpi;
+    ipiValor += dec.ipi;
+    icms += dec.icms;
+    pisCofins += dec.pisCofins;
     interPonderado += interItem * bruto;
 
     if (r.geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !operacaoInterna(destino.uf)) {

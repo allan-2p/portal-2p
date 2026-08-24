@@ -331,17 +331,23 @@ export function fatorLiquidoSemImpostos(row: Record<string, any>): number | null
   if (!(base > 0)) return null;
   const impostos = Number(t["ipi"] ?? 0) + Number(t["icms"] ?? 0) + Number(t["pisCofins"] ?? 0);
   if (!Number.isFinite(impostos) || impostos < 0) return null;
-  const fator = (base - impostos) / base;
+  // Intermediário sempre em 6 casas (nunca 2) — ver carregadores-impostos.ts.
+  const fator = Math.round(((base - impostos) / base) * 1e6) / 1e6;
   if (!(fator > 0) || fator > 1) return null;
   return fator;
 }
 
-/** Valor unitário líquido (sem imposto nenhum) enviado no VALOR_PROD. */
+/**
+ * Valor unitário líquido (sem imposto nenhum) enviado no VALOR_PROD.
+ * O produto é calculado em 6 casas e só o resultado final vai a 2 casas,
+ * que é o limite do campo do SAP.
+ */
 export function valorProdUnitario(row: Record<string, any>, item: any): number {
   const fator = fatorLiquidoSemImpostos(row);
   const valor = Number(item?.valor ?? 0);
   if (!(valor > 0) || fator === null) return 0;
-  return Math.round(valor * fator * 100) / 100;
+  const liquido = Math.round(valor * fator * 1e6) / 1e6;
+  return Math.round(liquido * 100) / 100;
 }
 
 
