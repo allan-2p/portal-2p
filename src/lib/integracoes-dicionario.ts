@@ -260,7 +260,8 @@ const SAP_OV: FluxoDic = {
         f("BILL_DATE", "data do dia"),
         f(
           "VALOR_PROD",
-          "preço manual unitário (2P Carregadores, com SAP_VALOR_PROD_CARREGADORES=X) → vira VKP0 manual; vazio = preço da tabela do SAP (Solar sempre vazio)",
+          "preço manual unitário LÍQUIDO, sem IPI, ICMS e PIS/COFINS (2P Carregadores, com SAP_VALOR_PROD_CARREGADORES=X) → vira VKP0 manual; vazio = preço da tabela do SAP (Solar sempre vazio)",
+
         ),
         vazio("PESO_BRUTO"),
         vazio("PESO_LIQ"),

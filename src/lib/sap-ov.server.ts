@@ -314,6 +314,37 @@ export function valorProdAtivo(row: Record<string, any>): boolean {
   );
 }
 
+/**
+ * Fator que converte o preço cheio da proposta no valor LÍQUIDO, sem nenhum
+ * imposto: tira IPI (por fora) e ICMS + PIS/COFINS (por dentro).
+ *
+ *   fator = (valorItens − IPI − ICMS − PIS/COFINS) / valorItens
+ *
+ * Os impostos são proporcionais ao valor dos itens, então o fator agregado
+ * gravado em `totais` no fechamento da proposta vale para cada linha. DIFAL não
+ * entra: é custo de cabeçalho, não compõe o preço do item.
+ * Retorna null quando os totais não permitem calcular (aí o envio é bloqueado).
+ */
+export function fatorLiquidoSemImpostos(row: Record<string, any>): number | null {
+  const t = (row["totais"] ?? {}) as Record<string, any>;
+  const base = Number(t["valor"] ?? 0);
+  if (!(base > 0)) return null;
+  const impostos = Number(t["ipi"] ?? 0) + Number(t["icms"] ?? 0) + Number(t["pisCofins"] ?? 0);
+  if (!Number.isFinite(impostos) || impostos < 0) return null;
+  const fator = (base - impostos) / base;
+  if (!(fator > 0) || fator > 1) return null;
+  return fator;
+}
+
+/** Valor unitário líquido (sem imposto nenhum) enviado no VALOR_PROD. */
+export function valorProdUnitario(row: Record<string, any>, item: any): number {
+  const fator = fatorLiquidoSemImpostos(row);
+  const valor = Number(item?.valor ?? 0);
+  if (!(valor > 0) || fator === null) return 0;
+  return Math.round(valor * fator * 100) / 100;
+}
+
+
 
 function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): string {
   const c = constantes(String(row["organizacao"] ?? "carregadores"), row);
@@ -329,7 +360,8 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
     kit && codigo === "100000350" ? "100000278" : codigo;
   // VALOR_PROD: vazio = preço vem da condição do SAP (regra de sempre, Solar).
   // Somente 2P Carregadores, e apenas com a flag SAP_VALOR_PROD_CARREGADORES=X,
-  // envia o preço manual UNITÁRIO da proposta (vira VKP0 manual no SAP).
+  // envia o preço manual UNITÁRIO LÍQUIDO da proposta (sem IPI, ICMS e
+  // PIS/COFINS) — vira VKP0 manual no SAP, que aplica os impostos por cima.
   const usaValorProd = valorProdAtivo(row);
   const linhas = itens
     .map(
@@ -343,7 +375,8 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         `<PESO_BRUTO></PESO_BRUTO>` +
         `<PESO_LIQ></PESO_LIQ>` +
         `<UM_PESO></UM_PESO>` +
-        `<VALOR_PROD>${usaValorProd && Number(i.valor) > 0 ? Number(i.valor).toFixed(2) : ""}</VALOR_PROD>` +
+        `<VALOR_PROD>${usaValorProd && valorProdUnitario(row, i) > 0 ? valorProdUnitario(row, i).toFixed(2) : ""}</VALOR_PROD>` +
+
         `<VALOR_DESC></VALOR_DESC>` +
         `<PERC_DESC></PERC_DESC>` +
         `<NCM></NCM>` +
@@ -638,6 +671,15 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
             .slice(0, 5)
             .join(", ")}.`,
     );
+
+  // Preço manual: sem os totais da proposta não dá para calcular o valor
+  // líquido (sem impostos) e o SAP receberia um preço errado — bloqueia.
+  if (valorProdAtivo(row) && fatorLiquidoSemImpostos(row) === null)
+    pendencias.push(
+      "Não foi possível calcular o valor líquido (sem impostos) dos itens: os totais de IPI, ICMS e PIS/COFINS da proposta estão ausentes ou inconsistentes.",
+    );
+
+
 
 
   const duplicados = new Map<string, number>();
@@ -1023,15 +1065,19 @@ export async function criarOrdemVendaSap(
   const precoManual = valorProdAtivo(row)
     ? {
         campo: "VALOR_PROD",
+        base: "valor líquido unitário, sem IPI, ICMS e PIS/COFINS",
+        fator_liquido: fatorLiquidoSemImpostos(row),
         itens: (Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [])
           .filter((i) => Number(i?.qtd ?? 0) > 0)
           .map((i) => ({
             material: norm(i?.codigo),
             qtd: Number(i?.qtd ?? 0),
-            valor_unitario: Number(i?.valor ?? 0).toFixed(2),
+            valor_unitario_proposta: Number(i?.valor ?? 0).toFixed(2),
+            valor_unitario_liquido: valorProdUnitario(row, i).toFixed(2),
           })),
       }
     : null;
+
 
   await logIntegrationEvent({
     ...base,

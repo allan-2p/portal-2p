@@ -41,11 +41,13 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
   criar nenhuma cobrança, se o serviço de certificado (mTLS) do Itaú está no ar e se as
   credenciais Pix continuam válidas. Protegido pelo mesmo segredo dos demais gatilhos.
 - Preço manual da proposta na ordem de venda do SAP (**somente 2P Carregadores**): o valor
-  unitário definido pelo vendedor passa a ser enviado no campo `VALOR_PROD` e vira o preço
-  do item no SAP. Fica atrás da chave `SAP_VALOR_PROD_CARREGADORES` (desligada até o SAP
-  transportar o ajuste para produção). Propostas Solar continuam sempre com o preço da
-  tabela do SAP. Pedido de Carregadores com item sem valor é bloqueado antes do envio, e o
-  painel de auditoria passa a registrar os valores enviados.
+  unitário do vendedor passa a ser enviado no campo `VALOR_PROD` como **valor líquido, sem
+  IPI, ICMS e PIS/COFINS** (o SAP aplica os impostos por cima). Fica atrás da chave
+  `SAP_VALOR_PROD_CARREGADORES` (desligada até o SAP transportar o ajuste para produção).
+  Propostas Solar continuam sempre com o preço da tabela do SAP. Pedido de Carregadores com
+  item sem valor — ou sem os totais de imposto da proposta — é bloqueado antes do envio, e o
+  painel de auditoria mostra o preço da proposta e o líquido enviado, item a item.
+
 
 
 ### Alterado
