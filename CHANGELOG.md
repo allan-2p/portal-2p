@@ -35,7 +35,15 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
-_Sem mudanças registradas._
+### Corrigido
+
+- Conferência automática de preços no SAP voltou a gravar o resultado: a atualização
+  do catálogo falhava quando a descrição do material não era enviada junto.
+
+### Banco de dados
+
+- Agendamento `portal-sap-catalogo-vendaveis` criado no banco (4x/dia, 250 materiais por
+  rodada), conforme `docs/migracao/setup-novo-projeto.sql`. Passo manual já executado.
 
 ---
 
