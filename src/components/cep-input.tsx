@@ -20,22 +20,47 @@ export function formatarCep(v: string) {
   return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
 }
 
+async function viaCep(d: string): Promise<EnderecoCep | null> {
+  const res = await fetch(`https://viacep.com.br/ws/${d}/json/`);
+  if (!res.ok) return null;
+  const j = (await res.json()) as Record<string, string> & { erro?: boolean | string };
+  if (j.erro) return null;
+  return {
+    cep: formatarCep(d),
+    logradouro: j['logradouro'] ?? "",
+    complemento: j['complemento'] ?? "",
+    bairro: j['bairro'] ?? "",
+    cidade: j['localidade'] ?? "",
+    uf: j['uf'] ?? "",
+  };
+}
+
+async function brasilApi(d: string): Promise<EnderecoCep | null> {
+  const res = await fetch(`https://brasilapi.com.br/api/cep/v1/${d}`);
+  if (!res.ok) return null;
+  const j = (await res.json()) as Record<string, string>;
+  return {
+    cep: formatarCep(d),
+    logradouro: j['street'] ?? "",
+    complemento: "",
+    bairro: j['neighborhood'] ?? "",
+    cidade: j['city'] ?? "",
+    uf: j['state'] ?? "",
+  };
+}
+
+/** Busca o CEP no ViaCEP e, se falhar (rede/CSP/instabilidade), tenta a BrasilAPI. */
 export async function buscarCep(cep: string): Promise<EnderecoCep | null> {
   const d = soDigitosCep(cep);
   if (d.length !== 8) return null;
   try {
-    const res = await fetch(`https://viacep.com.br/ws/${d}/json/`);
-    if (!res.ok) return null;
-    const j = (await res.json()) as Record<string, string> & { erro?: boolean | string };
-    if (j.erro) return null;
-    return {
-      cep: formatarCep(d),
-      logradouro: j['logradouro'] ?? "",
-      complemento: j['complemento'] ?? "",
-      bairro: j['bairro'] ?? "",
-      cidade: j['localidade'] ?? "",
-      uf: j['uf'] ?? "",
-    };
+    const r = await viaCep(d);
+    if (r) return r;
+  } catch {
+    /* tenta o fallback abaixo */
+  }
+  try {
+    return await brasilApi(d);
   } catch {
     return null;
   }
