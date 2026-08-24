@@ -14,7 +14,9 @@ const SELECT =
   "id, numero, instancia, cliente_doc, cliente_nome, cliente_id, status, prioridade, conclusao, " +
   "restricao, condicao_solicitada, condicao_aprovada, credito_solicitado, credito_aprovado, serasa, " +
   "validade, observacoes_vendedor, observacoes_financeiro, proposta_id, proposta_numero, " +
-  "solicitado_por, solicitado_em, analista_id, concluido_em";
+  "solicitado_por, solicitado_em, analista_id, concluido_em, contato_nome, contato_email, " +
+  "contato_telefone, empresa_secundaria, empresa_secundaria_nome, empresa_secundaria_doc, anexos, " +
+  "responsavel_analise, autorizacao_diretoria";
 
 const soDigitos = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 const num = (v: unknown) => {
