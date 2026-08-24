@@ -1320,7 +1320,9 @@ function PropostaCarregadoresPage() {
 
       submitLock.current = false;
       setSaving(false);
+      setConclusaoFase(null);
     }
+
   }
 
 
