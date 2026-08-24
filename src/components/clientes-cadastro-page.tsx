@@ -930,9 +930,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
+              {isLoading && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
               {!isLoading && rows.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                   <Building2 className="h-6 w-6 mx-auto mb-2 opacity-50" />
                   {clientes.length === 0
                     ? "Nenhum cadastro ainda — clique em “Novo cadastro”."
@@ -964,6 +964,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     {c.consultor_sap && (
                       <div className="text-[10px] font-mono opacity-70">{c.consultor_sap}</div>
                     )}
+                  </td>
+                  <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                    {c.created_at
+                      ? new Date(c.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+                      : "—"}
                   </td>
                   <td className="px-4 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" aria-label="Ver detalhes" onClick={() => setDetalhe(c)}><Eye className="h-4 w-4" /></Button>
