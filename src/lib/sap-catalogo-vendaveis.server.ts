@@ -90,7 +90,7 @@ export async function varrerCatalogoVendaveis(
 
   let q = supabaseAdmin
     .from("sap_produtos")
-    .select("codigo, ativo, ativo_override, vendavel_sap, preco_sugerido, listas_com_preco, preco_vk12")
+    .select("codigo, descricao, ativo, ativo_override, vendavel_sap, preco_sugerido, listas_com_preco, preco_vk12")
     .eq("origem", "sap");
   if (opts?.codigos?.length) q = q.in("codigo", opts.codigos);
   else q = q.order("preco_checado_em", { ascending: true, nullsFirst: true }).limit(limite);
