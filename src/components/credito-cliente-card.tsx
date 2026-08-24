@@ -49,6 +49,13 @@ export function CreditoClienteCard({
   const [condicao, setCondicao] = useState("");
   const [prioridade, setPrioridade] = useState<string>("Normal");
   const [obs, setObs] = useState("");
+  const [contatoNome, setContatoNome] = useState("");
+  const [contatoEmail, setContatoEmail] = useState("");
+  const [contatoTel, setContatoTel] = useState("");
+  const [temSecundaria, setTemSecundaria] = useState(false);
+  const [secNome, setSecNome] = useState("");
+  const [secDoc, setSecDoc] = useState("");
+  const [anexos, setAnexos] = useState<CreditoAnexo[]>([]);
 
   const analises = useQuery({
     queryKey: ["credito-analises", "cliente", doc],
