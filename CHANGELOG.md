@@ -35,7 +35,19 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Alterado
+
+- Portal mais leve: logos do cabeçalho servidos em versões otimizadas (de ~270 KB para
+  ~10 KB somados) e imagem de fundo de login sem uso removida.
+- Limpeza de código morto: 24 arquivos de componentes/utilitários sem uso e 15
+  bibliotecas de interface não utilizadas removidos do projeto, reduzindo o pacote
+  entregue ao navegador. Nenhuma tela em uso foi afetada.
+
 ### Corrigido
+
+- Mensagens de aviso (sucesso, erro, sessão expirada) voltaram a aparecer na tela: o
+  container de notificações não estava montado, então todo aviso do portal era
+  silencioso.
 
 - Conferência automática de preços no SAP voltou a gravar o resultado: a atualização
   do catálogo falhava quando a descrição do material não era enviada junto.

@@ -2,7 +2,7 @@
 // Solar (atual, laranja), Carregadores (azul), Marketing (cinza + amarelo fosco).
 
 import type { AppPath } from "@/lib/routes";
-import solarLogoRaw from "@/assets/2p-logo.jpg";
+import solarLogoRaw from "@/assets/2p-logo-sm.webp";
 import carregadoresAsset from "@/assets/2p-carregadores-logo.png.asset.json";
 
 export type InstanceId = "solar" | "carregadores" | "marketing" | "financeiro";

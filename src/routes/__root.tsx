@@ -17,6 +17,7 @@ import inter400 from "@fontsource/inter/files/inter-latin-400-normal.woff2?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { InstanceProvider } from "@/components/instance-provider";
 import { SimulationProvider, SimulationBanner } from "@/components/simulation";
+import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logUserActivity } from "@/lib/activity.functions";
 import { useIdleSignout } from "@/hooks/use-idle-signout";
@@ -211,6 +212,8 @@ function RootComponent() {
           <SimulationBanner />
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
+          {/* Container dos avisos (toasts) — sem ele nenhuma mensagem de sucesso/erro aparece. */}
+          <Toaster />
         </InstanceProvider>
       </SimulationProvider>
     </QueryClientProvider>
