@@ -331,10 +331,7 @@ function NovaPropostaSolarPage() {
 
   const produtos = produtosQ.data ?? [];
   const config = cfgQ.data ?? SOLAR_CALC_CONFIG_FALLBACK;
-  const cliente: ClienteCad | null = useMemo(
-    () => (clientesQ.data ?? []).find((c: any) => String(c.doc) === clienteDoc) ?? null,
-    [clientesQ.data, clienteDoc],
-  );
+  const cliente = (clientesQ.selecionado ?? null) as ClienteCad | null;
 
   const suportesDe = (tid: string) => {
     const ids = (combQ.data ?? {})[tid] ?? [];
