@@ -1,6 +1,7 @@
 import { cidadeUf } from "@/lib/local-format";
 import { useCan, useCanDelete } from "@/components/permission-gate";
 import { useEffect, useMemo, useState } from "react";
+import { ConfirmarFechamentoDialog } from "@/components/confirmar-saida";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent } from "@/components/ui/card";
@@ -409,17 +410,34 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   );
   const filtrosAtivos = fUf !== "todas" || fStatus !== "ativos" || fFiscal !== "todos" || q.trim() !== "";
 
+  // Assinatura do formulário no momento em que o modal abriu: qualquer
+  // divergência significa alterações não salvas.
+  const assinaturaForm = JSON.stringify([form, docBusca, consultorId]);
+  const [baseForm, setBaseForm] = useState<string | null>(null);
+  const [confirmarFechar, setConfirmarFechar] = useState(false);
+  const formSujo = baseForm !== null && baseForm !== assinaturaForm;
+
+  function tentarFechar() {
+    if (formSujo) return setConfirmarFechar(true);
+    fechar();
+  }
+
   function fechar() {
+    setBaseForm(null); setConfirmarFechar(false);
     setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
     setConsultorId(consultoresQ.data?.eu.id ?? null);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
     setFontes([]); setAvisos([]);
   }
-  const abrirNovo = () => { fechar(); setOpen(true); };
+  const abrirNovo = () => {
+    fechar();
+    setOpen(true);
+    setBaseForm(JSON.stringify([vazio(), "", consultoresQ.data?.eu.id ?? null]));
+  };
   const abrirEdicao = (c: Cliente) => {
     const { id: _id, ...rest } = c;
     setEditId(c.id);
-    setForm({
+    const inicial = {
       ...vazio(),
       ...rest,
       doc: mascaraDoc(c.doc ?? ""),
@@ -428,8 +446,12 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         nome: c.contato_nome, cargo: c.contato_cargo,
         email: c.contato_email, telefone: c.contato_telefone,
       }),
-    });
-    setConsultorId(c.created_by ?? consultoresQ.data?.eu.id ?? null);
+    } as Form;
+    const consultor = c.created_by ?? consultoresQ.data?.eu.id ?? null;
+    setForm(inicial);
+    setConsultorId(consultor);
+    setDocBusca("");
+    setBaseForm(JSON.stringify([inicial, "", consultor]));
     setTentouSalvar(false); setFontes([]); setAvisos([]);
     setEtapa("formulario"); setOpen(true);
   };
@@ -518,7 +540,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         </Card>
       )}
 
-      <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : fechar())}>
+      <ConfirmarFechamentoDialog
+        aberto={confirmarFechar}
+        onCancelar={() => setConfirmarFechar(false)}
+        onDescartar={fechar}
+        descricao="Você preencheu informações do cliente que ainda não foram salvas. Se fechar agora, elas serão perdidas."
+      />
+
+      <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : tentarFechar())}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -565,7 +594,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               )}
 
               <DialogFooter>
-                <Button variant="outline" onClick={fechar}>Cancelar</Button>
+                <Button variant="outline" onClick={tentarFechar}>Cancelar</Button>
                 <Button onClick={() => verificar.mutate()} disabled={verificar.isPending || !docBusca.trim()} className="gap-2">
                   {verificar.isPending
                     ? <><Loader2 className="h-4 w-4 animate-spin" /> Consultando…</>
@@ -786,7 +815,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               </Section>
 
               <DialogFooter>
-                <Button variant="outline" onClick={fechar}>Cancelar</Button>
+                <Button variant="outline" onClick={tentarFechar}>Cancelar</Button>
                 <Button onClick={tentarSalvar} disabled={salvar.isPending}>
                   {salvar.isPending ? "Salvando…" : "Salvar cadastro"}
                 </Button>

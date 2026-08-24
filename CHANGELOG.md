@@ -38,8 +38,16 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - Overlay bloqueante ao concluir pedido (Solar e Carregadores) com passos animados das integrações e aviso para não fechar a janela.
 - Botão "Ver proposta concluída" no resultado da conclusão, abrindo o detalhe via `/{solar|carregadores}/propostas?ver=<id>`.
 
+### Alterado
+- "Salvar proposta" passa a aparecer somente na etapa de Finalização, ao lado de "Concluir pedido" (Solar e Carregadores).
+- Gerar prévia ou PDF da proposta agora salva a proposta antes de montar o documento.
+- Sair de uma proposta com alterações pendentes pede confirmação, com opção de salvar e sair.
+- Fechar o cadastro de cliente (botão ou clique fora) pede confirmação quando há informações não salvas.
+- Salvamento de proposta mais rápido: leituras de perfil/proposta em paralelo no servidor e atualização da lista em segundo plano.
+
 ### Corrigido
 - Campo "Valor do frete (manual)" duplicado no frete dedicado de Carregadores.
+
 
 
 ### Adicionado
