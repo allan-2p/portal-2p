@@ -476,6 +476,8 @@ function AnalisarDialog({
                     serasa: atual.serasa === "" ? null : Number(atual.serasa),
                     validade: atual.validade || null,
                     observacoesFinanceiro: atual.obs || null,
+                    responsavelAnalise: atual.responsavel || null,
+                    autorizacaoDiretoria: atual.diretoria || null,
                   })
                 }
               >
