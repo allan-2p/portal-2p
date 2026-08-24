@@ -35,7 +35,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 ### Alterado
-- **Busca e paginação no banco (clientes e propostas)**: a pesquisa passa a alcançar toda a base (mais de 7 mil clientes e todas as propostas, inclusive as importadas), sem o antigo teto de ~1000 registros por tela. A navegação por páginas e o total de registros vêm do banco, com 25 por página por padrão, e a ordenação é sempre do mais recente para o mais antigo.
+- **Lista de clientes**: nova coluna "Cliente desde" (data de criação do cadastro) e cabeçalhos de todas as colunas clicáveis para ordenar/inverter. Ordenação padrão continua sendo a mais recente primeiro (`created_at` descendente).
 - Filtros de status, UF, com/sem nº SAP e vendedor nas listas de propostas passam a ser aplicados no banco, junto da busca.
 
 - **Numeração de proposta definitiva**: o nº é inteiro puro, sem zeros à esquerda, e é o próprio nº de pedido (NROPED) enviado ao SAP. Faixas: 10001–53059 = importadas da plataforma antiga; 60001+ = propostas novas do portal (próximo = 60027). Todo preenchimento com zeros foi removido de geração, exibição, busca e comparação.

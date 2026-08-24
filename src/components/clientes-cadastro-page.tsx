@@ -94,6 +94,7 @@ export type Cliente = {
   ativo: boolean;
   created_by?: string | null;
   created_by_nome?: string | null;
+  created_at?: string | null;
   // Campos da migração da plataforma antiga (somente leitura no portal).
   consultor_nome?: string | null;
   consultor_sap?: string | null;
@@ -188,7 +189,7 @@ function Marca({ texto, termo }: { texto?: string | null; termo: string }) {
   );
 }
 
-type OrdemKey = "sap" | "cliente" | "doc" | "fiscal" | "cidade" | "contato";
+type OrdemKey = "sap" | "cliente" | "doc" | "fiscal" | "cidade" | "contato" | "cliente_desde";
 
 /** Ordenação padrão do portal: mais recente primeiro. */
 type OrdemLista = OrdemKey | "recente";
@@ -202,6 +203,7 @@ const COLUNA_ORDEM: Record<OrdemLista, string> = {
   fiscal: "contribuinte",
   cidade: "cidade",
   contato: "consultor_nome",
+  cliente_desde: "created_at",
 };
 
 const UFS = [
@@ -909,6 +911,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   ["fiscal", "Fiscal"],
                   ["cidade", "Cidade / UF"],
                   ["contato", "Consultor"],
+                  ["cliente_desde", "Cliente desde"],
                 ] as [OrdemKey, string][]).map(([k, label]) => (
                   <th key={k} className="text-left px-4 py-2">
                     <button
@@ -927,9 +930,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
+              {isLoading && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Carregando…</td></tr>}
               {!isLoading && rows.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                   <Building2 className="h-6 w-6 mx-auto mb-2 opacity-50" />
                   {clientes.length === 0
                     ? "Nenhum cadastro ainda — clique em “Novo cadastro”."
@@ -961,6 +964,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     {c.consultor_sap && (
                       <div className="text-[10px] font-mono opacity-70">{c.consultor_sap}</div>
                     )}
+                  </td>
+                  <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                    {c.created_at
+                      ? new Date(c.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+                      : "—"}
                   </td>
                   <td className="px-4 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" aria-label="Ver detalhes" onClick={() => setDetalhe(c)}><Eye className="h-4 w-4" /></Button>
