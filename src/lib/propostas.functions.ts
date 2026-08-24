@@ -457,21 +457,8 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     // Consultor da proposta: fotografado do cadastro do cliente no momento da
     // criação. Depois disso nunca muda, mesmo que o cadastro seja reatribuído.
     async function consultorDoCliente() {
-      const doc = (data.cliente.doc ?? "").replace(/\D/g, "");
-      if (!doc) return { id: null as string | null, nome: null as string | null };
-      try {
-        const db = await import("./clientes-db.server");
-        const achados = await db.findClienteByDoc(doc);
-        const alvo =
-          achados.find((a) => a.instancia === "carregadores")?.cliente ?? achados[0]?.cliente;
-        if (!alvo) return { id: null, nome: null };
-        return {
-          id: (alvo["created_by"] as string | null) ?? null,
-          nome: (alvo["created_by_nome"] as string | null) ?? null,
-        };
-      } catch {
-        return { id: null, nome: null };
-      }
+      const { consultorDoClientePorDoc } = await import("./consultor-sap.server");
+      return consultorDoClientePorDoc(data.cliente.doc ?? "", "carregadores");
     }
 
     // Leituras independentes em paralelo: perfil do usuário, repositório e a

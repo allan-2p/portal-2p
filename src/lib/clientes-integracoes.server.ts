@@ -103,6 +103,22 @@ export async function sincronizarCliente(
   }
 
 
+  /**
+   * Quando o SAP devolve o vendedor, ele passa a ser a verdade do cadastro:
+   * grava `consultor_sap` e, quando o código existe no portal, `consultor_nome`
+   * e `consultor_id` correspondentes.
+   */
+  async function vendedorDeVolta(retornado: string | null, enviado: string | null) {
+    const codigo = String(retornado ?? "").trim();
+    if (!codigo || codigo === String(enviado ?? "").trim()) return {};
+    const { consultorPorSap } = await import("./consultor-sap.server");
+    const noPortal = await consultorPorSap(codigo);
+    return {
+      consultor_sap: codigo,
+      ...(noPortal ? { consultor_nome: noPortal.nome, consultor_id: noPortal.id } : {}),
+    };
+  }
+
   const sapPayload = {
     doc: base.doc,
     razao_social: base.razao_social,
@@ -142,6 +158,7 @@ export async function sincronizarCliente(
         mensagem: "ignorado",
         equipe_vendas: null as string | null,
         escritorio_vendas: null as string | null,
+        vendedor_sap: null as string | null,
       }
     : await enviarClienteParaSap({
 
@@ -201,6 +218,8 @@ export async function sincronizarCliente(
       escopo_org: escopo,
       equipe_vendas: (sap.ok ? sap.equipe_vendas : null) ?? EQUIPE_VENDAS,
       escritorio_vendas: (sap.ok ? sap.escritorio_vendas : null) ?? ESCRITORIO,
+      // Vendedor devolvido pelo SAP volta para o par canônico do cadastro.
+      ...(await vendedorDeVolta(sap.ok ? sap.vendedor_sap : null, extras.vendedorSap ?? null)),
     });
   } catch (err) {
     console.error("[clientes] falha ao gravar retorno do SAP", err);
