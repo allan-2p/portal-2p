@@ -297,6 +297,24 @@ function parceiro(role: "AG" | "CL" | "ZT", doc: string, nome: string) {
 
 type Peso = { bruto: number; liquido: number };
 
+/** True quando a proposta é de 2P Carregadores. */
+export function ehCarregadores(row: Record<string, any>): boolean {
+  return String(row["organizacao"] ?? "").toLowerCase().includes("carregador");
+}
+
+/**
+ * Preço manual (VALOR_PROD → VKP0) só vale para 2P Carregadores e só quando a
+ * flag SAP_VALOR_PROD_CARREGADORES=X estiver ligada (após transporte no SAP).
+ * Solar permanece SEMPRE com o campo vazio.
+ */
+export function valorProdAtivo(row: Record<string, any>): boolean {
+  return (
+    ehCarregadores(row) &&
+    String(process.env["SAP_VALOR_PROD_CARREGADORES"] ?? "").toUpperCase() === "X"
+  );
+}
+
+
 function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): string {
   const c = constantes(String(row["organizacao"] ?? "carregadores"), row);
   const hoje = hojeIso();
@@ -309,7 +327,10 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
   const kit = Boolean(row["kit_fotovoltaico"]);
   const materialSap = (codigo: string) =>
     kit && codigo === "100000350" ? "100000278" : codigo;
-  // VALOR_PROD vai VAZIO: o preço vem da condição do SAP (igual à antiga).
+  // VALOR_PROD: vazio = preço vem da condição do SAP (regra de sempre, Solar).
+  // Somente 2P Carregadores, e apenas com a flag SAP_VALOR_PROD_CARREGADORES=X,
+  // envia o preço manual UNITÁRIO da proposta (vira VKP0 manual no SAP).
+  const usaValorProd = valorProdAtivo(row);
   const linhas = itens
     .map(
       (i, idx) =>
@@ -322,7 +343,7 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
         `<PESO_BRUTO></PESO_BRUTO>` +
         `<PESO_LIQ></PESO_LIQ>` +
         `<UM_PESO></UM_PESO>` +
-        `<VALOR_PROD></VALOR_PROD>` +
+        `<VALOR_PROD>${usaValorProd && Number(i.valor) > 0 ? Number(i.valor).toFixed(2) : ""}</VALOR_PROD>` +
         `<VALOR_DESC></VALOR_DESC>` +
         `<PERC_DESC></PERC_DESC>` +
         `<NCM></NCM>` +
@@ -606,11 +627,18 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
   const semValor = itens.filter((i) => !(Number(i?.valor ?? 0) > 0));
   if (semValor.length)
     pendencias.push(
-      `${semValor.length} item(ns) sem valor (preço não retornado do SAP): ${semValor
-        .map((i) => norm(i?.codigo) || String(i?.descricao ?? "item").slice(0, 30))
-        .slice(0, 5)
-        .join(", ")}.`,
+      valorProdAtivo(row)
+        ? // Carregadores com preço manual: nunca enviar VALOR_PROD zerado.
+          `${semValor.length} item(ns) sem valor de venda (preço manual obrigatório em Carregadores): ${semValor
+            .map((i) => norm(i?.codigo) || String(i?.descricao ?? "item").slice(0, 30))
+            .slice(0, 5)
+            .join(", ")}.`
+        : `${semValor.length} item(ns) sem valor (preço não retornado do SAP): ${semValor
+            .map((i) => norm(i?.codigo) || String(i?.descricao ?? "item").slice(0, 30))
+            .slice(0, 5)
+            .join(", ")}.`,
     );
+
 
   const duplicados = new Map<string, number>();
   for (const i of itens) {
@@ -990,13 +1018,35 @@ export async function criarOrdemVendaSap(
   }
 
 
+  // REGRA ZERO: quando o pedido sobe com preço manual (Carregadores), o painel
+  // de auditoria precisa mostrar exatamente quais valores foram enviados.
+  const precoManual = valorProdAtivo(row)
+    ? {
+        campo: "VALOR_PROD",
+        itens: (Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [])
+          .filter((i) => Number(i?.qtd ?? 0) > 0)
+          .map((i) => ({
+            material: norm(i?.codigo),
+            qtd: Number(i?.qtd ?? 0),
+            valor_unitario: Number(i?.valor ?? 0).toFixed(2),
+          })),
+      }
+    : null;
+
   await logIntegrationEvent({
     ...base,
     level: "info",
     message: testrun ? `Validação OK (test run) do pedido ${row["numero"]}` : `Ordem de venda ${vbeln} criada no SAP`,
-    detail: { proposta_id: propostaId, numero: row["numero"] ?? null, vbeln, testrun },
+    detail: {
+      proposta_id: propostaId,
+      numero: row["numero"] ?? null,
+      vbeln,
+      testrun,
+      preco_manual: precoManual,
+    },
     durationMs: Date.now() - inicio,
   });
+
 
   return { enviado: true, ok: true, vbeln, mensagem: texto, testrun };
 }
