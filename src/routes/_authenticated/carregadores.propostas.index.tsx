@@ -98,7 +98,7 @@ function HistoricoCarregadoresPage() {
   const [uf, setUf] = useState("todos");
   const [sap, setSap] = useState("todos");
   const [pagina, setPagina] = useState(1);
-  const [porPagina, setPorPagina] = useState(25);
+  const [porPagina, setPorPagina] = useState(10);
   const [vendedor, setVendedor] = useState("__all__");
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const podeExcluir = useCanDelete();

@@ -231,7 +231,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [ordem, setOrdem] = useState<OrdemLista>("recente");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
   const [pagina, setPagina] = useState(1);
-  const [porPagina, setPorPagina] = useState(25);
+  const [porPagina, setPorPagina] = useState(10);
   // A busca vai ao banco: espera o usuário parar de digitar.
   const [qBusca, setQBusca] = useState("");
   useEffect(() => {
