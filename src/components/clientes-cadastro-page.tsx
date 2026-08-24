@@ -1261,7 +1261,12 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                       clienteId={detalhe.id}
                       clienteDoc={detalhe.doc}
                       clienteNome={detalhe.razao_social}
+                      contatos={normalizarContatos(detalhe.contatos, {
+                        nome: detalhe.contato_nome, cargo: detalhe.contato_cargo,
+                        email: detalhe.contato_email, telefone: detalhe.contato_telefone,
+                      })}
                     />
+
                   </TabsContent>
                 </Tabs>
               </div>
