@@ -40,6 +40,7 @@ import { Route as AuthenticatedMarketingMetasRouteImport } from './routes/_authe
 import { Route as AuthenticatedMarketingGargaloRouteImport } from './routes/_authenticated/marketing.gargalo'
 import { Route as AuthenticatedMarketingCohortRouteImport } from './routes/_authenticated/marketing.cohort'
 import { Route as AuthenticatedMarketingCacRouteImport } from './routes/_authenticated/marketing.cac'
+import { Route as AuthenticatedFinanceiroCreditoRouteImport } from './routes/_authenticated/financeiro.credito'
 import { Route as AuthenticatedFinanceiroCondicoesRouteImport } from './routes/_authenticated/financeiro.condicoes'
 import { Route as AuthenticatedCarregadoresTarefasRouteImport } from './routes/_authenticated/carregadores.tarefas'
 import { Route as AuthenticatedCarregadoresRegrasRouteImport } from './routes/_authenticated/carregadores.regras'
@@ -278,6 +279,12 @@ const AuthenticatedMarketingCacRoute =
     id: '/cac',
     path: '/cac',
     getParentRoute: () => AuthenticatedMarketingRoute,
+  } as any)
+const AuthenticatedFinanceiroCreditoRoute =
+  AuthenticatedFinanceiroCreditoRouteImport.update({
+    id: '/credito',
+    path: '/credito',
+    getParentRoute: () => AuthenticatedFinanceiroRoute,
   } as any)
 const AuthenticatedFinanceiroCondicoesRoute =
   AuthenticatedFinanceiroCondicoesRouteImport.update({
@@ -721,6 +728,7 @@ export interface FileRoutesByFullPath {
   '/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
   '/financeiro/condicoes': typeof AuthenticatedFinanceiroCondicoesRoute
+  '/financeiro/credito': typeof AuthenticatedFinanceiroCreditoRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -816,6 +824,7 @@ export interface FileRoutesByTo {
   '/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
   '/financeiro/condicoes': typeof AuthenticatedFinanceiroCondicoesRoute
+  '/financeiro/credito': typeof AuthenticatedFinanceiroCreditoRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -917,6 +926,7 @@ export interface FileRoutesById {
   '/_authenticated/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/_authenticated/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
   '/_authenticated/financeiro/condicoes': typeof AuthenticatedFinanceiroCondicoesRoute
+  '/_authenticated/financeiro/credito': typeof AuthenticatedFinanceiroCreditoRoute
   '/_authenticated/marketing/cac': typeof AuthenticatedMarketingCacRoute
   '/_authenticated/marketing/cohort': typeof AuthenticatedMarketingCohortRoute
   '/_authenticated/marketing/gargalo': typeof AuthenticatedMarketingGargaloRoute
@@ -1018,6 +1028,7 @@ export interface FileRouteTypes {
     | '/carregadores/regras'
     | '/carregadores/tarefas'
     | '/financeiro/condicoes'
+    | '/financeiro/credito'
     | '/marketing/cac'
     | '/marketing/cohort'
     | '/marketing/gargalo'
@@ -1113,6 +1124,7 @@ export interface FileRouteTypes {
     | '/carregadores/regras'
     | '/carregadores/tarefas'
     | '/financeiro/condicoes'
+    | '/financeiro/credito'
     | '/marketing/cac'
     | '/marketing/cohort'
     | '/marketing/gargalo'
@@ -1213,6 +1225,7 @@ export interface FileRouteTypes {
     | '/_authenticated/carregadores/regras'
     | '/_authenticated/carregadores/tarefas'
     | '/_authenticated/financeiro/condicoes'
+    | '/_authenticated/financeiro/credito'
     | '/_authenticated/marketing/cac'
     | '/_authenticated/marketing/cohort'
     | '/_authenticated/marketing/gargalo'
@@ -1514,6 +1527,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/marketing/cac'
       preLoaderRoute: typeof AuthenticatedMarketingCacRouteImport
       parentRoute: typeof AuthenticatedMarketingRoute
+    }
+    '/_authenticated/financeiro/credito': {
+      id: '/_authenticated/financeiro/credito'
+      path: '/credito'
+      fullPath: '/financeiro/credito'
+      preLoaderRoute: typeof AuthenticatedFinanceiroCreditoRouteImport
+      parentRoute: typeof AuthenticatedFinanceiroRoute
     }
     '/_authenticated/financeiro/condicoes': {
       id: '/_authenticated/financeiro/condicoes'
@@ -1989,6 +2009,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedFinanceiroRouteChildren {
   AuthenticatedFinanceiroCondicoesRoute: typeof AuthenticatedFinanceiroCondicoesRoute
+  AuthenticatedFinanceiroCreditoRoute: typeof AuthenticatedFinanceiroCreditoRoute
   AuthenticatedFinanceiroIndexRoute: typeof AuthenticatedFinanceiroIndexRoute
 }
 
@@ -1996,6 +2017,7 @@ const AuthenticatedFinanceiroRouteChildren: AuthenticatedFinanceiroRouteChildren
   {
     AuthenticatedFinanceiroCondicoesRoute:
       AuthenticatedFinanceiroCondicoesRoute,
+    AuthenticatedFinanceiroCreditoRoute: AuthenticatedFinanceiroCreditoRoute,
     AuthenticatedFinanceiroIndexRoute: AuthenticatedFinanceiroIndexRoute,
   }
 

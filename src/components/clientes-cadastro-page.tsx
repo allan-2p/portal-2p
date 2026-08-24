@@ -23,6 +23,7 @@ import {
 import { sincronizarDonosFn } from "@/lib/owner-sync.functions";
 import { ClientHistoryTab } from "@/components/client-history-tab";
 import { ClienteIntegracoesDialog } from "@/components/cliente-integracoes-dialog";
+import { CreditoClienteCard } from "@/components/credito-cliente-card";
 
 import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
@@ -1028,6 +1029,13 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <Linha rot="Observações" val={detalhe.observacoes} />
                   </Bloco>
                 </div>
+
+                <CreditoClienteCard
+                  instancia={instancia}
+                  clienteId={detalhe.id}
+                  clienteDoc={detalhe.doc}
+                  clienteNome={detalhe.razao_social}
+                />
 
                 <ClientHistoryTab clienteNome={detalhe.razao_social} />
               </div>

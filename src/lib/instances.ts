@@ -65,7 +65,8 @@ export type FeatureKey =
   | "marketing.prevendas"
   | "marketing.metas"
   | "financeiro.home"
-  | "financeiro.condicoes";
+  | "financeiro.condicoes"
+  | "financeiro.credito";
 
 
 export type InstanceMeta = {
@@ -171,6 +172,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
     routes: [
       "financeiro.home",
       "financeiro.condicoes",
+      "financeiro.credito",
       "admin.usuarios",
       "admin.perfis",
       "admin.integracoes",
@@ -245,6 +247,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/marketing/metas": "marketing.metas",
   "/financeiro": "financeiro.home",
   "/financeiro/condicoes": "financeiro.condicoes",
+  "/financeiro/credito": "financeiro.credito",
 };
 
 export const FEATURE_LABELS: Record<FeatureKey, string> = {
@@ -304,6 +307,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "marketing.metas": "Marketing • Metas",
   "financeiro.home": "Financeiro • Home",
   "financeiro.condicoes": "Financeiro • Condições de Pagamento",
+  "financeiro.credito": "Financeiro • Análise de Crédito",
 };
 
 export const ALL_FEATURES: FeatureKey[] = Object.keys(FEATURE_LABELS) as FeatureKey[];

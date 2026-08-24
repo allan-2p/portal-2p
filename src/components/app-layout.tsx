@@ -440,6 +440,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   {show("financeiro.condicoes") && (
                     <NavLink item={{ to: "/financeiro/condicoes", label: "Condições de Pagamento", icon: Percent }} active={pathname.startsWith("/financeiro/condicoes")} collapsed={false} />
                   )}
+                  {show("financeiro.credito") && (
+                    <NavLink item={{ to: "/financeiro/credito", label: "Análise de Crédito", icon: ShieldCheck }} active={pathname.startsWith("/financeiro/credito")} collapsed={false} />
+                  )}
                 </div>
               )
             )}

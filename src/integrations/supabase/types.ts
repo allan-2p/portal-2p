@@ -893,6 +893,96 @@ export type Database = {
           },
         ]
       }
+      credito_analises: {
+        Row: {
+          analista_id: string | null
+          cliente_doc: string
+          cliente_id: string | null
+          cliente_nome: string | null
+          concluido_em: string | null
+          conclusao: string | null
+          condicao_aprovada: string | null
+          condicao_solicitada: string | null
+          created_at: string
+          credito_aprovado: number | null
+          credito_solicitado: number | null
+          id: string
+          instancia: string
+          numero: string
+          observacoes_financeiro: string | null
+          observacoes_vendedor: string | null
+          prioridade: string
+          proposta_id: string | null
+          proposta_numero: string | null
+          restricao: boolean | null
+          serasa: number | null
+          sf_id: string | null
+          solicitado_em: string
+          solicitado_por: string
+          status: string
+          updated_at: string
+          validade: string | null
+        }
+        Insert: {
+          analista_id?: string | null
+          cliente_doc: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          concluido_em?: string | null
+          conclusao?: string | null
+          condicao_aprovada?: string | null
+          condicao_solicitada?: string | null
+          created_at?: string
+          credito_aprovado?: number | null
+          credito_solicitado?: number | null
+          id?: string
+          instancia?: string
+          numero?: string
+          observacoes_financeiro?: string | null
+          observacoes_vendedor?: string | null
+          prioridade?: string
+          proposta_id?: string | null
+          proposta_numero?: string | null
+          restricao?: boolean | null
+          serasa?: number | null
+          sf_id?: string | null
+          solicitado_em?: string
+          solicitado_por: string
+          status?: string
+          updated_at?: string
+          validade?: string | null
+        }
+        Update: {
+          analista_id?: string | null
+          cliente_doc?: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          concluido_em?: string | null
+          conclusao?: string | null
+          condicao_aprovada?: string | null
+          condicao_solicitada?: string | null
+          created_at?: string
+          credito_aprovado?: number | null
+          credito_solicitado?: number | null
+          id?: string
+          instancia?: string
+          numero?: string
+          observacoes_financeiro?: string | null
+          observacoes_vendedor?: string | null
+          prioridade?: string
+          proposta_id?: string | null
+          proposta_numero?: string | null
+          restricao?: boolean | null
+          serasa?: number | null
+          sf_id?: string | null
+          solicitado_em?: string
+          solicitado_por?: string
+          status?: string
+          updated_at?: string
+          validade?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -3382,6 +3472,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      has_feature: {
+        Args: { _key: string; _user_id: string }
+        Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
       move_to_dlq: {
