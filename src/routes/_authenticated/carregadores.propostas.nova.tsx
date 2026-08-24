@@ -802,7 +802,11 @@ function PropostaCarregadoresPage() {
   else if (docDigits.length !== 11 && docDigits.length !== 14)
     errosIdentificacao.push({ campo: "doc", msg: "CNPJ/CPF inválido (11 ou 14 dígitos)." });
   if (!state.uf) errosIdentificacao.push({ campo: "uf", msg: "UF de destino não informada." });
-  else if (!ufs.some((u) => u.uf === state.uf))
+  // Só acusa UF sem alíquota quando a tabela realmente carregou — enquanto a
+  // consulta está em andamento (ou falhou) a lista vem vazia e o aviso era falso.
+  else if (ufsQ.isError)
+    errosIdentificacao.push({ campo: "uf", msg: "Não foi possível carregar as alíquotas por UF — recarregue a página." });
+  else if (ufs.length > 0 && !ufs.some((u) => u.uf === state.uf))
     errosIdentificacao.push({ campo: "uf", msg: "UF sem alíquota cadastrada." });
   if (state.contribuinte && !state.ie.trim())
     errosIdentificacao.push({ campo: "ie", msg: "Cliente contribuinte precisa de Inscrição Estadual." });
