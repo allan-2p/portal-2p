@@ -114,6 +114,8 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
   const frete = num(p['frete_valor']);
   const fat = baseFaturamento(p);
   const ent = (p['entrega'] ?? {}) as Row;
+  const disposicao = ((totais['calculo'] ?? {}) as Row)['disposicao'];
+
 
   return {
     numero: txt(p['numero']) || null,
@@ -154,8 +156,10 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
     enderecoEntrega: p['entrega_diferente']
       ? { contato: txt(ent['contato']), telefone: txt(ent['telefone']), linhas: linhasEndereco(ent) }
       : { nome: "Mesmo do faturamento", linhas: linhasEndereco(fat) },
+    estrutura: Array.isArray(disposicao) && disposicao.length ? { fileiras: disposicao } : null,
   };
 }
+
 
 /** HTML + nome de arquivo do PDF conforme a unidade da proposta. */
 export function propostaPdfDaLinha(p: Row): { html: string; fileName: string } {
