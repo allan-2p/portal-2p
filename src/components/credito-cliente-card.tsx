@@ -141,7 +141,7 @@ export function CreditoClienteCard({
       toast.success(`Solicitação ${r.numero} enviada ao Financeiro.`);
       setAberto(false);
       setValor(""); setCondicao(""); setPrioridade("Normal"); setObs("");
-      setContatoNome(""); setContatoEmail(""); setContatoTel("");
+      escolherContato(contatosDisponiveis.length ? "0" : "__novo");
       setTemSecundaria(false); setSecNome(""); setSecDoc(""); setAnexos([]);
       qc.invalidateQueries({ queryKey: ["credito-analises"] });
     },
