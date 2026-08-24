@@ -400,7 +400,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     const permContas = await getPerm(context as any, data.instancia, "contas");
     if (!data.id) assertPodeCriar(permContas, "contas");
     const podeEscolher = permContas.modify_all;
-    const { consultorPorSap, consultorDoCadastro } = await import("./consultor-sap.server");
+    const { consultorPorSap, consultorDoCadastro, idDeUsuario } = await import("./consultor-sap.server");
 
     const anteriorConsultor = data.id
       ? consultorDoCadastro(await db.getClienteById(data.instancia, data.id))
@@ -420,7 +420,8 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     let consultorSfId: string | null;
 
     if (noPortal) {
-      consultorId = noPortal.id;
+      // Consultor do de-para sem login no portal não tem uuid: só o par SAP/nome.
+      consultorId = idDeUsuario(noPortal.id) ?? anteriorConsultor.id;
       consultorNome = noPortal.nome;
       consultorEmail = noPortal.email;
       consultorSap = noPortal.sap;

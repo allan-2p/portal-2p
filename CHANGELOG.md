@@ -34,6 +34,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+### Adicionado
+- **Cadastro de consultores (`consultores_sap`)**: de-para oficial código SAP → nome com os 39 vendedores ativos. O seletor de consultor do cadastro de clientes une os usuários do portal com código SAP e esse de-para (dedupe pelo código, preferindo o usuário do portal). Leitura liberada para usuários logados; manutenção só para administradores.
+
 ### Alterado
 - **Consultor do cliente — campo canônico único**: o par `clientes.consultor_sap` + `clientes.consultor_nome` passa a ser a única fonte do consultor. A lista exibe esse par, o formulário edita esse par (select com os consultores do portal e seus códigos SAP, pré-selecionado por código e, na falta, por nome; código só do legado aparece como "«nome» (importado)" e não exige re-seleção), o cadastro no SAP (campo VENDEDOR) e a OV (`sap_vendedor_codigo`) usam esse par, e o vendedor devolvido pelo SAP volta a gravar nele. Propostas novas (Solar e Carregadores) herdam o consultor do cadastro do cliente.
 - **Dossiê 360 do cliente**: o histórico (propostas, pedidos, faturamento por trimestre, ticket médio, em aberto, taxa de conversão) passa a ser lido das propostas/pedidos do banco do Grupo 2P — inclusive as oportunidades importadas do Salesforce — em vez de consultar a API do Salesforce. Cliente sem vínculo com o Salesforce agora abre o dossiê com o histórico completo; só casos, visitas, treinamentos, contatos e atividades (que não têm espelho no banco) continuam vindo do Salesforce.
