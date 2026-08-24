@@ -53,8 +53,19 @@ export type SolarPropostaPdfData = {
   observacoes?: string | null;
   enderecoFaturamento?: SolarPdfEndereco;
   enderecoEntrega?: SolarPdfEndereco;
-  /** Resumo da Calculadora 2P (opcional). */
-  estrutura?: { distribuicao?: number[]; comprimentos?: number[] } | null;
+  /** Disposição dos painéis nas fileiras (opcional) — visão para o cliente. */
+  estrutura?: {
+    fileiras?: {
+      trilho?: string | null;
+      suporte?: string | null;
+      fileiras?: number;
+      modulos?: number;
+      orientacao?: string | null;
+      vao?: string | number | null;
+      balanco?: string | number | null;
+    }[];
+  } | null;
+
   validadeDias?: number;
 };
 

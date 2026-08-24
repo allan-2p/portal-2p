@@ -337,6 +337,28 @@ function NovaPropostaSolarPage() {
   };
 
   /**
+   * Disposição dos painéis nas fileiras com rótulos legíveis — é isso que a
+   * proposta (prévia/PDF) mostra ao cliente, no lugar do resumo técnico da
+   * quantificação.
+   */
+  const disposicaoFileiras = useMemo(
+    () =>
+      linhas
+        .filter((l) => Number(l.fileiras) > 0 && Number(l.modulos) > 0)
+        .map((l) => ({
+          trilho: (trilhosQ.data ?? []).find((t) => t.id === l.trilhoId)?.nome ?? "—",
+          suporte: (suportesQ.data ?? []).find((s) => s.id === l.suporteId)?.nome ?? "—",
+          fileiras: Number(l.fileiras) || 0,
+          modulos: Number(l.modulos) || 0,
+          orientacao: l.orientacao === "P" ? "Paisagem" : "Retrato",
+          vao: l.distMax || null,
+          balanco: l.balanco || null,
+        })),
+    [linhas, trilhosQ.data, suportesQ.data],
+  );
+
+
+  /**
    * Tabela de preço do cadastro do cliente ("2P-0001") vira o PLTYP do SAP ("01").
    * O vendedor ainda pode trocar manualmente depois.
    */
@@ -1248,7 +1270,9 @@ function NovaPropostaSolarPage() {
           // devolva exatamente o que foi salvo (modo + entradas da calculadora).
           calculo: {
             ...(resultado ? { distribuicao: resultado.distribuicao, comprimentos: resultado.comprimentos } : {}),
+            disposicao: disposicaoFileiras,
             modo,
+
             ...(modo === "calculadora"
               ? {
                   assinatura: assinaturaCalc,
@@ -1411,9 +1435,8 @@ function NovaPropostaSolarPage() {
             linhas: linhasEnd(entrega),
           }
         : { nome: "Mesmo do faturamento", linhas: linhasEnd(faturamentoBase) },
-      estrutura: resultado?.ok
-        ? { distribuicao: resultado.distribuicao, comprimentos: resultado.comprimentos }
-        : null,
+      estrutura: disposicaoFileiras.length ? { fileiras: disposicaoFileiras } : null,
+
     };
   }
 
@@ -2210,20 +2233,8 @@ function NovaPropostaSolarPage() {
                     )}
                   </div>
 
+                  {/* A quantificação é apenas validação interna — não é exibida. */}
 
-
-                  {resultado?.ok && (
-                    <div className="md:col-span-3 rounded-xl border border-border bg-surface-2 p-4 text-sm space-y-1 animate-fade-in">
-                      <div className="font-semibold">Resultado da quantificação</div>
-                      <div className="text-muted-foreground">
-                        Fileiras: {resultado.distribuicao.join(" + ")} painéis · Comprimentos:{" "}
-                        {resultado.comprimentos.map((c) => `${(c / 1000).toFixed(2)} m`).join(", ")}
-                      </div>
-                      {resultado.avisos.map((a) => (
-                        <div key={a} className="text-amber-500">{a}</div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
 
