@@ -35,12 +35,6 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
-### Corrigido
-
-- Mensagens de aviso (sucesso, erro, sessão expirada) voltaram a aparecer na tela: o
-  container de notificações não estava montado, então todo aviso do portal era
-  silencioso.
-
 ### Alterado
 
 - Portal mais leve: logos do cabeçalho servidos em versões otimizadas (de ~270 KB para
@@ -50,6 +44,10 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
   entregue ao navegador. Nenhuma tela em uso foi afetada.
 
 ### Corrigido
+
+- Mensagens de aviso (sucesso, erro, sessão expirada) voltaram a aparecer na tela: o
+  container de notificações não estava montado, então todo aviso do portal era
+  silencioso.
 
 - Conferência automática de preços no SAP voltou a gravar o resultado: a atualização
   do catálogo falhava quando a descrição do material não era enviada junto.
