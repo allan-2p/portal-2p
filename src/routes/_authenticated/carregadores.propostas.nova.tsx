@@ -280,6 +280,7 @@ function PropostaCarregadoresPage() {
     const alvo = editId ?? dupId;
     if (!alvo || carregado.current) return;
     carregado.current = true;
+    ressincronizarBase.current = true;
     (async () => {
       const data = await obterPropostaFn({ data: { id: alvo } }).catch(() => null);
       if (!data) {
@@ -1242,6 +1243,8 @@ function PropostaCarregadoresPage() {
         setNumeroAtual(numero);
         invalidate();
         limparRascunho();
+        ressincronizarBase.current = true;
+      ressincronizarBase.current = true;
         setAutosaveAt(status === "Salvo" ? new Date() : null);
         return;
       }
@@ -1302,6 +1305,7 @@ function PropostaCarregadoresPage() {
       );
       invalidate();
       limparRascunho();
+      ressincronizarBase.current = true;
       setAutosaveAt(status === "Salvo" ? new Date() : null);
       if (status === "Salvo" && inserida?.id) {
         // segue editando a mesma proposta em vez de duplicar ao salvar de novo
