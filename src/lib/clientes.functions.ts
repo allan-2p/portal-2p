@@ -56,34 +56,22 @@ export const listConsultoresFn = createServerFn({ method: "POST" })
     const podeEscolher = await podeEscolherConsultor(context as any, data.instancia);
     const { data: eu } = await context.supabase
       .from("profiles")
-      .select("id, full_name, email")
+      .select("id, full_name, email, numero_sap")
       .eq("id", context.userId)
       .maybeSingle();
 
     const meuNome = eu?.full_name || eu?.email || "—";
-    if (!podeEscolher) {
-      return {
-        podeEscolher: false as const,
-        eu: { id: context.userId, nome: meuNome },
-        consultores: [{ id: context.userId, nome: meuNome }],
-      };
-    }
-
-    const { data: perfis } = await context.supabase
-      .from("profiles")
-      .select("id, full_name, email, organizacao, ativo, is_consultor, numero_sap")
-      .eq("ativo", true)
-      .eq("is_consultor", true)
-      .in("organizacao", [data.instancia, "grupo"])
-      .order("full_name", { ascending: true });
-
-    const consultores = (perfis ?? [])
-      .filter((p: any) => String(p.numero_sap ?? "").trim() !== "")
-      .map((p: any) => ({
-        id: p.id as string,
-        nome: (p.full_name || p.email || "—") as string,
-      }));
-    return { podeEscolher: true as const, eu: { id: context.userId, nome: meuNome }, consultores };
+    const meuSap = String((eu as any)?.numero_sap ?? "").trim();
+    const { listarConsultoresPortal } = await import("./consultor-sap.server");
+    // A lista completa é sempre devolvida (o formulário precisa dela para
+    // pré-selecionar o consultor do cadastro); `podeEscolher` diz apenas se o
+    // usuário pode trocar o responsável.
+    const consultores = await listarConsultoresPortal(data.instancia);
+    return {
+      podeEscolher,
+      eu: { id: context.userId, nome: meuNome, sap: meuSap || null },
+      consultores,
+    };
   });
 
 /** Consulta a tabela `clientes` da instância, respeitando View All Records. */
@@ -353,8 +341,10 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     z.object({
       instancia: instanciaSchema,
       id: z.string().uuid().nullable().optional(),
-      /** Consultor responsável pelo cadastro (só respeitado para quem tem visão geral). */
-      consultor_id: z.string().uuid().nullable().optional(),
+      /** Código SAP do consultor responsável (par canônico consultor_sap + consultor_nome). */
+      consultor_sap: z.string().trim().max(20).nullable().optional(),
+      /** Nome do consultor — usado quando o código vem de importação e não casa com o portal. */
+      consultor_nome: z.string().trim().max(120).nullable().optional(),
       cliente: clienteSchema,
     }).parse(input),
   )
@@ -403,43 +393,62 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
-    // Consultor responsável: quem cria assume o cadastro; quem tem
-    // "Modify All Records" em Contas pode atribuir a outro consultor.
+    // Consultor responsável: par canônico consultor_sap + consultor_nome.
+    // Quem cria assume o cadastro; quem tem "Modify All Records" em Contas pode
+    // atribuir a outro consultor. Código importado que não casa com nenhum
+    // consultor do portal é preservado como está.
     const permContas = await getPerm(context as any, data.instancia, "contas");
     if (!data.id) assertPodeCriar(permContas, "contas");
     const podeEscolher = permContas.modify_all;
-    const consultorId = podeEscolher && data.consultor_id ? data.consultor_id : context.userId;
-    let consultorNome = perfil?.full_name ?? perfil?.email ?? null;
-    let consultorEmail = perfil?.email ?? null;
-    let consultorSap = (perfil as any)?.numero_sap ?? null;
-    let consultorSfId = (perfil as any)?.sf_user_id ?? null;
-    if (consultorId !== context.userId) {
-      const { data: alvo } = await context.supabase
-        .from("profiles")
-        .select("full_name, email, numero_sap, sf_user_id, ativo, is_consultor")
-        .eq("id", consultorId)
-        .maybeSingle();
-      // Só um consultor válido (ativo + marcado + com código SAP) pode
-      // responder por um cadastro.
-      if (
-        !alvo ||
-        alvo.ativo !== true ||
-        (alvo as any).is_consultor !== true ||
-        String((alvo as any).numero_sap ?? "").trim() === ""
-      ) {
-        throw new Error(
-          "O consultor selecionado não está habilitado (precisa estar ativo, marcado como consultor e com código SAP).",
-        );
-      }
-      consultorNome = alvo?.full_name ?? alvo?.email ?? null;
-      consultorEmail = alvo?.email ?? null;
-      consultorSap = (alvo as any)?.numero_sap ?? null;
-      consultorSfId = (alvo as any)?.sf_user_id ?? null;
+    const { consultorPorSap, consultorDoCadastro } = await import("./consultor-sap.server");
+
+    const anteriorConsultor = data.id
+      ? consultorDoCadastro(await db.getClienteById(data.instancia, data.id))
+      : { sap: null, nome: null, id: null };
+
+    const sapEscolhido = String(data.consultor_sap ?? "").trim();
+    const podeTrocar = podeEscolher || !data.id;
+    const sapAlvo = podeTrocar ? sapEscolhido || anteriorConsultor.sap : anteriorConsultor.sap;
+
+    const noPortal = await consultorPorSap(sapAlvo);
+    const meuSap = String((perfil as any)?.numero_sap ?? "").trim();
+
+    let consultorId: string | null;
+    let consultorNome: string | null;
+    let consultorEmail: string | null;
+    let consultorSap: string | null;
+    let consultorSfId: string | null;
+
+    if (noPortal) {
+      consultorId = noPortal.id;
+      consultorNome = noPortal.nome;
+      consultorEmail = noPortal.email;
+      consultorSap = noPortal.sap;
+      consultorSfId = noPortal.sfUserId;
+    } else if (sapAlvo) {
+      // Consultor só existe no legado/importação: mantém o par como veio.
+      consultorId = anteriorConsultor.id;
+      consultorNome =
+        (podeTrocar ? String(data.consultor_nome ?? "").trim() : "") || anteriorConsultor.nome || null;
+      consultorEmail = null;
+      consultorSap = sapAlvo;
+      consultorSfId = null;
+    } else {
+      // Sem código informado: assume quem está criando.
+      consultorId = context.userId;
+      consultorNome = perfil?.full_name ?? perfil?.email ?? null;
+      consultorEmail = perfil?.email ?? null;
+      consultorSap = meuSap || null;
+      consultorSfId = (perfil as any)?.sf_user_id ?? null;
     }
 
     const payload = {
       ...data.cliente,
       doc,
+      // Par canônico do consultor.
+      consultor_sap: consultorSap,
+      consultor_nome: consultorNome,
+      consultor_id: consultorId,
       organizacao: db.ORGANIZACAO[data.instancia],
       instancia: data.instancia,
     };
@@ -451,8 +460,9 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       if (data.id) {
         const anterior = await assertPodeAlterarCliente(context as any, data.instancia, data.id);
         const patch: Record<string, unknown> = { ...payload };
-        // Só reatribui o consultor quando o usuário tem permissão e escolheu alguém.
-        if (podeEscolher && data.consultor_id) {
+        // Só reatribui o dono do cadastro quando o consultor mudou de fato e
+        // corresponde a um usuário do portal.
+        if (podeTrocar && consultorSap !== anteriorConsultor.sap && consultorId) {
           patch["created_by"] = consultorId;
           patch["created_by_nome"] = consultorNome;
           patch["created_by_email"] = consultorEmail;
@@ -470,7 +480,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       } else {
         const row = await db.insertCliente(data.instancia, {
           ...payload,
-          created_by: consultorId,
+          created_by: consultorId ?? context.userId,
           created_by_nome: consultorNome,
           created_by_email: consultorEmail,
         });
@@ -532,15 +542,19 @@ export const reenviarClienteFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const cliente = await assertPodeAlterarCliente(context as any, data.instancia, data.id);
+    // O vendedor enviado ao SAP vem sempre do par canônico do cadastro.
+    const { consultorDoCadastro, consultorPorSap } = await import("./consultor-sap.server");
+    const doCadastro = consultorDoCadastro(cliente as Record<string, any>);
+    const noPortal = await consultorPorSap(doCadastro.sap);
     const { data: dono } = await context.supabase
       .from("profiles")
       .select("numero_sap, sf_user_id")
-      .eq("id", (cliente as any)?.created_by ?? context.userId)
+      .eq("id", doCadastro.id ?? (cliente as any)?.created_by ?? context.userId)
       .maybeSingle();
     const { sincronizarCliente } = await import("./clientes-integracoes.server");
     return sincronizarCliente(data.instancia, data.id, cliente as Record<string, any>, {
-      vendedorSap: (dono as any)?.numero_sap ?? null,
-      ownerSfId: (dono as any)?.sf_user_id ?? null,
+      vendedorSap: doCadastro.sap ?? (dono as any)?.numero_sap ?? null,
+      ownerSfId: noPortal?.sfUserId ?? (dono as any)?.sf_user_id ?? null,
       ...(data.alvos && data.alvos.length ? { alvos: data.alvos } : {}),
     });
   });

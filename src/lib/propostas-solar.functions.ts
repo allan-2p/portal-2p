@@ -467,19 +467,10 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
 
 
     // Consultor: fotografado do cadastro do cliente no momento da criação.
-    let consultorId: string | null = null;
-    let consultorNome: string | null = null;
-    try {
-      const db = await import("./clientes-db.server");
-      const achados = await db.findClienteByDoc(data.cliente.doc.replace(/\D/g, ""));
-      const alvo = achados.find((a) => a.instancia === "solar")?.cliente ?? achados[0]?.cliente;
-      if (alvo) {
-        consultorId = (alvo["created_by"] as string | null) ?? null;
-        consultorNome = (alvo["created_by_nome"] as string | null) ?? null;
-      }
-    } catch {
-      /* cadastro indisponível */
-    }
+    const { consultorDoClientePorDoc } = await import("./consultor-sap.server");
+    const doCliente = await consultorDoClientePorDoc(data.cliente.doc, "solar");
+    const consultorId: string | null = doCliente.id;
+    const consultorNome: string | null = doCliente.nome;
 
     let inserida: { id: string };
     try {

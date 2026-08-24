@@ -16,6 +16,8 @@ export type SapClienteResultado =
       /** Espelho do que foi enviado/retornado (VKGRP / VKBUR). */
       equipe_vendas: string | null;
       escritorio_vendas: string | null;
+      /** Vendedor devolvido pelo SAP (grava de volta em clientes.consultor_sap). */
+      vendedor_sap: string | null;
       raw: unknown;
     }
   | { ok: false; erro: string; raw?: unknown };
@@ -189,6 +191,8 @@ export async function enviarClienteParaSap(
   const enviados = camposSapCliente(cliente);
   const equipe = achar(json, "E_EQUIPE_VENDAS") ?? achar(json, "EQUIPE_VENDAS") ?? achar(json, "VKGRP");
   const escritorio = achar(json, "E_ESCRITORIO") ?? achar(json, "ESCRITORIO") ?? achar(json, "VKBUR");
+  const vendedor =
+    achar(json, "E_VENDEDOR") ?? achar(json, "EVendedor") ?? achar(json, "VENDEDOR") ?? null;
 
   return {
     ok: true,
@@ -196,6 +200,7 @@ export async function enviarClienteParaSap(
     mensagem: mensagem ? String(mensagem) : null,
     equipe_vendas: String(equipe ?? enviados.EQUIPE_VENDAS) || null,
     escritorio_vendas: String(escritorio ?? enviados.ESCRITORIO) || null,
+    vendedor_sap: String(vendedor ?? enviados.VENDEDOR ?? "").trim().replace(/^0+(?=\d)/, "") || null,
     raw: json,
   };
 }

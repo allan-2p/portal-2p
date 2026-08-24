@@ -127,11 +127,11 @@ const REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI", "Pe
 
 
 /**
- * Consultor da conta: nos cadastros importados vem em `consultor_nome`; o
- * `created_by_nome` ("Importação plataforma antiga") é só origem do cadastro.
+ * Consultor da conta: par canônico `consultor_sap` + `consultor_nome`. O
+ * `created_by_nome` ("Importação plataforma antiga") é só origem do cadastro e
+ * não entra aqui.
  */
-const consultorDoCliente = (c: Cliente): string =>
-  (c.consultor_nome ?? "").trim() || (c.created_by_nome ?? "").trim();
+const consultorDoCliente = (c: Cliente): string => (c.consultor_nome ?? "").trim();
 
 type Erros = Record<string, string>;
 const ROTULOS: Record<string, string> = {
@@ -252,19 +252,25 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [form, setForm] = useState<Form>(vazio());
   const [detalhe, setDetalhe] = useState<Cliente | null>(null);
   const [tentouSalvar, setTentouSalvar] = useState(false);
-  // Consultor responsável pelo cadastro (gravado em created_by/created_by_nome)
-  const [consultorId, setConsultorId] = useState<string | null>(null);
+  // Consultor responsável pelo cadastro — par canônico consultor_sap + consultor_nome.
+  const [consultorSap, setConsultorSap] = useState<string | null>(null);
+  const [consultorImportado, setConsultorImportado] = useState<{ sap: string; nome: string } | null>(null);
   const listarConsultores = useServerFn(listConsultoresFn);
   const consultoresQ = useQuery({
     queryKey: ["clientes-consultores", instancia],
     queryFn: () => listarConsultores({ data: { instancia } }),
     staleTime: 5 * 60_000,
   });
-  const consultorEfetivo = consultorId ?? consultoresQ.data?.eu.id ?? null;
+  type ConsultorOpcao = { id: string; nome: string; sap: string };
+  const consultores = (consultoresQ.data?.consultores ?? []) as ConsultorOpcao[];
+  // Opções do select: consultores do portal + (quando for o caso) o consultor
+  // importado que não casa com nenhum código do portal — nunca vazio.
+  const opcoesConsultor: ConsultorOpcao[] = consultorImportado
+    ? [...consultores, { id: consultorImportado.sap, sap: consultorImportado.sap, nome: `${consultorImportado.nome} (importado)` }]
+    : consultores;
+  const consultorEfetivo = consultorSap ?? consultoresQ.data?.eu.sap ?? null;
   const consultorNomeAtual =
-    (consultoresQ.data?.consultores ?? []).find((c: { id: string; nome: string }) => c.id === consultorId)?.nome ??
-    consultoresQ.data?.eu.nome ??
-    "—";
+    opcoesConsultor.find((c) => c.sap === consultorEfetivo)?.nome ?? consultoresQ.data?.eu.nome ?? "—";
 
   const errosAtuais = useMemo(() => validarCampos(form, consultorEfetivo), [form, consultorEfetivo]);
 
@@ -382,7 +388,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
             cnaes_secundarios: p.cnaes_secundarios ?? [],
             contatos: p.contatos ?? [],
           } as never,
-          consultor_id: consultorEfetivo,
+          consultor_sap: consultorEfetivo,
+          consultor_nome: opcoesConsultor.find((c) => c.sap === consultorEfetivo)?.nome ?? null,
         },
       });
     },
@@ -434,7 +441,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
   // Assinatura do formulário no momento em que o modal abriu: qualquer
   // divergência significa alterações não salvas.
-  const assinaturaForm = JSON.stringify([form, docBusca, consultorId]);
+  const assinaturaForm = JSON.stringify([form, docBusca, consultorSap]);
   const [baseForm, setBaseForm] = useState<string | null>(null);
   const [confirmarFechar, setConfirmarFechar] = useState(false);
   const formSujo = baseForm !== null && baseForm !== assinaturaForm;
@@ -447,14 +454,15 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   function fechar() {
     setBaseForm(null); setConfirmarFechar(false);
     setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
-    setConsultorId(consultoresQ.data?.eu.id ?? null);
+    setConsultorSap(consultoresQ.data?.eu.sap ?? null);
+    setConsultorImportado(null);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
     setFontes([]); setAvisos([]);
   }
   const abrirNovo = () => {
     fechar();
     setOpen(true);
-    setBaseForm(JSON.stringify([vazio(), "", consultoresQ.data?.eu.id ?? null]));
+    setBaseForm(JSON.stringify([vazio(), "", consultoresQ.data?.eu.sap ?? null]));
   };
   const abrirEdicao = (c: Cliente) => {
     const { id: _id, ...rest } = c;
@@ -469,9 +477,24 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         email: c.contato_email, telefone: c.contato_telefone,
       }),
     } as Form;
-    const consultor = c.created_by ?? consultoresQ.data?.eu.id ?? null;
+    // Pré-seleção: casa consultor_sap com o código do consultor do portal;
+    // se não casar, tenta pelo nome (case-insensitive); se ainda não casar,
+    // mantém o valor importado selecionado.
+    const sapCliente = (c.consultor_sap ?? "").trim();
+    const nomeCliente = (c.consultor_nome ?? "").trim();
+    const porCodigo = consultores.find((x) => x.sap === sapCliente);
+    const porNome = !porCodigo && nomeCliente
+      ? consultores.find((x) => x.nome.trim().toLowerCase() === nomeCliente.toLowerCase())
+      : undefined;
+    const casado = porCodigo ?? porNome;
+    const consultor = casado?.sap ?? (sapCliente || null) ?? consultoresQ.data?.eu.sap ?? null;
+    setConsultorImportado(
+      !casado && (sapCliente || nomeCliente)
+        ? { sap: sapCliente || nomeCliente, nome: nomeCliente || sapCliente }
+        : null,
+    );
     setForm(inicial);
-    setConsultorId(consultor);
+    setConsultorSap(consultor);
     setDocBusca("");
     setBaseForm(JSON.stringify([inicial, "", consultor]));
     setTentouSalvar(false); setFontes([]); setAvisos([]);
@@ -784,12 +807,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               <Section title="Comercial">
                 <F label="Consultor *" id="campo-consultor" error={erros.consultor}>
                   {consultoresQ.data?.podeEscolher ? (
-                    <Select value={consultorEfetivo ?? ""} onValueChange={(v) => setConsultorId(v)}>
-
+                    <Select value={consultorEfetivo ?? ""} onValueChange={(v) => setConsultorSap(v)}>
                       <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
                       <SelectContent>
-                        {(consultoresQ.data?.consultores ?? []).map((c: { id: string; nome: string }) => (
-                          <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                        {opcoesConsultor.map((c) => (
+                          <SelectItem key={c.sap} value={c.sap}>
+                            {c.nome}
+                            <span className="ml-2 font-mono text-[10px] opacity-60">{c.sap}</span>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
