@@ -63,7 +63,9 @@ export function CondicaoPagamentoSelect({
     const bloqueada = controlar && aPrazo && !cobre;
     return {
       value: c.codigo,
-      label: `${c.codigo} — ${c.descricao}`,
+      codigo: c.codigo,
+      descricao: c.descricao,
+      label: c.descricao,
       aPrazo,
       bloqueada,
       motivo: !vigente
