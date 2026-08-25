@@ -50,6 +50,7 @@ function EstoquePage() {
   const sync = useServerFn(syncEstoqueProdutos);
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
+  const [aba, setAba] = useAbaPersistente("admin-estoque", "produtos");
 
   const q = useQuery({ queryKey: ["estoque-consolidado"], queryFn: () => fetchAll({}) });
 

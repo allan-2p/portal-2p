@@ -15,6 +15,7 @@ export function CarregadoresComissaoRegras() {
   const { data: cfgData } = useCarregadoresConfig();
   const cfg = cfgData ?? CARREGADORES_CONFIG_FALLBACK;
 
+  const [abaRegime, setAbaRegime] = useAbaPersistente("carregadores-comissao-regime", "CLT");
   const [venda, setVenda] = useState(68750);
   const [custo, setCusto] = useState(34500);
   const [icms, setIcms] = useState(4);

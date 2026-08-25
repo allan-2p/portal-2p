@@ -6,6 +6,7 @@ import { IntegrationLogsPanel } from "@/components/integration-logs";
 import { ClientesIntegracaoStatus } from "@/components/admin/clientes-integracao-status";
 import { SincronizarPropostasSalesforce } from "@/components/admin/sincronizar-propostas-salesforce";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 
 export const Route = createFileRoute("/_authenticated/admin/logs/integracoes")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/admin/logs/integracoes")({
 
 function LogIntegracoesPage() {
   const { cliente } = Route.useSearch();
+  const [aba, setAba] = useAbaPersistente("admin-logs-integracoes", cliente ? "logs" : "cadastros");
   return (
     <AdminRouteGuard feature="admin.logs.integracoes" area="logs">
       <AppLayout>

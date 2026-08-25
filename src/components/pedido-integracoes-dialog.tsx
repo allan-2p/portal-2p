@@ -76,6 +76,7 @@ export function PedidoIntegracoesDialog({
   const sfFn = useServerFn(sincronizarPedidoSalesforceFn);
   const listar = useServerFn(listIntegrationLogs);
   const [limit, setLimit] = useState(10);
+  const [aba, setAba] = useAbaPersistente("pedido-integracoes", "integracoes");
 
   const status = useQuery({
     queryKey: ["pedido-integracoes", propostaId],

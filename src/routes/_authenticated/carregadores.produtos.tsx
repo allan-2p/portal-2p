@@ -46,6 +46,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
 });
 
 function ProdutosCarregadoresPage() {
+  const [aba, setAba] = useAbaPersistente("carregadores-produtos", "produtos");
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
