@@ -12,7 +12,7 @@ import {
   type CarregadoresState,
   type CarregadoresUf,
 } from "@/lib/carregadores";
-import { podeCancelarProposta } from "@/lib/proposta-status";
+import { podeCancelarProposta, podeMarcarEntregueProposta } from "@/lib/proposta-status";
 
 export type SalvarPropostaInput = {
   propostaId: string | null;
@@ -659,8 +659,11 @@ export const obterPropostaFn = createServerFn({ method: "POST" })
  * Atualiza o status da proposta.
  *
  * O status é governado pela máquina de estados (checkout, crons SAP, webhook
- * Fretefy). A única transição humana é o cancelamento — qualquer outra
- * alteração manual é recusada.
+ * Fretefy). As únicas transições humanas são:
+ * - "Cancelado" — quem pode editar a proposta;
+ * - "Entregue" (a partir de "Coletado") — baixa manual de entrega para fretes
+ *   fora da Fretefy; exige Manager Access ("Modify All Records") em Propostas.
+ * Qualquer outra alteração manual é recusada.
  */
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -675,13 +678,68 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
     const atual = (await db.getProposta(data.id)) as Record<string, any> | null;
     const de = String(atual?.["status"] ?? "Salvo");
 
-    const { assertPodeEditar, getPerm } = await import("./object-perms.server");
+    const { assertPodeEditar, getPerm, ForbiddenObjectError } = await import("./object-perms.server");
     const perm = await getPerm(context as any, String(atual?.["organizacao"] ?? "solar"), "propostas");
     assertPodeEditar(perm, "propostas", (atual?.["created_by"] as string | null) ?? null, (context as any).userId);
 
+    if (data.status === "Entregue") {
+      // Baixa manual de entrega: ação de pós-venda sobre pedidos de qualquer
+      // consultor — o gate é o Manager Access do perfil NO OBJETO PROPOSTAS,
+      // não a posse do registro.
+      if (!perm.modify_all) {
+        throw new ForbiddenObjectError(
+          'Marcar um pedido como entregue exige "Modify All Records" em propostas no seu perfil.',
+        );
+      }
+      if (!podeMarcarEntregueProposta(de)) {
+        throw new Error(`Só é possível marcar como entregue um pedido "Coletado" (este está "${de}").`);
+      }
+
+      const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
+      const t = await aplicarTransicao(data.id, "Entregue", "humano", { de });
+      if (!t.ok) throw new Error(t.motivo ?? "Não foi possível marcar o pedido como entregue.");
+
+      // Ação manual: fica no Log de Integrações com o autor, para auditoria.
+      try {
+        const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+        await logIntegrationEvent({
+          slug: "proposta",
+          level: "info",
+          event: "entrega-manual",
+          message: `Pedido ${atual?.["numero"] ?? ""} marcado como entregue manualmente (${de} → Entregue).`,
+          detail: { proposta_id: data.id, de },
+          actorId: (context as any).userId ?? null,
+        });
+      } catch {
+        /* best effort */
+      }
+
+      await sincronizarSalesforceAoSalvar(data.id);
+
+      // Aviso ao dono do pedido — best effort, nunca desfaz a baixa.
+      try {
+        const dono = (atual?.["created_by"] as string | null) ?? null;
+        if (dono && dono !== (context as any).userId) {
+          const { criarNotificacao } = await import("@/lib/notificacoes.server");
+          await criarNotificacao({
+            user_id: dono,
+            tipo: "info",
+            titulo: `Pedido entregue • ${atual?.["numero"] ?? ""}`.trim(),
+            descricao: "Entrega confirmada manualmente no portal.",
+            ref_tipo: "proposta",
+            ref_id: data.id,
+            chave: `entrega-manual:${data.id}`,
+          });
+        }
+      } catch {
+        /* best effort */
+      }
+      return { ok: true };
+    }
+
     if (data.status !== "Cancelado") {
       throw new Error(
-        "O status é definido automaticamente pelo processo (pagamento, SAP e transporte). Só o cancelamento é manual.",
+        "O status é definido automaticamente pelo processo (pagamento, SAP e transporte). Só o cancelamento e a baixa de entrega são manuais.",
       );
     }
     if (!podeCancelarProposta(de)) {

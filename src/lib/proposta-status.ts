@@ -84,7 +84,11 @@ export const PROPOSTA_TRANSICOES: Record<
   "Processando": { "Separação": "cron-sap", "Cancelado": ["humano", "pagamento"] },
   "Separação": { "Faturado": "cron-sap", "Cancelado": ["humano", "pagamento"] },
   "Faturado": { "Coletado": "cron-sap", "Cancelado": ["humano", "pagamento"] },
-  "Coletado": { "Entregue": "webhook-fretefy", "Cancelado": ["humano", "pagamento"] },
+  // "Coletado" → "Entregue" tem DOIS motores: o rastreio da Fretefy e a baixa
+  // manual no portal (necessária para fretes fora da Fretefy — Rodonaves,
+  // Correios, dedicado…), que exige Manager Access ("Modify All Records") no
+  // objeto `propostas`.
+  "Coletado": { "Entregue": ["webhook-fretefy", "humano"], "Cancelado": ["humano", "pagamento"] },
   "Entregue": {},
   "Cancelado": {},
 };
@@ -100,6 +104,11 @@ export function propostaEditavel(status: string): boolean {
 /** Cancelar é a única transição humana; não cancela pedido entregue/cancelado. */
 export function podeCancelarProposta(status: string): boolean {
   return motores(PROPOSTA_TRANSICOES[status as PropostaStatus]?.["Cancelado"]).includes("humano");
+}
+
+/** Baixa manual de entrega: só a partir de "Coletado" (frete fora da Fretefy). */
+export function podeMarcarEntregueProposta(status: string): boolean {
+  return motores(PROPOSTA_TRANSICOES[status as PropostaStatus]?.["Entregue"]).includes("humano");
 }
 
 export function transicaoPermitida(de: string, para: string, motor?: PropostaMotor): PropostaMotor | null {
