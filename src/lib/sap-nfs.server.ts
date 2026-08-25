@@ -513,6 +513,14 @@ export type NfResultado = {
   motivo?: string;
 };
 
+/** Seleciona uma janela circular para que nenhum pedido fique fora do lote. */
+export function selecionarFilaRotativa<T>(rows: T[], limite: number, rodada: number): T[] {
+  if (!rows.length || limite <= 0) return [];
+  if (rows.length <= limite) return rows.slice();
+  const inicio = (Math.max(0, rodada) * limite) % rows.length;
+  return Array.from({ length: Math.min(limite, rows.length) }, (_, i) => rows[(inicio + i) % rows.length] as T);
+}
+
 /**
  * Varre os pedidos em andamento e sincroniza o status com o SAP.
  * Lote de até 50 por execução, mais antigos primeiro.
@@ -534,12 +542,17 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
 
     order: "asc",
     naoVazio: ["sap_ov_numero"],
-    limit: limite,
+    limit: 20000,
   });
 
-  const fila = rows
-    .filter((r) => String(r["sap_ov_numero"] ?? "").trim() && String(r["numero"] ?? "").trim())
-    .slice(0, limite);
+  const elegiveis = rows.filter(
+    (r) => String(r["sap_ov_numero"] ?? "").trim() && String(r["numero"] ?? "").trim(),
+  );
+  // O cron roda a cada 20 minutos; cada execução pega a janela seguinte e,
+  // ao chegar ao fim, continua do começo. Assim pedidos novos e antigos são
+  // consultados mesmo quando o backlog passa de 50.
+  const rodada = Math.floor(Date.now() / (20 * 60 * 1000));
+  const fila = selecionarFilaRotativa(elegiveis, limite, rodada);
 
 
   const detalhes: NfAplicacao[] = [];
@@ -547,6 +560,15 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
   for (const row of fila) {
     try {
       detalhes.push(await processarProposta(row));
+      const atual = detalhes[detalhes.length - 1];
+      if (atual?.para === "Coletado" || String(row["status"] ?? "") === "Coletado") {
+        try {
+          const { reconciliarEntregaPendente } = await import("./fretefy-tracking.server");
+          await reconciliarEntregaPendente(String(row["id"]));
+        } catch {
+          /* best effort: o próximo ciclo tenta novamente */
+        }
+      }
     } catch (e) {
       const erro = (e as Error).message.slice(0, 300);
       erros.push({ proposta_id: String(row["id"]), erro });

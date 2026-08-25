@@ -79,12 +79,12 @@ export const PROPOSTA_TRANSICOES: Record<
   PropostaStatus,
   Partial<Record<PropostaStatus, PropostaMotor | PropostaMotor[]>>
 > = {
-  "Salvo": { "Aguardando Pagamento": "checkout", "Processando": "checkout", "Cancelado": "humano" },
-  "Aguardando Pagamento": { "Processando": ["pagamento", "cron-sap", "humano"], "Cancelado": "humano" },
-  "Processando": { "Separação": "cron-sap", "Cancelado": "humano" },
-  "Separação": { "Faturado": "cron-sap", "Cancelado": "humano" },
-  "Faturado": { "Coletado": "cron-sap", "Cancelado": "humano" },
-  "Coletado": { "Entregue": "webhook-fretefy", "Cancelado": "humano" },
+  "Salvo": { "Aguardando Pagamento": "checkout", "Processando": "checkout", "Cancelado": ["humano", "pagamento"] },
+  "Aguardando Pagamento": { "Processando": ["pagamento", "cron-sap", "humano"], "Cancelado": ["humano", "pagamento"] },
+  "Processando": { "Separação": "cron-sap", "Cancelado": ["humano", "pagamento"] },
+  "Separação": { "Faturado": "cron-sap", "Cancelado": ["humano", "pagamento"] },
+  "Faturado": { "Coletado": "cron-sap", "Cancelado": ["humano", "pagamento"] },
+  "Coletado": { "Entregue": "webhook-fretefy", "Cancelado": ["humano", "pagamento"] },
   "Entregue": {},
   "Cancelado": {},
 };

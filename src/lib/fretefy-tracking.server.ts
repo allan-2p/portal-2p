@@ -68,7 +68,7 @@ export async function processarWebhookFretefy(
     await logIntegrationEvent({
       slug: "fretefy",
       level: "warn",
-      event: "rastreio",
+      event: de === "Coletado" ? "rastreio" : "entrega-pendente",
       message: `Entrega recusada para o pedido ${ev.pedido}: ${r.motivo}`,
       detail: { proposta_id: id, status: de, payload },
     });
@@ -105,4 +105,24 @@ export async function processarWebhookFretefy(
   });
 
   return { ...base, proposta_id: id, de, para: "Entregue", entregue_em: r.row?.["entregue_em"] ?? null };
+}
+
+/** Reaplica uma entrega que chegou antes de o SAP levar o pedido a Coletado. */
+export async function reconciliarEntregaPendente(propostaId: string): Promise<boolean> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("integration_logs")
+    .select("detail")
+    .eq("slug", "fretefy")
+    .eq("event", "entrega-pendente")
+    .contains("detail", { proposta_id: propostaId })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const payload = data?.detail && typeof data.detail === "object"
+    ? (data.detail as Record<string, unknown>)["payload"]
+    : null;
+  if (!payload || typeof payload !== "object") return false;
+  const resultado = await processarWebhookFretefy(payload as Record<string, unknown>);
+  return resultado["para"] === "Entregue";
 }

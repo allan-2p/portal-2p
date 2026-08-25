@@ -35,6 +35,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 ### Corrigido
+- **Atualização dos pedidos**: o cron do SAP agora percorre toda a fila em janelas rotativas, sem deixar pedidos novos presos após os 50 mais antigos; checkout, Pix, confirmação manual e cancelamento passam pela mesma máquina de estados, com datas e trava contra concorrência; entregas da Fretefy recebidas antes da coleta no SAP são reaplicadas automaticamente quando o pedido chega a Coletado.
 - **Identificação de cliente duplicado**: o aviso de CNPJ já cadastrado agora exibe o consultor responsável gravado no cadastro, sem confundir a origem da importação com o vendedor da conta.
 - **Acesso por link direto**: ao abrir uma rota protegida sem sessão, o portal agora apenas direciona para o login, sem exibir o aviso incorreto de que a tela não está disponível na instância selecionada.
 - **Pesquisa numérica de clientes**: CNPJ, CPF, código SAP e número legado voltam a retornar resultados; a consulta deixou de aplicar comparação textual sobre o campo numérico de origem, que fazia o banco rejeitar toda busca contendo três ou mais dígitos.

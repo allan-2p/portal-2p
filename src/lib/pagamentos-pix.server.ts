@@ -12,7 +12,6 @@
  * Nunca grave credenciais ou certificados nos logs.
  */
 
-import { transicaoPermitida } from "./proposta-status";
 import * as db from "./propostas-db.server";
 
 export type PixEventoTipo = "pago" | "expirado" | "cancelado" | "desconhecido";
@@ -125,6 +124,7 @@ export type PixIO = {
   buscarPorTxid(txid: string): Promise<PropostaLike | null>;
   buscarPorNumero(numero: string): Promise<PropostaLike | null>;
   atualizar(id: string, patch: Record<string, unknown>): Promise<void>;
+  transicionar?(id: string, de: string, para: string, patch: Record<string, unknown>): Promise<boolean>;
   log(entry: {
     proposta_id: string;
     numero: string | null;
@@ -152,6 +152,10 @@ export const pixIOBanco: PixIO = {
   buscarPorTxid: (txid) => db.listarPropostasPorPagamentoTxid(txid) as Promise<PropostaLike | null>,
   buscarPorNumero: (numero) => db.getPropostaPorNumero(numero) as Promise<PropostaLike | null>,
   atualizar: (id, patch) => db.atualizarProposta(id, patch as any).then(() => undefined),
+  async transicionar(id, de, para, patch) {
+    const { aplicarTransicao } = await import("./proposta-transicao.server");
+    return (await aplicarTransicao(id, para, "pagamento", { de, patch })).ok;
+  },
   log: (entry) => db.registrarConclusaoLog(entry as any),
   async notificar(entry) {
     const { criarNotificacao, montarNotificacaoPix } = await import("./notificacoes.server");
@@ -192,6 +196,14 @@ export function criarPixIOSimulado(propostas: PropostaLike[]) {
       const row = rows.find((r) => r["id"] === id);
       if (row) Object.assign(row, patch);
       escritas.push({ proposta_id: id, patch });
+    },
+    async transicionar(id, de, para, patch) {
+      const row = rows.find((r) => r["id"] === id && String(r["status"] ?? "") === de);
+      if (!row) return false;
+      const completo = { ...patch, status: para };
+      Object.assign(row, completo);
+      escritas.push({ proposta_id: id, patch: completo });
+      return true;
     },
     async log(entry) {
       logs.push(entry);
@@ -312,13 +324,16 @@ export async function aplicarEventoPix(ev: PixEvento, io: PixIO = pixIOBanco): P
   } else if (ev.tipo === "cancelado") {
     if (de !== "Entregue" && de !== "Cancelado") para = "Cancelado";
   }
-  // A máquina de status é a autoridade: transição não prevista não é gravada.
-  if (para !== de && !transicaoPermitida(de, para)) para = de;
   // expirado: pedido permanece em Aguardando Pagamento para reemissão da cobrança.
 
-  if (para !== de) patch["status"] = para;
-
-  await io.atualizar(proposta["id"], patch);
+  if (para !== de && io.transicionar) {
+    const aplicada = await io.transicionar(String(proposta["id"]), de, para, patch);
+    if (!aplicada) {
+      return { ...base, proposta_id: proposta["id"], numero: proposta["numero"], de, skipped: true, motivo: "O status mudou durante a baixa do Pix." };
+    }
+  } else {
+    await io.atualizar(proposta["id"], patch);
+  }
 
   // Pix confirmado → só agora a ordem de venda é criada no SAP (regra legada).
   if (ev.tipo === "pago" && io.aoConfirmarPagamento) {
