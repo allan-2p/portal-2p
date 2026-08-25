@@ -87,6 +87,11 @@ export type ListarPropostasPaginaOpts = {
   createdByIn?: string[];
   /** Restringe às propostas do usuário (sem "View All Records"). */
   donoId?: string | null;
+  /** Código SAP do consultor logado (casa `sap_vendedor_codigo`). */
+  donoSap?: string | null;
+  /** Documentos dos clientes da carteira do consultor (casa `cliente_doc`). */
+  donoDocs?: string[] | null;
+
   pagina?: number;
   porPagina?: number;
 };
