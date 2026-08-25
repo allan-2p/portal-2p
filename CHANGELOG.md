@@ -35,6 +35,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 ### Corrigido
+- **Pesquisa de clientes**: cadastros legados vinculados ao vendedor pelo código SAP agora aparecem na lista e na pesquisa da carteira, mesmo quando não possuem o identificador interno `created_by`; a listagem fica consistente com a validação de CNPJ duplicado.
 - **Cadastro de clientes**: o aviso de "Tabela de clientes ainda não criada" agora só aparece quando o banco confirma ausência real da tabela, evitando falso bloqueio por cache/erro transitório enquanto a lista está revalidando.
 
 ### Removido
