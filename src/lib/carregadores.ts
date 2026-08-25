@@ -408,6 +408,7 @@ export function novoEstado(): CarregadoresState {
     faturamento: novoFaturamento("SP"),
     formaPagamento: "",
     condicaoPagamento: "",
+    condicaoPagamentoDescricao: "",
     entregaDiferente: false,
     entrega: novoEndereco("SP"),
     freteMod: "",
