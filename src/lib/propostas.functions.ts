@@ -577,7 +577,7 @@ export const listarPropostasFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const db = await repo();
-    const { assertPodeLer, filtrarPorDono, getPerm } = await import("./object-perms.server");
+    const { assertPodeLer, getPerm } = await import("./object-perms.server");
     const perm = await getPerm(context as any, data.organizacao ?? "solar", "propostas");
     assertPodeLer(perm, "propostas");
     const rows = await db.listarPropostas(data);
