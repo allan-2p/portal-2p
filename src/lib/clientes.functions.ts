@@ -82,6 +82,7 @@ export const listClientesFn = createServerFn({ method: "POST" })
     const db = await import("./clientes-db.server");
     const perm = await getPerm(context as any, data.instancia, "contas");
     assertPodeLer(perm, "contas");
+    const consultorSap = perm.view_all ? null : await meuConsultorSap(context as any);
     try {
       const todos = await db.listClientes(data.instancia);
       return { ok: true as const, clientes: filtrarPorDono(todos, perm, context.userId) };
@@ -131,6 +132,7 @@ export const listClientesPaginaFn = createServerFn({ method: "POST" })
         pagina: data.pagina,
         porPagina: data.porPagina,
         donoId: perm.view_all ? null : context.userId,
+        consultorSap,
       });
       return { ok: true as const, clientes: rows, total };
     } catch (e) {
