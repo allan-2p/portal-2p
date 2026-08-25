@@ -84,7 +84,16 @@ export const listClientesFn = createServerFn({ method: "POST" })
     assertPodeLer(perm, "contas");
     try {
       const todos = await db.listClientes(data.instancia);
-      return { ok: true as const, clientes: filtrarPorDono(todos, perm, context.userId) };
+      if (perm.view_all) return { ok: true as const, clientes: todos };
+      const sap = await meuConsultorSap(context as any);
+      const meus = todos.filter(
+        (c) =>
+          c["created_by"] === context.userId ||
+          c["consultor_id"] === context.userId ||
+          (!!sap && String(c["consultor_sap"] ?? "").trim() === sap),
+      );
+      return { ok: true as const, clientes: meus };
+
     } catch (e) {
       if (e instanceof db.ClientesTableMissing) {
         return { ok: false as const, motivo: "tabela-ausente" as const, clientes: [] };
