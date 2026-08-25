@@ -334,6 +334,11 @@ function NovaPropostaSolarPage() {
   const produtos = produtosQ.data ?? [];
   const config = cfgQ.data ?? SOLAR_CALC_CONFIG_FALLBACK;
   const cliente = (clientesQ.selecionado ?? null) as ClienteCad | null;
+  // Boleto a prazo depende de condição cadastrada no cliente + crédito aprovado.
+  const prazo = usePrazoLiberado(String((clientesQ.selecionado as any)?.["doc"] ?? clienteDoc ?? ""));
+  useEffect(() => {
+    if (!prazo.liberado && !prazo.carregando && formaPagamento === "boleto_prazo") setFormaPagamento("");
+  }, [prazo.liberado, prazo.carregando, formaPagamento]);
 
   const suportesDe = (tid: string) => {
     const ids = (combQ.data ?? {})[tid] ?? [];
