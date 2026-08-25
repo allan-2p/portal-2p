@@ -351,6 +351,7 @@ function PropostaCarregadoresPage() {
         } as CarregadoresState["faturamento"],
         formaPagamento: (((data as any).forma_pagamento as string | null) ?? "") as CarregadoresState["formaPagamento"],
         condicaoPagamento: ((data as any).condicao_pagamento_codigo as string | null) ?? "",
+        condicaoPagamentoDescricao: ((data as any).condicao_pagamento_descricao as string | null) ?? "",
         entregaDiferente: !!(data as any).entrega_diferente,
         entrega: { ...novoEndereco(data.uf), ...(((data as any).entrega as Record<string, string>) ?? {}) },
         freteMod: (data.frete_mod === "FOB" || data.frete_mod === "DEDICADO" || data.frete_mod === "CIF"
