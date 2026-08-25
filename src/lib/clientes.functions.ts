@@ -255,18 +255,6 @@ export const verificarDocFn = createServerFn({ method: "POST" })
     const achados = await db.findClienteByDoc(data.doc);
     if (achados.length === 0) return { existe: false as const, registros: [] };
 
-    const ids = Array.from(
-      new Set(achados.map((a) => a.cliente["created_by"]).filter(Boolean) as string[]),
-    );
-    const nomes = new Map<string, string>();
-    if (ids.length > 0) {
-      const { data: profs } = await context.supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", ids);
-      for (const p of profs ?? []) nomes.set(p.id, p.full_name || p.email || "—");
-    }
-
     return {
       existe: true as const,
       registros: achados.map(({ instancia, cliente }) => ({
