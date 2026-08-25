@@ -275,8 +275,7 @@ export const verificarDocFn = createServerFn({ method: "POST" })
         razao_social: (cliente["razao_social"] as string) ?? "—",
         organizacao: (cliente["organizacao"] as string) ?? db.ORGANIZACAO[instancia],
         consultor:
-          nomes.get(cliente["created_by"] as string) ??
-          (cliente["created_by_nome"] as string) ??
+          (cliente["consultor_nome"] as string | null) ||
           "Não identificado",
         ativo: cliente["ativo"] !== false,
         criado_em: (cliente["created_at"] as string) ?? null,
