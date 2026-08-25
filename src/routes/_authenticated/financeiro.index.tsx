@@ -9,12 +9,12 @@ export const Route = createFileRoute("/_authenticated/financeiro/")({
       { title: "Financeiro — Portal 2P" },
       {
         name: "description",
-        content: "Painel financeiro do Grupo 2P: condições de pagamento (ZTERM) usadas nas propostas e no SAP.",
+        content: "Painel financeiro do Grupo 2P: condições de pagamento usadas nas propostas e no SAP.",
       },
       { property: "og:title", content: "Financeiro — Portal 2P" },
       {
         property: "og:description",
-        content: "Gestão das condições de pagamento (ZTERM) do Grupo 2P.",
+        content: "Gestão das condições de pagamento do Grupo 2P.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
