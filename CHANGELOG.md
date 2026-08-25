@@ -34,6 +34,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+### Corrigido
+- **Cadastro de clientes**: o aviso de "Tabela de clientes ainda não criada" agora só aparece quando o banco confirma ausência real da tabela, evitando falso bloqueio por cache/erro transitório enquanto a lista está revalidando.
+
 ### Removido
 - **Pop-ups automáticos de notificação**: nenhum aviso automático (tarefas do Salesforce, Pix/boleto, Atlas) aparece mais no canto da tela. Tudo continua sendo registrado no sino do topo, com contador e histórico. Os avisos de ação do usuário (salvar, concluir, erro em um envio) seguem funcionando normalmente.
 - **Avisos de previsão de fechamento (Salesforce)**: os toasts "Previsão vencida/próxima" saíram do portal — reapareciam a cada ciclo de polling. As notificações de tarefas do dia continuam ativas.

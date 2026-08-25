@@ -306,7 +306,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   });
   const clientes = useMemo(() => ((data?.clientes ?? []) as unknown as Cliente[]), [data]);
   const total = data?.total ?? 0;
-  const tabelaAusente = data?.ok === false;
+  const tabelaAusente = !isFetching && data?.ok === false && data?.motivo === "tabela-ausente";
 
   const verificar = useMutation({
     mutationFn: async () => {
