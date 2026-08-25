@@ -265,7 +265,9 @@ export async function findClienteByDoc(doc: string): Promise<
   const digits = doc.replace(/\D/g, "");
   const out: Array<{ instancia: ClientesInstance; cliente: ClienteRow }> = [];
   try {
-    const params = new URLSearchParams({ select: SELECT, doc: `eq.${digits}`, limit: "10" });
+    // Base mista: há cadastros com o documento gravado formatado.
+    const alvos = [`doc.eq.${digits}`, ...padroesBuscaDoc(digits).map((p) => `doc.ilike.${p}`)];
+    const params = new URLSearchParams({ select: SELECT, or: `(${alvos.join(",")})`, limit: "10" });
     const rows: ClienteRow[] = (await rest("solar", `clientes?${params}`)) ?? [];
     for (const cliente of rows) {
       const inst = cliente["instancia"] === "carregadores" ? "carregadores" : "solar";
