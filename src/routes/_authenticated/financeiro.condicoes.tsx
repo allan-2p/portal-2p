@@ -128,7 +128,7 @@ function CondicoesPage() {
               <Receipt className="h-6 w-6 text-primary" /> Condições de Pagamento
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Código ZTERM enviado ao SAP. No checkout aparecem só as condições ativas com parcelas
+              Código enviado ao SAP. No checkout aparecem só as condições ativas com parcelas
               calculadas automaticamente.
             </p>
           </div>
