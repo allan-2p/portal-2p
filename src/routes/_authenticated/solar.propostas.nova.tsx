@@ -1216,11 +1216,11 @@ function NovaPropostaSolarPage() {
       setTentou(true);
       return toast.error("Escolha a transportadora — a proposta não pode ser salva sem o frete cotado.");
     }
-    if (concluir && !formaPagamento) {
+    if (concluir && tipoNf !== "bonificacao" && !formaPagamento) {
       setTentou(true);
       return toast.error("Forma de pagamento é obrigatória para concluir o pedido.");
     }
-    if (concluir && !condicaoPagamento) {
+    if (concluir && tipoNf !== "bonificacao" && !condicaoPagamento) {
       setTentou(true);
       return toast.error("Condição de pagamento é obrigatória para concluir o pedido.");
     }
@@ -1447,8 +1447,8 @@ function NovaPropostaSolarPage() {
   /** Bloqueios para emitir a proposta em PDF. */
   function validarParaPdf(): string | null {
     if (!itens.length) return "Adicione produtos antes de gerar o PDF.";
-    if (!formaPagamento) return "Selecione a forma de pagamento antes de gerar a proposta.";
-    if (!condicaoPagamento) return "Selecione a condição de pagamento antes de gerar a proposta.";
+    if (tipoNf !== "bonificacao" && !formaPagamento) return "Selecione a forma de pagamento antes de gerar a proposta.";
+    if (tipoNf !== "bonificacao" && !condicaoPagamento) return "Selecione a condição de pagamento antes de gerar a proposta.";
     return null;
   }
 
@@ -2554,8 +2554,8 @@ function NovaPropostaSolarPage() {
                   value={cidadeUf(destino.cidade, destino.uf)}
                 />
 
-                <Info label="Forma de pagamento" value={formaPagamento || "—"} />
-                <Info label="Condição de pagamento" value={condicaoPagamentoDescricao || "—"} />
+                <Info label="Forma de pagamento" value={tipoNf === "bonificacao" ? "— (bonificação)" : formaPagamento || "—"} />
+                <Info label="Condição de pagamento" value={tipoNf === "bonificacao" ? "— (bonificação)" : condicaoPagamentoDescricao || "—"} />
                 <Info
                   label="Frete"
                   value={`${freteMod || "—"}${bonificado || freteGratis ? " · Frete grátis" : ""}`}
