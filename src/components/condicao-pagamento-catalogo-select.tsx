@@ -42,10 +42,12 @@ export function CondicaoPagamentoCatalogoSelect({
   const cod = String(codigo ?? "").trim();
   const atual = opcoes.find((c) => c.codigo === cod);
   const rotulo = atual
-    ? `${atual.codigo} — ${atual.descricao}`
-    : cod || descricao
-      ? [cod, descricao].filter(Boolean).join(" — ")
-      : null;
+    ? atual.descricao
+    : descricao
+      ? descricao
+      : cod
+        ? "Selecione a condição"
+        : null;
 
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
