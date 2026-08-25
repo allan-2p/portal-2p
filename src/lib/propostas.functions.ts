@@ -659,8 +659,11 @@ export const obterPropostaFn = createServerFn({ method: "POST" })
  * Atualiza o status da proposta.
  *
  * O status é governado pela máquina de estados (checkout, crons SAP, webhook
- * Fretefy). A única transição humana é o cancelamento — qualquer outra
- * alteração manual é recusada.
+ * Fretefy). As únicas transições humanas são:
+ * - "Cancelado" — quem pode editar a proposta;
+ * - "Entregue" (a partir de "Coletado") — baixa manual de entrega para fretes
+ *   fora da Fretefy; exige Manager Access ("Modify All Records") em Propostas.
+ * Qualquer outra alteração manual é recusada.
  */
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
