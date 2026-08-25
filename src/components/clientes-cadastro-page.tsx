@@ -610,18 +610,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               }}
             />
           </div>
-          {consultoresQ.data?.podeEscolher && (
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => sincronizarCarteira.mutate()}
-              disabled={sincronizarCarteira.isPending}
-              title="Atualiza o consultor dos cadastros conforme o dono atual da conta no Salesforce"
-            >
-              <RefreshCw className={`h-4 w-4 ${sincronizarCarteira.isPending ? "animate-spin" : ""}`} />
-              Sincronizar carteira
-            </Button>
-          )}
           <Button className="gap-2" onClick={abrirNovo}><Plus className="h-4 w-4" /> Novo cadastro</Button>
 
 
