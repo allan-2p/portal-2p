@@ -35,7 +35,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 ### Adicionado
+- **Carteira por vendedor**: sem "View All Records", o consultor passa a ver seus clientes (por criador, consultor responsável ou código SAP do consultor) e todas as propostas/pedidos ligados a esses clientes — inclusive registros criados por outra pessoa para um cliente da carteira dele. Quem tem "View All Records" continua vendo tudo, sem filtro.
 - **Baixa manual de entrega**: pedidos "Coletado" com frete fora da Fretefy podem ser marcados como entregues direto no detalhe do pedido (Solar e Carregadores). A ação exige "Modify All Records" em Propostas, passa pela máquina de estados, carimba a data de entrega, registra o autor no Log de Integrações, sincroniza o Salesforce e avisa o dono do pedido.
+
 
 ### Banco de dados
 - Novo perfil de permissão **Analista de Fretes**: acesso às telas de propostas/pedidos de Solar e Carregadores e Manager Access apenas no objeto Propostas (ver/editar todos, sem criar nem excluir). Carga idempotente em `permission_profiles`, `permission_profile_instances`, `permission_profile_features` e `permission_profile_object_perms`.
