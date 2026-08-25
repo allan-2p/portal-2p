@@ -66,29 +66,27 @@ export function CondicaoPagamentoCatalogoSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
-          <CommandInput placeholder="Digite o código (ZTERM) ou a descrição" />
-          <CommandList className="max-h-72">
-            <CommandEmpty>
-              {q.isLoading ? "Carregando…" : "Nenhuma condição encontrada."}
-            </CommandEmpty>
-            {opcoes.map((c) => (
-              <CommandItem
-                key={c.codigo}
-                value={`${c.codigo} ${c.descricao}`}
-                onSelect={() => {
-                  onChange({ codigo: c.codigo, descricao: c.descricao });
-                  setAberto(false);
-                }}
-              >
-                <Check className={cn("h-4 w-4", cod === c.codigo ? "opacity-100" : "opacity-0")} />
-                <span className="truncate">
-                  {c.codigo} — {c.descricao}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandList>
-        </Command>
+          <Command>
+            <CommandInput placeholder="Busque pela condição de pagamento" />
+            <CommandList className="max-h-72">
+              <CommandEmpty>
+                {q.isLoading ? "Carregando…" : "Nenhuma condição encontrada."}
+              </CommandEmpty>
+              {opcoes.map((c) => (
+                <CommandItem
+                  key={c.codigo}
+                  value={`${c.codigo} ${c.descricao}`}
+                  onSelect={() => {
+                    onChange({ codigo: c.codigo, descricao: c.descricao });
+                    setAberto(false);
+                  }}
+                >
+                  <Check className={cn("h-4 w-4", cod === c.codigo ? "opacity-100" : "opacity-0")} />
+                  <span className="truncate">{c.descricao}</span>
+                </CommandItem>
+              ))}
+            </CommandList>
+          </Command>
       </PopoverContent>
     </Popover>
   );
