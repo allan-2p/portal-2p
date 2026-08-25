@@ -276,8 +276,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const consultorNomeAtual =
     opcoesConsultor.find((c) => c.sap === consultorEfetivo)?.nome ?? consultoresQ.data?.eu.nome ?? "—";
 
+  // Aba compartilhada entre visualização e edição: ao alternar entre os modos,
+  // o usuário permanece na mesma seção (ex.: Financeiro continua Financeiro).
   const [abaEdicao, setAbaEdicao] = useState("cadastrais");
-  const [abaDetalhe, setAbaDetalhe] = useState("cadastrais");
+  const abaDetalhe = abaEdicao;
+  const setAbaDetalhe = setAbaEdicao;
 
   const errosAtuais = useMemo(() => validarCampos(form, consultorEfetivo), [form, consultorEfetivo]);
 
