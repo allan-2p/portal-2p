@@ -710,6 +710,23 @@ export const finalidadeUsoPorDocFn = createServerFn({ method: "POST" })
     return { finalidade: (cliente?.["finalidade"] as string | null) ?? null };
   });
 
+/**
+ * Condição de pagamento cadastrada no cliente. É o pré-requisito para o
+ * checkout oferecer "Boleto a prazo": sem condição no cadastro, o pedido só
+ * pode sair à vista/Pix/cartão/financiamento.
+ */
+export const condicaoPagamentoClienteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ doc: docSchema }).parse(input))
+  .handler(async ({ data }) => {
+    const db = await import("./clientes-db.server");
+    const achados = await db.findClienteByDoc(data.doc);
+    const cliente = achados[0]?.cliente ?? null;
+    const condicao = String(cliente?.["condicao_pagamento"] ?? "").trim();
+    return { condicao: condicao || null };
+  });
+
+
 export const excluirClienteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>

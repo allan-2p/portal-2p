@@ -98,6 +98,7 @@ import { buildPropostaPdfHtml } from "@/lib/carregadores-proposta-pdf";
 import { MoneyInput } from "@/components/money-input";
 import { FreteDedicado } from "@/components/frete-dedicado";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { usePrazoLiberado } from "@/hooks/use-prazo-liberado";
 
 import { cn } from "@/lib/utils";
 import { ResultadoConclusaoDialog } from "@/components/resultado-conclusao-dialog";
@@ -610,6 +611,14 @@ function PropostaCarregadoresPage() {
 
   const set = <K extends keyof CarregadoresState>(k: K, v: CarregadoresState[K]) =>
     setState((s) => ({ ...s, [k]: v }));
+
+  // Boleto a prazo exige condição de pagamento cadastrada no cliente + crédito aprovado.
+  const prazo = usePrazoLiberado(String(state.doc ?? ""));
+  useEffect(() => {
+    if (!prazo.liberado && !prazo.carregando && state.formaPagamento === "boleto_prazo") {
+      setState((s) => ({ ...s, formaPagamento: "" as CarregadoresState["formaPagamento"] }));
+    }
+  }, [prazo.liberado, prazo.carregando, state.formaPagamento]);
 
   /** Atualiza campos do endereço de entrega. */
   const setEntrega = (patch: Partial<CarregadoresState["entrega"]>) =>
@@ -2529,12 +2538,19 @@ function PropostaCarregadoresPage() {
                         <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="boleto_vista">{labelFormaPagamento.boleto_vista}</SelectItem>
-                          <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
+                          {prazo.liberado && (
+                            <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
+                          )}
                           <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
                           <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
                           <SelectItem value="financiamento">{labelFormaPagamento.financiamento}</SelectItem>
                         </SelectContent>
                       </Select>
+                      {!prazo.liberado && prazo.motivo && (
+                        <p className="text-xs text-muted-foreground">
+                          Boleto a prazo indisponível: {prazo.motivo.toLowerCase()}
+                        </p>
+                      )}
                     </Field>
 
                     <Field label="Condição de pagamento">
