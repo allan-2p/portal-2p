@@ -111,14 +111,24 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             <h2 className="text-2xl font-bold mt-1 truncate">{p['nome'] || p['cliente_nome']}</h2>
             <div className="text-sm text-muted-foreground mt-1">{p['cliente_nome']}</div>
           </div>
-          <div
-            className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
-            style={{ backgroundColor: st.bg, color: st.fg }}
-          >
-            <StatusDot status={status} size="sm" className="ring-0" />
-            {status}
+          <div className="flex flex-wrap items-center gap-2">
+            {ehTipoNfBonificacao(p['tipo_nf']) ? <BonificacaoBadge /> : null}
+            <div
+              className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
+              style={{ backgroundColor: st.bg, color: st.fg }}
+            >
+              <StatusDot status={status} size="sm" className="ring-0" />
+              {status}
+            </div>
           </div>
         </div>
+
+        {ehTipoNfBonificacao(p['tipo_nf']) ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+            Pedido bonificado — nenhuma cobrança (boleto/Pix) é emitida para esta proposta.
+          </div>
+        ) : null}
+
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <Campo label="Data de criação" value={fmtData(p['created_at'])} />
