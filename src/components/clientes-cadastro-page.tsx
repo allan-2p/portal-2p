@@ -308,6 +308,16 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const abaDetalhe = abaEdicao;
   const setAbaDetalhe = setAbaEdicao;
 
+  // Título da página acompanha a aba ativa enquanto o cadastro está aberto.
+  useEffect(() => {
+    const anterior = document.title;
+    const secao = ROTULO_ABA[abaEdicao] ?? "";
+    if (open) document.title = `${editId ? "Editar cliente" : "Novo cliente"} · ${secao} — Portal 2P`;
+    else if (detalhe) document.title = `Cliente · ${secao} — Portal 2P`;
+    else document.title = "Cadastro de clientes — Portal 2P";
+    return () => { document.title = anterior; };
+  }, [abaEdicao, open, editId, detalhe]);
+
   const errosAtuais = useMemo(() => validarCampos(form, consultorEfetivo), [form, consultorEfetivo]);
 
   const erros: Erros = tentouSalvar ? errosAtuais : {};
