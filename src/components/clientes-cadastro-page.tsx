@@ -50,6 +50,31 @@ import {
 export type Instancia = "solar" | "carregadores";
 const ORGANIZACAO: Record<Instancia, string> = { solar: "2P Solar", carregadores: "2P Carregadores" };
 
+/** Rótulos amigáveis das abas — usados no título da página e na trilha. */
+const ROTULO_ABA: Record<string, string> = {
+  cadastrais: "Dados cadastrais",
+  contatos: "Contatos",
+  enderecos: "Endereços",
+  financeiro: "Financeiro",
+};
+
+/** Trilha (breadcrumb) que acompanha a aba ativa na visualização e na edição. */
+function TrilhaAbas({ base, registro, secao }: { base: string; registro: string; secao?: string }) {
+  return (
+    <nav aria-label="Trilha de navegação" className="mb-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+      <span>{base}</span>
+      <span aria-hidden="true">›</span>
+      <span className="max-w-[22rem] truncate">{registro}</span>
+      {secao ? (
+        <>
+          <span aria-hidden="true">›</span>
+          <span className="font-medium text-foreground" aria-current="page">{secao}</span>
+        </>
+      ) : null}
+    </nav>
+  );
+}
+
 type Cnae = { codigo: string; descricao: string };
 
 export type Cliente = {
@@ -282,6 +307,16 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [abaEdicao, setAbaEdicao] = useAbaPersistente("clientes-cadastro", "cadastrais");
   const abaDetalhe = abaEdicao;
   const setAbaDetalhe = setAbaEdicao;
+
+  // Título da página acompanha a aba ativa enquanto o cadastro está aberto.
+  useEffect(() => {
+    const anterior = document.title;
+    const secao = ROTULO_ABA[abaEdicao] ?? "";
+    if (open) document.title = `${editId ? "Editar cliente" : "Novo cliente"} · ${secao} — Portal 2P`;
+    else if (detalhe) document.title = `Cliente · ${secao} — Portal 2P`;
+    else document.title = "Cadastro de clientes — Portal 2P";
+    return () => { document.title = anterior; };
+  }, [abaEdicao, open, editId, detalhe]);
 
   const errosAtuais = useMemo(() => validarCampos(form, consultorEfetivo), [form, consultorEfetivo]);
 
@@ -617,12 +652,23 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : tentarFechar())}>
         <DialogContent className="max-w-4xl w-[calc(100vw-2rem)] max-h-[88vh] overflow-y-auto">
           <DialogHeader className="text-left">
+            <TrilhaAbas
+              base="Cadastro de clientes"
+              registro={
+                editId
+                  ? String(form.razao_social || form.nome_fantasia || "Cliente")
+                  : etapa === "documento"
+                    ? "Novo cadastro"
+                    : String(form.razao_social || "Novo cadastro")
+              }
+              secao={etapa === "documento" ? "Identificação" : ROTULO_ABA[abaEdicao]}
+            />
             <DialogTitle>
               {editId
-                ? "Editar cadastro do cliente"
+                ? `Editar cadastro do cliente — ${etapa === "documento" ? "Identificação" : ROTULO_ABA[abaEdicao]}`
                 : etapa === "documento"
                   ? "Novo cadastro — identificação"
-                  : "Novo cadastro de cliente"}
+                  : `Novo cadastro de cliente — ${ROTULO_ABA[abaEdicao]}`}
             </DialogTitle>
             <DialogDescription>
               {etapa === "documento"
@@ -1127,7 +1173,12 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
           {detalhe && (
             <>
               <DialogHeader className="text-left">
-                <DialogTitle className="pr-6">Cliente</DialogTitle>
+                <TrilhaAbas
+                  base="Cadastro de clientes"
+                  registro={String(detalhe.razao_social || detalhe.nome_fantasia || "Cliente")}
+                  secao={ROTULO_ABA[abaDetalhe]}
+                />
+                <DialogTitle className="pr-6">Cliente — {ROTULO_ABA[abaDetalhe]}</DialogTitle>
                 <DialogDescription>Visão completa do cadastro, contatos, endereços e financeiro.</DialogDescription>
               </DialogHeader>
 
