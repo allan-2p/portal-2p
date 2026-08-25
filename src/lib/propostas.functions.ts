@@ -668,10 +668,23 @@ export const obterPropostaFn = createServerFn({ method: "POST" })
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
-    const i = (input ?? {}) as { id?: unknown; status?: unknown };
+    const i = (input ?? {}) as { id?: unknown; status?: unknown; entregueEm?: unknown };
     if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
     if (typeof i.status !== "string" || !i.status) throw new Error("Status inválido.");
-    return { id: i.id, status: i.status };
+    // Baixa manual de entrega: a data é obrigatória (o analista informa quando
+    // a transportadora entregou de fato, que raramente é "agora").
+    let entregueEm: string | undefined;
+    if (i.status === "Entregue") {
+      const bruto = typeof i.entregueEm === "string" ? i.entregueEm.trim() : "";
+      if (!bruto) throw new Error("Informe a data de entrega.");
+      const d = new Date(bruto);
+      if (Number.isNaN(d.getTime())) throw new Error("Data de entrega inválida.");
+      if (d.getTime() > Date.now() + 5 * 60 * 1000) {
+        throw new Error("A data de entrega não pode ser no futuro.");
+      }
+      entregueEm = d.toISOString();
+    }
+    return { id: i.id, status: i.status, ...(entregueEm ? { entregueEm } : {}) };
   })
   .handler(async ({ data, context }) => {
     const db = await repo();
