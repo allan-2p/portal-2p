@@ -113,33 +113,37 @@ const termoSeguro = (t: string) => t.replace(/[(),*"\\]/g, " ").trim();
 /**
  * Escopo do consultor: registros criados por ele, em que ele é o consultor
  * responsável, ou ligados a um cliente da carteira dele.
+ *
+ * `docs` já vem fatiado pelo chamador — carteiras grandes são consultadas em
+ * lotes para não estourar o tamanho da URL do PostgREST.
  */
-function clausulaEscopo(opts: {
-  donoId?: string | null;
-  donoSap?: string | null;
-  donoDocs?: string[] | null;
-}): string | null {
+function clausulaEscopo(
+  opts: { donoId?: string | null; donoSap?: string | null },
+  docs: string[],
+  comIdentidade: boolean,
+): string | null {
   if (!opts.donoId) return null;
-  const alvos = [`created_by.eq.${opts.donoId}`, `consultor_id.eq.${opts.donoId}`];
-  if (opts.donoSap) alvos.push(`sap_vendedor_codigo.eq.${opts.donoSap}`);
-  const docs = (opts.donoDocs ?? []).filter(Boolean).slice(0, 800);
+  const alvos: string[] = [];
+  if (comIdentidade) {
+    alvos.push(`created_by.eq.${opts.donoId}`, `consultor_id.eq.${opts.donoId}`);
+    if (opts.donoSap) alvos.push(`sap_vendedor_codigo.eq.${opts.donoSap}`);
+  }
   if (docs.length) alvos.push(`cliente_doc.in.(${docs.join(",")})`);
+  if (!alvos.length) return null;
   return `or(${alvos.join(",")})`;
 }
 
+/** Documentos por consulta: mantém a URL do PostgREST em tamanho seguro. */
+const LOTE_DOCS = 400;
 
-/**
- * Página de propostas com busca no banco: a pesquisa alcança a base inteira
- * (inclusive as importadas da plataforma antiga), e a ordenação é sempre da
- * mais recente para a mais antiga.
- */
-export async function listarPropostasPagina(
-  opts: ListarPropostasPaginaOpts = {},
-): Promise<{ rows: PropostaRow[]; total: number }> {
-  const porPagina = Math.min(Math.max(opts.porPagina ?? 25, 1), 200);
-  const pagina = Math.max(opts.pagina ?? 1, 1);
+function montarParams(
+  opts: ListarPropostasPaginaOpts,
+  docs: string[],
+  comIdentidade: boolean,
+  select: string,
+): URLSearchParams {
   const params = new URLSearchParams({
-    select: opts.select ?? "*",
+    select,
     order: "created_at.desc.nullslast,id.asc",
   });
   if (opts.organizacao) params.set("organizacao", `eq.${opts.organizacao}`);
@@ -152,16 +156,97 @@ export async function listarPropostasPagina(
   // Condições compostas vão juntas em `and=(...)`: o PostgREST aceita só um
   // parâmetro `or` por consulta.
   const cond: string[] = [];
-  const escopo = clausulaEscopo(opts);
+  const escopo = clausulaEscopo(opts, docs, comIdentidade);
   if (escopo) cond.push(escopo);
   const termo = termoSeguro(opts.q ?? "");
   if (termo) cond.push(`or(${COLUNAS_BUSCA_PROPOSTA.map((c) => `${c}.ilike.*${termo}*`).join(",")})`);
   if (opts.comSap === "com") cond.push("or(sap_ov_numero.not.is.null,numero_sap.not.is.null)");
   if (opts.comSap === "sem") cond.push("and(sap_ov_numero.is.null,numero_sap.is.null)");
   if (cond.length) params.set("and", `(${cond.join(",")})`);
+  return params;
+}
 
+const maisRecentePrimeiro = (
+  a: { created_at?: string | null; id: string },
+  b: { created_at?: string | null; id: string },
+) => {
+  const ca = a.created_at ?? "";
+  const cb = b.created_at ?? "";
+  if (ca !== cb) {
+    if (!ca) return 1;
+    if (!cb) return -1;
+    return ca < cb ? 1 : -1;
+  }
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+};
 
+/** Baixa todas as chaves (id + data) que casam com um recorte do escopo. */
+async function coletarChaves(
+  opts: ListarPropostasPaginaOpts,
+  docs: string[],
+  comIdentidade: boolean,
+): Promise<Array<{ id: string; created_at: string | null }>> {
+  const params = montarParams(opts, docs, comIdentidade, "id,created_at");
+  const out: Array<{ id: string; created_at: string | null }> = [];
+  for (let p = 0; p < 40; p++) {
+    const from = p * PAGINA_DB;
+    const { ok, status, text } = await grupo2pRest(`propostas?${params}`, {
+      range: { from, to: from + PAGINA_DB - 1 },
+    });
+    if (!ok) {
+      if (status === 416) break;
+      throw new Error(`Erro no banco (${status}): ${text.slice(0, 300)}`);
+    }
+    const bloco = text ? (JSON.parse(text) as typeof out) : [];
+    out.push(...bloco);
+    if (bloco.length < PAGINA_DB) break;
+  }
+  return out;
+}
+
+/**
+ * Página de propostas com busca no banco: a pesquisa alcança a base inteira
+ * (inclusive as importadas da plataforma antiga), e a ordenação é sempre da
+ * mais recente para a mais antiga.
+ */
+export async function listarPropostasPagina(
+  opts: ListarPropostasPaginaOpts = {},
+): Promise<{ rows: PropostaRow[]; total: number }> {
+  const porPagina = Math.min(Math.max(opts.porPagina ?? 25, 1), 200);
+  const pagina = Math.max(opts.pagina ?? 1, 1);
   const from = (pagina - 1) * porPagina;
+  const select = opts.select ?? "*";
+  const docs = (opts.donoDocs ?? []).filter(Boolean);
+
+  // Carteira grande: a lista de documentos não cabe numa única URL. Nesse caso
+  // as chaves são coletadas em lotes (sem limite de carteira), unificadas e
+  // ordenadas aqui; só a página pedida volta completa do banco.
+  if (opts.donoId && docs.length > LOTE_DOCS) {
+    const lotes: string[][] = [];
+    for (let i = 0; i < docs.length; i += LOTE_DOCS) lotes.push(docs.slice(i, i + LOTE_DOCS));
+
+    const chaves = new Map<string, { id: string; created_at: string | null }>();
+    const partes = await Promise.all(
+      lotes.map((lote, i) => coletarChaves(opts, lote, i === 0)),
+    );
+    for (const parte of partes) for (const k of parte) chaves.set(k.id, k);
+
+    const ordenadas = [...chaves.values()].sort(maisRecentePrimeiro);
+    const daPagina = ordenadas.slice(from, from + porPagina);
+    if (!daPagina.length) return { rows: [], total: ordenadas.length };
+
+    const params = new URLSearchParams({
+      select,
+      order: "created_at.desc.nullslast,id.asc",
+      id: `in.(${daPagina.map((k) => k.id).join(",")})`,
+    });
+    const { ok, status, text } = await grupo2pRest(`propostas?${params}`);
+    if (!ok) throw new Error(`Erro no banco (${status}): ${text.slice(0, 300)}`);
+    const rows: PropostaRow[] = text ? JSON.parse(text) : [];
+    return { rows, total: ordenadas.length };
+  }
+
+  const params = montarParams(opts, docs, true, select);
   const { ok, status, text, total } = await grupo2pRest(`propostas?${params}`, {
     range: { from, to: from + porPagina - 1 },
     count: true,
@@ -173,6 +258,7 @@ export async function listarPropostasPagina(
   const rows: PropostaRow[] = text ? JSON.parse(text) : [];
   return { rows, total: total ?? rows.length };
 }
+
 
 /**
  * Consulta livre na tabela `propostas` do Grupo 2P (filtros PostgREST crus).
