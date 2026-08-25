@@ -289,7 +289,7 @@ function EditDialog({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">Código (ZTERM)</label>
+              <label className="text-xs text-muted-foreground">Código SAP</label>
               <Input
                 value={codigo}
                 disabled={!!value?.codigo}
