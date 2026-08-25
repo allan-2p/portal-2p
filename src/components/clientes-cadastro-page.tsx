@@ -558,7 +558,18 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         <div className="flex flex-1 flex-wrap items-center justify-end gap-2 ml-auto">
           <div className="relative w-80">
             <Search className="h-4 w-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-8" placeholder="Buscar por Código SAP, nome, CNPJ, cidade…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input
+              className="pl-8"
+              placeholder="Buscar por Código SAP, nome, CNPJ, cidade…"
+              value={q}
+              onChange={(e) => {
+                const v = e.target.value;
+                // Digitou só números/pontuação de documento: formata na hora
+                // (a busca no banco ignora a pontuação de qualquer forma).
+                const ehDoc = /^[\d.\-/\s]+$/.test(v) && soDigitos(v).length >= 3 && soDigitos(v).length <= 14;
+                setQ(ehDoc ? mascaraDoc(v) : v);
+              }}
+            />
           </div>
           {consultoresQ.data?.podeEscolher && (
             <Button

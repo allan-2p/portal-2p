@@ -8,6 +8,7 @@ import {
   ORGANIZACAO as ORG,
   ORGANIZACAO_LABEL as ORG_LABEL,
 } from "./grupo2p-db.server";
+import { padroesBuscaDoc } from "./cnpj";
 
 export type ClientesInstance = "solar" | "carregadores";
 
@@ -154,11 +155,13 @@ export async function listClientesPagina(
   if (termo) {
     const digitos = termo.replace(/\D/g, "");
     const alvos = COLUNAS_BUSCA_TEXTO.map((c) => `${c}.ilike.*${termo}*`);
+    for (const p of padroesBuscaDoc(termo)) alvos.push(`doc.ilike.*${p}*`);
     if (digitos.length >= 3) {
-      alvos.push(`doc.ilike.*${digitos}*`, `numero_sap.ilike.*${digitos}*`, `id_antigo.ilike.*${digitos}*`);
+      alvos.push(`numero_sap.ilike.*${digitos}*`, `id_antigo.ilike.*${digitos}*`);
     }
     params.set("or", `(${alvos.join(",")})`);
   }
+
 
   const from = (pagina - 1) * porPagina;
   const { ok, status, text, total } = await grupo2pRest(`clientes?${params}`, {
@@ -233,9 +236,11 @@ export async function listClientesPerfil(
   if (termo) {
     const digitos = termo.replace(/\D/g, "");
     const alvos = COLUNAS_BUSCA_TEXTO.map((c) => `${c}.ilike.*${termo}*`);
-    if (digitos.length >= 3) alvos.push(`doc.ilike.*${digitos}*`, `numero_sap.ilike.*${digitos}*`);
+    for (const p of padroesBuscaDoc(termo)) alvos.push(`doc.ilike.*${p}*`);
+    if (digitos.length >= 3) alvos.push(`numero_sap.ilike.*${digitos}*`);
     grupos.push(`or(${alvos.join(",")})`);
   }
+
   if (grupos.length) params.set("and", `(${grupos.join(",")})`);
 
   const from = (pagina - 1) * porPagina;
@@ -261,7 +266,9 @@ export async function findClienteByDoc(doc: string): Promise<
   const digits = doc.replace(/\D/g, "");
   const out: Array<{ instancia: ClientesInstance; cliente: ClienteRow }> = [];
   try {
-    const params = new URLSearchParams({ select: SELECT, doc: `eq.${digits}`, limit: "10" });
+    // Base mista: há cadastros com o documento gravado formatado.
+    const alvos = [`doc.eq.${digits}`, ...padroesBuscaDoc(digits).map((p) => `doc.ilike.${p}`)];
+    const params = new URLSearchParams({ select: SELECT, or: `(${alvos.join(",")})`, limit: "10" });
     const rows: ClienteRow[] = (await rest("solar", `clientes?${params}`)) ?? [];
     for (const cliente of rows) {
       const inst = cliente["instancia"] === "carregadores" ? "carregadores" : "solar";
