@@ -2378,7 +2378,10 @@ function PropostaCarregadoresPage() {
               {/* RESUMO ÚNICO DO PEDIDO */}
               <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-4 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-semibold">Resumo do pedido</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold">Resumo do pedido</p>
+                    {ehTipoNfBonificacao(state.tipoNf) ? <BonificacaoBadge /> : null}
+                  </div>
                   <span
                     className={cn(
                       "text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full",
