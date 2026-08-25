@@ -87,6 +87,11 @@ export type ListarPropostasPaginaOpts = {
   createdByIn?: string[];
   /** Restringe às propostas do usuário (sem "View All Records"). */
   donoId?: string | null;
+  /** Código SAP do consultor logado (casa `sap_vendedor_codigo`). */
+  donoSap?: string | null;
+  /** Documentos dos clientes da carteira do consultor (casa `cliente_doc`). */
+  donoDocs?: string[] | null;
+
   pagina?: number;
   porPagina?: number;
 };
@@ -106,6 +111,24 @@ const COLUNAS_BUSCA_PROPOSTA = [
 const termoSeguro = (t: string) => t.replace(/[(),*"\\]/g, " ").trim();
 
 /**
+ * Escopo do consultor: registros criados por ele, em que ele é o consultor
+ * responsável, ou ligados a um cliente da carteira dele.
+ */
+function clausulaEscopo(opts: {
+  donoId?: string | null;
+  donoSap?: string | null;
+  donoDocs?: string[] | null;
+}): string | null {
+  if (!opts.donoId) return null;
+  const alvos = [`created_by.eq.${opts.donoId}`, `consultor_id.eq.${opts.donoId}`];
+  if (opts.donoSap) alvos.push(`sap_vendedor_codigo.eq.${opts.donoSap}`);
+  const docs = (opts.donoDocs ?? []).filter(Boolean).slice(0, 800);
+  if (docs.length) alvos.push(`cliente_doc.in.(${docs.join(",")})`);
+  return `or(${alvos.join(",")})`;
+}
+
+
+/**
  * Página de propostas com busca no banco: a pesquisa alcança a base inteira
  * (inclusive as importadas da plataforma antiga), e a ordenação é sempre da
  * mais recente para a mais antiga.
@@ -122,19 +145,21 @@ export async function listarPropostasPagina(
   if (opts.organizacao) params.set("organizacao", `eq.${opts.organizacao}`);
   if (opts.status && opts.status !== "todos") params.set("status", `eq.${opts.status}`);
   if (opts.uf && opts.uf !== "todos") params.set("uf", `eq.${opts.uf}`);
-  if (opts.donoId) params.set("created_by", `eq.${opts.donoId}`);
-  else if (opts.createdByIn?.length) {
+  if (!opts.donoId && opts.createdByIn?.length) {
     params.set("created_by", `in.(${opts.createdByIn.join(",")})`);
   }
 
   // Condições compostas vão juntas em `and=(...)`: o PostgREST aceita só um
   // parâmetro `or` por consulta.
   const cond: string[] = [];
+  const escopo = clausulaEscopo(opts);
+  if (escopo) cond.push(escopo);
   const termo = termoSeguro(opts.q ?? "");
   if (termo) cond.push(`or(${COLUNAS_BUSCA_PROPOSTA.map((c) => `${c}.ilike.*${termo}*`).join(",")})`);
   if (opts.comSap === "com") cond.push("or(sap_ov_numero.not.is.null,numero_sap.not.is.null)");
   if (opts.comSap === "sem") cond.push("and(sap_ov_numero.is.null,numero_sap.is.null)");
   if (cond.length) params.set("and", `(${cond.join(",")})`);
+
 
   const from = (pagina - 1) * porPagina;
   const { ok, status, text, total } = await grupo2pRest(`propostas?${params}`, {

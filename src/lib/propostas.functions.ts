@@ -577,11 +577,17 @@ export const listarPropostasFn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const db = await repo();
-    const { assertPodeLer, filtrarPorDono, getPerm } = await import("./object-perms.server");
+    const { assertPodeLer, getPerm } = await import("./object-perms.server");
     const perm = await getPerm(context as any, data.organizacao ?? "solar", "propostas");
     assertPodeLer(perm, "propostas");
     const rows = await db.listarPropostas(data);
-    return filtrarPorDono(rows as any[], perm, (context as any).userId);
+    const { escopoDoConsultor, registroNoEscopo } = await import("./escopo-consultor.server");
+    const escopo = await escopoDoConsultor(
+      context as any,
+      (data.organizacao ?? "solar") as any,
+      perm,
+    );
+    return (rows as any[]).filter((r) => registroNoEscopo(r, escopo));
   });
 
 
@@ -611,9 +617,17 @@ export const listarPropostasPaginaFn = createServerFn({ method: "POST" })
     const { assertPodeLer, getPerm } = await import("./object-perms.server");
     const perm = await getPerm(context as any, data.organizacao ?? "solar", "propostas");
     assertPodeLer(perm, "propostas");
+    const { escopoDoConsultor } = await import("./escopo-consultor.server");
+    const escopo = await escopoDoConsultor(
+      context as any,
+      (data.organizacao ?? "solar") as any,
+      perm,
+    );
     return await db.listarPropostasPagina({
       ...data,
-      donoId: perm.view_all ? null : (context as any).userId,
+      donoId: escopo.userId,
+      donoSap: escopo.sap,
+      donoDocs: escopo.docs,
     });
   });
 
@@ -647,9 +661,12 @@ export const obterPropostaFn = createServerFn({ method: "POST" })
     const inst = String(prop["organizacao"] ?? "solar");
     const perm = await getPerm(context as any, inst, "propostas");
     assertPodeLer(perm, "propostas");
-    const dono = (prop["created_by"] as string | null) ?? null;
-    if (!perm.view_all && dono && dono !== (context as any).userId) {
-      throw new Error("Esta proposta pertence a outro consultor.");
+    if (!perm.view_all) {
+      const { escopoDoConsultor, registroNoEscopo } = await import("./escopo-consultor.server");
+      const escopo = await escopoDoConsultor(context as any, inst as any, perm);
+      if (!registroNoEscopo(prop, escopo)) {
+        throw new Error("Esta proposta pertence a outro consultor.");
+      }
     }
     return prop;
   });
