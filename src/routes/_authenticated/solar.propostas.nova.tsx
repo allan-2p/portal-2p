@@ -1448,7 +1448,7 @@ function NovaPropostaSolarPage() {
   function validarParaPdf(): string | null {
     if (!itens.length) return "Adicione produtos antes de gerar o PDF.";
     if (!formaPagamento) return "Selecione a forma de pagamento antes de gerar a proposta.";
-    if (!condicaoPagamento) return "Selecione a condição de pagamento (ZTERM) antes de gerar a proposta.";
+    if (!condicaoPagamento) return "Selecione a condição de pagamento antes de gerar a proposta.";
     return null;
   }
 
