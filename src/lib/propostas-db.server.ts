@@ -111,6 +111,24 @@ const COLUNAS_BUSCA_PROPOSTA = [
 const termoSeguro = (t: string) => t.replace(/[(),*"\\]/g, " ").trim();
 
 /**
+ * Escopo do consultor: registros criados por ele, em que ele é o consultor
+ * responsável, ou ligados a um cliente da carteira dele.
+ */
+function clausulaEscopo(opts: {
+  donoId?: string | null;
+  donoSap?: string | null;
+  donoDocs?: string[] | null;
+}): string | null {
+  if (!opts.donoId) return null;
+  const alvos = [`created_by.eq.${opts.donoId}`, `consultor_id.eq.${opts.donoId}`];
+  if (opts.donoSap) alvos.push(`sap_vendedor_codigo.eq.${opts.donoSap}`);
+  const docs = (opts.donoDocs ?? []).filter(Boolean).slice(0, 800);
+  if (docs.length) alvos.push(`cliente_doc.in.(${docs.join(",")})`);
+  return `or(${alvos.join(",")})`;
+}
+
+
+/**
  * Página de propostas com busca no banco: a pesquisa alcança a base inteira
  * (inclusive as importadas da plataforma antiga), e a ordenação é sempre da
  * mais recente para a mais antiga.
