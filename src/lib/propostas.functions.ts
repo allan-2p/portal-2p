@@ -713,7 +713,13 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
     // sobreviver para a auditoria e para o cron de NFs. Vira "Cancelado".
     const vbeln = String(atual?.["sap_ov_numero"] ?? "").trim();
     if (vbeln) {
-      await db.atualizarProposta(data.id, { status: "Cancelado" });
+      const de = String(atual?.["status"] ?? "");
+      if (!podeCancelarProposta(de)) {
+        throw new Error(`Não é possível cancelar um pedido com status "${de}".`);
+      }
+      const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
+      const transicao = await aplicarTransicao(data.id, "Cancelado", "humano", { de });
+      if (!transicao.ok) throw new Error(transicao.motivo ?? "Não foi possível cancelar o pedido.");
       return {
         ok: true,
         cancelada: true,
@@ -861,25 +867,17 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     // "Aguardando Pagamento"; o avanço vem do pagamento, do cron do SAP ou da
     // confirmação manual.
     const statusDestino = "Aguardando Pagamento";
-    const { transicaoPermitida } = await import("@/lib/proposta-status");
-    if (!transicaoPermitida(String(row["status"]), statusDestino, "checkout")) {
-      const detalhe = `Transição inválida: ${row["status"]} → ${statusDestino}.`;
-      await db.registrarConclusaoLog({ ...base, status: row["status"], resultado: "bloqueada", detalhe });
-      throw new Error(detalhe);
-    }
-
-    const atualizada = await db.atualizarProposta(
-      row.id,
-      {
-        status: statusDestino,
+    const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
+    const transicao = await aplicarTransicao(row.id, statusDestino, "checkout", {
+      de: String(row["status"]),
+      patch: {
         finalizado_por: userId,
         finalizado_por_nome: actor.actor_nome,
         finalizado_em: new Date().toISOString(),
       },
-      { status: "eq.Salvo" },
-    );
+    });
 
-    if (!atualizada) {
+    if (!transicao.ok) {
       await db.registrarConclusaoLog({
         ...base,
         status: row["status"],
@@ -1329,18 +1327,16 @@ export const confirmarPagamentoFn = createServerFn({ method: "POST" })
     const row = await db.getProposta(data.propostaId);
     if (!row) throw new Error("Proposta não encontrada.");
 
-    const { transicaoPermitida } = await import("@/lib/proposta-status");
-    if (!transicaoPermitida(String(row["status"] ?? ""), "Processando", "humano"))
+    const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
+    const transicao = await aplicarTransicao(row.id, "Processando", "humano", {
+      de: String(row["status"] ?? ""),
+    });
+    if (!transicao.ok) {
       throw new Error(
-        `Só é possível confirmar o pagamento de um pedido em "Aguardando Pagamento" (atual: ${row["status"]}).`,
+        transicao.motivo ??
+          `Só é possível confirmar o pagamento de um pedido em "Aguardando Pagamento" (atual: ${row["status"]}).`,
       );
-
-    const atualizada = await db.atualizarProposta(
-      row.id,
-      { status: "Processando" },
-      { status: "eq.Aguardando Pagamento" },
-    );
-    if (!atualizada) throw new Error("O pedido mudou de status enquanto a confirmação era registrada.");
+    }
 
     const detalhe = `Pagamento confirmado manualmente por ${nomeAtor}${
       data.observacao ? ` — ${data.observacao}` : ""

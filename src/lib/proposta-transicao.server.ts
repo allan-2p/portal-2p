@@ -67,7 +67,9 @@ export async function aplicarTransicao(
   }
 
   if (de === para) {
-    return { ok: false, de, para, motivo: "Pedido já está neste status.", row: null };
+    const motivo = "Pedido já está neste status.";
+    await registrarRecusa(motor, propostaId, de, para, motivo);
+    return { ok: false, de, para, motivo, row: null };
   }
 
   if (!transicaoPermitida(de, para, motor)) {
