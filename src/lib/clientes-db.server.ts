@@ -154,11 +154,13 @@ export async function listClientesPagina(
   if (termo) {
     const digitos = termo.replace(/\D/g, "");
     const alvos = COLUNAS_BUSCA_TEXTO.map((c) => `${c}.ilike.*${termo}*`);
+    for (const p of padroesBuscaDoc(termo)) alvos.push(`doc.ilike.*${p}*`);
     if (digitos.length >= 3) {
-      alvos.push(`doc.ilike.*${digitos}*`, `numero_sap.ilike.*${digitos}*`, `id_antigo.ilike.*${digitos}*`);
+      alvos.push(`numero_sap.ilike.*${digitos}*`, `id_antigo.ilike.*${digitos}*`);
     }
     params.set("or", `(${alvos.join(",")})`);
   }
+
 
   const from = (pagina - 1) * porPagina;
   const { ok, status, text, total } = await grupo2pRest(`clientes?${params}`, {
