@@ -90,6 +90,7 @@ import {
   useSolarTrilhos,
 } from "@/hooks/use-solar-catalogo";
 import { quantificarProjeto, pendenciasDePara } from "@/lib/solar-quantificador";
+import { usePrazoLiberado } from "@/hooks/use-prazo-liberado";
 import {
   SOLAR_CALC_CONFIG_FALLBACK,
   type CalcResultado,
@@ -2711,7 +2712,7 @@ function NovaPropostaSolarPage() {
                       <SelectTrigger className="md:max-w-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="boleto_vista">Boleto à vista</SelectItem>
-                        <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>
+                        {prazo.liberado && <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>}
                         <SelectItem value="pix">Pix</SelectItem>
                         <SelectItem value="cartao_credito">Cartão de crédito</SelectItem>
                         <SelectItem value="financiamento">Financiamento</SelectItem>
@@ -2719,6 +2720,7 @@ function NovaPropostaSolarPage() {
                     </Select>
                     <p className="text-xs text-muted-foreground">
                       Obrigatória apenas para concluir o pedido.
+                      {!prazo.liberado && prazo.motivo ? ` Boleto a prazo indisponível: ${prazo.motivo.toLowerCase()}` : ""}
                     </p>
                     {tentou && !formaPagamento && <Erro>Obrigatória para concluir.</Erro>}
                   </div>
