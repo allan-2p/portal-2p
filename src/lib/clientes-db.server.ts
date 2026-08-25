@@ -389,3 +389,46 @@ export async function clientesTableExists(instance: ClientesInstance): Promise<b
     throw e;
   }
 }
+
+/**
+ * Documentos (CNPJ/CPF) dos clientes de um consultor numa instância.
+ *
+ * É a ponte que faz o consultor enxergar todos os registros ligados aos
+ * clientes da carteira dele (propostas/pedidos), mesmo quando o registro foi
+ * criado por outra pessoa (back office, importação, transferência de carteira).
+ */
+export async function listarDocsDoConsultor(
+  instance: ClientesInstance,
+  opts: { donoId?: string | null; consultorSap?: string | null; limite?: number } = {},
+): Promise<string[]> {
+  if (!opts.donoId && !opts.consultorSap) return [];
+  const alvos: string[] = [];
+  if (opts.donoId) {
+    alvos.push(`created_by.eq.${opts.donoId}`);
+    if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
+  }
+  if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
+
+  const teto = Math.min(opts.limite ?? 5000, 20000);
+  const out = new Set<string>();
+  for (let pagina = 0; pagina < 20 && out.size < teto; pagina++) {
+    const params = new URLSearchParams({
+      select: "doc",
+      instancia: `eq.${instance}`,
+      or: `(${alvos.join(",")})`,
+      order: "created_at.desc.nullslast,id.asc",
+    });
+    const from = pagina * PAGINA_DB;
+    const { ok, text } = await grupo2pRest(`clientes?${params}`, {
+      range: { from, to: from + PAGINA_DB - 1 },
+    });
+    if (!ok) break;
+    const bloco: Array<{ doc: string | null }> = text ? JSON.parse(text) : [];
+    for (const r of bloco) {
+      const d = String(r.doc ?? "").replace(/\D/g, "");
+      if (d) out.add(d);
+    }
+    if (bloco.length < PAGINA_DB) break;
+  }
+  return [...out].slice(0, teto);
+}
