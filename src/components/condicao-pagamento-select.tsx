@@ -27,12 +27,14 @@ import { condicaoEhAPrazo, fmtBRL, limiteCobre } from "@/lib/credito";
 export function CondicaoPagamentoSelect({
   value,
   onChange,
+  onChangeDescricao,
   className,
   clienteDoc,
   valorTotal,
 }: {
   value: string;
   onChange: (codigo: string) => void;
+  onChangeDescricao?: (descricao: string) => void;
   className?: string;
   clienteDoc?: string | null;
   valorTotal?: number;
