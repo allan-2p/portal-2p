@@ -157,19 +157,23 @@ function validar(input: any): SalvarPropostaInput {
     previsaoFechamento: /^\d{4}-\d{2}-\d{2}$/.test(String(input.previsaoFechamento ?? ""))
       ? String(input.previsaoFechamento)
       : null,
-    tipoNf: ["venda", "triangulacao", "bonificacao"].includes(String(input.tipoNf))
-      ? String(input.tipoNf)
-      : "venda",
+    tipoNf: tipoNfNorm,
     faturarClienteFinal,
     faturamento,
-    formaPagamento: ["boleto_vista", "boleto_prazo", "pix", "cartao_credito", "financiamento"].includes(
-      String(input.formaPagamento),
-    )
-      ? String(input.formaPagamento)
-      : null,
-    condicaoPagamento: input.condicaoPagamento
-      ? String(input.condicaoPagamento).trim().toUpperCase()
-      : null,
+    formaPagamento:
+      tipoNfNorm === "bonificacao"
+        ? null
+        : ["boleto_vista", "boleto_prazo", "pix", "cartao_credito", "financiamento"].includes(
+              String(input.formaPagamento),
+            )
+          ? String(input.formaPagamento)
+          : null,
+    condicaoPagamento:
+      tipoNfNorm === "bonificacao"
+        ? null
+        : input.condicaoPagamento
+          ? String(input.condicaoPagamento).trim().toUpperCase()
+          : null,
     entregaDiferente: !!input.entregaDiferente,
     entrega: entregaNormalizada,
     freteMod,
@@ -967,11 +971,11 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
-    // Status de destino derivado da forma de pagamento (nunca da UI): todas as
-    // formas suportadas (Pix, boleto à vista/a prazo e cartão) entram como
-    // "Aguardando Pagamento"; o avanço vem do pagamento, do cron do SAP ou da
-    // confirmação manual.
-    const statusDestino = "Aguardando Pagamento";
+    // Status de destino derivado do registro (nunca da UI): venda entra em
+    // "Aguardando Pagamento"; bonificação não tem pagamento e segue direto para
+    // "Processando" (o financeiro libera o picking no SAP).
+    const ehBonificacao = String(row["tipo_nf"] ?? "").toLowerCase().startsWith("bonifica");
+    const statusDestino = ehBonificacao ? "Processando" : "Aguardando Pagamento";
     const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
     const transicao = await aplicarTransicao(row.id, statusDestino, "checkout", {
       de: String(row["status"]),
@@ -1041,7 +1045,18 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     // Cobrança automática (boleto à vista ou Pix). Falha aqui não trava o pedido.
     let cobranca: CobrancaOut | null = null;
     const semOv = !aguardaPix && !(sapOv?.ok ?? false);
-    if (semOv) {
+    if (ehBonificacao) {
+      cobranca = {
+        gerada: false,
+        meio: null,
+        motivo: "Bonificação: pedido sem cobrança (NF de bonificação, ordem VBON).",
+        erro: null,
+        txid: null,
+        linhaDigitavel: null,
+        vencimento: null,
+        pixCopiaCola: null,
+      };
+    } else if (semOv) {
       cobranca = {
         gerada: false,
         meio: null,

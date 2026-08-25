@@ -121,15 +121,19 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     },
     uf,
     contribuinte: !!i.contribuinte,
-    tipoNf: ["venda", "triangulacao", "bonificacao"].includes(String(i.tipoNf)) ? String(i.tipoNf) : "venda",
+    tipoNf: tipoNfNorm,
     finalidadeUso,
     faturarClienteFinal,
 
     faturamento,
-    formaPagamento: ["boleto_vista", "boleto_prazo", "pix", "cartao_credito", "financiamento"].includes(String(i.formaPagamento))
-      ? String(i.formaPagamento)
-      : null,
-    condicaoPagamento: i.condicaoPagamento ? String(i.condicaoPagamento).trim().toUpperCase() : null,
+    formaPagamento:
+      tipoNfNorm === "bonificacao"
+        ? null
+        : ["boleto_vista", "boleto_prazo", "pix", "cartao_credito", "financiamento"].includes(String(i.formaPagamento))
+          ? String(i.formaPagamento)
+          : null,
+    condicaoPagamento:
+      tipoNfNorm === "bonificacao" ? null : i.condicaoPagamento ? String(i.condicaoPagamento).trim().toUpperCase() : null,
     entregaDiferente: !!i.entregaDiferente,
     entrega,
     freteMod,
