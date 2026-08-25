@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { finalidadeUsoPorDocFn } from "@/lib/clientes.functions";
-import { obterPropostaFn } from "@/lib/propostas.functions";
+import { atualizarStatusPropostaFn, obterPropostaFn } from "@/lib/propostas.functions";
+import { meusObjectPermsFn } from "@/lib/object-perms.functions";
+import { podeMarcarEntregueProposta } from "@/lib/proposta-status";
 import { finalidadeUsoDoCadastro, labelFinalidadeUso } from "@/lib/carregadores";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
