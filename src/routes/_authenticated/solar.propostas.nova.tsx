@@ -212,6 +212,7 @@ function NovaPropostaSolarPage() {
   const [enriquecendo, setEnriquecendo] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<string>("");
   const [condicaoPagamento, setCondicaoPagamento] = useState<string>("");
+  const [condicaoPagamentoDescricao, setCondicaoPagamentoDescricao] = useState<string>("");
 
   // Etapa 3
   const [modo, setModo] = useState<"calculadora" | "lista">("calculadora");
