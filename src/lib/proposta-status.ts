@@ -106,6 +106,11 @@ export function podeCancelarProposta(status: string): boolean {
   return motores(PROPOSTA_TRANSICOES[status as PropostaStatus]?.["Cancelado"]).includes("humano");
 }
 
+/** Baixa manual de entrega: só a partir de "Coletado" (frete fora da Fretefy). */
+export function podeMarcarEntregueProposta(status: string): boolean {
+  return motores(PROPOSTA_TRANSICOES[status as PropostaStatus]?.["Entregue"]).includes("humano");
+}
+
 export function transicaoPermitida(de: string, para: string, motor?: PropostaMotor): PropostaMotor | null {
   const lista = motores(PROPOSTA_TRANSICOES[de as PropostaStatus]?.[para as PropostaStatus]);
   if (!lista.length) return null;
