@@ -74,6 +74,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // 1) se outra instância liberada tiver essa rota, troca de instância (link direto);
   // 2) senão, redireciona para a primeira rota válida da instância.
   useEffect(() => {
+    // O guard da rota protegida ainda pode estar concluindo o redirecionamento
+    // para /auth. Sem sessão não existe acesso de instância para validar e o
+    // layout não deve exibir um falso aviso de rota indisponível.
+    if (!user) return;
     if (instanceLoading) return;
     const feat = featureForPath(pathname);
     // A rota pertence a outra unidade (ex.: /carregadores/metas com a Solar ativa):
@@ -96,7 +100,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       navigate({ to: defaultRoute });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [instance, instanceLoading, pathname, defaultRoute, allowed]);
+  }, [user, instance, instanceLoading, pathname, defaultRoute, allowed]);
 
 
   const [showBar, setShowBar] = useState(false);
