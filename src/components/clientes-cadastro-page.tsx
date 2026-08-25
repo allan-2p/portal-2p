@@ -21,9 +21,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   AlertCircle, Plus, Search, Pencil, Building2, Filter, X, Eye,
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
-  ArrowRight, RefreshCw, History, Users, MapPin, CreditCard,
+  ArrowRight, History, Users, MapPin, CreditCard,
 } from "lucide-react";
-import { sincronizarDonosFn } from "@/lib/owner-sync.functions";
 import { ClienteIntegracoesDialog } from "@/components/cliente-integracoes-dialog";
 import { CreditoClienteCard } from "@/components/credito-cliente-card";
 import { ClienteEnderecosEditor } from "@/components/cliente-enderecos-editor";
