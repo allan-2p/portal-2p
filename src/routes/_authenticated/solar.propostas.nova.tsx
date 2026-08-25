@@ -2547,7 +2547,10 @@ function NovaPropostaSolarPage() {
         {etapa === 5 && (
           <section className="space-y-5">
             <div className="glass rounded-2xl p-5 space-y-4">
-              <h2 className="text-lg font-semibold">Resumo do pedido</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg font-semibold">Resumo do pedido</h2>
+                {ehTipoNfBonificacao(tipoNf) ? <BonificacaoBadge /> : null}
+              </div>
               <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                 <Info label="Proposta" value={propostaNome || "—"} />
                 <Info label="Cliente" value={String(cliente?.['razao_social'] ?? "—")} />
