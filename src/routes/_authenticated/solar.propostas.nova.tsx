@@ -2555,7 +2555,7 @@ function NovaPropostaSolarPage() {
                 />
 
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
-                <Info label="Condição de pagamento" value={condicaoPagamento || "—"} />
+                <Info label="Condição de pagamento" value={condicaoPagamentoDescricao || "—"} />
                 <Info
                   label="Frete"
                   value={`${freteMod || "—"}${bonificado || freteGratis ? " · Frete grátis" : ""}`}
