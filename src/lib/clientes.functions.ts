@@ -67,9 +67,14 @@ export const listConsultoresFn = createServerFn({ method: "POST" })
     // pré-selecionar o consultor do cadastro); `podeEscolher` diz apenas se o
     // usuário pode trocar o responsável.
     const consultores = await listarConsultoresPortal(data.instancia);
+    // Quem não é vendedor/consultor do portal não pode ser o responsável:
+    // devolvemos `eu.sap = null` para a tela não pré-selecionar ninguém e
+    // exigir a escolha de um vendedor.
+    const souConsultor = !!meuSap && consultores.some((c) => c.sap === meuSap);
     return {
       podeEscolher,
-      eu: { id: context.userId, nome: meuNome, sap: meuSap || null },
+      eu: { id: context.userId, nome: souConsultor ? meuNome : "—", sap: souConsultor ? meuSap : null },
+      souConsultor,
       consultores,
     };
   });
