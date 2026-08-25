@@ -10,7 +10,7 @@
  *
  * Com "View All Records" não há filtro nenhum.
  */
-import type { ObjectPerm } from "./object-perms.server";
+import type { ObjectPerm } from "./object-perms";
 
 export type EscopoDono = {
   /** `null` quando o usuário vê tudo. */
