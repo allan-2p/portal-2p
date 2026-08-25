@@ -29,6 +29,19 @@ export class ClientesTableMissing extends Error {
   }
 }
 
+function isClientesTableMissing(status: number, text: string): boolean {
+  const lower = text.toLowerCase();
+  if (/relation\s+["']?public\.clientes["']?\s+does not exist/i.test(text)) return true;
+  if (!lower.includes("clientes")) return false;
+  if (status !== 404) return false;
+  return (
+    lower.includes("could not find the table") ||
+    lower.includes("schema cache") ||
+    lower.includes("does not exist") ||
+    lower.includes("not found")
+  );
+}
+
 async function rest(
   instance: ClientesInstance,
   path: string,
@@ -36,7 +49,7 @@ async function rest(
 ): Promise<any> {
   const { ok, status, text } = await grupo2pRest(path, init);
   if (!ok) {
-    if (status === 404 || /relation .*clientes.* does not exist/i.test(text)) {
+    if (isClientesTableMissing(status, text)) {
       throw new ClientesTableMissing(instance);
     }
     throw new Error(`Erro no banco (${status}): ${text.slice(0, 300)}`);
@@ -143,7 +156,7 @@ export async function listClientesPagina(
     count: true,
   });
   if (!ok) {
-    if (status === 404 || /relation .*clientes.* does not exist/i.test(text)) {
+    if (isClientesTableMissing(status, text)) {
       throw new ClientesTableMissing(instance);
     }
     // 416 = página além do fim da lista.
@@ -221,7 +234,7 @@ export async function listClientesPerfil(
     count: true,
   });
   if (!ok) {
-    if (status === 404 || /relation .*clientes.* does not exist/i.test(text)) {
+    if (isClientesTableMissing(status, text)) {
       throw new ClientesTableMissing(instance);
     }
     if (status === 416) return { rows: [], total: total ?? 0 };
