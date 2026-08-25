@@ -117,8 +117,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { data: adminAreas } = useQuery({
     queryKey: ["admin-areas"],
     queryFn: () => getAdminAreas(),
+    // Só consulta com sessão pronta: sem o bearer o backend responde 401.
+    enabled: !!user,
+    retry: false,
     staleTime: 60_000,
   });
+
   const areaAllowed = (id: AdminSectionId) =>
     adminAreas ? adminAreas[id] === true : false;
   const visibleAdminSections = ADMIN_SECTIONS.filter(
