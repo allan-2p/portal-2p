@@ -1,6 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminAreas } from "@/lib/admin-guard.functions";
+import { useAuth } from "@/hooks/use-auth";
+
 
 import { AlertTriangle, ArrowLeft, ChevronDown } from "lucide-react";
 import { sectionForPath, type AdminNavItem } from "@/lib/admin-nav";
@@ -22,14 +24,19 @@ function slugFromTo(to: string): string | null {
  */
 export function AdminSidebar({ pathname, collapsed }: { pathname: string; collapsed: boolean }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { hasFeature, defaultRoute } = useInstance();
   const section = sectionForPath(pathname);
   // O menu só lista a seção quando o backend libera a área correspondente.
   const { data: areas } = useQuery({
     queryKey: ["admin-areas"],
     queryFn: () => getAdminAreas(),
+    // Sem sessão pronta o bearer não vai no request e o backend responde 401.
+    enabled: !!user,
+    retry: false,
     staleTime: 60_000,
   });
+
   const current = section && areas?.[section.id] === true ? section : null;
 
   const health = useIntegrationHealthMap(current?.id === "integracoes");
