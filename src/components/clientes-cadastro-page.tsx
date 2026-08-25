@@ -617,12 +617,23 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : tentarFechar())}>
         <DialogContent className="max-w-4xl w-[calc(100vw-2rem)] max-h-[88vh] overflow-y-auto">
           <DialogHeader className="text-left">
+            <TrilhaAbas
+              base="Cadastro de clientes"
+              registro={
+                editId
+                  ? String(form.razao_social || form.nome_fantasia || "Cliente")
+                  : etapa === "documento"
+                    ? "Novo cadastro"
+                    : String(form.razao_social || "Novo cadastro")
+              }
+              secao={etapa === "documento" ? "Identificação" : ROTULO_ABA[abaEdicao]}
+            />
             <DialogTitle>
               {editId
-                ? "Editar cadastro do cliente"
+                ? `Editar cadastro do cliente — ${etapa === "documento" ? "Identificação" : ROTULO_ABA[abaEdicao]}`
                 : etapa === "documento"
                   ? "Novo cadastro — identificação"
-                  : "Novo cadastro de cliente"}
+                  : `Novo cadastro de cliente — ${ROTULO_ABA[abaEdicao]}`}
             </DialogTitle>
             <DialogDescription>
               {etapa === "documento"
