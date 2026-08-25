@@ -459,21 +459,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   // Reenvio manual das integrações (SAP + Salesforce) de um cadastro.
 
 
-  // Transferência de carteira: realinha o consultor dos cadastros com o dono
-  // atual da conta no Salesforce (registros antigos permanecem intactos).
-  const sincronizarDonos = useServerFn(sincronizarDonosFn);
-  const sincronizarCarteira = useMutation({
-    mutationFn: () => sincronizarDonos({ data: { instancia } }),
-    onSuccess: (r: { transferidos: number }) => {
-      if (r.transferidos > 0) {
-        toast.success(`${r.transferidos} cliente(s) transferido(s) para o novo vendedor.`);
-      } else {
-        toast.success("Carteira já está atualizada.");
-      }
-      qc.invalidateQueries({ queryKey: ["clientes", instancia] });
-    },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Erro ao sincronizar."),
-  });
 
   // Filtro, ordenação e paginação acontecem no banco (listClientesPaginaFn):
   // a pesquisa alcança toda a base, não apenas a página carregada.
