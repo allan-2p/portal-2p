@@ -433,11 +433,21 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       consultorSap = sapAlvo;
       consultorSfId = null;
     } else {
-      // Sem código informado: assume quem está criando.
+      // Sem código informado: só quem é vendedor/consultor válido do portal
+      // assume o próprio cadastro. Usuário que não é consultor (back office,
+      // marketing, diretoria sem carteira) precisa escolher um vendedor.
+      const { listarConsultoresPortal } = await import("./consultor-sap.server");
+      const souConsultor =
+        !!meuSap && (await listarConsultoresPortal(data.instancia)).some((c) => c.sap === meuSap);
+      if (!souConsultor) {
+        const msg = "Selecione o consultor responsável: seu usuário não é um vendedor/consultor do portal.";
+        await logErroBanco("validar", new Error(msg));
+        throw new Error(msg);
+      }
       consultorId = context.userId;
       consultorNome = perfil?.full_name ?? perfil?.email ?? null;
       consultorEmail = perfil?.email ?? null;
-      consultorSap = meuSap || null;
+      consultorSap = meuSap;
       consultorSfId = (perfil as any)?.sf_user_id ?? null;
     }
 
