@@ -557,6 +557,8 @@ function MarcarEntregueAcao({ proposta }: { proposta: Record<string, any> }) {
   const meusPerms = useServerFn(meusObjectPermsFn);
   const atualizarStatus = useServerFn(atualizarStatusPropostaFn);
   const [confirmando, setConfirmando] = useState(false);
+  const hoje = new Date().toISOString().slice(0, 10);
+  const [dataEntrega, setDataEntrega] = useState(hoje);
 
   const permsQ = useQuery({
     queryKey: ["meus-object-perms", instancia],
@@ -567,7 +569,16 @@ function MarcarEntregueAcao({ proposta }: { proposta: Record<string, any> }) {
   const podeManual = !!(permsQ.data as Record<string, any> | undefined)?.['propostas']?.modify_all;
 
   const marcar = useMutation({
-    mutationFn: () => atualizarStatus({ data: { id: String(proposta['id']), status: "Entregue" } }),
+    mutationFn: () =>
+      atualizarStatus({
+        data: {
+          id: String(proposta['id']),
+          status: "Entregue",
+          // Data informada pelo analista, no fuso local, ao meio-dia para não
+          // "voltar um dia" na conversão para UTC.
+          entregueEm: new Date(`${dataEntrega}T12:00:00`).toISOString(),
+        },
+      }),
     onSuccess: async () => {
       toast.success(`Pedido ${proposta['numero'] ?? ""} marcado como entregue.`);
       setConfirmando(false);
@@ -582,13 +593,31 @@ function MarcarEntregueAcao({ proposta }: { proposta: Record<string, any> }) {
     <div className="flex flex-wrap items-center justify-end gap-2">
       {confirmando ? (
         <>
-          <span className="text-sm text-muted-foreground">
-            Confirmar a entrega deste pedido? A data de entrega será registrada agora.
-          </span>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            Data da entrega
+            <input
+              type="date"
+              required
+              max={hoje}
+              value={dataEntrega}
+              onChange={(e) => setDataEntrega(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+            />
+          </label>
           <Button size="sm" variant="outline" onClick={() => setConfirmando(false)} disabled={marcar.isPending}>
             Voltar
           </Button>
-          <Button size="sm" onClick={() => marcar.mutate()} disabled={marcar.isPending}>
+          <Button
+            size="sm"
+            onClick={() => {
+              if (!dataEntrega) {
+                toast.error("Informe a data de entrega.");
+                return;
+              }
+              marcar.mutate();
+            }}
+            disabled={marcar.isPending || !dataEntrega}
+          >
             {marcar.isPending ? "Registrando…" : "Confirmar entrega"}
           </Button>
         </>
