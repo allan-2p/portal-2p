@@ -61,3 +61,20 @@ export function mascaraCnpj(v: string): string {
     .replace(/\.(\d{3})(\d)/, ".$1/$2")
     .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
 }
+
+/**
+ * Padrões de busca (`ilike`) para a coluna `doc` a partir de um termo digitado
+ * com ou sem pontuação. Cobre bases mistas, onde o documento pode estar
+ * gravado só com dígitos ("41445384000133") ou formatado
+ * ("41.445.384/0001-33"): além dos dígitos puros e das máscaras de CNPJ/CPF,
+ * gera um padrão com curinga entre cada dígito, que casa com qualquer
+ * pontuação intermediária.
+ */
+export function padroesBuscaDoc(termo: string): string[] {
+  const d = soDigitos(termo);
+  if (d.length < 3) return [];
+  const padroes = new Set<string>([d, d.split("").join("*")]);
+  if (d.length === 14) padroes.add(mascaraCnpj(d));
+  if (d.length === 11) padroes.add(mascaraDoc(d));
+  return [...padroes];
+}
