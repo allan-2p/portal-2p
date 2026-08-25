@@ -569,7 +569,16 @@ function MarcarEntregueAcao({ proposta }: { proposta: Record<string, any> }) {
   const podeManual = !!(permsQ.data as Record<string, any> | undefined)?.['propostas']?.modify_all;
 
   const marcar = useMutation({
-    mutationFn: () => atualizarStatus({ data: { id: String(proposta['id']), status: "Entregue" } }),
+    mutationFn: () =>
+      atualizarStatus({
+        data: {
+          id: String(proposta['id']),
+          status: "Entregue",
+          // Data informada pelo analista, no fuso local, ao meio-dia para não
+          // "voltar um dia" na conversão para UTC.
+          entregueEm: new Date(`${dataEntrega}T12:00:00`).toISOString(),
+        },
+      }),
     onSuccess: async () => {
       toast.success(`Pedido ${proposta['numero'] ?? ""} marcado como entregue.`);
       setConfirmando(false);
