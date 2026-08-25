@@ -557,6 +557,8 @@ function MarcarEntregueAcao({ proposta }: { proposta: Record<string, any> }) {
   const meusPerms = useServerFn(meusObjectPermsFn);
   const atualizarStatus = useServerFn(atualizarStatusPropostaFn);
   const [confirmando, setConfirmando] = useState(false);
+  const hoje = new Date().toISOString().slice(0, 10);
+  const [dataEntrega, setDataEntrega] = useState(hoje);
 
   const permsQ = useQuery({
     queryKey: ["meus-object-perms", instancia],
