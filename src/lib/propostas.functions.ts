@@ -708,8 +708,24 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
         throw new Error(`Só é possível marcar como entregue um pedido "Coletado" (este está "${de}").`);
       }
 
+      const entregueEm = (data as { entregueEm?: string }).entregueEm;
+      if (!entregueEm) throw new Error("Informe a data de entrega.");
+      // A entrega não pode ser anterior à coleta/faturamento do pedido.
+      const referencia = atual?.["enviado_em"] ?? atual?.["coletado_em"] ?? atual?.["faturado_em"] ?? null;
+      if (referencia) {
+        const ref = new Date(String(referencia));
+        // Compara por dia: a coleta pode ter sido registrada no fim do mesmo dia.
+        const dia = (d: Date) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+        if (!Number.isNaN(ref.getTime()) && dia(new Date(entregueEm)) < dia(ref)) {
+          throw new Error("A data de entrega não pode ser anterior à data de coleta do pedido.");
+        }
+      }
+
       const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
-      const t = await aplicarTransicao(data.id, "Entregue", "humano", { de });
+      const t = await aplicarTransicao(data.id, "Entregue", "humano", {
+        de,
+        patch: { entregue_em: entregueEm },
+      });
       if (!t.ok) throw new Error(t.motivo ?? "Não foi possível marcar o pedido como entregue.");
 
       // Ação manual: fica no Log de Integrações com o autor, para auditoria.
