@@ -936,11 +936,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                         }}
                       />
                     </F>
-                    {ehAdmin && (
-                      <F label="Condição de pagamento SAP (ZTERM)">
-                        <Input value={form.condicao_pgto_sap ?? ""} onChange={(e) => set("condicao_pgto_sap", e.target.value)} placeholder="Ex.: 2P00" />
-                      </F>
-                    )}
                     <div className="sm:col-span-2 text-[11px] text-muted-foreground">
                       Condições a prazo só ficam disponíveis no checkout após análise de crédito aprovada.
                     </div>
