@@ -94,18 +94,19 @@ export function CondicaoPagamentoSelect({
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
           <Command>
-            <CommandInput placeholder="Digite o código ou a descrição" />
+            <CommandInput placeholder="Busque pela condição de pagamento" />
             <CommandList className="max-h-72">
               <CommandEmpty>Nenhuma condição encontrada.</CommandEmpty>
               {opcoes.map((o) => (
                 <CommandItem
                   key={o.value}
-                  value={o.label}
+                  value={`${o.codigo} ${o.descricao}`}
                   disabled={o.bloqueada}
                   title={o.bloqueada ? o.motivo : undefined}
                   onSelect={() => {
                     if (o.bloqueada) return;
                     onChange(o.value);
+                    onChangeDescricao?.(o.descricao);
                     setAberto(false);
                   }}
                 >
