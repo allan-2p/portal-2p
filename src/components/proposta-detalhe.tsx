@@ -543,3 +543,60 @@ function LegadoCard({ proposta }: { proposta: Record<string, any> }) {
     </div>
   );
 }
+
+/**
+ * Baixa manual de entrega — para fretes fora da Fretefy (Rodonaves, Correios,
+ * dedicado…), em que nenhuma integração confirma a entrega. Só aparece em
+ * pedido "Coletado" e para quem tem Manager Access ("Modify All Records") em
+ * Propostas; a checagem real é no servidor.
+ */
+function MarcarEntregueAcao({ proposta }: { proposta: Record<string, any> }) {
+  const status = String(proposta['status'] ?? "");
+  const instancia = String(proposta['organizacao'] ?? "solar");
+  const queryClient = useQueryClient();
+  const meusPerms = useServerFn(meusObjectPermsFn);
+  const atualizarStatus = useServerFn(atualizarStatusPropostaFn);
+  const [confirmando, setConfirmando] = useState(false);
+
+  const permsQ = useQuery({
+    queryKey: ["meus-object-perms", instancia],
+    queryFn: () => meusPerms({ data: { instancia } }),
+    enabled: podeMarcarEntregueProposta(status),
+    staleTime: 5 * 60 * 1000,
+  });
+  const podeManual = !!(permsQ.data as Record<string, any> | undefined)?.['propostas']?.modify_all;
+
+  const marcar = useMutation({
+    mutationFn: () => atualizarStatus({ data: { id: String(proposta['id']), status: "Entregue" } }),
+    onSuccess: async () => {
+      toast.success(`Pedido ${proposta['numero'] ?? ""} marcado como entregue.`);
+      setConfirmando(false);
+      await queryClient.invalidateQueries({ queryKey: ["carregadores-proposta", String(proposta['id'])] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  if (!podeMarcarEntregueProposta(status) || !podeManual) return null;
+
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      {confirmando ? (
+        <>
+          <span className="text-sm text-muted-foreground">
+            Confirmar a entrega deste pedido? A data de entrega será registrada agora.
+          </span>
+          <Button size="sm" variant="outline" onClick={() => setConfirmando(false)} disabled={marcar.isPending}>
+            Voltar
+          </Button>
+          <Button size="sm" onClick={() => marcar.mutate()} disabled={marcar.isPending}>
+            {marcar.isPending ? "Registrando…" : "Confirmar entrega"}
+          </Button>
+        </>
+      ) : (
+        <Button size="sm" variant="outline" onClick={() => setConfirmando(true)}>
+          Marcar como entregue
+        </Button>
+      )}
+    </div>
+  );
+}
