@@ -2698,39 +2698,48 @@ function NovaPropostaSolarPage() {
 
               </div>
 
-              <div className="space-y-3">
-                <div className="text-sm font-medium">Forma de pagamento</div>
-                <Select value={formaPagamento} onValueChange={setFormaPagamento}>
-                  <SelectTrigger className="md:max-w-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="boleto_vista">Boleto à vista</SelectItem>
-                    <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>
-                    <SelectItem value="pix">Pix</SelectItem>
-                    <SelectItem value="cartao_credito">Cartão de crédito</SelectItem>
-                    <SelectItem value="financiamento">Financiamento</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Obrigatória apenas para concluir o pedido.
-                </p>
-                {tentou && !formaPagamento && <Erro>Obrigatória para concluir.</Erro>}
-              </div>
+              {tipoNf === "bonificacao" ? (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600">
+                  <strong>Bonificação</strong> — nenhuma cobrança será emitida. A NF sai como bonificação e a ordem no
+                  SAP é criada como VBON na conclusão do pedido.
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium">Forma de pagamento</div>
+                    <Select value={formaPagamento} onValueChange={setFormaPagamento}>
+                      <SelectTrigger className="md:max-w-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="boleto_vista">Boleto à vista</SelectItem>
+                        <SelectItem value="boleto_prazo">Boleto a prazo</SelectItem>
+                        <SelectItem value="pix">Pix</SelectItem>
+                        <SelectItem value="cartao_credito">Cartão de crédito</SelectItem>
+                        <SelectItem value="financiamento">Financiamento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Obrigatória apenas para concluir o pedido.
+                    </p>
+                    {tentou && !formaPagamento && <Erro>Obrigatória para concluir.</Erro>}
+                  </div>
 
-              <div className="space-y-3">
-                <div className="text-sm font-medium">Condição de pagamento</div>
-                <CondicaoPagamentoSelect
-                  value={condicaoPagamento}
-                  onChange={setCondicaoPagamento}
-                  onChangeDescricao={setCondicaoPagamentoDescricao}
-                  className="md:max-w-sm"
-                  clienteDoc={String(cliente?.['doc'] ?? clienteDoc ?? "")}
-                  valorTotal={total}
-                />
-                <p className="text-xs text-muted-foreground">
-                  É o prazo enviado ao SAP — só aparecem as condições ativas com parcelas automáticas.
-                </p>
-                {tentou && !condicaoPagamento && <Erro>Obrigatória para concluir.</Erro>}
-              </div>
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium">Condição de pagamento</div>
+                    <CondicaoPagamentoSelect
+                      value={condicaoPagamento}
+                      onChange={setCondicaoPagamento}
+                      onChangeDescricao={setCondicaoPagamentoDescricao}
+                      className="md:max-w-sm"
+                      clienteDoc={String(cliente?.['doc'] ?? clienteDoc ?? "")}
+                      valorTotal={total}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      É o prazo enviado ao SAP — só aparecem as condições ativas com parcelas automáticas.
+                    </p>
+                    {tentou && !condicaoPagamento && <Erro>Obrigatória para concluir.</Erro>}
+                  </div>
+                </>
+              )}
 
               <div className="space-y-3">
                 <div className="text-sm font-medium">Observações</div>
