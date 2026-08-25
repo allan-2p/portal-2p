@@ -128,6 +128,9 @@ function validar(input: any): SalvarPropostaInput {
 
   const propostaNome = String(input.propostaNome ?? "").trim().slice(0, 160);
   if (!propostaNome) throw new Error("Informe o nome da proposta.");
+  const tipoNfNorm = ["venda", "triangulacao", "bonificacao"].includes(String(input.tipoNf))
+    ? String(input.tipoNf)
+    : "venda";
 
   return {
     propostaId: input.propostaId ? String(input.propostaId) : null,

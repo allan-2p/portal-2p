@@ -103,6 +103,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
 
 
   const freteMod = ["FOB", "CIF", "DEDICADO"].includes(String(i.freteMod)) ? String(i.freteMod) : "";
+  const tipoNfNorm = ["venda", "triangulacao", "bonificacao"].includes(String(i.tipoNf)) ? String(i.tipoNf) : "venda";
   const t = i.transportadora;
 
   return {
