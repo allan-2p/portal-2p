@@ -2529,10 +2529,11 @@ function PropostaCarregadoresPage() {
                   </Select>
                 </Field>
 
-                <Field label="Condição de pagamento (ZTERM)">
+                <Field label="Condição de pagamento">
                   <CondicaoPagamentoSelect
                     value={state.condicaoPagamento}
                     onChange={(v) => set("condicaoPagamento", v)}
+                    onChangeDescricao={(v) => set("condicaoPagamentoDescricao", v)}
                     clienteDoc={String(state.doc ?? "")}
                     valorTotal={d.valorTotalProposta}
                   />
