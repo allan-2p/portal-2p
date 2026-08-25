@@ -804,7 +804,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
                   <Section title="Dados comerciais">
                     <F label="Consultor *" id="campo-consultor" error={erros.consultor}>
-                      {consultoresQ.data?.podeEscolher ? (
+                      {/* Quem não é vendedor/consultor do portal nunca vira o
+                          responsável: precisa escolher um vendedor. */}
+                      {consultoresQ.data?.podeEscolher || consultoresQ.data?.souConsultor === false ? (
                         <Select value={consultorEfetivo ?? ""} onValueChange={(v) => setConsultorSap(v)}>
                           <SelectTrigger><SelectValue placeholder="Selecione o consultor" /></SelectTrigger>
                           <SelectContent>
