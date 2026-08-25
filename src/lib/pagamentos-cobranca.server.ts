@@ -312,6 +312,15 @@ export async function gerarCobrancaCheckout(
     };
   }
 
+  // Bonificação: mercadoria doada (NF de bonificação, ordem VBON). Nunca cobra.
+  if (String(row["tipo_nf"] ?? "").toLowerCase().startsWith("bonifica")) {
+    return {
+      gerada: false,
+      meio: null,
+      motivo: "Bonificação: pedido sem cobrança (NF de bonificação, ordem VBON).",
+    };
+  }
+
   const forma = String(row["forma_pagamento"] ?? "");
   if (forma === "boleto_prazo") {
     return {
