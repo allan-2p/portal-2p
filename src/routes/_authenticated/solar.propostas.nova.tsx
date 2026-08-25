@@ -1222,7 +1222,7 @@ function NovaPropostaSolarPage() {
     }
     if (concluir && !condicaoPagamento) {
       setTentou(true);
-      return toast.error("Condição de pagamento (ZTERM) é obrigatória para concluir o pedido.");
+      return toast.error("Condição de pagamento é obrigatória para concluir o pedido.");
     }
     setSalvando(true);
     if (concluir) setConclusaoFase("salvando");
