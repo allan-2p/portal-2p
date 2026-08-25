@@ -50,6 +50,31 @@ import {
 export type Instancia = "solar" | "carregadores";
 const ORGANIZACAO: Record<Instancia, string> = { solar: "2P Solar", carregadores: "2P Carregadores" };
 
+/** Rótulos amigáveis das abas — usados no título da página e na trilha. */
+const ROTULO_ABA: Record<string, string> = {
+  cadastrais: "Dados cadastrais",
+  contatos: "Contatos",
+  enderecos: "Endereços",
+  financeiro: "Financeiro",
+};
+
+/** Trilha (breadcrumb) que acompanha a aba ativa na visualização e na edição. */
+function TrilhaAbas({ base, registro, secao }: { base: string; registro: string; secao?: string }) {
+  return (
+    <nav aria-label="Trilha de navegação" className="mb-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+      <span>{base}</span>
+      <span aria-hidden="true">›</span>
+      <span className="max-w-[22rem] truncate">{registro}</span>
+      {secao ? (
+        <>
+          <span aria-hidden="true">›</span>
+          <span className="font-medium text-foreground" aria-current="page">{secao}</span>
+        </>
+      ) : null}
+    </nav>
+  );
+}
+
 type Cnae = { codigo: string; descricao: string };
 
 export type Cliente = {
