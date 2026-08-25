@@ -17,7 +17,7 @@ import { listCondicoesPagamento } from "@/lib/condicoes-pagamento.functions";
  * Seletor do catálogo de condições de pagamento para o cadastro do cliente.
  *
  * Diferente do seletor do checkout, aqui não há regra de crédito: é só a
- * condição liberada no cadastro. Devolve o par completo (ZTERM + descrição)
+ * condição liberada no cadastro. Devolve o par completo (código interno + descrição)
  * para gravar `condicao_pgto_sap` e `condicao_pagamento` juntos.
  */
 export function CondicaoPagamentoCatalogoSelect({
