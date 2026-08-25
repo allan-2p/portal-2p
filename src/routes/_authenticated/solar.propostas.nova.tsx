@@ -396,6 +396,7 @@ function NovaPropostaSolarPage() {
       setFinalidadeUso(p['finalidade_uso'] ? normalizarFinalidade(p['finalidade_uso']) : "");
       setFormaPagamento(String(p['forma_pagamento'] ?? ""));
       setCondicaoPagamento(String(p['condicao_pagamento_codigo'] ?? ""));
+      setCondicaoPagamentoDescricao(String(p['condicao_pagamento_descricao'] ?? ""));
       setEntregaDiferente(!!p['entrega_diferente']);
       setEntrega((p['entrega'] as Record<string, string>) ?? {});
       setFreteMod(String(p['frete_mod'] ?? ""));
