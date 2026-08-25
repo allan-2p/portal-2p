@@ -2717,10 +2717,11 @@ function NovaPropostaSolarPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="text-sm font-medium">Condição de pagamento (ZTERM)</div>
+                <div className="text-sm font-medium">Condição de pagamento</div>
                 <CondicaoPagamentoSelect
                   value={condicaoPagamento}
                   onChange={setCondicaoPagamento}
+                  onChangeDescricao={setCondicaoPagamentoDescricao}
                   className="md:max-w-sm"
                   clienteDoc={String(cliente?.['doc'] ?? clienteDoc ?? "")}
                   valorTotal={total}
