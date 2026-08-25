@@ -48,7 +48,7 @@ function FinanceiroHome() {
               <Receipt className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-semibold">Condições de Pagamento (ZTERM)</span>
+              <span className="block font-semibold">Condições de Pagamento</span>
               <span className="block text-sm text-muted-foreground">
                 Catálogo de condições enviadas ao SAP — ativar, desativar e ajustar parcelas.
               </span>
