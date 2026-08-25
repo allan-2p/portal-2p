@@ -34,6 +34,12 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+### Adicionado
+- **Baixa manual de entrega**: pedidos "Coletado" com frete fora da Fretefy podem ser marcados como entregues direto no detalhe do pedido (Solar e Carregadores). A ação exige "Modify All Records" em Propostas, passa pela máquina de estados, carimba a data de entrega, registra o autor no Log de Integrações, sincroniza o Salesforce e avisa o dono do pedido.
+
+### Banco de dados
+- Novo perfil de permissão **Analista de Fretes**: acesso às telas de propostas/pedidos de Solar e Carregadores e Manager Access apenas no objeto Propostas (ver/editar todos, sem criar nem excluir). Carga idempotente em `permission_profiles`, `permission_profile_instances`, `permission_profile_features` e `permission_profile_object_perms`.
+
 ### Corrigido
 - **Atualização dos pedidos**: o cron do SAP agora percorre toda a fila em janelas rotativas, sem deixar pedidos novos presos após os 50 mais antigos; checkout, Pix, confirmação manual e cancelamento passam pela mesma máquina de estados, com datas e trava contra concorrência; entregas da Fretefy recebidas antes da coleta no SAP são reaplicadas automaticamente quando o pedido chega a Coletado.
 - **Identificação de cliente duplicado**: o aviso de CNPJ já cadastrado agora exibe o consultor responsável gravado no cadastro, sem confundir a origem da importação com o vendedor da conta.
