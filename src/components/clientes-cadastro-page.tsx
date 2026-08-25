@@ -1263,7 +1263,6 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   <TabsContent value="financeiro" className="mt-4 space-y-4">
                     <Bloco titulo="Condições de pagamento liberadas">
                       <Linha rot="Condição de pagamento" val={detalhe.condicao_pagamento} />
-                      <Linha rot="Condição SAP (ZTERM)" val={detalhe.condicao_pgto_sap} />
                     </Bloco>
 
                     <CreditoClienteCard
