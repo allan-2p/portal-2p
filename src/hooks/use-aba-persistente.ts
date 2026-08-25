@@ -24,6 +24,34 @@ export function useAbaPersistente(chave: string, padrao: string) {
     return params.get(`aba:${chave}`);
   }, [chave]);
 
+  const gravar = useCallback(
+    (valor: string) => {
+      try {
+        // localStorage sobrevive a refresh e a reabertura do navegador.
+        window.localStorage.setItem(storageKey, valor);
+      } catch {
+        /* ignora */
+      }
+      try {
+        window.sessionStorage.setItem(storageKey, valor);
+      } catch {
+        /* ignora */
+      }
+    },
+    [storageKey],
+  );
+
+  const lerArmazenado = useCallback((): string | null => {
+    try {
+      return (
+        window.localStorage.getItem(storageKey) ??
+        window.sessionStorage.getItem(storageKey)
+      );
+    } catch {
+      return null;
+    }
+  }, [storageKey]);
+
   const aplicar = useCallback((valor: string) => {
     abaRef.current = valor;
     setAbaState(valor);
@@ -34,13 +62,13 @@ export function useAbaPersistente(chave: string, padrao: string) {
     let inicial: string | null = null;
     try {
       inicial = lerHash();
-      if (!inicial) inicial = window.sessionStorage.getItem(storageKey);
+      if (!inicial) inicial = lerArmazenado();
     } catch {
       /* armazenamento indisponível: segue com o padrão */
     }
     if (inicial) aplicar(inicial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey]);
+  }, [storageKey, lerArmazenado]);
 
   // Voltar/avançar no navegador devolve a aba correspondente à entrada.
   useEffect(() => {
@@ -49,11 +77,7 @@ export function useAbaPersistente(chave: string, padrao: string) {
       const alvo = doHash ?? padrao;
       if (alvo !== abaRef.current) {
         aplicar(alvo);
-        try {
-          window.sessionStorage.setItem(storageKey, alvo);
-        } catch {
-          /* ignora */
-        }
+        gravar(alvo);
       }
     }
     window.addEventListener("popstate", onPop);
@@ -62,17 +86,13 @@ export function useAbaPersistente(chave: string, padrao: string) {
       window.removeEventListener("popstate", onPop);
       window.removeEventListener("hashchange", onPop);
     };
-  }, [lerHash, padrao, storageKey, aplicar]);
+  }, [lerHash, padrao, gravar, aplicar]);
 
   const setAba = useCallback(
     (valor: string) => {
       if (valor === abaRef.current) return;
       aplicar(valor);
-      try {
-        window.sessionStorage.setItem(storageKey, valor);
-      } catch {
-        /* ignora */
-      }
+      gravar(valor);
       try {
         const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
         params.set(`aba:${chave}`, valor);
@@ -82,7 +102,7 @@ export function useAbaPersistente(chave: string, padrao: string) {
         /* ignora */
       }
     },
-    [chave, storageKey, aplicar],
+    [chave, gravar, aplicar],
   );
 
   return [aba, setAba] as const;
