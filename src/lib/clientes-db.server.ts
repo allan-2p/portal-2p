@@ -8,6 +8,7 @@ import {
   ORGANIZACAO as ORG,
   ORGANIZACAO_LABEL as ORG_LABEL,
 } from "./grupo2p-db.server";
+import { padroesBuscaDoc } from "./cnpj";
 
 export type ClientesInstance = "solar" | "carregadores";
 
