@@ -56,6 +56,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
+import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-badge";
 import { cn } from "@/lib/utils";
 import { CepInput, type EnderecoCep } from "@/components/cep-input";
 import {

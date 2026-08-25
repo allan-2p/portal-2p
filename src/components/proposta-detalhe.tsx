@@ -15,6 +15,7 @@ import { propostaStatusStyle } from "@/lib/proposta-status";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
+import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-badge";
 import { cidadeUf } from "@/lib/local-format";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
 import {

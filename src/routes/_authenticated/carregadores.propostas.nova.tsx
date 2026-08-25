@@ -100,6 +100,7 @@ import { FreteDedicado } from "@/components/frete-dedicado";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePrazoLiberado } from "@/hooks/use-prazo-liberado";
 
+import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-badge";
 import { cn } from "@/lib/utils";
 import { ResultadoConclusaoDialog } from "@/components/resultado-conclusao-dialog";
 import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-progresso";
