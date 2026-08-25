@@ -127,19 +127,21 @@ export async function listarPropostasPagina(
   if (opts.organizacao) params.set("organizacao", `eq.${opts.organizacao}`);
   if (opts.status && opts.status !== "todos") params.set("status", `eq.${opts.status}`);
   if (opts.uf && opts.uf !== "todos") params.set("uf", `eq.${opts.uf}`);
-  if (opts.donoId) params.set("created_by", `eq.${opts.donoId}`);
-  else if (opts.createdByIn?.length) {
+  if (!opts.donoId && opts.createdByIn?.length) {
     params.set("created_by", `in.(${opts.createdByIn.join(",")})`);
   }
 
   // Condições compostas vão juntas em `and=(...)`: o PostgREST aceita só um
   // parâmetro `or` por consulta.
   const cond: string[] = [];
+  const escopo = clausulaEscopo(opts);
+  if (escopo) cond.push(escopo);
   const termo = termoSeguro(opts.q ?? "");
   if (termo) cond.push(`or(${COLUNAS_BUSCA_PROPOSTA.map((c) => `${c}.ilike.*${termo}*`).join(",")})`);
   if (opts.comSap === "com") cond.push("or(sap_ov_numero.not.is.null,numero_sap.not.is.null)");
   if (opts.comSap === "sem") cond.push("and(sap_ov_numero.is.null,numero_sap.is.null)");
   if (cond.length) params.set("and", `(${cond.join(",")})`);
+
 
   const from = (pagina - 1) * porPagina;
   const { ok, status, text, total } = await grupo2pRest(`propostas?${params}`, {
