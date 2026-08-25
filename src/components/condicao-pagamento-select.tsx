@@ -16,9 +16,9 @@ import { getCreditoVigente } from "@/lib/credito.functions";
 import { condicaoEhAPrazo, fmtBRL, limiteCobre } from "@/lib/credito";
 
 /**
- * Seletor de condição de pagamento (ZTERM) do checkout.
+ * Seletor de condição de pagamento do checkout.
  * Mostra apenas as condições ativas com parcelas automáticas e permite
- * digitar para pesquisar pelo código ou pela descrição.
+ * digitar para pesquisar pela descrição.
  *
  * Quando `clienteDoc` é informado, as condições a prazo só ficam disponíveis
  * se o cliente tiver crédito liberado pelo Financeiro e limite suficiente
