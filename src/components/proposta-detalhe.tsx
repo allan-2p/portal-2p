@@ -154,6 +154,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           Andamento do pedido
         </h3>
         <PropostaTimeline status={status} proposta={p} />
+        <MarcarEntregueAcao proposta={p} />
       </div>
 
       <NfDocumentosCard proposta={p} />
