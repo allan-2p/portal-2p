@@ -423,17 +423,10 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     /** Histórico de uso do cupom: 1 registro por proposta, removido se o cupom sair. */
     const registrarUsoCupom = async (propostaId: string) => {
       try {
-        let limpar = supabase.from("solar_cupom_usos").delete().eq("proposta_id", propostaId);
-        if (cupom) limpar = limpar.neq("cupom_id", cupom.id);
-        await limpar;
+        // Histórico é imutável: sempre apaga o registro anterior e grava de novo.
+        await supabase.from("solar_cupom_usos").delete().eq("proposta_id", propostaId);
         if (!cupom) return;
-        const { data: existente } = await supabase
-          .from("solar_cupom_usos")
-          .select("id")
-          .eq("proposta_id", propostaId)
-          .eq("cupom_id", cupom.id)
-          .maybeSingle();
-        const registro = {
+        await supabase.from("solar_cupom_usos").insert({
           codigo: cupom.codigo,
           proposta_numero: numeroProposta,
           cliente_nome: data.cliente.nome,
@@ -441,22 +434,16 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
           desconto: cupom.desconto,
           frete_gratis: cupom.freteGratis,
           valor_total: valorTotal,
-        };
-        if (existente) {
-          await supabase.from("solar_cupom_usos").update(registro).eq("id", (existente as any).id);
-        } else {
-          await supabase.from("solar_cupom_usos").insert({
-            ...registro,
-            cupom_id: cupom.id,
-            proposta_id: propostaId,
-            user_id: userId,
-            user_nome: nomeAtual,
-          });
-        }
+          cupom_id: cupom.id,
+          proposta_id: propostaId,
+          user_id: userId,
+          user_nome: nomeAtual,
+        });
       } catch {
         /* histórico é auditoria: não bloqueia o salvamento */
       }
     };
+
 
     if (data.propostaId) {
       await repo.atualizarProposta(data.propostaId, payload);
