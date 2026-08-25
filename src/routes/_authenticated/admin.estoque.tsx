@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { Loader2, RefreshCw, Search, Boxes, Ship, Package, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/app-layout";
@@ -49,6 +50,7 @@ function EstoquePage() {
   const sync = useServerFn(syncEstoqueProdutos);
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
+  const [aba, setAba] = useAbaPersistente("admin-estoque", "produtos");
 
   const q = useQuery({ queryKey: ["estoque-consolidado"], queryFn: () => fetchAll({}) });
 
@@ -148,7 +150,7 @@ function EstoquePage() {
               <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
             </div>
           ) : (
-            <Tabs defaultValue="produtos">
+            <Tabs value={aba} onValueChange={setAba}>
               <TabsList>
                 <TabsTrigger value="produtos">Produtos</TabsTrigger>
                 <TabsTrigger value="estoque">Estoque</TabsTrigger>

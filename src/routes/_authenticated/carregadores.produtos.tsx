@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/produtos")({
 });
 
 function ProdutosCarregadoresPage() {
+  const [aba, setAba] = useAbaPersistente("carregadores-produtos", "produtos");
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
@@ -55,7 +57,7 @@ function ProdutosCarregadoresPage() {
           </p>
         </div>
 
-        <Tabs defaultValue="produtos">
+        <Tabs value={aba} onValueChange={setAba}>
           <TabsList>
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
             <TabsTrigger value="fotos">Fotos do catálogo</TabsTrigger>

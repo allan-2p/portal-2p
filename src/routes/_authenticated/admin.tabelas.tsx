@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/app-layout";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import {
   Loader2,
   AlertTriangle,
@@ -1709,7 +1710,8 @@ function saveStoredFilters(key: string, filters: OppFilters) {
 function TabelasPage() {
   const { hasRole } = useAuth();
   type TabId = "orcamentos" | "vendas" | "projecoes" | "projecao-tri" | "semanas" | "vendido-mes" | "vendido-tri" | "gerado-mes" | "carregadores" | "clientes-novos" | "recorrencia" | "retencao";
-  const [tab, setTab] = useState<TabId>("orcamentos");
+  const [tabRaw, setTab] = useAbaPersistente("admin-tabelas", "orcamentos");
+  const tab = tabRaw as TabId;
 
   const [orcDefaults, setOrcDefaults] = useState<OppFilters>(() => loadStoredFilters("orcamentos", OPP_DEFAULTS_ORCAMENTOS));
   const [venDefaults, setVenDefaults] = useState<OppFilters>(() => loadStoredFilters("vendas", OPP_DEFAULTS_VENDAS));

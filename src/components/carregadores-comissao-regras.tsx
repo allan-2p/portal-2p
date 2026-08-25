@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +15,7 @@ export function CarregadoresComissaoRegras() {
   const { data: cfgData } = useCarregadoresConfig();
   const cfg = cfgData ?? CARREGADORES_CONFIG_FALLBACK;
 
+  const [abaRegime, setAbaRegime] = useAbaPersistente("carregadores-comissao-regime", "CLT");
   const [venda, setVenda] = useState(68750);
   const [custo, setCusto] = useState(34500);
   const [icms, setIcms] = useState(4);
@@ -100,7 +102,7 @@ export function CarregadoresComissaoRegras() {
       </div>
 
       {/* Rateio CLT x PJ */}
-      <Tabs defaultValue="CLT">
+      <Tabs value={abaRegime} onValueChange={setAbaRegime}>
         <TabsList>
           <TabsTrigger value="CLT">CLT</TabsTrigger>
           <TabsTrigger value="PJ">PJ</TabsTrigger>
