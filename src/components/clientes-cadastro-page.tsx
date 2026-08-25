@@ -278,7 +278,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
 
   // Aba compartilhada entre visualização e edição: ao alternar entre os modos,
   // o usuário permanece na mesma seção (ex.: Financeiro continua Financeiro).
-  const [abaEdicao, setAbaEdicao] = useState("cadastrais");
+  const [abaEdicao, setAbaEdicao] = useAbaPersistente("clientes-cadastro", "cadastrais");
   const abaDetalhe = abaEdicao;
   const setAbaDetalhe = setAbaEdicao;
 
