@@ -48,7 +48,7 @@ function LogIntegracoesPage() {
             </div>
             <ExportLogsButton source="integracoes" />
           </header>
-          <Tabs defaultValue={cliente ? "logs" : "cadastros"}>
+          <Tabs value={aba} onValueChange={setAba}>
             <TabsList>
               <TabsTrigger value="cadastros">Status por cliente</TabsTrigger>
               <TabsTrigger value="logs">Histórico de logs</TabsTrigger>

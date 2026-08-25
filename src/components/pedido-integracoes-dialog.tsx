@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Calculator, CheckCircle2, Cloud, History, Loader2, RefreshCw, XCircle } from "lucide-react";
@@ -161,7 +162,7 @@ export function PedidoIntegracoesDialog({
         )}
 
         {d && (
-          <Tabs defaultValue="integracoes" className="space-y-4">
+          <Tabs value={aba} onValueChange={setAba} className="space-y-4">
             <TabsList className="w-full justify-start">
               <TabsTrigger value="integracoes" className="gap-2"><Cloud className="h-4 w-4" /> Integrações</TabsTrigger>
               <TabsTrigger value="auditoria" className="gap-2"><History className="h-4 w-4" /> Auditoria</TabsTrigger>

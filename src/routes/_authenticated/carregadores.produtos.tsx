@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +56,7 @@ function ProdutosCarregadoresPage() {
           </p>
         </div>
 
-        <Tabs defaultValue="produtos">
+        <Tabs value={aba} onValueChange={setAba}>
           <TabsList>
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
             <TabsTrigger value="fotos">Fotos do catálogo</TabsTrigger>

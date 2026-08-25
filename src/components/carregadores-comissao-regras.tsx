@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -100,7 +101,7 @@ export function CarregadoresComissaoRegras() {
       </div>
 
       {/* Rateio CLT x PJ */}
-      <Tabs defaultValue="CLT">
+      <Tabs value={abaRegime} onValueChange={setAbaRegime}>
         <TabsList>
           <TabsTrigger value="CLT">CLT</TabsTrigger>
           <TabsTrigger value="PJ">PJ</TabsTrigger>

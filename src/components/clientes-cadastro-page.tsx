@@ -1,6 +1,7 @@
 import { cidadeUf } from "@/lib/local-format";
 import { useCan, useCanDelete } from "@/components/permission-gate";
 import { useEffect, useMemo, useState } from "react";
+import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { ConfirmarFechamentoDialog } from "@/components/confirmar-saida";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
