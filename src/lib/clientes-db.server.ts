@@ -235,9 +235,11 @@ export async function listClientesPerfil(
   if (termo) {
     const digitos = termo.replace(/\D/g, "");
     const alvos = COLUNAS_BUSCA_TEXTO.map((c) => `${c}.ilike.*${termo}*`);
-    if (digitos.length >= 3) alvos.push(`doc.ilike.*${digitos}*`, `numero_sap.ilike.*${digitos}*`);
+    for (const p of padroesBuscaDoc(termo)) alvos.push(`doc.ilike.*${p}*`);
+    if (digitos.length >= 3) alvos.push(`numero_sap.ilike.*${digitos}*`);
     grupos.push(`or(${alvos.join(",")})`);
   }
+
   if (grupos.length) params.set("and", `(${grupos.join(",")})`);
 
   const from = (pagina - 1) * porPagina;
