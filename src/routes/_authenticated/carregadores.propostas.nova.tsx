@@ -910,8 +910,9 @@ function PropostaCarregadoresPage() {
   if (itensSemQtd.length)
     errosPdf.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
   if (!state.freteMod) errosPdf.push("Selecione a modalidade de frete.");
-  if (!state.formaPagamento) errosPdf.push("Selecione a forma de pagamento.");
-  if (!state.condicaoPagamento) errosPdf.push("Selecione a condição de pagamento.");
+  // Bonificação não tem pagamento: forma/condição não são exigidas.
+  if (state.tipoNf !== "bonificacao" && !state.formaPagamento) errosPdf.push("Selecione a forma de pagamento.");
+  if (state.tipoNf !== "bonificacao" && !state.condicaoPagamento) errosPdf.push("Selecione a condição de pagamento.");
   if (state.freteMod === "CIF" && !state.transportadora)
     errosPdf.push("Cotação de frete pendente — selecione a transportadora.");
   if (state.freteMod === "DEDICADO" && !(state.freteValor > 0))
@@ -2513,31 +2514,40 @@ function PropostaCarregadoresPage() {
               <div className="rounded-xl border border-border bg-card p-5 space-y-4">
                 <p className="font-semibold text-sm">Definições finais</p>
 
-                <Field label="Forma de pagamento">
-                  <Select
-                    value={state.formaPagamento || undefined}
-                    onValueChange={(v) => set("formaPagamento", v as CarregadoresState["formaPagamento"])}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="boleto_vista">{labelFormaPagamento.boleto_vista}</SelectItem>
-                      <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
-                      <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
-                      <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
-                      <SelectItem value="financiamento">{labelFormaPagamento.financiamento}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
+                {state.tipoNf === "bonificacao" ? (
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600">
+                    <strong>Bonificação</strong> — nenhuma cobrança será emitida. A NF sai como bonificação e a ordem no
+                    SAP é criada como VBON na conclusão do pedido.
+                  </div>
+                ) : (
+                  <>
+                    <Field label="Forma de pagamento">
+                      <Select
+                        value={state.formaPagamento || undefined}
+                        onValueChange={(v) => set("formaPagamento", v as CarregadoresState["formaPagamento"])}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="boleto_vista">{labelFormaPagamento.boleto_vista}</SelectItem>
+                          <SelectItem value="boleto_prazo">{labelFormaPagamento.boleto_prazo}</SelectItem>
+                          <SelectItem value="pix">{labelFormaPagamento.pix}</SelectItem>
+                          <SelectItem value="cartao_credito">{labelFormaPagamento.cartao_credito}</SelectItem>
+                          <SelectItem value="financiamento">{labelFormaPagamento.financiamento}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Field>
 
-                <Field label="Condição de pagamento">
-                  <CondicaoPagamentoSelect
-                    value={state.condicaoPagamento}
-                    onChange={(v) => set("condicaoPagamento", v)}
-                    onChangeDescricao={(v) => set("condicaoPagamentoDescricao", v)}
-                    clienteDoc={String(state.doc ?? "")}
-                    valorTotal={d.valorTotalProposta}
-                  />
-                </Field>
+                    <Field label="Condição de pagamento">
+                      <CondicaoPagamentoSelect
+                        value={state.condicaoPagamento}
+                        onChange={(v) => set("condicaoPagamento", v)}
+                        onChangeDescricao={(v) => set("condicaoPagamentoDescricao", v)}
+                        clienteDoc={String(state.doc ?? "")}
+                        valorTotal={d.valorTotalProposta}
+                      />
+                    </Field>
+                  </>
+                )}
 
                 <Field label="Observações finais">
                   <Textarea
