@@ -1138,7 +1138,12 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
           {detalhe && (
             <>
               <DialogHeader className="text-left">
-                <DialogTitle className="pr-6">Cliente</DialogTitle>
+                <TrilhaAbas
+                  base="Cadastro de clientes"
+                  registro={String(detalhe.razao_social || detalhe.nome_fantasia || "Cliente")}
+                  secao={ROTULO_ABA[abaDetalhe]}
+                />
+                <DialogTitle className="pr-6">Cliente — {ROTULO_ABA[abaDetalhe]}</DialogTitle>
                 <DialogDescription>Visão completa do cadastro, contatos, endereços e financeiro.</DialogDescription>
               </DialogHeader>
 
