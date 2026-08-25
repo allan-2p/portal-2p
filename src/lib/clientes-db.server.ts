@@ -157,7 +157,12 @@ export async function listClientesPagina(
     const alvos = COLUNAS_BUSCA_TEXTO.map((c) => `${c}.ilike.*${termo}*`);
     for (const p of padroesBuscaDoc(termo)) alvos.push(`doc.ilike.*${p}*`);
     if (digitos.length >= 3) {
-      alvos.push(`numero_sap.ilike.*${digitos}*`, `id_antigo.ilike.*${digitos}*`);
+      alvos.push(`numero_sap.ilike.*${digitos}*`);
+      // `id_antigo` é INTEGER no banco. Usar `ilike` nessa coluna fazia o
+      // Postgres rejeitar toda pesquisa numérica (inclusive CNPJ/CPF) com
+      // "operator does not exist: integer ~~* unknown".
+      const idAntigo = Number(digitos);
+      if (Number.isSafeInteger(idAntigo)) alvos.push(`id_antigo.eq.${idAntigo}`);
     }
     params.set("or", `(${alvos.join(",")})`);
   }

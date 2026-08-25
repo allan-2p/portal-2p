@@ -35,6 +35,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 ### Corrigido
+- **Pesquisa numérica de clientes**: CNPJ, CPF, código SAP e número legado voltam a retornar resultados; a consulta deixou de aplicar comparação textual sobre o campo numérico de origem, que fazia o banco rejeitar toda busca contendo três ou mais dígitos.
 - **Pesquisa de clientes**: cadastros legados vinculados ao vendedor pelo código SAP agora aparecem na lista e na pesquisa da carteira, mesmo quando não possuem o identificador interno `created_by`; a listagem fica consistente com a validação de CNPJ duplicado.
 - **Cadastro de clientes**: o aviso de "Tabela de clientes ainda não criada" agora só aparece quando o banco confirma ausência real da tabela, evitando falso bloqueio por cache/erro transitório enquanto a lista está revalidando.
 
