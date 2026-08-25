@@ -162,7 +162,9 @@ export async function listClientesPagina(
       // Postgres rejeitar toda pesquisa numérica (inclusive CNPJ/CPF) com
       // "operator does not exist: integer ~~* unknown".
       const idAntigo = Number(digitos);
-      if (Number.isSafeInteger(idAntigo)) alvos.push(`id_antigo.eq.${idAntigo}`);
+      if (Number.isInteger(idAntigo) && idAntigo >= -2_147_483_648 && idAntigo <= 2_147_483_647) {
+        alvos.push(`id_antigo.eq.${idAntigo}`);
+      }
     }
     params.set("or", `(${alvos.join(",")})`);
   }
