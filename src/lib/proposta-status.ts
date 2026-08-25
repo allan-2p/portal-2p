@@ -84,7 +84,11 @@ export const PROPOSTA_TRANSICOES: Record<
   "Processando": { "Separação": "cron-sap", "Cancelado": ["humano", "pagamento"] },
   "Separação": { "Faturado": "cron-sap", "Cancelado": ["humano", "pagamento"] },
   "Faturado": { "Coletado": "cron-sap", "Cancelado": ["humano", "pagamento"] },
-  "Coletado": { "Entregue": "webhook-fretefy", "Cancelado": ["humano", "pagamento"] },
+  // "Coletado" → "Entregue" tem DOIS motores: o rastreio da Fretefy e a baixa
+  // manual no portal (necessária para fretes fora da Fretefy — Rodonaves,
+  // Correios, dedicado…), que exige Manager Access ("Modify All Records") no
+  // objeto `propostas`.
+  "Coletado": { "Entregue": ["webhook-fretefy", "humano"], "Cancelado": ["humano", "pagamento"] },
   "Entregue": {},
   "Cancelado": {},
 };
