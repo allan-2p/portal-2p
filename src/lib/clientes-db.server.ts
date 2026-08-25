@@ -409,7 +409,7 @@ export async function listarDocsDoConsultor(
   }
   if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
 
-  const teto = Math.min(opts.limite ?? 5000, 20000);
+  const teto = Math.min(opts.limite ?? 20000, 20000);
   const out = new Set<string>();
   for (let pagina = 0; pagina < 20 && out.size < teto; pagina++) {
     const params = new URLSearchParams({
