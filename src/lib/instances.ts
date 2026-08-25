@@ -166,7 +166,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
     id: "financeiro",
     label: "Financeiro",
     short: "FIN",
-    description: "Controles financeiros do Grupo 2P — condições de pagamento (ZTERM).",
+    description: "Controles financeiros do Grupo 2P — condições de pagamento.",
     logo: solarLogoRaw,
     swatch: "oklch(0.55 0.13 165)",
     routes: [

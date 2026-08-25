@@ -29,13 +29,13 @@ import {
 export const Route = createFileRoute("/_authenticated/financeiro/condicoes")({
   head: () => ({
     meta: [
-      { title: "Condições de Pagamento (ZTERM) — Portal 2P" },
+      { title: "Condições de Pagamento — Portal 2P" },
       {
         name: "description",
         content:
-          "Catálogo de condições de pagamento (ZTERM) do Grupo 2P: ativas no checkout, descontinuadas e parcelas enviadas ao SAP.",
+          "Catálogo de condições de pagamento do Grupo 2P: ativas no checkout, descontinuadas e parcelas enviadas ao SAP.",
       },
-      { property: "og:title", content: "Condições de Pagamento (ZTERM) — Portal 2P" },
+      { property: "og:title", content: "Condições de Pagamento — Portal 2P" },
       {
         property: "og:description",
         content: "Gestão do catálogo de condições de pagamento enviadas ao SAP.",
@@ -128,7 +128,7 @@ function CondicoesPage() {
               <Receipt className="h-6 w-6 text-primary" /> Condições de Pagamento
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Código ZTERM enviado ao SAP. No checkout aparecem só as condições ativas com parcelas
+              Código enviado ao SAP. No checkout aparecem só as condições ativas com parcelas
               calculadas automaticamente.
             </p>
           </div>
@@ -289,7 +289,7 @@ function EditDialog({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">Código (ZTERM)</label>
+              <label className="text-xs text-muted-foreground">Código SAP</label>
               <Input
                 value={codigo}
                 disabled={!!value?.codigo}

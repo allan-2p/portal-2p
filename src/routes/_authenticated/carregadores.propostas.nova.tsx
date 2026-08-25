@@ -351,6 +351,7 @@ function PropostaCarregadoresPage() {
         } as CarregadoresState["faturamento"],
         formaPagamento: (((data as any).forma_pagamento as string | null) ?? "") as CarregadoresState["formaPagamento"],
         condicaoPagamento: ((data as any).condicao_pagamento_codigo as string | null) ?? "",
+        condicaoPagamentoDescricao: ((data as any).condicao_pagamento_descricao as string | null) ?? "",
         entregaDiferente: !!(data as any).entrega_diferente,
         entrega: { ...novoEndereco(data.uf), ...(((data as any).entrega as Record<string, string>) ?? {}) },
         freteMod: (data.frete_mod === "FOB" || data.frete_mod === "DEDICADO" || data.frete_mod === "CIF"
@@ -910,7 +911,7 @@ function PropostaCarregadoresPage() {
     errosPdf.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
   if (!state.freteMod) errosPdf.push("Selecione a modalidade de frete.");
   if (!state.formaPagamento) errosPdf.push("Selecione a forma de pagamento.");
-  if (!state.condicaoPagamento) errosPdf.push("Selecione a condição de pagamento (ZTERM).");
+  if (!state.condicaoPagamento) errosPdf.push("Selecione a condição de pagamento.");
   if (state.freteMod === "CIF" && !state.transportadora)
     errosPdf.push("Cotação de frete pendente — selecione a transportadora.");
   if (state.freteMod === "DEDICADO" && !(state.freteValor > 0))
@@ -2528,10 +2529,11 @@ function PropostaCarregadoresPage() {
                   </Select>
                 </Field>
 
-                <Field label="Condição de pagamento (ZTERM)">
+                <Field label="Condição de pagamento">
                   <CondicaoPagamentoSelect
                     value={state.condicaoPagamento}
                     onChange={(v) => set("condicaoPagamento", v)}
+                    onChangeDescricao={(v) => set("condicaoPagamentoDescricao", v)}
                     clienteDoc={String(state.doc ?? "")}
                     valorTotal={d.valorTotalProposta}
                   />

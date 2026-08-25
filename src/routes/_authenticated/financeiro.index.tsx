@@ -9,12 +9,12 @@ export const Route = createFileRoute("/_authenticated/financeiro/")({
       { title: "Financeiro — Portal 2P" },
       {
         name: "description",
-        content: "Painel financeiro do Grupo 2P: condições de pagamento (ZTERM) usadas nas propostas e no SAP.",
+        content: "Painel financeiro do Grupo 2P: condições de pagamento usadas nas propostas e no SAP.",
       },
       { property: "og:title", content: "Financeiro — Portal 2P" },
       {
         property: "og:description",
-        content: "Gestão das condições de pagamento (ZTERM) do Grupo 2P.",
+        content: "Gestão das condições de pagamento do Grupo 2P.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -48,7 +48,7 @@ function FinanceiroHome() {
               <Receipt className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-semibold">Condições de Pagamento (ZTERM)</span>
+              <span className="block font-semibold">Condições de Pagamento</span>
               <span className="block text-sm text-muted-foreground">
                 Catálogo de condições enviadas ao SAP — ativar, desativar e ajustar parcelas.
               </span>

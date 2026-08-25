@@ -16,9 +16,9 @@ import { getCreditoVigente } from "@/lib/credito.functions";
 import { condicaoEhAPrazo, fmtBRL, limiteCobre } from "@/lib/credito";
 
 /**
- * Seletor de condição de pagamento (ZTERM) do checkout.
+ * Seletor de condição de pagamento do checkout.
  * Mostra apenas as condições ativas com parcelas automáticas e permite
- * digitar para pesquisar pelo código ou pela descrição.
+ * digitar para pesquisar pela descrição.
  *
  * Quando `clienteDoc` é informado, as condições a prazo só ficam disponíveis
  * se o cliente tiver crédito liberado pelo Financeiro e limite suficiente
@@ -27,12 +27,14 @@ import { condicaoEhAPrazo, fmtBRL, limiteCobre } from "@/lib/credito";
 export function CondicaoPagamentoSelect({
   value,
   onChange,
+  onChangeDescricao,
   className,
   clienteDoc,
   valorTotal,
 }: {
   value: string;
   onChange: (codigo: string) => void;
+  onChangeDescricao?: (descricao: string) => void;
   className?: string;
   clienteDoc?: string | null;
   valorTotal?: number;
@@ -61,7 +63,9 @@ export function CondicaoPagamentoSelect({
     const bloqueada = controlar && aPrazo && !cobre;
     return {
       value: c.codigo,
-      label: `${c.codigo} — ${c.descricao}`,
+      codigo: c.codigo,
+      descricao: c.descricao,
+      label: c.descricao,
       aPrazo,
       bloqueada,
       motivo: !vigente
@@ -90,18 +94,19 @@ export function CondicaoPagamentoSelect({
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
           <Command>
-            <CommandInput placeholder="Digite o código ou a descrição" />
+            <CommandInput placeholder="Busque pela condição de pagamento" />
             <CommandList className="max-h-72">
               <CommandEmpty>Nenhuma condição encontrada.</CommandEmpty>
               {opcoes.map((o) => (
                 <CommandItem
                   key={o.value}
-                  value={o.label}
+                  value={`${o.codigo} ${o.descricao}`}
                   disabled={o.bloqueada}
                   title={o.bloqueada ? o.motivo : undefined}
                   onSelect={() => {
                     if (o.bloqueada) return;
                     onChange(o.value);
+                    onChangeDescricao?.(o.descricao);
                     setAberto(false);
                   }}
                 >

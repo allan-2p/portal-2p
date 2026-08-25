@@ -17,7 +17,7 @@ import { listCondicoesPagamento } from "@/lib/condicoes-pagamento.functions";
  * Seletor do catálogo de condições de pagamento para o cadastro do cliente.
  *
  * Diferente do seletor do checkout, aqui não há regra de crédito: é só a
- * condição liberada no cadastro. Devolve o par completo (ZTERM + descrição)
+ * condição liberada no cadastro. Devolve o par completo (código interno + descrição)
  * para gravar `condicao_pgto_sap` e `condicao_pagamento` juntos.
  */
 export function CondicaoPagamentoCatalogoSelect({
@@ -42,10 +42,12 @@ export function CondicaoPagamentoCatalogoSelect({
   const cod = String(codigo ?? "").trim();
   const atual = opcoes.find((c) => c.codigo === cod);
   const rotulo = atual
-    ? `${atual.codigo} — ${atual.descricao}`
-    : cod || descricao
-      ? [cod, descricao].filter(Boolean).join(" — ")
-      : null;
+    ? atual.descricao
+    : descricao
+      ? descricao
+      : cod
+        ? "Selecione a condição"
+        : null;
 
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
@@ -64,29 +66,27 @@ export function CondicaoPagamentoCatalogoSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
-          <CommandInput placeholder="Digite o código (ZTERM) ou a descrição" />
-          <CommandList className="max-h-72">
-            <CommandEmpty>
-              {q.isLoading ? "Carregando…" : "Nenhuma condição encontrada."}
-            </CommandEmpty>
-            {opcoes.map((c) => (
-              <CommandItem
-                key={c.codigo}
-                value={`${c.codigo} ${c.descricao}`}
-                onSelect={() => {
-                  onChange({ codigo: c.codigo, descricao: c.descricao });
-                  setAberto(false);
-                }}
-              >
-                <Check className={cn("h-4 w-4", cod === c.codigo ? "opacity-100" : "opacity-0")} />
-                <span className="truncate">
-                  {c.codigo} — {c.descricao}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandList>
-        </Command>
+          <Command>
+            <CommandInput placeholder="Busque pela condição de pagamento" />
+            <CommandList className="max-h-72">
+              <CommandEmpty>
+                {q.isLoading ? "Carregando…" : "Nenhuma condição encontrada."}
+              </CommandEmpty>
+              {opcoes.map((c) => (
+                <CommandItem
+                  key={c.codigo}
+                  value={`${c.codigo} ${c.descricao}`}
+                  onSelect={() => {
+                    onChange({ codigo: c.codigo, descricao: c.descricao });
+                    setAberto(false);
+                  }}
+                >
+                  <Check className={cn("h-4 w-4", cod === c.codigo ? "opacity-100" : "opacity-0")} />
+                  <span className="truncate">{c.descricao}</span>
+                </CommandItem>
+              ))}
+            </CommandList>
+          </Command>
       </PopoverContent>
     </Popover>
   );

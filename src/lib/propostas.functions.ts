@@ -317,6 +317,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       faturamento: data.faturamento as unknown as CarregadoresState["faturamento"],
       formaPagamento: (data.formaPagamento ?? "") as CarregadoresState["formaPagamento"],
       condicaoPagamento: data.condicaoPagamento ?? "",
+      condicaoPagamentoDescricao: "",
       entregaDiferente: data.entregaDiferente,
       entrega: data.entrega as unknown as CarregadoresState["entrega"],
       freteMod: data.freteMod as CarregadoresState["freteMod"],

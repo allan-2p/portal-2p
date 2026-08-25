@@ -212,6 +212,7 @@ function NovaPropostaSolarPage() {
   const [enriquecendo, setEnriquecendo] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<string>("");
   const [condicaoPagamento, setCondicaoPagamento] = useState<string>("");
+  const [condicaoPagamentoDescricao, setCondicaoPagamentoDescricao] = useState<string>("");
 
   // Etapa 3
   const [modo, setModo] = useState<"calculadora" | "lista">("calculadora");
@@ -395,6 +396,7 @@ function NovaPropostaSolarPage() {
       setFinalidadeUso(p['finalidade_uso'] ? normalizarFinalidade(p['finalidade_uso']) : "");
       setFormaPagamento(String(p['forma_pagamento'] ?? ""));
       setCondicaoPagamento(String(p['condicao_pagamento_codigo'] ?? ""));
+      setCondicaoPagamentoDescricao(String(p['condicao_pagamento_descricao'] ?? ""));
       setEntregaDiferente(!!p['entrega_diferente']);
       setEntrega((p['entrega'] as Record<string, string>) ?? {});
       setFreteMod(String(p['frete_mod'] ?? ""));
@@ -1220,7 +1222,7 @@ function NovaPropostaSolarPage() {
     }
     if (concluir && !condicaoPagamento) {
       setTentou(true);
-      return toast.error("Condição de pagamento (ZTERM) é obrigatória para concluir o pedido.");
+      return toast.error("Condição de pagamento é obrigatória para concluir o pedido.");
     }
     setSalvando(true);
     if (concluir) setConclusaoFase("salvando");
@@ -1446,7 +1448,7 @@ function NovaPropostaSolarPage() {
   function validarParaPdf(): string | null {
     if (!itens.length) return "Adicione produtos antes de gerar o PDF.";
     if (!formaPagamento) return "Selecione a forma de pagamento antes de gerar a proposta.";
-    if (!condicaoPagamento) return "Selecione a condição de pagamento (ZTERM) antes de gerar a proposta.";
+    if (!condicaoPagamento) return "Selecione a condição de pagamento antes de gerar a proposta.";
     return null;
   }
 
@@ -2553,7 +2555,7 @@ function NovaPropostaSolarPage() {
                 />
 
                 <Info label="Forma de pagamento" value={formaPagamento || "—"} />
-                <Info label="Condição de pagamento" value={condicaoPagamento || "—"} />
+                <Info label="Condição de pagamento" value={condicaoPagamentoDescricao || "—"} />
                 <Info
                   label="Frete"
                   value={`${freteMod || "—"}${bonificado || freteGratis ? " · Frete grátis" : ""}`}
@@ -2715,10 +2717,11 @@ function NovaPropostaSolarPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="text-sm font-medium">Condição de pagamento (ZTERM)</div>
+                <div className="text-sm font-medium">Condição de pagamento</div>
                 <CondicaoPagamentoSelect
                   value={condicaoPagamento}
                   onChange={setCondicaoPagamento}
+                  onChangeDescricao={setCondicaoPagamentoDescricao}
                   className="md:max-w-sm"
                   clienteDoc={String(cliente?.['doc'] ?? clienteDoc ?? "")}
                   valorTotal={total}

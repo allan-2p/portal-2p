@@ -149,7 +149,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
   {
     id: "financeiro",
     label: "Financeiro",
-    description: "Painel financeiro do Grupo 2P — condições de pagamento (ZTERM) enviadas ao SAP.",
+    description: "Painel financeiro do Grupo 2P — condições de pagamento enviadas ao SAP.",
     area: "instancia",
     keys: ["financeiro.home", "financeiro.condicoes"],
   },
