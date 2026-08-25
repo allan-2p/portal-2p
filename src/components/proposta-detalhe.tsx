@@ -593,13 +593,31 @@ function MarcarEntregueAcao({ proposta }: { proposta: Record<string, any> }) {
     <div className="flex flex-wrap items-center justify-end gap-2">
       {confirmando ? (
         <>
-          <span className="text-sm text-muted-foreground">
-            Confirmar a entrega deste pedido? A data de entrega será registrada agora.
-          </span>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            Data da entrega
+            <input
+              type="date"
+              required
+              max={hoje}
+              value={dataEntrega}
+              onChange={(e) => setDataEntrega(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+            />
+          </label>
           <Button size="sm" variant="outline" onClick={() => setConfirmando(false)} disabled={marcar.isPending}>
             Voltar
           </Button>
-          <Button size="sm" onClick={() => marcar.mutate()} disabled={marcar.isPending}>
+          <Button
+            size="sm"
+            onClick={() => {
+              if (!dataEntrega) {
+                toast.error("Informe a data de entrega.");
+                return;
+              }
+              marcar.mutate();
+            }}
+            disabled={marcar.isPending || !dataEntrega}
+          >
             {marcar.isPending ? "Registrando…" : "Confirmar entrega"}
           </Button>
         </>
