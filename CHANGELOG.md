@@ -35,6 +35,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 ### Corrigido
+- **Identificação de cliente duplicado**: o aviso de CNPJ já cadastrado agora exibe o consultor responsável gravado no cadastro, sem confundir a origem da importação com o vendedor da conta.
 - **Acesso por link direto**: ao abrir uma rota protegida sem sessão, o portal agora apenas direciona para o login, sem exibir o aviso incorreto de que a tela não está disponível na instância selecionada.
 - **Pesquisa numérica de clientes**: CNPJ, CPF, código SAP e número legado voltam a retornar resultados; a consulta deixou de aplicar comparação textual sobre o campo numérico de origem, que fazia o banco rejeitar toda busca contendo três ou mais dígitos.
 - **Pesquisa de clientes**: cadastros legados vinculados ao vendedor pelo código SAP agora aparecem na lista e na pesquisa da carteira, mesmo quando não possuem o identificador interno `created_by`; a listagem fica consistente com a validação de CNPJ duplicado.
