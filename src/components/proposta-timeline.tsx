@@ -76,7 +76,47 @@ export function PropostaTimeline({
 
   return (
     <div className={cn("w-full", className)}>
-      <div className="flex items-start">
+      {/* Mobile: linha do tempo vertical (cabe na tela sem apertar o texto) */}
+      <ol className="space-y-0 sm:hidden">
+        {ETAPAS_ANDAMENTO.map((etapa, i) => {
+          const done = atual >= i && atual !== -1;
+          const s = propostaStatusStyle(etapa);
+          const ultimo = i === ETAPAS_ANDAMENTO.length - 1;
+          return (
+            <li key={etapa} className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
+              <div className="flex flex-col items-center">
+                <span
+                  className="mt-1 h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-background"
+                  style={{ backgroundColor: done ? s.bg : "var(--border)" }}
+                  aria-current={atual === i ? "step" : undefined}
+                />
+                {!ultimo && (
+                  <span
+                    className="w-1 flex-1 rounded-full"
+                    style={{
+                      backgroundColor: atual > i && atual !== -1 ? s.bg : "var(--border)",
+                    }}
+                  />
+                )}
+              </div>
+              <div className={cn("pb-4", ultimo && "pb-0")}>
+                <div
+                  className={cn("text-sm leading-tight", done ? "font-semibold" : "text-muted-foreground")}
+                  style={done ? { color: s.bg } : undefined}
+                >
+                  {etapa}
+                </div>
+                <div className="text-[11px] leading-tight text-muted-foreground tabular-nums">
+                  {dataDoStatus(etapa, proposta) ?? ""}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="hidden items-start sm:flex">
+
         {ETAPAS_ANDAMENTO.map((etapa, i) => {
           const done = atual >= i && atual !== -1;
           const s = propostaStatusStyle(etapa);
