@@ -182,74 +182,90 @@ function HistoricoCarregadoresPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-[1700px] mx-auto space-y-5">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
+      <div className="max-w-[1700px] mx-auto space-y-4 sm:space-y-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:flex sm:flex-wrap sm:justify-between">
+          <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">Carregadores</div>
-            <h1 className="text-3xl font-bold mt-1">Propostas</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mt-1">Propostas</h1>
           </div>
           <PermissionGate feature="carregadores.propostas" action="editar" mode="disable">
-            <Button asChild className="gap-2">
+            <Button asChild className="gap-2 shrink-0">
               <Link to="/carregadores/propostas/nova">
-                <Plus className="h-4 w-4" /> Nova proposta
+                <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nova proposta</span>
+                <span className="sm:hidden">Nova</span>
               </Link>
             </Button>
           </PermissionGate>
         </div>
 
 
-
-
-        <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[220px]">
+        <div className="glass rounded-2xl p-3 sm:p-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+          <div className="relative col-span-2 sm:flex-1 sm:min-w-[220px]">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Buscar por cliente, nome da proposta, nº ou nº SAP"
+              placeholder="Buscar por cliente, nome, nº ou nº SAP"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os status</SelectItem>
               {STATUS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={uf} onValueChange={setUf}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[140px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todas as UFs</SelectItem>
               {ufs.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={sap} onValueChange={setSap}>
-            <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Nº SAP: todos</SelectItem>
               <SelectItem value="com">Com Nº SAP</SelectItem>
               <SelectItem value="sem">Sem Nº SAP (abertas)</SelectItem>
             </SelectContent>
           </Select>
-          <VendedorNamesFilter
-            value={vendedor}
-            onChange={setVendedor}
-            options={vend.names}
-            allLabel="Todos os vendedores"
-          />
+          <div className="col-span-2 sm:col-auto [&_button]:w-full sm:[&_button]:w-auto">
+            <VendedorNamesFilter
+              value={vendedor}
+              onChange={setVendedor}
+              options={vend.names}
+              allLabel="Todos os vendedores"
+            />
+          </div>
 
         </div>
 
         {/* Legenda universal de status — clique para filtrar */}
-        <StatusLegend
-          active={status === "todos" ? null : [status]}
-          onToggle={(s) => setStatus(status === s ? "todos" : s)}
-        />
+        <div className="-mx-1 overflow-x-auto px-1 sm:mx-0 sm:px-0">
+          <StatusLegend
+            className="min-w-max sm:min-w-0"
+            active={status === "todos" ? null : [status]}
+            onToggle={(s) => setStatus(status === s ? "todos" : s)}
+          />
+        </div>
 
         <div className="glass rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="md:hidden">
+            <PropostasMobileCards
+              rows={visiveis as any}
+              rotaNova="/carregadores/propostas/nova"
+              carregando={q.isLoading}
+              podeExcluir={podeExcluir}
+              onDetalhe={setDetalheId}
+              onIntegracoes={setIntegracoesId}
+              onExcluir={setExcluirId}
+            />
+          </div>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm min-w-[1000px]">
+
               <thead>
                 <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-4 py-3">Nº</th>
