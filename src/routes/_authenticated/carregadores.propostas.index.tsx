@@ -38,6 +38,7 @@ import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PermissionGate, useCanDelete } from "@/components/permission-gate";
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
+import { PropostasMobileCards } from "@/components/propostas-mobile-cards";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
   validateSearch: (s: Record<string, unknown>): { ver?: string } =>
