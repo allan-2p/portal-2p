@@ -166,46 +166,48 @@ function PropostasSolarPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-[1700px] mx-auto space-y-5">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
+      <div className="max-w-[1700px] mx-auto space-y-4 sm:space-y-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:flex sm:flex-wrap sm:justify-between">
+          <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">2P Solar</div>
-            <h1 className="text-3xl font-bold mt-1">Propostas</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mt-1">Propostas</h1>
           </div>
           <PermissionGate feature="propostas" action="editar" mode="disable">
-            <Button asChild className="gap-2">
+            <Button asChild className="gap-2 shrink-0">
               <Link to="/solar/propostas/nova">
-                <Plus className="h-4 w-4" /> Nova proposta
+                <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nova proposta</span>
+                <span className="sm:hidden">Nova</span>
               </Link>
             </Button>
           </PermissionGate>
         </div>
 
-        <div className="glass rounded-2xl p-4 flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[220px]">
+        <div className="glass rounded-2xl p-3 sm:p-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+          <div className="relative col-span-2 sm:flex-1 sm:min-w-[220px]">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Buscar por cliente, nome da proposta, nº ou nº SAP"
+              placeholder="Buscar por cliente, nome, nº ou nº SAP"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os status</SelectItem>
               {STATUS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={uf} onValueChange={setUf}>
-            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[140px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todas as UFs</SelectItem>
               {ufs.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
+
 
         <StatusLegend
           active={status === "todos" ? null : [status]}
