@@ -38,7 +38,6 @@ import {
 import { Trash2, Power } from "lucide-react";
 import { useSolarCupons, useSolarInvalidate } from "@/hooks/use-solar-catalogo";
 import { logModeration } from "@/lib/moderation-audit";
-import { ModerationAuditLog } from "@/components/moderation-audit-log";
 import { CupomHistoricoDialog } from "@/components/solar/cupom-historico-dialog";
 
 export const Route = createFileRoute("/_authenticated/solar/cupons")({
@@ -831,12 +830,6 @@ function CuponsPage() {
           codigo={historico?.codigo ?? null}
           open={!!historico}
           onOpenChange={(v) => !v && setHistorico(null)}
-        />
-
-        <ModerationAuditLog
-          area="solar_cupons"
-          title="Histórico de cupons"
-          description="Quem criou, alterou e excluiu cada cupom, com data e detalhes."
         />
       </div>
     </AppLayout>
