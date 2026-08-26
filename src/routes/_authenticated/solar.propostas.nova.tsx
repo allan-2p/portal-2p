@@ -327,6 +327,15 @@ function NovaPropostaSolarPage() {
   const combQ = useSolarTrilhoSuportes();
   const cfgQ = useSolarCalcConfig();
   const cuponsQ = useSolarCupons();
+  // Cupom recém-criado ainda não está na lista em cache: busca ao vivo pelo código.
+  const cupomNaLista = (cuponsQ.data ?? []).some(
+    (c) => c.codigo.trim().toUpperCase() === cupomCodigo.trim().toUpperCase(),
+  );
+  const cupomLookupQ = useSolarCupomPorCodigo(
+    cupomCodigo,
+    !cuponsQ.isLoading && !cupomNaLista && cupomCodigo.trim().length >= 3,
+  );
+
   const ncmsQ = useCarregadoresNcms();
   const fiscalCfgQ = useCarregadoresConfig();
   const precos = useServerFn(precosSolarFn);
