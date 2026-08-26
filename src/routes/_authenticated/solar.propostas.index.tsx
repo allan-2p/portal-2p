@@ -37,6 +37,7 @@ import { fmtBRL } from "@/lib/carregadores";
 import { PermissionGate, useCanDelete } from "@/components/permission-gate";
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
+import { PropostasMobileCards } from "@/components/propostas-mobile-cards";
 
 export const Route = createFileRoute("/_authenticated/solar/propostas/")({
   validateSearch: (s: Record<string, unknown>): { ver?: string } =>
