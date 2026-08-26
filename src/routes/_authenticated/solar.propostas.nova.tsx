@@ -81,6 +81,8 @@ import { buildSolarPropostaPdfHtml, solarPropostaPdfFileName } from "@/lib/solar
 import {
   useSolarCalcConfig,
   useSolarCupons,
+  useSolarCupomPorCodigo,
+
   type SolarCupom,
   useSolarGeradores,
   useSolarMicroinversores,
@@ -325,6 +327,15 @@ function NovaPropostaSolarPage() {
   const combQ = useSolarTrilhoSuportes();
   const cfgQ = useSolarCalcConfig();
   const cuponsQ = useSolarCupons();
+  // Cupom recém-criado ainda não está na lista em cache: busca ao vivo pelo código.
+  const cupomNaLista = (cuponsQ.data ?? []).some(
+    (c) => c.codigo.trim().toUpperCase() === cupomCodigo.trim().toUpperCase(),
+  );
+  const cupomLookupQ = useSolarCupomPorCodigo(
+    cupomCodigo,
+    !cuponsQ.isLoading && !cupomNaLista && cupomCodigo.trim().length >= 3,
+  );
+
   const ncmsQ = useCarregadoresNcms();
   const fiscalCfgQ = useCarregadoresConfig();
   const precos = useServerFn(precosSolarFn);
@@ -1075,8 +1086,19 @@ function NovaPropostaSolarPage() {
       return { status: "erro", cupom: null, mensagem: "Código inválido: use de 3 a 20 caracteres (letras, números, hífen ou underscore)." };
 
 
-    const achado = (cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo) ?? null;
-    if (!achado) return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" não existe.` };
+    const achado =
+      ((cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo) ??
+        (cupomLookupQ.data && cupomLookupQ.data.codigo.trim().toUpperCase() === alvo
+          ? cupomLookupQ.data
+          : null)) ?? null;
+    if (!achado) {
+      if (cupomLookupQ.isLoading || cupomLookupQ.isFetching)
+        return { status: "carregando", cupom: null, mensagem: "Validando cupom..." };
+      if (cupomLookupQ.isError)
+        return { status: "erro", cupom: null, mensagem: "Não foi possível validar o cupom agora. Tente novamente." };
+      return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" não existe.` };
+    }
+
     if (!achado.ativo) return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" está inativo.` };
 
     if (achado.validade_inicio) {
@@ -1128,7 +1150,7 @@ function NovaPropostaSolarPage() {
       cupom: achado,
       mensagem: `Cupom ${achado.codigo} aplicado${detalhes.length ? `: ${detalhes.join(" + ")}` : ""}.`,
     };
-  }, [cuponsQ.data, cuponsQ.isLoading, cuponsQ.isError, cupomCodigo, cliente, clienteDoc]);
+  }, [cuponsQ.data, cuponsQ.isLoading, cuponsQ.isError, cupomLookupQ.data, cupomLookupQ.isLoading, cupomLookupQ.isFetching, cupomLookupQ.isError, cupomCodigo, cliente, clienteDoc]);
 
   const cupom = cupomCheck.cupom;
   const desconto = useMemo(() => {
