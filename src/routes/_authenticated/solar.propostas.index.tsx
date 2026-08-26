@@ -209,14 +209,29 @@ function PropostasSolarPage() {
         </div>
 
 
-        <StatusLegend
-          active={status === "todos" ? null : [status]}
-          onToggle={(s) => setStatus(status === s ? "todos" : s)}
-        />
+        <div className="-mx-1 overflow-x-auto px-1 sm:mx-0 sm:px-0">
+          <StatusLegend
+            className="min-w-max sm:min-w-0"
+            active={status === "todos" ? null : [status]}
+            onToggle={(s) => setStatus(status === s ? "todos" : s)}
+          />
+        </div>
 
         <div className="glass rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="md:hidden">
+            <PropostasMobileCards
+              rows={visiveis as any}
+              rotaNova="/solar/propostas/nova"
+              carregando={q.isLoading}
+              podeExcluir={podeExcluir}
+              onDetalhe={setDetalheId}
+              onIntegracoes={setIntegracoesId}
+              onExcluir={setExcluirId}
+            />
+          </div>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm min-w-[1000px]">
+
               <thead>
                 <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-4 py-3">Nº</th>
