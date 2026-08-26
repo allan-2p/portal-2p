@@ -832,12 +832,6 @@ function CuponsPage() {
           open={!!historico}
           onOpenChange={(v) => !v && setHistorico(null)}
         />
-
-        <ModerationAuditLog
-          area="solar_cupons"
-          title="Histórico de cupons"
-          description="Quem criou, alterou e excluiu cada cupom, com data e detalhes."
-        />
       </div>
     </AppLayout>
   );
