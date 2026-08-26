@@ -249,10 +249,37 @@ export function PropostaDetalhe({ id }: { id?: string }) {
       </div>
 
       <div className="glass rounded-2xl overflow-hidden">
-        <div className="px-5 pt-5 pb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="px-4 pt-4 pb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground sm:px-5 sm:pt-5">
           Produtos da proposta
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile: cada item vira um cartão (sem rolagem horizontal) */}
+        <ul className="divide-y divide-border/60 border-t border-border md:hidden">
+          {itens.map((i, idx) => (
+            <li key={idx} className="flex gap-3 px-4 py-3">
+              <ProdutoFoto url={i.codigo ? fotos[i.codigo] : undefined} alt={i.nome} />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium leading-tight">{i.nome || "—"}</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">{i.codigo || "—"}</div>
+                <div className="mt-1 flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
+                  <span>
+                    {i.qtd ?? 0} × {fmtBRL(i.valor ?? 0)}
+                  </span>
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    {fmtBRL((i.valor ?? 0) * (i.qtd ?? 0))}
+                  </span>
+                </div>
+              </div>
+            </li>
+          ))}
+          {itens.length === 0 && (
+            <li className="px-4 py-8 text-center text-sm text-muted-foreground">
+              Nenhum item nesta proposta.
+            </li>
+          )}
+        </ul>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-xs text-muted-foreground uppercase tracking-wider border-y border-border">
@@ -289,11 +316,12 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             </tbody>
           </table>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-8 border-t border-border px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border px-4 py-4 sm:justify-end sm:gap-8 sm:px-5">
           <Total label="Subtotal" value={fmtBRL(subtotal)} />
           <Total label="Frete" value={fmtBRL(frete)} />
           <Total label="Total" value={fmtBRL(totais['valorTotal'] ?? subtotal + frete)} destaque />
         </div>
+
       </div>
 
       <div className="glass rounded-2xl p-5 space-y-3">
