@@ -92,7 +92,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="glass rounded-2xl p-5 space-y-4">
+      <div className="glass rounded-2xl p-4 sm:p-5 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">
@@ -108,7 +108,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
                 </span>
               )}
             </div>
-            <h2 className="text-2xl font-bold mt-1 truncate">{p['nome'] || p['cliente_nome']}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mt-1 truncate">{p['nome'] || p['cliente_nome']}</h2>
             <div className="text-sm text-muted-foreground mt-1">{p['cliente_nome']}</div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -159,7 +159,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
       {podeVerInterno && ehPlataformaAntiga(p) ? <LegadoCard proposta={p} /> : null}
 
-      <div className="glass rounded-2xl p-5 space-y-4">
+      <div className="glass rounded-2xl p-4 sm:p-5 space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
 
           Andamento do pedido
@@ -209,7 +209,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="glass rounded-2xl p-5 space-y-3">
+        <div className="glass rounded-2xl p-4 sm:p-5 space-y-3">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Faturamento</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <Campo
@@ -231,7 +231,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           </div>
         </div>
 
-        <div className="glass rounded-2xl p-5 space-y-3">
+        <div className="glass rounded-2xl p-4 sm:p-5 space-y-3">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Contato do cliente
           </h3>
@@ -324,7 +324,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
       </div>
 
-      <div className="glass rounded-2xl p-5 space-y-3">
+      <div className="glass rounded-2xl p-4 sm:p-5 space-y-3">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Indicadores internos
         </h3>
@@ -363,7 +363,7 @@ export function PropostaDetalheDialog({
   const somenteLeitura = bloqueiaReenvioSap(dq.data as Record<string, any> | null | undefined);
   return (
     <Dialog open={!!id} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-6xl h-[92dvh] max-h-[92dvh] flex flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="w-screen max-w-none h-[100dvh] max-h-[100dvh] rounded-none sm:w-[calc(100vw-1.5rem)] sm:max-w-6xl sm:h-[92dvh] sm:max-h-[92dvh] sm:rounded-lg flex flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="sticky top-0 z-10 shrink-0 border-b bg-background/95 px-4 py-3 text-left backdrop-blur sm:px-6">
           <DialogTitle className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
             <span className="flex min-w-0 items-center gap-2">
@@ -498,7 +498,7 @@ function PropostaPdfAcoes({ proposta }: { proposta: Record<string, any> }) {
       </div>
 
       <Dialog open={!!previa} onOpenChange={(o) => !o && setPrevia(null)}>
-        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-5xl h-[92dvh] max-h-[92dvh] flex flex-col gap-0 p-0">
+        <DialogContent className="w-screen max-w-none h-[100dvh] max-h-[100dvh] rounded-none sm:w-[calc(100vw-1.5rem)] sm:max-w-5xl sm:h-[92dvh] sm:max-h-[92dvh] sm:rounded-lg flex flex-col gap-0 p-0">
           <DialogHeader className="shrink-0 border-b px-4 py-3 text-left sm:px-6">
             <DialogTitle className="flex flex-wrap items-center justify-between gap-2">
               <span>Prévia da proposta</span>
@@ -526,7 +526,7 @@ function LegadoCard({ proposta }: { proposta: Record<string, any> }) {
   if (!legado && !pagamentos.length && !anterior && !projeto) return null;
 
   return (
-    <div className="glass rounded-2xl p-5 space-y-4">
+    <div className="glass rounded-2xl p-4 sm:p-5 space-y-4">
       <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         Dados da plataforma antiga
       </h3>
