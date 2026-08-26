@@ -219,6 +219,40 @@ export function useSolarCupons() {
   });
 }
 
+/**
+ * Busca ao vivo de um cupom pelo código.
+ * Usada quando o código digitado não está na lista em cache (ex.: cupom recém-criado
+ * em outra aba enquanto a proposta está aberta): o cupom vale a partir da criação.
+ */
+export function useSolarCupomPorCodigo(codigo: string, habilitado: boolean) {
+  const alvo = codigo.trim();
+  return useQuery({
+    queryKey: ["solar-cupom-lookup", alvo.toUpperCase()],
+    enabled: habilitado && alvo.length >= 3,
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+    queryFn: async (): Promise<SolarCupom | null> => {
+      const { data, error } = await supabase
+        .from("solar_cupons")
+        .select("*")
+        .ilike("codigo", alvo)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      const c = data as any;
+      return {
+        ...c,
+        valor: Number(c.valor ?? 0),
+        percentual: Number(c.percentual ?? 0),
+        tipos: (c.tipos ?? []) as string[],
+      } as SolarCupom;
+    },
+  });
+}
+
+
 export function useSolarInvalidate() {
   const qc = useQueryClient();
   return () => {
