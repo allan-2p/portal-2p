@@ -81,6 +81,8 @@ import { buildSolarPropostaPdfHtml, solarPropostaPdfFileName } from "@/lib/solar
 import {
   useSolarCalcConfig,
   useSolarCupons,
+  useSolarCupomPorCodigo,
+
   type SolarCupom,
   useSolarGeradores,
   useSolarMicroinversores,
