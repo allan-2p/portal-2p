@@ -1086,8 +1086,19 @@ function NovaPropostaSolarPage() {
       return { status: "erro", cupom: null, mensagem: "Código inválido: use de 3 a 20 caracteres (letras, números, hífen ou underscore)." };
 
 
-    const achado = (cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo) ?? null;
-    if (!achado) return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" não existe.` };
+    const achado =
+      ((cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo) ??
+        (cupomLookupQ.data && cupomLookupQ.data.codigo.trim().toUpperCase() === alvo
+          ? cupomLookupQ.data
+          : null)) ?? null;
+    if (!achado) {
+      if (cupomLookupQ.isLoading || cupomLookupQ.isFetching)
+        return { status: "carregando", cupom: null, mensagem: "Validando cupom..." };
+      if (cupomLookupQ.isError)
+        return { status: "erro", cupom: null, mensagem: "Não foi possível validar o cupom agora. Tente novamente." };
+      return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" não existe.` };
+    }
+
     if (!achado.ativo) return { status: "erro", cupom: null, mensagem: `Cupom "${alvo}" está inativo.` };
 
     if (achado.validade_inicio) {
