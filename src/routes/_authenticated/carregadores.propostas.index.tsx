@@ -348,7 +348,7 @@ function HistoricoCarregadoresPage() {
             </table>
           </div>
           {filtered.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
+            <div className="flex flex-col gap-3 border-t border-border px-4 py-3 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-muted-foreground">
                 Mostrando {(paginaAtual - 1) * porPagina + 1}–
                 {Math.min(paginaAtual * porPagina, total)} de {total}
@@ -357,7 +357,8 @@ function HistoricoCarregadoresPage() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-2 sm:justify-end">
+
                 <Select value={String(porPagina)} onValueChange={(v) => setPorPagina(Number(v))}>
                   <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
