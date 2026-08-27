@@ -30,6 +30,17 @@ import { groupFeatures, shortFeatureLabel, featureScopeLabel } from "@/lib/featu
 import { PermissionMatrix } from "@/components/admin/permission-matrix";
 import { ObjectPermsEditor } from "@/components/admin/object-perms-editor";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/admin/perfis")({
   component: () => (
