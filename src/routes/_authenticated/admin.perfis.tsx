@@ -250,17 +250,32 @@ function PerfisPage() {
     }
   }
 
-  async function toggleUser(userId: string, on: boolean) {
+  /** Aplica a troca de perfil (um perfil ativo por usuário). */
+  async function aplicarPerfil(userId: string, on: boolean) {
     if (!selected) return;
-    // Cada usuário tem no máximo um perfil: marcar substitui o perfil atual.
-    const ids = on ? [selected.id] : [];
     try {
-      await setUsersFn({ data: { user_id: userId, profile_ids: ids } });
+      await setUsersFn({ data: { user_id: userId, profile_ids: on ? [selected.id] : [] } });
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     }
   }
+
+  function toggleUser(userId: string, on: boolean) {
+    if (!selected) return;
+    const atual = profiles.find((p) => p.id !== selected.id && p.user_ids.includes(userId));
+    if (on && atual) {
+      const u = users.find((x) => x.id === userId);
+      setTroca({
+        userId,
+        userNome: u?.full_name ?? u?.email ?? "este usuário",
+        deNome: atual.name,
+      });
+      return;
+    }
+    void aplicarPerfil(userId, on);
+  }
+
 
 
   return (
