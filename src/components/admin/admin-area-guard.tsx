@@ -20,13 +20,16 @@ export function AdminAreaGuard({
   children: ReactNode;
 }) {
   const fetchAreas = useServerFn(getAdminAreas);
+  // Sem sessão hidratada o RPC sai sem Authorization e o servidor lança "Unauthorized".
+  const { user, loading: authLoading } = useAuth();
   const { data, isLoading } = useQuery({
     queryKey: ["admin-areas"],
     queryFn: () => fetchAreas(),
     staleTime: 60_000,
+    enabled: !!user,
   });
 
-  if (isLoading) {
+  if (authLoading || (!!user && isLoading)) {
     return (
       <AppLayout>
         <div className="flex min-h-[50vh] items-center justify-center">
