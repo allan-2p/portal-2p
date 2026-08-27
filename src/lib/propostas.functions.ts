@@ -1041,7 +1041,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     } else {
       try {
         const { criarOrdemVendaSap } = await import("@/lib/sap-ov.server");
-        const r = await criarOrdemVendaSap(row.id);
+        const r = await marcar("sap_ov", () => criarOrdemVendaSap(row.id));
         sapOv = {
           enviado: r.enviado,
           ok: r.ok,
