@@ -34,6 +34,10 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+### Alterado
+- **Salvar e concluir proposta mais rápidos**: o envio ao Salesforce saiu do caminho crítico — a proposta entra numa fila e é espelhada em segundo plano por um novo gatilho (`/api/public/hooks/salesforce-fila`), em vez de o vendedor esperar a integração responder. No Solar, gravação e histórico de cupom passaram a rodar em paralelo. Falhas continuam visíveis no painel de integrações e no status Salesforce do pedido.
+- **Diagnóstico de lentidão na finalização**: cada conclusão agora grava o tempo de cada etapa (SAP, cobrança, fila do Salesforce, aviso de kit e total) na execução registrada em Monitoramento.
+
 ### Adicionado
 - **Carteira por vendedor**: sem "View All Records", o consultor passa a ver seus clientes (por criador, consultor responsável ou código SAP do consultor) e todas as propostas/pedidos ligados a esses clientes — inclusive registros criados por outra pessoa para um cliente da carteira dele. Sem limite de tamanho de carteira: carteiras grandes são consultadas em lotes e a lista final é unificada e ordenada antes de paginar. Quem tem "View All Records" continua vendo tudo, sem filtro.
 - **Baixa manual de entrega**: pedidos "Coletado" com frete fora da Fretefy podem ser marcados como entregues direto no detalhe do pedido (Solar e Carregadores). A ação exige "Modify All Records" em Propostas, passa pela máquina de estados, carimba a data de entrega, registra o autor no Log de Integrações, sincroniza o Salesforce e avisa o dono do pedido.

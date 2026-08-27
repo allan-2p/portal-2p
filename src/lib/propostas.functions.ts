@@ -198,16 +198,15 @@ function validar(input: any): SalvarPropostaInput {
  * política (MB mínima e CMV máximo) são revalidadas aqui.
  */
 /**
- * Espelha a proposta no Salesforce sempre que ela é salva/atualizada.
- * Nunca lança: uma falha de integração não pode perder a gravação.
+ * Marca a proposta para espelhamento no Salesforce.
+ *
+ * O envio NÃO acontece mais no caminho crítico do vendedor: a proposta entra
+ * na fila (`sf_status = 'pendente'`) e o cron `salesforce-fila` processa em
+ * segundo plano. Nunca lança.
  */
 async function sincronizarSalesforceAoSalvar(propostaId: string) {
-  try {
-    const { sincronizarPedidoSalesforceSeguro } = await import("@/lib/salesforce-pedidos.server");
-    await sincronizarPedidoSalesforceSeguro(propostaId);
-  } catch {
-    /* registrado no integration_logs pela própria integração */
-  }
+  const { enfileirarSalesforce } = await import("@/lib/salesforce-fila.server");
+  await enfileirarSalesforce(propostaId);
 }
 
 /** Backfill: sincroniza no Salesforce as propostas já existentes (admin). */
@@ -481,10 +480,14 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     const perfilAtual = perfilRes.data;
     const nomeAtual = (perfilAtual as any)?.full_name ?? (perfilAtual as any)?.email ?? null;
 
+    // O espelhamento no Salesforce vai junto do próprio insert/update (fila),
+    // sem nenhuma ida extra ao banco nem chamada externa no caminho crítico.
+    const { PATCH_SALESFORCE_PENDENTE } = await import("@/lib/salesforce-fila.server");
+
     if (data.propostaId) {
       const atual = atualProposta;
 
-      const patch: Record<string, unknown> = { ...payload };
+      const patch: Record<string, unknown> = { ...payload, ...PATCH_SALESFORCE_PENDENTE };
       // Preenche o consultor apenas quando a proposta ainda não tem (legado).
       if (!(atual as any)?.consultor_id && !(atual as any)?.consultor_nome) {
         const c = await consultorDoCliente();
@@ -494,7 +497,6 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       if (!(atual as any)?.criado_por_nome) patch["criado_por_nome"] = nomeAtual;
 
       await db.atualizarProposta(data.propostaId, patch);
-      await sincronizarSalesforceAoSalvar(data.propostaId);
       return {
         id: data.propostaId,
         numero: numeroProposta,
@@ -511,6 +513,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     try {
       inserida = (await db.inserirProposta({
         ...payload,
+        ...PATCH_SALESFORCE_PENDENTE,
         organizacao: "carregadores",
         status: "Salvo",
         created_by: userId,
@@ -533,7 +536,6 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       }
       throw err;
     }
-    await sincronizarSalesforceAoSalvar(inserida!.id);
     return {
       id: inserida!.id,
       numero: numeroProposta,
@@ -543,6 +545,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       consultor: consultor.nome,
     };
   });
+
 
 /**
  * Nº SAP (VBELN) de uma proposta — apenas LEITURA.
@@ -895,9 +898,23 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       cobranca: CobrancaOut | null;
       sapOv: SapOvOut | null;
       salesforce: SalesforceOut | null;
+      /** Tempo de cada etapa (ms) — fica em job_runs para diagnosticar lentidão. */
+      tempos_ms?: Record<string, number>;
     };
     const executar = async (): Promise<ConclusaoOut> => {
     const { supabase, userId } = context as any;
+    // Cronometragem por etapa: sem isso não dá para saber quem pesa na
+    // finalização (SAP, Itaú, banco). O resultado vai para job_runs.
+    const t0 = Date.now();
+    const tempos: Record<string, number> = {};
+    const marcar = async <T,>(nome: string, fn: () => Promise<T>): Promise<T> => {
+      const i = Date.now();
+      try {
+        return await fn();
+      } finally {
+        tempos[nome] = Date.now() - i;
+      }
+    };
     const db = await repo();
 
     const { data: perfil } = await supabase
@@ -1024,7 +1041,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     } else {
       try {
         const { criarOrdemVendaSap } = await import("@/lib/sap-ov.server");
-        const r = await criarOrdemVendaSap(row.id);
+        const r = await marcar("sap_ov", () => criarOrdemVendaSap(row.id));
         sapOv = {
           enviado: r.enviado,
           ok: r.ok,
@@ -1074,7 +1091,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     } else {
       try {
         const { gerarCobrancaCheckout } = await import("@/lib/pagamentos-cobranca.server");
-        const r = await gerarCobrancaCheckout(row.id);
+        const r = await marcar("cobranca", () => gerarCobrancaCheckout(row.id));
         cobranca = {
           gerada: r.gerada,
           meio: r.meio ?? null,
@@ -1108,38 +1125,54 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     }
 
 
-    // Pedido no Salesforce (Opportunity). Falha aqui não desfaz o pedido:
-    // fica registrada e pode ser reenviada pelo job "salesforce.pedido".
+    // Pedido no Salesforce: sai do caminho crítico. A proposta entra na fila
+    // (`sf_status = 'pendente'`) e o cron `salesforce-fila` envia em segundo
+    // plano; falhas continuam visíveis no painel de integrações.
     let salesforce: SalesforceOut | null = null;
-    try {
-      const { sincronizarPedidoSalesforce } = await import("@/lib/salesforce-pedidos.server");
-      const r = await sincronizarPedidoSalesforce(row.id);
-      salesforce = {
-        enviado: r.enviado,
-        ok: r.ok,
-        opportunityId: r.opportunityId,
-        mensagem: r.mensagem,
-        motivo: r.motivo ?? null,
-      };
-      if (!r.ok) {
-        await db.registrarConclusaoLog({
-          ...base,
-          status: statusDestino,
-          resultado: "salesforce_falhou",
-          detalhe: String(r.mensagem ?? "Falha ao enviar o pedido ao Salesforce.").slice(0, 500),
-        });
-      }
-    } catch (e) {
-      salesforce = { enviado: false, ok: false, opportunityId: null, mensagem: (e as Error).message, motivo: null };
-    }
+    const emParalelo: Promise<unknown>[] = [
+      marcar("salesforce_fila", async () => {
+        const { enfileirarSalesforce } = await import("@/lib/salesforce-fila.server");
+        await enfileirarSalesforce(row.id);
+        salesforce = {
+          enviado: false,
+          ok: true,
+          opportunityId: (row["sf_opp_id"] as string) ?? null,
+          mensagem: null,
+          motivo: "Envio ao Salesforce em segundo plano (fila).",
+        };
+      }).catch((e: unknown) => {
+        salesforce = {
+          enviado: false,
+          ok: false,
+          opportunityId: null,
+          mensagem: (e as Error).message,
+          motivo: null,
+        };
+      }),
+    ];
 
     // Kit fotovoltaico: avisa produção/logística (não bloqueia o pedido).
     if (row["kit_fotovoltaico"]) {
-      const { avisarKitFotovoltaico } = await import("@/lib/kit-aviso.server");
-      await avisarKitFotovoltaico({ ...row, sap_ov_numero: sapOv?.vbeln ?? row["sap_ov_numero"] });
+      emParalelo.push(
+        marcar("kit_aviso", async () => {
+          const { avisarKitFotovoltaico } = await import("@/lib/kit-aviso.server");
+          await avisarKitFotovoltaico({ ...row, sap_ov_numero: sapOv?.vbeln ?? row["sap_ov_numero"] });
+        }).catch(() => undefined),
+      );
     }
+    await Promise.allSettled(emParalelo);
 
-    return { id: row.id, status: statusDestino, already_concluded: false, cobranca, sapOv, salesforce };
+    tempos["total"] = Date.now() - t0;
+    return {
+      id: row.id,
+      status: statusDestino,
+      already_concluded: false,
+      cobranca,
+      sapOv,
+      salesforce,
+      tempos_ms: { ...tempos },
+    };
+
     };
 
     // Monitoramento: cada finalização vira uma execução auditável em job_runs.

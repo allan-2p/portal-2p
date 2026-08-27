@@ -159,15 +159,14 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   };
 }
 
-/** Espelha a proposta no Salesforce ao salvar. Nunca lança. */
-async function espelharNoSalesforce(propostaId: string) {
-  try {
-    const { sincronizarPedidoSalesforceSeguro } = await import("./salesforce-pedidos.server");
-    await sincronizarPedidoSalesforceSeguro(propostaId);
-  } catch {
-    /* falha fica registrada no log de integrações */
-  }
-}
+/**
+ * Espelhamento no Salesforce: entra na fila (`sf_status = 'pendente'`) e é
+ * processado pelo cron em segundo plano — salvar não espera a integração.
+ */
+const SALESFORCE_PENDENTE = {
+  sf_status: "pendente",
+  sf_mensagem: "Na fila de envio ao Salesforce.",
+} as const;
 
 export const salvarPropostaSolar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -451,9 +450,11 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
 
 
     if (data.propostaId) {
-      await repo.atualizarProposta(data.propostaId, payload);
-      await registrarUsoCupom(data.propostaId);
-      await espelharNoSalesforce(data.propostaId);
+      // Cupom em paralelo: é auditoria e não precisa segurar a resposta.
+      await Promise.all([
+        repo.atualizarProposta(data.propostaId, { ...payload, ...SALESFORCE_PENDENTE }),
+        registrarUsoCupom(data.propostaId),
+      ]);
       return { id: data.propostaId, numero: numeroProposta, totais };
     }
 
@@ -468,6 +469,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     try {
       inserida = (await repo.inserirProposta({
         ...payload,
+        ...SALESFORCE_PENDENTE,
         organizacao: "solar",
         status: "Salvo",
         created_by: userId,
@@ -486,7 +488,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     }
 
     await registrarUsoCupom(inserida.id);
-    await espelharNoSalesforce(inserida.id);
+
 
 
     return { id: inserida.id, numero: numeroProposta, totais };
