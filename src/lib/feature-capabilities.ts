@@ -72,6 +72,10 @@ const MAP: Partial<Record<FeatureKey, CapabilityId[]>> = {
   "marketing.prevendas": V,
   // Inteligência
   atlas: V,
+  // Financeiro
+  "financeiro.home": V,
+  "financeiro.condicoes": VE,
+  "financeiro.credito": VEC,
   // Configurações (Grupo 2P)
   "admin.area.configuracoes": VECM,
   "admin.usuarios": VEM,

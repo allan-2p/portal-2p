@@ -53,6 +53,12 @@ const CARREGADORES_GESTOR: FeatureKey[] = [
   "carregadores.regras",
 ];
 
+const FINANCEIRO_GESTOR: FeatureKey[] = [
+  "financeiro.home",
+  "financeiro.condicoes",
+  "financeiro.credito",
+];
+
 const MKT_VENDEDOR: FeatureKey[] = ["marketing.home", "marketing.social", "marketing.prevendas"];
 
 const MKT_GESTOR: FeatureKey[] = [
@@ -89,6 +95,7 @@ export const PERMISSION_PROFILES: PermissionProfile[] = [
       solar: SOLAR_GESTOR,
       carregadores: CARREGADORES_GESTOR,
       marketing: MKT_GESTOR,
+      financeiro: FINANCEIRO_GESTOR,
     },
   },
   {
@@ -99,6 +106,7 @@ export const PERMISSION_PROFILES: PermissionProfile[] = [
       solar: allOf("solar"),
       carregadores: allOf("carregadores"),
       marketing: allOf("marketing"),
+      financeiro: allOf("financeiro"),
     },
   },
 ];
