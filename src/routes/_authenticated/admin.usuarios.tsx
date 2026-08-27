@@ -916,6 +916,9 @@ function EditUserModal({
   const [extraFeatures, setExtraFeatures] = useState<ExtraFeature[]>([]);
   const [permProfiles, setPermProfiles] = useState<{ id: string; name: string }[]>([]);
   const [profileId, setProfileId] = useState<string>("");
+  /** Perfil que o usuário já tinha ao abrir a tela (para confirmar a troca). */
+  const [perfilAtualId, setPerfilAtualId] = useState<string>("");
+
   const [profilesLoading, setProfilesLoading] = useState(true);
 
   useEffect(() => {
