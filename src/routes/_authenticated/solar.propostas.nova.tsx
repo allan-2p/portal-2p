@@ -710,7 +710,7 @@ function NovaPropostaSolarPage() {
    * componentes que sairiam sem código SAP cadastrado (trilho, suporte, config).
    */
   const pendenciasCodigos = useMemo(() => {
-    if (faltandoInputs.length || !modulo) return [];
+    if (catalogoCarregando || faltandoInputs.length || !modulo) return [];
     const fileiras = linhas.map((l) => ({
       trilho: (trilhosQ.data ?? []).find((t) => t.id === l.trilhoId),
       suporte: (suportesQ.data ?? []).find((s) => s.id === l.suporteId),
@@ -747,6 +747,7 @@ function NovaPropostaSolarPage() {
       return [];
     }
   }, [
+    catalogoCarregando,
     faltandoInputs,
     modulo,
     linhas,
@@ -762,7 +763,7 @@ function NovaPropostaSolarPage() {
     config,
   ]);
 
-  const bloqueiaCalculo = faltandoInputs.length > 0 || pendenciasCodigos.length > 0;
+  const bloqueiaCalculo = catalogoCarregando || faltandoInputs.length > 0 || pendenciasCodigos.length > 0;
 
 
   async function realizarProposta() {
@@ -2241,7 +2242,14 @@ function NovaPropostaSolarPage() {
 
                   </fieldset>
 
-                  {!calcTravado && faltandoInputs.length > 0 && (
+                  {catalogoCarregando && (
+                    <div className="flex items-center gap-2 rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Carregando catálogo da calculadora…
+                    </div>
+                  )}
+
+                  {!catalogoCarregando && !calcTravado && faltandoInputs.length > 0 && (
                     <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm space-y-1">
                       <div className="font-semibold text-amber-600 dark:text-amber-400">
                         Complete as etapas 1 e 2 para calcular
@@ -2254,7 +2262,7 @@ function NovaPropostaSolarPage() {
                     </div>
                   )}
 
-                  {!calcTravado && !faltandoInputs.length && pendenciasCodigos.length > 0 && (
+                  {!catalogoCarregando && !calcTravado && !faltandoInputs.length && pendenciasCodigos.length > 0 && (
                     <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm space-y-2">
                       <div className="font-semibold text-destructive">
                         De/para incompleto — cadastre os códigos de produto antes de calcular
