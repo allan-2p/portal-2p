@@ -1111,38 +1111,54 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     }
 
 
-    // Pedido no Salesforce (Opportunity). Falha aqui não desfaz o pedido:
-    // fica registrada e pode ser reenviada pelo job "salesforce.pedido".
+    // Pedido no Salesforce: sai do caminho crítico. A proposta entra na fila
+    // (`sf_status = 'pendente'`) e o cron `salesforce-fila` envia em segundo
+    // plano; falhas continuam visíveis no painel de integrações.
     let salesforce: SalesforceOut | null = null;
-    try {
-      const { sincronizarPedidoSalesforce } = await import("@/lib/salesforce-pedidos.server");
-      const r = await sincronizarPedidoSalesforce(row.id);
-      salesforce = {
-        enviado: r.enviado,
-        ok: r.ok,
-        opportunityId: r.opportunityId,
-        mensagem: r.mensagem,
-        motivo: r.motivo ?? null,
-      };
-      if (!r.ok) {
-        await db.registrarConclusaoLog({
-          ...base,
-          status: statusDestino,
-          resultado: "salesforce_falhou",
-          detalhe: String(r.mensagem ?? "Falha ao enviar o pedido ao Salesforce.").slice(0, 500),
-        });
-      }
-    } catch (e) {
-      salesforce = { enviado: false, ok: false, opportunityId: null, mensagem: (e as Error).message, motivo: null };
-    }
+    const emParalelo: Promise<unknown>[] = [
+      marcar("salesforce_fila", async () => {
+        const { enfileirarSalesforce } = await import("@/lib/salesforce-fila.server");
+        await enfileirarSalesforce(row.id);
+        salesforce = {
+          enviado: false,
+          ok: true,
+          opportunityId: (row["sf_opp_id"] as string) ?? null,
+          mensagem: null,
+          motivo: "Envio ao Salesforce em segundo plano (fila).",
+        };
+      }).catch((e: unknown) => {
+        salesforce = {
+          enviado: false,
+          ok: false,
+          opportunityId: null,
+          mensagem: (e as Error).message,
+          motivo: null,
+        };
+      }),
+    ];
 
     // Kit fotovoltaico: avisa produção/logística (não bloqueia o pedido).
     if (row["kit_fotovoltaico"]) {
-      const { avisarKitFotovoltaico } = await import("@/lib/kit-aviso.server");
-      await avisarKitFotovoltaico({ ...row, sap_ov_numero: sapOv?.vbeln ?? row["sap_ov_numero"] });
+      emParalelo.push(
+        marcar("kit_aviso", async () => {
+          const { avisarKitFotovoltaico } = await import("@/lib/kit-aviso.server");
+          await avisarKitFotovoltaico({ ...row, sap_ov_numero: sapOv?.vbeln ?? row["sap_ov_numero"] });
+        }).catch(() => undefined),
+      );
     }
+    await Promise.allSettled(emParalelo);
 
-    return { id: row.id, status: statusDestino, already_concluded: false, cobranca, sapOv, salesforce };
+    tempos["total"] = Date.now() - t0;
+    return {
+      id: row.id,
+      status: statusDestino,
+      already_concluded: false,
+      cobranca,
+      sapOv,
+      salesforce,
+      tempos_ms: { ...tempos },
+    };
+
     };
 
     // Monitoramento: cada finalização vira uma execução auditável em job_runs.
