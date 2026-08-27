@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/app-layout";
 import { AccessDenied } from "@/components/access-denied";
 import { getAdminAreas } from "@/lib/admin-guard.functions";
 import type { AdminSectionId } from "@/lib/admin-nav";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Guard das homes administrativas: libera quem tem o toggle da área ou
