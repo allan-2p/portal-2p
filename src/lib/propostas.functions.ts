@@ -198,16 +198,15 @@ function validar(input: any): SalvarPropostaInput {
  * política (MB mínima e CMV máximo) são revalidadas aqui.
  */
 /**
- * Espelha a proposta no Salesforce sempre que ela é salva/atualizada.
- * Nunca lança: uma falha de integração não pode perder a gravação.
+ * Marca a proposta para espelhamento no Salesforce.
+ *
+ * O envio NÃO acontece mais no caminho crítico do vendedor: a proposta entra
+ * na fila (`sf_status = 'pendente'`) e o cron `salesforce-fila` processa em
+ * segundo plano. Nunca lança.
  */
 async function sincronizarSalesforceAoSalvar(propostaId: string) {
-  try {
-    const { sincronizarPedidoSalesforceSeguro } = await import("@/lib/salesforce-pedidos.server");
-    await sincronizarPedidoSalesforceSeguro(propostaId);
-  } catch {
-    /* registrado no integration_logs pela própria integração */
-  }
+  const { enfileirarSalesforce } = await import("@/lib/salesforce-fila.server");
+  await enfileirarSalesforce(propostaId);
 }
 
 /** Backfill: sincroniza no Salesforce as propostas já existentes (admin). */
