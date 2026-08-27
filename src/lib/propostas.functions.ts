@@ -898,9 +898,23 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       cobranca: CobrancaOut | null;
       sapOv: SapOvOut | null;
       salesforce: SalesforceOut | null;
+      /** Tempo de cada etapa (ms) — fica em job_runs para diagnosticar lentidão. */
+      tempos_ms?: Record<string, number>;
     };
     const executar = async (): Promise<ConclusaoOut> => {
     const { supabase, userId } = context as any;
+    // Cronometragem por etapa: sem isso não dá para saber quem pesa na
+    // finalização (SAP, Itaú, banco). O resultado vai para job_runs.
+    const t0 = Date.now();
+    const tempos: Record<string, number> = {};
+    const marcar = async <T,>(nome: string, fn: () => Promise<T>): Promise<T> => {
+      const i = Date.now();
+      try {
+        return await fn();
+      } finally {
+        tempos[nome] = Date.now() - i;
+      }
+    };
     const db = await repo();
 
     const { data: perfil } = await supabase
