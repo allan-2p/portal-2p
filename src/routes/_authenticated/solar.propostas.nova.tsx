@@ -345,6 +345,20 @@ function NovaPropostaSolarPage() {
 
   const produtos = produtosQ.data ?? [];
   const config = cfgQ.data ?? SOLAR_CALC_CONFIG_FALLBACK;
+  /**
+   * Enquanto o catálogo (módulos, trilhos, suportes, config…) está carregando,
+   * qualquer validação de de/para é falso-positivo — não mostramos alertas.
+   */
+  const catalogoCarregando = [
+    produtosQ,
+    modulosQ,
+    geradoresQ,
+    microinversoresQ,
+    trilhosQ,
+    suportesQ,
+    combQ,
+    cfgQ,
+  ].some((q) => q.isLoading);
   const cliente = (clientesQ.selecionado ?? null) as ClienteCad | null;
   // Boleto a prazo depende de condição cadastrada no cliente + crédito aprovado.
   const prazo = usePrazoLiberado(String((clientesQ.selecionado as any)?.["doc"] ?? clienteDoc ?? ""));
