@@ -927,7 +927,10 @@ function EditUserModal({
       .then((res) => {
         if (!alive) return;
         setPermProfiles(res.profiles.map((p) => ({ id: p.id, name: p.name })));
-        setProfileId(res.profiles.find((p) => p.user_ids.includes(row.id))?.id ?? "");
+        const atual = res.profiles.find((p) => p.user_ids.includes(row.id))?.id ?? "";
+        setProfileId(atual);
+        setPerfilAtualId(atual);
+
       })
       .catch(() => {})
       .finally(() => alive && setProfilesLoading(false));
