@@ -159,15 +159,14 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   };
 }
 
-/** Espelha a proposta no Salesforce ao salvar. Nunca lança. */
-async function espelharNoSalesforce(propostaId: string) {
-  try {
-    const { sincronizarPedidoSalesforceSeguro } = await import("./salesforce-pedidos.server");
-    await sincronizarPedidoSalesforceSeguro(propostaId);
-  } catch {
-    /* falha fica registrada no log de integrações */
-  }
-}
+/**
+ * Espelhamento no Salesforce: entra na fila (`sf_status = 'pendente'`) e é
+ * processado pelo cron em segundo plano — salvar não espera a integração.
+ */
+const SALESFORCE_PENDENTE = {
+  sf_status: "pendente",
+  sf_mensagem: "Na fila de envio ao Salesforce.",
+} as const;
 
 export const salvarPropostaSolar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
