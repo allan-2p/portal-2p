@@ -149,9 +149,10 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
   {
     id: "financeiro",
     label: "Financeiro",
-    description: "Painel financeiro do Grupo 2P — condições de pagamento enviadas ao SAP.",
+    description:
+      "Painel financeiro do Grupo 2P — condições de pagamento enviadas ao SAP e análises de crédito.",
     area: "instancia",
-    keys: ["financeiro.home", "financeiro.condicoes"],
+    keys: ["financeiro.home", "financeiro.condicoes", "financeiro.credito"],
   },
   {
     id: "sistema",
