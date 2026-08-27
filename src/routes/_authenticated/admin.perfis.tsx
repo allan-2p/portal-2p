@@ -76,6 +76,10 @@ function PerfisPage() {
   const [keys, setKeys] = useState<Set<FeatureKey>>(new Set());
   const [saving, setSaving] = useState(false);
   const [userSearch, setUserSearch] = useState("");
+  const [troca, setTroca] = useState<{ userId: string; userNome: string; deNome: string } | null>(
+    null,
+  );
+
   const [profInstances, setProfInstances] = useState<Set<InstanceId>>(new Set());
   const [featSearch, setFeatSearch] = useState("");
   const [tab, setTab] = useState<"perfis" | "matriz">("perfis");
