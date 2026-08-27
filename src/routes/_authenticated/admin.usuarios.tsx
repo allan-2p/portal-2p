@@ -965,7 +965,17 @@ function EditUserModal({
             toast.error("Selecione o perfil de permissão.");
             return;
           }
+          // Um perfil ativo por usuário: trocar substitui o anterior.
+          if (perfilAtualId && perfilAtualId !== profileId) {
+            const de = permProfiles.find((p) => p.id === perfilAtualId)?.name ?? "atual";
+            const para = permProfiles.find((p) => p.id === profileId)?.name ?? "novo";
+            const ok = window.confirm(
+              `Este usuário já usa o perfil "${de}". Cada usuário pode ter apenas um perfil ativo — ele será substituído por "${para}" e as permissões do perfil anterior serão perdidas. Continuar?`,
+            );
+            if (!ok) return;
+          }
           setSubmitting(true);
+
           try {
             await setUserProfilesFn({ data: { user_id: row.id, profile_ids: [profileId] } });
             await setExtraFeaturesFn({
