@@ -83,7 +83,7 @@ const UpsertInput = z.object({
   screen: z.string().min(1).max(64),
   role: z.enum(["admin", "gerente", "vendedor", "diretor", "marketing"]).nullable(),
   cargo: z.string().max(64).nullable(),
-  instance_id: z.enum(["solar", "carregadores", "marketing"]).nullable(),
+  instance_id: z.enum(["solar", "carregadores", "marketing", "financeiro"]).nullable(),
   variant_key: z.string().min(1).max(64),
   label: z.string().max(120).nullable(),
   enabled: z.boolean().default(true),
