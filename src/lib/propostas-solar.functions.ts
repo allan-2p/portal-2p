@@ -450,9 +450,11 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
 
 
     if (data.propostaId) {
-      await repo.atualizarProposta(data.propostaId, payload);
-      await registrarUsoCupom(data.propostaId);
-      await espelharNoSalesforce(data.propostaId);
+      // Cupom em paralelo: é auditoria e não precisa segurar a resposta.
+      await Promise.all([
+        repo.atualizarProposta(data.propostaId, { ...payload, ...SALESFORCE_PENDENTE }),
+        registrarUsoCupom(data.propostaId),
+      ]);
       return { id: data.propostaId, numero: numeroProposta, totais };
     }
 
@@ -467,6 +469,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     try {
       inserida = (await repo.inserirProposta({
         ...payload,
+        ...SALESFORCE_PENDENTE,
         organizacao: "solar",
         status: "Salvo",
         created_by: userId,
@@ -485,7 +488,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     }
 
     await registrarUsoCupom(inserida.id);
-    await espelharNoSalesforce(inserida.id);
+
 
 
     return { id: inserida.id, numero: numeroProposta, totais };
