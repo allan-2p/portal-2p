@@ -218,7 +218,7 @@ export const adminListAccessMatrix = createServerFn({ method: "GET" })
 
 const SetInstanceInput = z.object({
   user_id: z.string().uuid(),
-  instance_id: z.enum(["solar", "carregadores", "marketing"]),
+  instance_id: z.enum(["solar", "carregadores", "marketing", "financeiro"]),
   allowed: z.boolean(),
 });
 
@@ -320,7 +320,7 @@ export const adminImpersonateUser = createServerFn({ method: "POST" })
 // ---- Admin: permissões extras por usuário (fora do perfil) ---- //
 
 const ExtraFeature = z.object({
-  instance_id: z.enum(["solar", "carregadores", "marketing"]),
+  instance_id: z.enum(["solar", "carregadores", "marketing", "financeiro"]),
   feature_key: z.string().min(1),
 });
 

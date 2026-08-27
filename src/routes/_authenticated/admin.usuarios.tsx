@@ -916,6 +916,9 @@ function EditUserModal({
   const [extraFeatures, setExtraFeatures] = useState<ExtraFeature[]>([]);
   const [permProfiles, setPermProfiles] = useState<{ id: string; name: string }[]>([]);
   const [profileId, setProfileId] = useState<string>("");
+  /** Perfil que o usuário já tinha ao abrir a tela (para confirmar a troca). */
+  const [perfilAtualId, setPerfilAtualId] = useState<string>("");
+
   const [profilesLoading, setProfilesLoading] = useState(true);
 
   useEffect(() => {
@@ -924,7 +927,10 @@ function EditUserModal({
       .then((res) => {
         if (!alive) return;
         setPermProfiles(res.profiles.map((p) => ({ id: p.id, name: p.name })));
-        setProfileId(res.profiles.find((p) => p.user_ids.includes(row.id))?.id ?? "");
+        const atual = res.profiles.find((p) => p.user_ids.includes(row.id))?.id ?? "";
+        setProfileId(atual);
+        setPerfilAtualId(atual);
+
       })
       .catch(() => {})
       .finally(() => alive && setProfilesLoading(false));
@@ -965,14 +971,24 @@ function EditUserModal({
             toast.error("Selecione o perfil de permissão.");
             return;
           }
+          // Um perfil ativo por usuário: trocar substitui o anterior.
+          if (perfilAtualId && perfilAtualId !== profileId) {
+            const de = permProfiles.find((p) => p.id === perfilAtualId)?.name ?? "atual";
+            const para = permProfiles.find((p) => p.id === profileId)?.name ?? "novo";
+            const ok = window.confirm(
+              `Este usuário já usa o perfil "${de}". Cada usuário pode ter apenas um perfil ativo — ele será substituído por "${para}" e as permissões do perfil anterior serão perdidas. Continuar?`,
+            );
+            if (!ok) return;
+          }
           setSubmitting(true);
+
           try {
             await setUserProfilesFn({ data: { user_id: row.id, profile_ids: [profileId] } });
             await setExtraFeaturesFn({
               data: {
                 user_id: row.id,
                 features: extraFeatures.map((f) => ({
-                  instance_id: f.instance_id as "solar" | "carregadores" | "marketing",
+                  instance_id: f.instance_id as "solar" | "carregadores" | "marketing" | "financeiro",
                   feature_key: f.feature_key,
                 })),
               },

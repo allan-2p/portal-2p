@@ -30,6 +30,17 @@ import { groupFeatures, shortFeatureLabel, featureScopeLabel } from "@/lib/featu
 import { PermissionMatrix } from "@/components/admin/permission-matrix";
 import { ObjectPermsEditor } from "@/components/admin/object-perms-editor";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/admin/perfis")({
   component: () => (
@@ -76,6 +87,10 @@ function PerfisPage() {
   const [keys, setKeys] = useState<Set<FeatureKey>>(new Set());
   const [saving, setSaving] = useState(false);
   const [userSearch, setUserSearch] = useState("");
+  const [troca, setTroca] = useState<{ userId: string; userNome: string; deNome: string } | null>(
+    null,
+  );
+
   const [profInstances, setProfInstances] = useState<Set<InstanceId>>(new Set());
   const [featSearch, setFeatSearch] = useState("");
   const [tab, setTab] = useState<"perfis" | "matriz">("perfis");
@@ -250,17 +265,32 @@ function PerfisPage() {
     }
   }
 
-  async function toggleUser(userId: string, on: boolean) {
+  /** Aplica a troca de perfil (um perfil ativo por usuário). */
+  async function aplicarPerfil(userId: string, on: boolean) {
     if (!selected) return;
-    // Cada usuário tem no máximo um perfil: marcar substitui o perfil atual.
-    const ids = on ? [selected.id] : [];
     try {
-      await setUsersFn({ data: { user_id: userId, profile_ids: ids } });
+      await setUsersFn({ data: { user_id: userId, profile_ids: on ? [selected.id] : [] } });
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     }
   }
+
+  function toggleUser(userId: string, on: boolean) {
+    if (!selected) return;
+    const atual = profiles.find((p) => p.id !== selected.id && p.user_ids.includes(userId));
+    if (on && atual) {
+      const u = users.find((x) => x.id === userId);
+      setTroca({
+        userId,
+        userNome: u?.full_name ?? u?.email ?? "este usuário",
+        deNome: atual.name,
+      });
+      return;
+    }
+    void aplicarPerfil(userId, on);
+  }
+
 
 
   return (
@@ -632,8 +662,34 @@ function PerfisPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!troca} onOpenChange={(o) => !o && setTroca(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Trocar o perfil deste usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {troca?.userNome} já usa o perfil <strong>{troca?.deNome}</strong>. Cada usuário pode
+              ter apenas um perfil ativo, então ele será substituído por{" "}
+              <strong>{selected?.name}</strong> e as permissões do perfil anterior serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const t = troca;
+                setTroca(null);
+                if (t) void aplicarPerfil(t.userId, true);
+              }}
+            >
+              Trocar perfil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
+
 }
 
 
