@@ -252,18 +252,16 @@ function PerfisPage() {
 
   async function toggleUser(userId: string, on: boolean) {
     if (!selected) return;
-    const current = new Set(
-      profiles.filter((p) => p.user_ids.includes(userId)).map((p) => p.id),
-    );
-    if (on) current.add(selected.id);
-    else current.delete(selected.id);
+    // Cada usuário tem no máximo um perfil: marcar substitui o perfil atual.
+    const ids = on ? [selected.id] : [];
     try {
-      await setUsersFn({ data: { user_id: userId, profile_ids: [...current] } });
+      await setUsersFn({ data: { user_id: userId, profile_ids: ids } });
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     }
   }
+
 
   return (
     <AppLayout>
