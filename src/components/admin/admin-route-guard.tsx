@@ -8,6 +8,7 @@ import { checkAdminFeature, getAdminAreas } from "@/lib/admin-guard.functions";
 import type { FeatureKey } from "@/lib/instances";
 import type { AdminSectionId } from "@/lib/admin-nav";
 import type { CapabilityId } from "@/lib/feature-capabilities";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Guard de rota administrativa: a permissão é validada no backend
