@@ -1091,7 +1091,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     } else {
       try {
         const { gerarCobrancaCheckout } = await import("@/lib/pagamentos-cobranca.server");
-        const r = await gerarCobrancaCheckout(row.id);
+        const r = await marcar("cobranca", () => gerarCobrancaCheckout(row.id));
         cobranca = {
           gerada: r.gerada,
           meio: r.meio ?? null,
