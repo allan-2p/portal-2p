@@ -8,6 +8,7 @@ import { checkAdminFeature, getAdminAreas } from "@/lib/admin-guard.functions";
 import type { FeatureKey } from "@/lib/instances";
 import type { AdminSectionId } from "@/lib/admin-nav";
 import type { CapabilityId } from "@/lib/feature-capabilities";
+import { useAuth } from "@/hooks/use-auth";
 
 /**
  * Guard de rota administrativa: a permissão é validada no backend
@@ -28,19 +29,22 @@ export function AdminRouteGuard({
 }) {
   const check = useServerFn(checkAdminFeature);
   const fetchAreas = useServerFn(getAdminAreas);
+  // Sem sessão hidratada o RPC sai sem Authorization e o servidor lança "Unauthorized".
+  const { user, loading: authLoading } = useAuth();
   const { data, isLoading } = useQuery({
     queryKey: ["admin-feature-guard", feature, action],
     queryFn: () => check({ data: { feature, action } }),
     staleTime: 60_000,
+    enabled: !!user,
   });
   const areasQ = useQuery({
     queryKey: ["admin-areas"],
     queryFn: () => fetchAreas(),
     staleTime: 60_000,
-    enabled: !!area,
+    enabled: !!area && !!user,
   });
 
-  if (isLoading || (!!area && areasQ.isLoading)) {
+  if (authLoading || (!!user && (isLoading || (!!area && areasQ.isLoading)))) {
     return (
       <AppLayout>
         <div className="flex min-h-[50vh] items-center justify-center">
