@@ -177,6 +177,7 @@ Endpoints públicos (exigem `x-cron-secret`, exceto webhooks com assinatura pró
 - `/api/public/hooks/pix-itau`
 - `/api/public/hooks/pix-itau/*`
 - `/api/public/hooks/pix-reconsulta`
+- `/api/public/hooks/salesforce-fila`
 - `/api/public/hooks/sap-catalogo-vendaveis`
 - `/api/public/hooks/sap-nfs`
 <!-- /readme:jobs -->
