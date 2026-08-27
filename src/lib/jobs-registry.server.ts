@@ -40,9 +40,15 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
   },
 
   // Motor real: cria/atualiza a oportunidade do pedido no Salesforce.
+  // Sem `propostaId` no payload, processa a FILA (propostas com sf_status
+  // pendente/erro) — é assim que o cron esvazia o que o checkout enfileirou.
   "salesforce.pedido": async (payload) => {
     const id = String((payload as Record<string, unknown>)["propostaId"] ?? "");
-    if (!id) return { skipped: true, motivo: "Sem propostaId no payload." };
+    if (!id) {
+      const { processarFilaSalesforce } = await import("@/lib/salesforce-fila.server");
+      const limite = Number((payload as Record<string, unknown>)["limite"] ?? 25) || 25;
+      return { ...(await processarFilaSalesforce(limite)) };
+    }
     const { sincronizarPedidoSalesforce } = await import("@/lib/salesforce-pedidos.server");
     const r = await sincronizarPedidoSalesforce(id, { forcar: Boolean((payload as any)["forcar"]) });
     if (!r.ok) throw new Error(r.mensagem ?? "Falha ao enviar o pedido ao Salesforce.");
