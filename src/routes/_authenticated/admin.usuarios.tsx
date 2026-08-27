@@ -972,7 +972,7 @@ function EditUserModal({
               data: {
                 user_id: row.id,
                 features: extraFeatures.map((f) => ({
-                  instance_id: f.instance_id as "solar" | "carregadores" | "marketing",
+                  instance_id: f.instance_id as "solar" | "carregadores" | "marketing" | "financeiro",
                   feature_key: f.feature_key,
                 })),
               },
