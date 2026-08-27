@@ -651,8 +651,34 @@ function PerfisPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!troca} onOpenChange={(o) => !o && setTroca(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Trocar o perfil deste usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {troca?.userNome} já usa o perfil <strong>{troca?.deNome}</strong>. Cada usuário pode
+              ter apenas um perfil ativo, então ele será substituído por{" "}
+              <strong>{selected?.name}</strong> e as permissões do perfil anterior serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const t = troca;
+                setTroca(null);
+                if (t) void aplicarPerfil(t.userId, true);
+              }}
+            >
+              Trocar perfil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
+
 }
 
 
