@@ -480,10 +480,14 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     const perfilAtual = perfilRes.data;
     const nomeAtual = (perfilAtual as any)?.full_name ?? (perfilAtual as any)?.email ?? null;
 
+    // O espelhamento no Salesforce vai junto do próprio insert/update (fila),
+    // sem nenhuma ida extra ao banco nem chamada externa no caminho crítico.
+    const { PATCH_SALESFORCE_PENDENTE } = await import("@/lib/salesforce-fila.server");
+
     if (data.propostaId) {
       const atual = atualProposta;
 
-      const patch: Record<string, unknown> = { ...payload };
+      const patch: Record<string, unknown> = { ...payload, ...PATCH_SALESFORCE_PENDENTE };
       // Preenche o consultor apenas quando a proposta ainda não tem (legado).
       if (!(atual as any)?.consultor_id && !(atual as any)?.consultor_nome) {
         const c = await consultorDoCliente();
@@ -493,7 +497,6 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       if (!(atual as any)?.criado_por_nome) patch["criado_por_nome"] = nomeAtual;
 
       await db.atualizarProposta(data.propostaId, patch);
-      await sincronizarSalesforceAoSalvar(data.propostaId);
       return {
         id: data.propostaId,
         numero: numeroProposta,
@@ -510,6 +513,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     try {
       inserida = (await db.inserirProposta({
         ...payload,
+        ...PATCH_SALESFORCE_PENDENTE,
         organizacao: "carregadores",
         status: "Salvo",
         created_by: userId,
@@ -532,7 +536,6 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       }
       throw err;
     }
-    await sincronizarSalesforceAoSalvar(inserida!.id);
     return {
       id: inserida!.id,
       numero: numeroProposta,
@@ -542,6 +545,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       consultor: consultor.nome,
     };
   });
+
 
 /**
  * Nº SAP (VBELN) de uma proposta — apenas LEITURA.
