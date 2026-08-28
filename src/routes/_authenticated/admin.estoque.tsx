@@ -242,15 +242,17 @@ function EstoquePage() {
                         <th className="p-3 text-right">Pendente</th>
                         <th className="p-3 text-right">Entreposto</th>
                         <th className="p-3">Status</th>
+                        <th className="p-3">Próxima remessa</th>
                       </tr>
                     </thead>
                     <tbody>
                       {estoque.map((e) => {
-                        const s = statusEstoque(
+                        const proxima = proximaRemessaPorMaterial.get(e.material) ?? null;
+                        const info = infoEstoque(
                           e.est_livre,
                           e.qtd_pend_faturar,
                           e.est_entreposto,
-                          futuroPorMaterial.get(e.material) ?? 0,
+                          proxima,
                         );
                         return (
                           <tr key={e.material} className="border-t">
@@ -261,16 +263,15 @@ function EstoquePage() {
                             <td className="p-3 text-right">{qtd(e.qtd_pend_faturar)}</td>
                             <td className="p-3 text-right">{qtd(e.est_entreposto)}</td>
                             <td className="p-3">
-                              <span className={`rounded px-2 py-0.5 text-xs font-medium ${s.cls}`}>
-                                {s.label}
-                              </span>
+                              <DisponibilidadeBadge info={info} className="text-xs" />
                             </td>
+                            <td className="p-3">{proxima ? fmtDataCurta(proxima) : "—"}</td>
                           </tr>
                         );
                       })}
                       {estoque.length === 0 && (
                         <tr>
-                          <td className="p-6 text-center text-muted-foreground" colSpan={7}>
+                          <td className="p-6 text-center text-muted-foreground" colSpan={8}>
                             Sem dados de estoque.
                           </td>
                         </tr>
