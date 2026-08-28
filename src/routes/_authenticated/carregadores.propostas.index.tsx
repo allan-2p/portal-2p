@@ -1,3 +1,4 @@
+import { CAMPOS_BUSCA, placeholderBusca } from "@/lib/propostas-busca";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";

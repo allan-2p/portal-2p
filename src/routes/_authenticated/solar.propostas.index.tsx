@@ -1,3 +1,4 @@
+import { CAMPOS_BUSCA, placeholderBusca } from "@/lib/propostas-busca";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -144,7 +145,7 @@ function PropostasSolarPage() {
   const filtered = rows;
   const ufs = UFS;
 
-  useEffect(() => setPagina(1), [buscaDb, status, uf, porPagina]);
+  useEffect(() => setPagina(1), [buscaDb, campo, status, uf, porPagina]);
 
   const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
   const paginaAtual = Math.min(pagina, totalPaginas);
