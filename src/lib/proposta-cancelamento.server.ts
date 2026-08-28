@@ -11,7 +11,19 @@
 
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
-import { enviarEmail, layoutEmail } from "./email.server";
+import {
+  aguardarDesfechoEmails,
+  enviarEmailRastreado,
+  layoutEmail,
+  type ResultadoEnvioRastreado,
+} from "./email.server";
+
+export type EfeitosCancelamentoResult = {
+  /** true quando a RFC de cancelamento existia e o SAP confirmou. */
+  sapCancelado: boolean;
+  /** Desfecho real dos e-mails aos setores; null quando não havia e-mail a enviar. */
+  emails: ResultadoEnvioRastreado | null;
+};
 
 const DESTINOS_PADRAO =
   "logistica@2pgroup.com.br,camila@2pgroup.com.br,nfe@2pgroup.com.br,pedidos@2pgroup.com.br,financeiro@2pgroup.com.br";
