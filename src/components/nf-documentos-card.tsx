@@ -3,7 +3,7 @@
  * boleto (quando a forma de pagamento gera um). Os arquivos vêm do bucket
  * privado; se ainda não existirem, o portal busca no SAP sob demanda.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,24 +14,23 @@ type Tipo = "danfe" | "xml" | "boleto";
 
 const STATUS_COM_NF = ["Faturado", "Coletado", "Entregue"];
 
-export function NfDocumentosCard({ proposta }: { proposta: Record<string, any> }) {
+/** Regra única: os documentos só existem depois que o SAP fatura a NF. */
+export function temNotaFiscal(proposta: Record<string, any>) {
+  const status = String(proposta['status'] ?? "");
+  const nfNumero = String(proposta['nf_numero'] ?? "").trim();
+  return STATUS_COM_NF.includes(status) || !!nfNumero;
+}
+
+/** Baixa de um documento fiscal — reutilizada pelo bloco de NF e pelo de cobrança. */
+export function useDocumentoNf(propostaId: string) {
   const baixar = useServerFn(baixarDocumentoNf);
   const [carregando, setCarregando] = useState<Tipo | null>(null);
 
-  const id = String(proposta['id'] ?? "");
-  const status = String(proposta['status'] ?? "");
-  const nfNumero = String(proposta['nf_numero'] ?? "").trim();
-  const temNf = STATUS_COM_NF.includes(status) || !!nfNumero;
-  const formaPagamento = String(proposta['forma_pagamento'] ?? "");
-  const mostraBoleto = formaPagamento.startsWith("boleto");
-
-  if (!temNf && !STATUS_COM_NF.includes(status) && !nfNumero && !proposta['sap_ov_numero']) return null;
-
   const abrir = async (tipo: Tipo) => {
-    if (!id) return;
+    if (!propostaId) return;
     setCarregando(tipo);
     try {
-      const r = await baixar({ data: { propostaId: id, tipo } });
+      const r = await baixar({ data: { propostaId, tipo } });
       const a = document.createElement("a");
       a.href = r.url;
       a.target = "_blank";
@@ -51,43 +50,98 @@ export function NfDocumentosCard({ proposta }: { proposta: Record<string, any> }
     }
   };
 
-  const Botao = ({ tipo, icone: Icone, rotulo }: { tipo: Tipo; icone: any; rotulo: string }) => (
+  return { abrir, carregando };
+}
+
+function BotaoDoc({
+  tipo,
+  icone: Icone,
+  rotulo,
+  disponivel,
+  carregando,
+  onClick,
+}: {
+  tipo: Tipo;
+  icone: any;
+  rotulo: string;
+  disponivel: boolean;
+  carregando: Tipo | null;
+  onClick: (t: Tipo) => void;
+}) {
+  return (
     <Button
       variant="outline"
       size="sm"
-      disabled={!temNf || carregando !== null}
-      onClick={() => abrir(tipo)}
-      title={temNf ? rotulo : "Disponível somente após o faturamento da nota fiscal."}
+      className="gap-2"
+      disabled={!disponivel || carregando !== null}
+      onClick={() => onClick(tipo)}
+      title={disponivel ? rotulo : "Disponível somente após o faturamento da nota fiscal."}
     >
-      {carregando === tipo ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <Icone className="h-4 w-4" />
-      )}
+      {carregando === tipo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icone className="h-4 w-4" />}
       {rotulo}
     </Button>
   );
+}
+
+/** Botão isolado do boleto emitido pelo SAP — usado no bloco de cobrança. */
+export function BotaoBoletoNf({ proposta }: { proposta: Record<string, any> }) {
+  const { abrir, carregando } = useDocumentoNf(String(proposta['id'] ?? ""));
+  return (
+    <BotaoDoc
+      tipo="boleto"
+      icone={Receipt}
+      rotulo="Boleto (PDF)"
+      disponivel={temNotaFiscal(proposta)}
+      carregando={carregando}
+      onClick={abrir}
+    />
+  );
+}
+
+/**
+ * Bloco de Nota fiscal — dados da NF, faturamento/entrega (via `children`) e
+ * os documentos DANFE/XML. O boleto vive no bloco de Cobrança.
+ */
+export function NfDocumentosCard({
+  proposta,
+  children,
+}: {
+  proposta: Record<string, any>;
+  children?: ReactNode;
+}) {
+  const { abrir, carregando } = useDocumentoNf(String(proposta['id'] ?? ""));
+  const status = String(proposta['status'] ?? "");
+  const nfNumero = String(proposta['nf_numero'] ?? "").trim();
+  const temNf = temNotaFiscal(proposta);
 
   return (
-    <div className="glass rounded-2xl p-5 space-y-4">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        Nota fiscal
-      </h3>
+    <div className="glass rounded-2xl p-4 sm:p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Faturamento e nota fiscal
+        </h3>
+        {temNf ? (
+          <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success">
+            NF emitida
+          </span>
+        ) : (
+          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+            Aguardando faturamento
+          </span>
+        )}
+      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+      {children}
+
+      <div className="grid grid-cols-2 gap-4 border-t border-border/60 pt-4 text-sm md:grid-cols-3">
         <Campo label="Nº da NF" value={nfNumero || "—"} />
         <Campo label="Série" value={String(proposta['nf_serie'] ?? "") || "—"} />
-        <Campo
-          label="Chave de acesso"
-          value={String(proposta['nf_chave'] ?? "") || "—"}
-          mono
-        />
+        <Campo label="Chave de acesso" value={String(proposta['nf_chave'] ?? "") || "—"} mono />
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Botao tipo="danfe" icone={FileText} rotulo="DANFE (PDF)" />
-        <Botao tipo="xml" icone={FileCode2} rotulo="XML da NF-e" />
-        {mostraBoleto ? <Botao tipo="boleto" icone={Receipt} rotulo="Boleto (PDF)" /> : null}
+        <BotaoDoc tipo="danfe" icone={FileText} rotulo="DANFE (PDF)" disponivel={temNf} carregando={carregando} onClick={abrir} />
+        <BotaoDoc tipo="xml" icone={FileCode2} rotulo="XML da NF-e" disponivel={temNf} carregando={carregando} onClick={abrir} />
       </div>
 
       {!temNf ? (

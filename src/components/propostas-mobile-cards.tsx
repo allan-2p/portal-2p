@@ -24,6 +24,7 @@ export type PropostaCardRow = {
   status: string;
   created_at: string;
   expedido_em?: string | null;
+  finalizado_em?: string | null;
   consultor_nome?: string | null;
   criado_por_nome?: string | null;
   sap_ov_status?: string | null;
@@ -103,7 +104,6 @@ export function PropostasMobileCards({
                   </span>
                 </div>
                 <div className="truncate">
-                  {new Date(r.created_at).toLocaleDateString("pt-BR")} ·{" "}
                   {r.consultor_nome || r.criado_por_nome || "—"}
                 </div>
                 <div className="text-right text-sm font-semibold tabular-nums text-foreground">
@@ -117,6 +117,18 @@ export function PropostasMobileCards({
                     </span>
                   </div>
                 ) : null}
+                <div>
+                  Compra{" "}
+                  <span className="text-foreground">
+                    {r.finalizado_em ? new Date(r.finalizado_em).toLocaleDateString("pt-BR") : "—"}
+                  </span>
+                </div>
+                <div className="text-right">
+                  Criação{" "}
+                  <span className="text-foreground">
+                    {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                  </span>
+                </div>
               </div>
             </button>
 
