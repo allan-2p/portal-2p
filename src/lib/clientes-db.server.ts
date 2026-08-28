@@ -69,12 +69,18 @@ const PAGINA_DB = 1000;
  * Enquanto o SQL não for aplicado, o portal segue filtrando só por `instancia`.
  */
 let _temEscopoOrg: boolean | null = null;
+let _temEscopoOrgEm = 0;
 export async function temEscopoOrg(): Promise<boolean> {
-  if (_temEscopoOrg !== null) return _temEscopoOrg;
+  // Resposta negativa nunca é definitiva: a coluna pode ser criada depois que o
+  // worker subiu. Só o "true" fica em cache permanente.
+  if (_temEscopoOrg === true) return true;
+  if (_temEscopoOrg === false && Date.now() - _temEscopoOrgEm < 60_000) return false;
   const { ok } = await grupo2pRest("clientes?select=escopo_org&limit=1");
   _temEscopoOrg = ok;
+  _temEscopoOrgEm = Date.now();
   return ok;
 }
+
 
 /**
  * Filtro de visibilidade da instância: o cadastro aparece na unidade dele e,
@@ -226,10 +232,13 @@ export async function listClientesPagina(
  * funcionando usando apenas `created_by` / `consultor_sap`.
  */
 let _temConsultorId: boolean | null = null;
+let _temConsultorIdEm = 0;
 async function temConsultorId(): Promise<boolean> {
-  if (_temConsultorId !== null) return _temConsultorId;
+  if (_temConsultorId === true) return true;
+  if (_temConsultorId === false && Date.now() - _temConsultorIdEm < 60_000) return false;
   const { ok } = await grupo2pRest("clientes?select=consultor_id&limit=1");
   _temConsultorId = ok;
+  _temConsultorIdEm = Date.now();
   return ok;
 }
 
