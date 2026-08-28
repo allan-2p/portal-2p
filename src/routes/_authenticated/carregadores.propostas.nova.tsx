@@ -2,6 +2,7 @@ import { formatPropostaNumero } from "@/lib/sap-numero";
 import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { propostaStatusStyle } from "@/lib/proposta-status";
+import { DisponibilidadeBadge, useDisponibilidadeLote } from "@/components/disponibilidade-badge";
 import { WizardActionBar } from "@/components/wizard-action-bar";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -789,6 +790,18 @@ function PropostaCarregadoresPage() {
     .filter(Boolean)
     .join("\n\n");
   const uf = ufs.find((u) => u.uf === state.uf);
+  // Selo informativo de disponibilidade por item (mesma régua da antiga).
+  const disponibilidade = useDisponibilidadeLote(
+    useMemo(
+      () =>
+        state.itens.map((i) => ({
+          material: String(produtos.find((p) => p.id === i.produtoId)?.codigo ?? "").trim(),
+          qtd: i.qtd,
+        })),
+      [state.itens, produtos],
+    ),
+  );
+
   const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
   const erroFreteMsg = !state.freteMod
@@ -2028,6 +2041,14 @@ function PropostaCarregadoresPage() {
                             Para trocar o produto, exclua o item e adicione outro.
                           </p>
                         ) : null}
+                        <DisponibilidadeBadge
+                          className="mt-1 block"
+                          info={
+                            disponibilidade[
+                              String(produtos.find((p) => p.id === it.produtoId)?.codigo ?? "").trim()
+                            ]
+                          }
+                        />
 
                         {semProduto ? (
                           <p className="text-[11px] text-destructive mt-1">Selecione o produto ou remova a linha.</p>
@@ -2481,6 +2502,10 @@ function PropostaCarregadoresPage() {
                                   {prod?.codigo ? (
                                     <span className="text-muted-foreground"> · {prod.codigo}</span>
                                   ) : null}
+                                  <DisponibilidadeBadge
+                                    className="block"
+                                    info={disponibilidade[String(prod?.codigo ?? "").trim()]}
+                                  />
                                     </div>
                                   </div>
                                 </td>
