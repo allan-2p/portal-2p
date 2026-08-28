@@ -21,7 +21,14 @@ export type EmailTransacional = {
   idempotencyKey?: string;
 };
 
-export async function enviarEmail(msg: EmailTransacional): Promise<boolean> {
+/** Endereço fixo de registro: recebe cópia de todo e-mail de negócio do portal. */
+const COPIA_REGISTRO = () =>
+  String(process.env["EMAIL_COPIA_REGISTRO"] ?? "allan@2pgroup.com.br").trim().toLowerCase();
+
+export async function enviarEmail(
+  msg: EmailTransacional,
+  opts: { ehCopiaRegistro?: boolean } = {},
+): Promise<boolean> {
   try {
     const destino = (msg.to ?? "").trim();
     if (!destino || !destino.includes("@")) return false;
