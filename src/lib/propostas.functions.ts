@@ -860,10 +860,17 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
       const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
       const transicao = await aplicarTransicao(data.id, "Cancelado", "humano", { de });
       if (!transicao.ok) throw new Error(transicao.motivo ?? "Não foi possível cancelar o pedido.");
+      await sincronizarSalesforceAoSalvar(data.id);
+      try {
+        const { efeitosCancelamento } = await import("@/lib/proposta-cancelamento.server");
+        await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
+      } catch {
+        /* efeitos são best effort */
+      }
       return {
         ok: true,
         cancelada: true,
-        aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal.`,
+        aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal. Os setores foram avisados por e-mail.`,
       };
     }
     await db.excluirProposta(data.id);
