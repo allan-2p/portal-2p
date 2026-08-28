@@ -64,6 +64,38 @@ const SELECT = "*";
 const PAGINA_DB = 1000;
 
 /**
+ * A coluna `escopo_org` (supabase/external/clientes-equipe-escritorio.sql)
+ * marca a atuação do cadastro: `solar`, `carregadores` ou `grupo` (ambas).
+ * Enquanto o SQL não for aplicado, o portal segue filtrando só por `instancia`.
+ */
+let _temEscopoOrg: boolean | null = null;
+export async function temEscopoOrg(): Promise<boolean> {
+  if (_temEscopoOrg !== null) return _temEscopoOrg;
+  const { ok } = await grupo2pRest("clientes?select=escopo_org&limit=1");
+  _temEscopoOrg = ok;
+  return ok;
+}
+
+/**
+ * Filtro de visibilidade da instância: o cadastro aparece na unidade dele e,
+ * quando a atuação foi ampliada (`escopo_org = 'grupo'`), nas duas.
+ * Devolve um grupo PostgREST pronto para entrar em `and=(...)`.
+ */
+export async function grupoInstancia(instance: ClientesInstance): Promise<string> {
+  return (await temEscopoOrg())
+    ? `or(instancia.eq.${instance},escopo_org.eq.grupo)`
+    : `instancia.eq.${instance}`;
+}
+
+/** Mesmo filtro em formato de query string (`&or=(...)` ou `&instancia=eq.x`). */
+async function qsInstancia(instance: ClientesInstance): Promise<string> {
+  return (await temEscopoOrg())
+    ? `or=(instancia.eq.${instance},escopo_org.eq.grupo)`
+    : `instancia=eq.${instance}`;
+}
+
+
+/**
  * Lista completa da instância (usada por telas que precisam de todos os
  * cadastros). Busca em blocos de 1000 porque o PostgREST corta a resposta
  * nesse teto, independente do `limit`.
