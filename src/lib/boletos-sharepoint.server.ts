@@ -62,11 +62,10 @@ async function destinatarios(row: Record<string, any>): Promise<string[]> {
  */
 async function processarProposta(
   sessao: Awaited<ReturnType<typeof abrirSharepoint>>,
-  arquivosDaPasta: Awaited<ReturnType<typeof listarArquivos>>,
   row: Record<string, any>,
 ): Promise<{ arquivos: BoletoArquivo[]; emails: number } | null> {
   const nf = String(row["nf_numero"] ?? "").trim();
-  const achados = arquivosDaPasta.filter((a) => arquivoCasaComNf(a.nome, nf));
+  const achados = await listarArquivosDaNf(sessao, sessao.cfg.pastaBoletos, nf);
   if (!achados.length) return null;
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
