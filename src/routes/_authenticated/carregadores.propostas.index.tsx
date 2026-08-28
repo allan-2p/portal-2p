@@ -118,12 +118,13 @@ function HistoricoCarregadoresPage() {
   const createdByIn = vend.idsDe(vendedor);
 
   const q = useQuery({
-    queryKey: ["carregadores-proposals", { buscaDb, status, uf, sap, createdByIn, pagina, porPagina }],
+    queryKey: ["carregadores-proposals", { buscaDb, campo, status, uf, sap, createdByIn, pagina, porPagina }],
     queryFn: async (): Promise<{ rows: Row[]; total: number }> => {
       const data = await listarPropostasPaginaFn({
         data: {
           organizacao: "carregadores",
           q: buscaDb,
+          campo,
           status,
           uf,
           comSap: sap,
