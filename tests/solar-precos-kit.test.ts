@@ -150,17 +150,17 @@ describe("precosSolar — fallback quando o SAP não devolve tributos", () => {
   });
 
 
-  it("sem VALOR_LIQUIDO, cai para o preço sugerido do catálogo", async () => {
+  it("sem VALOR_LIQUIDO, o item fica zerado e sinalizado (nunca preço de catálogo)", async () => {
     mockSap(envelopeValores([{ item: "000010", attrs: { MATERIAL: "100000350", PESO_LIQUIDO: "120" } }]));
     const r = await precosSolar([{ codigo: "100000350", quantidade: 1 }], {
       kitFotovoltaico: true,
       sugeridos: { "100000350": 9999 },
     });
-    expect(r.precos["100000350"]).toBe(9999);
+    expect(r.precos["100000350"]).toBe(0);
     expect(r.fallback).toEqual(["100000350"]);
   });
 
-  it("SAP fora do ar: fallback no catálogo e aviso registrado", async () => {
+  it("SAP fora do ar: item zerado e aviso registrado", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => {
@@ -171,12 +171,12 @@ describe("precosSolar — fallback quando o SAP não devolve tributos", () => {
       kitFotovoltaico: true,
       sugeridos: { "100000350": 8500 },
     });
-    expect(r.precos["100000350"]).toBe(8500);
+    expect(r.precos["100000350"]).toBe(0);
     expect(r.fallback).toEqual(["100000350"]);
     expect(r.avisos.join(" ")).toMatch(/SAP/i);
   });
 
-  it("mensagem de erro do SAP vira aviso e o item cai no sugerido", async () => {
+  it("mensagem de erro do SAP vira aviso e o item fica zerado", async () => {
     mockSap(
       envelopeValores(
         [{ item: "000010", attrs: { MATERIAL: "100000350" } }],
@@ -188,7 +188,7 @@ describe("precosSolar — fallback quando o SAP não devolve tributos", () => {
       sugeridos: { "100000350": 7000 },
     });
     expect(r.avisos).toContain("Cliente sem parceiro cadastrado");
-    expect(r.precos["100000350"]).toBe(7000);
+    expect(r.precos["100000350"]).toBe(0);
     expect(r.fallback).toEqual(["100000350"]);
   });
 
