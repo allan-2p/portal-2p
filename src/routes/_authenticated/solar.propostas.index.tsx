@@ -332,9 +332,6 @@ function PropostasSolarPage() {
                     <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("pt-BR")}
                     </td>
-                    <td className="px-3 py-2.5 text-center">
-                      <StatusDot status={r.status} />
-                    </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center justify-end gap-0.5">
                         <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Detalhar" onClick={() => setDetalheId(r.id)}>
