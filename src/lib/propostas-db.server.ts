@@ -79,6 +79,8 @@ export type ListarPropostasPaginaOpts = {
   select?: string;
   /** Texto livre: número, nº anterior, cliente, documento, OV/nº SAP, consultor. */
   q?: string;
+  /** Campo da busca: tudo | numero | sap | cliente | documento | nome | consultor | nf. */
+  campo?: string;
   status?: string;
   uf?: string;
   /** "com" | "sem" — pedidos com ou sem ordem de venda no SAP. */
