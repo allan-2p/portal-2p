@@ -23,6 +23,7 @@ export type PropostaCardRow = {
   totais: Record<string, number>;
   status: string;
   created_at: string;
+  expedido_em?: string | null;
   consultor_nome?: string | null;
   criado_por_nome?: string | null;
   sap_ov_status?: string | null;
@@ -108,6 +109,14 @@ export function PropostasMobileCards({
                 <div className="text-right text-sm font-semibold tabular-nums text-foreground">
                   {fmtBRL(r.totais?.['valorTotal'] ?? 0)}
                 </div>
+                {r.expedido_em ? (
+                  <div className="col-span-2">
+                    Despacho{" "}
+                    <span className="text-foreground">
+                      {new Date(`${String(r.expedido_em).slice(0, 10)}T12:00:00`).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </button>
 
