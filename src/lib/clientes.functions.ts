@@ -280,9 +280,64 @@ export const verificarDocFn = createServerFn({ method: "POST" })
           (cliente["consultor_nome"] as string | null) ||
           "Não identificado",
         ativo: cliente["ativo"] !== false,
+        escopo_org: (cliente["escopo_org"] as string | null) ?? null,
         criado_em: (cliente["created_at"] as string) ?? null,
       })),
     };
+  });
+
+/**
+ * Amplia a atuação de um cadastro existente para as duas unidades (Grupo 2P).
+ * O cliente passa a aparecer no Solar e no Carregadores; no SAP vai como
+ * equipe de vendas 003 / escritório 0004.
+ */
+export const ampliarAtuacaoFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ instancia: instanciaSchema, id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const db = await import("./clientes-db.server");
+    const perm = await getPerm(context as any, data.instancia, "contas");
+    assertPodeCriar(perm, "contas");
+
+    if (!(await db.temEscopoOrg())) {
+      throw new Error(
+        "O banco ainda não tem a coluna de escopo (escopo_org). Rode supabase/external/clientes-equipe-escritorio.sql no banco do Grupo 2P.",
+      );
+    }
+
+    const atual = await db.getClienteByIdQualquer(data.id);
+    if (!atual) throw new Error("Cadastro não encontrado.");
+    if (String(atual["escopo_org"] ?? "").toLowerCase() !== "grupo") {
+      await db.ampliarAtuacaoGrupo(data.id);
+    }
+
+    const { logIntegrationEvent } = await import("./integration-logs.server");
+    await logIntegrationEvent({
+      slug: "clientes-cadastro",
+      level: "info",
+      event: "cadastro.atuacao-ampliada",
+      message: `Atuação ampliada para o Grupo 2P: ${atual["razao_social"]} (${atual["doc"]})`,
+      actorId: context.userId,
+      detail: { cliente_id: data.id, de: atual["instancia"] ?? null, para: "grupo" },
+    });
+
+    // Reenvia ao SAP para atualizar equipe/escritório de vendas.
+    const { sincronizarCliente } = await import("./clientes-integracoes.server");
+    let sync: any = null;
+    try {
+      sync = await sincronizarCliente(
+        data.instancia,
+        data.id,
+        { ...atual, escopo_org: "grupo", organizacao: "grupo" },
+        { vendedorSap: (atual["consultor_sap"] as string) ?? null, ownerSfId: null, alvos: ["sap"] as any },
+      );
+    } catch (err) {
+      sync = { sap: { ok: false, erro: (err as Error)?.message ?? String(err) } };
+    }
+
+    return { id: data.id, sync };
   });
 
 /** Enriquecimento por CNPJ (Serpro + CNPJá). Não grava nada. */
@@ -405,8 +460,11 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     const podeEscolher = permContas.modify_all;
     const { consultorPorSap, consultorDoCadastro, idDeUsuario } = await import("./consultor-sap.server");
 
+    const atualRow = data.id ? await db.getClienteById(data.instancia, data.id) : null;
+    /** Cadastro com atuação ampliada: mantém o escopo "grupo" em qualquer edição. */
+    const ehGrupo = String(atualRow?.["escopo_org"] ?? "").toLowerCase() === "grupo";
     const anteriorConsultor = data.id
-      ? consultorDoCadastro(await db.getClienteById(data.instancia, data.id))
+      ? consultorDoCadastro(atualRow)
       : { sap: null, nome: null, id: null };
 
     const sapEscolhido = String(data.consultor_sap ?? "").trim();
@@ -463,8 +521,11 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       consultor_sap: consultorSap,
       consultor_nome: consultorNome,
       consultor_id: consultorId,
-      organizacao: db.ORGANIZACAO[data.instancia],
-      instancia: data.instancia,
+      organizacao: ehGrupo ? "grupo" : db.ORGANIZACAO[data.instancia],
+      instancia: ehGrupo ? (atualRow?.["instancia"] ?? data.instancia) : data.instancia,
+      ...(ehGrupo
+        ? { escopo_org: "grupo", equipe_vendas: "003", escritorio_vendas: "0004" }
+        : {}),
     };
 
     let clienteId = data.id ?? null;
