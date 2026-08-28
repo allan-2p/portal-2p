@@ -1,6 +1,7 @@
 import { formatPropostaNumero } from "@/lib/sap-numero";
 import { cidadeUf, cidadeUfCep } from "@/lib/local-format";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { DisponibilidadeBadge, useDisponibilidadeLote } from "@/components/disponibilidade-badge";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1048,6 +1049,18 @@ function NovaPropostaSolarPage() {
       tabelaPreco: listaPreco,
     });
   }, [itens, avisosPreco, cliente, clienteDoc, listaPreco, produtos, trocando, precoTentado]);
+
+  // Selo informativo de disponibilidade (estoque livre → entreposto → ETA).
+  const disponibilidade = useDisponibilidadeLote(
+    useMemo(
+      () =>
+        itens.map((i) => ({
+          material: normCod(produtos.find((p) => p.id === i.produtoId)?.codigo ?? i.avulso?.codigo ?? ""),
+          qtd: i.qtd,
+        })),
+      [itens, produtos],
+    ),
+  );
 
   // ------------------------------------------------------------------
   // Itens enviados à cotação de frete: TODOS os itens com código SAP
@@ -2403,6 +2416,7 @@ function NovaPropostaSolarPage() {
                             {codigo} {i.origem === "calculadora" ? "· Calculadora 2P" : ""}
                             {!i.valor && !i.avulso ? " · sem preço no SAP" : ""}
                           </div>
+                          <DisponibilidadeBadge info={disponibilidade[normCod(codigo)]} />
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-1">
@@ -2687,6 +2701,9 @@ function NovaPropostaSolarPage() {
                           <td className="px-4 py-2.5">
                             <div className="font-medium">{i.avulso?.descricao ?? p?.descricao ?? "—"}</div>
                             <div className="text-xs text-muted-foreground">{i.avulso?.codigo ?? p?.codigo}</div>
+                            <DisponibilidadeBadge
+                              info={disponibilidade[normCod(p?.codigo ?? i.avulso?.codigo ?? "")]}
+                            />
 
                           </td>
                           <td className="px-4 py-2.5 text-center tabular-nums">{i.qtd}</td>
