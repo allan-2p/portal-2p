@@ -812,6 +812,12 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
     const t = await aplicarTransicao(data.id, "Cancelado", "humano", { de });
     if (!t.ok) throw new Error(t.motivo ?? "Não foi possível cancelar o pedido.");
     await sincronizarSalesforceAoSalvar(data.id);
+    try {
+      const { efeitosCancelamento } = await import("@/lib/proposta-cancelamento.server");
+      await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
+    } catch {
+      /* efeitos são best effort: nunca desfazem o cancelamento */
+    }
     return { ok: true };
   });
 
