@@ -364,12 +364,15 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border px-4 py-4 sm:justify-end sm:gap-8 sm:px-5">
           <Total label="Subtotal" value={fmtBRL(subtotal)} />
-          {Number(totais['desconto'] ?? 0) > 0 ? (
-            <Total
-              label={totais['cupom'] ? `Desconto (${String(totais['cupom'])})` : "Desconto"}
-              value={`- ${fmtBRL(Number(totais['desconto']))}`}
-            />
-          ) : null}
+          <Total
+            label={totais['cupom'] ? `Desconto (${String(totais['cupom'])})` : "Desconto"}
+            value={
+              Number(totais['desconto'] ?? 0) > 0
+                ? `- ${fmtBRL(Number(totais['desconto']))}`
+                : fmtBRL(0)
+            }
+          />
+
           <Total
             label="Frete"
             value={freteGratis ? "Grátis" : freteBonificado ? "Bonificado" : fmtBRL(frete)}
