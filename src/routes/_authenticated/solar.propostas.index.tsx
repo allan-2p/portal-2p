@@ -191,11 +191,20 @@ function PropostasSolarPage() {
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Buscar por cliente, nome, nº ou nº SAP"
+              placeholder={placeholderBusca(campo)}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
+          <Select value={campo} onValueChange={setCampo}>
+            <SelectTrigger className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {CAMPOS_BUSCA.map((c) => (
+                <SelectItem key={c.valor} value={c.valor}>{c.rotulo}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger>
             <SelectContent>
