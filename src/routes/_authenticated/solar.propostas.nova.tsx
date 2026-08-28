@@ -2470,14 +2470,29 @@ function NovaPropostaSolarPage() {
                       <tr className="border-b border-border/50">
 
                         <td className="px-4 py-3">
-                          <div className="font-medium">{descricao}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            {descricao}
+                            {i.kit && (
+                              <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">
+                                Kit
+                              </Badge>
+                            )}
+                          </div>
                           <div className="text-xs text-muted-foreground">
-                            {codigo} {i.origem === "calculadora" ? "· Calculadora 2P" : ""}
+                            {codigo}{" "}
+                            {i.kit
+                              ? "· Item obrigatório do kit fotovoltaico"
+                              : i.origem === "calculadora"
+                                ? "· Calculadora 2P"
+                                : ""}
                             {!i.valor && !i.avulso ? " · sem preço no SAP" : ""}
                           </div>
                           <DisponibilidadeBadge info={disponibilidade[normCod(codigo)]} />
                         </td>
                         <td className="px-4 py-3">
+                          {i.kit ? (
+                            <div className="text-center tabular-nums font-medium">1</div>
+                          ) : (
                           <div className="flex items-center justify-center gap-1">
                             <Button
                               variant="ghost"
@@ -2524,6 +2539,7 @@ function NovaPropostaSolarPage() {
                               <Plus className="h-3.5 w-3.5" />
                             </Button>
                           </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-right tabular-nums">{fmtBRL(i.valor)}</td>
 
@@ -2532,15 +2548,18 @@ function NovaPropostaSolarPage() {
                         </td>
 
                         <td className="px-4 py-3 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Remover"
-                            onClick={() => setItens((prev) => prev.filter((x) => x.key !== i.key))}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          {!i.kit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Remover"
+                              onClick={() => setItens((prev) => prev.filter((x) => x.key !== i.key))}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
                         </td>
+
                       </tr>
                       </Fragment>
                     );
