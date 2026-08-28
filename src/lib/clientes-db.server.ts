@@ -232,10 +232,13 @@ export async function listClientesPagina(
  * funcionando usando apenas `created_by` / `consultor_sap`.
  */
 let _temConsultorId: boolean | null = null;
+let _temConsultorIdEm = 0;
 async function temConsultorId(): Promise<boolean> {
-  if (_temConsultorId !== null) return _temConsultorId;
+  if (_temConsultorId === true) return true;
+  if (_temConsultorId === false && Date.now() - _temConsultorIdEm < 60_000) return false;
   const { ok } = await grupo2pRest("clientes?select=consultor_id&limit=1");
   _temConsultorId = ok;
+  _temConsultorIdEm = Date.now();
   return ok;
 }
 
