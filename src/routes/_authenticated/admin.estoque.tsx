@@ -87,10 +87,17 @@ function EstoquePage() {
     onError: (e: any) => toast.error(String(e?.message ?? e)),
   });
 
-  const futuroPorMaterial = useMemo(() => {
-    const m = new Map<string, number>();
+  // Próxima remessa por material: menor data de remessa futura (ou sem data) entre os containers.
+  const proximaRemessaPorMaterial = useMemo(() => {
+    const m = new Map<string, string | null>();
+    const hoje = new Date().toISOString().slice(0, 10);
     for (const c of q.data?.containers ?? []) {
-      m.set(c.material, (m.get(c.material) ?? 0) + Number(c.est_entreposto ?? 0));
+      const dt = c.dt_remessa ? String(c.dt_remessa).slice(0, 10) : null;
+      if (dt && dt < hoje) continue;
+      const atual = m.get(c.material);
+      if (atual === undefined || atual === null || (dt && dt < atual)) {
+        m.set(c.material, dt);
+      }
     }
     return m;
   }, [q.data]);
