@@ -69,12 +69,18 @@ const PAGINA_DB = 1000;
  * Enquanto o SQL não for aplicado, o portal segue filtrando só por `instancia`.
  */
 let _temEscopoOrg: boolean | null = null;
+let _temEscopoOrgEm = 0;
 export async function temEscopoOrg(): Promise<boolean> {
-  if (_temEscopoOrg !== null) return _temEscopoOrg;
+  // Resposta negativa nunca é definitiva: a coluna pode ser criada depois que o
+  // worker subiu. Só o "true" fica em cache permanente.
+  if (_temEscopoOrg === true) return true;
+  if (_temEscopoOrg === false && Date.now() - _temEscopoOrgEm < 60_000) return false;
   const { ok } = await grupo2pRest("clientes?select=escopo_org&limit=1");
   _temEscopoOrg = ok;
+  _temEscopoOrgEm = Date.now();
   return ok;
 }
+
 
 /**
  * Filtro de visibilidade da instância: o cadastro aparece na unidade dele e,
