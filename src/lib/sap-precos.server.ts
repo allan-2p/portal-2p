@@ -120,9 +120,16 @@ function envelope(itens: SimulacaoItem[], opts: SimulacaoOpts) {
       <I_S_PARCEIRO>
         <PLTYP>${esc(pltypDaTabela(opts.listaPreco))}</PLTYP>
         ${(() => {
+          // Documentos gravados sem os zeros à esquerda (ex.: 3752709000131,
+          // 13 dígitos) são completados como na antiga (str_pad 14) e na
+          // criação da OV (sap-ov.server.ts). Sem o pad o documento era
+          // descartado e o SAP simulava SEM o parceiro, devolvendo impostos
+          // genéricos (preço errado para ~450 clientes).
           const d = String(opts.documento ?? "").replace(/\D/g, "");
-          if (d.length === 14) return `<CNPJ>${esc(d)}</CNPJ>`;
-          if (d.length === 11) return `<CPF>${esc(d)}</CPF>`;
+          const cnpj = d.length > 11 ? d.padStart(14, "0") : "";
+          const cpf = d && d.length <= 11 ? d.padStart(11, "0") : "";
+          if (cnpj) return `<CNPJ>${esc(cnpj)}</CNPJ>`;
+          if (cpf) return `<CPF>${esc(cpf)}</CPF>`;
           return "";
         })()}
       </I_S_PARCEIRO>
