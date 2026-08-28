@@ -103,10 +103,10 @@ function PropostasSolarPage() {
   const podeExcluir = useCanDelete();
 
   const q = useQuery({
-    queryKey: ["solar-proposals", { buscaDb, status, uf, pagina, porPagina }],
+    queryKey: ["solar-proposals", { buscaDb, campo, status, uf, pagina, porPagina }],
     queryFn: async (): Promise<{ rows: Row[]; total: number }> => {
       const data = await listarPropostasPaginaFn({
-        data: { organizacao: "solar", q: buscaDb, status, uf, pagina, porPagina },
+        data: { organizacao: "solar", q: buscaDb, campo, status, uf, pagina, porPagina },
       });
       return {
         rows: ((data?.rows ?? []) as any[]).map((r) => ({
