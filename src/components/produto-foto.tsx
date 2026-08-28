@@ -20,7 +20,16 @@ export function ProdutoFoto({
       )}
     >
       {url ? (
-        <img src={url} alt={alt ?? "Foto do produto"} loading="lazy" className="h-full w-full object-contain" />
+        <img
+          src={url}
+          alt={alt ?? "Foto do produto"}
+          loading="lazy"
+          decoding="async"
+          width={56}
+          height={48}
+          className="h-full w-full object-contain"
+        />
+
       ) : (
         <ImageOff className="h-4 w-4 text-muted-foreground/60" aria-hidden />
       )}
