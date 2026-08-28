@@ -84,8 +84,8 @@ export function PropostasMobileCards({
             >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                 <div className="min-w-0">
-                  <div className="truncate text-base font-semibold leading-tight">
-                    {r.cliente_nome}
+                  <div className="truncate text-base font-bold tabular-nums leading-tight">
+                    {formatPropostaNumero(r.numero) || "—"}
                   </div>
                   <div className="mt-0.5 truncate text-sm text-muted-foreground">
                     {r.nome || "Sem nome"}
@@ -95,26 +95,32 @@ export function PropostasMobileCards({
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
-                <div>
-                  Nº <span className="text-foreground">{formatPropostaNumero(r.numero) || "—"}</span>
+                <div className="col-span-2 truncate">
+                  Cliente{" "}
+                  <span className="text-foreground font-medium">
+                    {r.cliente_nome}
+                  </span>
                 </div>
-                <div className="text-right">
+                <div className="col-span-2 truncate">
+                  Consultor{" "}
+                  <span className="text-foreground">
+                    {r.consultor_nome || r.criado_por_nome || "—"}
+                  </span>
+                </div>
+                <div>
                   SAP{" "}
                   <span className="text-foreground">
                     {formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}
                   </span>
                 </div>
-                <div>
+                <div className="text-right">
                   NF{" "}
                   <span className="text-foreground">
                     {r.nf_numero ? formatSapNumero(r.nf_numero) : "—"}
                   </span>
                 </div>
-                <div className="text-right text-sm font-semibold tabular-nums text-foreground">
+                <div className="text-right col-span-2 text-sm font-semibold tabular-nums text-foreground">
                   {fmtBRL(r.totais?.['valorTotal'] ?? 0)}
-                </div>
-                <div className="truncate">
-                  {r.consultor_nome || r.criado_por_nome || "—"}
                 </div>
                 {r.expedido_em ? (
                   <div className="col-span-2">

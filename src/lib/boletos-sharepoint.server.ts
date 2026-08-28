@@ -1,7 +1,7 @@
 /**
  * Boletos a prazo publicados pelo financeiro no SharePoint.
  *
- * O boleto a prazo (forma "n" / condição ZTERM) NÃO é emitido pelo portal:
+ * O boleto a prazo (forma "boleto_prazo" / condição ZTERM) NÃO é emitido pelo portal:
  * depois do faturamento, o financeiro sobe os PDFs no SharePoint
  * (`4- Boletos/1- Filial (9802)`). Este job varre os pedidos faturados,
  * procura os PDFs pelo número da NF, guarda no Storage e avisa o cliente
@@ -117,17 +117,23 @@ async function processarProposta(
 }
 
 /**
- * Varredura do cron: pedidos com boleto a prazo (`forma_pagamento = 'n'`),
- * NF emitida e ainda sem aviso enviado.
+ * Varredura do cron: pedidos com boleto a prazo (`forma_pagamento = 'boleto_prazo'`),
+ * NF emitida e ainda sem aviso enviado. Só pedidos faturados dentro da janela
+ * configurável (`BOLETOS_SP_JANELA_DIAS`, default 30) entram, evitando e-mails
+ * retroativos em massa para pedidos antigos migrados.
  */
 export async function sincronizarBoletosSharepoint(limite = 100): Promise<BoletosSharepointResultado> {
   const { consultarPropostas } = await import("./propostas-db.server");
 
+  const janelaDias = Math.max(1, Number(process.env["BOLETOS_SP_JANELA_DIAS"] ?? 30) || 30);
+  const corte = new Date(Date.now() - janelaDias * 86_400_000).toISOString();
+
   const rows = (await consultarPropostas(
     {
-      forma_pagamento: "eq.n",
+      forma_pagamento: "eq.boleto_prazo",
       nf_numero: "not.is.null",
       boletos_avisados_em: "is.null",
+      faturado_em: `gte.${corte}`,
     },
     {
       select: "id, numero, nf_numero, cliente_nome, cliente_doc, cliente_email, organizacao",
