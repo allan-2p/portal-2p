@@ -21,7 +21,14 @@ export type EmailTransacional = {
   idempotencyKey?: string;
 };
 
-export async function enviarEmail(msg: EmailTransacional): Promise<boolean> {
+/** Endereço fixo de registro: recebe cópia de todo e-mail de negócio do portal. */
+const COPIA_REGISTRO = () =>
+  String(process.env["EMAIL_COPIA_REGISTRO"] ?? "allan@2pgroup.com.br").trim().toLowerCase();
+
+export async function enviarEmail(
+  msg: EmailTransacional,
+  opts: { ehCopiaRegistro?: boolean } = {},
+): Promise<boolean> {
   try {
     const destino = (msg.to ?? "").trim();
     if (!destino || !destino.includes("@")) return false;
@@ -63,7 +70,31 @@ export async function enviarEmail(msg: EmailTransacional): Promise<boolean> {
       } as any);
       return false;
     }
+
+    // Cópia de registro: todo e-mail de negócio vai também para o endereço de
+    // registro — exceto quando o destinatário JÁ é ele, ou quando esta chamada
+    // já é a própria cópia (evita recursão). Best effort.
+    if (!opts.ehCopiaRegistro && destino.toLowerCase() !== COPIA_REGISTRO()) {
+      try {
+        await enviarEmail(
+          {
+            to: COPIA_REGISTRO(),
+            subject: `[registro] ${msg.subject}`,
+            html:
+              `<p style="font-size:12px;color:#6b7280">Cópia de registro — destinatário original: ${destino}</p>` +
+              msg.html,
+            label: `${msg.label}-registro`,
+            ...(msg.idempotencyKey ? { idempotencyKey: `${msg.idempotencyKey}-registro` } : {}),
+          },
+          { ehCopiaRegistro: true },
+        );
+      } catch {
+        /* cópia é best effort */
+      }
+    }
+
     return true;
+
   } catch {
     return false;
   }
