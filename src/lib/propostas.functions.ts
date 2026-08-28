@@ -698,6 +698,20 @@ export const obterPropostaFn = createServerFn({ method: "POST" })
  *   fora da Fretefy; exige Manager Access ("Modify All Records") em Propostas.
  * Qualquer outra alteração manual é recusada.
  */
+/** Nome de quem está executando a ação (para e-mails/auditoria). Best effort. */
+async function nomeDoAtor(context: any): Promise<string | null> {
+  try {
+    const { data } = await context.supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", context.userId)
+      .maybeSingle();
+    return (data as any)?.full_name ?? (data as any)?.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
