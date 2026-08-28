@@ -37,7 +37,7 @@ import { cnpjValido, mascaraCnpj, mascaraDoc, soDigitos } from "@/lib/cnpj";
 import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
 
 import {
-  listClientesPaginaFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn,
+  listClientesPaginaFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, ampliarAtuacaoFn,
   listConsultoresFn,
 
 } from "@/lib/clientes.functions";
@@ -79,6 +79,8 @@ type Cnae = { codigo: string; descricao: string };
 export type Cliente = {
   id: string;
   organizacao?: string | null;
+  /** "grupo" = atuação ampliada (aparece no Solar e no Carregadores). */
+  escopo_org?: string | null;
   razao_social: string;
   nome_fantasia: string | null;
   doc: string;
@@ -273,7 +275,15 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [docBusca, setDocBusca] = useState("");
   const [docErro, setDocErro] = useState<string | null>(null);
   const [duplicado, setDuplicado] = useState<
-    Array<{ instancia: string; razao_social: string; organizacao: string; consultor: string; ativo: boolean }>
+    Array<{
+      id: string;
+      instancia: string;
+      razao_social: string;
+      organizacao: string;
+      consultor: string;
+      ativo: boolean;
+      escopo_org: string | null;
+    }>
   >([]);
   const [fontes, setFontes] = useState<string[]>([]);
   const [avisos, setAvisos] = useState<string[]>([]);
@@ -345,6 +355,19 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const clientes = useMemo(() => ((data?.clientes ?? []) as unknown as Cliente[]), [data]);
   const total = data?.total ?? 0;
   const tabelaAusente = !isFetching && data?.ok === false && data?.motivo === "tabela-ausente";
+
+  const ampliar = useServerFn(ampliarAtuacaoFn);
+  const ampliarAtuacao = useMutation({
+    mutationFn: (id: string) => ampliar({ data: { instancia, id } }),
+    onSuccess: (r: any) => {
+      toast.success(`Atuação ampliada — o cliente agora aparece também em ${ORGANIZACAO[instancia]}.`);
+      if (r?.sync?.sap && r.sync.sap.ok === false) toast.error(`SAP: ${r.sync.sap.erro ?? "falha no envio."}`);
+      setDuplicado([]);
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["clientes", instancia] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Não foi possível ampliar a atuação."),
+  });
 
   const verificar = useMutation({
     mutationFn: async () => {
@@ -670,15 +693,45 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   <div className="flex items-center gap-2 text-sm font-semibold text-destructive">
                     <AlertCircle className="h-4 w-4" /> Este CNPJ já está cadastrado
                   </div>
-                  {duplicado.map((d, i) => (
-                    <div key={i} className="rounded-lg bg-background/60 p-2 text-sm">
-                      <div className="font-medium">{d.razao_social}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Instância: <strong>{d.organizacao}</strong> · Consultor: <strong>{d.consultor}</strong>
-                        {!d.ativo && " · cadastro inativo"}
+                  {duplicado.map((d, i) => {
+                    const ehGrupo = (d.escopo_org ?? "").toLowerCase() === "grupo";
+                    const outraUnidade = !ehGrupo && d.instancia !== instancia;
+                    return (
+                      <div key={i} className="rounded-lg bg-background/60 p-2 text-sm space-y-2">
+                        <div className="font-medium">{d.razao_social}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Instância: <strong>{ehGrupo ? "Grupo 2P (ambas)" : d.organizacao}</strong> · Consultor:{" "}
+                          <strong>{d.consultor}</strong>
+                          {!d.ativo && " · cadastro inativo"}
+                        </div>
+                        {ehGrupo && (
+                          <p className="text-xs text-muted-foreground">
+                            Este cadastro já atua nas duas unidades — procure por ele na lista de {ORGANIZACAO[instancia]}.
+                          </p>
+                        )}
+                        {outraUnidade && (
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">
+                              Você pode ampliar a atuação deste cliente para {ORGANIZACAO[instancia]}: ele passa a
+                              aparecer nas duas unidades (Grupo 2P) e é reenviado ao SAP com equipe 003 / escritório 0004.
+                            </p>
+                            <Button
+                              size="sm"
+                              className="gap-2"
+                              onClick={() => ampliarAtuacao.mutate(d.id)}
+                              disabled={ampliarAtuacao.isPending}
+                            >
+                              {ampliarAtuacao.isPending ? (
+                                <><Loader2 className="h-4 w-4 animate-spin" /> Ampliando…</>
+                              ) : (
+                                <>Ampliar atuação para {ORGANIZACAO[instancia]}</>
+                              )}
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -1163,7 +1216,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   sap={detalhe.numero_sap}
                   selos={
                     <>
-                      <Badge variant="outline">{detalhe.organizacao || ORGANIZACAO[instancia]}</Badge>
+                      <Badge variant="outline">
+                        {(detalhe.escopo_org ?? "").toLowerCase() === "grupo"
+                          ? "Grupo 2P (Solar + Carregadores)"
+                          : detalhe.organizacao || ORGANIZACAO[instancia]}
+                      </Badge>
                       <Badge variant={detalhe.contribuinte ? "default" : "secondary"}>
                         {detalhe.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}
                       </Badge>
