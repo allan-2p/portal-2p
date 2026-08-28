@@ -833,8 +833,9 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
       const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
       avisoEmail = avisoEnvioCancelamento(efeitos);
     } catch {
-      /* efeitos são best effort: nunca desfazem o cancelamento */
+      avisoEmail = "FALHA ao notificar os setores por e-mail. Avise-os manualmente.";
     }
+
     return { ok: true, aviso: avisoEmail };
   });
 
@@ -864,19 +865,20 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
       const transicao = await aplicarTransicao(data.id, "Cancelado", "humano", { de });
       if (!transicao.ok) throw new Error(transicao.motivo ?? "Não foi possível cancelar o pedido.");
       await sincronizarSalesforceAoSalvar(data.id);
-      let avisoEmail = "Os setores foram avisados por e-mail.";
+      let avisoEmail: string | null = null;
       try {
         const { efeitosCancelamento, avisoEnvioCancelamento } = await import("@/lib/proposta-cancelamento.server");
         const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
-        avisoEmail = avisoEnvioCancelamento(efeitos) ?? avisoEmail;
+        avisoEmail = avisoEnvioCancelamento(efeitos);
       } catch {
-        /* efeitos são best effort */
+        avisoEmail = "FALHA ao notificar os setores por e-mail. Avise-os manualmente.";
       }
       return {
         ok: true,
         cancelada: true,
-        aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal. ${avisoEmail}`,
+        aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal.${avisoEmail ? ` ${avisoEmail}` : ""}`,
       };
+
     }
     await db.excluirProposta(data.id);
     return { ok: true, cancelada: false, aviso: null as string | null };
