@@ -123,3 +123,67 @@ export function useImagensPorCodigo(codigos: (string | null | undefined)[]) {
     },
   });
 }
+
+/**
+ * Gera a miniatura WebP (lado maior = 320px) no navegador, a partir do arquivo
+ * enviado. Usada no upload do catálogo para que toda foto nova já nasça com a
+ * versão leve (o acervo original em PNG chega a somar dezenas de MB).
+ */
+export async function gerarMiniaturaWebp(file: File, lado = 320): Promise<Blob | null> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const escala = Math.min(1, lado / Math.max(bitmap.width, bitmap.height));
+    const w = Math.max(1, Math.round(bitmap.width * escala));
+    const h = Math.max(1, Math.round(bitmap.height * escala));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    return await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), "image/webp", 0.82),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** Remove o caminho (e sua miniatura) do cache de URLs assinadas. */
+export function limparCacheImagem(path: string) {
+  cache.delete(path);
+  cache.delete(caminhoMiniatura(path));
+}
+
+/**
+ * Envia a foto do produto e, junto, a miniatura WebP correspondente.
+ * Devolve o caminho do original (o que fica gravado em `sap_produtos`).
+ */
+export async function enviarFotoProduto(path: string, file: File): Promise<string> {
+  const up = await supabase.storage
+    .from(BUCKET_PRODUTOS)
+    .upload(path, file, { upsert: true, contentType: file.type || undefined });
+  if (up.error) throw new Error(up.error.message);
+
+  const thumb = await gerarMiniaturaWebp(file);
+  if (thumb) {
+    const t = await supabase.storage
+      .from(BUCKET_PRODUTOS)
+      .upload(caminhoMiniatura(path), thumb, {
+        upsert: true,
+        contentType: "image/webp",
+        cacheControl: "31536000",
+      });
+    if (t.error) console.warn("[produto-imagens] miniatura não gerada:", t.error.message);
+  }
+
+  limparCacheImagem(path);
+  return path;
+}
+
+/** Remove a foto do produto e sua miniatura do bucket. */
+export async function removerFotoProduto(path: string) {
+  limparCacheImagem(path);
+  await supabase.storage.from(BUCKET_PRODUTOS).remove([path, caminhoMiniatura(path)]);
+}
