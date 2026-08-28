@@ -72,7 +72,7 @@ import { obterPropostaFn, concluirPropostaFn } from "@/lib/propostas.functions";
 import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/resultado-conclusao-dialog";
 import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-progresso";
 import { useConfirmarSaida } from "@/components/confirmar-saida";
-import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
+import { salvarPropostaSolar, KIT_FOTOVOLTAICO_MATERIAL } from "@/lib/propostas-solar.functions";
 import { normalizarFinalidade } from "@/lib/sap-clientes-map";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
 import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
@@ -89,6 +89,7 @@ import {
   useSolarMicroinversores,
   useSolarModulos,
   useSolarProdutos,
+  useSolarKitBase,
   useSolarSuportes,
   useSolarTrilhoSuportes,
   useSolarTrilhos,
@@ -135,6 +136,8 @@ type Item = {
   qtd: number;
   valor: number;
   origem: "calculadora" | "manual";
+  /** Item obrigatório do kit fotovoltaico — quantidade travada em 1, não removível. */
+  kit?: boolean;
   /** Item digitado manualmente (fora do catálogo SAP). */
   avulso?: { codigo: string; descricao: string };
 };
