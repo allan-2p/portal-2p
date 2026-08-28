@@ -146,11 +146,10 @@ export async function sincronizarBoletosSharepoint(limite = 100): Promise<Boleto
   if (!rows.length) return out;
 
   const sessao = await abrirSharepoint();
-  const arquivos = await listarArquivos(sessao, sessao.cfg.pastaBoletos);
 
   for (const row of rows) {
     try {
-      const r = await processarProposta(sessao, arquivos, row);
+      const r = await processarProposta(sessao, row);
       if (!r) continue;
       out.com_arquivos++;
       out.arquivos += r.arquivos.length;
