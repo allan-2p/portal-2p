@@ -137,6 +137,71 @@ export async function listarArquivos(
   return out;
 }
 
+/**
+ * Arquivos de boleto de UMA NF, indo DIRETO na pasta com o nome da NF
+ * (padrão atual do financeiro: `4- Boletos/1- Filial (9802)/{NF}/*.pdf`) —
+ * 1 requisição, em vez de varrer as ~583 pastas recursivamente.
+ * Fallback legado: arquivos soltos no nível 1 cujo nome contém a NF.
+ */
+export async function listarArquivosDaNf(
+  s: SharepointSessao,
+  pastaBase: string,
+  nf: string,
+): Promise<SharepointArquivo[]> {
+  const limpo = String(nf ?? "").trim();
+  if (!limpo) return [];
+  const semZeros = limpo.replace(/^0+/, "");
+  const candidatos = [...new Set([semZeros, limpo].filter(Boolean))];
+
+  // 1) Pasta com o nome da NF (com e sem zeros à esquerda).
+  for (const nome of candidatos) {
+    const encoded = encodeURIComponent(`${pastaBase}/${nome}`).replace(/%2F/g, "/");
+    try {
+      const page: any = await graph(
+        s.token,
+        `/drives/${s.driveId}/root:/${encoded}:/children?$top=200&$select=id,name,size,folder,file,lastModifiedDateTime`,
+      );
+      const arquivos = (page?.value ?? [])
+        .filter((i: any) => !i.folder)
+        .map((i: any) => ({
+          id: String(i.id),
+          nome: String(i.name),
+          caminho: `${pastaBase}/${nome}/${i.name}`,
+          tamanho: Number(i.size ?? 0),
+          atualizado_em: i.lastModifiedDateTime ?? null,
+        }));
+      if (arquivos.length) return arquivos;
+    } catch (e) {
+      // 404 = pasta da NF não existe (ainda) — tenta o próximo candidato/fallback.
+      if (!/Graph 404/.test((e as Error).message)) throw e;
+    }
+  }
+
+  // 2) Legado: PDFs soltos no NÍVEL 1 da pasta base (sem recursão).
+  const encodedBase = encodeURIComponent(pastaBase).replace(/%2F/g, "/");
+  let url =
+    `/drives/${s.driveId}/root:/${encodedBase}:/children` +
+    `?$top=200&$select=id,name,size,folder,file,lastModifiedDateTime`;
+  const soltos: SharepointArquivo[] = [];
+  while (url) {
+    const page: any = await graph(s.token, url);
+    for (const i of page?.value ?? []) {
+      if (i.folder) continue;
+      if (!arquivoCasaComNf(String(i.name), limpo)) continue;
+      soltos.push({
+        id: String(i.id),
+        nome: String(i.name),
+        caminho: `${pastaBase}/${i.name}`,
+        tamanho: Number(i.size ?? 0),
+        atualizado_em: i.lastModifiedDateTime ?? null,
+      });
+    }
+    const next = page?.["@odata.nextLink"] as string | undefined;
+    url = next ? next.replace(GRAPH, "") : "";
+  }
+  return soltos;
+}
+
 /** Baixa o conteúdo de um arquivo pelo id do item. */
 export async function baixarArquivo(s: SharepointSessao, itemId: string): Promise<Uint8Array> {
   const r = await fetch(`${GRAPH}/drives/${s.driveId}/items/${itemId}/content`, {

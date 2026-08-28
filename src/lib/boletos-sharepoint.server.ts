@@ -12,7 +12,7 @@
  */
 
 import { enviarEmail, layoutEmail } from "./email.server";
-import { abrirSharepoint, listarArquivos, baixarArquivo, arquivoCasaComNf } from "./sharepoint.server";
+import { abrirSharepoint, listarArquivosDaNf, baixarArquivo } from "./sharepoint.server";
 
 export const BOLETOS_BUCKET = "danfes";
 
@@ -62,11 +62,10 @@ async function destinatarios(row: Record<string, any>): Promise<string[]> {
  */
 async function processarProposta(
   sessao: Awaited<ReturnType<typeof abrirSharepoint>>,
-  arquivosDaPasta: Awaited<ReturnType<typeof listarArquivos>>,
   row: Record<string, any>,
 ): Promise<{ arquivos: BoletoArquivo[]; emails: number } | null> {
   const nf = String(row["nf_numero"] ?? "").trim();
-  const achados = arquivosDaPasta.filter((a) => arquivoCasaComNf(a.nome, nf));
+  const achados = await listarArquivosDaNf(sessao, sessao.cfg.pastaBoletos, nf);
   if (!achados.length) return null;
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -147,11 +146,10 @@ export async function sincronizarBoletosSharepoint(limite = 100): Promise<Boleto
   if (!rows.length) return out;
 
   const sessao = await abrirSharepoint();
-  const arquivos = await listarArquivos(sessao, sessao.cfg.pastaBoletos);
 
   for (const row of rows) {
     try {
-      const r = await processarProposta(sessao, arquivos, row);
+      const r = await processarProposta(sessao, row);
       if (!r) continue;
       out.com_arquivos++;
       out.arquivos += r.arquivos.length;
