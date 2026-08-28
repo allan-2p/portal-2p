@@ -78,6 +78,10 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
     })),
     freteMod: txt(p['frete_mod']) || "—",
     freteValor: frete,
+    // Grátis só por marcação no pedido ou cupom — modalidade CIF/DEDICADO
+    // por si só NÃO torna o frete grátis.
+    freteGratis: p['frete_gratis'] === true || totais['freteGratis'] === true,
+    freteBonificado: p['frete_bonificado'] === true,
     impostos: {
       ipiRate,
       ipiValor: num(totais['ipi']),
@@ -141,7 +145,7 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
     cupom: txt(totais['cupom']) || null,
     freteMod: txt(p['frete_mod']) || null,
     freteValor: frete,
-    freteGratis: frete === 0,
+    freteGratis: p['frete_gratis'] === true || totais['freteGratis'] === true,
     freteBonificado: p['frete_bonificado'] === true,
     transportadora: txt(p['transportadora']) || null,
     total: num(totais['valorTotal']) || subtotal + frete,
