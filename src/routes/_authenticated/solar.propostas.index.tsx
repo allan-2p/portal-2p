@@ -293,6 +293,9 @@ function PropostasSolarPage() {
               <tbody className={fetchingClass(q.isFetching, q.isLoading)}>
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
+                    <td className="px-3 py-2.5 text-center">
+                      <StatusDot status={r.status} />
+                    </td>
                     <td className="px-3 py-2.5">
                       <div className="truncate text-sm font-bold tabular-nums text-foreground">
                         {formatPropostaNumero(r.numero) || "—"}
