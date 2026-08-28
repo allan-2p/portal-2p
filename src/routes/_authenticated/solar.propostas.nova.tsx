@@ -234,6 +234,8 @@ function NovaPropostaSolarPage() {
   const [editandoCalc, setEditandoCalc] = useState(false);
 
   const [trocando, setTrocando] = useState(false);
+  /** Só vira true depois que uma tentativa de precificação terminou — evita o alerta vermelho durante o carregamento. */
+  const [precoTentado, setPrecoTentado] = useState(false);
   const [resultado, setResultado] = useState<CalcResultado | null>(null);
   const [previewAberto, setPreviewAberto] = useState(false);
   const [pdfHtml, setPdfHtml] = useState("");
@@ -549,7 +551,14 @@ function NovaPropostaSolarPage() {
       },
     ];
     setter(novos);
-    void atualizarPrecos(novos, listaPreco, setter);
+    // Mostra o carregamento neutro (overlay "Atualizando itens e valores…")
+    // enquanto o SAP responde — sem isso, o item zerado acionava o alerta
+    // vermelho de bloqueio durante a busca do preço.
+    void (async () => {
+      setTrocando(true);
+      await atualizarPrecos(novos, listaPreco, setter);
+      setTrocando(false);
+    })();
   }
 
 
@@ -945,6 +954,8 @@ function NovaPropostaSolarPage() {
       const msg = (e as Error).message || "erro desconhecido";
       setAvisosPreco([msg]);
       toast.error(`Não foi possível buscar os preços no SAP: ${msg}.`);
+    } finally {
+      setPrecoTentado(true);
     }
   }
 
@@ -998,6 +1009,10 @@ function NovaPropostaSolarPage() {
 
   /** Explicação do bloqueio da etapa 3 (causa provável + ações sugeridas). */
   const diagnosticoBloqueio = useMemo(() => {
+    // Enquanto a precificação está em andamento (ou ainda não rodou), itens
+    // novos ficam zerados por instantes — mostrar o alerta vermelho aqui seria
+    // falso positivo. Só diagnostica depois de uma tentativa concluída.
+    if (trocando || (!precoTentado && !avisosPreco.length)) return null;
     const semPreco = itens.filter((i) => !(i.valor > 0)).map(
       (i) =>
         i.avulso?.descricao ||
@@ -1011,7 +1026,7 @@ function NovaPropostaSolarPage() {
       documento: String(cliente?.['doc'] ?? clienteDoc ?? ""),
       tabelaPreco: listaPreco,
     });
-  }, [itens, avisosPreco, cliente, clienteDoc, listaPreco, produtos]);
+  }, [itens, avisosPreco, cliente, clienteDoc, listaPreco, produtos, trocando, precoTentado]);
 
   // ------------------------------------------------------------------
   // Itens enviados à cotação de frete: TODOS os itens com código SAP
