@@ -620,6 +620,7 @@ export const listarPropostasPaginaFn = createServerFn({ method: "POST" })
     return {
       organizacao: txt(i["organizacao"]),
       q: txt(i["q"]),
+      campo: txt(i["campo"]),
       status: txt(i["status"]),
       uf: txt(i["uf"]),
       comSap: txt(i["comSap"]),
