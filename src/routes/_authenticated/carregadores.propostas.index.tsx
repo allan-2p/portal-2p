@@ -165,25 +165,35 @@ function HistoricoCarregadoresPage() {
   const paginaAtual = Math.min(pagina, totalPaginas);
   const detalheIdx = detalheId ? filtered.findIndex((r) => r.id === detalheId) : -1;
 
+  const [motivoCancel, setMotivoCancel] = useState("");
   const propostaParaExcluir = useMemo(
     () => rows.find((r) => r.id === excluirId) ?? null,
     [rows, excluirId]
   );
+  // Pedido com ordem no SAP não é apagado: vira "Cancelado" e exige motivo.
+  const ehCancelamentoSap = !!propostaParaExcluir?.sap_ov_numero;
 
   async function confirmarExclusao() {
     if (!excluirId) return;
+    if (ehCancelamentoSap && !motivoCancel) {
+      toast.error("Informe o motivo do cancelamento.");
+      return;
+    }
     try {
-      const r = await excluirPropostaFn({ data: { id: excluirId } });
+      const r = await excluirPropostaFn({
+        data: { id: excluirId, ...(motivoCancel ? { motivo: motivoCancel } : {}) },
+      });
       setExcluirId(null);
+      setMotivoCancel("");
       if (r?.aviso) toast.warning(r.aviso, { duration: 10000 });
-      else toast.success("Proposta excluída.");
+      else toast.success(ehCancelamentoSap ? "Pedido cancelado." : "Proposta excluída.");
       q.refetch();
       return;
     } catch (e) {
       setExcluirId(null);
+      setMotivoCancel("");
       return toast.error((e as Error).message);
     }
-    q.refetch();
   }
 
   return (
