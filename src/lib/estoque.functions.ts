@@ -113,6 +113,14 @@ export const listEstoqueSyncRuns = createServerFn({ method: "GET" })
     return { runs: (data ?? []) as EstoqueSyncRun[] };
   });
 
+export type DisponibilidadeInfo = {
+  ok: boolean;
+  disponivel?: boolean;
+  tipo?: string;
+  dt_remessa?: string;
+  msg?: string;
+};
+
 /** Cascata de disponibilidade: imediato → entreposto → próxima remessa. */
 export const checkDisponibilidade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -123,14 +131,36 @@ export const checkDisponibilidade = createServerFn({ method: "POST" })
       p_qtd: data.qtd,
     });
     if (error) throw new Error(error.message);
-    return res as {
-      ok: boolean;
-      disponivel?: boolean;
-      tipo?: string;
-      dt_remessa?: string;
-      msg?: string;
-    };
+    return res as DisponibilidadeInfo;
   });
+
+/** Disponibilidade de vários itens de uma vez (proposta). Máx. 100 itens. */
+export const checkDisponibilidadeLote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        itens: z
+          .array(z.object({ material: z.string().min(1), qtd: z.number().positive() }))
+          .min(1)
+          .max(100),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<Record<string, DisponibilidadeInfo>> => {
+    const out: Record<string, DisponibilidadeInfo> = {};
+    for (const item of data.itens) {
+      const { data: res, error } = await context.supabase.rpc("check_disponibilidade", {
+        p_material: item.material,
+        p_qtd: item.qtd,
+      });
+      out[item.material] = error
+        ? { ok: false, msg: error.message }
+        : (res as DisponibilidadeInfo);
+    }
+    return out;
+  });
+
 
 export type EstoqueSyncResult = {
   materiais: number;
