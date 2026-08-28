@@ -185,3 +185,21 @@ export const PROPOSTA_STATUS_EM_CURSO: PropostaStatus[] = [
 export function propostaStatusStyle(status: string): PropostaStatusStyle {
   return PROPOSTA_STATUS_STYLE[status as PropostaStatus] ?? PROPOSTA_STATUS_STYLE["Salvo"];
 }
+
+/** Edição da proposta só é permitida enquanto ela está "Salvo". */
+export function podeEditarProposta(status: string | null | undefined): boolean {
+  return status === "Salvo";
+}
+
+/** Status em que o pedido ainda pode ser cancelado (nunca excluído). */
+export const STATUS_CANCELAVEIS: PropostaStatus[] = [
+  "Aguardando Pagamento",
+  "Processando",
+  "Separação",
+  "Faturado",
+  "Coletado",
+];
+
+export function podeCancelarPedido(status: string | null | undefined): boolean {
+  return STATUS_CANCELAVEIS.includes(status as PropostaStatus);
+}
