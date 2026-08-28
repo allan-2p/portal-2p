@@ -236,7 +236,18 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             />
             <Campo label="Contribuinte" value={p['contribuinte'] ? "Sim" : "Não"} />
             <Campo label="Finalidade de uso" value={finalidadeCadastro ? labelFinalidadeUso[finalidadeUsoDoCadastro(finalidadeCadastro)] : labelFinalidade(p['finalidade_uso'])} />
-            <Campo label="Frete" value={`${p['frete_mod'] ?? "—"} · ${fmtBRL(frete)}`} />
+            <Campo
+              label="Frete"
+              value={`${p['frete_mod'] ?? "—"} · ${freteGratis ? "Grátis (cupom)" : freteBonificado ? "Bonificado" : fmtBRL(frete)}`}
+            />
+            {Number(totais['desconto'] ?? 0) > 0 ? (
+              <Campo
+                label="Desconto"
+                value={`${fmtBRL(Number(totais['desconto']))}${totais['cupom'] ? ` · cupom ${String(totais['cupom'])}` : ""}`}
+              />
+            ) : null}
+            <Campo label="Previsão de despacho" value={p['expedido_em'] ? fmtData(p['expedido_em']) : "—"} />
+
             <Campo label="Indicação" value={p['indicacao'] ? "Sim" : "Não"} />
             {p['indicacao'] ? <Campo label="Padrinho" value={p['padrinho_nome'] || "—"} /> : null}
 
