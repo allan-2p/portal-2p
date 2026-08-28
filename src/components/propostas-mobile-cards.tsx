@@ -24,6 +24,7 @@ export type PropostaCardRow = {
   status: string;
   created_at: string;
   expedido_em?: string | null;
+  finalizado_em?: string | null;
   consultor_nome?: string | null;
   criado_por_nome?: string | null;
   sap_ov_status?: string | null;
