@@ -7,7 +7,7 @@ import { Search, ImageOff, Upload, RefreshCw, Trash2, Loader2 } from "lucide-rea
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarregadoresInvalidate, useCarregadoresProductsAdmin } from "@/hooks/use-carregadores";
-import { useImagensPorPath, BUCKET_PRODUTOS } from "@/lib/produto-imagens";
+import { useImagensPorPath, enviarFotoProduto, removerFotoProduto } from "@/lib/produto-imagens";
 import type { CarregadoresProduct } from "@/lib/carregadores";
 
 type Filtro = "todos" | "com" | "sem";
@@ -66,10 +66,7 @@ export function CatalogoFotos() {
     setEnviando(p.id);
     try {
       const path = `skus/${p.codigo || p.id}.${ext === "jpeg" ? "jpg" : ext}`;
-      const up = await supabase.storage
-        .from(BUCKET_PRODUTOS)
-        .upload(path, file, { upsert: true, contentType: file.type || undefined });
-      if (up.error) throw new Error(up.error.message);
+      await enviarFotoProduto(path, file);
       const { error } = await supabase.from("sap_produtos").update({ imagem_path: path }).eq("id", p.id);
       if (error) throw new Error(error.message);
       toast.success(`Foto de ${p.codigo || p.nome} atualizada.`);
@@ -88,7 +85,7 @@ export function CatalogoFotos() {
     try {
       const { error } = await supabase.from("sap_produtos").update({ imagem_path: null }).eq("id", p.id);
       if (error) throw new Error(error.message);
-      await supabase.storage.from(BUCKET_PRODUTOS).remove([p.imagem_path]);
+      await removerFotoProduto(p.imagem_path);
       toast.success("Foto removida.");
       invalidate();
       await fotosQ.refetch();
