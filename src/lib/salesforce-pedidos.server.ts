@@ -259,6 +259,12 @@ export async function sincronizarPedidoSalesforce(
     };
     const custom: Record<string, unknown> = { ...payload };
     for (const k of Object.keys(corpoBase)) delete custom[k];
+    // Motivo do cancelamento: picklist Loss_Reason__c (valores idênticos aos
+    // do portal). Se a org não tiver o campo, a retentativa abaixo remove
+    // automaticamente o campo inválido.
+    if (so(row["status"]) === "Cancelado" && so(row["motivo_cancelamento"])) {
+      custom["Loss_Reason__c"] = so(row["motivo_cancelamento"]);
+    }
 
 
     // Vínculo: usa o sf_opp_id da proposta; se não houver, procura a
