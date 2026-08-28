@@ -12,7 +12,7 @@
  */
 
 import { enviarEmail, layoutEmail } from "./email.server";
-import { abrirSharepoint, listarArquivos, baixarArquivo, arquivoCasaComNf } from "./sharepoint.server";
+import { abrirSharepoint, listarArquivosDaNf, baixarArquivo } from "./sharepoint.server";
 
 export const BOLETOS_BUCKET = "danfes";
 
