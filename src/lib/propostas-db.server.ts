@@ -108,7 +108,23 @@ const COLUNAS_BUSCA_PROPOSTA = [
   "totais->>numeroAnterior",
 ];
 
+/**
+ * Busca por campo específico ("Buscar em" na tela). `tudo` mantém a pesquisa
+ * ampla; os demais restringem a pesquisa às colunas do campo escolhido.
+ */
+export const CAMPOS_BUSCA_PROPOSTA: Record<string, string[]> = {
+  tudo: COLUNAS_BUSCA_PROPOSTA,
+  numero: ["numero", "totais->>numeroAnterior"],
+  sap: ["sap_ov_numero", "numero_sap"],
+  cliente: ["cliente_nome"],
+  documento: ["cliente_doc"],
+  nome: ["nome"],
+  consultor: ["consultor_nome", "criado_por_nome"],
+  nf: ["nf_numero", "nf_chave"],
+};
+
 const termoSeguro = (t: string) => t.replace(/[(),*"\\]/g, " ").trim();
+
 
 /**
  * Escopo do consultor: registros criados por ele, em que ele é o consultor
