@@ -197,7 +197,19 @@ function RootComponent() {
         queryClient.clear();
       }
       if (event === "SIGNED_IN" && uid && lastUserId !== uid) {
-        void logUserActivity({ data: { event: "login" } }).catch(() => {});
+        // O middleware do cliente lê o token do storage; no instante do
+        // SIGNED_IN ele ainda pode não estar persistido → 401. Só registra
+        // depois de confirmar que a sessão já está hidratada.
+        void (async () => {
+          for (let i = 0; i < 5; i++) {
+            const { data: s } = await supabase.auth.getSession();
+            if (s.session?.access_token) {
+              await logUserActivity({ data: { event: "login" } }).catch(() => {});
+              return;
+            }
+            await new Promise((r) => setTimeout(r, 300));
+          }
+        })();
       }
       lastUserId = uid;
     });
