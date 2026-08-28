@@ -457,7 +457,14 @@ function NovaPropostaSolarPage() {
         });
       }
       const totais = (p['totais'] ?? {}) as Record<string, any>;
-      setListaPreco(String(totais['listaPreco'] ?? "01"));
+      // Tabela salva na proposta vence o padrão do cliente. Sem valor gravado
+      // (propostas antigas), deixa o cadastro do cliente decidir.
+      const tabelaSalva = String(totais['listaPreco'] ?? p['lista_preco'] ?? "").trim();
+      if (/^\d{2}$/.test(tabelaSalva)) {
+        tabelaDaProposta.current = true;
+        setListaPreco(tabelaSalva);
+      }
+
       if (typeof totais['ehKit'] === "boolean") setEhKit(totais['ehKit'] as boolean);
       setVendido(totais['vendidoClienteFinal'] ? "sim" : "nao");
       setCupomCodigo(String(totais['cupom'] ?? ""));
