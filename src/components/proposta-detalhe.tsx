@@ -73,8 +73,13 @@ export function PropostaDetalhe({ id }: { id?: string }) {
   const fotosQ = useImagensPorCodigo(itens.map((i) => i.codigo));
   const fotos = fotosQ.data ?? {};
   const frete = Number(p?.['frete_valor'] ?? 0);
+  // Frete grátis vem do cupom (frete_gratis / totais.freteGratis); bonificado é
+  // a cortesia comercial: em ambos o cliente não paga o frete.
+  const freteGratis = !!(p?.['frete_gratis'] ?? (totais as Record<string, unknown>)['freteGratis']);
+  const freteBonificado = !!p?.['frete_bonificado'];
   const status = String(p?.['status'] ?? "Salvo");
   const st = propostaStatusStyle(status);
+
 
   // Finalidade de uso: sempre a do cadastro atual do cliente (nunca a salva na proposta).
   const buscarFinalidade = useServerFn(finalidadeUsoPorDocFn);
@@ -231,7 +236,18 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             />
             <Campo label="Contribuinte" value={p['contribuinte'] ? "Sim" : "Não"} />
             <Campo label="Finalidade de uso" value={finalidadeCadastro ? labelFinalidadeUso[finalidadeUsoDoCadastro(finalidadeCadastro)] : labelFinalidade(p['finalidade_uso'])} />
-            <Campo label="Frete" value={`${p['frete_mod'] ?? "—"} · ${fmtBRL(frete)}`} />
+            <Campo
+              label="Frete"
+              value={`${p['frete_mod'] ?? "—"} · ${freteGratis ? "Grátis (cupom)" : freteBonificado ? "Bonificado" : fmtBRL(frete)}`}
+            />
+            {Number(totais['desconto'] ?? 0) > 0 ? (
+              <Campo
+                label="Desconto"
+                value={`${fmtBRL(Number(totais['desconto']))}${totais['cupom'] ? ` · cupom ${String(totais['cupom'])}` : ""}`}
+              />
+            ) : null}
+            <Campo label="Previsão de despacho" value={p['expedido_em'] ? fmtData(p['expedido_em']) : "—"} />
+
             <Campo label="Indicação" value={p['indicacao'] ? "Sim" : "Não"} />
             {p['indicacao'] ? <Campo label="Padrinho" value={p['padrinho_nome'] || "—"} /> : null}
 
@@ -325,9 +341,19 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border px-4 py-4 sm:justify-end sm:gap-8 sm:px-5">
           <Total label="Subtotal" value={fmtBRL(subtotal)} />
-          <Total label="Frete" value={fmtBRL(frete)} />
+          {Number(totais['desconto'] ?? 0) > 0 ? (
+            <Total
+              label={totais['cupom'] ? `Desconto (${String(totais['cupom'])})` : "Desconto"}
+              value={`- ${fmtBRL(Number(totais['desconto']))}`}
+            />
+          ) : null}
+          <Total
+            label="Frete"
+            value={freteGratis ? "Grátis" : freteBonificado ? "Bonificado" : fmtBRL(frete)}
+          />
           <Total label="Total" value={fmtBRL(totais['valorTotal'] ?? subtotal + frete)} destaque />
         </div>
+
 
       </div>
 

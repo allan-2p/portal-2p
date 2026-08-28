@@ -80,6 +80,7 @@ type Row = {
   criado_por_nome?: string | null;
   finalizado_por_nome?: string | null;
   finalizado_em?: string | null;
+  expedido_em?: string | null;
   sap_ov_status?: string | null;
   sf_status?: string | null;
 };
@@ -275,6 +276,7 @@ function HistoricoCarregadoresPage() {
                   <th className="text-left px-4 py-3">Nº SAP</th>
                   <th className="text-right px-4 py-3">Valor</th>
                   <th className="text-left px-4 py-3">Data</th>
+                  <th className="text-left px-4 py-3">Despacho</th>
                   <th className="text-left px-4 py-3">Consultor</th>
                   <th className="text-center px-4 py-3">Status</th>
                   <th className="text-right px-4 py-3">Ações</th>
@@ -290,6 +292,11 @@ function HistoricoCarregadoresPage() {
                     <td className="px-4 py-3 text-right font-semibold">{fmtBRL(r.totais.valorTotal ?? 0)}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {r.expedido_em
+                        ? new Date(`${String(r.expedido_em).slice(0, 10)}T12:00:00`).toLocaleDateString("pt-BR")
+                        : "—"}
                     </td>
                     <td className="px-4 py-3">{r.consultor_nome || r.criado_por_nome || "—"}</td>
                     <td className="px-4 py-3 text-center">
@@ -339,7 +346,7 @@ function HistoricoCarregadoresPage() {
                 {q.isLoading && <TableSkeletonRows colunas={9} linhas={porPagina > 10 ? 10 : porPagina} />}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">
                       Nenhuma proposta encontrada.
                     </td>
                   </tr>
