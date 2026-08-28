@@ -158,7 +158,7 @@ function HistoricoCarregadoresPage() {
 
   useEffect(() => {
     setPagina(1);
-  }, [buscaDb, status, uf, sap, vendedor, porPagina]);
+  }, [buscaDb, campo, status, uf, sap, vendedor, porPagina]);
 
   const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
   const paginaAtual = Math.min(pagina, totalPaginas);
