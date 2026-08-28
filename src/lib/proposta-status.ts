@@ -142,12 +142,12 @@ export const PROPOSTA_STATUS_STYLE: Record<PropostaStatus, PropostaStatusStyle> 
     bg: "#A8A29E", fg: "#1C1917",
   },
   "Aguardando Pagamento": {
-    dot: "bg-[#A78BFA]", text: "text-[#A78BFA]", chip: "bg-[#A78BFA] text-[#1E1B4B]",
-    bg: "#A78BFA", fg: "#1E1B4B",
+    dot: "bg-[#EA580C]", text: "text-[#EA580C]", chip: "bg-[#EA580C] text-[#FFF7ED]",
+    bg: "#EA580C", fg: "#FFF7ED",
   },
   "Processando": {
-    dot: "bg-[#D97706]", text: "text-[#D97706]", chip: "bg-[#D97706] text-[#FFFBEB]",
-    bg: "#D97706", fg: "#FFFBEB",
+    dot: "bg-[#EAB308]", text: "text-[#EAB308]", chip: "bg-[#EAB308] text-[#422006]",
+    bg: "#EAB308", fg: "#422006",
   },
   "Separação": {
     dot: "bg-[#0284C7]", text: "text-[#0284C7]", chip: "bg-[#0284C7] text-[#F0F9FF]",
@@ -158,16 +158,16 @@ export const PROPOSTA_STATUS_STYLE: Record<PropostaStatus, PropostaStatusStyle> 
     bg: "#1E3A8A", fg: "#EFF6FF",
   },
   "Coletado": {
-    dot: "bg-[#14B8A6]", text: "text-[#14B8A6]", chip: "bg-[#14B8A6] text-[#042F2E]",
-    bg: "#14B8A6", fg: "#042F2E",
+    dot: "bg-[#0F766E]", text: "text-[#0F766E]", chip: "bg-[#0F766E] text-[#ECFDF5]",
+    bg: "#0F766E", fg: "#ECFDF5",
   },
   "Entregue": {
     dot: "bg-[#16A34A]", text: "text-[#16A34A]", chip: "bg-[#16A34A] text-[#F0FDF4]",
     bg: "#16A34A", fg: "#F0FDF4",
   },
   "Cancelado": {
-    dot: "bg-[#B91C1C]", text: "text-[#B91C1C]", chip: "bg-[#B91C1C] text-[#FEF2F2]",
-    bg: "#B91C1C", fg: "#FEF2F2",
+    dot: "bg-[#DC2626]", text: "text-[#DC2626]", chip: "bg-[#DC2626] text-[#FEF2F2]",
+    bg: "#DC2626", fg: "#FEF2F2",
   },
 };
 
