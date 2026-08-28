@@ -34,6 +34,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- Carregadores: opção "Frete grátis" no wizard (CIF/Dedicado) — grava `frete_bonificado`, tira o frete do total cobrado, reflete no resumo, na prévia e no PDF. Cupom continua exclusivo do Solar.
+- CNPJ/CPF: normalização de zeros à esquerda (`docCanonico`) aplicada nas validações do envio SAP, crédito, condições de pagamento, revalidação de cadastro e na busca por documento.
+
 ### Corrigido
 - **Frete CIF/Dedicado aparecia como "Frete grátis"**: a modalidade de frete não define mais gratuidade. Agora só é exibido "Frete grátis" quando o frete é bonificado no próprio pedido ou concedido por cupom — na proposta, na prévia e no PDF (Carregadores e Solar). No PDF de Carregadores, CIF/Dedicado passa a mostrar o valor real do frete.
 - **Tabela de preço da proposta Solar voltava para a 01**: ao reabrir um orçamento, o padrão do cadastro do cliente sobrescrevia a tabela gravada. Agora a proposta usa a tabela salva (ou a escolhida manualmente) e só cai no padrão do cliente quando não há valor gravado.
