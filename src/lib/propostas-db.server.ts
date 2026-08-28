@@ -177,7 +177,15 @@ function montarParams(
   const escopo = clausulaEscopo(opts, docs, comIdentidade);
   if (escopo) cond.push(escopo);
   const termo = termoSeguro(opts.q ?? "");
-  if (termo) cond.push(`or(${COLUNAS_BUSCA_PROPOSTA.map((c) => `${c}.ilike.*${termo}*`).join(",")})`);
+  if (termo) {
+    const colunas = CAMPOS_BUSCA_PROPOSTA[opts.campo ?? "tudo"] ?? CAMPOS_BUSCA_PROPOSTA["tudo"]!;
+    // Documento digitado com pontuação também casa com o valor gravado só com
+    // dígitos (e vice-versa).
+    const digitos = termo.replace(/\D/g, "");
+    const termos = digitos && digitos !== termo ? [termo, digitos] : [termo];
+    const alvos = colunas.flatMap((c) => termos.map((t) => `${c}.ilike.*${t}*`));
+    cond.push(`or(${alvos.join(",")})`);
+  }
   if (opts.comSap === "com") cond.push("or(sap_ov_numero.not.is.null,numero_sap.not.is.null)");
   if (opts.comSap === "sem") cond.push("and(sap_ov_numero.is.null,numero_sap.is.null)");
   if (cond.length) params.set("and", `(${cond.join(",")})`);
