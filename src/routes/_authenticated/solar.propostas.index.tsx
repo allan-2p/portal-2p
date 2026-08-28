@@ -264,14 +264,14 @@ function PropostasSolarPage() {
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-3 py-2.5">
-                      <div className="max-w-[190px] truncate font-medium">{r.nome || "—"}</div>
+                      <div className="truncate font-medium">{r.nome || "—"}</div>
                       <div className="text-xs text-muted-foreground">
                         {formatPropostaNumero(r.numero) || "—"}
                       </div>
                     </td>
                     <td className="px-3 py-2.5">
-                      <div className="max-w-[220px] truncate font-medium">{r.cliente_nome}</div>
-                      <div className="max-w-[220px] truncate text-xs text-muted-foreground">
+                      <div className="truncate font-medium">{r.cliente_nome}</div>
+                      <div className="truncate text-xs text-muted-foreground">
                         {r.consultor_nome || r.criado_por_nome || "—"}
                       </div>
                     </td>
