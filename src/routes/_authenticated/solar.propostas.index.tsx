@@ -233,7 +233,18 @@ function PropostasSolarPage() {
             />
           </div>
           <div className="hidden md:block">
-            <table className="w-full text-[13px]">
+            <table className="w-full table-fixed text-[13px]">
+              <colgroup>
+                <col className="w-[20%]" />
+                <col />
+                <col className="w-[76px]" />
+                <col className="w-[118px]" />
+                <col className="w-[96px]" />
+                <col className="w-[96px]" />
+                <col className="w-[96px]" />
+                <col className="w-[56px]" />
+                <col className="w-[172px]" />
+              </colgroup>
 
               <thead>
                 <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
@@ -248,6 +259,7 @@ function PropostasSolarPage() {
                   <th className="text-right px-3 py-2.5">Ações</th>
                 </tr>
               </thead>
+
               <tbody className={fetchingClass(q.isFetching, q.isLoading)}>
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
