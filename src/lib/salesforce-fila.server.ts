@@ -39,17 +39,17 @@ export type FilaSalesforceResultado = {
  * primeiro. Sequencial para respeitar os limites da API do Salesforce.
  */
 export async function processarFilaSalesforce(limite = 25): Promise<FilaSalesforceResultado> {
-  const linhas = await db.listarPropostas({
-    select: "id,numero,sf_status,sf_opp_id,created_at",
-    order: "asc",
-    limit: 5000,
-  });
-  const pendentes = linhas
-    .filter((r) => {
-      const s = String((r as any)["sf_status"] ?? "").toLowerCase();
-      return s === "pendente" || s === "erro";
-    })
-    .slice(0, Math.max(1, limite));
+  // O filtro roda NO BANCO: varrer as primeiras N linhas e filtrar em memória
+  // deixava as pendentes recentes de fora (a tabela tem dezenas de milhares
+  // de propostas) e a fila nunca esvaziava.
+  const pendentes = await db.consultarPropostas(
+    { sf_status: "in.(pendente,erro)" },
+    {
+      select: "id,numero,sf_status,sf_opp_id,created_at",
+      order: "created_at.asc",
+      limit: Math.max(1, limite),
+    },
+  );
 
   const { sincronizarPedidoSalesforceSeguro } = await import("./salesforce-pedidos.server");
   const detalhes: FilaSalesforceResultado["detalhes"] = [];

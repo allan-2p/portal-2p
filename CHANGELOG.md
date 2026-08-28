@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- Fila do Salesforce: o filtro de pendentes passou a ser feito no banco. Antes o job lia só as 5.000 propostas mais antigas e filtrava em memória, então propostas recentes ficavam presas em "Na fila de envio" indefinidamente.
+
 - Carregadores: opção "Frete grátis" no wizard (CIF/Dedicado) — grava `frete_bonificado`, tira o frete do total cobrado, reflete no resumo, na prévia e no PDF. Cupom continua exclusivo do Solar.
 - CNPJ/CPF: normalização de zeros à esquerda (`docCanonico`) aplicada nas validações do envio SAP, crédito, condições de pagamento, revalidação de cadastro e na busca por documento.
 
