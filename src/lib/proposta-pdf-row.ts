@@ -145,7 +145,7 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
     cupom: txt(totais['cupom']) || null,
     freteMod: txt(p['frete_mod']) || null,
     freteValor: frete,
-    freteGratis: frete === 0,
+    freteGratis: p['frete_gratis'] === true || totais['freteGratis'] === true,
     freteBonificado: p['frete_bonificado'] === true,
     transportadora: txt(p['transportadora']) || null,
     total: num(totais['valorTotal']) || subtotal + frete,
