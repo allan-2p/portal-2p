@@ -286,7 +286,6 @@ function PropostasSolarPage() {
                   <th className="text-left px-3 py-2.5 whitespace-nowrap">Despacho</th>
                   <th className="text-left px-3 py-2.5 whitespace-nowrap">Compra</th>
                   <th className="text-left px-3 py-2.5 whitespace-nowrap">Criação</th>
-                  <th className="text-center px-3 py-2.5">Status</th>
                   <th className="text-right px-3 py-2.5">Ações</th>
                 </tr>
               </thead>
