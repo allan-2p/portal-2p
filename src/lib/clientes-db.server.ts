@@ -463,3 +463,21 @@ export async function listarDocsDoConsultor(
   }
   return [...out].slice(0, teto);
 }
+
+/** Busca o cadastro pelo id em qualquer unidade (usado ao ampliar a atuação). */
+export async function getClienteByIdQualquer(id: string): Promise<ClienteRow | null> {
+  const params = new URLSearchParams({ select: SELECT, id: `eq.${id}`, limit: "1" });
+  const rows = (await rest("solar", `clientes?${params}`)) ?? [];
+  return rows[0] ?? null;
+}
+
+/** Marca o cadastro como de atuação ampliada (Grupo 2P: aparece nas duas unidades). */
+export async function ampliarAtuacaoGrupo(id: string): Promise<ClienteRow | null> {
+  return gravarTolerante("solar", `clientes?id=eq.${id}`, "PATCH", {
+    escopo_org: "grupo",
+    organizacao: "grupo",
+    equipe_vendas: "003",
+    escritorio_vendas: "0004",
+    updated_at: new Date().toISOString(),
+  });
+}
