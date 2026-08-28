@@ -1,7 +1,7 @@
 import { CAMPOS_BUSCA, placeholderBusca } from "@/lib/propostas-busca";
 import { MOTIVOS_CANCELAMENTO } from "@/lib/cancelamento-motivos";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PROPOSTA_STATUS } from "@/lib/proposta-status";
+import { PROPOSTA_STATUS, podeCancelarPedido, podeEditarProposta } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react";
+import { Copy, Eye, Pencil, Plus, Search, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
 import { bloqueiaReenvioSap } from "@/lib/proposta-legado";
@@ -37,7 +37,7 @@ import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
-import { PermissionGate, useCanDelete } from "@/components/permission-gate";
+import { PermissionGate, useCan, useCanDelete } from "@/components/permission-gate";
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 import { PropostasMobileCards } from "@/components/propostas-mobile-cards";
@@ -109,6 +109,7 @@ function HistoricoCarregadoresPage() {
   const [vendedor, setVendedor] = useState("__all__");
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const podeExcluir = useCanDelete();
+  const podeVerIntegracoes = useCan("admin.logs.integracoes");
   const vend = useCarregadoresVendedores();
 
   // A pesquisa roda no banco (base inteira): espera parar de digitar.
@@ -172,7 +173,7 @@ function HistoricoCarregadoresPage() {
     [rows, excluirId]
   );
   // Pedido com ordem no SAP não é apagado: vira "Cancelado" e exige motivo.
-  const ehCancelamentoSap = !!propostaParaExcluir?.sap_ov_numero;
+  const ehCancelamentoSap = !!propostaParaExcluir?.sap_ov_numero || podeCancelarPedido(propostaParaExcluir?.status);
 
   async function confirmarExclusao() {
     if (!excluirId) return;
@@ -374,7 +375,7 @@ function HistoricoCarregadoresPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {!bloqueiaReenvioSap(r) && (
+                        {!bloqueiaReenvioSap(r) && podeEditarProposta(r.status) && (
                           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Continuar proposta" asChild>
                             <Link to="/carregadores/propostas/nova" search={{ id: r.id }}>
                               <Pencil className="h-4 w-4" />
@@ -386,19 +387,21 @@ function HistoricoCarregadoresPage() {
                             <Copy className="h-4 w-4" />
                           </Link>
                         </Button>
-                         <Button
-                           variant="ghost"
-                           size="icon"
-                           aria-label="Integrações e auditoria"
-                           title="Integrações e auditoria"
-                           className={cn("h-8 w-8", r.sap_ov_status === "criada" && r.sf_status === "sincronizado" ? "text-success" : "text-warning")}
-                           onClick={() => setIntegracoesId(r.id)}
-                         >
-                           <RefreshCw className="h-4 w-4" />
-                         </Button>
-                        {podeExcluir && (
-                           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
-                             <Trash2 className="h-4 w-4 text-destructive" />
+                         {podeVerIntegracoes && (
+                           <Button
+                             variant="ghost"
+                             size="icon"
+                             aria-label="Integrações e auditoria"
+                             title="Integrações e auditoria"
+                             className={cn("h-8 w-8", r.sap_ov_status === "criada" && r.sf_status === "sincronizado" ? "text-success" : "text-warning")}
+                             onClick={() => setIntegracoesId(r.id)}
+                           >
+                             <RefreshCw className="h-4 w-4" />
+                           </Button>
+                         )}
+                        {podeExcluir && podeCancelarPedido(r.status) && (
+                           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Cancelar pedido" title="Cancelar pedido" onClick={() => setExcluirId(r.id)}>
+                             <X className="h-4 w-4 text-destructive" />
                            </Button>
                         )}
                       </div>

@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Copy, Eye, Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { Copy, Eye, Pencil, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/proposta-status-ui";
 import { formatPropostaNumero, formatSapNumero } from "@/lib/sap-numero";
 import { bloqueiaReenvioSap } from "@/lib/proposta-legado";
+import { podeCancelarPedido, podeEditarProposta } from "@/lib/proposta-status";
+import { useCan } from "@/components/permission-gate";
 import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +54,7 @@ export function PropostasMobileCards({
   onExcluir: (id: string) => void;
   className?: string;
 }) {
+  const podeVerIntegracoes = useCan("admin.logs.integracoes");
   if (carregando) {
     return (
       <div className={cn("space-y-3 p-3", className)}>
@@ -149,7 +152,7 @@ export function PropostasMobileCards({
               <Button variant="ghost" size="icon" aria-label="Detalhar" onClick={() => onDetalhe(r.id)}>
                 <Eye className="h-4 w-4" />
               </Button>
-              {!bloqueiaReenvioSap(r as Record<string, unknown>) && (
+              {!bloqueiaReenvioSap(r as Record<string, unknown>) && podeEditarProposta(r.status) && (
                 <Button variant="ghost" size="icon" aria-label="Continuar proposta" asChild>
                   <Link to={rotaNova} search={{ id: r.id } as never}>
                     <Pencil className="h-4 w-4" />
@@ -161,18 +164,20 @@ export function PropostasMobileCards({
                   <Copy className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Integrações e auditoria"
-                className={integracoesOk ? "text-success" : "text-warning"}
-                onClick={() => onIntegracoes(r.id)}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-              {podeExcluir && (
-                <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => onExcluir(r.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
+              {podeVerIntegracoes && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Integrações e auditoria"
+                  className={integracoesOk ? "text-success" : "text-warning"}
+                  onClick={() => onIntegracoes(r.id)}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              )}
+              {podeExcluir && podeCancelarPedido(r.status) && (
+                <Button variant="ghost" size="icon" aria-label="Cancelar pedido" onClick={() => onExcluir(r.id)}>
+                  <X className="h-4 w-4 text-destructive" />
                 </Button>
               )}
             </div>
