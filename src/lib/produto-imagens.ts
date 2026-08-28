@@ -112,7 +112,7 @@ export function useImagensPorCodigo(codigos: (string | null | undefined)[]) {
         .filter((p): p is string => !!p);
       if (paths.length === 0) return {} as Record<string, string>;
 
-      const porPath = await assinar(Array.from(new Set(paths)), largura);
+      const porPath = await assinar(Array.from(new Set(paths)));
       const map: Record<string, string> = {};
       for (const c of limpos) {
         const path = porCodigo.get(c);
