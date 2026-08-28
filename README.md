@@ -115,7 +115,7 @@ Scripts:
 ## Variáveis de ambiente
 
 <!-- readme:env -->
-Fonte da verdade: [`.env.example`](./.env.example) — 70 variáveis, sendo 2 pública(s) no client (`VITE_*`).
+Fonte da verdade: [`.env.example`](./.env.example) — 71 variáveis, sendo 2 pública(s) no client (`VITE_*`).
 
 | Grupo | Variáveis |
 | --- | --- |
@@ -127,7 +127,7 @@ Fonte da verdade: [`.env.example`](./.env.example) — 70 variáveis, sendo 2 p�
 | **Fretefy** | `FRETEFY_TOKEN` |
 | **SharePoint / Microsoft Graph (boletos a prazo)** | `SHAREPOINT_TENANT_ID`, `SHAREPOINT_CLIENT_ID`, `SHAREPOINT_CLIENT_SECRET`, `SHAREPOINT_SITE_HOSTNAME`, `SHAREPOINT_SITE_PATH`, `SHAREPOINT_BOLETOS_PASTA` |
 | **Consulta de CNPJ / CPF** | `CNPJA_API_KEY`, `SERPRO_CONSUMER_KEY`, `SERPRO_CONSUMER_SECRET` |
-| **Notificações / IA** | `KIT_NOTIFICACAO_EMAIL`, `LOVABLE_API_KEY`, `LOVABLE_SEND_URL` |
+| **Notificações / IA** | `KIT_NOTIFICACAO_EMAIL`, `EMAIL_COPIA_REGISTRO`, `LOVABLE_API_KEY`, `LOVABLE_SEND_URL` |
 <!-- /readme:env -->
 
 Regras:
