@@ -1,9 +1,11 @@
 /**
  * Preços do 2P Solar por tabela de preço.
  *
- * A fonte oficial é a simulação de preços do SAP (`ZNFE_OV_SIMULAR`), a mesma
- * usada na cotação de frete. Quando o SAP não devolve valor para um item, o
- * portal cai para o preço sugerido do catálogo (`sap_produtos.preco_sugerido`).
+ * A fonte oficial e ÚNICA é a simulação de preços do SAP (`ZNFE_OV_SIMULAR`),
+ * a mesma usada na cotação de frete. Quando o SAP não devolve valor para um
+ * item, o portal NÃO completa com o preço sugerido do catálogo: o item volta
+ * zerado e entra em `fallback` para ser avisado/bloqueado na tela e no
+ * salvamento. Preço genérico virando preço de venda é erro comercial.
  */
 
 import { simularSap } from "./sap-precos.server";
@@ -11,13 +13,14 @@ import { simularSap } from "./sap-precos.server";
 export type PrecoItem = { codigo: string; quantidade: number };
 
 export type PrecoResultado = {
-  /** Valor unitário por código de material. */
+  /** Valor unitário por código de material (0 quando o SAP não precificou). */
   precos: Record<string, number>;
-  /** Códigos cujo preço veio do catálogo (SAP não respondeu). */
+  /** Códigos que o SAP não precificou — nunca preenchidos com preço de catálogo. */
   fallback: string[];
   /** Mensagens do SAP que explicam preços zerados (CNPJ sem parceiro, etc). */
   avisos: string[];
 };
+
 
 const norm = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
 const money2 = (v: number) => Math.round((Number(v) || 0) * 100) / 100;
@@ -132,11 +135,18 @@ export async function precosSolar(
     if (v !== undefined && v > 0) {
       precos[codigo] = v;
     } else {
-      precos[codigo] = money2(opts.sugeridos?.[codigo] ?? 0);
+      // Sem preço do SAP o item fica zerado de propósito: quem chama precisa
+      // avisar/bloquear. Nunca completar com `preco_sugerido` do catálogo.
+      precos[codigo] = 0;
       fallback.push(codigo);
     }
   }
+  if (fallback.length) {
+    const aviso = `O SAP não devolveu preço para: ${[...new Set(fallback)].join(", ")}. Os valores NÃO foram completados com o preço de catálogo — informe o valor manualmente ou corrija a condição de preço no SAP.`;
+    if (!avisos.includes(aviso)) avisos.push(aviso);
+  }
   return { precos, fallback, avisos };
 }
+
 
 

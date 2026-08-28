@@ -397,16 +397,25 @@ function NovaPropostaSolarPage() {
 
   /**
    * Tabela de preço do cadastro do cliente ("2P-0001") vira o PLTYP do SAP ("01").
-   * O vendedor ainda pode trocar manualmente depois.
+   * O vendedor ainda pode trocar manualmente depois — e a escolha da proposta
+   * sempre vence: ao reabrir um orçamento, o cadastro do cliente NÃO sobrescreve
+   * a tabela que ficou salva (era isso que jogava tudo de volta para a 01).
    */
   const tabelaAplicada = useRef<string>("");
+  const tabelaDaProposta = useRef(false);
   useEffect(() => {
     const doc = String(cliente?.['doc'] ?? "");
     if (!doc || tabelaAplicada.current === doc) return;
+    if (tabelaDaProposta.current) {
+      // Proposta salva já trouxe a tabela: só marca o cliente como aplicado.
+      tabelaAplicada.current = doc;
+      return;
+    }
     tabelaAplicada.current = doc;
     const pltyp = pltypDaTabela((cliente as any)?.['tabela_preco']);
     setListaPreco((atual) => (atual === pltyp ? atual : pltyp));
   }, [cliente]);
+
 
 
   // Carrega proposta existente para edição/duplicação
@@ -448,7 +457,14 @@ function NovaPropostaSolarPage() {
         });
       }
       const totais = (p['totais'] ?? {}) as Record<string, any>;
-      setListaPreco(String(totais['listaPreco'] ?? "01"));
+      // Tabela salva na proposta vence o padrão do cliente. Sem valor gravado
+      // (propostas antigas), deixa o cadastro do cliente decidir.
+      const tabelaSalva = String(totais['listaPreco'] ?? p['lista_preco'] ?? "").trim();
+      if (/^\d{2}$/.test(tabelaSalva)) {
+        tabelaDaProposta.current = true;
+        setListaPreco(tabelaSalva);
+      }
+
       if (typeof totais['ehKit'] === "boolean") setEhKit(totais['ehKit'] as boolean);
       setVendido(totais['vendidoClienteFinal'] ? "sim" : "nao");
       setCupomCodigo(String(totais['cupom'] ?? ""));
@@ -546,7 +562,9 @@ function NovaPropostaSolarPage() {
         key: Math.random().toString(36).slice(2),
         produtoId: p.id,
         qtd: 1,
-        valor: p.preco_sugerido,
+        // Nasce sem preço: o valor válido é só o que o SAP devolver.
+        valor: 0,
+
         origem: "manual",
       },
     ];
@@ -876,7 +894,7 @@ function NovaPropostaSolarPage() {
         key: Math.random().toString(36).slice(2),
         produtoId: prod.id,
         qtd: c.quantidade,
-        valor: prod.preco_sugerido,
+        valor: 0,
         origem: "calculadora",
       });
     }
@@ -963,8 +981,11 @@ function NovaPropostaSolarPage() {
 
   async function trocarTabela(t: string) {
     if (t === listaPreco) return;
+    // Escolha manual passa a mandar: nada de voltar para a tabela do cadastro.
+    tabelaDaProposta.current = true;
     setListaPreco(t);
     setTransportadora(null);
+
     setTrocando(true);
     await atualizarPrecos(itens, t);
     setTrocando(false);

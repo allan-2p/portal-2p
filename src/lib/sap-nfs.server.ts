@@ -117,7 +117,10 @@ export type ConsultaSap = {
   nfSerie: string | null;
   nfChave: string | null;
   danfeBase64: string | null;
+  /** Previsão de despacho devolvida pelo SAP (DATA_EXPEDICAO), formato AAAA-MM-DD. */
+  dataExpedicao: string | null;
 };
+
 
 /**
  * Número de documento válido? O SAP devolve `0000000000` (só zeros) quando
@@ -141,6 +144,13 @@ export function lerConsulta(doc: any): ConsultaSap {
     return s && documentoValido(s) ? s : null;
   };
   const dados = achar(doc, "E_S_DADOS") ?? achar(doc, "ZNFE_OV_CONSULTARResponse") ?? doc;
+  // Previsão de despacho: o SAP manda "0000-00-00" quando não há remessa.
+  const dataExp = (() => {
+    const s = txt(achar(dados, "DATA_EXPEDICAO"));
+    if (!s) return null;
+    const d = s.slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(d) && !d.startsWith("0000") ? d : null;
+  })();
   return {
     picking: txt(achar(dados, "STATUS_PICKING")),
     romaneio: txt(achar(dados, "STATUS_ROMANEIO")),
@@ -148,8 +158,11 @@ export function lerConsulta(doc: any): ConsultaSap {
     nfSerie: txt(achar(dados, "SERIE_NF") ?? achar(dados, "SERIE")),
     nfChave: num(achar(dados, "CHAVE_NFE") ?? achar(dados, "CHAVE") ?? achar(dados, "NFE_CHAVE")),
     danfeBase64: txt(achar(doc, "E_DANFE") ?? achar(doc, "DANFE")),
+    dataExpedicao: dataExp,
   };
 }
+
+
 
 
 /** Próximo status conforme as regras da plataforma antiga (só avança). */
@@ -412,6 +425,11 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
     const path = await salvarDanfe(id, c.danfeBase64);
     if (path) patch["danfe_path"] = path;
   }
+  // Previsão de despacho: o SAP é a única fonte e pode mudar — sobrescreve.
+  if (c.dataExpedicao && String(row["expedido_em"] ?? "").slice(0, 10) !== c.dataExpedicao) {
+    patch["expedido_em"] = c.dataExpedicao;
+  }
+
 
   if (Object.keys(patch).length) {
     try {
@@ -538,7 +556,7 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
     statusIn: ["Aguardando Pagamento", "Processando", "Separação", "Faturado"],
 
     select:
-      "id,numero,status,created_by,sap_ov_numero,nf_numero,danfe_path,created_at,fretefy_oferta_id",
+      "id,numero,status,created_by,sap_ov_numero,nf_numero,danfe_path,created_at,fretefy_oferta_id,expedido_em",
 
     order: "asc",
     naoVazio: ["sap_ov_numero"],
