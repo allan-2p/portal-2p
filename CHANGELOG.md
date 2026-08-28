@@ -35,6 +35,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 ### Corrigido
+- **Frete CIF/Dedicado aparecia como "Frete grátis"**: a modalidade de frete não define mais gratuidade. Agora só é exibido "Frete grátis" quando o frete é bonificado no próprio pedido ou concedido por cupom — na proposta, na prévia e no PDF (Carregadores e Solar). No PDF de Carregadores, CIF/Dedicado passa a mostrar o valor real do frete.
 - **Tabela de preço da proposta Solar voltava para a 01**: ao reabrir um orçamento, o padrão do cadastro do cliente sobrescrevia a tabela gravada. Agora a proposta usa a tabela salva (ou a escolhida manualmente) e só cai no padrão do cliente quando não há valor gravado.
 - **Preço errado para CNPJ sem zero à esquerda**: a simulação de preços (`sap-precos.server.ts`) descartava documentos com 12–13 dígitos (zero à esquerda perdido na base, ~450 clientes) e o SAP simulava sem o parceiro, devolvendo impostos genéricos. O envelope agora completa com zeros à esquerda, igual à criação da OV. Na proposta Solar, o alerta vermelho de bloqueio não aparece mais durante o carregamento de preços — só após uma tentativa concluída.
 
