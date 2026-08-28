@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- E-mails: todo e-mail de negócio do portal (avisos de boleto, boleto a prazo do SharePoint, aviso de Kit Fotovoltaico e templates futuros) passa a gerar uma cópia de registro para `allan@2pgroup.com.br` (configurável pela env `EMAIL_COPIA_REGISTRO`), com assunto `[registro] …` e o destinatário original no topo. A cópia entra na mesma fila (retry/DLQ/log) com label `<label>-registro` e não é enviada quando o destinatário já é o endereço de registro. E-mails de autenticação (reset de senha, convites, magic links) **não** recebem cópia, por segurança.
 - Detalhe da proposta ("olhinho") reorganizado: título com Nº da proposta + nome e Nº SAP no canto superior direito; contato do cliente junto às demais informações do topo; blocos separados de **Faturamento e nota fiscal** (endereço de entrega, DANFE e XML) e de **Cobrança** (Pix, boleto à vista/a prazo, cartão, boletos do SharePoint); criação/finalização e autores movidos para o rodapé.
 - Lista de propostas (Solar e Carregadores) mais compacta, sem rolagem lateral: proposta e cliente em duas linhas, nova coluna **Compra** (data de fechamento) e a data de criação renomeada para **Criação** como último campo.
 - Fila do Salesforce: o filtro de pendentes passou a ser feito no banco. Antes o job lia só as 5.000 propostas mais antigas e filtrava em memória, então propostas recentes ficavam presas em "Na fila de envio" indefinidamente.
