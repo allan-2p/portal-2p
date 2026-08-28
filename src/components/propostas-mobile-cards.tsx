@@ -19,6 +19,7 @@ export type PropostaCardRow = {
   nome?: string | null;
   numero_sap?: string | null;
   sap_ov_numero?: string | null;
+  nf_numero?: string | null;
   cliente_nome: string;
   totais: Record<string, number>;
   status: string;
