@@ -12,7 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { listEstoque, syncEstoqueProdutos } from "@/lib/estoque.functions";
+import { DisponibilidadeBadge } from "@/components/disponibilidade-badge";
+import {
+  listEstoque,
+  syncEstoqueProdutos,
+  type DisponibilidadeInfo,
+} from "@/lib/estoque.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/estoque")({
   component: EstoquePage,
@@ -38,11 +43,26 @@ const money = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v ?? 0));
 const qtd = (v: number) => new Intl.NumberFormat("pt-BR").format(Number(v ?? 0));
 
-function statusEstoque(livre: number, pend: number, entreposto: number, futuro: number) {
-  if (livre - pend > 0) return { label: "Em estoque", cls: "bg-emerald-500/15 text-emerald-600" };
-  if (entreposto > 0) return { label: "Entreposto", cls: "bg-sky-500/15 text-sky-600" };
-  if (futuro > 0) return { label: "Sob encomenda", cls: "bg-amber-500/15 text-amber-600" };
-  return { label: "Indisponível", cls: "bg-muted text-muted-foreground" };
+const fmtDataCurta = (v?: string | null) => {
+  if (!v) return "—";
+  const d = new Date(`${String(v).slice(0, 10)}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
+};
+
+/**
+ * Mesma cascata do selo usado nas propostas:
+ * imediato → entreposto → chegada (próxima remessa) → verificar.
+ */
+function infoEstoque(
+  livre: number,
+  pend: number,
+  entreposto: number,
+  proximaRemessa: string | null,
+): DisponibilidadeInfo {
+  if (livre - pend > 0) return { ok: true, disponivel: true, tipo: "imediato" };
+  if (entreposto > 0) return { ok: true, disponivel: true, tipo: "entreposto" };
+  if (proximaRemessa) return { ok: true, disponivel: false, tipo: "eta", dt_remessa: proximaRemessa };
+  return { ok: true, disponivel: false, tipo: "indisponivel" };
 }
 
 function EstoquePage() {
@@ -67,10 +87,17 @@ function EstoquePage() {
     onError: (e: any) => toast.error(String(e?.message ?? e)),
   });
 
-  const futuroPorMaterial = useMemo(() => {
-    const m = new Map<string, number>();
+  // Próxima remessa por material: menor data de remessa futura (ou sem data) entre os containers.
+  const proximaRemessaPorMaterial = useMemo(() => {
+    const m = new Map<string, string | null>();
+    const hoje = new Date().toISOString().slice(0, 10);
     for (const c of q.data?.containers ?? []) {
-      m.set(c.material, (m.get(c.material) ?? 0) + Number(c.est_entreposto ?? 0));
+      const dt = c.dt_remessa ? String(c.dt_remessa).slice(0, 10) : null;
+      if (dt && dt < hoje) continue;
+      const atual = m.get(c.material);
+      if (atual === undefined || atual === null || (dt && dt < atual)) {
+        m.set(c.material, dt);
+      }
     }
     return m;
   }, [q.data]);
@@ -215,15 +242,17 @@ function EstoquePage() {
                         <th className="p-3 text-right">Pendente</th>
                         <th className="p-3 text-right">Entreposto</th>
                         <th className="p-3">Status</th>
+                        <th className="p-3">Próxima remessa</th>
                       </tr>
                     </thead>
                     <tbody>
                       {estoque.map((e) => {
-                        const s = statusEstoque(
+                        const proxima = proximaRemessaPorMaterial.get(e.material) ?? null;
+                        const info = infoEstoque(
                           e.est_livre,
                           e.qtd_pend_faturar,
                           e.est_entreposto,
-                          futuroPorMaterial.get(e.material) ?? 0,
+                          proxima,
                         );
                         return (
                           <tr key={e.material} className="border-t">
@@ -234,16 +263,15 @@ function EstoquePage() {
                             <td className="p-3 text-right">{qtd(e.qtd_pend_faturar)}</td>
                             <td className="p-3 text-right">{qtd(e.est_entreposto)}</td>
                             <td className="p-3">
-                              <span className={`rounded px-2 py-0.5 text-xs font-medium ${s.cls}`}>
-                                {s.label}
-                              </span>
+                              <DisponibilidadeBadge info={info} className="text-xs" />
                             </td>
+                            <td className="p-3">{proxima ? fmtDataCurta(proxima) : "—"}</td>
                           </tr>
                         );
                       })}
                       {estoque.length === 0 && (
                         <tr>
-                          <td className="p-6 text-center text-muted-foreground" colSpan={7}>
+                          <td className="p-6 text-center text-muted-foreground" colSpan={8}>
                             Sem dados de estoque.
                           </td>
                         </tr>
