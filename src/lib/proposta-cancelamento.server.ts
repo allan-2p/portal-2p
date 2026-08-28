@@ -11,7 +11,36 @@
 
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
-import { enviarEmail, layoutEmail } from "./email.server";
+import {
+  aguardarDesfechoEmails,
+  enviarEmailRastreado,
+  layoutEmail,
+  type ResultadoEnvioRastreado,
+} from "./email.server";
+
+export type EfeitosCancelamentoResult = {
+  /** true quando a RFC de cancelamento existia e o SAP confirmou. */
+  sapCancelado: boolean;
+  /** Desfecho real dos e-mails aos setores; null quando não havia e-mail a enviar. */
+  emails: ResultadoEnvioRastreado | null;
+};
+
+/**
+ * Texto honesto sobre o envio dos e-mails de cancelamento: nunca diz
+ * "avisados por e-mail" quando o provedor recusou ou não confirmou.
+ */
+export function avisoEnvioCancelamento(r: EfeitosCancelamentoResult): string | null {
+  const e = r.emails;
+  if (!e || !e.total) return null;
+  if (e.falharam > 0) {
+    const motivo = e.erro ? ` Motivo informado pelo provedor: ${e.erro}.` : "";
+    return `FALHA no envio dos e-mails de cancelamento (${e.falharam} de ${e.total}).${motivo} Avise os setores manualmente.`;
+  }
+  if (e.pendentes > 0) {
+    return "E-mails de cancelamento enfileirados, mas ainda sem confirmação de envio pelo provedor — acompanhe em Integrações.";
+  }
+  return "Os setores foram avisados por e-mail.";
+}
 
 const DESTINOS_PADRAO =
   "logistica@2pgroup.com.br,camila@2pgroup.com.br,nfe@2pgroup.com.br,pedidos@2pgroup.com.br,financeiro@2pgroup.com.br";
@@ -126,14 +155,15 @@ async function cancelarOvNoSap(
 export async function efeitosCancelamento(
   propostaId: string,
   ctx: { actorNome?: string | null; motivo?: string | null } = {},
-): Promise<void> {
+): Promise<EfeitosCancelamentoResult> {
+  const resultado: EfeitosCancelamentoResult = { sapCancelado: false, emails: null };
   let row: Record<string, any> | null = null;
   try {
     row = (await db.getProposta(propostaId, SELECT)) as Record<string, any> | null;
   } catch {
     row = null;
   }
-  if (!row) return;
+  if (!row) return resultado;
 
   const vbeln = String(row["sap_ov_numero"] ?? "").trim();
 
@@ -146,8 +176,11 @@ export async function efeitosCancelamento(
       /* best effort */
     }
   }
+  resultado.sapCancelado = canceladoNoSap;
 
   // 2) E-mail aos setores — só para pedido que chegou ao SAP (igual à antiga).
+  //    Rastreado: aguarda o desfecho real no provedor para a tela não dizer
+  //    "enviado" quando o envio foi recusado (ex.: domínio não verificado).
   if (vbeln) {
     const numero = String(row["numero"] ?? "").trim();
     const org = String(row["organizacao"] ?? "") === "carregadores" ? "2P Carregadores" : "2P Solar";
@@ -171,19 +204,34 @@ export async function efeitosCancelamento(
       `<p>${linhas.join("<br />")}</p>`,
     );
 
+    const messageIds: string[] = [];
+    let total = 0;
+    let falhaEnfileirar = 0;
     for (const to of destinatarios()) {
+      total++;
       try {
-        await enviarEmail({
+        const r = await enviarEmailRastreado({
           to,
           subject: `Cancelamento de pedido ${numero} PORTAL 2P`,
           html,
           label: "cancelamento-pedido",
           idempotencyKey: `cancelamento:${propostaId}:${to}`,
         });
+        if (r.ok && r.messageId) messageIds.push(r.messageId);
+        else falhaEnfileirar++;
       } catch {
-        /* best effort */
+        falhaEnfileirar++;
       }
     }
+
+    const desfecho = await aguardarDesfechoEmails(messageIds);
+    resultado.emails = {
+      total,
+      enviados: desfecho.enviados,
+      falharam: desfecho.falharam + falhaEnfileirar,
+      pendentes: desfecho.pendentes,
+      erro: desfecho.erro,
+    };
   }
 
   // 3) Cancelar a carga na Fretefy.
@@ -195,4 +243,6 @@ export async function efeitosCancelamento(
       /* best effort */
     }
   }
+
+  return resultado;
 }
