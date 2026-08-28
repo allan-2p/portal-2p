@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getMyAccess } from "@/lib/access.functions";
+import { supabase } from "@/integrations/supabase/client";
+
 import { useAuth } from "@/hooks/use-auth";
 import { useSimulation } from "@/components/simulation";
 import {
@@ -67,11 +69,21 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
   const fetchAccess = useServerFn(getMyAccess);
   const q = useQuery({
     queryKey: ["my-access", user?.id],
-    queryFn: () => fetchAccess(),
+    queryFn: async () => {
+      // Só chama o serverFn quando o token já está no storage — senão o
+      // middleware do cliente envia a chamada sem Authorization e o servidor
+      // responde 401 (tela branca) durante a hidratação da sessão.
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.access_token) throw new Error("sessao-nao-hidratada");
+      return fetchAccess();
+    },
     enabled: !!user && !authLoading,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(500 * 2 ** attempt, 3000),
   });
+
 
   // Modo simulador: quando um admin está simulando outro usuário,
   // todo o portal passa a enxergar as permissões desse usuário.
