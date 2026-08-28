@@ -36,7 +36,7 @@ import {
   listarPropostasPaginaFn,
 } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
-import { PermissionGate, useCanDelete } from "@/components/permission-gate";
+import { PermissionGate, useCan, useCanDelete } from "@/components/permission-gate";
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 import { PropostasMobileCards } from "@/components/propostas-mobile-cards";

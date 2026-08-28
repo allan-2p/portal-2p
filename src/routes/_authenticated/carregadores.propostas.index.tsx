@@ -37,7 +37,7 @@ import { fmtBRL } from "@/lib/carregadores";
 import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
-import { PermissionGate, useCanDelete } from "@/components/permission-gate";
+import { PermissionGate, useCan, useCanDelete } from "@/components/permission-gate";
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 import { PropostasMobileCards } from "@/components/propostas-mobile-cards";
