@@ -105,6 +105,7 @@ function PropostasSolarPage() {
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const [motivoCancel, setMotivoCancel] = useState("");
   const podeExcluir = useCanDelete();
+  const podeVerIntegracoes = useCan("admin.logs.integracoes");
 
   const q = useQuery({
     queryKey: ["solar-proposals", { buscaDb, campo, status, uf, pagina, porPagina }],
@@ -348,16 +349,18 @@ function PropostasSolarPage() {
                             <Copy className="h-4 w-4" />
                           </Link>
                         </Button>
-                         <Button
-                           variant="ghost"
-                           size="icon"
-                           aria-label="Integrações e auditoria"
-                           title="Integrações e auditoria"
-                           className={`h-8 w-8 ${r.sap_ov_status === "criada" && r.sf_status === "sincronizado" ? "text-success" : "text-warning"}`}
-                           onClick={() => setIntegracoesId(r.id)}
-                         >
-                           <RefreshCw className="h-4 w-4" />
-                         </Button>
+                         {podeVerIntegracoes && (
+                           <Button
+                             variant="ghost"
+                             size="icon"
+                             aria-label="Integrações e auditoria"
+                             title="Integrações e auditoria"
+                             className={`h-8 w-8 ${r.sap_ov_status === "criada" && r.sf_status === "sincronizado" ? "text-success" : "text-warning"}`}
+                             onClick={() => setIntegracoesId(r.id)}
+                           >
+                             <RefreshCw className="h-4 w-4" />
+                           </Button>
+                         )}
                         {podeExcluir && podeCancelarPedido(r.status) && (
                           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Cancelar pedido" title="Cancelar pedido" onClick={() => setExcluirId(r.id)}>
                             <X className="h-4 w-4 text-destructive" />
