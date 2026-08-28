@@ -7,70 +7,77 @@ export const BUCKET_PRODUTOS = "produtos";
 const TTL_SEG = 60 * 60;
 /** Margem para não servir URL prestes a expirar. */
 const MARGEM_MS = 5 * 60 * 1000;
-/** Largura padrão das miniaturas — o original chega a 3 MB por arquivo. */
-export const LARGURA_MINIATURA = 160;
 
 type Entrada = { url: string; expiraEm: number };
 
 /**
- * Cache de URLs assinadas por `caminho|largura`, compartilhado por todas as telas.
+ * Cache de URLs assinadas por caminho, compartilhado por todas as telas.
  * Evita reassinar a mesma foto a cada navegação (e mantém a URL estável, para o
  * navegador reaproveitar o cache HTTP da imagem).
  */
 const cache = new Map<string, Entrada>();
 
-function chave(path: string, largura: number) {
-  return `${path}|${largura}`;
+/**
+ * Miniatura WebP (320px, ~2 KB) gerada a partir do original em `skus/`.
+ * O acervo original soma ~44 MB em PNG; as miniaturas somam ~430 KB.
+ */
+export function caminhoMiniatura(path: string) {
+  const nome = path.split("/").pop() ?? path;
+  return `thumbs/${nome.replace(/\.[^.]+$/, "")}.webp`;
 }
 
 /**
  * Assina apenas os caminhos que ainda não estão em cache e devolve o mapa
- * caminho → URL. As imagens são redimensionadas no servidor de storage.
+ * caminho original → URL da miniatura (com fallback para o arquivo original
+ * quando a miniatura ainda não existe).
  */
-async function assinar(paths: string[], largura: number) {
+async function assinar(paths: string[]) {
   const agora = Date.now();
-  const faltando = paths.filter((p) => {
-    const e = cache.get(chave(p, largura));
+  const alvo = new Map<string, string>(); // original → miniatura
+  for (const p of paths) alvo.set(p, caminhoMiniatura(p));
+
+  const faltando = Array.from(new Set(alvo.values())).filter((p) => {
+    const e = cache.get(p);
     return !e || e.expiraEm - MARGEM_MS < agora;
   });
 
-  if (faltando.length) {
+  const assinarLote = async (lista: string[]) => {
+    if (!lista.length) return;
     const { data, error } = await supabase.storage
       .from(BUCKET_PRODUTOS)
-      .createSignedUrls(faltando, TTL_SEG, {
-        transform: { width: largura, resize: "contain", quality: 70 },
-      });
+      .createSignedUrls(lista, TTL_SEG);
     if (error) throw error;
     for (const d of data ?? []) {
-      if (d.path && d.signedUrl) {
-        cache.set(chave(d.path, largura), {
-          url: d.signedUrl,
-          expiraEm: agora + TTL_SEG * 1000,
-        });
-      }
+      if (d.path && d.signedUrl) cache.set(d.path, { url: d.signedUrl, expiraEm: agora + TTL_SEG * 1000 });
     }
+  };
+
+  await assinarLote(faltando);
+
+  // Sem miniatura (foto recém-enviada): cai para o original.
+  const semThumb = paths.filter((p) => !cache.get(alvo.get(p)!));
+  if (semThumb.length) {
+    await assinarLote(semThumb);
+    for (const p of semThumb) alvo.set(p, p);
   }
 
   const map: Record<string, string> = {};
   for (const p of paths) {
-    const e = cache.get(chave(p, largura));
+    const e = cache.get(alvo.get(p)!);
     if (e) map[p] = e.url;
   }
   return map;
 }
 
 /** URLs assinadas (bucket privado) das fotos de produto, por caminho. */
-export function useImagensPorPath(
-  paths: (string | null | undefined)[],
-  largura = LARGURA_MINIATURA,
-) {
+export function useImagensPorPath(paths: (string | null | undefined)[]) {
   const limpos = Array.from(new Set(paths.filter((p): p is string => !!p))).sort();
   return useQuery({
-    queryKey: ["produto-imagens-path", largura, limpos],
+    queryKey: ["produto-imagens-path", limpos],
     enabled: limpos.length > 0,
     staleTime: 45 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
-    queryFn: () => assinar(limpos, largura),
+    queryFn: () => assinar(limpos),
   });
 }
 
