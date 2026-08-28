@@ -26,7 +26,7 @@ import {
   bloqueiaReenvioSap,
 } from "@/lib/proposta-legado";
 import { useAuth } from "@/hooks/use-auth";
-import { NfDocumentosCard, BotaoBoletoNf } from "@/components/nf-documentos-card";
+import { NfDocumentosCard } from "@/components/nf-documentos-card";
 import { CobrancaCard } from "@/components/cobranca-card";
 import { BoletosSharepointCard } from "@/components/boletos-sharepoint-card";
 import { propostaPdfDaLinha } from "@/lib/proposta-pdf-row";
