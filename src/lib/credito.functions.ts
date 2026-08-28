@@ -18,6 +18,8 @@ const SELECT =
   "contato_telefone, empresa_secundaria, empresa_secundaria_nome, empresa_secundaria_doc, anexos, " +
   "responsavel_analise, autorizacao_diretoria";
 
+import { docCanonico } from "./cnpj";
+
 const soDigitos = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 const num = (v: unknown) => {
   const n = Number(v);
@@ -131,7 +133,7 @@ export const solicitarCredito = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }): Promise<{ ok: true; id: string; numero: string }> => {
-    const doc = soDigitos(data.clienteDoc);
+    const doc = docCanonico(String(data.clienteDoc ?? ""));
     if (doc.length !== 11 && doc.length !== 14) throw new Error("CNPJ/CPF do cliente inválido.");
     const prioridade = CREDITO_PRIORIDADES.includes(data.prioridade as any)
       ? (data.prioridade as string)
@@ -144,7 +146,7 @@ export const solicitarCredito = createServerFn({ method: "POST" })
 
     const temSecundaria = !!data.empresaSecundaria;
     const secNome = data.empresaSecundariaNome?.trim() || "";
-    const secDoc = soDigitos(data.empresaSecundariaDoc);
+    const secDoc = docCanonico(String(data.empresaSecundariaDoc ?? ""));
     if (temSecundaria) {
       if (!secNome) throw new Error("Informe o nome da empresa secundária.");
       if (secDoc.length !== 11 && secDoc.length !== 14) {
