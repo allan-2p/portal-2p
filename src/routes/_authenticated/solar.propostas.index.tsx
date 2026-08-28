@@ -1,4 +1,5 @@
 import { CAMPOS_BUSCA, placeholderBusca } from "@/lib/propostas-busca";
+import { MOTIVOS_CANCELAMENTO } from "@/lib/cancelamento-motivos";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -102,6 +103,7 @@ function PropostasSolarPage() {
   const [detalheId, setDetalheId] = useState<string | null>(ver ?? null);
   const [integracoesId, setIntegracoesId] = useState<string | null>(null);
   const [excluirId, setExcluirId] = useState<string | null>(null);
+  const [motivoCancel, setMotivoCancel] = useState("");
   const podeExcluir = useCanDelete();
 
   const q = useQuery({
@@ -154,20 +156,31 @@ function PropostasSolarPage() {
   const detalheIdx = detalheId ? filtered.findIndex((r) => r.id === detalheId) : -1;
 
 
+  const propostaParaExcluir = excluirId ? rows.find((r) => r.id === excluirId) ?? null : null;
+  // Pedido com ordem no SAP não é apagado: vira "Cancelado" e exige motivo.
+  const ehCancelamentoSap = !!propostaParaExcluir?.sap_ov_numero;
+
   async function confirmarExclusao() {
     if (!excluirId) return;
+    if (ehCancelamentoSap && !motivoCancel) {
+      toast.error("Informe o motivo do cancelamento.");
+      return;
+    }
     try {
-      const r = await excluirPropostaFn({ data: { id: excluirId } });
+      const r = await excluirPropostaFn({
+        data: { id: excluirId, ...(motivoCancel ? { motivo: motivoCancel } : {}) },
+      });
       setExcluirId(null);
+      setMotivoCancel("");
       if (r?.aviso) toast.warning(r.aviso, { duration: 10000 });
-      else toast.success("Proposta excluída.");
+      else toast.success(ehCancelamentoSap ? "Pedido cancelado." : "Proposta excluída.");
       q.refetch();
       return;
     } catch (e) {
       setExcluirId(null);
+      setMotivoCancel("");
       return toast.error((e as Error).message);
     }
-    q.refetch();
   }
 
   return (
@@ -421,21 +434,47 @@ function PropostasSolarPage() {
         }}
       />
 
-      <AlertDialog open={!!excluirId} onOpenChange={(open) => !open && setExcluirId(null)}>
+      <AlertDialog
+        open={!!excluirId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setExcluirId(null);
+            setMotivoCancel("");
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir proposta?</AlertDialogTitle>
+            <AlertDialogTitle>{ehCancelamentoSap ? "Cancelar pedido?" : "Excluir proposta?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              Essa ação não pode ser desfeita.
+              {ehCancelamentoSap
+                ? "O pedido já tem ordem de venda no SAP e não será apagado: ele será marcado como Cancelado, o SAP e os setores serão avisados. Informe o motivo do cancelamento."
+                : "Essa ação não pode ser desfeita."}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {ehCancelamentoSap && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">
+                Motivo do cancelamento <span className="text-destructive">*</span>
+              </label>
+              <Select value={motivoCancel} onValueChange={setMotivoCancel}>
+                <SelectTrigger><SelectValue placeholder="Selecione o motivo…" /></SelectTrigger>
+                <SelectContent>
+                  {MOTIVOS_CANCELAMENTO.map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setExcluirId(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setExcluirId(null); setMotivoCancel(""); }}>Voltar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmarExclusao}
+              disabled={ehCancelamentoSap && !motivoCancel}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Sim, excluir
+              {ehCancelamentoSap ? "Sim, cancelar pedido" : "Sim, excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
