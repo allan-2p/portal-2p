@@ -138,14 +138,15 @@ async function cancelarOvNoSap(
 export async function efeitosCancelamento(
   propostaId: string,
   ctx: { actorNome?: string | null; motivo?: string | null } = {},
-): Promise<void> {
+): Promise<EfeitosCancelamentoResult> {
+  const resultado: EfeitosCancelamentoResult = { sapCancelado: false, emails: null };
   let row: Record<string, any> | null = null;
   try {
     row = (await db.getProposta(propostaId, SELECT)) as Record<string, any> | null;
   } catch {
     row = null;
   }
-  if (!row) return;
+  if (!row) return resultado;
 
   const vbeln = String(row["sap_ov_numero"] ?? "").trim();
 
@@ -158,8 +159,11 @@ export async function efeitosCancelamento(
       /* best effort */
     }
   }
+  resultado.sapCancelado = canceladoNoSap;
 
   // 2) E-mail aos setores — só para pedido que chegou ao SAP (igual à antiga).
+  //    Rastreado: aguarda o desfecho real no provedor para a tela não dizer
+  //    "enviado" quando o envio foi recusado (ex.: domínio não verificado).
   if (vbeln) {
     const numero = String(row["numero"] ?? "").trim();
     const org = String(row["organizacao"] ?? "") === "carregadores" ? "2P Carregadores" : "2P Solar";
@@ -183,19 +187,34 @@ export async function efeitosCancelamento(
       `<p>${linhas.join("<br />")}</p>`,
     );
 
+    const messageIds: string[] = [];
+    let total = 0;
+    let falhaEnfileirar = 0;
     for (const to of destinatarios()) {
+      total++;
       try {
-        await enviarEmail({
+        const r = await enviarEmailRastreado({
           to,
           subject: `Cancelamento de pedido ${numero} PORTAL 2P`,
           html,
           label: "cancelamento-pedido",
           idempotencyKey: `cancelamento:${propostaId}:${to}`,
         });
+        if (r.ok && r.messageId) messageIds.push(r.messageId);
+        else falhaEnfileirar++;
       } catch {
-        /* best effort */
+        falhaEnfileirar++;
       }
     }
+
+    const desfecho = await aguardarDesfechoEmails(messageIds);
+    resultado.emails = {
+      total,
+      enviados: desfecho.enviados,
+      falharam: desfecho.falharam + falhaEnfileirar,
+      pendentes: desfecho.pendentes,
+      erro: desfecho.erro,
+    };
   }
 
   // 3) Cancelar a carga na Fretefy.
@@ -207,4 +226,6 @@ export async function efeitosCancelamento(
       /* best effort */
     }
   }
+
+  return resultado;
 }
