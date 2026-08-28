@@ -79,6 +79,8 @@ type Cnae = { codigo: string; descricao: string };
 export type Cliente = {
   id: string;
   organizacao?: string | null;
+  /** "grupo" = atuação ampliada (aparece no Solar e no Carregadores). */
+  escopo_org?: string | null;
   razao_social: string;
   nome_fantasia: string | null;
   doc: string;
@@ -1214,7 +1216,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   sap={detalhe.numero_sap}
                   selos={
                     <>
-                      <Badge variant="outline">{detalhe.organizacao || ORGANIZACAO[instancia]}</Badge>
+                      <Badge variant="outline">
+                        {(detalhe.escopo_org ?? "").toLowerCase() === "grupo"
+                          ? "Grupo 2P (Solar + Carregadores)"
+                          : detalhe.organizacao || ORGANIZACAO[instancia]}
+                      </Badge>
                       <Badge variant={detalhe.contribuinte ? "default" : "secondary"}>
                         {detalhe.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}
                       </Badge>
