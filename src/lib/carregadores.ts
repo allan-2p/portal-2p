@@ -226,6 +226,8 @@ export type CarregadoresState = {
   freteMod: CarregadoresFreteMod | "";
   /** Entrega em área rural (perguntado apenas no CIF). */
   freteAreaRural: boolean;
+  /** Frete grátis: marcado no pedido — o cliente não paga o frete. */
+  freteBonificado: boolean;
   freteValor: number;
   /** Transportadora escolhida na cotação (CIF). */
   transportadora: CarregadoresTransportadora | null;
@@ -413,6 +415,7 @@ export function novoEstado(): CarregadoresState {
     entrega: novoEndereco("SP"),
     freteMod: "",
     freteAreaRural: false,
+    freteBonificado: false,
     freteValor: 0,
     transportadora: null,
 
@@ -490,7 +493,8 @@ export function calcularCarregadores(
   let difalValor = 0;
   let interPonderado = 0;
 
-  const frete = state.freteValor || 0;
+  // Frete grátis marcado no pedido: o cliente não paga o frete.
+  const frete = state.freteBonificado ? 0 : state.freteValor || 0;
 
 
   for (const it of state.itens) {

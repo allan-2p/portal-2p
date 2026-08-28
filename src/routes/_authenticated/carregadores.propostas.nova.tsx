@@ -360,6 +360,7 @@ function PropostaCarregadoresPage() {
           ? data.frete_mod
           : "") as CarregadoresState["freteMod"],
         freteAreaRural: !!(data as any).frete_area_rural,
+        freteBonificado: !!(data as any).frete_bonificado,
         freteValor: money2(data.frete_valor ?? 0),
         transportadora: (data as any).transportadora
           ? {
@@ -1131,6 +1132,7 @@ function PropostaCarregadoresPage() {
           }),
         freteMod: state.freteMod || "—",
         freteValor: state.freteValor,
+        freteBonificado: state.freteBonificado && FRETE_ABSORVIDO.includes(state.freteMod as CarregadoresFreteMod),
         observacoes: observacoesFinal,
         impostos: {
           ipiRate: config.ipi,
@@ -1140,7 +1142,7 @@ function PropostaCarregadoresPage() {
           pisCofinsRate: config.pis_cofins,
           pisCofins: d.pisCofins,
         },
-        totalNf: d.valorItens + state.freteValor,
+        totalNf: d.valorTotalProposta,
         valorTotal: d.valorTotalProposta,
         valor: d.valor,
         interno: {
@@ -1266,6 +1268,7 @@ function PropostaCarregadoresPage() {
           entrega: entregaEfetiva,
           freteMod: state.freteMod,
           freteAreaRural: state.freteMod === "CIF" ? state.freteAreaRural : false,
+          freteBonificado: FRETE_ABSORVIDO.includes(state.freteMod as CarregadoresFreteMod) ? state.freteBonificado : false,
           freteValor: state.freteMod === "FOB" || !state.freteMod ? 0 : money2(state.freteValor),
           transportadora: state.freteMod === "FOB" || !state.freteMod ? null : state.transportadora,
 
@@ -2258,6 +2261,7 @@ function PropostaCarregadoresPage() {
                       freteValor: v === "CIF" ? (s.transportadora?.total ?? 0) : v === "FOB" ? 0 : s.freteValor,
                       transportadora: v === "CIF" ? s.transportadora : null,
                       freteAreaRural: v === "CIF" ? s.freteAreaRural : false,
+                      freteBonificado: v === "CIF" || v === "DEDICADO" ? s.freteBonificado : false,
                     }))
                   }
                 >
@@ -2281,6 +2285,15 @@ function PropostaCarregadoresPage() {
                     <Switch
                       checked={state.freteAreaRural}
                       onCheckedChange={(v) => set("freteAreaRural", v)}
+                    />
+                  </div>
+                ) : null}
+                {state.freteMod === "CIF" || state.freteMod === "DEDICADO" ? (
+                  <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                    <span className="text-xs">Frete grátis (não cobrado do cliente)?</span>
+                    <Switch
+                      checked={state.freteBonificado}
+                      onCheckedChange={(v) => set("freteBonificado", v)}
                     />
                   </div>
                 ) : null}
@@ -2970,7 +2983,7 @@ function PropostaCarregadoresPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Total NF (com frete)</span>
-                  <span className="tabular-nums">{fmtBRL(d.valorItens + state.freteValor)}</span>
+                  <span className="tabular-nums">{fmtBRL(d.valorTotalProposta)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Margem bruta</span>

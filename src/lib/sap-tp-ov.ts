@@ -52,13 +52,18 @@ export function contribuinteDoFaturamento(input: {
  * (`calculadora.php:735-760`): documento do faturamento, TP_OV do faturamento,
  * PLTYP (tabela) continua sendo a do cliente da proposta.
  */
+/** Restaura zeros à esquerda perdidos em bases legadas (CNPJ 12/13 dígitos). */
+function canon(d: string): string {
+  return d.length > 11 && d.length < 14 ? d.padStart(14, "0") : d;
+}
+
 export function documentoDaSimulacao(input: {
   faturarClienteFinal?: unknown;
   faturamento?: { doc?: unknown } | null;
   clienteDoc?: unknown;
 }): string {
-  const final = digitos(input.faturamento?.doc);
+  const final = canon(digitos(input.faturamento?.doc));
   if (input.faturarClienteFinal === true && (final.length === 11 || final.length === 14)) return final;
-  return digitos(input.clienteDoc);
+  return canon(digitos(input.clienteDoc));
 }
 

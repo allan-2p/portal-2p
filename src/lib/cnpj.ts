@@ -2,6 +2,29 @@
 
 export const soDigitos = (v: string) => (v ?? "").replace(/\D/g, "");
 
+/**
+ * Documento canônico: restaura zeros à esquerda perdidos em bases que
+ * gravaram o CNPJ/CPF como número (ex.: "1445384000133" → 14 dígitos).
+ * - 12/13 dígitos → completa 14 quando o CNPJ resultante for válido.
+ * - 9/10 dígitos → completa 11 quando o CPF resultante for válido.
+ * Sem correspondência válida, devolve apenas os dígitos originais.
+ */
+export function docCanonico(v: string): string {
+  const d = soDigitos(v);
+  if (d.length === 11 || d.length === 14) return d;
+  if (d.length >= 12 && d.length < 14) {
+    const p = d.padStart(14, "0");
+    if (cnpjValido(p)) return p;
+  }
+  if (d.length >= 9 && d.length < 11) {
+    const p = d.padStart(11, "0");
+    if (cpfValido(p)) return p;
+  }
+  if (d.length > 11 && d.length < 14) return d.padStart(14, "0");
+  return d;
+}
+
+
 export function mascaraDoc(v: string): string {
   const d = soDigitos(v).slice(0, 14);
   if (d.length <= 11) {
@@ -74,6 +97,19 @@ export function padroesBuscaDoc(termo: string): string[] {
   const d = soDigitos(termo);
   if (d.length < 3) return [];
   const padroes = new Set<string>([d, d.split("").join("*")]);
+  // Bases legadas podem ter perdido os zeros à esquerda e vice-versa.
+  const semZeros = d.replace(/^0+/, "");
+  if (semZeros.length >= 3 && semZeros !== d) {
+    padroes.add(semZeros);
+    padroes.add(semZeros.split("").join("*"));
+  }
+  const canon = docCanonico(d);
+  if (canon !== d) {
+    padroes.add(canon);
+    padroes.add(canon.split("").join("*"));
+    if (canon.length === 14) padroes.add(mascaraCnpj(canon));
+    if (canon.length === 11) padroes.add(mascaraDoc(canon));
+  }
   if (d.length === 14) padroes.add(mascaraCnpj(d));
   if (d.length === 11) padroes.add(mascaraDoc(d));
   return [...padroes];

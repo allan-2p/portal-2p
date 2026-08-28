@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { docCanonico } from "@/lib/cnpj";
 import { condicaoPagamentoClienteFn } from "@/lib/clientes.functions";
 import { getCreditoVigente } from "@/lib/credito.functions";
 
@@ -9,7 +10,7 @@ import { getCreditoVigente } from "@/lib/credito.functions";
  * formas de pagamento.
  */
 export function usePrazoLiberado(clienteDoc?: string | null) {
-  const doc = String(clienteDoc ?? "").replace(/\D/g, "");
+  const doc = docCanonico(String(clienteDoc ?? ""));
   const valido = doc.length === 11 || doc.length === 14;
 
   const cadastro = useQuery({

@@ -42,6 +42,7 @@ export type SalvarPropostaInput = {
   entrega: Record<string, string>;
   freteMod: string;
   freteAreaRural: boolean;
+  freteBonificado: boolean;
   freteValor: number;
   transportadora: {
     id: string;
@@ -181,6 +182,7 @@ function validar(input: any): SalvarPropostaInput {
     entrega: entregaNormalizada,
     freteMod,
     freteAreaRural: !!input.freteAreaRural,
+    freteBonificado: freteMod === "CIF" || freteMod === "DEDICADO" ? !!input.freteBonificado : false,
     freteValor,
     transportadora,
     observacoes: input.observacoes ? String(input.observacoes) : null,
@@ -328,6 +330,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       entrega: data.entrega as unknown as CarregadoresState["entrega"],
       freteMod: data.freteMod as CarregadoresState["freteMod"],
       freteAreaRural: data.freteAreaRural,
+      freteBonificado: data.freteBonificado,
       freteValor: data.freteValor,
       transportadora: data.transportadora,
 
@@ -412,6 +415,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       entrega: data.entrega,
       frete_mod: data.freteMod,
       frete_area_rural: data.freteMod === "CIF" ? data.freteAreaRural : false,
+      frete_bonificado: data.freteBonificado,
       frete_valor: data.freteValor,
       transportadora: data.transportadora?.nome ?? null,
       transportadora_documento: data.transportadora?.documento ?? null,
@@ -458,6 +462,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
         mb: d.mb,
         mbPct: d.mbPct,
         comissao: d.comValor,
+        freteCobrado: data.freteBonificado ? 0 : data.freteValor,
       },
     };
 

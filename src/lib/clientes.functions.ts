@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { docCanonico } from "./cnpj";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
@@ -651,7 +652,7 @@ export const revalidarCnpjClienteFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const cliente = await assertPodeAlterarCliente(context as any, data.instancia, data.id);
-    const doc = String((cliente as any)?.doc ?? "").replace(/\D/g, "");
+    const doc = docCanonico(String((cliente as any)?.doc ?? ""));
     if (doc.length !== 14) {
       return {
         ok: false as const,

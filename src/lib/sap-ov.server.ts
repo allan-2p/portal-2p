@@ -476,7 +476,7 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
     .join("");
 
 
-  const docCliente = digitos(row["cliente_doc"]);
+  const docCliente = docSap(row["cliente_doc"]);
   const nomeCliente = String(row["cliente_nome"] ?? "");
   const emissor =
     row["faturar_cliente_final"] && digitos((row["faturamento"] ?? {})["doc"])
@@ -658,6 +658,28 @@ function mensagens(doc: any): {
 
 
 
+/**
+ * Documento no formato do SAP: bases legadas gravam o CNPJ como número e
+ * perdem os zeros à esquerda (13/12 dígitos). Completa 14 (CNPJ) ou 11 (CPF).
+ */
+function docSap(v: unknown): string {
+  const d = digitos(v);
+  if (d.length > 11 && d.length < 14) return d.padStart(14, "0");
+  if (d.length > 0 && d.length < 11 && cpfEhValido(d.padStart(11, "0"))) return d.padStart(11, "0");
+  return d;
+}
+
+function cpfEhValido(c: string): boolean {
+  if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
+  const dv = (len: number) => {
+    let soma = 0;
+    for (let i = 0; i < len; i++) soma += Number(c[i]) * (len + 1 - i);
+    const r = (soma * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return dv(9) === Number(c[9]) && dv(10) === Number(c[10]);
+}
+
 /** Valida CNPJ pelos dígitos verificadores. */
 function cnpjValido(v: unknown): boolean {
   const d = digitos(v);
@@ -688,14 +710,14 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
   if (!numero) pendencias.push("Número do pedido não definido.");
   if (!String(row["cliente_nome"] ?? "").trim()) pendencias.push("Cliente sem nome/razão social.");
 
-  const docCliente = digitos(row["cliente_doc"]);
+  const docCliente = docSap(row["cliente_doc"]);
   if (!docCliente) pendencias.push("Cliente sem CNPJ informado.");
   else if (docCliente.length !== 14) pendencias.push("CNPJ do cliente inválido (são necessários 14 dígitos).");
   else if (!cnpjValido(docCliente)) pendencias.push(`CNPJ do cliente inválido (${docCliente}).`);
 
   if (row["faturar_cliente_final"]) {
     const fat = (row["faturamento"] ?? {}) as Record<string, any>;
-    const docFat = digitos(fat["doc"]);
+    const docFat = docSap(fat["doc"]);
     if (!docFat) pendencias.push("Faturamento para cliente final marcado, mas sem CPF/CNPJ do emissor.");
     else if (docFat.length === 14 && !cnpjValido(docFat)) pendencias.push(`CNPJ de faturamento inválido (${docFat}).`);
     else if (docFat.length !== 14 && docFat.length !== 11)
