@@ -43,11 +43,26 @@ const money = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v ?? 0));
 const qtd = (v: number) => new Intl.NumberFormat("pt-BR").format(Number(v ?? 0));
 
-function statusEstoque(livre: number, pend: number, entreposto: number, futuro: number) {
-  if (livre - pend > 0) return { label: "Em estoque", cls: "bg-emerald-500/15 text-emerald-600" };
-  if (entreposto > 0) return { label: "Entreposto", cls: "bg-sky-500/15 text-sky-600" };
-  if (futuro > 0) return { label: "Sob encomenda", cls: "bg-amber-500/15 text-amber-600" };
-  return { label: "Indisponível", cls: "bg-muted text-muted-foreground" };
+const fmtDataCurta = (v?: string | null) => {
+  if (!v) return "—";
+  const d = new Date(`${String(v).slice(0, 10)}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
+};
+
+/**
+ * Mesma cascata do selo usado nas propostas:
+ * imediato → entreposto → chegada (próxima remessa) → verificar.
+ */
+function infoEstoque(
+  livre: number,
+  pend: number,
+  entreposto: number,
+  proximaRemessa: string | null,
+): DisponibilidadeInfo {
+  if (livre - pend > 0) return { ok: true, disponivel: true, tipo: "imediato" };
+  if (entreposto > 0) return { ok: true, disponivel: true, tipo: "entreposto" };
+  if (proximaRemessa) return { ok: true, disponivel: false, tipo: "eta", dt_remessa: proximaRemessa };
+  return { ok: true, disponivel: false, tipo: "indisponivel" };
 }
 
 function EstoquePage() {
