@@ -293,6 +293,7 @@ function HistoricoCarregadoresPage() {
           <div className="hidden md:block">
             <table className="w-full table-fixed text-[13px]">
               <colgroup>
+                <col className="w-[52px]" />
                 <col className="w-[150px]" />
                 <col className="w-[22%]" />
                 <col className="w-[14%]" />
@@ -302,13 +303,13 @@ function HistoricoCarregadoresPage() {
                 <col className="w-[96px]" />
                 <col className="w-[96px]" />
                 <col className="w-[96px]" />
-                <col className="w-[56px]" />
                 <col className="w-[172px]" />
               </colgroup>
 
-              <thead>
-                <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
-                  <th className="text-left px-3 py-2.5">Proposta</th>
+               <thead>
+                 <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
+                   <th className="text-center px-3 py-2.5">Status</th>
+                   <th className="text-left px-3 py-2.5">Proposta</th>
                   <th className="text-left px-3 py-2.5">Cliente</th>
                   <th className="text-left px-3 py-2.5">Consultor</th>
                   <th className="text-left px-3 py-2.5">Nº SAP</th>
