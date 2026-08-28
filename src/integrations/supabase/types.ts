@@ -1994,6 +1994,7 @@ export type Database = {
           indicacao: boolean
           itens: Json
           kit_fotovoltaico: boolean
+          motivo_cancelamento: string | null
           nome: string | null
           numero: string | null
           numero_sap: string | null
@@ -2059,6 +2060,7 @@ export type Database = {
           indicacao?: boolean
           itens?: Json
           kit_fotovoltaico?: boolean
+          motivo_cancelamento?: string | null
           nome?: string | null
           numero?: string | null
           numero_sap?: string | null
@@ -2124,6 +2126,7 @@ export type Database = {
           indicacao?: boolean
           itens?: Json
           kit_fotovoltaico?: boolean
+          motivo_cancelamento?: string | null
           nome?: string | null
           numero?: string | null
           numero_sap?: string | null
