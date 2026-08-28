@@ -902,14 +902,16 @@ function NovaPropostaSolarPage() {
         origem: "calculadora",
       });
     }
-    const extras = itensCalc.filter((i) => i.origem === "manual");
-    setItensCalc([...novos, ...extras]);
+    const extras = itensCalc.filter((i) => i.origem === "manual" && !i.kit);
+    // O item do kit é obrigatório e sobrevive ao recálculo da estrutura.
+    const kitAtual = itensCalc.filter((i) => i.kit);
+    setItensCalc([...kitAtual, ...novos, ...extras]);
     setAssinaturaCalc(assinaturaAtual);
     setEditandoCalc(false);
     if (faltando.length)
       toast.warning(`Itens sem correspondência no catálogo foram incluídos sem preço: ${faltando.join(", ")}.`);
     // Espera os preços do SAP antes de liberar a etapa: nunca seguir com zero calado.
-    await atualizarPrecos([...novos, ...extras], listaPreco, setItensCalc);
+    await atualizarPrecos([...kitAtual, ...novos, ...extras], listaPreco, setItensCalc);
     setCalculando(false);
     if (!faltando.length) toast.success("Estrutura calculada e itens precificados.");
 
