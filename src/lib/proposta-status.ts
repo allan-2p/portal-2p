@@ -158,8 +158,8 @@ export const PROPOSTA_STATUS_STYLE: Record<PropostaStatus, PropostaStatusStyle> 
     bg: "#1E3A8A", fg: "#EFF6FF",
   },
   "Coletado": {
-    dot: "bg-[#0F766E]", text: "text-[#0F766E]", chip: "bg-[#0F766E] text-[#ECFDF5]",
-    bg: "#0F766E", fg: "#ECFDF5",
+    dot: "bg-[#14B8A6]", text: "text-[#14B8A6]", chip: "bg-[#14B8A6] text-[#0F172A]",
+    bg: "#14B8A6", fg: "#0F172A",
   },
   "Entregue": {
     dot: "bg-[#16A34A]", text: "text-[#16A34A]", chip: "bg-[#16A34A] text-[#F0FDF4]",
