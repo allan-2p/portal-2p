@@ -833,8 +833,9 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
       const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
       avisoEmail = avisoEnvioCancelamento(efeitos);
     } catch {
-      /* efeitos são best effort: nunca desfazem o cancelamento */
+      avisoEmail = "FALHA ao notificar os setores por e-mail. Avise-os manualmente.";
     }
+
     return { ok: true, aviso: avisoEmail };
   });
 
