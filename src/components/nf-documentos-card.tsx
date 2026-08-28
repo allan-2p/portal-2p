@@ -139,7 +139,7 @@ export function NfDocumentosCard({
         <Campo label="Chave de acesso" value={String(proposta['nf_chave'] ?? "") || "—"} mono />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
         <BotaoDoc tipo="danfe" icone={FileText} rotulo="DANFE (PDF)" disponivel={temNf} carregando={carregando} onClick={abrir} />
         <BotaoDoc tipo="xml" icone={FileCode2} rotulo="XML da NF-e" disponivel={temNf} carregando={carregando} onClick={abrir} />
       </div>
