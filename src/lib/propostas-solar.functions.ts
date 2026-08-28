@@ -101,7 +101,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     if (docFat.length === 11) {
       if (!cpfValido(docFat)) throw new Error("CPF do faturamento inválido.");
       faturamento['contribuinte'] = false;
-      finalidadeUso = "uso_consumo";
+      finalidadeUso = "Uso e Consumo";
     } else {
       if (!cnpjValido(docFat)) throw new Error("CNPJ do faturamento inválido.");
       if (faturamento['contribuinte'] && !String(faturamento['ie'] ?? "").trim())
