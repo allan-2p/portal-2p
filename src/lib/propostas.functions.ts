@@ -829,7 +829,7 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
     await sincronizarSalesforceAoSalvar(data.id);
     let avisoEmail: string | null = null;
     try {
-      const { efeitosCancelamento } = await import("@/lib/proposta-cancelamento.server");
+      const { efeitosCancelamento, avisoEnvioCancelamento } = await import("@/lib/proposta-cancelamento.server");
       const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
       avisoEmail = avisoEnvioCancelamento(efeitos);
     } catch {
@@ -866,7 +866,7 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
       await sincronizarSalesforceAoSalvar(data.id);
       let avisoEmail = "Os setores foram avisados por e-mail.";
       try {
-        const { efeitosCancelamento } = await import("@/lib/proposta-cancelamento.server");
+        const { efeitosCancelamento, avisoEnvioCancelamento } = await import("@/lib/proposta-cancelamento.server");
         const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
         avisoEmail = avisoEnvioCancelamento(efeitos) ?? avisoEmail;
       } catch {
