@@ -158,7 +158,7 @@ function PropostasSolarPage() {
 
   const propostaParaExcluir = excluirId ? rows.find((r) => r.id === excluirId) ?? null : null;
   // Pedido com ordem no SAP não é apagado: vira "Cancelado" e exige motivo.
-  const ehCancelamentoSap = !!propostaParaExcluir?.sap_ov_numero;
+  const ehCancelamentoSap = !!propostaParaExcluir?.sap_ov_numero || podeCancelarPedido(propostaParaExcluir?.status);
 
   async function confirmarExclusao() {
     if (!excluirId) return;
