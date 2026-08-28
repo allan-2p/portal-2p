@@ -72,7 +72,7 @@ function BotaoDoc({
     <Button
       variant="outline"
       size="sm"
-      className="gap-2"
+      className="h-10 w-full justify-center gap-2 sm:h-9 sm:w-auto"
       disabled={!disponivel || carregando !== null}
       onClick={() => onClick(tipo)}
       title={disponivel ? rotulo : "Disponível somente após o faturamento da nota fiscal."}
