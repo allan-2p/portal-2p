@@ -510,6 +510,15 @@ function Campo({ label, value }: { label: string; value: string }) {
   );
 }
 
+function RodapeInfo({ rot, val }: { rot: string; val: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="uppercase tracking-wider text-[10px]">{rot}</div>
+      <div className="truncate font-medium text-foreground">{val}</div>
+    </div>
+  );
+}
+
 function Total({ label, value, destaque }: { label: string; value: string; destaque?: boolean }) {
   return (
     <div className="text-right">
