@@ -277,11 +277,6 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             }}
           />
 
-          {String(p['forma_pagamento'] ?? "").startsWith("boleto") ? (
-            <div className="flex flex-wrap gap-2 border-t border-border/60 pt-4">
-              <BotaoBoletoNf proposta={p} />
-            </div>
-          ) : null}
 
           <BoletosSharepointCard
             propostaId={String(p['id'])}
