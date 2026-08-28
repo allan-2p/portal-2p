@@ -133,7 +133,7 @@ export function NfDocumentosCard({
 
       {children}
 
-      <div className="grid grid-cols-2 gap-4 border-t border-border/60 pt-4 text-sm md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 border-t border-border/60 pt-4 text-sm sm:grid-cols-2 md:grid-cols-3">
         <Campo label="Nº da NF" value={nfNumero || "—"} />
         <Campo label="Série" value={String(proposta['nf_serie'] ?? "") || "—"} />
         <Campo label="Chave de acesso" value={String(proposta['nf_chave'] ?? "") || "—"} mono />
