@@ -231,58 +231,68 @@ function PropostasSolarPage() {
               onExcluir={setExcluirId}
             />
           </div>
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm min-w-[1000px]">
+          <div className="hidden md:block">
+            <table className="w-full text-[13px]">
 
               <thead>
-                <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-                  <th className="text-left px-4 py-3">Nº</th>
-                  <th className="text-left px-4 py-3">Cliente</th>
-                  <th className="text-left px-4 py-3">Proposta</th>
-                  <th className="text-left px-4 py-3">Nº SAP</th>
-                  <th className="text-right px-4 py-3">Valor</th>
-                  <th className="text-left px-4 py-3">Data</th>
-                  <th className="text-left px-4 py-3">Despacho</th>
-                  <th className="text-left px-4 py-3">Consultor</th>
-                  <th className="text-center px-4 py-3">Status</th>
-                  <th className="text-right px-4 py-3">Ações</th>
+                <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
+                  <th className="text-left px-3 py-2.5">Proposta</th>
+                  <th className="text-left px-3 py-2.5">Cliente</th>
+                  <th className="text-left px-3 py-2.5">Nº SAP</th>
+                  <th className="text-right px-3 py-2.5">Valor</th>
+                  <th className="text-left px-3 py-2.5 whitespace-nowrap">Despacho</th>
+                  <th className="text-left px-3 py-2.5 whitespace-nowrap">Compra</th>
+                  <th className="text-left px-3 py-2.5 whitespace-nowrap">Criação</th>
+                  <th className="text-center px-3 py-2.5">Status</th>
+                  <th className="text-right px-3 py-2.5">Ações</th>
                 </tr>
               </thead>
               <tbody className={fetchingClass(q.isFetching, q.isLoading)}>
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
-                    <td className="px-4 py-3 text-muted-foreground">{formatPropostaNumero(r.numero) || "—"}</td>
-                    <td className="px-4 py-3 font-medium">{r.cliente_nome}</td>
-                    <td className="px-4 py-3">{r.nome || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}</td>
-                    <td className="px-4 py-3 text-right font-semibold">
+                    <td className="px-3 py-2.5">
+                      <div className="max-w-[190px] truncate font-medium">{r.nome || "—"}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatPropostaNumero(r.numero) || "—"}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="max-w-[220px] truncate font-medium">{r.cliente_nome}</div>
+                      <div className="max-w-[220px] truncate text-xs text-muted-foreground">
+                        {r.consultor_nome || r.criado_por_nome || "—"}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap">
                       {fmtBRL(r.totais['valorTotal'] ?? 0)}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(r.created_at).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
                       {r.expedido_em
                         ? new Date(`${String(r.expedido_em).slice(0, 10)}T12:00:00`).toLocaleDateString("pt-BR")
                         : "—"}
                     </td>
-                    <td className="px-4 py-3">{r.consultor_nome || r.criado_por_nome || "—"}</td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                      {r.finalizado_em ? new Date(r.finalizado_em).toLocaleDateString("pt-BR") : "—"}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                      {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
                       <StatusDot status={r.status} />
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" aria-label="Detalhar" onClick={() => setDetalheId(r.id)}>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Detalhar" onClick={() => setDetalheId(r.id)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                         {!bloqueiaReenvioSap(r) && (
-                          <Button variant="ghost" size="icon" aria-label="Continuar proposta" asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Continuar proposta" asChild>
                             <Link to="/solar/propostas/nova" search={{ id: r.id }}>
                               <Pencil className="h-4 w-4" />
                             </Link>
                           </Button>
                         )}
-                        <Button variant="ghost" size="icon" aria-label="Duplicar proposta" asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Duplicar proposta" asChild>
                           <Link to="/solar/propostas/nova" search={{ dup: r.id }}>
                             <Copy className="h-4 w-4" />
                           </Link>
@@ -292,13 +302,13 @@ function PropostasSolarPage() {
                            size="icon"
                            aria-label="Integrações e auditoria"
                            title="Integrações e auditoria"
-                           className={r.sap_ov_status === "criada" && r.sf_status === "sincronizado" ? "text-success" : "text-warning"}
+                           className={`h-8 w-8 ${r.sap_ov_status === "criada" && r.sf_status === "sincronizado" ? "text-success" : "text-warning"}`}
                            onClick={() => setIntegracoesId(r.id)}
                          >
                            <RefreshCw className="h-4 w-4" />
                          </Button>
                         {podeExcluir && (
-                          <Button variant="ghost" size="icon" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         )}
