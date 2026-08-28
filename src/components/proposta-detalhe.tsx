@@ -95,13 +95,35 @@ export function PropostaDetalhe({ id }: { id?: string }) {
   if (q.isLoading) return <div className="glass rounded-2xl p-8 text-muted-foreground">Carregando…</div>;
   if (!p) return <div className="glass rounded-2xl p-8 text-muted-foreground">Proposta não encontrada.</div>;
 
+  const sapNumero = formatSapNumero(p['sap_ov_numero'] || p['numero_sap']);
+  const bonificado = ehTipoNfBonificacao(p['tipo_nf']);
+  const entrega = (p['entrega'] ?? {}) as Record<string, string>;
+  const faturamento = (p['faturamento'] ?? {}) as Record<string, string>;
+  const enderecoEntrega = [
+    [entrega['logradouro'], entrega['numero']].filter(Boolean).join(", "),
+    entrega['complemento'],
+    entrega['bairro'],
+    cidadeUf(entrega['cidade'] || faturamento['cidade'] || "", entrega['uf'] || faturamento['uf'] || String(p['uf'] ?? "")),
+    entrega['cep'],
+  ]
+    .filter((v) => v && String(v).trim())
+    .join(" · ");
+  const temCobranca =
+    !bonificado &&
+    !!(
+      p['pagamento_linha_digitavel'] ||
+      p['pagamento_pix_copia_cola'] ||
+      p['pagamento_status'] ||
+      p['forma_pagamento']
+    );
+
   return (
     <div className="space-y-4">
       <div className="glass rounded-2xl p-4 sm:p-5 space-y-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">
-              Proposta {formatPropostaNumero(p['numero']) || "—"}
+              Nº {formatPropostaNumero(p['numero']) || "—"}
               {numeroAnterior(p) && (
                 <span className="ml-2 normal-case tracking-normal text-muted-foreground font-normal">
                   nº anterior {numeroAnterior(p)}
@@ -113,42 +135,59 @@ export function PropostaDetalhe({ id }: { id?: string }) {
                 </span>
               )}
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold mt-1 truncate">{p['nome'] || p['cliente_nome']}</h2>
-            <div className="text-sm text-muted-foreground mt-1">{p['cliente_nome']}</div>
+            <h2 className="text-xl sm:text-2xl font-bold mt-1 truncate">
+              {p['nome'] || p['cliente_nome']}
+            </h2>
+            <div className="text-sm text-muted-foreground mt-1 truncate">{p['cliente_nome']}</div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {ehTipoNfBonificacao(p['tipo_nf']) ? <BonificacaoBadge /> : null}
-            <div
-              className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
-              style={{ backgroundColor: st.bg, color: st.fg }}
-            >
-              <StatusDot status={status} size="sm" className="ring-0" />
-              {status}
+
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <div className="rounded-xl border border-border/60 bg-muted/40 px-3 py-1.5 text-right">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Nº SAP</div>
+              <div className="font-mono text-sm font-semibold tabular-nums">{sapNumero || "—"}</div>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {bonificado ? <BonificacaoBadge /> : null}
+              <div
+                className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
+                style={{ backgroundColor: st.bg, color: st.fg }}
+              >
+                <StatusDot status={status} size="sm" className="ring-0" />
+                {status}
+              </div>
             </div>
           </div>
         </div>
 
-        {ehTipoNfBonificacao(p['tipo_nf']) ? (
+        {bonificado ? (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
             Pedido bonificado — nenhuma cobrança (boleto/Pix) é emitida para esta proposta.
           </div>
         ) : null}
 
-
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <Campo label="Data de criação" value={fmtData(p['created_at'])} />
-          <Campo label="Criado por" value={p['criado_por_nome'] || "—"} />
-          <Campo label="Finalizado em" value={p['finalizado_em'] ? fmtData(p['finalizado_em']) : "—"} />
-          <Campo label="Finalizado por" value={p['finalizado_por_nome'] || "—"} />
-          <Campo label="Consultor responsável" value={p['consultor_nome'] || "—"} />
-          <Campo label="Nº SAP" value={formatSapNumero(p['sap_ov_numero'] || p['numero_sap']) || "—"} />
           <Campo label="CNPJ/CPF" value={p['cliente_doc'] || "—"} />
           <Campo label="Inscrição estadual" value={p['cliente_ie'] || "—"} />
+          <Campo label="Telefone" value={p['cliente_telefone'] || "—"} />
+          <Campo label="E-mail" value={p['cliente_email'] || "—"} />
+          <Campo label="Consultor responsável" value={p['consultor_nome'] || "—"} />
+          <Campo label="Data da compra" value={p['finalizado_em'] ? fmtData(p['finalizado_em']) : "—"} />
+          <Campo label="Previsão de despacho" value={p['expedido_em'] ? fmtData(p['expedido_em']) : "—"} />
+          <Campo label="Indicação" value={p['indicacao'] ? `Sim · ${p['padrinho_nome'] || "—"}` : "Não"} />
           {numeroAnterior(p) ? <Campo label="Nº anterior" value={numeroAnterior(p)} /> : null}
           {p['projeto_antigo_id'] ? (
             <Campo label="Projeto (plataforma antiga)" value={String(p['projeto_antigo_id'])} />
           ) : null}
         </div>
+
+        {p['observacoes'] ? (
+          <div className="rounded-xl bg-muted/30 p-3 text-sm">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+              Observações
+            </div>
+            <p className="whitespace-pre-wrap">{String(p['observacoes'])}</p>
+          </div>
+        ) : null}
 
         {podeVerInterno && p['observacoes_internas'] ? (
           <div className="rounded-xl bg-muted/40 p-3 text-sm">
@@ -166,7 +205,6 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
       <div className="glass rounded-2xl p-4 sm:p-5 space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-
           Andamento do pedido
         </h3>
         {p['expedido_em'] ? (
@@ -180,22 +218,43 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         <MarcarEntregueAcao proposta={p} />
       </div>
 
-      <NfDocumentosCard proposta={p} />
+      {/* Faturamento + nota fiscal: onde se puxam DANFE e XML. */}
+      <NfDocumentosCard proposta={p}>
+        <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+          <Campo
+            label="Cidade / UF de destino"
+            value={cidadeUf(
+              faturamento['cidade'] || entrega['cidade'] || "",
+              faturamento['uf'] || entrega['uf'] || String(p['uf'] ?? ""),
+            )}
+          />
+          <Campo label="Contribuinte" value={p['contribuinte'] ? "Sim" : "Não"} />
+          <Campo
+            label="Finalidade de uso"
+            value={
+              finalidadeCadastro
+                ? labelFinalidadeUso[finalidadeUsoDoCadastro(finalidadeCadastro)]
+                : labelFinalidade(p['finalidade_uso'])
+            }
+          />
+          <Campo
+            label="Frete"
+            value={`${p['frete_mod'] ?? "—"} · ${freteGratis ? "Grátis (cupom)" : freteBonificado ? "Bonificado" : fmtBRL(frete)}`}
+          />
+          <div className="col-span-2 md:col-span-4">
+            <div className="text-xs text-muted-foreground">Endereço de entrega</div>
+            <div className="font-medium">{enderecoEntrega || "—"}</div>
+          </div>
+        </div>
+      </NfDocumentosCard>
 
-      <BoletosSharepointCard
-        propostaId={String(p['id'])}
-        formaPagamento={p['forma_pagamento']}
-        nfNumero={p['nf_numero']}
-        boletos={Array.isArray(p['boletos']) ? p['boletos'] : []}
-        avisadoEm={p['boletos_avisados_em']}
-      />
+      {/* Cobrança: Pix, boleto à vista, cartão e boletos a prazo do SharePoint. */}
+      {temCobranca ? (
+        <div className="glass rounded-2xl p-4 sm:p-5 space-y-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Cobrança
+          </h3>
 
-      {(p['pagamento_linha_digitavel'] ||
-        p['pagamento_pix_copia_cola'] ||
-        p['pagamento_status'] ||
-        p['forma_pagamento'] === 'pix' ||
-        p['forma_pagamento'] === 'boleto_vista') && (
-        <div className="glass rounded-2xl p-5">
           <CobrancaCard
             cobranca={{
               numeroPedido: p['numero'] ? String(p['numero']) : null,
@@ -214,62 +273,23 @@ export function PropostaDetalhe({ id }: { id?: string }) {
               atualizado_em: p['pagamento_atualizado_em'],
             }}
           />
-        </div>
-      )}
 
-
-
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="glass rounded-2xl p-4 sm:p-5 space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Faturamento</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <Campo
-              label="Cidade / UF de destino"
-              value={(() => {
-                const fat = (p['faturamento'] ?? {}) as Record<string, string>;
-                const ent = (p['entrega'] ?? {}) as Record<string, string>;
-                const cidade = fat['cidade'] || ent['cidade'] || "";
-                const uf = fat['uf'] || ent['uf'] || String(p['uf'] ?? "");
-                return cidadeUf(cidade, uf);
-              })()}
-            />
-            <Campo label="Contribuinte" value={p['contribuinte'] ? "Sim" : "Não"} />
-            <Campo label="Finalidade de uso" value={finalidadeCadastro ? labelFinalidadeUso[finalidadeUsoDoCadastro(finalidadeCadastro)] : labelFinalidade(p['finalidade_uso'])} />
-            <Campo
-              label="Frete"
-              value={`${p['frete_mod'] ?? "—"} · ${freteGratis ? "Grátis (cupom)" : freteBonificado ? "Bonificado" : fmtBRL(frete)}`}
-            />
-            {Number(totais['desconto'] ?? 0) > 0 ? (
-              <Campo
-                label="Desconto"
-                value={`${fmtBRL(Number(totais['desconto']))}${totais['cupom'] ? ` · cupom ${String(totais['cupom'])}` : ""}`}
-              />
-            ) : null}
-            <Campo label="Previsão de despacho" value={p['expedido_em'] ? fmtData(p['expedido_em']) : "—"} />
-
-            <Campo label="Indicação" value={p['indicacao'] ? "Sim" : "Não"} />
-            {p['indicacao'] ? <Campo label="Padrinho" value={p['padrinho_nome'] || "—"} /> : null}
-
-          </div>
-        </div>
-
-        <div className="glass rounded-2xl p-4 sm:p-5 space-y-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Contato do cliente
-          </h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <Campo label="Telefone" value={p['cliente_telefone'] || "—"} />
-            <Campo label="E-mail" value={p['cliente_email'] || "—"} />
-          </div>
-          {p['observacoes'] ? (
-            <div className="pt-2">
-              <div className="text-xs text-muted-foreground">Observações</div>
-              <div className="text-sm whitespace-pre-wrap">{p['observacoes']}</div>
+          {String(p['forma_pagamento'] ?? "").startsWith("boleto") ? (
+            <div className="flex flex-wrap gap-2 border-t border-border/60 pt-4">
+              <BotaoBoletoNf proposta={p} />
             </div>
           ) : null}
+
+          <BoletosSharepointCard
+            propostaId={String(p['id'])}
+            formaPagamento={p['forma_pagamento']}
+            nfNumero={p['nf_numero']}
+            boletos={Array.isArray(p['boletos']) ? p['boletos'] : []}
+            avisadoEm={p['boletos_avisados_em']}
+          />
         </div>
-      </div>
+      ) : null}
+
 
       <div className="glass rounded-2xl overflow-hidden">
         <div className="px-4 pt-4 pb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground sm:px-5 sm:pt-5">
