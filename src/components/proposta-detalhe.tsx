@@ -73,8 +73,13 @@ export function PropostaDetalhe({ id }: { id?: string }) {
   const fotosQ = useImagensPorCodigo(itens.map((i) => i.codigo));
   const fotos = fotosQ.data ?? {};
   const frete = Number(p?.['frete_valor'] ?? 0);
+  // Frete grátis vem do cupom (frete_gratis / totais.freteGratis); bonificado é
+  // a cortesia comercial: em ambos o cliente não paga o frete.
+  const freteGratis = !!(p?.['frete_gratis'] ?? (totais as Record<string, unknown>)['freteGratis']);
+  const freteBonificado = !!p?.['frete_bonificado'];
   const status = String(p?.['status'] ?? "Salvo");
   const st = propostaStatusStyle(status);
+
 
   // Finalidade de uso: sempre a do cadastro atual do cliente (nunca a salva na proposta).
   const buscarFinalidade = useServerFn(finalidadeUsoPorDocFn);
