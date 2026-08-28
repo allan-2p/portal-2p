@@ -105,7 +105,7 @@ export async function listClientes(instance: ClientesInstance): Promise<ClienteR
   for (let pagina = 0; pagina < 40; pagina++) {
     const params = new URLSearchParams({
       select: SELECT,
-      instancia: `eq.${instance}`,
+      and: `(${await grupoInstancia(instance)})`,
       order: "created_at.desc,id.asc",
     });
     const from = pagina * PAGINA_DB;
@@ -163,9 +163,9 @@ export async function listClientesPagina(
   const ordem = opts.ordem || "created_at";
   const dir = opts.dir === "asc" ? "asc" : "desc";
 
+  const grupos: string[] = [await grupoInstancia(instance)];
   const params = new URLSearchParams({
     select: SELECT,
-    instancia: `eq.${instance}`,
     order: `${ordem}.${dir}.nullslast,id.asc`,
   });
   if (opts.uf && opts.uf !== "todas") params.set("uf", `eq.${opts.uf}`);
@@ -180,8 +180,9 @@ export async function listClientesPagina(
       if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
     }
     if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
-    params.set("and", `(or(${alvos.join(",")}))`);
+    grupos.push(`or(${alvos.join(",")})`);
   }
+  params.set("and", `(${grupos.join(",")})`);
 
   const termo = termoSeguro(opts.q ?? "");
   if (termo) {
@@ -253,13 +254,11 @@ export async function listClientesPerfil(
 
   const params = new URLSearchParams({
     select: SELECT,
-    // Filtro por `instancia` (canônico). O campo `organizacao` foi padronizado
-    // para o mesmo slug e é mantido em sincronia na gravação.
-    instancia: `eq.${instance}`,
     order: "created_at.desc.nullslast,id.asc",
   });
 
-  const grupos: string[] = [];
+  // Filtro por `instancia` (canônico) + cadastros de atuação ampliada (grupo).
+  const grupos: string[] = [await grupoInstancia(instance)];
   if (opts.donoId || opts.consultorSap) {
     const alvos: string[] = [];
     if (opts.donoId) {
@@ -328,7 +327,7 @@ export async function getClienteById(
   const params = new URLSearchParams({
     select: SELECT,
     id: `eq.${id}`,
-    instancia: `eq.${instance}`,
+    and: `(${await grupoInstancia(instance)})`,
     limit: "1",
   });
   const rows = (await rest(instance, `clientes?${params}`)) ?? [];
@@ -386,14 +385,14 @@ export async function updateCliente(
   id: string,
   payload: Record<string, any>,
 ): Promise<ClienteRow | null> {
-  return gravarTolerante(instance, `clientes?id=eq.${id}&instancia=eq.${instance}`, "PATCH", {
+  return gravarTolerante(instance, `clientes?id=eq.${id}&${await qsInstancia(instance)}`, "PATCH", {
     ...payload,
     updated_at: new Date().toISOString(),
   });
 }
 
 export async function deleteCliente(instance: ClientesInstance, id: string): Promise<void> {
-  await rest(instance, `clientes?id=eq.${id}&instancia=eq.${instance}`, { method: "DELETE" });
+  await rest(instance, `clientes?id=eq.${id}&${await qsInstancia(instance)}`, { method: "DELETE" });
 }
 
 /**
@@ -446,7 +445,7 @@ export async function listarDocsDoConsultor(
   for (let pagina = 0; pagina < 20 && out.size < teto; pagina++) {
     const params = new URLSearchParams({
       select: "doc",
-      instancia: `eq.${instance}`,
+      and: `(${await grupoInstancia(instance)})`,
       or: `(${alvos.join(",")})`,
       order: "created_at.desc.nullslast,id.asc",
     });
