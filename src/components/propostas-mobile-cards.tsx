@@ -103,15 +103,18 @@ export function PropostasMobileCards({
                   <span className="text-foreground">
                     {formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}
                   </span>
-                  {r.nf_numero && (
-                    <span className="block">NF {formatSapNumero(r.nf_numero)}</span>
-                  )}
                 </div>
-                <div className="truncate">
-                  {r.consultor_nome || r.criado_por_nome || "—"}
+                <div>
+                  NF{" "}
+                  <span className="text-foreground">
+                    {r.nf_numero ? formatSapNumero(r.nf_numero) : "—"}
+                  </span>
                 </div>
                 <div className="text-right text-sm font-semibold tabular-nums text-foreground">
                   {fmtBRL(r.totais?.['valorTotal'] ?? 0)}
+                </div>
+                <div className="truncate">
+                  {r.consultor_nome || r.criado_por_nome || "—"}
                 </div>
                 {r.expedido_em ? (
                   <div className="col-span-2">
