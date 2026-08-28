@@ -12,7 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { listEstoque, syncEstoqueProdutos } from "@/lib/estoque.functions";
+import { DisponibilidadeBadge } from "@/components/disponibilidade-badge";
+import {
+  listEstoque,
+  syncEstoqueProdutos,
+  type DisponibilidadeInfo,
+} from "@/lib/estoque.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/estoque")({
   component: EstoquePage,
