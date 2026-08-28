@@ -63,6 +63,7 @@ type Row = {
   nome?: string | null;
   numero_sap?: string | null;
   sap_ov_numero?: string | null;
+  nf_numero?: string | null;
 
   cliente_nome: string;
   cliente_doc?: string | null;

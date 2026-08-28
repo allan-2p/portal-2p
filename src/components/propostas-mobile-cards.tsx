@@ -102,6 +102,9 @@ export function PropostasMobileCards({
                   <span className="text-foreground">
                     {formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}
                   </span>
+                  {r.nf_numero && (
+                    <span className="block">NF {formatSapNumero(r.nf_numero)}</span>
+                  )}
                 </div>
                 <div className="truncate">
                   {r.consultor_nome || r.criado_por_nome || "—"}
