@@ -983,7 +983,61 @@ function NovaPropostaSolarPage() {
     }
   }
 
+  // ------------------------------------------------------------------
+  // Kit fotovoltaico: o item-base (100000350) aparece na tela assim que a
+  // venda é marcada como kit — qtd 1 travada, não removível, entrando na
+  // precificação e nos totais exibidos (o servidor continua sendo a
+  // autoridade e reinjeta o item no salvamento).
+  // ------------------------------------------------------------------
+  const kitQ = useSolarKitBase(ehKit === true);
+  const kitProduto = kitQ.data ?? null;
+  const kitIndisponivel = ehKit === true && !kitQ.isLoading && !kitQ.isError && !kitProduto;
+  const [precificarKit, setPrecificarKit] = useState(0);
 
+  useEffect(() => {
+    const ehDoKit = (x: Item) =>
+      x.kit === true ||
+      (!!kitProduto && x.produtoId === kitProduto.id) ||
+      normCod(
+        x.avulso?.codigo ?? produtos.find((p) => p.id === x.produtoId)?.codigo ?? "",
+      ) === KIT_FOTOVOLTAICO_MATERIAL;
+
+    const aplicar = (prev: Item[]): Item[] => {
+      if (ehKit !== true || !kitProduto) {
+        const limpo = prev.filter((x) => !ehDoKit(x));
+        return limpo.length === prev.length ? prev : limpo;
+      }
+      if (prev.some(ehDoKit))
+        return prev.map((x) => (ehDoKit(x) ? { ...x, kit: true, qtd: 1 } : x));
+      return [
+        {
+          key: `kit-${Math.random().toString(36).slice(2)}`,
+          produtoId: kitProduto.id,
+          qtd: 1,
+          valor: 0,
+          origem: "calculadora" as const,
+          kit: true,
+          avulso: { codigo: kitProduto.codigo, descricao: kitProduto.descricao },
+        },
+        ...prev,
+      ];
+    };
+
+    setItensCalc(aplicar);
+    setItensLista(aplicar);
+    if (ehKit === true && kitProduto) setPrecificarKit((n) => n + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ehKit, kitProduto?.id]);
+
+  useEffect(() => {
+    if (!precificarKit || !itens.length || trocando) return;
+    void (async () => {
+      setTrocando(true);
+      await atualizarPrecos(itens, listaPreco);
+      setTrocando(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [precificarKit]);
 
   async function trocarTabela(t: string) {
     if (t === listaPreco) return;
