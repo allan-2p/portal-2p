@@ -198,6 +198,40 @@ export function useSolarProdutos() {
   });
 }
 
+/**
+ * Kit-base fotovoltaico (material comercial 100000350). Buscado SEM filtro de
+ * `ativo`/visibilidade — mesma regra do servidor, que injeta esse item quando a
+ * venda é kit.
+ */
+export function useSolarKitBase(habilitado = true) {
+  return useQuery({
+    queryKey: ["solar-kit-base"],
+    enabled: habilitado,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<SolarProduto | null> => {
+      const { data, error } = await supabase
+        .from("sap_produtos")
+        .select("id, codigo, descricao, tipo, custo, preco_sugerido, imagem_path, ncm_id")
+        .eq("codigo", "100000350")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      const p = data as any;
+      return {
+        id: p.id,
+        codigo: p.codigo,
+        descricao: p.descricao,
+        tipo: p.tipo ?? null,
+        custo: Number(p.custo ?? 0),
+        preco_sugerido: Number(p.preco_sugerido ?? 0),
+        imagem_path: p.imagem_path ?? null,
+        ncm_id: p.ncm_id ?? null,
+      };
+    },
+  });
+}
+
+
 /** Cupons válidos do Solar. */
 export function useSolarCupons() {
   return useQuery({
