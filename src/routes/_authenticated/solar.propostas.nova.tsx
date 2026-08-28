@@ -981,8 +981,11 @@ function NovaPropostaSolarPage() {
 
   async function trocarTabela(t: string) {
     if (t === listaPreco) return;
+    // Escolha manual passa a mandar: nada de voltar para a tabela do cadastro.
+    tabelaDaProposta.current = true;
     setListaPreco(t);
     setTransportadora(null);
+
     setTrocando(true);
     await atualizarPrecos(itens, t);
     setTrocando(false);
