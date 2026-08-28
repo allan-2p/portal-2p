@@ -71,6 +71,7 @@ type Row = {
   consultor_nome?: string | null;
   criado_por_nome?: string | null;
   expedido_em?: string | null;
+  finalizado_em?: string | null;
   sap_ov_status?: string | null;
   sf_status?: string | null;
 };
