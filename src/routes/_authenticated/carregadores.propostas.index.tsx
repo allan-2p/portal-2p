@@ -109,6 +109,7 @@ function HistoricoCarregadoresPage() {
   const vend = useCarregadoresVendedores();
 
   // A pesquisa roda no banco (base inteira): espera parar de digitar.
+  const [campo, setCampo] = useState<string>("tudo");
   const [buscaDb, setBuscaDb] = useState("");
   useEffect(() => {
     const t = setTimeout(() => setBuscaDb(busca.trim()), 350);
