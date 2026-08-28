@@ -72,7 +72,7 @@ function BotaoDoc({
     <Button
       variant="outline"
       size="sm"
-      className="gap-2"
+      className="h-10 w-full justify-center gap-2 sm:h-9 sm:w-auto"
       disabled={!disponivel || carregando !== null}
       onClick={() => onClick(tipo)}
       title={disponivel ? rotulo : "Disponível somente após o faturamento da nota fiscal."}
@@ -133,13 +133,13 @@ export function NfDocumentosCard({
 
       {children}
 
-      <div className="grid grid-cols-2 gap-4 border-t border-border/60 pt-4 text-sm md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 border-t border-border/60 pt-4 text-sm sm:grid-cols-2 md:grid-cols-3">
         <Campo label="Nº da NF" value={nfNumero || "—"} />
         <Campo label="Série" value={String(proposta['nf_serie'] ?? "") || "—"} />
         <Campo label="Chave de acesso" value={String(proposta['nf_chave'] ?? "") || "—"} mono />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
         <BotaoDoc tipo="danfe" icone={FileText} rotulo="DANFE (PDF)" disponivel={temNf} carregando={carregando} onClick={abrir} />
         <BotaoDoc tipo="xml" icone={FileCode2} rotulo="XML da NF-e" disponivel={temNf} carregando={carregando} onClick={abrir} />
       </div>

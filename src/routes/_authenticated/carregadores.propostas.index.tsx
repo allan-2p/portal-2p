@@ -266,7 +266,18 @@ function HistoricoCarregadoresPage() {
             />
           </div>
           <div className="hidden md:block">
-            <table className="w-full text-[13px]">
+            <table className="w-full table-fixed text-[13px]">
+              <colgroup>
+                <col className="w-[20%]" />
+                <col />
+                <col className="w-[76px]" />
+                <col className="w-[118px]" />
+                <col className="w-[96px]" />
+                <col className="w-[96px]" />
+                <col className="w-[96px]" />
+                <col className="w-[56px]" />
+                <col className="w-[172px]" />
+              </colgroup>
 
               <thead>
                 <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
@@ -285,17 +296,18 @@ function HistoricoCarregadoresPage() {
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-3 py-2.5">
-                      <div className="max-w-[190px] truncate font-medium">{r.nome || "—"}</div>
+                      <div className="truncate font-medium">{r.nome || "—"}</div>
                       <div className="text-xs text-muted-foreground">
                         {formatPropostaNumero(r.numero) || "—"}
                       </div>
                     </td>
                     <td className="px-3 py-2.5">
-                      <div className="max-w-[220px] truncate font-medium">{r.cliente_nome}</div>
-                      <div className="max-w-[220px] truncate text-xs text-muted-foreground">
+                      <div className="truncate font-medium">{r.cliente_nome}</div>
+                      <div className="truncate text-xs text-muted-foreground">
                         {r.consultor_nome || r.criado_por_nome || "—"}
                       </div>
                     </td>
+
                     <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}</td>
                     <td className="px-3 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap">{fmtBRL(r.totais.valorTotal ?? 0)}</td>
                     <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">

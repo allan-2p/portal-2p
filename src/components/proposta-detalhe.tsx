@@ -165,7 +165,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <Campo label="CNPJ/CPF" value={p['cliente_doc'] || "—"} />
           <Campo label="Inscrição estadual" value={p['cliente_ie'] || "—"} />
           <Campo label="Telefone" value={p['cliente_telefone'] || "—"} />
@@ -220,7 +220,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
       {/* Faturamento + nota fiscal: onde se puxam DANFE e XML. */}
       <NfDocumentosCard proposta={p}>
-        <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 md:grid-cols-4">
           <Campo
             label="Cidade / UF de destino"
             value={cidadeUf(
@@ -241,7 +241,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             label="Frete"
             value={`${p['frete_mod'] ?? "—"} · ${freteGratis ? "Grátis (cupom)" : freteBonificado ? "Bonificado" : fmtBRL(frete)}`}
           />
-          <div className="col-span-2 md:col-span-4">
+          <div className="col-span-1 sm:col-span-2 md:col-span-4">
             <div className="text-xs text-muted-foreground">Endereço de entrega</div>
             <div className="font-medium">{enderecoEntrega || "—"}</div>
           </div>
@@ -381,7 +381,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Indicadores internos
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <Campo label="Receita líquida" value={fmtBRL(totais['rl'] ?? 0)} />
           <Campo label="Margem bruta" value={fmtPct(totais['mbPct'] ?? 0)} />
           <Campo label="Comissão estimada" value={fmtBRL(totais['comissao'] ?? 0)} />
@@ -603,7 +603,7 @@ function LegadoCard({ proposta }: { proposta: Record<string, any> }) {
         Dados da plataforma antiga
       </h3>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
         {anterior ? <Campo label="Nº anterior" value={anterior} /> : null}
         {projeto ? <Campo label="Projeto de origem" value={String(projeto)} /> : null}
         <Campo label="Nº do pedido (SAP)" value={formatSapNumero(proposta['sap_ov_numero'] || proposta['numero_sap']) || "—"} />
