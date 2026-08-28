@@ -61,6 +61,7 @@ type Row = {
   numero: string | null;
   nome?: string | null;
   numero_sap?: string | null;
+  nf_numero?: string | null;
   sap_ov_numero?: string | null;
   cliente_nome: string;
   cliente_doc?: string | null;
@@ -286,7 +287,12 @@ function PropostasSolarPage() {
                         {r.consultor_nome || r.criado_por_nome || "—"}
                       </div>
                     </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                      <div>{formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}</div>
+                      {r.nf_numero && (
+                        <div className="text-xs text-muted-foreground/70">NF {formatSapNumero(r.nf_numero)}</div>
+                      )}
+                    </td>
                     <td className="px-3 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap">
                       {fmtBRL(r.totais['valorTotal'] ?? 0)}
                     </td>
