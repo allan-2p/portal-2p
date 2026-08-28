@@ -85,13 +85,10 @@ export function useImagensPorPath(paths: (string | null | undefined)[]) {
 const porCodigo = new Map<string, string | null>();
 
 /** Fotos de produto a partir dos códigos SAP (usado onde só há o snapshot do item). */
-export function useImagensPorCodigo(
-  codigos: (string | null | undefined)[],
-  largura = LARGURA_MINIATURA,
-) {
+export function useImagensPorCodigo(codigos: (string | null | undefined)[]) {
   const limpos = Array.from(new Set(codigos.filter((c): c is string => !!c))).sort();
   return useQuery({
-    queryKey: ["produto-imagens-codigo", largura, limpos],
+    queryKey: ["produto-imagens-codigo", limpos],
     enabled: limpos.length > 0,
     staleTime: 45 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
