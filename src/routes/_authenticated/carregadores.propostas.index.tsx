@@ -1,3 +1,4 @@
+import { CAMPOS_BUSCA, placeholderBusca } from "@/lib/propostas-busca";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PROPOSTA_STATUS } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
@@ -109,6 +110,7 @@ function HistoricoCarregadoresPage() {
   const vend = useCarregadoresVendedores();
 
   // A pesquisa roda no banco (base inteira): espera parar de digitar.
+  const [campo, setCampo] = useState<string>("tudo");
   const [buscaDb, setBuscaDb] = useState("");
   useEffect(() => {
     const t = setTimeout(() => setBuscaDb(busca.trim()), 350);
@@ -118,12 +120,13 @@ function HistoricoCarregadoresPage() {
   const createdByIn = vend.idsDe(vendedor);
 
   const q = useQuery({
-    queryKey: ["carregadores-proposals", { buscaDb, status, uf, sap, createdByIn, pagina, porPagina }],
+    queryKey: ["carregadores-proposals", { buscaDb, campo, status, uf, sap, createdByIn, pagina, porPagina }],
     queryFn: async (): Promise<{ rows: Row[]; total: number }> => {
       const data = await listarPropostasPaginaFn({
         data: {
           organizacao: "carregadores",
           q: buscaDb,
+          campo,
           status,
           uf,
           comSap: sap,
@@ -155,7 +158,7 @@ function HistoricoCarregadoresPage() {
 
   useEffect(() => {
     setPagina(1);
-  }, [buscaDb, status, uf, sap, vendedor, porPagina]);
+  }, [buscaDb, campo, status, uf, sap, vendedor, porPagina]);
 
   const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
   const paginaAtual = Math.min(pagina, totalPaginas);
@@ -206,11 +209,20 @@ function HistoricoCarregadoresPage() {
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Buscar por cliente, nome, nº ou nº SAP"
+              placeholder={placeholderBusca(campo)}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
+          <Select value={campo} onValueChange={setCampo}>
+            <SelectTrigger className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {CAMPOS_BUSCA.map((c) => (
+                <SelectItem key={c.valor} value={c.valor}>{c.rotulo}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="w-full sm:w-[170px]"><SelectValue /></SelectTrigger>
             <SelectContent>

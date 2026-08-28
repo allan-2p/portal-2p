@@ -620,6 +620,7 @@ export const listarPropostasPaginaFn = createServerFn({ method: "POST" })
     return {
       organizacao: txt(i["organizacao"]),
       q: txt(i["q"]),
+      campo: txt(i["campo"]),
       status: txt(i["status"]),
       uf: txt(i["uf"]),
       comSap: txt(i["comSap"]),
@@ -698,6 +699,20 @@ export const obterPropostaFn = createServerFn({ method: "POST" })
  *   fora da Fretefy; exige Manager Access ("Modify All Records") em Propostas.
  * Qualquer outra alteração manual é recusada.
  */
+/** Nome de quem está executando a ação (para e-mails/auditoria). Best effort. */
+async function nomeDoAtor(context: any): Promise<string | null> {
+  try {
+    const { data } = await context.supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", context.userId)
+      .maybeSingle();
+    return (data as any)?.full_name ?? (data as any)?.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
@@ -812,6 +827,12 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
     const t = await aplicarTransicao(data.id, "Cancelado", "humano", { de });
     if (!t.ok) throw new Error(t.motivo ?? "Não foi possível cancelar o pedido.");
     await sincronizarSalesforceAoSalvar(data.id);
+    try {
+      const { efeitosCancelamento } = await import("@/lib/proposta-cancelamento.server");
+      await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
+    } catch {
+      /* efeitos são best effort: nunca desfazem o cancelamento */
+    }
     return { ok: true };
   });
 
@@ -840,10 +861,17 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
       const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
       const transicao = await aplicarTransicao(data.id, "Cancelado", "humano", { de });
       if (!transicao.ok) throw new Error(transicao.motivo ?? "Não foi possível cancelar o pedido.");
+      await sincronizarSalesforceAoSalvar(data.id);
+      try {
+        const { efeitosCancelamento } = await import("@/lib/proposta-cancelamento.server");
+        await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
+      } catch {
+        /* efeitos são best effort */
+      }
       return {
         ok: true,
         cancelada: true,
-        aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal.`,
+        aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal. Os setores foram avisados por e-mail.`,
       };
     }
     await db.excluirProposta(data.id);
