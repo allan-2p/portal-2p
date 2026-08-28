@@ -265,7 +265,8 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     const itens = data.itens.map((i) => {
       const p = produtos.find((x) => x.id === i.produtoId)!;
       const cod = normCod(p.codigo);
-      const valor = money2(precos[cod] ?? sugeridos[cod] ?? 0);
+      // Preço vem SÓ do SAP — nunca do preço sugerido do catálogo.
+      const valor = money2(precos[cod] ?? 0);
       return {
         produtoId: i.produtoId,
         codigo: p.codigo ?? null,
@@ -279,7 +280,8 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
 
     const semPreco = itens.filter((i) => !(i.valor > 0)).map((i) => i.nome || i.codigo);
     if (semPreco.length) {
-      const motivo = `Sem preço no SAP nem preço sugerido no catálogo para: ${semPreco.slice(0, 8).join(", ")}.`;
+      const motivo = `O SAP não devolveu preço para: ${semPreco.slice(0, 8).join(", ")}. A proposta não foi salva — corrija a condição de preço no SAP (tabela ${data.listaPreco}) e tente de novo.`;
+
       await auditarBloqueio(auditCtx, {
         etapa: "salvar",
         motivo,

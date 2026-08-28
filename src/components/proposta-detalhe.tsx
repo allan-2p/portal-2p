@@ -164,7 +164,14 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
           Andamento do pedido
         </h3>
+        {p['expedido_em'] ? (
+          <p className="mb-3 text-sm text-muted-foreground">
+            Previsão de despacho:{" "}
+            <span className="font-semibold text-foreground">{fmtData(p['expedido_em'])}</span>
+          </p>
+        ) : null}
         <PropostaTimeline status={status} proposta={p} />
+
         <MarcarEntregueAcao proposta={p} />
       </div>
 

@@ -546,7 +546,9 @@ function NovaPropostaSolarPage() {
         key: Math.random().toString(36).slice(2),
         produtoId: p.id,
         qtd: 1,
-        valor: p.preco_sugerido,
+        // Nasce sem preço: o valor válido é só o que o SAP devolver.
+        valor: 0,
+
         origem: "manual",
       },
     ];
@@ -876,7 +878,7 @@ function NovaPropostaSolarPage() {
         key: Math.random().toString(36).slice(2),
         produtoId: prod.id,
         qtd: c.quantidade,
-        valor: prod.preco_sugerido,
+        valor: 0,
         origem: "calculadora",
       });
     }
