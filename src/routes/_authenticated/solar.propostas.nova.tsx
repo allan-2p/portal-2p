@@ -48,6 +48,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -72,7 +73,7 @@ import { obterPropostaFn, concluirPropostaFn } from "@/lib/propostas.functions";
 import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/resultado-conclusao-dialog";
 import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-progresso";
 import { useConfirmarSaida } from "@/components/confirmar-saida";
-import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
+import { salvarPropostaSolar, KIT_FOTOVOLTAICO_MATERIAL } from "@/lib/propostas-solar.functions";
 import { normalizarFinalidade } from "@/lib/sap-clientes-map";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
 import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
@@ -89,6 +90,7 @@ import {
   useSolarMicroinversores,
   useSolarModulos,
   useSolarProdutos,
+  useSolarKitBase,
   useSolarSuportes,
   useSolarTrilhoSuportes,
   useSolarTrilhos,
@@ -135,6 +137,8 @@ type Item = {
   qtd: number;
   valor: number;
   origem: "calculadora" | "manual";
+  /** Item obrigatório do kit fotovoltaico — quantidade travada em 1, não removível. */
+  kit?: boolean;
   /** Item digitado manualmente (fora do catálogo SAP). */
   avulso?: { codigo: string; descricao: string };
 };
@@ -899,14 +903,16 @@ function NovaPropostaSolarPage() {
         origem: "calculadora",
       });
     }
-    const extras = itensCalc.filter((i) => i.origem === "manual");
-    setItensCalc([...novos, ...extras]);
+    const extras = itensCalc.filter((i) => i.origem === "manual" && !i.kit);
+    // O item do kit é obrigatório e sobrevive ao recálculo da estrutura.
+    const kitAtual = itensCalc.filter((i) => i.kit);
+    setItensCalc([...kitAtual, ...novos, ...extras]);
     setAssinaturaCalc(assinaturaAtual);
     setEditandoCalc(false);
     if (faltando.length)
       toast.warning(`Itens sem correspondência no catálogo foram incluídos sem preço: ${faltando.join(", ")}.`);
     // Espera os preços do SAP antes de liberar a etapa: nunca seguir com zero calado.
-    await atualizarPrecos([...novos, ...extras], listaPreco, setItensCalc);
+    await atualizarPrecos([...kitAtual, ...novos, ...extras], listaPreco, setItensCalc);
     setCalculando(false);
     if (!faltando.length) toast.success("Estrutura calculada e itens precificados.");
 
@@ -978,7 +984,61 @@ function NovaPropostaSolarPage() {
     }
   }
 
+  // ------------------------------------------------------------------
+  // Kit fotovoltaico: o item-base (100000350) aparece na tela assim que a
+  // venda é marcada como kit — qtd 1 travada, não removível, entrando na
+  // precificação e nos totais exibidos (o servidor continua sendo a
+  // autoridade e reinjeta o item no salvamento).
+  // ------------------------------------------------------------------
+  const kitQ = useSolarKitBase(ehKit === true);
+  const kitProduto = kitQ.data ?? null;
+  const kitIndisponivel = ehKit === true && !kitQ.isLoading && !kitQ.isError && !kitProduto;
+  const [precificarKit, setPrecificarKit] = useState(0);
 
+  useEffect(() => {
+    const ehDoKit = (x: Item) =>
+      x.kit === true ||
+      (!!kitProduto && x.produtoId === kitProduto.id) ||
+      normCod(
+        x.avulso?.codigo ?? produtos.find((p) => p.id === x.produtoId)?.codigo ?? "",
+      ) === KIT_FOTOVOLTAICO_MATERIAL;
+
+    const aplicar = (prev: Item[]): Item[] => {
+      if (ehKit !== true || !kitProduto) {
+        const limpo = prev.filter((x) => !ehDoKit(x));
+        return limpo.length === prev.length ? prev : limpo;
+      }
+      if (prev.some(ehDoKit))
+        return prev.map((x) => (ehDoKit(x) ? { ...x, kit: true, qtd: 1 } : x));
+      return [
+        {
+          key: `kit-${Math.random().toString(36).slice(2)}`,
+          produtoId: kitProduto.id,
+          qtd: 1,
+          valor: 0,
+          origem: "calculadora" as const,
+          kit: true,
+          avulso: { codigo: kitProduto.codigo, descricao: kitProduto.descricao },
+        },
+        ...prev,
+      ];
+    };
+
+    setItensCalc(aplicar);
+    setItensLista(aplicar);
+    if (ehKit === true && kitProduto) setPrecificarKit((n) => n + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ehKit, kitProduto?.id]);
+
+  useEffect(() => {
+    if (!precificarKit || !itens.length || trocando) return;
+    void (async () => {
+      setTrocando(true);
+      await atualizarPrecos(itens, listaPreco);
+      setTrocando(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [precificarKit]);
 
   async function trocarTabela(t: string) {
     if (t === listaPreco) return;
@@ -2382,6 +2442,13 @@ function NovaPropostaSolarPage() {
 
             </div>
 
+            {kitIndisponivel && (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                O material do kit ({KIT_FOTOVOLTAICO_MATERIAL}) não está no catálogo. Sincronize os
+                produtos do SAP antes de vender kit fotovoltaico.
+              </div>
+            )}
+
             <div className="glass rounded-2xl overflow-hidden">
               <table className="w-full text-sm min-w-[720px]">
                 <thead>
@@ -2411,14 +2478,29 @@ function NovaPropostaSolarPage() {
                       <tr className="border-b border-border/50">
 
                         <td className="px-4 py-3">
-                          <div className="font-medium">{descricao}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            {descricao}
+                            {i.kit && (
+                              <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">
+                                Kit
+                              </Badge>
+                            )}
+                          </div>
                           <div className="text-xs text-muted-foreground">
-                            {codigo} {i.origem === "calculadora" ? "· Calculadora 2P" : ""}
+                            {codigo}{" "}
+                            {i.kit
+                              ? "· Item obrigatório do kit fotovoltaico"
+                              : i.origem === "calculadora"
+                                ? "· Calculadora 2P"
+                                : ""}
                             {!i.valor && !i.avulso ? " · sem preço no SAP" : ""}
                           </div>
                           <DisponibilidadeBadge info={disponibilidade[normCod(codigo)]} />
                         </td>
                         <td className="px-4 py-3">
+                          {i.kit ? (
+                            <div className="text-center tabular-nums font-medium">1</div>
+                          ) : (
                           <div className="flex items-center justify-center gap-1">
                             <Button
                               variant="ghost"
@@ -2465,6 +2547,7 @@ function NovaPropostaSolarPage() {
                               <Plus className="h-3.5 w-3.5" />
                             </Button>
                           </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-right tabular-nums">{fmtBRL(i.valor)}</td>
 
@@ -2473,15 +2556,18 @@ function NovaPropostaSolarPage() {
                         </td>
 
                         <td className="px-4 py-3 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Remover"
-                            onClick={() => setItens((prev) => prev.filter((x) => x.key !== i.key))}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          {!i.kit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Remover"
+                              onClick={() => setItens((prev) => prev.filter((x) => x.key !== i.key))}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
                         </td>
+
                       </tr>
                       </Fragment>
                     );
