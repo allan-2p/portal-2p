@@ -25,9 +25,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react";
+import { Copy, Eye, Pencil, Plus, Search, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
-import { PROPOSTA_STATUS } from "@/lib/proposta-status";
+import { PROPOSTA_STATUS, podeCancelarPedido, podeEditarProposta } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
 import { bloqueiaReenvioSap } from "@/lib/proposta-legado";
@@ -336,7 +336,7 @@ function PropostasSolarPage() {
                         <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Detalhar" onClick={() => setDetalheId(r.id)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {!bloqueiaReenvioSap(r) && (
+                        {!bloqueiaReenvioSap(r) && podeEditarProposta(r.status) && (
                           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Continuar proposta" asChild>
                             <Link to="/solar/propostas/nova" search={{ id: r.id }}>
                               <Pencil className="h-4 w-4" />
@@ -358,9 +358,9 @@ function PropostasSolarPage() {
                          >
                            <RefreshCw className="h-4 w-4" />
                          </Button>
-                        {podeExcluir && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                        {podeExcluir && podeCancelarPedido(r.status) && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Cancelar pedido" title="Cancelar pedido" onClick={() => setExcluirId(r.id)}>
+                            <X className="h-4 w-4 text-destructive" />
                           </Button>
                         )}
                       </div>

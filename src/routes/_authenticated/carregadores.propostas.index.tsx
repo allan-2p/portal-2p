@@ -1,7 +1,7 @@
 import { CAMPOS_BUSCA, placeholderBusca } from "@/lib/propostas-busca";
 import { MOTIVOS_CANCELAMENTO } from "@/lib/cancelamento-motivos";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PROPOSTA_STATUS } from "@/lib/proposta-status";
+import { PROPOSTA_STATUS, podeCancelarPedido, podeEditarProposta } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Copy, Eye, Pencil, Plus, Search, RefreshCw, Trash2 } from "lucide-react";
+import { Copy, Eye, Pencil, Plus, Search, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
 import { bloqueiaReenvioSap } from "@/lib/proposta-legado";
@@ -374,7 +374,7 @@ function HistoricoCarregadoresPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {!bloqueiaReenvioSap(r) && (
+                        {!bloqueiaReenvioSap(r) && podeEditarProposta(r.status) && (
                           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Continuar proposta" asChild>
                             <Link to="/carregadores/propostas/nova" search={{ id: r.id }}>
                               <Pencil className="h-4 w-4" />
@@ -396,9 +396,9 @@ function HistoricoCarregadoresPage() {
                          >
                            <RefreshCw className="h-4 w-4" />
                          </Button>
-                        {podeExcluir && (
-                           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Excluir" onClick={() => setExcluirId(r.id)}>
-                             <Trash2 className="h-4 w-4 text-destructive" />
+                        {podeExcluir && podeCancelarPedido(r.status) && (
+                           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Cancelar pedido" title="Cancelar pedido" onClick={() => setExcluirId(r.id)}>
+                             <X className="h-4 w-4 text-destructive" />
                            </Button>
                         )}
                       </div>
