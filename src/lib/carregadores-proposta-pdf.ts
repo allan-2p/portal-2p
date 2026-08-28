@@ -41,6 +41,9 @@ export type PropostaPdfData = {
   itens: PropostaPdfItem[];
   freteMod: string;
   freteValor: number;
+  /** Frete grátis só quando marcado no pedido ou concedido por cupom. */
+  freteGratis?: boolean;
+  freteBonificado?: boolean;
   impostos: {
     ipiRate: number;
     ipiValor: number;
