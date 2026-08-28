@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- Detalhe da proposta ("olhinho") reorganizado: título com Nº da proposta + nome e Nº SAP no canto superior direito; contato do cliente junto às demais informações do topo; blocos separados de **Faturamento e nota fiscal** (endereço de entrega, DANFE e XML) e de **Cobrança** (Pix, boleto à vista/a prazo, cartão, boletos do SharePoint); criação/finalização e autores movidos para o rodapé.
+- Lista de propostas (Solar e Carregadores) mais compacta, sem rolagem lateral: proposta e cliente em duas linhas, nova coluna **Compra** (data de fechamento) e a data de criação renomeada para **Criação** como último campo.
 - Fila do Salesforce: o filtro de pendentes passou a ser feito no banco. Antes o job lia só as 5.000 propostas mais antigas e filtrava em memória, então propostas recentes ficavam presas em "Na fila de envio" indefinidamente.
 
 - Carregadores: opção "Frete grátis" no wizard (CIF/Dedicado) — grava `frete_bonificado`, tira o frete do total cobrado, reflete no resumo, na prévia e no PDF. Cupom continua exclusivo do Solar.
