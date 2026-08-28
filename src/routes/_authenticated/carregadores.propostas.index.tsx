@@ -293,6 +293,7 @@ function HistoricoCarregadoresPage() {
           <div className="hidden md:block">
             <table className="w-full table-fixed text-[13px]">
               <colgroup>
+                <col className="w-[52px]" />
                 <col className="w-[150px]" />
                 <col className="w-[22%]" />
                 <col className="w-[14%]" />
@@ -302,13 +303,13 @@ function HistoricoCarregadoresPage() {
                 <col className="w-[96px]" />
                 <col className="w-[96px]" />
                 <col className="w-[96px]" />
-                <col className="w-[56px]" />
                 <col className="w-[172px]" />
               </colgroup>
 
-              <thead>
-                <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
-                  <th className="text-left px-3 py-2.5">Proposta</th>
+               <thead>
+                 <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
+                   <th className="text-center px-3 py-2.5">Status</th>
+                   <th className="text-left px-3 py-2.5">Proposta</th>
                   <th className="text-left px-3 py-2.5">Cliente</th>
                   <th className="text-left px-3 py-2.5">Consultor</th>
                   <th className="text-left px-3 py-2.5">Nº SAP</th>
@@ -316,14 +317,16 @@ function HistoricoCarregadoresPage() {
                   <th className="text-right px-3 py-2.5">Valor</th>
                   <th className="text-left px-3 py-2.5 whitespace-nowrap">Despacho</th>
                   <th className="text-left px-3 py-2.5 whitespace-nowrap">Compra</th>
-                  <th className="text-left px-3 py-2.5 whitespace-nowrap">Criação</th>
-                  <th className="text-center px-3 py-2.5">Status</th>
-                  <th className="text-right px-3 py-2.5">Ações</th>
+                   <th className="text-left px-3 py-2.5 whitespace-nowrap">Criação</th>
+                   <th className="text-right px-3 py-2.5">Ações</th>
                 </tr>
               </thead>
               <tbody className={fetchingClass(q.isFetching, q.isLoading)}>
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
+                    <td className="px-3 py-2.5 text-center">
+                      <StatusDot status={r.status} />
+                    </td>
                     <td className="px-3 py-2.5">
                       <div className="truncate text-sm font-bold tabular-nums text-foreground">
                         {formatPropostaNumero(r.numero) || "—"}
@@ -361,11 +364,8 @@ function HistoricoCarregadoresPage() {
                     <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("pt-BR")}
                     </td>
-                    <td className="px-3 py-2.5 text-center">
-                      <StatusDot status={r.status} />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center justify-end gap-0.5">
+                     <td className="px-3 py-2.5">
+                       <div className="flex items-center justify-end gap-0.5">
                         <Button
                           variant="ghost"
                           size="icon"

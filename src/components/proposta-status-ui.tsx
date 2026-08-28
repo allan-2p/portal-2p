@@ -1,6 +1,7 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   PROPOSTA_STATUS,
+  PROPOSTA_STATUS_STYLE,
   propostaStatusStyle,
   type PropostaStatus,
 } from "@/lib/proposta-status";
@@ -27,28 +28,33 @@ export function StatusDot({
   size?: "sm" | "md";
   className?: string;
 }) {
+  const reconhecido = status in PROPOSTA_STATUS_STYLE;
   const s = propostaStatusStyle(status);
-  const dim = size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3";
+  const nome = reconhecido ? status : "Sem status";
+  const bg = reconhecido ? s.bg : "#D1D5DB";
+  const fg = reconhecido ? s.fg : "#374151";
+  const dim = size === "sm" ? "h-2.5 w-2.5" : "h-3 w-3"; // md = 12×12 px
   return (
     <TooltipProvider delayDuration={120}>
       <Tooltip>
         <TooltipTrigger asChild>
           <span
             role="img"
-            aria-label={status}
+            tabIndex={0}
+            aria-label={`Status: ${nome}`}
             className={cn(
               "inline-block rounded-full ring-2 ring-background shadow-sm transition-transform hover:scale-125",
               dim,
               className,
             )}
-            style={{ backgroundColor: s.bg }}
+            style={{ backgroundColor: bg }}
           />
         </TooltipTrigger>
         <TooltipContent
           className="border-0 font-medium"
-          style={{ backgroundColor: s.bg, color: s.fg }}
+          style={{ backgroundColor: bg, color: fg }}
         >
-          {status}
+          {nome}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

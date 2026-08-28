@@ -14,7 +14,7 @@ import {
   type CarregadoresState,
   type CarregadoresUf,
 } from "@/lib/carregadores";
-import { podeCancelarProposta, podeMarcarEntregueProposta } from "@/lib/proposta-status";
+import { podeCancelarPedido, podeMarcarEntregueProposta } from "@/lib/proposta-status";
 
 export type SalvarPropostaInput = {
   propostaId: string | null;
@@ -837,7 +837,11 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
         "O status é definido automaticamente pelo processo (pagamento, SAP e transporte). Só o cancelamento e a baixa de entrega são manuais.",
       );
     }
-    if (!podeCancelarProposta(de)) {
+    // Cancelamento manual só existe de "Aguardando Pagamento" até "Coletado"
+    // (regra universal do portal): rascunho ("Salvo") não se cancela, e pedido
+    // "Entregue"/"Cancelado" é terminal. A máquina de transições admite
+    // Salvo → Cancelado por outros motores (ex.: pagamento), não por humano.
+    if (!podeCancelarPedido(de)) {
       throw new Error(`Não é possível cancelar um pedido com status "${de}".`);
     }
 
@@ -882,7 +886,7 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
     const vbeln = String(atual?.["sap_ov_numero"] ?? "").trim();
     if (vbeln) {
       const de = String(atual?.["status"] ?? "");
-      if (!podeCancelarProposta(de)) {
+      if (!podeCancelarPedido(de)) {
         throw new Error(`Não é possível cancelar um pedido com status "${de}".`);
       }
       const motivoCancel = (data as { motivo?: string }).motivo;
@@ -910,6 +914,15 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
         aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal.${avisoEmail ? ` ${avisoEmail}` : ""}`,
       };
 
+    }
+    // Sem ordem no SAP, a exclusão física só é permitida enquanto a proposta
+    // é rascunho ("Salvo"). Qualquer outro status é pedido em curso (ou já
+    // encerrado) e passa exclusivamente pelo fluxo de cancelamento com motivo.
+    const statusAtual = String(atual?.["status"] ?? "Salvo");
+    if (statusAtual !== "Salvo") {
+      throw new Error(
+        `Não é possível excluir uma proposta com status "${statusAtual}". Pedidos em andamento só podem ser cancelados (com motivo).`,
+      );
     }
     await db.excluirProposta(data.id);
     return { ok: true, cancelada: false, aviso: null as string | null };
