@@ -35,7 +35,7 @@ export function BoletosSharepointCard({ propostaId, formaPagamento, nfNumero, bo
   const baixar = useServerFn(baixarBoletoSharepoint);
   const [carregando, setCarregando] = useState<string | null>(null);
 
-  if (formaPagamento !== "n") return null;
+  if (formaPagamento !== "boleto_prazo") return null;
 
   const lista = (boletos ?? []).filter((b) => b?.path);
 

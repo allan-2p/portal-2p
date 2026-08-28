@@ -247,11 +247,12 @@ function PropostasSolarPage() {
           <div className="hidden md:block">
             <table className="w-full table-fixed text-[13px]">
               <colgroup>
-                <col className="w-[20%]" />
-                <col />
+                <col className="w-[150px]" />
+                <col className="w-[22%]" />
+                <col className="w-[14%]" />
                 <col className="w-[76px]" />
                 <col className="w-[76px]" />
-                <col className="w-[118px]" />
+                <col className="w-[110px]" />
                 <col className="w-[96px]" />
                 <col className="w-[96px]" />
                 <col className="w-[96px]" />
@@ -263,6 +264,7 @@ function PropostasSolarPage() {
                 <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
                   <th className="text-left px-3 py-2.5">Proposta</th>
                   <th className="text-left px-3 py-2.5">Cliente</th>
+                  <th className="text-left px-3 py-2.5">Consultor</th>
                   <th className="text-left px-3 py-2.5">Nº SAP</th>
                   <th className="text-left px-3 py-2.5">NF</th>
                   <th className="text-right px-3 py-2.5">Valor</th>
@@ -278,14 +280,18 @@ function PropostasSolarPage() {
                 {visiveis.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-3 py-2.5">
-                      <div className="truncate font-medium">{r.nome || "—"}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="truncate text-sm font-bold tabular-nums text-foreground">
                         {formatPropostaNumero(r.numero) || "—"}
+                      </div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {r.nome || "—"}
                       </div>
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="truncate font-medium">{r.cliente_nome}</div>
-                      <div className="truncate text-xs text-muted-foreground">
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="truncate text-sm text-muted-foreground">
                         {r.consultor_nome || r.criado_por_nome || "—"}
                       </div>
                     </td>
@@ -348,7 +354,7 @@ function PropostasSolarPage() {
                     </td>
                   </tr>
                 ))}
-                {q.isLoading && <TableSkeletonRows colunas={10} linhas={porPagina > 10 ? 10 : porPagina} />}
+                {q.isLoading && <TableSkeletonRows colunas={11} linhas={porPagina > 10 ? 10 : porPagina} />}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>
                     <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
