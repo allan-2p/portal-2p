@@ -24,7 +24,7 @@ import { setCarregadoresProductAtivo, updateCarregadoresProduct } from "@/lib/ca
 import { fmtBRL, precoSugeridoPadrao, MARGEM_PRECO_SUGERIDO, type CarregadoresProduct } from "@/lib/carregadores";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ProdutoFoto } from "@/components/produto-foto";
-import { useImagensPorPath, BUCKET_PRODUTOS } from "@/lib/produto-imagens";
+import { useImagensPorPath, enviarFotoProduto } from "@/lib/produto-imagens";
 import { CatalogoFotos } from "@/components/produtos/catalogo-fotos";
 
 
@@ -117,11 +117,11 @@ function ProdutosTab() {
   async function enviarFoto(p: CarregadoresProduct, file: File) {
     const ext = (file.name.split(".").pop() ?? "png").toLowerCase();
     const path = `skus/${p.codigo || p.id}.${ext}`;
-    const up = await supabase.storage.from(BUCKET_PRODUTOS).upload(path, file, {
-      upsert: true,
-      contentType: file.type || undefined,
-    });
-    if (up.error) return toast.error(up.error.message);
+    try {
+      await enviarFotoProduto(path, file);
+    } catch (e) {
+      return toast.error(e instanceof Error ? e.message : "Falha ao enviar a foto.");
+    }
     const { error } = await supabase.from("sap_produtos").update({ imagem_path: path }).eq("id", p.id);
     if (error) return toast.error(error.message);
     toast.success("Foto do produto atualizada.");
