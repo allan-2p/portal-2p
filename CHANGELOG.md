@@ -35,7 +35,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 ### Corrigido
+- **Tabela de preço da proposta Solar voltava para a 01**: ao reabrir um orçamento, o padrão do cadastro do cliente sobrescrevia a tabela gravada. Agora a proposta usa a tabela salva (ou a escolhida manualmente) e só cai no padrão do cliente quando não há valor gravado.
 - **Preço errado para CNPJ sem zero à esquerda**: a simulação de preços (`sap-precos.server.ts`) descartava documentos com 12–13 dígitos (zero à esquerda perdido na base, ~450 clientes) e o SAP simulava sem o parceiro, devolvendo impostos genéricos. O envelope agora completa com zeros à esquerda, igual à criação da OV. Na proposta Solar, o alerta vermelho de bloqueio não aparece mais durante o carregamento de preços — só após uma tentativa concluída.
+
 
 ### Alterado
 - **Salvar e concluir proposta mais rápidos**: o envio ao Salesforce saiu do caminho crítico — a proposta entra numa fila e é espelhada em segundo plano por um novo gatilho (`/api/public/hooks/salesforce-fila`), em vez de o vendedor esperar a integração responder. No Solar, gravação e histórico de cupom passaram a rodar em paralelo. Falhas continuam visíveis no painel de integrações e no status Salesforce do pedido.
