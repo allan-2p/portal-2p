@@ -2442,6 +2442,13 @@ function NovaPropostaSolarPage() {
 
             </div>
 
+            {kitIndisponivel && (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                O material do kit ({KIT_FOTOVOLTAICO_MATERIAL}) não está no catálogo. Sincronize os
+                produtos do SAP antes de vender kit fotovoltaico.
+              </div>
+            )}
+
             <div className="glass rounded-2xl overflow-hidden">
               <table className="w-full text-sm min-w-[720px]">
                 <thead>
