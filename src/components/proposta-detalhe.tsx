@@ -392,6 +392,16 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <Campo label="Margem bruta (R$)" value={fmtBRL(totais['mb'] ?? 0)} />
         </div>
       </div>
+
+      {/* Rodapé — autoria e datas do registro. */}
+      <div className="rounded-2xl border border-border/60 px-4 py-3 text-xs text-muted-foreground sm:px-5">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <RodapeInfo rot="Criado em" val={fmtData(p['created_at'])} />
+          <RodapeInfo rot="Criado por" val={p['criado_por_nome'] || "—"} />
+          <RodapeInfo rot="Finalizado em" val={p['finalizado_em'] ? fmtData(p['finalizado_em']) : "—"} />
+          <RodapeInfo rot="Finalizado por" val={p['finalizado_por_nome'] || "—"} />
+        </div>
+      </div>
     </div>
   );
 }
