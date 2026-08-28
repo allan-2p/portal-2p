@@ -25,6 +25,23 @@ export type EfeitosCancelamentoResult = {
   emails: ResultadoEnvioRastreado | null;
 };
 
+/**
+ * Texto honesto sobre o envio dos e-mails de cancelamento: nunca diz
+ * "avisados por e-mail" quando o provedor recusou ou não confirmou.
+ */
+export function avisoEnvioCancelamento(r: EfeitosCancelamentoResult): string | null {
+  const e = r.emails;
+  if (!e || !e.total) return null;
+  if (e.falharam > 0) {
+    const motivo = e.erro ? ` Motivo informado pelo provedor: ${e.erro}.` : "";
+    return `FALHA no envio dos e-mails de cancelamento (${e.falharam} de ${e.total}).${motivo} Avise os setores manualmente.`;
+  }
+  if (e.pendentes > 0) {
+    return "E-mails de cancelamento enfileirados, mas ainda sem confirmação de envio pelo provedor — acompanhe em Integrações.";
+  }
+  return "Os setores foram avisados por e-mail.";
+}
+
 const DESTINOS_PADRAO =
   "logistica@2pgroup.com.br,camila@2pgroup.com.br,nfe@2pgroup.com.br,pedidos@2pgroup.com.br,financeiro@2pgroup.com.br";
 
