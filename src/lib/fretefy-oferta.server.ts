@@ -263,3 +263,56 @@ export async function atualizarDocumentoOferta(
   });
   return { ok: true, ofertaId, status: res.status };
 }
+
+/**
+ * Cancela (deleta) a carga na Fretefy — usado quando o pedido é cancelado no
+ * portal. Mesmo endpoint da plataforma antiga (`DELETE carga/{id}`).
+ * Best effort: nunca desfaz o cancelamento já aplicado.
+ */
+export async function deletarOfertaCarga(
+  propostaId: string,
+  ofertaIdInformado?: string | null,
+): Promise<OfertaResultado> {
+  const base = { slug: "fretefy", event: "cancelar-carga" } as const;
+  if (!fretefyConfigurado())
+    return { ok: false, skipped: true, motivo: "FRETEFY_TOKEN não configurado." };
+
+  let ofertaId = String(ofertaIdInformado ?? "").trim();
+  if (!ofertaId) {
+    const row = await db.getProposta(propostaId, "id,numero,fretefy_oferta_id");
+    ofertaId = String((row as Record<string, any> | null)?.["fretefy_oferta_id"] ?? "").trim();
+  }
+  if (!ofertaId) return { ok: true, skipped: true, motivo: "Pedido sem carga na Fretefy." };
+
+  try {
+    const res = await fretefyRequest("DELETE", `carga/${ofertaId}`);
+    if (!res.ok) {
+      await logIntegrationEvent({
+        ...base,
+        level: "error",
+        message: `Fretefy recusou o cancelamento da carga ${ofertaId} (HTTP ${res.status}): ${res.response
+          .replace(/\s+/g, " ")
+          .slice(0, 300)}`,
+        detail: { proposta_id: propostaId, oferta_id: ofertaId },
+        durationMs: res.durationMs,
+      });
+      return { ok: false, ofertaId, status: res.status };
+    }
+    await logIntegrationEvent({
+      ...base,
+      level: "info",
+      message: `Carga ${ofertaId} cancelada na Fretefy.`,
+      detail: { proposta_id: propostaId, oferta_id: ofertaId },
+      durationMs: res.durationMs,
+    });
+    return { ok: true, ofertaId, status: res.status };
+  } catch (e) {
+    await logIntegrationEvent({
+      ...base,
+      level: "error",
+      message: `Falha ao cancelar a carga ${ofertaId} na Fretefy: ${(e as Error).message}`.slice(0, 500),
+      detail: { proposta_id: propostaId, oferta_id: ofertaId },
+    });
+    return { ok: false, ofertaId };
+  }
+}
