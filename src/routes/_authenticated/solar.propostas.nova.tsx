@@ -75,6 +75,7 @@ import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-p
 import { useConfirmarSaida } from "@/components/confirmar-saida";
 import { salvarPropostaSolar, KIT_FOTOVOLTAICO_MATERIAL } from "@/lib/propostas-solar.functions";
 import { normalizarFinalidade } from "@/lib/sap-clientes-map";
+import { cnpjValido, cpfValido } from "@/lib/cnpj";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
 import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
 import { resolverProduto } from "@/lib/solar-sku";
@@ -217,6 +218,12 @@ function NovaPropostaSolarPage() {
 
   /** Finalidade de uso — obrigatória quando o pedido fatura o cliente final. */
   const [finalidadeUso, setFinalidadeUso] = useState<string>("");
+
+  // Faturamento direto para CPF: finalidade travada em Uso e Consumo.
+  useEffect(() => {
+    if (faturarClienteFinal && fatTipoDoc === "cpf" && finalidadeUso !== "Uso e Consumo")
+      setFinalidadeUso("Uso e Consumo");
+  }, [faturarClienteFinal, fatTipoDoc, finalidadeUso]);
   const [resultadoConclusao, setResultadoConclusao] = useState<ResultadoConclusao | null>(null);
   const [enriquecendo, setEnriquecendo] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<string>("");
@@ -1156,7 +1163,7 @@ function NovaPropostaSolarPage() {
   /** Faturamento direto ao cliente final: busca dados do CNPJ (Serpro/CNPJá). */
   async function enriquecerFaturamento() {
     const doc = String(fat['doc'] ?? "").replace(/\D/g, "");
-    if (fatTipoDoc !== "cnpj" || doc.length !== 14) {
+    if (fatTipoDoc !== "cnpj" || !cnpjValido(doc)) {
       toast.error("Informe um CNPJ válido (14 dígitos).");
       return;
     }
@@ -1180,6 +1187,8 @@ function NovaPropostaSolarPage() {
         uf: e.uf ?? p['uf'] ?? "",
         telefone: e.telefone ?? p['telefone'] ?? "",
       }));
+      // Contribuinte de ICMS é definido pela consulta: IE encontrada ⇒ contribuinte.
+      setFatContribuinte(Boolean(String(e.ie ?? "").trim()));
       toast.success("Dados do CNPJ preenchidos. Você ainda pode editá-los.");
     } catch (err) {
       toast.error((err as Error).message || "Não foi possível consultar o CNPJ.");
@@ -1312,6 +1321,13 @@ function NovaPropostaSolarPage() {
     if (etapa === 2) {
       if (faturarClienteFinal && (!fat['nome'] || !fat['doc'] || !fat['logradouro'] || !fat['cidade'] || !fat['uf']))
         e.push("Complete os dados de faturamento do cliente final.");
+      if (faturarClienteFinal) {
+        const docDigits = String(fat['doc'] ?? "").replace(/\D/g, "");
+        if (fatTipoDoc === "cpf" && !cpfValido(docDigits))
+          e.push("CPF do cliente final inválido.");
+        if (fatTipoDoc === "cnpj" && !cnpjValido(docDigits))
+          e.push("CNPJ do cliente final inválido.");
+      }
       if (faturarClienteFinal && !finalidadeUso)
         e.push("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
       if (faturarClienteFinal && fatTipoDoc === "cnpj" && fatContribuinte && !String(fat['ie'] ?? "").trim())
@@ -1880,7 +1896,11 @@ function NovaPropostaSolarPage() {
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <Campo label="Finalidade de uso">
-                    <Select value={finalidadeUso} onValueChange={setFinalidadeUso}>
+                    <Select
+                      value={finalidadeUso}
+                      onValueChange={setFinalidadeUso}
+                      disabled={fatTipoDoc === "cpf"}
+                    >
                       <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Revenda">Revenda</SelectItem>
@@ -1888,16 +1908,24 @@ function NovaPropostaSolarPage() {
                         <SelectItem value="Uso e Consumo">Uso e Consumo</SelectItem>
                       </SelectContent>
                     </Select>
-                    {tentou && !finalidadeUso && <Erro>Obrigatória para faturar o cliente final.</Erro>}
+                    {fatTipoDoc === "cpf" ? (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Faturamento para CPF: finalidade travada em Uso e Consumo.
+                      </p>
+                    ) : (
+                      tentou && !finalidadeUso && <Erro>Obrigatória para faturar o cliente final.</Erro>
+                    )}
                   </Campo>
                   {fatTipoDoc === "cnpj" && (
-                    <label className="flex items-end gap-2 text-sm pb-2">
-                      <Checkbox
-                        checked={fatContribuinte}
-                        onCheckedChange={(v) => setFatContribuinte(v === true)}
-                      />
-                      Cliente final é contribuinte de ICMS
-                    </label>
+                    <div className="flex items-end gap-2 text-sm pb-2">
+                      <Checkbox checked={fatContribuinte} disabled />
+                      <span>
+                        Cliente final é contribuinte de ICMS
+                        <span className="block text-xs text-muted-foreground">
+                          Definido automaticamente pela consulta do CNPJ (inscrição estadual).
+                        </span>
+                      </span>
+                    </div>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">

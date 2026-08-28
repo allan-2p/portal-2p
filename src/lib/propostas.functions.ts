@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { cnpjValido, cpfValido } from "@/lib/cnpj";
+import { motivoCancelamentoValido } from "@/lib/cancelamento-motivos";
 import {
   CARREGADORES_CONFIG_FALLBACK,
   aliquotasDoItem,
@@ -105,6 +107,10 @@ function validar(input: any): SalvarPropostaInput {
     if (!faturamento['nome']) throw new Error("Informe o destinatário do faturamento.");
     if (docFat.length !== 11 && docFat.length !== 14)
       throw new Error("CNPJ/CPF do faturamento inválido.");
+    if (docFat.length === 11 ? !cpfValido(docFat) : !cnpjValido(docFat))
+      throw new Error(docFat.length === 11 ? "CPF do faturamento inválido." : "CNPJ do faturamento inválido.");
+    // CPF nunca é contribuinte de ICMS.
+    if (docFat.length === 11) faturamento['contribuinte'] = false;
     if (!faturamento['logradouro'] || !faturamento['cidade'] || !faturamento['uf'])
       throw new Error("Informe o endereço de faturamento.");
   }
@@ -150,6 +156,9 @@ function validar(input: any): SalvarPropostaInput {
     contribuinte: !!input.contribuinte,
     regimeTributario: input.regimeTributario ?? null,
     finalidadeUso: (() => {
+      // Faturamento direto para CPF: finalidade travada em Uso e Consumo.
+      if (faturarClienteFinal && String(faturamento['doc'] ?? "").replace(/\D/g, "").length === 11)
+        return "uso_consumo";
       const v = String(input.finalidadeUso ?? "");
       const valida = ["revenda", "industrializacao", "uso_consumo"].includes(v);
       // Faturando o cliente final, a finalidade vem da tela e é obrigatória.
@@ -716,9 +725,18 @@ async function nomeDoAtor(context: any): Promise<string | null> {
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
-    const i = (input ?? {}) as { id?: unknown; status?: unknown; entregueEm?: unknown };
+    const i = (input ?? {}) as { id?: unknown; status?: unknown; entregueEm?: unknown; motivo?: unknown };
     if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
     if (typeof i.status !== "string" || !i.status) throw new Error("Status inválido.");
+    // Cancelamento manual exige um motivo (mesma picklist do Salesforce), que
+    // fica registrado no pedido e alimenta a oportunidade (Loss_Reason__c).
+    let motivo: string | undefined;
+    if (i.status === "Cancelado") {
+      if (!motivoCancelamentoValido(i.motivo)) {
+        throw new Error("Informe o motivo do cancelamento.");
+      }
+      motivo = i.motivo;
+    }
     // Baixa manual de entrega: a data é obrigatória (o analista informa quando
     // a transportadora entregou de fato, que raramente é "agora").
     let entregueEm: string | undefined;
@@ -732,7 +750,7 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
       }
       entregueEm = d.toISOString();
     }
-    return { id: i.id, status: i.status, ...(entregueEm ? { entregueEm } : {}) };
+    return { id: i.id, status: i.status, ...(entregueEm ? { entregueEm } : {}), ...(motivo ? { motivo } : {}) };
   })
   .handler(async ({ data, context }) => {
     const db = await repo();
@@ -823,14 +841,17 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
       throw new Error(`Não é possível cancelar um pedido com status "${de}".`);
     }
 
+    const motivoCancel = (data as { motivo?: string }).motivo;
+    if (!motivoCancel) throw new Error("Informe o motivo do cancelamento.");
+
     const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
-    const t = await aplicarTransicao(data.id, "Cancelado", "humano", { de });
+    const t = await aplicarTransicao(data.id, "Cancelado", "humano", { de, patch: { motivo_cancelamento: motivoCancel } });
     if (!t.ok) throw new Error(t.motivo ?? "Não foi possível cancelar o pedido.");
     await sincronizarSalesforceAoSalvar(data.id);
     let avisoEmail: string | null = null;
     try {
       const { efeitosCancelamento, avisoEnvioCancelamento } = await import("@/lib/proposta-cancelamento.server");
-      const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
+      const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: motivoCancel });
       avisoEmail = avisoEnvioCancelamento(efeitos);
     } catch {
       avisoEmail = "FALHA ao notificar os setores por e-mail. Avise-os manualmente.";
@@ -843,9 +864,12 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
 export const excluirPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
-    const id = (input as { id?: unknown })?.id;
-    if (typeof id !== "string" || !id) throw new Error("Proposta inválida.");
-    return { id };
+    const i = (input ?? {}) as { id?: unknown; motivo?: unknown };
+    if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
+    // O motivo é validado de fato no handler, quando sabemos se a exclusão
+    // vira cancelamento (pedido com ordem no SAP).
+    const motivo = typeof i.motivo === "string" && i.motivo.trim() ? i.motivo.trim() : undefined;
+    return { id: i.id, ...(motivo ? { motivo } : {}) };
   })
   .handler(async ({ data, context }) => {
     const db = await repo();
@@ -861,14 +885,21 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
       if (!podeCancelarProposta(de)) {
         throw new Error(`Não é possível cancelar um pedido com status "${de}".`);
       }
+      const motivoCancel = (data as { motivo?: string }).motivo;
+      if (!motivoCancelamentoValido(motivoCancel)) {
+        throw new Error("Informe o motivo do cancelamento.");
+      }
       const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
-      const transicao = await aplicarTransicao(data.id, "Cancelado", "humano", { de });
+      const transicao = await aplicarTransicao(data.id, "Cancelado", "humano", {
+        de,
+        patch: { motivo_cancelamento: motivoCancel },
+      });
       if (!transicao.ok) throw new Error(transicao.motivo ?? "Não foi possível cancelar o pedido.");
       await sincronizarSalesforceAoSalvar(data.id);
       let avisoEmail: string | null = null;
       try {
         const { efeitosCancelamento, avisoEnvioCancelamento } = await import("@/lib/proposta-cancelamento.server");
-        const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: null });
+        const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: motivoCancel });
         avisoEmail = avisoEnvioCancelamento(efeitos);
       } catch {
         avisoEmail = "FALHA ao notificar os setores por e-mail. Avise-os manualmente.";

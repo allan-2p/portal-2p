@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tpOvDoPedido, contribuinteDoFaturamento, documentoDaSimulacao } from "@/lib/sap-tp-ov";
 import { finalidadeDaTela } from "@/lib/sap-clientes-map";
+import { cnpjValido, cpfValido } from "@/lib/cnpj";
 
 /**
  * Proposta 2P Solar — os valores NUNCA vêm da tela: o servidor recalcula tudo
@@ -85,7 +86,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   // final — é ele que entra como parceiro no SAP e define CFOP/IE. Aceita tanto
   // o rótulo ("Uso e Consumo") quanto o slug ("uso_consumo"), nunca um default.
   
-  const finalidadeUso = finalidadeDaTela(i.finalidadeUso);
+  let finalidadeUso = finalidadeDaTela(i.finalidadeUso);
   const faturarClienteFinal = i.faturarClienteFinal === true;
   if (faturarClienteFinal) {
     const docFat = String(faturamento['doc'] ?? "").replace(/\D/g, "");
@@ -95,10 +96,17 @@ function validar(input: unknown): SalvarPropostaSolarInput {
       throw new Error("Informe o endereço de faturamento do cliente final.");
     if (!finalidadeUso)
       throw new Error("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
-    // CPF nunca é contribuinte; CNPJ contribuinte precisa de inscrição estadual.
-    if (docFat.length === 11) faturamento['contribuinte'] = false;
-    else if (faturamento['contribuinte'] && !String(faturamento['ie'] ?? "").trim())
-      throw new Error("Cliente final marcado como contribuinte: informe a inscrição estadual.");
+    // Dígitos verificadores obrigatórios. CPF nunca é contribuinte e a
+    // finalidade é sempre Uso e Consumo; CNPJ contribuinte precisa de IE.
+    if (docFat.length === 11) {
+      if (!cpfValido(docFat)) throw new Error("CPF do faturamento inválido.");
+      faturamento['contribuinte'] = false;
+      finalidadeUso = "uso_consumo";
+    } else {
+      if (!cnpjValido(docFat)) throw new Error("CNPJ do faturamento inválido.");
+      if (faturamento['contribuinte'] && !String(faturamento['ie'] ?? "").trim())
+        throw new Error("Cliente final marcado como contribuinte: informe a inscrição estadual.");
+    }
   }
 
 

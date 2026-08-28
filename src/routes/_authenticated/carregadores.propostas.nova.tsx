@@ -386,16 +386,26 @@ function PropostaCarregadoresPage() {
     })();
   }, [editId, dupId]);
 
+  // Faturamento direto ao cliente final com CPF → finalidade travada em Uso e Consumo.
+  const faturamentoDocDigits = String(state.faturamento.doc ?? "").replace(/\D/g, "");
+  const faturamentoEhCpf = state.faturarClienteFinal && faturamentoDocDigits.length === 11;
+
   // Mantém a finalidade da tela sincronizada com o estado da proposta.
   // Isso evita que o Select mostre um valor enquanto o payload enviado ao
   // servidor ainda esteja vazio/inválido — situação que fazia a pendência
   // persistir mesmo com a opção aparentemente selecionada.
   useEffect(() => {
     if (!state.faturarClienteFinal) return;
+    if (faturamentoEhCpf) {
+      if (finalidadeFat !== "uso_consumo") setFinalidadeFat("uso_consumo");
+      if (state.finalidadeUso !== "uso_consumo")
+        setState((s) => ({ ...s, finalidadeUso: "uso_consumo" }));
+      return;
+    }
     if (!finalidadeFat && state.finalidadeUso) {
       setFinalidadeFat(state.finalidadeUso);
     }
-  }, [state.faturarClienteFinal, finalidadeFat, state.finalidadeUso]);
+  }, [state.faturarClienteFinal, finalidadeFat, state.finalidadeUso, faturamentoEhCpf]);
 
 
   // Sem autosave local: cada nova proposta parte do zero.
@@ -1799,6 +1809,7 @@ function PropostaCarregadoresPage() {
                       <Field label="Finalidade de uso">
                         <Select
                           value={finalidadeFat}
+                          disabled={faturamentoEhCpf}
                           onValueChange={(v) => {
                             const f = v as CarregadoresState["finalidadeUso"];
                             setFinalidadeFat(f);
@@ -1817,7 +1828,9 @@ function PropostaCarregadoresPage() {
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Define CFOP e IE no cadastro do cliente final no SAP.
+                          {faturamentoEhCpf
+                            ? "Faturamento para CPF: finalidade travada em Uso e Consumo."
+                            : "Define CFOP e IE no cadastro do cliente final no SAP."}
                         </p>
                       </Field>
                       <Field label="CPF / CNPJ">
