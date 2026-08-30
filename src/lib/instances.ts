@@ -194,7 +194,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/solar/pedidos": "pedidos",
   "/solar/propostas": "propostas",
   "/solar/cupons": "cupons",
-  "/solar/fidelidade": "fidelidade",
+  "/solar/plano-fidelidade": "fidelidade",
   "/solar/dashboards": "dashboards",
   "/solar/dashboards/metas": "dashboards.metas",
   "/solar/clientes/cadastros": "clientes.cadastros",

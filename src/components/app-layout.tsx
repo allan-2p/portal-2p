@@ -484,7 +484,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )}
 
             {show("fidelidade") && (
-              <NavLink item={{ to: "/solar/fidelidade", label: "Plano Fidelidade", icon: Gift, badge: "Em breve" }} active={pathname.startsWith("/solar/fidelidade")} collapsed={collapsed} />
+              <NavLink item={{ to: "/solar/plano-fidelidade", label: "Plano Fidelidade", icon: Gift, badge: "Em breve" }} active={pathname.startsWith("/solar/plano-fidelidade")} collapsed={collapsed} />
             )}
 
           </nav>
