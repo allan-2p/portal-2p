@@ -671,6 +671,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
       </main>
+      <AtlasWidget />
     </div>
   );
 }
