@@ -102,6 +102,12 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     return { ...(await avisarBoletos()) };
   },
 
+  // Motor real: radar semanal de clientes piorando (alertas + notificações).
+  "cron.atlas-radar": async () => {
+    const { executarRadarAtlas } = await import("@/lib/atlas-radar.server");
+    return { ...(await executarRadarAtlas()) };
+  },
+
   // Motor real: busca no SharePoint os PDFs dos boletos a prazo pela NF.
   "cron.boletos-sharepoint": async (payload) => {
     const { sincronizarBoletosSharepoint } = await import("@/lib/boletos-sharepoint.server");
