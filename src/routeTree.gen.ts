@@ -52,6 +52,7 @@ import { Route as AuthenticatedCarregadoresMetasRouteImport } from './routes/_au
 import { Route as AuthenticatedCarregadoresFreteRegrasRouteImport } from './routes/_authenticated/carregadores.frete-regras'
 import { Route as AuthenticatedCarregadoresComissoesRouteImport } from './routes/_authenticated/carregadores.comissoes'
 import { Route as AuthenticatedCarregadoresClientesRouteImport } from './routes/_authenticated/carregadores.clientes'
+import { Route as AuthenticatedAtlasIaRadarRouteImport } from './routes/_authenticated/atlas-ia.radar'
 import { Route as AuthenticatedAtlasIaThreadIdRouteImport } from './routes/_authenticated/atlas-ia.$threadId'
 import { Route as AuthenticatedAdminVinculosRouteImport } from './routes/_authenticated/admin.vinculos'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
@@ -353,6 +354,12 @@ const AuthenticatedCarregadoresClientesRoute =
   AuthenticatedCarregadoresClientesRouteImport.update({
     id: '/carregadores/clientes',
     path: '/carregadores/clientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAtlasIaRadarRoute =
+  AuthenticatedAtlasIaRadarRouteImport.update({
+    id: '/atlas-ia/radar',
+    path: '/atlas-ia/radar',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAtlasIaThreadIdRoute =
@@ -747,6 +754,7 @@ export interface FileRoutesByFullPath {
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/atlas-ia/$threadId': typeof AuthenticatedAtlasIaThreadIdRoute
+  '/atlas-ia/radar': typeof AuthenticatedAtlasIaRadarRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
@@ -849,6 +857,7 @@ export interface FileRoutesByTo {
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/atlas-ia/$threadId': typeof AuthenticatedAtlasIaThreadIdRoute
+  '/atlas-ia/radar': typeof AuthenticatedAtlasIaRadarRoute
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
   '/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
@@ -953,6 +962,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
   '/_authenticated/atlas-ia/$threadId': typeof AuthenticatedAtlasIaThreadIdRoute
+  '/_authenticated/atlas-ia/radar': typeof AuthenticatedAtlasIaRadarRoute
   '/_authenticated/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/_authenticated/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/_authenticated/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
@@ -1059,6 +1069,7 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/admin/vinculos'
     | '/atlas-ia/$threadId'
+    | '/atlas-ia/radar'
     | '/carregadores/clientes'
     | '/carregadores/comissoes'
     | '/carregadores/frete-regras'
@@ -1161,6 +1172,7 @@ export interface FileRouteTypes {
     | '/admin/usuarios'
     | '/admin/vinculos'
     | '/atlas-ia/$threadId'
+    | '/atlas-ia/radar'
     | '/carregadores/comissoes'
     | '/carregadores/frete-regras'
     | '/carregadores/metas'
@@ -1264,6 +1276,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/admin/vinculos'
     | '/_authenticated/atlas-ia/$threadId'
+    | '/_authenticated/atlas-ia/radar'
     | '/_authenticated/carregadores/clientes'
     | '/_authenticated/carregadores/comissoes'
     | '/_authenticated/carregadores/frete-regras'
@@ -1664,6 +1677,13 @@ declare module '@tanstack/react-router' {
       path: '/carregadores/clientes'
       fullPath: '/carregadores/clientes'
       preLoaderRoute: typeof AuthenticatedCarregadoresClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/atlas-ia/radar': {
+      id: '/_authenticated/atlas-ia/radar'
+      path: '/atlas-ia/radar'
+      fullPath: '/atlas-ia/radar'
+      preLoaderRoute: typeof AuthenticatedAtlasIaRadarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/atlas-ia/$threadId': {
@@ -2246,6 +2266,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedAdminVinculosRoute: typeof AuthenticatedAdminVinculosRoute
   AuthenticatedAtlasIaThreadIdRoute: typeof AuthenticatedAtlasIaThreadIdRoute
+  AuthenticatedAtlasIaRadarRoute: typeof AuthenticatedAtlasIaRadarRoute
   AuthenticatedCarregadoresClientesRoute: typeof AuthenticatedCarregadoresClientesRouteWithChildren
   AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
   AuthenticatedCarregadoresFreteRegrasRoute: typeof AuthenticatedCarregadoresFreteRegrasRoute
@@ -2301,6 +2322,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedAdminVinculosRoute: AuthenticatedAdminVinculosRoute,
   AuthenticatedAtlasIaThreadIdRoute: AuthenticatedAtlasIaThreadIdRoute,
+  AuthenticatedAtlasIaRadarRoute: AuthenticatedAtlasIaRadarRoute,
   AuthenticatedCarregadoresClientesRoute:
     AuthenticatedCarregadoresClientesRouteWithChildren,
   AuthenticatedCarregadoresComissoesRoute:
