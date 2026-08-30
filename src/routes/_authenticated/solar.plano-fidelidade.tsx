@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Gift, Lock } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/solar/fidelidade")({
+export const Route = createFileRoute("/_authenticated/solar/plano-fidelidade")({
   head: () => ({
     meta: [
       { title: "Plano Fidelidade 2P — Portal 2P" },
