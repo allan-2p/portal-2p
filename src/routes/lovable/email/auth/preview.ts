@@ -18,7 +18,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "portal-2p"
+const SITE_NAME = "Portal 2P"
 const ROOT_DOMAIN = "portal.2pgroup.app"
 
 // Sample data for preview mode ONLY (not used in actual email sending).
