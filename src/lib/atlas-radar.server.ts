@@ -280,7 +280,7 @@ export async function executarRadarAtlas(): Promise<ResultadoRadar> {
 
   const { data: run } = await supabaseAdmin
     .from("atlas_alerta_runs")
-    .insert({ status: "running" } as never)
+    .insert({ origem: "cron" } as never)
     .select("id")
     .single();
   const runId = (run as { id?: string } | null)?.id ?? null;
