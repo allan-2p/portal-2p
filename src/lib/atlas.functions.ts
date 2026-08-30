@@ -4,6 +4,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+/** Valor JSON serializável (o transporte das server functions exige isso). */
+export type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
+
 export type AtlasThread = {
   id: string;
   titulo: string;
@@ -14,7 +17,7 @@ export type AtlasThread = {
 export type AtlasMensagem = {
   id: string;
   role: "user" | "assistant";
-  parts: unknown[];
+  parts: Json[];
   created_at: string;
 };
 
@@ -103,8 +106,8 @@ export type AtlasAlerta = {
   consultor_nome: string | null;
   severidade: "atencao" | "critico";
   score: number;
-  sinais: Array<{ tipo: string; titulo: string; detalhe: string }>;
-  metricas: Record<string, unknown>;
+  sinais: Array<{ tipo: string; titulo: string; detalhe: string ; peso?: number }>;
+  metricas: Record<string, Json>;
   resumo: string | null;
   recomendacao: string | null;
   situacao: "aberto" | "tratado" | "silenciado";
@@ -180,5 +183,5 @@ export const rodarRadarFn = createServerFn({ method: "POST" })
       { job: "cron.atlas-radar", trigger: "portal", actorId: context.userId },
       () => executorFor("cron.atlas-radar")({}),
     );
-    return run;
+    return { ok: run.ok, runId: run.runId, erro: run.ok ? null : String(run.error ?? "") };
   });
