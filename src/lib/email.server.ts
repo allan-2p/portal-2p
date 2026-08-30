@@ -12,6 +12,9 @@ import { EmailAPIError, sendLovableEmail } from "@lovable.dev/email-js";
 const SITE_NAME = "Portal 2P";
 const FROM_DOMAIN = "notify.portal.2pgroup.app";
 const SENDER_DOMAIN = "notify.portal.2pgroup.app";
+/** Endereço real que recebe respostas — melhora reputação e entregabilidade. */
+const REPLY_TO = () =>
+  String(process.env["EMAIL_REPLY_TO"] ?? "contato@2pgroup.com.br").trim();
 
 export type EmailTransacional = {
   to: string;
@@ -22,7 +25,10 @@ export type EmailTransacional = {
   label: string;
   /** Evita e-mails duplicados no reprocessamento do job. */
   idempotencyKey?: string;
+  /** Sobrescreve o endereço de resposta padrão. */
+  replyTo?: string;
 };
+
 
 /** Endereço fixo de registro: recebe cópia de todo e-mail de negócio do portal. */
 const COPIA_REGISTRO = () =>
@@ -80,14 +86,16 @@ async function enviarEmailInterno(
       await sendLovableEmail(
         {
           to: destino,
-          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+          from: `${SITE_NAME} <portal@${FROM_DOMAIN}>`,
           sender_domain: SENDER_DOMAIN,
+          reply_to: (msg.replyTo ?? REPLY_TO()) || REPLY_TO(),
           subject: msg.subject,
           html: msg.html,
           text: texto,
           purpose: "transactional",
           label: msg.label,
           idempotency_key: msg.idempotencyKey || messageId,
+
         },
         { apiKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
       );
@@ -209,12 +217,23 @@ export async function aguardarDesfechoEmails(
   }
 }
 
-/** Layout simples e neutro, no tom do portal. */
-export function layoutEmail(titulo: string, corpo: string): string {
-  return `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f5f6f8;font-family:Arial,Helvetica,sans-serif;color:#1c1f23">
+/**
+ * Layout simples e neutro, no tom do portal.
+ *
+ * O `preheader` (texto oculto de pré-visualização) e o rodapé com endereço
+ * físico e endereço de resposta real ajudam a manter o e-mail fora do
+ * lixo eletrônico.
+ */
+export function layoutEmail(titulo: string, corpo: string, preheader?: string): string {
+  const previa = (preheader ?? String(titulo).replace(/<[^>]+>/g, " ")).slice(0, 140);
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulo}</title></head><body style="margin:0;background:#f5f6f8;font-family:Arial,Helvetica,sans-serif;color:#1c1f23">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${previa}</div>
   <div style="max-width:560px;margin:24px auto;background:#ffffff;border-radius:12px;padding:28px">
     <h1 style="margin:0 0 16px;font-size:18px;line-height:1.4">${titulo}</h1>
     <div style="font-size:14px;line-height:1.6">${corpo}</div>
-    <p style="margin:24px 0 0;font-size:12px;color:#6b7280">Portal 2P Group · mensagem automática, não responda este e-mail.</p>
+    <p style="margin:24px 0 0;font-size:12px;color:#6b7280">Você recebeu este e-mail porque tem um pedido ou cadastro no Portal 2P.<br />
+    Responda a esta mensagem se precisar falar com a nossa equipe.</p>
+    <p style="margin:8px 0 0;font-size:12px;color:#9ca3af">2P Group · portal.2pgroup.app</p>
   </div></body></html>`;
 }
+

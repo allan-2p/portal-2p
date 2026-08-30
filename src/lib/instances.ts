@@ -44,6 +44,7 @@ export type FeatureKey =
   | "admin.auditoria"
   | "admin.atividade"
   | "admin.vinculos"
+  | "admin.emails"
   | "admin.area.configuracoes"
   | "admin.area.moderacao"
   | "admin.area.integracoes"
@@ -110,6 +111,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "admin.auditoria",
       "admin.atividade",
       "admin.vinculos",
+      "admin.emails",
     ],
   },
   carregadores: {
@@ -237,6 +239,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/admin/logs/retencao": "admin.logs.retencao",
   "/admin/logs/gatilhos": "admin.logs.jobs",
   "/admin/vinculos": "admin.vinculos",
+  "/admin/emails": "admin.emails",
   "/marketing": "marketing.home",
   "/marketing/social": "marketing.social",
   "/marketing/trafego": "marketing.trafego",
@@ -293,6 +296,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.sistema.excluir": "Sistema • Excluir registros (universal)",
   "admin.clientes.integracoes": "Clientes • Integrações e histórico (auditoria)",
   "admin.vinculos": "Admin • Vínculos Salesforce",
+  "admin.emails": "Configurações • E-mails enviados",
   "admin.area.configuracoes": "Acesso • Configurações (engrenagem)",
   "admin.area.moderacao": "Acesso • Moderação (engrenagem)",
   "admin.area.integracoes": "Acesso • Integrações (engrenagem)",

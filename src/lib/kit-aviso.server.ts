@@ -24,20 +24,23 @@ export async function avisarKitFotovoltaico(row: Record<string, any>): Promise<b
       .map((i) => `<li>${i?.codigo ?? ""} — ${i?.descricao ?? ""} — ${Number(i?.qtd ?? 0)} un</li>`)
       .join("");
 
-    const html =
-      `<p>Novo pedido com <strong>Kit Fotovoltaico</strong>.</p>` +
+    const { enviarEmail, layoutEmail } = await import("./email.server");
+    const html = layoutEmail(
+      `Kit fotovoltaico — pedido ${numero}`,
+      `<p>Novo pedido com <strong>kit fotovoltaico</strong>.</p>` +
       `<p>Pedido: <strong>${numero}</strong><br/>Cliente: ${cliente}<br/>` +
       `Ordem de venda SAP: ${vbeln || "aguardando"}</p>` +
       `<p>Material de produção: <strong>100000278</strong> (comercial 100000350).</p>` +
-      `<ul>${linhas}</ul>`;
+      `<ul>${linhas}</ul>`,
+      `Pedido ${numero} — ${cliente}`,
+    );
 
-    const { enviarEmail } = await import("./email.server");
     const destinos = DESTINOS();
     let enviados = 0;
     for (const to of destinos) {
       const ok = await enviarEmail({
         to,
-        subject: `Kit Fotovoltaico — pedido ${numero}`,
+        subject: `Kit fotovoltaico do pedido ${numero}`,
         html,
         label: "kit-fotovoltaico",
         idempotencyKey: `kit-${row["id"]}-${to}`,
