@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Gift, Lock } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Gift, Lock, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/solar/plano-fidelidade")({
   head: () => ({
@@ -19,6 +20,12 @@ function SolarFidelidadePage() {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Link>
+        </Button>
         <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-[oklch(0.62_0.22_30)] flex items-center justify-center shadow-lg">
           <Gift className="h-7 w-7 text-primary-foreground" />
         </div>
