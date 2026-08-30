@@ -62,7 +62,7 @@ function RadarPage() {
   });
 
   const varrer = useMutation({
-    mutationFn: async () => await rodar({ data: {} }),
+    mutationFn: async () => await rodar(),
     onSuccess: () => {
       toast.success("Radar executado.");
       void qc.invalidateQueries({ queryKey: ["atlas-alertas"] });
@@ -144,8 +144,8 @@ function RadarPage() {
 
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {(a.sinais ?? []).map((s, i) => (
-                  <Badge key={i} variant="secondary" className="text-[11px] font-normal">
-                    {s.descricao}
+                  <Badge key={i} variant="secondary" className="text-[11px] font-normal" title={s.detalhe}>
+                    {s.titulo}
                   </Badge>
                 ))}
               </div>

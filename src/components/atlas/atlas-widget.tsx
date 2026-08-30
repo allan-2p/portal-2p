@@ -47,7 +47,7 @@ export function AtlasWidget() {
 
   const threads = useQuery({
     queryKey: ["atlas-threads"],
-    queryFn: async () => await listar({ data: {} }),
+    queryFn: async () => await listar(),
     enabled: Boolean(user) && aberto,
   });
 

@@ -63,11 +63,14 @@ export function AtlasChat({
     () =>
       new DefaultChatTransport({
         api: "/api/atlas-chat",
-        headers: async () => {
+        // O token vai no fetch para poder ser lido de forma assíncrona.
+        fetch: (async (input: RequestInfo | URL, init?: RequestInit) => {
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
-          return token ? { Authorization: `Bearer ${token}` } : {};
-        },
+          const headers = new Headers(init?.headers);
+          if (token) headers.set("Authorization", `Bearer ${token}`);
+          return fetch(input, { ...init, headers });
+        }) as typeof fetch,
         body: () => ({ threadId, contexto }),
       }),
     [threadId, contexto],
