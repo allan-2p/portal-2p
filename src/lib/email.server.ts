@@ -12,6 +12,9 @@ import { EmailAPIError, sendLovableEmail } from "@lovable.dev/email-js";
 const SITE_NAME = "Portal 2P";
 const FROM_DOMAIN = "notify.portal.2pgroup.app";
 const SENDER_DOMAIN = "notify.portal.2pgroup.app";
+/** Endereço real que recebe respostas — melhora reputação e entregabilidade. */
+const REPLY_TO = () =>
+  String(process.env["EMAIL_REPLY_TO"] ?? "contato@2pgroup.com.br").trim();
 
 export type EmailTransacional = {
   to: string;
@@ -22,7 +25,10 @@ export type EmailTransacional = {
   label: string;
   /** Evita e-mails duplicados no reprocessamento do job. */
   idempotencyKey?: string;
+  /** Sobrescreve o endereço de resposta padrão. */
+  replyTo?: string;
 };
+
 
 /** Endereço fixo de registro: recebe cópia de todo e-mail de negócio do portal. */
 const COPIA_REGISTRO = () =>
