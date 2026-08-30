@@ -78,6 +78,8 @@ async function enviarEmailInterno(
       status: "pending",
     } as any);
 
+    const unsubscribeToken = await tokenDescadastro(destino);
+
     const { error } = await supabaseAdmin.rpc("enqueue_email", {
       queue_name: "transactional_emails",
       payload: {
