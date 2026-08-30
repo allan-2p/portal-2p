@@ -31,11 +31,19 @@ export default defineConfig({
     plugins: [mcpPlugin()],
 
     resolve: {
-      alias: {
-        "entities/lib/decode.js": path.resolve(__dirname, "node_modules/entities/lib/decode.js"),
-        "entities/lib/encode.js": path.resolve(__dirname, "node_modules/entities/lib/encode.js"),
-        entities: path.resolve(__dirname, "node_modules/entities"),
-      },
+      // Aliases exatos: um alias "entities" solto também capturava subcaminhos
+      // (ex.: "entities/escape" do parse5 v8) e apontava para a v4 da raiz.
+      alias: [
+        {
+          find: "entities/lib/decode.js",
+          replacement: path.resolve(__dirname, "node_modules/entities/lib/decode.js"),
+        },
+        {
+          find: "entities/lib/encode.js",
+          replacement: path.resolve(__dirname, "node_modules/entities/lib/encode.js"),
+        },
+        { find: /^entities$/, replacement: path.resolve(__dirname, "node_modules/entities") },
+      ],
     },
   },
 });
