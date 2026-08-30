@@ -92,6 +92,7 @@ async function enviarEmailInterno(
         text: msg.text ?? msg.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
         purpose: "transactional",
         label: msg.label,
+        ...(unsubscribeToken ? { unsubscribe_token: unsubscribeToken } : {}),
         ...(msg.idempotencyKey ? { idempotency_key: msg.idempotencyKey } : {}),
         queued_at: new Date().toISOString(),
       } as any,
