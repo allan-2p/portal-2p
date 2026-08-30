@@ -683,7 +683,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 function NavLink({
   item, active, collapsed,
 }: {
-  item: { to: AppPath; label: string; icon: typeof Home };
+  item: { to: AppPath; label: string; icon: typeof Home; badge?: string };
   active: boolean;
   collapsed: boolean;
 }) {
@@ -692,7 +692,7 @@ function NavLink({
     <Link
       to={item.to}
       preload="intent"
-      title={collapsed ? item.label : undefined}
+      title={collapsed ? (item.badge ? `${item.label} (${item.badge})` : item.label) : undefined}
       className={cn(
         "flex items-center gap-3 rounded-lg text-sm transition-all mb-1",
         collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
@@ -701,6 +701,11 @@ function NavLink({
     >
       <Icon className="h-4 w-4 shrink-0" />
       {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && item.badge && (
+        <span className="ml-auto shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/15 text-primary">
+          {item.badge}
+        </span>
+      )}
     </Link>
   );
 }

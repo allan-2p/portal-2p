@@ -15,6 +15,7 @@ export type FeatureKey =
   | "pedidos"
   | "propostas"
   | "cupons"
+  | "fidelidade"
   | "dashboards"
   | "dashboards.metas"
   | "clientes.cadastros"
@@ -101,6 +102,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "clientes.sugestoes",
       "clientes.ranking",
       "cupons",
+      "fidelidade",
       "atlas",
       "admin.usuarios",
       "admin.metas",
@@ -192,6 +194,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/solar/pedidos": "pedidos",
   "/solar/propostas": "propostas",
   "/solar/cupons": "cupons",
+  "/solar/fidelidade": "fidelidade",
   "/solar/dashboards": "dashboards",
   "/solar/dashboards/metas": "dashboards.metas",
   "/solar/clientes/cadastros": "clientes.cadastros",
@@ -259,6 +262,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   pedidos: "Pedidos",
   propostas: "Propostas",
   cupons: "Cupons",
+  fidelidade: "Plano Fidelidade",
   dashboards: "Dashboards",
   "dashboards.metas": "Dashboards • Metas",
   "clientes.cadastros": "Clientes • Cadastros",

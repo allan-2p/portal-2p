@@ -20,6 +20,7 @@ const SOLAR_VENDEDOR: FeatureKey[] = [
   "tarefas",
   "propostas",
   "pedidos",
+  "fidelidade",
   "clientes.cadastros",
   "clientes.segmentacao",
   "clientes.perfil",
