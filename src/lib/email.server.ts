@@ -1,12 +1,15 @@
 /**
  * Envio de e-mails transacionais do portal.
  *
- * Usa a fila de e-mail já existente do projeto (`enqueue_email` →
- * `/lovable/email/queue/process`), então o envio é assíncrono, com retry e
- * registro em `email_send_log`. Nunca lança: e-mail não pode quebrar o fluxo.
+ * Os e-mails são enviados diretamente pela API de e-mail gerenciada da
+ * plataforma (`sendLovableEmail`): entrega, tentativas, supressão e
+ * descadastro são tratados do lado do provedor. O histórico continua
+ * registrado em `email_send_log`. Nunca lança: e-mail não pode quebrar o fluxo.
  */
 
-const SITE_NAME = "portal-2p";
+import { EmailAPIError, sendLovableEmail } from "@lovable.dev/email-js";
+
+const SITE_NAME = "Portal 2P";
 const FROM_DOMAIN = "notify.portal.2pgroup.app";
 const SENDER_DOMAIN = "notify.portal.2pgroup.app";
 
@@ -25,38 +28,32 @@ export type EmailTransacional = {
 const COPIA_REGISTRO = () =>
   String(process.env["EMAIL_COPIA_REGISTRO"] ?? "allan@2pgroup.com.br").trim().toLowerCase();
 
-/**
- * Token de descadastro do destinatário (obrigatório para e-mails de negócio:
- * sem ele o provedor recusa com 400 missing_unsubscribe). Um token por
- * endereço, reaproveitado entre envios.
- */
-async function tokenDescadastro(email: string): Promise<string | null> {
+type StatusLog = "sent" | "suppressed" | "failed";
+
+async function registrarLog(
+  messageId: string,
+  msg: EmailTransacional,
+  destino: string,
+  status: StatusLog,
+  errorMessage?: string,
+): Promise<void> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const alvo = email.trim().toLowerCase();
-
-    const { data } = await supabaseAdmin
-      .from("email_unsubscribe_tokens")
-      .select("token")
-      .eq("email", alvo)
-      .maybeSingle();
-    if (data?.token) return String(data.token);
-
-    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
-    const { error } = await supabaseAdmin
-      .from("email_unsubscribe_tokens")
-      .insert({ email: alvo, token } as any);
-    if (!error) return token;
-
-    // Corrida: outro envio criou o token no meio do caminho.
-    const { data: existente } = await supabaseAdmin
-      .from("email_unsubscribe_tokens")
-      .select("token")
-      .eq("email", alvo)
-      .maybeSingle();
-    return existente?.token ? String(existente.token) : null;
-  } catch {
-    return null;
+    const { error } = await supabaseAdmin.from("email_send_log").insert({
+      message_id: messageId,
+      template_name: msg.label,
+      recipient_email: destino,
+      status,
+      ...(errorMessage ? { error_message: errorMessage.slice(0, 300) } : {}),
+    } as any);
+    if (error) {
+      console.error("Falha ao registrar histórico de e-mail", {
+        code: error.code,
+        message: error.message,
+      });
+    }
+  } catch (e) {
+    console.error("Falha ao registrar histórico de e-mail", e);
   }
 }
 
@@ -68,44 +65,42 @@ async function enviarEmailInterno(
     const destino = (msg.to ?? "").trim();
     if (!destino || !destino.includes("@")) return { ok: false, messageId: null };
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) {
+      console.error("LOVABLE_API_KEY não configurada — e-mail não enviado");
+      return { ok: false, messageId: null };
+    }
+
     const messageId = crypto.randomUUID();
+    const texto =
+      msg.text ?? msg.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
-    await supabaseAdmin.from("email_send_log").insert({
-      message_id: messageId,
-      template_name: msg.label,
-      recipient_email: destino,
-      status: "pending",
-    } as any);
-
-    const unsubscribeToken = await tokenDescadastro(destino);
-
-    const { error } = await supabaseAdmin.rpc("enqueue_email", {
-      queue_name: "transactional_emails",
-      payload: {
-        message_id: messageId,
-        to: destino,
-        from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
-        sender_domain: SENDER_DOMAIN,
-        subject: msg.subject,
-        html: msg.html,
-        text: msg.text ?? msg.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
-        purpose: "transactional",
-        label: msg.label,
-        ...(unsubscribeToken ? { unsubscribe_token: unsubscribeToken } : {}),
-        ...(msg.idempotencyKey ? { idempotency_key: msg.idempotencyKey } : {}),
-        queued_at: new Date().toISOString(),
-      } as any,
-    });
-
-    if (error) {
-      await supabaseAdmin.from("email_send_log").insert({
-        message_id: messageId,
-        template_name: msg.label,
-        recipient_email: destino,
-        status: "failed",
-        error_message: error.message.slice(0, 300),
-      } as any);
+    let ok = false;
+    try {
+      await sendLovableEmail(
+        {
+          to: destino,
+          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+          sender_domain: SENDER_DOMAIN,
+          subject: msg.subject,
+          html: msg.html,
+          text: texto,
+          purpose: "transactional",
+          label: msg.label,
+          idempotency_key: msg.idempotencyKey || messageId,
+        },
+        { apiKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
+      );
+      ok = true;
+      await registrarLog(messageId, msg, destino, "sent");
+    } catch (error) {
+      if (error instanceof EmailAPIError && error.code === "recipient_suppressed") {
+        await registrarLog(messageId, msg, destino, "suppressed", "Destinatário descadastrado");
+      } else {
+        const detalhe = error instanceof Error ? error.message : String(error);
+        console.error("Falha no envio de e-mail", { label: msg.label, detalhe });
+        await registrarLog(messageId, msg, destino, "failed", detalhe);
+      }
       return { ok: false, messageId };
     }
 
@@ -131,9 +126,9 @@ async function enviarEmailInterno(
       }
     }
 
-    return { ok: true, messageId };
-
-  } catch {
+    return { ok, messageId };
+  } catch (e) {
+    console.error("Falha inesperada no envio de e-mail", e);
     return { ok: false, messageId: null };
   }
 }
@@ -147,7 +142,7 @@ export async function enviarEmail(
 
 /**
  * Igual a `enviarEmail`, mas devolve o `message_id` do log — permite consultar
- * depois o desfecho real no provedor (sent/dlq) em `email_send_log`.
+ * depois o desfecho real em `email_send_log`.
  */
 export async function enviarEmailRastreado(
   msg: EmailTransacional,
@@ -166,53 +161,51 @@ export type ResultadoEnvioRastreado = {
 };
 
 /**
- * Aguarda o desfecho real dos e-mails enfileirados (a fila processa a cada
- * poucos segundos). Consulta o status mais recente de cada `message_id` em
- * `email_send_log` até todos saírem de "pending" ou estourar o tempo limite.
+ * Consulta o desfecho dos e-mails enviados. Com o envio direto o resultado já
+ * está gravado em `email_send_log` no momento da chamada.
  */
 export async function aguardarDesfechoEmails(
   messageIds: string[],
-  timeoutMs = 15_000,
+  _timeoutMs = 15_000,
 ): Promise<ResultadoEnvioRastreado> {
   const ids = messageIds.filter(Boolean);
-  const vazio: ResultadoEnvioRastreado = { total: ids.length, enviados: 0, falharam: 0, pendentes: ids.length, erro: null };
-  if (!ids.length) return vazio;
+  const vazio: ResultadoEnvioRastreado = {
+    total: ids.length,
+    enviados: 0,
+    falharam: 0,
+    pendentes: ids.length,
+    erro: null,
+  };
+  if (!ids.length) return { ...vazio, pendentes: 0 };
 
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const limite = Date.now() + timeoutMs;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("email_send_log")
+      .select("message_id,status,error_message,created_at")
+      .in("message_id", ids)
+      .order("created_at", { ascending: false });
 
-  for (;;) {
-    try {
-      const { data } = await supabaseAdmin
-        .from("email_send_log")
-        .select("message_id,status,error_message,created_at")
-        .in("message_id", ids)
-        .order("created_at", { ascending: false });
-
-      const ultima = new Map<string, Record<string, any>>();
-      for (const r of (data ?? []) as Record<string, any>[]) {
-        const mid = String(r["message_id"] ?? "");
-        if (mid && !ultima.has(mid)) ultima.set(mid, r);
-      }
-
-      let enviados = 0, falharam = 0, pendentes = 0, erro: string | null = null;
-      for (const id of ids) {
-        const row = ultima.get(id);
-        const st = String(row?.["status"] ?? "pending");
-        if (st === "sent") enviados++;
-        else if (st === "failed" || st === "dlq" || st === "suppressed" || st === "bounced") {
-          falharam++;
-          if (!erro && row?.["error_message"]) erro = String(row["error_message"]).slice(0, 200);
-        } else pendentes++;
-      }
-
-      if (pendentes === 0 || Date.now() >= limite) {
-        return { total: ids.length, enviados, falharam, pendentes, erro };
-      }
-    } catch {
-      if (Date.now() >= limite) return vazio;
+    const ultima = new Map<string, Record<string, any>>();
+    for (const r of (data ?? []) as Record<string, any>[]) {
+      const mid = String(r["message_id"] ?? "");
+      if (mid && !ultima.has(mid)) ultima.set(mid, r);
     }
-    await new Promise((r) => setTimeout(r, 2_500));
+
+    let enviados = 0, falharam = 0, pendentes = 0, erro: string | null = null;
+    for (const id of ids) {
+      const row = ultima.get(id);
+      const st = String(row?.["status"] ?? "pending");
+      if (st === "sent") enviados++;
+      else if (st === "failed" || st === "dlq" || st === "suppressed" || st === "bounced") {
+        falharam++;
+        if (!erro && row?.["error_message"]) erro = String(row["error_message"]).slice(0, 200);
+      } else pendentes++;
+    }
+
+    return { total: ids.length, enviados, falharam, pendentes, erro };
+  } catch {
+    return vazio;
   }
 }
 
