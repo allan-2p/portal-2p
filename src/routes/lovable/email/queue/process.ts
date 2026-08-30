@@ -232,7 +232,13 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
                   text: payload.text,
                   purpose: payload.purpose,
                   label: payload.label,
-                  idempotency_key: payload.idempotency_key,
+                  // O provedor marca o run como "já falhou" e devolve 409 se a
+                  // mesma chave for reenviada — cada tentativa usa um sufixo.
+                  idempotency_key: payload.idempotency_key
+                    ? failedAttempts > 0
+                      ? `${payload.idempotency_key}:a${failedAttempts}`
+                      : payload.idempotency_key
+                    : payload.idempotency_key,
                   unsubscribe_token: payload.unsubscribe_token,
                   message_id: payload.message_id,
                 },

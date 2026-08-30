@@ -25,6 +25,41 @@ export type EmailTransacional = {
 const COPIA_REGISTRO = () =>
   String(process.env["EMAIL_COPIA_REGISTRO"] ?? "allan@2pgroup.com.br").trim().toLowerCase();
 
+/**
+ * Token de descadastro do destinatário (obrigatório para e-mails de negócio:
+ * sem ele o provedor recusa com 400 missing_unsubscribe). Um token por
+ * endereço, reaproveitado entre envios.
+ */
+async function tokenDescadastro(email: string): Promise<string | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const alvo = email.trim().toLowerCase();
+
+    const { data } = await supabaseAdmin
+      .from("email_unsubscribe_tokens")
+      .select("token")
+      .eq("email", alvo)
+      .maybeSingle();
+    if (data?.token) return String(data.token);
+
+    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const { error } = await supabaseAdmin
+      .from("email_unsubscribe_tokens")
+      .insert({ email: alvo, token } as any);
+    if (!error) return token;
+
+    // Corrida: outro envio criou o token no meio do caminho.
+    const { data: existente } = await supabaseAdmin
+      .from("email_unsubscribe_tokens")
+      .select("token")
+      .eq("email", alvo)
+      .maybeSingle();
+    return existente?.token ? String(existente.token) : null;
+  } catch {
+    return null;
+  }
+}
+
 async function enviarEmailInterno(
   msg: EmailTransacional,
   opts: { ehCopiaRegistro?: boolean } = {},
