@@ -27,6 +27,7 @@ import {
   Rows3,
   Anchor,
   Cpu,
+  Mail,
 } from "lucide-react";
 import type { FeatureKey } from "@/lib/instances";
 import type { AppPath } from "@/lib/routes";
@@ -93,6 +94,12 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         items: [
           { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.objetos.produtos" },
           { to: "/admin/estoque", label: "Estoque", icon: Boxes, feature: "admin.objetos.produtos" },
+        ],
+      },
+      {
+        label: "E-mails",
+        items: [
+          { to: "/admin/emails", label: "E-mails enviados", icon: Mail, feature: "admin.emails" },
         ],
       },
       {
