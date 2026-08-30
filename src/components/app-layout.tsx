@@ -270,10 +270,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {show("cupons") && (
               <NavLink item={{ to: "/solar/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/solar/cupons")} collapsed={collapsed} />
             )}
-            {show("fidelidade") && (
-              <NavLink item={{ to: "/solar/fidelidade", label: "Fidelidade", icon: Gift, badge: "Em breve" }} active={pathname.startsWith("/solar/fidelidade")} collapsed={collapsed} />
-            )}
-  
+
             {/* Módulo Carregadores — navegação exclusiva da instância */}
             {(show("carregadores.home") || show("carregadores.tarefas") || show("carregadores.clientes") || show("carregadores.propostas") || show("carregadores.pedidos") || show("carregadores.produtos") || show("carregadores.comissoes") || show("carregadores.regras")) && (
               <>
@@ -484,6 +481,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   )}
                 </div>
               )
+            )}
+
+            {show("fidelidade") && (
+              <NavLink item={{ to: "/solar/fidelidade", label: "Plano Fidelidade", icon: Gift, badge: "Em breve" }} active={pathname.startsWith("/solar/fidelidade")} collapsed={collapsed} />
             )}
 
           </nav>
