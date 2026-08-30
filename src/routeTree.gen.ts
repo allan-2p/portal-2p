@@ -92,6 +92,7 @@ import { Route as ApiPublicHooksFretefyTrackingRouteImport } from './routes/api/
 import { Route as ApiPublicHooksEstoqueSyncRouteImport } from './routes/api/public/hooks/estoque-sync'
 import { Route as ApiPublicHooksBoletosSharepointRouteImport } from './routes/api/public/hooks/boletos-sharepoint'
 import { Route as ApiPublicHooksBoletoAvisosRouteImport } from './routes/api/public/hooks/boleto-avisos'
+import { Route as ApiPublicHooksAtlasRadarRouteImport } from './routes/api/public/hooks/atlas-radar'
 import { Route as AuthenticatedSolarPropostasNovaRouteImport } from './routes/_authenticated/solar.propostas.nova'
 import { Route as AuthenticatedSolarDashboardsMetasRouteImport } from './routes/_authenticated/solar.dashboards.metas'
 import { Route as AuthenticatedSolarClientesSugestoesRouteImport } from './routes/_authenticated/solar.clientes.sugestoes'
@@ -587,6 +588,12 @@ const ApiPublicHooksBoletoAvisosRoute =
     path: '/api/public/hooks/boleto-avisos',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAtlasRadarRoute =
+  ApiPublicHooksAtlasRadarRouteImport.update({
+    id: '/api/public/hooks/atlas-radar',
+    path: '/api/public/hooks/atlas-radar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedSolarPropostasNovaRoute =
   AuthenticatedSolarPropostasNovaRouteImport.update({
     id: '/solar/propostas/nova',
@@ -778,6 +785,7 @@ export interface FileRoutesByFullPath {
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/atlas-radar': typeof ApiPublicHooksAtlasRadarRoute
   '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
@@ -876,6 +884,7 @@ export interface FileRoutesByTo {
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/atlas-radar': typeof ApiPublicHooksAtlasRadarRoute
   '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
@@ -980,6 +989,7 @@ export interface FileRoutesById {
   '/_authenticated/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/_authenticated/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/_authenticated/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/atlas-radar': typeof ApiPublicHooksAtlasRadarRoute
   '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
@@ -1084,6 +1094,7 @@ export interface FileRouteTypes {
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
     | '/solar/propostas/nova'
+    | '/api/public/hooks/atlas-radar'
     | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
@@ -1182,6 +1193,7 @@ export interface FileRouteTypes {
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
     | '/solar/propostas/nova'
+    | '/api/public/hooks/atlas-radar'
     | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
@@ -1285,6 +1297,7 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/clientes/sugestoes'
     | '/_authenticated/solar/dashboards/metas'
     | '/_authenticated/solar/propostas/nova'
+    | '/api/public/hooks/atlas-radar'
     | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
@@ -1320,6 +1333,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAppVersionRoute: typeof ApiPublicAppVersionRoute
+  ApiPublicHooksAtlasRadarRoute: typeof ApiPublicHooksAtlasRadarRoute
   ApiPublicHooksBoletoAvisosRoute: typeof ApiPublicHooksBoletoAvisosRoute
   ApiPublicHooksBoletosSharepointRoute: typeof ApiPublicHooksBoletosSharepointRoute
   ApiPublicHooksEstoqueSyncRoute: typeof ApiPublicHooksEstoqueSyncRoute
@@ -1919,6 +1933,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBoletoAvisosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/atlas-radar': {
+      id: '/api/public/hooks/atlas-radar'
+      path: '/api/public/hooks/atlas-radar'
+      fullPath: '/api/public/hooks/atlas-radar'
+      preLoaderRoute: typeof ApiPublicHooksAtlasRadarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/solar/propostas/nova': {
       id: '/_authenticated/solar/propostas/nova'
       path: '/solar/propostas/nova'
@@ -2325,6 +2346,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAppVersionRoute: ApiPublicAppVersionRoute,
+  ApiPublicHooksAtlasRadarRoute: ApiPublicHooksAtlasRadarRoute,
   ApiPublicHooksBoletoAvisosRoute: ApiPublicHooksBoletoAvisosRoute,
   ApiPublicHooksBoletosSharepointRoute: ApiPublicHooksBoletosSharepointRoute,
   ApiPublicHooksEstoqueSyncRoute: ApiPublicHooksEstoqueSyncRoute,
