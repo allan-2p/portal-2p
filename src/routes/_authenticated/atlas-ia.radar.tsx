@@ -124,7 +124,7 @@ function RadarPage() {
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-semibold">{a.cliente_nome}</h2>
                   <p className="text-xs text-muted-foreground">
-                    {mascaraDoc(a.cliente_doc)}
+                    {mascaraDoc(a.cliente_doc ?? "")}
                     {a.consultor_nome ? ` • ${a.consultor_nome}` : ""}
                     {a.instancia ? ` • ${a.instancia}` : ""}
                   </p>
