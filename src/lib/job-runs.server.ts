@@ -60,6 +60,12 @@ export const JOBS = {
     descricao: "Avisa consultor e cliente sobre boletos vencendo ou vencidos.",
     reprocessavel: true,
   },
+  "cron.atlas-radar": {
+    label: "Cron • Radar do Atlas",
+    descricao:
+      "Varre a base semanalmente, detecta clientes piorando e avisa o consultor com plano de ação.",
+    reprocessavel: true,
+  },
   "webhook.pix-itau": {
     label: "Webhook • Pix (Itaú)",
     descricao: "Notificação do PSP: cobrança paga, expirada, removida ou devolvida.",
