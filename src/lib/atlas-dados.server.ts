@@ -294,3 +294,27 @@ export function periodoPadrao(dias = 90): { inicio: string; fim: string } {
   const inicio = new Date(fim.getTime() - dias * 24 * 60 * 60 * 1000);
   return { inicio: inicio.toISOString().slice(0, 10), fim: fim.toISOString().slice(0, 10) };
 }
+
+/** Mapa documento → Id da conta no Salesforce (para cruzar visitas/tarefas). */
+export async function mapaSfPorDoc(): Promise<Map<string, string>> {
+  const mapa = new Map<string, string>();
+  for (let pagina = 0; pagina < 20; pagina++) {
+    const params = new URLSearchParams({
+      select: "doc,sf_account_id",
+      sf_account_id: "not.is.null",
+      order: "id.asc",
+    });
+    const from = pagina * 1000;
+    const { ok, text } = await grupo2pRest(`clientes?${params}`, {
+      range: { from, to: from + 999 },
+    });
+    if (!ok) break;
+    const rows: Array<{ doc?: string; sf_account_id?: string }> = text ? JSON.parse(text) : [];
+    for (const r of rows) {
+      const d = docCanonico(String(r.doc ?? ""));
+      if (d && r.sf_account_id) mapa.set(d, String(r.sf_account_id));
+    }
+    if (rows.length < 1000) break;
+  }
+  return mapa;
+}

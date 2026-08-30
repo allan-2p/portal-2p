@@ -299,11 +299,16 @@ export async function executarRadarAtlas(): Promise<ResultadoRadar> {
     const rows = await propostasComEscopo(escopoGlobal, {});
     const agregados = agregar(rows, agora);
     const atividade = await contasComAtividade();
+    const { mapaSfPorDoc } = await import("./atlas-dados.server");
+    const contasPorDoc = atividade ? await mapaSfPorDoc() : new Map<string, string>();
 
     const candidatos: Array<{ a: Agregado; sinais: Sinal[]; score: number }> = [];
     for (const a of agregados) {
       if (a.anterior === 0 && a.atual === 0) continue;
-      const sinais = sinaisDoCliente(a, agora, atividade ? false : null);
+      const sfId = contasPorDoc.get(a.doc) ?? null;
+      // Sem conta espelhada no Salesforce não dá para afirmar ausência de visita.
+      const temAtividade = atividade && sfId ? atividade.has(sfId) : null;
+      const sinais = sinaisDoCliente(a, agora, temAtividade);
       if (!sinais.length) continue;
       const score = sinais.reduce((s, x) => s + x.peso, 0);
       if (score < 20) continue;
@@ -402,10 +407,11 @@ export async function executarRadarAtlas(): Promise<ResultadoRadar> {
       await supabaseAdmin
         .from("atlas_alerta_runs")
         .update({
-          status: "ok",
-          finished_at: new Date().toISOString(),
+          ok: true,
+          finalizado_em: new Date().toISOString(),
           clientes_avaliados: agregados.length,
           alertas_gerados: candidatos.length,
+          emails_enviados: porConsultor.size,
         } as never)
         .eq("id", runId);
     }
@@ -422,8 +428,8 @@ export async function executarRadarAtlas(): Promise<ResultadoRadar> {
       await supabaseAdmin
         .from("atlas_alerta_runs")
         .update({
-          status: "error",
-          finished_at: new Date().toISOString(),
+          ok: false,
+          finalizado_em: new Date().toISOString(),
           erro: String((e as Error)?.message ?? e).slice(0, 500),
         } as never)
         .eq("id", runId);
