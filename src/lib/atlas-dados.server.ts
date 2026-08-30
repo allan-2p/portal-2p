@@ -150,14 +150,7 @@ export async function buscarClientes(
   const docs = new Set(
     INSTANCIAS.flatMap((i) => escopo.porInstancia[i].docs ?? []).map((d) => docCanonico(d)),
   );
-  return rows
-    .filter(
-      (c) =>
-        docs.has(c.doc) ||
-        c.consultor_id === ctx.userId ||
-        INSTANCIAS.some((i) => escopo.porInstancia[i].userId === ctx.userId && false),
-    )
-    .slice(0, limite);
+  return rows.filter((c) => docs.has(c.doc) || c.consultor_id === ctx.userId).slice(0, limite);
 }
 
 /** Cadastro do cliente por documento (qualquer unidade). */
@@ -276,13 +269,13 @@ export async function metasDoUsuario(
   if (!sfUserId) return [];
   const { data } = await ctx.supabase
     .from("salesperson_goals")
-    .select("year, month, goal")
+    .select("year, month, monthly_goal")
     .eq("sf_user_id", sfUserId)
     .eq("year", ano);
   return ((data ?? []) as any[]).map((r) => ({
     ano: Number(r.year),
     mes: Number(r.month),
-    meta: Number(r.goal ?? 0),
+    meta: Number(r.monthly_goal ?? 0),
   }));
 }
 
