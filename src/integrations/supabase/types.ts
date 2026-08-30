@@ -14,6 +14,200 @@ export type Database = {
   }
   public: {
     Tables: {
+      atlas_alerta_runs: {
+        Row: {
+          alertas_gerados: number
+          clientes_avaliados: number
+          created_at: string
+          detalhe: Json
+          emails_enviados: number
+          erro: string | null
+          finalizado_em: string | null
+          id: string
+          iniciado_em: string
+          ok: boolean
+          origem: string
+        }
+        Insert: {
+          alertas_gerados?: number
+          clientes_avaliados?: number
+          created_at?: string
+          detalhe?: Json
+          emails_enviados?: number
+          erro?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          ok?: boolean
+          origem?: string
+        }
+        Update: {
+          alertas_gerados?: number
+          clientes_avaliados?: number
+          created_at?: string
+          detalhe?: Json
+          emails_enviados?: number
+          erro?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          ok?: boolean
+          origem?: string
+        }
+        Relationships: []
+      }
+      atlas_alertas: {
+        Row: {
+          chave: string
+          cliente_doc: string | null
+          cliente_id: string | null
+          cliente_nome: string
+          consultor_id: string | null
+          consultor_nome: string | null
+          created_at: string
+          id: string
+          instancia: string
+          metricas: Json
+          periodo_fim: string
+          periodo_inicio: string
+          recomendacao: string | null
+          resumo: string | null
+          run_id: string | null
+          score: number
+          severidade: string
+          sf_account_id: string | null
+          silenciado_ate: string | null
+          sinais: Json
+          situacao: string
+          tratado_em: string | null
+          tratado_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          chave: string
+          cliente_doc?: string | null
+          cliente_id?: string | null
+          cliente_nome: string
+          consultor_id?: string | null
+          consultor_nome?: string | null
+          created_at?: string
+          id?: string
+          instancia?: string
+          metricas?: Json
+          periodo_fim: string
+          periodo_inicio: string
+          recomendacao?: string | null
+          resumo?: string | null
+          run_id?: string | null
+          score?: number
+          severidade?: string
+          sf_account_id?: string | null
+          silenciado_ate?: string | null
+          sinais?: Json
+          situacao?: string
+          tratado_em?: string | null
+          tratado_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chave?: string
+          cliente_doc?: string | null
+          cliente_id?: string | null
+          cliente_nome?: string
+          consultor_id?: string | null
+          consultor_nome?: string | null
+          created_at?: string
+          id?: string
+          instancia?: string
+          metricas?: Json
+          periodo_fim?: string
+          periodo_inicio?: string
+          recomendacao?: string | null
+          resumo?: string | null
+          run_id?: string | null
+          score?: number
+          severidade?: string
+          sf_account_id?: string | null
+          silenciado_ate?: string | null
+          sinais?: Json
+          situacao?: string
+          tratado_em?: string | null
+          tratado_por?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      atlas_mensagens: {
+        Row: {
+          created_at: string
+          id: string
+          parts: Json
+          role: string
+          sdk_message_id: string | null
+          texto: string | null
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parts?: Json
+          role: string
+          sdk_message_id?: string | null
+          texto?: string | null
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parts?: Json
+          role?: string
+          sdk_message_id?: string | null
+          texto?: string | null
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atlas_mensagens_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "atlas_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      atlas_threads: {
+        Row: {
+          contexto: Json
+          created_at: string
+          id: string
+          last_message_at: string
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contexto?: Json
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          titulo?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contexto?: Json
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       carregadores_clientes: {
         Row: {
           ativo: boolean

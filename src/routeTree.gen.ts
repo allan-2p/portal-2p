@@ -17,6 +17,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as ApiAtlasChatRouteImport } from './routes/api/atlas-chat'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
@@ -51,6 +52,8 @@ import { Route as AuthenticatedCarregadoresMetasRouteImport } from './routes/_au
 import { Route as AuthenticatedCarregadoresFreteRegrasRouteImport } from './routes/_authenticated/carregadores.frete-regras'
 import { Route as AuthenticatedCarregadoresComissoesRouteImport } from './routes/_authenticated/carregadores.comissoes'
 import { Route as AuthenticatedCarregadoresClientesRouteImport } from './routes/_authenticated/carregadores.clientes'
+import { Route as AuthenticatedAtlasIaRadarRouteImport } from './routes/_authenticated/atlas-ia.radar'
+import { Route as AuthenticatedAtlasIaThreadIdRouteImport } from './routes/_authenticated/atlas-ia.$threadId'
 import { Route as AuthenticatedAdminVinculosRouteImport } from './routes/_authenticated/admin.vinculos'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as AuthenticatedAdminTrilhosSolarRouteImport } from './routes/_authenticated/admin.trilhos-solar'
@@ -91,6 +94,7 @@ import { Route as ApiPublicHooksFretefyTrackingRouteImport } from './routes/api/
 import { Route as ApiPublicHooksEstoqueSyncRouteImport } from './routes/api/public/hooks/estoque-sync'
 import { Route as ApiPublicHooksBoletosSharepointRouteImport } from './routes/api/public/hooks/boletos-sharepoint'
 import { Route as ApiPublicHooksBoletoAvisosRouteImport } from './routes/api/public/hooks/boleto-avisos'
+import { Route as ApiPublicHooksAtlasRadarRouteImport } from './routes/api/public/hooks/atlas-radar'
 import { Route as AuthenticatedSolarPropostasNovaRouteImport } from './routes/_authenticated/solar.propostas.nova'
 import { Route as AuthenticatedSolarDashboardsMetasRouteImport } from './routes/_authenticated/solar.dashboards.metas'
 import { Route as AuthenticatedSolarClientesSugestoesRouteImport } from './routes/_authenticated/solar.clientes.sugestoes'
@@ -148,6 +152,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiAtlasChatRoute = ApiAtlasChatRouteImport.update({
+  id: '/api/atlas-chat',
+  path: '/api/atlas-chat',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
   id: '/perfil',
@@ -345,6 +354,18 @@ const AuthenticatedCarregadoresClientesRoute =
   AuthenticatedCarregadoresClientesRouteImport.update({
     id: '/carregadores/clientes',
     path: '/carregadores/clientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAtlasIaRadarRoute =
+  AuthenticatedAtlasIaRadarRouteImport.update({
+    id: '/atlas-ia/radar',
+    path: '/atlas-ia/radar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAtlasIaThreadIdRoute =
+  AuthenticatedAtlasIaThreadIdRouteImport.update({
+    id: '/atlas-ia/$threadId',
+    path: '/atlas-ia/$threadId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAdminVinculosRoute =
@@ -581,6 +602,12 @@ const ApiPublicHooksBoletoAvisosRoute =
     path: '/api/public/hooks/boleto-avisos',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAtlasRadarRoute =
+  ApiPublicHooksAtlasRadarRouteImport.update({
+    id: '/api/public/hooks/atlas-radar',
+    path: '/api/public/hooks/atlas-radar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedSolarPropostasNovaRoute =
   AuthenticatedSolarPropostasNovaRouteImport.update({
     id: '/solar/propostas/nova',
@@ -703,6 +730,7 @@ export interface FileRoutesByFullPath {
   '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/perfil': typeof AuthenticatedPerfilRoute
+  '/api/atlas-chat': typeof ApiAtlasChatRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/atividade': typeof AuthenticatedAdminAtividadeRoute
@@ -725,6 +753,8 @@ export interface FileRoutesByFullPath {
   '/admin/trilhos-solar': typeof AuthenticatedAdminTrilhosSolarRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
+  '/atlas-ia/$threadId': typeof AuthenticatedAtlasIaThreadIdRoute
+  '/atlas-ia/radar': typeof AuthenticatedAtlasIaRadarRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
@@ -771,6 +801,7 @@ export interface FileRoutesByFullPath {
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/atlas-radar': typeof ApiPublicHooksAtlasRadarRoute
   '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
@@ -801,6 +832,7 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/perfil': typeof AuthenticatedPerfilRoute
+  '/api/atlas-chat': typeof ApiAtlasChatRoute
   '/': typeof AuthenticatedIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -824,6 +856,8 @@ export interface FileRoutesByTo {
   '/admin/trilhos-solar': typeof AuthenticatedAdminTrilhosSolarRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
+  '/atlas-ia/$threadId': typeof AuthenticatedAtlasIaThreadIdRoute
+  '/atlas-ia/radar': typeof AuthenticatedAtlasIaRadarRoute
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
   '/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
@@ -868,6 +902,7 @@ export interface FileRoutesByTo {
   '/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/atlas-radar': typeof ApiPublicHooksAtlasRadarRoute
   '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
@@ -902,6 +937,7 @@ export interface FileRoutesById {
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/_authenticated/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
+  '/api/atlas-chat': typeof ApiAtlasChatRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -925,6 +961,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/trilhos-solar': typeof AuthenticatedAdminTrilhosSolarRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/admin/vinculos': typeof AuthenticatedAdminVinculosRoute
+  '/_authenticated/atlas-ia/$threadId': typeof AuthenticatedAtlasIaThreadIdRoute
+  '/_authenticated/atlas-ia/radar': typeof AuthenticatedAtlasIaRadarRoute
   '/_authenticated/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/_authenticated/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
   '/_authenticated/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
@@ -971,6 +1009,7 @@ export interface FileRoutesById {
   '/_authenticated/solar/clientes/sugestoes': typeof AuthenticatedSolarClientesSugestoesRoute
   '/_authenticated/solar/dashboards/metas': typeof AuthenticatedSolarDashboardsMetasRoute
   '/_authenticated/solar/propostas/nova': typeof AuthenticatedSolarPropostasNovaRoute
+  '/api/public/hooks/atlas-radar': typeof ApiPublicHooksAtlasRadarRoute
   '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
@@ -1006,6 +1045,7 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/marketing'
     | '/perfil'
+    | '/api/atlas-chat'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/atividade'
@@ -1028,6 +1068,8 @@ export interface FileRouteTypes {
     | '/admin/trilhos-solar'
     | '/admin/usuarios'
     | '/admin/vinculos'
+    | '/atlas-ia/$threadId'
+    | '/atlas-ia/radar'
     | '/carregadores/clientes'
     | '/carregadores/comissoes'
     | '/carregadores/frete-regras'
@@ -1074,6 +1116,7 @@ export interface FileRouteTypes {
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
     | '/solar/propostas/nova'
+    | '/api/public/hooks/atlas-radar'
     | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
@@ -1104,6 +1147,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/perfil'
+    | '/api/atlas-chat'
     | '/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -1127,6 +1171,8 @@ export interface FileRouteTypes {
     | '/admin/trilhos-solar'
     | '/admin/usuarios'
     | '/admin/vinculos'
+    | '/atlas-ia/$threadId'
+    | '/atlas-ia/radar'
     | '/carregadores/comissoes'
     | '/carregadores/frete-regras'
     | '/carregadores/metas'
@@ -1171,6 +1217,7 @@ export interface FileRouteTypes {
     | '/solar/clientes/sugestoes'
     | '/solar/dashboards/metas'
     | '/solar/propostas/nova'
+    | '/api/public/hooks/atlas-radar'
     | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
@@ -1204,6 +1251,7 @@ export interface FileRouteTypes {
     | '/_authenticated/financeiro'
     | '/_authenticated/marketing'
     | '/_authenticated/perfil'
+    | '/api/atlas-chat'
     | '/_authenticated/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -1227,6 +1275,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/trilhos-solar'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/admin/vinculos'
+    | '/_authenticated/atlas-ia/$threadId'
+    | '/_authenticated/atlas-ia/radar'
     | '/_authenticated/carregadores/clientes'
     | '/_authenticated/carregadores/comissoes'
     | '/_authenticated/carregadores/frete-regras'
@@ -1273,6 +1323,7 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/clientes/sugestoes'
     | '/_authenticated/solar/dashboards/metas'
     | '/_authenticated/solar/propostas/nova'
+    | '/api/public/hooks/atlas-radar'
     | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
@@ -1304,9 +1355,11 @@ export interface RootRouteChildren {
   TvGeralRoute: typeof TvGeralRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  ApiAtlasChatRoute: typeof ApiAtlasChatRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAppVersionRoute: typeof ApiPublicAppVersionRoute
+  ApiPublicHooksAtlasRadarRoute: typeof ApiPublicHooksAtlasRadarRoute
   ApiPublicHooksBoletoAvisosRoute: typeof ApiPublicHooksBoletoAvisosRoute
   ApiPublicHooksBoletosSharepointRoute: typeof ApiPublicHooksBoletosSharepointRoute
   ApiPublicHooksEstoqueSyncRoute: typeof ApiPublicHooksEstoqueSyncRoute
@@ -1380,6 +1433,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/atlas-chat': {
+      id: '/api/atlas-chat'
+      path: '/api/atlas-chat'
+      fullPath: '/api/atlas-chat'
+      preLoaderRoute: typeof ApiAtlasChatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/perfil': {
       id: '/_authenticated/perfil'
@@ -1617,6 +1677,20 @@ declare module '@tanstack/react-router' {
       path: '/carregadores/clientes'
       fullPath: '/carregadores/clientes'
       preLoaderRoute: typeof AuthenticatedCarregadoresClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/atlas-ia/radar': {
+      id: '/_authenticated/atlas-ia/radar'
+      path: '/atlas-ia/radar'
+      fullPath: '/atlas-ia/radar'
+      preLoaderRoute: typeof AuthenticatedAtlasIaRadarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/atlas-ia/$threadId': {
+      id: '/_authenticated/atlas-ia/$threadId'
+      path: '/atlas-ia/$threadId'
+      fullPath: '/atlas-ia/$threadId'
+      preLoaderRoute: typeof AuthenticatedAtlasIaThreadIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/vinculos': {
@@ -1897,6 +1971,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/boleto-avisos'
       fullPath: '/api/public/hooks/boleto-avisos'
       preLoaderRoute: typeof ApiPublicHooksBoletoAvisosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/atlas-radar': {
+      id: '/api/public/hooks/atlas-radar'
+      path: '/api/public/hooks/atlas-radar'
+      fullPath: '/api/public/hooks/atlas-radar'
+      preLoaderRoute: typeof ApiPublicHooksAtlasRadarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/solar/propostas/nova': {
@@ -2184,6 +2265,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminTrilhosSolarRoute: typeof AuthenticatedAdminTrilhosSolarRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedAdminVinculosRoute: typeof AuthenticatedAdminVinculosRoute
+  AuthenticatedAtlasIaThreadIdRoute: typeof AuthenticatedAtlasIaThreadIdRoute
+  AuthenticatedAtlasIaRadarRoute: typeof AuthenticatedAtlasIaRadarRoute
   AuthenticatedCarregadoresClientesRoute: typeof AuthenticatedCarregadoresClientesRouteWithChildren
   AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
   AuthenticatedCarregadoresFreteRegrasRoute: typeof AuthenticatedCarregadoresFreteRegrasRoute
@@ -2238,6 +2321,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminTrilhosSolarRoute: AuthenticatedAdminTrilhosSolarRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedAdminVinculosRoute: AuthenticatedAdminVinculosRoute,
+  AuthenticatedAtlasIaThreadIdRoute: AuthenticatedAtlasIaThreadIdRoute,
+  AuthenticatedAtlasIaRadarRoute: AuthenticatedAtlasIaRadarRoute,
   AuthenticatedCarregadoresClientesRoute:
     AuthenticatedCarregadoresClientesRouteWithChildren,
   AuthenticatedCarregadoresComissoesRoute:
@@ -2301,9 +2386,11 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  ApiAtlasChatRoute: ApiAtlasChatRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAppVersionRoute: ApiPublicAppVersionRoute,
+  ApiPublicHooksAtlasRadarRoute: ApiPublicHooksAtlasRadarRoute,
   ApiPublicHooksBoletoAvisosRoute: ApiPublicHooksBoletoAvisosRoute,
   ApiPublicHooksBoletosSharepointRoute: ApiPublicHooksBoletosSharepointRoute,
   ApiPublicHooksEstoqueSyncRoute: ApiPublicHooksEstoqueSyncRoute,

@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import type { AppPath } from "@/lib/routes";
 import { supabase } from "@/integrations/supabase/client";
 import { logUserActivity } from "@/lib/activity.functions";
+import { AtlasWidget } from "@/components/atlas/atlas-widget";
 import { useAuth, ROLE_LABELS } from "@/hooks/use-auth";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { useSalesforceNotifications } from "@/hooks/use-salesforce-notifications";
@@ -671,6 +672,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
       </main>
+      <AtlasWidget />
     </div>
   );
 }
