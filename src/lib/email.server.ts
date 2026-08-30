@@ -86,14 +86,16 @@ async function enviarEmailInterno(
       await sendLovableEmail(
         {
           to: destino,
-          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+          from: `${SITE_NAME} <portal@${FROM_DOMAIN}>`,
           sender_domain: SENDER_DOMAIN,
+          reply_to: (msg.replyTo ?? REPLY_TO()) || REPLY_TO(),
           subject: msg.subject,
           html: msg.html,
           text: texto,
           purpose: "transactional",
           label: msg.label,
           idempotency_key: msg.idempotencyKey || messageId,
+
         },
         { apiKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
       );
