@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu, Gift } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import grupo2pLogo from "@/assets/2p-logo-preto-sm.webp";
@@ -269,6 +269,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )}
             {show("cupons") && (
               <NavLink item={{ to: "/solar/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/solar/cupons")} collapsed={collapsed} />
+            )}
+            {show("fidelidade") && (
+              <NavLink item={{ to: "/solar/fidelidade", label: "Fidelidade", icon: Gift, badge: "Em breve" }} active={pathname.startsWith("/solar/fidelidade")} collapsed={collapsed} />
             )}
   
             {/* Módulo Carregadores — navegação exclusiva da instância */}
