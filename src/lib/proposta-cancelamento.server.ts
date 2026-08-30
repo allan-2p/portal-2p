@@ -212,7 +212,7 @@ export async function efeitosCancelamento(
       try {
         const r = await enviarEmailRastreado({
           to,
-          subject: `Cancelamento de pedido ${numero} PORTAL 2P`,
+          subject: `Cancelamento do pedido ${numero}`,
           html,
           label: "cancelamento-pedido",
           idempotencyKey: `cancelamento:${propostaId}:${to}`,

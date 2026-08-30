@@ -123,8 +123,8 @@ export async function avisarBoletos(): Promise<BoletoAvisosResultado> {
         to: email,
         subject:
           tipo === "vencido"
-            ? `Boleto vencido · pedido ${numero}`
-            : `Seu boleto vence em ${DIAS_AVISO} dias · pedido ${numero}`,
+            ? `Boleto do pedido ${numero} venceu em ${dataBR(venc)}`
+            : `Boleto do pedido ${numero} vence em ${dataBR(venc)}`,
         html: layoutEmail(tipo === "vencido" ? "Boleto vencido" : "Boleto a vencer", corpo + linha + link),
         label: `boleto-${tipo}`,
         idempotencyKey: chave,

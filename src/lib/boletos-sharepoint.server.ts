@@ -98,7 +98,7 @@ async function processarProposta(
     for (const to of destinos) {
       const ok = await enviarEmail({
         to,
-        subject: `Boletos 2P - Pedido ${numero} com NF:${nf}`,
+        subject: `Boletos do pedido ${numero} (nota fiscal ${nf})`,
         html,
         label: "boletos-sharepoint",
         idempotencyKey: `boletos-sp:${row["id"]}:${nf}:${to}`,

@@ -37,7 +37,7 @@ export async function avisarKitFotovoltaico(row: Record<string, any>): Promise<b
     for (const to of destinos) {
       const ok = await enviarEmail({
         to,
-        subject: `Kit Fotovoltaico — pedido ${numero}`,
+        subject: `Kit fotovoltaico do pedido ${numero}`,
         html,
         label: "kit-fotovoltaico",
         idempotencyKey: `kit-${row["id"]}-${to}`,
