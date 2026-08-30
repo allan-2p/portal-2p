@@ -59,11 +59,12 @@ tests/                    testes unitários e de RLS
 ### Rotas do app
 
 <!-- readme:rotas -->
-73 páginas autenticadas em `src/routes/_authenticated` (file routes do TanStack Router).
+75 páginas autenticadas em `src/routes/_authenticated` (file routes do TanStack Router).
 
 | Área | Páginas | Rotas |
 | --- | --- | --- |
 | **admin** | 28 | `/admin/atividade`, `/admin/auditoria`, `/admin/comissoes`, `/admin/configuracoes`, `/admin/estoque`, `/admin/frete-regras`, `/admin`, `/admin/integracoes`, `/admin/integracoes/$slug`, `/admin/logs/gatilhos`, `/admin/logs`, `/admin/logs/integracoes`, `/admin/logs/moderacao`, `/admin/logs/retencao`, `/admin/logs/sap`, `/admin/metas`, `/admin/microinversores-solar`, `/admin/moderacao`, `/admin/modulos-solar`, `/admin/perfis`, `/admin/produtos`, `/admin/produtos-solar`, `/admin/regras`, `/admin/suportes-solar`, `/admin/tabelas`, `/admin/trilhos-solar`, `/admin/usuarios`, `/admin/vinculos` |
+| **atlas-ia** | 2 | `/atlas-ia/$threadId`, `/atlas-ia/radar` |
 | **carregadores** | 16 | `/carregadores/clientes`, `/carregadores/clientes/cadastros`, `/carregadores/clientes`, `/carregadores/comissoes`, `/carregadores/frete-regras`, `/carregadores`, `/carregadores/metas`, `/carregadores/pedidos`, `/carregadores/produtos`, `/carregadores/propostas`, `/carregadores/propostas/auditoria`, `/carregadores/propostas`, `/carregadores/propostas/nova`, `/carregadores/propostas/visualizar`, `/carregadores/regras`, `/carregadores/tarefas` |
 | **raiz** | 4 | `/financeiro`, `/index`, `/marketing`, `/perfil` |
 | **financeiro** | 3 | `/financeiro/condicoes`, `/financeiro/credito`, `/financeiro` |
@@ -160,6 +161,7 @@ reprocessamento usa exatamente o mesmo executor do disparo original
 | `cron.pix-reconsulta` | Cron • Reconsulta Pix (Itaú) | Consulta no Itaú as cobranças Pix pendentes (fallback do webhook). | sim |
 | `cron.boletos-sharepoint` | Cron • Boletos a prazo (SharePoint) | Busca os PDFs dos boletos a prazo pela NF, guarda no portal e avisa o cliente. | sim |
 | `cron.boleto-avisos` | Cron • Avisos de boleto | Avisa consultor e cliente sobre boletos vencendo ou vencidos. | sim |
+| `cron.atlas-radar` | Cron • Radar do Atlas | Varre a base semanalmente, detecta clientes piorando e avisa o consultor com plano de ação. | sim |
 | `webhook.pix-itau` | Webhook • Pix (Itaú) | Notificação do PSP: cobrança paga, expirada, removida ou devolvida. | sim |
 | `webhook.fretefy` | Webhook • Fretefy (rastreio) | Retorno de coleta/entrega enviado pela Fretefy. | sim |
 | `fretefy.oferta-carga` | Fretefy • Oferta de carga | Cria a oferta de carga após a OV (frete CIF/dedicado) e atualiza a NF no faturamento. | sim |
@@ -168,6 +170,7 @@ reprocessamento usa exatamente o mesmo executor do disparo original
 Endpoints públicos (exigem `x-cron-secret`, exceto webhooks com assinatura própria):
 
 - `/api/public/app-version`
+- `/api/public/hooks/atlas-radar`
 - `/api/public/hooks/boleto-avisos`
 - `/api/public/hooks/boletos-sharepoint`
 - `/api/public/hooks/estoque-sync`
