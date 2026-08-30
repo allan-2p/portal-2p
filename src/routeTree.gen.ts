@@ -70,6 +70,7 @@ import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminIntegracoesRouteImport } from './routes/_authenticated/admin.integracoes'
 import { Route as AuthenticatedAdminFreteRegrasRouteImport } from './routes/_authenticated/admin.frete-regras'
 import { Route as AuthenticatedAdminEstoqueRouteImport } from './routes/_authenticated/admin.estoque'
+import { Route as AuthenticatedAdminEmailsRouteImport } from './routes/_authenticated/admin.emails'
 import { Route as AuthenticatedAdminConfiguracoesRouteImport } from './routes/_authenticated/admin.configuracoes'
 import { Route as AuthenticatedAdminComissoesRouteImport } from './routes/_authenticated/admin.comissoes'
 import { Route as AuthenticatedAdminAuditoriaRouteImport } from './routes/_authenticated/admin.auditoria'
@@ -463,6 +464,12 @@ const AuthenticatedAdminEstoqueRoute =
     path: '/admin/estoque',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminEmailsRoute =
+  AuthenticatedAdminEmailsRouteImport.update({
+    id: '/admin/emails',
+    path: '/admin/emails',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminConfiguracoesRoute =
   AuthenticatedAdminConfiguracoesRouteImport.update({
     id: '/admin/configuracoes',
@@ -737,6 +744,7 @@ export interface FileRoutesByFullPath {
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
   '/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
+  '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
@@ -840,6 +848,7 @@ export interface FileRoutesByTo {
   '/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
   '/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
+  '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
@@ -945,6 +954,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/auditoria': typeof AuthenticatedAdminAuditoriaRoute
   '/_authenticated/admin/comissoes': typeof AuthenticatedAdminComissoesRoute
   '/_authenticated/admin/configuracoes': typeof AuthenticatedAdminConfiguracoesRoute
+  '/_authenticated/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/_authenticated/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/_authenticated/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
   '/_authenticated/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
@@ -1052,6 +1062,7 @@ export interface FileRouteTypes {
     | '/admin/auditoria'
     | '/admin/comissoes'
     | '/admin/configuracoes'
+    | '/admin/emails'
     | '/admin/estoque'
     | '/admin/frete-regras'
     | '/admin/integracoes'
@@ -1155,6 +1166,7 @@ export interface FileRouteTypes {
     | '/admin/auditoria'
     | '/admin/comissoes'
     | '/admin/configuracoes'
+    | '/admin/emails'
     | '/admin/estoque'
     | '/admin/frete-regras'
     | '/admin/integracoes'
@@ -1259,6 +1271,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/auditoria'
     | '/_authenticated/admin/comissoes'
     | '/_authenticated/admin/configuracoes'
+    | '/_authenticated/admin/emails'
     | '/_authenticated/admin/estoque'
     | '/_authenticated/admin/frete-regras'
     | '/_authenticated/admin/integracoes'
@@ -1805,6 +1818,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEstoqueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/emails': {
+      id: '/_authenticated/admin/emails'
+      path: '/admin/emails'
+      fullPath: '/admin/emails'
+      preLoaderRoute: typeof AuthenticatedAdminEmailsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/configuracoes': {
       id: '/_authenticated/admin/configuracoes'
       path: '/admin/configuracoes'
@@ -2249,6 +2269,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminAuditoriaRoute: typeof AuthenticatedAdminAuditoriaRoute
   AuthenticatedAdminComissoesRoute: typeof AuthenticatedAdminComissoesRoute
   AuthenticatedAdminConfiguracoesRoute: typeof AuthenticatedAdminConfiguracoesRoute
+  AuthenticatedAdminEmailsRoute: typeof AuthenticatedAdminEmailsRoute
   AuthenticatedAdminEstoqueRoute: typeof AuthenticatedAdminEstoqueRoute
   AuthenticatedAdminFreteRegrasRoute: typeof AuthenticatedAdminFreteRegrasRoute
   AuthenticatedAdminIntegracoesRoute: typeof AuthenticatedAdminIntegracoesRoute
@@ -2304,6 +2325,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminAuditoriaRoute: AuthenticatedAdminAuditoriaRoute,
   AuthenticatedAdminComissoesRoute: AuthenticatedAdminComissoesRoute,
   AuthenticatedAdminConfiguracoesRoute: AuthenticatedAdminConfiguracoesRoute,
+  AuthenticatedAdminEmailsRoute: AuthenticatedAdminEmailsRoute,
   AuthenticatedAdminEstoqueRoute: AuthenticatedAdminEstoqueRoute,
   AuthenticatedAdminFreteRegrasRoute: AuthenticatedAdminFreteRegrasRoute,
   AuthenticatedAdminIntegracoesRoute: AuthenticatedAdminIntegracoesRoute,
