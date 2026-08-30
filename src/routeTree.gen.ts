@@ -30,6 +30,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ApiPublicAppVersionRouteImport } from './routes/api/public/app-version'
 import { Route as AuthenticatedSolarTarefasRouteImport } from './routes/_authenticated/solar.tarefas'
 import { Route as AuthenticatedSolarPedidosRouteImport } from './routes/_authenticated/solar.pedidos'
+import { Route as AuthenticatedSolarFidelidadeRouteImport } from './routes/_authenticated/solar.fidelidade'
 import { Route as AuthenticatedSolarDashboardsRouteImport } from './routes/_authenticated/solar.dashboards'
 import { Route as AuthenticatedSolarCuponsRouteImport } from './routes/_authenticated/solar.cupons'
 import { Route as AuthenticatedSolarClientesRouteImport } from './routes/_authenticated/solar.clientes'
@@ -224,6 +225,12 @@ const AuthenticatedSolarPedidosRoute =
   AuthenticatedSolarPedidosRouteImport.update({
     id: '/solar/pedidos',
     path: '/solar/pedidos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSolarFidelidadeRoute =
+  AuthenticatedSolarFidelidadeRouteImport.update({
+    id: '/solar/fidelidade',
+    path: '/solar/fidelidade',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSolarDashboardsRoute =
@@ -785,6 +792,7 @@ export interface FileRoutesByFullPath {
   '/solar/clientes': typeof AuthenticatedSolarClientesRouteWithChildren
   '/solar/cupons': typeof AuthenticatedSolarCuponsRoute
   '/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
+  '/solar/fidelidade': typeof AuthenticatedSolarFidelidadeRoute
   '/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
   '/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
@@ -887,6 +895,7 @@ export interface FileRoutesByTo {
   '/solar/clientes': typeof AuthenticatedSolarClientesRouteWithChildren
   '/solar/cupons': typeof AuthenticatedSolarCuponsRoute
   '/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
+  '/solar/fidelidade': typeof AuthenticatedSolarFidelidadeRoute
   '/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
   '/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
@@ -995,6 +1004,7 @@ export interface FileRoutesById {
   '/_authenticated/solar/clientes': typeof AuthenticatedSolarClientesRouteWithChildren
   '/_authenticated/solar/cupons': typeof AuthenticatedSolarCuponsRoute
   '/_authenticated/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
+  '/_authenticated/solar/fidelidade': typeof AuthenticatedSolarFidelidadeRoute
   '/_authenticated/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
   '/_authenticated/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
@@ -1103,6 +1113,7 @@ export interface FileRouteTypes {
     | '/solar/clientes'
     | '/solar/cupons'
     | '/solar/dashboards'
+    | '/solar/fidelidade'
     | '/solar/pedidos'
     | '/solar/tarefas'
     | '/api/public/app-version'
@@ -1205,6 +1216,7 @@ export interface FileRouteTypes {
     | '/solar/clientes'
     | '/solar/cupons'
     | '/solar/dashboards'
+    | '/solar/fidelidade'
     | '/solar/pedidos'
     | '/solar/tarefas'
     | '/api/public/app-version'
@@ -1312,6 +1324,7 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/clientes'
     | '/_authenticated/solar/cupons'
     | '/_authenticated/solar/dashboards'
+    | '/_authenticated/solar/fidelidade'
     | '/_authenticated/solar/pedidos'
     | '/_authenticated/solar/tarefas'
     | '/api/public/app-version'
@@ -1536,6 +1549,13 @@ declare module '@tanstack/react-router' {
       path: '/solar/pedidos'
       fullPath: '/solar/pedidos'
       preLoaderRoute: typeof AuthenticatedSolarPedidosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/solar/fidelidade': {
+      id: '/_authenticated/solar/fidelidade'
+      path: '/solar/fidelidade'
+      fullPath: '/solar/fidelidade'
+      preLoaderRoute: typeof AuthenticatedSolarFidelidadeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/solar/dashboards': {
@@ -2301,6 +2321,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSolarClientesRoute: typeof AuthenticatedSolarClientesRouteWithChildren
   AuthenticatedSolarCuponsRoute: typeof AuthenticatedSolarCuponsRoute
   AuthenticatedSolarDashboardsRoute: typeof AuthenticatedSolarDashboardsRouteWithChildren
+  AuthenticatedSolarFidelidadeRoute: typeof AuthenticatedSolarFidelidadeRoute
   AuthenticatedSolarPedidosRoute: typeof AuthenticatedSolarPedidosRoute
   AuthenticatedSolarTarefasRoute: typeof AuthenticatedSolarTarefasRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -2364,6 +2385,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSolarCuponsRoute: AuthenticatedSolarCuponsRoute,
   AuthenticatedSolarDashboardsRoute:
     AuthenticatedSolarDashboardsRouteWithChildren,
+  AuthenticatedSolarFidelidadeRoute: AuthenticatedSolarFidelidadeRoute,
   AuthenticatedSolarPedidosRoute: AuthenticatedSolarPedidosRoute,
   AuthenticatedSolarTarefasRoute: AuthenticatedSolarTarefasRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,

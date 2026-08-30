@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu, Gift } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import grupo2pLogo from "@/assets/2p-logo-preto-sm.webp";
@@ -269,6 +269,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )}
             {show("cupons") && (
               <NavLink item={{ to: "/solar/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/solar/cupons")} collapsed={collapsed} />
+            )}
+            {show("fidelidade") && (
+              <NavLink item={{ to: "/solar/fidelidade", label: "Fidelidade", icon: Gift, badge: "Em breve" }} active={pathname.startsWith("/solar/fidelidade")} collapsed={collapsed} />
             )}
   
             {/* Módulo Carregadores — navegação exclusiva da instância */}
@@ -683,7 +686,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 function NavLink({
   item, active, collapsed,
 }: {
-  item: { to: AppPath; label: string; icon: typeof Home };
+  item: { to: AppPath; label: string; icon: typeof Home; badge?: string };
   active: boolean;
   collapsed: boolean;
 }) {
@@ -692,7 +695,7 @@ function NavLink({
     <Link
       to={item.to}
       preload="intent"
-      title={collapsed ? item.label : undefined}
+      title={collapsed ? (item.badge ? `${item.label} (${item.badge})` : item.label) : undefined}
       className={cn(
         "flex items-center gap-3 rounded-lg text-sm transition-all mb-1",
         collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5",
@@ -701,6 +704,11 @@ function NavLink({
     >
       <Icon className="h-4 w-4 shrink-0" />
       {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && item.badge && (
+        <span className="ml-auto shrink-0 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/15 text-primary">
+          {item.badge}
+        </span>
+      )}
     </Link>
   );
 }
