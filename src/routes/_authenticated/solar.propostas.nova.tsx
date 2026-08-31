@@ -1307,7 +1307,7 @@ function NovaPropostaSolarPage() {
       cupom: achado,
       mensagem: `Cupom ${achado.codigo} aplicado${detalhes.length ? `: ${detalhes.join(" + ")}` : ""}.`,
     };
-  }, [cuponsQ.data, cuponsQ.isLoading, cuponsQ.isError, cupomLookupQ.data, cupomLookupQ.isLoading, cupomLookupQ.isFetching, cupomLookupQ.isError, cupomCodigo, cliente, clienteDoc]);
+  }, [cupomEncontrado, cupomUsoProprioQ.data, cuponsQ.isLoading, cuponsQ.isError, cupomLookupQ.isLoading, cupomLookupQ.isFetching, cupomLookupQ.isError, cupomCodigo, cliente, clienteDoc]);
 
   const cupom = cupomCheck.cupom;
   const desconto = useMemo(() => {
