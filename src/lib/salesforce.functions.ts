@@ -823,6 +823,10 @@ export type SalesforceAccountHistory = {
   lastPurchase: string | null;
   firstPurchase: string | null;
   wonRate: number; // 0..1
+  /** Intervalo médio entre compras concluídas, em dias (null com < 2 compras). */
+  avgPurchaseIntervalDays: number | null;
+  /** Dias desde a última compra concluída. */
+  daysSinceLastPurchase: number | null;
 };
 
 function quarterOf(dateStr: string): { year: number; q: number } {
