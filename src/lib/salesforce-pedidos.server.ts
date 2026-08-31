@@ -309,7 +309,18 @@ export async function sincronizarPedidoSalesforce(
     oppId = oppId ?? res?.id ?? null;
     if (!oppId) throw new Error("Salesforce não retornou o ID da oportunidade.");
 
-    const mensagem = atualizou ? `Oportunidade ${oppId} atualizada.` : `Oportunidade ${oppId} criada.`;
+    let mensagem = atualizou ? `Oportunidade ${oppId} atualizada.` : `Oportunidade ${oppId} criada.`;
+
+    // Produtos da oportunidade (aba "Products"): linhas de OpportunityLineItem
+    // a partir dos itens da proposta. Nunca derruba o envio da oportunidade.
+    try {
+      const { sincronizarItensOportunidade } = await import("./salesforce-itens.server");
+      const itens = await sincronizarItensOportunidade(propostaId, oppId, row as Record<string, any>);
+      if (itens.enviados) mensagem += ` ${itens.enviados} produto(s) enviados.`;
+      if (itens.semCadastro.length) mensagem += ` ${itens.semCadastro.length} produto(s) sem cadastro no Salesforce.`;
+    } catch {
+      /* já registrado em integration_logs */
+    }
 
     await gravar(propostaId, {
       sf_opp_id: oppId,
@@ -318,6 +329,7 @@ export async function sincronizarPedidoSalesforce(
       sf_mensagem: mensagem,
       sf_enviado_em: new Date().toISOString(),
     });
+
     await logIntegrationEvent({
       ...base,
       level: "info",

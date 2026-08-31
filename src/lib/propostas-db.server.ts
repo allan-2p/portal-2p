@@ -317,12 +317,27 @@ export async function getPropostaPorNumero(numero: string): Promise<PropostaRow 
   return rows[0] ?? null;
 }
 
+/**
+ * Espelha o JSON `itens` em `proposta_itens` (linha a linha). Best effort:
+ * um problema no espelho nunca derruba a gravação do pedido.
+ */
+async function espelhar(row: PropostaRow | null | undefined, payload: Record<string, unknown>) {
+  if (!row?.id || !("itens" in payload)) return;
+  try {
+    const { espelharItensProposta } = await import("./proposta-itens.server");
+    await espelharItensProposta(row as Record<string, any>);
+  } catch {
+    /* best effort */
+  }
+}
+
 export async function inserirProposta(payload: Record<string, unknown>): Promise<PropostaRow> {
   const rows = await rest(`propostas`, {
     method: "POST",
     body: JSON.stringify(payload),
     prefer: "return=representation",
   });
+  await espelhar(rows?.[0], payload);
   return rows?.[0];
 }
 
@@ -338,8 +353,10 @@ export async function atualizarProposta(
     body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
     prefer: "return=representation",
   });
+  await espelhar(rows?.[0], patch);
   return rows?.[0] ?? null;
 }
+
 
 export async function excluirProposta(id: string): Promise<void> {
   await rest(`propostas?id=eq.${id}`, { method: "DELETE" });
