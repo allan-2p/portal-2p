@@ -1274,9 +1274,11 @@ function NovaPropostaSolarPage() {
           mensagem: `Cupom expirado em ${venc.toLocaleDateString("pt-BR")}.`,
         };
     }
-    if (!achado.reutilizavel && (achado.usos ?? 0) > 0)
+    // Usos que contam para o bloqueio: exclui o uso da própria proposta em edição.
+    const usosEfetivos = Math.max((achado.usos ?? 0) - (cupomUsoProprioQ.data ? 1 : 0), 0);
+    if (!achado.reutilizavel && usosEfetivos > 0)
       return { status: "erro", cupom: null, mensagem: "Cupom de uso único já utilizado." };
-    if (achado.limite_usos != null && (achado.usos ?? 0) >= Number(achado.limite_usos))
+    if (achado.limite_usos != null && usosEfetivos >= Number(achado.limite_usos))
       return {
         status: "erro",
         cupom: null,
