@@ -260,7 +260,11 @@ export async function sincronizarPedidoSalesforce(
     }
 
     // Padrão do Opportunity Name: "número da proposta - nome da proposta".
-    const nomeOpp = [numero, so(row["nome"]) || clienteNome].filter(Boolean).join(" - ").slice(0, 120);
+    // Em grupos com variações o número exibido carrega o sufixo da favorita.
+    const { numeroExibicao } = await import("./proposta-variacoes");
+    const numeroLabel = numeroExibicao(row as any) || numero;
+    const nomeOpp = [numeroLabel, so(row["nome"]) || clienteNome].filter(Boolean).join(" - ").slice(0, 120);
+
 
     // O corpo sai do mapeamento configurável (Admin › Integrações ›
     // Salesforce › Campos): a tela de conferência mostra exatamente o que é
