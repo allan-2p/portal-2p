@@ -652,69 +652,87 @@ function Pager({
   );
 }
 
-/* ------------------------------------------------------- Propostas/pedidos */
+/* ---------------------------------------------- Histórico de pedidos */
+
+function HistoricoTabela({ rows, tone }: { rows: any[]; tone: "ganho" | "perdido" }) {
+  if (rows.length === 0) {
+    return <Empty>{tone === "ganho" ? "Nenhum pedido ganho." : "Nenhum pedido perdido."}</Empty>;
+  }
+  return (
+    <div className="overflow-x-auto -mx-1">
+      <table className="w-full text-sm">
+        <thead className="text-[11px] uppercase tracking-wider text-muted-foreground">
+          <tr>
+            <th className="text-left px-2 py-2 font-medium">Pedido</th>
+            <th className="text-left px-2 py-2 font-medium">Etapa</th>
+            <th className="text-right px-2 py-2 font-medium">Valor</th>
+            <th className="text-left px-2 py-2 font-medium">Data</th>
+            <th className="text-left px-2 py-2 font-medium">Responsável</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((o) => (
+            <tr key={o.id} className="border-t border-border">
+              <td className="px-2 py-2 max-w-[260px] truncate font-medium">{o.name}</td>
+              <td className="px-2 py-2">
+                <span
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded",
+                    tone === "ganho"
+                      ? "bg-success/15 text-success"
+                      : "bg-destructive/15 text-destructive",
+                  )}
+                >
+                  {o.stage ?? "—"}
+                </span>
+              </td>
+              <td className="px-2 py-2 text-right tabular-nums">{fmt(o.amount)}</td>
+              <td className="px-2 py-2 text-muted-foreground tabular-nums">{date(o.closeDate)}</td>
+              <td className="px-2 py-2 text-muted-foreground truncate max-w-[160px]">
+                {o.owner ?? "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function NegociosPanel({ data, loading }: { data: any; loading: boolean }) {
   const opps = (data?.opportunities ?? []) as any[];
-  const abertas = opps.filter((o) => !o.isClosed);
-  const ganhas = opps.filter((o) => o.isWon);
-  const perdidas = opps.filter((o) => o.isClosed && !o.isWon);
+  const ordena = (arr: any[]) =>
+    arr.slice().sort((a, b) => String(b.closeDate ?? "").localeCompare(String(a.closeDate ?? "")));
+  const ganhas = ordena(opps.filter((o) => o.isWon));
+  const perdidas = ordena(opps.filter((o) => o.isClosed && !o.isWon));
   const sum = (arr: any[]) => arr.reduce((s, o) => s + (o.amount || 0), 0);
+  const decididos = ganhas.length + perdidas.length;
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
-        <MiniStat label={`Em aberto (${abertas.length})`} value={fmt(sum(abertas))} />
-        <MiniStat label={`Fechadas (${ganhas.length})`} value={fmt(sum(ganhas))} />
-        <MiniStat label={`Perdidas (${perdidas.length})`} value={fmt(sum(perdidas))} />
+        <MiniStat label={`Ganhos (${ganhas.length})`} value={fmt(sum(ganhas))} />
+        <MiniStat label={`Perdidos (${perdidas.length})`} value={fmt(sum(perdidas))} />
+        <MiniStat
+          label="Taxa de ganho"
+          value={decididos ? `${Math.round((ganhas.length / decididos) * 100)}%` : "—"}
+        />
       </div>
-      <Card title="Propostas & pedidos" icon={Briefcase}>
-        {loading ? (
-          <Empty>Carregando negócios…</Empty>
-        ) : opps.length === 0 ? (
-          <Empty>Nenhuma oportunidade nos últimos 3 anos.</Empty>
-        ) : (
-          <div className="overflow-x-auto -mx-1">
-            <table className="w-full text-sm">
-              <thead className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="text-left px-2 py-2 font-medium">Negócio</th>
-                  <th className="text-left px-2 py-2 font-medium">Etapa</th>
-                  <th className="text-right px-2 py-2 font-medium">Valor</th>
-                  <th className="text-left px-2 py-2 font-medium">Data</th>
-                  <th className="text-left px-2 py-2 font-medium">Responsável</th>
-                </tr>
-              </thead>
-              <tbody>
-                {opps.map((o) => (
-                  <tr key={o.id} className="border-t border-border">
-                    <td className="px-2 py-2 max-w-[260px] truncate font-medium">{o.name}</td>
-                    <td className="px-2 py-2">
-                      <span
-                        className={cn(
-                          "text-[10px] px-1.5 py-0.5 rounded",
-                          o.isWon
-                            ? "bg-success/15 text-success"
-                            : o.isClosed
-                              ? "bg-destructive/15 text-destructive"
-                              : "bg-primary/15 text-primary",
-                        )}
-                      >
-                        {o.stage ?? "—"}
-                      </span>
-                    </td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmt(o.amount)}</td>
-                    <td className="px-2 py-2 text-muted-foreground tabular-nums">{date(o.closeDate)}</td>
-                    <td className="px-2 py-2 text-muted-foreground truncate max-w-[160px]">
-                      {o.owner ?? "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+
+      {loading ? (
+        <Card title="Histórico de pedidos" icon={Briefcase}>
+          <Empty>Carregando histórico…</Empty>
+        </Card>
+      ) : (
+        <>
+          <Card title={`Pedidos ganhos (${ganhas.length})`} icon={Briefcase}>
+            <HistoricoTabela rows={ganhas} tone="ganho" />
+          </Card>
+          <Card title={`Pedidos perdidos (${perdidas.length})`} icon={Briefcase}>
+            <HistoricoTabela rows={perdidas} tone="perdido" />
+          </Card>
+        </>
+      )}
     </div>
   );
 }
