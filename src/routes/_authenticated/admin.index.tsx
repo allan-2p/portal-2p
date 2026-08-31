@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/app-layout";
 import { AccessDenied } from "@/components/access-denied";
 import { getAdminAreas } from "@/lib/admin-guard.functions";
 import { ADMIN_SECTIONS } from "@/lib/admin-nav";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -30,13 +31,17 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 
 function AdministracaoHome() {
   const fetchAreas = useServerFn(getAdminAreas);
+  const { user, loading: authLoading } = useAuth();
   const { data, isLoading } = useQuery({
     queryKey: ["admin-areas"],
     queryFn: () => fetchAreas(),
     staleTime: 60_000,
+    // Sem sessão hidratada o RPC sai sem Authorization e o servidor lança "Unauthorized".
+    enabled: !!user,
+    retry: false,
   });
 
-  if (isLoading) {
+  if (authLoading || (!!user && isLoading)) {
     return (
       <AppLayout>
         <div className="flex min-h-[50vh] items-center justify-center">
