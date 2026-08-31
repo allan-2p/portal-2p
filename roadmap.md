@@ -42,3 +42,5 @@
 - [ ] Renomear "Observações" para "Observações da Nota Fiscal" (vai para o SAP) e criar "Observações do Pedido" (campo interno, não vai para NF/SAP) exibido acima.
 - [ ] Observações da NF: pré-preencher com contato do cliente e endereço de entrega quando diferente do faturamento; manter os avisos de impostos dos Carregadores (DIFAL/IPI/uso e consumo).
 - [ ] Banco Grupo 2P: criar coluna `observacoes_internas` em `propostas` (DDL pendente — conexão psql falhou nesta rodada).
+
+- [ ] Bug: botão Editar em proposta Solar leva para o checkout de Carregadores (rota deve seguir a organizacao da proposta).
