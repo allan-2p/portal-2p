@@ -8,6 +8,7 @@ import { INSTANCES, type InstanceId } from "@/lib/instances";
 import { isGroupAdminPath } from "@/lib/admin-area";
 import { getAdminAreas } from "@/lib/admin-guard.functions";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 const INSTANCE_HOME: Record<InstanceId, string> = {
   solar: "/",
@@ -35,10 +36,14 @@ export function InstanceSwitcher() {
   const adminActive = isGroupAdminPath(pathname);
 
   const fetchAreas = useServerFn(getAdminAreas);
+  const { user } = useAuth();
   const areasQ = useQuery({
     queryKey: ["admin-areas"],
     queryFn: () => fetchAreas(),
     staleTime: 60_000,
+    // Sem sessão hidratada o RPC sai sem Authorization e o servidor lança "Unauthorized".
+    enabled: !!user,
+    retry: false,
   });
   const adminAllowed = Object.values(areasQ.data ?? {}).some(Boolean);
 
