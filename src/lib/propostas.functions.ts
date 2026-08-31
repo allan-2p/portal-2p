@@ -956,7 +956,13 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
         `Não é possível excluir uma proposta com status "${statusAtual}". Pedidos em andamento só podem ser cancelados (com motivo).`,
       );
     }
+    // Variação: transfere favorita/vínculo do Salesforce antes de apagar.
+    {
+      const { prepararExclusaoVariacao } = await import("@/lib/proposta-variacoes.server");
+      await prepararExclusaoVariacao((atual ?? { id: data.id }) as any);
+    }
     await db.excluirProposta(data.id);
+
     return { ok: true, cancelada: false, aviso: null as string | null };
 
   });
@@ -1106,7 +1112,21 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
       return { id: row.id, status: row["status"] as string, already_concluded: true, cobranca: null, sapOv: null, salesforce: null };
     }
 
+    // Variações: só uma do grupo pode virar pedido. A escolhida na finalização
+    // assume como favorita (e leva o vínculo do Salesforce).
+    {
+      const { assertPodeConcluirVariacao } = await import("@/lib/proposta-variacoes.server");
+      try {
+        await assertPodeConcluirVariacao(row as any);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        await db.registrarConclusaoLog({ ...base, status: row["status"], resultado: "bloqueada", detalhe: msg });
+        throw new Error(msg);
+      }
+    }
+
     // Status de destino derivado do registro (nunca da UI): venda entra em
+
     // "Aguardando Pagamento"; bonificação não tem pagamento e segue direto para
     // "Processando" (o financeiro libera o picking no SAP).
     const ehBonificacao = String(row["tipo_nf"] ?? "").toLowerCase().startsWith("bonifica");
