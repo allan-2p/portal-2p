@@ -25,3 +25,7 @@
 - [ ] Atlas do cliente: título apenas "Mapa Mental"
 - [ ] Excluir a variação de teste 60121-B
 - [ ] Org "2P Carregadores": oportunidades com "Carregador" no nome de Caroline Gimenez, Ghustavo Novaes e Bruno Amaral — atualizar Salesforce e portal; refletir na TV
+
+- [x] Variações na listagem: ocultar a favorita no toggle, remover status individual e mostrar data de criação
+- [x] Marcar propostas de carregadores (Caroline/Ghustavo/Bruno) como 2P Carregadores no portal e no Salesforce
+- [x] TV: vendas de carregadores dos consultores da unidade

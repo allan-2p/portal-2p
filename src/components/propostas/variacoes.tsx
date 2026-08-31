@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { ChevronDown, ChevronRight, GitBranch, Loader2, Pencil, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fmtBRL } from "@/lib/carregadores";
-import { StatusDot } from "@/components/proposta-status-ui";
 import { podeEditarProposta } from "@/lib/proposta-status";
 import { numeroExibicao, resumoItens } from "@/lib/proposta-variacoes";
 import {
