@@ -117,14 +117,9 @@ export function tabelaPreco(row: Record<string, any>): string | null {
   return n >= 1 && n <= 5 ? String(n).padStart(2, "0") : null;
 }
 
-/** Projeto vendido? — derivado do status do pedido. */
-export function projetoVendido(status: unknown): string | null {
-  const s = so(status).toLowerCase();
-  if (!s) return null;
-  if (["faturado", "coletado", "entregue"].some((x) => s.includes(x))) return "Sim";
-  if (s.includes("separa") || s.includes("estoque") || s.includes("process")) return "Estoque";
-  if (s.includes("cancel") || s.includes("perdid")) return "Não";
-  return "Não";
+/** Projeto vendido? — escolha feita na proposta (Sim/Não/Estoque). */
+export function projetoVendido(row: Record<string, any>): string | null {
+  return projetoVendidoLabel(row ?? {});
 }
 
 
