@@ -85,14 +85,30 @@ async function processarProposta(
   const destinos = await destinatarios(row);
   let emails = 0;
   if (destinos.length) {
+    // Links assinados (7 dias) para baixar cada PDF direto do e-mail.
+    const vencimentoLinks = new Date(Date.now() + 7 * 86_400_000);
+    const { data: assinados } = await supabaseAdmin.storage
+      .from(BOLETOS_BUCKET)
+      .createSignedUrls(salvos.map((a) => a.path), 7 * 86_400);
+    const urlPor = new Map(
+      (assinados ?? [])
+        .filter((s) => s.path && s.signedUrl)
+        .map((s) => [s.path as string, s.signedUrl as string]),
+    );
     const linhas = salvos
-      .map((a) => `<li style="margin:4px 0">${a.nome}</li>`)
+      .map((a) => {
+        const url = urlPor.get(a.path);
+        const nome = a.nome.replace(/</g, "&lt;");
+        return url
+          ? `<li style="margin:6px 0">${nome} — <a href="${url}">Baixar boleto (PDF)</a></li>`
+          : `<li style="margin:6px 0">${nome}</li>`;
+      })
       .join("");
     const html = layoutEmail(
       `Boletos do pedido ${numero}`,
       `<p>Seguem os boletos referentes à nota fiscal <strong>${nf}</strong> do pedido <strong>${numero}</strong>.</p>
        <ul style="padding-left:18px;margin:12px 0">${linhas}</ul>
-       <p>Os arquivos também ficam disponíveis no portal, no detalhe do pedido.</p>
+       <p>Os links para download ficam válidos até <strong>${vencimentoLinks.toLocaleDateString("pt-BR")}</strong>. Os arquivos também ficam disponíveis no portal, no detalhe do pedido.</p>
        <p style="margin-top:16px">Contas a Receber · 2P Group</p>`,
     );
     for (const to of destinos) {

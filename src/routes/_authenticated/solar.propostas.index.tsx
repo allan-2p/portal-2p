@@ -484,7 +484,7 @@ function PropostasSolarPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">
-                  Observações do cancelamento <span className="text-destructive">*</span>
+                  Descrição do Cancelamento <span className="text-destructive">*</span>
                 </label>
                 <Textarea
                   value={obsCancel}
