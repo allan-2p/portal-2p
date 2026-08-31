@@ -36,7 +36,10 @@ type Linha = {
   forma_pagamento: string;
   vendedor: string;
   observacoes: string;
+  /** Faturamento direto ao cliente final (opcional). */
+  faturamento?: Record<string, string | boolean>;
 };
+
 
 const so = (v: unknown) => String(v ?? "").trim();
 const dig = (v: unknown) => so(v).replace(/\D/g, "");
