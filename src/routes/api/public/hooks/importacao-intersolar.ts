@@ -248,7 +248,7 @@ export const Route = createFileRoute("/api/public/hooks/importacao-intersolar")(
               uf: so(cadastro["uf"]).toUpperCase(),
               contribuinte: cadastro["contribuinte"] === true,
               tipoNf: "venda",
-              finalidadeUso: null,
+              finalidadeUso: l.faturamento ? "Uso e Consumo" : null,
               faturarClienteFinal: !!l.faturamento,
               faturamento: l.faturamento ?? {},
               formaPagamento: l.forma_pagamento === "pix" ? "pix" : "cartao_credito",
