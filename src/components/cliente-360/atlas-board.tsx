@@ -87,8 +87,6 @@ export function AtlasBoard({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
-        <Sparkles className="h-4 w-4 text-primary" />
-        <h3 className="font-semibold">Mapa mental do cliente</h3>
         <span className="text-[11px] text-muted-foreground">
           arraste os cartões · tudo vira contexto para o Atlas
         </span>

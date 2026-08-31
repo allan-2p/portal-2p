@@ -104,6 +104,7 @@ import { Route as AuthenticatedSolarClientesSugestoesRouteImport } from './route
 import { Route as AuthenticatedSolarClientesSegmentacaoRouteImport } from './routes/_authenticated/solar.clientes.segmentacao'
 import { Route as AuthenticatedSolarClientesRankingRouteImport } from './routes/_authenticated/solar.clientes.ranking'
 import { Route as AuthenticatedSolarClientesPerfilRouteImport } from './routes/_authenticated/solar.clientes.perfil'
+import { Route as AuthenticatedSolarClientesNegociosRouteImport } from './routes/_authenticated/solar.clientes.negocios'
 import { Route as AuthenticatedSolarClientesCadastrosRouteImport } from './routes/_authenticated/solar.clientes.cadastros'
 import { Route as AuthenticatedCarregadoresPropostasVisualizarRouteImport } from './routes/_authenticated/carregadores.propostas.visualizar'
 import { Route as AuthenticatedCarregadoresPropostasNovaRouteImport } from './routes/_authenticated/carregadores.propostas.nova'
@@ -665,6 +666,12 @@ const AuthenticatedSolarClientesPerfilRoute =
     path: '/perfil',
     getParentRoute: () => AuthenticatedSolarClientesRoute,
   } as any)
+const AuthenticatedSolarClientesNegociosRoute =
+  AuthenticatedSolarClientesNegociosRouteImport.update({
+    id: '/negocios',
+    path: '/negocios',
+    getParentRoute: () => AuthenticatedSolarClientesRoute,
+  } as any)
 const AuthenticatedSolarClientesCadastrosRoute =
   AuthenticatedSolarClientesCadastrosRouteImport.update({
     id: '/cadastros',
@@ -818,6 +825,7 @@ export interface FileRoutesByFullPath {
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/carregadores/propostas/visualizar': typeof AuthenticatedCarregadoresPropostasVisualizarRoute
   '/solar/clientes/cadastros': typeof AuthenticatedSolarClientesCadastrosRoute
+  '/solar/clientes/negocios': typeof AuthenticatedSolarClientesNegociosRoute
   '/solar/clientes/perfil': typeof AuthenticatedSolarClientesPerfilRoute
   '/solar/clientes/ranking': typeof AuthenticatedSolarClientesRankingRoute
   '/solar/clientes/segmentacao': typeof AuthenticatedSolarClientesSegmentacaoRoute
@@ -922,6 +930,7 @@ export interface FileRoutesByTo {
   '/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/carregadores/propostas/visualizar': typeof AuthenticatedCarregadoresPropostasVisualizarRoute
   '/solar/clientes/cadastros': typeof AuthenticatedSolarClientesCadastrosRoute
+  '/solar/clientes/negocios': typeof AuthenticatedSolarClientesNegociosRoute
   '/solar/clientes/perfil': typeof AuthenticatedSolarClientesPerfilRoute
   '/solar/clientes/ranking': typeof AuthenticatedSolarClientesRankingRoute
   '/solar/clientes/segmentacao': typeof AuthenticatedSolarClientesSegmentacaoRoute
@@ -1032,6 +1041,7 @@ export interface FileRoutesById {
   '/_authenticated/carregadores/propostas/nova': typeof AuthenticatedCarregadoresPropostasNovaRoute
   '/_authenticated/carregadores/propostas/visualizar': typeof AuthenticatedCarregadoresPropostasVisualizarRoute
   '/_authenticated/solar/clientes/cadastros': typeof AuthenticatedSolarClientesCadastrosRoute
+  '/_authenticated/solar/clientes/negocios': typeof AuthenticatedSolarClientesNegociosRoute
   '/_authenticated/solar/clientes/perfil': typeof AuthenticatedSolarClientesPerfilRoute
   '/_authenticated/solar/clientes/ranking': typeof AuthenticatedSolarClientesRankingRoute
   '/_authenticated/solar/clientes/segmentacao': typeof AuthenticatedSolarClientesSegmentacaoRoute
@@ -1142,6 +1152,7 @@ export interface FileRouteTypes {
     | '/carregadores/propostas/nova'
     | '/carregadores/propostas/visualizar'
     | '/solar/clientes/cadastros'
+    | '/solar/clientes/negocios'
     | '/solar/clientes/perfil'
     | '/solar/clientes/ranking'
     | '/solar/clientes/segmentacao'
@@ -1246,6 +1257,7 @@ export interface FileRouteTypes {
     | '/carregadores/propostas/nova'
     | '/carregadores/propostas/visualizar'
     | '/solar/clientes/cadastros'
+    | '/solar/clientes/negocios'
     | '/solar/clientes/perfil'
     | '/solar/clientes/ranking'
     | '/solar/clientes/segmentacao'
@@ -1355,6 +1367,7 @@ export interface FileRouteTypes {
     | '/_authenticated/carregadores/propostas/nova'
     | '/_authenticated/carregadores/propostas/visualizar'
     | '/_authenticated/solar/clientes/cadastros'
+    | '/_authenticated/solar/clientes/negocios'
     | '/_authenticated/solar/clientes/perfil'
     | '/_authenticated/solar/clientes/ranking'
     | '/_authenticated/solar/clientes/segmentacao'
@@ -2083,6 +2096,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSolarClientesPerfilRouteImport
       parentRoute: typeof AuthenticatedSolarClientesRoute
     }
+    '/_authenticated/solar/clientes/negocios': {
+      id: '/_authenticated/solar/clientes/negocios'
+      path: '/negocios'
+      fullPath: '/solar/clientes/negocios'
+      preLoaderRoute: typeof AuthenticatedSolarClientesNegociosRouteImport
+      parentRoute: typeof AuthenticatedSolarClientesRoute
+    }
     '/_authenticated/solar/clientes/cadastros': {
       id: '/_authenticated/solar/clientes/cadastros'
       path: '/cadastros'
@@ -2261,6 +2281,7 @@ const AuthenticatedCarregadoresPropostasRouteWithChildren =
 
 interface AuthenticatedSolarClientesRouteChildren {
   AuthenticatedSolarClientesCadastrosRoute: typeof AuthenticatedSolarClientesCadastrosRoute
+  AuthenticatedSolarClientesNegociosRoute: typeof AuthenticatedSolarClientesNegociosRoute
   AuthenticatedSolarClientesPerfilRoute: typeof AuthenticatedSolarClientesPerfilRoute
   AuthenticatedSolarClientesRankingRoute: typeof AuthenticatedSolarClientesRankingRoute
   AuthenticatedSolarClientesSegmentacaoRoute: typeof AuthenticatedSolarClientesSegmentacaoRoute
@@ -2271,6 +2292,8 @@ const AuthenticatedSolarClientesRouteChildren: AuthenticatedSolarClientesRouteCh
   {
     AuthenticatedSolarClientesCadastrosRoute:
       AuthenticatedSolarClientesCadastrosRoute,
+    AuthenticatedSolarClientesNegociosRoute:
+      AuthenticatedSolarClientesNegociosRoute,
     AuthenticatedSolarClientesPerfilRoute:
       AuthenticatedSolarClientesPerfilRoute,
     AuthenticatedSolarClientesRankingRoute:
