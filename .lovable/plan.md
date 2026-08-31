@@ -83,7 +83,7 @@ Criar migration com:
 - Trigger `touch_updated_at`
 
 ## Dependências / riscos
-- A tabela `propostas` no Grupo 2P só tem propostas `carregadores` hoje. Propostas `solar` precisam estar migradas para o banco Grupo 2P para que a integração funcione; isso é pré-requisito de dados, não de código.
+- A tabela `propostas` no Grupo 2P já tem as duas unidades (42.044 propostas `solar` e 124 `carregadores`), então a integração e o backfill de itens cobrem Solar e Carregadores desde o início. O volume do Solar exige que o backfill de `proposta_itens` rode em lotes, não de uma vez.
 - Os produtos precisam ter `ProductCode` no Salesforce igual ao código SAP do portal. Se houver divergência, os itens não serão vinculados.
 - O campo `tabela_preco` precisa estar presente/populado na proposta. Se não existir, será necessário derivá-lo da simulação SAP ou do catálogo de produtos.
 
