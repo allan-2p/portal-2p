@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { Copy, Eye, Pencil, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusDot } from "@/components/proposta-status-ui";
-import { formatPropostaNumero, formatSapNumero } from "@/lib/sap-numero";
+import { formatSapNumero } from "@/lib/sap-numero";
+import { numeroExibicao } from "@/lib/proposta-variacoes";
 import { bloqueiaReenvioSap } from "@/lib/proposta-legado";
 import { podeCancelarPedido, podeEditarProposta } from "@/lib/proposta-status";
 import { useCan } from "@/components/permission-gate";
@@ -88,7 +89,7 @@ export function PropostasMobileCards({
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                 <div className="min-w-0">
                   <div className="truncate text-base font-bold tabular-nums leading-tight">
-                    {formatPropostaNumero(r.numero) || "—"}
+                    {numeroExibicao(r as any) || "—"}
                   </div>
                   <div className="mt-0.5 truncate text-sm text-muted-foreground">
                     {r.nome || "Sem nome"}
