@@ -154,7 +154,7 @@ async function cancelarOvNoSap(
 
 export async function efeitosCancelamento(
   propostaId: string,
-  ctx: { actorNome?: string | null; motivo?: string | null } = {},
+  ctx: { actorNome?: string | null; motivo?: string | null; observacao?: string | null } = {},
 ): Promise<EfeitosCancelamentoResult> {
   const resultado: EfeitosCancelamentoResult = { sapCancelado: false, emails: null };
   let row: Record<string, any> | null = null;
@@ -171,7 +171,10 @@ export async function efeitosCancelamento(
   let canceladoNoSap = false;
   if (vbeln) {
     try {
-      canceladoNoSap = await cancelarOvNoSap(row, ctx.motivo ?? null);
+      canceladoNoSap = await cancelarOvNoSap(
+        row,
+        [ctx.motivo, ctx.observacao].filter(Boolean).join(" — ") || null,
+      );
     } catch {
       /* best effort */
     }
@@ -197,6 +200,7 @@ export async function efeitosCancelamento(
       `<strong>Unidade:</strong> ${esc(org)}`,
       `<strong>Cancelado por:</strong> ${esc(ctx.actorNome ?? "Portal 2P")}`,
       ctx.motivo ? `<strong>Motivo:</strong> ${esc(ctx.motivo)}` : "",
+      ctx.observacao ? `<strong>Observações:</strong> ${esc(ctx.observacao)}` : "",
     ].filter(Boolean);
 
     const html = layoutEmail(
