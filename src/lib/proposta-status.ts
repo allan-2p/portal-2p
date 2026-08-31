@@ -142,8 +142,8 @@ export const PROPOSTA_STATUS_STYLE: Record<PropostaStatus, PropostaStatusStyle> 
     bg: "#A8A29E", fg: "#1C1917",
   },
   "Aguardando Pagamento": {
-    dot: "bg-[#EA580C]", text: "text-[#EA580C]", chip: "bg-[#EA580C] text-[#FFF7ED]",
-    bg: "#EA580C", fg: "#FFF7ED",
+    dot: "bg-[#FB923C]", text: "text-[#FB923C]", chip: "bg-[#FB923C] text-[#431407]",
+    bg: "#FB923C", fg: "#431407",
   },
   "Processando": {
     dot: "bg-[#EAB308]", text: "text-[#EAB308]", chip: "bg-[#EAB308] text-[#422006]",
