@@ -84,7 +84,7 @@ Criar migration com:
 
 ## Dependências / riscos
 - A tabela `propostas` no Grupo 2P já tem as duas unidades (42.044 propostas `solar` e 124 `carregadores`), então a integração e o backfill de itens cobrem Solar e Carregadores desde o início. O volume do Solar exige que o backfill de `proposta_itens` rode em lotes, não de uma vez.
-- Os produtos precisam ter `ProductCode` no Salesforce igual ao código SAP do portal. Se houver divergência, os itens não serão vinculados.
+- Os produtos precisam ter `ProductCode` no Salesforce igual ao código SAP do portal. Se houver divergência, os itens não serão vinculados — e nesse caso o problema não pode ficar silencioso: cada item sem `PricebookEntry` correspondente é registrado como uma ocorrência ("produto sem cadastro no Salesforce", com nº da proposta, código SAP e data) e aparece num **Painel de Saúde do Portal** dentro de Configurações (permissão de administrador). Esse painel é o local único para acompanhar tudo que envolva o portal: quebras e erros de integração (Salesforce, SAP, Fretefy, e-mails, boletos, jobs de cron), correções pendentes, ajustes de cadastro necessários e possíveis problemas detectados, cada ocorrência com severidade (crítico / atenção / informativo), contagem, último acontecimento e ação de marcar como resolvida.
 - O campo `tabela_preco` precisa estar presente/populado na proposta. Se não existir, será necessário derivá-lo da simulação SAP ou do catálogo de produtos.
 
 ## Validação
