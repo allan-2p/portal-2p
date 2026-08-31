@@ -1,4 +1,5 @@
 import { formatPropostaNumero } from "@/lib/sap-numero";
+import { PainelVariacoes } from "@/components/propostas/variacoes";
 import { cidadeUf, cidadeUfCep } from "@/lib/local-format";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DisponibilidadeBadge, useDisponibilidadeLote } from "@/components/disponibilidade-badge";
