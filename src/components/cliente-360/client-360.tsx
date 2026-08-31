@@ -487,12 +487,12 @@ function VisaoGeral({
 
 
       <div className="grid md:grid-cols-2 gap-4">
-        <Card title="Funil do cliente" icon={Briefcase}>
-          {(history?.stages ?? []).length === 0 ? (
-            <Empty>Sem oportunidades no período.</Empty>
+        <Card title="Funil do cliente · propostas em aberto" icon={Briefcase}>
+          {funilAberto.length === 0 ? (
+            <Empty>Nenhuma proposta em aberto para este cliente.</Empty>
           ) : (
             <ul className="space-y-2">
-              {history.stages.map((s: any) => (
+              {funilAberto.map((s: any) => (
                 <li key={s.stage} className="flex items-center gap-2 text-sm">
                   <span className="truncate flex-1">{s.stage}</span>
                   <span className="text-xs text-muted-foreground tabular-nums">{s.count}</span>
