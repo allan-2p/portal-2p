@@ -287,6 +287,12 @@ export async function sincronizarPedidoSalesforce(
     // oportunidade já existente do mesmo pedido antes de criar uma nova.
     let oppId: string | null = existente || (await acharOpp(numero, nomeOpp));
 
+    // Pedido ainda "Salvo" e oportunidade marcada manualmente como perdida:
+    // mantém o estágio da org (os demais campos continuam sincronizando).
+    if (oppId && so(row["status"]) === "Salvo") {
+      if ((await stageAtual(oppId)) === "Oportunidade Perdida") delete corpoBase["StageName"];
+    }
+
     const enviar = (corpo: Record<string, unknown>) =>
       oppId
         ? sf(`/sobjects/Opportunity/${oppId}`, { method: "PATCH", body: JSON.stringify(corpo) })
