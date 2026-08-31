@@ -24,6 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmailsCatalogoPainel } from "@/components/admin/emails-catalogo-painel";
 import { listarEmailsEnviados, listarTemplatesEmail } from "@/lib/emails-admin.functions";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -89,10 +91,10 @@ function EmailsEnviados() {
   }, [linhas]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">E-mails enviados</h1>
+          <h2 className="text-lg font-semibold">E-mails enviados</h2>
           <p className="text-sm text-muted-foreground">
             Acompanhe boletos, kits e avisos: status de entrega, tentativas e descadastros.
           </p>
@@ -243,6 +245,32 @@ function EmailsEnviados() {
   );
 }
 
+function PainelEmails() {
+  return (
+    <div className="mx-auto max-w-6xl space-y-5">
+      <header>
+        <h1 className="text-2xl font-bold">E-mails</h1>
+        <p className="text-sm text-muted-foreground">
+          Painel de controle dos e-mails do portal: o que é enviado, como funciona e o histórico de
+          entrega.
+        </p>
+      </header>
+      <Tabs defaultValue="enviados">
+        <TabsList>
+          <TabsTrigger value="enviados">E-mails enviados</TabsTrigger>
+          <TabsTrigger value="tipos">Tipos de e-mail</TabsTrigger>
+        </TabsList>
+        <TabsContent value="enviados" className="mt-4">
+          <EmailsEnviados />
+        </TabsContent>
+        <TabsContent value="tipos" className="mt-4">
+          <EmailsCatalogoPainel />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/admin/emails")({
   head: () => ({
     meta: [
@@ -264,7 +292,7 @@ export const Route = createFileRoute("/_authenticated/admin/emails")({
   component: () => (
     <AdminRouteGuard feature="admin.emails" area="configuracoes">
       <AppLayout>
-        <EmailsEnviados />
+        <PainelEmails />
       </AppLayout>
     </AdminRouteGuard>
   ),

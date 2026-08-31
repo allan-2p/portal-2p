@@ -99,7 +99,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       {
         label: "E-mails",
         items: [
-          { to: "/admin/emails", label: "E-mails enviados", icon: Mail, feature: "admin.emails" },
+          { to: "/admin/emails", label: "Painel de e-mails", icon: Mail, feature: "admin.emails" },
         ],
       },
       {
