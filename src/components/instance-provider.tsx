@@ -186,7 +186,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
           featuresForAreaAccessKey(areaKey).includes(key),
       );
     },
-    [instance, grantedSet, isAdmin, allowed],
+    [instance, grantedSet, isAdmin, allowed, perfilRoute, perfilInstance],
   );
 
   const can = useCallback(
