@@ -479,7 +479,11 @@ function VisaoGeral({
   data: any;
   loading: boolean;
 }) {
-  void history;
+  // Funil = só o que ainda está em aberto (fora concluído/perdido/cancelado).
+  const funilAberto = ((history?.stages ?? []) as any[]).filter(
+    (s) => !ETAPA_FECHADA.test(String(s.stage ?? "")),
+  );
+
   return (
     <div className="space-y-4">
 
