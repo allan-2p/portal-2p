@@ -509,8 +509,13 @@ const Eyebrow = ({ children, style }: { children: ReactNode; style?: CSSProperti
       letterSpacing: 2,
       textTransform: "uppercase",
       color: T.dim,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      lineHeight: 1.2,
       ...style,
     }}
+
   >
     {children}
   </div>
@@ -886,34 +891,53 @@ const GraficoSemanal = ({
 
   return (
     <Card delay={delay} style={{ padding: "20px 24px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ width: 7, height: 7, borderRadius: 999, background: dot }} />
-          <Eyebrow>{titulo}</Eyebrow>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0,1fr) auto",
+          alignItems: "center",
+          columnGap: 20,
+          marginBottom: 14,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <span style={{ width: 7, height: 7, borderRadius: 999, background: dot, flexShrink: 0 }} />
+          <div style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <Eyebrow>{titulo}</Eyebrow>
+          </div>
           <span style={{
-            marginLeft: 6,
-            fontSize: 16,
+            flexShrink: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            height: 30,
+            fontSize: 15,
             color: isCurrentWeek ? T.green : T.dim,
             fontWeight: 700,
-            padding: "2px 10px",
+            padding: "0 12px",
             borderRadius: 999,
             border: `1px solid ${isCurrentWeek ? "rgba(34,179,122,.4)" : "rgba(255,255,255,.14)"}`,
             background: isCurrentWeek ? "rgba(34,179,122,.12)" : "transparent",
             letterSpacing: -0.2,
+            whiteSpace: "nowrap",
+            lineHeight: 1,
           }}>
             Semana {safeIdx + 1}/{semanas.length}{isCurrentWeek ? " · atual" : ""}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 22, color: T.dim }}>
-          <span><span style={{ color: T.ink, fontWeight: 800 }}>R$ {fmtK(totalReal)}</span> / R$ {fmtK(totalProj)} proj</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 21, color: T.dim, whiteSpace: "nowrap", flexShrink: 0 }}>
+          <span style={{ whiteSpace: "nowrap", lineHeight: 1 }}>
+            <span style={{ color: T.ink, fontWeight: 800 }}>R$ {fmtK(totalReal)}</span>
+            <span style={{ color: T.faint }}> / </span>
+            R$ {fmtK(totalProj)} proj
+          </span>
           <span
             style={{
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              minWidth: 62,
-              height: 30,
-              padding: "0 12px",
+              minWidth: 66,
+              height: 32,
+              padding: "0 14px",
               borderRadius: 999,
               background: "rgba(34,179,122,.15)",
               border: "1px solid rgba(34,179,122,.4)",
@@ -922,6 +946,8 @@ const GraficoSemanal = ({
               fontStyle: "italic",
               fontSize: 20,
               letterSpacing: -0.3,
+              lineHeight: 1,
+              whiteSpace: "nowrap",
             }}
           >
             {p.toFixed(0)}%
@@ -929,9 +955,10 @@ const GraficoSemanal = ({
         </div>
       </div>
 
+
       <div style={{ display: "flex", alignItems: "stretch", gap: 12 }}>
         {arrowBtn("prev", canPrev, () => setIdx((i) => Math.max(0, i - 1)))}
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, minmax(0, 1fr))`, gap: 24, height: 150, alignItems: "end", width: "100%", maxWidth: 720, margin: "0 auto", justifyContent: "center", padding: "0 12px", flex: 1 }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, minmax(0, 1fr))`, gap: 24, height: 150, alignItems: "end", width: "100%", maxWidth: 720, margin: "0 auto", justifyContent: "center", padding: "38px 12px 0", boxSizing: "content-box", flex: 1 }}>
 
         {dados.map((d, i) => {
           const hoje = isCurrentWeek && d.dia === diaAtual;

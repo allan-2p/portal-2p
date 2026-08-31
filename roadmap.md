@@ -29,3 +29,8 @@
 - [x] Variações na listagem: ocultar a favorita no toggle, remover status individual e mostrar data de criação
 - [x] Marcar propostas de carregadores (Caroline/Ghustavo/Bruno) como 2P Carregadores no portal e no Salesforce
 - [x] TV: vendas de carregadores dos consultores da unidade
+
+## Pendências (31/08 fim de tarde)
+- [ ] Salesforce: proprietário das oportunidades = consultor da proposta (corrigir as 60 do Limpador Intersolar que ficaram como Portal 2P)
+- [ ] TV: revisão de UI/UX (números quebrando, alinhamento e quebras de linha estranhas) sem alterar os dados atuais
+- [ ] Limpadores de hoje com "Marketing 2P": redistribuir clientes e propostas igualmente entre Fernando Lira, Gabriel Kendi e Gabriel Sargiani (portal + Salesforce)
