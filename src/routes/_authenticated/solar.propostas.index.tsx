@@ -30,7 +30,7 @@ import { Copy, Eye, Pencil, Plus, Search, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { PROPOSTA_STATUS, podeCancelarPedido, podeEditarProposta } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
-import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
+import { formatSapNumero } from "@/lib/sap-numero";
 import { bloqueiaReenvioSap } from "@/lib/proposta-legado";
 import {
   excluirPropostaFn,
