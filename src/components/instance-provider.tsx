@@ -169,8 +169,13 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
       const meta = INSTANCES[instance];
       if (!meta.routes.includes(key)) return false;
       if (isAdmin) return true;
-      // A home da instância é sempre acessível — é a página inicial de todo usuário.
-      if (HOME_FEATURE[instance] === key) return true;
+      // A home da instância é liberada por padrão — exceto quando o perfil
+      // define outra página inicial nesta unidade (acesso restrito a telas
+      // específicas, como o Viewer de Carregadores).
+      if (HOME_FEATURE[instance] === key) {
+        const homeSubstituida = !!perfilRoute && perfilInstance === instance;
+        if (!homeSubstituida) return true;
+      }
       // Default deny: só libera com permissão explícita.
       if (grantedSet.has(`${instance}::${key}`)) return true;
       // Toggle explícito de área (ex.: "Acesso • Configurações") libera todas as
