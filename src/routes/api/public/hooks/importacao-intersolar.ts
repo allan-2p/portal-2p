@@ -36,7 +36,10 @@ type Linha = {
   forma_pagamento: string;
   vendedor: string;
   observacoes: string;
+  /** Faturamento direto ao cliente final (opcional). */
+  faturamento?: Record<string, string | boolean>;
 };
+
 
 const so = (v: unknown) => String(v ?? "").trim();
 const dig = (v: unknown) => so(v).replace(/\D/g, "");
@@ -245,13 +248,14 @@ export const Route = createFileRoute("/api/public/hooks/importacao-intersolar")(
               uf: so(cadastro["uf"]).toUpperCase(),
               contribuinte: cadastro["contribuinte"] === true,
               tipoNf: "venda",
-              finalidadeUso: null,
-              faturarClienteFinal: false,
-              faturamento: {},
+              finalidadeUso: l.faturamento ? "Uso e Consumo" : null,
+              faturarClienteFinal: !!l.faturamento,
+              faturamento: l.faturamento ?? {},
               formaPagamento: l.forma_pagamento === "pix" ? "pix" : "cartao_credito",
               condicaoPagamento: null,
               entregaDiferente: false,
               entrega: {},
+
               freteMod: "CIF",
               freteAreaRural: false,
               freteValor: 0,
