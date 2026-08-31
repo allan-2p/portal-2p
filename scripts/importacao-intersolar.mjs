@@ -63,7 +63,7 @@ for (let i = 0; i < alvo.length; i += lote) {
       "x-cron-secret": secret,
       authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ linhas: bloco, dryRun: flag("dry") }),
+    body: JSON.stringify({ linhas: bloco, dryRun: flag("dry"), continuarEmErro: flag("seguir") }),
   });
   const txt = await res.text();
   let json;
