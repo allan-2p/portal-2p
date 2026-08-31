@@ -1213,6 +1213,23 @@ function NovaPropostaSolarPage() {
     () => money2(itens.reduce((s, i) => s + i.valor * i.qtd, 0)),
     [itens],
   );
+  // Cupom encontrado pelo código digitado (lista em cache ou busca ao vivo).
+  const cupomEncontrado = useMemo((): SolarCupom | null => {
+    const alvo = cupomCodigo.trim().toUpperCase();
+    if (!alvo || !/^[A-Z0-9\-_]{3,20}$/.test(alvo)) return null;
+    return (
+      (cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo) ??
+      (cupomLookupQ.data && cupomLookupQ.data.codigo.trim().toUpperCase() === alvo
+        ? cupomLookupQ.data
+        : null) ??
+      null
+    );
+  }, [cupomCodigo, cuponsQ.data, cupomLookupQ.data]);
+
+  // Se o uso registrado do cupom é desta própria proposta em edição, ele não
+  // conta como "já utilizado" (o servidor faz o mesmo desconto ao salvar).
+  const cupomUsoProprioQ = useSolarCupomUsoProprio(cupomEncontrado?.id ?? null, propostaId);
+
   // Validação do cupom (código, status, validade, uso e vínculo com cliente)
   const cupomCheck = useMemo((): {
     status: "vazio" | "carregando" | "ok" | "erro";
@@ -1228,11 +1245,7 @@ function NovaPropostaSolarPage() {
       return { status: "erro", cupom: null, mensagem: "Código inválido: use de 3 a 20 caracteres (letras, números, hífen ou underscore)." };
 
 
-    const achado =
-      ((cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo) ??
-        (cupomLookupQ.data && cupomLookupQ.data.codigo.trim().toUpperCase() === alvo
-          ? cupomLookupQ.data
-          : null)) ?? null;
+    const achado = cupomEncontrado;
     if (!achado) {
       if (cupomLookupQ.isLoading || cupomLookupQ.isFetching)
         return { status: "carregando", cupom: null, mensagem: "Validando cupom..." };
