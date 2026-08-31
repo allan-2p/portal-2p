@@ -33,3 +33,4 @@
 ## Pendências (31/08 fim de tarde)
 - [ ] Salesforce: proprietário das oportunidades = consultor da proposta (corrigir as 60 do Limpador Intersolar que ficaram como Portal 2P)
 - [ ] TV: revisão de UI/UX (números quebrando, alinhamento e quebras de linha estranhas) sem alterar os dados atuais
+- [ ] Limpadores de hoje com "Marketing 2P": redistribuir clientes e propostas igualmente entre Fernando Lira, Gabriel Kendi e Gabriel Sargiani (portal + Salesforce)
