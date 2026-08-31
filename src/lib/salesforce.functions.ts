@@ -955,6 +955,8 @@ export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
       lastPurchase,
       firstPurchase,
       wonRate: decided ? totalCount / decided : 0,
+      avgPurchaseIntervalDays,
+      daysSinceLastPurchase,
     } as SalesforceAccountHistory;
   });
 
