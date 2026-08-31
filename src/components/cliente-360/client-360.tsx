@@ -402,6 +402,20 @@ function BannerStats({ account, history }: { account: SalesforceAccount; history
       />
       <MiniStat label="Ticket médio" value={fmt(history?.avgTicket ?? null)} />
       <MiniStat label="Última compra" value={date(history?.lastPurchase)} />
+      <MiniStat
+        label="Tempo médio de compra"
+        value={
+          history?.avgPurchaseIntervalDays != null
+            ? `${history.avgPurchaseIntervalDays} dias`
+            : "—"
+        }
+      />
+      <MiniStat
+        label="Dias desde a última"
+        value={
+          history?.daysSinceLastPurchase != null ? `${history.daysSinceLastPurchase} dias` : "—"
+        }
+      />
     </div>
   );
 }
