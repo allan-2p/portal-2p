@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { cnpjValido, cpfValido } from "@/lib/cnpj";
-import { motivoCancelamentoValido } from "@/lib/cancelamento-motivos";
+import { motivoCancelamentoValido, validarObsCancelamento } from "@/lib/cancelamento-motivos";
 import {
   CARREGADORES_CONFIG_FALLBACK,
   aliquotasDoItem,
@@ -725,18 +725,28 @@ async function nomeDoAtor(context: any): Promise<string | null> {
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
-    const i = (input ?? {}) as { id?: unknown; status?: unknown; entregueEm?: unknown; motivo?: unknown };
+    const i = (input ?? {}) as {
+      id?: unknown;
+      status?: unknown;
+      entregueEm?: unknown;
+      motivo?: unknown;
+      observacao?: unknown;
+    };
     if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
     if (typeof i.status !== "string" || !i.status) throw new Error("Status inválido.");
     // Cancelamento manual exige um motivo (mesma picklist do Salesforce), que
-    // fica registrado no pedido e alimenta a oportunidade (Loss_Reason__c).
+    // fica registrado no pedido e alimenta a oportunidade (Loss_Reason__c),
+    // e uma observação escrita pelo vendedor explicando o caso.
     let motivo: string | undefined;
+    let observacao: string | undefined;
     if (i.status === "Cancelado") {
       if (!motivoCancelamentoValido(i.motivo)) {
         throw new Error("Informe o motivo do cancelamento.");
       }
       motivo = i.motivo;
+      observacao = validarObsCancelamento(i.observacao);
     }
+
     // Baixa manual de entrega: a data é obrigatória (o analista informa quando
     // a transportadora entregou de fato, que raramente é "agora").
     let entregueEm: string | undefined;
@@ -750,7 +760,13 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
       }
       entregueEm = d.toISOString();
     }
-    return { id: i.id, status: i.status, ...(entregueEm ? { entregueEm } : {}), ...(motivo ? { motivo } : {}) };
+    return {
+      id: i.id,
+      status: i.status,
+      ...(entregueEm ? { entregueEm } : {}),
+      ...(motivo ? { motivo } : {}),
+      ...(observacao ? { observacao } : {}),
+    };
   })
   .handler(async ({ data, context }) => {
     const db = await repo();
@@ -847,19 +863,28 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
 
     const motivoCancel = (data as { motivo?: string }).motivo;
     if (!motivoCancel) throw new Error("Informe o motivo do cancelamento.");
+    const obsCancel = validarObsCancelamento((data as { observacao?: string }).observacao);
 
     const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
-    const t = await aplicarTransicao(data.id, "Cancelado", "humano", { de, patch: { motivo_cancelamento: motivoCancel } });
+    const t = await aplicarTransicao(data.id, "Cancelado", "humano", {
+      de,
+      patch: { motivo_cancelamento: motivoCancel, motivo_cancelamento_obs: obsCancel },
+    });
     if (!t.ok) throw new Error(t.motivo ?? "Não foi possível cancelar o pedido.");
     await sincronizarSalesforceAoSalvar(data.id);
     let avisoEmail: string | null = null;
     try {
       const { efeitosCancelamento, avisoEnvioCancelamento } = await import("@/lib/proposta-cancelamento.server");
-      const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: motivoCancel });
+      const efeitos = await efeitosCancelamento(data.id, {
+        actorNome: await nomeDoAtor(context),
+        motivo: motivoCancel,
+        observacao: obsCancel,
+      });
       avisoEmail = avisoEnvioCancelamento(efeitos);
     } catch {
       avisoEmail = "FALHA ao notificar os setores por e-mail. Avise-os manualmente.";
     }
+
 
     return { ok: true, aviso: avisoEmail };
   });
@@ -868,12 +893,14 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
 export const excluirPropostaFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
-    const i = (input ?? {}) as { id?: unknown; motivo?: unknown };
+    const i = (input ?? {}) as { id?: unknown; motivo?: unknown; observacao?: unknown };
     if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
-    // O motivo é validado de fato no handler, quando sabemos se a exclusão
-    // vira cancelamento (pedido com ordem no SAP).
+    // O motivo e a observação são validados de fato no handler, quando sabemos
+    // se a exclusão vira cancelamento (pedido com ordem no SAP).
     const motivo = typeof i.motivo === "string" && i.motivo.trim() ? i.motivo.trim() : undefined;
-    return { id: i.id, ...(motivo ? { motivo } : {}) };
+    const observacao =
+      typeof i.observacao === "string" && i.observacao.trim() ? i.observacao.trim() : undefined;
+    return { id: i.id, ...(motivo ? { motivo } : {}), ...(observacao ? { observacao } : {}) };
   })
   .handler(async ({ data, context }) => {
     const db = await repo();
@@ -893,17 +920,22 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
       if (!motivoCancelamentoValido(motivoCancel)) {
         throw new Error("Informe o motivo do cancelamento.");
       }
+      const obsCancel = validarObsCancelamento((data as { observacao?: string }).observacao);
       const { aplicarTransicao } = await import("@/lib/proposta-transicao.server");
       const transicao = await aplicarTransicao(data.id, "Cancelado", "humano", {
         de,
-        patch: { motivo_cancelamento: motivoCancel },
+        patch: { motivo_cancelamento: motivoCancel, motivo_cancelamento_obs: obsCancel },
       });
       if (!transicao.ok) throw new Error(transicao.motivo ?? "Não foi possível cancelar o pedido.");
       await sincronizarSalesforceAoSalvar(data.id);
       let avisoEmail: string | null = null;
       try {
         const { efeitosCancelamento, avisoEnvioCancelamento } = await import("@/lib/proposta-cancelamento.server");
-        const efeitos = await efeitosCancelamento(data.id, { actorNome: await nomeDoAtor(context), motivo: motivoCancel });
+        const efeitos = await efeitosCancelamento(data.id, {
+          actorNome: await nomeDoAtor(context),
+          motivo: motivoCancel,
+          observacao: obsCancel,
+        });
         avisoEmail = avisoEnvioCancelamento(efeitos);
       } catch {
         avisoEmail = "FALHA ao notificar os setores por e-mail. Avise-os manualmente.";

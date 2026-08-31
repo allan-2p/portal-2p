@@ -403,8 +403,9 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <RodapeInfo rot="Finalizado por" val={p['finalizado_por_nome'] || "—"} />
         </div>
         {String(p['status'] ?? "") === "Cancelado" && (
-          <div className="mt-3 border-t border-border/60 pt-3">
+          <div className="mt-3 grid gap-2 border-t border-border/60 pt-3 sm:grid-cols-2">
             <RodapeInfo rot="Motivo do cancelamento" val={String(p['motivo_cancelamento'] ?? "").trim() || "—"} />
+            <RodapeInfo rot="Observações do cancelamento" val={String(p['motivo_cancelamento_obs'] ?? "").trim() || "—"} />
           </div>
         )}
       </div>

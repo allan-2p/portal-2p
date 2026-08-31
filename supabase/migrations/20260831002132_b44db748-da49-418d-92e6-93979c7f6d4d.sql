@@ -1,0 +1,2 @@
+ALTER TABLE public.propostas ADD COLUMN IF NOT EXISTS motivo_cancelamento_obs text;
+COMMENT ON COLUMN public.propostas.motivo_cancelamento_obs IS 'Texto livre obrigatório informado pelo vendedor ao cancelar o pedido, complementando a picklist motivo_cancelamento.';

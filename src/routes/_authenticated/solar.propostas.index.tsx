@@ -1,11 +1,12 @@
 import { CAMPOS_BUSCA, placeholderBusca } from "@/lib/propostas-busca";
-import { MOTIVOS_CANCELAMENTO } from "@/lib/cancelamento-motivos";
+import { MOTIVOS_CANCELAMENTO, OBS_CANCELAMENTO_MIN, OBS_CANCELAMENTO_MAX } from "@/lib/cancelamento-motivos";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { TableSkeletonRows, fetchingClass } from "@/components/ui/table-skeleton";
 
 import {
@@ -104,6 +105,7 @@ function PropostasSolarPage() {
   const [integracoesId, setIntegracoesId] = useState<string | null>(null);
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const [motivoCancel, setMotivoCancel] = useState("");
+  const [obsCancel, setObsCancel] = useState("");
   const podeExcluir = useCanDelete();
   const podeVerIntegracoes = useCan("admin.logs.integracoes");
 
@@ -167,12 +169,21 @@ function PropostasSolarPage() {
       toast.error("Informe o motivo do cancelamento.");
       return;
     }
+    if (ehCancelamentoSap && obsCancel.trim().length < OBS_CANCELAMENTO_MIN) {
+      toast.error(`Escreva uma observação com pelo menos ${OBS_CANCELAMENTO_MIN} caracteres.`);
+      return;
+    }
     try {
       const r = await excluirPropostaFn({
-        data: { id: excluirId, ...(motivoCancel ? { motivo: motivoCancel } : {}) },
+        data: {
+          id: excluirId,
+          ...(motivoCancel ? { motivo: motivoCancel } : {}),
+          ...(obsCancel.trim() ? { observacao: obsCancel.trim() } : {}),
+        },
       });
       setExcluirId(null);
       setMotivoCancel("");
+      setObsCancel("");
       if (r?.aviso) toast.warning(r.aviso, { duration: 10000 });
       else toast.success(ehCancelamentoSap ? "Pedido cancelado." : "Proposta excluída.");
       q.refetch();
@@ -180,6 +191,7 @@ function PropostasSolarPage() {
     } catch (e) {
       setExcluirId(null);
       setMotivoCancel("");
+      setObsCancel("");
       return toast.error((e as Error).message);
     }
   }
@@ -456,25 +468,41 @@ function PropostasSolarPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           {ehCancelamentoSap && (
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">
-                Motivo do cancelamento <span className="text-destructive">*</span>
-              </label>
-              <Select value={motivoCancel} onValueChange={setMotivoCancel}>
-                <SelectTrigger><SelectValue placeholder="Selecione o motivo…" /></SelectTrigger>
-                <SelectContent>
-                  {MOTIVOS_CANCELAMENTO.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  Motivo do cancelamento <span className="text-destructive">*</span>
+                </label>
+                <Select value={motivoCancel} onValueChange={setMotivoCancel}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o motivo…" /></SelectTrigger>
+                  <SelectContent>
+                    {MOTIVOS_CANCELAMENTO.map((m) => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  Observações do cancelamento <span className="text-destructive">*</span>
+                </label>
+                <Textarea
+                  value={obsCancel}
+                  onChange={(e) => setObsCancel(e.target.value.slice(0, OBS_CANCELAMENTO_MAX))}
+                  rows={3}
+                  placeholder="Explique o que aconteceu (o que o cliente pediu, o que deu errado, próximos passos)…"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Mínimo de {OBS_CANCELAMENTO_MIN} caracteres • {obsCancel.trim().length}/{OBS_CANCELAMENTO_MAX}
+                </p>
+              </div>
             </div>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => { setExcluirId(null); setMotivoCancel(""); }}>Voltar</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => { setExcluirId(null); setMotivoCancel(""); setObsCancel(""); }}>Voltar</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmarExclusao}
-              disabled={ehCancelamentoSap && !motivoCancel}
+              disabled={ehCancelamentoSap && (!motivoCancel || obsCancel.trim().length < OBS_CANCELAMENTO_MIN)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {ehCancelamentoSap ? "Sim, cancelar pedido" : "Sim, excluir"}
