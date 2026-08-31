@@ -149,7 +149,7 @@ function HomePage() {
   const { profile, user } = useAuth();
   const displayName = (profile?.full_name?.trim().split(/\s+/)[0]) || (user?.email?.split("@")[0]) || "";
   const [metaOpen, setMetaOpen] = useState(false);
-  type AgeKey = "all" | "7d" | "15-30" | "30-60" | "60+";
+  type AgeKey = "all" | "hoje" | "7d" | "15-30" | "30-60" | "60+";
   type ForecastKey = AgeKey | "semana" | "atrasados";
   const [forecastFilter, setForecastFilter] = useState<ForecastKey>("all");
   const [oppsAgeFilter, setOppsAgeFilter] = useState<AgeKey>("all");
@@ -317,6 +317,7 @@ function HomePage() {
     if (!createdISO) return false;
     const created = new Date(createdISO + "T00:00:00");
     const ageDays = Math.floor((todayStartRef.getTime() - created.getTime()) / 86400000);
+    if (key === "hoje") return ageDays === 0;
     if (key === "7d") return ageDays <= 7;
     if (key === "15-30") return ageDays >= 15 && ageDays <= 30;
     if (key === "30-60") return ageDays > 30 && ageDays <= 60;
@@ -1346,6 +1347,7 @@ function HomePage() {
             <div className="flex flex-wrap gap-1.5 mb-3 text-xs">
               {([
                 { k: "all", l: "Todos" },
+                { k: "hoje", l: "Hoje" },
                 { k: "7d", l: "≤ 7 dias" },
                 { k: "15-30", l: "15–30 dias" },
                 { k: "30-60", l: "30–60 dias" },

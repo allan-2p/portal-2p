@@ -823,6 +823,10 @@ export type SalesforceAccountHistory = {
   lastPurchase: string | null;
   firstPurchase: string | null;
   wonRate: number; // 0..1
+  /** Intervalo médio entre compras concluídas, em dias (null com < 2 compras). */
+  avgPurchaseIntervalDays: number | null;
+  /** Dias desde a última compra concluída. */
+  daysSinceLastPurchase: number | null;
 };
 
 function quarterOf(dateStr: string): { year: number; q: number } {
@@ -889,6 +893,8 @@ export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
     let lostCount = 0;
     let lastPurchase: string | null = null;
     let firstPurchase: string | null = null;
+    const purchaseDates: string[] = [];
+
 
     for (const r of rows) {
       const stage = r.StageName ?? "—";
@@ -903,6 +909,7 @@ export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
         totalLifetime += val;
         totalCount += 1;
         if (r.CloseDate) {
+          purchaseDates.push(r.CloseDate);
           if (!lastPurchase || r.CloseDate > lastPurchase) lastPurchase = r.CloseDate;
           if (!firstPurchase || r.CloseDate < firstPurchase) firstPurchase = r.CloseDate;
           const { year, q } = quarterOf(r.CloseDate);
@@ -922,6 +929,20 @@ export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
 
     const stages = [...stageMap.values()].sort((a, b) => b.total - a.total);
     const decided = totalCount + lostCount;
+
+    // Tempo médio de compra: média dos intervalos entre compras concluídas.
+    const dias = (a: string, b: string) =>
+      Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
+    const ordenadas = [...new Set(purchaseDates)].sort();
+    let avgPurchaseIntervalDays: number | null = null;
+    if (ordenadas.length >= 2) {
+      const total = dias(ordenadas[0]!, ordenadas[ordenadas.length - 1]!);
+      avgPurchaseIntervalDays = Math.round(total / (ordenadas.length - 1));
+    }
+    const daysSinceLastPurchase = lastPurchase
+      ? dias(lastPurchase, new Date().toISOString().slice(0, 10))
+      : null;
+
     return {
       quarters,
       stages,
@@ -934,6 +955,8 @@ export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
       lastPurchase,
       firstPurchase,
       wonRate: decided ? totalCount / decided : 0,
+      avgPurchaseIntervalDays,
+      daysSinceLastPurchase,
     } as SalesforceAccountHistory;
   });
 

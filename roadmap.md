@@ -5,3 +5,15 @@
 - [ ] Mapear por padrão os campos que faltavam: Nº SAP, frete, tipo de NF, desconto, total, margem, tabela de preço, previsão de fechamento, NF, datas de faturamento/coleta/entrega, transportadora, vendedor, quem criou/finalizou, feito através de, projeto vendido.
 - [ ] Enviar os produtos linha a linha (OpportunityLineItem) e gravar `proposta_itens` no Grupo 2P em todo salvamento (hoje só o backfill grava).
 - [ ] Reprocessar o pedido 60048 e a fila.
+
+## Perfil do cliente (360)
+- [x] Funil da visão geral: só propostas em aberto.
+- [x] Aba Propostas & pedidos: só histórico, separando ganhos e perdidos.
+- [x] Tempo médio de compra (e dias desde a última) no cabeçalho do perfil.
+
+## Home
+- [x] Funil de orçamentos: filtro "Hoje" (geração de hoje).
+
+## Pendentes
+- [ ] Página de Tarefas: entrar na tarefa, editar, concluir e alternar visualização (lista/cards).
+- [ ] Carregadores: exibir vendas de Caroline Gimenez, Ghustavo Novaes e Bruno Amaral com org "2P Carregadores" (aguardando confirmação da origem dos registros).
