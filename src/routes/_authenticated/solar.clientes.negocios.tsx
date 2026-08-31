@@ -2,21 +2,27 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Briefcase } from "lucide-react";
-import { zodValidator, fallback } from "@tanstack/zod-adapter";
-import { z } from "zod";
 
 import { getDossieClienteFn } from "@/lib/cliente-dossie.functions";
 
-const searchSchema = z.object({
-  instancia: fallback(z.string(), "solar").default("solar"),
-  sfId: fallback(z.string(), "").default(""),
-  doc: fallback(z.string(), "").default(""),
-  nome: fallback(z.string(), "").default(""),
-  tipo: fallback(z.string(), "ganhos").default("ganhos"),
-});
+type NegociosSearch = {
+  instancia: string;
+  sfId: string;
+  doc: string;
+  nome: string;
+  tipo: string;
+};
+
+const str = (v: unknown, fb: string) => (typeof v === "string" && v ? v : fb);
 
 export const Route = createFileRoute("/_authenticated/solar/clientes/negocios")({
-  validateSearch: zodValidator(searchSchema),
+  validateSearch: (search: Record<string, unknown>): NegociosSearch => ({
+    instancia: str(search.instancia, "solar"),
+    sfId: str(search.sfId, ""),
+    doc: str(search.doc, ""),
+    nome: str(search.nome, ""),
+    tipo: str(search.tipo, "ganhos"),
+  }),
   component: NegociosPage,
   head: () => ({
     meta: [
