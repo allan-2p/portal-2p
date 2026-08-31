@@ -93,6 +93,8 @@ export type ListarPropostasPaginaOpts = {
   donoSap?: string | null;
   /** Documentos dos clientes da carteira do consultor (casa `cliente_doc`). */
   donoDocs?: string[] | null;
+  /** Esconde variações não favoritas (uma linha por projeto). */
+  somenteFavoritas?: boolean;
 
   pagina?: number;
   porPagina?: number;
