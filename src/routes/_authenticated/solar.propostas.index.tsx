@@ -1,7 +1,7 @@
 import { CAMPOS_BUSCA, placeholderBusca } from "@/lib/propostas-busca";
 import { MOTIVOS_CANCELAMENTO, OBS_CANCELAMENTO_MIN, OBS_CANCELAMENTO_MAX } from "@/lib/cancelamento-motivos";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
