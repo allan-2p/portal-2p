@@ -41,6 +41,7 @@ const SOLAR_GESTOR: FeatureKey[] = [
 
 const CARREGADORES_VENDEDOR: FeatureKey[] = [
   "carregadores.home",
+  "carregadores.visao-geral",
   "carregadores.tarefas",
   "carregadores.clientes",
   "carregadores.propostas",

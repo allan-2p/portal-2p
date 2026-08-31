@@ -25,6 +25,7 @@ export type FeatureKey =
   | "clientes.ranking"
   | "atlas"
   | "carregadores.home"
+  | "carregadores.visao-geral"
   | "carregadores.tarefas"
   | "carregadores.clientes"
   | "carregadores.propostas"
@@ -125,6 +126,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
     swatch: "oklch(0.5 0.19 265)",
     routes: [
       "carregadores.home",
+      "carregadores.visao-geral",
       "carregadores.tarefas",
       "carregadores.clientes",
       "carregadores.propostas",
@@ -204,6 +206,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/solar/clientes/ranking": "clientes.ranking",
   "/solar/atlas": "atlas",
   "/carregadores": "carregadores.home",
+  "/carregadores/visao-geral": "carregadores.visao-geral",
   "/carregadores/tarefas": "carregadores.tarefas",
   "/carregadores/clientes": "carregadores.clientes",
   "/carregadores/clientes/cadastros": "carregadores.clientes",
@@ -272,6 +275,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "clientes.ranking": "Clientes • Ranking",
   atlas: "Atlas (AI)",
   "carregadores.home": "Carregadores • Home",
+  "carregadores.visao-geral": "Carregadores • Visão Geral",
   "carregadores.tarefas": "Carregadores • Tarefas",
   "carregadores.clientes": "Carregadores • Clientes",
   "carregadores.propostas": "Carregadores • Propostas",
