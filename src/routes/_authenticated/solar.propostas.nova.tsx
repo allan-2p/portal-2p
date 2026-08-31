@@ -478,7 +478,14 @@ function NovaPropostaSolarPage() {
       }
 
       if (typeof totais['ehKit'] === "boolean") setEhKit(totais['ehKit'] as boolean);
-      setVendido(totais['vendidoClienteFinal'] ? "sim" : "nao");
+      const escolhaVendido = String(totais['projetoVendido'] ?? "");
+      setVendido(
+        escolhaVendido === "sim" || escolhaVendido === "nao" || escolhaVendido === "estoque"
+          ? (escolhaVendido as "sim" | "nao" | "estoque")
+          : totais['vendidoClienteFinal']
+            ? "sim"
+            : "nao",
+      );
       setCupomCodigo(String(totais['cupom'] ?? ""));
       // Restaura exatamente o que foi salvo: modo (calculadora/lista) e, no modo
       // calculadora, todas as entradas + os itens gerados. Sem isso, reabrir a
@@ -1402,6 +1409,7 @@ function NovaPropostaSolarPage() {
           propostaId,
           propostaNome,
           vendidoClienteFinal: vendido === "sim",
+          projetoVendido: vendido,
           previsaoFechamento: previsao || null,
           listaPreco,
           ehKit: ehKit === true,
