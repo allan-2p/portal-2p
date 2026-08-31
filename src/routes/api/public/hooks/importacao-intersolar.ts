@@ -202,6 +202,44 @@ export const Route = createFileRoute("/api/public/hooks/importacao-intersolar")(
             }
             if (!cadastro) throw new Error("Cadastro do cliente não encontrado após a criação.");
 
+            // ---------- Cliente final (faturamento direto) ----------
+            // O SAP só precifica com o parceiro faturado cadastrado; no fluxo
+            // normal isso acontece no checkout. Aqui o orçamento já nasce com
+            // faturamento direto, então o mestre precisa existir antes.
+            if (l.faturamento) {
+              const docFat = dig(l.faturamento["doc"]);
+              const { enviarClienteParaSap } = await import("@/lib/sap-clientes.server");
+              const jaTem = await db.findClienteByDoc(docFat);
+              const r = await enviarClienteParaSap(
+                {
+                  doc: docFat,
+                  razao_social: so(l.faturamento["nome"]),
+                  ie: so(l.faturamento["ie"]),
+                  contribuinte: docFat.length === 11 ? false : l.faturamento["contribuinte"] === true,
+                  cliente_final: true,
+                  email: so(l.email),
+                  telefone: so(l.faturamento["telefone"]) || so(l.telefone),
+                  cep: dig(l.faturamento["cep"]),
+                  logradouro: so(l.faturamento["logradouro"]),
+                  numero: so(l.faturamento["numero"]),
+                  complemento: so(l.faturamento["complemento"]),
+                  bairro: so(l.faturamento["bairro"]),
+                  cidade: so(l.faturamento["cidade"]),
+                  uf: so(l.faturamento["uf"]),
+                  vendedor_sap: vend?.sap ?? so(cadastro["vendedor_sap"]),
+                  condicao_pgto_sap: so(cadastro["condicao_pgto_sap"]) || null,
+                  tabela_preco: so(cadastro["tabela_preco"]) || "2P-0001",
+                  numero_sap: so(jaTem[0]?.cliente?.["numero_sap"]) || null,
+                  integrador_sap: so(cadastro["numero_sap"]) || null,
+                  escopo_org: "solar",
+                } as any,
+                { tentativas: 2, retentarHttp5xx: false },
+              );
+              if (!r.ok) throw new Error(`Cadastro do cliente final no SAP falhou: ${r.erro}`);
+              item["cliente_final_sap"] = r.numero_sap;
+            }
+
+
             // ---------- Proposta (orçamento "Salvo") ----------
             const qtdL = Math.max(0, Math.round(num(l.qtd_limpador)));
             const qtdE = Math.max(0, Math.round(num(l.qtd_escova)));
