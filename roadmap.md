@@ -50,3 +50,8 @@
 - [ ] Pedidos SAP 17636 e 17633: alterar transportadora para SCHREIBER LOGÍSTICA LTDA no banco e no Salesforce.
 
 (sprint checkout pagamento/observacoes: concluído)
+
+## Carregadores — Visão Geral (31/08 noite)
+- [ ] Listar apenas pedidos com produtos do catálogo de carregadores (excluir kits/brindes/bonificação)
+- [ ] Exibir data da compra nas listagens
+- [ ] Filtro de período: mês, trimestre, ano e intervalo de datas
