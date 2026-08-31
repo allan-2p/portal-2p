@@ -187,7 +187,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         {p['observacoes'] ? (
           <div className="rounded-xl bg-muted/30 p-3 text-sm">
             <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-              Observações
+              Observações da Nota Fiscal
             </div>
             <p className="whitespace-pre-wrap">{String(p['observacoes'])}</p>
           </div>
@@ -196,7 +196,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         {podeVerInterno && p['observacoes_internas'] ? (
           <div className="rounded-xl bg-muted/40 p-3 text-sm">
             <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-              Observações internas
+              Observações do Pedido (interno)
             </div>
             <p className="whitespace-pre-wrap">{String(p['observacoes_internas'])}</p>
           </div>
@@ -474,9 +474,17 @@ export function PropostaDetalheDialog({
               )}
               {id && !somenteLeitura && (
                 <Button size="sm" className="gap-2" asChild>
-                  <Link to="/carregadores/propostas/nova" search={{ id }}>
-                    <Pencil className="h-4 w-4" /> Editar
-                  </Link>
+                  {/* A edição precisa abrir o checkout da própria instância da
+                      proposta — Solar não pode cair no wizard de Carregadores. */}
+                  {String((dq.data as Record<string, any> | null | undefined)?.['organizacao'] ?? "solar") === "solar" ? (
+                    <Link to="/solar/propostas/nova" search={{ id }}>
+                      <Pencil className="h-4 w-4" /> Editar
+                    </Link>
+                  ) : (
+                    <Link to="/carregadores/propostas/nova" search={{ id }}>
+                      <Pencil className="h-4 w-4" /> Editar
+                    </Link>
+                  )}
                 </Button>
               )}
               {id && somenteLeitura && (

@@ -46,6 +46,7 @@ import { useImagensPorPath } from "@/lib/produto-imagens";
 
 import { AlertCircle, Check, Eye, CheckCircle2, ChevronsUpDown, FileDown, Info, Loader2, Plus, Save, Trash2, TriangleAlert, Users, Zap } from "lucide-react";
 import { CondicaoPagamentoSelect } from "@/components/condicao-pagamento-select";
+import { condicaoDaFormaPagamento, motivoCondicaoTravada } from "@/lib/condicao-pagamento-forma";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -374,6 +375,7 @@ function PropostaCarregadoresPage() {
           : null,
 
         observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
+        observacoesInternas: ((data as any).observacoes_internas as string | null) ?? "",
         itens: itens.length ? itens : [novoItem()],
       });
       setConsultorProposta(((data as any).consultor_nome as string | null) ?? null);
@@ -627,6 +629,23 @@ function PropostaCarregadoresPage() {
 
   // Boleto a prazo exige condição de pagamento cadastrada no cliente + crédito aprovado.
   const prazo = usePrazoLiberado(String(state.doc ?? ""));
+
+  // A forma de pagamento define a condição enviada ao SAP; apenas o boleto a
+  // prazo deixa o consultor escolher o prazo.
+  const condicaoTravadaCarregadores = condicaoDaFormaPagamento(state.formaPagamento);
+  useEffect(() => {
+    if (!condicaoTravadaCarregadores) return;
+    setState((s) =>
+      s.condicaoPagamento === condicaoTravadaCarregadores.codigo &&
+      s.condicaoPagamentoDescricao === condicaoTravadaCarregadores.descricao
+        ? s
+        : {
+            ...s,
+            condicaoPagamento: condicaoTravadaCarregadores.codigo,
+            condicaoPagamentoDescricao: condicaoTravadaCarregadores.descricao,
+          },
+    );
+  }, [condicaoTravadaCarregadores]);
   useEffect(() => {
     if (!prazo.liberado && !prazo.carregando && state.formaPagamento === "boleto_prazo") {
       setState((s) => ({ ...s, formaPagamento: "" as CarregadoresState["formaPagamento"] }));
@@ -1296,6 +1315,7 @@ function PropostaCarregadoresPage() {
           transportadora: state.freteMod === "FOB" || !state.freteMod ? null : state.transportadora,
 
           observacoes: observacoesFinal.trim() || null,
+          observacoesInternas: state.observacoesInternas.trim() || null,
           itens: state.itens
             .filter((i) => i.produtoId)
             .map((i) => ({ produtoId: i.produtoId, qtd: i.qtd, valor: money2(i.valor) })),
@@ -2613,18 +2633,41 @@ function PropostaCarregadoresPage() {
                         onChangeDescricao={(v) => set("condicaoPagamentoDescricao", v)}
                         clienteDoc={String(state.doc ?? "")}
                         valorTotal={d.valorTotalProposta}
+                        disabled={!!condicaoTravadaCarregadores}
                       />
+                      {motivoCondicaoTravada(state.formaPagamento) ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {motivoCondicaoTravada(state.formaPagamento)}
+                        </p>
+                      ) : null}
                     </Field>
                   </>
                 )}
 
-                <Field label="Observações finais">
+                <Field label="Observações do Pedido">
+                  <Textarea
+                    rows={3}
+                    value={state.observacoesInternas}
+                    placeholder="Anotações internas do pedido"
+                    onChange={(e) => set("observacoesInternas", e.target.value)}
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Uso interno do portal — não sai na nota fiscal nem vai para o SAP.
+                  </p>
+                </Field>
+
+                <Field label="Observações da Nota Fiscal">
                   <Textarea
                     rows={4}
                     value={state.observacoes}
-                    placeholder="Observações da proposta"
+                    placeholder="Observações que saem na nota fiscal"
                     onChange={(e) => set("observacoes", e.target.value)}
                   />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Vai para a NF/SAP. Contato e telefone do cliente
+                    {state.entregaDiferente ? ", endereço de entrega" : ""} e transportadora já são
+                    incluídos automaticamente — não precisa repetir aqui.
+                  </p>
                   {avisoUsoConsumo ? (
                     <p className="mt-2 text-xs text-muted-foreground">
                       Este aviso será incluído automaticamente nas observações da proposta: “{avisoUsoConsumo}”

@@ -44,3 +44,5 @@
 - [ ] Banco Grupo 2P: criar coluna `observacoes_internas` em `propostas` (DDL pendente — conexão psql falhou nesta rodada).
 
 - [ ] Bug: botão Editar em proposta Solar leva para o checkout de Carregadores (rota deve seguir a organizacao da proposta).
+
+(sprint checkout pagamento/observacoes: concluído)

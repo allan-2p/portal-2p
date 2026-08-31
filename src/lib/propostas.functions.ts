@@ -54,6 +54,8 @@ export type SalvarPropostaInput = {
     prazo: number;
   } | null;
   observacoes: string | null;
+  /** Observações internas do pedido — não vão para a NF nem para o SAP. */
+  observacoesInternas?: string | null;
   /** Proposta originada de indicação (Carregadores). */
   indicacao: boolean;
   padrinhoId: string | null;
@@ -195,6 +197,7 @@ function validar(input: any): SalvarPropostaInput {
     freteValor,
     transportadora,
     observacoes: input.observacoes ? String(input.observacoes) : null,
+    observacoesInternas: input.observacoesInternas ? String(input.observacoesInternas) : null,
     indicacao: !!input.indicacao,
     padrinhoId: input.padrinhoId ? String(input.padrinhoId) : null,
     itens,
@@ -344,6 +347,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       transportadora: data.transportadora,
 
       observacoes: data.observacoes ?? "",
+      observacoesInternas: data.observacoesInternas ?? "",
       itens: data.itens.map((i, idx) => ({
         key: String(idx),
         produtoId: i.produtoId,
@@ -431,6 +435,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       transportadora_id: data.transportadora?.id ?? null,
       frete_prazo: data.transportadora?.prazo ?? null,
       observacoes: data.observacoes,
+      observacoes_internas: data.observacoesInternas ?? null,
 
       indicacao: data.indicacao,
       padrinho_id: data.indicacao ? padrinhoId : null,

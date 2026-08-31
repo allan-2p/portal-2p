@@ -41,6 +41,8 @@ export type SalvarPropostaSolarInput = {
   transportadora: { id: string; nome: string; documento: string; total: number; prazo: number } | null;
   cupomCodigo: string | null;
   observacoes: string | null;
+  /** Observações internas do pedido — não vão para a NF nem para o SAP. */
+  observacoesInternas: string | null;
   calculo: Record<string, unknown> | null;
   itens: { produtoId: string; qtd: number }[];
 };
@@ -170,6 +172,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
         : null,
     cupomCodigo: i.cupomCodigo ? String(i.cupomCodigo).trim().slice(0, 40) : null,
     observacoes: i.observacoes ? String(i.observacoes) : null,
+    observacoesInternas: i.observacoesInternas ? String(i.observacoesInternas) : null,
     calculo: i.calculo && typeof i.calculo === "object" ? (i.calculo as Record<string, unknown>) : null,
     itens,
   };
@@ -439,6 +442,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       transportadora_id: data.transportadora?.id ?? null,
       frete_prazo: data.transportadora?.prazo ?? null,
       observacoes: data.observacoes,
+      observacoes_internas: data.observacoesInternas,
       itens,
       totais: { ...totais, calculo: data.calculo },
     };

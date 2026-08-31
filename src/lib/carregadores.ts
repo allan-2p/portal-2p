@@ -232,6 +232,8 @@ export type CarregadoresState = {
   /** Transportadora escolhida na cotação (CIF). */
   transportadora: CarregadoresTransportadora | null;
   observacoes: string;
+  /** Observações internas do pedido — não vão para a NF nem para o SAP. */
+  observacoesInternas: string;
   itens: CarregadoresItem[];
 };
 
@@ -420,6 +422,7 @@ export function novoEstado(): CarregadoresState {
     transportadora: null,
 
     observacoes: OBSERVACOES_PADRAO,
+    observacoesInternas: "",
     itens: [novoItem()],
   };
 }
