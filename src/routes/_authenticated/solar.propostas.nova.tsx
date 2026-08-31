@@ -86,6 +86,7 @@ import {
   useSolarCalcConfig,
   useSolarCupons,
   useSolarCupomPorCodigo,
+  useSolarCupomUsoProprio,
 
   type SolarCupom,
   useSolarGeradores,
@@ -1212,6 +1213,23 @@ function NovaPropostaSolarPage() {
     () => money2(itens.reduce((s, i) => s + i.valor * i.qtd, 0)),
     [itens],
   );
+  // Cupom encontrado pelo código digitado (lista em cache ou busca ao vivo).
+  const cupomEncontrado = useMemo((): SolarCupom | null => {
+    const alvo = cupomCodigo.trim().toUpperCase();
+    if (!alvo || !/^[A-Z0-9\-_]{3,20}$/.test(alvo)) return null;
+    return (
+      (cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo) ??
+      (cupomLookupQ.data && cupomLookupQ.data.codigo.trim().toUpperCase() === alvo
+        ? cupomLookupQ.data
+        : null) ??
+      null
+    );
+  }, [cupomCodigo, cuponsQ.data, cupomLookupQ.data]);
+
+  // Se o uso registrado do cupom é desta própria proposta em edição, ele não
+  // conta como "já utilizado" (o servidor faz o mesmo desconto ao salvar).
+  const cupomUsoProprioQ = useSolarCupomUsoProprio(cupomEncontrado?.id ?? null, propostaId);
+
   // Validação do cupom (código, status, validade, uso e vínculo com cliente)
   const cupomCheck = useMemo((): {
     status: "vazio" | "carregando" | "ok" | "erro";
@@ -1227,11 +1245,7 @@ function NovaPropostaSolarPage() {
       return { status: "erro", cupom: null, mensagem: "Código inválido: use de 3 a 20 caracteres (letras, números, hífen ou underscore)." };
 
 
-    const achado =
-      ((cuponsQ.data ?? []).find((c) => c.codigo.trim().toUpperCase() === alvo) ??
-        (cupomLookupQ.data && cupomLookupQ.data.codigo.trim().toUpperCase() === alvo
-          ? cupomLookupQ.data
-          : null)) ?? null;
+    const achado = cupomEncontrado;
     if (!achado) {
       if (cupomLookupQ.isLoading || cupomLookupQ.isFetching)
         return { status: "carregando", cupom: null, mensagem: "Validando cupom..." };
@@ -1260,9 +1274,11 @@ function NovaPropostaSolarPage() {
           mensagem: `Cupom expirado em ${venc.toLocaleDateString("pt-BR")}.`,
         };
     }
-    if (!achado.reutilizavel && (achado.usos ?? 0) > 0)
+    // Usos que contam para o bloqueio: exclui o uso da própria proposta em edição.
+    const usosEfetivos = Math.max((achado.usos ?? 0) - (cupomUsoProprioQ.data ? 1 : 0), 0);
+    if (!achado.reutilizavel && usosEfetivos > 0)
       return { status: "erro", cupom: null, mensagem: "Cupom de uso único já utilizado." };
-    if (achado.limite_usos != null && (achado.usos ?? 0) >= Number(achado.limite_usos))
+    if (achado.limite_usos != null && usosEfetivos >= Number(achado.limite_usos))
       return {
         status: "erro",
         cupom: null,
@@ -1291,7 +1307,7 @@ function NovaPropostaSolarPage() {
       cupom: achado,
       mensagem: `Cupom ${achado.codigo} aplicado${detalhes.length ? `: ${detalhes.join(" + ")}` : ""}.`,
     };
-  }, [cuponsQ.data, cuponsQ.isLoading, cuponsQ.isError, cupomLookupQ.data, cupomLookupQ.isLoading, cupomLookupQ.isFetching, cupomLookupQ.isError, cupomCodigo, cliente, clienteDoc]);
+  }, [cupomEncontrado, cupomUsoProprioQ.data, cuponsQ.isLoading, cuponsQ.isError, cupomLookupQ.isLoading, cupomLookupQ.isFetching, cupomLookupQ.isError, cupomCodigo, cliente, clienteDoc]);
 
   const cupom = cupomCheck.cupom;
   const desconto = useMemo(() => {
