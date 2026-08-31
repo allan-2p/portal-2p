@@ -41,6 +41,13 @@ import { PermissionGate, useCan, useCanDelete } from "@/components/permission-ga
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 import { PropostasMobileCards } from "@/components/propostas-mobile-cards";
+import {
+  BotaoCriarVariacao,
+  LinhasVariacoes,
+  ToggleVariacoes,
+  numeroDaLinha,
+} from "@/components/propostas/variacoes";
+
 
 export const Route = createFileRoute("/_authenticated/solar/propostas/")({
   validateSearch: (s: Record<string, unknown>): { ver?: string } =>
