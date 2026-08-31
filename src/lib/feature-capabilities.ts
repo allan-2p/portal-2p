@@ -49,6 +49,7 @@ const MAP: Partial<Record<FeatureKey, CapabilityId[]>> = {
   fidelidade: V,
   // Operação — Carregadores
   "carregadores.home": V,
+  "carregadores.visao-geral": V,
   "carregadores.tarefas": VEC,
   "carregadores.propostas": VEC,
   "carregadores.pedidos": VE,

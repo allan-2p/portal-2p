@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Visão Geral de Carregadores vira tela com permissão própria**: nova feature `carregadores.visao-geral` (somente visualizar) na matriz de permissões — o item do menu e a rota `/carregadores/visao-geral` só aparecem para quem tem a tela liberada. Incluída nos perfis padrão de Carregadores (Vendedor/Gestor/Administrativo) e no perfil **Viewer | 2P Carregadores**.
 - **Importação Intersolar com faturamento direto**: quando a linha da carga fatura direto no cliente final (CPF), o hook `/api/public/hooks/importacao-intersolar` cadastra antes o parceiro faturado no SAP (mesma rotina do checkout). Sem esse cadastro o SAP recusava a simulação com "Não existe mestre de clientes para emissor ordem".
 
 - **Correção de zeros à esquerda em CNPJ/CPF**: documentos gravados sem o zero inicial (ex.: `2673975000106` em vez de `02.673.975/0001-06`) faziam o cliente aparecer como inválido/inexistente no checkout. O documento agora é normalizado ao salvar o cadastro (inclusive na importação de clientes de Carregadores) e a base do Grupo 2P foi corrigida: 451 clientes, 546 contatos e 2.640 propostas. Pendente: o cliente RSUL ENERGIA aparece duplicado (Solar e Carregadores com o mesmo CNPJ), então esse registro ficou sem normalizar.

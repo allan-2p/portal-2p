@@ -272,7 +272,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             )}
 
             {/* Módulo Carregadores — navegação exclusiva da instância */}
-            {(show("carregadores.home") || show("carregadores.tarefas") || show("carregadores.clientes") || show("carregadores.propostas") || show("carregadores.pedidos") || show("carregadores.produtos") || show("carregadores.comissoes") || show("carregadores.regras")) && (
+            {(show("carregadores.home") || show("carregadores.visao-geral") || show("carregadores.tarefas") || show("carregadores.clientes") || show("carregadores.propostas") || show("carregadores.pedidos") || show("carregadores.produtos") || show("carregadores.comissoes") || show("carregadores.regras")) && (
               <>
                 {!collapsed && (
                   <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -282,7 +282,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 {show("carregadores.home") && (
                   <NavLink item={{ to: "/carregadores", label: "Home", icon: Home }} active={pathname === "/carregadores"} collapsed={collapsed} />
                 )}
-                {show("carregadores.home") && (
+                {show("carregadores.visao-geral") && (
                   <NavLink item={{ to: "/carregadores/visao-geral", label: "Visão Geral", icon: BarChart3 }} active={pathname.startsWith("/carregadores/visao-geral")} collapsed={collapsed} />
                 )}
                 {show("carregadores.tarefas") && (

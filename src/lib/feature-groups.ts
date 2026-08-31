@@ -47,6 +47,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "cupons",
       "fidelidade",
       "carregadores.home",
+      "carregadores.visao-geral",
       "carregadores.tarefas",
       "carregadores.propostas",
       "carregadores.pedidos",
