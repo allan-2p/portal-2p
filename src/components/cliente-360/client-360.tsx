@@ -466,6 +466,9 @@ const Empty = ({ children }: { children: ReactNode }) => (
   <div className="text-sm text-muted-foreground text-center py-8">{children}</div>
 );
 
+/** Etapas que já saíram do funil: concluídas, perdidas ou canceladas. */
+const ETAPA_FECHADA = /conclu|ganh|perd|cancel/i;
+
 /* ------------------------------------------------------------- Visão geral */
 
 function VisaoGeral({
