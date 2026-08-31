@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sincronizarDonoContaFn } from "@/lib/owner-sync.functions";
@@ -172,7 +173,9 @@ export function Client360({
               <VisaoGeral account={account} history={history} data={d} loading={dossieQ.isLoading} />
             </div>
           )}
-          {tab === "negocios" && <NegociosPanel data={d} loading={dossieQ.isLoading} />}
+          {tab === "negocios" && (
+            <NegociosPanel data={d} loading={dossieQ.isLoading} account={account} instancia={instancia} />
+          )}
           {tab === "casos" && <CasosPanel data={d} loading={q360.isLoading} />}
           {tab === "campo" && <CampoPanel data={d} loading={q360.isLoading} />}
           {tab === "financeiro" && <FinanceiroPanel data={d} history={history} loading={dossieQ.isLoading} />}
@@ -699,7 +702,17 @@ function HistoricoTabela({ rows, tone }: { rows: any[]; tone: "ganho" | "perdido
   );
 }
 
-function NegociosPanel({ data, loading }: { data: any; loading: boolean }) {
+function NegociosPanel({
+  data,
+  loading,
+  account,
+  instancia,
+}: {
+  data: any;
+  loading: boolean;
+  account: SalesforceAccount;
+  instancia: string;
+}) {
   const opps = (data?.opportunities ?? []) as any[];
   const ordena = (arr: any[]) =>
     arr.slice().sort((a, b) => String(b.closeDate ?? "").localeCompare(String(a.closeDate ?? "")));
@@ -707,6 +720,22 @@ function NegociosPanel({ data, loading }: { data: any; loading: boolean }) {
   const perdidas = ordena(opps.filter((o) => o.isClosed && !o.isWon));
   const sum = (arr: any[]) => arr.reduce((s, o) => s + (o.amount || 0), 0);
   const decididos = ganhas.length + perdidas.length;
+
+  const verTodos = (tipo: "ganhos" | "perdidos") => (
+    <Link
+      to="/solar/clientes/negocios"
+      search={{
+        instancia,
+        sfId: account.id || "",
+        doc: account.cnpj || "",
+        nome: account.name || "",
+        tipo,
+      }}
+      className="text-xs font-medium text-primary hover:underline"
+    >
+      Ver todos
+    </Link>
+  );
 
   return (
     <div className="space-y-4">
@@ -725,11 +754,19 @@ function NegociosPanel({ data, loading }: { data: any; loading: boolean }) {
         </Card>
       ) : (
         <>
-          <Card title={`Pedidos ganhos (${ganhas.length})`} icon={Briefcase}>
-            <HistoricoTabela rows={ganhas} tone="ganho" />
+          <Card
+            title={`Pedidos ganhos (${ganhas.length})`}
+            icon={Briefcase}
+            right={ganhas.length > 5 ? verTodos("ganhos") : undefined}
+          >
+            <HistoricoTabela rows={ganhas.slice(0, 5)} tone="ganho" />
           </Card>
-          <Card title={`Pedidos perdidos (${perdidas.length})`} icon={Briefcase}>
-            <HistoricoTabela rows={perdidas} tone="perdido" />
+          <Card
+            title={`Pedidos perdidos (${perdidas.length})`}
+            icon={Briefcase}
+            right={perdidas.length > 5 ? verTodos("perdidos") : undefined}
+          >
+            <HistoricoTabela rows={perdidas.slice(0, 5)} tone="perdido" />
           </Card>
         </>
       )}
@@ -1035,7 +1072,7 @@ function AtlasPanelTab({ account }: { account: SalesforceAccount }) {
 
   return (
     <Card
-      title="Atlas do cliente"
+      title="Mapa Mental"
       icon={Sparkles}
       right={
         <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">

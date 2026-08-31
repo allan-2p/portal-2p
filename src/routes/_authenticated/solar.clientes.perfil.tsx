@@ -62,10 +62,22 @@ function clienteParaAccount(c: Record<string, any>): SalesforceAccount {
     id: String(c["sf_account_id"] ?? ""),
     name: String(c["razao_social"] ?? c["nome_fantasia"] ?? "—"),
     cnpj: (c["doc"] as string | null) ?? null,
-    segment: (["A", "B", "C", "D"].includes(String(c["segmento"] ?? ""))
-      ? String(c["segmento"])
-      : null) as SalesforceAccount["segment"],
-    tubos: [],
+    segment: (() => {
+      const raw = String(
+        c["segmento"] ??
+          c["sfa_segmentacao_solar__c"] ??
+          (c["sfa_custom_fields"] as any)?.Segmentacao_Solar__c ??
+          "",
+      )
+        .trim()
+        .toUpperCase()
+        .charAt(0);
+      return (["A", "B", "C", "D"].includes(raw) ? raw : null) as SalesforceAccount["segment"];
+    })(),
+    tubos: String(c["sfa_segmentacao_tubos__c"] ?? "")
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean),
     ownerId: (c["consultor_id"] as string | null) ?? (c["created_by"] as string | null) ?? null,
     ownerName:
       ((c["consultor_nome"] as string | null) || (c["created_by_nome"] as string | null)) ?? null,

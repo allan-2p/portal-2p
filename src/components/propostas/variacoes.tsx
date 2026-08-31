@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { ChevronDown, ChevronRight, GitBranch, Loader2, Pencil, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fmtBRL } from "@/lib/carregadores";
-import { StatusDot } from "@/components/proposta-status-ui";
 import { podeEditarProposta } from "@/lib/proposta-status";
 import { numeroExibicao, resumoItens } from "@/lib/proposta-variacoes";
 import {
@@ -130,22 +129,22 @@ export function LinhasVariacoes({
 
   const irmas = q.data ?? [];
   if (irmas.length < 2) return null;
+  // A favorita já ocupa a linha principal: aqui só as demais variações.
+  const alternativas = irmas.filter((v) => !v.variacao_favorita);
+  if (!alternativas.length) return null;
+
+  const dataBR = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("pt-BR") : "—";
 
   return (
     <>
-      {irmas.map((v) => (
+      {alternativas.map((v) => (
         <tr key={v.id} className="border-b border-border/40 bg-surface-2/40 text-[12px]">
-          <td className="px-3 py-2 text-center">
-            <StatusDot status={v.status} />
-          </td>
+          <td className="px-3 py-2" />
           <td className="px-3 py-2">
             <div className="flex items-center gap-1.5 pl-4">
               <span className="font-semibold tabular-nums">{numeroExibicao(v as any)}</span>
-              {v.variacao_favorita && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                  <Star className="h-3 w-3 fill-current" /> favorita
-                </span>
-              )}
+              <span className="text-[11px] text-muted-foreground">{dataBR(v.created_at)}</span>
             </div>
             <div className="truncate pl-4 text-[11px] text-muted-foreground">{v.nome || resumoItens(v as any)}</div>
           </td>

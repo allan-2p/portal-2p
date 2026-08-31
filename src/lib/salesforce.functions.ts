@@ -1262,7 +1262,11 @@ export const OPP_DEFAULTS_CARREGADORES_TRI: OppFilters = {
     "Finalizado",
   ],
   tipoNfNotIn: ["Bonificação"],
-  ownerNameIn: ["Caroline Gimenez"],
+  // A TV mostra as vendas de carregadores dos três consultores da unidade.
+  // "Ghustavo Novaes" não tem usuário no Salesforce — as propostas dele são
+  // criadas pelo portal sob outro owner, por isso não entram nesta lista.
+  orgIn: ["2P Carregadores"],
+  ownerNameIn: ["Caroline Gimenez", "Bruno Amaral"],
   dateField: "CloseDate",
   dateLiteral: "THIS_QUARTER",
 };

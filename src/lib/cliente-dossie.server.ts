@@ -50,6 +50,10 @@ export type DossieHistorico = {
   lastPurchase: string | null;
   firstPurchase: string | null;
   wonRate: number;
+  /** Intervalo médio (dias) entre compras concluídas. */
+  avgPurchaseIntervalDays: number | null;
+  /** Dias desde a última compra concluída. */
+  daysSinceLastPurchase: number | null;
 };
 
 export type DossieCliente = { historico: DossieHistorico; negocios: DossieNegocio[] };
@@ -207,6 +211,7 @@ export function agregarHistorico(negocios: DossieNegocio[]): DossieHistorico {
   let lostCount = 0;
   let lastPurchase: string | null = null;
   let firstPurchase: string | null = null;
+  const datasCompra: string[] = [];
 
   for (const n of negocios) {
     if ((n.tipoNf ?? "").toLowerCase().includes("bonifica")) continue;
@@ -222,6 +227,7 @@ export function agregarHistorico(negocios: DossieNegocio[]): DossieHistorico {
       if (n.closeDate) {
         if (!lastPurchase || n.closeDate > lastPurchase) lastPurchase = n.closeDate;
         if (!firstPurchase || n.closeDate < firstPurchase) firstPurchase = n.closeDate;
+        datasCompra.push(n.closeDate);
         const d = new Date(`${n.closeDate}T12:00:00Z`);
         const idx = qIndex.get(`${d.getUTCFullYear()}-Q${Math.floor(d.getUTCMonth() / 3) + 1}`);
         if (idx != null) {
@@ -238,6 +244,16 @@ export function agregarHistorico(negocios: DossieNegocio[]): DossieHistorico {
   }
 
   const decided = totalCount + lostCount;
+  const DIA = 86_400_000;
+  const ts = (d: string) => Date.parse(`${d}T12:00:00Z`);
+  const unicas = [...new Set(datasCompra)].sort();
+  const avgPurchaseIntervalDays =
+    unicas.length >= 2
+      ? Math.round((ts(unicas[unicas.length - 1]) - ts(unicas[0])) / DIA / (unicas.length - 1))
+      : null;
+  const daysSinceLastPurchase = lastPurchase
+    ? Math.max(0, Math.round((Date.now() - ts(lastPurchase)) / DIA))
+    : null;
   return {
     quarters,
     stages: [...stageMap.values()].sort((a, b) => b.total - a.total),
@@ -250,6 +266,8 @@ export function agregarHistorico(negocios: DossieNegocio[]): DossieHistorico {
     lastPurchase,
     firstPurchase,
     wonRate: decided ? totalCount / decided : 0,
+    avgPurchaseIntervalDays,
+    daysSinceLastPurchase,
   };
 }
 

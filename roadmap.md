@@ -17,3 +17,15 @@
 ## Pendentes
 - [x] Página de Tarefas: abrir tarefa, registrar interação, adiar, concluir, nova tarefa e visualização lista/calendário.
 - [ ] Carregadores: exibir vendas de Caroline Gimenez, Ghustavo Novaes e Bruno Amaral com org "2P Carregadores" (aguardando confirmação da origem dos registros).
+
+## Pendências (31/08 tarde)
+- [ ] Perfil do cliente: tempo médio de compra e dias desde a última compra
+- [ ] Perfil: segmentação correta (A/B/C/D)
+- [ ] Perfil: propostas/pedidos com 5 últimos ganhos + 5 perdidos e "ver todos"
+- [ ] Atlas do cliente: título apenas "Mapa Mental"
+- [ ] Excluir a variação de teste 60121-B
+- [ ] Org "2P Carregadores": oportunidades com "Carregador" no nome de Caroline Gimenez, Ghustavo Novaes e Bruno Amaral — atualizar Salesforce e portal; refletir na TV
+
+- [x] Variações na listagem: ocultar a favorita no toggle, remover status individual e mostrar data de criação
+- [x] Marcar propostas de carregadores (Caroline/Ghustavo/Bruno) como 2P Carregadores no portal e no Salesforce
+- [x] TV: vendas de carregadores dos consultores da unidade
