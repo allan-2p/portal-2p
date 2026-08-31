@@ -636,6 +636,8 @@ export const listarPropostasPaginaFn = createServerFn({ method: "POST" })
       createdByIn: Array.isArray(i["createdByIn"]) ? i["createdByIn"].map(String) : undefined,
       pagina: num(i["pagina"]),
       porPagina: num(i["porPagina"]),
+      // Uma linha por projeto: as variações ficam agrupadas sob a favorita.
+      somenteFavoritas: i["somenteFavoritas"] !== false,
     };
   })
   .handler(async ({ data, context }) => {
@@ -649,13 +651,39 @@ export const listarPropostasPaginaFn = createServerFn({ method: "POST" })
       (data.organizacao ?? "solar") as any,
       perm,
     );
-    return await db.listarPropostasPagina({
+    const pagina = await db.listarPropostasPagina({
       ...data,
       donoId: escopo.userId,
       donoSap: escopo.sap,
       donoDocs: escopo.docs,
     });
+
+    // Quantas variações cada projeto tem (para o "+N" na listagem).
+    const grupos = [
+      ...new Set(
+        pagina.rows
+          .map((r) => String(r["variacao_grupo"] ?? "").trim())
+          .filter(Boolean),
+      ),
+    ];
+    if (grupos.length) {
+      const irmas = await db.consultarPropostas(
+        { variacao_grupo: `in.(${grupos.join(",")})` },
+        { select: "id,variacao_grupo", limit: 1000 },
+      );
+      const contagem = new Map<string, number>();
+      for (const r of irmas) {
+        const g = String(r["variacao_grupo"] ?? "");
+        contagem.set(g, (contagem.get(g) ?? 0) + 1);
+      }
+      for (const r of pagina.rows) {
+        const g = String(r["variacao_grupo"] ?? "").trim();
+        if (g) r["variacoes_total"] = contagem.get(g) ?? 1;
+      }
+    }
+    return pagina;
   });
+
 
 
 /** Resumo de pagamento (Pix/boleto) dos pedidos de uma organização. */
