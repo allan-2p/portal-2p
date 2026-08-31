@@ -509,8 +509,13 @@ const Eyebrow = ({ children, style }: { children: ReactNode; style?: CSSProperti
       letterSpacing: 2,
       textTransform: "uppercase",
       color: T.dim,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      lineHeight: 1.2,
       ...style,
     }}
+
   >
     {children}
   </div>
