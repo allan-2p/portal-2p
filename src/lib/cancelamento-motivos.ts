@@ -1,8 +1,8 @@
 /**
  * Motivos de cancelamento de pedido — MESMOS valores da picklist
- * `Loss_Reason__c` do Salesforce (imagem de referência da org). Ao cancelar,
- * o motivo é gravado em `propostas.motivo_cancelamento`, aparece no detalhe
- * ("olhinho") e é enviado à oportunidade no Salesforce.
+ * `Motivo_de_cancelamento__c` do Salesforce. Ao cancelar, o motivo é gravado
+ * em `propostas.motivo_cancelamento`, aparece no detalhe ("olhinho") e é
+ * enviado à oportunidade no Salesforce (campo obrigatório na org).
  */
 export const MOTIVOS_CANCELAMENTO = [
   "Pedido Incorreto",
@@ -11,6 +11,7 @@ export const MOTIVOS_CANCELAMENTO = [
   "Erro de Emissão de NF",
   "Erro Interno",
   "Desistiu da Compra",
+  "Teste Interno",
 ] as const;
 
 export type MotivoCancelamento = (typeof MOTIVOS_CANCELAMENTO)[number];
@@ -20,7 +21,7 @@ export function motivoCancelamentoValido(v: unknown): v is MotivoCancelamento {
 }
 
 /** Tamanho mínimo/máximo da observação escrita pelo vendedor ao cancelar. */
-export const OBS_CANCELAMENTO_MIN = 15;
+export const OBS_CANCELAMENTO_MIN = 8;
 export const OBS_CANCELAMENTO_MAX = 500;
 
 /**
