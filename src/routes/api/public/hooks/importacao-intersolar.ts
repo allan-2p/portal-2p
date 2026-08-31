@@ -86,7 +86,7 @@ export const Route = createFileRoute("/api/public/hooks/importacao-intersolar")(
       POST: async ({ request }) => {
         if (!cronSecretValido(request)) return new Response("Unauthorized", { status: 401 });
 
-        const body = (await request.json()) as { linhas?: Linha[]; dryRun?: boolean };
+        const body = (await request.json()) as { linhas?: Linha[]; dryRun?: boolean; continuarEmErro?: boolean };
         const linhas = Array.isArray(body.linhas) ? body.linhas : [];
         const dryRun = body.dryRun === true;
 
@@ -216,8 +216,19 @@ export const Route = createFileRoute("/api/public/hooks/importacao-intersolar")(
               `Valor fechado: R$ ${totalVenda.toFixed(2).replace(".", ",")} (${formaLabel}). Frete bonificado.` +
               (obs ? ` ${obs}` : "");
 
+            // Reexecução da carga: reaproveita a proposta já criada para o mesmo
+            // cliente/nome (tabela `propostas` vive no banco do Grupo 2P).
+            const { grupo2pRest } = await import("@/lib/grupo2p-db.server");
+            const busca = await grupo2pRest(
+              `propostas?select=id,created_at&organizacao=eq.solar&cliente_doc=eq.${doc}&nome=eq.Limpador%202P%20%E2%80%94%20Intersolar%202026&order=created_at.asc&limit=1`,
+            );
+            const achadas = busca.ok && busca.text ? (JSON.parse(busca.text) as { id: string }[]) : [];
+            const propostaExistente = achadas[0] ? String(achadas[0].id) : null;
+
+
+
             const base = {
-              propostaId: null as string | null,
+              propostaId: propostaExistente,
               propostaNome: "Limpador 2P — Intersolar 2026",
               vendidoClienteFinal: false,
               projetoVendido: "nao" as const,
@@ -255,15 +266,31 @@ export const Route = createFileRoute("/api/public/hooks/importacao-intersolar")(
             const salva = await salvarPropostaSolar({ data: base });
             item["proposta"] = salva.numero;
             item["proposta_id"] = salva.id;
+            item["reaproveitada"] = !!propostaExistente;
             item["subtotal_simulado"] = salva.totais.subtotal;
             item["total_venda"] = totalVenda;
 
-            // ---------- Cupom de fechamento ----------
+            // ---------- Fechamento do valor combinado ----------
             const desconto = money2(Number(salva.totais.subtotal) - totalVenda);
             if (desconto < -0.01) {
-              item["excecao"] = `Vendido acima do preço simulado (diferença R$ ${desconto.toFixed(2)}) — tratar manualmente.`;
-              item["total_final"] = salva.totais.valorTotal;
+              // Venda acima do preço simulado: o acréscimo entra como valor de
+              // frete cobrado (CIF, não bonificado) para o total bater.
+              const acrescimo = money2(-desconto);
+              const refeita = await salvarPropostaSolar({
+                data: {
+                  ...base,
+                  propostaId: salva.id,
+                  freteValor: acrescimo,
+                  freteBonificado: false,
+                  observacoes:
+                    observacoes.replace("Frete bonificado.", "") +
+                    ` Ajuste de R$ ${acrescimo.toFixed(2).replace(".", ",")} lançado no campo de frete para fechar o valor combinado.`,
+                },
+              });
+              item["acrescimo_frete"] = acrescimo;
+              item["total_final"] = refeita.totais.valorTotal;
             } else if (desconto > 0.01) {
+
               const codigo = `INTERSOLAR26-${String(l.linha).padStart(2, "0")}`;
               const validade = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10);
               const { data: jaTem } = await supabaseAdmin
@@ -303,11 +330,15 @@ export const Route = createFileRoute("/api/public/hooks/importacao-intersolar")(
           } catch (e) {
             item["erro"] = (e as Error).message;
             relatorio.push(item);
+            // `continuarEmErro`: a carga segue e as linhas com falha ficam no
+            // relatório final para tratamento manual (parceiro do SAP, etc.).
+            if (body.continuarEmErro === true) continue;
             return new Response(JSON.stringify({ ok: false, relatorio }), {
               status: 500,
               headers: { "content-type": "application/json", "cache-control": "no-store" },
             });
           }
+
         }
 
         return new Response(JSON.stringify({ ok: true, relatorio }), {
