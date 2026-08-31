@@ -86,6 +86,7 @@ export const listarVariacoesFn = createServerFn({ method: "POST" })
       forma_pagamento: (r["forma_pagamento"] as string | null) ?? null,
       frete_valor: Number(r["frete_valor"] ?? 0),
       updated_at: (r["updated_at"] as string | null) ?? null,
+      created_at: (r["created_at"] as string | null) ?? null,
     }));
   });
 
