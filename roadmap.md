@@ -45,4 +45,8 @@
 
 - [ ] Bug: botão Editar em proposta Solar leva para o checkout de Carregadores (rota deve seguir a organizacao da proposta).
 
+## Ajustes rápidos (31/08 noite)
+- [ ] Cor do status "Aguardando Pagamento": tornar o laranja mais claro para não confundir com vermelho.
+- [ ] Pedidos SAP 17636 e 17633: alterar transportadora para SCHREIBER LOGÍSTICA LTDA no banco e no Salesforce.
+
 (sprint checkout pagamento/observacoes: concluído)
