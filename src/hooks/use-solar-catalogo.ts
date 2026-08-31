@@ -285,7 +285,28 @@ export function useSolarCupomPorCodigo(codigo: string, habilitado: boolean) {
     },
   });
 }
-
+/**
+ * Diz se o cupom já foi usado PELA PRÓPRIA proposta em edição.
+ * Cupons de uso único contam o histórico inteiro em `usos`; sem este ajuste,
+ * reabrir uma proposta salva com cupom marcaria "já utilizado" e zeraria o
+ * desconto na tela. O servidor já desconsidera a própria proposta ao salvar.
+ */
+export function useSolarCupomUsoProprio(cupomId: string | null, propostaId: string | null) {
+  return useQuery({
+    queryKey: ["solar-cupom-uso-proprio", cupomId, propostaId],
+    enabled: !!cupomId && !!propostaId,
+    staleTime: 30_000,
+    queryFn: async (): Promise<boolean> => {
+      const { count, error } = await supabase
+        .from("solar_cupom_usos")
+        .select("id", { count: "exact", head: true })
+        .eq("cupom_id", cupomId!)
+        .eq("proposta_id", propostaId!);
+      if (error) throw error;
+      return (count ?? 0) > 0;
+    },
+  });
+}
 
 export function useSolarInvalidate() {
   const qc = useQueryClient();
