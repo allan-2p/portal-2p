@@ -85,7 +85,12 @@ type Row = {
   finalizado_em?: string | null;
   sap_ov_status?: string | null;
   sf_status?: string | null;
+  variacao_grupo?: string | null;
+  variacao_sufixo?: string | null;
+  variacao_favorita?: boolean | null;
+  variacoes_total?: number | null;
 };
+
 
 const STATUS = PROPOSTA_STATUS;
 
