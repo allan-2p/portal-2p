@@ -24,6 +24,7 @@ import { WizardActionBar } from "@/components/wizard-action-bar";
 import { FreteCotacao } from "@/components/frete-cotacao";
 import { FreteDedicado } from "@/components/frete-dedicado";
 import { CondicaoPagamentoSelect } from "@/components/condicao-pagamento-select";
+import { condicaoDaFormaPagamento, motivoCondicaoTravada } from "@/lib/condicao-pagamento-forma";
 import { toast } from "sonner";
 import {
   Building2,
@@ -207,6 +208,8 @@ function NovaPropostaSolarPage() {
   const [vendido, setVendido] = useState<"sim" | "nao" | "estoque">("nao");
   const [previsao, setPrevisao] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  /** Observações internas: ficam só no portal, nunca vão para a NF/SAP. */
+  const [observacoesInternas, setObservacoesInternas] = useState("");
 
   // Etapa 2
   const [tipoNf, setTipoNf] = useState("venda");
@@ -231,6 +234,16 @@ function NovaPropostaSolarPage() {
   const [formaPagamento, setFormaPagamento] = useState<string>("");
   const [condicaoPagamento, setCondicaoPagamento] = useState<string>("");
   const [condicaoPagamentoDescricao, setCondicaoPagamentoDescricao] = useState<string>("");
+
+  // A forma de pagamento define a condição enviada ao SAP; só boleto a prazo
+  // deixa o consultor escolher o prazo.
+  const condicaoTravada = condicaoDaFormaPagamento(formaPagamento);
+  useEffect(() => {
+    if (!condicaoTravada) return;
+    if (condicaoPagamento !== condicaoTravada.codigo) setCondicaoPagamento(condicaoTravada.codigo);
+    if (condicaoPagamentoDescricao !== condicaoTravada.descricao)
+      setCondicaoPagamentoDescricao(condicaoTravada.descricao);
+  }, [condicaoTravada, condicaoPagamento, condicaoPagamentoDescricao]);
 
   // Etapa 3
   const [modo, setModo] = useState<"calculadora" | "lista">("calculadora");
@@ -297,7 +310,7 @@ function NovaPropostaSolarPage() {
 
   // Alterações não salvas: assinatura dos campos que compõem a proposta.
   const assinaturaProposta = JSON.stringify([
-    propostaNome, clienteDoc, vendido, previsao, observacoes,
+    propostaNome, clienteDoc, vendido, previsao, observacoes, observacoesInternas,
     tipoNf, faturarClienteFinal, fatTipoDoc, fat, fatContribuinte, finalidadeUso,
     formaPagamento, condicaoPagamento, modo, listaPreco, ehKit,
     itensCalc, itensLista, geradorId, microModelo, microQtd, moduloId,
@@ -445,6 +458,7 @@ function NovaPropostaSolarPage() {
       setClienteDoc(String(p['cliente_doc'] ?? ""));
       setPrevisao(String(p['previsao_fechamento'] ?? ""));
       setObservacoes(String(p['observacoes'] ?? ""));
+      setObservacoesInternas(String(p['observacoes_internas'] ?? ""));
       setTipoNf(String(p['tipo_nf'] ?? "venda"));
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
       setFat((p['faturamento'] as Record<string, string>) ?? {});
@@ -1464,6 +1478,7 @@ function NovaPropostaSolarPage() {
           transportadora,
           cupomCodigo: cupomCodigo || null,
           observacoes: observacoes || null,
+          observacoesInternas: observacoesInternas || null,
           // Guarda o estado completo da etapa 3 para que reabrir a proposta
           // devolva exatamente o que foi salvo (modo + entradas da calculadora).
           calculo: {
@@ -2981,9 +2996,11 @@ function NovaPropostaSolarPage() {
                       className="md:max-w-sm"
                       clienteDoc={String(cliente?.['doc'] ?? clienteDoc ?? "")}
                       valorTotal={total}
+                      disabled={!!condicaoTravada}
                     />
                     <p className="text-xs text-muted-foreground">
-                      É o prazo enviado ao SAP — só aparecem as condições ativas com parcelas automáticas.
+                      {motivoCondicaoTravada(formaPagamento) ??
+                        "É o prazo enviado ao SAP — só aparecem as condições ativas com parcelas automáticas."}
                     </p>
                     {tentou && !condicaoPagamento && <Erro>Obrigatória para concluir.</Erro>}
                   </div>
@@ -2991,8 +3008,27 @@ function NovaPropostaSolarPage() {
               )}
 
               <div className="space-y-3">
-                <div className="text-sm font-medium">Observações</div>
+                <div className="text-sm font-medium">Observações do Pedido</div>
+                <Textarea
+                  value={observacoesInternas}
+                  onChange={(e) => setObservacoesInternas(e.target.value)}
+                  rows={3}
+                  placeholder="Anotações internas do pedido"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Uso interno do portal — não sai na nota fiscal nem vai para o SAP.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Observações da Nota Fiscal</div>
                 <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} />
+                <p className="text-xs text-muted-foreground">
+                  Vai para a NF/SAP. Já são incluídos automaticamente: contato e telefone do cliente
+                  {entregaDiferente ? ", endereço de entrega" : ""}
+                  {transportadora ? ", transportadora" : ""}
+                  {ehKit ? ", aviso de kit fotovoltaico" : ""} — não precisa repetir aqui.
+                </p>
               </div>
 
               <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-border">

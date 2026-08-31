@@ -31,6 +31,7 @@ export function CondicaoPagamentoSelect({
   className,
   clienteDoc,
   valorTotal,
+  disabled,
 }: {
   value: string;
   onChange: (codigo: string) => void;
@@ -38,6 +39,8 @@ export function CondicaoPagamentoSelect({
   className?: string;
   clienteDoc?: string | null;
   valorTotal?: number;
+  /** Travado quando a forma de pagamento já define a condição. */
+  disabled?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const q = useQuery({
@@ -77,19 +80,24 @@ export function CondicaoPagamentoSelect({
 
   return (
     <div className="space-y-1.5">
-      <Popover open={aberto} onOpenChange={setAberto}>
+      <Popover open={disabled ? false : aberto} onOpenChange={(o) => !disabled && setAberto(o)}>
         <PopoverTrigger asChild>
           <Button
             type="button"
             variant="outline"
             role="combobox"
             aria-expanded={aberto}
-            className={cn("w-full justify-between font-normal", className)}
+            disabled={disabled}
+            className={cn("w-full justify-between font-normal", disabled && "opacity-100", className)}
           >
             <span className="truncate">
               {selecionada?.label ?? (q.isLoading ? "Carregando…" : "Selecione a condição")}
             </span>
-            <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            {disabled ? (
+              <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -123,7 +131,7 @@ export function CondicaoPagamentoSelect({
         </PopoverContent>
       </Popover>
 
-      {controlar && !cobre && (
+      {!disabled && controlar && !cobre && (
         <p className="text-xs text-muted-foreground">
           Condições a prazo bloqueadas:{" "}
           {vigente
@@ -131,7 +139,7 @@ export function CondicaoPagamentoSelect({
             : "cliente sem crédito liberado. Peça a análise no cadastro do cliente."}
         </p>
       )}
-      {controlar && cobre && vigente && (
+      {!disabled && controlar && cobre && vigente && (
         <p className="text-xs text-muted-foreground">
           Crédito liberado {fmtBRL(vigente.limite)} · análise {vigente.numero}
           {vigente.validade ? ` · válido até ${new Date(`${vigente.validade}T12:00:00`).toLocaleDateString("pt-BR")}` : ""}
