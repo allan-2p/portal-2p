@@ -44,6 +44,7 @@ import { Route as AuthenticatedMarketingCohortRouteImport } from './routes/_auth
 import { Route as AuthenticatedMarketingCacRouteImport } from './routes/_authenticated/marketing.cac'
 import { Route as AuthenticatedFinanceiroCreditoRouteImport } from './routes/_authenticated/financeiro.credito'
 import { Route as AuthenticatedFinanceiroCondicoesRouteImport } from './routes/_authenticated/financeiro.condicoes'
+import { Route as AuthenticatedCarregadoresVisaoGeralRouteImport } from './routes/_authenticated/carregadores.visao-geral'
 import { Route as AuthenticatedCarregadoresTarefasRouteImport } from './routes/_authenticated/carregadores.tarefas'
 import { Route as AuthenticatedCarregadoresRegrasRouteImport } from './routes/_authenticated/carregadores.regras'
 import { Route as AuthenticatedCarregadoresPropostasRouteImport } from './routes/_authenticated/carregadores.propostas'
@@ -311,6 +312,12 @@ const AuthenticatedFinanceiroCondicoesRoute =
     id: '/condicoes',
     path: '/condicoes',
     getParentRoute: () => AuthenticatedFinanceiroRoute,
+  } as any)
+const AuthenticatedCarregadoresVisaoGeralRoute =
+  AuthenticatedCarregadoresVisaoGeralRouteImport.update({
+    id: '/carregadores/visao-geral',
+    path: '/carregadores/visao-geral',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCarregadoresTarefasRoute =
   AuthenticatedCarregadoresTarefasRouteImport.update({
@@ -793,6 +800,7 @@ export interface FileRoutesByFullPath {
   '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   '/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
+  '/carregadores/visao-geral': typeof AuthenticatedCarregadoresVisaoGeralRoute
   '/financeiro/condicoes': typeof AuthenticatedFinanceiroCondicoesRoute
   '/financeiro/credito': typeof AuthenticatedFinanceiroCreditoRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
@@ -898,6 +906,7 @@ export interface FileRoutesByTo {
   '/carregadores/produtos': typeof AuthenticatedCarregadoresProdutosRoute
   '/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
+  '/carregadores/visao-geral': typeof AuthenticatedCarregadoresVisaoGeralRoute
   '/financeiro/condicoes': typeof AuthenticatedFinanceiroCondicoesRoute
   '/financeiro/credito': typeof AuthenticatedFinanceiroCreditoRoute
   '/marketing/cac': typeof AuthenticatedMarketingCacRoute
@@ -1009,6 +1018,7 @@ export interface FileRoutesById {
   '/_authenticated/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   '/_authenticated/carregadores/regras': typeof AuthenticatedCarregadoresRegrasRoute
   '/_authenticated/carregadores/tarefas': typeof AuthenticatedCarregadoresTarefasRoute
+  '/_authenticated/carregadores/visao-geral': typeof AuthenticatedCarregadoresVisaoGeralRoute
   '/_authenticated/financeiro/condicoes': typeof AuthenticatedFinanceiroCondicoesRoute
   '/_authenticated/financeiro/credito': typeof AuthenticatedFinanceiroCreditoRoute
   '/_authenticated/marketing/cac': typeof AuthenticatedMarketingCacRoute
@@ -1120,6 +1130,7 @@ export interface FileRouteTypes {
     | '/carregadores/propostas'
     | '/carregadores/regras'
     | '/carregadores/tarefas'
+    | '/carregadores/visao-geral'
     | '/financeiro/condicoes'
     | '/financeiro/credito'
     | '/marketing/cac'
@@ -1225,6 +1236,7 @@ export interface FileRouteTypes {
     | '/carregadores/produtos'
     | '/carregadores/regras'
     | '/carregadores/tarefas'
+    | '/carregadores/visao-geral'
     | '/financeiro/condicoes'
     | '/financeiro/credito'
     | '/marketing/cac'
@@ -1335,6 +1347,7 @@ export interface FileRouteTypes {
     | '/_authenticated/carregadores/propostas'
     | '/_authenticated/carregadores/regras'
     | '/_authenticated/carregadores/tarefas'
+    | '/_authenticated/carregadores/visao-geral'
     | '/_authenticated/financeiro/condicoes'
     | '/_authenticated/financeiro/credito'
     | '/_authenticated/marketing/cac'
@@ -1675,6 +1688,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/financeiro/condicoes'
       preLoaderRoute: typeof AuthenticatedFinanceiroCondicoesRouteImport
       parentRoute: typeof AuthenticatedFinanceiroRoute
+    }
+    '/_authenticated/carregadores/visao-geral': {
+      id: '/_authenticated/carregadores/visao-geral'
+      path: '/carregadores/visao-geral'
+      fullPath: '/carregadores/visao-geral'
+      preLoaderRoute: typeof AuthenticatedCarregadoresVisaoGeralRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/carregadores/tarefas': {
       id: '/_authenticated/carregadores/tarefas'
@@ -2361,6 +2381,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarregadoresPropostasRoute: typeof AuthenticatedCarregadoresPropostasRouteWithChildren
   AuthenticatedCarregadoresRegrasRoute: typeof AuthenticatedCarregadoresRegrasRoute
   AuthenticatedCarregadoresTarefasRoute: typeof AuthenticatedCarregadoresTarefasRoute
+  AuthenticatedCarregadoresVisaoGeralRoute: typeof AuthenticatedCarregadoresVisaoGeralRoute
   AuthenticatedSolarAtlasRoute: typeof AuthenticatedSolarAtlasRoute
   AuthenticatedSolarClientesRoute: typeof AuthenticatedSolarClientesRouteWithChildren
   AuthenticatedSolarCuponsRoute: typeof AuthenticatedSolarCuponsRoute
@@ -2424,6 +2445,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCarregadoresPropostasRouteWithChildren,
   AuthenticatedCarregadoresRegrasRoute: AuthenticatedCarregadoresRegrasRoute,
   AuthenticatedCarregadoresTarefasRoute: AuthenticatedCarregadoresTarefasRoute,
+  AuthenticatedCarregadoresVisaoGeralRoute:
+    AuthenticatedCarregadoresVisaoGeralRoute,
   AuthenticatedSolarAtlasRoute: AuthenticatedSolarAtlasRoute,
   AuthenticatedSolarClientesRoute: AuthenticatedSolarClientesRouteWithChildren,
   AuthenticatedSolarCuponsRoute: AuthenticatedSolarCuponsRoute,

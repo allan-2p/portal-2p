@@ -282,6 +282,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 {show("carregadores.home") && (
                   <NavLink item={{ to: "/carregadores", label: "Home", icon: Home }} active={pathname === "/carregadores"} collapsed={collapsed} />
                 )}
+                {show("carregadores.home") && (
+                  <NavLink item={{ to: "/carregadores/visao-geral", label: "Visão Geral", icon: BarChart3 }} active={pathname.startsWith("/carregadores/visao-geral")} collapsed={collapsed} />
+                )}
                 {show("carregadores.tarefas") && (
                   <NavLink item={{ to: "/carregadores/tarefas", label: "Tarefas", icon: Calendar }} active={pathname.startsWith("/carregadores/tarefas")} collapsed={collapsed} />
                 )}
