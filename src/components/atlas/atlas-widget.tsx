@@ -81,9 +81,15 @@ export function AtlasWidget() {
 
   const contexto = useMemo(() => `o usuário está na tela ${pathname}`, [pathname]);
 
-  if (!user) return null;
+  // Não exibe o botão flutuante dentro das telas de proposta (criação, edição,
+  // visualização) para não competir com o formulário/composer da proposta.
+  const esconderNaProposta =
+    pathname.startsWith("/carregadores/propostas") || pathname.startsWith("/solar/propostas");
+
+  if (!user || esconderNaProposta) return null;
 
   return (
+
     <>
       {!aberto && (
         <button
