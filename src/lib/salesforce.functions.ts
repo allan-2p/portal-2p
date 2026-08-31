@@ -893,6 +893,8 @@ export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
     let lostCount = 0;
     let lastPurchase: string | null = null;
     let firstPurchase: string | null = null;
+    const purchaseDates: string[] = [];
+
 
     for (const r of rows) {
       const stage = r.StageName ?? "—";
@@ -907,6 +909,7 @@ export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
         totalLifetime += val;
         totalCount += 1;
         if (r.CloseDate) {
+          purchaseDates.push(r.CloseDate);
           if (!lastPurchase || r.CloseDate > lastPurchase) lastPurchase = r.CloseDate;
           if (!firstPurchase || r.CloseDate < firstPurchase) firstPurchase = r.CloseDate;
           const { year, q } = quarterOf(r.CloseDate);
