@@ -284,7 +284,7 @@ export const CAMPOS_OPPORTUNITY: CampoOrigem[] = [
     sfPadrao: "StageName",
     tipo: "picklist",
     obrigatorio: true,
-    valor: (r) => stage(r["status"]),
+    valor: (r) => stage(r["status"], escolhaProjetoVendido(r)),
   },
   {
     chave: "data_fechamento",
@@ -496,10 +496,10 @@ export const CAMPOS_OPPORTUNITY: CampoOrigem[] = [
   {
     chave: "projeto_vendido",
     rotulo: "Projeto vendido?",
-    origem: "Derivado do status do pedido",
+    origem: "Escolha \"O projeto já foi vendido para o cliente final?\" na proposta",
     sfPadrao: "Projeto_Vendido__c",
     tipo: "picklist",
-    valor: (r) => projetoVendido(r["status"]),
+    valor: (r) => projetoVendido(r),
   },
   {
     chave: "criada_por",
