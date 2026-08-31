@@ -200,7 +200,7 @@ export async function efeitosCancelamento(
       `<strong>Unidade:</strong> ${esc(org)}`,
       `<strong>Cancelado por:</strong> ${esc(ctx.actorNome ?? "Portal 2P")}`,
       ctx.motivo ? `<strong>Motivo:</strong> ${esc(ctx.motivo)}` : "",
-      ctx.observacao ? `<strong>Observações:</strong> ${esc(ctx.observacao)}` : "",
+      ctx.observacao ? `<strong>Descrição do cancelamento:</strong> ${esc(ctx.observacao)}` : "",
     ].filter(Boolean);
 
     const html = layoutEmail(
