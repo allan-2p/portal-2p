@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Viewer de Carregadores enxerga todos os pedidos**: o perfil **Viewer | 2P Carregadores** ganhou leitura total (View All Records, somente leitura) em Propostas, Pedidos e Contas da unidade Carregadores — antes a Visão Geral aparecia vazia porque o escopo de consultor filtrava tudo. O menu também deixa de exibir a **Home** quando o perfil define outra página inicial na unidade.
 - **Acesso restrito por perfil Viewer**: o perfil **Viewer | 2P Carregadores** passa a definir a página inicial do usuário — quem tem esse perfil entra direto em Carregadores → Visão Geral. O usuário Rodrigo Sanches teve o acesso direto à unidade Solar removido e fica restrito a Carregadores (apenas a tela Visão Geral liberada).
 - **Visão Geral de Carregadores vira tela com permissão própria**: nova feature `carregadores.visao-geral` (somente visualizar) na matriz de permissões — o item do menu e a rota `/carregadores/visao-geral` só aparecem para quem tem a tela liberada. Incluída nos perfis padrão de Carregadores (Vendedor/Gestor/Administrativo) e no perfil **Viewer | 2P Carregadores**.
 - **Importação Intersolar com faturamento direto**: quando a linha da carga fatura direto no cliente final (CPF), o hook `/api/public/hooks/importacao-intersolar` cadastra antes o parceiro faturado no SAP (mesma rotina do checkout). Sem esse cadastro o SAP recusava a simulação com "Não existe mestre de clientes para emissor ordem".
