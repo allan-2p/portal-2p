@@ -14,6 +14,8 @@ export type SalvarPropostaSolarInput = {
   propostaId: string | null;
   propostaNome: string;
   vendidoClienteFinal: boolean;
+  /** Escolha tri-state da tela: sim | nao | estoque (usada no StageName do Salesforce). */
+  projetoVendido: "sim" | "nao" | "estoque";
   previsaoFechamento: string | null;
   listaPreco: string;
   /** Venda em formato de kit (afeta regras comerciais/fiscais adiante). */
@@ -64,7 +66,12 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     .filter((x: any) => x.qtd > 0);
   if (!itens.length) throw new Error("Adicione ao menos um produto.");
 
-  const vendidoClienteFinal = i.vendidoClienteFinal === true;
+  const projetoVendido = ["sim", "nao", "estoque"].includes(String(i.projetoVendido))
+    ? (String(i.projetoVendido) as "sim" | "nao" | "estoque")
+    : i.vendidoClienteFinal === true
+      ? "sim"
+      : "nao";
+  const vendidoClienteFinal = projetoVendido === "sim" || i.vendidoClienteFinal === true;
   const previsao = /^\d{4}-\d{2}-\d{2}$/.test(String(i.previsaoFechamento ?? ""))
     ? String(i.previsaoFechamento)
     : null;
@@ -118,6 +125,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     propostaId: i.propostaId ? String(i.propostaId) : null,
     propostaNome,
     vendidoClienteFinal,
+    projetoVendido,
     previsaoFechamento: previsao,
     listaPreco: /^\d{2}$/.test(String(i.listaPreco)) ? String(i.listaPreco) : "01",
     ehKit: i.ehKit === true,
@@ -370,6 +378,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       listaPreco: data.listaPreco,
       ehKit: data.ehKit,
       vendidoClienteFinal: data.vendidoClienteFinal,
+      projetoVendido: data.projetoVendido,
     };
     // Finalidade de uso:
     //  - pedido faturado ao CLIENTE FINAL → vale o que foi preenchido na tela

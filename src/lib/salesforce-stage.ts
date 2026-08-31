@@ -8,30 +8,50 @@ const so = (v: unknown) => String(v ?? "").trim();
 
 /**
  * Valores EXATOS da picklist StageName: Projeto Não Fechado, Projeto Fechado,
- * Estoque, Em Negociação, Pedido Concluído, Pedido Cancelado, Oportunidade Perdida.
+ * Estoque, Em Negociação (não é mais gerada pelo portal), Pedido Concluído,
+ * Pedido Cancelado, Oportunidade Perdida (só manual, nunca enviada).
+ *
+ * Mapa usado apenas para exibição na tela de mapeamento de campos.
  */
 export const SF_STAGE_POR_STATUS: Record<string, string> = {
-  "Salvo": "Em Negociação",
-  "Aguardando Pagamento": "Em Negociação",
-  "Processando": "Projeto Fechado",
-  "Separação": "Estoque",
+  "Salvo": "Projeto Fechado / Projeto Não Fechado / Estoque (conforme a escolha na proposta)",
+  "Aguardando Pagamento": "Pedido Concluído",
+  "Processando": "Pedido Concluído",
+  "Separação": "Pedido Concluído",
   "Faturado": "Pedido Concluído",
   "Coletado": "Pedido Concluído",
   "Entregue": "Pedido Concluído",
   "Cancelado": "Pedido Cancelado",
 };
 
-export function stage(status: unknown): string {
-  const exato = SF_STAGE_POR_STATUS[so(status)];
-  if (exato) return exato;
-  const s = so(status).toLowerCase();
-  if (s.includes("cancel")) return "Pedido Cancelado";
-  if (s.includes("perdid")) return "Oportunidade Perdida";
-  if (s.includes("entregue") || s.includes("coletad") || s.includes("faturad")) return "Pedido Concluído";
-  if (s.includes("separa") || s.includes("estoque")) return "Estoque";
-  if (s.includes("process")) return "Projeto Fechado";
-  return "Em Negociação";
+/** Escolha "O projeto já foi vendido para o cliente final?" (tri-state). */
+export function escolhaProjetoVendido(row: Record<string, any>): "sim" | "nao" | "estoque" {
+  const t = (row?.["totais"] ?? {}) as Record<string, any>;
+  const v = so(t["projetoVendido"]).toLowerCase();
+  if (v === "sim" || v === "nao" || v === "estoque") return v;
+  return t["vendidoClienteFinal"] === true ? "sim" : "nao";
 }
+
+/** Rótulo enviado em `Projeto_Vendido__c`. */
+export function projetoVendidoLabel(row: Record<string, any>): string {
+  const v = escolhaProjetoVendido(row);
+  return v === "sim" ? "Sim" : v === "estoque" ? "Estoque" : "Não";
+}
+
+/**
+ * StageName do pedido. "Salvo" segue a escolha da proposta; de Aguardando
+ * Pagamento em diante é sempre "Pedido Concluído".
+ */
+export function stage(status: unknown, projetoVendido?: unknown): string {
+  const s = so(status);
+  if (s === "Cancelado") return "Pedido Cancelado";
+  if (s && s !== "Salvo") return "Pedido Concluído";
+  const v = so(projetoVendido).toLowerCase();
+  if (v === "sim") return "Projeto Fechado";
+  if (v === "estoque") return "Estoque";
+  return "Projeto Não Fechado";
+}
+
 
 /**
  * Organização da oportunidade (picklist `Org_Oportunidade__c`).

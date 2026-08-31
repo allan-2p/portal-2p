@@ -7,7 +7,7 @@
  * ao usuário seja exatamente o payload enviado.
  */
 
-import { stage, orgOportunidade } from "./salesforce-stage";
+import { stage, orgOportunidade, escolhaProjetoVendido, projetoVendidoLabel } from "./salesforce-stage";
 
 export type SfObjeto = "Account" | "Opportunity";
 
@@ -117,14 +117,9 @@ export function tabelaPreco(row: Record<string, any>): string | null {
   return n >= 1 && n <= 5 ? String(n).padStart(2, "0") : null;
 }
 
-/** Projeto vendido? — derivado do status do pedido. */
-export function projetoVendido(status: unknown): string | null {
-  const s = so(status).toLowerCase();
-  if (!s) return null;
-  if (["faturado", "coletado", "entregue"].some((x) => s.includes(x))) return "Sim";
-  if (s.includes("separa") || s.includes("estoque") || s.includes("process")) return "Estoque";
-  if (s.includes("cancel") || s.includes("perdid")) return "Não";
-  return "Não";
+/** Projeto vendido? — escolha feita na proposta (Sim/Não/Estoque). */
+export function projetoVendido(row: Record<string, any>): string | null {
+  return projetoVendidoLabel(row ?? {});
 }
 
 
@@ -289,7 +284,7 @@ export const CAMPOS_OPPORTUNITY: CampoOrigem[] = [
     sfPadrao: "StageName",
     tipo: "picklist",
     obrigatorio: true,
-    valor: (r) => stage(r["status"]),
+    valor: (r) => stage(r["status"], escolhaProjetoVendido(r)),
   },
   {
     chave: "data_fechamento",
@@ -501,10 +496,10 @@ export const CAMPOS_OPPORTUNITY: CampoOrigem[] = [
   {
     chave: "projeto_vendido",
     rotulo: "Projeto vendido?",
-    origem: "Derivado do status do pedido",
+    origem: "Escolha \"O projeto já foi vendido para o cliente final?\" na proposta",
     sfPadrao: "Projeto_Vendido__c",
     tipo: "picklist",
-    valor: (r) => projetoVendido(r["status"]),
+    valor: (r) => projetoVendido(r),
   },
   {
     chave: "criada_por",

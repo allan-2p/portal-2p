@@ -12,7 +12,7 @@
 
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
-import { stage } from "./salesforce-stage";
+import { stage, escolhaProjetoVendido } from "./salesforce-stage";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
 
@@ -84,6 +84,19 @@ const digitos = (v: unknown) => so(v).replace(/\D/g, "");
  * (módulo puro, compartilhado com a tela de mapeamento de campos).
  */
 export { SF_STAGE_POR_STATUS, stage, orgOportunidade } from "./salesforce-stage";
+
+/**
+ * "Oportunidade Perdida" é marcada manualmente pelo comercial no Salesforce em
+ * pedidos que continuam "Salvo" no portal — o sync nunca pode sobrescrevê-la.
+ */
+async function stageAtual(oppId: string): Promise<string> {
+  try {
+    const r = await sf(`/sobjects/Opportunity/${oppId}?fields=StageName`);
+    return so(r?.StageName);
+  } catch {
+    return "";
+  }
+}
 
 
 async function acharAccount(doc: string, nome: string): Promise<string | null> {
@@ -252,7 +265,7 @@ export async function sincronizarPedidoSalesforce(
     const corpoBase: Record<string, unknown> = {
       Name: payload["Name"] ?? nomeOpp,
       AccountId: accountId,
-      StageName: payload["StageName"] ?? stage(row["status"]),
+      StageName: payload["StageName"] ?? stage(row["status"], escolhaProjetoVendido(row as Record<string, any>)),
       CloseDate: payload["CloseDate"],
       Amount: payload["Amount"],
       Description: payload["Description"],
@@ -273,6 +286,12 @@ export async function sincronizarPedidoSalesforce(
     // Vínculo: usa o sf_opp_id da proposta; se não houver, procura a
     // oportunidade já existente do mesmo pedido antes de criar uma nova.
     let oppId: string | null = existente || (await acharOpp(numero, nomeOpp));
+
+    // Pedido ainda "Salvo" e oportunidade marcada manualmente como perdida:
+    // mantém o estágio da org (os demais campos continuam sincronizando).
+    if (oppId && so(row["status"]) === "Salvo") {
+      if ((await stageAtual(oppId)) === "Oportunidade Perdida") delete corpoBase["StageName"];
+    }
 
     const enviar = (corpo: Record<string, unknown>) =>
       oppId
