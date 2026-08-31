@@ -205,3 +205,89 @@ export function LinhasVariacoes({
     </>
   );
 }
+
+/**
+ * Painel da etapa de finalização: mostra as variações do projeto e deixa
+ * escolher qual delas será concluída (a escolhida vira a favorita).
+ */
+export function PainelVariacoes({
+  propostaId,
+  rotaEdicao,
+}: {
+  propostaId: string;
+  rotaEdicao: "/solar/propostas/nova" | "/carregadores/propostas/nova";
+}) {
+  const qc = useQueryClient();
+  const [trocando, setTrocando] = useState<string | null>(null);
+  const q = useQuery({
+    queryKey: ["variacoes", propostaId],
+    queryFn: () => listarVariacoesFn({ data: { id: propostaId } }),
+    staleTime: 10_000,
+  });
+  const irmas = q.data ?? [];
+  if (irmas.length < 2) return null;
+
+  return (
+    <div className="glass rounded-2xl p-4 space-y-3">
+      <div>
+        <div className="text-sm font-semibold">Variações deste projeto</div>
+        <p className="text-xs text-muted-foreground">
+          Todas compartilham o mesmo número. Só a variação escolhida vira pedido e vai para o Salesforce.
+        </p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {irmas.map((v) => {
+          const atual = v.id === propostaId;
+          return (
+            <div
+              key={v.id}
+              className={`rounded-xl border p-3 text-sm ${atual ? "border-primary bg-primary/5" : "border-border"}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold tabular-nums">{numeroExibicao(v as any)}</span>
+                {v.variacao_favorita && (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-primary">
+                    <Star className="h-3 w-3 fill-current" /> favorita
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 truncate text-xs text-muted-foreground">{resumoItens(v as any)}</div>
+              <div className="mt-1 font-semibold tabular-nums">
+                {fmtBRL(Number((v.totais as any)?.["valorTotal"] ?? 0))}
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                {!atual && (
+                  <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
+                    <Link to={rotaEdicao} search={{ id: v.id }}>Abrir</Link>
+                  </Button>
+                )}
+                {!v.variacao_favorita && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    disabled={trocando === v.id}
+                    onClick={async () => {
+                      setTrocando(v.id);
+                      try {
+                        await marcarVariacaoFavoritaFn({ data: { id: v.id } });
+                        toast.success(`${numeroExibicao(v as any)} agora é a favorita.`);
+                        await qc.invalidateQueries({ queryKey: ["variacoes", propostaId] });
+                      } catch (e) {
+                        toast.error((e as Error).message);
+                      } finally {
+                        setTrocando(null);
+                      }
+                    }}
+                  >
+                    {trocando === v.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Usar esta"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
