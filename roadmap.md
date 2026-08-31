@@ -36,3 +36,11 @@
 - [x] Limpadores de hoje com "Marketing 2P": redistribuir clientes e propostas igualmente entre Fernando Lira, Gabriel Kendi e Gabriel Sargiani (portal + Salesforce)
 - [x] Transferir proposta 60055 (Roger Rodrigues) para Fernando Lira e 60054 (Ecio Mendes) para Gabriel Sargiani (portal + Salesforce: opp, conta e cliente)
 - [x] Cupom de desconto aparece no pedido mas não aplica o desconto (erro "Cupom de uso único já utilizado"); afeta vários pedidos de limpador — verificar se impacta outras propostas
+
+## Checkout — pagamento e observações (31/08 tarde)
+- [ ] Forma de pagamento trava a condição: cartão → 2PCC (CARTAO), boleto à vista → 2P00 (A VISTA), Pix → 2PPX (PIX), financiamento → 2P00. Só boleto a prazo deixa o consultor escolher.
+- [ ] Renomear "Observações" para "Observações da Nota Fiscal" (vai para o SAP) e criar "Observações do Pedido" (campo interno, não vai para NF/SAP) exibido acima.
+- [ ] Observações da NF: pré-preencher com contato do cliente e endereço de entrega quando diferente do faturamento; manter os avisos de impostos dos Carregadores (DIFAL/IPI/uso e consumo).
+- [ ] Banco Grupo 2P: criar coluna `observacoes_internas` em `propostas` (DDL pendente — conexão psql falhou nesta rodada).
+
+- [ ] Bug: botão Editar em proposta Solar leva para o checkout de Carregadores (rota deve seguir a organizacao da proposta).
