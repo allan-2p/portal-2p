@@ -363,9 +363,16 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     const { resolverCondicaoPagamento } = await import("./condicoes-pagamento.server");
     const cond = await resolverCondicaoPagamento(supabase, data.condicaoPagamento);
     const repo = await import("./propostas-db.server");
+    const rowAtual = data.propostaId ? await repo.getProposta(data.propostaId) : null;
+    if (rowAtual) {
+      // Grupo com pedido fechado: as variações restantes são somente leitura.
+      const { assertGrupoEditavel } = await import("./proposta-variacoes.server");
+      await assertGrupoEditavel(rowAtual as any, "salvar");
+    }
     const numeroProposta = data.propostaId
-      ? ((await repo.getProposta(data.propostaId, "numero"))?.["numero"] as string) ?? ""
+      ? ((rowAtual?.["numero"] as string) ?? "")
       : await repo.proximoNumeroProposta("solar");
+
 
     const totais = {
       subtotal,
