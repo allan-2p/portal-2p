@@ -114,6 +114,9 @@ function PropostasSolarPage() {
     return () => clearTimeout(t);
   }, [busca]);
   const [detalheId, setDetalheId] = useState<string | null>(ver ?? null);
+  /** Projeto com variações expandidas na listagem. */
+  const [expandido, setExpandido] = useState<string | null>(null);
+
   const [integracoesId, setIntegracoesId] = useState<string | null>(null);
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const [motivoCancel, setMotivoCancel] = useState("");
