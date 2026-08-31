@@ -128,7 +128,7 @@ export async function avisarBoletos(): Promise<BoletoAvisosResultado> {
           tipo === "vencido"
             ? `Boleto do pedido ${numero} venceu em ${dataBR(venc)}`
             : `Boleto do pedido ${numero} vence em ${dataBR(venc)}`,
-        html: layoutEmail(tipo === "vencido" ? "Boleto vencido" : "Boleto a vencer", corpo + linha + link),
+        html: layoutEmail(tipo === "vencido" ? "Boleto vencido" : "Boleto a vencer", corpo + linha + barras + link),
         label: `boleto-${tipo}`,
         idempotencyKey: chave,
       });
