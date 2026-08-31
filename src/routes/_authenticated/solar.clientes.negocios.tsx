@@ -73,7 +73,7 @@ function NegociosPage() {
   });
 
   const ganho = tipo !== "perdidos";
-  const rows = (q.data?.negocios ?? [])
+  const rows = (q.data?.opportunities ?? [])
     .filter((o: any) => (ganho ? o.isWon : o.isClosed && !o.isWon))
     .sort((a: any, b: any) => String(b.closeDate ?? "").localeCompare(String(a.closeDate ?? "")));
   const total = rows.reduce((s: number, o: any) => s + (o.amount || 0), 0);
