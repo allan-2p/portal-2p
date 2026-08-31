@@ -476,13 +476,23 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
 
 
     if (data.propostaId) {
+      // Variação não favorita não entra na fila do Salesforce.
+      const naoFavorita =
+        !!String(rowAtual?.["variacao_grupo"] ?? "").trim() && rowAtual?.["variacao_favorita"] !== true;
+      const sf = naoFavorita
+        ? {
+            sf_status: "nao_favorita",
+            sf_mensagem: "Variação não favorita — o Salesforce acompanha a favorita do grupo.",
+          }
+        : SALESFORCE_PENDENTE;
       // Cupom em paralelo: é auditoria e não precisa segurar a resposta.
       await Promise.all([
-        repo.atualizarProposta(data.propostaId, { ...payload, ...SALESFORCE_PENDENTE }),
+        repo.atualizarProposta(data.propostaId, { ...payload, ...sf }),
         registrarUsoCupom(data.propostaId),
       ]);
       return { id: data.propostaId, numero: numeroProposta, totais };
     }
+
 
 
     // Consultor: fotografado do cadastro do cliente no momento da criação.
