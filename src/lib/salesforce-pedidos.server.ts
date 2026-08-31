@@ -265,7 +265,7 @@ export async function sincronizarPedidoSalesforce(
     const corpoBase: Record<string, unknown> = {
       Name: payload["Name"] ?? nomeOpp,
       AccountId: accountId,
-      StageName: payload["StageName"] ?? stage(row["status"]),
+      StageName: payload["StageName"] ?? stage(row["status"], escolhaProjetoVendido(row as Record<string, any>)),
       CloseDate: payload["CloseDate"],
       Amount: payload["Amount"],
       Description: payload["Description"],
