@@ -1,4 +1,5 @@
 import { formatPropostaNumero } from "@/lib/sap-numero";
+import { PainelVariacoes } from "@/components/propostas/variacoes";
 import { cidadeUf, cidadeUfCep } from "@/lib/local-format";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DisponibilidadeBadge, useDisponibilidadeLote } from "@/components/disponibilidade-badge";
@@ -2763,7 +2764,9 @@ function NovaPropostaSolarPage() {
 
         {etapa === 5 && (
           <section className="space-y-5">
+            {propostaId && <PainelVariacoes propostaId={propostaId} rotaEdicao="/solar/propostas/nova" />}
             <div className="glass rounded-2xl p-5 space-y-4">
+
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-semibold">Resumo do pedido</h2>
                 {ehTipoNfBonificacao(tipoNf) ? <BonificacaoBadge /> : null}

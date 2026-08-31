@@ -215,7 +215,21 @@ export async function sincronizarPedidoSalesforce(
   if (!row)
     return { enviado: false, ok: false, opportunityId: null, accountId: null, mensagem: "Proposta não encontrada." };
 
+  // Variações: só a favorita do grupo espelha no Salesforce (uma Opportunity
+  // por projeto). As demais ficam apenas no portal.
+  if (String(row["variacao_grupo"] ?? "").trim() && row["variacao_favorita"] !== true) {
+    return {
+      enviado: false,
+      ok: true,
+      opportunityId: null,
+      accountId: null,
+      mensagem: "Variação não favorita — o Salesforce acompanha apenas a favorita do grupo.",
+      motivo: "nao_favorita",
+    };
+  }
+
   if (!secrets()) {
+
     return {
       enviado: false,
       ok: false,
@@ -246,7 +260,11 @@ export async function sincronizarPedidoSalesforce(
     }
 
     // Padrão do Opportunity Name: "número da proposta - nome da proposta".
-    const nomeOpp = [numero, so(row["nome"]) || clienteNome].filter(Boolean).join(" - ").slice(0, 120);
+    // Em grupos com variações o número exibido carrega o sufixo da favorita.
+    const { numeroExibicao } = await import("./proposta-variacoes");
+    const numeroLabel = numeroExibicao(row as any) || numero;
+    const nomeOpp = [numeroLabel, so(row["nome"]) || clienteNome].filter(Boolean).join(" - ").slice(0, 120);
+
 
     // O corpo sai do mapeamento configurável (Admin › Integrações ›
     // Salesforce › Campos): a tela de conferência mostra exatamente o que é

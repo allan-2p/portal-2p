@@ -17,7 +17,8 @@ import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
 import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-badge";
 import { cidadeUf } from "@/lib/local-format";
-import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
+import { formatSapNumero } from "@/lib/sap-numero";
+import { numeroExibicao } from "@/lib/proposta-variacoes";
 import {
   numeroAnterior,
   ehPlataformaAntiga,
@@ -123,7 +124,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-4">
           <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">
-              Nº {formatPropostaNumero(p['numero']) || "—"}
+              Nº {numeroExibicao(p as any) || "—"}
               {numeroAnterior(p) && (
                 <span className="ml-2 normal-case tracking-normal text-muted-foreground font-normal">
                   nº anterior {numeroAnterior(p)}

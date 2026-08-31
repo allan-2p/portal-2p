@@ -1,7 +1,7 @@
 import { CAMPOS_BUSCA, placeholderBusca } from "@/lib/propostas-busca";
 import { MOTIVOS_CANCELAMENTO, OBS_CANCELAMENTO_MIN, OBS_CANCELAMENTO_MAX } from "@/lib/cancelamento-motivos";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import { Copy, Eye, Pencil, Plus, Search, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { PROPOSTA_STATUS, podeCancelarPedido, podeEditarProposta } from "@/lib/proposta-status";
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
-import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
+import { formatSapNumero } from "@/lib/sap-numero";
 import { bloqueiaReenvioSap } from "@/lib/proposta-legado";
 import {
   excluirPropostaFn,
@@ -41,6 +41,13 @@ import { PermissionGate, useCan, useCanDelete } from "@/components/permission-ga
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 import { PropostasMobileCards } from "@/components/propostas-mobile-cards";
+import {
+  BotaoCriarVariacao,
+  LinhasVariacoes,
+  ToggleVariacoes,
+  numeroDaLinha,
+} from "@/components/propostas/variacoes";
+
 
 export const Route = createFileRoute("/_authenticated/solar/propostas/")({
   validateSearch: (s: Record<string, unknown>): { ver?: string } =>
@@ -78,7 +85,12 @@ type Row = {
   finalizado_em?: string | null;
   sap_ov_status?: string | null;
   sf_status?: string | null;
+  variacao_grupo?: string | null;
+  variacao_sufixo?: string | null;
+  variacao_favorita?: boolean | null;
+  variacoes_total?: number | null;
 };
+
 
 const STATUS = PROPOSTA_STATUS;
 
@@ -102,6 +114,9 @@ function PropostasSolarPage() {
     return () => clearTimeout(t);
   }, [busca]);
   const [detalheId, setDetalheId] = useState<string | null>(ver ?? null);
+  /** Projeto com variações expandidas na listagem. */
+  const [expandido, setExpandido] = useState<string | null>(null);
+
   const [integracoesId, setIntegracoesId] = useState<string | null>(null);
   const [excluirId, setExcluirId] = useState<string | null>(null);
   const [motivoCancel, setMotivoCancel] = useState("");
@@ -304,17 +319,23 @@ function PropostasSolarPage() {
 
               <tbody className={fetchingClass(q.isFetching, q.isLoading)}>
                 {visiveis.map((r) => (
-                  <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
+                  <Fragment key={r.id}>
+                  <tr className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-3 py-2.5 text-center">
                       <StatusDot status={r.status} />
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="truncate text-sm font-bold tabular-nums text-foreground">
-                        {formatPropostaNumero(r.numero) || "—"}
+                        {numeroDaLinha(r as any)}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
                         {r.nome || "—"}
                       </div>
+                      <ToggleVariacoes
+                        total={Number(r.variacoes_total ?? 0)}
+                        aberto={expandido === r.id}
+                        onToggle={() => setExpandido(expandido === r.id ? null : r.id)}
+                      />
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="truncate font-medium">{r.cliente_nome}</div>
@@ -356,6 +377,14 @@ function PropostasSolarPage() {
                             </Link>
                           </Button>
                         )}
+                        <BotaoCriarVariacao
+                          propostaId={r.id}
+                          status={r.status}
+                          onCriada={() => {
+                            setExpandido(r.id);
+                            q.refetch();
+                          }}
+                        />
                         <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Duplicar proposta" asChild>
                           <Link to="/solar/propostas/nova" search={{ dup: r.id }}>
                             <Copy className="h-4 w-4" />
@@ -381,7 +410,18 @@ function PropostasSolarPage() {
                       </div>
                     </td>
                   </tr>
+                  {expandido === r.id && (
+                    <LinhasVariacoes
+                      propostaId={r.id}
+                      colSpan={11}
+                      rotaEdicao="/solar/propostas/nova"
+                      onDetalhe={setDetalheId}
+                      onAtualizar={() => q.refetch()}
+                    />
+                  )}
+                  </Fragment>
                 ))}
+
                 {q.isLoading && <TableSkeletonRows colunas={11} linhas={porPagina > 10 ? 10 : porPagina} />}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>

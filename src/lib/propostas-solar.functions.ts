@@ -363,9 +363,16 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     const { resolverCondicaoPagamento } = await import("./condicoes-pagamento.server");
     const cond = await resolverCondicaoPagamento(supabase, data.condicaoPagamento);
     const repo = await import("./propostas-db.server");
+    const rowAtual = data.propostaId ? await repo.getProposta(data.propostaId) : null;
+    if (rowAtual) {
+      // Grupo com pedido fechado: as variações restantes são somente leitura.
+      const { assertGrupoEditavel } = await import("./proposta-variacoes.server");
+      await assertGrupoEditavel(rowAtual as any, "salvar");
+    }
     const numeroProposta = data.propostaId
-      ? ((await repo.getProposta(data.propostaId, "numero"))?.["numero"] as string) ?? ""
+      ? ((rowAtual?.["numero"] as string) ?? "")
       : await repo.proximoNumeroProposta("solar");
+
 
     const totais = {
       subtotal,
@@ -469,13 +476,23 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
 
 
     if (data.propostaId) {
+      // Variação não favorita não entra na fila do Salesforce.
+      const naoFavorita =
+        !!String(rowAtual?.["variacao_grupo"] ?? "").trim() && rowAtual?.["variacao_favorita"] !== true;
+      const sf = naoFavorita
+        ? {
+            sf_status: "nao_favorita",
+            sf_mensagem: "Variação não favorita — o Salesforce acompanha a favorita do grupo.",
+          }
+        : SALESFORCE_PENDENTE;
       // Cupom em paralelo: é auditoria e não precisa segurar a resposta.
       await Promise.all([
-        repo.atualizarProposta(data.propostaId, { ...payload, ...SALESFORCE_PENDENTE }),
+        repo.atualizarProposta(data.propostaId, { ...payload, ...sf }),
         registrarUsoCupom(data.propostaId),
       ]);
       return { id: data.propostaId, numero: numeroProposta, totais };
     }
+
 
 
     // Consultor: fotografado do cadastro do cliente no momento da criação.

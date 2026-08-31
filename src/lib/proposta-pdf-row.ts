@@ -1,3 +1,4 @@
+import { numeroExibicao } from "@/lib/proposta-variacoes";
 /**
  * Converte uma proposta já salva (linha do banco) nos dados de PDF usados
  * pelos geradores de Carregadores e Solar — permite prévia/impressão a partir
@@ -53,7 +54,7 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
   const frete = num(p['frete_valor']);
 
   return {
-    numero: txt(p['numero']) || undefined,
+    numero: numeroExibicao(p as any) || undefined,
     propostaNome: txt(p['nome']) || null,
     numeroSap: txt(p['sap_ov_numero'] || p['numero_sap']) || null,
     cliente: {
@@ -122,7 +123,7 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
 
 
   return {
-    numero: txt(p['numero']) || null,
+    numero: numeroExibicao(p as any) || null,
     propostaNome: txt(p['nome']) || null,
     cliente: {
       nome: txt(p['cliente_nome']) || "—",

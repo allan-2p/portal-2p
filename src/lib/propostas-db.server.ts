@@ -93,6 +93,8 @@ export type ListarPropostasPaginaOpts = {
   donoSap?: string | null;
   /** Documentos dos clientes da carteira do consultor (casa `cliente_doc`). */
   donoDocs?: string[] | null;
+  /** Esconde variações não favoritas (uma linha por projeto). */
+  somenteFavoritas?: boolean;
 
   pagina?: number;
   porPagina?: number;
@@ -176,7 +178,14 @@ function montarParams(
   const cond: string[] = [];
   const escopo = clausulaEscopo(opts, docs, comIdentidade);
   if (escopo) cond.push(escopo);
-  const termo = termoSeguro(opts.q ?? "");
+  let termo = termoSeguro(opts.q ?? "");
+  // "60123-B" na busca: o sufixo é só exibição — o banco guarda o número base.
+  const comSufixo = /^\d+\s*-\s*[A-Za-z]$/.test(termo);
+  if (comSufixo) termo = termo.split("-")[0]!.trim();
+  // Listagem padrão mostra uma linha por projeto (a variação favorita).
+  if (opts.somenteFavoritas && !comSufixo) {
+    cond.push("or(variacao_grupo.is.null,variacao_favorita.is.true)");
+  }
   if (termo) {
     const colunas = CAMPOS_BUSCA_PROPOSTA[opts.campo ?? "tudo"] ?? CAMPOS_BUSCA_PROPOSTA["tudo"]!;
     // Documento digitado com pontuação também casa com o valor gravado só com
@@ -189,6 +198,7 @@ function montarParams(
   if (opts.comSap === "com") cond.push("or(sap_ov_numero.not.is.null,numero_sap.not.is.null)");
   if (opts.comSap === "sem") cond.push("and(sap_ov_numero.is.null,numero_sap.is.null)");
   if (cond.length) params.set("and", `(${cond.join(",")})`);
+
   return params;
 }
 
