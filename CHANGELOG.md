@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Importação Intersolar com faturamento direto**: quando a linha da carga fatura direto no cliente final (CPF), o hook `/api/public/hooks/importacao-intersolar` cadastra antes o parceiro faturado no SAP (mesma rotina do checkout). Sem esse cadastro o SAP recusava a simulação com "Não existe mestre de clientes para emissor ordem".
+
 - **Correção de zeros à esquerda em CNPJ/CPF**: documentos gravados sem o zero inicial (ex.: `2673975000106` em vez de `02.673.975/0001-06`) faziam o cliente aparecer como inválido/inexistente no checkout. O documento agora é normalizado ao salvar o cadastro (inclusive na importação de clientes de Carregadores) e a base do Grupo 2P foi corrigida: 451 clientes, 546 contatos e 2.640 propostas. Pendente: o cliente RSUL ENERGIA aparece duplicado (Solar e Carregadores com o mesmo CNPJ), então esse registro ficou sem normalizar.
 - **Novo estágio do Salesforce (StageName)**: pedido "Salvo" segue a escolha da proposta em "O projeto já foi vendido para o cliente final?" — **Sim** → `Projeto Fechado`, **Não** → `Projeto Não Fechado`, **Estoque** → `Estoque`. De "Aguardando Pagamento" em diante o estágio é sempre `Pedido Concluído`, e "Cancelado" → `Pedido Cancelado`. `Oportunidade Perdida` continua sendo marcada só manualmente no Salesforce: quando o pedido segue "Salvo", o portal não sobrescreve esse estágio (os demais campos continuam atualizando). A escolha também é enviada em **Projeto vendido** (Sim/Não/Estoque).
 - **Correção**: a opção **Estoque** da proposta Solar deixa de se perder ao salvar/reabrir (antes virava "Não"); agora fica gravada nos totais da proposta.
