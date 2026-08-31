@@ -929,6 +929,20 @@ export const getSalesforceAccountHistory = createServerFn({ method: "GET" })
 
     const stages = [...stageMap.values()].sort((a, b) => b.total - a.total);
     const decided = totalCount + lostCount;
+
+    // Tempo médio de compra: média dos intervalos entre compras concluídas.
+    const dias = (a: string, b: string) =>
+      Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
+    const ordenadas = [...new Set(purchaseDates)].sort();
+    let avgPurchaseIntervalDays: number | null = null;
+    if (ordenadas.length >= 2) {
+      const total = dias(ordenadas[0]!, ordenadas[ordenadas.length - 1]!);
+      avgPurchaseIntervalDays = Math.round(total / (ordenadas.length - 1));
+    }
+    const daysSinceLastPurchase = lastPurchase
+      ? dias(lastPurchase, new Date().toISOString().slice(0, 10))
+      : null;
+
     return {
       quarters,
       stages,
