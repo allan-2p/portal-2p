@@ -304,17 +304,23 @@ function PropostasSolarPage() {
 
               <tbody className={fetchingClass(q.isFetching, q.isLoading)}>
                 {visiveis.map((r) => (
-                  <tr key={r.id} className="border-b border-border/50 hover:bg-surface-2">
+                  <Fragment key={r.id}>
+                  <tr className="border-b border-border/50 hover:bg-surface-2">
                     <td className="px-3 py-2.5 text-center">
                       <StatusDot status={r.status} />
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="truncate text-sm font-bold tabular-nums text-foreground">
-                        {formatPropostaNumero(r.numero) || "—"}
+                        {numeroDaLinha(r as any)}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
                         {r.nome || "—"}
                       </div>
+                      <ToggleVariacoes
+                        total={Number(r.variacoes_total ?? 0)}
+                        aberto={expandido === r.id}
+                        onToggle={() => setExpandido(expandido === r.id ? null : r.id)}
+                      />
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="truncate font-medium">{r.cliente_nome}</div>
@@ -356,6 +362,14 @@ function PropostasSolarPage() {
                             </Link>
                           </Button>
                         )}
+                        <BotaoCriarVariacao
+                          propostaId={r.id}
+                          status={r.status}
+                          onCriada={() => {
+                            setExpandido(r.id);
+                            q.refetch();
+                          }}
+                        />
                         <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Duplicar proposta" asChild>
                           <Link to="/solar/propostas/nova" search={{ dup: r.id }}>
                             <Copy className="h-4 w-4" />
@@ -381,7 +395,18 @@ function PropostasSolarPage() {
                       </div>
                     </td>
                   </tr>
+                  {expandido === r.id && (
+                    <LinhasVariacoes
+                      propostaId={r.id}
+                      colSpan={11}
+                      rotaEdicao="/solar/propostas/nova"
+                      onDetalhe={setDetalheId}
+                      onAtualizar={() => q.refetch()}
+                    />
+                  )}
+                  </Fragment>
                 ))}
+
                 {q.isLoading && <TableSkeletonRows colunas={11} linhas={porPagina > 10 ? 10 : porPagina} />}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>
