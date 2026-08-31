@@ -86,6 +86,7 @@ import {
   useSolarCalcConfig,
   useSolarCupons,
   useSolarCupomPorCodigo,
+  useSolarCupomUsoProprio,
 
   type SolarCupom,
   useSolarGeradores,
