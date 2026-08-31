@@ -85,6 +85,19 @@ const digitos = (v: unknown) => so(v).replace(/\D/g, "");
  */
 export { SF_STAGE_POR_STATUS, stage, orgOportunidade } from "./salesforce-stage";
 
+/**
+ * "Oportunidade Perdida" é marcada manualmente pelo comercial no Salesforce em
+ * pedidos que continuam "Salvo" no portal — o sync nunca pode sobrescrevê-la.
+ */
+async function stageAtual(oppId: string): Promise<string> {
+  try {
+    const r = await sf(`/sobjects/Opportunity/${oppId}?fields=StageName`);
+    return so(r?.StageName);
+  } catch {
+    return "";
+  }
+}
+
 
 async function acharAccount(doc: string, nome: string): Promise<string | null> {
   const d = digitos(doc);
