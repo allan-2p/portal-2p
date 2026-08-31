@@ -410,7 +410,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = await import("./clientes-db.server");
     const { logIntegrationEvent } = await import("./integration-logs.server");
-    const doc = data.cliente.doc.replace(/\D/g, "");
+    const doc = docCanonico(data.cliente.doc);
 
     /** Toda falha do cadastro (banco incluído) fica visível em Logs > Integrações. */
     const logErroBanco = async (etapa: string, err: unknown) =>
@@ -829,12 +829,12 @@ export const migrarCarregadoresClientesFn = createServerFn({ method: "POST" })
     if (error) throw error;
 
     const existentes = new Set(
-      (await db.listClientes("carregadores")).map((c) => String(c["doc"] ?? "")),
+      (await db.listClientes("carregadores")).map((c) => docCanonico(String(c["doc"] ?? ""))),
     );
 
     let migrados = 0;
     for (const c of antigos ?? []) {
-      const doc = String(c.doc ?? "").replace(/\D/g, "");
+      const doc = docCanonico(String(c.doc ?? ""));
       if (!doc || existentes.has(doc)) continue;
       await db.insertCliente("carregadores", {
         razao_social: c.razao_social,
