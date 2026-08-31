@@ -34,5 +34,5 @@
 - [ ] Salesforce: proprietário das oportunidades = consultor da proposta (corrigir as 60 do Limpador Intersolar que ficaram como Portal 2P)
 - [ ] TV: revisão de UI/UX (números quebrando, alinhamento e quebras de linha estranhas) sem alterar os dados atuais
 - [ ] Limpadores de hoje com "Marketing 2P": redistribuir clientes e propostas igualmente entre Fernando Lira, Gabriel Kendi e Gabriel Sargiani (portal + Salesforce)
-- [ ] Transferir proposta 60055 (Roger Rodrigues) para Fernando Lira e 60054 (Ecio Mendes) para Gabriel Sargiani (portal + Salesforce: opp, conta e cliente)
-- [ ] Cupom de desconto aparece no pedido mas não aplica o desconto (erro "Cupom de uso único já utilizado"); afeta vários pedidos de limpador — verificar se impacta outras propostas
+- [x] Transferir proposta 60055 (Roger Rodrigues) para Fernando Lira e 60054 (Ecio Mendes) para Gabriel Sargiani (portal + Salesforce: opp, conta e cliente)
+- [x] Cupom de desconto aparece no pedido mas não aplica o desconto (erro "Cupom de uso único já utilizado"); afeta vários pedidos de limpador — verificar se impacta outras propostas
