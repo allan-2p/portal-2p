@@ -958,7 +958,7 @@ const GraficoSemanal = ({
 
       <div style={{ display: "flex", alignItems: "stretch", gap: 12 }}>
         {arrowBtn("prev", canPrev, () => setIdx((i) => Math.max(0, i - 1)))}
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, minmax(0, 1fr))`, gap: 24, height: 150, alignItems: "end", width: "100%", maxWidth: 720, margin: "0 auto", justifyContent: "center", padding: "0 12px", flex: 1 }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${dados.length}, minmax(0, 1fr))`, gap: 24, height: 150, alignItems: "end", width: "100%", maxWidth: 720, margin: "0 auto", justifyContent: "center", padding: "38px 12px 0", boxSizing: "content-box", flex: 1 }}>
 
         {dados.map((d, i) => {
           const hoje = isCurrentWeek && d.dia === diaAtual;
