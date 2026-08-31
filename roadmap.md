@@ -15,5 +15,5 @@
 - [x] Funil de orçamentos: filtro "Hoje" (geração de hoje).
 
 ## Pendentes
-- [ ] Página de Tarefas: entrar na tarefa, editar, concluir e alternar visualização (lista/cards).
+- [x] Página de Tarefas: abrir tarefa, registrar interação, adiar, concluir, nova tarefa e visualização lista/calendário.
 - [ ] Carregadores: exibir vendas de Caroline Gimenez, Ghustavo Novaes e Bruno Amaral com org "2P Carregadores" (aguardando confirmação da origem dos registros).
