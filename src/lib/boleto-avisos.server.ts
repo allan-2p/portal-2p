@@ -52,7 +52,7 @@ export async function avisarBoletos(): Promise<BoletoAvisosResultado> {
     },
     {
       select:
-        "id, numero, created_by, cliente_nome, cliente_doc, cliente_email, pagamento_valor, pagamento_vencimento, pagamento_linha_digitavel, pagamento_url",
+        "id, numero, created_by, cliente_nome, cliente_doc, cliente_email, pagamento_valor, pagamento_vencimento, pagamento_linha_digitavel, pagamento_codigo_barras, pagamento_url",
       limit: 200,
     },
   );
@@ -111,8 +111,11 @@ export async function avisarBoletos(): Promise<BoletoAvisosResultado> {
       const linha = row["pagamento_linha_digitavel"]
         ? `<p style="margin:16px 0 0"><strong>Linha digitável:</strong><br><code style="font-size:13px">${row["pagamento_linha_digitavel"]}</code></p>`
         : "";
+      const barras = row["pagamento_codigo_barras"]
+        ? `<p style="margin:12px 0 0"><strong>Código de barras:</strong><br><code style="font-size:13px">${row["pagamento_codigo_barras"]}</code></p>`
+        : "";
       const link = row["pagamento_url"]
-        ? `<p style="margin:16px 0 0"><a href="${row["pagamento_url"]}" style="background:#111827;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-block">Abrir boleto</a></p>`
+        ? `<p style="margin:16px 0 0"><a href="${row["pagamento_url"]}" style="background:#111827;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-block">Baixar boleto (PDF)</a></p>`
         : "";
       const corpo =
         tipo === "vencido"
