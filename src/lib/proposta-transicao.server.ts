@@ -110,5 +110,17 @@ export async function aplicarTransicao(
     return { ok: false, de, para, motivo, row: null };
   }
 
+  // Toda mudança de status precisa chegar ao Salesforce (StageName, carimbos,
+  // datas de faturamento/coleta/entrega). Antes só o cancelamento e a baixa
+  // manual reenviavam, então pedidos que avançavam pelo SAP/Fretefy ficavam
+  // congelados na org. A fila é assíncrona: não atrasa o motor.
+  try {
+    const { enfileirarSalesforce } = await import("./salesforce-fila.server");
+    await enfileirarSalesforce(propostaId);
+  } catch {
+    /* best effort — o backfill/cron ainda cobre */
+  }
+
   return { ok: true, de, para, motivo: null, row: row as Record<string, unknown> };
 }
+

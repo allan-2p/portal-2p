@@ -73,6 +73,61 @@ export function dataFechamento(row: Record<string, any>) {
   );
 }
 
+/** Data (YYYY-MM-DD) ou nulo. */
+const data = (v: unknown) => (so(v) ? so(v).slice(0, 10) : null);
+/** Data/hora ISO ou nulo (campos datetime da org). */
+const hora = (v: unknown) => (so(v) ? new Date(so(v)).toISOString() : null);
+const numeroOuNulo = (v: unknown) => {
+  const n = Number(digitos(v));
+  return Number.isFinite(n) && so(v) ? n : null;
+};
+
+/** Tipo de NF do portal → picklist da org (Venda / Bonificação / Triangulação). */
+export function tipoNf(row: Record<string, any>): string | null {
+  const t = so(row["tipo_nf"]).toLowerCase();
+  if (!t) return null;
+  if (t.startsWith("bonific")) return "Bonificação";
+  if (t.startsWith("triangul")) return "Triangulação";
+  return "Venda";
+}
+
+/** Desconto em reais concedido na proposta (0 quando não houve). */
+export function descontoProposta(row: Record<string, any>): number {
+  const t = (row["totais"] ?? {}) as Record<string, any>;
+  const d = Number(t["desconto"] ?? t["descontoValor"] ?? row["desconto_valor"] ?? 0);
+  return Number.isFinite(d) ? Math.abs(d) : 0;
+}
+
+/** Margem bruta percentual (0–100) para o campo percent da org. */
+export function margemTotal(row: Record<string, any>): number | null {
+  const t = (row["totais"] ?? {}) as Record<string, any>;
+  const p = Number(t["mbPct"] ?? t["margemPct"]);
+  if (!Number.isFinite(p)) return null;
+  // O portal guarda fração (0,34); a org espera percentual.
+  return Math.round((p <= 1 ? p * 100 : p) * 100) / 100;
+}
+
+/** Tabela de preço: a picklist da org usa os códigos 01..05. */
+export function tabelaPreco(row: Record<string, any>): string | null {
+  const t = (row["totais"] ?? {}) as Record<string, any>;
+  const bruto = so(row["tabela_preco"] ?? t["listaPreco"] ?? t["tabelaPreco"]);
+  const m = bruto.match(/(\d{1,2})/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return n >= 1 && n <= 5 ? String(n).padStart(2, "0") : null;
+}
+
+/** Projeto vendido? — derivado do status do pedido. */
+export function projetoVendido(status: unknown): string | null {
+  const s = so(status).toLowerCase();
+  if (!s) return null;
+  if (["faturado", "coletado", "entregue"].some((x) => s.includes(x))) return "Sim";
+  if (s.includes("separa") || s.includes("estoque") || s.includes("process")) return "Estoque";
+  if (s.includes("cancel") || s.includes("perdid")) return "Não";
+  return "Não";
+}
+
+
 /* ------------------------------------------------------------------ */
 /* Account                                                             */
 /* ------------------------------------------------------------------ */
@@ -283,11 +338,12 @@ export const CAMPOS_OPPORTUNITY: CampoOrigem[] = [
     chave: "numero_sap",
     rotulo: "Nº SAP / ordem de venda",
     origem: "Proposta › OV do SAP (ou nº SAP)",
-    ajuda: "Sem campo correspondente detectado na org — indique qual campo deve receber a OV.",
-    sfPadrao: null,
-    tipo: "texto",
-    valor: (r) => ouNulo(so(r["sap_ov_numero"]) || so(r["numero_sap"])),
+    ajuda: "Campo numérico `N_SAP__c` da org (a OV vai sem os zeros à esquerda).",
+    sfPadrao: "N_SAP__c",
+    tipo: "numero",
+    valor: (r) => numeroOuNulo(so(r["sap_ov_numero"]) || so(r["numero_sap"])),
   },
+
   {
     chave: "status_pedido",
     rotulo: "Status do pedido (texto do portal)",
@@ -316,10 +372,11 @@ export const CAMPOS_OPPORTUNITY: CampoOrigem[] = [
     chave: "frete_valor",
     rotulo: "Valor do frete",
     origem: "Proposta › Frete",
-    sfPadrao: null,
+    sfPadrao: "Frete__c",
     tipo: "numero",
-    valor: (r) => (r["frete_valor"] == null ? null : Number(r["frete_valor"]) || 0),
+    valor: (r) => (r["frete_valor"] == null ? 0 : Number(r["frete_valor"]) || 0),
   },
+
   {
     chave: "frete_mod",
     rotulo: "Modalidade do frete (CIF/FOB)",
@@ -340,11 +397,221 @@ export const CAMPOS_OPPORTUNITY: CampoOrigem[] = [
     chave: "nota_fiscal",
     rotulo: "Nota fiscal",
     origem: "Proposta › Nº da NF (após faturamento)",
-    sfPadrao: null,
+    sfPadrao: "Nota_Fiscal__c",
+    tipo: "numero",
+    valor: (r) => numeroOuNulo(r["nf_numero"] ?? r["nota_fiscal"]),
+  },
+  {
+    chave: "tipo_nf",
+    rotulo: "Tipo de NF",
+    origem: "Proposta › Tipo de nota (Venda / Bonificação / Triangulação)",
+    sfPadrao: "Tipo_de_NF__c",
+    tipo: "picklist",
+    valor: (r) => tipoNf(r),
+  },
+  {
+    chave: "desconto",
+    rotulo: "Desconto",
+    origem: "Proposta › Total de desconto aplicado",
+    sfPadrao: "Desconto__c",
+    tipo: "numero",
+    valor: (r) => descontoProposta(r),
+  },
+  {
+    chave: "total",
+    rotulo: "Total do pedido",
+    origem: "Proposta › Total (produtos + impostos + frete)",
+    sfPadrao: "Total__c",
+    tipo: "numero",
+    valor: (r) => valorTotalProposta(r),
+  },
+  {
+    chave: "margem_total",
+    rotulo: "Margem total (%)",
+    origem: "Proposta › Margem bruta percentual",
+    sfPadrao: "Margem_Total__c",
+    tipo: "numero",
+    valor: (r) => margemTotal(r),
+  },
+  {
+    chave: "tabela_preco",
+    rotulo: "Tabela de preço",
+    origem: "Proposta › Tabela de preço usada na simulação",
+    sfPadrao: "Tabela_de_Preco__c",
+    tipo: "picklist",
+    valor: (r) => tabelaPreco(r),
+  },
+  {
+    chave: "previsao_fechamento",
+    rotulo: "Previsão de fechamento",
+    origem: "Proposta › Previsão de fechamento",
+    sfPadrao: "Previsao_de_Fechamento__c",
+    tipo: "data",
+    valor: (r) => data(r["previsao_fechamento"]),
+  },
+  {
+    chave: "estimativa_entrega",
+    rotulo: "Estimativa de entrega",
+    origem: "Proposta › Previsão de despacho / prazo do frete",
+    sfPadrao: "Estimativa_de_entrega__c",
+    tipo: "data",
+    valor: (r) => data(r["previsao_despacho"] ?? r["frete_previsao_entrega"]),
+  },
+  {
+    chave: "transportadora",
+    rotulo: "Transportadora",
+    origem: "Proposta › Transportadora do frete",
+    sfPadrao: "Transportadora__c",
     tipo: "texto",
-    valor: (r) => ouNulo(r["nf_numero"] ?? r["nota_fiscal"]),
+    valor: (r) => ouNulo(r["transportadora"]),
+  },
+  {
+    chave: "vendedor",
+    rotulo: "Vendedor",
+    origem: "Proposta › Consultor responsável",
+    ajuda: "Picklist da org: só entra se o nome do consultor existir lá.",
+    sfPadrao: "Vendedor__c",
+    tipo: "picklist",
+    valor: (r) => ouNulo(r["consultor_nome"] ?? r["criado_por_nome"]),
+  },
+  {
+    chave: "usuario_criacao",
+    rotulo: "Usuário de criação",
+    origem: "Proposta › Criado por",
+    sfPadrao: "Usuario_Criacao__c",
+    tipo: "texto",
+    valor: (r) => ouNulo(r["criado_por_nome"]),
+  },
+  {
+    chave: "usuario_finalizacao",
+    rotulo: "Usuário de finalização",
+    origem: "Proposta › Finalizado por",
+    sfPadrao: "Usuario_Finalizacao__c",
+    tipo: "texto",
+    valor: (r) => ouNulo(r["finalizado_por_nome"]),
+  },
+  {
+    chave: "feito_atraves_de",
+    rotulo: "Feito através de",
+    origem: "Calculadora 2P (kit fotovoltaico) ou Lista de Produtos",
+    sfPadrao: "Feito_atrav_s_de__c",
+    tipo: "picklist",
+    valor: (r) => (r["kit_fotovoltaico"] ? "Calculadora 2P" : "Lista de Produtos"),
+  },
+  {
+    chave: "projeto_vendido",
+    rotulo: "Projeto vendido?",
+    origem: "Derivado do status do pedido",
+    sfPadrao: "Projeto_Vendido__c",
+    tipo: "picklist",
+    valor: (r) => projetoVendido(r["status"]),
+  },
+  {
+    chave: "criada_por",
+    rotulo: "Quem criou?",
+    origem: "Origem da proposta (portal do vendedor)",
+    sfPadrao: "Oportunidade_criada_por__c",
+    tipo: "picklist",
+    valor: () => "Vendedor",
+  },
+  {
+    chave: "finalizada_por",
+    rotulo: "Quem finalizou?",
+    origem: "Proposta › Finalizado por (vendedor ou cliente via link)",
+    sfPadrao: "Oportunidade_finalizada_por__c",
+    tipo: "picklist",
+    valor: (r) => (so(r["finalizado_por"]) ? "Vendedor" : so(r["finalizado_em"]) ? "Cliente" : null),
+  },
+  {
+    chave: "email_cliente",
+    rotulo: "E-mail do cliente",
+    origem: "Proposta › E-mail do cliente",
+    sfPadrao: "Email__c",
+    tipo: "email",
+    valor: (r) => ouNulo(r["cliente_email"]),
+  },
+  {
+    chave: "data_faturamento",
+    rotulo: "Data de faturamento",
+    origem: "Proposta › Faturado em",
+    sfPadrao: "Data_de_Faturamento__c",
+    tipo: "data",
+    valor: (r) => data(r["faturado_em"]),
+  },
+  {
+    chave: "data_coleta",
+    rotulo: "Data de coleta",
+    origem: "Proposta › Coletado em",
+    sfPadrao: "Data_de_Coleta__c",
+    tipo: "data",
+    valor: (r) => data(r["coletado_em"] ?? r["enviado_em"]),
+  },
+  {
+    chave: "data_entrega",
+    rotulo: "Data de entrega",
+    origem: "Proposta › Entregue em",
+    sfPadrao: "Data_de_Entrega__c",
+    tipo: "data",
+    valor: (r) => data(r["entregue_em"]),
+  },
+  {
+    chave: "carimbo_salvo",
+    rotulo: "Carimbo · Salvo",
+    origem: "Proposta › Data de criação",
+    sfPadrao: "Salvo__c",
+    tipo: "data",
+    valor: (r) => hora(r["salvo_em"] ?? r["created_at"]),
+  },
+  {
+    chave: "carimbo_processando",
+    rotulo: "Carimbo · Processando",
+    origem: "Proposta › Processando em",
+    sfPadrao: "Processando__c",
+    tipo: "data",
+    valor: (r) => hora(r["processando_em"]),
+  },
+  {
+    chave: "carimbo_separacao",
+    rotulo: "Carimbo · Separação",
+    origem: "Proposta › Separado em",
+    sfPadrao: "Separacao__c",
+    tipo: "data",
+    valor: (r) => hora(r["separado_em"]),
+  },
+  {
+    chave: "carimbo_faturado",
+    rotulo: "Carimbo · Faturado",
+    origem: "Proposta › Faturado em",
+    sfPadrao: "Faturado__c",
+    tipo: "data",
+    valor: (r) => hora(r["faturado_em"]),
+  },
+  {
+    chave: "carimbo_coletado",
+    rotulo: "Carimbo · Coletado",
+    origem: "Proposta › Coletado em",
+    sfPadrao: "Coletado__c",
+    tipo: "data",
+    valor: (r) => hora(r["coletado_em"] ?? r["enviado_em"]),
+  },
+  {
+    chave: "carimbo_entregue",
+    rotulo: "Carimbo · Entregue",
+    origem: "Proposta › Entregue em",
+    sfPadrao: "Entregue__c",
+    tipo: "data",
+    valor: (r) => hora(r["entregue_em"]),
+  },
+  {
+    chave: "data_cancelamento",
+    rotulo: "Data de cancelamento",
+    origem: "Proposta › Cancelado em",
+    sfPadrao: "Data_de_Cancelamento__c",
+    tipo: "data",
+    valor: (r) => hora(r["cancelado_em"]),
   },
 ];
+
 
 export function camposDoObjeto(objeto: SfObjeto): CampoOrigem[] {
   return objeto === "Account" ? CAMPOS_ACCOUNT : CAMPOS_OPPORTUNITY;
