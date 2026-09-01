@@ -91,7 +91,7 @@ function CarregadoresVisaoGeralPage() {
         data: {
           organizacao: "carregadores",
           select:
-            "id,numero,nome,cliente_nome,status,totais,itens,created_at,aguardando_pagamento_em,processando_em",
+            "id,numero,nome,cliente_nome,status,totais,itens,created_at,aguardando_pagamento_em,processando_em,faturado_em,nf_numero,sap_ov_numero",
           statusIn: STATUS_VENDIDOS as unknown as string[],
         },
       });
@@ -105,6 +105,9 @@ function CarregadoresVisaoGeralPage() {
           status: r.status,
           valor: Number(r.totais?.valorTotal ?? r.totais?.total ?? 0),
           data: r.aguardando_pagamento_em ?? r.processando_em ?? r.created_at,
+          dataFaturamento: r.faturado_em ?? null,
+          nfNumero: r.nf_numero ?? null,
+          sapOvNumero: r.sap_ov_numero ?? null,
           codigos: itens.map((i: any) => String(i?.codigo ?? "").trim()).filter(Boolean),
           nomesItens: itens.map((i: any) => norm(i?.nome)).filter(Boolean),
         };
