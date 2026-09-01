@@ -40,6 +40,10 @@ type PedidoVendido = {
   valor: number;
   /** Data da compra: quando o pedido saiu de rascunho (fallback: criação). */
   data: string;
+  /** Data de faturamento (quando a NF foi emitida). */
+  faturadoEm: string | null;
+  nfNumero: string | null;
+  sapNumero: string | null;
   codigos: string[];
   nomesItens: string[];
 };
@@ -69,9 +73,12 @@ function fmtData(iso: string) {
 }
 
 type Modo = "todos" | "mes" | "trimestre" | "ano" | "intervalo";
+/** Qual data alimenta os filtros e o agrupamento. */
+type CampoData = "compra" | "faturamento";
 
 function CarregadoresVisaoGeralPage() {
   const [modo, setModo] = useState<Modo>("todos");
+  const [campoData, setCampoData] = useState<CampoData>("compra");
   const [mes, setMes] = useState<string>("");
   const [trimestre, setTrimestre] = useState<string>("");
   const [ano, setAno] = useState<string>("");
@@ -87,7 +94,7 @@ function CarregadoresVisaoGeralPage() {
         data: {
           organizacao: "carregadores",
           select:
-            "id,numero,nome,cliente_nome,status,totais,itens,created_at,aguardando_pagamento_em,processando_em",
+            "id,numero,nome,cliente_nome,status,totais,itens,created_at,aguardando_pagamento_em,processando_em,faturado_em,nf_numero,nf_serie,sap_ov_numero,numero_sap",
           statusIn: STATUS_VENDIDOS as unknown as string[],
         },
       });
@@ -101,6 +108,9 @@ function CarregadoresVisaoGeralPage() {
           status: r.status,
           valor: Number(r.totais?.valorTotal ?? r.totais?.total ?? 0),
           data: r.aguardando_pagamento_em ?? r.processando_em ?? r.created_at,
+          faturadoEm: r.faturado_em ?? null,
+          nfNumero: r.nf_numero ? String(r.nf_numero) : null,
+          sapNumero: String(r.sap_ov_numero ?? r.numero_sap ?? "").trim() || null,
           codigos: itens.map((i: any) => String(i?.codigo ?? "").trim()).filter(Boolean),
           nomesItens: itens.map((i: any) => norm(i?.nome)).filter(Boolean),
         };
@@ -123,31 +133,50 @@ function CarregadoresVisaoGeralPage() {
     );
   }, [q.data, produtos.data]);
 
+  /** Data usada nos filtros/agrupamento conforme a escolha do usuário. */
+  const dataBase = (p: PedidoVendido) => (campoData === "faturamento" ? p.faturadoEm : p.data);
+
+  const comData = useMemo(
+    () => vendidos.filter((p) => Boolean(dataBase(p))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [vendidos, campoData],
+  );
+
   const meses = useMemo(() => {
-    const set = new Set(vendidos.map((p) => mesChave(p.data)));
+    const set = new Set(comData.map((p) => mesChave(dataBase(p)!)));
     return [...set].sort().reverse();
-  }, [vendidos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comData, campoData]);
 
   const anos = useMemo(() => {
-    const set = new Set(vendidos.map((p) => p.data.slice(0, 4)));
+    const set = new Set(comData.map((p) => dataBase(p)!.slice(0, 4)));
     return [...set].sort().reverse();
-  }, [vendidos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comData, campoData]);
 
   const trimestres = useMemo(() => {
     const set = new Set(
-      vendidos.map((p) => `${p.data.slice(0, 4)}-T${Math.floor(Number(p.data.slice(5, 7)) / 3.0001) + 1}`),
+      comData.map((p) => {
+        const d = dataBase(p)!;
+        return `${d.slice(0, 4)}-T${Math.floor(Number(d.slice(5, 7)) / 3.0001) + 1}`;
+      }),
     );
     return [...set].sort().reverse();
-  }, [vendidos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comData, campoData]);
 
   const filtrados = useMemo(() => {
-    return vendidos.filter((p) => {
-      const d = p.data.slice(0, 10);
-      if (modo === "mes") return !mes || mesChave(p.data) === mes;
-      if (modo === "ano") return !ano || p.data.slice(0, 4) === ano;
+    const base = modo === "todos" ? vendidos : comData;
+    return base.filter((p) => {
+      const iso = dataBase(p);
+      if (modo === "todos") return true;
+      if (!iso) return false;
+      const d = iso.slice(0, 10);
+      if (modo === "mes") return !mes || mesChave(iso) === mes;
+      if (modo === "ano") return !ano || iso.slice(0, 4) === ano;
       if (modo === "trimestre") {
         if (!trimestre) return true;
-        const t = `${p.data.slice(0, 4)}-T${Math.floor(Number(p.data.slice(5, 7)) / 3.0001) + 1}`;
+        const t = `${iso.slice(0, 4)}-T${Math.floor(Number(iso.slice(5, 7)) / 3.0001) + 1}`;
         return t === trimestre;
       }
       if (modo === "intervalo") {
@@ -157,7 +186,8 @@ function CarregadoresVisaoGeralPage() {
       }
       return true;
     });
-  }, [vendidos, modo, mes, trimestre, ano, de, ate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendidos, comData, campoData, modo, mes, trimestre, ano, de, ate]);
 
   const totalPeriodo = filtrados.reduce((s, p) => s + p.valor, 0);
 
@@ -165,13 +195,14 @@ function CarregadoresVisaoGeralPage() {
   const grupos = useMemo(() => {
     const map = new Map<string, PedidoVendido[]>();
     for (const p of filtrados) {
-      const k = mesChave(p.data);
+      const k = mesChave(dataBase(p) ?? p.data);
       if (!map.has(k)) map.set(k, []);
       map.get(k)!.push(p);
     }
     for (const arr of map.values()) arr.sort((a, b) => (a.data < b.data ? 1 : -1));
     return [...map.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
-  }, [filtrados]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtrados, campoData]);
 
   const carregando = q.isLoading || produtos.isLoading;
   const selectCls = "h-9 rounded-lg border border-border bg-surface px-3 text-sm";
@@ -185,13 +216,22 @@ function CarregadoresVisaoGeralPage() {
               <BarChart3 className="h-5 w-5 text-primary" /> Visão Geral
             </h1>
             <p className="text-sm text-muted-foreground">
-              Pedidos vendidos de carregadores — cliente, pedido, data da compra e valor.
+              Pedidos vendidos de carregadores — cliente, pedido, NF, nº SAP, datas de compra e faturamento e valor.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {(q.isFetching || produtos.isFetching) && (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}
+            <select
+              value={campoData}
+              onChange={(e) => setCampoData(e.target.value as CampoData)}
+              className={selectCls}
+              aria-label="Data usada no filtro"
+            >
+              <option value="compra">Data da compra</option>
+              <option value="faturamento">Data de faturamento</option>
+            </select>
             <select value={modo} onChange={(e) => setModo(e.target.value as Modo)} className={selectCls}>
               <option value="todos">Todos os períodos</option>
               <option value="mes">Por mês</option>
@@ -274,9 +314,12 @@ function CarregadoresVisaoGeralPage() {
                 </div>
               </div>
               <div className="divide-y divide-border">
-                <div className="hidden sm:grid grid-cols-[100px_100px_1fr_1fr_120px_140px] gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                <div className="hidden sm:grid grid-cols-[90px_90px_100px_92px_92px_1fr_1fr_110px_130px] gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                   <span>Pedido</span>
+                  <span>NF</span>
+                  <span>Nº SAP</span>
                   <span>Compra</span>
+                  <span>Faturamento</span>
                   <span>Nome</span>
                   <span>Cliente</span>
                   <span>Status</span>
@@ -285,10 +328,13 @@ function CarregadoresVisaoGeralPage() {
                 {itens.map((p) => (
                   <div
                     key={p.id}
-                    className="grid sm:grid-cols-[100px_100px_1fr_1fr_120px_140px] gap-1 sm:gap-3 px-5 py-2.5 text-sm items-center"
+                    className="grid sm:grid-cols-[90px_90px_100px_92px_92px_1fr_1fr_110px_130px] gap-1 sm:gap-3 px-5 py-2.5 text-sm items-center"
                   >
                     <span className="font-mono text-xs text-muted-foreground">{p.numero ?? "—"}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{p.nfNumero ?? "—"}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{p.sapNumero ?? "—"}</span>
                     <span className="text-xs text-muted-foreground">{fmtData(p.data)}</span>
+                    <span className="text-xs text-muted-foreground">{p.faturadoEm ? fmtData(p.faturadoEm) : "—"}</span>
                     <span className={cn("truncate", !p.nome && "text-muted-foreground")}>{p.nome ?? "—"}</span>
                     <span className="truncate">{p.cliente_nome}</span>
                     <span className="flex items-center gap-1.5 text-xs">
