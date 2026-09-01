@@ -22,7 +22,7 @@ import {
 } from "@/lib/estoque.functions";
 
 import type { UnidadeProdutos } from "@/components/admin/produtos-gestao";
-import { UNIDADE_LABEL } from "@/components/admin/produtos-gestao";
+import { UNIDADE_LABEL } from "@/components/admin/unidades-produtos";
 
 const money = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v ?? 0));
