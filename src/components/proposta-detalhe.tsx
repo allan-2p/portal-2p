@@ -58,7 +58,8 @@ export function usePropostaDetalhe(id?: string) {
     // de editar mostrava a versão em cache (parecia que "não salvou").
     staleTime: 0,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+
+
 
     // Enquanto a cobrança não estiver paga, o detalhe se atualiza sozinho —
     // assim o Pix reemitido aparece sem precisar recarregar a tela.
