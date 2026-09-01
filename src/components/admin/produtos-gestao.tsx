@@ -419,7 +419,8 @@ export function ProdutosGestao({ unidade }: { unidade: UnidadeProdutos }) {
   const [soDivergentes, setSoDivergentes] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [aba, setAba] = useState<"portal" | "sap">("portal");
+  // No Grupo 2P o moderador trabalha a partir do catálogo completo do SAP.
+  const [aba, setAba] = useState<"portal" | "sap">(unidade === "grupo2p" ? "sap" : "portal");
 
 
 
