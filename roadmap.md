@@ -80,3 +80,6 @@
 - [ ] Kit gerador: marcar/desmarcar deve reprecificar TODOS os itens (assinatura determinística)
 - [ ] Faturar ao cliente final: simular com o cliente fake da UF (`clientes_fakes`) + CNPJ_CI da revenda
 - [ ] Catálogo do portal: itens 200000590 e 200000142 enviados ao portal não aparecem; itens publicados devem permanecer no catálogo mesmo após novas sincronizações do SAP
+
+- [x] Funil do cliente: visual mais legível (cards por etapa)
+- [x] Catálogo do portal: itens enviados manualmente não podem ser removidos/desativados por novas sincronizações do SAP
