@@ -67,7 +67,11 @@ function ProdutosCarregadoresPage() {
             <TabsTrigger value="ufs">Alíquotas por UF</TabsTrigger>
           </TabsList>
           <TabsContent value="produtos" className="mt-4"><ProdutosTab /></TabsContent>
-          <TabsContent value="fotos" className="mt-4"><CatalogoFotos /></TabsContent>
+          <TabsContent value="fotos" className="mt-4">
+            <Suspense fallback={<p className="py-10 text-center text-muted-foreground">Carregando catálogo…</p>}>
+              <CatalogoFotos />
+            </Suspense>
+          </TabsContent>
           <TabsContent value="ufs" className="mt-4"><UfsTab /></TabsContent>
         </Tabs>
 
