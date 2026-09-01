@@ -256,7 +256,6 @@ export const Route = createFileRoute("/api/atlas-chat")({
           }
         }
 
-        console.log("[atlas-dbg]", JSON.stringify(sanearHistorico(messages).map(m=>({r:m.role,p:(m.parts??[]).map(x=>({t:(x as any).type,s:(x as any).state}))}))));
         const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
         const gateway = createLovableAiGatewayProvider(key);
 
