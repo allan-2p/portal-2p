@@ -682,7 +682,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         aberto={confirmarFechar}
         onCancelar={() => setConfirmarFechar(false)}
         onDescartar={fechar}
-        descricao="Você preencheu informações do cliente que ainda não foram salvas. Se fechar agora, elas serão perdidas."
+        descricao={
+          modoAmpliacao
+            ? `A atuação já foi ampliada, mas a revisão do cadastro ainda não foi salva e ${ORGANIZACAO[instancia]} continuará sem consultor responsável. Deseja sair mesmo assim?`
+            : "Você preencheu informações do cliente que ainda não foram salvas. Se fechar agora, elas serão perdidas."
+        }
       />
 
       <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : tentarFechar())}>
