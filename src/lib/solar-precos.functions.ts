@@ -34,9 +34,22 @@ function validar(input: unknown): PrecoSolarInput {
   // final, o preço tem que ser simulado com o documento e o TP_OV DELE — os
   // impostos mudam (ex.: sem IE o IPI entra na base do ICMS). A tabela (PLTYP)
   // continua sendo a do cliente da proposta.
-  const faturamento = (i.faturamento ?? null) as { doc?: unknown; contribuinte?: unknown } | null;
+  const faturamento = (i.faturamento ?? null) as
+    | { doc?: unknown; contribuinte?: unknown; uf?: unknown }
+    | null;
   const clienteDoc = String(i.documento ?? "");
+  const finalContribuinte = contribuinteDoFaturamento({
+    contribuinte: i.contribuinte === true,
+    faturarClienteFinal: i.faturarClienteFinal === true,
+    faturamento,
+    clienteDoc,
+  });
   return {
+    faturarClienteFinal: i.faturarClienteFinal === true,
+    ufFaturamento: String(faturamento?.uf ?? i.uf ?? "").trim().toUpperCase(),
+    finalContribuinte,
+    triangulacao: String(i.tipoNf ?? "").toLowerCase().startsWith("triangul"),
+    clienteDoc: clienteDoc.replace(/\D/g, ""),
     itens,
     documento: documentoDaSimulacao({
       faturarClienteFinal: i.faturarClienteFinal === true,
