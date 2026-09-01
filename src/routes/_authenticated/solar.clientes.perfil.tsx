@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/app-layout";
 import { listClientesPerfilFn, getClientePerfilFn } from "@/lib/clientes.functions";
 import type { SalesforceAccount } from "@/lib/salesforce.functions";
 import { Search, Sparkles, AlertTriangle } from "lucide-react";
+import { fmtDataBR } from "@/lib/data-br";
 
 // Dossiê 360 (funil, atividades, gráficos) em chunk próprio: só baixa ao abrir um cliente.
 const Client360 = lazy(() =>
@@ -40,8 +41,7 @@ export const Route = createFileRoute("/_authenticated/solar/clientes/perfil")({
 const PAGE_SIZE = 10;
 const INSTANCIA = "solar" as const;
 
-const fmtData = (d: string | null | undefined) =>
-  d ? new Date(d).toLocaleDateString("pt-BR") : "—";
+const fmtData = (d: string | null | undefined) => fmtDataBR(d);
 
 const docFmt = (doc: string | null) => {
   const d = (doc ?? "").replace(/\D/g, "");

@@ -13,6 +13,7 @@ import { PROPOSTA_STATUS_STYLE, type PropostaStatus } from "@/lib/proposta-statu
 import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { PixStatusBadge } from "@/components/pix-status-badge";
 import { acaoAtlasPix, normalizarPagamentoStatus, type PagamentoStatus } from "@/lib/pagamentos-ui";
+import { fmtDataBR } from "@/lib/data-br";
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
@@ -54,8 +55,7 @@ type Pedido = {
 };
 
 function datePtBr(iso: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR");
+  return fmtDataBR(iso);
 }
 
 function CarregadoresPedidosPage() {
