@@ -179,15 +179,10 @@ export async function listClientesPagina(
   if (opts.status === "inativos") params.set("ativo", "is.false");
   if (opts.fiscal === "contribuinte") params.set("contribuinte", "is.true");
   if (opts.fiscal === "nao") params.set("contribuinte", "not.is.true");
-  if (opts.donoId || opts.consultorSap) {
-    const alvos: string[] = [];
-    if (opts.donoId) {
-      alvos.push(`created_by.eq.${opts.donoId}`);
-      if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
-    }
-    if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
-    grupos.push(`or(${alvos.join(",")})`);
+  if (opts.donoId || opts.consultorSap || opts.consultorNome) {
+    grupos.push(`or(${(await alvosDoDono(opts)).join(",")})`);
   }
+
   params.set("and", `(${grupos.join(",")})`);
 
   const termo = termoSeguro(opts.q ?? "");
