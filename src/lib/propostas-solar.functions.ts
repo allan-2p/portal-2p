@@ -44,7 +44,8 @@ export type SalvarPropostaSolarInput = {
   /** Observações internas do pedido — não vão para a NF nem para o SAP. */
   observacoesInternas: string | null;
   calculo: Record<string, unknown> | null;
-  itens: { produtoId: string; qtd: number }[];
+  /** `produtoId` do catálogo e/ou o código SAP do material (fallback). */
+  itens: { produtoId: string; codigo: string; qtd: number }[];
 };
 
 const money2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100;
