@@ -227,6 +227,7 @@ export const listClientesPerfilFn = createServerFn({ method: "POST" })
     const perm = await getPerm(context as any, data.instancia, "contas");
     assertPodeLer(perm, "contas");
     const consultorSap = perm.view_all ? null : await meuConsultorSap(context as any);
+    const consultorNome = perm.view_all ? null : await meuNomeCompleto(context as any);
     try {
       const { rows, total } = await db.listClientesPerfil(data.instancia, {
         q: data.q,
@@ -234,7 +235,9 @@ export const listClientesPerfilFn = createServerFn({ method: "POST" })
         porPagina: data.porPagina,
         donoId: perm.view_all ? null : context.userId,
         consultorSap,
+        consultorNome,
       });
+
       return { ok: true as const, clientes: rows.map(resumirClientePerfil), total };
     } catch (e) {
       if (e instanceof db.ClientesTableMissing) {
