@@ -136,8 +136,11 @@ export async function varrerCatalogoVendaveis(
     const vendavel = Boolean(achado);
     const override = linha.ativo_override as boolean | null;
     if (override !== null && override !== undefined) overrides += 1;
-    const ativo = override ?? vendavel;
+    // A varredura nunca desativa: só o override manual pode desligar um material.
+    // O que já está ativo no portal continua ativo mesmo sem preço na VK12.
+    const ativo = override ?? (Boolean(linha.ativo) || vendavel);
     if (ativo !== Boolean(linha.ativo)) (ativo ? ativados++ : desativados++);
+
 
     const patch: Record<string, unknown> = {
       codigo,
