@@ -149,10 +149,6 @@ function CarregadoresVisaoGeralPage() {
     return [...set].sort().reverse();
   }, [vendidos]);
 
-  /** Data de referência conforme o filtro escolhido (compra ou faturamento). */
-  const dataRef = (p: PedidoVendido) =>
-    campoData === "faturamento" ? (p.dataFaturamento ?? p.data) : p.data;
-
   const filtrados = useMemo(() => {
     return vendidos.filter((p) => {
       const ref = campoData === "faturamento" ? (p.dataFaturamento ?? p.data) : p.data;
