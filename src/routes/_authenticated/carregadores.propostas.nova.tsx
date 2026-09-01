@@ -77,6 +77,7 @@ import {
   type CarregadoresFinalidadeUso,
   type CarregadoresItem,
   type CarregadoresFreteMod,
+  type CarregadoresTipoNf,
   type CarregadoresState,
   textoDifalContribuinte,
   avisoDifalUsoConsumo,
@@ -347,7 +348,7 @@ function PropostaCarregadoresPage() {
         padrinhoId: ((data as any).padrinho_id as string | null) ?? null,
         padrinhoNome: ((data as any).padrinho_nome as string | null) ?? "",
         previsaoFechamento: ((data as any).previsao_fechamento as string | null) ?? "",
-        tipoNf: (((data as any).tipo_nf as string | null) ?? "venda") as CarregadoresState["tipoNf"],
+        tipoNf: (((data as any).tipo_nf as string | null) ?? "") as CarregadoresState["tipoNf"],
         faturarClienteFinal: (data as any).faturar_cliente_final === true,
         faturamento: {
           ...novoFaturamento(data.uf),
@@ -963,6 +964,7 @@ function PropostaCarregadoresPage() {
   if (itensSemQtd.length)
     errosPdf.push(`${itensSemQtd.length} item(ns) sem quantidade informada.`);
   if (!state.freteMod) errosPdf.push("Selecione a modalidade de frete.");
+  if (!state.tipoNf) errosPdf.push("Selecione o tipo de nota fiscal.");
   // Bonificação não tem pagamento: forma/condição não são exigidas.
   if (state.tipoNf !== "bonificacao" && !state.formaPagamento) errosPdf.push("Selecione a forma de pagamento.");
   if (state.tipoNf !== "bonificacao" && !state.condicaoPagamento) errosPdf.push("Selecione a condição de pagamento.");
@@ -987,6 +989,7 @@ function PropostaCarregadoresPage() {
   const errosSalvar: string[] = [];
   if (!state.propostaNome.trim()) errosSalvar.push("Informe o nome da proposta.");
   errosCliente.forEach((e) => errosSalvar.push(e.msg));
+  if (!state.tipoNf) errosSalvar.push("Selecione o tipo de nota fiscal.");
   if (!temProduto) errosSalvar.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length) errosSalvar.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
   if (temProduto && abaixoPolitica) errosSalvar.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
@@ -1790,15 +1793,20 @@ function PropostaCarregadoresPage() {
             {etapa === 2 ? (
               <>
 
-                <Field label="Tipo de nota fiscal">
+                <Field label="Tipo de nota fiscal *">
                   <Select value={state.tipoNf} onValueChange={(v) => set("tipoNf", v as CarregadoresState["tipoNf"])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo de nota fiscal" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="venda">{labelTipoNf.venda}</SelectItem>
                       <SelectItem value="triangulacao">{labelTipoNf.triangulacao}</SelectItem>
                       <SelectItem value="bonificacao">{labelTipoNf.bonificacao}</SelectItem>
                     </SelectContent>
                   </Select>
+                  {tentouAvancar && !state.tipoNf && (
+                    <p className="text-xs text-destructive">Selecione o tipo de nota fiscal.</p>
+                  )}
                 </Field>
 
                 <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
@@ -2471,7 +2479,7 @@ function PropostaCarregadoresPage() {
                   <ResumoLinha k="Consultor" v={consultorProposta ?? "—"} />
                   <ResumoLinha
                     k="Nota"
-                    v={`${labelTipoNf[state.tipoNf]} · ${labelFinalidadeUso[state.finalidadeUso]} · ${cidadeUf(faturamentoEfetivo.cidade, state.uf)}`}
+                    v={`${labelTipoNf[state.tipoNf as CarregadoresTipoNf] || "—"} · ${labelFinalidadeUso[state.finalidadeUso]} · ${cidadeUf(faturamentoEfetivo.cidade, state.uf)}`}
                   />
                   <ResumoLinha
                     k="Endereço de faturamento"

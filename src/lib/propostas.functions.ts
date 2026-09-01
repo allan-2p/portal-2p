@@ -137,9 +137,10 @@ function validar(input: any): SalvarPropostaInput {
 
   const propostaNome = String(input.propostaNome ?? "").trim().slice(0, 160);
   if (!propostaNome) throw new Error("Informe o nome da proposta.");
-  const tipoNfNorm = ["venda", "triangulacao", "bonificacao"].includes(String(input.tipoNf))
-    ? String(input.tipoNf)
-    : "venda";
+  const tipoNfRaw = String(input.tipoNf ?? "").trim().toLowerCase();
+  if (!tipoNfRaw || !["venda", "triangulacao", "bonificacao"].includes(tipoNfRaw))
+    throw new Error("Selecione o tipo de nota fiscal da operação.");
+  const tipoNfNorm = tipoNfRaw;
 
   return {
     propostaId: input.propostaId ? String(input.propostaId) : null,

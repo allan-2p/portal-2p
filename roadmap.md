@@ -1,5 +1,12 @@
 # Roadmap
 
+## Em andamento / perguntas
+- [ ] Qual permissão de perfil permite marcar pedido como entregue? (resposta: `modify_all = true` no objeto `propostas` da instância; ver `permission_profile_object_perms`)
+
+## Concluído neste turno
+- [x] Tipo de NF obrigatório em solar e carregadores (front + back)
+
+
 ## Salesforce — envio completo do pedido
 - [ ] Reenviar/atualizar a oportunidade a cada mudança de status (todos os motores, não só as ações manuais).
 - [ ] Mapear por padrão os campos que faltavam: Nº SAP, frete, tipo de NF, desconto, total, margem, tabela de preço, previsão de fechamento, NF, datas de faturamento/coleta/entrega, transportadora, vendedor, quem criou/finalizou, feito através de, projeto vendido.

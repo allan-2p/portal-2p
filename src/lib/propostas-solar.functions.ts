@@ -120,7 +120,10 @@ function validar(input: unknown): SalvarPropostaSolarInput {
 
 
   const freteMod = ["FOB", "CIF", "DEDICADO"].includes(String(i.freteMod)) ? String(i.freteMod) : "";
-  const tipoNfNorm = ["venda", "triangulacao", "bonificacao"].includes(String(i.tipoNf)) ? String(i.tipoNf) : "venda";
+  const tipoNfRaw = String(i.tipoNf ?? "").trim().toLowerCase();
+  if (!tipoNfRaw || !["venda", "triangulacao", "bonificacao"].includes(tipoNfRaw))
+    throw new Error("Selecione o tipo de nota fiscal da operação.");
+  const tipoNfNorm = tipoNfRaw;
   const t = i.transportadora;
 
   return {
