@@ -419,6 +419,74 @@ export const logSalesforceInteraction = createServerFn({ method: "POST" })
     return { id: res?.id ?? null };
   });
 
+/**
+ * Reprocessa tarefas antigas criadas pelo portal sem dono explícito: elas
+ * ficaram no usuário de integração do Salesforce e por isso só apareciam no
+ * perfil do cliente (filtro por conta), sumindo da home e das Tarefas diárias
+ * (filtro por dono). Transfere cada uma para o dono da conta vinculada.
+ */
+export const reatribuirTarefasDoPortalFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { simular?: boolean } | undefined) => input ?? {})
+  .handler(async ({ data, context }) => {
+    const { requireAdminFeature } = await import("@/lib/guards.server");
+    await requireAdminFeature(context as any, "admin.integracoes", "editar");
+
+    const me = await sfFetch(`/chatter/users/me`);
+    const integracaoId = String(me?.id ?? "").trim();
+    if (!validId(integracaoId)) throw new Error("Não foi possível identificar o usuário de integração do Salesforce.");
+
+    const soql =
+      `SELECT Id, WhatId FROM Task ` +
+      `WHERE OwnerId = '${esc(integracaoId)}' AND WhatId != null ` +
+      `ORDER BY CreatedDate DESC LIMIT 2000`;
+    const res = await sfFetch(`/query?q=${encodeURIComponent(soql)}`);
+    const tarefas = ((res?.records ?? []) as any[])
+      .map((r) => ({ id: String(r.Id), whatId: String(r.WhatId ?? "") }))
+      .filter((t) => validId(t.whatId));
+
+    // Dono de cada conta (uma consulta por lote de 200 ids).
+    const contas = Array.from(new Set(tarefas.map((t) => t.whatId)));
+    const donos = new Map<string, string>();
+    for (let i = 0; i < contas.length; i += 200) {
+      const lote = contas.slice(i, i + 200);
+      const q = `SELECT Id, OwnerId FROM Account WHERE Id IN (${lote.map((id) => `'${esc(id)}'`).join(",")})`;
+      const r = await sfFetch(`/query?q=${encodeURIComponent(q)}`).catch(() => ({ records: [] }));
+      for (const row of (r?.records ?? []) as any[]) {
+        if (validId(row.OwnerId)) donos.set(String(row.Id), String(row.OwnerId));
+      }
+    }
+
+    const alvos = tarefas
+      .map((t) => ({ ...t, ownerId: donos.get(t.whatId) ?? null }))
+      .filter((t) => t.ownerId && t.ownerId !== integracaoId) as Array<{ id: string; whatId: string; ownerId: string }>;
+
+    if (data.simular) {
+      return { total: tarefas.length, reatribuidas: 0, semDono: tarefas.length - alvos.length, previstas: alvos.length };
+    }
+
+    let ok = 0;
+    let falhas = 0;
+    for (const t of alvos) {
+      try {
+        await sfFetch(`/sobjects/Task/${t.id}`, { method: "PATCH", body: JSON.stringify({ OwnerId: t.ownerId }) });
+        ok += 1;
+      } catch {
+        falhas += 1;
+      }
+    }
+
+    const { auditIntegration } = await import("@/lib/audit.server");
+    void auditIntegration(
+      context.userId,
+      "salesforce",
+      "reatribuiu tarefas do portal",
+      `${ok} tarefa(s) transferidas ao dono da conta (${falhas} falha(s))`,
+    );
+    return { total: tarefas.length, reatribuidas: ok, falhas, semDono: tarefas.length - alvos.length };
+  });
+
+
 
 export type SalesforceSalesperson = { id: string; name: string; email: string | null };
 

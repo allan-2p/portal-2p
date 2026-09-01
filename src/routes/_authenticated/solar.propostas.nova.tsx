@@ -1,3 +1,4 @@
+import { invalidarCachePropostas } from "@/lib/propostas-cache";
 import { formatPropostaNumero } from "@/lib/sap-numero";
 import { PainelVariacoes } from "@/components/propostas/variacoes";
 import { cidadeUf, cidadeUfCep } from "@/lib/local-format";
@@ -1567,7 +1568,9 @@ function NovaPropostaSolarPage() {
       setNumero(r.numero);
       ressincronizarBase.current = true;
       // Revalida a lista em segundo plano: não faz o usuário esperar o refetch.
-      void queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
+      // Revalida listagem, detalhe e variações: sem isso o detalhe do pedido
+      // continuava mostrando a versão anterior até recarregar a página.
+      void invalidarCachePropostas(queryClient);
 
       if (!concluir) {
         toast.success(`Proposta ${formatPropostaNumero(r.numero)} salva.`);
@@ -1580,7 +1583,7 @@ function NovaPropostaSolarPage() {
         // O servidor valida a conclusão como etapa 4 (Finalização).
         setConclusaoFase("integrando");
         const linha = await concluirPropostaFn({ data: { id: r.id, origem: "portal", etapa: 5 } });
-        void queryClient.invalidateQueries({ queryKey: ["solar-proposals"] });
+        void invalidarCachePropostas(queryClient);
         if (linha?.already_concluded) {
           toast.info(`Pedido ${formatPropostaNumero(r.numero)} já havia sido concluído (${linha.status}).`);
           void navigate({ to: "/solar/propostas" });
