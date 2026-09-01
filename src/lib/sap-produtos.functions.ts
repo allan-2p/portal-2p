@@ -259,13 +259,19 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
           `${r.descricao ?? ""}|${r.unidade ?? ""}|${r.ncm_codigo ?? ""}|${r.no_catalogo ? 1 : 0}`,
         ]),
       );
+      // Envio manual manda: material já colocado no catálogo do portal continua
+      // lá em qualquer sincronização — só sai por decisão de alguém na
+      // Administração. O SAP só pode ADICIONAR ao catálogo, nunca remover.
+      const jaNoCatalogo = new Set(
+        (espelhoExistente ?? []).filter((r: any) => r.no_catalogo).map((r: any) => String(r.codigo)),
+      );
       const espelho = todosMateriais
         .map((m) => ({
           codigo: m.codigo,
           descricao: m.descricao,
           unidade: m.unidade,
           ncm_codigo: ncmDe(m),
-          no_catalogo: m.liberado,
+          no_catalogo: m.liberado || jaNoCatalogo.has(m.codigo),
           sap_raw: m.raw as any,
           last_synced_at: now,
         }))
@@ -351,10 +357,14 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
 
 
       // Merge: o que não veio mais do SAP fica inativo (sem apagar histórico).
-      // Produtos criados manualmente no portal não são afetados.
+      // Produtos criados manualmente no portal e materiais enviados de propósito
+      // ao catálogo do portal não são afetados — só saem por decisão manual.
       const vindos = new Set(rows.map((r) => r.codigo));
       const orfaos = (existentes ?? [])
-        .filter((r: any) => r.ativo && r.origem !== "manual" && !vindos.has(r.codigo))
+        .filter(
+          (r: any) =>
+            r.ativo && r.origem !== "manual" && !vindos.has(r.codigo) && !jaNoCatalogo.has(String(r.codigo)),
+        )
         .map((r: any) => r.codigo as string);
       for (let i = 0; i < orfaos.length; i += 500) {
         const chunk = orfaos.slice(i, i + 500);

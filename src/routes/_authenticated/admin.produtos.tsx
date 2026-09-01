@@ -88,7 +88,14 @@ function duracao(inicio: string, fim: string | null) {
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
-function CatalogoSapCompleto({ onPropagar }: { onPropagar: () => void }) {
+function CatalogoSapCompleto({
+  onPropagar,
+  onEnviado,
+}: {
+  onPropagar: () => void;
+  /** Leva o usuário até o material recém-enviado na aba Produtos. */
+  onEnviado: (codigo: string) => void;
+}) {
   const listAll = useServerFn(listSapCatalogoCompleto);
   const setNoPortal = useServerFn(setSapCatalogoNoPortal);
   const [q, setQ] = useState("");
@@ -108,11 +115,12 @@ function CatalogoSapCompleto({ onPropagar }: { onPropagar: () => void }) {
       await setNoPortal({ data: { codigo, no_catalogo } });
       toast.success(
         no_catalogo
-          ? `${codigo} enviado ao catálogo do portal (inativo, defina a visibilidade em Produtos).`
+          ? `${codigo} enviado ao catálogo do portal. Ele entra inativo e sem visibilidade — defina a instância abaixo.`
           : `${codigo} removido do catálogo do portal.`,
       );
       await refetch();
       onPropagar();
+      if (no_catalogo) onEnviado(codigo);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao atualizar o catálogo.");
     } finally {
@@ -1121,7 +1129,18 @@ function ProdutosPage() {
         </div>
         </>
         ) : (
-          <CatalogoSapCompleto onPropagar={propagar} />
+          <CatalogoSapCompleto
+            onPropagar={propagar}
+            onEnviado={(codigo) => {
+              // Material entra inativo: sem isso ele sumia atrás do filtro
+              // padrão "Ativos" e parecia que o envio não funcionou.
+              setStatus("todos");
+              setVisibilidade("all");
+              setQ(codigo);
+              setPage(0);
+              setAba("portal");
+            }}
+          />
         )}
 
       </div>

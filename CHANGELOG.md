@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Catálogo do portal é definitivo**: material enviado manualmente ao catálogo passa a permanecer lá em qualquer sincronização do SAP (só sai por decisão de alguém na Administração) e não é mais desativado quando deixa de vir na lista de liberados do SAP. Ao enviar, a tela já leva para o produto na aba Produtos com os filtros abertos — antes ele entrava inativo e sumia atrás do filtro padrão "Ativos", parecendo que o envio não tinha funcionado.
+- **Funil do cliente mais legível**: resumo com valor em aberto, nº de propostas e etapas; cada etapa vira um bloco com barra de participação no funil, e cada oportunidade mostra data, tempo em aberto (com destaque para as paradas há mais de 60/180 dias) e valor.
 - **Kit gerador recalcula sempre**: marcar ou desmarcar "Kit fotovoltaico" na proposta Solar às vezes não reprecificava os itens já na lista (o disparo se perdia quando outra precificação estava em curso ou a lista ainda carregava). Agora o kit faz parte da mesma assinatura de preço do faturamento, com reprocessamento pendente, e o aviso indica se os valores saíram com ou sem ICMS/IPI.
 - **Faturamento ao cliente final**: a simulação de preço passa a usar o cliente fake da UF de faturamento (o cliente final não existe no cadastro do SAP), mantendo o CNPJ real como consumidor industrial quando contribuinte; em triangulação nada muda.
 - Perfil do cliente: tarefas abrem com detalhes e ações (Concluir, Registrar interação, Reagendar), iguais às da home; funil agrupado por etapa com data de criação; coluna "Status do pedido" nas tabelas de propostas.
