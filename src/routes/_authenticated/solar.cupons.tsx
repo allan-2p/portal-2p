@@ -775,16 +775,6 @@ function CuponsPage() {
                         >
                           <Power className={cn("h-4 w-4", c.ativo ? "text-emerald-500" : "text-muted-foreground")} />
                         </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive"
-                          title="Excluir cupom"
-                          onClick={() => setExcluindo(c)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </td>
                     )}
                   </tr>
