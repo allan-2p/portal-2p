@@ -5,6 +5,7 @@ import {
   type PropostaStatus,
 } from "@/lib/proposta-status";
 import { cn } from "@/lib/utils";
+import { fmtDataHoraBR } from "@/lib/data-br";
 
 /**
  * Linha do tempo universal de andamento do pedido (2P Solar, 2P Carregadores).
@@ -22,16 +23,7 @@ export const ETAPAS_ANDAMENTO: PropostaStatus[] = [
   "Entregue",
 ];
 
-const fmtDataHora = (v?: string | null) =>
-  v
-    ? new Date(v).toLocaleString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : null;
+const fmtDataHora = (v?: string | null) => (v ? fmtDataHoraBR(v) : null);
 
 /** Data em que o pedido entrou no status (coluna carimbada na transição). */
 function dataDoStatus(

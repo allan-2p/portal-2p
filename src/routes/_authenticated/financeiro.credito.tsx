@@ -26,6 +26,7 @@ import {
   CREDITO_CONCLUSOES, CREDITO_PRIORIDADES, CREDITO_STATUS,
   creditoStatusTom, fmtBRL, type CreditoAnalise,
 } from "@/lib/credito";
+import { fmtDataBR } from "@/lib/data-br";
 
 export const Route = createFileRoute("/_authenticated/financeiro/credito")({
   head: () => ({
@@ -56,7 +57,7 @@ const ABAS: { id: Aba; label: string; status?: string[] }[] = [
   { id: "todas", label: "Todas" },
 ];
 
-const dataBR = (v?: string | null) => (v ? new Date(v).toLocaleDateString("pt-BR") : "—");
+const dataBR = (v?: string | null) => fmtDataBR(v);
 
 function CreditoPage() {
   const { hasFeature } = useInstance();

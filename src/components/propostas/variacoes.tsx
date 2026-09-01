@@ -17,6 +17,7 @@ import {
   listarVariacoesFn,
   marcarVariacaoFavoritaFn,
 } from "@/lib/proposta-variacoes.functions";
+import { fmtDataBR } from "@/lib/data-br";
 
 export type LinhaComVariacao = {
   id: string;
@@ -139,8 +140,7 @@ export function LinhasVariacoes({
   const alternativas = irmas.filter((v) => !v.variacao_favorita);
   if (!alternativas.length) return null;
 
-  const dataBR = (iso?: string | null) =>
-    iso ? new Date(iso).toLocaleDateString("pt-BR") : "—";
+  const dataBR = (iso?: string | null) => fmtDataBR(iso);
 
   return (
     <>

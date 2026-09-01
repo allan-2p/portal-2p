@@ -41,13 +41,13 @@ import { BoletosSharepointCard } from "@/components/boletos-sharepoint-card";
 import { propostaPdfDaLinha } from "@/lib/proposta-pdf-row";
 import { useState } from "react";
 import { toast } from "sonner";
+import { fmtDataBR } from "@/lib/data-br";
 
 
 
 type Item = { codigo?: string | null; nome?: string; qtd?: number; valor?: number };
 
-const fmtData = (v?: string | null) =>
-  v ? new Date(v).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+const fmtData = (v?: string | null) => fmtDataBR(v);
 
 export function usePropostaDetalhe(id?: string) {
   return useQuery({

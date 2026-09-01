@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { fmtBRL } from "@/lib/carregadores";
 import { PixQrCode } from "@/components/pix-qrcode";
 import { boletoGuiaHtml, imprimirBoletoGuia } from "@/lib/boleto-guia-pdf";
+import { fmtDataBR } from "@/lib/data-br";
 
 export type CobrancaInfo = {
   forma?: string | null;
@@ -26,8 +27,7 @@ export type CobrancaInfo = {
   clienteDoc?: string | null;
 };
 
-const fmtData = (v?: string | null) =>
-  v ? new Date(v).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+const fmtData = (v?: string | null) => fmtDataBR(v);
 
 export function labelStatusCobranca(status?: string | null) {
   switch (String(status ?? "")) {

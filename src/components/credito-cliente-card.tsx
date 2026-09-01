@@ -22,8 +22,9 @@ import {
 } from "@/lib/credito";
 import { CreditoAnexosUpload } from "@/components/credito-anexos";
 import { Switch } from "@/components/ui/switch";
+import { fmtDataBR } from "@/lib/data-br";
 
-const dataBR = (v?: string | null) => (v ? new Date(v).toLocaleDateString("pt-BR") : "—");
+const dataBR = (v?: string | null) => fmtDataBR(v);
 
 /**
  * Bloco de Análise de Crédito no cadastro do cliente: solicitações do portal

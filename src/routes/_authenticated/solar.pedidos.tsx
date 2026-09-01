@@ -10,6 +10,7 @@ import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { listarPropostasFn } from "@/lib/propostas.functions";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useVendedoresOrg } from "@/hooks/use-carregadores-vendedores";
+import { fmtDataBR } from "@/lib/data-br";
 
 export const Route = createFileRoute("/_authenticated/solar/pedidos")({
   head: () => ({
@@ -60,8 +61,7 @@ type Pedido = {
 };
 
 function datePtBr(iso: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR");
+  return fmtDataBR(iso);
 }
 
 function AcompanhamentoSolarPage() {
