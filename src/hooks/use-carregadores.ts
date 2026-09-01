@@ -1,3 +1,4 @@
+import { invalidarCachePropostas } from "@/lib/propostas-cache";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,6 +127,9 @@ export function useCarregadoresInvalidate() {
     qc.invalidateQueries({ queryKey: ["carregadores-products-admin"] });
     qc.invalidateQueries({ queryKey: ["carregadores-ufs"] });
     qc.invalidateQueries({ queryKey: ["carregadores-config"] });
-    qc.invalidateQueries({ queryKey: ["carregadores-proposals"] });
+    // Listagem, detalhe do pedido e variações — o detalhe ficava em cache com
+    // a versão anterior depois de salvar.
+    void invalidarCachePropostas(qc);
   };
 }
+
