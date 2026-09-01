@@ -182,7 +182,12 @@ export type ClientePerfilResumo = {
   criadoEm: string | null;
 };
 
-function resumirClientePerfil(c: Record<string, any>): ClientePerfilResumo {
+function resumirClientePerfil(
+  c: Record<string, any>,
+  instancia: "solar" | "carregadores" = "solar",
+): ClientePerfilResumo {
+  const prefixo = instancia === "carregadores" ? "consultor_carregadores" : "consultor_solar";
+  const respNome = String(c[`${prefixo}_nome`] ?? "").trim() || null;
   return {
     id: String(c["id"]),
     sfAccountId: (c["sf_account_id"] as string | null) ?? null,
@@ -193,7 +198,7 @@ function resumirClientePerfil(c: Record<string, any>): ClientePerfilResumo {
     cidade: (c["cidade"] as string | null) ?? null,
     uf: (c["uf"] as string | null) ?? null,
     consultor:
-      ((c["consultor_nome"] as string | null) || (c["created_by_nome"] as string | null)) ?? null,
+      (respNome || (c["consultor_nome"] as string | null) || (c["created_by_nome"] as string | null)) ?? null,
     criadoEm: (c["created_at"] as string | null) ?? null,
   };
 }
@@ -268,7 +273,7 @@ export const listClientesPerfilFn = createServerFn({ method: "POST" })
         consultorNome,
       });
 
-      return { ok: true as const, clientes: rows.map(resumirClientePerfil), total };
+      return { ok: true as const, clientes: rows.map((r) => resumirClientePerfil(r, data.instancia)), total };
     } catch (e) {
       if (e instanceof db.ClientesTableMissing) {
         return { ok: false as const, motivo: "tabela-ausente" as const, clientes: [], total: 0 };
