@@ -504,7 +504,20 @@ function VisaoGeral({
       }))
       .sort((a, b) => b.total - a.total || b.itens.length - a.itens.length);
   }, [oportunidadesAbertas]);
-  const maiorEtapa = grupos.reduce((m, g) => Math.max(m, g.total), 0);
+  const [etapaFiltro, setEtapaFiltro] = useState<string>("todas");
+  // Linhas da tabela: filtradas pela etapa escolhida, mais recentes primeiro.
+  const linhas = useMemo(() => {
+    const base =
+      etapaFiltro === "todas"
+        ? oportunidadesAbertas
+        : oportunidadesAbertas.filter(
+            (o) => (String(o.stage ?? "").trim() || "Sem etapa") === etapaFiltro,
+          );
+    return base
+      .slice()
+      .sort((a, b) => String(b.createdDate ?? "").localeCompare(String(a.createdDate ?? "")));
+  }, [oportunidadesAbertas, etapaFiltro]);
+  const totalLinhas = linhas.reduce((s: number, o: any) => s + (o.amount || 0), 0);
 
   return (
     <div className="space-y-4">
