@@ -34,7 +34,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
-- **Proposta Solar voltou a salvar**: a sincronização do SAP das 14:06 desativou 23 materiais de estrutura (trilhos, grampos, suportes) que continuavam vendáveis; sem eles no catálogo, os itens da calculadora viravam "avulso" e o pedido era recusado com "Adicione ao menos um produto". Os materiais foram reativados, a sincronização agora ignora desativações em massa (acima de 10% dos ativos) quando a resposta do SAP vem incompleta, e a etapa de produtos avisa exatamente quais códigos estão fora do catálogo.
+- **Sincronização do SAP nunca mais desativa material**: ela passa a ser somente aditiva — traz materiais novos e atualiza dados cadastrais, mas não desliga nada. Material que deixa de vir na lista do SAP continua como está no portal, e a varredura de preço (VK12) só pode ativar; desativar virou decisão exclusivamente manual na Administração.
+- **Proposta Solar voltou a salvar**: a sincronização do SAP das 14:06 desativou 23 materiais de estrutura (trilhos, grampos, suportes) que continuavam vendáveis; sem eles no catálogo, os itens da calculadora viravam "avulso" e o pedido era recusado com "Adicione ao menos um produto". Os materiais foram reativados e a etapa de produtos avisa exatamente quais códigos estão fora do catálogo.
+
 
 - **Catálogo do portal é definitivo**: material enviado manualmente ao catálogo passa a permanecer lá em qualquer sincronização do SAP (só sai por decisão de alguém na Administração) e não é mais desativado quando deixa de vir na lista de liberados do SAP. Ao enviar, a tela já leva para o produto na aba Produtos com os filtros abertos — antes ele entrava inativo e sumia atrás do filtro padrão "Ativos", parecendo que o envio não tinha funcionado.
 - **Funil do cliente mais legível**: resumo com valor em aberto, nº de propostas e etapas; cada etapa vira um bloco com barra de participação no funil, e cada oportunidade mostra data, tempo em aberto (com destaque para as paradas há mais de 60/180 dias) e valor.
