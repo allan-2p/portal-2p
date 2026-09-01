@@ -231,14 +231,15 @@ export const Route = createFileRoute("/api/atlas-chat")({
         // A conversa precisa ser do usuário. Se o id veio de um cache antigo
         // (conversa excluída ou de outro usuário), criamos uma nova em vez de
         // recusar a pergunta — o Atlas nunca deve deixar de responder por isso.
-        let thread: { id: string; titulo: string | null } | null = null;
+        type ThreadRow = { id: string; titulo: string | null };
+        let thread: ThreadRow | null = null;
         if (threadId) {
           const { data } = await ctx.supabase
             .from("atlas_threads")
             .select("id, titulo")
             .eq("id", threadId)
             .maybeSingle();
-          thread = (data as typeof thread) ?? null;
+          thread = (data as ThreadRow | null) ?? null;
         }
         if (!thread) {
           const { data: nova, error: erroNova } = await ctx.supabase
@@ -247,9 +248,10 @@ export const Route = createFileRoute("/api/atlas-chat")({
             .select("id, titulo")
             .single();
           if (erroNova || !nova) return new Response("Não foi possível abrir a conversa.", { status: 500 });
-          thread = nova as typeof thread;
-          threadId = thread!.id;
+          thread = nova as ThreadRow;
+          threadId = thread.id;
         }
+
 
 
         const ultima = messages[messages.length - 1] as UIMessage;
