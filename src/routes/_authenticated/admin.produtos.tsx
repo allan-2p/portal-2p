@@ -1129,7 +1129,18 @@ function ProdutosPage() {
         </div>
         </>
         ) : (
-          <CatalogoSapCompleto onPropagar={propagar} />
+          <CatalogoSapCompleto
+            onPropagar={propagar}
+            onEnviado={(codigo) => {
+              // Material entra inativo: sem isso ele sumia atrás do filtro
+              // padrão "Ativos" e parecia que o envio não funcionou.
+              setStatus("todos");
+              setVisibilidade("all");
+              setQ(codigo);
+              setPage(0);
+              setAba("portal");
+            }}
+          />
         )}
 
       </div>
