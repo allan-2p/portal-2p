@@ -813,7 +813,7 @@ export function ProdutosGestao({ unidade }: { unidade: UnidadeProdutos }) {
         <div className="flex items-center gap-1 border-b border-border">
           {([
             { id: "portal", label: "Catálogo do portal" },
-            { id: "sap", label: "Todos os produtos do SAP" },
+            { id: "sap", label: "Catálogo SAP (todos os materiais)" },
           ] as const).map((t) => (
             <button
               key={t.id}
