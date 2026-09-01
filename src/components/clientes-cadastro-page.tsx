@@ -947,9 +947,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                       id="campo-consultor"
                       error={erros.consultor}
                       hint={
-                        escopoGrupo
-                          ? "Cadastro Grupo 2P: cada unidade tem seu próprio consultor. O vendedor principal do SAP é o da unidade de origem."
-                          : undefined
+                        modoAmpliacao
+                          ? `Ampliação de atuação: escolha quem responde por este cliente em ${ORGANIZACAO[instancia]}.`
+                          : escopoGrupo
+                            ? "Cadastro Grupo 2P: cada unidade tem seu próprio consultor. O vendedor principal do SAP é o da unidade de origem."
+                            : undefined
                       }
                     >
                       {/* Quem não é vendedor/consultor do portal nunca vira o
