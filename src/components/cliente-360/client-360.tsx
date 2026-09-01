@@ -520,33 +520,87 @@ function VisaoGeral({
           <Empty>Nenhuma proposta em aberto para este cliente.</Empty>
         ) : (
           <>
-            <div className="space-y-3">
+            {/* Resumo do funil: o consultor vê primeiro quanto está em jogo. */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="rounded-lg border border-border bg-background/40 p-2.5">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Em aberto</div>
+                <div className="text-base font-semibold tabular-nums">{fmt(totalFunil)}</div>
+              </div>
+              <div className="rounded-lg border border-border bg-background/40 p-2.5">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Propostas</div>
+                <div className="text-base font-semibold tabular-nums">{oportunidadesAbertas.length}</div>
+              </div>
+              <div className="rounded-lg border border-border bg-background/40 p-2.5">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Etapas</div>
+                <div className="text-base font-semibold tabular-nums">{grupos.length}</div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
               {grupos.map((g) => (
-                <div key={g.etapa}>
-                  <div className="flex items-center justify-between gap-2 border-b border-border pb-1 mb-1.5">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
-                      {g.etapa} · {g.itens.length}
+                <section key={g.etapa} className="rounded-xl border border-border bg-background/30 overflow-hidden">
+                  <header className="flex items-center gap-2 px-3 py-2 bg-muted/40">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
+                    <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-wider">
+                      {g.etapa}
                     </span>
-                    <span className="text-[11px] font-semibold tabular-nums shrink-0">
-                      {fmt(g.total)}
+                    <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                      {g.itens.length}
                     </span>
+                    <span className="shrink-0 text-xs font-semibold tabular-nums">{fmt(g.total)}</span>
+                  </header>
+                  {/* Participação da etapa no funil — leitura instantânea de onde está o dinheiro. */}
+                  <div className="h-1 w-full bg-muted">
+                    <div
+                      className="h-full bg-primary"
+                      style={{ width: `${maiorEtapa > 0 ? Math.max(2, (g.total / maiorEtapa) * 100) : 2}%` }}
+                    />
                   </div>
-                  <ul className="space-y-1.5">
-                    {g.itens.map((o: any) => (
-                      <li key={o.id} className="flex items-center gap-2 text-sm">
-                        <span className="truncate flex-1">{o.name}</span>
-                        <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
-                          {date(o.createdDate)}
-                        </span>
-                        <span className="tabular-nums font-medium shrink-0">{fmt(o.amount)}</span>
-                      </li>
-                    ))}
+                  <ul className="divide-y divide-border/60">
+                    {g.itens.map((o: any) => {
+                      const dias = o.createdDate
+                        ? Math.floor((Date.now() - new Date(o.createdDate).getTime()) / 86_400_000)
+                        : null;
+                      return (
+                        <li
+                          key={o.id}
+                          className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 hover:bg-muted/40"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium">{o.name}</div>
+                            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
+                              <span className="tabular-nums">{date(o.createdDate)}</span>
+                              {dias !== null && (
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 ${
+                                    dias > 180
+                                      ? "bg-destructive/10 text-destructive"
+                                      : dias > 60
+                                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                                        : "bg-muted text-muted-foreground"
+                                  }`}
+                                >
+                                  {dias === 0 ? "hoje" : `há ${dias} dia${dias > 1 ? "s" : ""}`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            {o.amount ? (
+                              <span className="text-sm font-semibold tabular-nums">{fmt(o.amount)}</span>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground">sem valor</span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
-                </div>
+                </section>
               ))}
             </div>
 
-            <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs">
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-2 text-xs">
               <span className="text-muted-foreground">
                 {oportunidadesAbertas.length} proposta(s) em aberto
               </span>
