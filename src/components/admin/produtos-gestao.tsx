@@ -77,13 +77,33 @@ function duracao(inicio: string, fim: string | null) {
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
+/** Produto do catálogo do portal (`sap_produtos`) usado pelos controles inline. */
+type ProdutoPortal = {
+  id: string;
+  visibilidade: string | null;
+  ativo: boolean;
+  ativo_override?: boolean | null;
+  origem?: string | null;
+  custo?: number | null;
+  ncm_id?: string | null;
+};
+
 function CatalogoSapCompleto({
+  unidade,
+  porCodigo,
   onPropagar,
   onEnviado,
+  onVisibilidade,
+  onOverride,
 }: {
+  unidade: UnidadeProdutos;
+  /** Espelho de `sap_produtos` por código, para editar sem sair do Catálogo. */
+  porCodigo: Map<string, ProdutoPortal>;
   onPropagar: () => void;
   /** Leva o usuário até o material recém-enviado na aba Produtos. */
   onEnviado: (codigo: string) => void;
+  onVisibilidade: (id: string, v: SapVisibilidade, p: ProdutoPortal) => void | Promise<void>;
+  onOverride: (id: string, override: boolean | null) => void;
 }) {
   const listAll = useServerFn(listSapCatalogoCompleto);
   const setNoPortal = useServerFn(setSapCatalogoNoPortal);
@@ -92,6 +112,10 @@ function CatalogoSapCompleto({
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [salvando, setSalvando] = useState<string | null>(null);
+  /** Destino aplicado ao enviar um material ao catálogo do portal. */
+  const [destino, setDestino] = useState<SapVisibilidade>(
+    unidade === "grupo2p" ? "nenhuma" : (unidade as SapVisibilidade),
+  );
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["sap-catalogo-completo"],
@@ -101,21 +125,22 @@ function CatalogoSapCompleto({
   const alternarCatalogo = async (codigo: string, no_catalogo: boolean) => {
     setSalvando(codigo);
     try {
-      await setNoPortal({ data: { codigo, no_catalogo } });
+      await setNoPortal({ data: { codigo, no_catalogo, ...(no_catalogo ? { visibilidade: destino } : {}) } });
       toast.success(
         no_catalogo
-          ? `${codigo} enviado ao catálogo do portal. Ele entra inativo e sem visibilidade — defina a instância abaixo.`
+          ? `${codigo} enviado ao catálogo do portal (${VIS_LABELS[destino]}). Ele entra inativo — ative aqui mesmo quando quiser liberar.`
           : `${codigo} removido do catálogo do portal.`,
       );
       await refetch();
       onPropagar();
-      if (no_catalogo) onEnviado(codigo);
+      if (no_catalogo && destino === "nenhuma") onEnviado(codigo);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao atualizar o catálogo.");
     } finally {
       setSalvando(null);
     }
   };
+
 
 
   const itens = data?.itens ?? [];
