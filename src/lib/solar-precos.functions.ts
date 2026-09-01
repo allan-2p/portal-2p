@@ -91,9 +91,29 @@ export const precosSolarFn = createServerFn({ method: "POST" })
     for (const p of (prods ?? []) as any[])
       sugeridos[String(p.codigo).replace(/^0+(?=\d)/, "")] = Number(p.preco_sugerido ?? 0);
 
+    // Cliente final não é cadastrado no SAP até o fechamento do pedido: simular
+    // com o documento dele devolve "Não existe mestre de clientes para emissor
+    // ordem". Como na plataforma antiga, a simulação usa o cliente fake da UF
+    // do faturamento e manda a revenda em CNPJ_CI. Triangulação não usa fake.
+    let documento = data.documento;
+    let empresaCnpj = "";
+    if (data.faturarClienteFinal && !data.triangulacao && data.ufFaturamento) {
+      const { clienteFakeDaUf } = await import("./clientes-fakes.server");
+      const fake = await clienteFakeDaUf(data.ufFaturamento);
+      if (fake) {
+        if (data.finalContribuinte && fake.cnpj) {
+          documento = fake.cnpj;
+          empresaCnpj = data.clienteDoc.length > 11 ? data.clienteDoc : "";
+        } else if (fake.cpf) {
+          documento = fake.cpf;
+        }
+      }
+    }
+
     const { precosSolar } = await import("./solar-precos.server");
     return await precosSolar(data.itens, {
-      documento: data.documento,
+      documento,
+      ...(empresaCnpj ? { empresaCnpj } : {}),
       listaPreco: data.listaPreco,
       tipoOv: data.tipoOv,
       kitFotovoltaico: data.kitFotovoltaico,
