@@ -24,6 +24,7 @@ import {
   type SalesforceAccount,
   type SalesforceContact,
   type SalesforceActivity,
+  type SalesforceTask,
 } from "@/lib/salesforce.functions";
 import {
   getClientNotes,
@@ -31,6 +32,11 @@ import {
   type ClientNoteCard,
 } from "@/lib/client-notes.functions";
 import { AtlasBoard } from "@/components/cliente-360/atlas-board";
+import {
+  CompleteTaskDialog,
+  InteractionQuickDialog,
+  RescheduleTaskDialog,
+} from "@/components/tarefas/task-dialogs";
 import { cn } from "@/lib/utils";
 
 import {
