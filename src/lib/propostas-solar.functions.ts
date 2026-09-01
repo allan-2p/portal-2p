@@ -206,14 +206,41 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const { data: prodRows, error: prodErr } = await supabase
-      .from("sap_produtos")
-      .select("id, codigo, descricao, preco_sugerido, imagem_path, ativo")
-      .in("id", data.itens.map((i) => i.produtoId));
-    if (prodErr) throw new Error(prodErr.message);
-    const produtos = (prodRows ?? []) as any[];
-    if (produtos.length !== new Set(data.itens.map((i) => i.produtoId)).size)
-      throw new Error("Há itens com produtos indisponíveis no catálogo.");
+    const SELECT_PRODUTO = "id, codigo, descricao, preco_sugerido, imagem_path, ativo";
+    const ids = [...new Set(data.itens.map((i) => i.produtoId).filter(Boolean))];
+    const codigos = [...new Set(data.itens.filter((i) => !i.produtoId).map((i) => normCod(i.codigo)).filter(Boolean))];
+
+    const [porId, porCodigo] = await Promise.all([
+      ids.length
+        ? supabase.from("sap_produtos").select(SELECT_PRODUTO).in("id", ids)
+        : Promise.resolve({ data: [], error: null } as any),
+      codigos.length
+        ? supabase.from("sap_produtos").select(SELECT_PRODUTO).in("codigo", codigos)
+        : Promise.resolve({ data: [], error: null } as any),
+    ]);
+    if (porId.error) throw new Error(porId.error.message);
+    if (porCodigo.error) throw new Error(porCodigo.error.message);
+
+    const produtos = [...((porId.data ?? []) as any[]), ...((porCodigo.data ?? []) as any[])].filter(
+      (p, idx, arr) => arr.findIndex((x) => x.id === p.id) === idx,
+    );
+
+    // Itens que vieram só com o código SAP passam a apontar para o catálogo.
+    const naoResolvidos: string[] = [];
+    for (const item of data.itens) {
+      if (item.produtoId) {
+        if (!produtos.some((p) => p.id === item.produtoId)) naoResolvidos.push(item.codigo || item.produtoId);
+        continue;
+      }
+      const achado = produtos.find((p) => normCod(p.codigo) === normCod(item.codigo));
+      if (!achado) naoResolvidos.push(item.codigo);
+      else item.produtoId = String(achado.id);
+    }
+    if (naoResolvidos.length)
+      throw new Error(
+        `Há itens que não estão no catálogo do portal: ${[...new Set(naoResolvidos)].slice(0, 8).join(", ")}.`,
+      );
+
 
     // Kit fotovoltaico: o servidor é a autoridade — o kit-base entra sempre com
     // quantidade 1 e não pode ser removido nem alterado pela tela.
