@@ -447,11 +447,12 @@ export const CAMPOS_OPPORTUNITY: CampoOrigem[] = [
   {
     chave: "estimativa_entrega",
     rotulo: "Estimativa de entrega",
-    origem: "Proposta › Previsão de despacho / prazo do frete",
+    origem: "Proposta › Estimativa de entrega (coleta + prazo do frete)",
     sfPadrao: "Estimativa_de_entrega__c",
     tipo: "data",
-    valor: (r) => data(r["previsao_despacho"] ?? r["frete_previsao_entrega"]),
+    valor: (r) => data(r["estimativa_entrega"] ?? r["previsao_despacho"] ?? r["frete_previsao_entrega"]),
   },
+
   {
     chave: "transportadora",
     rotulo: "Transportadora",
