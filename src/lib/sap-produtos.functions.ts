@@ -481,7 +481,16 @@ export const listSapCatalogoCompleto = createServerFn({ method: "GET" })
  */
 export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ codigo: z.string().min(1), no_catalogo: z.boolean() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        codigo: z.string().min(1),
+        no_catalogo: z.boolean(),
+        /** Destino escolhido pelo moderador ao enviar o material ao catálogo. */
+        visibilidade: z.enum(["nenhuma", "solar", "carregadores", "ambos"]).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, [
       { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
