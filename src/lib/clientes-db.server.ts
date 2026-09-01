@@ -255,7 +255,7 @@ export async function listClientesPagina(
   if (opts.fiscal === "contribuinte") params.set("contribuinte", "is.true");
   if (opts.fiscal === "nao") params.set("contribuinte", "not.is.true");
   if (opts.donoId || opts.consultorSap || opts.consultorNome) {
-    grupos.push(`or(${(await alvosDoDono(opts)).join(",")})`);
+    grupos.push(await filtroDoDono(instance, opts));
   }
 
   params.set("and", `(${grupos.join(",")})`);
@@ -341,7 +341,7 @@ export async function listClientesPerfil(
   // Filtro por `instancia` (canônico) + cadastros de atuação ampliada (grupo).
   const grupos: string[] = [await grupoInstancia(instance)];
   if (opts.donoId || opts.consultorSap || opts.consultorNome) {
-    grupos.push(`or(${(await alvosDoDono(opts)).join(",")})`);
+    grupos.push(await filtroDoDono(instance, opts));
   }
 
   const termo = termoSeguro(opts.q ?? "");
@@ -512,16 +512,14 @@ export async function listarDocsDoConsultor(
   } = {},
 ): Promise<string[]> {
   if (!opts.donoId && !opts.consultorSap && !opts.consultorNome) return [];
-  const alvos = await alvosDoDono(opts);
-
+  const filtroDono = await filtroDoDono(instance, opts);
 
   const teto = Math.min(opts.limite ?? 20000, 20000);
   const out = new Set<string>();
   for (let pagina = 0; pagina < 20 && out.size < teto; pagina++) {
     const params = new URLSearchParams({
       select: "doc",
-      and: `(${await grupoInstancia(instance)})`,
-      or: `(${alvos.join(",")})`,
+      and: `(${await grupoInstancia(instance)},${filtroDono})`,
       order: "created_at.desc.nullslast,id.asc",
     });
     const from = pagina * PAGINA_DB;
