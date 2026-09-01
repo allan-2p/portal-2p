@@ -343,6 +343,40 @@ async function postTaskWithDefaults(body: Record<string, unknown>) {
   return sfFetch(`/sobjects/Task`, { method: "POST", body: JSON.stringify(enriched) });
 }
 
+/**
+ * Dono da tarefa criada pelo portal. Sem OwnerId explícito o Salesforce grava
+ * a tarefa no usuário de integração — ela some da home e das tarefas diárias
+ * (que filtram por OwnerId) e só aparece no perfil do cliente (filtra por
+ * WhatId). Por isso caímos para o sf_user_id de quem está criando e, se ele
+ * não estiver vinculado, para o dono da conta.
+ */
+async function resolveNewTaskOwner(
+  supabase: Parameters<typeof getScopeForUser>[0],
+  userId: string,
+  p: TaskPayload,
+): Promise<string | null> {
+  if (validId(p.ownerId)) return p.ownerId!;
+  try {
+    const scope = await getScopeForUser(supabase, userId);
+    if (scope.sf_user_id && validId(scope.sf_user_id)) return scope.sf_user_id;
+  } catch {
+    /* segue para o dono da conta */
+  }
+  if (validId(p.whatId)) {
+    try {
+      const res = await sfFetch(
+        `/query?q=${encodeURIComponent(`SELECT OwnerId FROM Account WHERE Id = '${esc(p.whatId!)}' LIMIT 1`)}`,
+      );
+      const owner = res?.records?.[0]?.OwnerId ?? null;
+      if (validId(owner)) return owner;
+    } catch {
+      /* deixa o Salesforce decidir */
+    }
+  }
+  return null;
+}
+
+
 export const createSalesforceTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: TaskPayload) => {
@@ -353,8 +387,10 @@ export const createSalesforceTask = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data, context }) => {
-    const body = buildTaskBody({ status: "Open", ...data });
+    const ownerId = await resolveNewTaskOwner(context.supabase, context.userId, data);
+    const body = buildTaskBody({ status: "Open", ...data, ownerId });
     const res = await postTaskWithDefaults(body);
+
     const { auditIntegration } = await import("@/lib/audit.server");
     void auditIntegration(context.userId, "salesforce", "criou tarefa", data.subject);
     return { id: res?.id ?? null };
@@ -371,7 +407,9 @@ export const logSalesforceInteraction = createServerFn({ method: "POST" })
     const activityDate =
       data.activityDate ||
       `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const body = buildTaskBody({ ...data, status: "Completed", activityDate });
+    const ownerId = await resolveNewTaskOwner(context.supabase, context.userId, data);
+    const body = buildTaskBody({ ...data, ownerId, status: "Completed", activityDate });
+
     // Log a Call: mesmo comportamento do botão "Log a Call" no Salesforce —
     // grava uma Task concluída com TaskSubtype = 'Call' (chamada), não uma tarefa comum.
     (body as Record<string, unknown>).TaskSubtype = "Call";

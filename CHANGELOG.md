@@ -35,6 +35,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+- **Tarefa criada no portal fica com o vendedor**: tarefas e interações criadas pelo perfil do cliente, pela home ou pela tela de Tarefas iam para o usuário de integração do Salesforce, então só apareciam no perfil do cliente (que filtra pela conta) e sumiam da Agenda de hoje e das Tarefas diárias (que filtram pelo dono). Agora o dono é sempre quem criou (vínculo Salesforce do usuário) e, se ele não tiver vínculo, o dono da conta.
 - **Estimativa de entrega**: pedido que entra em Coletado passa a gravar a data prometida (coleta + prazo do frete em dias úteis; sem prazo, a própria data da coleta) e a exibi-la no detalhe do pedido em Coletado/Entregue — incluindo as 9.674 estimativas herdadas da plataforma antiga. Quem tem Manager Access em Propostas (ex.: Analista de Fretes) pode ajustar a data manualmente, com registro no Log de Integrações (`estimativa-manual`), e o valor vai ao Salesforce em `Estimativa_de_entrega__c`. Estimativa já existente nunca é sobrescrita.
 - **Cliente do vendedor não aparecia na busca da proposta**: cadastros importados da plataforma antiga tinham só o nome do consultor (sem vínculo de usuário) e, em parte deles, um código SAP de outro vendedor, o que escondia o cliente do dono real. A busca de clientes, o perfil do cliente e o escopo de propostas passam a reconhecer também o nome do consultor, e os 6.801 cadastros afetados foram religados ao vendedor correto (`consultor_id`/`consultor_sap`).
 
