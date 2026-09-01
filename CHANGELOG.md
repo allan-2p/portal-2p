@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Atlas Radar respeita a carteira do vendedor**: a listagem de alertas (card da home e tela `/atlas-ia/radar`) passa a filtrar pelo escopo do consultor — vendedor vê só os clientes da carteira dele; admin/diretor (View All Records) veem tudo. Antes a varredura era global e a leitura não filtrava.
 - Atlas: perguntas abertas em conversa livre (correção do envio pelo campo de texto), título automático da conversa a partir da primeira pergunta, painel "O que o Atlas consulta hoje" no topo e saneamento do histórico com chamadas de ferramenta incompletas.
 - **Atlas em tela cheia**: `/solar/atlas` deixou de ser aviso "em breve" e passou a ser o chat completo (perguntas abertas, lista de conversas, painel do que ele consulta). O chat agora mostra em tempo real quais dados está consultando.
 - **Atlas Radar na home**: o card "em breve" foi substituído pelos alertas abertos de clientes em piora, com link para o radar.
