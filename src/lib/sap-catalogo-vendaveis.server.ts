@@ -149,8 +149,10 @@ export async function varrerCatalogoVendaveis(
       preco_checado_em: now,
       ativo,
     };
-    // Preço de contingência: só preenche quando o portal ainda não tem preço.
-    if (achado && !(Number(linha.preco_sugerido ?? 0) > 0)) patch["preco_sugerido"] = achado.valor;
+    // Preço de contingência: só sobrescreve quando o portal ainda não tem preço,
+    // mas o campo é NOT NULL e o upsert valida a tupla de insert — sempre enviar.
+    const precoAtual = Number(linha.preco_sugerido ?? 0);
+    patch["preco_sugerido"] = precoAtual > 0 ? precoAtual : (achado?.valor ?? 0);
     updates.push(patch);
   }
 
