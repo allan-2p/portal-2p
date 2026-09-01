@@ -1438,6 +1438,16 @@ function NovaPropostaSolarPage() {
     }
     if (etapa === 3) {
       if (!itens.length) e.push("Adicione ao menos um produto.");
+      // Item sem produto do catálogo não pode ser salvo (o servidor o descarta e
+      // a proposta ficaria sem itens). Mostra o motivo real, com os códigos.
+      const foraCatalogo = itens.filter((i) => !i.produtoId);
+      if (itens.length && foraCatalogo.length)
+        e.push(
+          `Itens fora do catálogo do portal: ${foraCatalogo
+            .map((i) => i.avulso?.codigo ?? "sem código")
+            .join(", ")}. Peça a liberação em Administração › Produtos e recalcule.`,
+        );
+
       if (modo === "calculadora") {
         if (!assinaturaCalc) e.push("Execute o cálculo da estrutura antes de avançar.");
         else if (calcDesatualizado)
