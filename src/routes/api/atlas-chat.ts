@@ -257,7 +257,7 @@ export const Route = createFileRoute("/api/atlas-chat")({
         await salvarMensagem(ctx, threadId, ultima);
 
         // Primeira pergunta vira o título da conversa.
-        if (!thread.titulo || thread.titulo === "Nova conversa") {
+        if (!thread?.titulo || thread.titulo === "Nova conversa") {
           const texto = (ultima?.parts ?? [])
             .filter((p): p is { type: "text"; text: string } => p.type === "text")
             .map((p) => p.text)
