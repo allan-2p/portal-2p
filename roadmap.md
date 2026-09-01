@@ -86,4 +86,4 @@
 
 ## Moderação (01/09)
 - [ ] Migrar Produtos e Estoque de Configurações > Objetos e Campos para Moderação, separados por 2P Solar, 2P Carregadores e Grupo 2P (nova aba Grupo 2P com todos os produtos).
-- [ ] Carregadores > Visão Geral: colunas nº NF, nº SAP, data de compra e data de faturamento + filtros por essas datas.
+- [x] Carregadores > Visão Geral: colunas nº NF, nº SAP, data de compra e data de faturamento + filtros por essas datas.

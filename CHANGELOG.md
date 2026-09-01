@@ -19,6 +19,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ## Como atualizar este arquivo
 
 1. Toda mudança relevante entra em **`[Não publicado]`** no mesmo commit da alteração —
+
+- Gestão de Produtos e Estoque migradas de Configurações para Moderação, separadas por unidade (2P Solar, 2P Carregadores e Grupo 2P); as rotas antigas redirecionam para a nova área.
+- Carregadores > Visão Geral: colunas de nº da NF, nº SAP e data de faturamento, com opção de filtrar por data da compra ou por data de faturamento.
    uma linha por mudança, em linguagem de negócio (o que muda para quem usa), não em
    nomes de arquivo.
 2. Mudança de banco entra em **`Banco de dados`** citando a migração
