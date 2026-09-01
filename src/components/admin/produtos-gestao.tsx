@@ -54,13 +54,10 @@ import {
   TIPO_LABELS,
 } from "@/lib/sap-produtos-rules";
 
-export type UnidadeProdutos = "solar" | "carregadores" | "grupo2p";
+import { UNIDADE_LABEL, type UnidadeProdutos } from "@/components/admin/unidades-produtos";
 
-export const UNIDADE_LABEL: Record<UnidadeProdutos, string> = {
-  solar: "2P Solar",
-  carregadores: "2P Carregadores",
-  grupo2p: "Grupo 2P",
-};
+export type { UnidadeProdutos };
+
 
 
 function fmt(d: string | null) {
