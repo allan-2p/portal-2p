@@ -2,7 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { finalidadeUsoPorDocFn } from "@/lib/clientes.functions";
-import { atualizarStatusPropostaFn, obterPropostaFn } from "@/lib/propostas.functions";
+import {
+  atualizarEstimativaEntregaFn,
+  atualizarStatusPropostaFn,
+  obterPropostaFn,
+} from "@/lib/propostas.functions";
+
 import { meusObjectPermsFn } from "@/lib/object-perms.functions";
 import { podeMarcarEntregueProposta } from "@/lib/proposta-status";
 import { finalidadeUsoDoCadastro, labelFinalidadeUso } from "@/lib/carregadores";
