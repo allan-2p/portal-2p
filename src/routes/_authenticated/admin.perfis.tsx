@@ -2,13 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, Save, ShieldCheck, Users, Pencil } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, ShieldCheck, Users, Pencil, Copy } from "lucide-react";
 import { useCanDelete } from "@/components/permission-gate";
 import { AppLayout } from "@/components/app-layout";
 import { useAuth } from "@/hooks/use-auth";
 import {
   adminListPermissionProfiles,
   adminSavePermissionProfile,
+  adminClonePermissionProfile,
   adminDeletePermissionProfile,
   adminSetProfileFeatures,
   adminSetProfileInstances,
@@ -72,6 +73,7 @@ function PerfisPage() {
   const { hasRole, loading: authLoading } = useAuth();
   const listFn = useServerFn(adminListPermissionProfiles);
   const saveFn = useServerFn(adminSavePermissionProfile);
+  const cloneFn = useServerFn(adminClonePermissionProfile);
   const deleteFn = useServerFn(adminDeletePermissionProfile);
   const setFeatsFn = useServerFn(adminSetProfileFeatures);
   const setInstsFn = useServerFn(adminSetProfileInstances);
@@ -237,6 +239,19 @@ function PerfisPage() {
     }
   }
 
+  async function cloneProfile(p: PermissionProfile) {
+    const name = prompt("Nome do novo perfil", `${p.name} (cópia)`);
+    if (name === null) return;
+    try {
+      const res = await cloneFn({ data: { id: p.id, ...(name.trim() ? { name: name.trim() } : {}) } });
+      toast.success("Perfil clonado com telas, instâncias e permissões por objeto");
+      setSelectedId(res.id);
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao clonar perfil");
+    }
+  }
+
   async function removeProfile(p: PermissionProfile) {
     if (!confirm(`Excluir o perfil "${p.name}"? Os usuários vinculados perdem essas permissões.`)) return;
     try {
@@ -385,6 +400,12 @@ function PerfisPage() {
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border text-sm hover:bg-surface-2"
                       >
                         <Pencil className="h-3.5 w-3.5" /> Renomear
+                      </button>
+                      <button
+                        onClick={() => cloneProfile(selected)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border text-sm hover:bg-surface-2"
+                      >
+                        <Copy className="h-3.5 w-3.5" /> Clonar
                       </button>
                       {!selected.is_system && podeExcluir && (
                         <button
