@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { AppLayout } from "@/components/app-layout";
@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AlertCircle, Package, Pencil, Save, Search } from "lucide-react";
+import { AlertCircle, Pencil, Save, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { validateAtivacaoCarregadores } from "@/lib/product-visibility";
@@ -50,19 +50,11 @@ function ProdutosCarregadoresPage() {
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Catálogo único do portal (alimentado pelo SAP e por edições manuais), alíquotas por UF. Base usada pelo cálculo de DRE das propostas de carregadores.
-            </p>
-          </div>
-          <Button asChild variant="outline">
-            <Link to="/admin/moderacao/produtos/$unidade" params={{ unidade: "carregadores" }}>
-              <Package className="h-4 w-4 mr-2" />
-              Catálogo
-            </Link>
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Catálogo único do portal (alimentado pelo SAP e por edições manuais), alíquotas por UF. Base usada pelo cálculo de DRE das propostas de carregadores.
+          </p>
         </div>
 
         <Tabs value={aba} onValueChange={setAba}>

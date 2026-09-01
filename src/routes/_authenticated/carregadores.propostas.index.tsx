@@ -150,10 +150,6 @@ function HistoricoCarregadoresPage() {
       };
     },
     staleTime: 30_000,
-    // Falhas transitórias do servidor (ex.: 500 logo após um deploy/reinício)
-    // não devem deixar a tela em branco: tenta de novo com espera crescente.
-    retry: 3,
-    retryDelay: (tentativa) => Math.min(1000 * 2 ** tentativa, 8000),
     placeholderData: (prev) => prev,
   });
 

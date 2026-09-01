@@ -83,9 +83,3 @@
 
 - [x] Funil do cliente: visual mais legível (cards por etapa)
 - [x] Catálogo do portal: itens enviados manualmente não podem ser removidos/desativados por novas sincronizações do SAP
-
-## Moderação (01/09)
-- [x] Migrar Produtos e Estoque de Configurações > Objetos e Campos para Moderação, separados por 2P Solar, 2P Carregadores e Grupo 2P (nova aba Grupo 2P com todos os produtos).
-- [x] Corrigir os links de Catálogo na navegação da Moderação para abrir a unidade selecionada sem cair na tela de erro.
-- [ ] Republicar o portal com o build de produção corrigido e confirmar `/`, `/auth` e `/tv-geral` sem erro 500.
-- [x] Carregadores > Visão Geral: colunas nº NF, nº SAP, data de compra e data de faturamento + filtros por essas datas.

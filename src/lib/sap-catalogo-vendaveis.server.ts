@@ -136,11 +136,8 @@ export async function varrerCatalogoVendaveis(
     const vendavel = Boolean(achado);
     const override = linha.ativo_override as boolean | null;
     if (override !== null && override !== undefined) overrides += 1;
-    // A varredura nunca desativa: só o override manual pode desligar um material.
-    // O que já está ativo no portal continua ativo mesmo sem preço na VK12.
-    const ativo = override ?? (Boolean(linha.ativo) || vendavel);
+    const ativo = override ?? vendavel;
     if (ativo !== Boolean(linha.ativo)) (ativo ? ativados++ : desativados++);
-
 
     const patch: Record<string, unknown> = {
       codigo,
@@ -152,10 +149,8 @@ export async function varrerCatalogoVendaveis(
       preco_checado_em: now,
       ativo,
     };
-    // Preço de contingência: só sobrescreve quando o portal ainda não tem preço,
-    // mas o campo é NOT NULL e o upsert valida a tupla de insert — sempre enviar.
-    const precoAtual = Number(linha.preco_sugerido ?? 0);
-    patch["preco_sugerido"] = precoAtual > 0 ? precoAtual : (achado?.valor ?? 0);
+    // Preço de contingência: só preenche quando o portal ainda não tem preço.
+    if (achado && !(Number(linha.preco_sugerido ?? 0) > 0)) patch["preco_sugerido"] = achado.valor;
     updates.push(patch);
   }
 

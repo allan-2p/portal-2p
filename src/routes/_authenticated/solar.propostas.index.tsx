@@ -144,10 +144,6 @@ function PropostasSolarPage() {
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
-    // Falhas transitórias do servidor (ex.: 500 logo após um deploy/reinício)
-    // não devem deixar a tela em branco: tenta de novo com espera crescente.
-    retry: 3,
-    retryDelay: (tentativa) => Math.min(1000 * 2 ** tentativa, 8000),
     placeholderData: (prev) => prev,
     // Enquanto houver pedido em processamento, atualiza sozinho a cada 6s —
     // e só nesse caso, para não pesar o portal.

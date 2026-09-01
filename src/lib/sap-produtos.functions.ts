@@ -356,20 +356,24 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       }
 
 
-      // A sincronização do SAP é aditiva: traz materiais novos e atualiza dados,
-      // mas NUNCA desativa nada. O que já está estabelecido no portal só muda
-      // por decisão manual na Administração.
+      // Merge: o que não veio mais do SAP fica inativo (sem apagar histórico).
+      // Produtos criados manualmente no portal e materiais enviados de propósito
+      // ao catálogo do portal não são afetados — só saem por decisão manual.
       const vindos = new Set(rows.map((r) => r.codigo));
-      const ausentes = (existentes ?? []).filter(
-        (r: any) => r.ativo && r.origem !== "manual" && !vindos.has(r.codigo),
-      ).length;
-      if (ausentes > 0) {
-        console.info(
-          `[sap-produtos] ${ausentes} materiais ativos não vieram nesta sincronização — mantidos como estão.`,
-        );
+      const orfaos = (existentes ?? [])
+        .filter(
+          (r: any) =>
+            r.ativo && r.origem !== "manual" && !vindos.has(r.codigo) && !jaNoCatalogo.has(String(r.codigo)),
+        )
+        .map((r: any) => r.codigo as string);
+      for (let i = 0; i < orfaos.length; i += 500) {
+        const chunk = orfaos.slice(i, i + 500);
+        const { error } = await supabaseAdmin
+          .from("sap_produtos")
+          .update({ ativo: false, last_synced_at: now })
+          .in("codigo", chunk);
+        if (error) throw new Error(error.message);
       }
-
-
 
       const inserted = novos.length;
       const updated = atualizados.length;
@@ -379,12 +383,12 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         slug: "sap",
         level: "info",
         event: "sync",
-        message: `Sincronização incremental: ${inserted} novos, ${updated} atualizados, ${unchanged} sem mudança, 0 desativados (${ausentes} ausentes mantidos).`,
+        message: `Sincronização incremental: ${inserted} novos, ${updated} atualizados, ${unchanged} sem mudança, ${orfaos.length} desativados.`,
         detail: {
           inserted,
           updated,
           unchanged,
-          deactivated: 0,
+          deactivated: orfaos.length,
           catalogo_atualizado: espelho.length,
           catalogo_inalterado: catalogoInalterado,
         },
@@ -426,7 +430,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       return {
         inserted,
         updated,
-        deactivated: 0,
+        deactivated: orfaos.length,
         unchanged,
         vendaveis,
         catalogoAtualizado: espelho.length,
@@ -481,16 +485,7 @@ export const listSapCatalogoCompleto = createServerFn({ method: "GET" })
  */
 export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) =>
-    z
-      .object({
-        codigo: z.string().min(1),
-        no_catalogo: z.boolean(),
-        /** Destino escolhido pelo moderador ao enviar o material ao catálogo. */
-        visibilidade: z.enum(["nenhuma", "solar", "carregadores", "ambos"]).optional(),
-      })
-      .parse(d),
-  )
+  .inputValidator((d) => z.object({ codigo: z.string().min(1), no_catalogo: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, [
       { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
@@ -522,36 +517,14 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
       }
       const { data: existente } = await supabaseAdmin
         .from("sap_produtos")
-        .select("id, origem, custo, ncm_id, visibilidade")
+        .select("id")
         .eq("codigo", material.codigo)
         .maybeSingle();
-
-      // O moderador pode escolher o destino no próprio Catálogo; sem escolha,
-      // o material entra sem visibilidade (comportamento anterior).
-      const destino = data.visibilidade && data.visibilidade !== "nenhuma" ? data.visibilidade : null;
-
-      if (existente && data.visibilidade && (existente as any).visibilidade !== data.visibilidade) {
-        const { countOpenProposalsWithProduct } = await import("@/lib/product-visibility.server");
-        const propostasAbertas = await countOpenProposalsWithProduct((existente as any).id);
-        const bloqueio = validateVisibilidadeChange(data.visibilidade, {
-          origem: (existente as any).origem,
-          custo: Number((existente as any).custo ?? 0),
-          ncm_id: (existente as any).ncm_id,
-          propostasAbertas,
-        });
-        if (bloqueio) throw new Error(bloqueio);
-      }
-
 
       if (existente) {
         const { error } = await supabaseAdmin
           .from("sap_produtos")
-          .update({
-            descricao: material.descricao,
-            ...(ncm ? { ncm_codigo: ncm } : {}),
-            ...(ncmId ? { ncm_id: ncmId } : {}),
-            ...(data.visibilidade ? { visibilidade: destino } : {}),
-          })
+          .update({ descricao: material.descricao, ...(ncm ? { ncm_codigo: ncm } : {}), ...(ncmId ? { ncm_id: ncmId } : {}) })
           .eq("codigo", material.codigo);
         if (error) throw new Error(error.message);
       } else {
@@ -562,7 +535,7 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
           permissao: "Todos",
           origem: "sap",
           ativo: false,
-          visibilidade: destino,
+          visibilidade: null,
           last_synced_at: new Date().toISOString(),
           sap_raw: (material as any).sap_raw ?? null,
           ...(ncm ? { ncm_codigo: ncm } : {}),

@@ -19,9 +19,6 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ## Como atualizar este arquivo
 
 1. Toda mudança relevante entra em **`[Não publicado]`** no mesmo commit da alteração —
-
-- Gestão de Produtos e Estoque migradas de Configurações para Moderação, separadas por unidade (2P Solar, 2P Carregadores e Grupo 2P); as rotas antigas redirecionam para a nova área.
-- Carregadores > Visão Geral: colunas de nº da NF, nº SAP e data de faturamento, com opção de filtrar por data da compra ou por data de faturamento.
    uma linha por mudança, em linguagem de negócio (o que muda para quem usa), não em
    nomes de arquivo.
 2. Mudança de banco entra em **`Banco de dados`** citando a migração
@@ -37,16 +34,6 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
-- **Navegação do Catálogo na Moderação corrigida**: abrir Catálogo ou Estoque de Solar, Carregadores e Grupo 2P agora monta a tela da unidade escolhida; antes a URL mudava, mas a Visão Geral da Moderação continuava ocupando a rota e impedia a página filha de carregar.
-- **Catálogo dentro da Gestão de Produtos**: em 2P Solar e 2P Carregadores o "Catálogo SAP" virou apenas **Catálogo** e passa a ficar dentro de Gestão de Produtos (com atalho no topo da tela). Nele o moderador controla visibilidade, ativo/inativo e a entrada de materiais no catálogo do portal, inclusive direto na lista completa do SAP.
-- **Grupo 2P > Todos os Produtos** (antes "Gestão de Produtos"): abre na lista completa do SAP e o moderador escolhe o destino do material ao enviá-lo (2P Solar, 2P Carregadores, Grupo 2P ou sem visibilidade), mantendo as travas de produtos usados em propostas em aberto.
-- **Solar sem preço sugerido**: a coluna de preço sugerido saiu da Gestão de Produtos do 2P Solar — o preço do Solar vem sempre da simulação do SAP.
-- **Catálogo do SAP legível por todos, sem expor custo**: o navegador não pede mais as colunas `custo`/`sap_raw` em `sap_produtos` (catálogo Solar e kit-base). Custo continua visível nas telas de gestão (Produtos, Estoque, Carregadores), sempre via servidor com checagem de permissão. Passo manual do Allan após o deploy: revoke da tabela + grant por coluna (sem `custo`/`sap_raw`) para `authenticated`.
-
-- **Sincronização do SAP nunca mais desativa material**: ela passa a ser somente aditiva — traz materiais novos e atualiza dados cadastrais, mas não desliga nada. Material que deixa de vir na lista do SAP continua como está no portal, e a varredura de preço (VK12) só pode ativar; desativar virou decisão exclusivamente manual na Administração.
-- **Proposta Solar voltou a salvar**: a sincronização do SAP das 14:06 desativou 23 materiais de estrutura (trilhos, grampos, suportes) que continuavam vendáveis; sem eles no catálogo, os itens da calculadora viravam "avulso" e o pedido era recusado com "Adicione ao menos um produto". Os materiais foram reativados e a etapa de produtos avisa exatamente quais códigos estão fora do catálogo.
-
-
 - **Catálogo do portal é definitivo**: material enviado manualmente ao catálogo passa a permanecer lá em qualquer sincronização do SAP (só sai por decisão de alguém na Administração) e não é mais desativado quando deixa de vir na lista de liberados do SAP. Ao enviar, a tela já leva para o produto na aba Produtos com os filtros abertos — antes ele entrava inativo e sumia atrás do filtro padrão "Ativos", parecendo que o envio não tinha funcionado.
 - **Funil do cliente mais legível**: resumo com valor em aberto, nº de propostas e etapas; cada etapa vira um bloco com barra de participação no funil, e cada oportunidade mostra data, tempo em aberto (com destaque para as paradas há mais de 60/180 dias) e valor.
 - **Kit gerador recalcula sempre**: marcar ou desmarcar "Kit fotovoltaico" na proposta Solar às vezes não reprecificava os itens já na lista (o disparo se perdia quando outra precificação estava em curso ou a lista ainda carregava). Agora o kit faz parte da mesma assinatura de preço do faturamento, com reprocessamento pendente, e o aviso indica se os valores saíram com ou sem ICMS/IPI.

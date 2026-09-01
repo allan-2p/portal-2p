@@ -90,6 +90,13 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         ],
       },
       {
+        label: "Objetos e Campos",
+        items: [
+          { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.objetos.produtos" },
+          { to: "/admin/estoque", label: "Estoque", icon: Boxes, feature: "admin.objetos.produtos" },
+        ],
+      },
+      {
         label: "E-mails",
         items: [
           { to: "/admin/emails", label: "Painel de e-mails", icon: Mail, feature: "admin.emails" },
@@ -159,7 +166,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   {
     id: "moderacao",
     label: "Moderação",
-    description: "Configurações por unidade: 2P Solar, 2P Carregadores e Grupo 2P — produtos, estoque, regras de propostas, metas e comissões.",
+    description: "Configurações por unidade: 2P Solar e 2P Carregadores — produtos e regras de propostas, metas e comissões.",
     icon: SlidersHorizontal,
     home: "/admin/moderacao",
     groups: [
@@ -178,14 +185,12 @@ export const ADMIN_SECTIONS: AdminSection[] = [
             feature: "admin.produtos",
             exact: true,
             children: [
-              { to: "/admin/moderacao/produtos/solar", label: "Catálogo", icon: Package, feature: "admin.objetos.produtos" },
               { to: "/admin/modulos-solar", label: "Módulos", icon: LayoutGrid, feature: "admin.produtos" },
               { to: "/admin/trilhos-solar", label: "Trilhos", icon: Rows3, feature: "admin.produtos" },
               { to: "/admin/suportes-solar", label: "Suportes", icon: Anchor, feature: "admin.produtos" },
               { to: "/admin/microinversores-solar", label: "Microinversores", icon: Cpu, feature: "admin.produtos" },
             ],
           },
-          { to: "/admin/moderacao/estoque/solar", label: "Estoque", icon: Boxes, feature: "admin.objetos.produtos" },
           { to: "/admin/regras", label: "Regras de Propostas", icon: BookOpen, feature: "admin.regras" },
           { to: "/admin/frete-regras", label: "Regras de Fretes", icon: Truck, feature: "admin.regras" },
           { to: "/admin/metas", label: "Regras de Metas", icon: Target, feature: "admin.metas" },
@@ -196,29 +201,11 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         label: "2P Carregadores",
         collapsible: true,
         items: [
-          {
-            to: "/carregadores/produtos",
-            label: "Gestão de Produtos",
-            icon: Package,
-            feature: "carregadores.produtos",
-            exact: true,
-            children: [
-              { to: "/admin/moderacao/produtos/carregadores", label: "Catálogo", icon: Package, feature: "admin.objetos.produtos" },
-            ],
-          },
-          { to: "/admin/moderacao/estoque/carregadores", label: "Estoque", icon: Boxes, feature: "admin.objetos.produtos" },
+          { to: "/carregadores/produtos", label: "Gestão de Produtos", icon: Package, feature: "carregadores.produtos" },
           { to: "/carregadores/regras", label: "Regras de Propostas", icon: BookOpen, feature: "carregadores.regras" },
           { to: "/carregadores/frete-regras", label: "Regras de Fretes", icon: Truck, feature: "carregadores.regras" },
           { to: "/carregadores/metas", label: "Regras de Metas", icon: Target, feature: "carregadores.metas" },
           { to: "/carregadores/comissoes", label: "Regras de Comissões", icon: Percent, feature: "carregadores.comissoes" },
-        ],
-      },
-      {
-        label: "Grupo 2P",
-        collapsible: true,
-        items: [
-          { to: "/admin/moderacao/produtos/grupo-2p", label: "Todos os Produtos", icon: Package, feature: "admin.objetos.produtos" },
-          { to: "/admin/moderacao/estoque/grupo-2p", label: "Estoque", icon: Boxes, feature: "admin.objetos.produtos" },
         ],
       },
     ],

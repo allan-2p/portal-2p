@@ -190,15 +190,6 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
 };
 
 // Mapa: rota do TanStack → feature key (para gate de menu e roteamento).
-/**
- * Rotas de Moderação com unidade no caminho (solar / carregadores / grupo-2p).
- * Ficam fora do literal porque `AppPath` só conhece a forma com `$unidade`.
- */
-const MODERACAO_PRODUTOS_ROTAS: Record<string, FeatureKey> = {
-  "/admin/moderacao/produtos": "admin.objetos.produtos",
-  "/admin/moderacao/estoque": "admin.objetos.produtos",
-};
-
 export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/": "home",
   "/solar/tarefas": "tarefas",
@@ -244,7 +235,6 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/admin/tabelas": "admin.tabelas",
   "/admin/produtos": "admin.objetos.produtos",
   "/admin/estoque": "admin.objetos.produtos",
-  ...MODERACAO_PRODUTOS_ROTAS,
   "/admin/perfis": "admin.perfis",
   "/admin/integracoes": "admin.integracoes",
   "/admin/auditoria": "admin.auditoria",

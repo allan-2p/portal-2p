@@ -82,7 +82,6 @@ import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.
 import { Route as AuthenticatedSolarPropostasIndexRouteImport } from './routes/_authenticated/solar.propostas.index'
 import { Route as AuthenticatedCarregadoresPropostasIndexRouteImport } from './routes/_authenticated/carregadores.propostas.index'
 import { Route as AuthenticatedCarregadoresClientesIndexRouteImport } from './routes/_authenticated/carregadores.clientes.index'
-import { Route as AuthenticatedAdminModeracaoIndexRouteImport } from './routes/_authenticated/admin.moderacao.index'
 import { Route as AuthenticatedAdminLogsIndexRouteImport } from './routes/_authenticated/admin.logs.index'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -119,8 +118,6 @@ import { Route as AuthenticatedAdminLogsIntegracoesRouteImport } from './routes/
 import { Route as AuthenticatedAdminLogsGatilhosRouteImport } from './routes/_authenticated/admin.logs.gatilhos'
 import { Route as AuthenticatedAdminIntegracoesSlugRouteImport } from './routes/_authenticated/admin.integracoes_.$slug'
 import { Route as ApiPublicHooksPixItauSplatRouteImport } from './routes/api/public/hooks/pix-itau.$'
-import { Route as AuthenticatedAdminModeracaoProdutosUnidadeRouteImport } from './routes/_authenticated/admin.moderacao.produtos.$unidade'
-import { Route as AuthenticatedAdminModeracaoEstoqueUnidadeRouteImport } from './routes/_authenticated/admin.moderacao.estoque.$unidade'
 
 const TvGeralRoute = TvGeralRouteImport.update({
   id: '/tv-geral',
@@ -542,12 +539,6 @@ const AuthenticatedCarregadoresClientesIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedCarregadoresClientesRoute,
   } as any)
-const AuthenticatedAdminModeracaoIndexRoute =
-  AuthenticatedAdminModeracaoIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedAdminModeracaoRoute,
-  } as any)
 const AuthenticatedAdminLogsIndexRoute =
   AuthenticatedAdminLogsIndexRouteImport.update({
     id: '/admin/logs/',
@@ -760,18 +751,6 @@ const ApiPublicHooksPixItauSplatRoute =
     path: '/$',
     getParentRoute: () => ApiPublicHooksPixItauRoute,
   } as any)
-const AuthenticatedAdminModeracaoProdutosUnidadeRoute =
-  AuthenticatedAdminModeracaoProdutosUnidadeRouteImport.update({
-    id: '/produtos/$unidade',
-    path: '/produtos/$unidade',
-    getParentRoute: () => AuthenticatedAdminModeracaoRoute,
-  } as any)
-const AuthenticatedAdminModeracaoEstoqueUnidadeRoute =
-  AuthenticatedAdminModeracaoEstoqueUnidadeRouteImport.update({
-    id: '/estoque/$unidade',
-    path: '/estoque/$unidade',
-    getParentRoute: () => AuthenticatedAdminModeracaoRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -799,7 +778,7 @@ export interface FileRoutesByFullPath {
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/microinversores-solar': typeof AuthenticatedAdminMicroinversoresSolarRoute
-  '/admin/moderacao': typeof AuthenticatedAdminModeracaoRouteWithChildren
+  '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/admin/modulos-solar': typeof AuthenticatedAdminModulosSolarRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
@@ -878,12 +857,9 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/admin/logs/': typeof AuthenticatedAdminLogsIndexRoute
-  '/admin/moderacao/': typeof AuthenticatedAdminModeracaoIndexRoute
   '/carregadores/clientes/': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
   '/solar/propostas/': typeof AuthenticatedSolarPropostasIndexRoute
-  '/admin/moderacao/estoque/$unidade': typeof AuthenticatedAdminModeracaoEstoqueUnidadeRoute
-  '/admin/moderacao/produtos/$unidade': typeof AuthenticatedAdminModeracaoProdutosUnidadeRoute
   '/api/public/hooks/pix-itau/$': typeof ApiPublicHooksPixItauSplatRoute
 }
 export interface FileRoutesByTo {
@@ -910,6 +886,7 @@ export interface FileRoutesByTo {
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/microinversores-solar': typeof AuthenticatedAdminMicroinversoresSolarRoute
+  '/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/admin/modulos-solar': typeof AuthenticatedAdminModulosSolarRoute
   '/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/admin/produtos': typeof AuthenticatedAdminProdutosRoute
@@ -986,12 +963,9 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/admin/logs': typeof AuthenticatedAdminLogsIndexRoute
-  '/admin/moderacao': typeof AuthenticatedAdminModeracaoIndexRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/carregadores/propostas': typeof AuthenticatedCarregadoresPropostasIndexRoute
   '/solar/propostas': typeof AuthenticatedSolarPropostasIndexRoute
-  '/admin/moderacao/estoque/$unidade': typeof AuthenticatedAdminModeracaoEstoqueUnidadeRoute
-  '/admin/moderacao/produtos/$unidade': typeof AuthenticatedAdminModeracaoProdutosUnidadeRoute
   '/api/public/hooks/pix-itau/$': typeof ApiPublicHooksPixItauSplatRoute
 }
 export interface FileRoutesById {
@@ -1022,7 +996,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/_authenticated/admin/microinversores-solar': typeof AuthenticatedAdminMicroinversoresSolarRoute
-  '/_authenticated/admin/moderacao': typeof AuthenticatedAdminModeracaoRouteWithChildren
+  '/_authenticated/admin/moderacao': typeof AuthenticatedAdminModeracaoRoute
   '/_authenticated/admin/modulos-solar': typeof AuthenticatedAdminModulosSolarRoute
   '/_authenticated/admin/perfis': typeof AuthenticatedAdminPerfisRoute
   '/_authenticated/admin/produtos': typeof AuthenticatedAdminProdutosRoute
@@ -1101,12 +1075,9 @@ export interface FileRoutesById {
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/admin/logs/': typeof AuthenticatedAdminLogsIndexRoute
-  '/_authenticated/admin/moderacao/': typeof AuthenticatedAdminModeracaoIndexRoute
   '/_authenticated/carregadores/clientes/': typeof AuthenticatedCarregadoresClientesIndexRoute
   '/_authenticated/carregadores/propostas/': typeof AuthenticatedCarregadoresPropostasIndexRoute
   '/_authenticated/solar/propostas/': typeof AuthenticatedSolarPropostasIndexRoute
-  '/_authenticated/admin/moderacao/estoque/$unidade': typeof AuthenticatedAdminModeracaoEstoqueUnidadeRoute
-  '/_authenticated/admin/moderacao/produtos/$unidade': typeof AuthenticatedAdminModeracaoProdutosUnidadeRoute
   '/api/public/hooks/pix-itau/$': typeof ApiPublicHooksPixItauSplatRoute
 }
 export interface FileRouteTypes {
@@ -1216,12 +1187,9 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/admin/logs/'
-    | '/admin/moderacao/'
     | '/carregadores/clientes/'
     | '/carregadores/propostas/'
     | '/solar/propostas/'
-    | '/admin/moderacao/estoque/$unidade'
-    | '/admin/moderacao/produtos/$unidade'
     | '/api/public/hooks/pix-itau/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1248,6 +1216,7 @@ export interface FileRouteTypes {
     | '/admin/integracoes'
     | '/admin/metas'
     | '/admin/microinversores-solar'
+    | '/admin/moderacao'
     | '/admin/modulos-solar'
     | '/admin/perfis'
     | '/admin/produtos'
@@ -1324,12 +1293,9 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/admin/logs'
-    | '/admin/moderacao'
     | '/carregadores/clientes'
     | '/carregadores/propostas'
     | '/solar/propostas'
-    | '/admin/moderacao/estoque/$unidade'
-    | '/admin/moderacao/produtos/$unidade'
     | '/api/public/hooks/pix-itau/$'
   id:
     | '__root__'
@@ -1438,12 +1404,9 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/_authenticated/admin/logs/'
-    | '/_authenticated/admin/moderacao/'
     | '/_authenticated/carregadores/clientes/'
     | '/_authenticated/carregadores/propostas/'
     | '/_authenticated/solar/propostas/'
-    | '/_authenticated/admin/moderacao/estoque/$unidade'
-    | '/_authenticated/admin/moderacao/produtos/$unidade'
     | '/api/public/hooks/pix-itau/$'
   fileRoutesById: FileRoutesById
 }
@@ -1992,13 +1955,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarregadoresClientesIndexRouteImport
       parentRoute: typeof AuthenticatedCarregadoresClientesRoute
     }
-    '/_authenticated/admin/moderacao/': {
-      id: '/_authenticated/admin/moderacao/'
-      path: '/'
-      fullPath: '/admin/moderacao/'
-      preLoaderRoute: typeof AuthenticatedAdminModeracaoIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminModeracaoRoute
-    }
     '/_authenticated/admin/logs/': {
       id: '/_authenticated/admin/logs/'
       path: '/admin/logs'
@@ -2251,20 +2207,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPixItauSplatRouteImport
       parentRoute: typeof ApiPublicHooksPixItauRoute
     }
-    '/_authenticated/admin/moderacao/produtos/$unidade': {
-      id: '/_authenticated/admin/moderacao/produtos/$unidade'
-      path: '/produtos/$unidade'
-      fullPath: '/admin/moderacao/produtos/$unidade'
-      preLoaderRoute: typeof AuthenticatedAdminModeracaoProdutosUnidadeRouteImport
-      parentRoute: typeof AuthenticatedAdminModeracaoRoute
-    }
-    '/_authenticated/admin/moderacao/estoque/$unidade': {
-      id: '/_authenticated/admin/moderacao/estoque/$unidade'
-      path: '/estoque/$unidade'
-      fullPath: '/admin/moderacao/estoque/$unidade'
-      preLoaderRoute: typeof AuthenticatedAdminModeracaoEstoqueUnidadeRouteImport
-      parentRoute: typeof AuthenticatedAdminModeracaoRoute
-    }
   }
 }
 
@@ -2313,27 +2255,6 @@ const AuthenticatedMarketingRouteChildren: AuthenticatedMarketingRouteChildren =
 const AuthenticatedMarketingRouteWithChildren =
   AuthenticatedMarketingRoute._addFileChildren(
     AuthenticatedMarketingRouteChildren,
-  )
-
-interface AuthenticatedAdminModeracaoRouteChildren {
-  AuthenticatedAdminModeracaoIndexRoute: typeof AuthenticatedAdminModeracaoIndexRoute
-  AuthenticatedAdminModeracaoEstoqueUnidadeRoute: typeof AuthenticatedAdminModeracaoEstoqueUnidadeRoute
-  AuthenticatedAdminModeracaoProdutosUnidadeRoute: typeof AuthenticatedAdminModeracaoProdutosUnidadeRoute
-}
-
-const AuthenticatedAdminModeracaoRouteChildren: AuthenticatedAdminModeracaoRouteChildren =
-  {
-    AuthenticatedAdminModeracaoIndexRoute:
-      AuthenticatedAdminModeracaoIndexRoute,
-    AuthenticatedAdminModeracaoEstoqueUnidadeRoute:
-      AuthenticatedAdminModeracaoEstoqueUnidadeRoute,
-    AuthenticatedAdminModeracaoProdutosUnidadeRoute:
-      AuthenticatedAdminModeracaoProdutosUnidadeRoute,
-  }
-
-const AuthenticatedAdminModeracaoRouteWithChildren =
-  AuthenticatedAdminModeracaoRoute._addFileChildren(
-    AuthenticatedAdminModeracaoRouteChildren,
   )
 
 interface AuthenticatedCarregadoresClientesRouteChildren {
@@ -2438,7 +2359,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIntegracoesRoute: typeof AuthenticatedAdminIntegracoesRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
   AuthenticatedAdminMicroinversoresSolarRoute: typeof AuthenticatedAdminMicroinversoresSolarRoute
-  AuthenticatedAdminModeracaoRoute: typeof AuthenticatedAdminModeracaoRouteWithChildren
+  AuthenticatedAdminModeracaoRoute: typeof AuthenticatedAdminModeracaoRoute
   AuthenticatedAdminModulosSolarRoute: typeof AuthenticatedAdminModulosSolarRoute
   AuthenticatedAdminPerfisRoute: typeof AuthenticatedAdminPerfisRoute
   AuthenticatedAdminProdutosRoute: typeof AuthenticatedAdminProdutosRoute
@@ -2497,8 +2418,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
   AuthenticatedAdminMicroinversoresSolarRoute:
     AuthenticatedAdminMicroinversoresSolarRoute,
-  AuthenticatedAdminModeracaoRoute:
-    AuthenticatedAdminModeracaoRouteWithChildren,
+  AuthenticatedAdminModeracaoRoute: AuthenticatedAdminModeracaoRoute,
   AuthenticatedAdminModulosSolarRoute: AuthenticatedAdminModulosSolarRoute,
   AuthenticatedAdminPerfisRoute: AuthenticatedAdminPerfisRoute,
   AuthenticatedAdminProdutosRoute: AuthenticatedAdminProdutosRoute,
