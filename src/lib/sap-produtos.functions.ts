@@ -259,13 +259,19 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
           `${r.descricao ?? ""}|${r.unidade ?? ""}|${r.ncm_codigo ?? ""}|${r.no_catalogo ? 1 : 0}`,
         ]),
       );
+      // Envio manual manda: material já colocado no catálogo do portal continua
+      // lá em qualquer sincronização — só sai por decisão de alguém na
+      // Administração. O SAP só pode ADICIONAR ao catálogo, nunca remover.
+      const jaNoCatalogo = new Set(
+        (espelhoExistente ?? []).filter((r: any) => r.no_catalogo).map((r: any) => String(r.codigo)),
+      );
       const espelho = todosMateriais
         .map((m) => ({
           codigo: m.codigo,
           descricao: m.descricao,
           unidade: m.unidade,
           ncm_codigo: ncmDe(m),
-          no_catalogo: m.liberado,
+          no_catalogo: m.liberado || jaNoCatalogo.has(m.codigo),
           sap_raw: m.raw as any,
           last_synced_at: now,
         }))
