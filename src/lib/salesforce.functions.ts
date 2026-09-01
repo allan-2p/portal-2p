@@ -430,7 +430,7 @@ export const reatribuirTarefasDoPortalFn = createServerFn({ method: "POST" })
   .inputValidator((input: { simular?: boolean } | undefined) => input ?? {})
   .handler(async ({ data, context }) => {
     const { requireAdminFeature } = await import("@/lib/guards.server");
-    await requireAdminFeature(context as any, "admin.logs.integracoes", "reatribuir tarefas");
+    await requireAdminFeature(context as any, "admin.integracoes", "editar");
 
     const me = await sfFetch(`/chatter/users/me`);
     const integracaoId = String(me?.id ?? "").trim();
