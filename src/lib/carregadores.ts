@@ -120,6 +120,8 @@ export const labelTipoNf: Record<CarregadoresTipoNf, string> = {
   bonificacao: "Bonificação",
 };
 
+export const tiposNfValidos = ["venda", "triangulacao", "bonificacao"] as const;
+
 /** Formas de pagamento aceitas na proposta. */
 export type CarregadoresFormaPagamento = "boleto_vista" | "boleto_prazo" | "pix" | "cartao_credito" | "financiamento";
 
@@ -209,7 +211,7 @@ export type CarregadoresState = {
   /** Previsão de fechamento (AAAA-MM-DD) — campo opcional. */
   previsaoFechamento: string;
   /** Tipo de nota fiscal da operação. */
-  tipoNf: CarregadoresTipoNf;
+  tipoNf: CarregadoresTipoNf | "";
   /** Faturar diretamente para o cliente final (desmarcado por padrão). */
   faturarClienteFinal: boolean;
   /** Destinatário fiscal alternativo (quando não é o cliente final). */
@@ -407,7 +409,7 @@ export function novoEstado(): CarregadoresState {
     padrinhoId: null,
     padrinhoNome: "",
     previsaoFechamento: "",
-    tipoNf: "venda",
+    tipoNf: "",
     faturarClienteFinal: false,
     faturamento: novoFaturamento("SP"),
     formaPagamento: "",

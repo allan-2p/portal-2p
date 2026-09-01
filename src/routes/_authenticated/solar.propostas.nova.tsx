@@ -212,7 +212,7 @@ function NovaPropostaSolarPage() {
   const [observacoesInternas, setObservacoesInternas] = useState("");
 
   // Etapa 2
-  const [tipoNf, setTipoNf] = useState("venda");
+  const [tipoNf, setTipoNf] = useState("");
   const [faturarClienteFinal, setFaturarClienteFinal] = useState(false);
   const [fatTipoDoc, setFatTipoDoc] = useState<"cnpj" | "cpf">("cnpj");
   const [fat, setFat] = useState<Record<string, string>>({});
@@ -459,7 +459,7 @@ function NovaPropostaSolarPage() {
       setPrevisao(String(p['previsao_fechamento'] ?? ""));
       setObservacoes(String(p['observacoes'] ?? ""));
       setObservacoesInternas(String(p['observacoes_internas'] ?? ""));
-      setTipoNf(String(p['tipo_nf'] ?? "venda"));
+      setTipoNf(String(p['tipo_nf'] ?? ""));
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
       setFat((p['faturamento'] as Record<string, string>) ?? {});
       setFatContribuinte(!!(p['faturamento'] as Record<string, unknown> | null)?.['contribuinte']);
@@ -513,6 +513,9 @@ function NovaPropostaSolarPage() {
       const catalogo = produtosQ.data ?? [];
       const itensSalvos: Item[] = ((p['itens'] as any[]) ?? []).map((i) => {
         const codigo = String(i.codigo ?? "").trim();
+        const avulsoSalvo = i.avulso && typeof i.avulso === "object"
+          ? { codigo: String(i.avulso.codigo ?? "").trim(), descricao: String(i.avulso.descricao ?? i.nome ?? "").trim() }
+          : null;
         const doCatalogo = i.produtoId
           ? null
           : codigo
@@ -526,7 +529,9 @@ function NovaPropostaSolarPage() {
           valor: money2(i.valor),
           origem: "manual" as const,
         };
-        if (!produtoId && codigo) {
+        if (avulsoSalvo) {
+          base.avulso = avulsoSalvo;
+        } else if (!produtoId && codigo) {
           base.avulso = { codigo, descricao: String(i.nome ?? codigo) };
         }
         return base;
@@ -569,6 +574,30 @@ function NovaPropostaSolarPage() {
       }
     })();
   }, [editId, dupId]);
+
+  // Quando o catálogo chega depois do carregamento da proposta, re-resolve
+  // itens que estavam como avulso só por causa do timing (ex.: produto
+  // inativo que voltou ao catálogo, ou catálogo ainda não carregado).
+  useEffect(() => {
+    const catalogo = produtosQ.data ?? [];
+    if (!catalogo.length) return;
+    const resolver = (itens: Item[]): Item[] => {
+      let alterou = false;
+      const novos = itens.map((i) => {
+        if (i.produtoId || !i.avulso?.codigo) return i;
+        const cod = normCod(i.avulso.codigo);
+        if (!cod) return i;
+        const achado = catalogo.find((p) => normCod(p.codigo) === cod);
+        if (!achado) return i;
+        alterou = true;
+        const { avulso: _, ...rest } = i;
+        return { ...rest, produtoId: achado.id };
+      });
+      return alterou ? novos : itens;
+    };
+    setItensLista((atual) => resolver(atual));
+    setItensCalc((atual) => resolver(atual));
+  }, [produtosQ.data]);
 
   // ------------------------------------------------------------------
   // Calculadora 2P
@@ -1440,6 +1469,10 @@ function NovaPropostaSolarPage() {
       setTentou(true);
       return toast.error("Escolha a transportadora — a proposta não pode ser salva sem o frete cotado.");
     }
+    if (!tipoNf) {
+      setTentou(true);
+      return toast.error("Tipo de nota fiscal é obrigatório.");
+    }
     if (concluir && tipoNf !== "bonificacao" && !formaPagamento) {
       setTentou(true);
       return toast.error("Forma de pagamento é obrigatória para concluir o pedido.");
@@ -1673,6 +1706,7 @@ function NovaPropostaSolarPage() {
   /** Bloqueios para emitir a proposta em PDF. */
   function validarParaPdf(): string | null {
     if (!itens.length) return "Adicione produtos antes de gerar o PDF.";
+    if (!tipoNf) return "Selecione o tipo de nota fiscal antes de gerar a proposta.";
     if (tipoNf !== "bonificacao" && !formaPagamento) return "Selecione a forma de pagamento antes de gerar a proposta.";
     if (tipoNf !== "bonificacao" && !condicaoPagamento) return "Selecione a condição de pagamento antes de gerar a proposta.";
     return null;
@@ -1820,15 +1854,18 @@ function NovaPropostaSolarPage() {
         {etapa === 2 && (
           <section className="glass rounded-2xl p-5 space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Campo label="Tipo de NF">
+              <Campo label="Tipo de NF *">
                 <Select value={tipoNf} onValueChange={setTipoNf}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo de nota fiscal" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="venda">Venda</SelectItem>
                     <SelectItem value="triangulacao">Triangulação</SelectItem>
                     <SelectItem value="bonificacao">Bonificação</SelectItem>
                   </SelectContent>
                 </Select>
+                {tentou && !tipoNf && <Erro>Selecione o tipo de nota fiscal.</Erro>}
               </Campo>
             </div>
             <label className="flex items-center gap-2 text-sm">
