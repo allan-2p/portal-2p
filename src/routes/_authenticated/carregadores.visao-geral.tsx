@@ -300,9 +300,12 @@ function CarregadoresVisaoGeralPage() {
                 </div>
               </div>
               <div className="divide-y divide-border">
-                <div className="hidden sm:grid grid-cols-[100px_100px_1fr_1fr_120px_140px] gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                <div className="hidden lg:grid grid-cols-[90px_90px_90px_90px_90px_1fr_1fr_110px_120px] gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                   <span>Pedido</span>
+                  <span>Nº SAP</span>
+                  <span>Nº NF</span>
                   <span>Compra</span>
+                  <span>Faturamento</span>
                   <span>Nome</span>
                   <span>Cliente</span>
                   <span>Status</span>
@@ -311,16 +314,19 @@ function CarregadoresVisaoGeralPage() {
                 {itens.map((p) => (
                   <div
                     key={p.id}
-                    className="grid sm:grid-cols-[100px_100px_1fr_1fr_120px_140px] gap-1 sm:gap-3 px-5 py-2.5 text-sm items-center"
+                    className="grid lg:grid-cols-[90px_90px_90px_90px_90px_1fr_1fr_110px_120px] gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center"
                   >
                     <span className="font-mono text-xs text-muted-foreground">{p.numero ?? "—"}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{p.sapOvNumero ?? "—"}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{p.nfNumero ?? "—"}</span>
                     <span className="text-xs text-muted-foreground">{fmtData(p.data)}</span>
+                    <span className="text-xs text-muted-foreground">{p.dataFaturamento ? fmtData(p.dataFaturamento) : "—"}</span>
                     <span className={cn("truncate", !p.nome && "text-muted-foreground")}>{p.nome ?? "—"}</span>
                     <span className="truncate">{p.cliente_nome}</span>
                     <span className="flex items-center gap-1.5 text-xs">
                       <StatusDot status={p.status as any} /> {p.status}
                     </span>
-                    <span className="sm:text-right font-semibold">{fmtBRL(p.valor)}</span>
+                    <span className="lg:text-right font-semibold">{fmtBRL(p.valor)}</span>
                   </div>
                 ))}
               </div>
