@@ -93,13 +93,17 @@ export const listClientesFn = createServerFn({ method: "POST" })
       if (perm.view_all) return { ok: true as const, clientes: todos };
       const sap = await meuConsultorSap(context as any);
       const nome = normalizarNome(await meuNomeCompleto(context as any));
-      const meus = todos.filter(
-        (c) =>
-          c["created_by"] === context.userId ||
-          c["consultor_id"] === context.userId ||
-          (!!sap && String(c["consultor_sap"] ?? "").trim() === sap) ||
-          (!!nome && normalizarNome(String(c["consultor_nome"] ?? "")) === nome),
-      );
+      const { consultorDaInstancia } = await import("./consultor-sap.server");
+      const meus = todos.filter((c) => {
+        // Cadastro Grupo 2P pode ter um responsável em cada unidade.
+        const resp = consultorDaInstancia(c, data.instancia);
+        return (
+          resp.id === context.userId ||
+          (!resp.proprio && c["created_by"] === context.userId) ||
+          (!!sap && String(resp.sap ?? "").trim() === sap) ||
+          (!!nome && normalizarNome(String(resp.nome ?? "")) === nome)
+        );
+      });
 
       return { ok: true as const, clientes: meus };
 
@@ -288,11 +292,13 @@ export const getClientePerfilFn = createServerFn({ method: "POST" })
     if (!perm.view_all) {
       const sap = await meuConsultorSap(context as any);
       const nome = normalizarNome(await meuNomeCompleto(context as any));
+      const { consultorDaInstancia } = await import("./consultor-sap.server");
+      const resp = consultorDaInstancia(cliente, data.instancia);
       const meu =
-        cliente["created_by"] === context.userId ||
-        cliente["consultor_id"] === context.userId ||
-        (sap !== null && String(cliente["consultor_sap"] ?? "") === sap) ||
-        (!!nome && normalizarNome(String(cliente["consultor_nome"] ?? "")) === nome);
+        resp.id === context.userId ||
+        (!resp.proprio && cliente["created_by"] === context.userId) ||
+        (sap !== null && String(resp.sap ?? "") === sap) ||
+        (!!nome && normalizarNome(String(resp.nome ?? "")) === nome);
 
       if (!meu) throw new Error("Você não tem acesso a este cadastro.");
     }
