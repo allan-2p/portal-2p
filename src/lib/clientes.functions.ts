@@ -261,10 +261,13 @@ export const getClientePerfilFn = createServerFn({ method: "POST" })
     if (!cliente) return { ok: false as const, cliente: null };
     if (!perm.view_all) {
       const sap = await meuConsultorSap(context as any);
+      const nome = normalizarNome(await meuNomeCompleto(context as any));
       const meu =
         cliente["created_by"] === context.userId ||
         cliente["consultor_id"] === context.userId ||
-        (sap !== null && String(cliente["consultor_sap"] ?? "") === sap);
+        (sap !== null && String(cliente["consultor_sap"] ?? "") === sap) ||
+        (!!nome && normalizarNome(String(cliente["consultor_nome"] ?? "")) === nome);
+
       if (!meu) throw new Error("Você não tem acesso a este cadastro.");
     }
     return { ok: true as const, cliente: cliente as Record<string, any> };
