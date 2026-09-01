@@ -122,6 +122,19 @@ function IntegracoesPage() {
               )}
 
               {connected && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => reatribuir.mutate()}
+                  disabled={reatribuir.isPending}
+                  title="Transfere tarefas antigas criadas pelo portal para o vendedor dono da conta"
+                >
+                  {reatribuir.isPending ? <Loader2 className="animate-spin" /> : null}
+                  Reatribuir tarefas do portal
+                </Button>
+              )}
+
+              {connected && (
                 <a
                   href="https://lovable.dev/projects"
                   target="_blank"
