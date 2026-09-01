@@ -1221,7 +1221,7 @@ export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
       `FROM Event WHERE WhatId = '${esc(accountId)}' ` +
       `ORDER BY ActivityDate DESC NULLS LAST LIMIT 100`;
     const [tRes, eRes] = await Promise.all([
-      sfFetch(`/query?q=${encodeURIComponent(taskSoql2)}`).catch(() => ({ records: [] })),
+      sfFetch(`/query?q=${encodeURIComponent(taskSoql)}`).catch(() => ({ records: [] })),
       sfFetch(`/query?q=${encodeURIComponent(eventSoql)}`).catch(() => ({ records: [] })),
     ]);
     const tasks: SalesforceActivity[] = (tRes?.records ?? []).map((r: any) => ({
