@@ -439,15 +439,16 @@ export async function clientesTableExists(instance: ClientesInstance): Promise<b
  */
 export async function listarDocsDoConsultor(
   instance: ClientesInstance,
-  opts: { donoId?: string | null; consultorSap?: string | null; limite?: number } = {},
+  opts: {
+    donoId?: string | null;
+    consultorSap?: string | null;
+    consultorNome?: string | null;
+    limite?: number;
+  } = {},
 ): Promise<string[]> {
-  if (!opts.donoId && !opts.consultorSap) return [];
-  const alvos: string[] = [];
-  if (opts.donoId) {
-    alvos.push(`created_by.eq.${opts.donoId}`);
-    if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
-  }
-  if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
+  if (!opts.donoId && !opts.consultorSap && !opts.consultorNome) return [];
+  const alvos = await alvosDoDono(opts);
+
 
   const teto = Math.min(opts.limite ?? 20000, 20000);
   const out = new Set<string>();
