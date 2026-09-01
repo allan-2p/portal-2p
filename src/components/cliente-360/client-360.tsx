@@ -1128,20 +1128,88 @@ function ActivityRail({ accountId }: { accountId: string }) {
       ) : (
         <ul className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
           {rows.map((a) => (
-            <ActivityItem key={a.id} a={a} />
+            <ActivityItem
+              key={a.id}
+              a={a}
+              accountId={accountId}
+              onComplete={setCompleteTask}
+              onInteraction={setInteractionTask}
+              onReschedule={setRescheduleTask}
+            />
           ))}
         </ul>
       )}
 
       {totalPages > 1 && <Pager page={pageSafe} total={totalPages} onChange={setPage} />}
+
+      <InteractionQuickDialog
+        task={interactionTask}
+        existing={null}
+        onClose={() => setInteractionTask(null)}
+        onSaved={() => {
+          setInteractionTask(null);
+          recarregar();
+        }}
+      />
+      <CompleteTaskDialog
+        task={completeTask}
+        existing={null}
+        onClose={() => setCompleteTask(null)}
+        onSaveInteraction={() => {}}
+        onDone={() => {
+          setCompleteTask(null);
+          recarregar();
+        }}
+      />
+      <RescheduleTaskDialog
+        task={rescheduleTask}
+        onClose={() => setRescheduleTask(null)}
+        onDone={() => {
+          setRescheduleTask(null);
+          recarregar();
+        }}
+      />
     </aside>
   );
 }
 
-function ActivityItem({ a }: { a: SalesforceActivity }) {
+/** Converte a atividade da conta no formato de tarefa usado pelos diálogos. */
+function atividadeParaTarefa(a: SalesforceActivity, accountId: string): SalesforceTask {
+  return {
+    id: a.id,
+    date: a.date ?? new Date().toISOString().slice(0, 10),
+    subject: a.subject,
+    status: a.status,
+    priority: a.priority,
+    description: a.description,
+    who: a.who ?? null,
+    whoId: a.whoId ?? null,
+    what: null,
+    whatId: accountId,
+    type: a.type ?? null,
+    owner: a.owner,
+    ownerId: a.ownerId ?? null,
+  };
+}
+
+function ActivityItem({
+  a,
+  accountId,
+  onComplete,
+  onInteraction,
+  onReschedule,
+}: {
+  a: SalesforceActivity;
+  accountId: string;
+  onComplete: (t: SalesforceTask) => void;
+  onInteraction: (t: SalesforceTask) => void;
+  onReschedule: (t: SalesforceTask) => void;
+}) {
   const [open, setOpen] = useState(false);
   const done = a.kind === "task" && a.status === "Completed";
   const Icon = a.kind === "event" ? CalendarClock : done ? CheckCircle2 : Circle;
+  const podeAgir = a.kind === "task" && !done;
+  const tarefa = () => atividadeParaTarefa(a, accountId);
   return (
     <li className="rounded-lg border border-border bg-background/40">
       <button
@@ -1163,14 +1231,44 @@ function ActivityItem({ a }: { a: SalesforceActivity }) {
           </div>
         </div>
       </button>
-      {open && a.description && (
-        <p className="px-2.5 pb-2.5 -mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap">
-          {a.description}
-        </p>
+      {open && (
+        <div className="px-2.5 pb-2.5 -mt-1 space-y-2">
+          {a.description && (
+            <p className="text-[11px] text-muted-foreground whitespace-pre-wrap">{a.description}</p>
+          )}
+          <div className="flex flex-wrap gap-1.5 text-[10px] text-muted-foreground">
+            {a.type && <span className="px-1.5 py-0.5 rounded bg-surface-2">{a.type}</span>}
+            {a.priority && <span className="px-1.5 py-0.5 rounded bg-surface-2">{a.priority}</span>}
+            {a.who && <span className="px-1.5 py-0.5 rounded bg-surface-2">{a.who}</span>}
+          </div>
+          {podeAgir && (
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => onComplete(tarefa())}
+                className="text-[11px] px-2 py-1 rounded-md bg-primary text-primary-foreground font-medium"
+              >
+                Concluir
+              </button>
+              <button
+                onClick={() => onInteraction(tarefa())}
+                className="text-[11px] px-2 py-1 rounded-md bg-surface-2 hover:bg-surface font-medium"
+              >
+                Registrar interação
+              </button>
+              <button
+                onClick={() => onReschedule(tarefa())}
+                className="text-[11px] px-2 py-1 rounded-md bg-surface-2 hover:bg-surface font-medium"
+              >
+                Reagendar
+              </button>
+            </div>
+          )}
+        </div>
       )}
     </li>
   );
 }
+
 
 /* ------------------------------------------- Nova tarefa / nova interação */
 
