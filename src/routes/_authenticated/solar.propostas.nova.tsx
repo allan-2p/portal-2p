@@ -507,13 +507,30 @@ function NovaPropostaSolarPage() {
       // calculadora, todas as entradas + os itens gerados. Sem isso, reabrir a
       // proposta a convertia silenciosamente em "lista de produtos".
       const calc = (totais['calculo'] ?? {}) as Record<string, any>;
-      const itensSalvos: Item[] = ((p['itens'] as any[]) ?? []).map((i) => ({
-        key: Math.random().toString(36).slice(2),
-        produtoId: String(i.produtoId ?? ""),
-        qtd: Number(i.qtd ?? 1),
-        valor: money2(i.valor),
-        origem: "manual" as const,
-      }));
+      // Propostas importadas da plataforma antiga não têm produtoId — só o
+      // código SAP e o nome. Sem resolver isso, o passo 3 mostra "—" e o frete
+      // fica bloqueado por "item sem código SAP".
+      const catalogo = produtosQ.data ?? [];
+      const itensSalvos: Item[] = ((p['itens'] as any[]) ?? []).map((i) => {
+        const codigo = String(i.codigo ?? "").trim();
+        const doCatalogo = i.produtoId
+          ? null
+          : codigo
+            ? catalogo.find((x) => normCod(x.codigo) === normCod(codigo))
+            : null;
+        const produtoId = String(i.produtoId ?? doCatalogo?.id ?? "");
+        const base: Item = {
+          key: Math.random().toString(36).slice(2),
+          produtoId,
+          qtd: Number(i.qtd ?? 1),
+          valor: money2(i.valor),
+          origem: "manual" as const,
+        };
+        if (!produtoId && codigo) {
+          base.avulso = { codigo, descricao: String(i.nome ?? codigo) };
+        }
+        return base;
+      });
 
       if (calc['modo'] === "calculadora") {
         const e = (calc['entrada'] ?? {}) as Record<string, any>;

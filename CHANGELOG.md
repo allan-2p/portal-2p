@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+
+- Edição de propostas importadas da plataforma antiga: itens sem `produtoId` agora são reconhecidos pelo código SAP (catálogo ou item avulso), voltando a aparecer no passo 3 e liberando a cotação de frete.
 - **Variação de proposta importada**: criar variação de um orçamento vindo da plataforma antiga dava erro de chave duplicada (`projeto_antigo_id`). A variação agora nasce como proposta nativa do portal — não herda o vínculo com o projeto antigo nem as marcas de importação (origem/nº anterior).
 - **Atlas Radar respeita a carteira do vendedor**: a listagem de alertas (card da home e tela `/atlas-ia/radar`) passa a filtrar pelo escopo do consultor — vendedor vê só os clientes da carteira dele; admin/diretor (View All Records) veem tudo. Antes a varredura era global e a leitura não filtrava.
 - Atlas: perguntas abertas em conversa livre (correção do envio pelo campo de texto), título automático da conversa a partir da primeira pergunta, painel "O que o Atlas consulta hoje" no topo e saneamento do histórico com chamadas de ferramenta incompletas.
