@@ -591,6 +591,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </div>
               <div className="hidden sm:block"><ThemeToggle /></div>
               <NotificationsDropdown />
+              <AtlasWidget />
 
               {canSeeAdminMenu && (
                 <div className="relative hidden md:block">
@@ -675,7 +676,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
       </main>
-      <AtlasWidget />
     </div>
   );
 }

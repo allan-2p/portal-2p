@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { MessageSquarePlus, Sparkles, X, Radar, Trash2, Maximize2, History } from "lucide-react";
+import { MessageSquarePlus, MessageSquareText, X, Radar, Trash2, Maximize2, History } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -99,28 +99,29 @@ export function AtlasWidget() {
   return (
     <>
       {!aberto && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={() => setAberto(true)}
           aria-label="Abrir o chat do Atlas"
-          className="fixed bottom-5 right-5 z-40 flex h-13 items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg transition-transform hover:scale-105"
+          title="Abrir o Atlas"
+          className="shrink-0 text-primary"
         >
-          <Sparkles className="h-4 w-4" />
-          Atlas
-        </button>
+          <MessageSquareText className="h-4 w-4" />
+        </Button>
       )}
 
       {aberto && (
         <div
           className={cn(
             "fixed z-50 flex flex-col overflow-hidden border border-border bg-card shadow-2xl",
-            "inset-x-0 bottom-0 top-0 sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[min(640px,calc(100vh-6rem))] sm:w-[420px] sm:rounded-2xl",
+            "inset-x-0 bottom-0 top-0 sm:inset-auto sm:right-5 sm:top-20 sm:h-[min(640px,calc(100vh-6rem))] sm:w-[420px] sm:rounded-2xl",
           )}
           role="dialog"
           aria-label="Chat do Atlas"
         >
           <header className="flex items-center gap-2 border-b border-border px-3 py-2">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <MessageSquareText className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold">Atlas</span>
             <div className="ml-auto flex items-center gap-1">
               <Button

@@ -225,7 +225,7 @@ function RootComponent() {
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           {/* Container dos avisos (toasts) — sem ele nenhuma mensagem de sucesso/erro aparece. */}
-          <Toaster />
+          <Toaster position="top-center" duration={2500} visibleToasts={2} closeButton />
         </InstanceProvider>
       </SimulationProvider>
     </QueryClientProvider>
