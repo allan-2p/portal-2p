@@ -1238,9 +1238,9 @@ export function ProdutosGestao({ unidade }: { unidade: UnidadeProdutos }) {
             unidade={unidade}
             porCodigo={porCodigo}
             onPropagar={propagar}
-            onVisibilidade={(id, v, p) =>
-              alterarVisibilidade(id, v, { origem: p.origem ?? null, custo: p.custo ?? null, ncm_id: p.ncm_id ?? null })
-            }
+            onVisibilidade={(id, v, p) => {
+              void alterarVisibilidade(id, v, { origem: p.origem ?? null, custo: p.custo ?? null, ncm_id: p.ncm_id ?? null });
+            }}
             onOverride={(id, override) => overrideMut.mutate({ id, override })}
             onEnviado={(codigo) => {
               // Material entra inativo: sem isso ele sumia atrás do filtro
