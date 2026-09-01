@@ -1,15 +1,16 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-// Dossiê 360 (funil, atividades, gráficos) em chunk próprio: só baixa ao abrir um cliente.
-const Client360 = lazy(() =>
-  import("@/components/cliente-360/client-360").then((m) => ({ default: m.Client360 })),
-);
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { listClientesPerfilFn, getClientePerfilFn } from "@/lib/clientes.functions";
 import type { SalesforceAccount } from "@/lib/salesforce.functions";
 import { Search, Sparkles, AlertTriangle } from "lucide-react";
+
+// Dossiê 360 (funil, atividades, gráficos) em chunk próprio: só baixa ao abrir um cliente.
+const Client360 = lazy(() =>
+  import("@/components/cliente-360/client-360").then((m) => ({ default: m.Client360 })),
+);
 
 type Search = { account?: string };
 
