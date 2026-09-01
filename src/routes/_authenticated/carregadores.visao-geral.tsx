@@ -73,9 +73,11 @@ function fmtData(iso: string) {
 }
 
 type Modo = "todos" | "mes" | "trimestre" | "ano" | "intervalo";
+type CampoData = "compra" | "faturamento";
 
 function CarregadoresVisaoGeralPage() {
   const [modo, setModo] = useState<Modo>("todos");
+  const [campoData, setCampoData] = useState<CampoData>("compra");
   const [mes, setMes] = useState<string>("");
   const [trimestre, setTrimestre] = useState<string>("");
   const [ano, setAno] = useState<string>("");
