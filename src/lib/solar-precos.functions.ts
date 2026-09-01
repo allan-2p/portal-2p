@@ -10,6 +10,16 @@ export type PrecoSolarInput = {
   tipoOv: string;
   /** Kit fotovoltaico: preço sem ICMS/IPI. */
   kitFotovoltaico: boolean;
+  /** Faturamento ao cliente final (não cadastrado no SAP) — usa cliente fake. */
+  faturarClienteFinal: boolean;
+  /** UF do faturamento (define o cliente fake usado na simulação). */
+  ufFaturamento: string;
+  /** Cliente final é contribuinte com CNPJ (ZV2P) — define fake CNPJ x CPF. */
+  finalContribuinte: boolean;
+  /** Triangulação não usa cliente fake (regra da plataforma antiga). */
+  triangulacao: boolean;
+  /** Documento do cliente da proposta (revenda) — vira CNPJ_CI no envelope. */
+  clienteDoc: string;
 };
 
 function validar(input: unknown): PrecoSolarInput {
