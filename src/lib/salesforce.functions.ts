@@ -1215,12 +1215,16 @@ export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
       `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Owner.Name ` +
       `FROM Task WHERE WhatId = '${esc(accountId)}' ` +
       `ORDER BY ActivityDate DESC NULLS LAST LIMIT 200`;
+    const taskSoql2 =
+      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Type, ` +
+      `OwnerId, Owner.Name, WhoId, Who.Name FROM Task WHERE WhatId = '${esc(accountId)}' ` +
+      `ORDER BY ActivityDate DESC NULLS LAST LIMIT 200`;
     const eventSoql =
-      `SELECT Id, Subject, ActivityDate, Description, Owner.Name ` +
+      `SELECT Id, Subject, ActivityDate, Description, OwnerId, Owner.Name, WhoId, Who.Name ` +
       `FROM Event WHERE WhatId = '${esc(accountId)}' ` +
       `ORDER BY ActivityDate DESC NULLS LAST LIMIT 100`;
     const [tRes, eRes] = await Promise.all([
-      sfFetch(`/query?q=${encodeURIComponent(taskSoql)}`).catch(() => ({ records: [] })),
+      sfFetch(`/query?q=${encodeURIComponent(taskSoql2)}`).catch(() => ({ records: [] })),
       sfFetch(`/query?q=${encodeURIComponent(eventSoql)}`).catch(() => ({ records: [] })),
     ]);
     const tasks: SalesforceActivity[] = (tRes?.records ?? []).map((r: any) => ({
@@ -1232,6 +1236,10 @@ export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
       priority: r.Priority ?? null,
       description: r.Description ?? null,
       owner: r.Owner?.Name ?? null,
+      ownerId: r.OwnerId ?? null,
+      type: r.Type ?? null,
+      who: r.Who?.Name ?? null,
+      whoId: r.WhoId ?? null,
     }));
     const events: SalesforceActivity[] = (eRes?.records ?? []).map((r: any) => ({
       id: r.Id,
@@ -1242,7 +1250,12 @@ export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
       priority: null,
       description: r.Description ?? null,
       owner: r.Owner?.Name ?? null,
+      ownerId: r.OwnerId ?? null,
+      type: null,
+      who: r.Who?.Name ?? null,
+      whoId: r.WhoId ?? null,
     }));
+
     const records = [...tasks, ...events].sort((a, b) => {
       const da = a.date ?? "";
       const db = b.date ?? "";
