@@ -187,6 +187,49 @@ async function alvosDoDono(opts: {
   return alvos;
 }
 
+/**
+ * Filtro de "cadastros deste consultor" **nesta instância**.
+ *
+ * Cadastros com atuação Grupo 2P podem ter um responsável em cada unidade
+ * (colunas `consultor_<instancia>_*`). Quando a unidade tem responsável
+ * próprio, só ele enxerga o cadastro ali; quando não tem, vale o par canônico
+ * (o mesmo enviado ao SAP).
+ */
+async function filtroDoDono(
+  instance: ClientesInstance,
+  opts: { donoId?: string | null; consultorSap?: string | null; consultorNome?: string | null },
+): Promise<string> {
+  const canonicos = await alvosDoDono(opts);
+  if (!(await temConsultorPorInstancia())) return `or(${canonicos.join(",")})`;
+
+  const p = instance === "carregadores" ? "consultor_carregadores" : "consultor_solar";
+  const meus: string[] = [];
+  if (opts.donoId) meus.push(`${p}_id.eq.${opts.donoId}`);
+  if (opts.consultorSap) meus.push(`${p}_sap.eq.${opts.consultorSap}`);
+  const nome = termoSeguro(opts.consultorNome ?? "");
+  if (nome) meus.push(`${p}_nome.ilike.${nome}`);
+
+  // Sem responsável próprio na unidade → cai no par canônico.
+  const semDono = `and(${p}_sap.is.null,${p}_nome.is.null,${p}_id.is.null,or(${canonicos.join(",")}))`;
+  return `or(${[...meus, semDono].join(",")})`;
+}
+
+/**
+ * As colunas `consultor_<instancia>_*` (supabase/external/clientes-consultor-por-instancia.sql)
+ * podem ainda não existir: o portal segue funcionando só com o par canônico.
+ */
+let _temConsultorInst: boolean | null = null;
+let _temConsultorInstEm = 0;
+export async function temConsultorPorInstancia(): Promise<boolean> {
+  if (_temConsultorInst === true) return true;
+  if (_temConsultorInst === false && Date.now() - _temConsultorInstEm < 60_000) return false;
+  const { ok } = await grupo2pRest("clientes?select=consultor_solar_sap,consultor_carregadores_sap&limit=1");
+  _temConsultorInst = ok;
+  _temConsultorInstEm = Date.now();
+  return ok;
+}
+
+
 
 /**
  * Busca paginada no banco: o filtro roda no Postgres, então dá para pesquisar
@@ -212,7 +255,7 @@ export async function listClientesPagina(
   if (opts.fiscal === "contribuinte") params.set("contribuinte", "is.true");
   if (opts.fiscal === "nao") params.set("contribuinte", "not.is.true");
   if (opts.donoId || opts.consultorSap || opts.consultorNome) {
-    grupos.push(`or(${(await alvosDoDono(opts)).join(",")})`);
+    grupos.push(await filtroDoDono(instance, opts));
   }
 
   params.set("and", `(${grupos.join(",")})`);
@@ -298,7 +341,7 @@ export async function listClientesPerfil(
   // Filtro por `instancia` (canônico) + cadastros de atuação ampliada (grupo).
   const grupos: string[] = [await grupoInstancia(instance)];
   if (opts.donoId || opts.consultorSap || opts.consultorNome) {
-    grupos.push(`or(${(await alvosDoDono(opts)).join(",")})`);
+    grupos.push(await filtroDoDono(instance, opts));
   }
 
   const termo = termoSeguro(opts.q ?? "");
@@ -469,16 +512,14 @@ export async function listarDocsDoConsultor(
   } = {},
 ): Promise<string[]> {
   if (!opts.donoId && !opts.consultorSap && !opts.consultorNome) return [];
-  const alvos = await alvosDoDono(opts);
-
+  const filtroDono = await filtroDoDono(instance, opts);
 
   const teto = Math.min(opts.limite ?? 20000, 20000);
   const out = new Set<string>();
   for (let pagina = 0; pagina < 20 && out.size < teto; pagina++) {
     const params = new URLSearchParams({
       select: "doc",
-      and: `(${await grupoInstancia(instance)})`,
-      or: `(${alvos.join(",")})`,
+      and: `(${await grupoInstancia(instance)},${filtroDono})`,
       order: "created_at.desc.nullslast,id.asc",
     });
     const from = pagina * PAGINA_DB;
@@ -504,12 +545,24 @@ export async function getClienteByIdQualquer(id: string): Promise<ClienteRow | n
 }
 
 /** Marca o cadastro como de atuação ampliada (Grupo 2P: aparece nas duas unidades). */
-export async function ampliarAtuacaoGrupo(id: string): Promise<ClienteRow | null> {
+export async function ampliarAtuacaoGrupo(
+  id: string,
+  /** Consultor atual, fixado como responsável da unidade de origem. */
+  origem?: { instancia: ClientesInstance; sap: string | null; nome: string | null; id: string | null },
+): Promise<ClienteRow | null> {
+  const p = origem
+    ? origem.instancia === "carregadores"
+      ? "consultor_carregadores"
+      : "consultor_solar"
+    : null;
   return gravarTolerante("solar", `clientes?id=eq.${id}`, "PATCH", {
     escopo_org: "grupo",
     organizacao: "grupo",
     equipe_vendas: "003",
     escritorio_vendas: "0004",
+    ...(p && origem
+      ? { [`${p}_sap`]: origem.sap, [`${p}_nome`]: origem.nome, [`${p}_id`]: origem.id }
+      : {}),
     updated_at: new Date().toISOString(),
   });
 }

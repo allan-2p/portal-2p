@@ -130,6 +130,11 @@ export type Cliente = {
   // Campos da migração da plataforma antiga (somente leitura no portal).
   consultor_nome?: string | null;
   consultor_sap?: string | null;
+  /** Consultor por unidade (cadastros com atuação Grupo 2P). */
+  consultor_solar_nome?: string | null;
+  consultor_solar_sap?: string | null;
+  consultor_carregadores_nome?: string | null;
+  consultor_carregadores_sap?: string | null;
   origem_cadastro?: string | null;
   origem?: string | null;
   sub_origem?: string | null;
@@ -162,7 +167,23 @@ const vazio = (): Form => ({
  * `created_by_nome` ("Importação plataforma antiga") é só origem do cadastro e
  * não entra aqui.
  */
-const consultorDoCliente = (c: Cliente): string => (c.consultor_nome ?? "").trim();
+const consultorDoCliente = (c: Cliente, instancia?: "solar" | "carregadores"): string => {
+  // Cadastro Grupo 2P pode ter um responsável em cada unidade; sem responsável
+  // próprio vale o par canônico (o mesmo enviado ao SAP).
+  const proprio =
+    instancia === "carregadores" ? c.consultor_carregadores_nome : c.consultor_solar_nome;
+  return String(proprio ?? c.consultor_nome ?? "").trim();
+};
+
+/** Par consultor (código + nome) do cadastro na unidade aberta. */
+const consultorParDaInstancia = (c: Cliente, instancia: "solar" | "carregadores") => {
+  const sapInst = instancia === "carregadores" ? c.consultor_carregadores_sap : c.consultor_solar_sap;
+  const nomeInst = instancia === "carregadores" ? c.consultor_carregadores_nome : c.consultor_solar_nome;
+  if ((sapInst ?? "").trim() || (nomeInst ?? "").trim()) {
+    return { sap: (sapInst ?? "").trim(), nome: (nomeInst ?? "").trim() };
+  }
+  return { sap: (c.consultor_sap ?? "").trim(), nome: (c.consultor_nome ?? "").trim() };
+};
 
 type Erros = Record<string, string>;
 const ROTULOS: Record<string, string> = {
@@ -294,6 +315,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   // Consultor responsável pelo cadastro — par canônico consultor_sap + consultor_nome.
   const [consultorSap, setConsultorSap] = useState<string | null>(null);
   const [consultorImportado, setConsultorImportado] = useState<{ sap: string; nome: string } | null>(null);
+  /** Cadastro com atuação Grupo 2P: o consultor é definido por unidade. */
+  const [escopoGrupo, setEscopoGrupo] = useState(false);
   const listarConsultores = useServerFn(listConsultoresFn);
   const consultoresQ = useQuery({
     queryKey: ["clientes-consultores", instancia],
@@ -509,6 +532,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
     setConsultorSap(consultoresQ.data?.eu.sap ?? null);
     setConsultorImportado(null);
+    setEscopoGrupo(false);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
     setFontes([]); setAvisos([]);
   }
@@ -533,14 +557,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     // Pré-seleção: casa consultor_sap com o código do consultor do portal;
     // se não casar, tenta pelo nome (case-insensitive); se ainda não casar,
     // mantém o valor importado selecionado.
-    const sapCliente = (c.consultor_sap ?? "").trim();
-    const nomeCliente = (c.consultor_nome ?? "").trim();
+    const { sap: sapCliente, nome: nomeCliente } = consultorParDaInstancia(c, instancia);
     const porCodigo = consultores.find((x) => x.sap === sapCliente);
     const porNome = !porCodigo && nomeCliente
       ? consultores.find((x) => x.nome.trim().toLowerCase() === nomeCliente.toLowerCase())
       : undefined;
     const casado = porCodigo ?? porNome;
     const consultor = casado?.sap ?? (sapCliente || null) ?? consultoresQ.data?.eu.sap ?? null;
+    setEscopoGrupo(String(c.escopo_org ?? "").toLowerCase() === "grupo");
     setConsultorImportado(
       !casado && (sapCliente || nomeCliente)
         ? { sap: sapCliente || nomeCliente, nome: nomeCliente || sapCliente }
@@ -878,7 +902,16 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   </Section>
 
                   <Section title="Dados comerciais">
-                    <F label="Consultor *" id="campo-consultor" error={erros.consultor}>
+                    <F
+                      label={escopoGrupo ? `Consultor * (${ORGANIZACAO[instancia]})` : "Consultor *"}
+                      id="campo-consultor"
+                      error={erros.consultor}
+                      hint={
+                        escopoGrupo
+                          ? "Cadastro Grupo 2P: cada unidade tem seu próprio consultor. O vendedor principal do SAP é o da unidade de origem."
+                          : undefined
+                      }
+                    >
                       {/* Quem não é vendedor/consultor do portal nunca vira o
                           responsável: precisa escolher um vendedor. */}
                       {consultoresQ.data?.podeEscolher || consultoresQ.data?.souConsultor === false ? (
@@ -1142,7 +1175,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   </td>
                   <td className="px-4 py-2">{cidadeUf(c.cidade, c.uf)}</td>
                   <td className="px-4 py-2">
-                    {consultorDoCliente(c) || "—"}
+                    {consultorDoCliente(c, instancia) || "—"}
                   </td>
 
                   <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
@@ -1211,7 +1244,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 <ClienteCabecalho
                   nome={detalhe.razao_social}
                   fantasia={detalhe.nome_fantasia}
-                  consultor={consultorDoCliente(detalhe)}
+                  consultor={consultorDoCliente(detalhe, instancia)}
                   doc={detalhe.doc}
                   sap={detalhe.numero_sap}
                   selos={
@@ -1263,7 +1296,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <Bloco titulo="Dados comerciais">
                       <Linha rot="Finalidade de uso" val={detalhe.finalidade} />
                       <Linha rot="Tabela de preço" val={detalhe.tabela_preco} />
-                      <Linha rot="Consultor" val={consultorDoCliente(detalhe)} />
+                      <Linha rot="Consultor" val={consultorDoCliente(detalhe, instancia)} />
                       <Linha rot="Cód. do consultor (SAP)" val={detalhe.consultor_sap} />
                       <Linha rot="Observações" val={detalhe.observacoes} />
                     </Bloco>
@@ -1448,11 +1481,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function F({ label, children, error, id }: { label: string; children: React.ReactNode; error?: string; id?: string }) {
+function F({ label, children, error, id, hint }: { label: string; children: React.ReactNode; error?: string; id?: string; hint?: string }) {
   return (
     <div className="space-y-1" {...(id ? { id } : {})}>
       <Label className="text-xs">{label}</Label>
       {children}
+      {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );

@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Cliente Grupo 2P com um vendedor por unidade**: cadastros com atuação ampliada passam a ter consultor próprio na Solar e nos Carregadores. Cada unidade vê, edita e filtra pelo seu responsável; o vendedor principal enviado ao SAP continua sendo o da unidade de origem do cadastro. Ao ampliar a atuação, o consultor atual fica fixado na unidade de origem e a outra unidade começa livre para receber outro vendedor. (Requer rodar `supabase/external/clientes-consultor-por-instancia.sql`.)
 - **Clonar perfil de permissão**: na tela de Perfis, o administrador pode duplicar um perfil existente com um clique — o novo perfil nasce com as mesmas telas, unidades liberadas, permissões por objeto e página inicial (os usuários vinculados não são copiados).
 - **Perfil do cliente voltou a mostrar as tarefas**: a lista de atividades do dossiê consultava um campo de tarefa que não existe no CRM e a falha era silenciosa (aparecia "nada pendente" mesmo com tarefa aberta). Corrigido, e agora eventuais falhas ficam registradas no log.
 - **Catálogo visível para todos, sem expor custo**: o navegador não pede mais as colunas sensíveis (`custo`, `sap_raw`) ao ler o catálogo — o vendedor carrega os produtos normalmente (nome, código, preço sugerido) e as telas de gestão e os cálculos de CMV/margem passaram a buscar o custo pelo servidor. Isso prepara o bloqueio dessas colunas no banco sem quebrar nenhuma tela.

@@ -27,7 +27,10 @@ async function assertPodeAlterarCliente(
   const db = await import("./clientes-db.server");
   const atual = await db.getClienteById(instancia, id);
   if (!atual) throw new Error("Cadastro não encontrado.");
-  const dono = (atual["created_by"] as string | null) ?? null;
+  // Cadastro Grupo 2P: o responsável da unidade aberta também é dono do registro.
+  const { consultorDaInstancia, idDeUsuario } = await import("./consultor-sap.server");
+  const resp = consultorDaInstancia(atual, instancia);
+  const dono = idDeUsuario(resp.id) ?? ((atual["created_by"] as string | null) ?? null);
   const perm = await getPerm(context as any, instancia, "contas");
   assertPodeEditar(perm, "contas", dono, context.userId);
   return atual;
@@ -93,13 +96,17 @@ export const listClientesFn = createServerFn({ method: "POST" })
       if (perm.view_all) return { ok: true as const, clientes: todos };
       const sap = await meuConsultorSap(context as any);
       const nome = normalizarNome(await meuNomeCompleto(context as any));
-      const meus = todos.filter(
-        (c) =>
-          c["created_by"] === context.userId ||
-          c["consultor_id"] === context.userId ||
-          (!!sap && String(c["consultor_sap"] ?? "").trim() === sap) ||
-          (!!nome && normalizarNome(String(c["consultor_nome"] ?? "")) === nome),
-      );
+      const { consultorDaInstancia } = await import("./consultor-sap.server");
+      const meus = todos.filter((c) => {
+        // Cadastro Grupo 2P pode ter um responsável em cada unidade.
+        const resp = consultorDaInstancia(c, data.instancia);
+        return (
+          resp.id === context.userId ||
+          (!resp.proprio && c["created_by"] === context.userId) ||
+          (!!sap && String(resp.sap ?? "").trim() === sap) ||
+          (!!nome && normalizarNome(String(resp.nome ?? "")) === nome)
+        );
+      });
 
       return { ok: true as const, clientes: meus };
 
@@ -178,7 +185,12 @@ export type ClientePerfilResumo = {
   criadoEm: string | null;
 };
 
-function resumirClientePerfil(c: Record<string, any>): ClientePerfilResumo {
+function resumirClientePerfil(
+  c: Record<string, any>,
+  instancia: "solar" | "carregadores" = "solar",
+): ClientePerfilResumo {
+  const prefixo = instancia === "carregadores" ? "consultor_carregadores" : "consultor_solar";
+  const respNome = String(c[`${prefixo}_nome`] ?? "").trim() || null;
   return {
     id: String(c["id"]),
     sfAccountId: (c["sf_account_id"] as string | null) ?? null,
@@ -189,7 +201,7 @@ function resumirClientePerfil(c: Record<string, any>): ClientePerfilResumo {
     cidade: (c["cidade"] as string | null) ?? null,
     uf: (c["uf"] as string | null) ?? null,
     consultor:
-      ((c["consultor_nome"] as string | null) || (c["created_by_nome"] as string | null)) ?? null,
+      (respNome || (c["consultor_nome"] as string | null) || (c["created_by_nome"] as string | null)) ?? null,
     criadoEm: (c["created_at"] as string | null) ?? null,
   };
 }
@@ -264,7 +276,7 @@ export const listClientesPerfilFn = createServerFn({ method: "POST" })
         consultorNome,
       });
 
-      return { ok: true as const, clientes: rows.map(resumirClientePerfil), total };
+      return { ok: true as const, clientes: rows.map((r) => resumirClientePerfil(r, data.instancia)), total };
     } catch (e) {
       if (e instanceof db.ClientesTableMissing) {
         return { ok: false as const, motivo: "tabela-ausente" as const, clientes: [], total: 0 };
@@ -288,11 +300,13 @@ export const getClientePerfilFn = createServerFn({ method: "POST" })
     if (!perm.view_all) {
       const sap = await meuConsultorSap(context as any);
       const nome = normalizarNome(await meuNomeCompleto(context as any));
+      const { consultorDaInstancia } = await import("./consultor-sap.server");
+      const resp = consultorDaInstancia(cliente, data.instancia);
       const meu =
-        cliente["created_by"] === context.userId ||
-        cliente["consultor_id"] === context.userId ||
-        (sap !== null && String(cliente["consultor_sap"] ?? "") === sap) ||
-        (!!nome && normalizarNome(String(cliente["consultor_nome"] ?? "")) === nome);
+        resp.id === context.userId ||
+        (!resp.proprio && cliente["created_by"] === context.userId) ||
+        (sap !== null && String(resp.sap ?? "") === sap) ||
+        (!!nome && normalizarNome(String(resp.nome ?? "")) === nome);
 
       if (!meu) throw new Error("Você não tem acesso a este cadastro.");
     }
@@ -349,7 +363,17 @@ export const ampliarAtuacaoFn = createServerFn({ method: "POST" })
     const atual = await db.getClienteByIdQualquer(data.id);
     if (!atual) throw new Error("Cadastro não encontrado.");
     if (String(atual["escopo_org"] ?? "").toLowerCase() !== "grupo") {
-      await db.ampliarAtuacaoGrupo(data.id);
+      // O consultor atual fica como responsável da unidade de origem; a outra
+      // unidade começa sem dono e pode receber um vendedor próprio.
+      const { consultorDoCadastro, idDeUsuario } = await import("./consultor-sap.server");
+      const atualCons = consultorDoCadastro(atual);
+      const origemInst = atual["instancia"] === "carregadores" ? "carregadores" : "solar";
+      await db.ampliarAtuacaoGrupo(data.id, {
+        instancia: origemInst,
+        sap: atualCons.sap,
+        nome: atualCons.nome,
+        id: idDeUsuario(atualCons.id),
+      });
     }
 
     const { logIntegrationEvent } = await import("./integration-logs.server");
@@ -497,13 +521,16 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     const permContas = await getPerm(context as any, data.instancia, "contas");
     if (!data.id) assertPodeCriar(permContas, "contas");
     const podeEscolher = permContas.modify_all;
-    const { consultorPorSap, consultorDoCadastro, idDeUsuario } = await import("./consultor-sap.server");
+    const { consultorPorSap, consultorDaInstancia, prefixoConsultor, idDeUsuario } =
+      await import("./consultor-sap.server");
 
     const atualRow = data.id ? await db.getClienteById(data.instancia, data.id) : null;
     /** Cadastro com atuação ampliada: mantém o escopo "grupo" em qualquer edição. */
     const ehGrupo = String(atualRow?.["escopo_org"] ?? "").toLowerCase() === "grupo";
+    // Cadastro Grupo 2P tem um responsável por unidade: a edição sempre trata
+    // do consultor da instância aberta.
     const anteriorConsultor = data.id
-      ? consultorDoCadastro(atualRow)
+      ? consultorDaInstancia(atualRow, data.instancia)
       : { sap: null, nome: null, id: null };
 
     const sapEscolhido = String(data.consultor_sap ?? "").trim();
@@ -553,13 +580,23 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       consultorSfId = (perfil as any)?.sf_user_id ?? null;
     }
 
+    // Consultor da unidade aberta (Grupo 2P pode ter um em cada). O par
+    // canônico — o que vai para o SAP — só muda quando a edição acontece na
+    // unidade de origem do cadastro (ou quando ele não é Grupo 2P).
+    const pref = prefixoConsultor(data.instancia);
+    const instanciaDona = String(atualRow?.["instancia"] ?? data.instancia);
+    const mexeNoCanonico = !ehGrupo || instanciaDona === data.instancia;
+
     const payload = {
       ...data.cliente,
       doc,
-      // Par canônico do consultor.
-      consultor_sap: consultorSap,
-      consultor_nome: consultorNome,
-      consultor_id: consultorId,
+      [`${pref}_sap`]: consultorSap,
+      [`${pref}_nome`]: consultorNome,
+      [`${pref}_id`]: idDeUsuario(consultorId),
+      // Par canônico do consultor (vendedor principal, enviado ao SAP).
+      ...(mexeNoCanonico
+        ? { consultor_sap: consultorSap, consultor_nome: consultorNome, consultor_id: consultorId }
+        : {}),
       organizacao: ehGrupo ? "grupo" : db.ORGANIZACAO[data.instancia],
       instancia: ehGrupo ? (atualRow?.["instancia"] ?? data.instancia) : data.instancia,
       ...(ehGrupo
@@ -576,7 +613,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
         const patch: Record<string, unknown> = { ...payload };
         // Só reatribui o dono do cadastro quando o consultor mudou de fato e
         // corresponde a um usuário do portal.
-        if (podeTrocar && consultorSap !== anteriorConsultor.sap && consultorId) {
+        if (podeTrocar && mexeNoCanonico && consultorSap !== anteriorConsultor.sap && consultorId) {
           patch["created_by"] = consultorId;
           patch["created_by_nome"] = consultorNome;
           patch["created_by_email"] = consultorEmail;
