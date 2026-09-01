@@ -196,8 +196,16 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         label: "2P Carregadores",
         collapsible: true,
         items: [
-          { to: "/carregadores/produtos", label: "Gestão de Produtos", icon: Package, feature: "carregadores.produtos" },
-          { to: "/admin/moderacao/produtos/carregadores", label: "Catálogo SAP", icon: Package, feature: "admin.objetos.produtos" },
+          {
+            to: "/carregadores/produtos",
+            label: "Gestão de Produtos",
+            icon: Package,
+            feature: "carregadores.produtos",
+            exact: true,
+            children: [
+              { to: "/admin/moderacao/produtos/carregadores", label: "Catálogo", icon: Package, feature: "admin.objetos.produtos" },
+            ],
+          },
           { to: "/admin/moderacao/estoque/carregadores", label: "Estoque", icon: Boxes, feature: "admin.objetos.produtos" },
           { to: "/carregadores/regras", label: "Regras de Propostas", icon: BookOpen, feature: "carregadores.regras" },
           { to: "/carregadores/frete-regras", label: "Regras de Fretes", icon: Truck, feature: "carregadores.regras" },
