@@ -355,25 +355,10 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
       }
 
+      // A sincronização só traz novidades: material que não veio mais do SAP
+      // permanece exatamente como está no portal (nada é desativado aqui).
+      // Ativar/desativar é sempre decisão manual em Administração › Produtos.
 
-      // Merge: o que não veio mais do SAP fica inativo (sem apagar histórico).
-      // Produtos criados manualmente no portal e materiais enviados de propósito
-      // ao catálogo do portal não são afetados — só saem por decisão manual.
-      const vindos = new Set(rows.map((r) => r.codigo));
-      const orfaos = (existentes ?? [])
-        .filter(
-          (r: any) =>
-            r.ativo && r.origem !== "manual" && !vindos.has(r.codigo) && !jaNoCatalogo.has(String(r.codigo)),
-        )
-        .map((r: any) => r.codigo as string);
-      for (let i = 0; i < orfaos.length; i += 500) {
-        const chunk = orfaos.slice(i, i + 500);
-        const { error } = await supabaseAdmin
-          .from("sap_produtos")
-          .update({ ativo: false, last_synced_at: now })
-          .in("codigo", chunk);
-        if (error) throw new Error(error.message);
-      }
 
       const inserted = novos.length;
       const updated = atualizados.length;
