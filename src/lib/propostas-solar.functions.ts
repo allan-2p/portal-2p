@@ -63,7 +63,6 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   const uf = String(i.uf ?? "").trim().toUpperCase();
   if (uf.length !== 2) throw new Error("UF inválida.");
 
-  const itens = (Array.isArray(i.itens) ? i.itens : [])
   // Item válido = tem `produtoId` do catálogo OU o código SAP do material. A
   // tela às vezes não consegue casar o item com o catálogo (catálogo ainda
   // carregando, SKU comercial etc.) — nesse caso o servidor resolve pelo código.
