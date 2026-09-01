@@ -155,6 +155,10 @@ const NAO_COPIAR = new Set([
   "variacao_grupo",
   "variacao_sufixo",
   "variacao_favorita",
+  // Vínculos exclusivos da importação da plataforma antiga: a variação é uma
+  // proposta nova do portal (projeto_antigo_id é único no banco).
+  "projeto_antigo_id",
+  "legado",
 ]);
 
 export async function criarVariacao(
@@ -195,6 +199,15 @@ export async function criarVariacao(
   for (const [k, v] of Object.entries(origem)) {
     if (NAO_COPIAR.has(k) || k.startsWith("sfo_")) continue;
     payload[k] = v;
+  }
+  // A variação nasce no portal: não herda marcas da importação antiga.
+  const totaisOrigem = (origem["totais"] ?? {}) as Record<string, unknown>;
+  if (totaisOrigem && typeof totaisOrigem === "object") {
+    const t = { ...totaisOrigem };
+    delete t["origem"];
+    delete t["numeroAnterior"];
+    delete t["numero_anterior"];
+    payload["totais"] = t;
   }
   payload["variacao_grupo"] = grupo;
   payload["variacao_sufixo"] = sufixo;
