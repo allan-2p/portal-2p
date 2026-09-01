@@ -490,6 +490,25 @@ function VisaoGeral({
     (o) => !o.isClosed && !ETAPA_FECHADA.test(String(o.stage ?? "")),
   );
   const totalFunil = oportunidadesAbertas.reduce((s: number, o: any) => s + (o.amount || 0), 0);
+  // Agrupado por etapa do funil, da etapa de maior valor para a menor.
+  const grupos = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const o of oportunidadesAbertas) {
+      const etapa = String(o.stage ?? "").trim() || "Sem etapa";
+      const arr = map.get(etapa) ?? [];
+      arr.push(o);
+      map.set(etapa, arr);
+    }
+    return [...map.entries()]
+      .map(([etapa, itens]) => ({
+        etapa,
+        itens: itens
+          .slice()
+          .sort((a, b) => String(b.createdDate ?? "").localeCompare(String(a.createdDate ?? ""))),
+        total: itens.reduce((s: number, o: any) => s + (o.amount || 0), 0),
+      }))
+      .sort((a, b) => b.total - a.total || b.itens.length - a.itens.length);
+  }, [oportunidadesAbertas]);
 
   return (
     <div className="space-y-4">
@@ -500,15 +519,32 @@ function VisaoGeral({
           <Empty>Nenhuma proposta em aberto para este cliente.</Empty>
         ) : (
           <>
-            <ul className="space-y-1.5">
-              {oportunidadesAbertas.map((o: any) => (
-                <li key={o.id} className="flex items-center gap-2 text-sm">
-                  <span className="truncate flex-1">{o.name}</span>
-                  <span className="text-[11px] text-muted-foreground shrink-0">{o.stage}</span>
-                  <span className="tabular-nums font-medium shrink-0">{fmt(o.amount)}</span>
-                </li>
+            <div className="space-y-3">
+              {grupos.map((g) => (
+                <div key={g.etapa}>
+                  <div className="flex items-center justify-between gap-2 border-b border-border pb-1 mb-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
+                      {g.etapa} · {g.itens.length}
+                    </span>
+                    <span className="text-[11px] font-semibold tabular-nums shrink-0">
+                      {fmt(g.total)}
+                    </span>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {g.itens.map((o: any) => (
+                      <li key={o.id} className="flex items-center gap-2 text-sm">
+                        <span className="truncate flex-1">{o.name}</span>
+                        <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
+                          {date(o.createdDate)}
+                        </span>
+                        <span className="tabular-nums font-medium shrink-0">{fmt(o.amount)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
+
             <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs">
               <span className="text-muted-foreground">
                 {oportunidadesAbertas.length} proposta(s) em aberto
