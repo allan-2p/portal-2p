@@ -85,11 +85,33 @@ export async function aplicarTransicao(
   const agora = new Date().toISOString();
   const col = propostaStatusDataCol(para);
   const patchBase = { ...(opts.patch ?? {}), status: para };
+
+  // Estimativa de entrega: nasce na coleta (data da coleta + prazo do frete em
+  // dias úteis) e nunca é sobrescrita — pode ter vindo do legado ou de um
+  // ajuste manual do analista de fretes.
+  if (para === "Coletado" && !("estimativa_entrega" in patchBase)) {
+    try {
+      const atual = (await db.getProposta(propostaId, "id,frete_prazo,estimativa_entrega")) as
+        | Record<string, unknown>
+        | null;
+      if (atual && !atual["estimativa_entrega"]) {
+        const { adicionarDiasUteis } = await import("./dias-uteis");
+        (patchBase as Record<string, unknown>)["estimativa_entrega"] = adicionarDiasUteis(
+          new Date(),
+          Number(atual["frete_prazo"] ?? 0),
+        );
+      }
+    } catch {
+      /* coluna ausente/consulta falha não pode travar a coleta */
+    }
+  }
+
   const patchComData = {
     ...patchBase,
     status_alterado_em: agora,
     ...(col && !(col in patchBase) ? { [col]: agora } : {}),
   };
+
 
   let row: Record<string, unknown> | null = null;
   try {

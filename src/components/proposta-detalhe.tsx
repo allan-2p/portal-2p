@@ -2,7 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { finalidadeUsoPorDocFn } from "@/lib/clientes.functions";
-import { atualizarStatusPropostaFn, obterPropostaFn } from "@/lib/propostas.functions";
+import {
+  atualizarEstimativaEntregaFn,
+  atualizarStatusPropostaFn,
+  obterPropostaFn,
+} from "@/lib/propostas.functions";
+
 import { meusObjectPermsFn } from "@/lib/object-perms.functions";
 import { podeMarcarEntregueProposta } from "@/lib/proposta-status";
 import { finalidadeUsoDoCadastro, labelFinalidadeUso } from "@/lib/carregadores";
@@ -217,7 +222,9 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             <span className="font-semibold text-foreground">{fmtData(p['expedido_em'])}</span>
           </p>
         ) : null}
+        <EstimativaEntrega proposta={p} />
         <PropostaTimeline status={status} proposta={p} />
+
 
         <MarcarEntregueAcao proposta={p} />
       </div>
@@ -679,6 +686,86 @@ function LegadoCard({ proposta }: { proposta: Record<string, any> }) {
     </div>
   );
 }
+
+/**
+ * Estimativa de entrega — data prometida ao cliente, criada na coleta
+ * (coleta + prazo do frete em dias úteis) ou herdada da plataforma antiga.
+ * Todos que abrem o pedido veem; só quem tem "Modify All Records" em
+ * Propostas (Manager Access / Analista de Fretes) edita — o gate real é no
+ * servidor. Antes da coleta o campo não existe para o cliente, então não
+ * aparece.
+ */
+function EstimativaEntrega({ proposta }: { proposta: Record<string, any> }) {
+  const status = String(proposta['status'] ?? "");
+  const instancia = String(proposta['organizacao'] ?? "solar");
+  const valor = (proposta['estimativa_entrega'] as string | null) ?? null;
+  const visivel = (status === "Coletado" || status === "Entregue") && !!valor;
+
+  const queryClient = useQueryClient();
+  const meusPerms = useServerFn(meusObjectPermsFn);
+  const salvarEstimativa = useServerFn(atualizarEstimativaEntregaFn);
+  const [editando, setEditando] = useState(false);
+  const [dataNova, setDataNova] = useState(String(valor ?? "").slice(0, 10));
+
+  const permsQ = useQuery({
+    queryKey: ["meus-object-perms", instancia],
+    queryFn: () => meusPerms({ data: { instancia } }),
+    enabled: visivel,
+    staleTime: 5 * 60 * 1000,
+  });
+  const podeEditar = !!(permsQ.data as Record<string, any> | undefined)?.['propostas']?.modify_all;
+
+  const salvar = useMutation({
+    mutationFn: () => salvarEstimativa({ data: { id: String(proposta['id']), data: dataNova } }),
+    onSuccess: async () => {
+      toast.success("Estimativa de entrega atualizada.");
+      setEditando(false);
+      await queryClient.invalidateQueries({ queryKey: ["carregadores-proposta", String(proposta['id'])] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  if (!visivel) return null;
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+      <span>
+        Estimativa de entrega:{" "}
+        <span className="font-semibold text-foreground">{fmtData(valor)}</span>
+      </span>
+      {podeEditar && !editando ? (
+        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditando(true)}>
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+      ) : null}
+      {podeEditar && editando ? (
+        <>
+          <input
+            type="date"
+            value={dataNova}
+            onChange={(e) => setDataNova(e.target.value)}
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+          />
+          <Button size="sm" onClick={() => salvar.mutate()} disabled={salvar.isPending}>
+            Salvar
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setDataNova(String(valor ?? "").slice(0, 10));
+              setEditando(false);
+            }}
+            disabled={salvar.isPending}
+          >
+            Cancelar
+          </Button>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 
 /**
  * Baixa manual de entrega — para fretes fora da Fretefy (Rodonaves, Correios,

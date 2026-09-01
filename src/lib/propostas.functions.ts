@@ -756,7 +756,60 @@ async function nomeDoAtor(context: any): Promise<string | null> {
   }
 }
 
+/**
+ * Ajuste manual da estimativa de entrega (data prometida ao cliente).
+ *
+ * A estimativa nasce sozinha na coleta; a edição existe para o caso clássico
+ * de atraso da transportadora. Mesmo gate da baixa manual de entrega:
+ * "Modify All Records" em Propostas (Manager Access / Analista de Fretes).
+ */
+export const atualizarEstimativaEntregaFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { id?: unknown; data?: unknown };
+    if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
+    const bruto = typeof i.data === "string" ? i.data.trim() : "";
+    if (!bruto) return { id: i.id, data: null as string | null };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(bruto)) throw new Error("Data inválida.");
+    if (Number.isNaN(new Date(`${bruto}T12:00:00Z`).getTime())) throw new Error("Data inválida.");
+    return { id: i.id, data: bruto };
+  })
+  .handler(async ({ data, context }) => {
+    const db = await repo();
+    const atual = (await db.getProposta(data.id)) as Record<string, any> | null;
+    if (!atual) throw new Error("Proposta não encontrada.");
+
+    const { getPerm, ForbiddenObjectError } = await import("./object-perms.server");
+    const perm = await getPerm(context as any, String(atual["organizacao"] ?? "solar"), "propostas");
+    if (!perm.modify_all) {
+      throw new ForbiddenObjectError(
+        'Editar a estimativa de entrega exige "Modify All Records" em propostas no seu perfil.',
+      );
+    }
+
+    const anterior = (atual["estimativa_entrega"] as string | null) ?? null;
+    await db.atualizarProposta(data.id, { estimativa_entrega: data.data });
+
+    try {
+      const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+      await logIntegrationEvent({
+        slug: "proposta",
+        level: "info",
+        event: "estimativa-manual",
+        message: `Estimativa de entrega do pedido ${atual["numero"] ?? ""}: ${anterior ?? "—"} → ${data.data ?? "—"}.`,
+        detail: { proposta_id: data.id, de: anterior, para: data.data },
+        actorId: (context as any).userId ?? null,
+      });
+    } catch {
+      /* best effort */
+    }
+
+    await sincronizarSalesforceAoSalvar(data.id);
+    return { ok: true as const, estimativaEntrega: data.data };
+  });
+
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
+
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
     const i = (input ?? {}) as {
