@@ -30,6 +30,25 @@ export default defineConfig({
     },
     plugins: [mcpPlugin()],
 
+    build: {
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          // Bibliotecas pesadas em chunks próprios: saem do bundle inicial e
+          // só são baixadas na tela que precisa delas (catálogo, funil, chat).
+          manualChunks(id: string) {
+            if (!id.includes("node_modules")) return;
+            if (id.includes("xlsx")) return "vendor-xlsx";
+            if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
+            if (id.includes("shiki") || id.includes("streamdown") || id.includes("mermaid"))
+              return "vendor-markdown";
+            if (id.includes("qrcode")) return "vendor-qrcode";
+            return;
+          },
+        },
+      },
+    },
+
     resolve: {
       // Aliases exatos: um alias "entities" solto também capturava subcaminhos
       // (ex.: "entities/escape" do parse5 v8) e apontava para a v4 da raiz.

@@ -346,11 +346,6 @@ function Banner({
             <Field label="ICP" value={account.icp != null ? String(account.icp) : null} />
             <Field label="Primeira compra" value={account.primeiraCompra ? date(account.primeiraCompra) : null} />
             <Field label="Cliente desde" value={date(account.createdAt)} />
-            <Field label="Plano fidelidade" value={account.planoFidelidade} />
-            <Field
-              label="Pontuação fidelidade"
-              value={account.pontuacaoFidelidade != null ? String(account.pontuacaoFidelidade) : null}
-            />
             <Field label="Segmentação tubos" value={account.tubos.join(", ") || null} />
             <Field label="Setor" value={account.industry} />
             {account.observacoes && (

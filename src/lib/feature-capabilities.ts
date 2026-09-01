@@ -46,7 +46,6 @@ const MAP: Partial<Record<FeatureKey, CapabilityId[]>> = {
   propostas: VEC,
   pedidos: VE,
   cupons: VE,
-  fidelidade: V,
   // Operação — Carregadores
   "carregadores.home": V,
   "carregadores.visao-geral": V,

@@ -2,7 +2,7 @@
  * Chat lateral do Atlas: botão flutuante no canto inferior direito e painel
  * com a lista de conversas do usuário.
  */
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -10,7 +10,8 @@ import { MessageSquarePlus, Sparkles, X, Radar, Trash2, Maximize2, History } fro
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { AtlasChat } from "./atlas-chat";
+// Chat carregado sob demanda: streamdown/shiki/mermaid saem do bundle inicial.
+const AtlasChat = lazy(() => import("./atlas-chat").then((m) => ({ default: m.AtlasChat })));
 import { criarThreadFn, excluirThreadFn, listarThreadsFn } from "@/lib/atlas.functions";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -204,7 +205,9 @@ export function AtlasWidget() {
 
           <div className="min-h-0 flex-1">
             {threadId ? (
-              <AtlasChat threadId={threadId} contexto={contexto} compacto />
+              <Suspense fallback={<p className="p-4 text-sm text-muted-foreground">Carregando o Atlas…</p>}>
+                <AtlasChat threadId={threadId} contexto={contexto} compacto />
+              </Suspense>
             ) : (
               <p className="p-4 text-sm text-muted-foreground">Preparando sua conversa…</p>
             )}
