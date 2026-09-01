@@ -1137,26 +1137,52 @@ function NovaPropostaSolarPage() {
   const assinaturaFaturado = faturarClienteFinal
     ? `1|${String(fat['doc'] ?? "").replace(/\D/g, "")}|${String(fat['contribuinte'] ?? "")}|${String(fat['ie'] ?? "").trim() ? 1 : 0}`
     : "0";
+  // Kit fotovoltaico entra na MESMA assinatura: marcar ou desmarcar o kit muda
+  // o preço de TODOS os itens (isenção de ICMS/IPI), então tem que reprecificar
+  // de forma determinística — o contador antigo era engolido quando a lista
+  // ainda estava carregando ou outra precificação estava em curso.
+  const assinaturaPreco = `${assinaturaFaturado}|kit:${ehKit === true && kitProduto ? 1 : 0}`;
   const assinaturaAnterior = useRef<string | null>(null);
+  const assinaturaPendente = useRef<string | null>(null);
+
   useEffect(() => {
     const anterior = assinaturaAnterior.current;
-    assinaturaAnterior.current = assinaturaFaturado;
-    if (anterior === null || anterior === assinaturaFaturado) return;
-    if (!itens.length || trocando) return;
+    if (anterior === null) {
+      assinaturaAnterior.current = assinaturaPreco;
+      return;
+    }
+    if (anterior === assinaturaPreco && assinaturaPendente.current === null) return;
     const docFinal = String(fat['doc'] ?? "").replace(/\D/g, "");
     if (faturarClienteFinal && docFinal.length !== 11 && docFinal.length !== 14) return;
+    // Sem itens ou com outra precificação rodando: guarda para reprocessar
+    // assim que possível, em vez de perder o disparo.
+    if (!itens.length || trocando) {
+      assinaturaPendente.current = assinaturaPreco;
+      return;
+    }
+    const anteriorKit = anterior.includes("|kit:1");
+    const agoraKit = assinaturaPreco.includes("|kit:1");
+    assinaturaAnterior.current = assinaturaPreco;
+    assinaturaPendente.current = null;
     void (async () => {
       setTrocando(true);
       await atualizarPrecos(itens, listaPreco);
       setTrocando(false);
-      toast.info(
-        faturarClienteFinal
-          ? "Preços recalculados com os impostos do cliente final (destinatário da NF)."
-          : "Preços recalculados com os impostos do cliente da proposta.",
-      );
+      if (anteriorKit !== agoraKit)
+        toast.info(
+          agoraKit
+            ? "Kit gerador ativado: valores recalculados sem ICMS/IPI."
+            : "Kit gerador desativado: valores recalculados com os impostos cheios.",
+        );
+      else
+        toast.info(
+          faturarClienteFinal
+            ? "Preços recalculados com os impostos do cliente final (destinatário da NF)."
+            : "Preços recalculados com os impostos do cliente da proposta.",
+        );
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assinaturaFaturado]);
+  }, [assinaturaPreco, itens.length, trocando]);
 
   /** Explicação do bloqueio da etapa 3 (causa provável + ações sugeridas). */
   const diagnosticoBloqueio = useMemo(() => {
