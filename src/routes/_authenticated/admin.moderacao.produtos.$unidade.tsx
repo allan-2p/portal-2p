@@ -13,15 +13,17 @@ export const Route = createFileRoute("/_authenticated/admin/moderacao/produtos/$
     if (!SLUGS[params.unidade]) throw redirect({ to: "/admin/moderacao/produtos/$unidade", params: { unidade: "grupo-2p" } });
   },
   head: ({ params }) => {
-    const label = UNIDADE_LABEL[SLUGS[params.unidade] ?? "grupo2p"];
+    const unidade = SLUGS[params.unidade] ?? "grupo2p";
+    const label = UNIDADE_LABEL[unidade];
+    const titulo = unidade === "grupo2p" ? "Todos os Produtos — Grupo 2P" : `Catálogo — ${label}`;
     return {
       meta: [
-        { title: `Gestão de Produtos — ${label} | Portal 2P` },
+        { title: `${titulo} | Portal 2P` },
         {
           name: "description",
           content: `Controle do catálogo SAP de ${label}: produtos ativos, visibilidade e preços.`,
         },
-        { property: "og:title", content: `Gestão de Produtos — ${label} | Portal 2P` },
+        { property: "og:title", content: `${titulo} | Portal 2P` },
         {
           property: "og:description",
           content: `Moderação do catálogo de produtos de ${label} no Portal 2P.`,
