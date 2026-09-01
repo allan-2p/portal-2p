@@ -545,12 +545,24 @@ export async function getClienteByIdQualquer(id: string): Promise<ClienteRow | n
 }
 
 /** Marca o cadastro como de atuação ampliada (Grupo 2P: aparece nas duas unidades). */
-export async function ampliarAtuacaoGrupo(id: string): Promise<ClienteRow | null> {
+export async function ampliarAtuacaoGrupo(
+  id: string,
+  /** Consultor atual, fixado como responsável da unidade de origem. */
+  origem?: { instancia: ClientesInstance; sap: string | null; nome: string | null; id: string | null },
+): Promise<ClienteRow | null> {
+  const p = origem
+    ? origem.instancia === "carregadores"
+      ? "consultor_carregadores"
+      : "consultor_solar"
+    : null;
   return gravarTolerante("solar", `clientes?id=eq.${id}`, "PATCH", {
     escopo_org: "grupo",
     organizacao: "grupo",
     equipe_vendas: "003",
     escritorio_vendas: "0004",
+    ...(p && origem
+      ? { [`${p}_sap`]: origem.sap, [`${p}_nome`]: origem.nome, [`${p}_id`]: origem.id }
+      : {}),
     updated_at: new Date().toISOString(),
   });
 }

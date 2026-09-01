@@ -27,7 +27,10 @@ async function assertPodeAlterarCliente(
   const db = await import("./clientes-db.server");
   const atual = await db.getClienteById(instancia, id);
   if (!atual) throw new Error("Cadastro não encontrado.");
-  const dono = (atual["created_by"] as string | null) ?? null;
+  // Cadastro Grupo 2P: o responsável da unidade aberta também é dono do registro.
+  const { consultorDaInstancia, idDeUsuario } = await import("./consultor-sap.server");
+  const resp = consultorDaInstancia(atual, instancia);
+  const dono = idDeUsuario(resp.id) ?? ((atual["created_by"] as string | null) ?? null);
   const perm = await getPerm(context as any, instancia, "contas");
   assertPodeEditar(perm, "contas", dono, context.userId);
   return atual;
@@ -360,7 +363,17 @@ export const ampliarAtuacaoFn = createServerFn({ method: "POST" })
     const atual = await db.getClienteByIdQualquer(data.id);
     if (!atual) throw new Error("Cadastro não encontrado.");
     if (String(atual["escopo_org"] ?? "").toLowerCase() !== "grupo") {
-      await db.ampliarAtuacaoGrupo(data.id);
+      // O consultor atual fica como responsável da unidade de origem; a outra
+      // unidade começa sem dono e pode receber um vendedor próprio.
+      const { consultorDoCadastro, idDeUsuario } = await import("./consultor-sap.server");
+      const atualCons = consultorDoCadastro(atual);
+      const origemInst = atual["instancia"] === "carregadores" ? "carregadores" : "solar";
+      await db.ampliarAtuacaoGrupo(data.id, {
+        instancia: origemInst,
+        sap: atualCons.sap,
+        nome: atualCons.nome,
+        id: idDeUsuario(atualCons.id),
+      });
     }
 
     const { logIntegrationEvent } = await import("./integration-logs.server");
