@@ -538,7 +538,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const formSujo = baseForm !== null && baseForm !== assinaturaForm;
 
   function tentarFechar() {
-    if (formSujo) return setConfirmarFechar(true);
+    if (modoAmpliacao || formSujo) return setConfirmarFechar(true);
     fechar();
   }
 
@@ -548,6 +548,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     setConsultorSap(consultoresQ.data?.eu.sap ?? null);
     setConsultorImportado(null);
     setEscopoGrupo(false);
+    setModoAmpliacao(false);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
     setFontes([]); setAvisos([]);
   }
