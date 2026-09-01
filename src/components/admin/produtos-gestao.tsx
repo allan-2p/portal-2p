@@ -234,6 +234,22 @@ function CatalogoSapCompleto({
           </SelectContent>
         </Select>
 
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">Enviar para</span>
+          <Select value={destino} onValueChange={(v) => setDestino(v as SapVisibilidade)}>
+            <SelectTrigger className="w-44" aria-label="Destino do material ao enviar ao catálogo">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VISIBILIDADE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} aria-label="Atualizar catálogo completo">
           <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
         </Button>
@@ -248,6 +264,8 @@ function CatalogoSapCompleto({
               <th className="text-left px-3 py-2">Unidade</th>
               <th className="text-left px-3 py-2">NCM (SAP)</th>
               <th className="text-left px-3 py-2">No catálogo</th>
+              <th className="text-left px-3 py-2">Visibilidade</th>
+              <th className="text-left px-3 py-2">Ativo</th>
               <th className="text-left px-3 py-2">Sincronizado</th>
               <th className="text-right px-3 py-2">Ação</th>
             </tr>
@@ -255,19 +273,21 @@ function CatalogoSapCompleto({
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin inline" />
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
 
                   Nenhum material. Clique em “Sinc. SAP” para importar o catálogo completo.
                 </td>
               </tr>
             ) : (
-              rows.map((i) => (
+              rows.map((i) => {
+                const p = porCodigo.get(i.codigo);
+                return (
                 <tr key={i.codigo} className="border-t border-border hover:bg-muted/30">
                   <td className="px-3 py-2 font-mono text-xs">{i.codigo}</td>
                   <td className="px-3 py-2">{i.descricao}</td>
@@ -275,6 +295,49 @@ function CatalogoSapCompleto({
                   <td className="px-3 py-2 font-mono text-xs">{i.ncm_codigo ?? "—"}</td>
                   <td className="px-3 py-2">
                     <Badge variant={i.no_catalogo ? "default" : "outline"}>{i.no_catalogo ? "Sim" : "Não"}</Badge>
+                  </td>
+                  <td className="px-3 py-2">
+                    {p ? (
+                      <Select
+                        value={p.visibilidade ?? "nenhuma"}
+                        onValueChange={(v) => void onVisibilidade(p.id, v as SapVisibilidade, p)}
+                      >
+                        <SelectTrigger className="h-8 w-[160px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VISIBILIDADE_OPTIONS.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    {p ? (
+                      <div className="flex items-center gap-2">
+                        <Badge variant={p.ativo ? "default" : "outline"}>{p.ativo ? "Ativo" : "Inativo"}</Badge>
+                        <Select
+                          value={p.ativo_override === null || p.ativo_override === undefined ? "auto" : p.ativo_override ? "on" : "off"}
+                          onValueChange={(v) => onOverride(p.id, v === "auto" ? null : v === "on")}
+                        >
+                          <SelectTrigger className="h-7 w-[124px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Automático</SelectItem>
+                            <SelectItem value="on">Forçar ativo</SelectItem>
+                            <SelectItem value="off">Forçar inativo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{fmt(i.last_synced_at)}</td>
                   <td className="px-3 py-2 text-right">
@@ -286,7 +349,7 @@ function CatalogoSapCompleto({
                       title={
                         i.no_catalogo
                           ? "Remover do catálogo do portal"
-                          : "Enviar este material para o catálogo do portal (entra inativo)"
+                          : `Enviar este material para o catálogo do portal (${VIS_LABELS[destino]}, entra inativo)`
                       }
                     >
                       {salvando === i.codigo ? (
@@ -299,8 +362,10 @@ function CatalogoSapCompleto({
                     </Button>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
+
 
           </tbody>
         </table>
