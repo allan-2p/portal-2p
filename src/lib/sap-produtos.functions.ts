@@ -526,10 +526,19 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
         .eq("codigo", material.codigo)
         .maybeSingle();
 
+      // O moderador pode escolher o destino no próprio Catálogo; sem escolha,
+      // o material entra sem visibilidade (comportamento anterior).
+      const destino = data.visibilidade && data.visibilidade !== "nenhuma" ? data.visibilidade : null;
+
       if (existente) {
         const { error } = await supabaseAdmin
           .from("sap_produtos")
-          .update({ descricao: material.descricao, ...(ncm ? { ncm_codigo: ncm } : {}), ...(ncmId ? { ncm_id: ncmId } : {}) })
+          .update({
+            descricao: material.descricao,
+            ...(ncm ? { ncm_codigo: ncm } : {}),
+            ...(ncmId ? { ncm_id: ncmId } : {}),
+            ...(data.visibilidade ? { visibilidade: destino } : {}),
+          })
           .eq("codigo", material.codigo);
         if (error) throw new Error(error.message);
       } else {
@@ -540,7 +549,7 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
           permissao: "Todos",
           origem: "sap",
           ativo: false,
-          visibilidade: null,
+          visibilidade: destino,
           last_synced_at: new Date().toISOString(),
           sap_raw: (material as any).sap_raw ?? null,
           ...(ncm ? { ncm_codigo: ncm } : {}),
