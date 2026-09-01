@@ -1051,12 +1051,22 @@ function AtlasPanelTab({ account }: { account: SalesforceAccount }) {
 
 function ActivityRail({ accountId }: { accountId: string }) {
   const fetchActivities = useServerFn(getSalesforceAccountActivities);
+  const queryClient = useQueryClient();
   const q = useQuery({
     queryKey: ["sf-account-activities", accountId],
     queryFn: () => fetchActivities({ data: { accountId } }),
     staleTime: 2 * 60_000,
   });
+  const [completeTask, setCompleteTask] = useState<SalesforceTask | null>(null);
+  const [interactionTask, setInteractionTask] = useState<SalesforceTask | null>(null);
+  const [rescheduleTask, setRescheduleTask] = useState<SalesforceTask | null>(null);
+  const recarregar = () => {
+    void queryClient.invalidateQueries({ queryKey: ["sf-account-activities", accountId] });
+    void queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
+    void queryClient.invalidateQueries({ queryKey: ["sf-tasks"] });
+  };
   const activities: SalesforceActivity[] = q.data?.records ?? [];
+
   const hoje = new Date().toISOString().slice(0, 10);
 
   const abertas = useMemo(
