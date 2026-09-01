@@ -135,6 +135,14 @@ export type ListarClientesOpts = {
   donoId?: string | null;
   /** Código SAP do consultor — necessário para cadastros legados sem `created_by`. */
   consultorSap?: string | null;
+  /**
+   * Nome do consultor responsável. Cadastros importados da plataforma antiga
+   * trazem só `consultor_nome` (sem `created_by`/`consultor_id`) e, em parte
+   * deles, um `consultor_sap` herdado de outro vendedor — sem este alvo o
+   * cliente ficava invisível para o dono real na busca da proposta.
+   */
+  consultorNome?: string | null;
+
   pagina?: number;
   porPagina?: number;
   ordem?: string;
