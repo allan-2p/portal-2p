@@ -83,3 +83,7 @@
 
 - [x] Funil do cliente: visual mais legível (cards por etapa)
 - [x] Catálogo do portal: itens enviados manualmente não podem ser removidos/desativados por novas sincronizações do SAP
+
+## Perfis e atividades (01/09)
+- [ ] Admin: opção de clonar perfil de permissão (telas, instâncias, objetos)
+- [ ] Perfil do cliente: tarefa existente no Salesforce não aparece em "Atividades" (aparece no calendário de Tarefas)
