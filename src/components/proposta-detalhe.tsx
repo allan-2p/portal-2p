@@ -788,6 +788,94 @@ function EstimativaEntrega({ proposta }: { proposta: Record<string, any> }) {
   );
 }
 
+/**
+ * Data efetiva de entrega de um pedido já entregue. Todos veem; só quem tem
+ * "Modify All Records" em Propostas (mesmo perfil que edita a estimativa e faz
+ * a baixa manual) corrige a data — o gate real é no servidor.
+ */
+function DataEntregaRealizada({ proposta }: { proposta: Record<string, any> }) {
+  const status = String(proposta['status'] ?? "");
+  const instancia = String(proposta['organizacao'] ?? "solar");
+  const entregueEm = (proposta['entregue_em'] as string | null) ?? null;
+  const visivel = status === "Entregue";
+
+  const queryClient = useQueryClient();
+  const meusPerms = useServerFn(meusObjectPermsFn);
+  const salvarData = useServerFn(atualizarDataEntregaFn);
+  const [editando, setEditando] = useState(false);
+  const [dataNova, setDataNova] = useState(String(entregueEm ?? "").slice(0, 10));
+
+  const permsQ = useQuery({
+    queryKey: ["meus-object-perms", instancia],
+    queryFn: () => meusPerms({ data: { instancia } }),
+    enabled: visivel,
+    staleTime: 5 * 60 * 1000,
+  });
+  const podeEditar = !!(permsQ.data as Record<string, any> | undefined)?.['propostas']?.modify_all;
+
+  const salvar = useMutation({
+    mutationFn: () => salvarData({ data: { id: String(proposta['id']), data: dataNova } }),
+    onSuccess: async () => {
+      toast.success("Data de entrega atualizada.");
+      setEditando(false);
+      await queryClient.invalidateQueries({ queryKey: ["carregadores-proposta", String(proposta['id'])] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  if (!visivel) return null;
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+      <span>
+        Entregue em:{" "}
+        <span className="font-semibold text-foreground">{entregueEm ? fmtData(entregueEm) : "—"}</span>
+      </span>
+      {podeEditar && !editando ? (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2"
+          aria-label="Editar data de entrega"
+          onClick={() => {
+            setDataNova(String(entregueEm ?? new Date().toISOString()).slice(0, 10));
+            setEditando(true);
+          }}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+      ) : null}
+      {podeEditar && editando ? (
+        <>
+          <input
+            type="date"
+            value={dataNova}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setDataNova(e.target.value)}
+            className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+          />
+          <Button size="sm" onClick={() => salvar.mutate()} disabled={salvar.isPending || !dataNova}>
+            Salvar
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setDataNova(String(entregueEm ?? "").slice(0, 10));
+              setEditando(false);
+            }}
+            disabled={salvar.isPending}
+          >
+            Cancelar
+          </Button>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+
+
 
 /**
  * Baixa manual de entrega — para fretes fora da Fretefy (Rodonaves, Correios,
