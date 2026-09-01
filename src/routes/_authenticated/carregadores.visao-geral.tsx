@@ -209,6 +209,15 @@ function CarregadoresVisaoGeralPage() {
             {(q.isFetching || produtos.isFetching) && (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}
+            <select
+              value={campoData}
+              onChange={(e) => setCampoData(e.target.value as CampoData)}
+              className={selectCls}
+              title="Data usada no filtro e no agrupamento por mês"
+            >
+              <option value="compra">Data de compra</option>
+              <option value="faturamento">Data de faturamento</option>
+            </select>
             <select value={modo} onChange={(e) => setModo(e.target.value as Modo)} className={selectCls}>
               <option value="todos">Todos os períodos</option>
               <option value="mes">Por mês</option>
