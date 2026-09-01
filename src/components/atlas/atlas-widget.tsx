@@ -1,21 +1,23 @@
 /**
- * Chat lateral do Atlas: botão flutuante no canto inferior direito e painel
+ * Chat lateral do Atlas: botão flutuante arrastável na lateral direita e painel
  * com a lista de conversas do usuário.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { MessageSquarePlus, MessageSquareText, X, Radar, Trash2, Maximize2, History } from "lucide-react";
+import { MessageSquarePlus, X, Radar, Trash2, Maximize2, History, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AtlasChatLazy as AtlasChat } from "./atlas-chat-lazy";
+import { AtlasIcon } from "./atlas-icon";
 import { criarThreadFn, excluirThreadFn, listarThreadsFn } from "@/lib/atlas.functions";
 import { useAuth } from "@/hooks/use-auth";
 
 const ABERTO_KEY = "portal2p-atlas-open";
 const THREAD_KEY = "portal2p-atlas-thread";
+const OFFSET_Y_KEY = "portal2p-atlas-offset-y";
 
 export function AtlasWidget() {
   const { user } = useAuth();
@@ -23,7 +25,10 @@ export function AtlasWidget() {
   const [aberto, setAberto] = useState(false);
   const [mostrarLista, setMostrarLista] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
+  const [offsetY, setOffsetY] = useState(0);
   const qc = useQueryClient();
+
+  const dragRef = useRef<{ startY: number; startOffset: number; moved: boolean } | null>(null);
 
   const listar = useServerFn(listarThreadsFn);
   const criar = useServerFn(criarThreadFn);
@@ -44,6 +49,39 @@ export function AtlasWidget() {
     if (typeof window === "undefined" || !threadId) return;
     window.localStorage.setItem(THREAD_KEY, threadId);
   }, [threadId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(OFFSET_Y_KEY);
+    if (saved) setOffsetY(Number(saved) || 0);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(OFFSET_Y_KEY, String(offsetY));
+  }, [offsetY]);
+
+  const clampOffset = (next: number) => {
+    if (typeof window === "undefined") return next;
+    const padding = 80;
+    const max = Math.max(0, (window.innerHeight - padding * 2) / 2 - 40);
+    return Math.max(-max, Math.min(max, next));
+  };
+
+  const startDrag = (clientY: number) => {
+    dragRef.current = { startY: clientY, startOffset: offsetY, moved: false };
+  };
+
+  const onMove = (clientY: number) => {
+    if (!dragRef.current) return;
+    const delta = clientY - dragRef.current.startY;
+    if (Math.abs(delta) > 4) dragRef.current.moved = true;
+    setOffsetY(clampOffset(dragRef.current.startOffset + delta));
+  };
+
+  const endDrag = () => {
+    dragRef.current = null;
+  };
 
   const threads = useQuery({
     queryKey: ["atlas-threads"],
@@ -99,15 +137,31 @@ export function AtlasWidget() {
   return (
     <>
       {!aberto && (
-        <Button
-          size="icon"
-          onClick={() => setAberto(true)}
-          aria-label="Abrir o chat do Atlas"
-          title="Abrir o Atlas"
-          className="fixed right-0 top-1/2 z-20 h-11 w-9 -translate-y-1/2 rounded-l-full rounded-r-none border border-r-0 border-primary-foreground/20 bg-primary/80 text-primary-foreground shadow-md opacity-70 transition-[width,opacity] hover:w-11 hover:bg-primary hover:opacity-100 focus-visible:w-11 focus-visible:opacity-100 sm:h-12 sm:w-10 sm:hover:w-12 sm:focus-visible:w-12"
+        <div
+          className="fixed right-0 top-1/2 z-20 -translate-y-1/2"
+          style={{ transform: `translateY(calc(-50% + ${offsetY}px))` }}
         >
-          <MessageSquareText className="h-4 w-4" aria-hidden="true" />
-        </Button>
+          <Button
+            size="icon"
+            onClick={() => {
+              if (dragRef.current?.moved) return;
+              setAberto(true);
+            }}
+            onMouseDown={(e) => startDrag(e.clientY)}
+            onMouseMove={(e) => onMove(e.clientY)}
+            onMouseUp={endDrag}
+            onMouseLeave={endDrag}
+            onTouchStart={(e) => startDrag(e.touches[0]?.clientY ?? 0)}
+            onTouchMove={(e) => onMove(e.touches[0]?.clientY ?? 0)}
+            onTouchEnd={endDrag}
+            aria-label="Abrir o chat do Atlas"
+            title="Arraste para cima/baixo · clique para abrir o Atlas"
+            className="relative h-11 w-9 cursor-grab rounded-l-full rounded-r-none border border-r-0 border-primary-foreground/20 bg-primary/80 text-primary-foreground shadow-md opacity-70 transition-[width,opacity] hover:w-11 hover:bg-primary hover:opacity-100 focus-visible:w-11 focus-visible:opacity-100 active:cursor-grabbing sm:h-12 sm:w-10 sm:hover:w-12 sm:focus-visible:w-12"
+          >
+            <AtlasIcon className="h-5 w-5" />
+            <GripVertical className="pointer-events-none absolute left-0.5 h-3 w-3 opacity-40" />
+          </Button>
+        </div>
       )}
 
       {aberto && (
@@ -120,7 +174,7 @@ export function AtlasWidget() {
           aria-label="Chat do Atlas"
         >
           <header className="flex items-center gap-2 border-b border-border px-3 py-2">
-            <MessageSquareText className="h-4 w-4 text-primary" />
+            <AtlasIcon className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold">Atlas</span>
             <div className="ml-auto flex items-center gap-1">
               <Button
