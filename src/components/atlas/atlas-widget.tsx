@@ -89,7 +89,6 @@ export function AtlasWidget() {
   if (!user || esconderNaProposta) return null;
 
   return (
-
     <>
       {!aberto && (
         <button
@@ -148,7 +147,12 @@ export function AtlasWidget() {
                   </Link>
                 </Button>
               )}
-              <Button variant="ghost" size="icon-sm" title="Fechar" onClick={() => setAberto(false)}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title="Fechar"
+                onClick={() => setAberto(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>

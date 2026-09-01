@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
+import { AtlasRadarCard } from "@/components/atlas/atlas-radar-card";
 import { AppLayout } from "@/components/app-layout";
 import { ViewSlot } from "@/components/view-slot";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -1265,31 +1266,7 @@ function HomePage() {
 
           </div>
 
-          <div className="relative glass rounded-2xl p-5 overflow-hidden min-h-[280px]">
-            <div aria-hidden className="absolute inset-0 blur-sm pointer-events-none select-none opacity-40 p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="font-display font-semibold">Atlas radar</span>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div>• Cliente X abaixo da projeção do trimestre</div>
-                <div>• 3 oportunidades em aberto — Cliente Y</div>
-                <div>• Observação registrada — Cliente Z</div>
-              </div>
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center px-4">
-              <div className="glass rounded-2xl px-6 py-5 max-w-sm text-center shadow-xl border border-primary/20">
-                <div className="mx-auto h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-[oklch(0.65_0.2_30)] flex items-center justify-center mb-3 shadow-md shadow-primary/30">
-                  <Clock className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div className="text-[11px] uppercase tracking-wider text-primary font-semibold">Em breve</div>
-                <h3 className="font-display font-bold text-lg mt-1">Atlas radar</h3>
-                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                  Estamos ligando o Atlas às suas contas para gerar sinais automáticos de oportunidade e risco.
-                </p>
-              </div>
-            </div>
-          </div>
+          <AtlasRadarCard />
         </div>
 
         {/* Seção: Pipeline */}

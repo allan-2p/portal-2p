@@ -6,7 +6,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkles, AlertTriangle } from "lucide-react";
+import { Sparkles, AlertTriangle, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { listarMensagensFn } from "@/lib/atlas.functions";
@@ -24,6 +24,15 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
+
+/** Rótulos amigáveis das consultas que o Atlas faz no meio da resposta. */
+const FERRAMENTA_LABEL: Record<string, string> = {
+  buscar_clientes: "Consultando clientes da carteira",
+  resumo_cliente: "Abrindo o dossiê do cliente",
+  desempenho_periodo: "Somando pedidos e propostas do período",
+  minhas_metas: "Comparando meta x realizado",
+  alertas_abertos: "Lendo os alertas do radar",
+};
 
 const SUGESTOES = [
   "Quais clientes da minha carteira caíram nos últimos 90 dias?",
@@ -130,11 +139,33 @@ export function AtlasChat({
               .map((p) => (p.type === "text" ? p.text : ""))
               .join("")
               .trim();
-            const ferramentas = m.parts.filter((p) => p.type.startsWith("tool-")).length;
-            if (!texto && !ferramentas) return null;
+            const ferramentas = m.parts.filter((p) => p.type.startsWith("tool-"));
+            if (!texto && ferramentas.length === 0) return null;
             return (
               <Message from={m.role} key={m.id}>
                 <MessageContent>
+                  {ferramentas.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {ferramentas.map((p, i) => {
+                        const nome = p.type.replace(/^tool-/, "");
+                        const estado = (p as { state?: string }).state ?? "";
+                        const pronto = estado.includes("output") || estado.includes("result");
+                        return (
+                          <span
+                            key={`${m.id}-${nome}-${i}`}
+                            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[10px] text-muted-foreground"
+                          >
+                            {pronto ? (
+                              <Check className="h-3 w-3 text-success" />
+                            ) : (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            )}
+                            {FERRAMENTA_LABEL[nome] ?? nome}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                   {texto ? (
                     <MessageResponse>{texto}</MessageResponse>
                   ) : (

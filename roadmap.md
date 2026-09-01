@@ -55,3 +55,11 @@
 - [ ] Listar apenas pedidos com produtos do catálogo de carregadores (excluir kits/brindes/bonificação)
 - [ ] Exibir data da compra nas listagens
 - [ ] Filtro de período: mês, trimestre, ano e intervalo de datas
+
+## Atlas + Perfil do cliente (01/09)
+- [ ] Atlas: tela cheia de chat em /solar/atlas (sai o aviso "em breve"), perguntas abertas
+- [ ] Atlas: indicador do que está consultando + o que ele sabe responder
+- [ ] Atlas Radar ativo na home (substituir card "em breve")
+- [ ] Perfil do cliente: remover "Pedidos em aberto" da aba Financeiro
+- [ ] Perfil do cliente: Visão geral — "Funil do cliente" lista oportunidades em aberto (valor + etapa); remover "sinais rápidos"
+- [ ] Perfil do cliente: renomear "Propostas e pedidos" para "Propostas"
