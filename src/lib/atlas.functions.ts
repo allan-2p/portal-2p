@@ -157,7 +157,7 @@ export const listarAlertasFn = createServerFn({ method: "POST" })
             escopo.porInstancia[inst],
           );
         });
-    return visiveis.slice(0, limite) as AtlasAlerta[];
+    return visiveis.slice(0, limite) as unknown as AtlasAlerta[];
   });
 
 export const atualizarAlertaFn = createServerFn({ method: "POST" })
