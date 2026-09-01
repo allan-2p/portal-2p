@@ -63,12 +63,20 @@ export function AtlasWidget() {
   });
 
   useEffect(() => {
-    if (!aberto || !threads.isSuccess || threadId) return;
+    if (!aberto || !threads.isSuccess) return;
+    // Id guardado no navegador pode apontar para uma conversa já excluída.
+    if (threadId && !threads.data.some((t) => t.id === threadId)) {
+      setThreadId(null);
+      if (typeof window !== "undefined") window.localStorage.removeItem(THREAD_KEY);
+      return;
+    }
+    if (threadId) return;
     const primeira = threads.data[0];
     if (primeira) setThreadId(primeira.id);
     else if (!novaConversa.isPending) novaConversa.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aberto, threads.isSuccess, threadId]);
+  }, [aberto, threads.isSuccess, threads.data, threadId]);
+
 
   const apagar = useMutation({
     mutationFn: async (id: string) => await excluir({ data: { id } }),
