@@ -82,6 +82,7 @@ export async function precosSolar(
         ...(opts.documento ? { documento: opts.documento } : {}),
         listaPreco: opts.listaPreco || "01",
         ...(opts.tipoOv ? { tipoOv: opts.tipoOv } : {}),
+        ...(opts.empresaCnpj ? { empresaCnpj: opts.empresaCnpj } : {}),
         filial,
       });
       sim = r.valores as unknown as Map<string, { valor: number | null; valorSemIcmsIpi?: number | null }>;
