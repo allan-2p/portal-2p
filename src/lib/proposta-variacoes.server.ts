@@ -200,6 +200,15 @@ export async function criarVariacao(
     if (NAO_COPIAR.has(k) || k.startsWith("sfo_")) continue;
     payload[k] = v;
   }
+  // A variação nasce no portal: não herda marcas da importação antiga.
+  const totaisOrigem = (origem["totais"] ?? {}) as Record<string, unknown>;
+  if (totaisOrigem && typeof totaisOrigem === "object") {
+    const t = { ...totaisOrigem };
+    delete t["origem"];
+    delete t["numeroAnterior"];
+    delete t["numero_anterior"];
+    payload["totais"] = t;
+  }
   payload["variacao_grupo"] = grupo;
   payload["variacao_sufixo"] = sufixo;
   payload["variacao_favorita"] = false;
