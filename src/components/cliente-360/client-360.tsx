@@ -509,6 +509,7 @@ function VisaoGeral({
       }))
       .sort((a, b) => b.total - a.total || b.itens.length - a.itens.length);
   }, [oportunidadesAbertas]);
+  const maiorEtapa = grupos.reduce((m, g) => Math.max(m, g.total), 0);
 
   return (
     <div className="space-y-4">
