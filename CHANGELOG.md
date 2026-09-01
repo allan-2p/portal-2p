@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Visão Geral de Carregadores mais completa**: as linhas agora exibem Nº SAP, Nº NF e a data de faturamento, além da data de compra; um novo seletor permite filtrar e agrupar os pedidos pela data de compra ou pela data de faturamento.
 - **Datas exibidas com um dia a menos**: previsão de despacho, estimativa de entrega e demais datas sem hora (validade de cupom/condição, datas de crédito, pedidos, variações) apareciam um dia antes do valor real por causa do fuso. Agora toda data é formatada por um único utilitário que ancora datas puras no dia correto.
 - **Ampliação de atuação exige revisão do cadastro**: ao ampliar um cliente de uma unidade para a outra, o portal abre o cadastro na unidade nova para conferência e obriga a escolher o consultor responsável dessa unidade antes de concluir. Sair sem salvar pede confirmação e avisa que a unidade ficará sem responsável.
 

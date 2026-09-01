@@ -40,6 +40,10 @@ type PedidoVendido = {
   valor: number;
   /** Data da compra: quando o pedido saiu de rascunho (fallback: criação). */
   data: string;
+  /** Data de faturamento (NF emitida). */
+  dataFaturamento: string | null;
+  nfNumero: string | null;
+  sapOvNumero: string | null;
   codigos: string[];
   nomesItens: string[];
 };
@@ -69,9 +73,11 @@ function fmtData(iso: string) {
 }
 
 type Modo = "todos" | "mes" | "trimestre" | "ano" | "intervalo";
+type CampoData = "compra" | "faturamento";
 
 function CarregadoresVisaoGeralPage() {
   const [modo, setModo] = useState<Modo>("todos");
+  const [campoData, setCampoData] = useState<CampoData>("compra");
   const [mes, setMes] = useState<string>("");
   const [trimestre, setTrimestre] = useState<string>("");
   const [ano, setAno] = useState<string>("");
@@ -87,7 +93,7 @@ function CarregadoresVisaoGeralPage() {
         data: {
           organizacao: "carregadores",
           select:
-            "id,numero,nome,cliente_nome,status,totais,itens,created_at,aguardando_pagamento_em,processando_em",
+            "id,numero,nome,cliente_nome,status,totais,itens,created_at,aguardando_pagamento_em,processando_em,faturado_em,nf_numero,sap_ov_numero",
           statusIn: STATUS_VENDIDOS as unknown as string[],
         },
       });
@@ -101,6 +107,9 @@ function CarregadoresVisaoGeralPage() {
           status: r.status,
           valor: Number(r.totais?.valorTotal ?? r.totais?.total ?? 0),
           data: r.aguardando_pagamento_em ?? r.processando_em ?? r.created_at,
+          dataFaturamento: r.faturado_em ?? null,
+          nfNumero: r.nf_numero ?? null,
+          sapOvNumero: r.sap_ov_numero ?? null,
           codigos: itens.map((i: any) => String(i?.codigo ?? "").trim()).filter(Boolean),
           nomesItens: itens.map((i: any) => norm(i?.nome)).filter(Boolean),
         };
@@ -142,12 +151,13 @@ function CarregadoresVisaoGeralPage() {
 
   const filtrados = useMemo(() => {
     return vendidos.filter((p) => {
-      const d = p.data.slice(0, 10);
-      if (modo === "mes") return !mes || mesChave(p.data) === mes;
-      if (modo === "ano") return !ano || p.data.slice(0, 4) === ano;
+      const ref = campoData === "faturamento" ? (p.dataFaturamento ?? p.data) : p.data;
+      const d = ref.slice(0, 10);
+      if (modo === "mes") return !mes || mesChave(ref) === mes;
+      if (modo === "ano") return !ano || ref.slice(0, 4) === ano;
       if (modo === "trimestre") {
         if (!trimestre) return true;
-        const t = `${p.data.slice(0, 4)}-T${Math.floor(Number(p.data.slice(5, 7)) / 3.0001) + 1}`;
+        const t = `${ref.slice(0, 4)}-T${Math.floor(Number(ref.slice(5, 7)) / 3.0001) + 1}`;
         return t === trimestre;
       }
       if (modo === "intervalo") {
@@ -157,7 +167,7 @@ function CarregadoresVisaoGeralPage() {
       }
       return true;
     });
-  }, [vendidos, modo, mes, trimestre, ano, de, ate]);
+  }, [vendidos, modo, mes, trimestre, ano, de, ate, campoData]);
 
   const totalPeriodo = filtrados.reduce((s, p) => s + p.valor, 0);
 
@@ -165,13 +175,20 @@ function CarregadoresVisaoGeralPage() {
   const grupos = useMemo(() => {
     const map = new Map<string, PedidoVendido[]>();
     for (const p of filtrados) {
-      const k = mesChave(p.data);
+      const ref = campoData === "faturamento" ? (p.dataFaturamento ?? p.data) : p.data;
+      const k = mesChave(ref);
       if (!map.has(k)) map.set(k, []);
       map.get(k)!.push(p);
     }
-    for (const arr of map.values()) arr.sort((a, b) => (a.data < b.data ? 1 : -1));
+    for (const arr of map.values()) {
+      arr.sort((a, b) => {
+        const da = campoData === "faturamento" ? (a.dataFaturamento ?? a.data) : a.data;
+        const db = campoData === "faturamento" ? (b.dataFaturamento ?? b.data) : b.data;
+        return da < db ? 1 : -1;
+      });
+    }
     return [...map.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
-  }, [filtrados]);
+  }, [filtrados, campoData]);
 
   const carregando = q.isLoading || produtos.isLoading;
   const selectCls = "h-9 rounded-lg border border-border bg-surface px-3 text-sm";
@@ -192,6 +209,15 @@ function CarregadoresVisaoGeralPage() {
             {(q.isFetching || produtos.isFetching) && (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}
+            <select
+              value={campoData}
+              onChange={(e) => setCampoData(e.target.value as CampoData)}
+              className={selectCls}
+              title="Data usada no filtro e no agrupamento por mês"
+            >
+              <option value="compra">Data de compra</option>
+              <option value="faturamento">Data de faturamento</option>
+            </select>
             <select value={modo} onChange={(e) => setModo(e.target.value as Modo)} className={selectCls}>
               <option value="todos">Todos os períodos</option>
               <option value="mes">Por mês</option>
@@ -274,9 +300,12 @@ function CarregadoresVisaoGeralPage() {
                 </div>
               </div>
               <div className="divide-y divide-border">
-                <div className="hidden sm:grid grid-cols-[100px_100px_1fr_1fr_120px_140px] gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                <div className="hidden lg:grid grid-cols-[90px_90px_90px_90px_90px_1fr_1fr_110px_120px] gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                   <span>Pedido</span>
+                  <span>Nº SAP</span>
+                  <span>Nº NF</span>
                   <span>Compra</span>
+                  <span>Faturamento</span>
                   <span>Nome</span>
                   <span>Cliente</span>
                   <span>Status</span>
@@ -285,16 +314,19 @@ function CarregadoresVisaoGeralPage() {
                 {itens.map((p) => (
                   <div
                     key={p.id}
-                    className="grid sm:grid-cols-[100px_100px_1fr_1fr_120px_140px] gap-1 sm:gap-3 px-5 py-2.5 text-sm items-center"
+                    className="grid lg:grid-cols-[90px_90px_90px_90px_90px_1fr_1fr_110px_120px] gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center"
                   >
                     <span className="font-mono text-xs text-muted-foreground">{p.numero ?? "—"}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{p.sapOvNumero ?? "—"}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{p.nfNumero ?? "—"}</span>
                     <span className="text-xs text-muted-foreground">{fmtData(p.data)}</span>
+                    <span className="text-xs text-muted-foreground">{p.dataFaturamento ? fmtData(p.dataFaturamento) : "—"}</span>
                     <span className={cn("truncate", !p.nome && "text-muted-foreground")}>{p.nome ?? "—"}</span>
                     <span className="truncate">{p.cliente_nome}</span>
                     <span className="flex items-center gap-1.5 text-xs">
                       <StatusDot status={p.status as any} /> {p.status}
                     </span>
-                    <span className="sm:text-right font-semibold">{fmtBRL(p.valor)}</span>
+                    <span className="lg:text-right font-semibold">{fmtBRL(p.valor)}</span>
                   </div>
                 ))}
               </div>
