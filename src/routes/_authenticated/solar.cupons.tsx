@@ -25,17 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Trash2, Power } from "lucide-react";
+import { Power } from "lucide-react";
 import { useSolarCupons, useSolarInvalidate } from "@/hooks/use-solar-catalogo";
 import { logModeration } from "@/lib/moderation-audit";
 import { CupomHistoricoDialog } from "@/components/solar/cupom-historico-dialog";
@@ -179,7 +169,6 @@ function CuponsPage() {
   const [reutilizavel, setReutilizavel] = useState(false);
   const [limiteUsos, setLimiteUsos] = useState("");
   const [clienteDoc, setClienteDoc] = useState("");
-  const [excluindo, setExcluindo] = useState<Cupom | null>(null);
   const [historico, setHistorico] = useState<Cupom | null>(null);
 
 
@@ -212,32 +201,6 @@ function CuponsPage() {
     setErrors({});
   };
 
-  const handleDelete = async (c: Cupom) => {
-    try {
-      const { error } = await supabase.from("solar_cupons").delete().eq("id", c.id);
-      if (error) throw error;
-      void logModeration({
-        area: "solar_cupons",
-        action: "excluiu",
-        target: c.codigo,
-        summary: `Cupom ${c.codigo} excluído.`,
-        details: {
-          desconto: [c.valor ? fmt(c.valor) : null, c.percentual ? `${c.percentual}%` : null, c.tipos.includes("frete") ? "frete grátis" : null]
-            .filter(Boolean)
-            .join(" + "),
-          validade: c.inicio ? `${c.inicio} → ${c.validade}` : `até ${c.validade}`,
-          usos: c.usos,
-          cliente: c.cliente ?? "todos",
-        },
-      });
-      invalidateSolar();
-      toast.success(`Cupom ${c.codigo} excluído.`);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Não foi possível excluir o cupom.");
-    } finally {
-      setExcluindo(null);
-    }
-  };
 
   const handleToggleAtivo = async (c: Cupom) => {
     const novo = !c.ativo;
@@ -775,16 +738,6 @@ function CuponsPage() {
                         >
                           <Power className={cn("h-4 w-4", c.ativo ? "text-emerald-500" : "text-muted-foreground")} />
                         </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive"
-                          title="Excluir cupom"
-                          onClick={() => setExcluindo(c)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </td>
                     )}
                   </tr>
@@ -805,25 +758,6 @@ function CuponsPage() {
           </div>
         </div>
 
-        <AlertDialog open={!!excluindo} onOpenChange={(v) => !v && setExcluindo(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir cupom {excluindo?.codigo}?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação não pode ser desfeita. O código ficará disponível para uso novamente.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => excluindo && handleDelete(excluindo)}
-              >
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
 
         <CupomHistoricoDialog
           cupomId={historico?.id ?? null}

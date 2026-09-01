@@ -88,3 +88,5 @@
 - [x] Admin: opção de clonar perfil de permissão (telas, instâncias, objetos)
 - [x] Perfil do cliente: tarefa existente no Salesforce não aparece em "Atividades" (aparece no calendário de Tarefas)
 - [x] Clientes Grupo 2P: consultor separado por unidade (Solar e Carregadores)
+- Catálogo: inativar 200000015 e ativar 200000657 (parafuso M8*25) — feito
+- Cupons: remover exclusão de cupom (só ativar/desativar) — feito

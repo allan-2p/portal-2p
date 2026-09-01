@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Cupom não pode mais ser excluído**: o botão de excluir saiu da tela de Cupons. Cupons agora só podem ser ativados ou desativados, preservando o histórico de uso e as propostas que os utilizaram.
+- **Parafuso M8*25 com o código correto**: o material `200000015` foi desativado e o código correto `200000657` entrou ativo, visível na 2P Solar e liberado na calculadora, com a mesma foto do item anterior.
 - **Cliente Grupo 2P com um vendedor por unidade**: cadastros com atuação ampliada passam a ter consultor próprio na Solar e nos Carregadores. Cada unidade vê, edita e filtra pelo seu responsável; o vendedor principal enviado ao SAP continua sendo o da unidade de origem do cadastro. Ao ampliar a atuação, o consultor atual fica fixado na unidade de origem e a outra unidade começa livre para receber outro vendedor. (Requer rodar `supabase/external/clientes-consultor-por-instancia.sql`.)
 - **Clonar perfil de permissão**: na tela de Perfis, o administrador pode duplicar um perfil existente com um clique — o novo perfil nasce com as mesmas telas, unidades liberadas, permissões por objeto e página inicial (os usuários vinculados não são copiados).
 - **Perfil do cliente voltou a mostrar as tarefas**: a lista de atividades do dossiê consultava um campo de tarefa que não existe no CRM e a falha era silenciosa (aparecia "nada pendente" mesmo com tarefa aberta). Corrigido, e agora eventuais falhas ficam registradas no log.
