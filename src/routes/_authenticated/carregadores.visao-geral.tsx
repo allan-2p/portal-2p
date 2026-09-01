@@ -40,6 +40,10 @@ type PedidoVendido = {
   valor: number;
   /** Data da compra: quando o pedido saiu de rascunho (fallback: criação). */
   data: string;
+  /** Data de faturamento (NF emitida). */
+  dataFaturamento: string | null;
+  nfNumero: string | null;
+  sapOvNumero: string | null;
   codigos: string[];
   nomesItens: string[];
 };
