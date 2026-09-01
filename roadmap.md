@@ -4,6 +4,10 @@
 - [x] Reprocessar tarefas antigas do Salesforce criadas pelo portal (dono = usuário de integração) transferindo para o vendedor da conta.
 - [ ] Qual permissão de perfil permite marcar pedido como entregue? (resposta: `modify_all = true` no objeto `propostas` da instância; ver `permission_profile_object_perms`)
 
+## Entrega
+- [x] Ampliação de atuação: revisão obrigatória do cadastro + escolha do consultor da nova unidade.
+- [x] Data de entrega editável mesmo após o pedido marcado como Entregue (mesmo perfil que edita a estimativa).
+
 ## Concluído neste turno
 - [x] Tipo de NF obrigatório em solar e carregadores (front + back)
 

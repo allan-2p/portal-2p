@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Ampliação de atuação exige revisão do cadastro**: ao ampliar um cliente de uma unidade para a outra, o portal abre o cadastro na unidade nova para conferência e obriga a escolher o consultor responsável dessa unidade antes de concluir. Sair sem salvar pede confirmação e avisa que a unidade ficará sem responsável.
+- **Data de entrega editável após a baixa**: em pedidos já marcados como Entregue, quem edita a estimativa de entrega e faz a baixa manual (Manager Access em Propostas) pode corrigir a data efetiva de entrega direto no pedido; a alteração fica registrada no log e é reenviada ao Salesforce.
 - **Cupom não pode mais ser excluído**: o botão de excluir saiu da tela de Cupons. Cupons agora só podem ser ativados ou desativados, preservando o histórico de uso e as propostas que os utilizaram.
 - **Parafuso M8*25 com o código correto**: o material `200000015` foi desativado e o código correto `200000657` entrou ativo, visível na 2P Solar e liberado na calculadora, com a mesma foto do item anterior.
 - **Cliente Grupo 2P com um vendedor por unidade**: cadastros com atuação ampliada passam a ter consultor próprio na Solar e nos Carregadores. Cada unidade vê, edita e filtra pelo seu responsável; o vendedor principal enviado ao SAP continua sendo o da unidade de origem do cadastro. Ao ampliar a atuação, o consultor atual fica fixado na unidade de origem e a outra unidade começa livre para receber outro vendedor. (Requer rodar `supabase/external/clientes-consultor-por-instancia.sql`.)

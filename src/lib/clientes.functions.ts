@@ -400,7 +400,10 @@ export const ampliarAtuacaoFn = createServerFn({ method: "POST" })
       sync = { sap: { ok: false, erro: (err as Error)?.message ?? String(err) } };
     }
 
-    return { id: data.id, sync };
+    // Devolve o cadastro já ampliado: o consultor precisa revisá-lo e escolher
+    // o responsável desta unidade antes de concluir.
+    const atualizado = (await db.getClienteByIdQualquer(data.id)) ?? atual;
+    return { id: data.id, sync, cliente: atualizado as Record<string, any> };
   });
 
 /** Enriquecimento por CNPJ (Serpro + CNPJá). Não grava nada. */
@@ -534,7 +537,9 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       : { sap: null, nome: null, id: null };
 
     const sapEscolhido = String(data.consultor_sap ?? "").trim();
-    const podeTrocar = podeEscolher || !data.id;
+    // Cadastro Grupo 2P recém-ampliado: esta unidade ainda não tem dono, então
+    // quem faz a revisão define o responsável mesmo sem "Modify All Records".
+    const podeTrocar = podeEscolher || !data.id || !anteriorConsultor.sap;
     const sapAlvo = podeTrocar ? sapEscolhido || anteriorConsultor.sap : anteriorConsultor.sap;
 
     const noPortal = await consultorPorSap(sapAlvo);

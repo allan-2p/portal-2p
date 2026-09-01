@@ -317,6 +317,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [consultorImportado, setConsultorImportado] = useState<{ sap: string; nome: string } | null>(null);
   /** Cadastro com atuação Grupo 2P: o consultor é definido por unidade. */
   const [escopoGrupo, setEscopoGrupo] = useState(false);
+  /** Revisão obrigatória logo após ampliar a atuação para esta unidade. */
+  const [modoAmpliacao, setModoAmpliacao] = useState(false);
   const listarConsultores = useServerFn(listConsultoresFn);
   const consultoresQ = useQuery({
     queryKey: ["clientes-consultores", instancia],
@@ -330,7 +332,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const opcoesConsultor: ConsultorOpcao[] = consultorImportado
     ? [...consultores, { id: consultorImportado.sap, sap: consultorImportado.sap, nome: `${consultorImportado.nome} (importado)` }]
     : consultores;
-  const consultorEfetivo = consultorSap ?? consultoresQ.data?.eu.sap ?? null;
+  /** Quem pode atribuir o cadastro a outro consultor (senão assume o próprio). */
+  const podeEscolherConsultor =
+    !!consultoresQ.data?.podeEscolher || consultoresQ.data?.souConsultor === false;
+  // Na ampliação de atuação o responsável desta unidade não é presumido:
+  // quem pode escolher precisa escolher explicitamente.
+  const consultorEfetivo =
+    consultorSap ??
+    (modoAmpliacao && podeEscolherConsultor ? null : consultoresQ.data?.eu.sap ?? null);
   const consultorNomeAtual =
     opcoesConsultor.find((c) => c.sap === consultorEfetivo)?.nome ?? consultoresQ.data?.eu.nome ?? "—";
 
@@ -383,11 +392,22 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const ampliarAtuacao = useMutation({
     mutationFn: (id: string) => ampliar({ data: { instancia, id } }),
     onSuccess: (r: any) => {
-      toast.success(`Atuação ampliada — o cliente agora aparece também em ${ORGANIZACAO[instancia]}.`);
+      toast.success(`Atuação ampliada — revise o cadastro e escolha o consultor de ${ORGANIZACAO[instancia]}.`);
       if (r?.sync?.sap && r.sync.sap.ok === false) toast.error(`SAP: ${r.sync.sap.erro ?? "falha no envio."}`);
       setDuplicado([]);
-      setOpen(false);
       qc.invalidateQueries({ queryKey: ["clientes", instancia] });
+      if (r?.cliente) {
+        // Revisão obrigatória: abre o cadastro nesta unidade sem consultor
+        // definido, para o vendedor conferir os dados e escolher o responsável.
+        abrirEdicao(r.cliente as Cliente);
+        setEscopoGrupo(true);
+        setModoAmpliacao(true);
+        setConsultorSap(null);
+        setConsultorImportado(null);
+        setAbaEdicao("cadastrais");
+      } else {
+        setOpen(false);
+      }
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Não foi possível ampliar a atuação."),
   });
@@ -523,7 +543,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const formSujo = baseForm !== null && baseForm !== assinaturaForm;
 
   function tentarFechar() {
-    if (formSujo) return setConfirmarFechar(true);
+    if (modoAmpliacao || formSujo) return setConfirmarFechar(true);
     fechar();
   }
 
@@ -533,6 +553,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     setConsultorSap(consultoresQ.data?.eu.sap ?? null);
     setConsultorImportado(null);
     setEscopoGrupo(false);
+    setModoAmpliacao(false);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
     setFontes([]); setAvisos([]);
   }
@@ -575,6 +596,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     setDocBusca("");
     setBaseForm(JSON.stringify([inicial, "", consultor]));
     setTentouSalvar(false); setFontes([]); setAvisos([]);
+    setModoAmpliacao(false);
     setEtapa("formulario"); setOpen(true);
   };
   const focarCampo = (campo: string) => {
@@ -665,7 +687,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
         aberto={confirmarFechar}
         onCancelar={() => setConfirmarFechar(false)}
         onDescartar={fechar}
-        descricao="Você preencheu informações do cliente que ainda não foram salvas. Se fechar agora, elas serão perdidas."
+        descricao={
+          modoAmpliacao
+            ? `A atuação já foi ampliada, mas a revisão do cadastro ainda não foi salva e ${ORGANIZACAO[instancia]} continuará sem consultor responsável. Deseja sair mesmo assim?`
+            : "Você preencheu informações do cliente que ainda não foram salvas. Se fechar agora, elas serão perdidas."
+        }
       />
 
       <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : tentarFechar())}>
@@ -787,6 +813,20 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 }
               />
 
+              {modoAmpliacao && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs" role="status">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
+                    <AlertCircle className="h-4 w-4" /> Revisão obrigatória da ampliação
+                  </div>
+                  <p className="mt-1 text-muted-foreground">
+                    Este cadastro passou a atuar também em <strong>{ORGANIZACAO[instancia]}</strong>. Confira os dados
+                    cadastrais, fiscais e de contato e escolha o <strong>consultor responsável nesta unidade</strong>{" "}
+                    antes de concluir.
+                  </p>
+                </div>
+              )}
+
+
               {(fontes.length > 0 || avisos.length > 0) && (
                 <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs">
                   {fontes.length > 0 && (
@@ -907,9 +947,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                       id="campo-consultor"
                       error={erros.consultor}
                       hint={
-                        escopoGrupo
-                          ? "Cadastro Grupo 2P: cada unidade tem seu próprio consultor. O vendedor principal do SAP é o da unidade de origem."
-                          : undefined
+                        modoAmpliacao
+                          ? `Ampliação de atuação: escolha quem responde por este cliente em ${ORGANIZACAO[instancia]}.`
+                          : escopoGrupo
+                            ? "Cadastro Grupo 2P: cada unidade tem seu próprio consultor. O vendedor principal do SAP é o da unidade de origem."
+                            : undefined
                       }
                     >
                       {/* Quem não é vendedor/consultor do portal nunca vira o
@@ -1066,7 +1108,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               <DialogFooter>
                 <Button variant="outline" onClick={tentarFechar}>Cancelar</Button>
                 <Button onClick={tentarSalvar} disabled={salvar.isPending}>
-                  {salvar.isPending ? "Salvando…" : "Salvar cadastro"}
+                  {salvar.isPending
+                    ? "Salvando…"
+                    : modoAmpliacao
+                      ? "Concluir revisão da ampliação"
+                      : "Salvar cadastro"}
                 </Button>
               </DialogFooter>
             </>

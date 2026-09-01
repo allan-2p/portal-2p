@@ -808,6 +808,63 @@ export const atualizarEstimativaEntregaFn = createServerFn({ method: "POST" })
     return { ok: true as const, estimativaEntrega: data.data };
   });
 
+/**
+ * Correção da data efetiva de entrega de um pedido já entregue.
+ *
+ * Mesmo gate da baixa manual e da estimativa: "Modify All Records" em
+ * Propostas. Só ajusta a data — o status continua "Entregue".
+ */
+export const atualizarDataEntregaFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { id?: unknown; data?: unknown };
+    if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
+    const bruto = typeof i.data === "string" ? i.data.trim() : "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(bruto)) throw new Error("Data inválida.");
+    if (Number.isNaN(new Date(`${bruto}T12:00:00Z`).getTime())) throw new Error("Data inválida.");
+    return { id: i.id, data: bruto };
+  })
+  .handler(async ({ data, context }) => {
+    const db = await repo();
+    const atual = (await db.getProposta(data.id)) as Record<string, any> | null;
+    if (!atual) throw new Error("Proposta não encontrada.");
+    if (String(atual["status"] ?? "") !== "Entregue") {
+      throw new Error("A data de entrega só pode ser corrigida em pedidos já entregues.");
+    }
+
+    const { getPerm, ForbiddenObjectError } = await import("./object-perms.server");
+    const perm = await getPerm(context as any, String(atual["organizacao"] ?? "solar"), "propostas");
+    if (!perm.modify_all) {
+      throw new ForbiddenObjectError(
+        'Editar a data de entrega exige "Modify All Records" em propostas no seu perfil.',
+      );
+    }
+
+    const anterior = (atual["entregue_em"] as string | null) ?? null;
+    // Meio-dia local para a data não "voltar um dia" na conversão para UTC.
+    const novo = new Date(`${data.data}T12:00:00`).toISOString();
+    await db.atualizarProposta(data.id, { entregue_em: novo });
+
+    try {
+      const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+      await logIntegrationEvent({
+        slug: "proposta",
+        level: "info",
+        event: "data-entrega-manual",
+        message: `Data de entrega do pedido ${atual["numero"] ?? ""}: ${anterior ?? "—"} → ${novo}.`,
+        detail: { proposta_id: data.id, de: anterior, para: novo },
+        actorId: (context as any).userId ?? null,
+      });
+    } catch {
+      /* best effort */
+    }
+
+    await sincronizarSalesforceAoSalvar(data.id);
+    return { ok: true as const, entregueEm: novo };
+  });
+
+
+
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
 
   .middleware([requireSupabaseAuth])
