@@ -1208,7 +1208,7 @@ export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
     if (!validId(accountId)) throw new Error("accountId inválido");
     await assertAccountAccess(context.supabase, context.userId, accountId);
     const taskSoql =
-      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Type, ` +
+      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, TaskSubtype, ` +
       `OwnerId, Owner.Name, WhoId, Who.Name FROM Task WHERE WhatId = '${esc(accountId)}' ` +
       `ORDER BY ActivityDate DESC NULLS LAST LIMIT 200`;
 
@@ -1217,8 +1217,14 @@ export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
       `FROM Event WHERE WhatId = '${esc(accountId)}' ` +
       `ORDER BY ActivityDate DESC NULLS LAST LIMIT 100`;
     const [tRes, eRes] = await Promise.all([
-      sfFetch(`/query?q=${encodeURIComponent(taskSoql)}`).catch(() => ({ records: [] })),
-      sfFetch(`/query?q=${encodeURIComponent(eventSoql)}`).catch(() => ({ records: [] })),
+      sfFetch(`/query?q=${encodeURIComponent(taskSoql)}`).catch((e) => {
+        console.error("[salesforce] falha ao listar tarefas da conta", accountId, e);
+        return { records: [] };
+      }),
+      sfFetch(`/query?q=${encodeURIComponent(eventSoql)}`).catch((e) => {
+        console.error("[salesforce] falha ao listar eventos da conta", accountId, e);
+        return { records: [] };
+      }),
     ]);
     const tasks: SalesforceActivity[] = (tRes?.records ?? []).map((r: any) => ({
       id: r.Id,
@@ -1230,7 +1236,7 @@ export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
       description: r.Description ?? null,
       owner: r.Owner?.Name ?? null,
       ownerId: r.OwnerId ?? null,
-      type: r.Type ?? null,
+      type: r.TaskSubtype ?? null,
       who: r.Who?.Name ?? null,
       whoId: r.WhoId ?? null,
     }));
