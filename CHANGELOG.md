@@ -37,6 +37,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Catálogo dentro da Gestão de Produtos**: em 2P Solar e 2P Carregadores o "Catálogo SAP" virou apenas **Catálogo** e passa a ficar dentro de Gestão de Produtos (com atalho no topo da tela). Nele o moderador controla visibilidade, ativo/inativo e a entrada de materiais no catálogo do portal, inclusive direto na lista completa do SAP.
+- **Grupo 2P > Todos os Produtos** (antes "Gestão de Produtos"): abre na lista completa do SAP e o moderador escolhe o destino do material ao enviá-lo (2P Solar, 2P Carregadores, Grupo 2P ou sem visibilidade), mantendo as travas de produtos usados em propostas em aberto.
+- **Solar sem preço sugerido**: a coluna de preço sugerido saiu da Gestão de Produtos do 2P Solar — o preço do Solar vem sempre da simulação do SAP.
 - **Catálogo do SAP legível por todos, sem expor custo**: o navegador não pede mais as colunas `custo`/`sap_raw` em `sap_produtos` (catálogo Solar e kit-base). Custo continua visível nas telas de gestão (Produtos, Estoque, Carregadores), sempre via servidor com checagem de permissão. Passo manual do Allan após o deploy: revoke da tabela + grant por coluna (sem `custo`/`sap_raw`) para `authenticated`.
 
 - **Sincronização do SAP nunca mais desativa material**: ela passa a ser somente aditiva — traz materiais novos e atualiza dados cadastrais, mas não desliga nada. Material que deixa de vir na lista do SAP continua como está no portal, e a varredura de preço (VK12) só pode ativar; desativar virou decisão exclusivamente manual na Administração.
