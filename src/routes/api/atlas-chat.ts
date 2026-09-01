@@ -226,16 +226,31 @@ export const Route = createFileRoute("/api/atlas-chat")({
         };
         const messages = Array.isArray(body.messages) ? body.messages : [];
         if (!messages.length) return new Response("Mensagens ausentes.", { status: 400 });
-        const threadId = String(body.threadId ?? "");
-        if (!threadId) return new Response("Conversa ausente.", { status: 400 });
+        let threadId = String(body.threadId ?? "");
 
-        // A conversa precisa ser do usuário (RLS garante, mas falhamos cedo).
-        const { data: thread } = await ctx.supabase
-          .from("atlas_threads")
-          .select("id, titulo")
-          .eq("id", threadId)
-          .maybeSingle();
-        if (!thread) return new Response("Conversa não encontrada.", { status: 404 });
+        // A conversa precisa ser do usuário. Se o id veio de um cache antigo
+        // (conversa excluída ou de outro usuário), criamos uma nova em vez de
+        // recusar a pergunta — o Atlas nunca deve deixar de responder por isso.
+        let thread: { id: string; titulo: string | null } | null = null;
+        if (threadId) {
+          const { data } = await ctx.supabase
+            .from("atlas_threads")
+            .select("id, titulo")
+            .eq("id", threadId)
+            .maybeSingle();
+          thread = (data as typeof thread) ?? null;
+        }
+        if (!thread) {
+          const { data: nova, error: erroNova } = await ctx.supabase
+            .from("atlas_threads")
+            .insert({ user_id: ctx.userId, titulo: "Nova conversa" } as never)
+            .select("id, titulo")
+            .single();
+          if (erroNova || !nova) return new Response("Não foi possível abrir a conversa.", { status: 500 });
+          thread = nova as typeof thread;
+          threadId = thread!.id;
+        }
+
 
         const ultima = messages[messages.length - 1] as UIMessage;
         const { salvarMensagem } = await import("@/lib/atlas-mensagens.server");
