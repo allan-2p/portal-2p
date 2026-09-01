@@ -400,7 +400,10 @@ export const ampliarAtuacaoFn = createServerFn({ method: "POST" })
       sync = { sap: { ok: false, erro: (err as Error)?.message ?? String(err) } };
     }
 
-    return { id: data.id, sync };
+    // Devolve o cadastro já ampliado: o consultor precisa revisá-lo e escolher
+    // o responsável desta unidade antes de concluir.
+    const atualizado = (await db.getClienteByIdQualquer(data.id)) ?? atual;
+    return { id: data.id, sync, cliente: atualizado as Record<string, any> };
   });
 
 /** Enriquecimento por CNPJ (Serpro + CNPJá). Não grava nada. */
