@@ -133,7 +133,8 @@ export async function consultorDoClientePorDoc(
     const alvo =
       (instancia ? achados.find((a) => a.instancia === instancia)?.cliente : undefined) ??
       achados[0]?.cliente;
-    return consultorDoCadastro(alvo);
+    const c = instancia ? consultorDaInstancia(alvo, instancia) : consultorDoCadastro(alvo);
+    return { sap: c.sap, nome: c.nome, id: c.id };
   } catch {
     return { sap: null, nome: null, id: null };
   }
