@@ -407,7 +407,9 @@ export const logSalesforceInteraction = createServerFn({ method: "POST" })
     const activityDate =
       data.activityDate ||
       `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const body = buildTaskBody({ ...data, status: "Completed", activityDate });
+    const ownerId = await resolveNewTaskOwner(context.supabase, context.userId, data);
+    const body = buildTaskBody({ ...data, ownerId, status: "Completed", activityDate });
+
     // Log a Call: mesmo comportamento do botão "Log a Call" no Salesforce —
     // grava uma Task concluída com TaskSubtype = 'Call' (chamada), não uma tarefa comum.
     (body as Record<string, unknown>).TaskSubtype = "Call";
