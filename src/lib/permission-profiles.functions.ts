@@ -100,7 +100,96 @@ export const adminSavePermissionProfile = createServerFn({ method: "POST" })
     return { ok: true, id: (row as any).id as string };
   });
 
+// ---- Clonar perfil (telas, instâncias e permissões por objeto) ---- //
+export const adminClonePermissionProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        name: z.string().min(2).max(60).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true; id: string }> => {
+    await assertAdmin(context);
+    const { data: origem, error: errOrigem } = await context.supabase
+      .from("permission_profiles")
+      .select("name, description, default_instance, default_route")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (errOrigem) throw new Error(errOrigem.message);
+    if (!origem) throw new Error("Perfil de origem não encontrado");
+
+    const baseName = data.name?.trim() || `${(origem as any).name} (cópia)`;
+    const { data: existentes } = await context.supabase
+      .from("permission_profiles")
+      .select("name");
+    const usados = new Set(((existentes ?? []) as any[]).map((r) => String(r.name).toLowerCase()));
+    let nome = baseName.slice(0, 60);
+    let n = 2;
+    while (usados.has(nome.toLowerCase())) {
+      nome = `${baseName} ${n++}`.slice(0, 60);
+    }
+
+    const { data: novo, error } = await context.supabase
+      .from("permission_profiles")
+      .insert({
+        name: nome,
+        description: (origem as any).description ?? null,
+        default_instance: (origem as any).default_instance ?? null,
+        default_route: (origem as any).default_route ?? null,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    const novoId = (novo as any).id as string;
+
+    const [{ data: feats }, { data: insts }, { data: objs }] = await Promise.all([
+      context.supabase
+        .from("permission_profile_features")
+        .select("instance_id, feature_key")
+        .eq("profile_id", data.id),
+      context.supabase
+        .from("permission_profile_instances")
+        .select("instance_id")
+        .eq("profile_id", data.id),
+      context.supabase
+        .from("permission_profile_object_perms")
+        .select(
+          "instance_id, object_key, can_read, can_create, can_edit, can_delete, view_all, modify_all, view_all_fields",
+        )
+        .eq("profile_id", data.id),
+    ]);
+
+    if ((insts ?? []).length) {
+      const { error: e } = await context.supabase
+        .from("permission_profile_instances")
+        .insert((insts as any[]).map((r) => ({ profile_id: novoId, instance_id: r.instance_id })));
+      if (e) throw new Error(e.message);
+    }
+    if ((feats ?? []).length) {
+      const { error: e } = await context.supabase.from("permission_profile_features").insert(
+        (feats as any[]).map((r) => ({
+          profile_id: novoId,
+          instance_id: r.instance_id,
+          feature_key: r.feature_key,
+        })),
+      );
+      if (e) throw new Error(e.message);
+    }
+    if ((objs ?? []).length) {
+      const { error: e } = await context.supabase
+        .from("permission_profile_object_perms")
+        .insert((objs as any[]).map((r) => ({ ...r, profile_id: novoId })));
+      if (e) throw new Error(e.message);
+    }
+
+    return { ok: true, id: novoId };
+  });
+
 export const adminDeletePermissionProfile = createServerFn({ method: "POST" })
+
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
