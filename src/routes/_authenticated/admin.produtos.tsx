@@ -115,11 +115,12 @@ function CatalogoSapCompleto({
       await setNoPortal({ data: { codigo, no_catalogo } });
       toast.success(
         no_catalogo
-          ? `${codigo} enviado ao catálogo do portal (inativo, defina a visibilidade em Produtos).`
+          ? `${codigo} enviado ao catálogo do portal. Ele entra inativo e sem visibilidade — defina a instância abaixo.`
           : `${codigo} removido do catálogo do portal.`,
       );
       await refetch();
       onPropagar();
+      if (no_catalogo) onEnviado(codigo);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao atualizar o catálogo.");
     } finally {
