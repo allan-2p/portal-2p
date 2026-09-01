@@ -64,10 +64,19 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   if (uf.length !== 2) throw new Error("UF inválida.");
 
   const itens = (Array.isArray(i.itens) ? i.itens : [])
-    .filter((x: any) => x && typeof x.produtoId === "string" && x.produtoId)
-    .map((x: any) => ({ produtoId: String(x.produtoId), qtd: Math.max(0, Number(x.qtd) || 0) }))
-    .filter((x: any) => x.qtd > 0);
+  // Item válido = tem `produtoId` do catálogo OU o código SAP do material. A
+  // tela às vezes não consegue casar o item com o catálogo (catálogo ainda
+  // carregando, SKU comercial etc.) — nesse caso o servidor resolve pelo código.
+  const itens = (Array.isArray(i.itens) ? i.itens : [])
+    .map((x: any) => ({
+      produtoId: String(x?.produtoId ?? "").trim(),
+      codigo: String(x?.codigo ?? "").trim(),
+      qtd: Math.max(0, Number(x?.qtd) || 0),
+    }))
+    .filter((x: any) => (x.produtoId || x.codigo) && x.qtd > 0);
   if (!itens.length) throw new Error("Adicione ao menos um produto.");
+
+
 
   const projetoVendido = ["sim", "nao", "estoque"].includes(String(i.projetoVendido))
     ? (String(i.projetoVendido) as "sim" | "nao" | "estoque")
