@@ -88,7 +88,14 @@ function duracao(inicio: string, fim: string | null) {
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
-function CatalogoSapCompleto({ onPropagar }: { onPropagar: () => void }) {
+function CatalogoSapCompleto({
+  onPropagar,
+  onEnviado,
+}: {
+  onPropagar: () => void;
+  /** Leva o usuário até o material recém-enviado na aba Produtos. */
+  onEnviado: (codigo: string) => void;
+}) {
   const listAll = useServerFn(listSapCatalogoCompleto);
   const setNoPortal = useServerFn(setSapCatalogoNoPortal);
   const [q, setQ] = useState("");
