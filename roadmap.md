@@ -94,3 +94,8 @@
 - [x] Clientes Grupo 2P: consultor separado por unidade (Solar e Carregadores)
 - Catálogo: inativar 200000015 e ativar 200000657 (parafuso M8*25) — feito
 - Cupons: remover exclusão de cupom (só ativar/desativar) — feito
+
+## Segmentação e funil (01/09)
+- [x] Reverter ampliação de teste da DGA Energia (escopo voltou a somente Solar)
+- [ ] Segmentação: tabela deve preencher toda a largura do card (sem espaço em branco à direita)
+- [ ] Funil do cliente (perfil 360): visual de tabela, datas melhor organizadas e filtro por etapa
