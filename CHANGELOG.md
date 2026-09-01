@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Clonar perfil de permissão**: na tela de Perfis, o administrador pode duplicar um perfil existente com um clique — o novo perfil nasce com as mesmas telas, unidades liberadas, permissões por objeto e página inicial (os usuários vinculados não são copiados).
+- **Perfil do cliente voltou a mostrar as tarefas**: a lista de atividades do dossiê consultava um campo de tarefa que não existe no CRM e a falha era silenciosa (aparecia "nada pendente" mesmo com tarefa aberta). Corrigido, e agora eventuais falhas ficam registradas no log.
 - **Catálogo visível para todos, sem expor custo**: o navegador não pede mais as colunas sensíveis (`custo`, `sap_raw`) ao ler o catálogo — o vendedor carrega os produtos normalmente (nome, código, preço sugerido) e as telas de gestão e os cálculos de CMV/margem passaram a buscar o custo pelo servidor. Isso prepara o bloqueio dessas colunas no banco sem quebrar nenhuma tela.
 - **Atlas flutuante arrastável e com ícone próprio**: o vendedor pode agora arrastar o botão do Atlas para cima e para baixo na lateral direita, e a posição fica salva no navegador; o ícone foi trocado por um globo com brilho, mais alinhado à ideia de "Atlas" como mapa/inteligência.
 - **Avisos e Atlas não cobrem mais ações**: as notificações temporárias saíram do rodapé (onde escondiam botões como download) e agora aparecem de forma compacta no topo; o Atlas continua flutuante, mas virou uma aba lateral pequena, sem texto, sem ocupar a área inferior de ações e abaixo de menus e diálogos.
