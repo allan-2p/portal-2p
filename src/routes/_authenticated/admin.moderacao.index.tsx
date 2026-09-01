@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/app-layout";
 import { AdminAreaGuard } from "@/components/admin/admin-area-guard";
 import { AdminSectionHome } from "@/components/admin/admin-section-home";
 
-export const Route = createFileRoute("/_authenticated/admin/moderacao")({
+export const Route = createFileRoute("/_authenticated/admin/moderacao/")({
   head: () => ({
     meta: [
       { title: "Moderação | Portal 2P" },
