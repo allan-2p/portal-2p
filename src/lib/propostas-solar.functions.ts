@@ -44,7 +44,8 @@ export type SalvarPropostaSolarInput = {
   /** Observações internas do pedido — não vão para a NF nem para o SAP. */
   observacoesInternas: string | null;
   calculo: Record<string, unknown> | null;
-  itens: { produtoId: string; qtd: number }[];
+  /** `produtoId` do catálogo e/ou o código SAP do material (fallback). */
+  itens: { produtoId: string; codigo: string; qtd: number }[];
 };
 
 const money2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100;
@@ -62,11 +63,19 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   const uf = String(i.uf ?? "").trim().toUpperCase();
   if (uf.length !== 2) throw new Error("UF inválida.");
 
+  // Item válido = tem `produtoId` do catálogo OU o código SAP do material. A
+  // tela às vezes não consegue casar o item com o catálogo (catálogo ainda
+  // carregando, SKU comercial etc.) — nesse caso o servidor resolve pelo código.
   const itens = (Array.isArray(i.itens) ? i.itens : [])
-    .filter((x: any) => x && typeof x.produtoId === "string" && x.produtoId)
-    .map((x: any) => ({ produtoId: String(x.produtoId), qtd: Math.max(0, Number(x.qtd) || 0) }))
-    .filter((x: any) => x.qtd > 0);
+    .map((x: any) => ({
+      produtoId: String(x?.produtoId ?? "").trim(),
+      codigo: String(x?.codigo ?? "").trim(),
+      qtd: Math.max(0, Number(x?.qtd) || 0),
+    }))
+    .filter((x: any) => (x.produtoId || x.codigo) && x.qtd > 0);
   if (!itens.length) throw new Error("Adicione ao menos um produto.");
+
+
 
   const projetoVendido = ["sim", "nao", "estoque"].includes(String(i.projetoVendido))
     ? (String(i.projetoVendido) as "sim" | "nao" | "estoque")
@@ -196,14 +205,41 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const { data: prodRows, error: prodErr } = await supabase
-      .from("sap_produtos")
-      .select("id, codigo, descricao, preco_sugerido, imagem_path, ativo")
-      .in("id", data.itens.map((i) => i.produtoId));
-    if (prodErr) throw new Error(prodErr.message);
-    const produtos = (prodRows ?? []) as any[];
-    if (produtos.length !== new Set(data.itens.map((i) => i.produtoId)).size)
-      throw new Error("Há itens com produtos indisponíveis no catálogo.");
+    const SELECT_PRODUTO = "id, codigo, descricao, preco_sugerido, imagem_path, ativo";
+    const ids = [...new Set(data.itens.map((i) => i.produtoId).filter(Boolean))];
+    const codigos = [...new Set(data.itens.filter((i) => !i.produtoId).map((i) => normCod(i.codigo)).filter(Boolean))];
+
+    const [porId, porCodigo] = await Promise.all([
+      ids.length
+        ? supabase.from("sap_produtos").select(SELECT_PRODUTO).in("id", ids)
+        : Promise.resolve({ data: [], error: null } as any),
+      codigos.length
+        ? supabase.from("sap_produtos").select(SELECT_PRODUTO).in("codigo", codigos)
+        : Promise.resolve({ data: [], error: null } as any),
+    ]);
+    if (porId.error) throw new Error(porId.error.message);
+    if (porCodigo.error) throw new Error(porCodigo.error.message);
+
+    const produtos = [...((porId.data ?? []) as any[]), ...((porCodigo.data ?? []) as any[])].filter(
+      (p, idx, arr) => arr.findIndex((x) => x.id === p.id) === idx,
+    );
+
+    // Itens que vieram só com o código SAP passam a apontar para o catálogo.
+    const naoResolvidos: string[] = [];
+    for (const item of data.itens) {
+      if (item.produtoId) {
+        if (!produtos.some((p) => p.id === item.produtoId)) naoResolvidos.push(item.codigo || item.produtoId);
+        continue;
+      }
+      const achado = produtos.find((p) => normCod(p.codigo) === normCod(item.codigo));
+      if (!achado) naoResolvidos.push(item.codigo);
+      else item.produtoId = String(achado.id);
+    }
+    if (naoResolvidos.length)
+      throw new Error(
+        `Há itens que não estão no catálogo do portal: ${[...new Set(naoResolvidos)].slice(0, 8).join(", ")}.`,
+      );
+
 
     // Kit fotovoltaico: o servidor é a autoridade — o kit-base entra sempre com
     // quantidade 1 e não pode ser removido nem alterado pela tela.
@@ -221,7 +257,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       if (!produtos.some((p) => p.id === kit.id)) produtos.push(kit);
       const jaTem = data.itens.find((i) => i.produtoId === kit.id);
       if (jaTem) jaTem.qtd = 1;
-      else data.itens.push({ produtoId: String(kit.id), qtd: 1 });
+      else data.itens.push({ produtoId: String(kit.id), codigo: String(kit.codigo ?? ""), qtd: 1 });
     } else {
       // Sem kit, o kit-base não pode ser vendido avulso pela tela.
       const kitNaLista = produtos.find((p) => normCod(p.codigo) === KIT_FOTOVOLTAICO_MATERIAL);
