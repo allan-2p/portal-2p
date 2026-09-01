@@ -129,18 +129,35 @@ export const listarAlertasFn = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data, context }) => {
+    const limite = Math.min(Math.max(data.limite, 1), 300);
     let q = context.supabase
       .from("atlas_alertas")
       .select(
-        "id, instancia, cliente_nome, cliente_doc, cliente_id, consultor_nome, severidade, score, sinais, metricas, resumo, recomendacao, situacao, silenciado_ate, periodo_inicio, periodo_fim, created_at",
+        "id, instancia, cliente_nome, cliente_doc, cliente_id, consultor_id, consultor_nome, severidade, score, sinais, metricas, resumo, recomendacao, situacao, silenciado_ate, periodo_inicio, periodo_fim, created_at",
       )
       .order("score", { ascending: false })
-      .limit(Math.min(Math.max(data.limite, 1), 300));
+      // Busca a mais porque o filtro de carteira é aplicado em código.
+      .limit(300);
     if (data.situacao !== "todos") q = q.eq("situacao", data.situacao);
     if (data.clienteDoc) q = q.eq("cliente_doc", data.clienteDoc.replace(/\D/g, ""));
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows ?? []) as AtlasAlerta[];
+
+    // Escopo: consultor enxerga só os alertas da carteira dele; quem tem
+    // "View All Records" enxerga tudo.
+    const { escopoAtlas } = await import("./atlas-dados.server");
+    const { registroNoEscopo } = await import("./escopo-consultor.server");
+    const escopo = await escopoAtlas(context as any);
+    const visiveis = escopo.verTudo
+      ? (rows ?? [])
+      : (rows ?? []).filter((a: any) => {
+          const inst = a.instancia === "carregadores" ? "carregadores" : "solar";
+          return registroNoEscopo(
+            { consultor_id: a.consultor_id, cliente_doc: a.cliente_doc },
+            escopo.porInstancia[inst],
+          );
+        });
+    return visiveis.slice(0, limite) as AtlasAlerta[];
   });
 
 export const atualizarAlertaFn = createServerFn({ method: "POST" })
