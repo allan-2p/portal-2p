@@ -332,7 +332,9 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const opcoesConsultor: ConsultorOpcao[] = consultorImportado
     ? [...consultores, { id: consultorImportado.sap, sap: consultorImportado.sap, nome: `${consultorImportado.nome} (importado)` }]
     : consultores;
-  const consultorEfetivo = consultorSap ?? consultoresQ.data?.eu.sap ?? null;
+  // Na ampliação de atuação o responsável desta unidade não é presumido:
+  // o consultor precisa escolher explicitamente.
+  const consultorEfetivo = consultorSap ?? (modoAmpliacao ? null : consultoresQ.data?.eu.sap ?? null);
   const consultorNomeAtual =
     opcoesConsultor.find((c) => c.sap === consultorEfetivo)?.nome ?? consultoresQ.data?.eu.nome ?? "—";
 
