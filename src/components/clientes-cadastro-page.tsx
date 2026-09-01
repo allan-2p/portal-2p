@@ -591,6 +591,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     setDocBusca("");
     setBaseForm(JSON.stringify([inicial, "", consultor]));
     setTentouSalvar(false); setFontes([]); setAvisos([]);
+    setModoAmpliacao(false);
     setEtapa("formulario"); setOpen(true);
   };
   const focarCampo = (campo: string) => {
