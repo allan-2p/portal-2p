@@ -356,35 +356,19 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       }
 
 
-      // Merge: o que não veio mais do SAP fica inativo (sem apagar histórico).
-      // Produtos criados manualmente no portal e materiais enviados de propósito
-      // ao catálogo do portal não são afetados — só saem por decisão manual.
+      // A sincronização do SAP é aditiva: traz materiais novos e atualiza dados,
+      // mas NUNCA desativa nada. O que já está estabelecido no portal só muda
+      // por decisão manual na Administração.
       const vindos = new Set(rows.map((r) => r.codigo));
-      const ativosAntes = (existentes ?? []).filter((r: any) => r.ativo).length;
-      const orfaos = (existentes ?? [])
-        .filter(
-          (r: any) =>
-            r.ativo && r.origem !== "manual" && !vindos.has(r.codigo) && !jaNoCatalogo.has(String(r.codigo)),
-        )
-        .map((r: any) => r.codigo as string);
-      // Trava de segurança: se a resposta do SAP vier incompleta, a desativação
-      // em massa derrubaria o catálogo inteiro (itens somem das propostas).
-      // Acima de 10% dos ativos, nada é desativado — a sincronização apenas avisa.
-      const desativacaoSuspeita = ativosAntes > 0 && orfaos.length > Math.max(5, ativosAntes * 0.1);
-      if (desativacaoSuspeita) {
-        console.warn(
-          `[sap-produtos] desativação em massa ignorada: ${orfaos.length} de ${ativosAntes} ativos não vieram do SAP.`,
+      const ausentes = (existentes ?? []).filter(
+        (r: any) => r.ativo && r.origem !== "manual" && !vindos.has(r.codigo),
+      ).length;
+      if (ausentes > 0) {
+        console.info(
+          `[sap-produtos] ${ausentes} materiais ativos não vieram nesta sincronização — mantidos como estão.`,
         );
-      } else {
-        for (let i = 0; i < orfaos.length; i += 500) {
-          const chunk = orfaos.slice(i, i + 500);
-          const { error } = await supabaseAdmin
-            .from("sap_produtos")
-            .update({ ativo: false, last_synced_at: now })
-            .in("codigo", chunk);
-          if (error) throw new Error(error.message);
-        }
       }
+
 
 
       const inserted = novos.length;
