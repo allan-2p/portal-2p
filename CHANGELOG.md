@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- Atlas: perguntas abertas em conversa livre (correção do envio pelo campo de texto), título automático da conversa a partir da primeira pergunta, painel "O que o Atlas consulta hoje" no topo e saneamento do histórico com chamadas de ferramenta incompletas.
 - **Atlas em tela cheia**: `/solar/atlas` deixou de ser aviso "em breve" e passou a ser o chat completo (perguntas abertas, lista de conversas, painel do que ele consulta). O chat agora mostra em tempo real quais dados está consultando.
 - **Atlas Radar na home**: o card "em breve" foi substituído pelos alertas abertos de clientes em piora, com link para o radar.
 - **Perfil do cliente**: "Propostas & pedidos" virou "Propostas"; a Visão geral lista as oportunidades em aberto (nome, etapa e valor) e perdeu o bloco "Sinais rápidos"; o bloco "Pedidos em aberto" saiu da aba Financeiro.

@@ -19,7 +19,6 @@ import {
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
-  PromptInputBody,
   PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
@@ -196,21 +195,18 @@ export function AtlasChat({
 
       <div className="border-t border-border p-3">
         <PromptInput
-          onSubmit={async (msg, event) => {
-            event.preventDefault();
-            const texto = msg.text ?? "";
-            (event.currentTarget as HTMLFormElement).reset();
-            await enviar(texto);
+          onSubmit={async (msg) => {
+            // Não mexer no formulário aqui: o PromptInput já limpa o campo e o
+            // evento chega "desmontado" (currentTarget nulo) por ser assíncrono.
+            await enviar(msg.text ?? "");
           }}
         >
-          <PromptInputBody>
-            <PromptInputTextarea
-              ref={inputRef}
-              autoFocus
-              placeholder="Pergunte sobre um cliente, período ou meta…"
-            />
-          </PromptInputBody>
-          <PromptInputFooter>
+          <PromptInputTextarea
+            ref={inputRef}
+            autoFocus
+            placeholder="Pergunte o que quiser — ex.: como está a minha meta deste mês?"
+          />
+          <PromptInputFooter className="justify-between">
             <span className="pl-1 text-[11px] text-muted-foreground">
               O Atlas responde com os dados que você tem acesso.
             </span>
