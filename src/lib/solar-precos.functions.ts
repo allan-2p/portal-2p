@@ -95,20 +95,15 @@ export const precosSolarFn = createServerFn({ method: "POST" })
     // com o documento dele devolve "Não existe mestre de clientes para emissor
     // ordem". Como na plataforma antiga, a simulação usa o cliente fake da UF
     // do faturamento e manda a revenda em CNPJ_CI. Triangulação não usa fake.
-    let documento = data.documento;
-    let empresaCnpj = "";
-    if (data.faturarClienteFinal && !data.triangulacao && data.ufFaturamento) {
-      const { clienteFakeDaUf } = await import("./clientes-fakes.server");
-      const fake = await clienteFakeDaUf(data.ufFaturamento);
-      if (fake) {
-        if (data.finalContribuinte && fake.cnpj) {
-          documento = fake.cnpj;
-          empresaCnpj = data.clienteDoc.length > 11 ? data.clienteDoc : "";
-        } else if (fake.cpf) {
-          documento = fake.cpf;
-        }
-      }
-    }
+    const { documentoSimulacaoComFake } = await import("./clientes-fakes.server");
+    const { documento, empresaCnpj } = await documentoSimulacaoComFake({
+      faturarClienteFinal: data.faturarClienteFinal,
+      triangulacao: data.triangulacao,
+      ufFaturamento: data.ufFaturamento,
+      finalContribuinte: data.finalContribuinte,
+      documentoReal: data.documento,
+      clienteDoc: data.clienteDoc,
+    });
 
     const { precosSolar } = await import("./solar-precos.server");
     return await precosSolar(data.itens, {
