@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Catálogo do SAP legível por todos, sem expor custo**: o navegador não pede mais as colunas `custo`/`sap_raw` em `sap_produtos` (catálogo Solar e kit-base). Custo continua visível nas telas de gestão (Produtos, Estoque, Carregadores), sempre via servidor com checagem de permissão. Passo manual do Allan após o deploy: revoke da tabela + grant por coluna (sem `custo`/`sap_raw`) para `authenticated`.
+
 - **Sincronização do SAP nunca mais desativa material**: ela passa a ser somente aditiva — traz materiais novos e atualiza dados cadastrais, mas não desliga nada. Material que deixa de vir na lista do SAP continua como está no portal, e a varredura de preço (VK12) só pode ativar; desativar virou decisão exclusivamente manual na Administração.
 - **Proposta Solar voltou a salvar**: a sincronização do SAP das 14:06 desativou 23 materiais de estrutura (trilhos, grampos, suportes) que continuavam vendáveis; sem eles no catálogo, os itens da calculadora viravam "avulso" e o pedido era recusado com "Adicione ao menos um produto". Os materiais foram reativados e a etapa de produtos avisa exatamente quais códigos estão fora do catálogo.
 
