@@ -22,6 +22,7 @@ import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
 import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-badge";
 import { cidadeUf } from "@/lib/local-format";
+import { adicionarDiasUteis } from "@/lib/dias-uteis";
 import { formatSapNumero } from "@/lib/sap-numero";
 import { numeroExibicao } from "@/lib/proposta-variacoes";
 import {
@@ -698,7 +699,17 @@ function LegadoCard({ proposta }: { proposta: Record<string, any> }) {
 function EstimativaEntrega({ proposta }: { proposta: Record<string, any> }) {
   const status = String(proposta['status'] ?? "");
   const instancia = String(proposta['organizacao'] ?? "solar");
-  const valor = (proposta['estimativa_entrega'] as string | null) ?? null;
+  const gravada = (proposta['estimativa_entrega'] as string | null) ?? null;
+
+  // Pedidos coletados antes da estimativa existir não têm o campo gravado:
+  // derivamos na hora (data da coleta + prazo do frete em dias úteis) para o
+  // cliente nunca ficar sem previsão.
+  const coleta = (proposta['coletado_em'] ?? proposta['expedido_em']) as string | null;
+  const derivada =
+    !gravada && coleta
+      ? adicionarDiasUteis(String(coleta).slice(0, 10), Number(proposta['frete_prazo'] ?? 0))
+      : null;
+  const valor = gravada ?? derivada;
   const visivel = (status === "Coletado" || status === "Entregue") && !!valor;
 
   const queryClient = useQueryClient();
@@ -706,6 +717,7 @@ function EstimativaEntrega({ proposta }: { proposta: Record<string, any> }) {
   const salvarEstimativa = useServerFn(atualizarEstimativaEntregaFn);
   const [editando, setEditando] = useState(false);
   const [dataNova, setDataNova] = useState(String(valor ?? "").slice(0, 10));
+
 
   const permsQ = useQuery({
     queryKey: ["meus-object-perms", instancia],
