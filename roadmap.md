@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Em andamento / perguntas
+- [ ] Perfil do cliente: agrupar o funil por etapa e mostrar a data de criação das oportunidades.
 - [ ] Perfil do cliente: abrir a tarefa e ver/executar os detalhes igual à home (mesmo dialog de tarefa).
 - [x] Reprocessar tarefas antigas do Salesforce criadas pelo portal (dono = usuário de integração) transferindo para o vendedor da conta.
 - [ ] Qual permissão de perfil permite marcar pedido como entregue? (resposta: `modify_all = true` no objeto `propostas` da instância; ver `permission_profile_object_perms`)
