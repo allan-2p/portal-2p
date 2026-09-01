@@ -2751,7 +2751,7 @@ export const getSalesforceAccount360 = createServerFn({ method: "GET" })
         subject: r.Subject ?? "(sem assunto)",
         status: r.Status ?? null,
         priority: r.Priority ?? null,
-        type: r.TaskSubtype ?? null,
+        type: r.Type ?? null,
         origin: r.Origin ?? null,
         createdDate: r.CreatedDate ?? null,
         closedDate: r.ClosedDate ?? null,
