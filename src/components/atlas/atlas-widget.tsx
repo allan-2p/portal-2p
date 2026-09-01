@@ -100,14 +100,13 @@ export function AtlasWidget() {
     <>
       {!aberto && (
         <Button
-          variant="ghost"
-          size="icon-sm"
+          size="icon"
           onClick={() => setAberto(true)}
           aria-label="Abrir o chat do Atlas"
           title="Abrir o Atlas"
-          className="shrink-0 text-primary"
+          className="fixed right-0 top-1/2 z-20 h-11 w-9 -translate-y-1/2 rounded-l-full rounded-r-none border border-r-0 border-primary-foreground/20 bg-primary/80 text-primary-foreground shadow-md opacity-70 transition-[width,opacity] hover:w-11 hover:bg-primary hover:opacity-100 focus-visible:w-11 focus-visible:opacity-100 sm:h-12 sm:w-10 sm:hover:w-12 sm:focus-visible:w-12"
         >
-          <MessageSquareText className="h-4 w-4" />
+          <MessageSquareText className="h-4 w-4" aria-hidden="true" />
         </Button>
       )}
 
