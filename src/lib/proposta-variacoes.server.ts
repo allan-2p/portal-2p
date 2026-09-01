@@ -155,6 +155,10 @@ const NAO_COPIAR = new Set([
   "variacao_grupo",
   "variacao_sufixo",
   "variacao_favorita",
+  // Vínculos exclusivos da importação da plataforma antiga: a variação é uma
+  // proposta nova do portal (projeto_antigo_id é único no banco).
+  "projeto_antigo_id",
+  "legado",
 ]);
 
 export async function criarVariacao(
