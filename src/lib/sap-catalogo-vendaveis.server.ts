@@ -136,9 +136,10 @@ export async function varrerCatalogoVendaveis(
     const vendavel = Boolean(achado);
     const override = linha.ativo_override as boolean | null;
     if (override !== null && override !== undefined) overrides += 1;
-    const ativo = override ?? vendavel;
-    if (ativo !== Boolean(linha.ativo)) (ativo ? ativados++ : desativados++);
 
+    // A varredura NUNCA muda o ativo/inativo de quem já está no portal: ela só
+    // registra o que o SAP diz (vendavel_sap/preço). Ativar ou desativar é
+    // sempre decisão manual em Administração › Produtos.
     const patch: Record<string, unknown> = {
       codigo,
       // O upsert valida a tupla de insert, então colunas NOT NULL precisam vir no payload.
@@ -147,7 +148,7 @@ export async function varrerCatalogoVendaveis(
       listas_com_preco: achado ? `${achado.lista}:${achado.valor.toFixed(2)}` : null,
       preco_vk12: achado ? achado.valor : null,
       preco_checado_em: now,
-      ativo,
+      ativo: Boolean(linha.ativo),
     };
     // Preço de contingência: só preenche quando o portal ainda não tem preço.
     if (achado && !(Number(linha.preco_sugerido ?? 0) > 0)) patch["preco_sugerido"] = achado.valor;
@@ -161,17 +162,6 @@ export async function varrerCatalogoVendaveis(
     if (upErr) throw new Error(`gravação do catálogo: ${upErr.message}`);
   }
 
-  // Espelha o status no catálogo consolidado de estoque.
-  for (const grupo of [true, false]) {
-    const codigos = updates.filter((u) => u["ativo"] === grupo).map((u) => String(u["codigo"]));
-    for (let i = 0; i < codigos.length; i += 200) {
-      await supabaseAdmin
-        .from("produtos")
-        .update({ ativo: grupo })
-        .eq("origem", "sap")
-        .in("codigo", codigos.slice(i, i + 200));
-    }
-  }
 
   const resultado: VarreduraResult = {
     verificados: linhas.length,

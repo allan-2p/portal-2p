@@ -5,6 +5,7 @@
 - [ ] Qual permissão de perfil permite marcar pedido como entregue? (resposta: `modify_all = true` no objeto `propostas` da instância; ver `permission_profile_object_perms`)
 
 ## Concluído neste turno
+- [x] Sincronização do SAP não desativa mais materiais (só traz novidades; ativar/desativar é manual).
 - [x] Tipo de NF obrigatório em solar e carregadores (front + back)
 
 
