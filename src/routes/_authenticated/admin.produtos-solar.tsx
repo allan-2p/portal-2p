@@ -108,13 +108,21 @@ function ProdutosSolarPage() {
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-5">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-primary font-semibold">Moderação · 2P Solar</div>
-          <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Catálogo vindo do SAP e mantido na base do portal. Aqui você controla quais produtos
-            ficam ativos para o 2P Solar.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Moderação · 2P Solar</div>
+            <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Catálogo vindo do SAP e mantido na base do portal. Aqui você controla quais produtos
+              ficam ativos para o 2P Solar.
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <Link to="/admin/moderacao/produtos/$unidade" params={{ unidade: "solar" }}>
+              <Package className="h-4 w-4 mr-2" />
+              Catálogo
+            </Link>
+          </Button>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
