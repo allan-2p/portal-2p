@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -43,7 +43,6 @@ type Row = {
   tipo: string;
   ativo: boolean;
   visibilidade: string;
-  preco_sugerido: number;
   last_synced_at: string | null;
 };
 
@@ -63,7 +62,7 @@ function ProdutosSolarPage() {
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("sap_produtos")
-        .select("id, codigo, descricao, tipo, ativo, visibilidade, preco_sugerido, last_synced_at")
+        .select("id, codigo, descricao, tipo, ativo, visibilidade, last_synced_at")
         .in("visibilidade", ["solar", "ambos"])
         .order("descricao");
       if (error) throw error;
@@ -94,22 +93,6 @@ function ProdutosSolarPage() {
 
   const ativos = produtos.filter((p) => p.ativo).length;
 
-  /** Preço sugerido: rede de segurança quando o SAP não precifica o material. */
-  async function salvarPreco(p: Row, valor: string) {
-    const novo = Math.max(0, Math.round((Number(String(valor).replace(",", ".")) || 0) * 100) / 100);
-    if (novo === Number(p.preco_sugerido ?? 0)) return;
-    const { error } = await supabase.from("sap_produtos").update({ preco_sugerido: novo }).eq("id", p.id);
-    if (error) return toast.error(error.message);
-    void logModeration({
-      area: "produtos",
-      action: "atualizou preço",
-      target: p.codigo,
-      summary: `Preço sugerido de ${p.codigo} alterado para R$ ${novo.toFixed(2)} no 2P Solar.`,
-    });
-    toast.success(`Preço de ${p.codigo} salvo.`);
-    void qc.invalidateQueries({ queryKey: ["produtos-solar"] });
-  }
-
   async function toggleAtivo(p: Row) {
     const { error } = await supabase.from("sap_produtos").update({ ativo: !p.ativo }).eq("id", p.id);
     if (error) return toast.error(error.message);
@@ -125,13 +108,21 @@ function ProdutosSolarPage() {
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-5">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-primary font-semibold">Moderação · 2P Solar</div>
-          <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Catálogo vindo do SAP e mantido na base do portal. Aqui você controla quais produtos
-            ficam ativos para o 2P Solar.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-primary font-semibold">Moderação · 2P Solar</div>
+            <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Catálogo vindo do SAP e mantido na base do portal. Aqui você controla quais produtos
+              ficam ativos para o 2P Solar.
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <Link to="/admin/moderacao/produtos/$unidade" params={{ unidade: "solar" }}>
+              <Package className="h-4 w-4 mr-2" />
+              Catálogo
+            </Link>
+          </Button>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
@@ -180,7 +171,6 @@ function ProdutosSolarPage() {
                   <th className="text-left px-4 py-3">Código (SKU)</th>
                   <th className="text-left px-4 py-3">Descrição</th>
                   <th className="text-left px-4 py-3">Tipo</th>
-                  <th className="text-right px-4 py-3">Preço sugerido (R$)</th>
                   <th className="text-center px-4 py-3">Ativo</th>
                 </tr>
               </thead>
@@ -190,18 +180,6 @@ function ProdutosSolarPage() {
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.codigo}</td>
                     <td className="px-4 py-3 font-medium">{p.descricao}</td>
                     <td className="px-4 py-3 text-muted-foreground">{p.tipo}</td>
-                    <td className="px-4 py-3 text-right">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className="h-8 w-32 ml-auto text-right"
-                        defaultValue={Number(p.preco_sugerido ?? 0) || ""}
-                        placeholder="0,00"
-                        onBlur={(e) => void salvarPreco(p, e.currentTarget.value)}
-                        aria-label={`Preço sugerido de ${p.codigo}`}
-                      />
-                    </td>
                     <td className="px-4 py-3 text-center">
                       <Switch checked={p.ativo} onCheckedChange={() => toggleAtivo(p)} aria-label="Ativar produto" />
                     </td>
@@ -209,7 +187,7 @@ function ProdutosSolarPage() {
                 ))}
                 {visiveis.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={4} className="px-4 py-10 text-center text-muted-foreground">
                       {isLoading ? "Carregando…" : "Nenhum produto encontrado."}
                     </td>
                   </tr>

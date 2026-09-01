@@ -77,13 +77,33 @@ function duracao(inicio: string, fim: string | null) {
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
+/** Produto do catálogo do portal (`sap_produtos`) usado pelos controles inline. */
+type ProdutoPortal = {
+  id: string;
+  visibilidade: string | null;
+  ativo: boolean;
+  ativo_override?: boolean | null;
+  origem?: string | null;
+  custo?: number | null;
+  ncm_id?: string | null;
+};
+
 function CatalogoSapCompleto({
+  unidade,
+  porCodigo,
   onPropagar,
   onEnviado,
+  onVisibilidade,
+  onOverride,
 }: {
+  unidade: UnidadeProdutos;
+  /** Espelho de `sap_produtos` por código, para editar sem sair do Catálogo. */
+  porCodigo: Map<string, ProdutoPortal>;
   onPropagar: () => void;
   /** Leva o usuário até o material recém-enviado na aba Produtos. */
   onEnviado: (codigo: string) => void;
+  onVisibilidade: (id: string, v: SapVisibilidade, p: ProdutoPortal) => void | Promise<void>;
+  onOverride: (id: string, override: boolean | null) => void;
 }) {
   const listAll = useServerFn(listSapCatalogoCompleto);
   const setNoPortal = useServerFn(setSapCatalogoNoPortal);
@@ -92,6 +112,10 @@ function CatalogoSapCompleto({
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [salvando, setSalvando] = useState<string | null>(null);
+  /** Destino aplicado ao enviar um material ao catálogo do portal. */
+  const [destino, setDestino] = useState<SapVisibilidade>(
+    unidade === "grupo2p" ? "nenhuma" : (unidade as SapVisibilidade),
+  );
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["sap-catalogo-completo"],
@@ -101,21 +125,22 @@ function CatalogoSapCompleto({
   const alternarCatalogo = async (codigo: string, no_catalogo: boolean) => {
     setSalvando(codigo);
     try {
-      await setNoPortal({ data: { codigo, no_catalogo } });
+      await setNoPortal({ data: { codigo, no_catalogo, ...(no_catalogo ? { visibilidade: destino } : {}) } });
       toast.success(
         no_catalogo
-          ? `${codigo} enviado ao catálogo do portal. Ele entra inativo e sem visibilidade — defina a instância abaixo.`
+          ? `${codigo} enviado ao catálogo do portal (${VIS_LABELS[destino]}). Ele entra inativo — ative aqui mesmo quando quiser liberar.`
           : `${codigo} removido do catálogo do portal.`,
       );
       await refetch();
       onPropagar();
-      if (no_catalogo) onEnviado(codigo);
+      if (no_catalogo && destino === "nenhuma") onEnviado(codigo);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao atualizar o catálogo.");
     } finally {
       setSalvando(null);
     }
   };
+
 
 
   const itens = data?.itens ?? [];
@@ -209,6 +234,22 @@ function CatalogoSapCompleto({
           </SelectContent>
         </Select>
 
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">Enviar para</span>
+          <Select value={destino} onValueChange={(v) => setDestino(v as SapVisibilidade)}>
+            <SelectTrigger className="w-44" aria-label="Destino do material ao enviar ao catálogo">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VISIBILIDADE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} aria-label="Atualizar catálogo completo">
           <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
         </Button>
@@ -223,6 +264,8 @@ function CatalogoSapCompleto({
               <th className="text-left px-3 py-2">Unidade</th>
               <th className="text-left px-3 py-2">NCM (SAP)</th>
               <th className="text-left px-3 py-2">No catálogo</th>
+              <th className="text-left px-3 py-2">Visibilidade</th>
+              <th className="text-left px-3 py-2">Ativo</th>
               <th className="text-left px-3 py-2">Sincronizado</th>
               <th className="text-right px-3 py-2">Ação</th>
             </tr>
@@ -230,19 +273,21 @@ function CatalogoSapCompleto({
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin inline" />
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+                <td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
 
                   Nenhum material. Clique em “Sinc. SAP” para importar o catálogo completo.
                 </td>
               </tr>
             ) : (
-              rows.map((i) => (
+              rows.map((i) => {
+                const p = porCodigo.get(i.codigo);
+                return (
                 <tr key={i.codigo} className="border-t border-border hover:bg-muted/30">
                   <td className="px-3 py-2 font-mono text-xs">{i.codigo}</td>
                   <td className="px-3 py-2">{i.descricao}</td>
@@ -250,6 +295,49 @@ function CatalogoSapCompleto({
                   <td className="px-3 py-2 font-mono text-xs">{i.ncm_codigo ?? "—"}</td>
                   <td className="px-3 py-2">
                     <Badge variant={i.no_catalogo ? "default" : "outline"}>{i.no_catalogo ? "Sim" : "Não"}</Badge>
+                  </td>
+                  <td className="px-3 py-2">
+                    {p ? (
+                      <Select
+                        value={p.visibilidade ?? "nenhuma"}
+                        onValueChange={(v) => void onVisibilidade(p.id, v as SapVisibilidade, p)}
+                      >
+                        <SelectTrigger className="h-8 w-[160px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VISIBILIDADE_OPTIONS.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
+                    {p ? (
+                      <div className="flex items-center gap-2">
+                        <Badge variant={p.ativo ? "default" : "outline"}>{p.ativo ? "Ativo" : "Inativo"}</Badge>
+                        <Select
+                          value={p.ativo_override === null || p.ativo_override === undefined ? "auto" : p.ativo_override ? "on" : "off"}
+                          onValueChange={(v) => onOverride(p.id, v === "auto" ? null : v === "on")}
+                        >
+                          <SelectTrigger className="h-7 w-[124px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Automático</SelectItem>
+                            <SelectItem value="on">Forçar ativo</SelectItem>
+                            <SelectItem value="off">Forçar inativo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{fmt(i.last_synced_at)}</td>
                   <td className="px-3 py-2 text-right">
@@ -261,7 +349,7 @@ function CatalogoSapCompleto({
                       title={
                         i.no_catalogo
                           ? "Remover do catálogo do portal"
-                          : "Enviar este material para o catálogo do portal (entra inativo)"
+                          : `Enviar este material para o catálogo do portal (${VIS_LABELS[destino]}, entra inativo)`
                       }
                     >
                       {salvando === i.codigo ? (
@@ -274,8 +362,10 @@ function CatalogoSapCompleto({
                     </Button>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
+
 
           </tbody>
         </table>
@@ -329,7 +419,8 @@ export function ProdutosGestao({ unidade }: { unidade: UnidadeProdutos }) {
   const [soDivergentes, setSoDivergentes] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [aba, setAba] = useState<"portal" | "sap">("portal");
+  // No Grupo 2P o moderador trabalha a partir do catálogo completo do SAP.
+  const [aba, setAba] = useState<"portal" | "sap">(unidade === "grupo2p" ? "sap" : "portal");
 
 
 
@@ -509,6 +600,23 @@ export function ProdutosGestao({ unidade }: { unidade: UnidadeProdutos }) {
   const current = Math.min(page, totalPages - 1);
   const rows = filtered.slice(current * pageSize, current * pageSize + pageSize);
   const lastRun = data?.lastRun ?? null;
+  /** Espelho do catálogo do portal por código, para os controles do Catálogo SAP. */
+  const porCodigo = useMemo(() => {
+    const m = new Map<string, ProdutoPortal>();
+    for (const p of data?.produtos ?? []) {
+      m.set(p.codigo, {
+        id: p.id,
+        visibilidade: p.visibilidade ?? null,
+        ativo: Boolean(p.ativo),
+        ativo_override: p.ativo_override ?? null,
+        origem: p.origem ?? null,
+        custo: p.custo ?? null,
+        ncm_id: p.ncm_id ?? null,
+      });
+    }
+    return m;
+  }, [data]);
+  const titulo = unidade === "grupo2p" ? "Todos os Produtos — Grupo 2P" : `Catálogo — ${UNIDADE_LABEL[unidade]}`;
 
 
   return (
@@ -518,7 +626,7 @@ export function ProdutosGestao({ unidade }: { unidade: UnidadeProdutos }) {
           <div>
             <h1 className="text-2xl font-semibold flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
-              Gestão de Produtos — {UNIDADE_LABEL[unidade]}
+              {titulo}
             </h1>
             <p className="text-sm text-muted-foreground">
               Catálogo espelhado do SAP (RFC listar_material). Controle aqui o que fica ativo e
@@ -706,7 +814,7 @@ export function ProdutosGestao({ unidade }: { unidade: UnidadeProdutos }) {
         <div className="flex items-center gap-1 border-b border-border">
           {([
             { id: "portal", label: "Catálogo do portal" },
-            { id: "sap", label: "Todos os produtos do SAP" },
+            { id: "sap", label: "Catálogo SAP (todos os materiais)" },
           ] as const).map((t) => (
             <button
               key={t.id}
@@ -1127,7 +1235,13 @@ export function ProdutosGestao({ unidade }: { unidade: UnidadeProdutos }) {
         </>
         ) : (
           <CatalogoSapCompleto
+            unidade={unidade}
+            porCodigo={porCodigo}
             onPropagar={propagar}
+            onVisibilidade={(id, v, p) => {
+              void alterarVisibilidade(id, v, { origem: p.origem ?? null, custo: p.custo ?? null, ncm_id: p.ncm_id ?? null });
+            }}
+            onOverride={(id, override) => overrideMut.mutate({ id, override })}
             onEnviado={(codigo) => {
               // Material entra inativo: sem isso ele sumia atrás do filtro
               // padrão "Ativos" e parecia que o envio não funcionou.

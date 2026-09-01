@@ -481,7 +481,16 @@ export const listSapCatalogoCompleto = createServerFn({ method: "GET" })
  */
 export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ codigo: z.string().min(1), no_catalogo: z.boolean() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        codigo: z.string().min(1),
+        no_catalogo: z.boolean(),
+        /** Destino escolhido pelo moderador ao enviar o material ao catálogo. */
+        visibilidade: z.enum(["nenhuma", "solar", "carregadores", "ambos"]).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, [
       { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
@@ -513,14 +522,36 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
       }
       const { data: existente } = await supabaseAdmin
         .from("sap_produtos")
-        .select("id")
+        .select("id, origem, custo, ncm_id, visibilidade")
         .eq("codigo", material.codigo)
         .maybeSingle();
+
+      // O moderador pode escolher o destino no próprio Catálogo; sem escolha,
+      // o material entra sem visibilidade (comportamento anterior).
+      const destino = data.visibilidade && data.visibilidade !== "nenhuma" ? data.visibilidade : null;
+
+      if (existente && data.visibilidade && (existente as any).visibilidade !== data.visibilidade) {
+        const { countOpenProposalsWithProduct } = await import("@/lib/product-visibility.server");
+        const propostasAbertas = await countOpenProposalsWithProduct((existente as any).id);
+        const bloqueio = validateVisibilidadeChange(data.visibilidade, {
+          origem: (existente as any).origem,
+          custo: Number((existente as any).custo ?? 0),
+          ncm_id: (existente as any).ncm_id,
+          propostasAbertas,
+        });
+        if (bloqueio) throw new Error(bloqueio);
+      }
+
 
       if (existente) {
         const { error } = await supabaseAdmin
           .from("sap_produtos")
-          .update({ descricao: material.descricao, ...(ncm ? { ncm_codigo: ncm } : {}), ...(ncmId ? { ncm_id: ncmId } : {}) })
+          .update({
+            descricao: material.descricao,
+            ...(ncm ? { ncm_codigo: ncm } : {}),
+            ...(ncmId ? { ncm_id: ncmId } : {}),
+            ...(data.visibilidade ? { visibilidade: destino } : {}),
+          })
           .eq("codigo", material.codigo);
         if (error) throw new Error(error.message);
       } else {
@@ -531,7 +562,7 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
           permissao: "Todos",
           origem: "sap",
           ativo: false,
-          visibilidade: null,
+          visibilidade: destino,
           last_synced_at: new Date().toISOString(),
           sap_raw: (material as any).sap_raw ?? null,
           ...(ncm ? { ncm_codigo: ncm } : {}),
