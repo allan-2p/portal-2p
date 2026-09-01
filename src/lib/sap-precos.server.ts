@@ -85,6 +85,12 @@ export type SimulacaoOpts = {
   filial?: string;
   /** Tipo de ordem (ZV2P / ZC2P / VBON). */
   tipoOv?: string;
+  /**
+   * CNPJ da empresa/revenda que compra (tag CNPJ_CI). Usado quando a simulação
+   * roda com o cliente fake da UF (faturamento ao cliente final não cadastrado
+   * no SAP): `<CNPJ>fake</CNPJ><CNPJ_CI>doc da revenda</CNPJ_CI>`.
+   */
+  empresaCnpj?: string;
 };
 
 function envelope(itens: SimulacaoItem[], opts: SimulacaoOpts) {
