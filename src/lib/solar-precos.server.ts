@@ -54,6 +54,8 @@ export async function precosSolar(
      * itens da proposta — o preço passa a ser VALOR_LIQUIDO + PIS + COFINS.
      */
     kitFotovoltaico?: boolean;
+    /** CNPJ da revenda (CNPJ_CI) quando a simulação usa o cliente fake da UF. */
+    empresaCnpj?: string;
     sugeridos?: Record<string, number>;
     /** Quando informado, cada tentativa no SAP entra na auditoria da proposta. */
     auditoria?: import("./proposta-auditoria.server").AuditoriaContexto & { etapa?: string };
