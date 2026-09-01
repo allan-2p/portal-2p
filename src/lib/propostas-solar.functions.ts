@@ -110,18 +110,21 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     const docFat = String(faturamento['doc'] ?? "").replace(/\D/g, "");
     if (!String(faturamento['nome'] ?? "").trim()) throw new Error("Informe o destinatário do faturamento.");
     if (docFat.length !== 11 && docFat.length !== 14) throw new Error("CNPJ/CPF do faturamento inválido.");
-    if (!faturamento['logradouro'] || !faturamento['cidade'] || !faturamento['uf'])
+    if (!faturamento['logradouro'] || !faturamento['cidade'])
       throw new Error("Informe o endereço de faturamento do cliente final.");
-    if (!finalidadeUso)
-      throw new Error("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
+    if (String(faturamento['uf'] ?? "").trim().length !== 2)
+      throw new Error("Informe a UF do endereço de faturamento do cliente final.");
     // Dígitos verificadores obrigatórios. CPF nunca é contribuinte e a
-    // finalidade é sempre Uso e Consumo; CNPJ contribuinte precisa de IE.
+    // finalidade é sempre Uso e Consumo (não se exige a seleção na tela);
+    // CNPJ contribuinte precisa de IE e continua exigindo a finalidade.
     if (docFat.length === 11) {
       if (!cpfValido(docFat)) throw new Error("CPF do faturamento inválido.");
       faturamento['contribuinte'] = false;
       finalidadeUso = "Uso e Consumo";
     } else {
       if (!cnpjValido(docFat)) throw new Error("CNPJ do faturamento inválido.");
+      if (!finalidadeUso)
+        throw new Error("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
       if (faturamento['contribuinte'] && !String(faturamento['ie'] ?? "").trim())
         throw new Error("Cliente final marcado como contribuinte: informe a inscrição estadual.");
     }
@@ -279,32 +282,43 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
     };
 
+    // Preço = impostos do parceiro faturado. Cliente final ainda não existe no
+    // SAP: simula com o cliente fake da UF do faturamento (mesma regra da
+    // precificação interativa), senão o SAP devolve "Não existe mestre de
+    // clientes para emissor ordem" e o salvamento trava.
+    const finalContribuinte = contribuinteDoFaturamento({
+      contribuinte: data.contribuinte,
+      faturarClienteFinal: data.faturarClienteFinal,
+      faturamento: data.faturamento as { contribuinte?: unknown; doc?: unknown },
+      clienteDoc: data.cliente.doc,
+    });
+    const { documentoSimulacaoComFake } = await import("./clientes-fakes.server");
+    const { documento: docSimulacao, empresaCnpj } = await documentoSimulacaoComFake({
+      faturarClienteFinal: data.faturarClienteFinal,
+      triangulacao: String(data.tipoNf ?? "").toLowerCase().startsWith("triangul"),
+      ufFaturamento: String(data.faturamento['uf'] ?? ""),
+      finalContribuinte,
+      documentoReal: documentoDaSimulacao({
+        faturarClienteFinal: data.faturarClienteFinal,
+        faturamento: data.faturamento as { doc?: unknown },
+        clienteDoc: data.cliente.doc,
+      }),
+      clienteDoc: String(data.cliente.doc ?? ""),
+    });
+
     const { precos, avisos, fallback } = await precosSolar(
       data.itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId)!;
         return { codigo: String(p.codigo), quantidade: i.qtd };
       }),
       {
-        // Preço = impostos do parceiro faturado (cliente final quando houver).
-        documento: documentoDaSimulacao({
-          faturarClienteFinal: data.faturarClienteFinal,
-          faturamento: data.faturamento as { doc?: unknown },
-          clienteDoc: data.cliente.doc,
-        }),
+        documento: docSimulacao,
+        ...(empresaCnpj ? { empresaCnpj } : {}),
         listaPreco: data.listaPreco,
-        tipoOv: tpOvDoPedido(
-          data.tipoNf,
-          contribuinteDoFaturamento({
-            contribuinte: data.contribuinte,
-            faturarClienteFinal: data.faturarClienteFinal,
-            faturamento: data.faturamento as { contribuinte?: unknown; doc?: unknown },
-            clienteDoc: data.cliente.doc,
-          }),
-
-        ),
+        tipoOv: tpOvDoPedido(data.tipoNf, finalContribuinte),
         kitFotovoltaico: data.ehKit,
         sugeridos,
-        auditoria: { ...auditCtx, etapa: "salvar" },
+        auditoria: { ...auditCtx, etapa: "salvar", doc: docSimulacao },
       },
     );
 

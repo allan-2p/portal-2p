@@ -1134,8 +1134,10 @@ function NovaPropostaSolarPage() {
   // base do ICMS) — e, portanto, o preço. Recalcula ao marcar/desmarcar e ao
   // alterar documento/contribuinte do faturamento, para o total da proposta
   // bater com a OV/NF e com a cobrança.
+  // A UF do faturamento entra na assinatura: ela define o cliente fake usado na
+  // simulação (imposto por estado), então trocá-la tem que reprecificar.
   const assinaturaFaturado = faturarClienteFinal
-    ? `1|${String(fat['doc'] ?? "").replace(/\D/g, "")}|${String(fat['contribuinte'] ?? "")}|${String(fat['ie'] ?? "").trim() ? 1 : 0}`
+    ? `1|${String(fat['doc'] ?? "").replace(/\D/g, "")}|${String(fat['contribuinte'] ?? "")}|${String(fat['ie'] ?? "").trim() ? 1 : 0}|${String(fat['uf'] ?? "").trim().toUpperCase()}`
     : "0";
   // Kit fotovoltaico entra na MESMA assinatura: marcar ou desmarcar o kit muda
   // o preço de TODOS os itens (isenção de ICMS/IPI), então tem que reprecificar

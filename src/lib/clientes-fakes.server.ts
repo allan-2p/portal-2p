@@ -40,3 +40,38 @@ export async function clienteFakeDaUf(uf: unknown): Promise<ClienteFake | null> 
     return null;
   }
 }
+
+/**
+ * Documento (e CNPJ_CI) usados para SIMULAR preço no SAP.
+ *
+ * Quando o pedido fatura o cliente final (que ainda não existe no SAP), a
+ * simulação usa o cliente fake da UF **preenchida no faturamento** — nunca a UF
+ * da revenda, porque o imposto depende do estado. Triangulação nunca usa fake.
+ */
+export async function documentoSimulacaoComFake(input: {
+  faturarClienteFinal: boolean;
+  triangulacao: boolean;
+  ufFaturamento: string;
+  finalContribuinte: boolean;
+  documentoReal: string;
+  clienteDoc: string;
+}): Promise<{ documento: string; empresaCnpj?: string }> {
+  const documento = input.documentoReal;
+  if (!input.faturarClienteFinal || input.triangulacao) return { documento };
+
+  const uf = String(input.ufFaturamento ?? "").trim().toUpperCase();
+  if (uf.length !== 2)
+    throw new Error("Informe a UF do endereço de faturamento do cliente final.");
+
+  const fake = await clienteFakeDaUf(uf);
+  if (!fake) return { documento };
+
+  const clienteDoc = String(input.clienteDoc ?? "").replace(/\D/g, "");
+  if (input.finalContribuinte && fake.cnpj)
+    return {
+      documento: fake.cnpj,
+      ...(clienteDoc.length > 11 ? { empresaCnpj: clienteDoc } : {}),
+    };
+  if (fake.cpf) return { documento: fake.cpf };
+  return { documento };
+}
