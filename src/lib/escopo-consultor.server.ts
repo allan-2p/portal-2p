@@ -21,14 +21,15 @@ export type EscopoDono = {
 
 const SEM_FILTRO: EscopoDono = { userId: null, sap: null, docs: null };
 
-async function meuSap(ctx: { supabase: any; userId: string }): Promise<string | null> {
+async function meuPerfil(ctx: { supabase: any; userId: string }): Promise<{ sap: string | null; nome: string | null }> {
   const { data } = await ctx.supabase
     .from("profiles")
-    .select("numero_sap")
+    .select("numero_sap, full_name")
     .eq("id", ctx.userId)
     .maybeSingle();
   const sap = String(data?.numero_sap ?? "").trim();
-  return sap || null;
+  const nome = String(data?.full_name ?? "").trim();
+  return { sap: sap || null, nome: nome || null };
 }
 
 export async function escopoDoConsultor(
@@ -37,16 +38,21 @@ export async function escopoDoConsultor(
   perm: ObjectPerm,
 ): Promise<EscopoDono> {
   if (perm.view_all) return SEM_FILTRO;
-  const sap = await meuSap(ctx);
+  const { sap, nome } = await meuPerfil(ctx);
   let docs: string[] = [];
   try {
     const db = await import("./clientes-db.server");
-    docs = await db.listarDocsDoConsultor(instancia, { donoId: ctx.userId, consultorSap: sap });
+    docs = await db.listarDocsDoConsultor(instancia, {
+      donoId: ctx.userId,
+      consultorSap: sap,
+      consultorNome: nome,
+    });
   } catch {
     docs = [];
   }
   return { userId: ctx.userId, sap, docs };
 }
+
 
 /** Aplica o escopo a um registro já carregado (proposta/pedido). */
 export function registroNoEscopo(row: Record<string, any>, escopo: EscopoDono): boolean {
