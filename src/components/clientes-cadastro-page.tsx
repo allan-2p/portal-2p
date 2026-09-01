@@ -135,7 +135,6 @@ export type Cliente = {
   consultor_solar_sap?: string | null;
   consultor_carregadores_nome?: string | null;
   consultor_carregadores_sap?: string | null;
-  escopo_org?: string | null;
   origem_cadastro?: string | null;
   origem?: string | null;
   sub_origem?: string | null;
