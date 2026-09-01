@@ -10,7 +10,7 @@ import { MessageSquarePlus, Sparkles, X, Radar, Trash2, Maximize2, History } fro
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { AtlasChat } from "./atlas-chat";
+import { AtlasChatLazy as AtlasChat } from "./atlas-chat-lazy";
 import { criarThreadFn, excluirThreadFn, listarThreadsFn } from "@/lib/atlas.functions";
 import { useAuth } from "@/hooks/use-auth";
 
