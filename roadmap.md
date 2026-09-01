@@ -79,4 +79,4 @@
 ## Precificação Solar (01/09)
 - [ ] Kit gerador: marcar/desmarcar deve reprecificar TODOS os itens (assinatura determinística)
 - [ ] Faturar ao cliente final: simular com o cliente fake da UF (`clientes_fakes`) + CNPJ_CI da revenda
-- [ ] Catálogo do portal: item 200000590 enviado ao portal não aparece; itens publicados devem permanecer no catálogo mesmo após novas sincronizações do SAP
+- [ ] Catálogo do portal: itens 200000590 e 200000142 enviados ao portal não aparecem; itens publicados devem permanecer no catálogo mesmo após novas sincronizações do SAP
