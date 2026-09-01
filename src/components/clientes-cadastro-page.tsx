@@ -1108,7 +1108,11 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               <DialogFooter>
                 <Button variant="outline" onClick={tentarFechar}>Cancelar</Button>
                 <Button onClick={tentarSalvar} disabled={salvar.isPending}>
-                  {salvar.isPending ? "Salvando…" : "Salvar cadastro"}
+                  {salvar.isPending
+                    ? "Salvando…"
+                    : modoAmpliacao
+                      ? "Concluir revisão da ampliação"
+                      : "Salvar cadastro"}
                 </Button>
               </DialogFooter>
             </>
