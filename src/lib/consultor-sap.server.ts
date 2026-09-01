@@ -96,6 +96,30 @@ export function consultorDoCadastro(cliente: Record<string, any> | null | undefi
   };
 }
 
+/** Prefixo das colunas de consultor por instância (supabase/external/clientes-consultor-por-instancia.sql). */
+export const prefixoConsultor = (instancia: "solar" | "carregadores") =>
+  instancia === "carregadores" ? "consultor_carregadores" : "consultor_solar";
+
+/**
+ * Consultor responsável pelo cadastro **nesta instância**.
+ *
+ * Cadastros com atuação Grupo 2P aparecem no Solar e em Carregadores e podem
+ * ter um vendedor diferente em cada unidade. Quando a unidade não tem
+ * responsável próprio, vale o par canônico (o mesmo enviado ao SAP).
+ */
+export function consultorDaInstancia(
+  cliente: Record<string, any> | null | undefined,
+  instancia: "solar" | "carregadores",
+) {
+  const p = prefixoConsultor(instancia);
+  const sap = codigo(cliente?.[`${p}_sap`]) || null;
+  const nome = String(cliente?.[`${p}_nome`] ?? "").trim() || null;
+  const id = (cliente?.[`${p}_id`] as string | null) || null;
+  if (sap || nome || id) return { sap, nome, id, proprio: true as const };
+  return { ...consultorDoCadastro(cliente), proprio: false as const };
+}
+
+
 /** Par canônico do cliente pelo documento — usado pelas propostas/OV. */
 export async function consultorDoClientePorDoc(
   doc: string,
