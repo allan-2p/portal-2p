@@ -1029,6 +1029,9 @@ function NovaPropostaSolarPage() {
                 doc: String(fat['doc'] ?? ""),
                 contribuinte:
                   String(fat['contribuinte'] ?? "") === "true" || Boolean(String(fat['ie'] ?? "").trim()),
+                // UF do faturamento: o servidor simula com o cliente fake dela,
+                // já que o cliente final não existe no cadastro do SAP.
+                uf: String(fat['uf'] ?? cliente?.['uf'] ?? ""),
               }
             : null,
         },
