@@ -317,6 +317,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [consultorImportado, setConsultorImportado] = useState<{ sap: string; nome: string } | null>(null);
   /** Cadastro com atuação Grupo 2P: o consultor é definido por unidade. */
   const [escopoGrupo, setEscopoGrupo] = useState(false);
+  /** Revisão obrigatória logo após ampliar a atuação para esta unidade. */
+  const [modoAmpliacao, setModoAmpliacao] = useState(false);
   const listarConsultores = useServerFn(listConsultoresFn);
   const consultoresQ = useQuery({
     queryKey: ["clientes-consultores", instancia],
