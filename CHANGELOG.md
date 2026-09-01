@@ -37,6 +37,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Navegação do Catálogo na Moderação corrigida**: abrir Catálogo ou Estoque de Solar, Carregadores e Grupo 2P agora monta a tela da unidade escolhida; antes a URL mudava, mas a Visão Geral da Moderação continuava ocupando a rota e impedia a página filha de carregar.
 - **Catálogo dentro da Gestão de Produtos**: em 2P Solar e 2P Carregadores o "Catálogo SAP" virou apenas **Catálogo** e passa a ficar dentro de Gestão de Produtos (com atalho no topo da tela). Nele o moderador controla visibilidade, ativo/inativo e a entrada de materiais no catálogo do portal, inclusive direto na lista completa do SAP.
 - **Grupo 2P > Todos os Produtos** (antes "Gestão de Produtos"): abre na lista completa do SAP e o moderador escolhe o destino do material ao enviá-lo (2P Solar, 2P Carregadores, Grupo 2P ou sem visibilidade), mantendo as travas de produtos usados em propostas em aberto.
 - **Solar sem preço sugerido**: a coluna de preço sugerido saiu da Gestão de Produtos do 2P Solar — o preço do Solar vem sempre da simulação do SAP.
