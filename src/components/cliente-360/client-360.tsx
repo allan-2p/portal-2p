@@ -544,75 +544,109 @@ function VisaoGeral({
               </div>
             </div>
 
-            <div className="space-y-4">
+            {/* Filtro por etapa do funil */}
+            <div className="flex flex-wrap gap-1.5 mb-3 text-xs">
+              <button
+                onClick={() => setEtapaFiltro("todas")}
+                className={`px-2.5 py-1 rounded-md border transition-colors ${
+                  etapaFiltro === "todas"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Todas
+                <span className="ml-1.5 text-[10px] opacity-70">{oportunidadesAbertas.length}</span>
+              </button>
               {grupos.map((g) => (
-                <section key={g.etapa} className="rounded-xl border border-border bg-background/30 overflow-hidden">
-                  <header className="flex items-center gap-2 px-3 py-2 bg-muted/40">
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />
-                    <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-wider">
-                      {g.etapa}
-                    </span>
-                    <span className="shrink-0 rounded-full bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                      {g.itens.length}
-                    </span>
-                    <span className="shrink-0 text-xs font-semibold tabular-nums">{fmt(g.total)}</span>
-                  </header>
-                  {/* Participação da etapa no funil — leitura instantânea de onde está o dinheiro. */}
-                  <div className="h-1 w-full bg-muted">
-                    <div
-                      className="h-full bg-primary"
-                      style={{ width: `${maiorEtapa > 0 ? Math.max(2, (g.total / maiorEtapa) * 100) : 2}%` }}
-                    />
-                  </div>
-                  <ul className="divide-y divide-border/60">
-                    {g.itens.map((o: any) => {
-                      const dias = o.createdDate
-                        ? Math.floor((Date.now() - new Date(o.createdDate).getTime()) / 86_400_000)
-                        : null;
-                      return (
-                        <li
-                          key={o.id}
-                          className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 hover:bg-muted/40"
-                        >
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-medium">{o.name}</div>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
-                              <span className="tabular-nums">{date(o.createdDate)}</span>
-                              {dias !== null && (
-                                <span
-                                  className={`rounded-full px-1.5 py-0.5 ${
-                                    dias > 180
-                                      ? "bg-destructive/10 text-destructive"
-                                      : dias > 60
-                                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                                        : "bg-muted text-muted-foreground"
-                                  }`}
-                                >
-                                  {dias === 0 ? "hoje" : `há ${dias} dia${dias > 1 ? "s" : ""}`}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="shrink-0 text-right">
-                            {o.amount ? (
-                              <span className="text-sm font-semibold tabular-nums">{fmt(o.amount)}</span>
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground">sem valor</span>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
+                <button
+                  key={g.etapa}
+                  onClick={() => setEtapaFiltro(g.etapa)}
+                  className={`px-2.5 py-1 rounded-md border transition-colors ${
+                    etapaFiltro === g.etapa
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {g.etapa}
+                  <span className="ml-1.5 text-[10px] opacity-70">{g.itens.length}</span>
+                </button>
               ))}
             </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-border pt-2 text-xs">
-              <span className="text-muted-foreground">
-                {oportunidadesAbertas.length} proposta(s) em aberto
-              </span>
-              <span className="font-semibold tabular-nums">{fmt(totalFunil)}</span>
+            {/* Tabela do funil: datas e valores em colunas alinhadas. */}
+            <div className="rounded-xl border border-border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40">
+                    <th className="text-left px-3 py-2 font-medium">Proposta</th>
+                    <th className="text-left px-3 py-2 font-medium">Etapa</th>
+                    <th className="text-left px-3 py-2 font-medium whitespace-nowrap">Criada em</th>
+                    <th className="text-right px-3 py-2 font-medium whitespace-nowrap">Em aberto</th>
+                    <th className="text-right px-3 py-2 font-medium">Valor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {linhas.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                        Nenhuma proposta nesta etapa.
+                      </td>
+                    </tr>
+                  )}
+                  {linhas.map((o: any) => {
+                    const etapa = String(o.stage ?? "").trim() || "Sem etapa";
+                    const dias = o.createdDate
+                      ? Math.floor((Date.now() - new Date(o.createdDate).getTime()) / 86_400_000)
+                      : null;
+                    return (
+                      <tr key={o.id} className="hover:bg-muted/40">
+                        <td className="px-3 py-2">
+                          <div className="max-w-[260px] truncate font-medium">{o.name}</div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                            <span className="max-w-[160px] truncate">{etapa}</span>
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+                          {date(o.createdDate)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {dias !== null && (
+                            <span
+                              className={`text-xs tabular-nums whitespace-nowrap ${
+                                dias > 180
+                                  ? "text-destructive font-medium"
+                                  : dias > 60
+                                    ? "text-amber-600 dark:text-amber-400"
+                                    : "text-muted-foreground"
+                              }`}
+                            >
+                              {dias === 0 ? "hoje" : `${dias} dia${dias > 1 ? "s" : ""}`}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {o.amount ? (
+                            <span className="font-semibold tabular-nums">{fmt(o.amount)}</span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">sem valor</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-border bg-muted/30 text-xs">
+                    <td className="px-3 py-2 font-medium" colSpan={4}>
+                      {linhas.length} proposta(s){etapaFiltro === "todas" ? " em aberto" : ` em "${etapaFiltro}"`}
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold tabular-nums">{fmt(totalLinhas)}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </>
         )}
