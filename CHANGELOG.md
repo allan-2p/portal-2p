@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Home reorganizada**: o card Atlas Radar saiu da home (o Radar continua em Atlas IA); os Orçamentos subiram para a seção "Operação do dia · Tarefas & Orçamentos", ao lado da Agenda, e no lugar deles entrou o card "Ranking de clientes" (em configuração, com conteúdo embaçado até ser ligado).
+- **Funil do cliente em formato de tabela**: o funil da visão geral do Perfil do Cliente deixou os blocos por etapa e virou uma tabela (Proposta, Etapa, Criada em, Em aberto, Valor) com filtro por etapa, mais recentes primeiro e total no rodapé.
 - **Proposta com faturamento ao cliente final volta a salvar**: a revalidação de preços no salvamento simulava com o documento real do cliente final (que só é cadastrado no SAP no fechamento), o SAP recusava a precificação e o pedido travava. Agora salvar usa a mesma regra da tela — cliente fake da UF informada no faturamento, com a revenda no envelope quando o cliente final é CNPJ com IE. Triangulação continua sem fake.
 - **UF do faturamento manda no imposto simulado**: a simulação nunca mais cai para a UF da revenda; se a UF do cliente final estiver em branco, o portal pede a UF em vez de precificar com o estado errado, e trocar a UF no wizard reprecifica na hora.
 - **CPF do cliente final não pede mais finalidade de uso**: para CPF a finalidade é sempre "Uso e Consumo" e é aplicada automaticamente; a exigência de seleção continua apenas para CNPJ.

@@ -7,6 +7,9 @@
 ## Entrega
 - [x] Ampliação de atuação: revisão obrigatória do cadastro + escolha do consultor da nova unidade.
 - [x] Data de entrega editável mesmo após o pedido marcado como Entregue (mesmo perfil que edita a estimativa).
+- [x] Funil do cliente (perfil 360): tabela com filtro por etapa e datas em colunas.
+- [x] Home: Atlas Radar removido; Orçamentos subiram para a seção de tarefas; Ranking de clientes (em configuração, com blur) no lugar.
+- [ ] Publicar para aplicar na versão publicada: tabela de Segmentação preenchendo a largura e demais mudanças recentes.
 
 ## Concluído neste turno
 - [x] Tipo de NF obrigatório em solar e carregadores (front + back)
@@ -94,3 +97,8 @@
 - [x] Clientes Grupo 2P: consultor separado por unidade (Solar e Carregadores)
 - Catálogo: inativar 200000015 e ativar 200000657 (parafuso M8*25) — feito
 - Cupons: remover exclusão de cupom (só ativar/desativar) — feito
+
+## Segmentação e funil (01/09)
+- [x] Reverter ampliação de teste da DGA Energia (escopo voltou a somente Solar)
+- [ ] Segmentação: tabela deve preencher toda a largura do card (sem espaço em branco à direita)
+- [ ] Funil do cliente (perfil 360): visual de tabela, datas melhor organizadas e filtro por etapa

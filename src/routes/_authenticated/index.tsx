@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
-import { AtlasRadarCard } from "@/components/atlas/atlas-radar-card";
 import { AppLayout } from "@/components/app-layout";
 import { ViewSlot } from "@/components/view-slot";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -12,7 +11,7 @@ import {
   ArrowDownRight, ArrowUpRight, Sparkles, Target, AlertTriangle, Clock,
   TrendingUp, CheckCircle2, Calendar, Info, ChevronDown,
   FileText, CalendarClock, Loader2,
-  CalendarIcon, MessageSquare, Check, Plus, ArrowUpDown, CalendarPlus,
+  CalendarIcon, MessageSquare, Check, Plus, ArrowUpDown, CalendarPlus, Trophy,
 } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
@@ -996,12 +995,12 @@ function HomePage() {
           <div className="flex items-end justify-between mb-3">
             <div>
               <h2 className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-semibold">Operação do dia</h2>
-              <h3 className="font-display font-bold text-xl mt-1">Tarefas & Sugestões</h3>
+              <h3 className="font-display font-bold text-xl mt-1">Tarefas & Orçamentos</h3>
             </div>
           </div>
         </div>
 
-        {/* Agenda + Atlas Radar */}
+        {/* Agenda + Orçamentos */}
         <div className="grid lg:grid-cols-2 gap-4">
           <div className="glass rounded-2xl p-5">
             <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
@@ -1266,20 +1265,6 @@ function HomePage() {
 
           </div>
 
-          <AtlasRadarCard />
-        </div>
-
-        {/* Seção: Pipeline */}
-        <div>
-          <div className="flex items-end justify-between mb-3">
-            <div>
-              <h2 className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-semibold">Pipeline comercial</h2>
-              <h3 className="font-display font-bold text-xl mt-1">Orçamentos & Previsões de Fechamento</h3>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-4">
           {/* Orçamentos */}
           <div className="glass rounded-2xl p-5">
             <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
@@ -1363,6 +1348,49 @@ function HomePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Seção: Pipeline */}
+        <div>
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <h2 className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-semibold">Pipeline comercial</h2>
+              <h3 className="font-display font-bold text-xl mt-1">Clientes & Previsões de Fechamento</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-4">
+          {/* Ranking de clientes — em configuração */}
+          <div className="glass rounded-2xl p-5 relative overflow-hidden">
+            <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
+              <div>
+                <h3 className="font-display font-semibold flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-primary" /> Ranking de clientes
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Maiores clientes do período</p>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="space-y-2 blur-md select-none pointer-events-none" aria-hidden>
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-surface">
+                    <span className="h-7 w-7 shrink-0 rounded-full bg-surface-2" />
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <div className="h-3 w-2/3 rounded bg-surface-2" />
+                      <div className="h-2.5 w-1/3 rounded bg-surface-2" />
+                    </div>
+                    <div className="h-3.5 w-16 shrink-0 rounded bg-surface-2" />
+                  </div>
+                ))}
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xs font-medium text-muted-foreground bg-surface/80 border border-border rounded-full px-3 py-1.5 backdrop-blur-sm">
+                  Em configuração
+                </span>
+              </div>
             </div>
           </div>
 
