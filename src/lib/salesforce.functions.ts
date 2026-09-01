@@ -387,8 +387,10 @@ export const createSalesforceTask = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data, context }) => {
-    const body = buildTaskBody({ status: "Open", ...data });
+    const ownerId = await resolveNewTaskOwner(context.supabase, context.userId, data);
+    const body = buildTaskBody({ status: "Open", ...data, ownerId });
     const res = await postTaskWithDefaults(body);
+
     const { auditIntegration } = await import("@/lib/audit.server");
     void auditIntegration(context.userId, "salesforce", "criou tarefa", data.subject);
     return { id: res?.id ?? null };
