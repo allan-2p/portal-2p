@@ -22,11 +22,32 @@ function instrucoes(hoje: string, contexto: string): string {
     "Use as ferramentas para buscar dados reais antes de afirmar qualquer número — nunca invente valores.",
     "Quando o usuário pedir insights ou plano de ação, entregue: (1) diagnóstico curto com números, (2) 3 a 5 ações objetivas com prazo sugerido, (3) risco principal.",
     "Se os dados forem insuficientes, diga o que falta em vez de estimar.",
+    "Aceite perguntas abertas e conversa livre: se a pergunta não exigir dados, responda como um consultor comercial experiente (argumentação de venda, negociação, follow-up, objeções).",
+    "Se a pergunta estiver fora do que você consegue consultar, explique em uma linha o que você tem hoje (clientes, pedidos/propostas, metas e alertas do radar) e siga ajudando com o que dá.",
     "Valores em reais no formato brasileiro. Nunca exponha IDs internos, tokens ou detalhes técnicos.",
     contexto ? `Contexto da tela em que o usuário está: ${contexto}` : "",
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+/**
+ * Conversas interrompidas podem ter ficado com uma chamada de ferramenta sem
+ * resultado salvo — isso quebra as próximas requisições
+ * (AI_MissingToolResultsError). Removemos essas partes do histórico.
+ */
+function sanearHistorico(messages: UIMessage[]): UIMessage[] {
+  return messages
+    .map((m) => {
+      const parts = (m.parts ?? []).filter((p) => {
+        const tipo = String((p as { type?: string }).type ?? "");
+        if (!tipo.startsWith("tool-") && tipo !== "dynamic-tool") return true;
+        const estado = String((p as { state?: string }).state ?? "");
+        return estado === "output-available" || estado === "output-error";
+      });
+      return { ...m, parts } as UIMessage;
+    })
+    .filter((m) => (m.parts ?? []).length > 0);
 }
 
 function ferramentas(ctx: AtlasCtx) {
@@ -211,13 +232,29 @@ export const Route = createFileRoute("/api/atlas-chat")({
         // A conversa precisa ser do usuário (RLS garante, mas falhamos cedo).
         const { data: thread } = await ctx.supabase
           .from("atlas_threads")
-          .select("id")
+          .select("id, titulo")
           .eq("id", threadId)
           .maybeSingle();
         if (!thread) return new Response("Conversa não encontrada.", { status: 404 });
 
+        const ultima = messages[messages.length - 1] as UIMessage;
         const { salvarMensagem } = await import("@/lib/atlas-mensagens.server");
-        await salvarMensagem(ctx, threadId, messages[messages.length - 1] as UIMessage);
+        await salvarMensagem(ctx, threadId, ultima);
+
+        // Primeira pergunta vira o título da conversa.
+        if (!thread.titulo || thread.titulo === "Nova conversa") {
+          const texto = (ultima?.parts ?? [])
+            .filter((p): p is { type: "text"; text: string } => p.type === "text")
+            .map((p) => p.text)
+            .join(" ")
+            .trim();
+          if (texto) {
+            await ctx.supabase
+              .from("atlas_threads")
+              .update({ titulo: texto.slice(0, 60) })
+              .eq("id", threadId);
+          }
+        }
 
         const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
         const gateway = createLovableAiGatewayProvider(key);
@@ -226,7 +263,9 @@ export const Route = createFileRoute("/api/atlas-chat")({
           const result = streamText({
             model: gateway(ATLAS_MODEL),
             system: instrucoes(hoje, String(body.contexto ?? "")),
-            messages: await convertToModelMessages(messages),
+            messages: await convertToModelMessages(sanearHistorico(messages), {
+              ignoreIncompleteToolCalls: true,
+            }),
             tools: ferramentas(ctx),
             stopWhen: stepCountIs(8),
           });

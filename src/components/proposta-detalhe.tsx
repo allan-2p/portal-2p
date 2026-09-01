@@ -472,11 +472,17 @@ export function PropostaDetalheDialog({
                   </Button>
                 </>
               )}
-              {id && !somenteLeitura && (
+              {/* Só liberamos a edição depois de saber a instância da proposta:
+                  abrir antes mandaria um pedido de Carregadores para o wizard
+                  de Solar (e vice-versa). */}
+              {id && !somenteLeitura && !dq.data && (
+                <Button size="sm" className="gap-2" disabled>
+                  <Pencil className="h-4 w-4" /> Editar
+                </Button>
+              )}
+              {id && !somenteLeitura && !!dq.data && (
                 <Button size="sm" className="gap-2" asChild>
-                  {/* A edição precisa abrir o checkout da própria instância da
-                      proposta — Solar não pode cair no wizard de Carregadores. */}
-                  {String((dq.data as Record<string, any> | null | undefined)?.['organizacao'] ?? "solar") === "solar" ? (
+                  {String((dq.data as Record<string, any>)['organizacao'] ?? "solar") === "solar" ? (
                     <Link to="/solar/propostas/nova" search={{ id }}>
                       <Pencil className="h-4 w-4" /> Editar
                     </Link>

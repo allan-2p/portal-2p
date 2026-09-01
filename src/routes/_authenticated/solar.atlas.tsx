@@ -83,6 +83,17 @@ function AtlasPage() {
       <div className="flex h-[calc(100vh-8rem)] gap-4">
         {/* Conversas */}
         <aside className="hidden w-64 shrink-0 flex-col rounded-2xl border border-border bg-card lg:flex">
+          <div className="border-b border-border p-3 text-[11px] leading-relaxed text-muted-foreground">
+            <div className="mb-1.5 font-semibold text-foreground">O que o Atlas consulta hoje</div>
+            <ul className="space-y-1.5">
+              {CAPACIDADES.map((c) => (
+                <li key={c.titulo}>
+                  <span className="text-foreground">{c.titulo}</span> — {c.detalhe}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2">Sempre dentro da sua carteira e das suas permissões.</p>
+          </div>
           <div className="flex items-center gap-2 border-b border-border p-3">
             <Button
               size="sm"
@@ -127,17 +138,6 @@ function AtlasPage() {
                 </button>
               </div>
             ))}
-          </div>
-          <div className="border-t border-border p-3 text-[11px] leading-relaxed text-muted-foreground">
-            <div className="mb-1.5 font-semibold text-foreground">O que o Atlas consulta hoje</div>
-            <ul className="space-y-1.5">
-              {CAPACIDADES.map((c) => (
-                <li key={c.titulo}>
-                  <span className="text-foreground">{c.titulo}</span> — {c.detalhe}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2">Sempre dentro da sua carteira e das suas permissões.</p>
           </div>
         </aside>
 
