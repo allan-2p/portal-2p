@@ -1579,7 +1579,14 @@ function NovaPropostaSolarPage() {
                 }
               : {}),
           },
-          itens: itens.map((i) => ({ produtoId: i.produtoId, qtd: i.qtd })),
+          // Envia também o código SAP: se a tela não conseguiu casar o item com
+          // o catálogo (catálogo ainda carregando, SKU comercial), o servidor
+          // resolve pelo código em vez de recusar a proposta.
+          itens: itens.map((i) => ({
+            produtoId: i.produtoId,
+            codigo: normCod(produtos.find((p) => p.id === i.produtoId)?.codigo ?? i.avulso?.codigo ?? ""),
+            qtd: i.qtd,
+          })),
         },
       });
       setPropostaId(r.id);
