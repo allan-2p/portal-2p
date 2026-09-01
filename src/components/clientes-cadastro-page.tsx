@@ -316,6 +316,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   // Consultor responsável pelo cadastro — par canônico consultor_sap + consultor_nome.
   const [consultorSap, setConsultorSap] = useState<string | null>(null);
   const [consultorImportado, setConsultorImportado] = useState<{ sap: string; nome: string } | null>(null);
+  /** Cadastro com atuação Grupo 2P: o consultor é definido por unidade. */
+  const [escopoGrupo, setEscopoGrupo] = useState(false);
   const listarConsultores = useServerFn(listConsultoresFn);
   const consultoresQ = useQuery({
     queryKey: ["clientes-consultores", instancia],
@@ -531,6 +533,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     setOpen(false); setEditId(null); setForm(vazio()); setTentouSalvar(false);
     setConsultorSap(consultoresQ.data?.eu.sap ?? null);
     setConsultorImportado(null);
+    setEscopoGrupo(false);
     setEtapa("documento"); setDocBusca(""); setDocErro(null); setDuplicado([]);
     setFontes([]); setAvisos([]);
   }
@@ -562,6 +565,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
       : undefined;
     const casado = porCodigo ?? porNome;
     const consultor = casado?.sap ?? (sapCliente || null) ?? consultoresQ.data?.eu.sap ?? null;
+    setEscopoGrupo(String(c.escopo_org ?? "").toLowerCase() === "grupo");
     setConsultorImportado(
       !casado && (sapCliente || nomeCliente)
         ? { sap: sapCliente || nomeCliente, nome: nomeCliente || sapCliente }
@@ -899,7 +903,16 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                   </Section>
 
                   <Section title="Dados comerciais">
-                    <F label="Consultor *" id="campo-consultor" error={erros.consultor}>
+                    <F
+                      label={escopoGrupo ? `Consultor * (${ORGANIZACAO[instancia]})` : "Consultor *"}
+                      id="campo-consultor"
+                      error={erros.consultor}
+                      hint={
+                        escopoGrupo
+                          ? "Cadastro Grupo 2P: cada unidade tem seu próprio consultor. O vendedor principal do SAP é o da unidade de origem."
+                          : undefined
+                      }
+                    >
                       {/* Quem não é vendedor/consultor do portal nunca vira o
                           responsável: precisa escolher um vendedor. */}
                       {consultoresQ.data?.podeEscolher || consultoresQ.data?.souConsultor === false ? (
