@@ -1212,13 +1212,10 @@ export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
     if (!validId(accountId)) throw new Error("accountId inválido");
     await assertAccountAccess(context.supabase, context.userId, accountId);
     const taskSoql =
-      `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Owner.Name ` +
-      `FROM Task WHERE WhatId = '${esc(accountId)}' ` +
-      `ORDER BY ActivityDate DESC NULLS LAST LIMIT 200`;
-    const taskSoql2 =
       `SELECT Id, Subject, Status, Priority, ActivityDate, Description, Type, ` +
       `OwnerId, Owner.Name, WhoId, Who.Name FROM Task WHERE WhatId = '${esc(accountId)}' ` +
       `ORDER BY ActivityDate DESC NULLS LAST LIMIT 200`;
+
     const eventSoql =
       `SELECT Id, Subject, ActivityDate, Description, OwnerId, Owner.Name, WhoId, Who.Name ` +
       `FROM Event WHERE WhatId = '${esc(accountId)}' ` +
