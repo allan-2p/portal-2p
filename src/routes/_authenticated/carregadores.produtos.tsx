@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
