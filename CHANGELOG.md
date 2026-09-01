@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- Perfil do cliente: tarefas abrem com detalhes e ações (Concluir, Registrar interação, Reagendar), iguais às da home; funil agrupado por etapa com data de criação; coluna "Status do pedido" nas tabelas de propostas.
+- Tarefas antigas do usuário de integração reatribuídas ao dono da conta (13 registros).
 
 - Atualização do frontend após salvar pedido: listagem, detalhe e variações são revalidados juntos (`src/lib/propostas-cache.ts`); o detalhe do pedido sempre recarrega ao abrir, então a edição já aparece sem recarregar a página.
 - Reprocessamento de tarefas antigas do Salesforce: botão "Reatribuir tarefas do portal" em Admin > Integrações transfere as tarefas presas no usuário de integração para o vendedor dono da conta, fazendo-as aparecer na home e nas Tarefas diárias.
