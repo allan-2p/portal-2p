@@ -53,9 +53,7 @@ import {
   Circle,
   CalendarClock,
   Smartphone,
-  Clock,
   BarChart3,
-  ShieldCheck,
   Hash,
   Save,
   Plus,
@@ -74,7 +72,7 @@ type TabKey = "visao" | "negocios" | "casos" | "campo" | "financeiro" | "atlas";
 
 const TABS: Array<{ key: TabKey; label: string; icon: typeof Users }> = [
   { key: "visao", label: "Visão geral", icon: BarChart3 },
-  { key: "negocios", label: "Propostas & pedidos", icon: Briefcase },
+  { key: "negocios", label: "Propostas", icon: Briefcase },
   { key: "casos", label: "Casos", icon: LifeBuoy },
   { key: "campo", label: "Visitas & treinamentos", icon: MapPin },
   { key: "financeiro", label: "Financeiro", icon: Wallet },
@@ -170,7 +168,7 @@ export function Client360({
           {tab === "visao" && (
             <div className="space-y-4">
               {temSf && <AtlasPanelTab account={account} />}
-              <VisaoGeral account={account} history={history} data={d} loading={dossieQ.isLoading} />
+              <VisaoGeral data={d} loading={dossieQ.isLoading} />
             </div>
           )}
           {tab === "negocios" && (
@@ -475,79 +473,46 @@ const ETAPA_FECHADA = /conclu|ganh|perd|cancel/i;
 /* ------------------------------------------------------------- Visão geral */
 
 function VisaoGeral({
-  account,
-  history,
   data,
   loading,
 }: {
-  account: SalesforceAccount;
-  history: any;
   data: any;
   loading: boolean;
 }) {
-  // Funil = só o que ainda está em aberto (fora concluído/perdido/cancelado).
-  const funilAberto = ((history?.stages ?? []) as any[]).filter(
-    (s) => !ETAPA_FECHADA.test(String(s.stage ?? "")),
+  // Funil = oportunidades que ainda estão em aberto (fora concluído/perdido/cancelado).
+  const oportunidadesAbertas = ((data?.opportunities ?? []) as any[]).filter(
+    (o) => !o.isClosed && !ETAPA_FECHADA.test(String(o.stage ?? "")),
   );
+  const totalFunil = oportunidadesAbertas.reduce((s: number, o: any) => s + (o.amount || 0), 0);
 
   return (
     <div className="space-y-4">
-
-
-
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card title="Funil do cliente · propostas em aberto" icon={Briefcase}>
-          {funilAberto.length === 0 ? (
-            <Empty>Nenhuma proposta em aberto para este cliente.</Empty>
-          ) : (
-            <ul className="space-y-2">
-              {funilAberto.map((s: any) => (
-                <li key={s.stage} className="flex items-center gap-2 text-sm">
-                  <span className="truncate flex-1">{s.stage}</span>
-                  <span className="text-xs text-muted-foreground tabular-nums">{s.count}</span>
-                  <span className="tabular-nums text-xs font-medium">{fmt(s.total)}</span>
+      <Card title="Funil do cliente · propostas em aberto" icon={Briefcase}>
+        {loading ? (
+          <Empty>Carregando…</Empty>
+        ) : oportunidadesAbertas.length === 0 ? (
+          <Empty>Nenhuma proposta em aberto para este cliente.</Empty>
+        ) : (
+          <>
+            <ul className="space-y-1.5">
+              {oportunidadesAbertas.map((o: any) => (
+                <li key={o.id} className="flex items-center gap-2 text-sm">
+                  <span className="truncate flex-1">{o.name}</span>
+                  <span className="text-[11px] text-muted-foreground shrink-0">{o.stage}</span>
+                  <span className="tabular-nums font-medium shrink-0">{fmt(o.amount)}</span>
                 </li>
               ))}
             </ul>
-          )}
-        </Card>
-
-        <Card title="Sinais rápidos" icon={ShieldCheck}>
-          {loading ? (
-            <Empty>Carregando…</Empty>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              <Signal
-                label="Casos abertos"
-                value={String((data?.cases ?? []).filter((c: any) => !c.closedDate).length)}
-              />
-              <Signal label="Visitas registradas" value={String((data?.visitas ?? []).length)} />
-              <Signal label="Treinamentos" value={String((data?.treinamentos ?? []).length)} />
-              <Signal
-                label="Crédito aprovado"
-                value={fmt(
-                  Math.max(0, ...((data?.creditos ?? []).map((c: any) => c.creditoAprovado ?? 0) as number[]), 0),
-                )}
-              />
-              <Signal label="Contatos-chave" value={account.tubos.length ? account.tubos.join(", ") : "—"} />
-            </ul>
-          )}
-        </Card>
-      </div>
-
+            <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs">
+              <span className="text-muted-foreground">
+                {oportunidadesAbertas.length} proposta(s) em aberto
+              </span>
+              <span className="font-semibold tabular-nums">{fmt(totalFunil)}</span>
+            </div>
+          </>
+        )}
+      </Card>
     </div>
-  );
-}
-
-
-
-function Signal({ label, value }: { label: string; value: string }) {
-  return (
-    <li className="flex items-center justify-between gap-2">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium tabular-nums truncate">{value}</span>
-    </li>
   );
 }
 
@@ -996,21 +961,6 @@ function FinanceiroPanel({
         )}
       </Card>
 
-      <Card title="Pedidos em aberto" icon={Clock}>
-        {emAberto.length === 0 ? (
-          <Empty>Nada em aberto no momento.</Empty>
-        ) : (
-          <ul className="space-y-1.5">
-            {emAberto.map((o: any) => (
-              <li key={o.id} className="flex items-center gap-2 text-sm">
-                <span className="truncate flex-1">{o.name}</span>
-                <span className="text-[11px] text-muted-foreground">{o.stage}</span>
-                <span className="tabular-nums font-medium">{fmt(o.amount)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
     </div>
   );
 }

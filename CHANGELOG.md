@@ -34,6 +34,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Atlas em tela cheia**: `/solar/atlas` deixou de ser aviso "em breve" e passou a ser o chat completo (perguntas abertas, lista de conversas, painel do que ele consulta). O chat agora mostra em tempo real quais dados está consultando.
+- **Atlas Radar na home**: o card "em breve" foi substituído pelos alertas abertos de clientes em piora, com link para o radar.
+- **Perfil do cliente**: "Propostas & pedidos" virou "Propostas"; a Visão geral lista as oportunidades em aberto (nome, etapa e valor) e perdeu o bloco "Sinais rápidos"; o bloco "Pedidos em aberto" saiu da aba Financeiro.
 - **Viewer de Carregadores enxerga todos os pedidos**: o perfil **Viewer | 2P Carregadores** ganhou leitura total (View All Records, somente leitura) em Propostas, Pedidos e Contas da unidade Carregadores — antes a Visão Geral aparecia vazia porque o escopo de consultor filtrava tudo. O menu também deixa de exibir a **Home** quando o perfil define outra página inicial na unidade.
 - **Acesso restrito por perfil Viewer**: o perfil **Viewer | 2P Carregadores** passa a definir a página inicial do usuário — quem tem esse perfil entra direto em Carregadores → Visão Geral. O usuário Rodrigo Sanches teve o acesso direto à unidade Solar removido e fica restrito a Carregadores (apenas a tela Visão Geral liberada).
 - **Visão Geral de Carregadores vira tela com permissão própria**: nova feature `carregadores.visao-geral` (somente visualizar) na matriz de permissões — o item do menu e a rota `/carregadores/visao-geral` só aparecem para quem tem a tela liberada. Incluída nos perfis padrão de Carregadores (Vendedor/Gestor/Administrativo) e no perfil **Viewer | 2P Carregadores**.
