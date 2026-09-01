@@ -1197,7 +1197,12 @@ export type SalesforceActivity = {
   priority: string | null;
   description: string | null;
   owner: string | null;
+  ownerId: string | null;
+  type: string | null;
+  who: string | null;
+  whoId: string | null;
 };
+
 
 export const getSalesforceAccountActivities = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
