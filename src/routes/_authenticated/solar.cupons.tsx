@@ -805,25 +805,6 @@ function CuponsPage() {
           </div>
         </div>
 
-        <AlertDialog open={!!excluindo} onOpenChange={(v) => !v && setExcluindo(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir cupom {excluindo?.codigo}?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação não pode ser desfeita. O código ficará disponível para uso novamente.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => excluindo && handleDelete(excluindo)}
-              >
-                Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
 
         <CupomHistoricoDialog
           cupomId={historico?.id ?? null}
