@@ -92,12 +92,15 @@ export const listClientesFn = createServerFn({ method: "POST" })
       const todos = await db.listClientes(data.instancia);
       if (perm.view_all) return { ok: true as const, clientes: todos };
       const sap = await meuConsultorSap(context as any);
+      const nome = normalizarNome(await meuNomeCompleto(context as any));
       const meus = todos.filter(
         (c) =>
           c["created_by"] === context.userId ||
           c["consultor_id"] === context.userId ||
-          (!!sap && String(c["consultor_sap"] ?? "").trim() === sap),
+          (!!sap && String(c["consultor_sap"] ?? "").trim() === sap) ||
+          (!!nome && normalizarNome(String(c["consultor_nome"] ?? "")) === nome),
       );
+
       return { ok: true as const, clientes: meus };
 
     } catch (e) {
@@ -136,6 +139,7 @@ export const listClientesPaginaFn = createServerFn({ method: "POST" })
     const perm = await getPerm(context as any, data.instancia, "contas");
     assertPodeLer(perm, "contas");
     const consultorSap = perm.view_all ? null : await meuConsultorSap(context as any);
+    const consultorNome = perm.view_all ? null : await meuNomeCompleto(context as any);
     try {
       const { rows, total } = await db.listClientesPagina(data.instancia, {
         q: data.q,
@@ -148,6 +152,8 @@ export const listClientesPaginaFn = createServerFn({ method: "POST" })
         porPagina: data.porPagina,
         donoId: perm.view_all ? null : context.userId,
         consultorSap,
+        consultorNome,
+
       });
       return { ok: true as const, clientes: rows, total };
     } catch (e) {
@@ -200,6 +206,32 @@ async function meuConsultorSap(context: { supabase: any; userId: string }) {
 }
 
 /**
+ * Nome completo do usuário logado. Cadastros importados da plataforma antiga
+ * só têm `consultor_nome` (sem `created_by`/`consultor_id`), então o nome é a
+ * única forma de o dono real enxergar o cliente na busca da proposta.
+ */
+async function meuNomeCompleto(context: { supabase: any; userId: string }) {
+  const { data } = await context.supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", context.userId)
+    .maybeSingle();
+  const nome = String(data?.full_name ?? "").trim();
+  return nome || null;
+}
+
+/** Compara nomes ignorando acentos, caixa e espaços repetidos. */
+function normalizarNome(v: string | null): string {
+  return String(v ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+
+/**
  * Lista da tela "Perfil do Cliente": 100% da tabela `clientes` do Grupo 2P.
  * Separada por instância (campo `organizacao`/`instancia`) e, sem "View All
  * Records", pelo consultor responsável.
@@ -221,6 +253,7 @@ export const listClientesPerfilFn = createServerFn({ method: "POST" })
     const perm = await getPerm(context as any, data.instancia, "contas");
     assertPodeLer(perm, "contas");
     const consultorSap = perm.view_all ? null : await meuConsultorSap(context as any);
+    const consultorNome = perm.view_all ? null : await meuNomeCompleto(context as any);
     try {
       const { rows, total } = await db.listClientesPerfil(data.instancia, {
         q: data.q,
@@ -228,7 +261,9 @@ export const listClientesPerfilFn = createServerFn({ method: "POST" })
         porPagina: data.porPagina,
         donoId: perm.view_all ? null : context.userId,
         consultorSap,
+        consultorNome,
       });
+
       return { ok: true as const, clientes: rows.map(resumirClientePerfil), total };
     } catch (e) {
       if (e instanceof db.ClientesTableMissing) {
@@ -252,10 +287,13 @@ export const getClientePerfilFn = createServerFn({ method: "POST" })
     if (!cliente) return { ok: false as const, cliente: null };
     if (!perm.view_all) {
       const sap = await meuConsultorSap(context as any);
+      const nome = normalizarNome(await meuNomeCompleto(context as any));
       const meu =
         cliente["created_by"] === context.userId ||
         cliente["consultor_id"] === context.userId ||
-        (sap !== null && String(cliente["consultor_sap"] ?? "") === sap);
+        (sap !== null && String(cliente["consultor_sap"] ?? "") === sap) ||
+        (!!nome && normalizarNome(String(cliente["consultor_nome"] ?? "")) === nome);
+
       if (!meu) throw new Error("Você não tem acesso a este cadastro.");
     }
     return { ok: true as const, cliente: cliente as Record<string, any> };

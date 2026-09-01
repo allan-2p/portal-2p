@@ -70,3 +70,7 @@
 - [x] Perfil do cliente: remover "Pedidos em aberto" da aba Financeiro
 - [x] Perfil do cliente: Visão geral — "Funil do cliente" lista oportunidades em aberto (valor + etapa); remover "sinais rápidos"
 - [x] Perfil do cliente: renomear "Propostas e pedidos" para "Propostas"
+
+## Escopo de clientes e OV manual (01/09)
+- [ ] Cliente cadastrado não aparece na busca da proposta: escopo do vendedor ignora `consultor_nome` e a base tem `consultor_id` nulo (corrigir código + backfill para todos os vendedores)
+- [ ] Campo de admin para vincular manualmente a OV do SAP à proposta (gravar + atualizar radar/status)

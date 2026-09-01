@@ -135,6 +135,14 @@ export type ListarClientesOpts = {
   donoId?: string | null;
   /** Código SAP do consultor — necessário para cadastros legados sem `created_by`. */
   consultorSap?: string | null;
+  /**
+   * Nome do consultor responsável. Cadastros importados da plataforma antiga
+   * trazem só `consultor_nome` (sem `created_by`/`consultor_id`) e, em parte
+   * deles, um `consultor_sap` herdado de outro vendedor — sem este alvo o
+   * cliente ficava invisível para o dono real na busca da proposta.
+   */
+  consultorNome?: string | null;
+
   pagina?: number;
   porPagina?: number;
   ordem?: string;
@@ -155,6 +163,30 @@ const COLUNAS_BUSCA_TEXTO = [
 
 /** Escapa vírgula/parênteses para não quebrar o `or=(...)` do PostgREST. */
 const termoSeguro = (t: string) => t.replace(/[(),*"\\]/g, " ").trim();
+
+/**
+ * Alvos PostgREST que definem "cadastro do consultor": criado por ele,
+ * responsável por `consultor_id`, pelo código SAP ou pelo nome gravado no
+ * cadastro (única pista nos registros importados da plataforma antiga).
+ */
+async function alvosDoDono(opts: {
+  donoId?: string | null;
+  consultorSap?: string | null;
+  consultorNome?: string | null;
+}): Promise<string[]> {
+  const alvos: string[] = [];
+  if (opts.donoId) {
+    alvos.push(`created_by.eq.${opts.donoId}`);
+    // `consultor_id` só entra quando a coluna existe no banco: senão o
+    // PostgREST devolve 400 e a lista inteira quebra.
+    if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
+  }
+  if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
+  const nome = termoSeguro(opts.consultorNome ?? "");
+  if (nome) alvos.push(`consultor_nome.ilike.${nome}`);
+  return alvos;
+}
+
 
 /**
  * Busca paginada no banco: o filtro roda no Postgres, então dá para pesquisar
@@ -179,15 +211,10 @@ export async function listClientesPagina(
   if (opts.status === "inativos") params.set("ativo", "is.false");
   if (opts.fiscal === "contribuinte") params.set("contribuinte", "is.true");
   if (opts.fiscal === "nao") params.set("contribuinte", "not.is.true");
-  if (opts.donoId || opts.consultorSap) {
-    const alvos: string[] = [];
-    if (opts.donoId) {
-      alvos.push(`created_by.eq.${opts.donoId}`);
-      if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
-    }
-    if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
-    grupos.push(`or(${alvos.join(",")})`);
+  if (opts.donoId || opts.consultorSap || opts.consultorNome) {
+    grupos.push(`or(${(await alvosDoDono(opts)).join(",")})`);
   }
+
   params.set("and", `(${grupos.join(",")})`);
 
   const termo = termoSeguro(opts.q ?? "");
@@ -256,7 +283,9 @@ export async function listClientesPerfil(
     porPagina?: number;
     donoId?: string | null;
     consultorSap?: string | null;
+    consultorNome?: string | null;
   } = {},
+
 ): Promise<{ rows: ClienteRow[]; total: number }> {
   const porPagina = Math.min(Math.max(opts.porPagina ?? 10, 1), 200);
   const pagina = Math.max(opts.pagina ?? 1, 1);
@@ -268,17 +297,10 @@ export async function listClientesPerfil(
 
   // Filtro por `instancia` (canônico) + cadastros de atuação ampliada (grupo).
   const grupos: string[] = [await grupoInstancia(instance)];
-  if (opts.donoId || opts.consultorSap) {
-    const alvos: string[] = [];
-    if (opts.donoId) {
-      alvos.push(`created_by.eq.${opts.donoId}`);
-      // `consultor_id` só entra no filtro quando a coluna existe no banco:
-      // senão o PostgREST devolve 400 e a lista inteira quebra.
-      if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
-    }
-    if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
-    grupos.push(`or(${alvos.join(",")})`);
+  if (opts.donoId || opts.consultorSap || opts.consultorNome) {
+    grupos.push(`or(${(await alvosDoDono(opts)).join(",")})`);
   }
+
   const termo = termoSeguro(opts.q ?? "");
   if (termo) {
     const digitos = termo.replace(/\D/g, "");
@@ -439,15 +461,16 @@ export async function clientesTableExists(instance: ClientesInstance): Promise<b
  */
 export async function listarDocsDoConsultor(
   instance: ClientesInstance,
-  opts: { donoId?: string | null; consultorSap?: string | null; limite?: number } = {},
+  opts: {
+    donoId?: string | null;
+    consultorSap?: string | null;
+    consultorNome?: string | null;
+    limite?: number;
+  } = {},
 ): Promise<string[]> {
-  if (!opts.donoId && !opts.consultorSap) return [];
-  const alvos: string[] = [];
-  if (opts.donoId) {
-    alvos.push(`created_by.eq.${opts.donoId}`);
-    if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
-  }
-  if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
+  if (!opts.donoId && !opts.consultorSap && !opts.consultorNome) return [];
+  const alvos = await alvosDoDono(opts);
+
 
   const teto = Math.min(opts.limite ?? 20000, 20000);
   const out = new Set<string>();
