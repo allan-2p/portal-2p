@@ -522,13 +522,26 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
       }
       const { data: existente } = await supabaseAdmin
         .from("sap_produtos")
-        .select("id")
+        .select("id, origem, custo, ncm_id, visibilidade")
         .eq("codigo", material.codigo)
         .maybeSingle();
 
       // O moderador pode escolher o destino no próprio Catálogo; sem escolha,
       // o material entra sem visibilidade (comportamento anterior).
       const destino = data.visibilidade && data.visibilidade !== "nenhuma" ? data.visibilidade : null;
+
+      if (existente && data.visibilidade && (existente as any).visibilidade !== data.visibilidade) {
+        const { countOpenProposalsWithProduct } = await import("@/lib/product-visibility.server");
+        const propostasAbertas = await countOpenProposalsWithProduct((existente as any).id);
+        const bloqueio = validateVisibilidadeChange(data.visibilidade, {
+          origem: (existente as any).origem,
+          custo: Number((existente as any).custo ?? 0),
+          ncm_id: (existente as any).ncm_id,
+          propostasAbertas,
+        });
+        if (bloqueio) throw new Error(bloqueio);
+      }
+
 
       if (existente) {
         const { error } = await supabaseAdmin
