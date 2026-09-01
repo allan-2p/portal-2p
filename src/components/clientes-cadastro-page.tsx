@@ -385,11 +385,22 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const ampliarAtuacao = useMutation({
     mutationFn: (id: string) => ampliar({ data: { instancia, id } }),
     onSuccess: (r: any) => {
-      toast.success(`Atuação ampliada — o cliente agora aparece também em ${ORGANIZACAO[instancia]}.`);
+      toast.success(`Atuação ampliada — revise o cadastro e escolha o consultor de ${ORGANIZACAO[instancia]}.`);
       if (r?.sync?.sap && r.sync.sap.ok === false) toast.error(`SAP: ${r.sync.sap.erro ?? "falha no envio."}`);
       setDuplicado([]);
-      setOpen(false);
       qc.invalidateQueries({ queryKey: ["clientes", instancia] });
+      if (r?.cliente) {
+        // Revisão obrigatória: abre o cadastro nesta unidade sem consultor
+        // definido, para o vendedor conferir os dados e escolher o responsável.
+        abrirEdicao(r.cliente as Cliente);
+        setEscopoGrupo(true);
+        setModoAmpliacao(true);
+        setConsultorSap(null);
+        setConsultorImportado(null);
+        setAbaEdicao("cadastrais");
+      } else {
+        setOpen(false);
+      }
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Não foi possível ampliar a atuação."),
   });
