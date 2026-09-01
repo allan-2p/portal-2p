@@ -9,7 +9,7 @@
 - [x] Data de entrega editável mesmo após o pedido marcado como Entregue (mesmo perfil que edita a estimativa).
 - [x] Funil do cliente (perfil 360): tabela com filtro por etapa e datas em colunas.
 - [x] Home: Atlas Radar removido; Orçamentos subiram para a seção de tarefas; Ranking de clientes (em configuração, com blur) no lugar.
-- [ ] Publicar para aplicar na versão publicada: tabela de Segmentação preenchendo a largura e demais mudanças recentes.
+- [x] Publicado em 01/09/2026: tabela de Segmentação preenchendo a largura e demais mudanças recentes.
 
 ## Concluído neste turno
 - [x] Tipo de NF obrigatório em solar e carregadores (front + back)
