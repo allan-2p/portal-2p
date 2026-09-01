@@ -1073,7 +1073,7 @@ function NovaPropostaSolarPage() {
   const kitQ = useSolarKitBase(ehKit === true);
   const kitProduto = kitQ.data ?? null;
   const kitIndisponivel = ehKit === true && !kitQ.isLoading && !kitQ.isError && !kitProduto;
-  const [precificarKit, setPrecificarKit] = useState(0);
+  
 
   useEffect(() => {
     const ehDoKit = (x: Item) =>
