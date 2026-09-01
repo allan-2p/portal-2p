@@ -149,14 +149,19 @@ function CarregadoresVisaoGeralPage() {
     return [...set].sort().reverse();
   }, [vendidos]);
 
+  /** Data de referência conforme o filtro escolhido (compra ou faturamento). */
+  const dataRef = (p: PedidoVendido) =>
+    campoData === "faturamento" ? (p.dataFaturamento ?? p.data) : p.data;
+
   const filtrados = useMemo(() => {
     return vendidos.filter((p) => {
-      const d = p.data.slice(0, 10);
-      if (modo === "mes") return !mes || mesChave(p.data) === mes;
-      if (modo === "ano") return !ano || p.data.slice(0, 4) === ano;
+      const ref = campoData === "faturamento" ? (p.dataFaturamento ?? p.data) : p.data;
+      const d = ref.slice(0, 10);
+      if (modo === "mes") return !mes || mesChave(ref) === mes;
+      if (modo === "ano") return !ano || ref.slice(0, 4) === ano;
       if (modo === "trimestre") {
         if (!trimestre) return true;
-        const t = `${p.data.slice(0, 4)}-T${Math.floor(Number(p.data.slice(5, 7)) / 3.0001) + 1}`;
+        const t = `${ref.slice(0, 4)}-T${Math.floor(Number(ref.slice(5, 7)) / 3.0001) + 1}`;
         return t === trimestre;
       }
       if (modo === "intervalo") {
@@ -166,7 +171,7 @@ function CarregadoresVisaoGeralPage() {
       }
       return true;
     });
-  }, [vendidos, modo, mes, trimestre, ano, de, ate]);
+  }, [vendidos, modo, mes, trimestre, ano, de, ate, campoData]);
 
   const totalPeriodo = filtrados.reduce((s, p) => s + p.valor, 0);
 
@@ -174,13 +179,20 @@ function CarregadoresVisaoGeralPage() {
   const grupos = useMemo(() => {
     const map = new Map<string, PedidoVendido[]>();
     for (const p of filtrados) {
-      const k = mesChave(p.data);
+      const ref = campoData === "faturamento" ? (p.dataFaturamento ?? p.data) : p.data;
+      const k = mesChave(ref);
       if (!map.has(k)) map.set(k, []);
       map.get(k)!.push(p);
     }
-    for (const arr of map.values()) arr.sort((a, b) => (a.data < b.data ? 1 : -1));
+    for (const arr of map.values()) {
+      arr.sort((a, b) => {
+        const da = campoData === "faturamento" ? (a.dataFaturamento ?? a.data) : a.data;
+        const db = campoData === "faturamento" ? (b.dataFaturamento ?? b.data) : b.data;
+        return da < db ? 1 : -1;
+      });
+    }
     return [...map.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
-  }, [filtrados]);
+  }, [filtrados, campoData]);
 
   const carregando = q.isLoading || produtos.isLoading;
   const selectCls = "h-9 rounded-lg border border-border bg-surface px-3 text-sm";
