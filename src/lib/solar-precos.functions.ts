@@ -10,6 +10,16 @@ export type PrecoSolarInput = {
   tipoOv: string;
   /** Kit fotovoltaico: preço sem ICMS/IPI. */
   kitFotovoltaico: boolean;
+  /** Faturamento ao cliente final (não cadastrado no SAP) — usa cliente fake. */
+  faturarClienteFinal: boolean;
+  /** UF do faturamento (define o cliente fake usado na simulação). */
+  ufFaturamento: string;
+  /** Cliente final é contribuinte com CNPJ (ZV2P) — define fake CNPJ x CPF. */
+  finalContribuinte: boolean;
+  /** Triangulação não usa cliente fake (regra da plataforma antiga). */
+  triangulacao: boolean;
+  /** Documento do cliente da proposta (revenda) — vira CNPJ_CI no envelope. */
+  clienteDoc: string;
 };
 
 function validar(input: unknown): PrecoSolarInput {
@@ -24,9 +34,22 @@ function validar(input: unknown): PrecoSolarInput {
   // final, o preço tem que ser simulado com o documento e o TP_OV DELE — os
   // impostos mudam (ex.: sem IE o IPI entra na base do ICMS). A tabela (PLTYP)
   // continua sendo a do cliente da proposta.
-  const faturamento = (i.faturamento ?? null) as { doc?: unknown; contribuinte?: unknown } | null;
+  const faturamento = (i.faturamento ?? null) as
+    | { doc?: unknown; contribuinte?: unknown; uf?: unknown }
+    | null;
   const clienteDoc = String(i.documento ?? "");
+  const finalContribuinte = contribuinteDoFaturamento({
+    contribuinte: i.contribuinte === true,
+    faturarClienteFinal: i.faturarClienteFinal === true,
+    faturamento,
+    clienteDoc,
+  });
   return {
+    faturarClienteFinal: i.faturarClienteFinal === true,
+    ufFaturamento: String(faturamento?.uf ?? i.uf ?? "").trim().toUpperCase(),
+    finalContribuinte,
+    triangulacao: String(i.tipoNf ?? "").toLowerCase().startsWith("triangul"),
+    clienteDoc: clienteDoc.replace(/\D/g, ""),
     itens,
     documento: documentoDaSimulacao({
       faturarClienteFinal: i.faturarClienteFinal === true,
@@ -68,16 +91,37 @@ export const precosSolarFn = createServerFn({ method: "POST" })
     for (const p of (prods ?? []) as any[])
       sugeridos[String(p.codigo).replace(/^0+(?=\d)/, "")] = Number(p.preco_sugerido ?? 0);
 
+    // Cliente final não é cadastrado no SAP até o fechamento do pedido: simular
+    // com o documento dele devolve "Não existe mestre de clientes para emissor
+    // ordem". Como na plataforma antiga, a simulação usa o cliente fake da UF
+    // do faturamento e manda a revenda em CNPJ_CI. Triangulação não usa fake.
+    let documento = data.documento;
+    let empresaCnpj = "";
+    if (data.faturarClienteFinal && !data.triangulacao && data.ufFaturamento) {
+      const { clienteFakeDaUf } = await import("./clientes-fakes.server");
+      const fake = await clienteFakeDaUf(data.ufFaturamento);
+      if (fake) {
+        if (data.finalContribuinte && fake.cnpj) {
+          documento = fake.cnpj;
+          empresaCnpj = data.clienteDoc.length > 11 ? data.clienteDoc : "";
+        } else if (fake.cpf) {
+          documento = fake.cpf;
+        }
+      }
+    }
+
     const { precosSolar } = await import("./solar-precos.server");
     return await precosSolar(data.itens, {
-      documento: data.documento,
+      documento,
+      ...(empresaCnpj ? { empresaCnpj } : {}),
       listaPreco: data.listaPreco,
       tipoOv: data.tipoOv,
       kitFotovoltaico: data.kitFotovoltaico,
       sugeridos,
       auditoria: {
         etapa: "precos",
-        doc: data.documento,
+        // Documento efetivamente usado na simulação (fake da UF quando houver).
+        doc: documento,
         unidade: "solar",
         actorId: context.userId,
         actorEmail: (context.claims as { email?: string } | null)?.email ?? null,

@@ -85,6 +85,12 @@ export type SimulacaoOpts = {
   filial?: string;
   /** Tipo de ordem (ZV2P / ZC2P / VBON). */
   tipoOv?: string;
+  /**
+   * CNPJ da empresa/revenda que compra (tag CNPJ_CI). Usado quando a simulação
+   * roda com o cliente fake da UF (faturamento ao cliente final não cadastrado
+   * no SAP): `<CNPJ>fake</CNPJ><CNPJ_CI>doc da revenda</CNPJ_CI>`.
+   */
+  empresaCnpj?: string;
 };
 
 function envelope(itens: SimulacaoItem[], opts: SimulacaoOpts) {
@@ -128,8 +134,10 @@ function envelope(itens: SimulacaoItem[], opts: SimulacaoOpts) {
           const d = String(opts.documento ?? "").replace(/\D/g, "");
           const cnpj = d.length > 11 ? d.padStart(14, "0") : "";
           const cpf = d && d.length <= 11 ? d.padStart(11, "0") : "";
-          if (cnpj) return `<CNPJ>${esc(cnpj)}</CNPJ>`;
-          if (cpf) return `<CPF>${esc(cpf)}</CPF>`;
+          const ci = String(opts.empresaCnpj ?? "").replace(/\D/g, "");
+          const tagCi = ci.length > 11 ? `<CNPJ_CI>${esc(ci.padStart(14, "0"))}</CNPJ_CI>` : "";
+          if (cnpj) return `<CNPJ>${esc(cnpj)}</CNPJ>${tagCi}`;
+          if (cpf) return `<CPF>${esc(cpf)}</CPF>${tagCi}`;
           return "";
         })()}
       </I_S_PARCEIRO>
