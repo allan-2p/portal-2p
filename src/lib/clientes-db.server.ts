@@ -165,6 +165,30 @@ const COLUNAS_BUSCA_TEXTO = [
 const termoSeguro = (t: string) => t.replace(/[(),*"\\]/g, " ").trim();
 
 /**
+ * Alvos PostgREST que definem "cadastro do consultor": criado por ele,
+ * responsável por `consultor_id`, pelo código SAP ou pelo nome gravado no
+ * cadastro (única pista nos registros importados da plataforma antiga).
+ */
+async function alvosDoDono(opts: {
+  donoId?: string | null;
+  consultorSap?: string | null;
+  consultorNome?: string | null;
+}): Promise<string[]> {
+  const alvos: string[] = [];
+  if (opts.donoId) {
+    alvos.push(`created_by.eq.${opts.donoId}`);
+    // `consultor_id` só entra quando a coluna existe no banco: senão o
+    // PostgREST devolve 400 e a lista inteira quebra.
+    if (await temConsultorId()) alvos.push(`consultor_id.eq.${opts.donoId}`);
+  }
+  if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
+  const nome = termoSeguro(opts.consultorNome ?? "");
+  if (nome) alvos.push(`consultor_nome.ilike.${nome}`);
+  return alvos;
+}
+
+
+/**
  * Busca paginada no banco: o filtro roda no Postgres, então dá para pesquisar
  * em toda a base (7 mil+ cadastros) e não só na primeira página carregada.
  */
