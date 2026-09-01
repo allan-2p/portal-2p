@@ -261,7 +261,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       supabase.from("carregadores_config").select("*").eq("id", 1).maybeSingle(),
       supabase.from("carregadores_uf_rates").select("uf, nome, aliq_interna, fcp, convenio_st"),
       supabase.from("carregadores_ncm").select("*"),
-      supabase
+      (await import("@/integrations/supabase/client.server")).supabaseAdmin
         .from("sap_produtos")
         .select("id, codigo, descricao, custo, preco_sugerido, ativo, ncm_id, ncm_codigo")
         .in("id", data.itens.map((i) => i.produtoId)),
