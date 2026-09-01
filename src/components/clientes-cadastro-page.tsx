@@ -1482,11 +1482,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function F({ label, children, error, id }: { label: string; children: React.ReactNode; error?: string; id?: string }) {
+function F({ label, children, error, id, hint }: { label: string; children: React.ReactNode; error?: string; id?: string; hint?: string }) {
   return (
     <div className="space-y-1" {...(id ? { id } : {})}>
       <Label className="text-xs">{label}</Label>
       {children}
+      {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
