@@ -75,3 +75,8 @@
 ## Escopo de clientes e OV manual (01/09)
 - [ ] Cliente cadastrado não aparece na busca da proposta: escopo do vendedor ignora `consultor_nome` e a base tem `consultor_id` nulo (corrigir código + backfill para todos os vendedores)
 - [ ] Campo de admin para vincular manualmente a OV do SAP à proposta (gravar + atualizar radar/status)
+
+## Precificação Solar (01/09)
+- [ ] Kit gerador: marcar/desmarcar deve reprecificar TODOS os itens (assinatura determinística)
+- [ ] Faturar ao cliente final: simular com o cliente fake da UF (`clientes_fakes`) + CNPJ_CI da revenda
+- [ ] Catálogo do portal: item 200000590 enviado ao portal não aparece; itens publicados devem permanecer no catálogo mesmo após novas sincronizações do SAP
