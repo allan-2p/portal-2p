@@ -120,7 +120,8 @@ export const precosSolarFn = createServerFn({ method: "POST" })
       sugeridos,
       auditoria: {
         etapa: "precos",
-        doc: data.documento,
+        // Documento efetivamente usado na simulação (fake da UF quando houver).
+        doc: documento,
         unidade: "solar",
         actorId: context.userId,
         actorEmail: (context.claims as { email?: string } | null)?.email ?? null,
