@@ -25,7 +25,10 @@ import { fmtBRL, precoSugeridoPadrao, MARGEM_PRECO_SUGERIDO, type CarregadoresPr
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorPath, enviarFotoProduto } from "@/lib/produto-imagens";
-import { CatalogoFotos } from "@/components/produtos/catalogo-fotos";
+// Catálogo de fotos só é baixado quando a aba é aberta (chunk separado).
+const CatalogoFotos = lazy(() =>
+  import("@/components/produtos/catalogo-fotos").then((m) => ({ default: m.CatalogoFotos })),
+);
 
 
 
