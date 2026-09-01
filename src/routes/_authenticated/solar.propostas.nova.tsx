@@ -1106,19 +1106,8 @@ function NovaPropostaSolarPage() {
 
     setItensCalc(aplicar);
     setItensLista(aplicar);
-    if (ehKit === true && kitProduto) setPrecificarKit((n) => n + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ehKit, kitProduto?.id]);
-
-  useEffect(() => {
-    if (!precificarKit || !itens.length || trocando) return;
-    void (async () => {
-      setTrocando(true);
-      await atualizarPrecos(itens, listaPreco);
-      setTrocando(false);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [precificarKit]);
 
   async function trocarTabela(t: string) {
     if (t === listaPreco) return;
