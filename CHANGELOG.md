@@ -34,7 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
-- **Avisos e Atlas não cobrem mais ações**: as notificações temporárias saíram do rodapé (onde escondiam botões como download) e agora aparecem de forma compacta no topo; o acesso ao Atlas deixou de flutuar sobre o conteúdo e foi incorporado ao cabeçalho.
+- **Avisos e Atlas não cobrem mais ações**: as notificações temporárias saíram do rodapé (onde escondiam botões como download) e agora aparecem de forma compacta no topo; o Atlas continua flutuante, mas virou uma aba lateral pequena, sem texto, sem ocupar a área inferior de ações e abaixo de menus e diálogos.
 - **Carregamento sob demanda (bundle menor)**: o chat do Atlas (markdown, realce de código, diagramas e animações) saiu do pacote comum de todas as telas e passa a ser baixado só quando o chat é aberto; a aba "Fotos do catálogo" e o dossiê 360 do cliente (funil, atividades) também viraram chunks separados. Primeiro carregamento do portal fica mais leve e as publicações mais rápidas.
 - **Plano Fidelidade removido do portal**: a página `/solar/plano-fidelidade`, o item de menu, a permissão/feature correspondente e os campos "Plano fidelidade" e "Pontuação fidelidade" do perfil do cliente foram excluídos.
 - **Proposta Solar não é mais recusada por "Adicione ao menos um produto"**: quando a tela não conseguia casar um item com o catálogo (catálogo ainda carregando ou item vindo da calculadora sem correspondência), o pedido era enviado sem identificação do produto e o salvamento falhava mesmo com a lista preenchida. Agora cada item vai também com o código SAP e o servidor resolve o produto pelo código; se realmente não existir no catálogo, a mensagem diz quais códigos faltam.
