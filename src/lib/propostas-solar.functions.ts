@@ -110,18 +110,21 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     const docFat = String(faturamento['doc'] ?? "").replace(/\D/g, "");
     if (!String(faturamento['nome'] ?? "").trim()) throw new Error("Informe o destinatário do faturamento.");
     if (docFat.length !== 11 && docFat.length !== 14) throw new Error("CNPJ/CPF do faturamento inválido.");
-    if (!faturamento['logradouro'] || !faturamento['cidade'] || !faturamento['uf'])
+    if (!faturamento['logradouro'] || !faturamento['cidade'])
       throw new Error("Informe o endereço de faturamento do cliente final.");
-    if (!finalidadeUso)
-      throw new Error("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
+    if (String(faturamento['uf'] ?? "").trim().length !== 2)
+      throw new Error("Informe a UF do endereço de faturamento do cliente final.");
     // Dígitos verificadores obrigatórios. CPF nunca é contribuinte e a
-    // finalidade é sempre Uso e Consumo; CNPJ contribuinte precisa de IE.
+    // finalidade é sempre Uso e Consumo (não se exige a seleção na tela);
+    // CNPJ contribuinte precisa de IE e continua exigindo a finalidade.
     if (docFat.length === 11) {
       if (!cpfValido(docFat)) throw new Error("CPF do faturamento inválido.");
       faturamento['contribuinte'] = false;
       finalidadeUso = "Uso e Consumo";
     } else {
       if (!cnpjValido(docFat)) throw new Error("CNPJ do faturamento inválido.");
+      if (!finalidadeUso)
+        throw new Error("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
       if (faturamento['contribuinte'] && !String(faturamento['ie'] ?? "").trim())
         throw new Error("Cliente final marcado como contribuinte: informe a inscrição estadual.");
     }
