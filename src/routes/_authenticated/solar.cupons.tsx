@@ -179,7 +179,6 @@ function CuponsPage() {
   const [reutilizavel, setReutilizavel] = useState(false);
   const [limiteUsos, setLimiteUsos] = useState("");
   const [clienteDoc, setClienteDoc] = useState("");
-  const [excluindo, setExcluindo] = useState<Cupom | null>(null);
   const [historico, setHistorico] = useState<Cupom | null>(null);
 
 
