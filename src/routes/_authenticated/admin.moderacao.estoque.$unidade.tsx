@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { EstoqueGestao } from "@/components/admin/estoque-gestao";
-import { UNIDADE_LABEL, type UnidadeProdutos } from "@/components/admin/produtos-gestao";
+import { UNIDADE_LABEL, type UnidadeProdutos } from "@/components/admin/unidades-produtos";
 
 const SLUGS: Record<string, UnidadeProdutos> = {
   solar: "solar",
