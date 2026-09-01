@@ -251,7 +251,9 @@ export async function listClientesPerfil(
     porPagina?: number;
     donoId?: string | null;
     consultorSap?: string | null;
+    consultorNome?: string | null;
   } = {},
+
 ): Promise<{ rows: ClienteRow[]; total: number }> {
   const porPagina = Math.min(Math.max(opts.porPagina ?? 10, 1), 200);
   const pagina = Math.max(opts.pagina ?? 1, 1);
