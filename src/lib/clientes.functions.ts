@@ -508,13 +508,16 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     const permContas = await getPerm(context as any, data.instancia, "contas");
     if (!data.id) assertPodeCriar(permContas, "contas");
     const podeEscolher = permContas.modify_all;
-    const { consultorPorSap, consultorDoCadastro, idDeUsuario } = await import("./consultor-sap.server");
+    const { consultorPorSap, consultorDaInstancia, prefixoConsultor, idDeUsuario } =
+      await import("./consultor-sap.server");
 
     const atualRow = data.id ? await db.getClienteById(data.instancia, data.id) : null;
     /** Cadastro com atuação ampliada: mantém o escopo "grupo" em qualquer edição. */
     const ehGrupo = String(atualRow?.["escopo_org"] ?? "").toLowerCase() === "grupo";
+    // Cadastro Grupo 2P tem um responsável por unidade: a edição sempre trata
+    // do consultor da instância aberta.
     const anteriorConsultor = data.id
-      ? consultorDoCadastro(atualRow)
+      ? consultorDaInstancia(atualRow, data.instancia)
       : { sap: null, nome: null, id: null };
 
     const sapEscolhido = String(data.consultor_sap ?? "").trim();
@@ -564,13 +567,23 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
       consultorSfId = (perfil as any)?.sf_user_id ?? null;
     }
 
+    // Consultor da unidade aberta (Grupo 2P pode ter um em cada). O par
+    // canônico — o que vai para o SAP — só muda quando a edição acontece na
+    // unidade de origem do cadastro (ou quando ele não é Grupo 2P).
+    const pref = prefixoConsultor(data.instancia);
+    const instanciaDona = String(atualRow?.["instancia"] ?? data.instancia);
+    const mexeNoCanonico = !ehGrupo || instanciaDona === data.instancia;
+
     const payload = {
       ...data.cliente,
       doc,
-      // Par canônico do consultor.
-      consultor_sap: consultorSap,
-      consultor_nome: consultorNome,
-      consultor_id: consultorId,
+      [`${pref}_sap`]: consultorSap,
+      [`${pref}_nome`]: consultorNome,
+      [`${pref}_id`]: idDeUsuario(consultorId),
+      // Par canônico do consultor (vendedor principal, enviado ao SAP).
+      ...(mexeNoCanonico
+        ? { consultor_sap: consultorSap, consultor_nome: consultorNome, consultor_id: consultorId }
+        : {}),
       organizacao: ehGrupo ? "grupo" : db.ORGANIZACAO[data.instancia],
       instancia: ehGrupo ? (atualRow?.["instancia"] ?? data.instancia) : data.instancia,
       ...(ehGrupo
@@ -587,7 +600,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
         const patch: Record<string, unknown> = { ...payload };
         // Só reatribui o dono do cadastro quando o consultor mudou de fato e
         // corresponde a um usuário do portal.
-        if (podeTrocar && consultorSap !== anteriorConsultor.sap && consultorId) {
+        if (podeTrocar && mexeNoCanonico && consultorSap !== anteriorConsultor.sap && consultorId) {
           patch["created_by"] = consultorId;
           patch["created_by_nome"] = consultorNome;
           patch["created_by_email"] = consultorEmail;
