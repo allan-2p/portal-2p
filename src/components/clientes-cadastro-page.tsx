@@ -808,6 +808,20 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                 }
               />
 
+              {modoAmpliacao && (
+                <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs" role="status">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
+                    <AlertCircle className="h-4 w-4" /> Revisão obrigatória da ampliação
+                  </div>
+                  <p className="mt-1 text-muted-foreground">
+                    Este cadastro passou a atuar também em <strong>{ORGANIZACAO[instancia]}</strong>. Confira os dados
+                    cadastrais, fiscais e de contato e escolha o <strong>consultor responsável nesta unidade</strong>{" "}
+                    antes de concluir.
+                  </p>
+                </div>
+              )}
+
+
               {(fontes.length > 0 || avisos.length > 0) && (
                 <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs">
                   {fontes.length > 0 && (
