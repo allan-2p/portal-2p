@@ -217,7 +217,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         label: "Grupo 2P",
         collapsible: true,
         items: [
-          { to: "/admin/moderacao/produtos/grupo-2p", label: "Gestão de Produtos", icon: Package, feature: "admin.objetos.produtos" },
+          { to: "/admin/moderacao/produtos/grupo-2p", label: "Todos os Produtos", icon: Package, feature: "admin.objetos.produtos" },
           { to: "/admin/moderacao/estoque/grupo-2p", label: "Estoque", icon: Boxes, feature: "admin.objetos.produtos" },
         ],
       },
