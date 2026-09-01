@@ -599,6 +599,23 @@ export function ProdutosGestao({ unidade }: { unidade: UnidadeProdutos }) {
   const current = Math.min(page, totalPages - 1);
   const rows = filtered.slice(current * pageSize, current * pageSize + pageSize);
   const lastRun = data?.lastRun ?? null;
+  /** Espelho do catálogo do portal por código, para os controles do Catálogo SAP. */
+  const porCodigo = useMemo(() => {
+    const m = new Map<string, ProdutoPortal>();
+    for (const p of data?.produtos ?? []) {
+      m.set(p.codigo, {
+        id: p.id,
+        visibilidade: p.visibilidade ?? null,
+        ativo: Boolean(p.ativo),
+        ativo_override: p.ativo_override ?? null,
+        origem: p.origem ?? null,
+        custo: p.custo ?? null,
+        ncm_id: p.ncm_id ?? null,
+      });
+    }
+    return m;
+  }, [data]);
+  const titulo = unidade === "grupo2p" ? "Todos os Produtos — Grupo 2P" : `Catálogo — ${UNIDADE_LABEL[unidade]}`;
 
 
   return (
@@ -608,7 +625,7 @@ export function ProdutosGestao({ unidade }: { unidade: UnidadeProdutos }) {
           <div>
             <h1 className="text-2xl font-semibold flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
-              Gestão de Produtos — {UNIDADE_LABEL[unidade]}
+              {titulo}
             </h1>
             <p className="text-sm text-muted-foreground">
               Catálogo espelhado do SAP (RFC listar_material). Controle aqui o que fica ativo e
