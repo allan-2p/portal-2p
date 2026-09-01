@@ -217,7 +217,9 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             <span className="font-semibold text-foreground">{fmtData(p['expedido_em'])}</span>
           </p>
         ) : null}
+        <EstimativaEntrega proposta={p} />
         <PropostaTimeline status={status} proposta={p} />
+
 
         <MarcarEntregueAcao proposta={p} />
       </div>
