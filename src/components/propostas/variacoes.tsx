@@ -3,7 +3,8 @@
  * e as alternativas aparecem recolhidas embaixo dela.
  */
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useHydrated } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronDown, ChevronRight, GitBranch, Loader2, Pencil, Star } from "lucide-react";
@@ -111,9 +112,14 @@ export function LinhasVariacoes({
 }) {
   const qc = useQueryClient();
   const [trocando, setTrocando] = useState<string | null>(null);
+  const hydrated = useHydrated();
+  const listar = useServerFn(listarVariacoesFn);
   const q = useQuery({
     queryKey: ["variacoes", propostaId],
-    queryFn: () => listarVariacoesFn({ data: { id: propostaId } }),
+    queryFn: () => listar({ data: { id: propostaId } }),
+    // A sessão do Supabase só existe no browser: chamar durante o SSR manda
+    // a RPC sem o bearer e o servidor devolve "Unauthorized".
+    enabled: hydrated,
     staleTime: 15_000,
   });
 
@@ -218,9 +224,12 @@ export function PainelVariacoes({
 }) {
   const qc = useQueryClient();
   const [trocando, setTrocando] = useState<string | null>(null);
+  const hydrated = useHydrated();
+  const listar = useServerFn(listarVariacoesFn);
   const q = useQuery({
     queryKey: ["variacoes", propostaId],
-    queryFn: () => listarVariacoesFn({ data: { id: propostaId } }),
+    queryFn: () => listar({ data: { id: propostaId } }),
+    enabled: hydrated,
     staleTime: 10_000,
   });
   const irmas = q.data ?? [];
