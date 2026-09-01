@@ -24,6 +24,7 @@ import {
   type SalesforceAccount,
   type SalesforceContact,
   type SalesforceActivity,
+  type SalesforceTask,
 } from "@/lib/salesforce.functions";
 import {
   getClientNotes,
@@ -31,6 +32,11 @@ import {
   type ClientNoteCard,
 } from "@/lib/client-notes.functions";
 import { AtlasBoard } from "@/components/cliente-360/atlas-board";
+import {
+  CompleteTaskDialog,
+  InteractionQuickDialog,
+  RescheduleTaskDialog,
+} from "@/components/tarefas/task-dialogs";
 import { cn } from "@/lib/utils";
 
 import {
@@ -484,6 +490,25 @@ function VisaoGeral({
     (o) => !o.isClosed && !ETAPA_FECHADA.test(String(o.stage ?? "")),
   );
   const totalFunil = oportunidadesAbertas.reduce((s: number, o: any) => s + (o.amount || 0), 0);
+  // Agrupado por etapa do funil, da etapa de maior valor para a menor.
+  const grupos = useMemo(() => {
+    const map = new Map<string, any[]>();
+    for (const o of oportunidadesAbertas) {
+      const etapa = String(o.stage ?? "").trim() || "Sem etapa";
+      const arr = map.get(etapa) ?? [];
+      arr.push(o);
+      map.set(etapa, arr);
+    }
+    return [...map.entries()]
+      .map(([etapa, itens]) => ({
+        etapa,
+        itens: itens
+          .slice()
+          .sort((a, b) => String(b.createdDate ?? "").localeCompare(String(a.createdDate ?? ""))),
+        total: itens.reduce((s: number, o: any) => s + (o.amount || 0), 0),
+      }))
+      .sort((a, b) => b.total - a.total || b.itens.length - a.itens.length);
+  }, [oportunidadesAbertas]);
 
   return (
     <div className="space-y-4">
@@ -494,15 +519,32 @@ function VisaoGeral({
           <Empty>Nenhuma proposta em aberto para este cliente.</Empty>
         ) : (
           <>
-            <ul className="space-y-1.5">
-              {oportunidadesAbertas.map((o: any) => (
-                <li key={o.id} className="flex items-center gap-2 text-sm">
-                  <span className="truncate flex-1">{o.name}</span>
-                  <span className="text-[11px] text-muted-foreground shrink-0">{o.stage}</span>
-                  <span className="tabular-nums font-medium shrink-0">{fmt(o.amount)}</span>
-                </li>
+            <div className="space-y-3">
+              {grupos.map((g) => (
+                <div key={g.etapa}>
+                  <div className="flex items-center justify-between gap-2 border-b border-border pb-1 mb-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
+                      {g.etapa} · {g.itens.length}
+                    </span>
+                    <span className="text-[11px] font-semibold tabular-nums shrink-0">
+                      {fmt(g.total)}
+                    </span>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {g.itens.map((o: any) => (
+                      <li key={o.id} className="flex items-center gap-2 text-sm">
+                        <span className="truncate flex-1">{o.name}</span>
+                        <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
+                          {date(o.createdDate)}
+                        </span>
+                        <span className="tabular-nums font-medium shrink-0">{fmt(o.amount)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
+
             <div className="mt-3 flex items-center justify-between border-t border-border pt-2 text-xs">
               <span className="text-muted-foreground">
                 {oportunidadesAbertas.length} proposta(s) em aberto
@@ -633,6 +675,7 @@ function HistoricoTabela({ rows, tone }: { rows: any[]; tone: "ganho" | "perdido
           <tr>
             <th className="text-left px-2 py-2 font-medium">Pedido</th>
             <th className="text-left px-2 py-2 font-medium">Etapa</th>
+            <th className="text-left px-2 py-2 font-medium">Status do pedido</th>
             <th className="text-right px-2 py-2 font-medium">Valor</th>
             <th className="text-left px-2 py-2 font-medium">Data</th>
             <th className="text-left px-2 py-2 font-medium">Responsável</th>
@@ -652,6 +695,11 @@ function HistoricoTabela({ rows, tone }: { rows: any[]; tone: "ganho" | "perdido
                   )}
                 >
                   {o.stage ?? "—"}
+                </span>
+              </td>
+              <td className="px-2 py-2">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-muted-foreground">
+                  {o.status ?? "—"}
                 </span>
               </td>
               <td className="px-2 py-2 text-right tabular-nums">{fmt(o.amount)}</td>
@@ -1051,12 +1099,22 @@ function AtlasPanelTab({ account }: { account: SalesforceAccount }) {
 
 function ActivityRail({ accountId }: { accountId: string }) {
   const fetchActivities = useServerFn(getSalesforceAccountActivities);
+  const queryClient = useQueryClient();
   const q = useQuery({
     queryKey: ["sf-account-activities", accountId],
     queryFn: () => fetchActivities({ data: { accountId } }),
     staleTime: 2 * 60_000,
   });
+  const [completeTask, setCompleteTask] = useState<SalesforceTask | null>(null);
+  const [interactionTask, setInteractionTask] = useState<SalesforceTask | null>(null);
+  const [rescheduleTask, setRescheduleTask] = useState<SalesforceTask | null>(null);
+  const recarregar = () => {
+    void queryClient.invalidateQueries({ queryKey: ["sf-account-activities", accountId] });
+    void queryClient.invalidateQueries({ queryKey: ["sf-home-tasks"] });
+    void queryClient.invalidateQueries({ queryKey: ["sf-tasks"] });
+  };
   const activities: SalesforceActivity[] = q.data?.records ?? [];
+
   const hoje = new Date().toISOString().slice(0, 10);
 
   const abertas = useMemo(
@@ -1128,20 +1186,88 @@ function ActivityRail({ accountId }: { accountId: string }) {
       ) : (
         <ul className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
           {rows.map((a) => (
-            <ActivityItem key={a.id} a={a} />
+            <ActivityItem
+              key={a.id}
+              a={a}
+              accountId={accountId}
+              onComplete={setCompleteTask}
+              onInteraction={setInteractionTask}
+              onReschedule={setRescheduleTask}
+            />
           ))}
         </ul>
       )}
 
       {totalPages > 1 && <Pager page={pageSafe} total={totalPages} onChange={setPage} />}
+
+      <InteractionQuickDialog
+        task={interactionTask}
+        existing={null}
+        onClose={() => setInteractionTask(null)}
+        onSaved={() => {
+          setInteractionTask(null);
+          recarregar();
+        }}
+      />
+      <CompleteTaskDialog
+        task={completeTask}
+        existing={null}
+        onClose={() => setCompleteTask(null)}
+        onSaveInteraction={() => {}}
+        onDone={() => {
+          setCompleteTask(null);
+          recarregar();
+        }}
+      />
+      <RescheduleTaskDialog
+        task={rescheduleTask}
+        onClose={() => setRescheduleTask(null)}
+        onDone={() => {
+          setRescheduleTask(null);
+          recarregar();
+        }}
+      />
     </aside>
   );
 }
 
-function ActivityItem({ a }: { a: SalesforceActivity }) {
+/** Converte a atividade da conta no formato de tarefa usado pelos diálogos. */
+function atividadeParaTarefa(a: SalesforceActivity, accountId: string): SalesforceTask {
+  return {
+    id: a.id,
+    date: a.date ?? new Date().toISOString().slice(0, 10),
+    subject: a.subject,
+    status: a.status,
+    priority: a.priority,
+    description: a.description,
+    who: a.who ?? null,
+    whoId: a.whoId ?? null,
+    what: null,
+    whatId: accountId,
+    type: a.type ?? null,
+    owner: a.owner,
+    ownerId: a.ownerId ?? null,
+  };
+}
+
+function ActivityItem({
+  a,
+  accountId,
+  onComplete,
+  onInteraction,
+  onReschedule,
+}: {
+  a: SalesforceActivity;
+  accountId: string;
+  onComplete: (t: SalesforceTask) => void;
+  onInteraction: (t: SalesforceTask) => void;
+  onReschedule: (t: SalesforceTask) => void;
+}) {
   const [open, setOpen] = useState(false);
   const done = a.kind === "task" && a.status === "Completed";
   const Icon = a.kind === "event" ? CalendarClock : done ? CheckCircle2 : Circle;
+  const podeAgir = a.kind === "task" && !done;
+  const tarefa = () => atividadeParaTarefa(a, accountId);
   return (
     <li className="rounded-lg border border-border bg-background/40">
       <button
@@ -1163,14 +1289,44 @@ function ActivityItem({ a }: { a: SalesforceActivity }) {
           </div>
         </div>
       </button>
-      {open && a.description && (
-        <p className="px-2.5 pb-2.5 -mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap">
-          {a.description}
-        </p>
+      {open && (
+        <div className="px-2.5 pb-2.5 -mt-1 space-y-2">
+          {a.description && (
+            <p className="text-[11px] text-muted-foreground whitespace-pre-wrap">{a.description}</p>
+          )}
+          <div className="flex flex-wrap gap-1.5 text-[10px] text-muted-foreground">
+            {a.type && <span className="px-1.5 py-0.5 rounded bg-surface-2">{a.type}</span>}
+            {a.priority && <span className="px-1.5 py-0.5 rounded bg-surface-2">{a.priority}</span>}
+            {a.who && <span className="px-1.5 py-0.5 rounded bg-surface-2">{a.who}</span>}
+          </div>
+          {podeAgir && (
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => onComplete(tarefa())}
+                className="text-[11px] px-2 py-1 rounded-md bg-primary text-primary-foreground font-medium"
+              >
+                Concluir
+              </button>
+              <button
+                onClick={() => onInteraction(tarefa())}
+                className="text-[11px] px-2 py-1 rounded-md bg-surface-2 hover:bg-surface font-medium"
+              >
+                Registrar interação
+              </button>
+              <button
+                onClick={() => onReschedule(tarefa())}
+                className="text-[11px] px-2 py-1 rounded-md bg-surface-2 hover:bg-surface font-medium"
+              >
+                Reagendar
+              </button>
+            </div>
+          )}
+        </div>
       )}
     </li>
   );
 }
+
 
 /* ------------------------------------------- Nova tarefa / nova interação */
 
