@@ -357,10 +357,14 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
 
 
       // Merge: o que não veio mais do SAP fica inativo (sem apagar histórico).
-      // Produtos criados manualmente no portal não são afetados.
+      // Produtos criados manualmente no portal e materiais enviados de propósito
+      // ao catálogo do portal não são afetados — só saem por decisão manual.
       const vindos = new Set(rows.map((r) => r.codigo));
       const orfaos = (existentes ?? [])
-        .filter((r: any) => r.ativo && r.origem !== "manual" && !vindos.has(r.codigo))
+        .filter(
+          (r: any) =>
+            r.ativo && r.origem !== "manual" && !vindos.has(r.codigo) && !jaNoCatalogo.has(String(r.codigo)),
+        )
         .map((r: any) => r.codigo as string);
       for (let i = 0; i < orfaos.length; i += 500) {
         const chunk = orfaos.slice(i, i + 500);
