@@ -332,9 +332,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const opcoesConsultor: ConsultorOpcao[] = consultorImportado
     ? [...consultores, { id: consultorImportado.sap, sap: consultorImportado.sap, nome: `${consultorImportado.nome} (importado)` }]
     : consultores;
+  /** Quem pode atribuir o cadastro a outro consultor (senão assume o próprio). */
+  const podeEscolherConsultor =
+    !!consultoresQ.data?.podeEscolher || consultoresQ.data?.souConsultor === false;
   // Na ampliação de atuação o responsável desta unidade não é presumido:
-  // o consultor precisa escolher explicitamente.
-  const consultorEfetivo = consultorSap ?? (modoAmpliacao ? null : consultoresQ.data?.eu.sap ?? null);
+  // quem pode escolher precisa escolher explicitamente.
+  const consultorEfetivo =
+    consultorSap ??
+    (modoAmpliacao && podeEscolherConsultor ? null : consultoresQ.data?.eu.sap ?? null);
   const consultorNomeAtual =
     opcoesConsultor.find((c) => c.sap === consultorEfetivo)?.nome ?? consultoresQ.data?.eu.nome ?? "—";
 
