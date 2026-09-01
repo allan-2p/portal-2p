@@ -6,7 +6,7 @@ import { Loader2, MessageSquarePlus, Radar, Sparkles, Trash2 } from "lucide-reac
 import { toast } from "sonner";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
-import { AtlasChat } from "@/components/atlas/atlas-chat";
+import { AtlasChatLazy as AtlasChat } from "@/components/atlas/atlas-chat-lazy";
 import { criarThreadFn, excluirThreadFn, listarThreadsFn } from "@/lib/atlas.functions";
 import { cn } from "@/lib/utils";
 

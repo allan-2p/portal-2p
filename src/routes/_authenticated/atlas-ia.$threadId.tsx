@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Radar, Sparkles } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
-import { AtlasChat } from "@/components/atlas/atlas-chat";
+import { AtlasChatLazy as AtlasChat } from "@/components/atlas/atlas-chat-lazy";
 
 export const Route = createFileRoute("/_authenticated/atlas-ia/$threadId")({
   head: () => ({

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,10 @@ import { fmtBRL, precoSugeridoPadrao, MARGEM_PRECO_SUGERIDO, type CarregadoresPr
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorPath, enviarFotoProduto } from "@/lib/produto-imagens";
-import { CatalogoFotos } from "@/components/produtos/catalogo-fotos";
+// Catálogo de fotos só é baixado quando a aba é aberta (chunk separado).
+const CatalogoFotos = lazy(() =>
+  import("@/components/produtos/catalogo-fotos").then((m) => ({ default: m.CatalogoFotos })),
+);
 
 
 
@@ -64,7 +67,11 @@ function ProdutosCarregadoresPage() {
             <TabsTrigger value="ufs">Alíquotas por UF</TabsTrigger>
           </TabsList>
           <TabsContent value="produtos" className="mt-4"><ProdutosTab /></TabsContent>
-          <TabsContent value="fotos" className="mt-4"><CatalogoFotos /></TabsContent>
+          <TabsContent value="fotos" className="mt-4">
+            <Suspense fallback={<p className="py-10 text-center text-muted-foreground">Carregando catálogo…</p>}>
+              <CatalogoFotos />
+            </Suspense>
+          </TabsContent>
           <TabsContent value="ufs" className="mt-4"><UfsTab /></TabsContent>
         </Tabs>
 
