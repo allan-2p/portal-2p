@@ -675,6 +675,7 @@ function HistoricoTabela({ rows, tone }: { rows: any[]; tone: "ganho" | "perdido
           <tr>
             <th className="text-left px-2 py-2 font-medium">Pedido</th>
             <th className="text-left px-2 py-2 font-medium">Etapa</th>
+            <th className="text-left px-2 py-2 font-medium">Status do pedido</th>
             <th className="text-right px-2 py-2 font-medium">Valor</th>
             <th className="text-left px-2 py-2 font-medium">Data</th>
             <th className="text-left px-2 py-2 font-medium">Responsável</th>
@@ -694,6 +695,11 @@ function HistoricoTabela({ rows, tone }: { rows: any[]; tone: "ganho" | "perdido
                   )}
                 >
                   {o.stage ?? "—"}
+                </span>
+              </td>
+              <td className="px-2 py-2">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-muted-foreground">
+                  {o.status ?? "—"}
                 </span>
               </td>
               <td className="px-2 py-2 text-right tabular-nums">{fmt(o.amount)}</td>
