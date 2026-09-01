@@ -35,7 +35,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+- **Cliente do vendedor não aparecia na busca da proposta**: cadastros importados da plataforma antiga tinham só o nome do consultor (sem vínculo de usuário) e, em parte deles, um código SAP de outro vendedor, o que escondia o cliente do dono real. A busca de clientes, o perfil do cliente e o escopo de propostas passam a reconhecer também o nome do consultor, e os 6.801 cadastros afetados foram religados ao vendedor correto (`consultor_id`/`consultor_sap`).
 - Edição de propostas importadas da plataforma antiga: itens sem `produtoId` agora são reconhecidos pelo código SAP (catálogo ou item avulso), voltando a aparecer no passo 3 e liberando a cotação de frete.
+
 - **Variação de proposta importada**: criar variação de um orçamento vindo da plataforma antiga dava erro de chave duplicada (`projeto_antigo_id`). A variação agora nasce como proposta nativa do portal — não herda o vínculo com o projeto antigo nem as marcas de importação (origem/nº anterior).
 - **Tipo de nota fiscal obrigatório**: solar e carregadores passam a exigir seleção de tipo de NF (venda, triangulação ou bonificação) antes de salvar, gerar PDF ou concluir o pedido. Bonificação continua dispensando forma/condição de pagamento.
 - **Atlas Radar respeita a carteira do vendedor**: a listagem de alertas (card da home e tela `/atlas-ia/radar`) passa a filtrar pelo escopo do consultor — vendedor vê só os clientes da carteira dele; admin/diretor (View All Records) veem tudo. Antes a varredura era global e a leitura não filtrava.
