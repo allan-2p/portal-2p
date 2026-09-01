@@ -42,8 +42,11 @@ function toProduct(p: any): CarregadoresProductAdmin {
  */
 export const listCarregadoresProductsForProposal = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ products: CarregadoresProductAdmin[] }> => {
-    const { data, error } = await context.supabase
+  .handler(async (): Promise<{ products: CarregadoresProductAdmin[] }> => {
+    // Leitura pelo client de servidor: a coluna `custo` fica trancada para o
+    // papel `authenticated` no banco, mas o cálculo de CMV/margem precisa dela.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("sap_produtos")
       .select(COLS)
       .in("visibilidade", ["carregadores", "ambos"])

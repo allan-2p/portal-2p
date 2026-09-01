@@ -60,7 +60,8 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
       { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
     ]);
 
-    const { data: produto, error: readError } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: produto, error: readError } = await supabaseAdmin
       .from("sap_produtos")
       .select("id, descricao, origem, custo, ncm_id, visibilidade")
       .eq("id", data.id)
@@ -113,7 +114,8 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
 export const listSapProdutos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ produtos: SapProdutoRow[]; lastRun: SapSyncRun | null }> => {
-    const { data, error } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("sap_produtos")
       .select(
         "id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id, ncm_codigo, vendavel_sap, ativo_override, ativo_override_motivo, preco_vk12, preco_checado_em",
