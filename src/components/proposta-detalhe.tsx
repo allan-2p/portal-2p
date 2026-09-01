@@ -22,6 +22,7 @@ import { useImagensPorCodigo } from "@/lib/produto-imagens";
 import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
 import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-badge";
 import { cidadeUf } from "@/lib/local-format";
+import { adicionarDiasUteis } from "@/lib/dias-uteis";
 import { formatSapNumero } from "@/lib/sap-numero";
 import { numeroExibicao } from "@/lib/proposta-variacoes";
 import {
