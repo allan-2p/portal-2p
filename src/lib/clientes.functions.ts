@@ -92,12 +92,15 @@ export const listClientesFn = createServerFn({ method: "POST" })
       const todos = await db.listClientes(data.instancia);
       if (perm.view_all) return { ok: true as const, clientes: todos };
       const sap = await meuConsultorSap(context as any);
+      const nome = normalizarNome(await meuNomeCompleto(context as any));
       const meus = todos.filter(
         (c) =>
           c["created_by"] === context.userId ||
           c["consultor_id"] === context.userId ||
-          (!!sap && String(c["consultor_sap"] ?? "").trim() === sap),
+          (!!sap && String(c["consultor_sap"] ?? "").trim() === sap) ||
+          (!!nome && normalizarNome(String(c["consultor_nome"] ?? "")) === nome),
       );
+
       return { ok: true as const, clientes: meus };
 
     } catch (e) {
