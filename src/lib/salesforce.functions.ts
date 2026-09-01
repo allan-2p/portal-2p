@@ -642,6 +642,8 @@ export type SalesforceAccount = {
   operacao?: string | null;
   porte?: string | null;
   organizacao?: string | null;
+  planoFidelidade?: string | null;
+  pontuacaoFidelidade?: number | null;
   ativo?: boolean | null;
 };
 
@@ -725,6 +727,8 @@ function mapAccountDb(r: any, ownerNames: Map<string, string>): SalesforceAccoun
     operacao: cf.Operacao__c ?? null,
     porte: cf.Porte__c ?? null,
     organizacao: cf.Org_Conta__c ?? null,
+    planoFidelidade: cf.Plano_Fidelidade__c ?? null,
+    pontuacaoFidelidade: num(cf.Pontuacao_Plano_Fidelidade__c),
     ativo: typeof cf.Ativo__c === "boolean" ? cf.Ativo__c : null,
   };
 

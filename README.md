@@ -59,7 +59,7 @@ tests/                    testes unitários e de RLS
 ### Rotas do app
 
 <!-- readme:rotas -->
-78 páginas autenticadas em `src/routes/_authenticated` (file routes do TanStack Router).
+79 páginas autenticadas em `src/routes/_authenticated` (file routes do TanStack Router).
 
 | Área | Páginas | Rotas |
 | --- | --- | --- |
@@ -69,7 +69,7 @@ tests/                    testes unitários e de RLS
 | **raiz** | 4 | `/financeiro`, `/index`, `/marketing`, `/perfil` |
 | **financeiro** | 3 | `/financeiro/condicoes`, `/financeiro/credito`, `/financeiro` |
 | **marketing** | 8 | `/marketing/cac`, `/marketing/cohort`, `/marketing/gargalo`, `/marketing`, `/marketing/metas`, `/marketing/pre-vendas`, `/marketing/social`, `/marketing/trafego` |
-| **solar** | 15 | `/solar/atlas`, `/solar/clientes`, `/solar/clientes/cadastros`, `/solar/clientes/negocios`, `/solar/clientes/perfil`, `/solar/clientes/ranking`, `/solar/clientes/segmentacao`, `/solar/clientes/sugestoes`, `/solar/cupons`, `/solar/dashboards`, `/solar/dashboards/metas`, `/solar/pedidos`, `/solar/propostas`, `/solar/propostas/nova`, `/solar/tarefas` |
+| **solar** | 16 | `/solar/atlas`, `/solar/clientes`, `/solar/clientes/cadastros`, `/solar/clientes/negocios`, `/solar/clientes/perfil`, `/solar/clientes/ranking`, `/solar/clientes/segmentacao`, `/solar/clientes/sugestoes`, `/solar/cupons`, `/solar/dashboards`, `/solar/dashboards/metas`, `/solar/pedidos`, `/solar/plano-fidelidade`, `/solar/propostas`, `/solar/propostas/nova`, `/solar/tarefas` |
 <!-- /readme:rotas -->
 
 ### Convenções importantes

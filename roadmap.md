@@ -5,9 +5,6 @@
 - [ ] Qual permissão de perfil permite marcar pedido como entregue? (resposta: `modify_all = true` no objeto `propostas` da instância; ver `permission_profile_object_perms`)
 
 ## Concluído neste turno
-- [x] Remover o Plano Fidelidade de todo o portal (rota, menu, permissões, perfil do cliente).
-- [x] Dividir o bundle em chunks sob demanda (catálogo/planilhas, gráficos do funil, chat do Atlas).
-- [x] Sincronização do SAP não desativa mais materiais (só traz novidades; ativar/desativar é manual).
 - [x] Tipo de NF obrigatório em solar e carregadores (front + back)
 
 
