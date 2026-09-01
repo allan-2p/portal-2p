@@ -231,6 +231,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           </p>
         ) : null}
         <EstimativaEntrega proposta={p} />
+        <DataEntregaRealizada proposta={p} />
         <PropostaTimeline status={status} proposta={p} />
 
 
