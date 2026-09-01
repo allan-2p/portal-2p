@@ -35,6 +35,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+- **Plano Fidelidade removido do portal**: página `/solar/plano-fidelidade`, item de menu, feature `fidelidade` (perfis e grupos de permissão) e os campos de fidelidade do perfil do cliente foram excluídos.
+- **Bundle dividido em chunks sob demanda**: chat do Atlas (streamdown/shiki/mermaid) carregado só ao abrir e chunks próprios para planilhas (xlsx), gráficos (recharts/d3), markdown e QR Code — carregamento inicial mais leve.
+
 - Sincronização do SAP (mestre de materiais e varredura de preço) não desativa mais nada no portal: apenas insere materiais novos (inativos) e atualiza dados do SAP. Ativar/desativar continua sendo decisão manual em Administração › Produtos.
 - **Proposta Solar não é mais recusada por "Adicione ao menos um produto"**: quando a tela não conseguia casar um item com o catálogo (catálogo ainda carregando ou item vindo da calculadora sem correspondência), o pedido era enviado sem identificação do produto e o salvamento falhava mesmo com a lista preenchida. Agora cada item vai também com o código SAP e o servidor resolve o produto pelo código; se realmente não existir no catálogo, a mensagem diz quais códigos faltam.
 - **Catálogo do portal é definitivo**: material enviado manualmente ao catálogo passa a permanecer lá em qualquer sincronização do SAP (só sai por decisão de alguém na Administração) e não é mais desativado quando deixa de vir na lista de liberados do SAP. Ao enviar, a tela já leva para o produto na aba Produtos com os filtros abertos — antes ele entrava inativo e sumia atrás do filtro padrão "Ativos", parecendo que o envio não tinha funcionado.
