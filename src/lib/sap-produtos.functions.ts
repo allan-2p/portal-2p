@@ -368,12 +368,12 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         slug: "sap",
         level: "info",
         event: "sync",
-        message: `Sincronização incremental: ${inserted} novos, ${updated} atualizados, ${unchanged} sem mudança, ${orfaos.length} desativados.`,
+        message: `Sincronização incremental: ${inserted} novos, ${updated} atualizados, ${unchanged} sem mudança, 0 desativados (a sincronização não desativa materiais).`,
         detail: {
           inserted,
           updated,
           unchanged,
-          deactivated: orfaos.length,
+          deactivated: 0,
           catalogo_atualizado: espelho.length,
           catalogo_inalterado: catalogoInalterado,
         },
@@ -415,7 +415,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       return {
         inserted,
         updated,
-        deactivated: orfaos.length,
+        deactivated: 0,
         unchanged,
         vendaveis,
         catalogoAtualizado: espelho.length,
