@@ -206,6 +206,32 @@ async function meuConsultorSap(context: { supabase: any; userId: string }) {
 }
 
 /**
+ * Nome completo do usuário logado. Cadastros importados da plataforma antiga
+ * só têm `consultor_nome` (sem `created_by`/`consultor_id`), então o nome é a
+ * única forma de o dono real enxergar o cliente na busca da proposta.
+ */
+async function meuNomeCompleto(context: { supabase: any; userId: string }) {
+  const { data } = await context.supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", context.userId)
+    .maybeSingle();
+  const nome = String(data?.full_name ?? "").trim();
+  return nome || null;
+}
+
+/** Compara nomes ignorando acentos, caixa e espaços repetidos. */
+function normalizarNome(v: string | null): string {
+  return String(v ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+
+/**
  * Lista da tela "Perfil do Cliente": 100% da tabela `clientes` do Grupo 2P.
  * Separada por instância (campo `organizacao`/`instancia`) e, sem "View All
  * Records", pelo consultor responsável.
