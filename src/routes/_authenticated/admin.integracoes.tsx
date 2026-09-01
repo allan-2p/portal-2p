@@ -7,7 +7,7 @@ import { CheckCircle2, XCircle, RefreshCw, ExternalLink, Cloud, Loader2, ArrowLe
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { getSalesforceStatus, getSalesforceSample } from "@/lib/salesforce.functions";
+import { getSalesforceStatus, getSalesforceSample, reatribuirTarefasDoPortalFn } from "@/lib/salesforce.functions";
 import { IntegrationStatusBadge, formatLastSync, useIntegrationHealthMap } from "@/components/integration-status";
 import { IntegrationLogsPanel } from "@/components/integration-logs";
 import { IntegrationAlertsBanner } from "@/components/integration-alerts";
@@ -38,6 +38,17 @@ function IntegracoesPage() {
     mutationFn: () => fetchSample(),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao buscar dados"),
     onSuccess: () => toast.success("Dados carregados do Salesforce"),
+  });
+
+  const reatribuirFn = useServerFn(reatribuirTarefasDoPortalFn);
+  const reatribuir = useMutation({
+    mutationFn: () => reatribuirFn({ data: {} }),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao reatribuir tarefas"),
+    onSuccess: (r: any) =>
+      toast.success(
+        `${r?.reatribuidas ?? 0} tarefa(s) transferidas ao vendedor da conta` +
+          (r?.falhas ? ` · ${r.falhas} falha(s)` : ""),
+      ),
   });
 
   const connected = status.data?.connected === true;
