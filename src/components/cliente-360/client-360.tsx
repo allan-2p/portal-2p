@@ -590,7 +590,7 @@ function VisaoGeral({
                 <tbody className="divide-y divide-border/60">
                   {linhas.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                      <td colSpan={6} className="px-3 py-6 text-center text-xs text-muted-foreground">
                         Nenhuma proposta nesta etapa.
                       </td>
                     </tr>
@@ -602,9 +602,13 @@ function VisaoGeral({
                       : null;
                     return (
                       <tr key={o.id} className="hover:bg-muted/40">
+                        <td className="px-3 py-2 text-xs tabular-nums whitespace-nowrap text-muted-foreground">
+                          {o.numero || "—"}
+                        </td>
                         <td className="px-3 py-2">
                           <div className="max-w-[260px] truncate font-medium">{o.name}</div>
                         </td>
+
                         <td className="px-3 py-2">
                           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
