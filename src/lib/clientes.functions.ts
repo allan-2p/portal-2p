@@ -360,7 +360,9 @@ export const ampliarAtuacaoFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = await import("./clientes-db.server");
     const perm = await getPerm(context as any, data.instancia, "contas");
-    assertPodeCriar(perm, "contas");
+    // Ampliar atuação é aberto a todo consultor com acesso de escrita em Contas
+    // (criar OU editar): quem amplia traz o cadastro para a sua instância.
+    if (!perm.can_create && !perm.can_edit) assertPodeCriar(perm, "contas");
 
     if (!(await db.temEscopoOrg())) {
       throw new Error(
