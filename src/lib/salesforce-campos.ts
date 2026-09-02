@@ -7,7 +7,7 @@
  * ao usuário seja exatamente o payload enviado.
  */
 
-import { stage, orgOportunidade, escolhaProjetoVendido, projetoVendidoLabel, faseDaProposta } from "./salesforce-stage";
+import { orgOportunidade, escolhaProjetoVendido, projetoVendidoLabel, faseDaProposta } from "./salesforce-stage";
 
 export type SfObjeto = "Account" | "Opportunity";
 
