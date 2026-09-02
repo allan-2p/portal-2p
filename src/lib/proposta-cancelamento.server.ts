@@ -55,17 +55,34 @@ function destinatarios(): string[] {
 const SELECT =
   "id,numero,nome,organizacao,cliente_nome,cliente_doc,sap_ov_numero,nf_numero,nf_serie,fretefy_oferta_id,totais,consultor_id,consultor_nome";
 
-async function emailDoConsultor(consultorId: string | null | undefined): Promise<string | null> {
-  if (!consultorId) return null;
+async function emailDoConsultor(
+  consultorId: string | null | undefined,
+  consultorNome?: string | null,
+): Promise<string | null> {
+  const limpar = (v: unknown) => String(v ?? "").trim().toLowerCase();
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
-      .from("profiles")
-      .select("email")
-      .eq("id", consultorId)
-      .maybeSingle();
-    const email = String((data as any)?.email ?? "").trim().toLowerCase();
-    return email.includes("@") ? email : null;
+    if (consultorId) {
+      const { data } = await supabaseAdmin
+        .from("profiles")
+        .select("email")
+        .eq("id", consultorId)
+        .maybeSingle();
+      const email = limpar((data as any)?.email);
+      if (email.includes("@")) return email;
+    }
+    // Pedidos vindos da plataforma antiga só têm o nome do consultor.
+    const nome = String(consultorNome ?? "").trim();
+    if (nome) {
+      const { data } = await supabaseAdmin
+        .from("profiles")
+        .select("email,full_name")
+        .ilike("full_name", nome)
+        .limit(2);
+      const linhas = ((data as any[]) ?? []).filter((r) => limpar(r?.email).includes("@"));
+      if (linhas.length === 1) return limpar(linhas[0]?.email);
+    }
+    return null;
   } catch {
     return null;
   }
@@ -253,7 +270,7 @@ export async function efeitosCancelamento(
     );
 
     // O consultor responsável pela proposta também recebe o aviso de cancelamento.
-    const emailConsultor = await emailDoConsultor(row["consultor_id"]);
+    const emailConsultor = await emailDoConsultor(row["consultor_id"], row["consultor_nome"]);
     const destinatariosFinais = new Set(destinatarios());
     if (emailConsultor) destinatariosFinais.add(emailConsultor);
 

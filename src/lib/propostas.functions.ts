@@ -226,6 +226,30 @@ async function sincronizarSalesforceAoSalvar(propostaId: string) {
   await enfileirarSalesforce(propostaId);
 }
 
+/**
+ * Igual à anterior, mas nunca derruba a operação: usada no cancelamento, onde
+ * uma recusa do CRM não pode impedir o aviso aos setores nem devolver erro ao
+ * usuário depois do pedido já ter sido cancelado.
+ */
+async function sincronizarSalesforceComTolerancia(propostaId: string) {
+  try {
+    await sincronizarSalesforceAoSalvar(propostaId);
+  } catch (e) {
+    try {
+      const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+      await logIntegrationEvent({
+        slug: "salesforce",
+        event: "cancelamento-sync",
+        level: "error",
+        message: `Não foi possível enfileirar o cancelamento no CRM: ${(e as Error).message}`.slice(0, 500),
+        detail: { proposta_id: propostaId },
+      });
+    } catch {
+      /* best effort */
+    }
+  }
+}
+
 /** Backfill: sincroniza no Salesforce as propostas já existentes (admin). */
 export const sincronizarPropostasSalesforceLoteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1099,7 +1123,9 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
       patch: { motivo_cancelamento: motivoCancel, motivo_cancelamento_obs: obsCancel },
     });
     if (!t.ok) throw new Error(t.motivo ?? "Não foi possível cancelar o pedido.");
-    await sincronizarSalesforceAoSalvar(data.id);
+    // O aviso aos setores vem ANTES do Salesforce e o CRM é best effort: uma
+    // recusa da org (owner inativo, campo obrigatório) não pode impedir o
+    // e-mail de cancelamento, que é o que a operação realmente depende.
     let avisoEmail: string | null = null;
     try {
       const { efeitosCancelamento, avisoEnvioCancelamento } = await import("@/lib/proposta-cancelamento.server");
@@ -1109,9 +1135,22 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
         observacao: obsCancel,
       });
       avisoEmail = avisoEnvioCancelamento(efeitos);
-    } catch {
+    } catch (e) {
       avisoEmail = "FALHA ao notificar os setores por e-mail. Avise-os manualmente.";
+      try {
+        const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+        await logIntegrationEvent({
+          slug: "proposta",
+          event: "cancelamento-email",
+          level: "error",
+          message: `Falha ao avisar os setores do cancelamento: ${(e as Error).message}`.slice(0, 500),
+          detail: { proposta_id: data.id },
+        });
+      } catch {
+        /* best effort */
+      }
     }
+    await sincronizarSalesforceComTolerancia(data.id);
 
 
     return { ok: true, aviso: avisoEmail };
@@ -1155,7 +1194,6 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
         patch: { motivo_cancelamento: motivoCancel, motivo_cancelamento_obs: obsCancel },
       });
       if (!transicao.ok) throw new Error(transicao.motivo ?? "Não foi possível cancelar o pedido.");
-      await sincronizarSalesforceAoSalvar(data.id);
       let avisoEmail: string | null = null;
       try {
         const { efeitosCancelamento, avisoEnvioCancelamento } = await import("@/lib/proposta-cancelamento.server");
@@ -1165,9 +1203,22 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
           observacao: obsCancel,
         });
         avisoEmail = avisoEnvioCancelamento(efeitos);
-      } catch {
+      } catch (e) {
         avisoEmail = "FALHA ao notificar os setores por e-mail. Avise-os manualmente.";
+        try {
+          const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+          await logIntegrationEvent({
+            slug: "proposta",
+            event: "cancelamento-email",
+            level: "error",
+            message: `Falha ao avisar os setores do cancelamento: ${(e as Error).message}`.slice(0, 500),
+            detail: { proposta_id: data.id },
+          });
+        } catch {
+          /* best effort */
+        }
       }
+      await sincronizarSalesforceComTolerancia(data.id);
       return {
         ok: true,
         cancelada: true,
