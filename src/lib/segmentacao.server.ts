@@ -165,12 +165,38 @@ export type SegmentacaoResult = {
   consultores: string[];
 };
 
-export async function calcularSegmentacao(opts: {
+/**
+ * Cache curto em memória: a tela é pesada (varre o espelho inteiro do
+ * Salesforce) e vários usuários pedem o mesmo recorte em sequência.
+ */
+const CACHE_MS = 120_000;
+const cache = new Map<string, { em: number; p: Promise<SegmentacaoResult> }>();
+
+export function calcularSegmentacao(opts: {
   instance: SegmentacaoInstance;
   periodo: "mes" | "tri";
   donoId?: string | null;
   consultorSap?: string | null;
 }): Promise<SegmentacaoResult> {
+  const chave = `${opts.instance}|${opts.periodo}|${opts.donoId ?? ""}|${opts.consultorSap ?? ""}`;
+  const agora = Date.now();
+  const hit = cache.get(chave);
+  if (hit && agora - hit.em < CACHE_MS) return hit.p;
+  const p = calcularSegmentacaoRaw(opts).catch((e) => {
+    cache.delete(chave);
+    throw e;
+  });
+  cache.set(chave, { em: agora, p });
+  return p;
+}
+
+async function calcularSegmentacaoRaw(opts: {
+  instance: SegmentacaoInstance;
+  periodo: "mes" | "tri";
+  donoId?: string | null;
+  consultorSap?: string | null;
+}): Promise<SegmentacaoResult> {
+
   const base = trimestreAnterior();
   const atual = periodoAtual(opts.periodo);
 
