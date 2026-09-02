@@ -2429,7 +2429,14 @@ function PropostaCarregadoresPage() {
               <FreteDedicado
                 valor={state.freteValor}
                 selecionada={state.transportadora}
-
+                prazo={state.transportadora?.prazo ?? null}
+                onPrazoChange={(n) =>
+                  setState((s) =>
+                    s.transportadora
+                      ? { ...s, transportadora: { ...s.transportadora, prazo: Number(n ?? 0) } }
+                      : s,
+                  )
+                }
                 onSelect={(t) =>
                   setState((s) => ({
                     ...s,
@@ -2438,6 +2445,7 @@ function PropostaCarregadoresPage() {
                   }))
                 }
               />
+
             ) : null}
             {state.freteMod === "CIF" && !state.transportadora && tentouAvancar ? (
               <p className="text-[11px] text-destructive mt-1 flex items-center gap-1">
