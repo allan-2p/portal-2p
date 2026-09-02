@@ -45,7 +45,12 @@ export type SalvarPropostaSolarInput = {
   observacoesInternas: string | null;
   calculo: Record<string, unknown> | null;
   /** `produtoId` do catálogo e/ou o código SAP do material (fallback). */
-  itens: { produtoId: string; codigo: string; qtd: number }[];
+  itens: { produtoId: string; codigo: string; qtd: number; valor: number }[];
+  /**
+   * Trava de preço: o vendedor viu os valores da tela e confirmou os novos
+   * preços do SAP. Sem confirmação, qualquer divergência bloqueia o salvamento.
+   */
+  precosConfirmados: boolean;
 };
 
 const money2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100;
