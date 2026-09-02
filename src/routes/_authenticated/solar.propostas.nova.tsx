@@ -2856,7 +2856,13 @@ function NovaPropostaSolarPage() {
             </div>
 
             {freteMod === "DEDICADO" && (
-              <FreteDedicado selecionada={transportadora} onSelect={setTransportadora} />
+              <FreteDedicado
+                selecionada={transportadora}
+                onSelect={setTransportadora}
+                prazo={fretePrazoManual}
+                onPrazoChange={setFretePrazoManual}
+              />
+
             )}
 
             {freteMod === "CIF" && freteItens.pendencias.length > 0 && (
