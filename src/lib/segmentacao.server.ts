@@ -271,11 +271,12 @@ async function calcularSegmentacaoRaw(opts: {
     if (!o.account_id) continue;
     const lista = pedidosPorConta.get(o.account_id) ?? [];
     lista.push({
-      id: o.id,
-      name: o.name,
-      status: o.status_do_pedido__c,
+      id: o.id ?? "",
+      name: o.name ?? null,
+      status: o.status_do_pedido__c ?? null,
       total: valor(o),
-      closeDate: o.close_date,
+      closeDate: o.close_date ?? null,
+
     });
     pedidosPorConta.set(o.account_id, lista);
   }
