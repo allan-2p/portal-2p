@@ -407,7 +407,17 @@ function SegmentacaoPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[900px] table-fixed text-sm">
+              <colgroup>
+                <col className="w-10" />
+                <col className="w-16" />
+                <col />
+                <col className="w-16" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
+                <col className="w-12" />
+              </colgroup>
               <thead>
                 <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50 select-none">
                   <th className="w-10"></th>
@@ -561,7 +571,7 @@ function SegmentacaoPage() {
                     <td className="px-4 py-3 text-right tabular-nums">{fmt(totals.projection)}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-success">{fmt(totals.generation)}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-primary">{fmt(totals.sales)}</td>
-                    <td colSpan={2}></td>
+                    <td></td>
                   </tr>
                 )}
               </tbody>

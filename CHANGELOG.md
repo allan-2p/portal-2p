@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Tabela de Segmentação ocupa toda a largura**: corrigida uma coluna vazia implícita no rodapé que reservava grande parte da tabela; as colunas agora têm larguras estáveis e o nome do cliente absorve o espaço disponível.
 - **Home reorganizada**: o card Atlas Radar saiu da home (o Radar continua em Atlas IA); os Orçamentos subiram para a seção "Operação do dia · Tarefas & Orçamentos", ao lado da Agenda, e no lugar deles entrou o card "Ranking de clientes" (em configuração, com conteúdo embaçado até ser ligado).
 - **Funil do cliente em formato de tabela**: o funil da visão geral do Perfil do Cliente deixou os blocos por etapa e virou uma tabela (Proposta, Etapa, Criada em, Em aberto, Valor) com filtro por etapa, mais recentes primeiro e total no rodapé.
 - **Proposta com faturamento ao cliente final volta a salvar**: a revalidação de preços no salvamento simulava com o documento real do cliente final (que só é cadastrado no SAP no fechamento), o SAP recusava a precificação e o pedido travava. Agora salvar usa a mesma regra da tela — cliente fake da UF informada no faturamento, com a revenda no envelope quando o cliente final é CNPJ com IE. Triangulação continua sem fake.
