@@ -29,6 +29,8 @@ export function AtlasWidget() {
   const qc = useQueryClient();
 
   const dragRef = useRef<{ startY: number; startOffset: number; moved: boolean } | null>(null);
+  // Continua true durante o click que sucede o pointerup, para não abrir o chat.
+  const moveuRef = useRef(false);
 
   const listar = useServerFn(listarThreadsFn);
   const criar = useServerFn(criarThreadFn);
