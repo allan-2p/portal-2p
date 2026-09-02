@@ -489,6 +489,10 @@ function NovaPropostaSolarPage() {
           prazo: Number(p['frete_prazo'] ?? 0),
         });
       }
+      setFretePrazoManual(
+        p['frete_prazo'] === null || p['frete_prazo'] === undefined ? null : Number(p['frete_prazo']),
+      );
+
       const totais = (p['totais'] ?? {}) as Record<string, any>;
       // Tabela salva na proposta vence o padrão do cliente. Sem valor gravado
       // (propostas antigas), deixa o cadastro do cliente decidir.
