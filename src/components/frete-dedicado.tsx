@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Truck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/money-input";
+
 import { listarTransportadorasDedicadas } from "@/lib/frete.functions";
 import { fmtBRL, type CarregadoresTransportadora } from "@/lib/carregadores";
 
@@ -17,19 +19,34 @@ type Props = {
    * "Valor do frete (manual)"). Nesse caso o campo interno não é exibido.
    */
   valor?: number;
+  /**
+   * Prazo de entrega em dias úteis, informado manualmente (não há cotação no
+   * frete dedicado). Quando `onPrazoChange` é passado, o campo é exibido.
+   */
+  prazo?: number | null;
+  onPrazoChange?: (n: number | null) => void;
 };
 
 /**
  * Frete dedicado: o vendedor informa o valor manualmente e escolhe uma das
- * transportadoras dedicadas cadastradas (prazo fixo de 2 dias). O CNPJ segue
- * para a ordem de venda (parceiro ZT) e para a oferta de carga.
+ * transportadoras dedicadas cadastradas. O prazo de entrega (dias úteis)
+ * também é manual. O CNPJ segue para a ordem de venda (parceiro ZT) e para a
+ * oferta de carga.
  */
-export function FreteDedicado({ selecionada, onSelect, valor: valorExterno }: Props) {
+export function FreteDedicado({
+  selecionada,
+  onSelect,
+  valor: valorExterno,
+  prazo,
+  onPrazoChange,
+}: Props) {
   const controlado = valorExterno !== undefined;
   const listar = useServerFn(listarTransportadorasDedicadas);
   const [lista, setLista] = useState<Dedicada[]>([]);
   const [valorInterno, setValorInterno] = useState<number>(selecionada?.total ?? 0);
   const valor = controlado ? (valorExterno ?? 0) : valorInterno;
+  const prazoAtual = onPrazoChange ? (prazo ?? null) : (selecionada?.prazo ?? 2);
+
 
 
   useEffect(() => {
@@ -51,11 +68,12 @@ export function FreteDedicado({ selecionada, onSelect, valor: valorExterno }: Pr
     if (t > 0) setValorInterno((v) => (v === t ? v : t));
   }, [selecionada?.total, controlado]);
 
-  const aplicar = (id: string, total: number) => {
+  const aplicar = (id: string, total: number, prazoDias = prazoAtual) => {
     const t = lista.find((x) => x.id === id);
     if (!t) return onSelect(null);
-    onSelect({ id: t.id, nome: t.nome, documento: t.documento, total, prazo: 2 });
+    onSelect({ id: t.id, nome: t.nome, documento: t.documento, total, prazo: Number(prazoDias ?? 0) });
   };
+
 
   // Valor vindo do formulário: mantém o total da transportadora em sincronia.
   useEffect(() => {
@@ -71,7 +89,7 @@ export function FreteDedicado({ selecionada, onSelect, valor: valorExterno }: Pr
       <div className="flex items-center gap-2 text-sm font-medium">
         <Truck className="size-4" /> Frete dedicado
       </div>
-      <div className={controlado ? "grid gap-4" : "grid gap-4 md:grid-cols-2"}>
+      <div className={controlado && !onPrazoChange ? "grid gap-4" : "grid gap-4 md:grid-cols-2"}>
         {!controlado && (
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Valor do frete (manual) *</label>
@@ -97,13 +115,36 @@ export function FreteDedicado({ selecionada, onSelect, valor: valorExterno }: Pr
             </SelectContent>
           </Select>
         </div>
+        {onPrazoChange && (
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Prazo de entrega (dias úteis)</label>
+            <Input
+              type="number"
+              min={0}
+              max={365}
+              inputMode="numeric"
+              placeholder="Ex.: 5"
+              value={prazoAtual === null || prazoAtual === undefined ? "" : String(prazoAtual)}
+              onChange={(e) => {
+                const bruto = e.target.value.trim();
+                const n = bruto === "" ? null : Math.max(0, Math.min(365, Math.round(Number(bruto) || 0)));
+                onPrazoChange(n);
+                if (selecionada) aplicar(selecionada.id, valor, n);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {selecionada && (
         <p className="text-xs text-muted-foreground">
-          {selecionada.nome} · CNPJ {selecionada.documento} · prazo 2 dias · {fmtBRL(selecionada.total)}
+          {selecionada.nome} · CNPJ {selecionada.documento}
+          {Number(selecionada.prazo ?? 0) > 0 ? ` · prazo ${selecionada.prazo} dias úteis` : " · prazo a definir"}
+          {" · "}
+          {fmtBRL(selecionada.total)}
         </p>
       )}
+
       {!(valor > 0) && (
         <p className="text-xs text-amber-600">Informe o valor do frete dedicado.</p>
       )}

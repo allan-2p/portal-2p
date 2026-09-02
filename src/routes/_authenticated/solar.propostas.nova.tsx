@@ -24,6 +24,7 @@ import {
 import { WizardActionBar } from "@/components/wizard-action-bar";
 import { FreteCotacao } from "@/components/frete-cotacao";
 import { FreteDedicado } from "@/components/frete-dedicado";
+import { textoPrazoEntrega } from "@/lib/prazo-entrega";
 import { CondicaoPagamentoSelect } from "@/components/condicao-pagamento-select";
 import { condicaoDaFormaPagamento, motivoCondicaoTravada } from "@/lib/condicao-pagamento-forma";
 import { toast } from "sonner";
@@ -301,6 +302,10 @@ function NovaPropostaSolarPage() {
   const [freteBonificado, setFreteBonificado] = useState(false);
   const [areaRural, setAreaRural] = useState(false);
   const [transportadora, setTransportadora] = useState<CarregadoresTransportadora | null>(null);
+  // Prazo de entrega em dias úteis: no CIF vem da cotação (SLA da
+  // transportadora); no DEDICADO o vendedor informa manualmente.
+  const [fretePrazoManual, setFretePrazoManual] = useState<number | null>(null);
+
   // Cotação de frete em andamento — trava avanço/salvamento para não gravar sem o frete.
   const [freteCotando, setFreteCotando] = useState(false);
 
@@ -485,6 +490,10 @@ function NovaPropostaSolarPage() {
           prazo: Number(p['frete_prazo'] ?? 0),
         });
       }
+      setFretePrazoManual(
+        p['frete_prazo'] === null || p['frete_prazo'] === undefined ? null : Number(p['frete_prazo']),
+      );
+
       const totais = (p['totais'] ?? {}) as Record<string, any>;
       // Tabela salva na proposta vence o padrão do cliente. Sem valor gravado
       // (propostas antigas), deixa o cadastro do cliente decidir.
@@ -1402,6 +1411,14 @@ function NovaPropostaSolarPage() {
 
   const freteValor = freteMod === "FOB" || freteMod === "" || freteGratis ? 0 : (transportadora?.total ?? 0);
   const bonificado = freteBonificado && (freteMod === "CIF" || freteMod === "DEDICADO");
+  // Prazo mostrado/gravado: CIF usa o SLA da cotação; DEDICADO usa o manual.
+  const fretePrazoEfetivo =
+    freteMod === "DEDICADO"
+      ? fretePrazoManual
+      : freteMod === "CIF"
+        ? (transportadora?.prazo ?? null)
+        : null;
+
   // Bonificado: a 2P assume o frete — o valor continua cotado, mas não é cobrado.
   const total = money2(subtotal - desconto + (bonificado ? 0 : freteValor));
 
@@ -1711,6 +1728,8 @@ function NovaPropostaSolarPage() {
       freteGratis,
       freteBonificado: bonificado,
       transportadora: transportadora?.nome ?? null,
+      fretePrazo: fretePrazoEfetivo,
+
       total,
       listaPreco,
       tipoNf,
@@ -2817,7 +2836,10 @@ function NovaPropostaSolarPage() {
                   onValueChange={(v) => {
                     setFreteMod(v);
                     setTransportadora(null);
+                    // CIF volta a usar o SLA da cotação; FOB não tem prazo.
+                    setFretePrazoManual(null);
                   }}
+
                 >
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
@@ -2848,7 +2870,13 @@ function NovaPropostaSolarPage() {
             </div>
 
             {freteMod === "DEDICADO" && (
-              <FreteDedicado selecionada={transportadora} onSelect={setTransportadora} />
+              <FreteDedicado
+                selecionada={transportadora}
+                onSelect={setTransportadora}
+                prazo={fretePrazoManual}
+                onPrazoChange={setFretePrazoManual}
+              />
+
             )}
 
             {freteMod === "CIF" && freteItens.pendencias.length > 0 && (
@@ -2905,6 +2933,8 @@ function NovaPropostaSolarPage() {
                   value={`${freteMod || "—"}${bonificado || freteGratis ? " · Frete grátis" : ""}`}
                 />
                 <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
+                <Info label="Prazo de entrega" value={textoPrazoEntrega(fretePrazoEfetivo, freteMod)} />
+
                 <Info
                   label="Endereço de faturamento"
                   value={

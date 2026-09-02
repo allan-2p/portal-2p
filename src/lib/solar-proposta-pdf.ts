@@ -2,6 +2,7 @@ import { formatPropostaNumero } from "@/lib/sap-numero";
 import { fmtBRL, fmtPct } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
 import { LOGO_2P_DATA_URI } from "./brand-2p-logo";
+import { textoPrazoEntrega } from "./prazo-entrega";
 
 
 export type SolarPdfItem = {
@@ -46,6 +47,8 @@ export type SolarPropostaPdfData = {
   /** Frete absorvido pela 2P (cliente não paga). */
   freteBonificado?: boolean;
   transportadora?: string | null;
+  /** Prazo de entrega em dias úteis (propostas.frete_prazo). */
+  fretePrazo?: number | null;
   total: number;
   listaPreco?: string | null;
   tipoNf?: string | null;
@@ -365,7 +368,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
 
     <div class="cond">
       <div><label>Validade</label><p>Proposta válida até ${esc(validade)}, sujeita a disponibilidade de estoque.</p></div>
-      <div><label>Prazo de entrega</label><p>A confirmar na aprovação, conforme modalidade ${esc(p.freteMod || "de frete")}.</p></div>
+      <div><label>Prazo de entrega</label><p>${esc(textoPrazoEntrega(p.fretePrazo, p.freteMod))}</p></div>
       <div><label>Condições</label><p>Valores em reais.</p></div>
       <div><label>Forma de pagamento</label><p>${esc(p.formaPagamento ? (LABEL_PAGAMENTO[p.formaPagamento] ?? p.formaPagamento) : "") || "A definir"}</p></div>
     </div>
