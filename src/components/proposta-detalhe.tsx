@@ -196,6 +196,12 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <Campo label="Telefone" value={p['cliente_telefone'] || "—"} />
           <Campo label="E-mail" value={p['cliente_email'] || "—"} />
           <Campo label="Fase (Salesforce)" value={faseDaProposta(p as any)} />
+          {p['motivo_perda'] ? (
+            <Campo label="Motivo da perda" value={String(p['motivo_perda'])} />
+          ) : null}
+          {p['motivo_perda_obs'] ? (
+            <Campo label="Descrição da perda" value={String(p['motivo_perda_obs'])} />
+          ) : null}
           <Campo label="Consultor responsável" value={p['consultor_nome'] || "—"} />
           <Campo label="Data da compra" value={p['finalizado_em'] ? fmtData(p['finalizado_em']) : "—"} />
           <Campo label="Previsão de despacho" value={p['expedido_em'] ? fmtData(p['expedido_em']) : "—"} />
