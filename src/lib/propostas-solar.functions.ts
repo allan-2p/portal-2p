@@ -343,6 +343,39 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       throw new Error(motivo);
     }
 
+    // ------------------------------------------------------------------
+    // Trava de preço: o valor que o vendedor viu na tela é o valor gravado.
+    // Se a simulação do SAP devolver preço diferente (mudança de condição de
+    // preço entre a montagem e o salvamento), o salvamento é BLOQUEADO com a
+    // lista "de → para". Só grava quando o vendedor confirma explicitamente.
+    // ------------------------------------------------------------------
+    if (!data.precosConfirmados) {
+      const divergentes: string[] = [];
+      for (const i of data.itens) {
+        const p = produtos.find((x) => x.id === i.produtoId)!;
+        const cod = normCod(p.codigo);
+        const novo = money2(precos[cod] ?? 0);
+        const visto = money2(i.valor);
+        if (visto > 0 && novo > 0 && Math.abs(novo - visto) >= 0.01) {
+          const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+          divergentes.push(`${p.descricao ?? cod} (${cod}): ${brl(visto)} → ${brl(novo)}`);
+        }
+      }
+      if (divergentes.length) {
+        const motivo =
+          `PRECO_ALTERADO: a tabela ${data.listaPreco} mudou no SAP depois da montagem da proposta. ` +
+          `${divergentes.slice(0, 8).join(" • ")}. ` +
+          `A proposta NÃO foi salva: revise os preços e confirme para gravar com os novos valores.`;
+        await auditarBloqueio(auditCtx, {
+          etapa: "salvar",
+          motivo,
+          dados: { divergentes, precos, lista_preco: data.listaPreco },
+        });
+        throw new Error(motivo);
+      }
+    }
+
+
     const itens = data.itens.map((i) => {
       const p = produtos.find((x) => x.id === i.produtoId)!;
       const cod = normCod(p.codigo);
