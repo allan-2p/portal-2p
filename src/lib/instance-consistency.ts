@@ -20,6 +20,7 @@ export function isGroupFeature(key: FeatureKey): boolean {
 export const CAPABILITY_FEATURES: FeatureKey[] = [
   "admin.logs.exportar",
   "admin.sistema.excluir",
+  "admin.sistema.cancelar",
   "admin.clientes.integracoes",
   "admin.area.integracoes",
 ];
