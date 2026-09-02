@@ -4,10 +4,10 @@ import { condicaoPagamentoClienteFn } from "@/lib/clientes.functions";
 import { getCreditoVigente } from "@/lib/credito.functions";
 
 /**
- * "Boleto a prazo" só é oferecido na proposta quando o cliente tem condição de
- * pagamento cadastrada no cadastro E crédito aprovado (análise concluída como
- * Liberado e dentro da validade). Sem isso, o checkout mostra apenas as demais
- * formas de pagamento.
+ * "Boleto a prazo" é oferecido quando o cliente tem condição de pagamento
+ * cadastrada E o prazo já está concedido: ou pela condição de pagamento do
+ * SAP (ZTERM diferente de 2P00 = à vista), ou por uma análise de crédito
+ * concluída como Liberado e dentro da validade no portal.
  */
 export function usePrazoLiberado(clienteDoc?: string | null) {
   const doc = docCanonico(String(clienteDoc ?? ""));
@@ -28,7 +28,8 @@ export function usePrazoLiberado(clienteDoc?: string | null) {
   });
 
   const condicaoCadastrada = cadastro.data?.condicao ?? null;
-  const creditoAprovado = Boolean(credito.data);
+  const prazoNoSap = cadastro.data?.prazoNoSap === true;
+  const creditoAprovado = Boolean(credito.data) || prazoNoSap;
   const liberado = valido && Boolean(condicaoCadastrada) && creditoAprovado;
 
   return {
@@ -36,12 +37,13 @@ export function usePrazoLiberado(clienteDoc?: string | null) {
     carregando: valido && (cadastro.isLoading || credito.isLoading),
     condicaoCadastrada,
     creditoAprovado,
+    prazoNoSap,
     motivo: !valido
       ? "Selecione o cliente para liberar condições a prazo."
       : !condicaoCadastrada
         ? "Cliente sem condição de pagamento cadastrada."
         : !creditoAprovado
-          ? "Cliente sem crédito aprovado pelo Financeiro."
+          ? "Cliente sem condição a prazo no SAP e sem crédito aprovado pelo Financeiro."
           : null,
   };
 }
