@@ -187,10 +187,9 @@ export async function calcularSegmentacao(opts: {
     if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
     clientesParams.set("or", `(${alvos.join(",")})`);
   }
-  const clientes = await buscarTudo("clientes", clientesParams);
-
-  // ---------- Oportunidades (espelho no mesmo banco) ----------
-  const [vendasTri, vendidoAtual, geradoAtual, pedidos] = await Promise.all([
+  // Clientes e oportunidades saem juntos — não há dependência entre eles.
+  const [clientes, vendasTri, vendidoAtual, geradoAtual, pedidos] = await Promise.all([
+    buscarTudo("clientes", clientesParams),
     buscarTudo(
       "opportunity_sf",
       paramsOpp({
@@ -217,12 +216,16 @@ export async function calcularSegmentacao(opts: {
     ) as Promise<OppRow[]>,
     buscarTudo(
       "opportunity_sf",
-      paramsOpp({
-        stage_name: "eq.Pedido Concluído",
-        status_do_pedido__c: `in.(${STATUS_PEDIDO_ANDAMENTO.map((s) => `"${s}"`).join(",")})`,
-      }),
+      paramsOpp(
+        {
+          stage_name: "eq.Pedido Concluído",
+          status_do_pedido__c: `in.(${STATUS_PEDIDO_ANDAMENTO.map((s) => `"${s}"`).join(",")})`,
+        },
+        OPP_COLS_PEDIDO,
+      ),
     ) as Promise<OppRow[]>,
   ]);
+
 
   // ---------- Agregações por conta ----------
   const vendasBase = new Map<string, number>();
