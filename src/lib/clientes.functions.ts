@@ -34,12 +34,23 @@ async function assertPodeAlterarCliente(
   // responsável, qualquer consultor pode revisar o cadastro e assumi-lo nesta
   // instância — o dono da outra unidade não bloqueia ("Modify All Records"
   // deixa de ser exigido nesse caso).
-  const semDonoNaInstancia = !resp.sap && !resp.id;
-  const dono = semDonoNaInstancia
-    ? null
-    : (idDeUsuario(resp.id) ?? ((atual["created_by"] as string | null) ?? null));
+  const semDonoNaInstancia = !resp.sap && !resp.id && !resp.nome;
+  // O responsável da unidade pode não ter uuid gravado (o par canônico é
+  // SAP + nome). Nesse caso o vínculo é reconhecido pelo código SAP ou pelo
+  // nome do consultor — mesma regra usada na listagem.
+  const meuSap = await meuConsultorSap(context as any);
+  const meuNome = normalizarNome(await meuNomeCompleto(context as any));
+  const souOResponsavel =
+    idDeUsuario(resp.id) === context.userId ||
+    (!!meuSap && String(resp.sap ?? "").trim() === meuSap) ||
+    (!!meuNome && normalizarNome(String(resp.nome ?? "")) === meuNome);
+  const dono =
+    semDonoNaInstancia || souOResponsavel
+      ? null
+      : (idDeUsuario(resp.id) ?? ((atual["created_by"] as string | null) ?? null));
   const perm = await getPerm(context as any, instancia, "contas");
   assertPodeEditar(perm, "contas", dono, context.userId);
+
 
   return atual;
 }
