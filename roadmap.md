@@ -124,3 +124,6 @@
 - [x] Detalhe da proposta (olhinho): exibir peso total dos itens
 - [x] Tipo de nota fiscal: padrão "Venda" em Solar e Carregadores (consultor pode alterar)
 - [x] Ampliação de atuação liberada para qualquer consultor (sem exigir "Modify All Records")
+
+- [x] Perfil de Cliente: acelerar carregamento da segmentação (paginação paralela + cache)
+- [x] Dossiê 360: exibir número da proposta no funil
