@@ -420,7 +420,18 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           </table>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border px-4 py-4 sm:justify-end sm:gap-8 sm:px-5">
+          <Total
+            label="Peso total"
+            value={
+              pesoQ.isLoading
+                ? "Calculando…"
+                : pesoTotal > 0
+                  ? `${pesoTotal.toLocaleString("pt-BR", { maximumFractionDigits: 3 })} kg`
+                  : "—"
+            }
+          />
           <Total label="Subtotal" value={fmtBRL(subtotal)} />
+
           <Total
             label={totais['cupom'] ? `Desconto (${String(totais['cupom'])})` : "Desconto"}
             value={
