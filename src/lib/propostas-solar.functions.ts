@@ -76,6 +76,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
       produtoId: String(x?.produtoId ?? "").trim(),
       codigo: String(x?.codigo ?? "").trim(),
       qtd: Math.max(0, Number(x?.qtd) || 0),
+      valor: money2(x?.valor),
     }))
     .filter((x: any) => (x.produtoId || x.codigo) && x.qtd > 0);
   if (!itens.length) throw new Error("Adicione ao menos um produto.");
