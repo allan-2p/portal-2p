@@ -12,6 +12,7 @@
 - [x] Publicado em 01/09/2026: tabela de Segmentação preenchendo a largura e demais mudanças recentes.
 
 ## Concluído neste turno
+- [x] Fase (StageName) exibida nas propostas + "dar perda" pela linha (motivo + descrição → Loss_Reason__c / Descri_o_do_Motivo_de_Perda__c).
 - [x] Tipo de NF obrigatório em solar e carregadores (front + back)
 
 
