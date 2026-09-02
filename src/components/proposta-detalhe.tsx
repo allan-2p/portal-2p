@@ -16,6 +16,8 @@ import { finalidadeUsoDoCadastro, labelFinalidadeUso } from "@/lib/carregadores"
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fmtBRL, fmtPct } from "@/lib/carregadores";
+import { BotaoDarPerda } from "@/components/propostas/dar-perda";
+import { faseDaProposta } from "@/lib/salesforce-stage";
 import { StatusDot } from "@/components/proposta-status-ui";
 import { PropostaTimeline } from "@/components/proposta-timeline";
 import { propostaStatusStyle } from "@/lib/proposta-status";
@@ -166,6 +168,10 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
               {bonificado ? <BonificacaoBadge /> : null}
+              <span className="rounded-full border border-border/60 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                {faseDaProposta(p as any)}
+              </span>
+              <BotaoDarPerda proposta={p as any} />
               <div
                 className="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold sm:text-sm"
                 style={{ backgroundColor: st.bg, color: st.fg }}
@@ -189,6 +195,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <Campo label="Inscrição estadual" value={p['cliente_ie'] || "—"} />
           <Campo label="Telefone" value={p['cliente_telefone'] || "—"} />
           <Campo label="E-mail" value={p['cliente_email'] || "—"} />
+          <Campo label="Fase (Salesforce)" value={faseDaProposta(p as any)} />
           <Campo label="Consultor responsável" value={p['consultor_nome'] || "—"} />
           <Campo label="Data da compra" value={p['finalizado_em'] ? fmtData(p['finalizado_em']) : "—"} />
           <Campo label="Previsão de despacho" value={p['expedido_em'] ? fmtData(p['expedido_em']) : "—"} />
