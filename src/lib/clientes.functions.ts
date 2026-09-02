@@ -34,7 +34,12 @@ async function assertPodeAlterarCliente(
   // responsável, qualquer consultor pode revisar o cadastro e assumi-lo nesta
   // instância — o dono da outra unidade não bloqueia ("Modify All Records"
   // deixa de ser exigido nesse caso).
-  const semDonoNaInstancia = !resp.sap && !resp.id && !resp.nome;
+  // O mesmo vale para o cadastro Grupo 2P cuja unidade aberta ainda não tem
+  // responsável próprio (só herda o par canônico da unidade de origem): é
+  // exatamente a revisão obrigatória da ampliação.
+  const ehGrupo = String(atual["escopo_org"] ?? "").toLowerCase() === "grupo";
+  const semDonoNaInstancia = (!resp.sap && !resp.id && !resp.nome) || (ehGrupo && !resp.proprio);
+
   // O responsável da unidade pode não ter uuid gravado (o par canônico é
   // SAP + nome). Nesse caso o vínculo é reconhecido pelo código SAP ou pelo
   // nome do consultor — mesma regra usada na listagem.
