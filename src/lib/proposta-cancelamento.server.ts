@@ -27,7 +27,7 @@ export type EfeitosCancelamentoResult = {
 
 /**
  * Texto honesto sobre o envio dos e-mails de cancelamento: nunca diz
- * "avisados por e-mail" quando o provedor recusou ou não confirmou.
+ * "enviado" quando o provedor recusou ou não confirmou.
  */
 export function avisoEnvioCancelamento(r: EfeitosCancelamentoResult): string | null {
   const e = r.emails;
@@ -37,9 +37,9 @@ export function avisoEnvioCancelamento(r: EfeitosCancelamentoResult): string | n
     return `FALHA no envio dos e-mails de cancelamento (${e.falharam} de ${e.total}).${motivo} Avise os setores manualmente.`;
   }
   if (e.pendentes > 0) {
-    return "E-mails de cancelamento enfileirados, mas ainda sem confirmação de envio pelo provedor — acompanhe em Integrações.";
+    return "E-mail de cancelamento enfileirado, mas ainda sem confirmação de envio pelo provedor — acompanhe em Integrações.";
   }
-  return "Os setores foram avisados por e-mail.";
+  return "E-mail de cancelamento enviado.";
 }
 
 const DESTINOS_PADRAO =
