@@ -68,19 +68,38 @@ export function AtlasWidget() {
     return Math.max(-max, Math.min(max, next));
   };
 
+  // O arrasto é acompanhado no window: se ficasse no botão, sair da área
+  // (poucos pixels) encerraria o movimento antes de reposicionar o ícone.
   const startDrag = (clientY: number) => {
+    if (typeof window === "undefined") return;
     dragRef.current = { startY: clientY, startOffset: offsetY, moved: false };
-  };
+    moveuRef.current = false;
 
-  const onMove = (clientY: number) => {
-    if (!dragRef.current) return;
-    const delta = clientY - dragRef.current.startY;
-    if (Math.abs(delta) > 4) dragRef.current.moved = true;
-    setOffsetY(clampOffset(dragRef.current.startOffset + delta));
-  };
+    const onMove = (ev: PointerEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      ev.preventDefault();
+      const delta = ev.clientY - d.startY;
+      if (Math.abs(delta) > 4) {
+        d.moved = true;
+        moveuRef.current = true;
+      }
+      setOffsetY(clampOffset(d.startOffset + delta));
+    };
+    const endDrag = () => {
+      dragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+      // Zera só depois do click, que dispara logo após o pointerup.
+      window.setTimeout(() => {
+        moveuRef.current = false;
+      }, 0);
+    };
 
-  const endDrag = () => {
-    dragRef.current = null;
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
   };
 
   const threads = useQuery({
