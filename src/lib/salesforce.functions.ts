@@ -2608,6 +2608,8 @@ export const getClientTimeline = createServerFn({ method: "GET" })
 
 export type Account360Opportunity = {
   id: string;
+  /** Número do pedido no portal (Numero_Pedido_Portal__c), quando existir. */
+  numero: string | null;
   name: string;
   stage: string | null;
   amount: number;
@@ -2618,6 +2620,7 @@ export type Account360Opportunity = {
   owner: string | null;
   tipoNf: string | null;
 };
+
 
 export type Account360Case = {
   id: string;
