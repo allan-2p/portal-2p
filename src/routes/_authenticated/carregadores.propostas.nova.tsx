@@ -100,6 +100,7 @@ import {
 import { buildPropostaPdfHtml } from "@/lib/carregadores-proposta-pdf";
 import { MoneyInput } from "@/components/money-input";
 import { FreteDedicado } from "@/components/frete-dedicado";
+import { textoPrazoEntrega } from "@/lib/prazo-entrega";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePrazoLiberado } from "@/hooks/use-prazo-liberado";
 
