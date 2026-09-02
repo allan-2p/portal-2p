@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Duplicar proposta só em pedido cancelado**: o ícone de copiar saiu das linhas dos demais status nas listas de propostas (2P Solar e 2P Carregadores); ele aparece apenas quando o pedido está Cancelado, para refazê-lo.
+- **Dono da oportunidade no CRM pelo nome do consultor**: pedidos vindos da plataforma antiga não têm consultor vinculado por ID e iam ao Salesforce com o dono de quem importou (ex.: "Portal 2P"). Agora o portal também procura o vendedor pelo nome gravado na proposta (quando ele identifica um único usuário) antes de cair em quem criou o registro.
 - **E-mail de cancelamento de pedido volta a sair**: a leitura do pedido pedia uma coluna inexistente (`valor_total`) e falhava em silêncio, cancelando o pedido sem avisar logística, faturamento, NF-e, pedidos e financeiro (nem a cópia de registro). A leitura foi corrigida, ganhou tentativa alternativa e, se ainda falhar, o portal mostra "FALHA no envio" e grava o erro no Log de Integrações em vez de fingir sucesso.
 - **Cancelamento: consultor em cópia e mensagem clara**: o e-mail de cancelamento agora inclui o consultor responsável pela proposta nos destinatários e a mensagem do portal foi alterada para "E-mail de cancelamento enviado.", deixando claro que não é necessário avisar os setores manualmente.
 - **Cores da fase alinhadas com o status**: o badge da fase (StageName) na listagem de propostas passa a usar a mesma cor do status atual do pedido, facilitando a leitura da linha.
