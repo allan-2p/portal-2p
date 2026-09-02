@@ -1496,7 +1496,7 @@ function NovaPropostaSolarPage() {
     setEtapa((s) => (Math.min(5, s + 1) as typeof s));
   }
 
-  async function salvarProposta(concluir = false) {
+  async function salvarProposta(concluir = false, precosConfirmados = false) {
     // Nunca gravar/concluir com uma cotação de frete em andamento: o valor
     // ainda não está aplicado e a proposta iria sem o frete.
     if (freteCotando) {
