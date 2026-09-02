@@ -293,15 +293,15 @@ function PropostasSolarPage() {
               <colgroup>
                 <col className="w-[8%]" />
                 <col className="w-[4%]" />
-                <col className="w-[12%]" />
+                <col className="w-[13%]" />
                 <col className="w-[13%]" />
                 <col className="w-[8%]" />
                 <col className="w-[7%]" />
                 <col className="w-[6%]" />
-                <col className="w-[8%]" />
+                <col className="w-[9%]" />
                 <col className="w-[6%]" />
                 <col className="w-[6%]" />
-                <col className="w-[6%]" />
+                <col className="w-[7%]" />
                 <col className="w-[13%]" />
               </colgroup>
 
