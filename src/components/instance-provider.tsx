@@ -52,6 +52,8 @@ type Ctx = {
   can: (key: FeatureKey, action?: CapabilityId) => boolean;
   isRouteAllowed: (path: string) => boolean;
   defaultRoute: string;
+  /** Administrador do Sistema. */
+  isAdmin: boolean;
   loading: boolean;
 };
 
@@ -231,6 +233,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
     can,
     isRouteAllowed,
     defaultRoute,
+    isAdmin,
     loading: authLoading || (!!user && q.isLoading) || sim.loading,
   };
   return <InstanceContext.Provider value={value}>{children}</InstanceContext.Provider>;
@@ -248,6 +251,7 @@ export function useInstance(): Ctx {
       can: () => true,
       isRouteAllowed: () => true,
       defaultRoute: "/",
+      isAdmin: false,
       loading: false,
     };
   }

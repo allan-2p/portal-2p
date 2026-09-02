@@ -41,6 +41,8 @@ import { PermissionGate, useCan, useCanDelete } from "@/components/permission-ga
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 import { PropostasMobileCards } from "@/components/propostas-mobile-cards";
+import { BotaoDarPerda } from "@/components/propostas/dar-perda";
+import { faseDaProposta } from "@/lib/salesforce-stage";
 import {
   BotaoCriarVariacao,
   LinhasVariacoes,
@@ -290,8 +292,9 @@ function PropostasSolarPage() {
               <colgroup>
                 <col className="w-[52px]" />
                 <col className="w-[150px]" />
-                <col className="w-[22%]" />
-                <col className="w-[14%]" />
+                <col className="w-[19%]" />
+                <col className="w-[12%]" />
+                <col className="w-[13%]" />
                 <col className="w-[76px]" />
                 <col className="w-[76px]" />
                 <col className="w-[110px]" />
@@ -307,6 +310,7 @@ function PropostasSolarPage() {
                    <th className="text-left px-3 py-2.5">Proposta</th>
                   <th className="text-left px-3 py-2.5">Cliente</th>
                   <th className="text-left px-3 py-2.5">Consultor</th>
+                  <th className="text-left px-3 py-2.5">Fase</th>
                   <th className="text-left px-3 py-2.5">Nº SAP</th>
                   <th className="text-left px-3 py-2.5">NF</th>
                   <th className="text-right px-3 py-2.5">Valor</th>
@@ -343,6 +347,11 @@ function PropostasSolarPage() {
                     <td className="px-3 py-2.5">
                       <div className="truncate text-sm text-muted-foreground">
                         {r.consultor_nome || r.criado_por_nome || "—"}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="truncate text-sm text-muted-foreground" title={faseDaProposta(r as any)}>
+                        {faseDaProposta(r as any)}
                       </div>
                     </td>
                     <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
@@ -402,6 +411,7 @@ function PropostasSolarPage() {
                              <RefreshCw className="h-4 w-4" />
                            </Button>
                          )}
+                        <BotaoDarPerda proposta={r as any} onFeito={() => q.refetch()} />
                         {podeExcluir && podeCancelarPedido(r.status) && (
                           <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Cancelar pedido" title="Cancelar pedido" onClick={() => setExcluirId(r.id)}>
                             <X className="h-4 w-4 text-destructive" />
@@ -413,7 +423,7 @@ function PropostasSolarPage() {
                   {expandido === r.id && (
                     <LinhasVariacoes
                       propostaId={r.id}
-                      colSpan={11}
+                      colSpan={12}
                       rotaEdicao="/solar/propostas/nova"
                       onDetalhe={setDetalheId}
                       onAtualizar={() => q.refetch()}
@@ -422,10 +432,10 @@ function PropostasSolarPage() {
                   </Fragment>
                 ))}
 
-                {q.isLoading && <TableSkeletonRows colunas={11} linhas={porPagina > 10 ? 10 : porPagina} />}
+                {q.isLoading && <TableSkeletonRows colunas={12} linhas={porPagina > 10 ? 10 : porPagina} />}
                 {!q.isLoading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={11} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={12} className="px-4 py-10 text-center text-muted-foreground">
                       Nenhuma proposta encontrada.
                     </td>
                   </tr>

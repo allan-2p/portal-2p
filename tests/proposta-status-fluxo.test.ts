@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { proximoStatus, selecionarFilaRotativa } from "@/lib/sap-nfs.server";
 import { transicaoPermitida } from "@/lib/proposta-status";
+import { motivosPerdaPara, podeDarPerda, validarObsPerda } from "@/lib/perda-motivos";
+import { faseDaProposta } from "@/lib/salesforce-stage";
 
 describe("fila rotativa do cron SAP", () => {
   it("alcança todas as linhas quando o backlog supera o limite", () => {
@@ -23,5 +25,34 @@ describe("máquina de status", () => {
     expect(transicaoPermitida("Coletado", "Entregue", "webhook-fretefy")).toBe("webhook-fretefy");
     expect(transicaoPermitida("Coletado", "Entregue", "cron-sap")).toBeNull();
     expect(transicaoPermitida("Aguardando Pagamento", "Processando", "pagamento")).toBe("pagamento");
+  });
+});
+describe("perda de oportunidade", () => {
+  it("só permite dar perda em proposta Salvo e ainda não perdida", () => {
+    expect(podeDarPerda("Salvo")).toBe(true);
+    expect(podeDarPerda("Salvo", true)).toBe(false);
+    expect(podeDarPerda("Processando")).toBe(false);
+    expect(podeDarPerda("Cancelado")).toBe(false);
+  });
+
+  it("esconde o motivo restrito de quem não é administrador", () => {
+    expect(motivosPerdaPara(false)).not.toContain("Oportunidade Mecanicamente Perdida");
+    expect(motivosPerdaPara(true)).toContain("Oportunidade Mecanicamente Perdida");
+  });
+
+  it("exige descrição da perda com pelo menos 8 caracteres", () => {
+    expect(() => validarObsPerda("curto")).toThrow();
+    expect(validarObsPerda("  cliente   comprou  do concorrente ")).toBe(
+      "cliente comprou do concorrente",
+    );
+  });
+
+  it("a fase vira Oportunidade Perdida quando há motivo de perda", () => {
+    expect(faseDaProposta({ status: "Salvo", totais: { projetoVendido: "sim" } })).toBe(
+      "Projeto Fechado",
+    );
+    expect(
+      faseDaProposta({ status: "Salvo", motivo_perda: "Sem Retorno", perdida_em: "2026-09-02" }),
+    ).toBe("Oportunidade Perdida");
   });
 });

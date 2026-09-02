@@ -12,7 +12,7 @@
 
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
-import { stage, escolhaProjetoVendido } from "./salesforce-stage";
+import { faseDaProposta, propostaPerdida } from "./salesforce-stage";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
 
@@ -286,7 +286,7 @@ export async function sincronizarPedidoSalesforce(
     const corpoBase: Record<string, unknown> = {
       Name: payload["Name"] ?? nomeOpp,
       AccountId: accountId,
-      StageName: payload["StageName"] ?? stage(row["status"], escolhaProjetoVendido(row as Record<string, any>)),
+      StageName: payload["StageName"] ?? faseDaProposta(row as Record<string, any>),
       CloseDate: payload["CloseDate"],
       Amount: payload["Amount"],
       Description: payload["Description"],
@@ -302,6 +302,14 @@ export async function sincronizarPedidoSalesforce(
       const obs = so(row["motivo_cancelamento_obs"]);
       if (obs) custom["Descri_o_do_Motivo_de_Perda__c"] = obs;
     }
+    // Perda dada no portal: estágio "Oportunidade Perdida" + picklist
+    // `Loss_Reason__c` e a descrição escrita pelo vendedor.
+    const perdida = propostaPerdida(row as Record<string, any>);
+    if (perdida) {
+      custom["Loss_Reason__c"] = so(row["motivo_perda"]);
+      const obsPerda = so(row["motivo_perda_obs"]);
+      if (obsPerda) custom["Descri_o_do_Motivo_de_Perda__c"] = obsPerda;
+    }
 
 
     // Vínculo: usa o sf_opp_id da proposta; se não houver, procura a
@@ -310,9 +318,11 @@ export async function sincronizarPedidoSalesforce(
 
     // Pedido ainda "Salvo" e oportunidade marcada manualmente como perdida:
     // mantém o estágio da org (os demais campos continuam sincronizando).
-    if (oppId && so(row["status"]) === "Salvo") {
+    // Se a perda foi dada no portal, o estágio vai normalmente.
+    if (oppId && !perdida && so(row["status"]) === "Salvo") {
       if ((await stageAtual(oppId)) === "Oportunidade Perdida") delete corpoBase["StageName"];
     }
+
 
     const enviar = (corpo: Record<string, unknown>) =>
       oppId

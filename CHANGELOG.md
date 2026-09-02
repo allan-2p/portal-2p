@@ -34,6 +34,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Fase (Salesforce) na proposta**: as listas de propostas (2P Solar e 2P Carregadores) e o detalhe do pedido agora mostram a fase — Pedido Concluído, Projeto Não Fechado, Projeto Fechado, Estoque, Em Negociação, Pedido Cancelado ou Oportunidade Perdida — sem a sigla.
+- **"Dar perda" direto pela linha da proposta**: enquanto a proposta está em "Salvo", um botão de polegar para baixo abre um diálogo com o motivo da perda (mesma lista do CRM) e a descrição obrigatória. A gravação é imediata e o envio ao CRM acontece em segundo plano; "Oportunidade Mecanicamente Perdida" só aparece (e só é aceita) para o Administrador do Sistema.
+- **Banco de dados**: `public.propostas` ganhou `motivo_perda`, `motivo_perda_obs` e `perdida_em` no banco do Grupo 2P (script `supabase/external/propostas-perda.sql`, aplicação manual no projeto grupo-2p).
 - **Tabela de Segmentação ocupa toda a largura**: corrigida uma coluna vazia implícita no rodapé que reservava grande parte da tabela; as colunas agora têm larguras estáveis e o nome do cliente absorve o espaço disponível.
 - **Home reorganizada**: o card Atlas Radar saiu da home (o Radar continua em Atlas IA); os Orçamentos subiram para a seção "Operação do dia · Tarefas & Orçamentos", ao lado da Agenda, e no lugar deles entrou o card "Ranking de clientes" (em configuração, com conteúdo embaçado até ser ligado).
 - **Funil do cliente em formato de tabela**: o funil da visão geral do Perfil do Cliente deixou os blocos por etapa e virou uma tabela (Proposta, Etapa, Criada em, Em aberto, Valor) com filtro por etapa, mais recentes primeiro e total no rodapé.
