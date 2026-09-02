@@ -395,11 +395,14 @@ function PropostasSolarPage() {
                             q.refetch();
                           }}
                         />
-                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Duplicar proposta" asChild>
-                          <Link to="/solar/propostas/nova" search={{ dup: r.id }}>
-                            <Copy className="h-4 w-4" />
-                          </Link>
-                        </Button>
+                        {/* Duplicar só faz sentido para refazer um pedido cancelado. */}
+                        {r.status === "Cancelado" && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Duplicar proposta" asChild>
+                            <Link to="/solar/propostas/nova" search={{ dup: r.id }}>
+                              <Copy className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        )}
                          {podeVerIntegracoes && (
                            <Button
                              variant="ghost"
