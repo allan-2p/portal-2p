@@ -45,7 +45,12 @@ export type SalvarPropostaSolarInput = {
   observacoesInternas: string | null;
   calculo: Record<string, unknown> | null;
   /** `produtoId` do catálogo e/ou o código SAP do material (fallback). */
-  itens: { produtoId: string; codigo: string; qtd: number }[];
+  itens: { produtoId: string; codigo: string; qtd: number; valor: number }[];
+  /**
+   * Trava de preço: o vendedor viu os valores da tela e confirmou os novos
+   * preços do SAP. Sem confirmação, qualquer divergência bloqueia o salvamento.
+   */
+  precosConfirmados: boolean;
 };
 
 const money2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100;
@@ -71,6 +76,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
       produtoId: String(x?.produtoId ?? "").trim(),
       codigo: String(x?.codigo ?? "").trim(),
       qtd: Math.max(0, Number(x?.qtd) || 0),
+      valor: money2(x?.valor),
     }))
     .filter((x: any) => (x.produtoId || x.codigo) && x.qtd > 0);
   if (!itens.length) throw new Error("Adicione ao menos um produto.");
@@ -192,6 +198,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     observacoesInternas: i.observacoesInternas ? String(i.observacoesInternas) : null,
     calculo: i.calculo && typeof i.calculo === "object" ? (i.calculo as Record<string, unknown>) : null,
     itens,
+    precosConfirmados: i.precosConfirmados === true,
   };
 }
 
@@ -262,7 +269,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       if (!produtos.some((p) => p.id === kit.id)) produtos.push(kit);
       const jaTem = data.itens.find((i) => i.produtoId === kit.id);
       if (jaTem) jaTem.qtd = 1;
-      else data.itens.push({ produtoId: String(kit.id), codigo: String(kit.codigo ?? ""), qtd: 1 });
+      else data.itens.push({ produtoId: String(kit.id), codigo: String(kit.codigo ?? ""), qtd: 1, valor: 0 });
     } else {
       // Sem kit, o kit-base não pode ser vendido avulso pela tela.
       const kitNaLista = produtos.find((p) => normCod(p.codigo) === KIT_FOTOVOLTAICO_MATERIAL);
@@ -335,6 +342,39 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       });
       throw new Error(motivo);
     }
+
+    // ------------------------------------------------------------------
+    // Trava de preço: o valor que o vendedor viu na tela é o valor gravado.
+    // Se a simulação do SAP devolver preço diferente (mudança de condição de
+    // preço entre a montagem e o salvamento), o salvamento é BLOQUEADO com a
+    // lista "de → para". Só grava quando o vendedor confirma explicitamente.
+    // ------------------------------------------------------------------
+    if (!data.precosConfirmados) {
+      const divergentes: string[] = [];
+      for (const i of data.itens) {
+        const p = produtos.find((x) => x.id === i.produtoId)!;
+        const cod = normCod(p.codigo);
+        const novo = money2(precos[cod] ?? 0);
+        const visto = money2(i.valor);
+        if (visto > 0 && novo > 0 && Math.abs(novo - visto) >= 0.01) {
+          const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+          divergentes.push(`${p.descricao ?? cod} (${cod}): ${brl(visto)} → ${brl(novo)}`);
+        }
+      }
+      if (divergentes.length) {
+        const motivo =
+          `PRECO_ALTERADO: a tabela ${data.listaPreco} mudou no SAP depois da montagem da proposta. ` +
+          `${divergentes.slice(0, 8).join(" • ")}. ` +
+          `A proposta NÃO foi salva: revise os preços e confirme para gravar com os novos valores.`;
+        await auditarBloqueio(auditCtx, {
+          etapa: "salvar",
+          motivo,
+          dados: { divergentes, precos, lista_preco: data.listaPreco },
+        });
+        throw new Error(motivo);
+      }
+    }
+
 
     const itens = data.itens.map((i) => {
       const p = produtos.find((x) => x.id === i.produtoId)!;

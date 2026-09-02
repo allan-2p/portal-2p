@@ -1496,7 +1496,7 @@ function NovaPropostaSolarPage() {
     setEtapa((s) => (Math.min(5, s + 1) as typeof s));
   }
 
-  async function salvarProposta(concluir = false) {
+  async function salvarProposta(concluir = false, precosConfirmados = false) {
     // Nunca gravar/concluir com uma cotação de frete em andamento: o valor
     // ainda não está aplicado e a proposta iria sem o frete.
     if (freteCotando) {
@@ -1608,7 +1608,11 @@ function NovaPropostaSolarPage() {
             produtoId: i.produtoId,
             codigo: normCod(produtos.find((p) => p.id === i.produtoId)?.codigo ?? i.avulso?.codigo ?? ""),
             qtd: i.qtd,
+            // Preço que o vendedor está vendo: o servidor recusa gravar um
+            // valor diferente sem confirmação (trava de tabela de preço).
+            valor: i.valor,
           })),
+          precosConfirmados,
         },
       });
       setPropostaId(r.id);
@@ -1649,7 +1653,21 @@ function NovaPropostaSolarPage() {
         toast.error(msg, { duration: 12000 });
       }
     } catch (e) {
-      toast.error((e as Error).message, { duration: 12000 });
+      const msg = (e as Error).message || "Falha ao salvar a proposta.";
+      // Tabela de preço mudou no SAP: nada é gravado às escondidas. Atualiza
+      // os valores na tela e só grava depois que o vendedor confirmar.
+      if (msg.startsWith("PRECO_ALTERADO")) {
+        await atualizarPrecos(itens, listaPreco);
+        toast.error(msg.replace(/^PRECO_ALTERADO:\s*/, ""), {
+          duration: 30000,
+          action: {
+            label: "Salvar com os novos preços",
+            onClick: () => void salvarProposta(concluir, true),
+          },
+        });
+      } else {
+        toast.error(msg, { duration: 12000 });
+      }
     } finally {
       setSalvando(false);
       setConclusaoFase(null);

@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Trava de preço na proposta Solar**: o preço que o vendedor vê na tela é o preço gravado. Se a tabela mudar no SAP entre a montagem e o salvamento, a proposta **não** é salva: o portal avisa item a item ("de → para"), atualiza os valores na tela e só grava depois que o vendedor confirmar em "Salvar com os novos preços".
 - **Fim do "Esta página não carregou" depois de uma publicação**: quando a aba está aberta há muito tempo e o portal é atualizado, os arquivos antigos deixam de existir e a tela quebrava ao trocar de filtro ou de tela. Agora o portal reconhece esse caso, limpa o cache e recarrega sozinho uma única vez ("Atualizando o portal…"). A tela de erro genérica também foi traduzida e passa a mostrar a mensagem técnica, para facilitar o suporte.
 - Detalhe da proposta (olhinho): peso total dos itens calculado pela simulação do SAP.
 - Tipo de nota fiscal já vem como "Venda" nas novas propostas Solar e Carregadores (editável).
