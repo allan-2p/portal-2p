@@ -66,11 +66,12 @@ export function FreteDedicado({
     if (t > 0) setValorInterno((v) => (v === t ? v : t));
   }, [selecionada?.total, controlado]);
 
-  const aplicar = (id: string, total: number) => {
+  const aplicar = (id: string, total: number, prazoDias = prazoAtual) => {
     const t = lista.find((x) => x.id === id);
     if (!t) return onSelect(null);
-    onSelect({ id: t.id, nome: t.nome, documento: t.documento, total, prazo: 2 });
+    onSelect({ id: t.id, nome: t.nome, documento: t.documento, total, prazo: Number(prazoDias ?? 0) });
   };
+
 
   // Valor vindo do formulário: mantém o total da transportadora em sincronia.
   useEffect(() => {
