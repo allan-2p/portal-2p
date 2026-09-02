@@ -66,6 +66,22 @@ export function faseDaProposta(row: Record<string, any> | null | undefined): str
   return stage(row?.["status"], escolhaProjetoVendido((row ?? {}) as Record<string, any>));
 }
 
+/** Siglas usadas na listagem de propostas (StageName compacto). */
+export const FASE_SIGLAS: Record<string, string> = {
+  "Pedido Concluído": "FIN",
+  "Projeto Não Fechado": "NÃO",
+  "Projeto Fechado": "SIM",
+  "Estoque": "EST",
+  "Em Negociação": "NEG",
+  "Pedido Cancelado": "CAN",
+  "Oportunidade Perdida": "PER",
+};
+
+/** Fase da proposta reduzida à sigla para colunas compactas. */
+export function siglaDaFase(row: Record<string, any> | null | undefined): string {
+  return FASE_SIGLAS[faseDaProposta(row)] ?? "—";
+}
+
 
 
 /**
