@@ -56,7 +56,7 @@ function classesFase(row: Record<string, any>): string {
   }
 
   // FIN/NÃO/SIM/EST: usa a cor do status (Salvo = cinza, etc.).
-  return `${style.dot.replace("bg-", "bg-")} ${style.text}`;
+  return style.chip;
 }
 
 /** Badge compacto com o nome da fase em até duas linhas (usado nas listagens). */
