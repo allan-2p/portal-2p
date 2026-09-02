@@ -270,7 +270,7 @@ export async function efeitosCancelamento(
     );
 
     // O consultor responsável pela proposta também recebe o aviso de cancelamento.
-    const emailConsultor = await emailDoConsultor(row["consultor_id"]);
+    const emailConsultor = await emailDoConsultor(row["consultor_id"], row["consultor_nome"]);
     const destinatariosFinais = new Set(destinatarios());
     if (emailConsultor) destinatariosFinais.add(emailConsultor);
 
