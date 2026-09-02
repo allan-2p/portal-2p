@@ -21,26 +21,30 @@ export function paraData(v?: string | number | Date | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** Data em `dd/mm/aaaa`. */
+const p2 = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * Data em `dd/mm/aaaa`.
+ *
+ * Formatação manual de propósito: no runtime de servidor (edge) o ICU pode não
+ * ter os dados de `pt-BR` e o `Intl` cai para `en-US`, invertendo dia/mês
+ * (08/09 virava 09/08). Montando os campos na mão o formato é sempre BR.
+ */
 export function fmtDataBR(
   v?: string | number | Date | null,
   fallback = "—",
-  opts: Intl.DateTimeFormatOptions = { day: "2-digit", month: "2-digit", year: "numeric" },
+  opts?: Intl.DateTimeFormatOptions,
 ): string {
   const d = paraData(v);
-  return d ? d.toLocaleDateString("pt-BR", opts) : fallback;
+  if (!d) return fallback;
+  if (opts) return d.toLocaleDateString("pt-BR", opts);
+  return `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
 /** Data e hora em `dd/mm/aa, hh:mm`. */
 export function fmtDataHoraBR(v?: string | number | Date | null, fallback = "—"): string {
   const d = paraData(v);
-  return d
-    ? d.toLocaleString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : fallback;
+  if (!d) return fallback;
+  return `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${String(d.getFullYear()).slice(2)}, ${p2(d.getHours())}:${p2(d.getMinutes())}`;
 }
+

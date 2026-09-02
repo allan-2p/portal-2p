@@ -103,3 +103,8 @@
 - [x] Reverter ampliação de teste da DGA Energia (escopo voltou a somente Solar)
 - [x] Segmentação: tabela deve preencher toda a largura do card (sem espaço em branco à direita)
 - [ ] Funil do cliente (perfil 360): visual de tabela, datas melhor organizadas e filtro por etapa
+
+## Datas e perda (02/09)
+- [x] Estimativa de entrega exibida em formato americano (mês/dia) — formatação BR manual em `src/lib/data-br.ts` (Intl caía para en-US no runtime de servidor)
+- [x] Colunas de perda aplicadas no banco grupo-2p (`motivo_perda`, `motivo_perda_obs`, `perdida_em`)
+- [ ] Teste end-to-end de "dar perda" numa proposta Salvo real (aguardando indicação de uma proposta descartável)
