@@ -330,8 +330,18 @@ function HomePage() {
   // Propostas do portal ligadas às oportunidades listadas: permitem abrir a
   // proposta (mesma visualização das listas) e dar perda direto na home.
   const vinculosOpps = usePropostasVinculadas(
-    useMemo(() => opps.map((o) => ({ sfOppId: o.id })), [opps]),
+    // Também casamos pelo número no início do nome ("60044 - ..."): pedidos
+    // importados do legado não têm `sf_opp_id` gravado no portal.
+    useMemo(
+      () =>
+        opps.map((o) => ({
+          sfOppId: o.id,
+          numero: /^\s*(\d{4,})\s*-/.exec(o.name ?? "")?.[1] ?? null,
+        })),
+      [opps],
+    ),
   );
+
 
   const fetchForecasts = useServerFn(getSalesforceForecasts);
   const forecastsQ = useQuery({
