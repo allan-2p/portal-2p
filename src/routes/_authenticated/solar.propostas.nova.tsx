@@ -1727,6 +1727,8 @@ function NovaPropostaSolarPage() {
       freteGratis,
       freteBonificado: bonificado,
       transportadora: transportadora?.nome ?? null,
+      fretePrazo: fretePrazoEfetivo,
+
       total,
       listaPreco,
       tipoNf,
