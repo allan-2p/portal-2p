@@ -2913,6 +2913,8 @@ function NovaPropostaSolarPage() {
                   value={`${freteMod || "—"}${bonificado || freteGratis ? " · Frete grátis" : ""}`}
                 />
                 <Info label="Transportadora" value={transportadora?.nome ?? "—"} />
+                <Info label="Prazo de entrega" value={textoPrazoEntrega(fretePrazoEfetivo, freteMod)} />
+
                 <Info
                   label="Endereço de faturamento"
                   value={
