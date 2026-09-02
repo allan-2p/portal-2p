@@ -31,49 +31,54 @@ const STATUS_VENDIDO = [
   "Finalizado",
 ];
 
-const OPP_COLS = [
-  "id",
-  "name",
-  "account_id",
-  "stage_name",
-  "amount",
-  "total__c",
-  "close_date",
-  "created_date",
-  "status_do_pedido__c",
-  "tipo_de_nf__c",
-].join(",");
+/** Colunas mínimas para somar valores por conta (agregações). */
+const OPP_COLS_SOMA = ["account_id", "amount", "total__c", "tipo_de_nf__c"].join(",");
+/** Colunas da lista de pedidos em andamento exibida no dossiê. */
+const OPP_COLS_PEDIDO = ["id", "name", "account_id", "amount", "total__c", "close_date", "status_do_pedido__c", "tipo_de_nf__c"].join(",");
 
 type OppRow = {
-  id: string;
-  name: string | null;
+  id?: string;
+  name?: string | null;
   account_id: string | null;
-  stage_name: string | null;
   amount: number | null;
   total__c: number | null;
-  close_date: string | null;
-  created_date: string | null;
-  status_do_pedido__c: string | null;
-  tipo_de_nf__c: string | null;
+  close_date?: string | null;
+  status_do_pedido__c?: string | null;
+  tipo_de_nf__c?: string | null;
 };
 
+/**
+ * Paginação em paralelo: a primeira página pede `count=exact` e as demais
+ * saem todas de uma vez. Antes as páginas eram buscadas em sequência, o que
+ * fazia a tela levar dezenas de segundos em bases grandes.
+ */
 async function buscarTudo(tabela: string, params: URLSearchParams, maxPaginas = 40): Promise<any[]> {
-  const out: any[] = [];
-  for (let p = 0; p < maxPaginas; p++) {
+  const pagina = async (p: number, count = false) => {
     const from = p * PAGINA_DB;
-    const { ok, status, text } = await grupo2pRest(`${tabela}?${params}`, {
+    const { ok, status, text, total } = await grupo2pRest(`${tabela}?${params}`, {
       range: { from, to: from + PAGINA_DB - 1 },
+      ...(count ? { count: true } : {}),
     });
     if (!ok) {
-      if (status === 416) break;
+      if (status === 416) return { linhas: [] as any[], total: 0 };
       throw new Error(`Erro no banco (${status}): ${text.slice(0, 300)}`);
     }
-    const bloco: any[] = text ? JSON.parse(text) : [];
-    out.push(...bloco);
-    if (bloco.length < PAGINA_DB) break;
-  }
+    return { linhas: (text ? JSON.parse(text) : []) as any[], total: total ?? 0 };
+  };
+
+  const primeira = await pagina(0, true);
+  const out = [...primeira.linhas];
+  if (primeira.linhas.length < PAGINA_DB) return out;
+
+  const paginas = Math.min(Math.ceil((primeira.total || 0) / PAGINA_DB), maxPaginas);
+  if (paginas <= 1) return out;
+  const restantes = await Promise.all(
+    Array.from({ length: paginas - 1 }, (_, i) => pagina(i + 1).then((r) => r.linhas)),
+  );
+  for (const bloco of restantes) out.push(...bloco);
   return out;
 }
+
 
 function pad(n: number) {
   return n < 10 ? `0${n}` : `${n}`;
