@@ -82,6 +82,24 @@ export function siglaDaFase(row: Record<string, any> | null | undefined): string
   return FASE_SIGLAS[faseDaProposta(row)] ?? "—";
 }
 
+/** Rótulo da fase quebrado em até duas linhas, para colunas estreitas. */
+export const FASE_LINHAS: Record<string, [string, string?]> = {
+  "Pedido Concluído": ["Pedido", "Concluído"],
+  "Projeto Não Fechado": ["Projeto Não", "Fechado"],
+  "Projeto Fechado": ["Projeto", "Fechado"],
+  "Estoque": ["Estoque"],
+  "Em Negociação": ["Em", "Negociação"],
+  "Pedido Cancelado": ["Pedido", "Cancelado"],
+  "Oportunidade Perdida": ["Oportunidade", "Perdida"],
+};
+
+/** Linhas do rótulo da fase (1 ou 2). */
+export function linhasDaFase(row: Record<string, any> | null | undefined): string[] {
+  const fase = faseDaProposta(row);
+  const l = FASE_LINHAS[fase];
+  return l ? (l.filter(Boolean) as string[]) : [fase || "—"];
+}
+
 
 
 /**

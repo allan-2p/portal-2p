@@ -31,7 +31,7 @@ import {
   podeDarPerda,
 } from "@/lib/perda-motivos";
 import { cn } from "@/lib/utils";
-import { faseDaProposta, propostaPerdida, siglaDaFase } from "@/lib/salesforce-stage";
+import { faseDaProposta, linhasDaFase, propostaPerdida, siglaDaFase } from "@/lib/salesforce-stage";
 
 /** Fase (StageName) da proposta, sem sigla. */
 export function FaseTexto({ row, className }: { row: Record<string, any>; className?: string }) {
@@ -48,7 +48,7 @@ const FASE_BADGE_STYLE: Record<string, string> = {
   PER: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
 };
 
-/** Badge compacto com a sigla da fase (usado nas listagens). */
+/** Badge compacto com o nome da fase em até duas linhas (usado nas listagens). */
 export function FaseBadge({
   row,
   className,
@@ -57,18 +57,21 @@ export function FaseBadge({
   className?: string;
 }) {
   const sigla = siglaDaFase(row);
+  const linhas = linhasDaFase(row);
   const perdida = propostaPerdida(row);
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[11px] font-semibold tracking-wide tabular-nums",
+        "inline-flex w-full max-w-full flex-col items-center justify-center rounded px-1 py-0.5 text-[10px] font-semibold leading-[1.15] tracking-tight",
         FASE_BADGE_STYLE[sigla] ?? "bg-muted text-muted-foreground",
         perdida && "opacity-90",
         className,
       )}
       title={faseDaProposta(row)}
     >
-      {sigla}
+      {linhas.map((l) => (
+        <span key={l} className="block max-w-full truncate">{l}</span>
+      ))}
     </span>
   );
 }
