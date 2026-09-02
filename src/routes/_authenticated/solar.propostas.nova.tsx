@@ -2825,7 +2825,10 @@ function NovaPropostaSolarPage() {
                   onValueChange={(v) => {
                     setFreteMod(v);
                     setTransportadora(null);
+                    // CIF volta a usar o SLA da cotação; FOB não tem prazo.
+                    setFretePrazoManual(null);
                   }}
+
                 >
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
