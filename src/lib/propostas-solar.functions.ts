@@ -198,6 +198,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     observacoesInternas: i.observacoesInternas ? String(i.observacoesInternas) : null,
     calculo: i.calculo && typeof i.calculo === "object" ? (i.calculo as Record<string, unknown>) : null,
     itens,
+    precosConfirmados: i.precosConfirmados === true,
   };
 }
 
