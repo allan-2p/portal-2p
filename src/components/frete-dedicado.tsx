@@ -87,7 +87,7 @@ export function FreteDedicado({
       <div className="flex items-center gap-2 text-sm font-medium">
         <Truck className="size-4" /> Frete dedicado
       </div>
-      <div className={controlado ? "grid gap-4" : "grid gap-4 md:grid-cols-2"}>
+      <div className={controlado && !onPrazoChange ? "grid gap-4" : "grid gap-4 md:grid-cols-2"}>
         {!controlado && (
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Valor do frete (manual) *</label>
@@ -113,13 +113,36 @@ export function FreteDedicado({
             </SelectContent>
           </Select>
         </div>
+        {onPrazoChange && (
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Prazo de entrega (dias úteis)</label>
+            <Input
+              type="number"
+              min={0}
+              max={365}
+              inputMode="numeric"
+              placeholder="Ex.: 5"
+              value={prazoAtual === null || prazoAtual === undefined ? "" : String(prazoAtual)}
+              onChange={(e) => {
+                const bruto = e.target.value.trim();
+                const n = bruto === "" ? null : Math.max(0, Math.min(365, Math.round(Number(bruto) || 0)));
+                onPrazoChange(n);
+                if (selecionada) aplicar(selecionada.id, valor, n);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {selecionada && (
         <p className="text-xs text-muted-foreground">
-          {selecionada.nome} · CNPJ {selecionada.documento} · prazo 2 dias · {fmtBRL(selecionada.total)}
+          {selecionada.nome} · CNPJ {selecionada.documento}
+          {Number(selecionada.prazo ?? 0) > 0 ? ` · prazo ${selecionada.prazo} dias úteis` : " · prazo a definir"}
+          {" · "}
+          {fmtBRL(selecionada.total)}
         </p>
       )}
+
       {!(valor > 0) && (
         <p className="text-xs text-amber-600">Informe o valor do frete dedicado.</p>
       )}
