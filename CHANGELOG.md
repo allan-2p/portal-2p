@@ -295,3 +295,5 @@ Primeira versão consolidada do portal em produção (`portal.2pgroup.app`).
 
 - SAP (ordem de venda, clientes, NFs, estoque, catálogo vendável por preço VK12),
   Itaú (Pix/Boleto), Salesforce, Fretefy, SharePoint/Graph, consulta CNPJ/CPF.
+
+- Estimativa de entrega (e demais datas) exibidas em formato americano em alguns casos: formatação pt-BR agora é feita manualmente, sem depender do Intl do runtime.
