@@ -13,7 +13,7 @@ export function textoPrazoEntrega(
 ): string {
   const dias = Number(prazo ?? 0);
   if (Number.isFinite(dias) && dias > 0) {
-    return `${dias} ${dias === 1 ? "dia útil" : "dias úteis"} após a confirmação do pedido`;
+    return `${dias} ${dias === 1 ? "dia útil" : "dias úteis"} após o despacho`;
   }
   const mod = String(freteMod ?? "").trim();
   return `A confirmar na aprovação, conforme modalidade ${mod || "de frete"}.`;
