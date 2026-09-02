@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Cancelamento: cópia de registro unificada**: o e-mail de cancelamento agora é enviado uma única vez com todos os destinatários (setores, consultor e allan@) no campo To. A cópia de registro automática foi desativada para esse fluxo, eliminando a chuva de e-mails `[registro]` na caixa do Allan.
 - **Cancelamento: e-mail aos setores não depende mais do CRM**: o aviso de cancelamento passou a ser enviado antes da sincronização com o Salesforce, e uma recusa da org (ex.: dono inativo da conta) deixou de interromper o fluxo — o erro do CRM agora só é registrado no Log de Integrações. Era essa recusa que impedia o envio dos e-mails em pedidos cancelados recentemente.
 - **Consultor no aviso de cancelamento também por nome**: pedidos importados da plataforma antiga não têm consultor vinculado por ID; o portal agora localiza o e-mail do vendedor pelo nome gravado na proposta.
 - **Duplicar proposta só em pedido cancelado**: o ícone de copiar saiu das linhas dos demais status nas listas de propostas (2P Solar e 2P Carregadores); ele aparece apenas quando o pedido está Cancelado, para refazê-lo.
