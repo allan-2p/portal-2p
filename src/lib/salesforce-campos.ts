@@ -7,7 +7,7 @@
  * ao usuário seja exatamente o payload enviado.
  */
 
-import { stage, orgOportunidade, escolhaProjetoVendido, projetoVendidoLabel } from "./salesforce-stage";
+import { stage, orgOportunidade, escolhaProjetoVendido, projetoVendidoLabel, faseDaProposta } from "./salesforce-stage";
 
 export type SfObjeto = "Account" | "Opportunity";
 
@@ -303,7 +303,7 @@ export const CAMPOS_OPPORTUNITY: CampoOrigem[] = [
     sfPadrao: "StageName",
     tipo: "picklist",
     obrigatorio: true,
-    valor: (r) => stage(r["status"], escolhaProjetoVendido(r)),
+    valor: (r) => faseDaProposta(r),
   },
   {
     chave: "data_fechamento",
