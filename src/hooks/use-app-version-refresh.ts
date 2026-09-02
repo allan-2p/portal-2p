@@ -1,30 +1,8 @@
 import { useEffect, useRef } from "react";
+import { hardReload } from "@/lib/chunk-reload";
 
 const ENDPOINT = "/api/public/app-version";
 const INTERVALO_MS = 60_000;
-
-/** Limpa tudo que pode segurar a versão antiga e recarrega (equivale ao ctrl+shift+r). */
-async function hardReload() {
-  try {
-    if ("serviceWorker" in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map((r) => r.unregister()));
-    }
-  } catch {
-    /* noop */
-  }
-  try {
-    if ("caches" in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
-    }
-  } catch {
-    /* noop */
-  }
-  const url = new URL(window.location.href);
-  url.searchParams.set("v", String(Date.now()));
-  window.location.replace(url.toString());
-}
 
 /**
  * Detecta nova publicação do portal e força um refresh completo, para que
