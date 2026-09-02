@@ -307,18 +307,18 @@ function PropostasSolarPage() {
 
                <thead>
                  <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
-                   <th className="text-center px-3 py-2.5">Fase</th>
-                   <th className="text-center px-3 py-2.5">Status</th>
-                   <th className="text-left px-3 py-2.5">Proposta</th>
-                  <th className="text-left px-3 py-2.5">Cliente</th>
-                  <th className="text-left px-3 py-2.5">Consultor</th>
-                  <th className="text-left px-3 py-2.5">Nº SAP</th>
-                  <th className="text-left px-3 py-2.5">NF</th>
-                  <th className="text-right px-3 py-2.5">Valor</th>
-                  <th className="text-left px-3 py-2.5 whitespace-nowrap">Despacho</th>
-                  <th className="text-left px-3 py-2.5 whitespace-nowrap">Compra</th>
-                  <th className="text-left px-3 py-2.5 whitespace-nowrap">Criação</th>
-                  <th className="text-right px-3 py-2.5">Ações</th>
+                   <th className="text-center px-2 py-2.5">Fase</th>
+                   <th className="text-center px-2 py-2.5">Status</th>
+                   <th className="text-left px-2 py-2.5">Proposta</th>
+                  <th className="text-left px-2 py-2.5">Cliente</th>
+                  <th className="text-left px-2 py-2.5">Consultor</th>
+                  <th className="text-left px-2 py-2.5">Nº SAP</th>
+                  <th className="text-left px-2 py-2.5">NF</th>
+                  <th className="text-right px-2 py-2.5">Valor</th>
+                  <th className="text-left px-2 py-2.5 truncate">Despacho</th>
+                  <th className="text-left px-2 py-2.5 truncate">Compra</th>
+                  <th className="text-left px-2 py-2.5 truncate">Criação</th>
+                  <th className="text-right px-2 py-2.5">Ações</th>
                 </tr>
               </thead>
 
@@ -328,13 +328,13 @@ function PropostasSolarPage() {
                   return (
                   <Fragment key={r.id}>
                   <tr className={cn("border-b border-border/50 hover:bg-surface-2", perdida && "bg-muted/30 opacity-85")}>
-                    <td className="px-3 py-2.5 text-center">
+                    <td className="px-2 py-2.5 text-center">
                       <FaseBadge row={r as any} />
                     </td>
-                    <td className="px-3 py-2.5 text-center">
+                    <td className="px-2 py-2.5 text-center">
                       <StatusDot status={r.status} />
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-2 py-2.5">
                       <div className="truncate text-sm font-bold tabular-nums text-foreground">
                         {numeroDaLinha(r as any)}
                       </div>
@@ -347,41 +347,41 @@ function PropostasSolarPage() {
                         onToggle={() => setExpandido(expandido === r.id ? null : r.id)}
                       />
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-2 py-2.5">
                       <div className="truncate font-medium">{r.cliente_nome}</div>
                     </td>
-                    <td className="px-3 py-2.5">
+                    <td className="px-2 py-2.5">
                       <div className="truncate text-sm text-muted-foreground">
                         {r.consultor_nome || r.criado_por_nome || "—"}
                       </div>
                     </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                    <td className="px-2 py-2.5 truncate text-muted-foreground">
                       {formatSapNumero(r.sap_ov_numero || r.numero_sap) || "—"}
                     </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                    <td className="px-2 py-2.5 truncate text-muted-foreground">
                       {r.nf_numero ? formatSapNumero(r.nf_numero) : "—"}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap">
+                    <td className="px-2 py-2.5 text-right font-semibold tabular-nums whitespace-nowrap">
                       {fmtBRL(r.totais['valorTotal'] ?? 0)}
                     </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                    <td className="px-2 py-2.5 truncate text-muted-foreground">
                       {r.expedido_em
                         ? new Date(`${String(r.expedido_em).slice(0, 10)}T12:00:00`).toLocaleDateString("pt-BR")
                         : "—"}
                     </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                    <td className="px-2 py-2.5 truncate text-muted-foreground">
                       {r.finalizado_em ? new Date(r.finalizado_em).toLocaleDateString("pt-BR") : "—"}
                     </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
+                    <td className="px-2 py-2.5 truncate text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("pt-BR")}
                     </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Detalhar" onClick={() => setDetalheId(r.id)}>
+                    <td className="px-2 py-2.5">
+                      <div className="flex flex-wrap items-center justify-end gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Detalhar" onClick={() => setDetalheId(r.id)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                         {!bloqueiaReenvioSap(r) && podeEditarProposta(r.status) && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Continuar proposta" asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Continuar proposta" asChild>
                             <Link to="/solar/propostas/nova" search={{ id: r.id }}>
                               <Pencil className="h-4 w-4" />
                             </Link>
@@ -395,7 +395,7 @@ function PropostasSolarPage() {
                             q.refetch();
                           }}
                         />
-                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Duplicar proposta" asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Duplicar proposta" asChild>
                           <Link to="/solar/propostas/nova" search={{ dup: r.id }}>
                             <Copy className="h-4 w-4" />
                           </Link>
@@ -406,7 +406,7 @@ function PropostasSolarPage() {
                              size="icon"
                              aria-label="Integrações e auditoria"
                              title="Integrações e auditoria"
-                             className={`h-8 w-8 ${r.sap_ov_status === "criada" && r.sf_status === "sincronizado" ? "text-success" : "text-warning"}`}
+                             className={`h-7 w-7 ${r.sap_ov_status === "criada" && r.sf_status === "sincronizado" ? "text-success" : "text-warning"}`}
                              onClick={() => setIntegracoesId(r.id)}
                            >
                              <RefreshCw className="h-4 w-4" />
@@ -414,7 +414,7 @@ function PropostasSolarPage() {
                          )}
                         <BotaoDarPerda proposta={r as any} onFeito={() => q.refetch()} />
                         {podeExcluir && podeCancelarPedido(r.status) && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Cancelar pedido" title="Cancelar pedido" onClick={() => setExcluirId(r.id)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Cancelar pedido" title="Cancelar pedido" onClick={() => setExcluirId(r.id)}>
                             <X className="h-4 w-4 text-destructive" />
                           </Button>
                         )}
