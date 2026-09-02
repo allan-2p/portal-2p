@@ -1247,7 +1247,7 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
       return {
         ok: true,
         cancelada: true,
-        aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal.${avisoEmail ? ` ${avisoEmail}` : ""}`,
+        aviso: `${vbeln ? `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). ` : ""}O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal.${avisoEmail ? ` ${avisoEmail}` : ""}`,
       };
 
     }
