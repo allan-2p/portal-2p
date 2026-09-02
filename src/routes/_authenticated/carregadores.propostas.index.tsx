@@ -307,18 +307,18 @@ function HistoricoCarregadoresPage() {
           <div className="hidden md:block">
             <table className="w-full table-fixed text-[13px]">
               <colgroup>
-                <col className="w-[52px]" />
-                <col className="w-[52px]" />
-                <col className="w-[150px]" />
-                <col className="w-[19%]" />
+                <col className="w-[8%]" />
+                <col className="w-[4%]" />
                 <col className="w-[12%]" />
-                <col className="w-[76px]" />
-                <col className="w-[76px]" />
-                <col className="w-[110px]" />
-                <col className="w-[96px]" />
-                <col className="w-[96px]" />
-                <col className="w-[96px]" />
-                <col className="w-[172px]" />
+                <col className="w-[15%]" />
+                <col className="w-[9%]" />
+                <col className="w-[7%]" />
+                <col className="w-[6%]" />
+                <col className="w-[8%]" />
+                <col className="w-[6%]" />
+                <col className="w-[6%]" />
+                <col className="w-[6%]" />
+                <col className="w-[13%]" />
               </colgroup>
 
                <thead>
