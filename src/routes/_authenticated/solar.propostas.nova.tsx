@@ -1608,7 +1608,11 @@ function NovaPropostaSolarPage() {
             produtoId: i.produtoId,
             codigo: normCod(produtos.find((p) => p.id === i.produtoId)?.codigo ?? i.avulso?.codigo ?? ""),
             qtd: i.qtd,
+            // Preço que o vendedor está vendo: o servidor recusa gravar um
+            // valor diferente sem confirmação (trava de tabela de preço).
+            valor: i.valor,
           })),
+          precosConfirmados,
         },
       });
       setPropostaId(r.id);
