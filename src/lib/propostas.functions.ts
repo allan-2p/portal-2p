@@ -1973,3 +1973,36 @@ export const confirmarPagamentoFn = createServerFn({ method: "POST" })
 
     return { ok: true, status: "Processando" as const };
   });
+
+/**
+ * Localiza as propostas do portal vinculadas a oportunidades do Salesforce
+ * (`sf_opp_id`) ou a números de pedido. Usado para abrir a visualização da
+ * proposta e liberar o "dar perda" a partir da home e do perfil do cliente.
+ */
+export const vincularPropostasSfFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { sfOppIds?: unknown; numeros?: unknown };
+    const lista = (v: unknown) =>
+      Array.isArray(v) ? [...new Set(v.map((x) => String(x ?? "").trim()).filter(Boolean))].slice(0, 300) : [];
+    return { sfOppIds: lista(i.sfOppIds), numeros: lista(i.numeros) };
+  })
+  .handler(async ({ data }) => {
+    const db = await repo();
+    const select = "id,numero,status,organizacao,motivo_perda,perdida_em,sf_opp_id";
+    const out: Record<string, any>[] = [];
+    const inList = (vs: string[]) => `in.(${vs.map((v) => `"${v.replace(/"/g, "")}"`).join(",")})`;
+    if (data.sfOppIds.length) {
+      out.push(...(await db.consultarPropostas({ sf_opp_id: inList(data.sfOppIds) }, { select, limit: 500 })));
+    }
+    if (data.numeros.length) {
+      out.push(...(await db.consultarPropostas({ numero: inList(data.numeros) }, { select, limit: 500 })));
+    }
+    const vistos = new Set<string>();
+    return out.filter((r) => {
+      const id = String(r["id"] ?? "");
+      if (!id || vistos.has(id)) return false;
+      vistos.add(id);
+      return true;
+    });
+  });

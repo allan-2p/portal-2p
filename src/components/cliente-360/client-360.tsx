@@ -38,6 +38,7 @@ import {
   RescheduleTaskDialog,
 } from "@/components/tarefas/task-dialogs";
 import { cn } from "@/lib/utils";
+import { AcoesOportunidade, usePropostasVinculadas } from "@/components/propostas/acoes-oportunidade";
 
 import {
   Building2,
@@ -518,6 +519,14 @@ function VisaoGeral({
       .sort((a, b) => String(b.createdDate ?? "").localeCompare(String(a.createdDate ?? "")));
   }, [oportunidadesAbertas, etapaFiltro]);
   const totalLinhas = linhas.reduce((s: number, o: any) => s + (o.amount || 0), 0);
+  // Propostas do portal ligadas a estas oportunidades: abrem a mesma
+  // visualização do "olhinho" e permitem dar perda direto na linha.
+  const vinculos = usePropostasVinculadas(
+    useMemo(
+      () => oportunidadesAbertas.map((o: any) => ({ sfOppId: o.id, numero: o.numero })),
+      [oportunidadesAbertas],
+    ),
+  );
 
   return (
     <div className="space-y-4">
@@ -584,13 +593,14 @@ function VisaoGeral({
                     <th className="text-left px-3 py-2 font-medium whitespace-nowrap">Criada em</th>
                     <th className="text-right px-3 py-2 font-medium whitespace-nowrap">Em aberto</th>
                     <th className="text-right px-3 py-2 font-medium">Valor</th>
+                    <th className="text-right px-3 py-2 font-medium w-[1%] whitespace-nowrap">Ações</th>
                   </tr>
 
                 </thead>
                 <tbody className="divide-y divide-border/60">
                   {linhas.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                      <td colSpan={7} className="px-3 py-6 text-center text-xs text-muted-foreground">
                         Nenhuma proposta nesta etapa.
                       </td>
                     </tr>
@@ -640,6 +650,12 @@ function VisaoGeral({
                             <span className="text-[10px] text-muted-foreground">sem valor</span>
                           )}
                         </td>
+                        <td className="px-2 py-1 text-right whitespace-nowrap">
+                          <AcoesOportunidade
+                            proposta={vinculos.buscar({ sfOppId: o.id, numero: o.numero })}
+                            onFeito={vinculos.recarregar}
+                          />
+                        </td>
                       </tr>
                     );
                   })}
@@ -650,6 +666,7 @@ function VisaoGeral({
                       {linhas.length} proposta(s){etapaFiltro === "todas" ? " em aberto" : ` em "${etapaFiltro}"`}
                     </td>
                     <td className="px-3 py-2 text-right font-semibold tabular-nums">{fmt(totalLinhas)}</td>
+                    <td />
                   </tr>
                 </tfoot>
               </table>

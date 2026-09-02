@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { VendedorFilter } from "@/components/vendedor-filter";
 
 import { cn } from "@/lib/utils";
+import { AcoesOportunidade, usePropostasVinculadas } from "@/components/propostas/acoes-oportunidade";
 import { useAuth } from "@/hooks/use-auth";
 import { useScopedOwner, useSellerScope } from "@/hooks/use-seller-scope";
 import {
@@ -326,6 +327,11 @@ function HomePage() {
     .slice()
     .sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0));
   const oppsTotal = filteredOpps.reduce((a, b) => a + (b.amount ?? 0), 0);
+  // Propostas do portal ligadas às oportunidades listadas: permitem abrir a
+  // proposta (mesma visualização das listas) e dar perda direto na home.
+  const vinculosOpps = usePropostasVinculadas(
+    useMemo(() => opps.map((o) => ({ sfOppId: o.id })), [opps]),
+  );
 
   const fetchForecasts = useServerFn(getSalesforceForecasts);
   const forecastsQ = useQuery({
@@ -1346,6 +1352,11 @@ function HomePage() {
                       <div className="text-[10px] text-muted-foreground">{new Date(b.closeDate + "T00:00:00").toLocaleDateString("pt-BR")}</div>
                     )}
                   </div>
+                  <AcoesOportunidade
+                    className="inline-flex shrink-0 items-center gap-0.5"
+                    proposta={vinculosOpps.buscar({ sfOppId: b.id })}
+                    onFeito={vinculosOpps.recarregar}
+                  />
                 </div>
               ))}
             </div>
