@@ -26,6 +26,11 @@ import { useAppVersionRefresh } from "@/hooks/use-app-version-refresh";
 import { applyAreaAttribute } from "@/lib/admin-area";
 import { AccessDenied } from "@/components/access-denied";
 import { toFriendlyError } from "@/lib/friendly-errors";
+import {
+  ehErroDeVersaoAntiga,
+  ouvirErrosDeVersaoAntiga,
+  recarregarPorVersaoAntiga,
+} from "@/lib/chunk-reload";
 
 // Origem do backend — sempre derivada da configuração, nunca hardcoded.
 const SUPABASE_ORIGIN: string =
