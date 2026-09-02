@@ -1410,6 +1410,14 @@ function NovaPropostaSolarPage() {
 
   const freteValor = freteMod === "FOB" || freteMod === "" || freteGratis ? 0 : (transportadora?.total ?? 0);
   const bonificado = freteBonificado && (freteMod === "CIF" || freteMod === "DEDICADO");
+  // Prazo mostrado/gravado: CIF usa o SLA da cotação; DEDICADO usa o manual.
+  const fretePrazoEfetivo =
+    freteMod === "DEDICADO"
+      ? fretePrazoManual
+      : freteMod === "CIF"
+        ? (transportadora?.prazo ?? null)
+        : null;
+
   // Bonificado: a 2P assume o frete — o valor continua cotado, mas não é cobrado.
   const total = money2(subtotal - desconto + (bonificado ? 0 : freteValor));
 
