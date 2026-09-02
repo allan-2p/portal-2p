@@ -864,6 +864,88 @@ export const atualizarDataEntregaFn = createServerFn({ method: "POST" })
   });
 
 
+/**
+ * "Dar perda" numa oportunidade — disponível para todos os vendedores e só
+ * enquanto a proposta é rascunho ("Salvo"). Grava motivo + descrição e muda a
+ * fase para "Oportunidade Perdida"; o envio ao Salesforce (StageName,
+ * Loss_Reason__c, Descri_o_do_Motivo_de_Perda__c) vai pela fila, sem prender
+ * o vendedor.
+ */
+export const marcarPerdaPropostaFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { id?: unknown; motivo?: unknown; observacao?: unknown };
+    if (typeof i.id !== "string" || !i.id) throw new Error("Proposta inválida.");
+    if (!motivoPerdaValido(i.motivo)) throw new Error("Informe o motivo da perda.");
+    return { id: i.id, motivo: i.motivo, observacao: validarObsPerda(i.observacao) };
+  })
+  .handler(async ({ data, context }) => {
+    const db = await repo();
+    const atual = (await db.getProposta(data.id)) as Record<string, any> | null;
+    if (!atual) throw new Error("Proposta não encontrada.");
+
+    const status = String(atual["status"] ?? "");
+    if (status !== "Salvo") {
+      throw new Error(
+        `Só é possível dar perda numa proposta com status "Salvo". Este pedido está "${status}".`,
+      );
+    }
+    if (atual["motivo_perda"] || atual["perdida_em"]) {
+      throw new Error("Esta oportunidade já está marcada como perdida.");
+    }
+
+    // Permissão: editar propostas (a do próprio consultor basta).
+    const { getPerm, assertPodeEditar } = await import("./object-perms.server");
+    const perm = await getPerm(context as any, String(atual["organizacao"] ?? "solar"), "propostas");
+    assertPodeEditar(
+      perm,
+      "propostas",
+      (atual["created_by"] as string | null) ?? null,
+      (context as any).userId,
+    );
+
+    // "Oportunidade Mecanicamente Perdida" é exclusiva do Administrador do
+    // Sistema — não basta esconder na tela.
+    if (motivoPerdaSomenteAdmin(data.motivo)) {
+      const { data: admin } = await (context as any).supabase.rpc("is_admin");
+      if (admin !== true) {
+        throw new Error("Este motivo de perda é exclusivo do Administrador do Sistema.");
+      }
+    }
+
+    const perdidaEm = new Date().toISOString();
+    await db.atualizarProposta(data.id, {
+      motivo_perda: data.motivo,
+      motivo_perda_obs: data.observacao,
+      perdida_em: perdidaEm,
+    });
+
+    // Auditoria e Salesforce: best effort, nunca seguram a resposta.
+    void (async () => {
+      try {
+        const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+        await logIntegrationEvent({
+          slug: "proposta",
+          level: "info",
+          event: "perda-oportunidade",
+          message: `Perda registrada na proposta ${atual["numero"] ?? ""}: ${data.motivo}.`,
+          detail: { proposta_id: data.id, motivo: data.motivo, observacao: data.observacao },
+          actorId: (context as any).userId ?? null,
+        });
+      } catch {
+        /* best effort */
+      }
+      try {
+        await sincronizarSalesforceAoSalvar(data.id);
+      } catch {
+        /* a fila reenvia depois */
+      }
+    })();
+
+    return { ok: true as const, perdidaEm, motivo: data.motivo };
+  });
+
+
 
 export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
 
