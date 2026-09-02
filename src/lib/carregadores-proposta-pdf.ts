@@ -40,6 +40,8 @@ export type PropostaPdfData = {
   finalidadeUso?: string | null;
   itens: PropostaPdfItem[];
   freteMod: string;
+  /** Prazo de entrega em dias úteis (propostas.frete_prazo). */
+  fretePrazo?: number | null;
   freteValor: number;
   /** Frete grátis só quando marcado no pedido ou concedido por cupom. */
   freteGratis?: boolean;
@@ -419,7 +421,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
 
     <div class="cond">
       <div><label>Validade</label><p>Proposta válida até ${esc(validade)}, sujeita a disponibilidade de estoque.</p></div>
-      <div><label>Prazo de entrega</label><p>A confirmar na aprovação do pedido, conforme modalidade de frete ${esc(p.freteMod)}.</p></div>
+      <div><label>Prazo de entrega</label><p>${esc(textoPrazoEntrega(p.fretePrazo, p.freteMod))}</p></div>
       <div><label>Condições</label><p>Valores em reais, impostos conforme legislação vigente em ${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}.</p></div>
       <div><label>Forma de pagamento</label><p>${esc(p.formaPagamento) || "—"}</p></div>
     </div>
