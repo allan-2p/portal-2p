@@ -27,7 +27,7 @@ export type EfeitosCancelamentoResult = {
 
 /**
  * Texto honesto sobre o envio dos e-mails de cancelamento: nunca diz
- * "avisados por e-mail" quando o provedor recusou ou não confirmou.
+ * "enviado" quando o provedor recusou ou não confirmou.
  */
 export function avisoEnvioCancelamento(r: EfeitosCancelamentoResult): string | null {
   const e = r.emails;
@@ -37,9 +37,9 @@ export function avisoEnvioCancelamento(r: EfeitosCancelamentoResult): string | n
     return `FALHA no envio dos e-mails de cancelamento (${e.falharam} de ${e.total}).${motivo} Avise os setores manualmente.`;
   }
   if (e.pendentes > 0) {
-    return "E-mails de cancelamento enfileirados, mas ainda sem confirmação de envio pelo provedor — acompanhe em Integrações.";
+    return "E-mail de cancelamento enfileirado, mas ainda sem confirmação de envio pelo provedor — acompanhe em Integrações.";
   }
-  return "Os setores foram avisados por e-mail.";
+  return "E-mail de cancelamento enviado.";
 }
 
 const DESTINOS_PADRAO =
@@ -53,7 +53,23 @@ function destinatarios(): string[] {
 }
 
 const SELECT =
-  "id,numero,nome,organizacao,cliente_nome,cliente_doc,sap_ov_numero,nf_numero,nf_serie,fretefy_oferta_id,totais";
+  "id,numero,nome,organizacao,cliente_nome,cliente_doc,sap_ov_numero,nf_numero,nf_serie,fretefy_oferta_id,totais,consultor_id,consultor_nome";
+
+async function emailDoConsultor(consultorId: string | null | undefined): Promise<string | null> {
+  if (!consultorId) return null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", consultorId)
+      .maybeSingle();
+    const email = String((data as any)?.email ?? "").trim().toLowerCase();
+    return email.includes("@") ? email : null;
+  } catch {
+    return null;
+  }
+}
 
 
 function esc(v: unknown): string {
@@ -236,10 +252,15 @@ export async function efeitosCancelamento(
       `<p>${linhas.join("<br />")}</p>`,
     );
 
+    // O consultor responsável pela proposta também recebe o aviso de cancelamento.
+    const emailConsultor = await emailDoConsultor(row["consultor_id"]);
+    const destinatariosFinais = new Set(destinatarios());
+    if (emailConsultor) destinatariosFinais.add(emailConsultor);
+
     const messageIds: string[] = [];
     let total = 0;
     let falhaEnfileirar = 0;
-    for (const to of destinatarios()) {
+    for (const to of destinatariosFinais) {
       total++;
       try {
         const r = await enviarEmailRastreado({

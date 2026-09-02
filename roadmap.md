@@ -14,6 +14,9 @@
 ## Concluído neste turno
 - [x] Fase (StageName) exibida nas propostas + "dar perda" pela linha (motivo + descrição → Loss_Reason__c / Descri_o_do_Motivo_de_Perda__c).
 - [x] Tipo de NF obrigatório em solar e carregadores (front + back)
+- [x] Cancelamento: mensagem alterada para "E-mail de cancelamento enviado." e consultor incluído nos destinatários.
+
+
 
 
 ## Salesforce — envio completo do pedido
