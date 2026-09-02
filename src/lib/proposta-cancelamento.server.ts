@@ -53,7 +53,8 @@ function destinatarios(): string[] {
 }
 
 const SELECT =
-  "id,numero,nome,organizacao,cliente_nome,cliente_doc,sap_ov_numero,nf_numero,nf_serie,fretefy_oferta_id,valor_total,totais";
+  "id,numero,nome,organizacao,cliente_nome,cliente_doc,sap_ov_numero,nf_numero,nf_serie,fretefy_oferta_id,totais";
+
 
 function esc(v: unknown): string {
   return String(v ?? "")
