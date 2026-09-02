@@ -431,7 +431,8 @@ function PropostasSolarPage() {
                     />
                   )}
                   </Fragment>
-                ))}
+                );})}
+
 
                 {q.isLoading && <TableSkeletonRows colunas={12} linhas={porPagina > 10 ? 10 : porPagina} />}
                 {!q.isLoading && filtered.length === 0 && (
