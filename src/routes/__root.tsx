@@ -214,6 +214,9 @@ function RootComponent() {
   useIdleSignout();
   // Nova publicação detectada → refresh completo, sem cache antigo.
   useAppVersionRefresh();
+  // Arquivo do app que sumiu depois de uma publicação: recarrega em vez de quebrar.
+  useEffect(() => ouvirErrosDeVersaoAntiga(), []);
+
 
 
   useEffect(() => {
