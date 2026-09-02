@@ -42,8 +42,8 @@ import { PermissionGate, useCan, useCanDelete } from "@/components/permission-ga
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 import { PropostasMobileCards } from "@/components/propostas-mobile-cards";
-import { BotaoDarPerda } from "@/components/propostas/dar-perda";
-import { faseDaProposta } from "@/lib/salesforce-stage";
+import { BotaoDarPerda, FaseBadge } from "@/components/propostas/dar-perda";
+import { propostaPerdida } from "@/lib/salesforce-stage";
 
 export const Route = createFileRoute("/_authenticated/carregadores/propostas/")({
   validateSearch: (s: Record<string, unknown>): { ver?: string } =>
