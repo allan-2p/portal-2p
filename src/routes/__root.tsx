@@ -64,9 +64,29 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   const friendly = toFriendlyError(error);
+  const versaoAntiga = ehErroDeVersaoAntiga(error);
   useEffect(() => {
+    // Aba presa numa publicação anterior: o arquivo pedido não existe mais.
+    // Em vez de mostrar erro, limpa o cache e recarrega uma única vez.
+    if (versaoAntiga && recarregarPorVersaoAntiga()) return;
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+  }, [error, versaoAntiga]);
+
+  if (versaoAntiga) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Atualizando o portal…
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Uma nova versão foi publicada. Estamos recarregando a página para você.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
 
   if (friendly.kind === "permissao") {
     return (
