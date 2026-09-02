@@ -68,7 +68,7 @@ export function valorTotalProposta(row: Record<string, any>) {
 }
 
 /** `YYYY-MM-DD` de um timestamp no fuso de São Paulo (evita o "um dia a menos"). */
-function diaBR(v: unknown): string {
+export function diaBR(v: unknown): string {
   const s = so(v);
   if (!s) return "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
