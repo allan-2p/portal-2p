@@ -35,7 +35,7 @@ import { bloqueiaReenvioSap } from "@/lib/proposta-legado";
 import { supabase } from "@/integrations/supabase/client";
 import { listarPropostasPaginaFn, excluirPropostaFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
-import { cn } from "@/lib/utils";
+import { abreviaNome, cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PermissionGate, useCan, useCanDelete } from "@/components/permission-gate";
@@ -310,8 +310,8 @@ function HistoricoCarregadoresPage() {
                 <col className="w-[8%]" />
                 <col className="w-[4%]" />
                 <col className="w-[12%]" />
-                <col className="w-[15%]" />
-                <col className="w-[9%]" />
+                <col className="w-[13%]" />
+                <col className="w-[8%]" />
                 <col className="w-[7%]" />
                 <col className="w-[6%]" />
                 <col className="w-[8%]" />
@@ -357,11 +357,11 @@ function HistoricoCarregadoresPage() {
                       </div>
                     </td>
                     <td className="px-2 py-2.5">
-                      <div className="truncate font-medium">{r.cliente_nome}</div>
+                      <div className="line-clamp-2 break-words font-medium leading-tight" title={r.cliente_nome}>{r.cliente_nome}</div>
                     </td>
                     <td className="px-2 py-2.5">
-                      <div className="truncate text-sm text-muted-foreground">
-                        {r.consultor_nome || r.criado_por_nome || "—"}
+                      <div className="truncate text-sm text-muted-foreground" title={r.consultor_nome || r.criado_por_nome || ""}>
+                        {abreviaNome(r.consultor_nome || r.criado_por_nome) || "—"}
                       </div>
                     </td>
                     <td className="px-2 py-2.5 truncate text-muted-foreground">
