@@ -1185,8 +1185,9 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
     const vbeln = String(atual?.["sap_ov_numero"] ?? "").trim();
     // Cancelar é permissão própria ("admin.sistema.cancelar"): quem a tem pode
     // cancelar pedidos sem poder excluir registros.
+    const ehCancelamento = !!vbeln || podeCancelarPedido(String(atual?.["status"] ?? ""));
     let podeCancelarPorFeature = false;
-    if (vbeln) {
+    if (ehCancelamento) {
       const { data: temFeature } = await (context as any).supabase.rpc("has_feature", {
         _user_id: userId,
         _key: "admin.sistema.cancelar",
@@ -1202,7 +1203,7 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
     } else {
       assertPodeExcluir(perm, "propostas", dono, userId);
     }
-    if (vbeln) {
+    if (ehCancelamento) {
       const de = String(atual?.["status"] ?? "");
       if (!podeCancelarPedido(de)) {
         throw new Error(`Não é possível cancelar um pedido com status "${de}".`);
