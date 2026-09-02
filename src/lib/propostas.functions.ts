@@ -1984,7 +1984,7 @@ export const vincularPropostasSfFn = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => {
     const i = (input ?? {}) as { sfOppIds?: unknown; numeros?: unknown };
     const lista = (v: unknown) =>
-      Array.isArray(v) ? [...new Set(v.map((x) => String(x ?? "").trim()).filter(Boolean))].slice(0, 300) : [];
+      Array.isArray(v) ? [...new Set(v.map((x) => String(x ?? "").trim()).filter(Boolean))].slice(0, 3000) : [];
     return { sfOppIds: lista(i.sfOppIds), numeros: lista(i.numeros) };
   })
   .handler(async ({ data }) => {
@@ -1992,12 +1992,18 @@ export const vincularPropostasSfFn = createServerFn({ method: "POST" })
     const select = "id,numero,status,organizacao,motivo_perda,perdida_em,sf_opp_id";
     const out: Record<string, any>[] = [];
     const inList = (vs: string[]) => `in.(${vs.map((v) => `"${v.replace(/"/g, "")}"`).join(",")})`;
-    if (data.sfOppIds.length) {
-      out.push(...(await db.consultarPropostas({ sf_opp_id: inList(data.sfOppIds) }, { select, limit: 500 })));
-    }
-    if (data.numeros.length) {
-      out.push(...(await db.consultarPropostas({ numero: inList(data.numeros) }, { select, limit: 500 })));
-    }
+    // Lotes: a home lista centenas de oportunidades e um `in.()` gigante
+    // estoura o tamanho da URL do PostgREST — sem isso só as primeiras
+    // linhas ganhavam o olhinho/dar perda.
+    const emLotes = async (col: string, vs: string[]) => {
+      for (let i = 0; i < vs.length; i += 150) {
+        const fatia = vs.slice(i, i + 150);
+        out.push(...(await db.consultarPropostas({ [col]: inList(fatia) }, { select, limit: 500 })));
+      }
+    };
+    if (data.sfOppIds.length) await emLotes("sf_opp_id", data.sfOppIds);
+    if (data.numeros.length) await emLotes("numero", data.numeros);
+
     const vistos = new Set<string>();
     return out.filter((r) => {
       const id = String(r["id"] ?? "");

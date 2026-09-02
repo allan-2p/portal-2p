@@ -1,6 +1,8 @@
 # Roadmap
 
 ## Em andamento / perguntas
+- [x] Backfill Salesforce: 6.393 propostas sem `sf_status` enfileiradas (pendente) para o cron `salesforce-fila` drenar.
+- [x] Home/dossiê: olhinho e "dar perda" apareciam só em parte das oportunidades (limite de 300 refs no vínculo) — corrigido com lotes e casamento por número.
 - [x] Boleto a prazo não aparecia para RUD CORRENTES (condição 2P04 no cadastro): liberar quando o cliente já tem condição a prazo no SAP, sem exigir análise de crédito no portal.
 - [x] Item 200000109 (2P-PSI300I Pris.madeira M10*300) ativo no SAP mas não aparece no portal nem nos itens avulsos — investigar.
 - [x] Reprocessar tarefas antigas do Salesforce criadas pelo portal (dono = usuário de integração) transferindo para o vendedor da conta.
