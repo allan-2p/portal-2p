@@ -93,6 +93,26 @@ export function PropostaDetalhe({ id }: { id?: string }) {
   const subtotal = itens.reduce((a, i) => a + (i.valor ?? 0) * (i.qtd ?? 0), 0);
   const fotosQ = useImagensPorCodigo(itens.map((i) => i.codigo));
   const fotos = fotosQ.data ?? {};
+  // Peso total: consultado sob demanda na simulação do SAP (mesma fonte do frete).
+  const buscarPeso = useServerFn(pesoItensProposta);
+  const itensPeso = itens
+    .filter((i) => i.codigo && Number(i.qtd || 0) > 0)
+    .map((i) => ({ codigo: String(i.codigo), qtd: Number(i.qtd || 0) }));
+  const pesoQ = useQuery({
+    queryKey: ["proposta-peso", p?.["id"], itensPeso.map((i) => `${i.codigo}x${i.qtd}`).join("|")],
+    enabled: itensPeso.length > 0,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+    queryFn: () =>
+      buscarPeso({
+        data: {
+          itens: itensPeso,
+          ...(p?.["cliente_doc"] ? { documento: String(p["cliente_doc"]) } : {}),
+        },
+      }),
+  });
+  const pesoTotal = Number(pesoQ.data?.total ?? 0);
+
   const frete = Number(p?.['frete_valor'] ?? 0);
   // Frete grátis vem do cupom (frete_gratis / totais.freteGratis); bonificado é
   // a cortesia comercial: em ambos o cliente não paga o frete.
