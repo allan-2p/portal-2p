@@ -12,7 +12,7 @@
 
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
-import { stage, escolhaProjetoVendido, faseDaProposta, propostaPerdida } from "./salesforce-stage";
+import { faseDaProposta, propostaPerdida } from "./salesforce-stage";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
 
