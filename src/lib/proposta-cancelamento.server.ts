@@ -53,7 +53,8 @@ function destinatarios(): string[] {
 }
 
 const SELECT =
-  "id,numero,nome,organizacao,cliente_nome,cliente_doc,sap_ov_numero,nf_numero,nf_serie,fretefy_oferta_id,valor_total,totais";
+  "id,numero,nome,organizacao,cliente_nome,cliente_doc,sap_ov_numero,nf_numero,nf_serie,fretefy_oferta_id,totais";
+
 
 function esc(v: unknown): string {
   return String(v ?? "")
@@ -158,12 +159,39 @@ export async function efeitosCancelamento(
 ): Promise<EfeitosCancelamentoResult> {
   const resultado: EfeitosCancelamentoResult = { sapCancelado: false, emails: null };
   let row: Record<string, any> | null = null;
+  let erroLeitura: string | null = null;
   try {
     row = (await db.getProposta(propostaId, SELECT)) as Record<string, any> | null;
-  } catch {
-    row = null;
+  } catch (e) {
+    // Nunca deixar a leitura derrubar o aviso em silêncio: tenta de novo com
+    // todas as colunas e, se ainda falhar, registra e devolve falha explícita.
+    erroLeitura = (e as Error).message;
+    try {
+      row = (await db.getProposta(propostaId)) as Record<string, any> | null;
+      erroLeitura = null;
+    } catch (e2) {
+      erroLeitura = (e2 as Error).message;
+      row = null;
+    }
   }
-  if (!row) return resultado;
+  if (!row) {
+    await logIntegrationEvent({
+      slug: "proposta",
+      event: "cancelamento-email",
+      level: "error",
+      message: `Não foi possível ler o pedido para avisar os setores do cancelamento: ${erroLeitura ?? "pedido não encontrado"}`.slice(0, 500),
+      detail: { proposta_id: propostaId },
+    });
+    resultado.emails = {
+      total: 1,
+      enviados: 0,
+      falharam: 1,
+      pendentes: 0,
+      erro: erroLeitura ?? "pedido não encontrado",
+    };
+    return resultado;
+  }
+
 
   const vbeln = String(row["sap_ov_numero"] ?? "").trim();
 
