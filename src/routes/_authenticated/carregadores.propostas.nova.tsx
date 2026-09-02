@@ -1177,6 +1177,7 @@ function PropostaCarregadoresPage() {
 
           }),
         freteMod: state.freteMod || "—",
+        fretePrazo: state.transportadora?.prazo ?? null,
         freteValor: state.freteValor,
         freteBonificado: state.freteBonificado && FRETE_ABSORVIDO.includes(state.freteMod as CarregadoresFreteMod),
         observacoes: observacoesFinal,
