@@ -29,6 +29,8 @@ export function AtlasWidget() {
   const qc = useQueryClient();
 
   const dragRef = useRef<{ startY: number; startOffset: number; moved: boolean } | null>(null);
+  // Continua true durante o click que sucede o pointerup, para não abrir o chat.
+  const moveuRef = useRef(false);
 
   const listar = useServerFn(listarThreadsFn);
   const criar = useServerFn(criarThreadFn);
@@ -68,19 +70,38 @@ export function AtlasWidget() {
     return Math.max(-max, Math.min(max, next));
   };
 
+  // O arrasto é acompanhado no window: se ficasse no botão, sair da área
+  // (poucos pixels) encerraria o movimento antes de reposicionar o ícone.
   const startDrag = (clientY: number) => {
+    if (typeof window === "undefined") return;
     dragRef.current = { startY: clientY, startOffset: offsetY, moved: false };
-  };
+    moveuRef.current = false;
 
-  const onMove = (clientY: number) => {
-    if (!dragRef.current) return;
-    const delta = clientY - dragRef.current.startY;
-    if (Math.abs(delta) > 4) dragRef.current.moved = true;
-    setOffsetY(clampOffset(dragRef.current.startOffset + delta));
-  };
+    const onMove = (ev: PointerEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      ev.preventDefault();
+      const delta = ev.clientY - d.startY;
+      if (Math.abs(delta) > 4) {
+        d.moved = true;
+        moveuRef.current = true;
+      }
+      setOffsetY(clampOffset(d.startOffset + delta));
+    };
+    const endDrag = () => {
+      dragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+      // Zera só depois do click, que dispara logo após o pointerup.
+      window.setTimeout(() => {
+        moveuRef.current = false;
+      }, 0);
+    };
 
-  const endDrag = () => {
-    dragRef.current = null;
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
   };
 
   const threads = useQuery({
@@ -144,16 +165,11 @@ export function AtlasWidget() {
           <Button
             size="icon"
             onClick={() => {
-              if (dragRef.current?.moved) return;
+              if (moveuRef.current) return;
               setAberto(true);
             }}
-            onMouseDown={(e) => startDrag(e.clientY)}
-            onMouseMove={(e) => onMove(e.clientY)}
-            onMouseUp={endDrag}
-            onMouseLeave={endDrag}
-            onTouchStart={(e) => startDrag(e.touches[0]?.clientY ?? 0)}
-            onTouchMove={(e) => onMove(e.touches[0]?.clientY ?? 0)}
-            onTouchEnd={endDrag}
+            onPointerDown={(e) => startDrag(e.clientY)}
+            style={{ touchAction: "none" }}
             aria-label="Abrir o chat do Atlas"
             title="Arraste para cima/baixo · clique para abrir o Atlas"
             className="relative h-11 w-9 cursor-grab rounded-l-full rounded-r-none border border-r-0 border-primary-foreground/20 bg-primary/80 text-primary-foreground shadow-md opacity-70 transition-[width,opacity] hover:w-11 hover:bg-primary hover:opacity-100 focus-visible:w-11 focus-visible:opacity-100 active:cursor-grabbing sm:h-12 sm:w-10 sm:hover:w-12 sm:focus-visible:w-12"
