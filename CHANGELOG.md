@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Abrir a proposta e dar perda pela home e pelo perfil do cliente**: as oportunidades listadas na home (Orçamentos) e no funil do dossiê do cliente ganharam os ícones de visualizar (mesma tela do olhinho das listas de propostas) e de dar perda, quando existe proposta correspondente no portal.
 - **Revisão da ampliação de atuação não trava mais em "Modify All Records"**: quando um cadastro passa a atuar também na outra unidade, o consultor que faz a revisão consegue salvar e assumir o cliente naquela unidade, mesmo que o registro tenha sido criado por outra pessoa. Também passou a ser reconhecido como dono quem é o consultor responsável pelo código SAP/nome, e não só por vínculo de usuário.
 
 - **Revalidação de CNPJ agora atualiza o SAP**: ao aplicar a revalidação de um cadastro (IE, contribuinte, regime, endereço), o cliente é reenviado automaticamente ao SAP. Antes os dados mudavam só no portal e o SAP seguia com o cadastro antigo (ex.: cliente que virou contribuinte continuava como não contribuinte no faturamento). O salvamento normal do cadastro já sincronizava.
