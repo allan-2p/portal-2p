@@ -50,7 +50,10 @@ export function avisoEnvioCancelamento(r: EfeitosCancelamentoResult): string | n
 }
 
 const DESTINOS_PADRAO =
-  "logistica@2pgroup.com.br,camila@2pgroup.com.br,nfe@2pgroup.com.br,pedidos@2pgroup.com.br,financeiro@2pgroup.com.br";
+  "logistica@2pgroup.com.br,nfe@2pgroup.com.br,pedidos@2pgroup.com.br,financeiro@2pgroup.com.br";
+
+/** Endereços que sempre recebem cópia de registro do cancelamento. */
+const COPIAS_FIXAS = ["alexandre@2pgroup.com.br"];
 
 function destinatarios(): string[] {
   return String(process.env["CANCELAMENTO_NOTIFICACAO_EMAIL"] ?? DESTINOS_PADRAO)
@@ -271,22 +274,30 @@ export async function efeitosCancelamento(
       ctx.observacao ? `<strong>Descrição do cancelamento:</strong> ${esc(ctx.observacao)}` : "",
     ].filter(Boolean);
 
-    const html = layoutEmail(
-      `Solicitação de cancelamento — pedido ${esc(numero)}`,
-      `<p>${linhas.join("<br />")}</p>`,
-    );
-
     // O consultor responsável pela proposta também recebe o aviso de cancelamento.
     const emailConsultor = await emailDoConsultor(row["consultor_id"], row["consultor_nome"]);
-    const destinatariosFinais = new Set(destinatarios());
-    if (emailConsultor) destinatariosFinais.add(emailConsultor);
+    const setores = new Set(destinatarios());
+    if (emailConsultor) setores.add(emailConsultor);
+    const copias = new Set<string>([...COPIAS_FIXAS, COPIA_REGISTRO()].map((e) => e.toLowerCase()));
+    for (const c of copias) setores.delete(c);
+
+    const listaVisivel = [
+      `<strong>Para:</strong> ${esc(Array.from(setores).join(", "))}`,
+      `<strong>Em cópia:</strong> ${esc(Array.from(copias).join(", "))}`,
+    ].join("<br />");
+
+    const html = layoutEmail(
+      `Solicitação de cancelamento — pedido ${esc(numero)}`,
+      `<p>${linhas.join("<br />")}</p>` +
+        `<p style="font-size:12px;color:#6b7280">${listaVisivel}</p>`,
+    );
 
     const messageIds: string[] = [];
     let total = 0;
     let falhaEnfileirar = 0;
 
-    // E-mails individuais para cada destinatário operacional.
-    for (const to of destinatariosFinais) {
+    // Um e-mail por destinatário (a API não aceita múltiplos endereços no To).
+    for (const to of [...setores, ...copias]) {
       total++;
       try {
         const r = await enviarEmailRastreado(
@@ -306,24 +317,6 @@ export async function efeitosCancelamento(
       }
     }
 
-    // allan@ recebe UM e-mail de registro separado, não uma cópia por destinatário.
-    total++;
-    try {
-      const r = await enviarEmailRastreado(
-        {
-          to: COPIA_REGISTRO(),
-          subject: `Cancelamento do pedido ${numero}`,
-          html,
-          label: "cancelamento-pedido",
-          idempotencyKey: `cancelamento:${propostaId}:registro${ctx.forcarReenvio ? `:${crypto.randomUUID()}` : ""}`,
-        },
-        { ehCopiaRegistro: true },
-      );
-      if (r.ok && r.messageId) messageIds.push(r.messageId);
-      else falhaEnfileirar++;
-    } catch {
-      falhaEnfileirar++;
-    }
 
     const desfecho = await aguardarDesfechoEmails(messageIds);
     resultado.emails = {
