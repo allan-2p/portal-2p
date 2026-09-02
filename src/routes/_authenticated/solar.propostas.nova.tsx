@@ -1653,7 +1653,21 @@ function NovaPropostaSolarPage() {
         toast.error(msg, { duration: 12000 });
       }
     } catch (e) {
-      toast.error((e as Error).message, { duration: 12000 });
+      const msg = (e as Error).message || "Falha ao salvar a proposta.";
+      // Tabela de preço mudou no SAP: nada é gravado às escondidas. Atualiza
+      // os valores na tela e só grava depois que o vendedor confirmar.
+      if (msg.startsWith("PRECO_ALTERADO")) {
+        await atualizarPrecos(itens, listaPreco);
+        toast.error(msg.replace(/^PRECO_ALTERADO:\s*/, ""), {
+          duration: 30000,
+          action: {
+            label: "Salvar com os novos preços",
+            onClick: () => void salvarProposta(concluir, true),
+          },
+        });
+      } else {
+        toast.error(msg, { duration: 12000 });
+      }
     } finally {
       setSalvando(false);
       setConclusaoFase(null);
