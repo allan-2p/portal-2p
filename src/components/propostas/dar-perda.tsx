@@ -38,14 +38,20 @@ export function FaseTexto({ row, className }: { row: Record<string, any>; classN
   return <span className={className}>{faseDaProposta(row)}</span>;
 }
 
+/**
+ * Cor por significado da fase: pedido concluído = verde (receita realizada),
+ * projeto fechado = azul (venda ganha, ainda em execução), estoque = violeta
+ * (compra para giro), não fechado / negociação = âmbar (em aberto),
+ * cancelado = vermelho, perdida = cinza (encerrada sem venda).
+ */
 const FASE_BADGE_STYLE: Record<string, string> = {
-  FIN: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  NÃO: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-  SIM: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  EST: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
-  NEG: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
-  CAN: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-  PER: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
+  FIN: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+  SIM: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
+  EST: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
+  NÃO: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  NEG: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  CAN: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
+  PER: "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
 };
 
 /** Badge compacto com o nome da fase em até duas linhas (usado nas listagens). */
