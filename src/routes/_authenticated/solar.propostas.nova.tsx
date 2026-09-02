@@ -301,6 +301,10 @@ function NovaPropostaSolarPage() {
   const [freteBonificado, setFreteBonificado] = useState(false);
   const [areaRural, setAreaRural] = useState(false);
   const [transportadora, setTransportadora] = useState<CarregadoresTransportadora | null>(null);
+  // Prazo de entrega em dias úteis: no CIF vem da cotação (SLA da
+  // transportadora); no DEDICADO o vendedor informa manualmente.
+  const [fretePrazoManual, setFretePrazoManual] = useState<number | null>(null);
+
   // Cotação de frete em andamento — trava avanço/salvamento para não gravar sem o frete.
   const [freteCotando, setFreteCotando] = useState(false);
 
