@@ -2729,8 +2729,13 @@ export const getSalesforceAccount360 = createServerFn({ method: "GET" })
     const run = (soql: string) =>
       sfFetch(`/query?q=${encodeURIComponent(soql)}`).catch(() => ({ records: [] }));
 
+    const runOpp = () =>
+      sfFetch(`/query?q=${encodeURIComponent(soqlOpp)}`).catch(() =>
+        sfFetch(`/query?q=${encodeURIComponent(camposOpp(false))}`).catch(() => ({ records: [] })),
+      );
+
     const [oRes, cRes, vRes, tRes, crRes] = await Promise.all([
-      run(soqlOpp),
+      runOpp(),
       run(soqlCase),
       run(soqlVisita),
       run(soqlTrein),
@@ -2742,11 +2747,13 @@ export const getSalesforceAccount360 = createServerFn({ method: "GET" })
     return {
       opportunities: ((oRes?.records ?? []) as any[]).map((r) => ({
         id: r.Id,
+        numero: r.Numero_Pedido_Portal__c ? String(r.Numero_Pedido_Portal__c) : null,
         name: r.Name ?? "Oportunidade",
         stage: r.StageName ?? null,
         amount: Number(r.Total__c ?? r.Amount ?? 0) || 0,
         closeDate: r.CloseDate ?? null,
         createdDate: r.CreatedDate ?? null,
+
         isClosed: Boolean(r.IsClosed),
         isWon: Boolean(r.IsWon),
         owner: r.Owner?.Name ?? null,
