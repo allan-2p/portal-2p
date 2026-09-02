@@ -34,6 +34,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Cancelar pedido virou permissão própria** ("Sistema • Cancelar pedidos"): antes só quem podia excluir registros conseguia cancelar. Agora os perfis de Consultores e o Analista de Faturamento podem cancelar pedidos, com as mesmas regras de hoje (motivo obrigatório, descrição mínima, status permitido, aviso aos setores e ao SAP). Cancelar pedido de outro consultor continua exigindo "Modify All Records".
 - **Boleto a prazo**: clientes que já têm condição de pagamento a prazo no cadastro/SAP (ex.: 14 DDL / 2P04) voltam a ver a opção "Boleto a prazo" na proposta, sem depender de uma análise de crédito aberta no portal. Continua bloqueado para quem só tem condição à vista e não tem crédito aprovado.
 - **Catálogo**: o item 200000109 (2P-PSI300I Pris.madeira M10*300) foi enviado ao catálogo Solar — estava ativo no SAP, mas nunca havia sido publicado no portal, por isso não aparecia nem como item avulso.
 - **Trava de preço na proposta Solar**: o preço que o vendedor vê na tela é o preço gravado. Se a tabela mudar no SAP entre a montagem e o salvamento, a proposta **não** é salva: o portal avisa item a item ("de → para"), atualiza os valores na tela e só grava depois que o vendedor confirmar em "Salvar com os novos preços".
