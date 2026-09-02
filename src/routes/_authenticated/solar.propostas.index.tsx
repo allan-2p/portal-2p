@@ -38,7 +38,7 @@ import {
   listarPropostasPaginaFn,
 } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
-import { PermissionGate, useCan, useCanDelete } from "@/components/permission-gate";
+import { PermissionGate, useCan, useCanCancel, useCanDelete } from "@/components/permission-gate";
 import { PropostaDetalheDialog } from "@/components/proposta-detalhe";
 import { PedidoIntegracoesDialog } from "@/components/pedido-integracoes-dialog";
 import { PropostasMobileCards } from "@/components/propostas-mobile-cards";
@@ -125,6 +125,8 @@ function PropostasSolarPage() {
   const [motivoCancel, setMotivoCancel] = useState("");
   const [obsCancel, setObsCancel] = useState("");
   const podeExcluir = useCanDelete();
+  // Cancelar pedido tem permissão própria (consultores e faturamento).
+  const podeCancelar = useCanCancel();
   const podeVerIntegracoes = useCan("admin.logs.integracoes");
 
   const q = useQuery({
@@ -282,7 +284,7 @@ function PropostasSolarPage() {
               rows={visiveis as any}
               rotaNova="/solar/propostas/nova"
               carregando={q.isLoading}
-              podeExcluir={podeExcluir}
+              podeExcluir={podeExcluir || podeCancelar}
               onDetalhe={setDetalheId}
               onIntegracoes={setIntegracoesId}
               onExcluir={setExcluirId}
@@ -416,7 +418,7 @@ function PropostasSolarPage() {
                            </Button>
                          )}
                         <BotaoDarPerda proposta={r as any} onFeito={() => q.refetch()} />
-                        {podeExcluir && podeCancelarPedido(r.status) && (
+                        {(podeExcluir || podeCancelar) && podeCancelarPedido(r.status) && (
                           <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Cancelar pedido" title="Cancelar pedido" onClick={() => setExcluirId(r.id)}>
                             <X className="h-4 w-4 text-destructive" />
                           </Button>

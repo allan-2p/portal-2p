@@ -1176,13 +1176,34 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = await repo();
     const atual = (await db.getProposta(data.id)) as Record<string, any> | null;
-    const { assertPodeExcluir, getPerm } = await import("./object-perms.server");
+    const { assertPodeExcluir, getPerm, ForbiddenObjectError } = await import("./object-perms.server");
     const perm = await getPerm(context as any, String(atual?.["organizacao"] ?? "solar"), "propostas");
-    assertPodeExcluir(perm, "propostas", (atual?.["created_by"] as string | null) ?? null, (context as any).userId);
+    const dono = (atual?.["created_by"] as string | null) ?? null;
+    const userId = (context as any).userId as string;
     // Pedido que já foi ao SAP não é apagado: o par NROPED↔VBELN precisa
     // sobreviver para a auditoria e para o cron de NFs. Vira "Cancelado".
     const vbeln = String(atual?.["sap_ov_numero"] ?? "").trim();
-    if (vbeln) {
+    // Cancelar é permissão própria ("admin.sistema.cancelar"): quem a tem pode
+    // cancelar pedidos sem poder excluir registros.
+    const ehCancelamento = !!vbeln || podeCancelarPedido(String(atual?.["status"] ?? ""));
+    let podeCancelarPorFeature = false;
+    if (ehCancelamento) {
+      const { data: temFeature } = await (context as any).supabase.rpc("has_feature", {
+        _user_id: userId,
+        _key: "admin.sistema.cancelar",
+      });
+      podeCancelarPorFeature = Boolean(temFeature);
+    }
+    if (podeCancelarPorFeature) {
+      if (dono && dono !== userId && !perm.modify_all) {
+        throw new ForbiddenObjectError(
+          `Este pedido pertence a outro consultor. É necessário "Modify All Records".`,
+        );
+      }
+    } else {
+      assertPodeExcluir(perm, "propostas", dono, userId);
+    }
+    if (ehCancelamento) {
       const de = String(atual?.["status"] ?? "");
       if (!podeCancelarPedido(de)) {
         throw new Error(`Não é possível cancelar um pedido com status "${de}".`);
@@ -1226,7 +1247,7 @@ export const excluirPropostaFn = createServerFn({ method: "POST" })
       return {
         ok: true,
         cancelada: true,
-        aviso: `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal.${avisoEmail ? ` ${avisoEmail}` : ""}`,
+        aviso: `${vbeln ? `A ordem ${vbeln} continua no SAP — solicite o cancelamento ao time (VA02). ` : ""}O pedido ${atual?.["numero"] ?? ""} foi marcado como Cancelado no portal.${avisoEmail ? ` ${avisoEmail}` : ""}`,
       };
 
     }

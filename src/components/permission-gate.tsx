@@ -9,9 +9,22 @@ import type { CapabilityId } from "@/lib/feature-capabilities";
  */
 export const DELETE_FEATURE: FeatureKey = "admin.sistema.excluir";
 
+/**
+ * Cancelar pedido é uma permissão própria (não é excluir): pode ser dada a
+ * consultores e ao faturamento sem liberar exclusão de registros.
+ */
+export const CANCEL_FEATURE: FeatureKey = "admin.sistema.cancelar";
+
 /** Regra universal: pode excluir registros no portal? */
 export function useCanDelete() {
   return useCan(DELETE_FEATURE);
+}
+
+/** Pode cancelar pedidos (quem exclui também pode). */
+export function useCanCancel() {
+  const cancelar = useCan(CANCEL_FEATURE);
+  const excluir = useCan(DELETE_FEATURE);
+  return cancelar || excluir;
 }
 
 export const NO_PERMISSION_HINT = "Seu perfil não permite esta ação. Fale com um administrador.";

@@ -57,6 +57,7 @@ export type FeatureKey =
   | "admin.logs.jobs"
   | "admin.logs.exportar"
   | "admin.sistema.excluir"
+  | "admin.sistema.cancelar"
   | "admin.clientes.integracoes"
   | "marketing.home"
   | "marketing.social"
@@ -298,6 +299,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.logs.jobs": "Logs • Gatilhos automáticos (monitoramento)",
   "admin.logs.exportar": "Logs • Exportar registros (CSV)",
   "admin.sistema.excluir": "Sistema • Excluir registros (universal)",
+  "admin.sistema.cancelar": "Sistema • Cancelar pedidos (universal)",
   "admin.clientes.integracoes": "Clientes • Integrações e histórico (auditoria)",
   "admin.vinculos": "Admin • Vínculos Salesforce",
   "admin.emails": "Configurações • E-mails enviados",
