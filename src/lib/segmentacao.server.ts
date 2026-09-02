@@ -128,11 +128,12 @@ function classificar(vendasTriAnterior: number): Segmento {
 const semBonificacao = "(tipo_de_nf__c.is.null,tipo_de_nf__c.neq.Bonificação)";
 const valor = (o: OppRow) => Number(o.total__c ?? o.amount ?? 0) || 0;
 
-function paramsOpp(extra: Record<string, string>) {
-  const p = new URLSearchParams({ select: OPP_COLS, is_deleted: "is.false", ...extra });
+function paramsOpp(extra: Record<string, string>, cols = OPP_COLS_SOMA) {
+  const p = new URLSearchParams({ select: cols, is_deleted: "is.false", ...extra });
   p.set("or", semBonificacao);
   return p;
 }
+
 
 export type SegmentacaoRow = {
   id: string;
