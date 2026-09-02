@@ -31,7 +31,7 @@ import {
   podeDarPerda,
 } from "@/lib/perda-motivos";
 import { cn } from "@/lib/utils";
-import { faseDaProposta, propostaPerdida, siglaDaFase } from "@/lib/salesforce-stage";
+import { faseDaProposta, linhasDaFase, propostaPerdida, siglaDaFase } from "@/lib/salesforce-stage";
 
 /** Fase (StageName) da proposta, sem sigla. */
 export function FaseTexto({ row, className }: { row: Record<string, any>; className?: string }) {
