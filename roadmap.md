@@ -1,6 +1,8 @@
 # Roadmap
 
 ## Em andamento / perguntas
+- [ ] Boleto a prazo não aparecia para RUD CORRENTES (condição 2P04 no cadastro): liberar quando o cliente já tem condição a prazo no SAP, sem exigir análise de crédito no portal.
+- [ ] Item 200000109 (2P-PSI300I Pris.madeira M10*300) ativo no SAP mas não aparece no portal nem nos itens avulsos — investigar.
 - [x] Reprocessar tarefas antigas do Salesforce criadas pelo portal (dono = usuário de integração) transferindo para o vendedor da conta.
 - [ ] Qual permissão de perfil permite marcar pedido como entregue? (resposta: `modify_all = true` no objeto `propostas` da instância; ver `permission_profile_object_perms`)
 - [x] Reenviados os avisos de cancelamento dos pedidos 60134 e 60138.

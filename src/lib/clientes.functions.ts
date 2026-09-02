@@ -875,7 +875,10 @@ export const condicaoPagamentoClienteFn = createServerFn({ method: "POST" })
     const achados = await db.findClienteByDoc(data.doc);
     const cliente = achados[0]?.cliente ?? null;
     const condicao = String(cliente?.["condicao_pagamento"] ?? "").trim();
-    return { condicao: condicao || null };
+    // ZTERM do SAP: qualquer condição diferente de "à vista" (2P00) significa
+    // que o crédito a prazo já foi concedido ao cliente fora do portal.
+    const condicaoSap = String(cliente?.["condicao_pgto_sap"] ?? "").trim().toUpperCase();
+    return { condicao: condicao || null, condicaoSap: condicaoSap || null, prazoNoSap: !!condicaoSap && condicaoSap !== "2P00" };
   });
 
 
