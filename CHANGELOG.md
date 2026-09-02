@@ -34,6 +34,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- Detalhe da proposta (olhinho): peso total dos itens calculado pela simulação do SAP.
+- Tipo de nota fiscal já vem como "Venda" nas novas propostas Solar e Carregadores (editável).
+- Ampliação de atuação: qualquer consultor pode ampliar e assumir o cadastro na sua instância.
 - **Prazo de entrega na proposta**: o prazo em dias úteis passa a aparecer no olhinho do pedido, no resumo da finalização e no PDF ("X dias úteis após o despacho"), com o texto "A confirmar na aprovação, conforme modalidade …" apenas quando não há prazo. No frete DEDICADO o vendedor agora informa o prazo manualmente (o CIF continua automático, pelo SLA da transportadora), e esse valor alimenta a estimativa de entrega na coleta. Vale para 2P Solar e 2P Carregadores.
 - **Reprocessamento das datas de venda no CRM**: rodada de correção nas oportunidades já fechadas — 91 pedidos estavam com a data de fechamento antiga (data de criação/previsão) e 89 foram corrigidos para a data real da compra, o que ajusta o "Vendido" da home no mês certo. Dois pedidos antigos (26390 e 25659) não puderam ser atualizados porque o CRM exige o detalhamento do motivo de perda. O script `scripts/reprocessar-closedate.ts` permite repetir a verificação (simulação por padrão, `--aplicar` para gravar).
 - **Data de venda no CRM = data em que o pedido foi fechado**: o `CloseDate` da oportunidade passa a usar a data de conclusão do pedido (a "Data da compra" do portal) em vez da previsão de fechamento/criação. Com isso o "Vendido" da home e os relatórios por mês passam a contar o pedido no mês em que ele foi realmente fechado. Enquanto o pedido não é fechado, a previsão continua sendo enviada como estimativa.
