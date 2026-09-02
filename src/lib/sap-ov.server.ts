@@ -736,7 +736,12 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
         : "Frete CIF sem valor calculado — a ordem irá com frete zerado.",
     );
 
-  if (!String(row["forma_pagamento"] ?? "").trim()) pendencias.push("Forma de pagamento não definida.");
+  // Bonificação legada pode estar sem forma gravada: vai como boleto à vista (2P00).
+  if (
+    !String(row["forma_pagamento"] ?? "").trim() &&
+    !String(row["tipo_nf"] ?? "").toLowerCase().startsWith("bonifica")
+  )
+    pendencias.push("Forma de pagamento não definida.");
   if (!String(row["consultor_codigo_sap"] ?? "").trim())
     avisos.push("Vendedor sem código SAP cadastrado — a ordem irá sem o vendedor.");
 
