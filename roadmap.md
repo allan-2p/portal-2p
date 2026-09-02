@@ -3,6 +3,7 @@
 ## Em andamento / perguntas
 - [x] Reprocessar tarefas antigas do Salesforce criadas pelo portal (dono = usuário de integração) transferindo para o vendedor da conta.
 - [ ] Qual permissão de perfil permite marcar pedido como entregue? (resposta: `modify_all = true` no objeto `propostas` da instância; ver `permission_profile_object_perms`)
+- [ ] Reenviar o e-mail de cancelamento do pedido 60134 (cancelado em 01/09 antes da correção estar publicada; nenhum envio consta nos logs).
 
 ## Entrega
 - [x] Ampliação de atuação: revisão obrigatória do cadastro + escolha do consultor da nova unidade.

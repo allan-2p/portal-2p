@@ -147,6 +147,30 @@ async function ownerSfId(userId: unknown): Promise<string | null> {
   }
 }
 
+/**
+ * OwnerId pelo nome do consultor gravado na proposta. Pedidos importados da
+ * plataforma antiga têm `consultor_nome` preenchido e `consultor_id` nulo — sem
+ * isso a oportunidade cai no dono de quem importou (ex.: "Portal 2P").
+ */
+async function ownerSfIdPorNome(nome: unknown): Promise<string | null> {
+  const n = so(nome);
+  if (!n) return null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select("sf_user_id,full_name")
+      .ilike("full_name", n)
+      .not("sf_user_id", "is", null)
+      .limit(2);
+    const linhas = (data as any[]) ?? [];
+    // Só aceita quando o nome identifica um único vendedor.
+    return linhas.length === 1 ? so(linhas[0]?.sf_user_id) || null : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Nomes de campos recusados pela org, extraídos da mensagem de erro. */
 function camposInvalidos(msg: string): string[] {
   const achados = new Set<string>();
@@ -275,7 +299,10 @@ export async function sincronizarPedidoSalesforce(
     // Dono da oportunidade = consultor responsável pela proposta (o vendedor),
     // não quem digitou/importou o pedido. Só cai em created_by se a proposta
     // não tiver consultor vinculado.
-    const owner = (await ownerSfId(row["consultor_id"])) ?? (await ownerSfId(row["created_by"]));
+    const owner =
+      (await ownerSfId(row["consultor_id"])) ??
+      (await ownerSfIdPorNome(row["consultor_nome"])) ??
+      (await ownerSfId(row["created_by"]));
     const { payload } = montarPayload(
       "Opportunity",
       { ...(row as Record<string, any>), _account_id: accountId, _owner_id: owner },
