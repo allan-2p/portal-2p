@@ -44,6 +44,7 @@ import { propostaPdfDaLinha } from "@/lib/proposta-pdf-row";
 import { useState } from "react";
 import { toast } from "sonner";
 import { fmtDataBR } from "@/lib/data-br";
+import { textoPrazoEntrega } from "@/lib/prazo-entrega";
 
 
 
