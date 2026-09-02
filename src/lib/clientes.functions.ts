@@ -565,7 +565,9 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     const sapEscolhido = String(data.consultor_sap ?? "").trim();
     // Cadastro Grupo 2P recém-ampliado: esta unidade ainda não tem dono, então
     // quem faz a revisão define o responsável mesmo sem "Modify All Records".
-    const podeTrocar = podeEscolher || !data.id || !anteriorConsultor.sap;
+    const podeTrocar =
+      podeEscolher || !data.id || !anteriorConsultor.sap || (ehGrupo && !anteriorConsultor.proprio);
+
     const sapAlvo = podeTrocar ? sapEscolhido || anteriorConsultor.sap : anteriorConsultor.sap;
 
     const noPortal = await consultorPorSap(sapAlvo);
