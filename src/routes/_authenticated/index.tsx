@@ -1364,9 +1364,13 @@ function HomePage() {
                   </div>
                   <AcoesOportunidade
                     className="inline-flex shrink-0 items-center gap-0.5"
-                    proposta={vinculosOpps.buscar({ sfOppId: b.id })}
+                    proposta={vinculosOpps.buscar({
+                      sfOppId: b.id,
+                      numero: /^\s*(\d{4,})\s*-/.exec(b.name ?? "")?.[1] ?? null,
+                    })}
                     onFeito={vinculosOpps.recarregar}
                   />
+
                 </div>
               ))}
             </div>
