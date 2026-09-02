@@ -31,6 +31,7 @@ import {
   podeDarPerda,
 } from "@/lib/perda-motivos";
 import { cn } from "@/lib/utils";
+import { propostaStatusStyle } from "@/lib/proposta-status";
 import { faseDaProposta, linhasDaFase, propostaPerdida, siglaDaFase } from "@/lib/salesforce-stage";
 
 /** Fase (StageName) da proposta, sem sigla. */
@@ -39,20 +40,24 @@ export function FaseTexto({ row, className }: { row: Record<string, any>; classN
 }
 
 /**
- * Cor por significado da fase: pedido concluído = verde (receita realizada),
- * projeto fechado = azul (venda ganha, ainda em execução), estoque = violeta
- * (compra para giro), não fechado / negociação = âmbar (em aberto),
- * cancelado = vermelho, perdida = cinza (encerrada sem venda).
+ * Cor da fase segue a cor do status atual do pedido, para que o StageName
+ * e o status estejam visualmente alinhados na linha da proposta.
  */
-const FASE_BADGE_STYLE: Record<string, string> = {
-  FIN: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  SIM: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
-  EST: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
-  NÃO: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  NEG: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  CAN: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
-  PER: "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-};
+function classesFase(row: Record<string, any>): string {
+  const sigla = siglaDaFase(row);
+  const status = String(row?.["status"] ?? "");
+  const style = propostaStatusStyle(status);
+
+  if (sigla === "PER") {
+    return "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400";
+  }
+  if (sigla === "CAN") {
+    return "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300";
+  }
+
+  // FIN/NÃO/SIM/EST: usa a cor do status (Salvo = cinza, etc.).
+  return `${style.dot.replace("bg-", "bg-")} ${style.text}`;
+}
 
 /** Badge compacto com o nome da fase em até duas linhas (usado nas listagens). */
 export function FaseBadge({
