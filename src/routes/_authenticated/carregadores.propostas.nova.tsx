@@ -2512,6 +2512,11 @@ function PropostaCarregadoresPage() {
                         : "—"
                     }
                   />
+                  <ResumoLinha
+                    k="Prazo de entrega"
+                    v={textoPrazoEntrega(state.transportadora?.prazo ?? null, state.freteMod)}
+                  />
+
                 </div>
 
                 {/* PRODUTOS */}
