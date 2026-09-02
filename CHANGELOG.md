@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Cancelamento: e-mail aos setores não depende mais do CRM**: o aviso de cancelamento passou a ser enviado antes da sincronização com o Salesforce, e uma recusa da org (ex.: dono inativo da conta) deixou de interromper o fluxo — o erro do CRM agora só é registrado no Log de Integrações. Era essa recusa que impedia o envio dos e-mails em pedidos cancelados recentemente.
+- **Consultor no aviso de cancelamento também por nome**: pedidos importados da plataforma antiga não têm consultor vinculado por ID; o portal agora localiza o e-mail do vendedor pelo nome gravado na proposta.
 - **Duplicar proposta só em pedido cancelado**: o ícone de copiar saiu das linhas dos demais status nas listas de propostas (2P Solar e 2P Carregadores); ele aparece apenas quando o pedido está Cancelado, para refazê-lo.
 - **Dono da oportunidade no CRM pelo nome do consultor**: pedidos vindos da plataforma antiga não têm consultor vinculado por ID e iam ao Salesforce com o dono de quem importou (ex.: "Portal 2P"). Agora o portal também procura o vendedor pelo nome gravado na proposta (quando ele identifica um único usuário) antes de cair em quem criou o registro.
 - **E-mail de cancelamento de pedido volta a sair**: a leitura do pedido pedia uma coluna inexistente (`valor_total`) e falhava em silêncio, cancelando o pedido sem avisar logística, faturamento, NF-e, pedidos e financeiro (nem a cópia de registro). A leitura foi corrigida, ganhou tentativa alternativa e, se ainda falhar, o portal mostra "FALHA no envio" e grava o erro no Log de Integrações em vez de fingir sucesso.
