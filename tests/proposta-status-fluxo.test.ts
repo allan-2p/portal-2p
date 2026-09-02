@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { proximoStatus, selecionarFilaRotativa } from "@/lib/sap-nfs.server";
 import { transicaoPermitida } from "@/lib/proposta-status";
+import { motivosPerdaPara, podeDarPerda, validarObsPerda } from "@/lib/perda-motivos";
+import { faseDaProposta } from "@/lib/salesforce-stage";
 
 describe("fila rotativa do cron SAP", () => {
   it("alcança todas as linhas quando o backlog supera o limite", () => {
