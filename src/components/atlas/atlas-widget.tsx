@@ -144,16 +144,11 @@ export function AtlasWidget() {
           <Button
             size="icon"
             onClick={() => {
-              if (dragRef.current?.moved) return;
+              if (moveuRef.current) return;
               setAberto(true);
             }}
-            onMouseDown={(e) => startDrag(e.clientY)}
-            onMouseMove={(e) => onMove(e.clientY)}
-            onMouseUp={endDrag}
-            onMouseLeave={endDrag}
-            onTouchStart={(e) => startDrag(e.touches[0]?.clientY ?? 0)}
-            onTouchMove={(e) => onMove(e.touches[0]?.clientY ?? 0)}
-            onTouchEnd={endDrag}
+            onPointerDown={(e) => startDrag(e.clientY)}
+            style={{ touchAction: "none" }}
             aria-label="Abrir o chat do Atlas"
             title="Arraste para cima/baixo · clique para abrir o Atlas"
             className="relative h-11 w-9 cursor-grab rounded-l-full rounded-r-none border border-r-0 border-primary-foreground/20 bg-primary/80 text-primary-foreground shadow-md opacity-70 transition-[width,opacity] hover:w-11 hover:bg-primary hover:opacity-100 focus-visible:w-11 focus-visible:opacity-100 active:cursor-grabbing sm:h-12 sm:w-10 sm:hover:w-12 sm:focus-visible:w-12"
