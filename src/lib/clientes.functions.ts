@@ -791,13 +791,34 @@ export const revalidarCnpjClienteFn = createServerFn({ method: "POST" })
       .map(([campo, v]) => ({ campo, de: norm((cliente as any)?.[campo]), para: norm(v), valor: v }));
 
     let aplicado = false;
+    let sync: any = null;
     if (data.aplicar && alteracoes.length > 0 && e.fontes.length > 0) {
       const db = await import("./clientes-db.server");
       const patch: Record<string, unknown> = {};
       for (const a of alteracoes) patch[a.campo] = a.valor;
       await db.updateCliente(data.instancia, data.id, patch);
       aplicado = true;
+
+      // Dados fiscais mudaram (IE/contribuinte/endereço/regime): o SAP precisa
+      // receber a atualização, senão o cadastro fica divergente no faturamento.
+      try {
+        const atualizado = {
+          ...(cliente as Record<string, any>),
+          ...patch,
+        } as Record<string, any>;
+        const { consultorDoCadastro } = await import("./consultor-sap.server");
+        const doCadastro = consultorDoCadastro(atualizado);
+        const { sincronizarCliente } = await import("./clientes-integracoes.server");
+        sync = await sincronizarCliente(data.instancia, data.id, atualizado, {
+          vendedorSap: doCadastro.sap ?? null,
+          ownerSfId: null,
+          alvos: ["sap"],
+        });
+      } catch (err) {
+        sync = { sap: { ok: false, numero_sap: null, erro: (err as Error)?.message ?? String(err) } };
+      }
     }
+
 
     await logIntegrationEvent({
       slug: "clientes-cadastro",
@@ -826,7 +847,9 @@ export const revalidarCnpjClienteFn = createServerFn({ method: "POST" })
       avisos: e.avisos,
       alteracoes: alteracoes.map(({ campo, de, para }) => ({ campo, de, para })),
       aplicado,
+      sync,
     };
+
   });
 
 /** Testa isoladamente banco, SAP, Salesforce ou contatos (sem alterar dados). */
