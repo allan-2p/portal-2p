@@ -847,7 +847,9 @@ export const revalidarCnpjClienteFn = createServerFn({ method: "POST" })
       avisos: e.avisos,
       alteracoes: alteracoes.map(({ campo, de, para }) => ({ campo, de, para })),
       aplicado,
+      sync,
     };
+
   });
 
 /** Testa isoladamente banco, SAP, Salesforce ou contatos (sem alterar dados). */
