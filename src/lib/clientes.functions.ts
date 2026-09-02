@@ -560,7 +560,7 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     // do consultor da instância aberta.
     const anteriorConsultor = data.id
       ? consultorDaInstancia(atualRow, data.instancia)
-      : { sap: null, nome: null, id: null };
+      : { sap: null, nome: null, id: null, proprio: false as const };
 
     const sapEscolhido = String(data.consultor_sap ?? "").trim();
     // Cadastro Grupo 2P recém-ampliado: esta unidade ainda não tem dono, então
