@@ -52,6 +52,21 @@ export function stage(status: unknown, projetoVendido?: unknown): string {
   return "Projeto Não Fechado";
 }
 
+/** A proposta foi marcada como perdida no portal? */
+export function propostaPerdida(row: Record<string, any> | null | undefined): boolean {
+  return !!(row && (so(row["motivo_perda"]) || so(row["perdida_em"])));
+}
+
+/**
+ * Fase (StageName) exibida no portal — sem sigla. Perda manual vence a
+ * derivação por status/escolha do projeto.
+ */
+export function faseDaProposta(row: Record<string, any> | null | undefined): string {
+  if (propostaPerdida(row)) return "Oportunidade Perdida";
+  return stage(row?.["status"], escolhaProjetoVendido((row ?? {}) as Record<string, any>));
+}
+
+
 
 /**
  * Organização da oportunidade (picklist `Org_Oportunidade__c`).
