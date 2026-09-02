@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **E-mail de cancelamento de pedido volta a sair**: a leitura do pedido pedia uma coluna inexistente (`valor_total`) e falhava em silêncio, cancelando o pedido sem avisar logística, faturamento, NF-e, pedidos e financeiro (nem a cópia de registro). A leitura foi corrigida, ganhou tentativa alternativa e, se ainda falhar, o portal mostra "FALHA no envio" e grava o erro no Log de Integrações em vez de fingir sucesso.
+
 - **Fase (Salesforce) na proposta**: as listas de propostas (2P Solar e 2P Carregadores) e o detalhe do pedido agora mostram a fase — Pedido Concluído, Projeto Não Fechado, Projeto Fechado, Estoque, Em Negociação, Pedido Cancelado ou Oportunidade Perdida. Nas listagens o nome aparece compacto em duas linhas, antes da coluna Status, e as linhas de oportunidades perdidas ficam com fundo acinzentado. As colunas da lista passaram a ser proporcionais à largura da tela, sem barra de rolagem lateral em nenhum tamanho de tela.
 - **"Dar perda" direto pela linha da proposta**: enquanto a proposta está em "Salvo", um botão de polegar para baixo abre um diálogo com o motivo da perda (mesma lista do CRM) e a descrição obrigatória. A gravação é imediata e o envio ao CRM acontece em segundo plano; "Oportunidade Mecanicamente Perdida" só aparece (e só é aceita) para o Administrador do Sistema.
 - **Banco de dados**: `public.propostas` ganhou `motivo_perda`, `motivo_perda_obs` e `perdida_em` no banco do Grupo 2P (script `supabase/external/propostas-perda.sql`, aplicação manual no projeto grupo-2p).
