@@ -269,7 +269,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       if (!produtos.some((p) => p.id === kit.id)) produtos.push(kit);
       const jaTem = data.itens.find((i) => i.produtoId === kit.id);
       if (jaTem) jaTem.qtd = 1;
-      else data.itens.push({ produtoId: String(kit.id), codigo: String(kit.codigo ?? ""), qtd: 1 });
+      else data.itens.push({ produtoId: String(kit.id), codigo: String(kit.codigo ?? ""), qtd: 1, valor: 0 });
     } else {
       // Sem kit, o kit-base não pode ser vendido avulso pela tela.
       const kitNaLista = produtos.find((p) => normCod(p.codigo) === KIT_FOTOVOLTAICO_MATERIAL);
