@@ -178,9 +178,10 @@ function validar(input: any): SalvarPropostaInput {
     tipoNf: tipoNfNorm,
     faturarClienteFinal,
     faturamento,
+    // Bonificação não cobra, mas a OV do SAP exige condição: boleto à vista (2P00).
     formaPagamento:
       tipoNfNorm === "bonificacao"
-        ? null
+        ? "boleto_vista"
         : ["boleto_vista", "boleto_prazo", "pix", "cartao_credito", "financiamento"].includes(
               String(input.formaPagamento),
             )

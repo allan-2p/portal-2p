@@ -3048,7 +3048,7 @@ function NovaPropostaSolarPage() {
               {tipoNf === "bonificacao" ? (
                 <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-600">
                   <strong>Bonificação</strong> — nenhuma cobrança será emitida. A NF sai como bonificação e a ordem no
-                  SAP é criada como VBON na conclusão do pedido.
+                  SAP é criada como VBON na conclusão do pedido, com condição à vista (2P00), sem cobrança.
                 </div>
               ) : (
                 <>

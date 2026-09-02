@@ -160,9 +160,11 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     faturarClienteFinal,
 
     faturamento,
+    // Bonificação não tem cobrança, mas o SAP exige condição de pagamento na OV:
+    // grava boleto à vista (ZTERM 2P00), como fazia a plataforma antiga.
     formaPagamento:
       tipoNfNorm === "bonificacao"
-        ? null
+        ? "boleto_vista"
         : ["boleto_vista", "boleto_prazo", "pix", "cartao_credito", "financiamento"].includes(String(i.formaPagamento))
           ? String(i.formaPagamento)
           : null,
