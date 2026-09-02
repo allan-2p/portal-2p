@@ -31,7 +31,7 @@ export type EmailTransacional = {
 
 
 /** Endereço fixo de registro: recebe cópia de todo e-mail de negócio do portal. */
-const COPIA_REGISTRO = () =>
+export const COPIA_REGISTRO = () =>
   String(process.env["EMAIL_COPIA_REGISTRO"] ?? "allan@2pgroup.com.br").trim().toLowerCase();
 
 type StatusLog = "sent" | "suppressed" | "failed";

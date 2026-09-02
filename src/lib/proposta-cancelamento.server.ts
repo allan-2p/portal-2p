@@ -15,6 +15,7 @@ import {
   aguardarDesfechoEmails,
   enviarEmailRastreado,
   layoutEmail,
+  COPIA_REGISTRO,
   type ResultadoEnvioRastreado,
 } from "./email.server";
 
@@ -32,6 +33,12 @@ export type EfeitosCancelamentoResult = {
 export function avisoEnvioCancelamento(r: EfeitosCancelamentoResult): string | null {
   const e = r.emails;
   if (!e || !e.total) return null;
+  if (e.falharam > 0 && e.enviados > 0) {
+    const suprimido = e.erro && /descadastrado|suppressed|unsubscribed|bounce/i.test(e.erro);
+    if (suprimido) {
+      return `E-mail de cancelamento enviado. Um destinatário está bloqueado pelo provedor (${e.erro}) e não recebeu.`;
+    }
+  }
   if (e.falharam > 0) {
     const motivo = e.erro ? ` Motivo informado pelo provedor: ${e.erro}.` : "";
     return `FALHA no envio dos e-mails de cancelamento (${e.falharam} de ${e.total}).${motivo} Avise os setores manualmente.`;
@@ -188,7 +195,7 @@ async function cancelarOvNoSap(
 
 export async function efeitosCancelamento(
   propostaId: string,
-  ctx: { actorNome?: string | null; motivo?: string | null; observacao?: string | null } = {},
+  ctx: { actorNome?: string | null; motivo?: string | null; observacao?: string | null; forcarReenvio?: boolean } = {},
 ): Promise<EfeitosCancelamentoResult> {
   const resultado: EfeitosCancelamentoResult = { sapCancelado: false, emails: null };
   let row: Record<string, any> | null = null;
@@ -277,21 +284,45 @@ export async function efeitosCancelamento(
     const messageIds: string[] = [];
     let total = 0;
     let falhaEnfileirar = 0;
+
+    // E-mails individuais para cada destinatário operacional.
     for (const to of destinatariosFinais) {
       total++;
       try {
-        const r = await enviarEmailRastreado({
-          to,
-          subject: `Cancelamento do pedido ${numero}`,
-          html,
-          label: "cancelamento-pedido",
-          idempotencyKey: `cancelamento:${propostaId}:${to}`,
-        });
+        const r = await enviarEmailRastreado(
+          {
+            to,
+            subject: `Cancelamento do pedido ${numero}`,
+            html,
+            label: "cancelamento-pedido",
+            idempotencyKey: `cancelamento:${propostaId}:${to}${ctx.forcarReenvio ? `:${crypto.randomUUID()}` : ""}`,
+          },
+          { ehCopiaRegistro: true }, // evita a cópia de registro automática
+        );
         if (r.ok && r.messageId) messageIds.push(r.messageId);
         else falhaEnfileirar++;
       } catch {
         falhaEnfileirar++;
       }
+    }
+
+    // allan@ recebe UM e-mail de registro separado, não uma cópia por destinatário.
+    total++;
+    try {
+      const r = await enviarEmailRastreado(
+        {
+          to: COPIA_REGISTRO(),
+          subject: `Cancelamento do pedido ${numero}`,
+          html,
+          label: "cancelamento-pedido",
+          idempotencyKey: `cancelamento:${propostaId}:registro${ctx.forcarReenvio ? `:${crypto.randomUUID()}` : ""}`,
+        },
+        { ehCopiaRegistro: true },
+      );
+      if (r.ok && r.messageId) messageIds.push(r.messageId);
+      else falhaEnfileirar++;
+    } catch {
+      falhaEnfileirar++;
     }
 
     const desfecho = await aguardarDesfechoEmails(messageIds);
