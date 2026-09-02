@@ -226,6 +226,30 @@ async function sincronizarSalesforceAoSalvar(propostaId: string) {
   await enfileirarSalesforce(propostaId);
 }
 
+/**
+ * Igual à anterior, mas nunca derruba a operação: usada no cancelamento, onde
+ * uma recusa do CRM não pode impedir o aviso aos setores nem devolver erro ao
+ * usuário depois do pedido já ter sido cancelado.
+ */
+async function sincronizarSalesforceComTolerancia(propostaId: string) {
+  try {
+    await sincronizarSalesforceAoSalvar(propostaId);
+  } catch (e) {
+    try {
+      const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+      await logIntegrationEvent({
+        slug: "salesforce",
+        event: "cancelamento-sync",
+        level: "error",
+        message: `Não foi possível enfileirar o cancelamento no CRM: ${(e as Error).message}`.slice(0, 500),
+        detail: { proposta_id: propostaId },
+      });
+    } catch {
+      /* best effort */
+    }
+  }
+}
+
 /** Backfill: sincroniza no Salesforce as propostas já existentes (admin). */
 export const sincronizarPropostasSalesforceLoteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
