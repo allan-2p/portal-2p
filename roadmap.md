@@ -15,6 +15,10 @@
 - [x] Fase (StageName) exibida nas propostas + "dar perda" pela linha (motivo + descrição → Loss_Reason__c / Descri_o_do_Motivo_de_Perda__c).
 - [x] Tipo de NF obrigatório em solar e carregadores (front + back)
 
+## Em andamento / perguntas
+- [ ] Cancelamento: verificar e-mail enviado após publicação, mudar mensagem para "e-mail enviado" e incluir consultor em cópia.
+
+
 
 ## Salesforce — envio completo do pedido
 - [ ] Reenviar/atualizar a oportunidade a cada mudança de status (todos os motores, não só as ações manuais).
