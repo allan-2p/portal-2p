@@ -67,9 +67,28 @@ export function valorTotalProposta(row: Record<string, any>) {
   return Number(t["valorTotal"] ?? t["valor_total"] ?? row["valor_total"] ?? 0) || 0;
 }
 
+/** `YYYY-MM-DD` de um timestamp no fuso de São Paulo (evita o "um dia a menos"). */
+function diaBR(v: unknown): string {
+  const s = so(v);
+  if (!s) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return "";
+  // en-CA devolve YYYY-MM-DD; timeZone garante o dia civil brasileiro.
+  return d.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+}
+
+/**
+ * CloseDate = data em que o pedido foi FECHADO de fato (`finalizado_em`).
+ * Enquanto o pedido não é fechado usamos a previsão de fechamento (ou a data
+ * de criação) apenas como estimativa — o Salesforce exige o campo preenchido.
+ */
 export function dataFechamento(row: Record<string, any>) {
   return (
-    so(row["previsao_fechamento"]).slice(0, 10) || String(row["created_at"] ?? new Date().toISOString()).slice(0, 10)
+    diaBR(row["finalizado_em"]) ||
+    so(row["previsao_fechamento"]).slice(0, 10) ||
+    diaBR(row["created_at"]) ||
+    diaBR(new Date().toISOString())
   );
 }
 

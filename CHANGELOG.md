@@ -34,6 +34,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ---
 
 ## [Não publicado]
+- **Data de venda no CRM = data em que o pedido foi fechado**: o `CloseDate` da oportunidade passa a usar a data de conclusão do pedido (a "Data da compra" do portal) em vez da previsão de fechamento/criação. Com isso o "Vendido" da home e os relatórios por mês passam a contar o pedido no mês em que ele foi realmente fechado. Enquanto o pedido não é fechado, a previsão continua sendo enviada como estimativa.
+- **Marcar pedido como entregue no mesmo dia**: a validação "A data de entrega não pode ser no futuro" travava a baixa quando o fuso do navegador adiantava o dia; agora a comparação é por dia-calendário e a data sugerida usa o fuso local.
 - **Bonificação destrava no SAP**: bonificação agora é gravada com forma de pagamento "boleto à vista" (condição 2P00 na ordem), como na plataforma antiga, e bonificações já gravadas sem forma deixam de travar a validação da OV. Nenhuma cobrança é emitida em bonificação — boleto, Pix e link continuam bloqueados.
 - **Cancelamento: cópia de registro unificada**: o aviso de cancelamento agora é enviado individualmente para cada setor e para o consultor, e allan@ recebe um único e-mail de registro separado — acabou a chuva de e-mails `[registro]` na caixa dele. A cópia de registro automática foi desativada para esse fluxo.
 - **Cancelamento: e-mail aos setores não depende mais do CRM**: o aviso de cancelamento passou a ser enviado antes da sincronização com o Salesforce, e uma recusa da org (ex.: dono inativo da conta) deixou de interromper o fluxo — o erro do CRM agora só é registrado no Log de Integrações. Era essa recusa que impedia o envio dos e-mails em pedidos cancelados recentemente.

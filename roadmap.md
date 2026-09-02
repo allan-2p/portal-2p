@@ -9,6 +9,8 @@
 - [x] Reenviar e confirmar recebimento do cancelamento unificado (pedido 60134/60138) após publicação.
 
 ## Entrega
+- [x] CloseDate do Salesforce = data real de fechamento do pedido (`finalizado_em`), não a previsão/criação.
+- [x] Baixa de entrega: validação de data por dia-calendário (não bloquear o dia de hoje).
 - [x] Ampliação de atuação: revisão obrigatória do cadastro + escolha do consultor da nova unidade.
 - [x] Data de entrega editável mesmo após o pedido marcado como Entregue (mesmo perfil que edita a estimativa).
 - [x] Funil do cliente (perfil 360): tabela com filtro por etapa e datas em colunas.

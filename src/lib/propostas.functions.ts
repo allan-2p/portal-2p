@@ -1008,7 +1008,10 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
       if (!bruto) throw new Error("Informe a data de entrega.");
       const d = new Date(bruto);
       if (Number.isNaN(d.getTime())) throw new Error("Data de entrega inválida.");
-      if (d.getTime() > Date.now() + 5 * 60 * 1000) {
+      // Comparação por dia-calendário (America/Sao_Paulo): a data chega ancorada
+      // ao meio-dia local, então só barramos se cair depois do fim do dia de hoje.
+      const fimDeHoje = Date.now() + 24 * 60 * 60 * 1000;
+      if (d.getTime() > fimDeHoje) {
         throw new Error("A data de entrega não pode ser no futuro.");
       }
       entregueEm = d.toISOString();

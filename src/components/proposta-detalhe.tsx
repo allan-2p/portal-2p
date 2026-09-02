@@ -903,7 +903,11 @@ function MarcarEntregueAcao({ proposta }: { proposta: Record<string, any> }) {
   const meusPerms = useServerFn(meusObjectPermsFn);
   const atualizarStatus = useServerFn(atualizarStatusPropostaFn);
   const [confirmando, setConfirmando] = useState(false);
-  const hoje = new Date().toISOString().slice(0, 10);
+  // Data de hoje no fuso local (toISOString usa UTC e pode adiantar um dia).
+  const hoje = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
   const [dataEntrega, setDataEntrega] = useState(hoje);
 
   const permsQ = useQuery({
