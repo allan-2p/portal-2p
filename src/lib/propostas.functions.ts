@@ -1099,7 +1099,9 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
       patch: { motivo_cancelamento: motivoCancel, motivo_cancelamento_obs: obsCancel },
     });
     if (!t.ok) throw new Error(t.motivo ?? "Não foi possível cancelar o pedido.");
-    await sincronizarSalesforceAoSalvar(data.id);
+    // O aviso aos setores vem ANTES do Salesforce e o CRM é best effort: uma
+    // recusa da org (owner inativo, campo obrigatório) não pode impedir o
+    // e-mail de cancelamento, que é o que a operação realmente depende.
     let avisoEmail: string | null = null;
     try {
       const { efeitosCancelamento, avisoEnvioCancelamento } = await import("@/lib/proposta-cancelamento.server");
@@ -1109,9 +1111,22 @@ export const atualizarStatusPropostaFn = createServerFn({ method: "POST" })
         observacao: obsCancel,
       });
       avisoEmail = avisoEnvioCancelamento(efeitos);
-    } catch {
+    } catch (e) {
       avisoEmail = "FALHA ao notificar os setores por e-mail. Avise-os manualmente.";
+      try {
+        const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+        await logIntegrationEvent({
+          slug: "proposta",
+          event: "cancelamento-email",
+          level: "error",
+          message: `Falha ao avisar os setores do cancelamento: ${(e as Error).message}`.slice(0, 500),
+          detail: { proposta_id: data.id },
+        });
+      } catch {
+        /* best effort */
+      }
     }
+    await sincronizarSalesforceComTolerancia(data.id);
 
 
     return { ok: true, aviso: avisoEmail };
