@@ -578,12 +578,14 @@ function VisaoGeral({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40">
+                    <th className="text-left px-3 py-2 font-medium whitespace-nowrap">Nº</th>
                     <th className="text-left px-3 py-2 font-medium">Proposta</th>
                     <th className="text-left px-3 py-2 font-medium">Etapa</th>
                     <th className="text-left px-3 py-2 font-medium whitespace-nowrap">Criada em</th>
                     <th className="text-right px-3 py-2 font-medium whitespace-nowrap">Em aberto</th>
                     <th className="text-right px-3 py-2 font-medium">Valor</th>
                   </tr>
+
                 </thead>
                 <tbody className="divide-y divide-border/60">
                   {linhas.length === 0 && (
