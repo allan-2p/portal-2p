@@ -50,7 +50,10 @@ export function avisoEnvioCancelamento(r: EfeitosCancelamentoResult): string | n
 }
 
 const DESTINOS_PADRAO =
-  "logistica@2pgroup.com.br,camila@2pgroup.com.br,nfe@2pgroup.com.br,pedidos@2pgroup.com.br,financeiro@2pgroup.com.br";
+  "logistica@2pgroup.com.br,nfe@2pgroup.com.br,pedidos@2pgroup.com.br,financeiro@2pgroup.com.br";
+
+/** Endereços que sempre recebem cópia de registro do cancelamento. */
+const COPIAS_FIXAS = ["alexandre@2pgroup.com.br"];
 
 function destinatarios(): string[] {
   return String(process.env["CANCELAMENTO_NOTIFICACAO_EMAIL"] ?? DESTINOS_PADRAO)
