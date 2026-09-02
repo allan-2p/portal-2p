@@ -45,6 +45,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { fmtDataBR } from "@/lib/data-br";
 import { textoPrazoEntrega } from "@/lib/prazo-entrega";
+import { pesoItensProposta } from "@/lib/peso-proposta.functions";
+
 
 
 
