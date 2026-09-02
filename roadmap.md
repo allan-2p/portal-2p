@@ -14,9 +14,8 @@
 ## Concluído neste turno
 - [x] Fase (StageName) exibida nas propostas + "dar perda" pela linha (motivo + descrição → Loss_Reason__c / Descri_o_do_Motivo_de_Perda__c).
 - [x] Tipo de NF obrigatório em solar e carregadores (front + back)
+- [x] Cancelamento: mensagem alterada para "E-mail de cancelamento enviado." e consultor incluído nos destinatários.
 
-## Em andamento / perguntas
-- [ ] Cancelamento: verificar e-mail enviado após publicação, mudar mensagem para "e-mail enviado" e incluir consultor em cópia.
 
 
 
