@@ -291,10 +291,10 @@ function PropostasSolarPage() {
             <table className="w-full table-fixed text-[13px]">
               <colgroup>
                 <col className="w-[52px]" />
+                <col className="w-[52px]" />
                 <col className="w-[150px]" />
                 <col className="w-[19%]" />
                 <col className="w-[12%]" />
-                <col className="w-[13%]" />
                 <col className="w-[76px]" />
                 <col className="w-[76px]" />
                 <col className="w-[110px]" />
@@ -306,11 +306,11 @@ function PropostasSolarPage() {
 
                <thead>
                  <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border">
+                   <th className="text-center px-3 py-2.5">Fase</th>
                    <th className="text-center px-3 py-2.5">Status</th>
                    <th className="text-left px-3 py-2.5">Proposta</th>
                   <th className="text-left px-3 py-2.5">Cliente</th>
                   <th className="text-left px-3 py-2.5">Consultor</th>
-                  <th className="text-left px-3 py-2.5">Fase</th>
                   <th className="text-left px-3 py-2.5">Nº SAP</th>
                   <th className="text-left px-3 py-2.5">NF</th>
                   <th className="text-right px-3 py-2.5">Valor</th>
@@ -322,9 +322,14 @@ function PropostasSolarPage() {
               </thead>
 
               <tbody className={fetchingClass(q.isFetching, q.isLoading)}>
-                {visiveis.map((r) => (
+                {visiveis.map((r) => {
+                  const perdida = propostaPerdida(r as any);
+                  return (
                   <Fragment key={r.id}>
-                  <tr className="border-b border-border/50 hover:bg-surface-2">
+                  <tr className={cn("border-b border-border/50 hover:bg-surface-2", perdida && "bg-muted/30 opacity-85")}>
+                    <td className="px-3 py-2.5 text-center">
+                      <FaseBadge row={r as any} />
+                    </td>
                     <td className="px-3 py-2.5 text-center">
                       <StatusDot status={r.status} />
                     </td>
@@ -347,11 +352,6 @@ function PropostasSolarPage() {
                     <td className="px-3 py-2.5">
                       <div className="truncate text-sm text-muted-foreground">
                         {r.consultor_nome || r.criado_por_nome || "—"}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="truncate text-sm text-muted-foreground" title={faseDaProposta(r as any)}>
-                        {faseDaProposta(r as any)}
                       </div>
                     </td>
                     <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">
