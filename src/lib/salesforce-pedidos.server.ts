@@ -299,7 +299,10 @@ export async function sincronizarPedidoSalesforce(
     // Dono da oportunidade = consultor responsável pela proposta (o vendedor),
     // não quem digitou/importou o pedido. Só cai em created_by se a proposta
     // não tiver consultor vinculado.
-    const owner = (await ownerSfId(row["consultor_id"])) ?? (await ownerSfId(row["created_by"]));
+    const owner =
+      (await ownerSfId(row["consultor_id"])) ??
+      (await ownerSfIdPorNome(row["consultor_nome"])) ??
+      (await ownerSfId(row["created_by"]));
     const { payload } = montarPayload(
       "Opportunity",
       { ...(row as Record<string, any>), _account_id: accountId, _owner_id: owner },
