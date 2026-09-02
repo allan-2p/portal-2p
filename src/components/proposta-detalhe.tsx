@@ -276,6 +276,13 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             label="Frete"
             value={`${p['frete_mod'] ?? "—"} · ${freteGratis ? "Grátis (cupom)" : freteBonificado ? "Bonificado" : fmtBRL(frete)}`}
           />
+          <Campo
+            label="Prazo de entrega"
+            value={textoPrazoEntrega(
+              p?.['frete_prazo'] == null ? null : Number(p['frete_prazo']),
+              p?.['frete_mod'] as string | null,
+            )}
+          />
           <div className="col-span-2 md:col-span-4">
             <div className="text-xs text-muted-foreground">Endereço de entrega</div>
             <div className="font-medium">{enderecoEntrega || "—"}</div>

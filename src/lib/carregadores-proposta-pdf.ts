@@ -1,6 +1,7 @@
 import { fmtBRL, fmtPct } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
 import { formatPropostaNumero } from "@/lib/sap-numero";
+import { textoPrazoEntrega } from "./prazo-entrega";
 
 export type PropostaPdfItem = {
   codigo?: string | null;

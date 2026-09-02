@@ -2,6 +2,7 @@ import { formatPropostaNumero } from "@/lib/sap-numero";
 import { fmtBRL, fmtPct } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
 import { LOGO_2P_DATA_URI } from "./brand-2p-logo";
+import { textoPrazoEntrega } from "./prazo-entrega";
 
 
 export type SolarPdfItem = {

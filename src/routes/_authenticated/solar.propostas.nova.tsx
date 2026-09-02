@@ -24,6 +24,7 @@ import {
 import { WizardActionBar } from "@/components/wizard-action-bar";
 import { FreteCotacao } from "@/components/frete-cotacao";
 import { FreteDedicado } from "@/components/frete-dedicado";
+import { textoPrazoEntrega } from "@/lib/prazo-entrega";
 import { CondicaoPagamentoSelect } from "@/components/condicao-pagamento-select";
 import { condicaoDaFormaPagamento, motivoCondicaoTravada } from "@/lib/condicao-pagamento-forma";
 import { toast } from "sonner";
