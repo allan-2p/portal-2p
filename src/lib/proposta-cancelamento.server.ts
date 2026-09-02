@@ -53,7 +53,23 @@ function destinatarios(): string[] {
 }
 
 const SELECT =
-  "id,numero,nome,organizacao,cliente_nome,cliente_doc,sap_ov_numero,nf_numero,nf_serie,fretefy_oferta_id,totais";
+  "id,numero,nome,organizacao,cliente_nome,cliente_doc,sap_ov_numero,nf_numero,nf_serie,fretefy_oferta_id,totais,consultor_id,consultor_nome";
+
+async function emailDoConsultor(consultorId: string | null | undefined): Promise<string | null> {
+  if (!consultorId) return null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select("email")
+      .eq("id", consultorId)
+      .maybeSingle();
+    const email = String((data as any)?.email ?? "").trim().toLowerCase();
+    return email.includes("@") ? email : null;
+  } catch {
+    return null;
+  }
+}
 
 
 function esc(v: unknown): string {
