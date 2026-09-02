@@ -518,6 +518,14 @@ function VisaoGeral({
       .sort((a, b) => String(b.createdDate ?? "").localeCompare(String(a.createdDate ?? "")));
   }, [oportunidadesAbertas, etapaFiltro]);
   const totalLinhas = linhas.reduce((s: number, o: any) => s + (o.amount || 0), 0);
+  // Propostas do portal ligadas a estas oportunidades: abrem a mesma
+  // visualização do "olhinho" e permitem dar perda direto na linha.
+  const vinculos = usePropostasVinculadas(
+    useMemo(
+      () => oportunidadesAbertas.map((o: any) => ({ sfOppId: o.id, numero: o.numero })),
+      [oportunidadesAbertas],
+    ),
+  );
 
   return (
     <div className="space-y-4">
