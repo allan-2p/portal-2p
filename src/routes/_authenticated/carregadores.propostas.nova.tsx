@@ -100,6 +100,7 @@ import {
 import { buildPropostaPdfHtml } from "@/lib/carregadores-proposta-pdf";
 import { MoneyInput } from "@/components/money-input";
 import { FreteDedicado } from "@/components/frete-dedicado";
+import { textoPrazoEntrega } from "@/lib/prazo-entrega";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePrazoLiberado } from "@/hooks/use-prazo-liberado";
 
@@ -1176,6 +1177,7 @@ function PropostaCarregadoresPage() {
 
           }),
         freteMod: state.freteMod || "—",
+        fretePrazo: state.transportadora?.prazo ?? null,
         freteValor: state.freteValor,
         freteBonificado: state.freteBonificado && FRETE_ABSORVIDO.includes(state.freteMod as CarregadoresFreteMod),
         observacoes: observacoesFinal,
@@ -2429,7 +2431,14 @@ function PropostaCarregadoresPage() {
               <FreteDedicado
                 valor={state.freteValor}
                 selecionada={state.transportadora}
-
+                prazo={state.transportadora?.prazo ?? null}
+                onPrazoChange={(n) =>
+                  setState((s) =>
+                    s.transportadora
+                      ? { ...s, transportadora: { ...s.transportadora, prazo: Number(n ?? 0) } }
+                      : s,
+                  )
+                }
                 onSelect={(t) =>
                   setState((s) => ({
                     ...s,
@@ -2438,6 +2447,7 @@ function PropostaCarregadoresPage() {
                   }))
                 }
               />
+
             ) : null}
             {state.freteMod === "CIF" && !state.transportadora && tentouAvancar ? (
               <p className="text-[11px] text-destructive mt-1 flex items-center gap-1">
@@ -2504,6 +2514,11 @@ function PropostaCarregadoresPage() {
                         : "—"
                     }
                   />
+                  <ResumoLinha
+                    k="Prazo de entrega"
+                    v={textoPrazoEntrega(state.transportadora?.prazo ?? null, state.freteMod)}
+                  />
+
                 </div>
 
                 {/* PRODUTOS */}

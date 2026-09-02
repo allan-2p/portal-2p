@@ -1563,7 +1563,10 @@ function NovaPropostaSolarPage() {
           freteAreaRural: areaRural,
           freteValor,
           freteBonificado: freteBonificado && (freteMod === "CIF" || freteMod === "DEDICADO"),
-          transportadora,
+          transportadora: transportadora
+            ? { ...transportadora, prazo: Number(fretePrazoEfetivo ?? transportadora.prazo ?? 0) }
+            : transportadora,
+
           cupomCodigo: cupomCodigo || null,
           observacoes: observacoes || null,
           observacoesInternas: observacoesInternas || null,
