@@ -34,12 +34,28 @@ async function assertPodeAlterarCliente(
   // responsável, qualquer consultor pode revisar o cadastro e assumi-lo nesta
   // instância — o dono da outra unidade não bloqueia ("Modify All Records"
   // deixa de ser exigido nesse caso).
-  const semDonoNaInstancia = !resp.sap && !resp.id;
-  const dono = semDonoNaInstancia
-    ? null
-    : (idDeUsuario(resp.id) ?? ((atual["created_by"] as string | null) ?? null));
+  // O mesmo vale para o cadastro Grupo 2P cuja unidade aberta ainda não tem
+  // responsável próprio (só herda o par canônico da unidade de origem): é
+  // exatamente a revisão obrigatória da ampliação.
+  const ehGrupo = String(atual["escopo_org"] ?? "").toLowerCase() === "grupo";
+  const semDonoNaInstancia = (!resp.sap && !resp.id && !resp.nome) || (ehGrupo && !resp.proprio);
+
+  // O responsável da unidade pode não ter uuid gravado (o par canônico é
+  // SAP + nome). Nesse caso o vínculo é reconhecido pelo código SAP ou pelo
+  // nome do consultor — mesma regra usada na listagem.
+  const meuSap = await meuConsultorSap(context as any);
+  const meuNome = normalizarNome(await meuNomeCompleto(context as any));
+  const souOResponsavel =
+    idDeUsuario(resp.id) === context.userId ||
+    (!!meuSap && String(resp.sap ?? "").trim() === meuSap) ||
+    (!!meuNome && normalizarNome(String(resp.nome ?? "")) === meuNome);
+  const dono =
+    semDonoNaInstancia || souOResponsavel
+      ? null
+      : (idDeUsuario(resp.id) ?? ((atual["created_by"] as string | null) ?? null));
   const perm = await getPerm(context as any, instancia, "contas");
   assertPodeEditar(perm, "contas", dono, context.userId);
+
 
   return atual;
 }
@@ -544,12 +560,14 @@ export const salvarClienteFn = createServerFn({ method: "POST" })
     // do consultor da instância aberta.
     const anteriorConsultor = data.id
       ? consultorDaInstancia(atualRow, data.instancia)
-      : { sap: null, nome: null, id: null };
+      : { sap: null, nome: null, id: null, proprio: false as const };
 
     const sapEscolhido = String(data.consultor_sap ?? "").trim();
     // Cadastro Grupo 2P recém-ampliado: esta unidade ainda não tem dono, então
     // quem faz a revisão define o responsável mesmo sem "Modify All Records".
-    const podeTrocar = podeEscolher || !data.id || !anteriorConsultor.sap;
+    const podeTrocar =
+      podeEscolher || !data.id || !anteriorConsultor.sap || (ehGrupo && !anteriorConsultor.proprio);
+
     const sapAlvo = podeTrocar ? sapEscolhido || anteriorConsultor.sap : anteriorConsultor.sap;
 
     const noPortal = await consultorPorSap(sapAlvo);
