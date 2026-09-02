@@ -214,7 +214,7 @@ function NovaPropostaSolarPage() {
   const [observacoesInternas, setObservacoesInternas] = useState("");
 
   // Etapa 2
-  const [tipoNf, setTipoNf] = useState("");
+  const [tipoNf, setTipoNf] = useState("venda"); // padrão: Venda (consultor pode alterar)
   const [faturarClienteFinal, setFaturarClienteFinal] = useState(false);
   const [fatTipoDoc, setFatTipoDoc] = useState<"cnpj" | "cpf">("cnpj");
   const [fat, setFat] = useState<Record<string, string>>({});
@@ -465,7 +465,7 @@ function NovaPropostaSolarPage() {
       setPrevisao(String(p['previsao_fechamento'] ?? ""));
       setObservacoes(String(p['observacoes'] ?? ""));
       setObservacoesInternas(String(p['observacoes_internas'] ?? ""));
-      setTipoNf(String(p['tipo_nf'] ?? ""));
+      setTipoNf(String(p['tipo_nf'] ?? "") || "venda");
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
       setFat((p['faturamento'] as Record<string, string>) ?? {});
       setFatContribuinte(!!(p['faturamento'] as Record<string, unknown> | null)?.['contribuinte']);

@@ -30,9 +30,17 @@ async function assertPodeAlterarCliente(
   // Cadastro Grupo 2P: o responsável da unidade aberta também é dono do registro.
   const { consultorDaInstancia, idDeUsuario } = await import("./consultor-sap.server");
   const resp = consultorDaInstancia(atual, instancia);
-  const dono = idDeUsuario(resp.id) ?? ((atual["created_by"] as string | null) ?? null);
+  // Ampliação de atuação: quando a unidade aberta ainda não tem consultor
+  // responsável, qualquer consultor pode revisar o cadastro e assumi-lo nesta
+  // instância — o dono da outra unidade não bloqueia ("Modify All Records"
+  // deixa de ser exigido nesse caso).
+  const semDonoNaInstancia = !resp.sap && !resp.id;
+  const dono = semDonoNaInstancia
+    ? null
+    : (idDeUsuario(resp.id) ?? ((atual["created_by"] as string | null) ?? null));
   const perm = await getPerm(context as any, instancia, "contas");
   assertPodeEditar(perm, "contas", dono, context.userId);
+
   return atual;
 }
 
@@ -352,7 +360,9 @@ export const ampliarAtuacaoFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = await import("./clientes-db.server");
     const perm = await getPerm(context as any, data.instancia, "contas");
-    assertPodeCriar(perm, "contas");
+    // Ampliar atuação é aberto a todo consultor com acesso de escrita em Contas
+    // (criar OU editar): quem amplia traz o cadastro para a sua instância.
+    if (!perm.can_create && !perm.can_edit) assertPodeCriar(perm, "contas");
 
     if (!(await db.temEscopoOrg())) {
       throw new Error(

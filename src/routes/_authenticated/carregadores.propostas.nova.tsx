@@ -349,7 +349,7 @@ function PropostaCarregadoresPage() {
         padrinhoId: ((data as any).padrinho_id as string | null) ?? null,
         padrinhoNome: ((data as any).padrinho_nome as string | null) ?? "",
         previsaoFechamento: ((data as any).previsao_fechamento as string | null) ?? "",
-        tipoNf: (((data as any).tipo_nf as string | null) ?? "") as CarregadoresState["tipoNf"],
+        tipoNf: ((((data as any).tipo_nf as string | null) ?? "") || "venda") as CarregadoresState["tipoNf"],
         faturarClienteFinal: (data as any).faturar_cliente_final === true,
         faturamento: {
           ...novoFaturamento(data.uf),

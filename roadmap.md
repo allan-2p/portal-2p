@@ -117,3 +117,8 @@
 - [x] Estimativa de entrega exibida em formato americano (mês/dia) — formatação BR manual em `src/lib/data-br.ts` (Intl caía para en-US no runtime de servidor)
 - [x] Colunas de perda aplicadas no banco grupo-2p (`motivo_perda`, `motivo_perda_obs`, `perdida_em`)
 - [ ] Teste end-to-end de "dar perda" numa proposta Salvo real (aguardando indicação de uma proposta descartável)
+
+## Propostas e cadastro (02/09)
+- [x] Detalhe da proposta (olhinho): exibir peso total dos itens
+- [x] Tipo de nota fiscal: padrão "Venda" em Solar e Carregadores (consultor pode alterar)
+- [x] Ampliação de atuação liberada para qualquer consultor (sem exigir "Modify All Records")
