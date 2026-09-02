@@ -74,7 +74,7 @@ export function FaseBadge({
     <span
       className={cn(
         "inline-flex w-full max-w-full flex-col items-center justify-center rounded px-1 py-0.5 text-[10px] font-semibold leading-[1.15] tracking-tight",
-        FASE_BADGE_STYLE[sigla] ?? "bg-muted text-muted-foreground",
+        classesFase(row),
         perdida && "opacity-90",
         className,
       )}
