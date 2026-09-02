@@ -646,7 +646,7 @@ function VisaoGeral({
                 </tbody>
                 <tfoot>
                   <tr className="border-t border-border bg-muted/30 text-xs">
-                    <td className="px-3 py-2 font-medium" colSpan={4}>
+                    <td className="px-3 py-2 font-medium" colSpan={5}>
                       {linhas.length} proposta(s){etapaFiltro === "todas" ? " em aberto" : ` em "${etapaFiltro}"`}
                     </td>
                     <td className="px-3 py-2 text-right font-semibold tabular-nums">{fmt(totalLinhas)}</td>
