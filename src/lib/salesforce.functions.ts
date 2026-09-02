@@ -2608,6 +2608,8 @@ export const getClientTimeline = createServerFn({ method: "GET" })
 
 export type Account360Opportunity = {
   id: string;
+  /** Número do pedido no portal (Numero_Pedido_Portal__c), quando existir. */
+  numero: string | null;
   name: string;
   stage: string | null;
   amount: number;
@@ -2618,6 +2620,7 @@ export type Account360Opportunity = {
   owner: string | null;
   tipoNf: string | null;
 };
+
 
 export type Account360Case = {
   id: string;
@@ -2696,10 +2699,14 @@ export const getSalesforceAccount360 = createServerFn({ method: "GET" })
     cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 3);
     const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-    const soqlOpp =
+    // O número do pedido no portal é campo customizado: se a org recusar,
+    // a consulta é refeita sem ele (o fallback evita perder o funil inteiro).
+    const camposOpp = (comNumero: boolean) =>
       `SELECT Id, Name, StageName, Amount, Total__c, CloseDate, CreatedDate, IsClosed, IsWon, ` +
-      `Tipo_de_NF__c, Owner.Name FROM Opportunity WHERE AccountId = '${id}' ` +
+      `Tipo_de_NF__c, Owner.Name${comNumero ? ", Numero_Pedido_Portal__c" : ""} FROM Opportunity WHERE AccountId = '${id}' ` +
       `AND CloseDate >= ${cutoffStr} ORDER BY CloseDate DESC NULLS LAST LIMIT 500`;
+    const soqlOpp = camposOpp(true);
+
     const soqlCase =
       `SELECT Id, CaseNumber, Subject, Status, Priority, Type, Origin, CreatedDate, ClosedDate, ` +
       `Description, Owner.Name FROM Case WHERE AccountId = '${id}' ` +
@@ -2722,8 +2729,13 @@ export const getSalesforceAccount360 = createServerFn({ method: "GET" })
     const run = (soql: string) =>
       sfFetch(`/query?q=${encodeURIComponent(soql)}`).catch(() => ({ records: [] }));
 
+    const runOpp = () =>
+      sfFetch(`/query?q=${encodeURIComponent(soqlOpp)}`).catch(() =>
+        sfFetch(`/query?q=${encodeURIComponent(camposOpp(false))}`).catch(() => ({ records: [] })),
+      );
+
     const [oRes, cRes, vRes, tRes, crRes] = await Promise.all([
-      run(soqlOpp),
+      runOpp(),
       run(soqlCase),
       run(soqlVisita),
       run(soqlTrein),
@@ -2735,11 +2747,13 @@ export const getSalesforceAccount360 = createServerFn({ method: "GET" })
     return {
       opportunities: ((oRes?.records ?? []) as any[]).map((r) => ({
         id: r.Id,
+        numero: r.Numero_Pedido_Portal__c ? String(r.Numero_Pedido_Portal__c) : null,
         name: r.Name ?? "Oportunidade",
         stage: r.StageName ?? null,
         amount: Number(r.Total__c ?? r.Amount ?? 0) || 0,
         closeDate: r.CloseDate ?? null,
         createdDate: r.CreatedDate ?? null,
+
         isClosed: Boolean(r.IsClosed),
         isWon: Boolean(r.IsWon),
         owner: r.Owner?.Name ?? null,

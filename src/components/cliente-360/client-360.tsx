@@ -578,17 +578,19 @@ function VisaoGeral({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40">
+                    <th className="text-left px-3 py-2 font-medium whitespace-nowrap">Nº</th>
                     <th className="text-left px-3 py-2 font-medium">Proposta</th>
                     <th className="text-left px-3 py-2 font-medium">Etapa</th>
                     <th className="text-left px-3 py-2 font-medium whitespace-nowrap">Criada em</th>
                     <th className="text-right px-3 py-2 font-medium whitespace-nowrap">Em aberto</th>
                     <th className="text-right px-3 py-2 font-medium">Valor</th>
                   </tr>
+
                 </thead>
                 <tbody className="divide-y divide-border/60">
                   {linhas.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                      <td colSpan={6} className="px-3 py-6 text-center text-xs text-muted-foreground">
                         Nenhuma proposta nesta etapa.
                       </td>
                     </tr>
@@ -600,9 +602,13 @@ function VisaoGeral({
                       : null;
                     return (
                       <tr key={o.id} className="hover:bg-muted/40">
+                        <td className="px-3 py-2 text-xs tabular-nums whitespace-nowrap text-muted-foreground">
+                          {o.numero || "—"}
+                        </td>
                         <td className="px-3 py-2">
                           <div className="max-w-[260px] truncate font-medium">{o.name}</div>
                         </td>
+
                         <td className="px-3 py-2">
                           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
@@ -640,7 +646,7 @@ function VisaoGeral({
                 </tbody>
                 <tfoot>
                   <tr className="border-t border-border bg-muted/30 text-xs">
-                    <td className="px-3 py-2 font-medium" colSpan={4}>
+                    <td className="px-3 py-2 font-medium" colSpan={5}>
                       {linhas.length} proposta(s){etapaFiltro === "todas" ? " em aberto" : ` em "${etapaFiltro}"`}
                     </td>
                     <td className="px-3 py-2 text-right font-semibold tabular-nums">{fmt(totalLinhas)}</td>

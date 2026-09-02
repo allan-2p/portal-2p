@@ -31,49 +31,54 @@ const STATUS_VENDIDO = [
   "Finalizado",
 ];
 
-const OPP_COLS = [
-  "id",
-  "name",
-  "account_id",
-  "stage_name",
-  "amount",
-  "total__c",
-  "close_date",
-  "created_date",
-  "status_do_pedido__c",
-  "tipo_de_nf__c",
-].join(",");
+/** Colunas mínimas para somar valores por conta (agregações). */
+const OPP_COLS_SOMA = ["account_id", "amount", "total__c", "tipo_de_nf__c"].join(",");
+/** Colunas da lista de pedidos em andamento exibida no dossiê. */
+const OPP_COLS_PEDIDO = ["id", "name", "account_id", "amount", "total__c", "close_date", "status_do_pedido__c", "tipo_de_nf__c"].join(",");
 
 type OppRow = {
-  id: string;
-  name: string | null;
+  id?: string;
+  name?: string | null;
   account_id: string | null;
-  stage_name: string | null;
   amount: number | null;
   total__c: number | null;
-  close_date: string | null;
-  created_date: string | null;
-  status_do_pedido__c: string | null;
-  tipo_de_nf__c: string | null;
+  close_date?: string | null;
+  status_do_pedido__c?: string | null;
+  tipo_de_nf__c?: string | null;
 };
 
+/**
+ * Paginação em paralelo: a primeira página pede `count=exact` e as demais
+ * saem todas de uma vez. Antes as páginas eram buscadas em sequência, o que
+ * fazia a tela levar dezenas de segundos em bases grandes.
+ */
 async function buscarTudo(tabela: string, params: URLSearchParams, maxPaginas = 40): Promise<any[]> {
-  const out: any[] = [];
-  for (let p = 0; p < maxPaginas; p++) {
+  const pagina = async (p: number, count = false) => {
     const from = p * PAGINA_DB;
-    const { ok, status, text } = await grupo2pRest(`${tabela}?${params}`, {
+    const { ok, status, text, total } = await grupo2pRest(`${tabela}?${params}`, {
       range: { from, to: from + PAGINA_DB - 1 },
+      ...(count ? { count: true } : {}),
     });
     if (!ok) {
-      if (status === 416) break;
+      if (status === 416) return { linhas: [] as any[], total: 0 };
       throw new Error(`Erro no banco (${status}): ${text.slice(0, 300)}`);
     }
-    const bloco: any[] = text ? JSON.parse(text) : [];
-    out.push(...bloco);
-    if (bloco.length < PAGINA_DB) break;
-  }
+    return { linhas: (text ? JSON.parse(text) : []) as any[], total: total ?? 0 };
+  };
+
+  const primeira = await pagina(0, true);
+  const out = [...primeira.linhas];
+  if (primeira.linhas.length < PAGINA_DB) return out;
+
+  const paginas = Math.min(Math.ceil((primeira.total || 0) / PAGINA_DB), maxPaginas);
+  if (paginas <= 1) return out;
+  const restantes = await Promise.all(
+    Array.from({ length: paginas - 1 }, (_, i) => pagina(i + 1).then((r) => r.linhas)),
+  );
+  for (const bloco of restantes) out.push(...bloco);
   return out;
 }
+
 
 function pad(n: number) {
   return n < 10 ? `0${n}` : `${n}`;
@@ -123,11 +128,12 @@ function classificar(vendasTriAnterior: number): Segmento {
 const semBonificacao = "(tipo_de_nf__c.is.null,tipo_de_nf__c.neq.Bonificação)";
 const valor = (o: OppRow) => Number(o.total__c ?? o.amount ?? 0) || 0;
 
-function paramsOpp(extra: Record<string, string>) {
-  const p = new URLSearchParams({ select: OPP_COLS, is_deleted: "is.false", ...extra });
+function paramsOpp(extra: Record<string, string>, cols = OPP_COLS_SOMA) {
+  const p = new URLSearchParams({ select: cols, is_deleted: "is.false", ...extra });
   p.set("or", semBonificacao);
   return p;
 }
+
 
 export type SegmentacaoRow = {
   id: string;
@@ -159,12 +165,38 @@ export type SegmentacaoResult = {
   consultores: string[];
 };
 
-export async function calcularSegmentacao(opts: {
+/**
+ * Cache curto em memória: a tela é pesada (varre o espelho inteiro do
+ * Salesforce) e vários usuários pedem o mesmo recorte em sequência.
+ */
+const CACHE_MS = 120_000;
+const cache = new Map<string, { em: number; p: Promise<SegmentacaoResult> }>();
+
+export function calcularSegmentacao(opts: {
   instance: SegmentacaoInstance;
   periodo: "mes" | "tri";
   donoId?: string | null;
   consultorSap?: string | null;
 }): Promise<SegmentacaoResult> {
+  const chave = `${opts.instance}|${opts.periodo}|${opts.donoId ?? ""}|${opts.consultorSap ?? ""}`;
+  const agora = Date.now();
+  const hit = cache.get(chave);
+  if (hit && agora - hit.em < CACHE_MS) return hit.p;
+  const p = calcularSegmentacaoRaw(opts).catch((e) => {
+    cache.delete(chave);
+    throw e;
+  });
+  cache.set(chave, { em: agora, p });
+  return p;
+}
+
+async function calcularSegmentacaoRaw(opts: {
+  instance: SegmentacaoInstance;
+  periodo: "mes" | "tri";
+  donoId?: string | null;
+  consultorSap?: string | null;
+}): Promise<SegmentacaoResult> {
+
   const base = trimestreAnterior();
   const atual = periodoAtual(opts.periodo);
 
@@ -181,10 +213,9 @@ export async function calcularSegmentacao(opts: {
     if (opts.consultorSap) alvos.push(`consultor_sap.eq.${opts.consultorSap}`);
     clientesParams.set("or", `(${alvos.join(",")})`);
   }
-  const clientes = await buscarTudo("clientes", clientesParams);
-
-  // ---------- Oportunidades (espelho no mesmo banco) ----------
-  const [vendasTri, vendidoAtual, geradoAtual, pedidos] = await Promise.all([
+  // Clientes e oportunidades saem juntos — não há dependência entre eles.
+  const [clientes, vendasTri, vendidoAtual, geradoAtual, pedidos] = await Promise.all([
+    buscarTudo("clientes", clientesParams),
     buscarTudo(
       "opportunity_sf",
       paramsOpp({
@@ -211,12 +242,16 @@ export async function calcularSegmentacao(opts: {
     ) as Promise<OppRow[]>,
     buscarTudo(
       "opportunity_sf",
-      paramsOpp({
-        stage_name: "eq.Pedido Concluído",
-        status_do_pedido__c: `in.(${STATUS_PEDIDO_ANDAMENTO.map((s) => `"${s}"`).join(",")})`,
-      }),
+      paramsOpp(
+        {
+          stage_name: "eq.Pedido Concluído",
+          status_do_pedido__c: `in.(${STATUS_PEDIDO_ANDAMENTO.map((s) => `"${s}"`).join(",")})`,
+        },
+        OPP_COLS_PEDIDO,
+      ),
     ) as Promise<OppRow[]>,
   ]);
+
 
   // ---------- Agregações por conta ----------
   const vendasBase = new Map<string, number>();
@@ -236,11 +271,12 @@ export async function calcularSegmentacao(opts: {
     if (!o.account_id) continue;
     const lista = pedidosPorConta.get(o.account_id) ?? [];
     lista.push({
-      id: o.id,
-      name: o.name,
-      status: o.status_do_pedido__c,
+      id: o.id ?? "",
+      name: o.name ?? null,
+      status: o.status_do_pedido__c ?? null,
       total: valor(o),
-      closeDate: o.close_date,
+      closeDate: o.close_date ?? null,
+
     });
     pedidosPorConta.set(o.account_id, lista);
   }
