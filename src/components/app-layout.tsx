@@ -286,7 +286,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       items: show("dashboards.metas")
         ? [{ to: "/solar/dashboards/metas", label: "Metas", icon: Target, active: pathname.startsWith("/solar/dashboards/metas") }]
         : undefined,
-      to: show("dashboards.metas") ? undefined : "/solar/dashboards",
+      to: "/solar/dashboards/metas",
     });
   }
   if (show("marketing.home")) {
