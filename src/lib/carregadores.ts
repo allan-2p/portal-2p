@@ -373,6 +373,7 @@ export type CarregadoresResult = {
   icmsRate: number;
   ipiValor: number;
   pisCofins: number;
+  pisCofinsRate: number;
   rl: number;
   custoTotal: number;
   cmv: number;
