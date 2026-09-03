@@ -34,44 +34,81 @@ export type FilaSalesforceResultado = {
   detalhes: { id: string; numero: string | null; ok: boolean; mensagem: string | null }[];
 };
 
+/** Marca de água usada pelo backfill em massa (`sf_mensagem`). */
+export const MARCA_BACKFILL = "(backfill)";
+
 /**
- * Reserva a maior parte de cada execução para oportunidades já vinculadas.
- * Essas linhas representam atualizações operacionais (compra, SAP, NF,
- * cancelamento) e não podem esperar atrás de um backfill de milhares de novas
- * oportunidades. Uma cota menor continua drenando os registros ainda sem
- * vínculo, evitando starvation do backfill.
+ * A fila tem três faixas, nesta ordem de prioridade:
+ *
+ * 1. **vinculadas** — oportunidades já existentes: atualizações operacionais
+ *    (compra, SAP, NF, perda, cancelamento).
+ * 2. **novas** — pedidos criados no portal e ainda sem oportunidade.
+ * 3. **backfill** — importação histórica (milhares de registros de 2022 em
+ *    diante), que só usa as vagas que sobram.
+ *
+ * Sem a faixa 2 separada, um pedido fechado hoje entrava na mesma fila do
+ * backfill ordenada por `created_at` crescente e ficava atrás de mais de mil
+ * registros antigos — na prática nunca chegava ao CRM.
  */
 export function cotasFilaSalesforce(limite: number) {
   const total = Math.max(1, Math.floor(limite));
-  if (total === 1) return { vinculadas: 1, novas: 0 };
-  const vinculadas = Math.max(1, Math.ceil(total * 0.8));
-  return { vinculadas, novas: total - vinculadas };
+  if (total === 1) return { vinculadas: 1, novas: 0, backfill: 0 };
+  if (total === 2) return { vinculadas: 1, novas: 1, backfill: 0 };
+  const vinculadas = Math.max(1, Math.round(total * 0.5));
+  const novas = Math.max(1, Math.round(total * 0.35));
+  return { vinculadas, novas, backfill: Math.max(0, total - vinculadas - novas) };
 }
 
 /**
- * Processa a fila: propostas com `sf_status` pendente/erro, mais antigas
- * primeiro. Sequencial para respeitar os limites da API do Salesforce.
+ * Processa a fila: propostas com `sf_status` pendente/erro. Sequencial para
+ * respeitar os limites da API do Salesforce.
+ *
+ * Dentro de cada faixa, `pendente` vem antes de `erro`: erros de regra de
+ * negócio da org (ex.: pedido cancelado sem motivo) nunca passam sozinhos e,
+ * como cada tentativa mexe em `updated_at`, voltavam ao topo e monopolizavam
+ * as vagas das execuções seguintes.
  */
 export async function processarFilaSalesforce(limite = 25): Promise<FilaSalesforceResultado> {
   const total = Math.max(1, Math.floor(limite));
   const cotas = cotasFilaSalesforce(total);
   const select = "id,numero,sf_status,sf_opp_id,created_at,updated_at";
+  // `not.like` devolve NULL (e a linha some) quando a mensagem é nula: por
+  // isso o `or` com `is.null`.
+  const SEM_BACKFILL = "(sf_mensagem.is.null,sf_mensagem.not.like.*backfill*)";
+  const COM_BACKFILL = "like.*backfill*";
 
-  // Atualizações de oportunidades existentes primeiro, da mais recente para a
-  // mais antiga. Antes tudo era ordenado por created_at: um cancelamento de um
-  // pedido antigo voltava ao fim de um backfill com milhares de registros.
-  const vinculadas = await db.consultarPropostas(
-    { sf_status: "in.(pendente,erro)", sf_opp_id: "not.is.null" },
-    { select, order: "updated_at.desc.nullslast", limit: cotas.vinculadas },
+  /** Busca uma faixa priorizando `pendente` e completando com `erro`. */
+  async function faixa(filtros: Record<string, string>, order: string, vagas: number) {
+    if (vagas <= 0) return [];
+    const pend = await db.consultarPropostas(
+      { ...filtros, sf_status: "eq.pendente" },
+      { select, order, limit: vagas },
+    );
+    if (pend.length >= vagas) return pend;
+    const erro = await db.consultarPropostas(
+      { ...filtros, sf_status: "eq.erro" },
+      { select, order, limit: vagas - pend.length },
+    );
+    return [...pend, ...erro];
+  }
+
+  const vinculadas = await faixa(
+    { sf_opp_id: "not.is.null" },
+    "updated_at.desc.nullslast",
+    cotas.vinculadas,
   );
-  const vagasNovas = Math.max(cotas.novas, total - vinculadas.length);
-  const novas = vagasNovas
-    ? await db.consultarPropostas(
-        { sf_status: "in.(pendente,erro)", sf_opp_id: "is.null" },
-        { select, order: "created_at.asc", limit: vagasNovas },
-      )
-    : [];
-  const pendentes = [...vinculadas, ...novas].slice(0, total);
+  const novas = await faixa(
+    { sf_opp_id: "is.null", or: SEM_BACKFILL },
+    "created_at.desc",
+    cotas.novas + (cotas.vinculadas - vinculadas.length),
+  );
+  const backfill = await faixa(
+    { sf_opp_id: "is.null", sf_mensagem: COM_BACKFILL },
+    "created_at.asc",
+    total - vinculadas.length - novas.length,
+  );
+  const pendentes = [...vinculadas, ...novas, ...backfill].slice(0, total);
+
 
   const { sincronizarPedidoSalesforceSeguro } = await import("./salesforce-pedidos.server");
   const detalhes: FilaSalesforceResultado["detalhes"] = [];

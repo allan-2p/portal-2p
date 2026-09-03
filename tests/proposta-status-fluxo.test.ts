@@ -17,9 +17,14 @@ describe("fila rotativa do cron SAP", () => {
 });
 
 describe("prioridade da fila Salesforce", () => {
-  it("reserva 80% do lote para atualizar oportunidades já vinculadas", () => {
-    expect(cotasFilaSalesforce(25)).toEqual({ vinculadas: 20, novas: 5 });
-    expect(cotasFilaSalesforce(1)).toEqual({ vinculadas: 1, novas: 0 });
+  it("separa pedidos novos do backfill histórico", () => {
+    // Pedidos criados hoje têm faixa própria: sem isso ficavam atrás de
+    // milhares de registros antigos e nunca chegavam ao CRM.
+    const c = cotasFilaSalesforce(25);
+    expect(c).toEqual({ vinculadas: 13, novas: 9, backfill: 3 });
+    expect(c.vinculadas + c.novas + c.backfill).toBe(25);
+    expect(cotasFilaSalesforce(1)).toEqual({ vinculadas: 1, novas: 0, backfill: 0 });
+    expect(cotasFilaSalesforce(2)).toEqual({ vinculadas: 1, novas: 1, backfill: 0 });
   });
 });
 

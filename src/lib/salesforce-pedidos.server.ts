@@ -283,12 +283,17 @@ export async function sincronizarPedidoSalesforce(
   const existente = so(row["sf_opp_id"]);
   const numero = so(row["numero"]);
   const clienteNome = so(row["cliente_nome"]);
+  // A fila separa o backfill histórico dos pedidos do dia pela marca na
+  // mensagem. Ao registrar um erro é preciso preservá-la, senão um registro de
+  // 2022 que falha migra para a faixa dos pedidos novos e disputa as vagas.
+  const eraBackfill = so(row["sf_mensagem"]).toLowerCase().includes("backfill");
+  const erroMsg = (m: string) => (eraBackfill ? `${m} (backfill)` : m);
 
   try {
     const accountId = so(row["sf_account_id"]) || (await acharAccount(row["cliente_doc"], clienteNome));
     if (!accountId) {
       const mensagem = "Conta do cliente não encontrada no Salesforce — sincronize o cadastro do cliente primeiro.";
-      await gravar(propostaId, { sf_status: "erro", sf_mensagem: mensagem });
+      await gravar(propostaId, { sf_status: "erro", sf_mensagem: erroMsg(mensagem) });
       await logIntegrationEvent({
         ...base,
         level: "error",
@@ -445,7 +450,7 @@ export async function sincronizarPedidoSalesforce(
     return { enviado: true, ok: true, opportunityId: oppId, accountId, mensagem };
   } catch (err) {
     const mensagem = (err as Error).message.slice(0, 500);
-    await gravar(propostaId, { sf_status: "erro", sf_mensagem: mensagem });
+    await gravar(propostaId, { sf_status: "erro", sf_mensagem: erroMsg(mensagem) });
     await logIntegrationEvent({
       ...base,
       level: "error",
