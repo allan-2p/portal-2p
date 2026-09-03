@@ -35,21 +35,43 @@ export type FilaSalesforceResultado = {
 };
 
 /**
+ * Reserva a maior parte de cada execução para oportunidades já vinculadas.
+ * Essas linhas representam atualizações operacionais (compra, SAP, NF,
+ * cancelamento) e não podem esperar atrás de um backfill de milhares de novas
+ * oportunidades. Uma cota menor continua drenando os registros ainda sem
+ * vínculo, evitando starvation do backfill.
+ */
+export function cotasFilaSalesforce(limite: number) {
+  const total = Math.max(1, Math.floor(limite));
+  if (total === 1) return { vinculadas: 1, novas: 0 };
+  const vinculadas = Math.max(1, Math.ceil(total * 0.8));
+  return { vinculadas, novas: total - vinculadas };
+}
+
+/**
  * Processa a fila: propostas com `sf_status` pendente/erro, mais antigas
  * primeiro. Sequencial para respeitar os limites da API do Salesforce.
  */
 export async function processarFilaSalesforce(limite = 25): Promise<FilaSalesforceResultado> {
-  // O filtro roda NO BANCO: varrer as primeiras N linhas e filtrar em memória
-  // deixava as pendentes recentes de fora (a tabela tem dezenas de milhares
-  // de propostas) e a fila nunca esvaziava.
-  const pendentes = await db.consultarPropostas(
-    { sf_status: "in.(pendente,erro)" },
-    {
-      select: "id,numero,sf_status,sf_opp_id,created_at",
-      order: "created_at.asc",
-      limit: Math.max(1, limite),
-    },
+  const total = Math.max(1, Math.floor(limite));
+  const cotas = cotasFilaSalesforce(total);
+  const select = "id,numero,sf_status,sf_opp_id,created_at,updated_at";
+
+  // Atualizações de oportunidades existentes primeiro, da mais recente para a
+  // mais antiga. Antes tudo era ordenado por created_at: um cancelamento de um
+  // pedido antigo voltava ao fim de um backfill com milhares de registros.
+  const vinculadas = await db.consultarPropostas(
+    { sf_status: "in.(pendente,erro)", sf_opp_id: "not.is.null" },
+    { select, order: "updated_at.desc.nullslast", limit: cotas.vinculadas },
   );
+  const vagasNovas = Math.max(cotas.novas, total - vinculadas.length);
+  const novas = vagasNovas
+    ? await db.consultarPropostas(
+        { sf_status: "in.(pendente,erro)", sf_opp_id: "is.null" },
+        { select, order: "created_at.asc", limit: vagasNovas },
+      )
+    : [];
+  const pendentes = [...vinculadas, ...novas].slice(0, total);
 
   const { sincronizarPedidoSalesforceSeguro } = await import("./salesforce-pedidos.server");
   const detalhes: FilaSalesforceResultado["detalhes"] = [];
