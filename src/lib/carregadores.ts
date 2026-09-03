@@ -585,6 +585,7 @@ export function calcularCarregadores(
     icmsRate,
     ipiValor,
     pisCofins,
+    pisCofinsRate: valorItem - icms > 0 ? pisCofins / (valorItem - icms) : 0,
     rl,
     custoTotal,
     cmv,
