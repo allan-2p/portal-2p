@@ -1,3 +1,4 @@
+import { contribuinteDeEnrich } from "@/lib/contribuinte";
 import { numeroExibicao } from "@/lib/proposta-variacoes";
 /**
  * Converte uma proposta já salva (linha do banco) nos dados de PDF usados
@@ -24,6 +25,18 @@ function linhasEndereco(o: Row | null | undefined): string[] {
     [txt(e['complemento']), txt(e['bairro'])].filter(Boolean).join(" · "),
     cidadeUfCep(txt(e['cidade']), txt(e['uf']), txt(e['cep']), ""),
   ].filter((l) => l.trim());
+}
+
+/**
+ * Contribuinte que vale para a NF: o do parceiro FATURADO. Quando o pedido é
+ * faturado direto ao cliente final, o revendedor não decide mais nada.
+ */
+function contribuinteDaNf(p: Row): boolean {
+  const fat = (p['faturamento'] ?? {}) as Row;
+  if (p['faturar_cliente_final'] === true || Object.keys(fat).length) {
+    return contribuinteDeEnrich(fat as never);
+  }
+  return p['contribuinte'] === true;
 }
 
 /** Endereço de faturamento: o do cliente final quando houver, senão o da entrega. */
@@ -66,7 +79,7 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
       telefone: txt(p['cliente_telefone']),
       uf: txt(fat['uf'] || ent['uf'] || p['uf']),
       cidade: txt(fat['cidade'] || ent['cidade']) || null,
-      contribuinte: p['contribuinte'] === true,
+      contribuinte: contribuinteDaNf(p),
     },
     itens: itens.map((i) => ({
       codigo: txt(i['codigo']) || null,
@@ -130,6 +143,7 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
       nome: txt(p['cliente_nome']) || "—",
       doc: txt(p['cliente_doc']),
       ie: txt(p['cliente_ie']),
+      contribuinte: contribuinteDaNf(p),
       email: txt(p['cliente_email']),
       telefone: txt(p['cliente_telefone']),
       uf: txt(fat['uf'] || ent['uf'] || p['uf']),
@@ -158,6 +172,8 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
     enderecoFaturamento: {
       nome: txt(fat['nome']) || txt(p['cliente_nome']),
       doc: txt(fat['doc']) || txt(p['cliente_doc']),
+      ie: txt(fat['ie']) || txt(p['cliente_ie']),
+      contribuinte: contribuinteDaNf(p),
       linhas: linhasEndereco(fat),
     },
     enderecoEntrega: p['entrega_diferente']

@@ -1771,6 +1771,8 @@ function NovaPropostaSolarPage() {
         nome: String(cliente?.['razao_social'] ?? "—"),
         doc: String(cliente?.['doc'] ?? ""),
         ie: String(cliente?.['ie'] ?? ""),
+        // A tag do PDF reflete quem recebe a NF: cliente final quando houver.
+        contribuinte: faturarClienteFinal ? fatContribuinte : cliente?.['contribuinte'] === true,
         email: String(cliente?.['email'] ?? ""),
         telefone: String(cliente?.['telefone'] ?? ""),
         uf: String(cliente?.['uf'] ?? ""),
@@ -1809,6 +1811,8 @@ function NovaPropostaSolarPage() {
       enderecoFaturamento: {
         nome: String(faturamentoBase['nome'] ?? faturamentoBase['razao_social'] ?? cliente?.['razao_social'] ?? ""),
         doc: String(faturamentoBase['doc'] ?? ""),
+        ie: String(faturamentoBase['ie'] ?? ""),
+        contribuinte: faturarClienteFinal ? fatContribuinte : cliente?.['contribuinte'] === true,
         linhas: linhasEnd(faturamentoBase),
       },
       enderecoEntrega: entregaDiferente
@@ -3022,8 +3026,20 @@ function NovaPropostaSolarPage() {
                   label="Endereço de faturamento"
                   value={
                     faturarClienteFinal
-                      ? `${fat['logradouro'] ?? ""} ${fat['numero'] ?? ""} — ${cidadeUf(fat['cidade'], fat['uf'])}`
-                      : `${cliente?.['logradouro'] ?? ""} ${cliente?.['numero'] ?? ""} — ${cidadeUf(String(cliente?.['cidade'] ?? ""), String(cliente?.['uf'] ?? ""))}`
+                      ? [
+                          [fat['logradouro'], fat['numero']].filter(Boolean).join(", "),
+                          fat['complemento'],
+                          fat['bairro'],
+                          cidadeUf(fat['cidade'], fat['uf']),
+                          fat['cep'],
+                        ].filter((v) => v && String(v).trim()).join(" · ")
+                      : [
+                          [cliente?.['logradouro'], cliente?.['numero']].filter(Boolean).join(", "),
+                          cliente?.['complemento'],
+                          cliente?.['bairro'],
+                          cidadeUf(String(cliente?.['cidade'] ?? ""), String(cliente?.['uf'] ?? "")),
+                          cliente?.['cep'],
+                        ].filter((v) => v && String(v).trim()).join(" · ")
                   }
                 />
                 <Info
@@ -3031,10 +3047,31 @@ function NovaPropostaSolarPage() {
                   value={
                     entregaDiferente
                       ? `${entrega['logradouro'] ?? ""} ${entrega['numero'] ?? ""} — ${cidadeUf(entrega['cidade'], entrega['uf'])}`
-                      : "Mesmo do faturamento"
+                      : faturarClienteFinal
+                        ? "Mesmo do faturamento (cliente final)"
+                        : "Mesmo do endereço do cliente"
                   }
                 />
               </div>
+
+              {faturarClienteFinal && (
+                <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
+                  <div className="text-xs uppercase tracking-wider font-semibold text-primary">
+                    Faturado para (cliente final)
+                  </div>
+                  <div className="mt-2 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                    <Info label="Nome" value={String(fat['nome'] ?? "—")} />
+                    <Info label={fatTipoDoc === "cpf" ? "CPF" : "CNPJ"} value={String(fat['doc'] ?? "—")} />
+                    <Info label="Inscrição estadual" value={String(fat['ie'] ?? "") || "—"} />
+                    <Info
+                      label="IE habilitada"
+                      value={fatTipoDoc === "cpf" ? "—" : fatIeHabilitada === null ? "—" : fatIeHabilitada ? "Sim" : "Não"}
+                    />
+                    <Info label="Contribuinte de ICMS" value={fatContribuinte ? "Sim" : "Não"} />
+                    <Info label="Finalidade de uso" value={finalidadeUso || "—"} />
+                  </div>
+                </div>
+              )}
 
               <div className="rounded-xl border border-border overflow-hidden">
                 <table className="w-full text-sm">
