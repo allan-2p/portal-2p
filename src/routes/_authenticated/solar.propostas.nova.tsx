@@ -222,6 +222,12 @@ function NovaPropostaSolarPage() {
   const [fatContribuinte, setFatContribuinte] = useState(false);
   /** Cidade/UF do faturamento ficam travadas quando vieram do CEP. */
   const [fatCepOk, setFatCepOk] = useState(false);
+  /**
+   * CNPJ do cliente final cuja consulta (botão Buscar) já foi executada com
+   * resposta. Sem a consulta o contribuinte/IE saem errados e a NF diverge no
+   * SAP — por isso a etapa 2 bloqueia o avanço até buscar o CNPJ informado.
+   */
+  const [fatConsultadoDoc, setFatConsultadoDoc] = useState<string | null>(null);
 
   /** Finalidade de uso — obrigatória quando o pedido fatura o cliente final. */
   const [finalidadeUso, setFinalidadeUso] = useState<string>("");
