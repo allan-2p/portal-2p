@@ -102,7 +102,7 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     throw new Error("Informe o endereço de entrega.");
 
   const faturamento: Record<string, string | boolean> = {};
-  for (const c of [...campos, "doc", "nome", "ie"])
+  for (const c of [...campos, "doc", "nome", "ie", "consulta_fiscal_doc"])
     faturamento[c] = String(i.faturamento?.[c] ?? "").slice(0, 160);
   faturamento['contribuinte'] = !!i.faturamento?.contribuinte;
   // A decisão fiscal da consulta é booleana e precisa atravessar o validador —
@@ -515,7 +515,10 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     if (data.faturarClienteFinal) {
       const fatIn = (data.faturamento ?? {}) as Record<string, unknown>;
       const docFat = String(fatIn["doc"] ?? "").replace(/\D/g, "");
-      if (docFat.length === 14 && typeof fatIn["ie_habilitada"] !== "boolean") {
+      const docConsultado = String(fatIn["consulta_fiscal_doc"] ?? "").replace(/\D/g, "");
+      const temResultadoFiscal = typeof fatIn["ie_habilitada"] === "boolean";
+      const consultaConfere = docConsultado === docFat;
+      if (docFat.length === 14 && (!temResultadoFiscal || !consultaConfere)) {
         throw new Error(
           "Consulte o CNPJ do cliente final (botão Buscar) antes de salvar: a consulta define a inscrição estadual e se ele é contribuinte de ICMS.",
         );

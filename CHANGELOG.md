@@ -45,6 +45,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Cadastro do cliente no SAP** usa a IE habilitada para definir o ICMSTAXPAY (01/09): CNPJ com inscrição baixada, suspensa ou isenta vai como não contribuinte, inclusive no parceiro de faturamento criado a partir do pedido.
 
 ### Corrigido
+- **Salvar proposta Solar após consultar o CNPJ**: a proposta agora envia também a identificação do CNPJ usado na consulta fiscal, evitando que o servidor peça uma nova busca mesmo quando a IE e a situação de contribuinte já foram carregadas na tela.
 - **Boleto a prazo**: as condições de pagamento agora ficam liberadas pelo prazo já concedido no cadastro do cliente (ex.: cliente 14/28 pode escolher à vista, 3, 7, 14, 21 e 28 DDL sem nova análise de crédito). A análise de crédito continua liberando prazos acima do cadastro; só fica bloqueado o que não couber em nenhum dos dois.
 - E-mail de aviso de kit: os itens apareciam como "— —" (lia `descricao` em vez de `nome`) e o texto citava o código comercial antigo.
 

@@ -1582,6 +1582,10 @@ function NovaPropostaSolarPage() {
             contribuinte: fatTipoDoc === "cnpj" ? fatContribuinte : false,
             // Decisão fiscal da consulta — viaja com a proposta (preço, PDF, SAP).
             ie_habilitada: fatTipoDoc === "cnpj" ? fatIeHabilitada === true : false,
+            // Prova qual documento originou a decisão fiscal. Isso impede tanto
+            // aceitar uma busca antiga após trocar o CNPJ quanto perder a busca
+            // válida durante a normalização do payload do server function.
+            consulta_fiscal_doc: fatTipoDoc === "cnpj" ? fatConsultadoDoc ?? "" : "",
           },
           formaPagamento: formaPagamento || null,
           condicaoPagamento: condicaoPagamento || null,
