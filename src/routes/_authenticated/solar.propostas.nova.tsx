@@ -473,8 +473,13 @@ function NovaPropostaSolarPage() {
       setObservacoesInternas(String(p['observacoes_internas'] ?? ""));
       setTipoNf(String(p['tipo_nf'] ?? "") || "venda");
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
-      setFat((p['faturamento'] as Record<string, string>) ?? {});
+      const fatSalvo = (p['faturamento'] as Record<string, string>) ?? {};
+      setFat(fatSalvo);
       setFatContribuinte(!!(p['faturamento'] as Record<string, unknown> | null)?.['contribuinte']);
+      // Proposta já salva: o faturamento gravado já passou pela consulta/edição,
+      // então o CNPJ carregado conta como consultado (edição/duplicação).
+      const docSalvo = String(fatSalvo['doc'] ?? "").replace(/\D/g, "");
+      setFatConsultadoDoc(docSalvo || null);
       // O banco guarda o slug ("uso_consumo"); a tela usa o rótulo do SAP.
       setFinalidadeUso(p['finalidade_uso'] ? normalizarFinalidade(p['finalidade_uso']) : "");
       setFormaPagamento(String(p['forma_pagamento'] ?? ""));
