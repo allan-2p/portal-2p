@@ -19,6 +19,10 @@ export type SolarPdfItem = {
 export type SolarPdfEndereco = {
   nome?: string | null;
   doc?: string | null;
+  /** Inscrição estadual do parceiro faturado (vazio = isento/não contribuinte). */
+  ie?: string | null;
+  /** Contribuinte de ICMS do parceiro faturado — decide CFOP e imposto na NF. */
+  contribuinte?: boolean | null;
   contato?: string | null;
   telefone?: string | null;
   linhas: string[];
@@ -31,6 +35,7 @@ export type SolarPropostaPdfData = {
     nome: string;
     doc?: string | null;
     ie?: string | null;
+    contribuinte?: boolean | null;
     email?: string | null;
     telefone?: string | null;
     uf?: string | null;
@@ -132,7 +137,13 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
 
   const bloco = (titulo: string, d: SolarPdfEndereco) => {
     const ls = (d?.linhas ?? []).filter((l) => l && l.trim());
-    const meta = [d?.doc ? `Doc. ${d.doc}` : "", d?.contato ? `Contato ${d.contato}` : "", d?.telefone ? `Tel. ${d.telefone}` : ""].filter(Boolean);
+    const meta = [
+      d?.doc ? `Doc. ${d.doc}` : "",
+      d?.ie ? `IE ${d.ie}` : "",
+      d?.contribuinte == null ? "" : d.contribuinte ? "Contribuinte ICMS" : "Não contribuinte",
+      d?.contato ? `Contato ${d.contato}` : "",
+      d?.telefone ? `Tel. ${d.telefone}` : "",
+    ].filter(Boolean);
     return `
       <div class="f">
         <label>${esc(titulo)}</label>
