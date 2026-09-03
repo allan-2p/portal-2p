@@ -171,10 +171,26 @@ async function ownerSfIdPorNome(nome: unknown): Promise<string | null> {
   }
 }
 
+/**
+ * Campos que uma REGRA DE VALIDAÇÃO da org exige. Eles aparecem em `fields`
+ * do erro, mas removê-los não resolve nada: a validação volta a falhar e o
+ * motivo real fica escondido. Precisam ser corrigidos na origem (a proposta).
+ */
+const CAMPOS_OBRIGATORIOS_ORG = new Set([
+  "Descri_o_do_Motivo_de_Perda__c",
+  "Motivo_de_cancelamento__c",
+  "Loss_Reason__c",
+]);
+
 /** Nomes de campos recusados pela org, extraídos da mensagem de erro. */
 function camposInvalidos(msg: string): string[] {
+  // FIELD_CUSTOM_VALIDATION_EXCEPTION = regra de negócio da org, não campo
+  // inexistente: nunca reenviar sem o campo.
+  if (/FIELD_CUSTOM_VALIDATION_EXCEPTION/i.test(msg)) return [];
   const achados = new Set<string>();
-  for (const m of msg.matchAll(/([A-Za-z0-9_]+__c)/g)) achados.add(m[1]!);
+  for (const m of msg.matchAll(/([A-Za-z0-9_]+__c)/g)) {
+    if (!CAMPOS_OBRIGATORIOS_ORG.has(m[1]!)) achados.add(m[1]!);
+  }
   return [...achados];
 }
 
@@ -333,9 +349,19 @@ export async function sincronizarPedidoSalesforce(
     // `Loss_Reason__c` e a descrição escrita pelo vendedor.
     const perdida = propostaPerdida(row as Record<string, any>);
     if (perdida) {
-      custom["Loss_Reason__c"] = so(row["motivo_perda"]);
+      const motivoPerda = so(row["motivo_perda"]);
+      custom["Loss_Reason__c"] = motivoPerda;
       const obsPerda = so(row["motivo_perda_obs"]);
-      if (obsPerda) custom["Descri_o_do_Motivo_de_Perda__c"] = obsPerda;
+      if (obsPerda) {
+        // A org recusa descrições com menos de 4 palavras. Perdas antigas
+        // (gravadas antes dessa validação no portal) ganham o motivo como
+        // prefixo em vez de ficarem eternamente com erro na fila.
+        const { palavrasObsPerda, OBS_PERDA_MIN_PALAVRAS } = await import("./perda-motivos");
+        custom["Descri_o_do_Motivo_de_Perda__c"] =
+          palavrasObsPerda(obsPerda) < OBS_PERDA_MIN_PALAVRAS && motivoPerda
+            ? `Motivo: ${motivoPerda}. ${obsPerda}`
+            : obsPerda;
+      }
     }
 
 
@@ -370,6 +396,7 @@ export async function sincronizarPedidoSalesforce(
           for (const c of campoInvalido) delete corpo[c];
           continue;
         }
+        if (/FIELD_CUSTOM_VALIDATION_EXCEPTION/i.test(msg)) throw err;
         if (/No such column|INVALID_FIELD|Unable to create\/update fields/i.test(msg) && tentativa <= 6) {
           corpo = { ...corpoBase };
           continue;
