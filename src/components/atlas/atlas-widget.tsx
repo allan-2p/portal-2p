@@ -2,11 +2,11 @@
  * Chat lateral do Atlas: botão flutuante arrastável na lateral direita e painel
  * com a lista de conversas do usuário.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { MessageSquarePlus, X, Radar, Trash2, Maximize2, History, GripVertical } from "lucide-react";
+import { MessageSquarePlus, X, Radar, Trash2, Maximize2, History } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,6 @@ import { useAuth } from "@/hooks/use-auth";
 
 const ABERTO_KEY = "portal2p-atlas-open";
 const THREAD_KEY = "portal2p-atlas-thread";
-const OFFSET_Y_KEY = "portal2p-atlas-offset-y";
 
 export function AtlasWidget() {
   const { user } = useAuth();
@@ -25,12 +24,7 @@ export function AtlasWidget() {
   const [aberto, setAberto] = useState(false);
   const [mostrarLista, setMostrarLista] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
-  const [offsetY, setOffsetY] = useState(0);
   const qc = useQueryClient();
-
-  const dragRef = useRef<{ startY: number; startOffset: number; moved: boolean } | null>(null);
-  // Continua true durante o click que sucede o pointerup, para não abrir o chat.
-  const moveuRef = useRef(false);
 
   const listar = useServerFn(listarThreadsFn);
   const criar = useServerFn(criarThreadFn);
@@ -51,58 +45,6 @@ export function AtlasWidget() {
     if (typeof window === "undefined" || !threadId) return;
     window.localStorage.setItem(THREAD_KEY, threadId);
   }, [threadId]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = window.localStorage.getItem(OFFSET_Y_KEY);
-    if (saved) setOffsetY(Number(saved) || 0);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(OFFSET_Y_KEY, String(offsetY));
-  }, [offsetY]);
-
-  const clampOffset = (next: number) => {
-    if (typeof window === "undefined") return next;
-    const padding = 80;
-    const max = Math.max(0, (window.innerHeight - padding * 2) / 2 - 40);
-    return Math.max(-max, Math.min(max, next));
-  };
-
-  // O arrasto é acompanhado no window: se ficasse no botão, sair da área
-  // (poucos pixels) encerraria o movimento antes de reposicionar o ícone.
-  const startDrag = (clientY: number) => {
-    if (typeof window === "undefined") return;
-    dragRef.current = { startY: clientY, startOffset: offsetY, moved: false };
-    moveuRef.current = false;
-
-    const onMove = (ev: PointerEvent) => {
-      const d = dragRef.current;
-      if (!d) return;
-      ev.preventDefault();
-      const delta = ev.clientY - d.startY;
-      if (Math.abs(delta) > 4) {
-        d.moved = true;
-        moveuRef.current = true;
-      }
-      setOffsetY(clampOffset(d.startOffset + delta));
-    };
-    const endDrag = () => {
-      dragRef.current = null;
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", endDrag);
-      window.removeEventListener("pointercancel", endDrag);
-      // Zera só depois do click, que dispara logo após o pointerup.
-      window.setTimeout(() => {
-        moveuRef.current = false;
-      }, 0);
-    };
-
-    window.addEventListener("pointermove", onMove, { passive: false });
-    window.addEventListener("pointerup", endDrag);
-    window.addEventListener("pointercancel", endDrag);
-  };
 
   const threads = useQuery({
     queryKey: ["atlas-threads"],
@@ -155,38 +97,10 @@ export function AtlasWidget() {
     return () => window.removeEventListener("atlas:abrir", abrir);
   }, [setAberto]);
 
-  // Não exibe o botão flutuante dentro das telas de proposta (criação, edição,
-  // visualização) para não competir com o formulário/composer da proposta.
-  const esconderNaProposta =
-    pathname.startsWith("/carregadores/propostas") || pathname.startsWith("/solar/propostas");
-
-  if (!user || esconderNaProposta) return null;
+  if (!user) return null;
 
   return (
     <>
-      {!aberto && (
-        <div
-          className="fixed right-0 top-1/2 z-20 -translate-y-1/2"
-          style={{ transform: `translateY(calc(-50% + ${offsetY}px))` }}
-        >
-          <Button
-            size="icon"
-            onClick={() => {
-              if (moveuRef.current) return;
-              setAberto(true);
-            }}
-            onPointerDown={(e) => startDrag(e.clientY)}
-            style={{ touchAction: "none" }}
-            aria-label="Abrir o chat do Atlas"
-            title="Arraste para cima/baixo · clique para abrir o Atlas"
-            className="relative h-11 w-9 cursor-grab rounded-l-full rounded-r-none border border-r-0 border-primary-foreground/20 bg-primary/80 text-primary-foreground shadow-md opacity-70 transition-[width,opacity] hover:w-11 hover:bg-primary hover:opacity-100 focus-visible:w-11 focus-visible:opacity-100 active:cursor-grabbing sm:h-12 sm:w-10 sm:hover:w-12 sm:focus-visible:w-12"
-          >
-            <AtlasIcon className="h-5 w-5" />
-            <GripVertical className="pointer-events-none absolute left-0.5 h-3 w-3 opacity-40" />
-          </Button>
-        </div>
-      )}
-
       {aberto && (
         <div
           className={cn(
