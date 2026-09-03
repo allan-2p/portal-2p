@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { listCondicoesPagamento } from "@/lib/condicoes-pagamento.functions";
 import { getCreditoVigente } from "@/lib/credito.functions";
+import { condicaoPagamentoClienteFn } from "@/lib/clientes.functions";
 import { condicaoEhAPrazo, fmtBRL, limiteCobre } from "@/lib/credito";
 
 /**
