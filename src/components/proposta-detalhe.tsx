@@ -149,6 +149,21 @@ export function PropostaDetalhe({ id }: { id?: string }) {
   ]
     .filter((v) => v && String(v).trim())
     .join(" · ");
+  // Faturou o cliente final? O bloco fiscal passa a ser o DELE, não o do revendedor.
+  const faturouClienteFinal =
+    p['faturar_cliente_final'] === true || Object.keys(faturamento).length > 0;
+  const enderecoFaturamento = [
+    [faturamento['logradouro'], faturamento['numero']].filter(Boolean).join(", "),
+    faturamento['complemento'],
+    faturamento['bairro'],
+    cidadeUf(faturamento['cidade'] ?? "", faturamento['uf'] ?? ""),
+    faturamento['cep'],
+  ]
+    .filter((v) => v && String(v).trim())
+    .join(" · ");
+  const contribuinteNf = faturouClienteFinal
+    ? contribuinteDeEnrich(faturamento as never)
+    : p['contribuinte'] === true;
   const temCobranca =
     !bonificado &&
     !!(
@@ -280,13 +295,13 @@ export function PropostaDetalhe({ id }: { id?: string }) {
       <NfDocumentosCard proposta={p}>
         <div className="grid grid-cols-2 gap-3 text-sm sm:gap-4 md:grid-cols-4">
           <Campo
-            label="Cidade / UF de destino"
+            label="Cidade / UF do faturamento"
             value={cidadeUf(
               faturamento['cidade'] || entrega['cidade'] || "",
               faturamento['uf'] || entrega['uf'] || String(p['uf'] ?? ""),
             )}
           />
-          <Campo label="Contribuinte" value={p['contribuinte'] ? "Sim" : "Não"} />
+          <Campo label="Contribuinte" value={contribuinteNf ? "Sim" : "Não"} />
           <Campo
             label="Finalidade de uso"
             value={
@@ -306,6 +321,31 @@ export function PropostaDetalhe({ id }: { id?: string }) {
               p?.['frete_mod'] as string | null,
             )}
           />
+          {faturouClienteFinal ? (
+            <div className="col-span-2 md:col-span-4 rounded-xl border border-primary/25 bg-primary/5 p-3">
+              <div className="text-xs uppercase tracking-wider font-semibold text-primary">
+                Faturado para (cliente final)
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">
+                <Campo label="Nome" value={faturamento['nome'] || "—"} />
+                <Campo label="CNPJ/CPF" value={faturamento['doc'] || "—"} />
+                <Campo label="Inscrição estadual" value={faturamento['ie'] || "—"} />
+                <Campo
+                  label="IE habilitada"
+                  value={
+                    typeof (faturamento as Record<string, unknown>)['ie_habilitada'] === "boolean"
+                      ? ((faturamento as Record<string, unknown>)['ie_habilitada'] ? "Sim" : "Não")
+                      : "—"
+                  }
+                />
+                <Campo label="Contribuinte" value={contribuinteNf ? "Sim" : "Não"} />
+                <div className="col-span-2 md:col-span-4">
+                  <div className="text-xs text-muted-foreground">Endereço de faturamento</div>
+                  <div className="font-medium">{enderecoFaturamento || "—"}</div>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="col-span-2 md:col-span-4">
             <div className="text-xs text-muted-foreground">Endereço de entrega</div>
             <div className="font-medium">{enderecoEntrega || "—"}</div>
