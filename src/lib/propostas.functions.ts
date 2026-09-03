@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { cnpjValido, cpfValido } from "@/lib/cnpj";
+import { contribuinteDeEnrich, temDecisaoFiscal } from "@/lib/contribuinte";
 import { motivoCancelamentoValido, validarObsCancelamento } from "@/lib/cancelamento-motivos";
 import { motivoPerdaValido, motivoPerdaSomenteAdmin, validarObsPerda } from "@/lib/perda-motivos";
 
