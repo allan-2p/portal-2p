@@ -130,6 +130,8 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     if (docFat.length === 11) {
       if (!cpfValido(docFat)) throw new Error("CPF do faturamento inválido.");
       faturamento['contribuinte'] = false;
+      // CPF nunca tem IE: a decisão fiscal é sempre "não habilitada".
+      faturamento['ie_habilitada'] = false;
       finalidadeUso = "Uso e Consumo";
     } else {
       if (!cnpjValido(docFat)) throw new Error("CNPJ do faturamento inválido.");
