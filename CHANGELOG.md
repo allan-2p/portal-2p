@@ -53,6 +53,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Resumo final da proposta de Carregadores** mostra os dados fiscais do cliente final (documento, inscrição estadual, situação da IE e contribuinte de ICMS).
 
 ### Corrigido
+- **Buscar CNPJ no faturamento Solar**: o resultado fiscal passa a ser levado ao salvamento imediatamente, mesmo quando o usuário clica em salvar logo após a consulta; ao alterar o CNPJ, a consulta anterior é invalidada para evitar reaproveitar IE/contribuinte de outro documento.
 - **Entrega em Carregadores** segue o endereço do cliente final quando o pedido é faturado direto para ele e não há endereço de entrega próprio (antes ia para o endereço do revendedor).
 - **Cadastro do cliente final no SAP**: atualização de cadastro já existente (KUNNR conhecido) volta a retentar em falha temporária do SAP; criação continua sem retentativa para não duplicar parceiro.
 - **Proposta Solar faturada a CPF do cliente final** volta a salvar: a decisão fiscal (sem inscrição estadual) passa a ser gravada automaticamente, sem pedir consulta de CNPJ.

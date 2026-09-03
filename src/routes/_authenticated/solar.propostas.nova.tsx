@@ -235,6 +235,12 @@ function NovaPropostaSolarPage() {
    * É a única fonte de verdade de contribuinte daqui pra frente.
    */
   const [fatIeHabilitada, setFatIeHabilitada] = useState<boolean | null>(null);
+  /**
+   * Espelho síncrono da consulta fiscal. O estado do React pode ainda estar no
+   * render anterior quando o usuário salva logo após o Buscar; a ref garante
+   * que a comprovação já siga no mesmo clique/ciclo de eventos.
+   */
+  const fatConsultaRef = useRef<{ doc: string; ieHabilitada: boolean } | null>(null);
 
   /** Finalidade de uso — obrigatória quando o pedido fatura o cliente final. */
   const [finalidadeUso, setFinalidadeUso] = useState<string>("");
@@ -490,6 +496,7 @@ function NovaPropostaSolarPage() {
       // (ie_habilitada). Propostas antigas exigem nova consulta antes de avançar.
       const docSalvo = String(fatSalvo['doc'] ?? "").replace(/\D/g, "");
       setFatConsultadoDoc(ieHab === null ? null : (docSalvo || null));
+      fatConsultaRef.current = ieHab === null || !docSalvo ? null : { doc: docSalvo, ieHabilitada: ieHab };
       // O banco guarda o slug ("uso_consumo"); a tela usa o rótulo do SAP.
       setFinalidadeUso(p['finalidade_uso'] ? normalizarFinalidade(p['finalidade_uso']) : "");
       setFormaPagamento(String(p['forma_pagamento'] ?? ""));
@@ -1290,6 +1297,7 @@ function NovaPropostaSolarPage() {
     try {
       const e = await enriquecer({ data: { cnpj: doc } });
       // A consulta foi executada (com ou sem retorno): libera o avanço da etapa.
+      fatConsultaRef.current = { doc, ieHabilitada: e?.ie_habilitada === true };
       setFatConsultadoDoc(doc);
       if (!e) {
         setFatIeHabilitada(false);
@@ -1556,6 +1564,8 @@ function NovaPropostaSolarPage() {
     if (concluir) setConclusaoFase("salvando");
 
     try {
+      const fatDocAtual = String(fat['doc'] ?? "").replace(/\D/g, "");
+      const consultaFiscal = fatConsultaRef.current?.doc === fatDocAtual ? fatConsultaRef.current : null;
       const r = await salvar({
         data: {
           propostaId,
@@ -1581,11 +1591,15 @@ function NovaPropostaSolarPage() {
             ...fat,
             contribuinte: fatTipoDoc === "cnpj" ? fatContribuinte : false,
             // Decisão fiscal da consulta — viaja com a proposta (preço, PDF, SAP).
-            ie_habilitada: fatTipoDoc === "cnpj" ? fatIeHabilitada === true : false,
+            ie_habilitada:
+              fatTipoDoc === "cnpj"
+                ? (consultaFiscal?.ieHabilitada ?? fatIeHabilitada) === true
+                : false,
             // Prova qual documento originou a decisão fiscal. Isso impede tanto
             // aceitar uma busca antiga após trocar o CNPJ quanto perder a busca
             // válida durante a normalização do payload do server function.
-            consulta_fiscal_doc: fatTipoDoc === "cnpj" ? fatConsultadoDoc ?? "" : "",
+            consulta_fiscal_doc:
+              fatTipoDoc === "cnpj" ? consultaFiscal?.doc ?? fatConsultadoDoc ?? "" : "",
           },
           formaPagamento: formaPagamento || null,
           condicaoPagamento: condicaoPagamento || null,
@@ -2030,6 +2044,7 @@ function NovaPropostaSolarPage() {
                           // consulta: senão um CNPJ digitado sobra no campo CPF
                           // e trava o "Próximo" com "CPF inválido".
                           setFat((p) => ({ ...p, doc: "", nome: "", ie: "" }));
+                          fatConsultaRef.current = null;
                           setFatConsultadoDoc(null);
                           setFatIeHabilitada(null);
                           setFatContribuinte(false);
@@ -2054,7 +2069,17 @@ function NovaPropostaSolarPage() {
                         value={fat['doc'] ?? ""}
                         inputMode="numeric"
                         placeholder={fatTipoDoc === "cnpj" ? "00.000.000/0000-00" : "000.000.000-00"}
-                        onChange={(e) => setFat((p) => ({ ...p, doc: e.target.value }))}
+                        onChange={(e) => {
+                          const novoDoc = e.target.value;
+                          const novosDigitos = novoDoc.replace(/\D/g, "");
+                          if (fatConsultaRef.current?.doc !== novosDigitos) {
+                            fatConsultaRef.current = null;
+                            setFatConsultadoDoc(null);
+                            setFatIeHabilitada(null);
+                            setFatContribuinte(false);
+                          }
+                          setFat((p) => ({ ...p, doc: novoDoc }));
+                        }}
                       />
                       {fatTipoDoc === "cnpj" && (
                         <Button
