@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronLeft, ChevronRight, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu, Search } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import grupo2pLogo from "@/assets/2p-logo-preto-sm.webp";
@@ -32,8 +32,16 @@ import { bootstrapFirstAdmin } from "@/lib/users.functions";
 import { useStickyOpen } from "@/hooks/use-sticky-open";
 
 import { toast } from "sonner";
+import { AtlasIcon } from "@/components/atlas/atlas-icon";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
-const COLLAPSE_KEY = "portal2p-sidebar-collapsed";
 const CLIENTES_OPEN_KEY = "portal2p-clientes-open";
 const DASHBOARDS_OPEN_KEY = "portal2p-dashboards-open";
 const PROPOSTAS_OPEN_KEY = "portal2p-propostas-open";
@@ -45,8 +53,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [buscaOpen, setBuscaOpen] = useState(false);
   // Menus/toggles lembram o estado durante a navegação (e entre sessões).
-  const [collapsed, toggleCollapsed] = useStickyOpen(COLLAPSE_KEY, false);
   const [clientesOpen, toggleClientes] = useStickyOpen(CLIENTES_OPEN_KEY, true);
   const [dashboardsOpen, toggleDashboards] = useStickyOpen(DASHBOARDS_OPEN_KEY, true);
   const [propostasOpen, togglePropostas] = useStickyOpen(PROPOSTAS_OPEN_KEY, true);
@@ -186,6 +194,137 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // Área do Grupo 2P (admin/config): tema neutro (preto/branco), sem identidade de instância.
   // O atributo global é aplicado em __root (vale para todo o portal); aqui só ajustamos a marca.
   const isAdminArea = isGroupAdminPath(pathname);
+
+  /**
+   * Abas do menu de topo — mesmos itens, mesmas rotas e o mesmo gating `show()`
+   * da antiga barra lateral; muda apenas a disposição (horizontal).
+   */
+  const tabs: TabItem[] = [];
+  if (show("atlas")) {
+    tabs.push({
+      id: "atlas",
+      label: "Atlas",
+      icon: Sparkles,
+      to: "/solar/atlas",
+      active: atlasActive,
+      destaque: true,
+      items: show("clientes.sugestoes")
+        ? [{
+            to: "/solar/clientes/sugestoes",
+            label: "Sugestões do Atlas",
+            icon: Sparkles,
+            active: pathname.startsWith("/solar/clientes/sugestoes"),
+          }]
+        : undefined,
+    });
+  }
+  if (show("home")) tabs.push({ id: "home", label: "Home", icon: Home, to: "/", active: pathname === "/" });
+  if (show("tarefas")) tabs.push({ id: "tarefas", label: "Tarefas", icon: Calendar, to: "/solar/tarefas", active: pathname.startsWith("/solar/tarefas") });
+  if (show("propostas")) {
+    tabs.push({
+      id: "propostas-solar",
+      label: "Propostas",
+      icon: ClipboardList,
+      active: propostasSolarActive,
+      items: [
+        { to: "/solar/propostas", label: "Propostas", icon: ClipboardList, active: pathname.startsWith("/solar/propostas") },
+        ...(show("pedidos")
+          ? [{ to: "/solar/pedidos" as AppPath, label: "Acompanhamento", icon: KanbanSquare, active: pathname.startsWith("/solar/pedidos") }]
+          : []),
+      ],
+    });
+  }
+  if (show("cupons")) tabs.push({ id: "cupons", label: "Cupons", icon: KeyRound, to: "/solar/cupons", active: pathname.startsWith("/solar/cupons") });
+  if (show("carregadores.home")) tabs.push({ id: "carreg-home", label: "Home", icon: Home, to: "/carregadores", active: pathname === "/carregadores" });
+  if (show("carregadores.visao-geral")) tabs.push({ id: "carreg-visao", label: "Visão Geral", icon: BarChart3, to: "/carregadores/visao-geral", active: pathname.startsWith("/carregadores/visao-geral") });
+  if (show("carregadores.tarefas")) tabs.push({ id: "carreg-tarefas", label: "Tarefas", icon: Calendar, to: "/carregadores/tarefas", active: pathname.startsWith("/carregadores/tarefas") });
+  if (show("carregadores.clientes")) tabs.push({ id: "carreg-clientes", label: "Clientes", icon: Users, to: "/carregadores/clientes/cadastros", active: pathname.startsWith("/carregadores/clientes") });
+  if (show("carregadores.propostas")) {
+    tabs.push({
+      id: "propostas-carregadores",
+      label: "Propostas",
+      icon: Zap,
+      active: propostasCarregadoresActive,
+      items: [
+        { to: "/carregadores/propostas", label: "Propostas", icon: Zap, active: pathname.startsWith("/carregadores/propostas") },
+        ...(show("carregadores.pedidos")
+          ? [{ to: "/carregadores/pedidos" as AppPath, label: "Acompanhamento", icon: ShoppingCart, active: pathname.startsWith("/carregadores/pedidos") }]
+          : []),
+      ],
+    });
+  }
+  if (show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.ranking")) {
+    tabs.push({
+      id: "clientes",
+      label: "Clientes",
+      icon: Layers,
+      active: clientesActive,
+      items: [
+        ...(show("clientes.cadastros")
+          ? [{ to: "/solar/clientes/cadastros" as AppPath, label: "Cadastros", icon: ClipboardList, active: pathname.startsWith("/solar/clientes/cadastros") }]
+          : []),
+        ...(show("clientes.segmentacao") || show("clientes.perfil")
+          ? [{
+              to: (show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : "/solar/clientes/perfil") as AppPath,
+              label: "Perfil de Cliente",
+              icon: UserIcon,
+              active: pathname.startsWith("/solar/clientes/segmentacao") || pathname.startsWith("/solar/clientes/perfil"),
+            }]
+          : []),
+        ...(show("clientes.ranking")
+          ? [{ to: "/solar/clientes/ranking" as AppPath, label: "Ranking", icon: Trophy, active: pathname.startsWith("/solar/clientes/ranking") }]
+          : []),
+      ],
+    });
+  }
+  if (show("dashboards")) {
+    tabs.push({
+      id: "dashboards",
+      label: "Dashboards",
+      icon: BarChart3,
+      active: dashboardsActive,
+      items: show("dashboards.metas")
+        ? [{ to: "/solar/dashboards/metas", label: "Metas", icon: Target, active: pathname.startsWith("/solar/dashboards/metas") }]
+        : undefined,
+      to: "/solar/dashboards/metas",
+    });
+  }
+  if (show("marketing.home")) {
+    tabs.push({ id: "mkt-home", label: "Home", icon: Megaphone, to: "/marketing", active: pathname === "/marketing" });
+    if (show("marketing.social")) tabs.push({ id: "mkt-social", label: "Social Mídia", icon: Users, to: "/marketing/social", active: pathname.startsWith("/marketing/social") });
+    if (show("marketing.trafego")) tabs.push({ id: "mkt-trafego", label: "Mídia Paga", icon: Filter, to: "/marketing/trafego", active: pathname.startsWith("/marketing/trafego") });
+    if (show("marketing.cohort")) tabs.push({ id: "mkt-cohort", label: "Análise Cohort", icon: LineChart, to: "/marketing/cohort", active: pathname.startsWith("/marketing/cohort") });
+    if (show("marketing.cac")) tabs.push({ id: "mkt-cac", label: "CAC", icon: TrendingUp, to: "/marketing/cac", active: pathname.startsWith("/marketing/cac") });
+    if (show("marketing.gargalo")) tabs.push({ id: "mkt-gargalo", label: "Mapa de Gargalo", icon: Filter, to: "/marketing/gargalo", active: pathname.startsWith("/marketing/gargalo") });
+    if (show("marketing.prevendas")) tabs.push({ id: "mkt-prevendas", label: "Pré-Vendas", icon: ClipboardList, to: "/marketing/pre-vendas", active: pathname.startsWith("/marketing/pre-vendas") });
+    if (show("marketing.metas")) tabs.push({ id: "mkt-metas", label: "Metas", icon: Target, to: "/marketing/metas", active: pathname.startsWith("/marketing/metas") });
+  }
+  if (show("financeiro.home")) {
+    tabs.push({ id: "fin-home", label: "Home", icon: Building2, to: "/financeiro", active: pathname === "/financeiro" });
+    if (show("financeiro.condicoes")) tabs.push({ id: "fin-condicoes", label: "Condições de Pagamento", icon: Percent, to: "/financeiro/condicoes", active: pathname.startsWith("/financeiro/condicoes") });
+    if (show("financeiro.credito")) tabs.push({ id: "fin-credito", label: "Análise de Crédito", icon: ShieldCheck, to: "/financeiro/credito", active: pathname.startsWith("/financeiro/credito") });
+  }
+
+  /** Itens "planos" para a busca global (command palette) — só o menu, sem dados. */
+  const itensBusca = tabs.flatMap((t) =>
+    t.items?.length
+      ? t.items.map((i) => ({ to: i.to, label: `${t.label} › ${i.label}`, icon: i.icon }))
+      : t.to
+        ? [{ to: t.to, label: t.label, icon: t.icon }]
+        : [],
+  );
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setBuscaOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
 
   const navTree = (collapsed: boolean) => (
           <nav className="px-2 py-2 flex-1 overflow-y-auto">
@@ -490,35 +629,155 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen flex bg-background">
-      <aside
-        className={cn(
-          "hidden md:flex shrink-0 flex-col border-r border-border bg-surface/60 backdrop-blur transition-[width] duration-300 relative",
-          collapsed ? "w-16" : "w-64",
-        )}
-      >
-        <div className={cn("flex items-center gap-3 py-6", collapsed ? "px-3 justify-center" : "px-5")}>
-          <img src={brand.logo} alt={brand.label} className={cn("h-9 w-auto rounded shrink-0 object-contain", isAdminArea && "dark:invert")} />
-          {!collapsed && (
-            <div className="min-w-0">
-              <div className="font-display font-bold text-base leading-none truncate">Portal 2P</div>
-              <div className="text-[11px] text-muted-foreground mt-1 truncate">{brand.label}</div>
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* ---------- Barra superior (identidade + utilidades) ---------- */}
+      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-lg">
+        <div className="flex items-center gap-2 px-3 sm:px-4 md:px-6 h-14">
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="md:hidden h-10 w-10 -ml-1 shrink-0 rounded-lg border border-border bg-surface flex items-center justify-center"
+            aria-label="Abrir menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <Link to="/" className="flex items-center gap-2.5 min-w-0 shrink-0">
+            <img
+              src={brand.logo}
+              alt={brand.label}
+              className={cn("h-8 w-auto rounded object-contain shrink-0", isAdminArea && "dark:invert")}
+            />
+            <span className="min-w-0 hidden sm:block">
+              <span className="block font-display font-bold text-sm leading-none truncate">Portal 2P</span>
+              <span className="block text-[11px] text-muted-foreground mt-0.5 truncate">{brand.label}</span>
+            </span>
+          </Link>
+
+          <div className="hidden md:flex items-center gap-2 ml-1">
+            <InstanceSwitcher />
+            {instance === "marketing" && <MarketingUnitSwitch />}
+          </div>
+
+          {/* Busca global do menu (⌘K) */}
+          <button
+            onClick={() => setBuscaOpen(true)}
+            className="hidden lg:flex items-center gap-2 mx-auto h-9 w-[min(420px,32vw)] rounded-lg border border-border bg-surface px-3 text-sm text-muted-foreground hover:bg-surface-2"
+          >
+            <Search className="h-4 w-4 shrink-0" />
+            <span className="truncate">Buscar telas…</span>
+            <kbd className="ml-auto text-[10px] rounded border border-border px-1 py-0.5">⌘K</kbd>
+          </button>
+
+          <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
+            <button
+              onClick={() => setBuscaOpen(true)}
+              className="lg:hidden h-9 w-9 rounded-lg border border-border bg-surface hover:bg-surface-2 flex items-center justify-center"
+              aria-label="Buscar telas"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+            {user && roles.length === 0 && (
+              <button
+                onClick={handlePromote}
+                className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Tornar-me admin
+              </button>
+            )}
+            <div className="hidden sm:block"><ThemeToggle /></div>
+            <NotificationsDropdown />
+
+            {canSeeAdminMenu && (
+              <div className="relative hidden md:block">
+                <button
+                  onClick={() => setAdminMenuOpen((v) => !v)}
+                  className="h-9 w-9 rounded-lg border border-border bg-surface hover:bg-surface-2 flex items-center justify-center relative"
+                  title={
+                    newFeatures.length > 0
+                      ? `${newFeatures.length} nova(s) tela(s) bloqueada(s) por padrão`
+                      : "Configurações de administrador"
+                  }
+                >
+                  <Settings className="h-4 w-4" />
+                  {newFeatures.length > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-amber-500 text-[10px] font-bold text-black flex items-center justify-center">
+                      {newFeatures.length}
+                    </span>
+                  )}
+                </button>
+                {adminMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setAdminMenuOpen(false)} />
+                    <div className="absolute right-0 top-11 z-50 w-60 bg-card text-card-foreground border border-border rounded-lg shadow-xl overflow-hidden">
+                      <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+                        Grupo 2P • Administração
+                      </div>
+                      {visibleAdminSections.map((s) => (
+                        <AdminMenuLink
+                          key={s.id}
+                          to={s.home}
+                          label={s.label}
+                          icon={s.icon}
+                          onClick={() => setAdminMenuOpen(false)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                className="h-9 w-9 rounded-full overflow-hidden bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center font-semibold text-sm text-primary-foreground ring-2 ring-background"
+              >
+                {avatarUrl ? <img src={avatarUrl} alt="" width={32} height={32} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials}
+              </button>
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 top-10 z-50 w-60 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border">
+                      <div className="font-medium text-sm truncate">{profile?.full_name ?? user?.email}</div>
+                      <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+                      {roles.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {roles.map((r) => (
+                            <span key={r} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary">
+                              {ROLE_LABELS[r]}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <Link to="/perfil" onClick={() => setMenuOpen(false)} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2">
+                      <UserIcon className="h-4 w-4" /> Meu perfil
+                    </Link>
+                    <button onClick={handleSignOut} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 text-destructive border-t border-border">
+                      <LogOut className="h-4 w-4" /> Sair
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        {isAdminArea ? <AdminSidebar pathname={pathname} collapsed={collapsed} /> : navTree(collapsed)}
+        {/* ---------- Barra de abas (navegação principal) ---------- */}
+        {!isAdminArea && tabs.length > 0 && (
+          <nav className="hidden md:block border-t border-border/60 bg-surface/40">
+            <div className="flex items-stretch gap-0.5 px-3 md:px-6 overflow-x-auto">
+              {tabs.map((t) => (
+                <TopTab key={t.id} tab={t} />
+              ))}
+            </div>
+          </nav>
+        )}
+      </header>
 
-        <button
-          onClick={toggleCollapsed}
-          className="absolute -right-3 top-7 h-6 w-6 rounded-full bg-surface border border-border flex items-center justify-center shadow hover:bg-surface-2 z-10"
-          aria-label="Recolher menu"
-        >
-          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-        </button>
-      </aside>
-
-      {/* Navegação mobile — gaveta lateral com o mesmo menu do desktop */}
+      {/* Navegação mobile — gaveta lateral com o mesmo menu de sempre */}
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent side="left" className="w-[86vw] max-w-[320px] p-0 flex flex-col md:hidden">
           <SheetHeader className="px-4 py-4 border-b border-border text-left">
@@ -551,131 +810,145 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </SheetContent>
       </Sheet>
 
-      <main className="flex-1 min-w-0">
-        <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-lg">
-          <div className="flex items-center gap-2 px-3 sm:px-4 md:px-6 h-14 md:h-16">
-            <button
-              onClick={() => setMobileNavOpen(true)}
-              className="md:hidden h-10 w-10 -ml-1 shrink-0 rounded-lg border border-border bg-surface flex items-center justify-center"
-              aria-label="Abrir menu"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <div className="md:hidden flex items-center gap-2 min-w-0">
-              <img src={brand.logo} alt={brand.label} className={cn("h-7 w-auto rounded object-contain shrink-0", isGroupAdminPath(pathname) && "dark:invert")} />
-              <span className="font-display font-bold truncate">Portal 2P</span>
-            </div>
-            <div className="hidden md:flex flex-1" />
-
-            <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
-              {user && roles.length === 0 && (
-                <button
-                  onClick={handlePromote}
-                  className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25"
-                >
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Tornar-me admin
-                </button>
-              )}
-              <Link
-                to="/tv-geral"
-                target="_blank"
-                title="Painel de TV — 2P Group"
-                className="hidden sm:flex h-9 w-9 rounded-lg border border-border bg-gradient-to-br from-[#F28A3C]/20 to-[#1A00B0]/20 hover:from-[#F28A3C]/35 hover:to-[#1A00B0]/35 flex items-center justify-center transition-colors"
-              >
-                <Tv className="h-4 w-4" />
-              </Link>
-              <div className="hidden md:flex items-center gap-2">
-                <InstanceSwitcher />
-                {instance === "marketing" && <MarketingUnitSwitch />}
-              </div>
-              <div className="hidden sm:block"><ThemeToggle /></div>
-              <NotificationsDropdown />
-
-              {canSeeAdminMenu && (
-                <div className="relative hidden md:block">
-                  <button
-                    onClick={() => setAdminMenuOpen((v) => !v)}
-                    className="h-9 w-9 rounded-lg border border-border bg-surface hover:bg-surface-2 flex items-center justify-center relative"
-                    title={
-                      newFeatures.length > 0
-                        ? `${newFeatures.length} nova(s) tela(s) bloqueada(s) por padrão`
-                        : "Configurações de administrador"
-                    }
-                  >
-                    <Settings className="h-4 w-4" />
-                    {newFeatures.length > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-amber-500 text-[10px] font-bold text-black flex items-center justify-center">
-                        {newFeatures.length}
-                      </span>
-                    )}
-                  </button>
-                  {adminMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setAdminMenuOpen(false)} />
-                      <div className="absolute right-0 top-11 z-50 w-60 bg-card text-card-foreground border border-border rounded-lg shadow-xl overflow-hidden">
-                        <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
-                          Grupo 2P • Administração
-                        </div>
-                        {visibleAdminSections.map((s) => (
-                          <AdminMenuLink
-                            key={s.id}
-                            to={s.home}
-                            label={s.label}
-                            icon={s.icon}
-                            onClick={() => setAdminMenuOpen(false)}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-
-              <div className="relative">
-                <button
-                  onClick={() => setMenuOpen((v) => !v)}
-                  className="h-9 w-9 rounded-full overflow-hidden bg-gradient-to-br from-primary to-[oklch(0.62_0.22_25)] flex items-center justify-center font-semibold text-sm text-primary-foreground ring-2 ring-background"
-                >
-                  {avatarUrl ? <img src={avatarUrl} alt="" width={32} height={32} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials}
-                </button>
-                {menuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                    <div className="absolute right-0 top-10 z-50 w-60 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
-                      <div className="px-4 py-3 border-b border-border">
-                        <div className="font-medium text-sm truncate">{profile?.full_name ?? user?.email}</div>
-                        <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
-                        {roles.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {roles.map((r) => (
-                              <span key={r} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary">
-                                {ROLE_LABELS[r]}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <Link to="/perfil" onClick={() => setMenuOpen(false)} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2">
-                        <UserIcon className="h-4 w-4" /> Meu perfil
-                      </Link>
-                      <button onClick={handleSignOut} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 text-destructive border-t border-border">
-                        <LogOut className="h-4 w-4" /> Sair
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+      <div className="flex flex-1 min-w-0">
+        {/* Área do Grupo 2P mantém o menu lateral próprio (muitas seções). */}
+        {isAdminArea && (
+          <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-surface/60 backdrop-blur">
+            <AdminSidebar pathname={pathname} collapsed={false} />
+          </aside>
+        )}
+        <main className="flex-1 min-w-0">
+          {showBar && <div className="route-bar" aria-hidden />}
+          <div key={pathname} className="p-4 sm:p-5 md:p-6 pb-16 page-transition">
+            {!instanceLoading && !isRouteAllowed(pathname) ? <AccessDenied /> : children}
           </div>
-        </header>
-        {showBar && <div className="route-bar" aria-hidden />}
-        <div key={pathname} className="p-4 sm:p-5 md:p-6 page-transition">
-          {!instanceLoading && !isRouteAllowed(pathname) ? <AccessDenied /> : children}
-        </div>
+        </main>
+      </div>
 
-      </main>
+      {/* ---------- Barra inferior (utilidades globais) ---------- */}
+      <div className="fixed inset-x-0 bottom-0 z-30 h-9 border-t border-border bg-background/90 backdrop-blur flex items-center gap-2 px-3 md:px-6 text-xs text-muted-foreground">
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("atlas:abrir"))}
+          className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md hover:bg-surface-2 hover:text-foreground"
+          title="Abrir o chat do Atlas"
+        >
+          <AtlasIcon className="h-3.5 w-3.5 text-primary" />
+          Atlas
+        </button>
+        <Link
+          to="/tv-geral"
+          target="_blank"
+          title="Painel de TV — 2P Group"
+          className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md hover:bg-surface-2 hover:text-foreground"
+        >
+          <Tv className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Painel de TV</span>
+        </Link>
+        <span className="ml-auto truncate">{brand.label}</span>
+      </div>
+
       <AtlasWidget />
+
+      <CommandDialog open={buscaOpen} onOpenChange={setBuscaOpen}>
+        <CommandInput placeholder="Buscar telas do portal…" />
+        <CommandList>
+          <CommandEmpty>Nenhuma tela encontrada.</CommandEmpty>
+          <CommandGroup heading="Navegação">
+            {itensBusca.map((i) => {
+              const Icon = i.icon;
+              return (
+                <CommandItem
+                  key={i.to + i.label}
+                  value={i.label}
+                  onSelect={() => {
+                    setBuscaOpen(false);
+                    void navigate({ to: i.to });
+                  }}
+                >
+                  <Icon className="mr-2 h-4 w-4" />
+                  {i.label}
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+    </div>
+  );
+}
+
+type TabItem = {
+  id: string;
+  label: string;
+  icon: typeof Home;
+  to?: AppPath;
+  active: boolean;
+  destaque?: boolean;
+  items?: { to: AppPath; label: string; icon: typeof Home; active: boolean }[];
+};
+
+const TAB_CLS =
+  "relative flex items-center gap-1.5 px-3 h-11 text-sm whitespace-nowrap border-b-2 transition-colors";
+
+/** Aba do menu de topo: link direto, ou botão com submenu quando tem filhos. */
+function TopTab({ tab }: { tab: TabItem }) {
+  const [open, setOpen] = useState(false);
+  const Icon = tab.icon;
+  const cls = cn(
+    TAB_CLS,
+    tab.active
+      ? "border-primary text-primary font-medium"
+      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-surface-2",
+  );
+
+  if (!tab.items?.length) {
+    return (
+      <Link to={tab.to!} preload="intent" className={cls}>
+        <Icon className={cn("h-4 w-4", tab.destaque && !tab.active && "text-primary")} />
+        {tab.label}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen((v) => !v)} className={cls}>
+        <Icon className={cn("h-4 w-4", tab.destaque && !tab.active && "text-primary")} />
+        {tab.label}
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-11 z-50 w-60 bg-card text-card-foreground border border-border rounded-lg shadow-xl overflow-hidden p-1">
+            {tab.to && (
+              <Link
+                to={tab.to}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-surface-2"
+              >
+                <Icon className="h-4 w-4" /> {tab.label}
+              </Link>
+            )}
+            {tab.items.map((i) => {
+              const ItemIcon = i.icon;
+              return (
+                <Link
+                  key={i.to}
+                  to={i.to}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-surface-2",
+                    i.active && "text-primary font-medium",
+                  )}
+                >
+                  <ItemIcon className="h-4 w-4" /> {i.label}
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

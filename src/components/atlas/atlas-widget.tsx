@@ -148,6 +148,13 @@ export function AtlasWidget() {
 
   const contexto = useMemo(() => `o usuário está na tela ${pathname}`, [pathname]);
 
+  // A barra inferior do portal abre o chat por evento (o gatilho vive lá).
+  useEffect(() => {
+    const abrir = () => setAberto(true);
+    window.addEventListener("atlas:abrir", abrir);
+    return () => window.removeEventListener("atlas:abrir", abrir);
+  }, [setAberto]);
+
   // Não exibe o botão flutuante dentro das telas de proposta (criação, edição,
   // visualização) para não competir com o formulário/composer da proposta.
   const esconderNaProposta =
