@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
 import { useStickyOpen } from "@/hooks/use-sticky-open";
-import { AlertTriangle, KanbanSquare, List, Loader2, Search } from "lucide-react";
+import { AlertTriangle, CalendarCheck, KanbanSquare, List, Loader2, PackageCheck, Search, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { listarPropostasFn, listarPagamentosFn } from "@/lib/propostas.functions";
 import { fmtBRL } from "@/lib/carregadores";
@@ -45,7 +45,12 @@ type Pedido = {
   code: string;
   title: string;
   client: string;
-  closing: string;
+  /** CloseDate: data real de fechamento (finalizado_em) ou a previsão gravada. */
+  fechamento: string;
+  /** Previsão de despacho vinda do SAP (expedido_em), YYYY-MM-DD. */
+  previsaoDespacho: string | null;
+  /** Estimativa de entrega (coleta + prazo do frete), YYYY-MM-DD. */
+  estimativaEntrega: string | null;
   value: number;
   status: PedidoStatus;
   uf: string;
@@ -53,6 +58,17 @@ type Pedido = {
   pix: PagamentoStatus | null;
   pixEm: string | null;
 };
+
+/** Data extra exibida por etapa: despacho em Separação/Faturado, entrega em Coletado. */
+function previsaoDo(p: Pedido) {
+  if (p.status === "Separação" || p.status === "Faturado")
+    return { icon: Truck, rotulo: "Previsão de despacho", data: p.previsaoDespacho };
+  if (p.status === "Coletado")
+    return { icon: PackageCheck, rotulo: "Estimativa de entrega", data: p.estimativaEntrega };
+  return null;
+}
+
+const hojeBR = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
 function datePtBr(iso: string | null) {
   return fmtDataBR(iso);
@@ -80,7 +96,7 @@ function CarregadoresPedidosPage() {
       const data = await listarPropostasFn({
         data: {
           organizacao: "carregadores",
-          select: "id,numero,cliente_nome,uf,status,totais,created_at,created_by",
+          select: "id,numero,cliente_nome,uf,status,totais,created_at,created_by,finalizado_em,previsao_fechamento,expedido_em,estimativa_entrega",
           statusIn: PEDIDO_STATUS as unknown as string[],
         },
       });
@@ -104,7 +120,9 @@ function CarregadoresPedidosPage() {
         code: r.numero ?? r.id.slice(-6).toUpperCase(),
         title: r.numero ? `Proposta ${r.numero}` : "Proposta",
         client: r.cliente_nome,
-        closing: datePtBr(r.created_at),
+        fechamento: datePtBr(r.finalizado_em ?? r.previsao_fechamento ?? r.created_at),
+        previsaoDespacho: r.expedido_em ? String(r.expedido_em).slice(0, 10) : null,
+        estimativaEntrega: r.estimativa_entrega ? String(r.estimativa_entrega).slice(0, 10) : null,
         value: Number(totais.valorTotal ?? 0),
         status: r.status as PedidoStatus,
         uf: r.uf,
@@ -205,36 +223,59 @@ function KanbanView({ data }: { data: Pedido[] }) {
               <span className="text-xs font-bold bg-background/30 px-2 py-0.5 rounded">{cards.length}</span>
             </div>
             <div className="p-2 space-y-2 overflow-y-auto flex-1">
-              {cards.map((c) => (
-                <div key={c.id} className="bg-surface-2 hover:bg-surface rounded-xl p-3 cursor-pointer border border-transparent hover:border-primary/30 transition-all">
-                  <div className="text-sm font-medium truncate">{c.code} — {c.title}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-primary mt-2">Cliente</div>
-                  <div className="text-xs text-foreground/90 leading-snug line-clamp-2">{c.client}</div>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-primary">Data</div>
-                      <div className="text-xs">{c.closing}</div>
+              {cards.map((c) => {
+                const prev = previsaoDo(c);
+                const atrasada = prev?.data != null && prev.data < hojeBR() && c.status === "Coletado";
+                return (
+                  <div key={c.id} className="bg-surface-2 hover:bg-surface rounded-xl p-3 cursor-pointer border border-transparent hover:border-primary/30 hover:shadow-md transition-all">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm font-semibold truncate tabular-nums">{c.code}</div>
+                      <span className="shrink-0 rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                        {c.uf}
+                      </span>
                     </div>
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wider text-primary">Valor</div>
-                      <div className="text-xs font-semibold">{fmtBRL(c.value)}</div>
-                    </div>
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-2">UF {c.uf}</div>
-                  {c.pix && (
-                    <div className="mt-2 space-y-1">
-                      <PixStatusBadge status={c.pix} />
-                      {acaoAtlasPix(c.pix) && (
-                        <div className="text-[11px] leading-snug text-muted-foreground">
-                          <span className="text-primary font-medium">Atlas: </span>
-                          {acaoAtlasPix(c.pix)!.acao}
+                    <div className="text-xs text-foreground/90 leading-snug line-clamp-2 mt-1.5">{c.client}</div>
+                    <div className="grid grid-cols-2 gap-2 mt-2.5 pt-2.5 border-t border-border/60">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-primary flex items-center gap-1">
+                          <CalendarCheck className="h-3 w-3" /> Fechamento
                         </div>
-                      )}
+                        <div className="text-xs mt-0.5">{c.fechamento}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-primary">Valor</div>
+                        <div className="text-xs font-semibold mt-0.5">{fmtBRL(c.value)}</div>
+                      </div>
                     </div>
-                  )}
+                    {prev && (
+                      <div
+                        className={cn(
+                          "mt-2.5 flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px]",
+                          atrasada ? "border-warning/30 bg-warning/10" : "border-primary/15 bg-primary/5",
+                        )}
+                      >
+                        <prev.icon className={cn("h-3.5 w-3.5 shrink-0", atrasada ? "text-warning" : "text-primary")} />
+                        <span className="text-muted-foreground">{prev.rotulo}</span>
+                        <span className={cn("ml-auto font-semibold", atrasada && "text-warning")}>
+                          {prev.data ? fmtDataBR(prev.data) : "—"}
+                        </span>
+                      </div>
+                    )}
+                    {c.pix && (
+                      <div className="mt-2 space-y-1">
+                        <PixStatusBadge status={c.pix} />
+                        {acaoAtlasPix(c.pix) && (
+                          <div className="text-[11px] leading-snug text-muted-foreground">
+                            <span className="text-primary font-medium">Atlas: </span>
+                            {acaoAtlasPix(c.pix)!.acao}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                </div>
-              ))}
+                  </div>
+                );
+              })}
               {cards.length === 0 && (
                 <div className="text-xs text-muted-foreground px-2 py-6 text-center">Nenhum pedido neste status.</div>
               )}
@@ -261,12 +302,15 @@ function ListView({ data }: { data: Pedido[] }) {
               <th className="text-center px-4 py-3">Status</th>
               <th className="text-left px-4 py-3">Pix</th>
               <th className="text-left px-4 py-3">UF</th>
-              <th className="text-left px-4 py-3">Data</th>
+              <th className="text-left px-4 py-3">Fechamento</th>
+              <th className="text-left px-4 py-3">Previsão</th>
               <th className="text-right px-4 py-3">Valor</th>
             </tr>
           </thead>
           <tbody>
-            {data.map((o) => (
+            {data.map((o) => {
+              const prev = previsaoDo(o);
+              return (
               <tr key={o.id} className="border-b border-border/50 hover:bg-surface-2">
                 <td className="px-4 py-3 font-medium">{o.code}</td>
                 <td className="px-4 py-3 text-muted-foreground">{o.title}</td>
@@ -290,13 +334,24 @@ function ListView({ data }: { data: Pedido[] }) {
                   )}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{o.uf}</td>
-                <td className="px-4 py-3 text-muted-foreground">{o.closing}</td>
+                <td className="px-4 py-3 text-muted-foreground">{o.fechamento}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {prev ? (
+                    <span className="inline-flex items-center gap-1.5" title={prev.rotulo}>
+                      <prev.icon className="h-3.5 w-3.5 text-primary" />
+                      {prev.data ? fmtDataBR(prev.data) : "—"}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td className="px-4 py-3 text-right font-semibold">{fmtBRL(o.value)}</td>
               </tr>
-            ))}
+              );
+            })}
             {data.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                   Nenhum pedido encontrado nos status em curso.
                 </td>
               </tr>

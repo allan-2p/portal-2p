@@ -36,6 +36,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ## [Não publicado]
 
 ### Alterado
+- **Acompanhamento (Solar e Carregadores)**: a data do card/linha passa a ser o **Fechamento** (CloseDate — data real de fechamento ou a previsão gravada), no lugar da data de criação. Nas etapas **Separação** e **Faturado** o card mostra a **Previsão de despacho** vinda do SAP; em **Coletado**, a **Estimativa de entrega** (coleta + prazo do frete), destacada em amarelo quando vencida. Cards com novo visual: UF em selo, hierarquia mais limpa e datas com ícones; a visão em lista ganha a coluna "Previsão".
 - Carregadores: PIS/COFINS passa a incidir sobre a base fiscal (Total NF − IPI − ICMS) × alíquota, em todos os casos. O fator empírico `0,870722` (calibrado com o SAP só para ICMS 4%) foi aposentado, e com ele o bloqueio de envio para operações com ICMS diferente de 4% — o valor líquido (VALOR_PROD) agora sai da mesma fórmula fiscal para qualquer alíquota. Diferença de ~0,05% no líquido enviado ao SAP; validar a próxima ordem criada.
 - Carregadores: totais da proposta passam a gravar `pisCofinsRate` (alíquota nominal de PIS/COFINS).
 
