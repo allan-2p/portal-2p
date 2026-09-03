@@ -78,6 +78,8 @@ export type ClienteSapInput = {
   razao_social: string;
   nome_fantasia?: string | null;
   ie?: string | null;
+  /** IE HABILITADA na consulta (CNPJá/SEFAZ) — fonte única do ICMSTAXPAY. */
+  ie_habilitada?: boolean | null;
   suframa?: string | null;
   contribuinte: boolean;
   regime_tributario?: string | null;
@@ -219,7 +221,13 @@ export function camposSapCliente(c: ClienteSapInput): CamposSapCliente {
     // Cliente final (faturamento direto): CFOPC é FIXO pelo tipo de documento —
     // a finalidade de uso só vale para o cadastro do integrador.
     cfopc = pessoaFisica ? "06" : "90";
-    const temIe = !pessoaFisica && ie && ie.toUpperCase() !== "ISENTO";
+    // Contribuinte = IE HABILITADA. O booleano da consulta manda; sem ele
+    // (registros legados) cai para a mera presença de IE.
+    const temIe = !pessoaFisica && (
+      typeof c.ie_habilitada === "boolean"
+        ? c.ie_habilitada
+        : Boolean(ie && ie.toUpperCase() !== "ISENTO")
+    );
     icmstaxpay = temIe ? "01" : "09";
     if (!temIe) ie = ie || "ISENTO";
   } else if (contribuinte && finalidade === "Revenda") cfopc = "08";

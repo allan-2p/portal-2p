@@ -1343,6 +1343,12 @@ async function cadastrarParceiroFaturamento(
       doc,
       razao_social: String(fat["nome"] ?? row["cliente_nome"] ?? "").trim(),
       ie: String(fat["ie"] ?? ""),
+      ie_habilitada:
+        doc.length === 11
+          ? false
+          : typeof fat["ie_habilitada"] === "boolean"
+            ? (fat["ie_habilitada"] as boolean)
+            : null,
       contribuinte: doc.length === 11 ? false : fat["contribuinte"] === true,
       cliente_final: true,
       email: String(row["cliente_email"] ?? ""),
