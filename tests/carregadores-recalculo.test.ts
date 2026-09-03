@@ -85,7 +85,7 @@ describe("Preço Sugerido", () => {
 
   // Markup de 37% sobre o custo ≠ MB% de 37%: impostos e frete reduzem a
   // receita líquida, então o sugerido é só o ponto de partida — a política de
-  // MB mínima (33%) é validada à parte, no cálculo da proposta.
+  // MB mínima configurável é validada à parte, no cálculo da proposta.
   it("é markup sobre o custo, não MB% — a política mínima é avaliada no cálculo", () => {
     const d = calc(estado());
     expect(d.valorItens).toBeCloseTo(precoSugeridoPadrao(PRODUTO.custo), 6);
@@ -170,7 +170,8 @@ describe("Recalculo dos itens", () => {
 });
 
 describe("Política de margem", () => {
-  it("reprova preço abaixo da MB mínima de 33%", () => {
+  it("reprova preço abaixo da MB mínima configurada em 10%", () => {
+    expect(config.politica_mb_min).toBe(0.1);
     const d = calc(
       estado({
         itens: [{ key: "1", produtoId: PRODUTO.id, qtd: 1, valor: PRODUTO.custo * 1.05, valorManual: true }],

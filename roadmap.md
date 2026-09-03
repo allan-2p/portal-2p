@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Em andamento / perguntas
-- [ ] Carregadores: tornar a margem mínima editável na Moderação, iniciar em 10% e bloquear orçamento/finalização abaixo do limite.
+- [x] Carregadores: tornar a margem mínima editável na Moderação, iniciar em 10% e bloquear orçamento/finalização abaixo do limite.
 - [x] Salesforce: priorizar na fila pedidos já vinculados quando houver compra, nº SAP, mudança de status ou cancelamento; reconciliar o pedido 52671 e casos equivalentes.
 - [x] Backfill Salesforce: 6.393 propostas sem `sf_status` enfileiradas (pendente) para o cron `salesforce-fila` drenar.
 - [x] Home/dossiê: olhinho e "dar perda" apareciam só em parte das oportunidades (limite de 300 refs no vínculo) — corrigido com lotes e casamento por número.

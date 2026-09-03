@@ -76,7 +76,7 @@ export const CARREGADORES_CONFIG_FALLBACK: CarregadoresConfig = {
   pis_cofins: 0.0925,
   aliq_inter: 0.04,
   majoracao_sem_ie: 0.25,
-  politica_mb_min: 0.33,
+  politica_mb_min: 0.1,
   mb_atencao: 0.4,
   comissao_base: "MB",
   comissao_pct: 0,
@@ -636,8 +636,8 @@ export function statusMB(mbPct: number, config: CarregadoresConfig): MbStatus {
 
 /**
  * Margem padrão aplicada sobre o custo para sugerir o preço de venda (37%).
- * Não confundir com a política de MB mínima (33%, `politica_mb_min`): o
- * sugerido nasce em 37% e a proposta nunca pode ser salva abaixo de 33%.
+ * Não confundir com a política de MB mínima configurável (`politica_mb_min`):
+ * o sugerido nasce em 37% e a proposta respeita o limite definido na Moderação.
  */
 export const MARGEM_PRECO_SUGERIDO = 0.37;
 

@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AppLayout } from "@/components/app-layout";
-import { useCarregadoresConfig } from "@/hooks/use-carregadores";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useCarregadoresConfig, useCarregadoresInvalidate } from "@/hooks/use-carregadores";
 import { CARREGADORES_CONFIG_FALLBACK, fmtPct } from "@/lib/carregadores";
+import { updateCarregadoresMargemMinima } from "@/lib/carregadores-config.functions";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
+import { Save } from "lucide-react";
+import { toast } from "sonner";
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/regras")({
@@ -55,6 +63,32 @@ function Campo({ nome, origem }: { nome: string; origem: string }) {
 function RegrasPage() {
   const { data: cfgData } = useCarregadoresConfig();
   const cfg = cfgData ?? CARREGADORES_CONFIG_FALLBACK;
+  const invalidate = useCarregadoresInvalidate();
+  const updateMargem = useServerFn(updateCarregadoresMargemMinima);
+  const [margemMinima, setMargemMinima] = useState("10.00");
+  const [salvandoMargem, setSalvandoMargem] = useState(false);
+
+  useEffect(() => {
+    if (cfgData) setMargemMinima((cfgData.politica_mb_min * 100).toFixed(2));
+  }, [cfgData]);
+
+  async function salvarMargemMinima() {
+    const percentual = Number(margemMinima.replace(",", "."));
+    if (!Number.isFinite(percentual) || percentual < 0 || percentual > 100) {
+      toast.error("Informe uma margem entre 0% e 100%.");
+      return;
+    }
+    setSalvandoMargem(true);
+    try {
+      await updateMargem({ data: { margemMinima: percentual / 100 } });
+      invalidate();
+      toast.success("Margem mínima atualizada.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível atualizar a margem mínima.");
+    } finally {
+      setSalvandoMargem(false);
+    }
+  }
 
   return (
     <AppLayout>
@@ -67,6 +101,33 @@ function RegrasPage() {
             como os impostos são apurados e como a margem e a comissão são formadas.
           </p>
         </div>
+
+        <Section
+          title="Margem mínima para orçamento"
+          subtitle="O moderador define o limite comercial aplicado a todas as propostas de Carregadores."
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="w-full max-w-xs space-y-1.5">
+              <Label htmlFor="margem-minima">Margem bruta mínima (%)</Label>
+              <Input
+                id="margem-minima"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={margemMinima}
+                onChange={(event) => setMargemMinima(event.target.value)}
+              />
+            </div>
+            <Button onClick={salvarMargemMinima} disabled={salvandoMargem} className="gap-2">
+              <Save className="h-4 w-4" />
+              {salvandoMargem ? "Salvando…" : "Salvar margem"}
+            </Button>
+          </div>
+          <p className="text-muted-foreground">
+            Orçamentos e fechamentos com margem abaixo deste percentual ficam bloqueados no portal.
+          </p>
+        </Section>
 
         <Section
           title="1. Origem dos dados"

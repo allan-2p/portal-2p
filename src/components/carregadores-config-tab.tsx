@@ -46,7 +46,6 @@ export function CarregadoresConfigTab() {
         ipi: form.ipi,
         pis_cofins: form.pis_cofins,
         aliq_inter: form.aliq_inter,
-        politica_mb_min: form.politica_mb_min,
         cmv_max: form.cmv_max,
       },
     });
@@ -65,9 +64,6 @@ export function CarregadoresConfigTab() {
         </Field>
         <Field label="Alíquota interestadual de origem (%)">
           <Input type="number" step="0.01" value={pct("aliq_inter")} onChange={(e) => setPct("aliq_inter", e.target.value)} />
-        </Field>
-        <Field label="MB mínima de política (%)">
-          <Input type="number" step="0.01" value={pct("politica_mb_min")} onChange={(e) => setPct("politica_mb_min", e.target.value)} />
         </Field>
         <Field label="Base da comissão">
           <Select
