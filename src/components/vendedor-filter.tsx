@@ -21,12 +21,15 @@ export function VendedorFilter({
 }) {
   const { query: scopeQ, scope, ready: scopeReady } = useSellerScope();
 
+  const { user } = useAuth();
   const fetchSalespeople = useServerFn(getSalesforceSalespeople);
   const q = useQuery({
     queryKey: ["sf-salespeople"],
     queryFn: () => fetchSalespeople(),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    // Sem sessão hidratada o RPC sai sem Authorization e o servidor lança "Unauthorized".
+    enabled: !!user,
   });
 
   // Fail-safe: enquanto o escopo não carrega OU se der erro, trata como Individual
