@@ -53,8 +53,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [buscaOpen, setBuscaOpen] = useState(false);
   // Menus/toggles lembram o estado durante a navegação (e entre sessões).
-  const [collapsed, toggleCollapsed] = useStickyOpen(COLLAPSE_KEY, false);
   const [clientesOpen, toggleClientes] = useStickyOpen(CLIENTES_OPEN_KEY, true);
   const [dashboardsOpen, toggleDashboards] = useStickyOpen(DASHBOARDS_OPEN_KEY, true);
   const [propostasOpen, togglePropostas] = useStickyOpen(PROPOSTAS_OPEN_KEY, true);
