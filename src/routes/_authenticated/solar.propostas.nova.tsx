@@ -2023,7 +2023,17 @@ function NovaPropostaSolarPage() {
                       <button
                         key={v}
                         type="button"
-                        onClick={() => setFatTipoDoc(v)}
+                        onClick={() => {
+                          if (v === fatTipoDoc) return;
+                          setFatTipoDoc(v);
+                          // Trocar o tipo zera o documento e tudo que veio da
+                          // consulta: senão um CNPJ digitado sobra no campo CPF
+                          // e trava o "Próximo" com "CPF inválido".
+                          setFat((p) => ({ ...p, doc: "", nome: "", ie: "" }));
+                          setFatConsultadoDoc(null);
+                          setFatIeHabilitada(null);
+                          setFatContribuinte(false);
+                        }}
                         className={cn(
                           "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
                           fatTipoDoc === v
