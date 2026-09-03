@@ -105,6 +105,10 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   for (const c of [...campos, "doc", "nome", "ie"])
     faturamento[c] = String(i.faturamento?.[c] ?? "").slice(0, 160);
   faturamento['contribuinte'] = !!i.faturamento?.contribuinte;
+  // A decisão fiscal da consulta é booleana e precisa atravessar o validador —
+  // sem ela a guarda abaixo rejeitaria toda proposta faturada a CNPJ.
+  if (typeof i.faturamento?.['ie_habilitada'] === "boolean")
+    faturamento['ie_habilitada'] = i.faturamento['ie_habilitada'];
 
   // Finalidade de uso: no Solar só é exigida quando o pedido fatura o cliente
   // final — é ele que entra como parceiro no SAP e define CFOP/IE. Aceita tanto
