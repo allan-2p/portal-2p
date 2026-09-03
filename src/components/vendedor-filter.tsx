@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Users as UsersIcon, Loader2, Lock, ChevronDown, Check } from "lucide-react";
 import { getSalesforceSalespeople } from "@/lib/salesforce.functions";
 import { useSellerScope } from "@/hooks/use-seller-scope";
+import { useAuth } from "@/hooks/use-auth";
 
 export function VendedorFilter({
   value,
