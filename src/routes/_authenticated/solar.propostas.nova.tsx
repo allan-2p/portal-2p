@@ -222,6 +222,12 @@ function NovaPropostaSolarPage() {
   const [fatContribuinte, setFatContribuinte] = useState(false);
   /** Cidade/UF do faturamento ficam travadas quando vieram do CEP. */
   const [fatCepOk, setFatCepOk] = useState(false);
+  /**
+   * CNPJ do cliente final cuja consulta (botão Buscar) já foi executada com
+   * resposta. Sem a consulta o contribuinte/IE saem errados e a NF diverge no
+   * SAP — por isso a etapa 2 bloqueia o avanço até buscar o CNPJ informado.
+   */
+  const [fatConsultadoDoc, setFatConsultadoDoc] = useState<string | null>(null);
 
   /** Finalidade de uso — obrigatória quando o pedido fatura o cliente final. */
   const [finalidadeUso, setFinalidadeUso] = useState<string>("");
@@ -467,8 +473,13 @@ function NovaPropostaSolarPage() {
       setObservacoesInternas(String(p['observacoes_internas'] ?? ""));
       setTipoNf(String(p['tipo_nf'] ?? "") || "venda");
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
-      setFat((p['faturamento'] as Record<string, string>) ?? {});
+      const fatSalvo = (p['faturamento'] as Record<string, string>) ?? {};
+      setFat(fatSalvo);
       setFatContribuinte(!!(p['faturamento'] as Record<string, unknown> | null)?.['contribuinte']);
+      // Proposta já salva: o faturamento gravado já passou pela consulta/edição,
+      // então o CNPJ carregado conta como consultado (edição/duplicação).
+      const docSalvo = String(fatSalvo['doc'] ?? "").replace(/\D/g, "");
+      setFatConsultadoDoc(docSalvo || null);
       // O banco guarda o slug ("uso_consumo"); a tela usa o rótulo do SAP.
       setFinalidadeUso(p['finalidade_uso'] ? normalizarFinalidade(p['finalidade_uso']) : "");
       setFormaPagamento(String(p['forma_pagamento'] ?? ""));
@@ -1269,6 +1280,8 @@ function NovaPropostaSolarPage() {
     setEnriquecendo(true);
     try {
       const e = await enriquecer({ data: { cnpj: doc } });
+      // A consulta foi executada (com ou sem retorno): libera o avanço da etapa.
+      setFatConsultadoDoc(doc);
       if (!e) {
         toast.warning("Não encontramos dados públicos — preencha manualmente.");
         return;
@@ -1449,6 +1462,10 @@ function NovaPropostaSolarPage() {
           e.push("CPF do cliente final inválido.");
         if (fatTipoDoc === "cnpj" && !cnpjValido(docDigits))
           e.push("CNPJ do cliente final inválido.");
+        // Sem a consulta o contribuinte/IE saem "chutados" e a NF diverge no
+        // SAP (preço errado): o avanço exige o Buscar do CNPJ informado.
+        else if (fatTipoDoc === "cnpj" && fatConsultadoDoc !== docDigits)
+          e.push("Clique em Buscar para consultar o CNPJ do cliente final antes de avançar — a consulta define a inscrição estadual e se ele é contribuinte de ICMS.");
       }
       if (faturarClienteFinal && !finalidadeUso)
         e.push("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
@@ -1482,7 +1499,7 @@ function NovaPropostaSolarPage() {
     return e;
   }, [
     etapa, propostaNome, cliente, vendido, previsao, faturarClienteFinal, fat,
-    finalidadeUso, fatTipoDoc, fatContribuinte,
+    finalidadeUso, fatTipoDoc, fatContribuinte, fatConsultadoDoc,
     itens, freteMod, transportadora, freteGratis, entregaDiferente, entrega,
     modo, assinaturaCalc, calcDesatualizado, itensCalc, avisosPreco, ehKit,
     freteCotando,
