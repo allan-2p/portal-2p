@@ -173,7 +173,7 @@ export function CarregadoresComissaoRegras() {
                   {pct(r.pctComissao)} da MB). Saldo do consultor:{" "}
                   <strong>{brl(rateio.custoVendedor)}</strong>
                   {rateio.bloqueado ? (
-                    <span className="text-destructive"> · bloqueado por CMV acima de {pct(params.cmvMax)}</span>
+                    <span className="text-destructive"> · sem comissão — CMV acima de {pct(params.cmvMax)}</span>
                   ) : rateio.custoVendedor <= 0 ? (
                     <span className="text-destructive"> · sem saldo após os fixos e a indicação</span>
                   ) : (
