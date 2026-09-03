@@ -32,8 +32,16 @@ import { bootstrapFirstAdmin } from "@/lib/users.functions";
 import { useStickyOpen } from "@/hooks/use-sticky-open";
 
 import { toast } from "sonner";
+import { AtlasIcon } from "@/components/atlas/atlas-icon";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
-const COLLAPSE_KEY = "portal2p-sidebar-collapsed";
 const CLIENTES_OPEN_KEY = "portal2p-clientes-open";
 const DASHBOARDS_OPEN_KEY = "portal2p-dashboards-open";
 const PROPOSTAS_OPEN_KEY = "portal2p-propostas-open";
