@@ -200,26 +200,32 @@ export function AppLayout({ children }: { children: ReactNode }) {
    * da antiga barra lateral; muda apenas a disposição (horizontal).
    */
   const tabs: TabItem[] = [];
-  if (show("atlas")) {
-    tabs.push({
-      id: "atlas",
-      label: "Atlas",
-      icon: Sparkles,
-      to: "/solar/atlas",
-      active: atlasActive,
-      destaque: true,
-      items: show("clientes.sugestoes")
-        ? [{
-            to: "/solar/clientes/sugestoes",
-            label: "Sugestões do Atlas",
-            icon: Sparkles,
-            active: pathname.startsWith("/solar/clientes/sugestoes"),
-          }]
-        : undefined,
-    });
-  }
   if (show("home")) tabs.push({ id: "home", label: "Home", icon: Home, to: "/", active: pathname === "/" });
   if (show("tarefas")) tabs.push({ id: "tarefas", label: "Tarefas", icon: Calendar, to: "/solar/tarefas", active: pathname.startsWith("/solar/tarefas") });
+  if (show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.ranking")) {
+    tabs.push({
+      id: "clientes",
+      label: "Clientes",
+      icon: Layers,
+      active: clientesActive,
+      items: [
+        ...(show("clientes.cadastros")
+          ? [{ to: "/solar/clientes/cadastros" as AppPath, label: "Cadastros", icon: ClipboardList, active: pathname.startsWith("/solar/clientes/cadastros") }]
+          : []),
+        ...(show("clientes.segmentacao") || show("clientes.perfil")
+          ? [{
+              to: (show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : "/solar/clientes/perfil") as AppPath,
+              label: "Perfil de Cliente",
+              icon: UserIcon,
+              active: pathname.startsWith("/solar/clientes/segmentacao") || pathname.startsWith("/solar/clientes/perfil"),
+            }]
+          : []),
+        ...(show("clientes.ranking")
+          ? [{ to: "/solar/clientes/ranking" as AppPath, label: "Ranking", icon: Trophy, active: pathname.startsWith("/solar/clientes/ranking") }]
+          : []),
+      ],
+    });
+  }
   if (show("propostas")) {
     tabs.push({
       id: "propostas-solar",
@@ -249,30 +255,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { to: "/carregadores/propostas", label: "Propostas", icon: Zap, active: pathname.startsWith("/carregadores/propostas") },
         ...(show("carregadores.pedidos")
           ? [{ to: "/carregadores/pedidos" as AppPath, label: "Acompanhamento", icon: ShoppingCart, active: pathname.startsWith("/carregadores/pedidos") }]
-          : []),
-      ],
-    });
-  }
-  if (show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.ranking")) {
-    tabs.push({
-      id: "clientes",
-      label: "Clientes",
-      icon: Layers,
-      active: clientesActive,
-      items: [
-        ...(show("clientes.cadastros")
-          ? [{ to: "/solar/clientes/cadastros" as AppPath, label: "Cadastros", icon: ClipboardList, active: pathname.startsWith("/solar/clientes/cadastros") }]
-          : []),
-        ...(show("clientes.segmentacao") || show("clientes.perfil")
-          ? [{
-              to: (show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : "/solar/clientes/perfil") as AppPath,
-              label: "Perfil de Cliente",
-              icon: UserIcon,
-              active: pathname.startsWith("/solar/clientes/segmentacao") || pathname.startsWith("/solar/clientes/perfil"),
-            }]
-          : []),
-        ...(show("clientes.ranking")
-          ? [{ to: "/solar/clientes/ranking" as AppPath, label: "Ranking", icon: Trophy, active: pathname.startsWith("/solar/clientes/ranking") }]
           : []),
       ],
     });
@@ -649,14 +631,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
             />
             <span className="min-w-0 hidden sm:block">
               <span className="block font-display font-bold text-sm leading-none truncate">Portal 2P</span>
-              <span className="block text-[11px] text-muted-foreground mt-0.5 truncate">{brand.label}</span>
             </span>
           </Link>
-
-          <div className="hidden md:flex items-center gap-2 ml-1">
-            <InstanceSwitcher />
-            {instance === "marketing" && <MarketingUnitSwitch />}
-          </div>
 
           {/* Busca global do menu (⌘K) */}
           <button
@@ -768,7 +744,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {/* ---------- Barra de abas (navegação principal) ---------- */}
         {!isAdminArea && tabs.length > 0 && (
           <nav className="hidden md:block border-t border-border/60 bg-surface/40">
-            <div className="flex items-stretch gap-0.5 px-3 md:px-6 overflow-x-auto">
+            <div className="flex items-stretch gap-0.5 px-3 md:px-6 overflow-visible">
+              <div className="flex shrink-0 items-center gap-2 pr-2">
+                <InstanceSwitcher />
+                {instance === "marketing" && <MarketingUnitSwitch />}
+              </div>
               {tabs.map((t) => (
                 <TopTab key={t.id} tab={t} />
               ))}
@@ -827,14 +807,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* ---------- Barra inferior (utilidades globais) ---------- */}
       <div className="fixed inset-x-0 bottom-0 z-30 h-9 border-t border-border bg-background/90 backdrop-blur flex items-center gap-2 px-3 md:px-6 text-xs text-muted-foreground">
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent("atlas:abrir"))}
-          className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md hover:bg-surface-2 hover:text-foreground"
-          title="Abrir o chat do Atlas"
-        >
-          <AtlasIcon className="h-3.5 w-3.5 text-primary" />
-          Atlas
-        </button>
         <Link
           to="/tv-geral"
           target="_blank"
@@ -844,7 +816,44 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <Tv className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Painel de TV</span>
         </Link>
-        <span className="ml-auto truncate">{brand.label}</span>
+        <div className="ml-auto flex items-center gap-1">
+          {show("atlas") && (
+            <>
+              <Link
+                to="/solar/atlas"
+                title="Atlas em tela cheia"
+                className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md hover:bg-surface-2 hover:text-foreground"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Atlas</span>
+              </Link>
+              {show("clientes.sugestoes") && (
+                <Link
+                  to="/solar/clientes/sugestoes"
+                  title="Sugestões do Atlas"
+                  className="inline-flex items-center h-6 px-2 rounded-md hover:bg-surface-2 hover:text-foreground"
+                >
+                  Sugestões
+                </Link>
+              )}
+            </>
+          )}
+          <Link
+            to="/atlas-ia/radar"
+            title="Radar do Atlas"
+            className="inline-flex items-center h-6 px-2 rounded-md hover:bg-surface-2 hover:text-foreground"
+          >
+            Radar
+          </Link>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("atlas:abrir"))}
+            className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-surface-2 hover:text-foreground"
+            title="Abrir o chat do Atlas"
+            aria-label="Abrir o chat do Atlas"
+          >
+            <AtlasIcon className="h-4 w-4 text-primary" />
+          </button>
+        </div>
       </div>
 
       <AtlasWidget />
