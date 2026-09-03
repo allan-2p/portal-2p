@@ -391,10 +391,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       throw new Error(
         `MB% de ${fmtPct(d.mbPct)} abaixo da política mínima de ${fmtPct(config.politica_mb_min)}.`,
       );
-    if (d.cmvExcedido)
-      throw new Error(
-        `CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação da diretoria.`,
-      );
+    // CMV acima do teto não bloqueia a proposta: apenas zera a comissão (ver calcularCarregadores).
 
     // Nº SAP (VBELN): nasce no SAP, nunca no portal. Aqui é só leitura de
     // `sap_ov_numero` para exibir/imprimir; nada é gerado nem gravado.
