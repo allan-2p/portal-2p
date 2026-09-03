@@ -75,7 +75,6 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
       nomeFantasia: txt(p['cliente_nome']),
       doc: txt(p['cliente_doc']),
       ie: txt(p['cliente_ie']),
-      contribuinte: contribuinteDaNf(p),
       email: txt(p['cliente_email']),
       telefone: txt(p['cliente_telefone']),
       uf: txt(fat['uf'] || ent['uf'] || p['uf']),
