@@ -301,7 +301,7 @@ function ListView({ data }: { data: Pedido[] }) {
       <StatusLegend statuses={PEDIDO_STATUS} />
       <div className="glass rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-max text-sm">
             <thead>
               <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
                 <th className="text-left px-4 py-3">Código</th>
