@@ -25,12 +25,7 @@ import { logIntegrationEvent } from "./integration-logs.server";
 import { simularPrecosSap } from "./sap-precos.server";
 import { deveCriarOferta } from "./fretefy-oferta";
 import { SAP_ACCEPT_LANGUAGE, comIdiomaPT } from "./sap-lang.server";
-import {
-  AVISO_FORA_CALIBRACAO,
-  dentroDaCalibracao,
-  fatorLiquidoCarregadores,
-  valorProdCarregadores,
-} from "./carregadores-impostos";
+import { fatorLiquidoCarregadores, valorProdCarregadores } from "./carregadores-impostos";
 
 
 export type SapOvResultado = {
@@ -341,7 +336,7 @@ export function valorProdAtivo(row: Record<string, any>): boolean {
 /**
  * Fator que converte o preço cheio da proposta no valor LÍQUIDO enviado ao SAP.
  * Mantido para compatibilidade/telemetria: é o fator agregado da proposta,
- * derivado da mesma conta calibrada (ver `carregadores-impostos.ts`).
+ * derivado da mesma fórmula fiscal (ver `carregadores-impostos.ts`).
  * Retorna null quando os totais não permitem calcular (aí o envio é bloqueado).
  */
 export function fatorLiquidoSemImpostos(row: Record<string, any>): number | null {
@@ -351,7 +346,8 @@ export function fatorLiquidoSemImpostos(row: Record<string, any>): number | null
   const ipi = aliqIpiDaProposta(row);
   const icms = aliqIcmsDaProposta(row);
   if (ipi === null || icms === null) return null;
-  const fator = fatorLiquidoCarregadores({ ipi, icms, pisCofins: 0 });
+  const pisCofins = aliqPisCofinsDaProposta(row) ?? 0;
+  const fator = fatorLiquidoCarregadores({ ipi, icms, pisCofins });
   if (!(fator > 0) || fator > 1) return null;
   return fator;
 }
@@ -384,6 +380,32 @@ export function aliqIcmsDaProposta(row: Record<string, any>): number | null {
   return Math.round((icms / semIpi) * 1e6) / 1e6;
 }
 
+/** Alíquota de PIS/COFINS da proposta (fração), como gravada no fechamento. */
+export function aliqPisCofinsDaProposta(row: Record<string, any>): number | null {
+  const t = (row["totais"] ?? {}) as Record<string, any>;
+  const direta = Number(t["pisCofinsRate"] ?? NaN);
+  if (Number.isFinite(direta) && direta > 0 && direta < 1) {
+    return Math.round(direta * 1e6) / 1e6;
+  }
+  // Fallback: PIS/COFINS ÷ (base sem IPI − ICMS).
+  const base = Number(t["valor"] ?? 0);
+  const ipi = Number(t["ipi"] ?? 0);
+  const icms = Number(t["icms"] ?? 0);
+  const pc = Number(t["pisCofins"] ?? 0);
+  const baseCalc = base - ipi - icms;
+  if (!(baseCalc > 0) || !Number.isFinite(pc) || pc <= 0) return null;
+  return Math.round((pc / baseCalc) * 1e6) / 1e6;
+}
+
+/** Alíquota de PIS/COFINS do item, com fallback na proposta. */
+export function aliqPisCofinsDoItem(row: Record<string, any>, item: any): number | null {
+  const direta = Number(item?.aliq_pis_cofins ?? item?.aliqPisCofins ?? NaN);
+  if (Number.isFinite(direta) && direta > 0 && direta < 1) {
+    return Math.round(direta * 1e6) / 1e6;
+  }
+  return aliqPisCofinsDaProposta(row);
+}
+
 /** Alíquota de IPI do item (do NCM/cadastro do produto), com fallback na proposta. */
 export function aliqIpiDoItem(row: Record<string, any>, item: any): number | null {
   const direta = Number(item?.aliq_ipi ?? item?.aliqIpi ?? NaN);
@@ -403,33 +425,29 @@ export function aliqIcmsDoItem(row: Record<string, any>, item: any): number | nu
 }
 
 /**
- * Valor unitário líquido enviado no VALOR_PROD, pela conta calibrada:
- *   precoSemIpi = preco / (1 + aliqIPI);  VALOR_PROD = precoSemIpi × fator.
+ * Valor unitário líquido enviado no VALOR_PROD, pela fórmula fiscal:
+ *   semIpi = preco / (1 + IPI);  ICMS = semIpi × aliqICMS;
+ *   PIS/COFINS = (semIpi − ICMS) × aliqPISCOFINS;  VALOR_PROD = semIpi − ICMS − PIS/COFINS.
  * Intermediários em 6 casas e só o resultado final em 2 casas (limite do campo).
- * Retorna 0 (bloqueia) quando a operação está fora da calibração de ICMS 4%.
+ * Retorna 0 quando não há alíquotas apuráveis (o envio é bloqueado antes).
  */
 export function valorProdUnitario(row: Record<string, any>, item: any): number {
   const valor = Number(item?.valor ?? 0);
   const ipi = aliqIpiDoItem(row, item);
   const icms = aliqIcmsDoItem(row, item);
-  if (!(valor > 0) || ipi === null || icms === null) return 0;
-  if (!dentroDaCalibracao(icms)) return 0;
-  return valorProdCarregadores(valor, ipi);
+  const pisCofins = aliqPisCofinsDoItem(row, item);
+  if (!(valor > 0) || ipi === null || icms === null || pisCofins === null) return 0;
+  return valorProdCarregadores(valor, { ipi, icms, pisCofins });
 }
 
-/**
- * Itens cuja alíquota de ICMS está fora da faixa calibrada (≠ 4%) — ou sem
- * alíquota apurável. Enquanto não calibrarmos o fator dessas faixas o envio
- * ao SAP é bloqueado.
- */
-export function itensForaDaCalibracao(row: Record<string, any>): any[] {
+/** Itens sem alíquota de ICMS ou PIS/COFINS apurável — sem elas o líquido não fecha. */
+export function itensSemAliquota(row: Record<string, any>): any[] {
   const itens = (Array.isArray(row["itens"]) ? (row["itens"] as any[]) : []).filter(
     (i) => Number(i?.qtd ?? 0) > 0,
   );
-  return itens.filter((i) => {
-    const icms = aliqIcmsDoItem(row, i);
-    return icms === null || !dentroDaCalibracao(icms);
-  });
+  return itens.filter(
+    (i) => aliqIcmsDoItem(row, i) === null || aliqPisCofinsDoItem(row, i) === null,
+  );
 }
 
 
@@ -798,14 +816,12 @@ export function validarPedidoParaSap(row: Record<string, any>): SapOvValidacao {
       "Não foi possível calcular o valor líquido (sem impostos) dos itens: os totais de IPI e ICMS da proposta estão ausentes ou inconsistentes.",
     );
 
-  // Guarda-corpo da calibração: o fator líquido só foi calibrado com o SAP para
-  // ICMS interestadual de 4% (produto importado). Qualquer outra alíquota
-  // (ex.: venda interna em SC) bloqueia o envio até calibrarmos essa faixa.
+  // Sem alíquota de ICMS/PIS-COFINS apurável não dá para calcular o líquido.
   if (valorProdAtivo(row)) {
-    const fora = itensForaDaCalibracao(row);
+    const fora = itensSemAliquota(row);
     if (fora.length)
       pendencias.push(
-        `${fora.length} item(ns) com ICMS diferente de 4% — ${AVISO_FORA_CALIBRACAO}: ${fora
+        `${fora.length} item(ns) sem alíquota de ICMS ou PIS/COFINS apurável: ${fora
           .map((i) => norm(i?.codigo) || String(i?.nome ?? i?.descricao ?? "item").slice(0, 30))
           .slice(0, 5)
           .join(", ")}.`,

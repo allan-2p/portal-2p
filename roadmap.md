@@ -134,4 +134,4 @@
 - [x] Dossiê 360: exibir número da proposta no funil
 
 ## Impostos Carregadores (03/09)
-- [ ] Definir base oficial do PIS/COFINS (Total NF + frete + desconto − IPI − ICMS × 9,25%) e unificar exibição x fator calibrado do SAP (0,870722)
+- [x] Definir base oficial do PIS/COFINS (Total NF + frete + desconto − IPI − ICMS × 9,25%) — fórmula fiscal virou caminho único; fator 0,870722 aposentado. Pendente: validar a próxima ordem criada no SAP

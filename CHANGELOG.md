@@ -36,6 +36,11 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ## [Não publicado]
 
 ### Alterado
+- Carregadores: PIS/COFINS passa a incidir sobre a base fiscal (Total NF − IPI − ICMS) × alíquota, em todos os casos. O fator empírico `0,870722` (calibrado com o SAP só para ICMS 4%) foi aposentado, e com ele o bloqueio de envio para operações com ICMS diferente de 4% — o valor líquido (VALOR_PROD) agora sai da mesma fórmula fiscal para qualquer alíquota. Diferença de ~0,05% no líquido enviado ao SAP; validar a próxima ordem criada.
+- Carregadores: totais da proposta passam a gravar `pisCofinsRate` (alíquota nominal de PIS/COFINS).
+
+
+### Alterado
 - Kit fotovoltaico Solar: o item-base da proposta passa a ser **200000691** (Kit Gerador Powerpad Rockcore 620w) no lugar de 100000350. A OV do SAP mantém o de-para para o material de produção **100000278**.
 - **Faturamento direto ao cliente final CNPJ (Solar): a etapa Faturamento não avança mais sem clicar em Buscar** para consultar o CNPJ informado. A consulta é o que define a inscrição estadual e se o cliente final é contribuinte de ICMS; sem ela a proposta saía como não contribuinte e a NF divergia de valores no SAP. O bloqueio vale também para a trilha de etapas e para o salvamento no servidor; propostas antigas sem o resultado da consulta pedem uma nova busca.
 - **Contribuinte de ICMS agora exige IE habilitada** em todo o portal (cadastro de clientes, importação e faturamento do cliente final). CNPJ com inscrição estadual baixada, suspensa ou isenta passa a ser tratado como não contribuinte, como o SAP já faz. O cadastro e a proposta mostram o novo indicador "IE habilitada" com a situação retornada na consulta.

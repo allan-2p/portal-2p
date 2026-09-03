@@ -373,6 +373,7 @@ export type CarregadoresResult = {
   icmsRate: number;
   ipiValor: number;
   pisCofins: number;
+  pisCofinsRate: number;
   rl: number;
   custoTotal: number;
   cmv: number;
@@ -585,6 +586,7 @@ export function calcularCarregadores(
     icmsRate,
     ipiValor,
     pisCofins,
+    pisCofinsRate: valorItem - icms > 0 ? pisCofins / (valorItem - icms) : 0,
     rl,
     custoTotal,
     cmv,

@@ -4,11 +4,11 @@ import {
   aliqIpiDaProposta,
   ehCarregadores,
   fatorLiquidoSemImpostos,
-  itensForaDaCalibracao,
+  itensSemAliquota,
   valorProdAtivo,
   valorProdUnitario,
 } from "@/lib/sap-ov.server";
-import { FATOR_LIQUIDO_SAP_ICMS4 } from "@/lib/carregadores-impostos";
+import { valorProdCarregadores } from "@/lib/carregadores-impostos";
 
 const flag = "SAP_VALOR_PROD_CARREGADORES";
 
@@ -39,7 +39,7 @@ describe("VALOR_PROD (preço manual) — gate por organização e flag", () => {
   });
 });
 
-describe("VALOR_PROD — conversão calibrada do preço de venda", () => {
+describe("VALOR_PROD — conversão fiscal do preço de venda", () => {
   // Proposta de Carregadores: 2 itens, preço cheio 1.587,30 e 3.174,60.
   // IPI 5% (NCM do produto) e ICMS interestadual de 4%.
   const row = () => {
@@ -48,35 +48,57 @@ describe("VALOR_PROD — conversão calibrada do preço de venda", () => {
     return {
       organizacao: "carregadores",
       itens: [
-        { codigo: "200000694", qtd: 1, valor: 1587.3, aliq_ipi: 0.05, aliq_icms: 0.04 },
-        { codigo: "200000684", qtd: 2, valor: 3174.6, aliq_ipi: 0.05, aliq_icms: 0.04 },
+        {
+          codigo: "200000694",
+          qtd: 1,
+          valor: 1587.3,
+          aliq_ipi: 0.05,
+          aliq_icms: 0.04,
+          aliq_pis_cofins: 0.0925,
+        },
+        {
+          codigo: "200000684",
+          qtd: 2,
+          valor: 3174.6,
+          aliq_ipi: 0.05,
+          aliq_icms: 0.04,
+          aliq_pis_cofins: 0.0925,
+        },
       ],
-      totais: { valor, ipi: valor - semIpi, icms: semIpi * 0.04, icmsRate: 0.04 },
+      totais: {
+        valor,
+        ipi: valor - semIpi,
+        icms: semIpi * 0.04,
+        icmsRate: 0.04,
+        pisCofinsRate: 0.0925,
+      },
     };
   };
 
-  it("aceite SAP: 3 un de 1.417,86 (T=4.253,58, IPI 0) → 1234.56", () => {
+  it("sem IPI: T=4.253,58 em 3 un → líquido pela fórmula fiscal", () => {
     const r = {
       organizacao: "carregadores",
-      itens: [{ codigo: "200000694", qtd: 3, valor: 4253.58 / 3, aliq_ipi: 0, aliq_icms: 0.04 }],
-      totais: { valor: 4253.58, ipi: 0, icmsRate: 0.04 },
+      itens: [
+        {
+          codigo: "200000694",
+          qtd: 3,
+          valor: 4253.58 / 3,
+          aliq_ipi: 0,
+          aliq_icms: 0.04,
+          aliq_pis_cofins: 0.0925,
+        },
+      ],
+      totais: { valor: 4253.58, ipi: 0, icmsRate: 0.04, pisCofinsRate: 0.0925 },
     };
-    expect(valorProdUnitario(r, r.itens[0])).toBe(1234.56);
+    expect(valorProdUnitario(r, r.itens[0])).toBe(
+      valorProdCarregadores(4253.58 / 3, { ipi: 0, icms: 0.04, pisCofins: 0.0925 }),
+    );
   });
 
-  it("aceite SAP: T=1.260,45 com IPI 9,75% → 1000.00", () => {
-    const r = {
-      organizacao: "carregadores",
-      itens: [{ codigo: "200000684", qtd: 1, valor: 1260.45, aliq_ipi: 0.0975, aliq_icms: 0.04 }],
-      totais: { valor: 1260.45, ipi: 1260.45 - 1260.45 / 1.0975, icmsRate: 0.04 },
-    };
-    expect(valorProdUnitario(r, r.itens[0])).toBe(1000);
-  });
-
-  it("aplica preço sem IPI × fator calibrado em cada linha", () => {
+  it("aplica a fórmula fiscal em cada linha", () => {
     const r = row();
     const esperado = (bruto: number) =>
-      Math.round(Math.round((bruto / 1.05) * 1e6) / 1e6 * FATOR_LIQUIDO_SAP_ICMS4 * 100) / 100;
+      valorProdCarregadores(bruto, { ipi: 0.05, icms: 0.04, pisCofins: 0.0925 });
     expect(valorProdUnitario(r, r.itens[0])).toBe(esperado(1587.3));
     expect(valorProdUnitario(r, r.itens[1])).toBe(esperado(3174.6));
   });
@@ -88,15 +110,28 @@ describe("VALOR_PROD — conversão calibrada do preço de venda", () => {
     expect(valorProdUnitario(r, { valor: 1587.3 })).toBeGreaterThan(0);
   });
 
-  it("bloqueia itens fora da calibração de ICMS 4%", () => {
+  it("aceita ICMS diferente de 4% (venda interna) e bloqueia só sem alíquota", () => {
     const r = row();
-    expect(itensForaDaCalibracao(r)).toHaveLength(0);
+    expect(itensSemAliquota(r)).toHaveLength(0);
     const interno = {
       ...r,
-      itens: [{ codigo: "200000694", qtd: 1, valor: 1000, aliq_ipi: 0.05, aliq_icms: 0.17 }],
+      itens: [
+        {
+          codigo: "200000694",
+          qtd: 1,
+          valor: 1000,
+          aliq_ipi: 0.05,
+          aliq_icms: 0.17,
+          aliq_pis_cofins: 0.0925,
+        },
+      ],
     };
-    expect(itensForaDaCalibracao(interno)).toHaveLength(1);
-    expect(valorProdUnitario(interno, interno.itens[0])).toBe(0);
+    expect(itensSemAliquota(interno)).toHaveLength(0);
+    expect(valorProdUnitario(interno, interno.itens[0])).toBeGreaterThan(0);
+
+    const semAliq = { organizacao: "carregadores", totais: {}, itens: [{ qtd: 1, valor: 1000 }] };
+    expect(itensSemAliquota(semAliq)).toHaveLength(1);
+    expect(valorProdUnitario(semAliq, semAliq.itens[0])).toBe(0);
   });
 
   it("não calcula (e força bloqueio) quando os totais estão ausentes", () => {
