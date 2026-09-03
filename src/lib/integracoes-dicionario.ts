@@ -254,7 +254,7 @@ const SAP_OV: FluxoDic = {
       estrutura: "T_ITEM",
       campos: [
         f("ITM_NUMBER", "sequencial do item"),
-        f("MATERIAL", "código do produto (kit: 100000350 é enviado como 100000278)"),
+        f("MATERIAL", "código do produto (kit: 200000691 é enviado como 100000278)"),
         f("QTDE", "quantidade do item"),
         f("UM", "fixo UN"),
         f("BILL_DATE", "data do dia"),

@@ -1,7 +1,7 @@
 /**
  * Aviso de pedido com Kit Fotovoltaico para produção/logística.
  *
- * O kit-base (100000350) é montado internamente e sai no SAP como o material
+ * O kit-base (200000691) é montado internamente e sai no SAP como o material
  * de produção 100000278, então a equipe precisa ser avisada assim que o pedido
  * é concluído. Nunca lança: o aviso não pode derrubar o checkout.
  */
@@ -21,7 +21,7 @@ export async function avisarKitFotovoltaico(row: Record<string, any>): Promise<b
     const vbeln = String(row["sap_ov_numero"] ?? "").trim();
     const itens = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
     const linhas = itens
-      .map((i) => `<li>${i?.codigo ?? ""} — ${i?.descricao ?? ""} — ${Number(i?.qtd ?? 0)} un</li>`)
+      .map((i) => `<li>${i?.codigo ?? ""} — ${i?.nome ?? i?.descricao ?? ""} — ${Number(i?.qtd ?? 0)} un</li>`)
       .join("");
 
     const { enviarEmail, layoutEmail } = await import("./email.server");
@@ -30,7 +30,7 @@ export async function avisarKitFotovoltaico(row: Record<string, any>): Promise<b
       `<p>Novo pedido com <strong>kit fotovoltaico</strong>.</p>` +
       `<p>Pedido: <strong>${numero}</strong><br/>Cliente: ${cliente}<br/>` +
       `Ordem de venda SAP: ${vbeln || "aguardando"}</p>` +
-      `<p>Material de produção: <strong>100000278</strong> (comercial 100000350).</p>` +
+      `<p>Material de produção: <strong>100000278</strong> (comercial 200000691).</p>` +
       `<ul>${linhas}</ul>`,
       `Pedido ${numero} — ${cliente}`,
     );

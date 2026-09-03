@@ -56,7 +56,7 @@ export type SalvarPropostaSolarInput = {
 const money2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100;
 
 /** Material do kit gerador fotovoltaico injetado quando o kit está ativo. */
-export const KIT_FOTOVOLTAICO_MATERIAL = "100000350";
+export const KIT_FOTOVOLTAICO_MATERIAL = "200000691";
 const normCod = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
 
 function validar(input: unknown): SalvarPropostaSolarInput {

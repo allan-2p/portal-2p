@@ -441,11 +441,11 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
     (i) => norm(i?.codigo) && Number(i?.qtd ?? 0) > 0,
   );
 
-  // Kit fotovoltaico: o material comercial 100000350 é enviado ao SAP como o
+  // Kit fotovoltaico: o material comercial 200000691 é enviado ao SAP como o
   // material de produção 100000278 (regra da plataforma antiga).
   const kit = Boolean(row["kit_fotovoltaico"]);
   const materialSap = (codigo: string) =>
-    kit && codigo === "100000350" ? "100000278" : codigo;
+    kit && codigo === "200000691" ? "100000278" : codigo;
   // VALOR_PROD: vazio = preço vem da condição do SAP (regra de sempre, Solar).
   // Somente 2P Carregadores, e apenas com a flag SAP_VALOR_PROD_CARREGADORES=X,
   // envia o preço manual UNITÁRIO LÍQUIDO da proposta (sem IPI, ICMS e
