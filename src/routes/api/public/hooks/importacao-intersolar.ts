@@ -153,7 +153,7 @@ export const Route = createFileRoute("/api/public/hooks/importacao-intersolar")(
                       ie_situacao: so(enr?.ie_situacao) || null,
                       suframa: so(enr?.suframa) || null,
                       suframa_situacao: so(enr?.suframa_situacao) || null,
-                      contribuinte: ehCnpj ? (so(enr?.ie) ? true : so(l.contribuinte).toUpperCase() === "S") : false,
+                      contribuinte: ehCnpj ? (enr ? enr.ie_habilitada === true : so(l.contribuinte).toUpperCase() === "S") : false,
                       regime_tributario: so(enr?.regime_tributario) || null,
                       natureza_juridica: so(enr?.natureza_juridica) || null,
                       porte: so(enr?.porte) || null,

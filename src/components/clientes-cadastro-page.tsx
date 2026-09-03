@@ -34,6 +34,7 @@ import { ClienteLogoUpload } from "@/components/cliente-logo-upload";
 
 import { toast } from "sonner";
 import { cnpjValido, mascaraCnpj, mascaraDoc, soDigitos } from "@/lib/cnpj";
+import { contribuinteDeEnrich } from "@/lib/contribuinte";
 import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clientes-map";
 
 import {
@@ -441,7 +442,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
               ie_situacao: e.ie_situacao,
               suframa: e.suframa,
               suframa_situacao: e.suframa_situacao,
-              contribuinte: !!e.ie,
+              contribuinte: contribuinteDeEnrich(e),
               regime_tributario: e.regime_tributario ?? base.regime_tributario,
               natureza_juridica: e.natureza_juridica,
               porte: e.porte,
@@ -920,7 +921,14 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <div className="sm:col-span-2 flex items-center justify-between rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
                       <div>
                         <div className="text-sm font-semibold">Cliente contribuinte do ICMS</div>
-                        <div className="text-xs text-muted-foreground">Definido automaticamente pela consulta do CNPJ (Inscrição Estadual). Não editável.</div>
+                        <div className="text-xs text-muted-foreground">
+                          Definido automaticamente pela consulta do CNPJ: contribuinte só com{" "}
+                          <strong>IE habilitada</strong>. Não editável.
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          IE habilitada: <strong>{form.contribuinte ? "Sim" : "Não"}</strong>
+                          {form.ie_situacao ? ` — ${form.ie_situacao}` : ""}
+                        </div>
                       </div>
                       <Badge variant={form.contribuinte ? "default" : "secondary"}>
                         {form.contribuinte ? "Contribuinte" : "Não contribuinte"}
@@ -1331,6 +1339,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
                     <Bloco titulo="Situação fiscal">
                       <Linha rot="Inscrição Estadual" val={detalhe.contribuinte ? detalhe.ie : "Isento / não contribuinte"} />
                       <Linha rot="Situação da IE" val={detalhe.ie_situacao} />
+                      <Linha rot="IE habilitada" val={detalhe.contribuinte ? "Sim" : "Não"} />
                       <Linha rot="Suframa" val={[detalhe.suframa, detalhe.suframa_situacao].filter(Boolean).join(" · ")} />
                       <Linha
                         rot="CNAE principal"

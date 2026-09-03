@@ -27,6 +27,12 @@ export type EnriquecimentoCnpj = {
   municipio_ibge: string | null;
   ie: string | null;
   ie_situacao: string | null;
+  /**
+   * Única fonte de verdade fiscal: true só quando a IE escolhida está
+   * HABILITADA na consulta. IE ausente, baixada, suspensa ou isenta ⇒ false
+   * (não contribuinte).
+   */
+  ie_habilitada: boolean;
   inscricoes_estaduais: Array<{ uf: string; numero: string; habilitada: boolean; situacao: string | null }>;
   suframa: string | null;
   suframa_situacao: string | null;
@@ -85,7 +91,7 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
     email: null, telefone: null, telefones: [],
     cep: null, logradouro: null, numero: null, complemento: null, bairro: null,
     cidade: null, uf: null, municipio_ibge: null,
-    ie: null, ie_situacao: null, inscricoes_estaduais: [],
+    ie: null, ie_situacao: null, ie_habilitada: false, inscricoes_estaduais: [],
     suframa: null, suframa_situacao: null,
     simples_optante: null, simei_optante: null, regime_tributario: null,
     fontes: [], avisos: [],
@@ -201,6 +207,7 @@ export async function enrichCnpj(cnpjRaw: string): Promise<EnriquecimentoCnpj> {
         if (daUf) {
           out.ie = daUf.numero || null;
           out.ie_situacao = daUf.habilitada ? "Habilitada" : (daUf.situacao ?? "Não habilitada");
+          out.ie_habilitada = daUf.habilitada === true && !!daUf.numero;
         }
         // Simples Nacional / SIMEI (só vem com ?simples=true)
         const simples = d.company?.simples ?? d.simples;
