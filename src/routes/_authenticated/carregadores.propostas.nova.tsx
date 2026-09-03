@@ -2609,6 +2609,24 @@ function PropostaCarregadoresPage() {
                         .join(" · ") || "—"
                     }
                   />
+                  {state.faturarClienteFinal && (
+                    <ResumoLinha
+                      k="Dados fiscais do cliente final"
+                      v={
+                        [
+                          state.faturamento.doc ? (faturamentoEhCpf ? `CPF ${state.faturamento.doc}` : `CNPJ ${state.faturamento.doc}`) : "",
+                          faturamentoEhCpf ? "" : `IE ${state.faturamento.ie?.trim() || "—"}`,
+                          faturamentoEhCpf
+                            ? ""
+                            : `IE habilitada: ${fatIeHabilitada === null ? "—" : fatIeHabilitada ? "Sim" : "Não"}`,
+                          `Contribuinte: ${state.faturamento.contribuinte ? "Sim" : "Não"}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      }
+                    />
+                  )}
+
                   <ResumoLinha
                     k="Endereço de entrega"
                     v={linhasEndereco(entregaEfetiva).join(" · ") || "—"}
