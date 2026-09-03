@@ -195,6 +195,137 @@ export function AppLayout({ children }: { children: ReactNode }) {
   // O atributo global é aplicado em __root (vale para todo o portal); aqui só ajustamos a marca.
   const isAdminArea = isGroupAdminPath(pathname);
 
+  /**
+   * Abas do menu de topo — mesmos itens, mesmas rotas e o mesmo gating `show()`
+   * da antiga barra lateral; muda apenas a disposição (horizontal).
+   */
+  const tabs: TabItem[] = [];
+  if (show("atlas")) {
+    tabs.push({
+      id: "atlas",
+      label: "Atlas",
+      icon: Sparkles,
+      to: "/solar/atlas",
+      active: atlasActive,
+      destaque: true,
+      items: show("clientes.sugestoes")
+        ? [{
+            to: "/solar/clientes/sugestoes",
+            label: "Sugestões do Atlas",
+            icon: Sparkles,
+            active: pathname.startsWith("/solar/clientes/sugestoes"),
+          }]
+        : undefined,
+    });
+  }
+  if (show("home")) tabs.push({ id: "home", label: "Home", icon: Home, to: "/", active: pathname === "/" });
+  if (show("tarefas")) tabs.push({ id: "tarefas", label: "Tarefas", icon: Calendar, to: "/solar/tarefas", active: pathname.startsWith("/solar/tarefas") });
+  if (show("propostas")) {
+    tabs.push({
+      id: "propostas-solar",
+      label: "Propostas",
+      icon: ClipboardList,
+      active: propostasSolarActive,
+      items: [
+        { to: "/solar/propostas", label: "Propostas", icon: ClipboardList, active: pathname.startsWith("/solar/propostas") },
+        ...(show("pedidos")
+          ? [{ to: "/solar/pedidos" as AppPath, label: "Acompanhamento", icon: KanbanSquare, active: pathname.startsWith("/solar/pedidos") }]
+          : []),
+      ],
+    });
+  }
+  if (show("cupons")) tabs.push({ id: "cupons", label: "Cupons", icon: KeyRound, to: "/solar/cupons", active: pathname.startsWith("/solar/cupons") });
+  if (show("carregadores.home")) tabs.push({ id: "carreg-home", label: "Home", icon: Home, to: "/carregadores", active: pathname === "/carregadores" });
+  if (show("carregadores.visao-geral")) tabs.push({ id: "carreg-visao", label: "Visão Geral", icon: BarChart3, to: "/carregadores/visao-geral", active: pathname.startsWith("/carregadores/visao-geral") });
+  if (show("carregadores.tarefas")) tabs.push({ id: "carreg-tarefas", label: "Tarefas", icon: Calendar, to: "/carregadores/tarefas", active: pathname.startsWith("/carregadores/tarefas") });
+  if (show("carregadores.clientes")) tabs.push({ id: "carreg-clientes", label: "Clientes", icon: Users, to: "/carregadores/clientes/cadastros", active: pathname.startsWith("/carregadores/clientes") });
+  if (show("carregadores.propostas")) {
+    tabs.push({
+      id: "propostas-carregadores",
+      label: "Propostas",
+      icon: Zap,
+      active: propostasCarregadoresActive,
+      items: [
+        { to: "/carregadores/propostas", label: "Propostas", icon: Zap, active: pathname.startsWith("/carregadores/propostas") },
+        ...(show("carregadores.pedidos")
+          ? [{ to: "/carregadores/pedidos" as AppPath, label: "Acompanhamento", icon: ShoppingCart, active: pathname.startsWith("/carregadores/pedidos") }]
+          : []),
+      ],
+    });
+  }
+  if (show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.ranking")) {
+    tabs.push({
+      id: "clientes",
+      label: "Clientes",
+      icon: Layers,
+      active: clientesActive,
+      items: [
+        ...(show("clientes.cadastros")
+          ? [{ to: "/solar/clientes/cadastros" as AppPath, label: "Cadastros", icon: ClipboardList, active: pathname.startsWith("/solar/clientes/cadastros") }]
+          : []),
+        ...(show("clientes.segmentacao") || show("clientes.perfil")
+          ? [{
+              to: (show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : "/solar/clientes/perfil") as AppPath,
+              label: "Perfil de Cliente",
+              icon: UserIcon,
+              active: pathname.startsWith("/solar/clientes/segmentacao") || pathname.startsWith("/solar/clientes/perfil"),
+            }]
+          : []),
+        ...(show("clientes.ranking")
+          ? [{ to: "/solar/clientes/ranking" as AppPath, label: "Ranking", icon: Trophy, active: pathname.startsWith("/solar/clientes/ranking") }]
+          : []),
+      ],
+    });
+  }
+  if (show("dashboards")) {
+    tabs.push({
+      id: "dashboards",
+      label: "Dashboards",
+      icon: BarChart3,
+      active: dashboardsActive,
+      items: show("dashboards.metas")
+        ? [{ to: "/solar/dashboards/metas", label: "Metas", icon: Target, active: pathname.startsWith("/solar/dashboards/metas") }]
+        : undefined,
+      to: show("dashboards.metas") ? undefined : "/solar/dashboards",
+    });
+  }
+  if (show("marketing.home")) {
+    tabs.push({ id: "mkt-home", label: "Home", icon: Megaphone, to: "/marketing", active: pathname === "/marketing" });
+    if (show("marketing.social")) tabs.push({ id: "mkt-social", label: "Social Mídia", icon: Users, to: "/marketing/social", active: pathname.startsWith("/marketing/social") });
+    if (show("marketing.trafego")) tabs.push({ id: "mkt-trafego", label: "Mídia Paga", icon: Filter, to: "/marketing/trafego", active: pathname.startsWith("/marketing/trafego") });
+    if (show("marketing.cohort")) tabs.push({ id: "mkt-cohort", label: "Análise Cohort", icon: LineChart, to: "/marketing/cohort", active: pathname.startsWith("/marketing/cohort") });
+    if (show("marketing.cac")) tabs.push({ id: "mkt-cac", label: "CAC", icon: TrendingUp, to: "/marketing/cac", active: pathname.startsWith("/marketing/cac") });
+    if (show("marketing.gargalo")) tabs.push({ id: "mkt-gargalo", label: "Mapa de Gargalo", icon: Filter, to: "/marketing/gargalo", active: pathname.startsWith("/marketing/gargalo") });
+    if (show("marketing.prevendas")) tabs.push({ id: "mkt-prevendas", label: "Pré-Vendas", icon: ClipboardList, to: "/marketing/pre-vendas", active: pathname.startsWith("/marketing/pre-vendas") });
+    if (show("marketing.metas")) tabs.push({ id: "mkt-metas", label: "Metas", icon: Target, to: "/marketing/metas", active: pathname.startsWith("/marketing/metas") });
+  }
+  if (show("financeiro.home")) {
+    tabs.push({ id: "fin-home", label: "Home", icon: Building2, to: "/financeiro", active: pathname === "/financeiro" });
+    if (show("financeiro.condicoes")) tabs.push({ id: "fin-condicoes", label: "Condições de Pagamento", icon: Percent, to: "/financeiro/condicoes", active: pathname.startsWith("/financeiro/condicoes") });
+    if (show("financeiro.credito")) tabs.push({ id: "fin-credito", label: "Análise de Crédito", icon: ShieldCheck, to: "/financeiro/credito", active: pathname.startsWith("/financeiro/credito") });
+  }
+
+  /** Itens "planos" para a busca global (command palette) — só o menu, sem dados. */
+  const itensBusca = tabs.flatMap((t) =>
+    t.items?.length
+      ? t.items.map((i) => ({ to: i.to, label: `${t.label} › ${i.label}`, icon: i.icon }))
+      : t.to
+        ? [{ to: t.to, label: t.label, icon: t.icon }]
+        : [],
+  );
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setBuscaOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+
   const navTree = (collapsed: boolean) => (
           <nav className="px-2 py-2 flex-1 overflow-y-auto">
             {/* Atlas — só se instância permitir */}
