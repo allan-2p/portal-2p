@@ -1771,6 +1771,8 @@ function NovaPropostaSolarPage() {
         nome: String(cliente?.['razao_social'] ?? "—"),
         doc: String(cliente?.['doc'] ?? ""),
         ie: String(cliente?.['ie'] ?? ""),
+        // A tag do PDF reflete quem recebe a NF: cliente final quando houver.
+        contribuinte: faturarClienteFinal ? fatContribuinte : cliente?.['contribuinte'] === true,
         email: String(cliente?.['email'] ?? ""),
         telefone: String(cliente?.['telefone'] ?? ""),
         uf: String(cliente?.['uf'] ?? ""),
@@ -1809,6 +1811,8 @@ function NovaPropostaSolarPage() {
       enderecoFaturamento: {
         nome: String(faturamentoBase['nome'] ?? faturamentoBase['razao_social'] ?? cliente?.['razao_social'] ?? ""),
         doc: String(faturamentoBase['doc'] ?? ""),
+        ie: String(faturamentoBase['ie'] ?? ""),
+        contribuinte: faturarClienteFinal ? fatContribuinte : cliente?.['contribuinte'] === true,
         linhas: linhasEnd(faturamentoBase),
       },
       enderecoEntrega: entregaDiferente
