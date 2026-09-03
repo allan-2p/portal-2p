@@ -37,6 +37,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Alterado
 - Kit fotovoltaico Solar: o item-base da proposta passa a ser **200000691** (Kit Gerador Powerpad Rockcore 620w) no lugar de 100000350. A OV do SAP mantém o de-para para o material de produção **100000278**.
+- **Faturamento direto ao cliente final CNPJ (Solar): a etapa Faturamento não avança mais sem clicar em Buscar** para consultar o CNPJ informado. A consulta é o que define a inscrição estadual e se o cliente final é contribuinte de ICMS; sem ela a proposta saía como não contribuinte e a NF divergia de valores no SAP. Propostas já salvas (edição/duplicação) continuam liberadas, pois o faturamento gravado já foi validado.
 
 ### Corrigido
 - **Boleto a prazo**: as condições de pagamento agora ficam liberadas pelo prazo já concedido no cadastro do cliente (ex.: cliente 14/28 pode escolher à vista, 3, 7, 14, 21 e 28 DDL sem nova análise de crédito). A análise de crédito continua liberando prazos acima do cadastro; só fica bloqueado o que não couber em nenhum dos dois.
