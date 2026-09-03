@@ -132,3 +132,6 @@
 
 - [x] Perfil de Cliente: acelerar carregamento da segmentação (paginação paralela + cache)
 - [x] Dossiê 360: exibir número da proposta no funil
+
+## Impostos Carregadores (03/09)
+- [ ] Definir base oficial do PIS/COFINS (Total NF + frete + desconto − IPI − ICMS × 9,25%) e unificar exibição x fator calibrado do SAP (0,870722)
