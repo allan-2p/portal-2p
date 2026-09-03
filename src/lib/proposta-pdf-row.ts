@@ -1,3 +1,4 @@
+import { contribuinteDeEnrich } from "@/lib/contribuinte";
 import { numeroExibicao } from "@/lib/proposta-variacoes";
 /**
  * Converte uma proposta já salva (linha do banco) nos dados de PDF usados
