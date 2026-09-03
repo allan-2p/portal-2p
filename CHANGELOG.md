@@ -53,6 +53,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Resumo final da proposta de Carregadores** mostra os dados fiscais do cliente final (documento, inscrição estadual, situação da IE e contribuinte de ICMS).
 
 ### Corrigido
+- **Dar perda em oportunidade não chegava ao Salesforce**: a marcação da perda entra na fila de envio no mesmo salvamento (antes o enfileiramento era feito em segundo plano e se perdia junto com a requisição), e a descrição da perda passa a exigir pelo menos 4 palavras — a regra de validação do CRM recusa textos curtos como "Sem retorno". Perdas antigas com descrição curta são enviadas com o motivo como prefixo. As 17 oportunidades que tinham ficado abertas no CRM foram reenviadas.
+- **Erros de regra de validação do Salesforce** deixam de ser mascarados: o sincronizador não remove mais os campos citados na validação (motivo de perda/cancelamento) para "tentar de novo" — o erro real aparece no painel de integrações.
 - **Buscar CNPJ no faturamento Solar**: o resultado fiscal passa a ser levado ao salvamento imediatamente, mesmo quando o usuário clica em salvar logo após a consulta; ao alterar o CNPJ, a consulta anterior é invalidada para evitar reaproveitar IE/contribuinte de outro documento.
 - **Entrega em Carregadores** segue o endereço do cliente final quando o pedido é faturado direto para ele e não há endereço de entrega próprio (antes ia para o endereço do revendedor).
 - **Cadastro do cliente final no SAP**: atualização de cadastro já existente (KUNNR conhecido) volta a retentar em falha temporária do SAP; criação continua sem retentativa para não duplicar parceiro.

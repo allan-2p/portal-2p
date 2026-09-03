@@ -950,33 +950,33 @@ export const marcarPerdaPropostaFn = createServerFn({ method: "POST" })
     }
 
     const perdidaEm = new Date().toISOString();
+    // O espelhamento no Salesforce entra no MESMO update: marcar a fila num
+    // bloco em segundo plano (`void (async …)`) não funciona no runtime
+    // serverless — a requisição termina antes e o `sf_status` fica preso em
+    // "sincronizado", deixando a oportunidade aberta no CRM.
+    const { PATCH_SALESFORCE_PENDENTE } = await import("@/lib/salesforce-fila.server");
     await db.atualizarProposta(data.id, {
       motivo_perda: data.motivo,
       motivo_perda_obs: data.observacao,
       perdida_em: perdidaEm,
+      ...PATCH_SALESFORCE_PENDENTE,
     });
 
-    // Auditoria e Salesforce: best effort, nunca seguram a resposta.
-    void (async () => {
-      try {
-        const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
-        await logIntegrationEvent({
-          slug: "proposta",
-          level: "info",
-          event: "perda-oportunidade",
-          message: `Perda registrada na proposta ${atual["numero"] ?? ""}: ${data.motivo}.`,
-          detail: { proposta_id: data.id, motivo: data.motivo, observacao: data.observacao },
-          actorId: (context as any).userId ?? null,
-        });
-      } catch {
-        /* best effort */
-      }
-      try {
-        await sincronizarSalesforceAoSalvar(data.id);
-      } catch {
-        /* a fila reenvia depois */
-      }
-    })();
+    // Auditoria: best effort, nunca segura a resposta.
+    try {
+      const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
+      await logIntegrationEvent({
+        slug: "proposta",
+        level: "info",
+        event: "perda-oportunidade",
+        message: `Perda registrada na proposta ${atual["numero"] ?? ""}: ${data.motivo}.`,
+        detail: { proposta_id: data.id, motivo: data.motivo, observacao: data.observacao },
+        actorId: (context as any).userId ?? null,
+      });
+    } catch {
+      /* best effort */
+    }
+
 
     return { ok: true as const, perdidaEm, motivo: data.motivo };
   });

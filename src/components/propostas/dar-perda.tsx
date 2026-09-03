@@ -27,6 +27,8 @@ import { marcarPerdaPropostaFn } from "@/lib/propostas.functions";
 import {
   OBS_PERDA_MAX,
   OBS_PERDA_MIN,
+  OBS_PERDA_MIN_PALAVRAS,
+  obsPerdaValida,
   motivosPerdaPara,
   podeDarPerda,
 } from "@/lib/perda-motivos";
@@ -111,7 +113,7 @@ export function BotaoDarPerda({
   const perdida = !!(proposta["motivo_perda"] || proposta["perdida_em"]);
   if (!podeDarPerda(proposta["status"], perdida)) return null;
 
-  const invalido = !motivo || obs.trim().length < OBS_PERDA_MIN;
+  const invalido = !motivo || !obsPerdaValida(obs);
 
   async function confirmar() {
     if (invalido || salvando) return;
@@ -197,7 +199,8 @@ export function BotaoDarPerda({
                 placeholder="Explique o que aconteceu (o que o cliente decidiu, concorrente, preço…)"
               />
               <p className="text-xs text-muted-foreground">
-                Mínimo de {OBS_PERDA_MIN} caracteres • {obs.trim().length}/{OBS_PERDA_MAX}
+                Mínimo de {OBS_PERDA_MIN} caracteres e {OBS_PERDA_MIN_PALAVRAS} palavras •{" "}
+                {obs.trim().length}/{OBS_PERDA_MAX}
               </p>
             </div>
           </div>
