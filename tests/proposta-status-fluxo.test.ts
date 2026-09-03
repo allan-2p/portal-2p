@@ -3,6 +3,7 @@ import { proximoStatus, selecionarFilaRotativa } from "@/lib/sap-nfs.server";
 import { transicaoPermitida } from "@/lib/proposta-status";
 import { motivosPerdaPara, podeDarPerda, validarObsPerda } from "@/lib/perda-motivos";
 import { faseDaProposta } from "@/lib/salesforce-stage";
+import { cotasFilaSalesforce } from "@/lib/salesforce-fila.server";
 
 describe("fila rotativa do cron SAP", () => {
   it("alcança todas as linhas quando o backlog supera o limite", () => {
@@ -12,6 +13,13 @@ describe("fila rotativa do cron SAP", () => {
       selecionarFilaRotativa(rows, 50, rodada).forEach((id) => vistos.add(id));
     }
     expect(vistos.size).toBe(123);
+  });
+});
+
+describe("prioridade da fila Salesforce", () => {
+  it("reserva 80% do lote para atualizar oportunidades já vinculadas", () => {
+    expect(cotasFilaSalesforce(25)).toEqual({ vinculadas: 20, novas: 5 });
+    expect(cotasFilaSalesforce(1)).toEqual({ vinculadas: 1, novas: 0 });
   });
 });
 
