@@ -1275,6 +1275,8 @@ function NovaPropostaSolarPage() {
     setEnriquecendo(true);
     try {
       const e = await enriquecer({ data: { cnpj: doc } });
+      // A consulta foi executada (com ou sem retorno): libera o avanço da etapa.
+      setFatConsultadoDoc(doc);
       if (!e) {
         toast.warning("Não encontramos dados públicos — preencha manualmente.");
         return;
