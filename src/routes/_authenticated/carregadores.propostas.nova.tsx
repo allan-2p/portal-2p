@@ -1005,6 +1005,13 @@ function PropostaCarregadoresPage() {
       motivo: `A margem bruta está abaixo do mínimo de ${fmtPct(config.politica_mb_min)} exigido pela política comercial.`,
       corrigir: "Aumente o valor unitário dos produtos ou reduza o frete absorvido (CIF/Dedicado).",
     });
+  if (temProduto && d.cmvExcedido)
+    alertas.push({
+      level: "warn",
+      titulo: `CMV acima do teto — ${fmtPct(d.cmv)}`,
+      motivo: `O CMV supera o limite de ${fmtPct(config.cmv_max)} da política comercial. A proposta pode seguir, mas a comissão fica zerada.`,
+      corrigir: "Revise os valores unitários ou negocie com a diretoria antes de concluir.",
+    });
   if (itensSemValor.length)
     alertas.push({
       level: "err",
