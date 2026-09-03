@@ -1462,6 +1462,10 @@ function NovaPropostaSolarPage() {
           e.push("CPF do cliente final inválido.");
         if (fatTipoDoc === "cnpj" && !cnpjValido(docDigits))
           e.push("CNPJ do cliente final inválido.");
+        // Sem a consulta o contribuinte/IE saem "chutados" e a NF diverge no
+        // SAP (preço errado): o avanço exige o Buscar do CNPJ informado.
+        else if (fatTipoDoc === "cnpj" && fatConsultadoDoc !== docDigits)
+          e.push("Clique em Buscar para consultar o CNPJ do cliente final antes de avançar — a consulta define a inscrição estadual e se ele é contribuinte de ICMS.");
       }
       if (faturarClienteFinal && !finalidadeUso)
         e.push("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
