@@ -3505,7 +3505,7 @@ function NovaPropostaSolarPage() {
           onNext={etapa < 5 ? avancar : undefined}
           nextDisabled={erros.length > 0}
           errors={erros}
-          showErrors={tentou}
+          showErrors={tentou || (etapa === 2 && erros.length > 0)}
           // Salvar/gerar proposta existem apenas na etapa de Finalização.
           actions={[]}
           primary={null}
