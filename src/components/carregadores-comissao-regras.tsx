@@ -94,9 +94,9 @@ export function CarregadoresComissaoRegras() {
         </div>
 
         {r.cmv > params.cmvMax ? (
-          <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-xs text-destructive">
-            CMV de {pct(r.cmv)} acima do limite de {pct(params.cmvMax)}. O vendedor não consegue orçar nessa
-            condição — é necessária aprovação especial da diretoria.
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-600 dark:text-amber-400">
+            CMV de {pct(r.cmv)} acima do teto de {pct(params.cmvMax)}. A proposta não é bloqueada, mas a comissão
+            fica zerada nessa condição.
           </div>
         ) : null}
       </div>
@@ -173,7 +173,7 @@ export function CarregadoresComissaoRegras() {
                   {pct(r.pctComissao)} da MB). Saldo do consultor:{" "}
                   <strong>{brl(rateio.custoVendedor)}</strong>
                   {rateio.bloqueado ? (
-                    <span className="text-destructive"> · bloqueado por CMV acima de {pct(params.cmvMax)}</span>
+                    <span className="text-destructive"> · sem comissão — CMV acima de {pct(params.cmvMax)}</span>
                   ) : rateio.custoVendedor <= 0 ? (
                     <span className="text-destructive"> · sem saldo após os fixos e a indicação</span>
                   ) : (

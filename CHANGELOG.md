@@ -35,6 +35,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+- Carregadores: **CMV acima do teto não bloqueia mais o orçamento**. A proposta pode ser salva, exportada em PDF e concluída; o portal apenas avisa que o CMV passou do limite e a comissão fica zerada nessa condição.
+
+
 - Carregadores: a margem bruta mínima agora é editável por moderadores em Regras de Propostas; o limite inicial foi ajustado para 10% e continua bloqueando orçamento e fechamento abaixo da política.
 - **Atualizações de pedidos não ficam mais atrás do backfill do Salesforce**: compras, nº SAP, faturamento, entrega e cancelamentos de oportunidades já vinculadas agora têm prioridade na fila, enquanto uma cota continua enviando oportunidades novas. Isso corrige o caso 52671, que estava cancelado no portal e com OV no SAP, mas permanecia aberto no CRM com CloseDate antiga.
 - **Sincronização com o Salesforce em dia**: 6.393 propostas que nunca tinham sido espelhadas (importadas do sistema antigo e orçamentos salvos) foram colocadas na fila de envio; o cron processa em segundo plano e as falhas ficam visíveis em Admin → Logs → Integrações.

@@ -901,7 +901,8 @@ function PropostaCarregadoresPage() {
   // Só sinalizamos campos em vermelho depois que o usuário tenta avançar.
   const campoInvalido = (c: string) => tentouAvancar && errosCliente.some((e) => e.campo === c);
   const temProduto = state.itens.some((i) => i.produtoId);
-  const podeSalvar = clienteOk && temProduto && !abaixoPolitica && !d.cmvExcedido;
+  // CMV acima do teto não bloqueia mais o orçamento: apenas zera a comissão e gera aviso.
+  const podeSalvar = clienteOk && temProduto && !abaixoPolitica;
 
 
   function irParaEtapa(alvo: 1 | 2 | 3 | 4 | 5) {
@@ -979,8 +980,6 @@ function PropostaCarregadoresPage() {
   if (temProduto && !(d.valorTotalProposta > 0))
     errosPdf.push("Total da proposta zerado — revise valores e quantidades.");
   if (temProduto && abaixoPolitica) errosPdf.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
-  if (temProduto && d.cmvExcedido)
-    errosPdf.push(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)} — exige aprovação da diretoria.`);
 
   // Conclusão do pedido herda os mesmos bloqueios (inclui forma de pagamento).
   const errosConclusao: string[] = [...errosPdf];
@@ -994,8 +993,6 @@ function PropostaCarregadoresPage() {
   if (!temProduto) errosSalvar.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length) errosSalvar.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
   if (temProduto && abaixoPolitica) errosSalvar.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
-  if (temProduto && d.cmvExcedido)
-    errosSalvar.push(`CMV de ${fmtPct(d.cmv)} acima do limite de ${fmtPct(config.cmv_max)} — exige aprovação da diretoria.`);
 
 
 
@@ -1007,6 +1004,13 @@ function PropostaCarregadoresPage() {
       titulo: `Fora da política — MB ${fmtPct(d.mbPct)}`,
       motivo: `A margem bruta está abaixo do mínimo de ${fmtPct(config.politica_mb_min)} exigido pela política comercial.`,
       corrigir: "Aumente o valor unitário dos produtos ou reduza o frete absorvido (CIF/Dedicado).",
+    });
+  if (temProduto && d.cmvExcedido)
+    alertas.push({
+      level: "warn",
+      titulo: `CMV acima do teto — ${fmtPct(d.cmv)}`,
+      motivo: `O CMV supera o limite de ${fmtPct(config.cmv_max)} da política comercial. A proposta pode seguir, mas a comissão fica zerada.`,
+      corrigir: "Revise os valores unitários ou negocie com a diretoria antes de concluir.",
     });
   if (itensSemValor.length)
     alertas.push({
@@ -1276,7 +1280,7 @@ function PropostaCarregadoresPage() {
     if (abaixoPolitica) return toast.error("MB% abaixo da política mínima.");
     const dNow = calcAtual();
     if (dNow.cmvExcedido)
-      return toast.error(`CMV de ${fmtPct(dNow.cmv)} acima do limite de ${fmtPct(config.cmv_max)}. Necessária aprovação especial da diretoria.`);
+      toast.warning(`CMV de ${fmtPct(dNow.cmv)} acima de ${fmtPct(config.cmv_max)} — sem comissão nesta proposta.`);
     submitLock.current = true;
     // Quem chama concluirPedido já setou saving e status; evita piscar
     if (!saving) setSaving(true);
