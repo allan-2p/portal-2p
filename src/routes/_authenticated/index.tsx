@@ -173,6 +173,8 @@ function HomePage() {
     queryFn: () => fetchSalespeople(),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    // Sem sessão hidratada o RPC sai sem Authorization e o servidor lança "Unauthorized".
+    enabled: dataEnabled,
   });
   const salespeople = peopleQ.data?.records ?? [];
 

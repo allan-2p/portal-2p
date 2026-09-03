@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Users as UsersIcon, Loader2, Lock, ChevronDown, Check } from "lucide-react";
 import { getSalesforceSalespeople } from "@/lib/salesforce.functions";
 import { useSellerScope } from "@/hooks/use-seller-scope";
+import { useAuth } from "@/hooks/use-auth";
 
 export function VendedorFilter({
   value,
@@ -21,12 +22,15 @@ export function VendedorFilter({
 }) {
   const { query: scopeQ, scope, ready: scopeReady } = useSellerScope();
 
+  const { user } = useAuth();
   const fetchSalespeople = useServerFn(getSalesforceSalespeople);
   const q = useQuery({
     queryKey: ["sf-salespeople"],
     queryFn: () => fetchSalespeople(),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    // Sem sessão hidratada o RPC sai sem Authorization e o servidor lança "Unauthorized".
+    enabled: !!user,
   });
 
   // Fail-safe: enquanto o escopo não carrega OU se der erro, trata como Individual
