@@ -103,8 +103,10 @@ function validar(input: any): SalvarPropostaInput {
 
   const faturarClienteFinal = input.faturarClienteFinal === true;
   const faturamento: Record<string, string | boolean> = {};
-  for (const c of [...campos, "doc", "nome", "ie"])
+  for (const c of [...campos, "doc", "nome", "ie", "ie_situacao"])
     faturamento[c] = String(input.faturamento?.[c] ?? "").slice(0, 160);
+  const ieHabInput = input.faturamento?.['ie_habilitada'];
+  if (typeof ieHabInput === "boolean") faturamento['ie_habilitada'] = ieHabInput;
   faturamento['contribuinte'] = !!input.faturamento?.contribuinte;
   if (faturarClienteFinal) {
     const docFat = String(faturamento['doc'] ?? "").replace(/\D/g, "");
@@ -114,7 +116,16 @@ function validar(input: any): SalvarPropostaInput {
     if (docFat.length === 11 ? !cpfValido(docFat) : !cnpjValido(docFat))
       throw new Error(docFat.length === 11 ? "CPF do faturamento inválido." : "CNPJ do faturamento inválido.");
     // CPF nunca é contribuinte de ICMS.
-    if (docFat.length === 11) faturamento['contribuinte'] = false;
+    if (docFat.length === 11) {
+      faturamento['contribuinte'] = false;
+      faturamento['ie_habilitada'] = false;
+    } else {
+      // CNPJ: a consulta do CNPJ é obrigatória — ela decide a IE e, com ela,
+      // contribuinte (TP_OV e ICMSTAXPAY).
+      if (!temDecisaoFiscal(faturamento))
+        throw new Error("Consulte o CNPJ do cliente final para definir a inscrição estadual.");
+      faturamento['contribuinte'] = contribuinteDeEnrich(faturamento);
+    }
     if (!faturamento['logradouro'] || !faturamento['cidade'] || !faturamento['uf'])
       throw new Error("Informe o endereço de faturamento.");
   }
