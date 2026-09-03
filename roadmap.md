@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Em andamento / perguntas
+- [x] Kit fotovoltaico: item-base passa de 100000350 para 200000691 (de-para SAP 200000691 → 100000278 mantido) + correção do e-mail de aviso.
 - [x] Carregadores: tornar a margem mínima editável na Moderação, iniciar em 10% e bloquear orçamento/finalização abaixo do limite.
 - [x] Salesforce: priorizar na fila pedidos já vinculados quando houver compra, nº SAP, mudança de status ou cancelamento; reconciliar o pedido 52671 e casos equivalentes.
 - [x] Backfill Salesforce: 6.393 propostas sem `sf_status` enfileiradas (pendente) para o cron `salesforce-fila` drenar.

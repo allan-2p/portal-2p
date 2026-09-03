@@ -35,6 +35,12 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Alterado
+- Kit fotovoltaico Solar: o item-base da proposta passa a ser **200000691** (Kit Gerador Powerpad Rockcore 620w) no lugar de 100000350. A OV do SAP mantém o de-para para o material de produção **100000278**.
+
+### Corrigido
+- E-mail de aviso de kit: os itens apareciam como "— —" (lia `descricao` em vez de `nome`) e o texto citava o código comercial antigo.
+
 - Carregadores: **CMV acima do teto não bloqueia mais o orçamento**. A proposta pode ser salva, exportada em PDF e concluída; o portal apenas avisa que o CMV passou do limite e a comissão fica zerada nessa condição.
 
 

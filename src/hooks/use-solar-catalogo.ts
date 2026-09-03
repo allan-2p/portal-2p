@@ -197,7 +197,7 @@ export function useSolarProdutos() {
 }
 
 /**
- * Kit-base fotovoltaico (material comercial 100000350). Buscado SEM filtro de
+ * Kit-base fotovoltaico (material comercial 200000691). Buscado SEM filtro de
  * `ativo`/visibilidade — mesma regra do servidor, que injeta esse item quando a
  * venda é kit.
  */
@@ -210,7 +210,7 @@ export function useSolarKitBase(habilitado = true) {
       const { data, error } = await supabase
         .from("sap_produtos")
         .select("id, codigo, descricao, tipo, preco_sugerido, imagem_path, ncm_id")
-        .eq("codigo", "100000350")
+        .eq("codigo", "200000691")
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
