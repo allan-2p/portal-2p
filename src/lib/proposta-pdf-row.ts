@@ -60,8 +60,20 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
   const valorItens = itens.reduce((a, i) => a + num(i['valor']) * num(i['qtd']), 0);
   const base = num(totais['valor']) || valorItens;
   const icmsRate = num(totais['icmsRate']);
-  const ipiRate = base > 0 ? num(totais['ipi']) / base : 0;
-  const pisCofinsRate = base > 0 ? num(totais['pisCofins']) / base : 0;
+  // Alíquotas NOMINAIS (as do NCM/operação), nunca parcela ÷ valor bruto:
+  // o IPI é por fora (base = valor sem IPI) e o PIS/COFINS tem alíquota
+  // própria. Preferimos as alíquotas fotografadas por item no fechamento.
+  const aliqItem = (campo: string) => {
+    const v = itens.map((i) => num(i[campo])).filter((x) => x > 0 && x < 1);
+    return v.length ? v[0]! : 0;
+  };
+  const ipiTotal = num(totais['ipi']);
+  const semIpi = base - ipiTotal;
+  const ipiRate = aliqItem('aliq_ipi') || (semIpi > 0 ? ipiTotal / semIpi : 0);
+  const pisCofinsRate =
+    aliqItem('aliq_pis_cofins') ||
+    (semIpi > 0 ? num(totais['pisCofins']) / semIpi : 0);
+
   const fat = baseFaturamento(p);
   const ent = (p['entrega'] ?? {}) as Row;
   const frete = num(p['frete_valor']);
@@ -86,9 +98,10 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
       nome: txt(i['nome']),
       qtd: num(i['qtd']),
       valor: num(i['valor']),
-      ipiRate: ipiRate || null,
-      icmsRate: icmsRate || null,
-      pisCofinsRate: pisCofinsRate || null,
+      ipiRate: num(i['aliq_ipi']) || ipiRate || null,
+      icmsRate: num(i['aliq_icms']) || icmsRate || null,
+      pisCofinsRate: num(i['aliq_pis_cofins']) || pisCofinsRate || null,
+
     })),
     freteMod: txt(p['frete_mod']) || "—",
     fretePrazo: p['frete_prazo'] == null ? null : num(p['frete_prazo']),
