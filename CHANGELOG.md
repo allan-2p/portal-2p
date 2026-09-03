@@ -44,7 +44,12 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Faturamento direto ao cliente final em Carregadores** segue a mesma regra do Solar: botão Buscar consulta o CNPJ, a inscrição estadual e o "contribuinte de ICMS" passam a vir da consulta (campo agora somente leitura), a etapa Faturamento não avança nem salva sem a consulta e o resumo "Revisar e concluir" mostra o bloco do cliente final com IE, situação da IE e endereço completo.
 - **Cadastro do cliente no SAP** usa a IE habilitada para definir o ICMSTAXPAY (01/09): CNPJ com inscrição baixada, suspensa ou isenta vai como não contribuinte, inclusive no parceiro de faturamento criado a partir do pedido.
 
+### Adicionado
+- **Resumo final da proposta de Carregadores** mostra os dados fiscais do cliente final (documento, inscrição estadual, situação da IE e contribuinte de ICMS).
+
 ### Corrigido
+- **Entrega em Carregadores** segue o endereço do cliente final quando o pedido é faturado direto para ele e não há endereço de entrega próprio (antes ia para o endereço do revendedor).
+- **Cadastro do cliente final no SAP**: atualização de cadastro já existente (KUNNR conhecido) volta a retentar em falha temporária do SAP; criação continua sem retentativa para não duplicar parceiro.
 - **Proposta Solar faturada a CPF do cliente final** volta a salvar: a decisão fiscal (sem inscrição estadual) passa a ser gravada automaticamente, sem pedir consulta de CNPJ.
 - **Troca entre CNPJ e CPF do cliente final (Solar)** limpa o documento, o nome/IE e o resultado da consulta anterior, evitando o erro "CPF inválido" com um CNPJ herdado no campo.
 - **Motivo do botão "Próximo" travado** na etapa Faturamento agora aparece antes do clique, explicando o que falta preencher ou consultar.

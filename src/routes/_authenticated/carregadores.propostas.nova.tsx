@@ -740,10 +740,32 @@ function PropostaCarregadoresPage() {
     } satisfies CarregadoresState["entrega"];
   }, [clientesQ.data, state.doc, state.uf]);
 
-  /** Endereço que efetivamente vale para a proposta. */
+  /**
+   * Endereço que efetivamente vale para a proposta. Sem "entrega diferente" e
+   * faturando o cliente final, a mercadoria segue para o endereço dele (mesma
+   * regra do Solar) — não para o do revendedor.
+   */
+  const entregaClienteFinal: CarregadoresState["entrega"] | null =
+    state.faturarClienteFinal &&
+    String(state.faturamento.logradouro ?? "").trim() &&
+    String(state.faturamento.cidade ?? "").trim()
+      ? {
+          cep: state.faturamento.cep ?? "",
+          logradouro: state.faturamento.logradouro ?? "",
+          numero: state.faturamento.numero ?? "",
+          complemento: state.faturamento.complemento ?? "",
+          bairro: state.faturamento.bairro ?? "",
+          cidade: state.faturamento.cidade ?? "",
+          uf: state.faturamento.uf || state.uf,
+          contato: state.entrega.contato ?? "",
+          telefone: state.faturamento.telefone || state.entrega.telefone || "",
+        }
+      : null;
+
   const entregaEfetiva: CarregadoresState["entrega"] = state.entregaDiferente
     ? state.entrega
-    : (enderecoPadraoCliente ?? { ...state.entrega, uf: state.entrega.uf || state.uf });
+    : (entregaClienteFinal ??
+      enderecoPadraoCliente ?? { ...state.entrega, uf: state.entrega.uf || state.uf });
 
   /** Endereço efetivo de entrega — base da cotação de frete. */
   const destinoFrete = {
@@ -2587,6 +2609,24 @@ function PropostaCarregadoresPage() {
                         .join(" · ") || "—"
                     }
                   />
+                  {state.faturarClienteFinal && (
+                    <ResumoLinha
+                      k="Dados fiscais do cliente final"
+                      v={
+                        [
+                          state.faturamento.doc ? (faturamentoEhCpf ? `CPF ${state.faturamento.doc}` : `CNPJ ${state.faturamento.doc}`) : "",
+                          faturamentoEhCpf ? "" : `IE ${state.faturamento.ie?.trim() || "—"}`,
+                          faturamentoEhCpf
+                            ? ""
+                            : `IE habilitada: ${fatIeHabilitada === null ? "—" : fatIeHabilitada ? "Sim" : "Não"}`,
+                          `Contribuinte: ${state.faturamento.contribuinte ? "Sim" : "Não"}`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      }
+                    />
+                  )}
+
                   <ResumoLinha
                     k="Endereço de entrega"
                     v={linhasEndereco(entregaEfetiva).join(" · ") || "—"}
