@@ -80,6 +80,7 @@ import { useConfirmarSaida } from "@/components/confirmar-saida";
 import { salvarPropostaSolar, KIT_FOTOVOLTAICO_MATERIAL } from "@/lib/propostas-solar.functions";
 import { normalizarFinalidade } from "@/lib/sap-clientes-map";
 import { cnpjValido, cpfValido } from "@/lib/cnpj";
+import { contribuinteDeEnrich } from "@/lib/contribuinte";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
 import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
 import { resolverProduto } from "@/lib/solar-sku";
@@ -228,6 +229,12 @@ function NovaPropostaSolarPage() {
    * SAP — por isso a etapa 2 bloqueia o avanço até buscar o CNPJ informado.
    */
   const [fatConsultadoDoc, setFatConsultadoDoc] = useState<string | null>(null);
+  /**
+   * Resultado fiscal da consulta: `true` só quando a IE do cliente final está
+   * HABILITADA. `null` = ainda não consultado (ou proposta antiga sem o dado).
+   * É a única fonte de verdade de contribuinte daqui pra frente.
+   */
+  const [fatIeHabilitada, setFatIeHabilitada] = useState<boolean | null>(null);
 
   /** Finalidade de uso — obrigatória quando o pedido fatura o cliente final. */
   const [finalidadeUso, setFinalidadeUso] = useState<string>("");
@@ -475,11 +482,14 @@ function NovaPropostaSolarPage() {
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
       const fatSalvo = (p['faturamento'] as Record<string, string>) ?? {};
       setFat(fatSalvo);
-      setFatContribuinte(!!(p['faturamento'] as Record<string, unknown> | null)?.['contribuinte']);
-      // Proposta já salva: o faturamento gravado já passou pela consulta/edição,
-      // então o CNPJ carregado conta como consultado (edição/duplicação).
+      const fatBlob = (p['faturamento'] as Record<string, unknown> | null) ?? {};
+      const ieHab = typeof fatBlob['ie_habilitada'] === "boolean" ? (fatBlob['ie_habilitada'] as boolean) : null;
+      setFatIeHabilitada(ieHab);
+      setFatContribuinte(ieHab ?? contribuinteDeEnrich(fatBlob as never));
+      // Só conta como consultado o faturamento que já traz a decisão fiscal
+      // (ie_habilitada). Propostas antigas exigem nova consulta antes de avançar.
       const docSalvo = String(fatSalvo['doc'] ?? "").replace(/\D/g, "");
-      setFatConsultadoDoc(docSalvo || null);
+      setFatConsultadoDoc(ieHab === null ? null : (docSalvo || null));
       // O banco guarda o slug ("uso_consumo"); a tela usa o rótulo do SAP.
       setFinalidadeUso(p['finalidade_uso'] ? normalizarFinalidade(p['finalidade_uso']) : "");
       setFormaPagamento(String(p['forma_pagamento'] ?? ""));
@@ -1047,8 +1057,7 @@ function NovaPropostaSolarPage() {
           faturamento: faturarClienteFinal
             ? {
                 doc: String(fat['doc'] ?? ""),
-                contribuinte:
-                  String(fat['contribuinte'] ?? "") === "true" || Boolean(String(fat['ie'] ?? "").trim()),
+                contribuinte: fatContribuinte,
                 // UF do faturamento: o servidor simula com o cliente fake dela,
                 // já que o cliente final não existe no cadastro do SAP.
                 uf: String(fat['uf'] ?? cliente?.['uf'] ?? ""),
@@ -1157,7 +1166,7 @@ function NovaPropostaSolarPage() {
   // A UF do faturamento entra na assinatura: ela define o cliente fake usado na
   // simulação (imposto por estado), então trocá-la tem que reprecificar.
   const assinaturaFaturado = faturarClienteFinal
-    ? `1|${String(fat['doc'] ?? "").replace(/\D/g, "")}|${String(fat['contribuinte'] ?? "")}|${String(fat['ie'] ?? "").trim() ? 1 : 0}|${String(fat['uf'] ?? "").trim().toUpperCase()}`
+    ? `1|${String(fat['doc'] ?? "").replace(/\D/g, "")}|${fatContribuinte ? 1 : 0}|${fatIeHabilitada === true ? 1 : 0}|${String(fat['uf'] ?? "").trim().toUpperCase()}`
     : "0";
   // Kit fotovoltaico entra na MESMA assinatura: marcar ou desmarcar o kit muda
   // o preço de TODOS os itens (isenção de ICMS/IPI), então tem que reprecificar
@@ -1283,6 +1292,8 @@ function NovaPropostaSolarPage() {
       // A consulta foi executada (com ou sem retorno): libera o avanço da etapa.
       setFatConsultadoDoc(doc);
       if (!e) {
+        setFatIeHabilitada(false);
+        setFatContribuinte(false);
         toast.warning("Não encontramos dados públicos — preencha manualmente.");
         return;
       }
@@ -1290,6 +1301,7 @@ function NovaPropostaSolarPage() {
         ...p,
         nome: e.razao_social ?? p['nome'] ?? "",
         ie: e.ie ?? p['ie'] ?? "",
+        ie_situacao: e.ie_situacao ?? "",
         cep: e.cep ?? p['cep'] ?? "",
         logradouro: e.logradouro ?? p['logradouro'] ?? "",
         numero: e.numero ?? p['numero'] ?? "",
@@ -1299,8 +1311,10 @@ function NovaPropostaSolarPage() {
         uf: e.uf ?? p['uf'] ?? "",
         telefone: e.telefone ?? p['telefone'] ?? "",
       }));
-      // Contribuinte de ICMS é definido pela consulta: IE encontrada ⇒ contribuinte.
-      setFatContribuinte(Boolean(String(e.ie ?? "").trim()));
+      // Contribuinte de ICMS = IE HABILITADA na consulta. IE ausente, baixada
+      // ou suspensa ⇒ não contribuinte (ZC2P / ICMSTAXPAY 09).
+      setFatIeHabilitada(e.ie_habilitada === true);
+      setFatContribuinte(e.ie_habilitada === true);
       toast.success("Dados do CNPJ preenchidos. Você ainda pode editá-los.");
     } catch (err) {
       toast.error((err as Error).message || "Não foi possível consultar o CNPJ.");
@@ -1469,6 +1483,8 @@ function NovaPropostaSolarPage() {
       }
       if (faturarClienteFinal && !finalidadeUso)
         e.push("Informe a finalidade de uso (Revenda, Industrialização ou Uso e Consumo).");
+      if (faturarClienteFinal && fatTipoDoc === "cnpj" && fatIeHabilitada === null)
+        e.push("Consulte o CNPJ do cliente final: sem a inscrição estadual não é possível definir se ele é contribuinte de ICMS.");
       if (faturarClienteFinal && fatTipoDoc === "cnpj" && fatContribuinte && !String(fat['ie'] ?? "").trim())
         e.push("Cliente final marcado como contribuinte: informe a inscrição estadual.");
     }
@@ -1499,7 +1515,7 @@ function NovaPropostaSolarPage() {
     return e;
   }, [
     etapa, propostaNome, cliente, vendido, previsao, faturarClienteFinal, fat,
-    finalidadeUso, fatTipoDoc, fatContribuinte, fatConsultadoDoc,
+    finalidadeUso, fatTipoDoc, fatContribuinte, fatConsultadoDoc, fatIeHabilitada,
     itens, freteMod, transportadora, freteGratis, entregaDiferente, entrega,
     modo, assinaturaCalc, calcDesatualizado, itensCalc, avisosPreco, ehKit,
     freteCotando,
@@ -1561,13 +1577,30 @@ function NovaPropostaSolarPage() {
           tipoNf,
           faturarClienteFinal,
           finalidadeUso: finalidadeUso || null,
-          faturamento: { ...fat, contribuinte: fatTipoDoc === "cnpj" ? fatContribuinte : false },
+          faturamento: {
+            ...fat,
+            contribuinte: fatTipoDoc === "cnpj" ? fatContribuinte : false,
+            // Decisão fiscal da consulta — viaja com a proposta (preço, PDF, SAP).
+            ie_habilitada: fatTipoDoc === "cnpj" ? fatIeHabilitada === true : false,
+          },
           formaPagamento: formaPagamento || null,
           condicaoPagamento: condicaoPagamento || null,
           entregaDiferente,
+          // Sem endereço de entrega próprio, a mercadoria vai para quem recebe a
+          // NF: cliente final quando o pedido é faturado direto para ele.
           entrega: entregaDiferente
             ? entrega
-            : {
+            : faturarClienteFinal && String(fat['logradouro'] ?? "").trim()
+              ? {
+                  cep: String(fat['cep'] ?? ""),
+                  logradouro: String(fat['logradouro'] ?? ""),
+                  numero: String(fat['numero'] ?? ""),
+                  complemento: String(fat['complemento'] ?? ""),
+                  bairro: String(fat['bairro'] ?? ""),
+                  cidade: String(fat['cidade'] ?? ""),
+                  uf: String(fat['uf'] ?? ""),
+                }
+              : {
                 cep: String(cliente?.['cep'] ?? ""),
                 logradouro: String(cliente?.['logradouro'] ?? ""),
                 numero: String(cliente?.['numero'] ?? ""),
@@ -1871,7 +1904,15 @@ function NovaPropostaSolarPage() {
             <button
               key={e}
               type="button"
-              onClick={() => setEtapa(((i + 1) as 1 | 2 | 3 | 4 | 5))}
+              onClick={() => {
+                const alvo = (i + 1) as 1 | 2 | 3 | 4 | 5;
+                if (alvo <= etapa) return setEtapa(alvo);
+                // Avançar pela trilha respeita as mesmas validações do botão
+                // Avançar — inclusive a consulta obrigatória do CNPJ.
+                if (alvo === etapa + 1 && !erros.length) return setEtapa(alvo);
+                setTentou(true);
+                toast.error(erros[0] ?? "Conclua a etapa atual antes de avançar.");
+              }}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs sm:text-sm transition-colors",
                 etapa === i + 1
@@ -2103,7 +2144,11 @@ function NovaPropostaSolarPage() {
                       <span>
                         Cliente final é contribuinte de ICMS
                         <span className="block text-xs text-muted-foreground">
-                          Definido automaticamente pela consulta do CNPJ (inscrição estadual).
+                          {fatIeHabilitada === null
+                            ? "Clique em Buscar: a consulta do CNPJ define a inscrição estadual."
+                            : fatIeHabilitada
+                              ? `IE habilitada${String(fat['ie'] ?? "").trim() ? ` — ${fat['ie']}` : ""}.`
+                              : `Sem IE habilitada${String(fat['ie_situacao'] ?? "").trim() ? ` (${fat['ie_situacao']})` : ""} — faturado como não contribuinte.`}
                         </span>
                       </span>
                     </div>
@@ -3407,6 +3452,7 @@ function NovaPropostaSolarPage() {
           stepLabel={ETAPAS[etapa - 1]}
           onBack={etapa > 1 ? () => setEtapa((s) => (Math.max(1, s - 1) as typeof s)) : undefined}
           onNext={etapa < 5 ? avancar : undefined}
+          nextDisabled={erros.length > 0}
           errors={erros}
           showErrors={tentou}
           // Salvar/gerar proposta existem apenas na etapa de Finalização.

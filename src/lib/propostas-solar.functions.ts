@@ -505,7 +505,21 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       }
     }
 
+    // Guarda fiscal: faturando CNPJ do cliente final, a proposta só é aceita
+    // com a decisão da consulta (ie_habilitada). Sem ela o TP_OV/ICMSTAXPAY
+    // sairiam "chutados" e a NF divergiria de valor no SAP.
+    if (data.faturarClienteFinal) {
+      const fatIn = (data.faturamento ?? {}) as Record<string, unknown>;
+      const docFat = String(fatIn["doc"] ?? "").replace(/\D/g, "");
+      if (docFat.length === 14 && typeof fatIn["ie_habilitada"] !== "boolean") {
+        throw new Error(
+          "Consulte o CNPJ do cliente final (botão Buscar) antes de salvar: a consulta define a inscrição estadual e se ele é contribuinte de ICMS.",
+        );
+      }
+    }
+
     const payload: Record<string, unknown> = {
+
 
       numero: numeroProposta,
       nome: data.propostaNome,

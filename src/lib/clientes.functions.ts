@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { docCanonico } from "./cnpj";
+import { contribuinteDeEnrich } from "./contribuinte";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
@@ -789,7 +790,7 @@ export const revalidarCnpjClienteFn = createServerFn({ method: "POST" })
       ie_situacao: e.ie_situacao,
       suframa: e.suframa,
       suframa_situacao: e.suframa_situacao,
-      contribuinte: !!e.ie,
+      contribuinte: contribuinteDeEnrich(e),
       regime_tributario: e.regime_tributario,
       cep: e.cep,
       logradouro: e.logradouro,
