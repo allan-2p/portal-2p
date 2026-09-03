@@ -98,9 +98,10 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
       nome: txt(i['nome']),
       qtd: num(i['qtd']),
       valor: num(i['valor']),
-      ipiRate: ipiRate || null,
-      icmsRate: icmsRate || null,
-      pisCofinsRate: pisCofinsRate || null,
+      ipiRate: num(i['aliq_ipi']) || ipiRate || null,
+      icmsRate: num(i['aliq_icms']) || icmsRate || null,
+      pisCofinsRate: num(i['aliq_pis_cofins']) || pisCofinsRate || null,
+
     })),
     freteMod: txt(p['frete_mod']) || "—",
     fretePrazo: p['frete_prazo'] == null ? null : num(p['frete_prazo']),
