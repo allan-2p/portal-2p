@@ -1371,7 +1371,8 @@ async function cadastrarParceiroFaturamento(
       escopo_org: escopo as "solar" | "carregadores" | "grupo",
     },
     // Criação de BP não é idempotente: nada de reenviar em HTTP 500.
-    { tentativas: 2, retentarHttp5xx: false },
+    // Atualização (KUNNR conhecido) é idempotente e pode retentar 5xx.
+    { tentativas: 2, retentarHttp5xx: Boolean(numeroSapExistente) },
   );
 
   if (!r.ok) return { ok: false, erro: r.erro };
