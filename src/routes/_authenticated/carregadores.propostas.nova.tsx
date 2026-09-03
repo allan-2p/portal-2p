@@ -705,6 +705,7 @@ function PropostaCarregadoresPage() {
   /** Atualiza os dados do destinatário fiscal alternativo. */
   /** Cidade/UF do faturamento ficam travadas quando vieram do CEP. */
   const [fatCepOk, setFatCepOk] = useState(false);
+  const [buscandoCnpjFat, setBuscandoCnpjFat] = useState(false);
 
   const setFaturamento = (patch: Partial<CarregadoresState["faturamento"]>) =>
     setState((s) => ({ ...s, faturamento: { ...s.faturamento, ...patch } }));
@@ -3136,6 +3137,38 @@ function PropostaCarregadoresPage() {
                   {state.email ? ` · ${state.email}` : ""}
                 </p>
               </div>
+
+              {state.faturarClienteFinal && (
+                <div className="rounded-xl border border-border p-3 space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Faturado para (cliente final)
+                  </p>
+                  <p className="font-semibold">{state.faturamento.nome || "—"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {state.faturamento.doc || "—"} ·{" "}
+                    {faturamentoEhCpf
+                      ? "CPF · não contribuinte"
+                      : `IE ${state.faturamento.ie || "—"} · ${
+                          fatIeHabilitada === null
+                            ? "IE não consultada"
+                            : fatIeHabilitada
+                              ? "IE habilitada"
+                              : "IE não habilitada"
+                        } · ${state.faturamento.contribuinte ? "Contribuinte" : "Não contribuinte"}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {[
+                      state.faturamento.logradouro,
+                      state.faturamento.numero,
+                      state.faturamento.bairro,
+                      cidadeUf(state.faturamento.cidade, state.faturamento.uf),
+                      state.faturamento.cep,
+                    ]
+                      .filter((v) => String(v ?? "").trim())
+                      .join(", ") || "—"}
+                  </p>
+                </div>
+              )}
 
               <div className="rounded-xl border border-border p-3 space-y-1.5">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
