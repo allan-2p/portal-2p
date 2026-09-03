@@ -169,11 +169,15 @@ export type CarregadoresFaturamento = CarregadoresEndereco & {
   doc: string;
   nome: string;
   ie: string;
+  /** Situação textual da IE retornada na consulta do CNPJ. */
+  ie_situacao?: string;
+  /** IE habilitada na consulta — fonte única de "contribuinte". */
+  ie_habilitada?: boolean | null;
   contribuinte: boolean;
 };
 
 export function novoFaturamento(uf = ""): CarregadoresFaturamento {
-  return { ...novoEndereco(uf), doc: "", nome: "", ie: "", contribuinte: false };
+  return { ...novoEndereco(uf), doc: "", nome: "", ie: "", ie_situacao: "", ie_habilitada: null, contribuinte: false };
 }
 
 /** Transportadora escolhida na cotação do Fretefy. */

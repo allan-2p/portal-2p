@@ -34,7 +34,9 @@ import {
 } from "@/components/ui/command";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listClientesPaginaFn } from "@/lib/clientes.functions";
+import { listClientesPaginaFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
+import { contribuinteDeEnrich } from "@/lib/contribuinte";
+import { cnpjValido } from "@/lib/cnpj";
 import { getClienteLogo } from "@/lib/cliente-logos.functions";
 import { PropostaIndicacao } from "@/components/proposta-indicacao";
 import { CepInput } from "@/components/cep-input";
@@ -393,6 +395,47 @@ function PropostaCarregadoresPage() {
   // Faturamento direto ao cliente final com CPF → finalidade travada em Uso e Consumo.
   const faturamentoDocDigits = String(state.faturamento.doc ?? "").replace(/\D/g, "");
   const faturamentoEhCpf = state.faturarClienteFinal && faturamentoDocDigits.length === 11;
+  /** Contribuinte do cliente final = IE HABILITADA na consulta do CNPJ. */
+  const fatIeHabilitada =
+    typeof state.faturamento.ie_habilitada === "boolean" ? state.faturamento.ie_habilitada : null;
+
+  /** Busca os dados públicos do CNPJ do cliente final (define a IE). */
+  async function buscarCnpjFaturamento() {
+    const doc = String(state.faturamento.doc ?? "").replace(/\D/g, "");
+    if (!cnpjValido(doc)) {
+      toast.error("Informe um CNPJ válido (14 dígitos).");
+      return;
+    }
+    setBuscandoCnpjFat(true);
+    try {
+      const e = await enriquecerCnpjFaturamento({ data: { cnpj: doc } });
+      if (!e) {
+        setFaturamento({ ie_habilitada: false, contribuinte: false });
+        toast.warning("Não encontramos dados públicos — preencha manualmente.");
+        return;
+      }
+      setFatCepOk(!!e.cep);
+      setFaturamento({
+        nome: e.razao_social ?? state.faturamento.nome,
+        ie: e.ie ?? state.faturamento.ie,
+        ie_situacao: e.ie_situacao ?? "",
+        ie_habilitada: e.ie_habilitada === true,
+        contribuinte: contribuinteDeEnrich({ ...e, doc } as never),
+        cep: e.cep ?? state.faturamento.cep,
+        logradouro: e.logradouro ?? state.faturamento.logradouro,
+        numero: e.numero ?? state.faturamento.numero,
+        complemento: e.complemento ?? state.faturamento.complemento,
+        bairro: e.bairro ?? state.faturamento.bairro,
+        cidade: e.cidade ?? state.faturamento.cidade,
+        uf: e.uf ?? state.faturamento.uf,
+      });
+      toast.success("Dados do CNPJ preenchidos. Você ainda pode editá-los.");
+    } catch (err) {
+      toast.error((err as Error).message || "Não foi possível consultar o CNPJ.");
+    } finally {
+      setBuscandoCnpjFat(false);
+    }
+  }
 
   // Mantém a finalidade da tela sincronizada com o estado da proposta.
   // Isso evita que o Select mostre um valor enquanto o payload enviado ao
@@ -428,6 +471,7 @@ function PropostaCarregadoresPage() {
   // Clientes vindos do cadastro universal (Clientes > Cadastros)
 
   const listClientes = useServerFn(listClientesPaginaFn);
+  const enriquecerCnpjFaturamento = useServerFn(enriquecerCnpjFn);
   const salvarProposta = useServerFn(salvarPropostaCarregadores);
   const consultarNumeroSap = useServerFn(consultarNumeroSapFn);
 
@@ -661,6 +705,7 @@ function PropostaCarregadoresPage() {
   /** Atualiza os dados do destinatário fiscal alternativo. */
   /** Cidade/UF do faturamento ficam travadas quando vieram do CEP. */
   const [fatCepOk, setFatCepOk] = useState(false);
+  const [buscandoCnpjFat, setBuscandoCnpjFat] = useState(false);
 
   const setFaturamento = (patch: Partial<CarregadoresState["faturamento"]>) =>
     setState((s) => ({ ...s, faturamento: { ...s.faturamento, ...patch } }));
@@ -888,6 +933,11 @@ function PropostaCarregadoresPage() {
       errosFaturamento.push({ campo: "fat_doc", msg: "CNPJ/CPF do faturamento inválido." });
     if (state.faturamento.contribuinte && !state.faturamento.ie.trim())
       errosFaturamento.push({ campo: "fat_ie", msg: "Faturamento contribuinte precisa de Inscrição Estadual." });
+    if (fatDoc.length === 14 && fatIeHabilitada === null)
+      errosFaturamento.push({
+        campo: "fat_doc",
+        msg: "Consulte o CNPJ do cliente final para definir a inscrição estadual.",
+      });
     if (!state.faturamento.logradouro.trim() || !state.faturamento.cidade.trim())
       errosFaturamento.push({ campo: "fat_end", msg: "Informe o endereço de faturamento." });
     if (state.faturamento.uf.trim().toUpperCase() !== state.uf.trim().toUpperCase())
@@ -1869,11 +1919,34 @@ function PropostaCarregadoresPage() {
                       </Field>
                       <Field label="CPF / CNPJ">
 
-                        <Input
-                          value={state.faturamento.doc}
-                          className={cn(campoInvalido("fat_doc") && "border-destructive")}
-                          onChange={(e) => setFaturamento({ doc: e.target.value })}
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            value={state.faturamento.doc}
+                            className={cn(campoInvalido("fat_doc") && "border-destructive")}
+                            onChange={(e) =>
+                              setFaturamento({
+                                doc: e.target.value,
+                                ie_habilitada: null,
+                                ie_situacao: "",
+                                contribuinte: false,
+                              })
+                            }
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-2 whitespace-nowrap"
+                            disabled={buscandoCnpjFat || faturamentoDocDigits.length !== 14}
+                            onClick={() => void buscarCnpjFaturamento()}
+                          >
+                            {buscandoCnpjFat ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4" />
+                            )}
+                            Buscar
+                          </Button>
+                        </div>
                       </Field>
                       <Field label="Cliente">
                         <Input
@@ -1890,11 +1963,19 @@ function PropostaCarregadoresPage() {
                         />
                       </Field>
                       <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
-                        <span className="text-xs">Contribuinte do ICMS?</span>
-                        <Switch
-                          checked={state.faturamento.contribuinte}
-                          onCheckedChange={(v) => setFaturamento({ contribuinte: v })}
-                        />
+                        <span className="text-xs">
+                          Contribuinte do ICMS?
+                          <span className="block text-[11px] text-muted-foreground">
+                            {faturamentoEhCpf
+                              ? "CPF nunca é contribuinte."
+                              : fatIeHabilitada === null
+                                ? "Clique em Buscar: a consulta do CNPJ define a IE."
+                                : fatIeHabilitada
+                                  ? `IE habilitada${state.faturamento.ie.trim() ? ` — ${state.faturamento.ie}` : ""}.`
+                                  : `Sem IE habilitada${String(state.faturamento.ie_situacao ?? "").trim() ? ` (${state.faturamento.ie_situacao})` : ""}.`}
+                          </span>
+                        </span>
+                        <Switch checked={state.faturamento.contribuinte} disabled />
                       </div>
                       <Field label="CEP">
                         <CepInput
@@ -3056,6 +3137,38 @@ function PropostaCarregadoresPage() {
                   {state.email ? ` · ${state.email}` : ""}
                 </p>
               </div>
+
+              {state.faturarClienteFinal && (
+                <div className="rounded-xl border border-border p-3 space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Faturado para (cliente final)
+                  </p>
+                  <p className="font-semibold">{state.faturamento.nome || "—"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {state.faturamento.doc || "—"} ·{" "}
+                    {faturamentoEhCpf
+                      ? "CPF · não contribuinte"
+                      : `IE ${state.faturamento.ie || "—"} · ${
+                          fatIeHabilitada === null
+                            ? "IE não consultada"
+                            : fatIeHabilitada
+                              ? "IE habilitada"
+                              : "IE não habilitada"
+                        } · ${state.faturamento.contribuinte ? "Contribuinte" : "Não contribuinte"}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {[
+                      state.faturamento.logradouro,
+                      state.faturamento.numero,
+                      state.faturamento.bairro,
+                      cidadeUf(state.faturamento.cidade, state.faturamento.uf),
+                      state.faturamento.cep,
+                    ]
+                      .filter((v) => String(v ?? "").trim())
+                      .join(", ") || "—"}
+                  </p>
+                </div>
+              )}
 
               <div className="rounded-xl border border-border p-3 space-y-1.5">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
