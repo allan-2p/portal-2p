@@ -58,13 +58,37 @@ export function CondicaoPagamentoSelect({
     staleTime: 60_000,
   });
 
+  /** Condição já cadastrada no cliente (ZTERM do SAP): concede prazo sem análise de crédito. */
+  const cadastro = useQuery({
+    queryKey: ["cliente-condicao-pagamento", doc],
+    queryFn: () => condicaoPagamentoClienteFn({ data: { doc } }),
+    enabled: doc.length === 11 || doc.length === 14,
+    staleTime: 60_000,
+  });
+
   const controlar = (doc.length === 11 || doc.length === 14) && credito.isSuccess;
   const vigente = credito.data ?? null;
   const cobre = limiteCobre(vigente, Number(valorTotal) || 0);
 
+  const maxDias = (parcelas: unknown) =>
+    (Array.isArray(parcelas) ? parcelas : []).reduce(
+      (m: number, p: any) => Math.max(m, Number(p?.dias) || 0),
+      0,
+    );
+
+  // Prazo (em dias) que o cadastro do cliente já libera: maior prazo da condição cadastrada.
+  const condicaoSap = String(cadastro.data?.condicaoSap ?? "").trim().toUpperCase();
+  const prazoLiberadoDias =
+    condicaoSap && condicaoSap !== "2P00"
+      ? maxDias((q.data ?? []).find((c) => String(c.codigo).toUpperCase() === condicaoSap)?.parcelas)
+      : 0;
+
   const opcoes = (q.data ?? []).map((c) => {
     const aPrazo = condicaoEhAPrazo(c.parcelas);
-    const bloqueada = controlar && aPrazo && !cobre;
+    const dias = maxDias(c.parcelas);
+    const liberadaPeloCadastro = aPrazo && prazoLiberadoDias > 0 && dias <= prazoLiberadoDias;
+    const liberadaPorCredito = aPrazo && controlar && cobre;
+    const bloqueada = aPrazo && controlar && !(liberadaPeloCadastro || liberadaPorCredito);
     return {
       value: c.codigo,
       codigo: c.codigo,
@@ -72,12 +96,16 @@ export function CondicaoPagamentoSelect({
       label: c.descricao,
       aPrazo,
       bloqueada,
-      motivo: !vigente
-        ? "Sem crédito liberado pelo Financeiro"
-        : `Limite aprovado ${fmtBRL(vigente.limite)} menor que o pedido`,
+      motivo: prazoLiberadoDias > 0
+        ? `Acima do prazo liberado no cadastro (${prazoLiberadoDias} dias) e sem crédito que cubra o pedido`
+        : !vigente
+          ? "Sem crédito liberado pelo Financeiro"
+          : `Limite aprovado ${fmtBRL(vigente.limite)} menor que o pedido`,
     };
   });
   const selecionada = opcoes.find((o) => o.value === value);
+  const temBloqueada = opcoes.some((o) => o.bloqueada);
+
 
   return (
     <div className="space-y-1.5">
