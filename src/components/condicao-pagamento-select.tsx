@@ -160,14 +160,16 @@ export function CondicaoPagamentoSelect({
         </PopoverContent>
       </Popover>
 
-      {!disabled && controlar && !cobre && (
+      {!disabled && temBloqueada && (
         <p className="text-xs text-muted-foreground">
-          Condições a prazo bloqueadas:{" "}
-          {vigente
-            ? `limite aprovado de ${fmtBRL(vigente.limite)} (análise ${vigente.numero}) não cobre este pedido.`
-            : "cliente sem crédito liberado. Peça a análise no cadastro do cliente."}
+          {prazoLiberadoDias > 0
+            ? `Condições até ${prazoLiberadoDias} dias liberadas pelo cadastro do cliente. Prazos maiores dependem de análise de crédito.`
+            : vigente
+              ? `Condições a prazo bloqueadas: limite aprovado de ${fmtBRL(vigente.limite)} (análise ${vigente.numero}) não cobre este pedido.`
+              : "Condições a prazo bloqueadas: cliente sem crédito liberado. Peça a análise no cadastro do cliente."}
         </p>
       )}
+
       {!disabled && controlar && cobre && vigente && (
         <p className="text-xs text-muted-foreground">
           Crédito liberado {fmtBRL(vigente.limite)} · análise {vigente.numero}
