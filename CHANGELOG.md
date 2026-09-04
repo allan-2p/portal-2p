@@ -40,6 +40,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Alterado
 - **Sugestões do Atlas e Radar viraram uma tela só**: agora tudo fica em **Radar do Atlas**, com as abas **Alertas** (clientes em risco) e **Sugestões** (as 10 melhores hipóteses e as ações de Pix). Links antigos para `/solar/clientes/sugestoes` redirecionam para o Radar.
+- **Logo acompanha o tema da instância**: Marketing passa a usar o logo 2P **amarelo** e Financeiro o logo 2P **verde**, ambos sem fundo (antes todas as instâncias usavam o logo laranja da Solar).
 
 ### Corrigido
 - **Busca global do topo fora do centro**: o campo "Buscar telas…" era centralizado apenas no espaço que sobrava entre o logo e os botões da direita. Agora fica centralizado de verdade na barra superior.
