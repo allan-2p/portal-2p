@@ -70,7 +70,8 @@ export type PropostaMotor =
 /**
  * Transições permitidas: destino → motor (ou motores) que podem dispará-la.
  *
- * "Aguardando Pagamento" → "Processando" tem três motores: o pagamento
+ * "Aguardando Pagamento" → "Processando" tem quatro motores: a criação da OV
+ * no checkout (cartão/boleto a prazo: pedido já colocado no SAP), o pagamento
  * (webhook/reconsulta do Pix), o cron do SAP (boleto a prazo/cartão, em que a
  * ordem já existe e o financeiro libera direto no ERP) e a confirmação manual
  * de pagamento feita no portal.
@@ -80,7 +81,7 @@ export const PROPOSTA_TRANSICOES: Record<
   Partial<Record<PropostaStatus, PropostaMotor | PropostaMotor[]>>
 > = {
   "Salvo": { "Aguardando Pagamento": "checkout", "Processando": "checkout", "Cancelado": ["humano", "pagamento"] },
-  "Aguardando Pagamento": { "Processando": ["pagamento", "cron-sap", "humano"], "Cancelado": ["humano", "pagamento"] },
+  "Aguardando Pagamento": { "Processando": ["pagamento", "cron-sap", "humano", "checkout"], "Cancelado": ["humano", "pagamento"] },
   "Processando": { "Separação": "cron-sap", "Cancelado": ["humano", "pagamento"] },
   "Separação": { "Faturado": "cron-sap", "Cancelado": ["humano", "pagamento"] },
   "Faturado": { "Coletado": "cron-sap", "Cancelado": ["humano", "pagamento"] },
