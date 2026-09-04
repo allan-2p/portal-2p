@@ -42,6 +42,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ### Corrigido
 - **Imposto por item na proposta Solar**: IPI, ICMS e PIS/COFINS de cada material passam a vir da **simulação do SAP** (valor real, que muda entre item nacional e importado) em vez das alíquotas genéricas 5% / 4% / 9,25%. Os percentuais são gravados junto com a proposta, então **prévia, resumo, PDF e reimpressão mostram sempre os mesmos números**; propostas antigas sem esse registro continuam usando o cálculo por NCM como aproximação.
 - **Resumo da proposta Solar** passou a exibir IPI, ICMS e PIS/COFINS por item, iguais aos do PDF.
+- **Propostas Solar já salvas sem imposto**: ao abrir a prévia ou imprimir, o portal refaz a simulação do SAP e grava as alíquotas na proposta — as colunas IPI/ICMS/PIS-COFINS deixam de sair com traço. Item isento passa a mostrar **0%** em vez de traço.
 
 ### Alterado
 - **Agenda de tarefas mais enxuta**: cada tarefa virou uma linha única com título clicável (abre em pop up), ações **Interação / Adiar / Concluir** à direita e o botão "Abrir" removido. A linha mostra a **segmentação (A–D) do cliente** e marca claramente quando o vínculo é um **Lead**, que não tem segmentação.
