@@ -33,8 +33,7 @@ import { useStickyOpen } from "@/hooks/use-sticky-open";
 
 import { toast } from "sonner";
 import { AtlasIcon } from "@/components/atlas/atlas-icon";
-import {
-} from "@/components/ui/command";
+import { GlobalSearch } from "@/components/global-search";
 
 const CLIENTES_OPEN_KEY = "portal2p-clientes-open";
 const DASHBOARDS_OPEN_KEY = "portal2p-dashboards-open";
