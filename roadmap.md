@@ -138,4 +138,4 @@
 
 ## Fretefy (04/09)
 - [x] Tela de monitoramento dos webhooks Fretefy: logs, pendências de entrega, taxa de falha e reprocessamento por CargaId (`/admin/logs/fretefy`)
-- [ ] Cadastrar secrets FRETEFY_TOKEN (rotacionado), FRETEFY_WEBHOOK_USER e FRETEFY_WEBHOOK_PASSWORD
+- [x] Cadastrar secrets FRETEFY_TOKEN (rotacionado), FRETEFY_WEBHOOK_USER e FRETEFY_WEBHOOK_PASSWORD
