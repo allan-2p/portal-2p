@@ -884,9 +884,10 @@ function PropostaCarregadoresPage() {
   const st = statusMB(d.mbPct, config);
 
   const avisoUsoConsumo = avisoDifalUsoConsumo(state);
-  const observacoesFinal = [observacoesComDifal(state.observacoes, state), avisoUsoConsumo]
-    .filter(Boolean)
-    .join("\n\n");
+  const observacoesFinal = Array.from(
+    new Set([observacoesComDifal(state.observacoes, state), avisoUsoConsumo].filter(Boolean).flatMap((t) => String(t).split(/\n+/))),
+  ).join("\n");
+
   const uf = ufs.find((u) => u.uf === state.uf);
   // Selo informativo de disponibilidade por item (mesma régua da antiga).
   const disponibilidade = useDisponibilidadeLote(
