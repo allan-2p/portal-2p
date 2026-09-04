@@ -687,22 +687,28 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
   const rows = await db.listarPropostas({
     // "Aguardando Pagamento" só entra com ordem criada (boleto a prazo/cartão);
     // o `naoVazio` abaixo já exclui os pedidos Pix, que ainda não têm OV.
-    // Coletado/Entregue continuam na fila enquanto o documento da NF não tiver
-    // sido enviado com sucesso à Fretefy (nf_fretefy_em IS NULL).
-    statusIn: ["Aguardando Pagamento", "Processando", "Separação", "Faturado", "Coletado", "Entregue"],
+    // "Entregue" é terminal: não há o que consultar no SAP e reconsultá-lo só
+    // gerava transição inválida e re-sync do Salesforce a cada ciclo.
+    statusIn: ["Aguardando Pagamento", "Processando", "Separação", "Faturado", "Coletado"],
 
     select:
       "id,numero,status,created_by,sap_ov_numero,nf_numero,nf_chave,nf_serie,danfe_path,created_at,fretefy_oferta_id,nf_fretefy_em,expedido_em",
 
     order: "asc",
     naoVazio: ["sap_ov_numero"],
-    nulo: ["nf_fretefy_em"],
     limit: 20000,
   });
 
   const elegiveis = rows.filter(
-    (r) => String(r["sap_ov_numero"] ?? "").trim() && String(r["numero"] ?? "").trim(),
+    (r) =>
+      String(r["sap_ov_numero"] ?? "").trim() &&
+      String(r["numero"] ?? "").trim() &&
+      // Só sai da fila quem já está no fim da esteira E já teve o documento
+      // enviado à Fretefy. Antes, qualquer envio à Fretefy congelava o pedido
+      // em "Faturado" (o "Coletado" só vem do SAP).
+      !(String(r["status"] ?? "") === "Coletado" && String(r["nf_fretefy_em"] ?? "").trim()),
   );
+
   // O cron roda a cada 20 minutos; cada execução pega a janela seguinte e,
   // ao chegar ao fim, continua do começo. Assim pedidos novos e antigos são
   // consultados mesmo quando o backlog passa de 50.
