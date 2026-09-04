@@ -42,6 +42,7 @@ import { NfDocumentosCard } from "@/components/nf-documentos-card";
 import { CobrancaCard } from "@/components/cobranca-card";
 import { BoletosSharepointCard } from "@/components/boletos-sharepoint-card";
 import { propostaPdfDaLinha } from "@/lib/proposta-pdf-row";
+import { PropostaPdfPreview } from "@/components/proposta-pdf-preview";
 import { garantirAliquotasProposta } from "@/lib/proposta-aliquotas.functions";
 
 import { useState } from "react";
@@ -771,8 +772,9 @@ function PropostaPdfAcoes({ proposta }: { proposta: Record<string, any> }) {
             </DialogTitle>
           </DialogHeader>
           <div className="min-h-0 flex-1 bg-muted/40">
-            <iframe title="Prévia da proposta" srcDoc={previa ?? ""} className="h-full w-full border-0 bg-white" />
+            <PropostaPdfPreview html={previa ?? ""} titulo="Prévia da proposta" className="h-full" />
           </div>
+
         </DialogContent>
       </Dialog>
     </>
