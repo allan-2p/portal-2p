@@ -133,7 +133,7 @@ export function UserDetailSheet({
             {q.error instanceof Error ? q.error.message : "Erro ao carregar diagnóstico."}
           </div>
         ) : (
-          <div className="p-6 space-y-5">
+          <div className="p-4 sm:p-6 space-y-5">
             {problems.length > 0 && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
                 <span className="font-medium">{problems.length}</span> ponto(s) de atenção

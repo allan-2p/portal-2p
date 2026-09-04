@@ -682,7 +682,7 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
             </button>
           </div>
 
-          <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+          <div className="p-4 sm:p-6 space-y-5 max-h-[70vh] overflow-y-auto">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <Detail label="Projeção" value={fmt(client.projection)} />
               <Detail label="Geração" value={fmt(client.generation)} sub={`${generationPct}%`} />
