@@ -96,6 +96,7 @@ import { Route as ApiPublicHooksPagamentoLinkRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksItauDiagnosticoRouteImport } from './routes/api/public/hooks/itau-diagnostico'
 import { Route as ApiPublicHooksImportacaoIntersolarRouteImport } from './routes/api/public/hooks/importacao-intersolar'
 import { Route as ApiPublicHooksFretefyTrackingRouteImport } from './routes/api/public/hooks/fretefy-tracking'
+import { Route as ApiPublicHooksFretefyBackfillRouteImport } from './routes/api/public/hooks/fretefy-backfill'
 import { Route as ApiPublicHooksEstoqueSyncRouteImport } from './routes/api/public/hooks/estoque-sync'
 import { Route as ApiPublicHooksBoletosSharepointRouteImport } from './routes/api/public/hooks/boletos-sharepoint'
 import { Route as ApiPublicHooksBoletoAvisosRouteImport } from './routes/api/public/hooks/boleto-avisos'
@@ -620,6 +621,12 @@ const ApiPublicHooksFretefyTrackingRoute =
     path: '/api/public/hooks/fretefy-tracking',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksFretefyBackfillRoute =
+  ApiPublicHooksFretefyBackfillRouteImport.update({
+    id: '/api/public/hooks/fretefy-backfill',
+    path: '/api/public/hooks/fretefy-backfill',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksEstoqueSyncRoute =
   ApiPublicHooksEstoqueSyncRouteImport.update({
     id: '/api/public/hooks/estoque-sync',
@@ -858,6 +865,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
+  '/api/public/hooks/fretefy-backfill': typeof ApiPublicHooksFretefyBackfillRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/importacao-intersolar': typeof ApiPublicHooksImportacaoIntersolarRoute
   '/api/public/hooks/itau-diagnostico': typeof ApiPublicHooksItauDiagnosticoRoute
@@ -966,6 +974,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
+  '/api/public/hooks/fretefy-backfill': typeof ApiPublicHooksFretefyBackfillRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/importacao-intersolar': typeof ApiPublicHooksImportacaoIntersolarRoute
   '/api/public/hooks/itau-diagnostico': typeof ApiPublicHooksItauDiagnosticoRoute
@@ -1080,6 +1089,7 @@ export interface FileRoutesById {
   '/api/public/hooks/boleto-avisos': typeof ApiPublicHooksBoletoAvisosRoute
   '/api/public/hooks/boletos-sharepoint': typeof ApiPublicHooksBoletosSharepointRoute
   '/api/public/hooks/estoque-sync': typeof ApiPublicHooksEstoqueSyncRoute
+  '/api/public/hooks/fretefy-backfill': typeof ApiPublicHooksFretefyBackfillRoute
   '/api/public/hooks/fretefy-tracking': typeof ApiPublicHooksFretefyTrackingRoute
   '/api/public/hooks/importacao-intersolar': typeof ApiPublicHooksImportacaoIntersolarRoute
   '/api/public/hooks/itau-diagnostico': typeof ApiPublicHooksItauDiagnosticoRoute
@@ -1194,6 +1204,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
+    | '/api/public/hooks/fretefy-backfill'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/importacao-intersolar'
     | '/api/public/hooks/itau-diagnostico'
@@ -1302,6 +1313,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
+    | '/api/public/hooks/fretefy-backfill'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/importacao-intersolar'
     | '/api/public/hooks/itau-diagnostico'
@@ -1415,6 +1427,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/boleto-avisos'
     | '/api/public/hooks/boletos-sharepoint'
     | '/api/public/hooks/estoque-sync'
+    | '/api/public/hooks/fretefy-backfill'
     | '/api/public/hooks/fretefy-tracking'
     | '/api/public/hooks/importacao-intersolar'
     | '/api/public/hooks/itau-diagnostico'
@@ -1453,6 +1466,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBoletoAvisosRoute: typeof ApiPublicHooksBoletoAvisosRoute
   ApiPublicHooksBoletosSharepointRoute: typeof ApiPublicHooksBoletosSharepointRoute
   ApiPublicHooksEstoqueSyncRoute: typeof ApiPublicHooksEstoqueSyncRoute
+  ApiPublicHooksFretefyBackfillRoute: typeof ApiPublicHooksFretefyBackfillRoute
   ApiPublicHooksFretefyTrackingRoute: typeof ApiPublicHooksFretefyTrackingRoute
   ApiPublicHooksImportacaoIntersolarRoute: typeof ApiPublicHooksImportacaoIntersolarRoute
   ApiPublicHooksItauDiagnosticoRoute: typeof ApiPublicHooksItauDiagnosticoRoute
@@ -2079,6 +2093,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksFretefyTrackingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/fretefy-backfill': {
+      id: '/api/public/hooks/fretefy-backfill'
+      path: '/api/public/hooks/fretefy-backfill'
+      fullPath: '/api/public/hooks/fretefy-backfill'
+      preLoaderRoute: typeof ApiPublicHooksFretefyBackfillRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/estoque-sync': {
       id: '/api/public/hooks/estoque-sync'
       path: '/api/public/hooks/estoque-sync'
@@ -2547,6 +2568,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksBoletoAvisosRoute: ApiPublicHooksBoletoAvisosRoute,
   ApiPublicHooksBoletosSharepointRoute: ApiPublicHooksBoletosSharepointRoute,
   ApiPublicHooksEstoqueSyncRoute: ApiPublicHooksEstoqueSyncRoute,
+  ApiPublicHooksFretefyBackfillRoute: ApiPublicHooksFretefyBackfillRoute,
   ApiPublicHooksFretefyTrackingRoute: ApiPublicHooksFretefyTrackingRoute,
   ApiPublicHooksImportacaoIntersolarRoute:
     ApiPublicHooksImportacaoIntersolarRoute,
