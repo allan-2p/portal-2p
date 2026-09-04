@@ -1,6 +1,6 @@
 import { fmtBRL, fmtPct, fmtAliquota } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
-import { formatPropostaNumero } from "@/lib/sap-numero";
+import { formatPropostaNumero, formatSapNumero } from "@/lib/sap-numero";
 import { textoPrazoEntrega } from "./prazo-entrega";
 
 export type PropostaPdfItem = {
@@ -108,7 +108,8 @@ export function propostaPdfFileName(p: Pick<PropostaPdfData, "numero" | "cliente
       .trim();
   const fantasia = limpo(p.cliente.nomeFantasia?.trim() || p.cliente.nome || "Cliente");
   const nome = limpo(p.propostaNome?.trim() || "Proposta");
-  const sap = p.numeroSap?.trim() ? [p.numeroSap.trim()] : [];
+  const sapNum = formatSapNumero(p.numeroSap);
+  const sap = sapNum ? [sapNum] : [];
   return [limpo(formatPropostaNumero(p.numero) || "Proposta"), nome, ...sap, fantasia].filter(Boolean).join(" - ");
 }
 
@@ -333,7 +334,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="hmeta">
         Emissão <b>${esc(dataStr)}</b><br>
         Validade <b>${esc(validade)}</b><br>
-        Nº SAP <b>${esc(p.numeroSap?.trim() || "em geração")}</b><br>
+        Nº SAP <b>${esc(formatSapNumero(p.numeroSap) || "em geração")}</b><br>
         Consultor responsável <b>${esc(p.consultor || "—")}</b>
       </div>
     </div>

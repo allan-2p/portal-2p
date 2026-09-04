@@ -25,6 +25,7 @@ import { logIntegrationEvent } from "./integration-logs.server";
 import { simularPrecosSap } from "./sap-precos.server";
 import { deveCriarOferta } from "./fretefy-oferta";
 import { SAP_ACCEPT_LANGUAGE, comIdiomaPT } from "./sap-lang.server";
+import { semZerosEsquerda } from "./sap-numero";
 import { fatorLiquidoCarregadores, valorProdCarregadores } from "./carregadores-impostos";
 
 
@@ -1240,8 +1241,10 @@ export async function criarOrdemVendaSap(
 
   const { erro, aviso, texto, numeroSucesso, itens: msgItens, detalhado, duplicado } = mensagens(doc);
   let vbeln =
-    String(achar(doc, "E_VBELN") ?? achar(doc, "E_VBELN_VA") ?? achar(doc, "E_NRO_OV") ?? "").trim() ||
-    numeroSucesso ||
+    semZerosEsquerda(
+      String(achar(doc, "E_VBELN") ?? achar(doc, "E_VBELN_VA") ?? achar(doc, "E_NRO_OV") ?? "").trim(),
+    ) ||
+    semZerosEsquerda(numeroSucesso) ||
     null;
 
   // Auto-recuperação: o SAP diz que já existe ordem para este NROPED — a ordem

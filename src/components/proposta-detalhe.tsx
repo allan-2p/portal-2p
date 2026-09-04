@@ -27,7 +27,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from 
 import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-badge";
 import { cidadeUf } from "@/lib/local-format";
 import { adicionarDiasUteis } from "@/lib/dias-uteis";
-import { formatSapNumero } from "@/lib/sap-numero";
+import { formatSapNumero, formatPropostaNumero } from "@/lib/sap-numero";
 import { soDigitos } from "@/lib/cnpj";
 import { numeroExibicao } from "@/lib/proposta-variacoes";
 import {
@@ -371,7 +371,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
           <CobrancaCard
             cobranca={{
-              numeroPedido: p['numero'] ? String(p['numero']) : null,
+              numeroPedido: formatPropostaNumero(p['numero']) || null,
               clienteNome: p['cliente_nome'],
               clienteDoc: p['cliente_doc'],
               forma: p['forma_pagamento'],
@@ -392,7 +392,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           <BoletosSharepointCard
             propostaId={String(p['id'])}
             formaPagamento={p['forma_pagamento']}
-            nfNumero={p['nf_numero']}
+            nfNumero={formatSapNumero(p['nf_numero']) || null}
             boletos={Array.isArray(p['boletos']) ? p['boletos'] : []}
             avisadoEm={p['boletos_avisados_em']}
           />

@@ -45,6 +45,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 
 ### Corrigido
+- **Números sem zeros à esquerda (padrão único)**: nº do pedido, nº do SAP (ordem de venda) e nº da nota fiscal passam a ser gravados e exibidos sempre sem zeros à esquerda (ex.: `17751`, `10953`) — inclusive no envio à Fretefy (documento/observação), na descrição do Salesforce, nos e-mails (kit, boletos, cancelamento) e nos PDFs de Solar e Carregadores. A chave da NF-e (44 dígitos) e a série continuam intactas, e o cancelamento no SAP reenvia o VBELN com 10 dígitos.
 - **PIS/COFINS na proposta solar**: o percentual aparecia como 10,19%–10,22% porque era calculado sobre o valor já sem os tributos. Passa a usar a mesma base do restante do portal (valor sem IPI e sem ICMS), exibindo os 9,25% corretos. Só a exibição do percentual muda — preços e totais seguem iguais.
 
 ### Adicionado

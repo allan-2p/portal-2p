@@ -54,9 +54,9 @@ describe("oferta de carga Fretefy", () => {
     expect(p.destino.empresa.documento).toBe("22147863000129");
     expect(p.destino.documentos[0].chave).toBe(CHAVE_PLACEHOLDER);
     expect(p.destino.documentos[0].chave.length).toBe(43);
-    expect(p.destino.documentos[0].pedido).toBe("050010");
-    expect(p.destino.observacao).toContain("Pedido: 050010 Plataforma - SAP 0000123456 - 80kw");
-    expect(p.carga.pedidoEmbarcador).toBe("0000123456 - 80kw");
+    expect(p.destino.documentos[0].pedido).toBe("50010");
+    expect(p.destino.observacao).toContain("Pedido: 50010 Plataforma - SAP 123456 - 80kw");
+    expect(p.carga.pedidoEmbarcador).toBe("123456 - 80kw");
     expect(p.carga.pesoBruto).toBe(1250.5);
     expect(p.pagamento.valorFrete).toBe(3030.33);
     expect(p.direcionamentos).toEqual([ctx.transportadoraId]);
@@ -87,8 +87,8 @@ describe("oferta de carga Fretefy", () => {
     }) as any;
     expect(p.destino.id).toBe("dest-1");
     expect(p.destino.documentos[0].id).toBe("doc-1");
-    expect(p.destino.documentos[0].numero).toBe("000123456");
-    expect(p.destino.documentos[0].pedido).toBe("0000123456");
+    expect(p.destino.documentos[0].numero).toBe("123456");
+    expect(p.destino.documentos[0].pedido).toBe("123456");
     expect(p.destino.documentos[0].quantidade).toBe(3);
     expect(p.destino.empresa.razaoSocial).toBe("2P ACESSÓRIOS LTDA.");
   });

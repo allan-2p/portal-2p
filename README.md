@@ -166,6 +166,7 @@ reprocessamento usa exatamente o mesmo executor do disparo original
 | `webhook.pix-itau` | Webhook • Pix (Itaú) | Notificação do PSP: cobrança paga, expirada, removida ou devolvida. | sim |
 | `webhook.fretefy` | Webhook • Fretefy (rastreio) | Retorno de coleta/entrega enviado pela Fretefy. | sim |
 | `fretefy.oferta-carga` | Fretefy • Oferta de carga | Cria a oferta de carga após a OV (frete CIF/dedicado) e atualiza a NF no faturamento. | sim |
+| `fretefy.backfill-documentos` | Fretefy • Reenvio de documentos pendentes | Reprocessa pedidos faturados/Coletado/Entregue que ainda não tiveram a NF enviada à Fretefy. | sim |
 | `nf.documento` | NF • Download de documento | Abertura da DANFE, do XML da NF-e ou do boleto pelo usuário (auditoria de acesso). | não |
 
 Endpoints públicos (exigem `x-cron-secret`, exceto webhooks com assinatura própria):
@@ -175,6 +176,7 @@ Endpoints públicos (exigem `x-cron-secret`, exceto webhooks com assinatura pró
 - `/api/public/hooks/boleto-avisos`
 - `/api/public/hooks/boletos-sharepoint`
 - `/api/public/hooks/estoque-sync`
+- `/api/public/hooks/fretefy-backfill`
 - `/api/public/hooks/fretefy-tracking`
 - `/api/public/hooks/importacao-intersolar`
 - `/api/public/hooks/itau-diagnostico`

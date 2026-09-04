@@ -1942,7 +1942,7 @@ function NovaPropostaSolarPage() {
           <div>
             <div className="text-xs uppercase tracking-wider text-primary font-semibold">2P Solar</div>
             <h1 className="text-2xl sm:text-3xl font-bold mt-1">
-              {propostaId ? `Proposta ${numero ?? ""}` : "Nova proposta"}
+              {propostaId ? `Proposta ${formatPropostaNumero(numero)}` : "Nova proposta"}
             </h1>
           </div>
           <div className="text-sm text-muted-foreground">

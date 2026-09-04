@@ -9,6 +9,7 @@
  * Tudo best effort: nenhum efeito desfaz o cancelamento já aplicado.
  */
 
+import { formatSapNumero, vbelnSap } from "@/lib/sap-numero";
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 import {
@@ -126,7 +127,8 @@ async function cancelarOvNoSap(
       : undefined;
   if (!auth) return false;
 
-  const vbeln = String(row["sap_ov_numero"] ?? "").trim();
+  // O SAP espera o VBELN ALPHA (10 dígitos), mesmo com o banco já sem zeros.
+  const vbeln = vbelnSap(row["sap_ov_numero"]);
   const numero = String(row["numero"] ?? "").trim();
   const base = { slug: "sap", event: "ov-cancelar" } as const;
   const inicio = Date.now();
@@ -236,7 +238,7 @@ export async function efeitosCancelamento(
   }
 
 
-  const vbeln = String(row["sap_ov_numero"] ?? "").trim();
+  const vbeln = formatSapNumero(row["sap_ov_numero"]);
 
   // 1) Cancelamento no SAP — só se a RFC estiver configurada (hoje: não está).
   let canceladoNoSap = false;
@@ -258,7 +260,7 @@ export async function efeitosCancelamento(
   if (vbeln) {
     const numero = String(row["numero"] ?? "").trim();
     const org = String(row["organizacao"] ?? "") === "carregadores" ? "2P Carregadores" : "2P Solar";
-    const nf = String(row["nf_numero"] ?? "").trim();
+    const nf = formatSapNumero(row["nf_numero"]);
     const instrucaoSap = canceladoNoSap
       ? "OV cancelada automaticamente no SAP."
       : "Favor cancelar a ordem de venda no SAP (VA02).";

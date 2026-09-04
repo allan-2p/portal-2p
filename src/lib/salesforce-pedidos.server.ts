@@ -10,6 +10,7 @@
  * integrações na linha do pedido.
  */
 
+import { formatSapNumero } from "@/lib/sap-numero";
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 import { faseDaProposta, propostaPerdida } from "./salesforce-stage";
@@ -128,8 +129,8 @@ function descricao(row: Record<string, any>): string {
   const frete = so(row["frete_mod"]).toUpperCase();
   if (frete) linhas.push(`Frete: ${frete}${row["frete_valor"] ? ` (R$ ${Number(row["frete_valor"]).toFixed(2)})` : ""}`);
   if (so(row["forma_pagamento"])) linhas.push(`Pagamento: ${so(row["forma_pagamento"])}`);
-  if (so(row["sap_ov_numero"])) linhas.push(`Ordem de venda SAP: ${so(row["sap_ov_numero"])}`);
-  if (so(row["numero_sap"])) linhas.push(`Nº SAP: ${so(row["numero_sap"])}`);
+  if (so(row["sap_ov_numero"])) linhas.push(`Ordem de venda SAP: ${formatSapNumero(row["sap_ov_numero"])}`);
+  if (so(row["numero_sap"])) linhas.push(`Nº SAP: ${formatSapNumero(row["numero_sap"])}`);
   if (so(row["observacoes"])) linhas.push(`Observações: ${so(row["observacoes"])}`);
   return linhas.join("\n").slice(0, 30000);
 }
