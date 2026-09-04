@@ -233,7 +233,11 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-sm">
           <Campo label="CNPJ/CPF" value={p['cliente_doc'] || "—"} />
           <Campo label="Inscrição estadual" value={p['cliente_ie'] || "—"} />
-          <Campo label="Telefone" value={p['cliente_telefone'] || "—"} />
+          <Campo
+            label="Telefone"
+            value={p['cliente_telefone'] || "—"}
+            href={p['cliente_telefone'] ? `https://wa.me/55${soDigitos(String(p['cliente_telefone']))}` : undefined}
+          />
           <Campo label="E-mail" value={p['cliente_email'] || "—"} />
           <Campo label="Fase (Salesforce)" value={faseDaProposta(p as any)} />
           {p['motivo_perda'] ? (
