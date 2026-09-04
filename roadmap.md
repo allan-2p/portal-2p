@@ -135,3 +135,7 @@
 
 ## Impostos Carregadores (03/09)
 - [x] Definir base oficial do PIS/COFINS (Total NF + frete + desconto − IPI − ICMS × 9,25%) — fórmula fiscal virou caminho único; fator 0,870722 aposentado. Pendente: validar a próxima ordem criada no SAP
+
+## Fretefy (04/09)
+- [x] Tela de monitoramento dos webhooks Fretefy: logs, pendências de entrega, taxa de falha e reprocessamento por CargaId (`/admin/logs/fretefy`)
+- [ ] Cadastrar secrets FRETEFY_TOKEN (rotacionado), FRETEFY_WEBHOOK_USER e FRETEFY_WEBHOOK_PASSWORD
