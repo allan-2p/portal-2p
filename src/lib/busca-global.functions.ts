@@ -35,6 +35,9 @@ const PEDIDO_STATUS = new Set([
 ]);
 
 const LIMITE_POR_GRUPO = 5;
+/** Teto por grupo na página de resultados completos (`/busca`). */
+const LIMITE_MAX = 30;
+
 
 const norm = (v: unknown) =>
   String(v ?? "")
