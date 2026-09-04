@@ -36,6 +36,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 import { getSalesforceTasks, type SalesforceTask } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
@@ -230,11 +238,8 @@ function TarefasPage() {
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   useHashAction("novo", () => setNewTaskOpen(true));
 
-  const AcoesTarefa = ({ t, compact }: { t: SalesforceTask; compact?: boolean }) => (
-    <div className="flex items-center gap-1.5 flex-wrap">
-      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setDetalheTask(t)}>
-        <ListChecks className="h-3.5 w-3.5" /> {compact ? "Abrir" : "Abrir tarefa"}
-      </Button>
+  const AcoesTarefa = ({ t, className }: { t: SalesforceTask; className?: string }) => (
+    <div className={cn("flex items-center gap-1.5 flex-wrap", className)}>
       <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setInteractionTask(t)}>
         <MessageSquare className="h-3.5 w-3.5" /> Interação
       </Button>
@@ -249,31 +254,58 @@ function TarefasPage() {
 
   const hojeKey = fmtKey(today);
 
+  const SegmentoBadge = ({ t }: { t: SalesforceTask }) => {
+    if (t.isLead)
+      return (
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color:var(--atlas)]/15 text-[color:var(--atlas)] font-semibold">
+          Lead
+        </span>
+      );
+    if (!t.whatId?.startsWith("001")) return null;
+    return (
+      <span
+        className={cn(
+          "text-[10px] px-1.5 py-0.5 rounded font-semibold",
+          t.segment ? "bg-success/15 text-success" : "bg-surface-2 text-muted-foreground",
+        )}
+      >
+        {t.segment ? `Segmento ${t.segment}` : "Sem segmentação"}
+      </span>
+    );
+  };
+
   const CardTarefa = ({ t }: { t: SalesforceTask }) => {
     const type = inferType(t.subject);
     const Icon = TYPE_ICON[type];
     const prio = mapPriority(t.priority);
     const jaInteragiu = !!taskInteractions[t.id];
     const atrasada = t.date < hojeKey;
+    const cliente = t.what ?? t.who;
     return (
-      <div className="rounded-xl border border-border bg-background p-4 hover:border-primary/40 transition-colors">
-        <div className="flex items-start gap-3">
+      <div className="rounded-xl border border-border bg-background px-3 py-2.5 hover:border-primary/40 transition-colors">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:flex lg:items-center">
           <div
             className={cn(
-              "h-9 w-9 rounded-lg flex items-center justify-center shrink-0",
+              "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
               TYPE_COLOR[type],
             )}
+            title={type}
           >
             <Icon className="h-4 w-4" />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-                {type}
-              </span>
+
+          <div className="min-w-0 lg:flex-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                onClick={() => setDetalheTask(t)}
+                className="font-semibold text-sm text-left truncate hover:text-primary hover:underline"
+                title={t.subject}
+              >
+                {t.subject}
+              </button>
               <span
                 className={cn(
-                  "text-[10px] px-1.5 py-0.5 rounded capitalize",
+                  "text-[10px] px-1.5 py-0.5 rounded shrink-0",
                   atrasada
                     ? "bg-destructive/15 text-destructive font-semibold"
                     : t.date === hojeKey
@@ -284,47 +316,33 @@ function TarefasPage() {
                 {atrasada ? "Atrasada · " : t.date === hojeKey ? "Hoje · " : ""}
                 {fmtDia(t.date)}
               </span>
-              {t.status && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-muted-foreground">
-                  {t.status}
-                </span>
-              )}
-              {jaInteragiu && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success">
-                  Interação registrada
-                </span>
-              )}
-              <span className={cn("ml-auto text-[10px] px-1.5 py-0.5 rounded", PRIO_CLASS[prio])}>
+              <span className={cn("text-[10px] px-1.5 py-0.5 rounded shrink-0", PRIO_CLASS[prio])}>
                 {t.priority ?? "—"}
               </span>
-            </div>
-            <button
-              onClick={() => setDetalheTask(t)}
-              className="font-semibold text-sm text-left hover:text-primary"
-            >
-              {t.subject}
-            </button>
-            <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-              {t.who && (
-                <div className="flex items-center gap-1.5">
-                  <User className="h-3 w-3" /> {t.who}
-                </div>
+              {jaInteragiu && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success shrink-0">
+                  Interação
+                </span>
               )}
-              {t.what && (
-                <div className="flex items-center gap-1.5">
-                  <Building2 className="h-3 w-3" /> {t.what}
-                </div>
-              )}
-              {t.owner && <div className="opacity-70">Responsável: {t.owner}</div>}
             </div>
-            <div className="mt-3">
-              <AcoesTarefa t={t} compact />
+            <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+              {t.whatId?.startsWith("001") ? (
+                <Building2 className="h-3 w-3 shrink-0" />
+              ) : (
+                <User className="h-3 w-3 shrink-0" />
+              )}
+              <span className="truncate">{cliente ?? "Sem cliente vinculado"}</span>
+              <SegmentoBadge t={t} />
+              {t.owner && <span className="truncate opacity-70 hidden sm:inline">· {t.owner}</span>}
             </div>
           </div>
+
+          <AcoesTarefa t={t} className="col-span-2 justify-end lg:shrink-0" />
         </div>
       </div>
     );
   };
+
 
   return (
     <AppLayout>
@@ -566,56 +584,48 @@ function TarefasPage() {
         </>
       )}
 
-      {/* Detalhe da tarefa */}
-      {detalheTask && (
-        <>
-          <div
-            className="fixed inset-0 bg-background/60 backdrop-blur-sm z-[60]"
-            onClick={() => setDetalheTask(null)}
-            aria-label="Fechar tarefa"
-          />
-          <aside className="fixed right-0 top-0 bottom-0 w-full sm:w-[460px] bg-surface border-l border-border z-[61] flex flex-col">
-            <header className="px-5 py-4 border-b border-border flex items-start justify-between gap-3">
-              <div className="min-w-0">
+      {/* Detalhe da tarefa (pop up) */}
+      <Dialog open={!!detalheTask} onOpenChange={(v) => !v && setDetalheTask(null)}>
+        <DialogContent className="max-w-xl">
+          {detalheTask && (
+            <>
+              <DialogHeader>
                 <div className="text-xs uppercase tracking-wider text-muted-foreground">
                   Tarefa · Salesforce
                 </div>
-                <div className="font-display font-semibold truncate">{detalheTask.subject}</div>
-              </div>
-              <button
-                onClick={() => setDetalheTask(null)}
-                className="p-2 hover:bg-surface-2 rounded-lg"
-                aria-label="Fechar"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </header>
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
-                <Campo label="Vencimento" value={fmtDia(detalheTask.date)} />
-                <Campo label="Prioridade" value={detalheTask.priority ?? "—"} />
-                <Campo label="Status" value={detalheTask.status ?? "—"} />
-                <Campo label="Responsável" value={detalheTask.owner ?? "—"} />
-                <Campo label="Cliente" value={detalheTask.what ?? "—"} />
-                <Campo label="Contato" value={detalheTask.who ?? "—"} />
-              </div>
-              {detalheTask.description && (
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">
-                    Descrição
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                    {detalheTask.description}
-                  </p>
+                <DialogTitle className="text-left">{detalheTask.subject}</DialogTitle>
+                <div className="flex items-center gap-2 pt-1">
+                  <SegmentoBadge t={detalheTask} />
                 </div>
-              )}
-            </div>
-            <footer className="px-5 py-4 border-t border-border">
-              <AcoesTarefa t={detalheTask} />
-            </footer>
-          </aside>
-        </>
-      )}
+              </DialogHeader>
+              <div className="space-y-4 text-sm max-h-[60vh] overflow-y-auto">
+                <div className="grid grid-cols-2 gap-3">
+                  <Campo label="Vencimento" value={fmtDia(detalheTask.date)} />
+                  <Campo label="Prioridade" value={detalheTask.priority ?? "—"} />
+                  <Campo label="Status" value={detalheTask.status ?? "—"} />
+                  <Campo label="Responsável" value={detalheTask.owner ?? "—"} />
+                  <Campo label="Cliente" value={detalheTask.what ?? "—"} />
+                  <Campo label="Contato" value={detalheTask.who ?? "—"} />
+                </div>
+                {detalheTask.description && (
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">
+                      Descrição
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {detalheTask.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <DialogFooter className="sm:justify-end">
+                <AcoesTarefa t={detalheTask} />
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
 
       <InteractionQuickDialog
         task={interactionTask}

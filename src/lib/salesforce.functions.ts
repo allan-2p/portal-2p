@@ -131,7 +131,12 @@ export type SalesforceTask = {
   type: string | null;
   owner: string | null;
   ownerId: string | null;
+  /** Segmentação Solar da conta vinculada (só existe para clientes/contas). */
+  segment?: "A" | "B" | "C" | "D" | null;
+  /** true quando o vínculo é um Lead (não possui segmentação). */
+  isLead?: boolean;
 };
+
 
 export const getSalesforceTasks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -166,8 +171,31 @@ export const getSalesforceTasks = createServerFn({ method: "GET" })
       whatId: r.WhatId ?? null,
       owner: r.Owner?.Name ?? null,
       ownerId: r.OwnerId ?? null,
+      segment: null,
+      isLead: String(r.WhoId ?? "").startsWith("00Q") || String(r.WhatId ?? "").startsWith("00Q"),
     }));
+
+    // Enriquecimento: segmentação Solar da conta vinculada (apenas contas 001...).
+    const accountIds = Array.from(
+      new Set(
+        records.map((t) => t.whatId).filter((id): id is string => !!id && id.startsWith("001")),
+      ),
+    );
+    if (accountIds.length) {
+      try {
+        const { fetchAccountSegments } = await import("@/lib/accounts-db.server");
+        const segByAccount = await fetchAccountSegments("solar", accountIds);
+        for (const t of records) {
+          if (t.whatId && segByAccount.has(t.whatId)) t.segment = segByAccount.get(t.whatId) ?? null;
+        }
+      } catch {
+        // segmentação é informação de apoio: falha aqui não deve derrubar a agenda
+      }
+    }
+
+
     return { records, totalSize: res?.totalSize ?? records.length };
+
   });
 
 export type SalesforceInteraction = {

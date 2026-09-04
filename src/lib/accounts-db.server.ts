@@ -115,3 +115,35 @@ export async function fetchAccountById(
   const rows = (await res.json()) as AccountDbRow[];
   return rows[0] ?? null;
 }
+
+/** Segmentação Solar (A–D) das contas informadas, lida do banco espelho. */
+export async function fetchAccountSegments(
+  instance: AccountsInstance,
+  ids: string[],
+): Promise<Map<string, "A" | "B" | "C" | "D" | null>> {
+  const out = new Map<string, "A" | "B" | "C" | "D" | null>();
+  const clean = Array.from(new Set(ids.filter((i) => /^[a-zA-Z0-9]{15,18}$/.test(i))));
+  if (clean.length === 0) return out;
+  const cfg = configFor(instance);
+  if (!cfg) throw new Error(`Base de contas não configurada para ${instance}`);
+  for (let i = 0; i < clean.length; i += 200) {
+    const chunk = clean.slice(i, i + 200);
+    const params = new URLSearchParams({
+      select: "id,custom_fields",
+      id: `in.(${chunk.join(",")})`,
+      limit: String(chunk.length),
+    });
+    const res = await fetch(`${cfg.url}/rest/v1/account_sf?${params.toString()}`, {
+      headers: { apikey: cfg.key, Authorization: `Bearer ${cfg.key}`, Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`Banco de contas ${instance} ${res.status}`);
+    for (const row of (await res.json()) as {
+      id: string;
+      custom_fields: Record<string, any> | null;
+    }[]) {
+      const raw = (row.custom_fields?.Segmentacao_Solar__c ?? "").toString().trim().toUpperCase();
+      out.set(row.id, (["A", "B", "C", "D"] as const).includes(raw as any) ? (raw as any) : null);
+    }
+  }
+  return out;
+}
