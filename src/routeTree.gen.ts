@@ -21,6 +21,7 @@ import { Route as ApiAtlasChatRouteImport } from './routes/api/atlas-chat'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
 import { Route as AuthenticatedFinanceiroRouteImport } from './routes/_authenticated/financeiro'
+import { Route as AuthenticatedBuscaRouteImport } from './routes/_authenticated/busca'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedMarketingIndexRouteImport } from './routes/_authenticated/marketing.index'
@@ -175,6 +176,11 @@ const AuthenticatedMarketingRoute = AuthenticatedMarketingRouteImport.update({
 const AuthenticatedFinanceiroRoute = AuthenticatedFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBuscaRoute = AuthenticatedBuscaRouteImport.update({
+  id: '/busca',
+  path: '/busca',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
@@ -755,6 +761,7 @@ export interface FileRoutesByFullPath {
   '/tv-geral': typeof TvGeralRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/busca': typeof AuthenticatedBuscaRoute
   '/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -863,6 +870,7 @@ export interface FileRoutesByTo {
   '/tv-geral': typeof TvGeralRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/busca': typeof AuthenticatedBuscaRoute
   '/perfil': typeof AuthenticatedPerfilRoute
   '/api/atlas-chat': typeof ApiAtlasChatRoute
   '/': typeof AuthenticatedIndexRoute
@@ -970,6 +978,7 @@ export interface FileRoutesById {
   '/tv-geral': typeof TvGeralRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/_authenticated/busca': typeof AuthenticatedBuscaRoute
   '/_authenticated/financeiro': typeof AuthenticatedFinanceiroRouteWithChildren
   '/_authenticated/marketing': typeof AuthenticatedMarketingRouteWithChildren
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
@@ -1082,6 +1091,7 @@ export interface FileRouteTypes {
     | '/tv-geral'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/busca'
     | '/financeiro'
     | '/marketing'
     | '/perfil'
@@ -1190,6 +1200,7 @@ export interface FileRouteTypes {
     | '/tv-geral'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/busca'
     | '/perfil'
     | '/api/atlas-chat'
     | '/'
@@ -1296,6 +1307,7 @@ export interface FileRouteTypes {
     | '/tv-geral'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/_authenticated/busca'
     | '/_authenticated/financeiro'
     | '/_authenticated/marketing'
     | '/_authenticated/perfil'
@@ -1513,6 +1525,13 @@ declare module '@tanstack/react-router' {
       path: '/financeiro'
       fullPath: '/financeiro'
       preLoaderRoute: typeof AuthenticatedFinanceiroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/busca': {
+      id: '/_authenticated/busca'
+      path: '/busca'
+      fullPath: '/busca'
+      preLoaderRoute: typeof AuthenticatedBuscaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/.well-known/oauth-protected-resource': {
@@ -2325,6 +2344,7 @@ const AuthenticatedSolarDashboardsRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBuscaRoute: typeof AuthenticatedBuscaRoute
   AuthenticatedFinanceiroRoute: typeof AuthenticatedFinanceiroRouteWithChildren
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRouteWithChildren
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
@@ -2382,6 +2402,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBuscaRoute: AuthenticatedBuscaRoute,
   AuthenticatedFinanceiroRoute: AuthenticatedFinanceiroRouteWithChildren,
   AuthenticatedMarketingRoute: AuthenticatedMarketingRouteWithChildren,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
