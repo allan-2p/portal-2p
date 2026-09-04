@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { JobRunRow } from "@/lib/job-runs.functions";
 import {
+  backfillDocumentosFretefy,
   fretefyResumo,
   listarEventosFretefy,
   pendenciasFretefy,
@@ -84,6 +85,7 @@ export function FretefyMonitorPanel() {
   const listarFn = useServerFn(listarEventosFretefy);
   const pendenciasFn = useServerFn(pendenciasFretefy);
   const reprocessarFn = useServerFn(reprocessarCargaFretefy);
+  const backfillFn = useServerFn(backfillDocumentosFretefy);
 
   const resumo = useQuery({ queryKey: ["fretefy-resumo"], queryFn: () => resumoFn() });
   const eventos = useQuery({
@@ -100,6 +102,30 @@ export function FretefyMonitorPanel() {
         toast.success(typeof motivo === "string" ? motivo : "Carga reprocessada.");
       } else {
         toast.error(r.error ?? "Falha ao reprocessar a carga.");
+      }
+      void qc.invalidateQueries({ queryKey: ["fretefy-eventos"] });
+      void qc.invalidateQueries({ queryKey: ["fretefy-resumo"] });
+      void qc.invalidateQueries({ queryKey: ["fretefy-pendencias"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const backfill = useMutation({
+    mutationFn: () => backfillFn({ data: { limite: 50 } }),
+    onSuccess: (r) => {
+      if (r.ok) {
+        const res = (r.resultado ?? {}) as Record<string, unknown>;
+        const enviados = Number(res["enviados"] ?? res["atualizados"] ?? 0);
+        const analisados = Number(res["analisados"] ?? res["total"] ?? 0);
+        toast.success(
+          enviados > 0
+            ? `${enviados} documento(s) reenviado(s) à Fretefy.`
+            : analisados > 0
+              ? "Nenhum documento pendente para reenviar."
+              : "Reenvio concluído.",
+        );
+      } else {
+        toast.error(r.error ?? "Falha no reenvio de documentos.");
       }
       void qc.invalidateQueries({ queryKey: ["fretefy-eventos"] });
       void qc.invalidateQueries({ queryKey: ["fretefy-resumo"] });
