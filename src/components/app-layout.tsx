@@ -203,15 +203,23 @@ export function AppLayout({ children }: { children: ReactNode }) {
   if (show("home")) tabs.push({ id: "home", label: "Home", icon: Home, to: "/", active: pathname === "/" });
   if (show("tarefas")) tabs.push({ id: "tarefas", label: "Tarefas", icon: Calendar, to: "/solar/tarefas", active: pathname.startsWith("/solar/tarefas") });
   if (show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.ranking")) {
+    const principal = (show("clientes.cadastros")
+      ? "/solar/clientes/cadastros"
+      : show("clientes.segmentacao")
+        ? "/solar/clientes/segmentacao"
+        : show("clientes.perfil")
+          ? "/solar/clientes/perfil"
+          : "/solar/clientes/ranking") as AppPath;
     tabs.push({
       id: "clientes",
       label: "Clientes",
       icon: Layers,
       active: clientesActive,
+      to: principal,
+      novo: show("clientes.cadastros")
+        ? { label: "Novo cliente", to: "/solar/clientes/cadastros" as AppPath, hash: "novo" }
+        : undefined,
       items: [
-        ...(show("clientes.cadastros")
-          ? [{ to: "/solar/clientes/cadastros" as AppPath, label: "Cadastros", icon: ClipboardList, active: pathname.startsWith("/solar/clientes/cadastros") }]
-          : []),
         ...(show("clientes.segmentacao") || show("clientes.perfil")
           ? [{
               to: (show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : "/solar/clientes/perfil") as AppPath,
@@ -232,27 +240,29 @@ export function AppLayout({ children }: { children: ReactNode }) {
       label: "Propostas",
       icon: ClipboardList,
       active: propostasSolarActive,
+      to: "/solar/propostas",
+      novo: { label: "Nova proposta", to: "/solar/propostas/nova" as AppPath },
       items: [
-        { to: "/solar/propostas", label: "Propostas", icon: ClipboardList, active: pathname.startsWith("/solar/propostas") },
         ...(show("pedidos")
           ? [{ to: "/solar/pedidos" as AppPath, label: "Acompanhamento", icon: KanbanSquare, active: pathname.startsWith("/solar/pedidos") }]
           : []),
       ],
     });
   }
-  if (show("cupons")) tabs.push({ id: "cupons", label: "Cupons", icon: KeyRound, to: "/solar/cupons", active: pathname.startsWith("/solar/cupons") });
+  if (show("cupons")) tabs.push({ id: "cupons", label: "Cupons", icon: KeyRound, to: "/solar/cupons", active: pathname.startsWith("/solar/cupons"), novo: { label: "Novo cupom", to: "/solar/cupons" as AppPath, hash: "novo" } });
   if (show("carregadores.home")) tabs.push({ id: "carreg-home", label: "Home", icon: Home, to: "/carregadores", active: pathname === "/carregadores" });
   if (show("carregadores.visao-geral")) tabs.push({ id: "carreg-visao", label: "Visão Geral", icon: BarChart3, to: "/carregadores/visao-geral", active: pathname.startsWith("/carregadores/visao-geral") });
-  if (show("carregadores.tarefas")) tabs.push({ id: "carreg-tarefas", label: "Tarefas", icon: Calendar, to: "/carregadores/tarefas", active: pathname.startsWith("/carregadores/tarefas") });
-  if (show("carregadores.clientes")) tabs.push({ id: "carreg-clientes", label: "Clientes", icon: Users, to: "/carregadores/clientes/cadastros", active: pathname.startsWith("/carregadores/clientes") });
+  if (show("carregadores.tarefas")) tabs.push({ id: "carreg-tarefas", label: "Tarefas", icon: Calendar, to: "/carregadores/tarefas", active: pathname.startsWith("/carregadores/tarefas"), novo: { label: "Nova tarefa", to: "/carregadores/tarefas" as AppPath, hash: "novo" } });
+  if (show("carregadores.clientes")) tabs.push({ id: "carreg-clientes", label: "Clientes", icon: Users, to: "/carregadores/clientes/cadastros", active: pathname.startsWith("/carregadores/clientes"), novo: { label: "Novo cliente", to: "/carregadores/clientes/cadastros" as AppPath, hash: "novo" } });
   if (show("carregadores.propostas")) {
     tabs.push({
       id: "propostas-carregadores",
       label: "Propostas",
       icon: Zap,
       active: propostasCarregadoresActive,
+      to: "/carregadores/propostas",
+      novo: { label: "Nova proposta", to: "/carregadores/propostas/nova" as AppPath },
       items: [
-        { to: "/carregadores/propostas", label: "Propostas", icon: Zap, active: pathname.startsWith("/carregadores/propostas") },
         ...(show("carregadores.pedidos")
           ? [{ to: "/carregadores/pedidos" as AppPath, label: "Acompanhamento", icon: ShoppingCart, active: pathname.startsWith("/carregadores/pedidos") }]
           : []),
