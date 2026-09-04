@@ -254,6 +254,38 @@ function TarefasPage() {
 
   const hojeKey = fmtKey(today);
 
+  const SegmentoIcone = ({ t }: { t: SalesforceTask }) => {
+    if (t.isLead)
+      return (
+        <span
+          className="h-8 px-1.5 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold bg-[color:var(--atlas)]/15 text-[color:var(--atlas)]"
+          title="Lead (sem segmentação)"
+        >
+          Lead
+        </span>
+      );
+    const conta = t.whatId?.startsWith("001");
+    return (
+      <span
+        className={cn(
+          "h-8 w-8 rounded-lg shrink-0 flex items-center justify-center text-xs font-bold",
+          conta && t.segment
+            ? "bg-success/15 text-success"
+            : "bg-surface-2 text-muted-foreground/60",
+        )}
+        title={
+          conta
+            ? t.segment
+              ? `Segmento ${t.segment}`
+              : "Sem segmentação"
+            : "Sem conta vinculada"
+        }
+      >
+        {conta && t.segment ? t.segment : "–"}
+      </span>
+    );
+  };
+
   const SegmentoBadge = ({ t }: { t: SalesforceTask }) => {
     if (t.isLead)
       return (
@@ -283,7 +315,8 @@ function TarefasPage() {
     const cliente = t.what ?? t.who;
     return (
       <div className="rounded-xl border border-border bg-background px-3 py-2.5 hover:border-primary/40 transition-colors">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:flex lg:items-center">
+        <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3 lg:flex lg:items-center">
+          <SegmentoIcone t={t} />
           <div
             className={cn(
               "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
@@ -332,12 +365,11 @@ function TarefasPage() {
                 <User className="h-3 w-3 shrink-0" />
               )}
               <span className="truncate">{cliente ?? "Sem cliente vinculado"}</span>
-              <SegmentoBadge t={t} />
               {t.owner && <span className="truncate opacity-70 hidden sm:inline">· {t.owner}</span>}
             </div>
           </div>
 
-          <AcoesTarefa t={t} className="col-span-2 justify-end lg:shrink-0" />
+          <AcoesTarefa t={t} className="col-span-3 justify-end lg:shrink-0" />
         </div>
       </div>
     );
