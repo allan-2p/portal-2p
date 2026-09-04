@@ -119,46 +119,35 @@ export function SugestoesAtlas() {
   }, [accounts]);
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <header>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Clientes</div>
-          <h1 className="text-3xl font-bold mt-1 flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-primary" /> Sugestões do Atlas
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            As 10 melhores hipóteses do Atlas para a carteira agora. Seu feedback (aceito,
-            parcial ou recusado) treina o modelo para as próximas rodadas.
-          </p>
-          <p className="text-[11px] text-muted-foreground mt-2">
-            Filtros aplicados: exclui clientes segmento D e clientes de Marketing 2P.
-          </p>
-        </header>
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground max-w-2xl">
+        As 10 melhores hipóteses do Atlas para a carteira agora. Seu feedback (aceito, parcial ou
+        recusado) treina o modelo para as próximas rodadas. Exclui clientes segmento D e clientes de
+        Marketing 2P.
+      </p>
 
-        <PagamentosAtlas />
+      <PagamentosAtlas />
 
-
-
-        {accountsQ.isLoading ? (
-          <div className="glass rounded-xl p-10 text-center text-muted-foreground">
-            Carregando sugestões…
-          </div>
-        ) : top.length === 0 ? (
-          <div className="glass rounded-xl p-10 text-center text-muted-foreground">
-            <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-60" />
-            Nenhuma sugestão elegível no momento.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {top.map((r, idx) => (
-              <InsightCard key={`${r.account.id}:${r.insight.id}`} rank={idx + 1} ranked={r} />
-            ))}
-          </div>
-        )}
-      </div>
-    </AppLayout>
+      {accountsQ.isLoading ? (
+        <div className="glass rounded-xl p-10 text-center text-muted-foreground">
+          Carregando sugestões…
+        </div>
+      ) : top.length === 0 ? (
+        <div className="glass rounded-xl p-10 text-center text-muted-foreground">
+          <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-60" />
+          Nenhuma sugestão elegível no momento.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {top.map((r, idx) => (
+            <InsightCard key={`${r.account.id}:${r.insight.id}`} rank={idx + 1} ranked={r} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
+
 
 function InsightCard({ rank, ranked }: { rank: number; ranked: Ranked }) {
   const { account, insight } = ranked;
