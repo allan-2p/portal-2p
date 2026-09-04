@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { mascaraDoc } from "@/lib/cnpj";
 import { atualizarAlertaFn, listarAlertasFn, rodarRadarFn } from "@/lib/atlas.functions";
 import { useAuth } from "@/hooks/use-auth";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SugestoesAtlas } from "@/components/atlas/sugestoes-atlas";
 
 export const Route = createFileRoute("/_authenticated/atlas-ia/radar")({
   head: () => ({
@@ -73,13 +75,28 @@ function RadarPage() {
   return (
     <AppLayout>
       <div className="mx-auto max-w-5xl space-y-4">
-        <header className="flex flex-wrap items-center gap-3">
-          <div>
-            <h1 className="text-lg font-semibold">Radar do Atlas</h1>
-            <p className="text-sm text-muted-foreground">
-              Clientes piorando em faturamento, frequência de compra, atividade ou projeção contra a meta.
-            </p>
-          </div>
+        <header>
+          <h1 className="text-lg font-semibold">Radar do Atlas</h1>
+          <p className="text-sm text-muted-foreground">
+            Alertas de clientes em risco e as sugestões do Atlas para a carteira, no mesmo lugar.
+          </p>
+        </header>
+
+        <Tabs defaultValue="alertas" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="alertas">Alertas</TabsTrigger>
+            <TabsTrigger value="sugestoes">Sugestões</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="sugestoes">
+            <SugestoesAtlas />
+          </TabsContent>
+
+          <TabsContent value="alertas" className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            Clientes piorando em faturamento, frequência de compra, atividade ou projeção contra a meta.
+          </p>
           <div className="ml-auto flex items-center gap-2">
             <Select value={situacao} onValueChange={setSituacao}>
               <SelectTrigger className="w-40">
@@ -103,7 +120,7 @@ function RadarPage() {
               </Button>
             )}
           </div>
-        </header>
+        </div>
 
         {alertas.isLoading && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -170,6 +187,8 @@ function RadarPage() {
             </article>
           ))}
         </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
