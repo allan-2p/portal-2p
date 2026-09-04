@@ -274,8 +274,10 @@ export async function simularSap(
     const pct = (chave: string) => {
       if (reg[chave] === undefined) return null;
       const v = num(reg[chave], chave);
-      return Number.isFinite(v) && v > 0 ? v / 100 : null;
+      // 0 é resposta válida (item isento) — vira "0%", nunca "—".
+      return Number.isFinite(v) && v >= 0 ? v / 100 : null;
     };
+
     mapa.set(codigo, {
       pesoLiquido,
       pesoBruto,
