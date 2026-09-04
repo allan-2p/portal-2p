@@ -146,13 +146,6 @@ export function lerConsulta(doc: any): ConsultaSap {
     return s && documentoValido(s) ? s : null;
   };
   const dados = achar(doc, "E_S_DADOS") ?? achar(doc, "ZNFE_OV_CONSULTARResponse") ?? doc;
-  // Previsão de despacho: o SAP manda "0000-00-00" quando não há remessa.
-  const dataExp = (() => {
-    const s = txt(achar(dados, "DATA_EXPEDICAO"));
-    if (!s) return null;
-    const d = s.slice(0, 10);
-    return /^\d{4}-\d{2}-\d{2}$/.test(d) && !d.startsWith("0000") ? d : null;
-  })();
   return {
     picking: txt(achar(dados, "STATUS_PICKING")),
     romaneio: txt(achar(dados, "STATUS_ROMANEIO")),
@@ -160,20 +153,44 @@ export function lerConsulta(doc: any): ConsultaSap {
     nfSerie: txt(achar(dados, "SERIE_NF") ?? achar(dados, "SERIE")),
     nfChave: num(achar(dados, "CHAVE_NFE") ?? achar(dados, "CHAVE") ?? achar(dados, "NFE_CHAVE")),
     danfeBase64: txt(achar(doc, "E_DANFE") ?? achar(doc, "DANFE")),
-    dataExpedicao: dataExp,
-    remessa: (() => {
-      const s = txt(
-        achar(dados, "VBELN_VL") ??
-          achar(dados, "REMESSA") ??
-          achar(dados, "STATUS_REMESSA") ??
-          achar(dados, "NUM_REMESSA"),
-      );
-      if (!s) return null;
-      // Zeros/vazio = sem remessa; textos (ex.: "OK") valem como sinal.
-      return /^\d+$/.test(s) ? (documentoValido(s) ? s : null) : s;
-    })(),
+    dataExpedicao: dataExpedicaoSap(achar(dados, "DATA_EXPEDICAO")),
+    remessa: remessaSap(dados),
   };
 }
+
+/**
+ * Data de expedição do SAP. A RFC devolve `DD.MM.AAAA` (ex.: `04.09.2026`) e,
+ * em alguns ambientes, ISO `AAAA-MM-DD`. Sem remessa vem vazia ou zerada.
+ * Retorna sempre AAAA-MM-DD.
+ */
+export function dataExpedicaoSap(bruto: unknown): string | null {
+  const s = String(bruto ?? "").trim();
+  if (!s || s === "undefined") return null;
+  const br = /^(\d{2})[./-](\d{2})[./-](\d{4})/.exec(s);
+  const d = br ? `${br[3]}-${br[2]}-${br[1]}` : s.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d.startsWith("0000")) return null;
+  return d.endsWith("-00-00") || d.slice(5) === "00-00" ? null : d;
+}
+
+/**
+ * Documento de remessa do SAP.
+ *
+ * O número real vem em `VBELN_VL` (ex.: `0080015549`); `REMESSA`/`NUM_REMESSA`
+ * são apelidos usados por outros ambientes. `STATUS_REMESSA` NÃO é número: é
+ * um semáforo (`OK`/`AOK`/`NOK`) e só conta como remessa criada quando está
+ * verde — antes esse campo entrava como texto e um `NOK` empurrava o pedido
+ * para "Separação" indevidamente.
+ */
+export function remessaSap(dados: any): string | null {
+  for (const campo of ["VBELN_VL", "REMESSA", "NUM_REMESSA"]) {
+    const s = String(achar(dados, campo) ?? "").trim();
+    if (s && s !== "undefined" && documentoValido(s)) return s.replace(/^0+(?=\d)/, "");
+  }
+  const status = String(achar(dados, "STATUS_REMESSA") ?? "").trim().toUpperCase();
+  return status === "OK" || status === "AOK" ? status : null;
+}
+
+
 
 
 
