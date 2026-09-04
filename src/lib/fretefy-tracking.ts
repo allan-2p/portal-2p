@@ -69,7 +69,7 @@ export function interpretarEventoFretefy(payload: Record<string, unknown>): Fret
     null;
 
   const bruto = [
-    pick(payload, ["evento", "event", "tipoEvento", "tipo_evento"]),
+    pick(payload, ["evento", "event", "type", "tipo", "tipoEvento", "tipo_evento", "tipoCarga"]),
     pick(payload, ["status", "situacao", "statusEntrega", "status_entrega"]),
     pick(payload, ["ocorrencia", "descricao", "descricaoOcorrencia", "mensagem", "message"]),
   ]
