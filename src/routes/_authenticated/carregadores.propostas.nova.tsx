@@ -1,5 +1,5 @@
 import { PropostaPdfPreview } from "@/components/proposta-pdf-preview";
-import { formatPropostaNumero } from "@/lib/sap-numero";
+import { formatPropostaNumero, formatSapNumero } from "@/lib/sap-numero";
 import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { propostaStatusStyle } from "@/lib/proposta-status";
@@ -1224,7 +1224,7 @@ function PropostaCarregadoresPage() {
       buildPropostaPdfHtml({
         numero: numeroAtual ?? numeroRef.current ?? undefined,
         propostaNome: state.propostaNome.trim() || null,
-        numeroSap: state.numeroSap.trim() || null,
+        numeroSap: formatSapNumero(state.numeroSap) || null,
         cliente: {
           nome: state.nome,
           nomeFantasia: state.nome,

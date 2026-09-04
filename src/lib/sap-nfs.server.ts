@@ -23,6 +23,7 @@
  *   SAP_BRIDGE_USER/PASSWORD ou SAP_BRIDGE_AUTH / SAP_NFS_AUTH
  */
 
+import { semZerosEsquerda } from "./sap-numero";
 import { XMLParser } from "fast-xml-parser";
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
@@ -525,7 +526,7 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
   // Desacopla número/série da chave: a chave pode chegar tardia (ex.: NF emitida
   // e depois o SAP passa a devolver CHNFE). Sempre preenche quando vazio.
   if (c.nfNumero && !row["nf_numero"]) {
-    patch["nf_numero"] = c.nfNumero;
+    patch["nf_numero"] = semZerosEsquerda(c.nfNumero);
     patch["nf_serie"] = c.nfSerie;
   }
   if (c.nfChave && !row["nf_chave"]) {

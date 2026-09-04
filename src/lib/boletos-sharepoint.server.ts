@@ -11,6 +11,7 @@
  * ser tentado no próximo ciclo.
  */
 
+import { formatSapNumero } from "@/lib/sap-numero";
 import { enviarEmail, layoutEmail } from "./email.server";
 import { abrirSharepoint, listarArquivosDaNf, baixarArquivo } from "./sharepoint.server";
 
@@ -64,7 +65,7 @@ async function processarProposta(
   sessao: Awaited<ReturnType<typeof abrirSharepoint>>,
   row: Record<string, any>,
 ): Promise<{ arquivos: BoletoArquivo[]; emails: number } | null> {
-  const nf = String(row["nf_numero"] ?? "").trim();
+  const nf = formatSapNumero(row["nf_numero"]);
   const achados = await listarArquivosDaNf(sessao, sessao.cfg.pastaBoletos, nf);
   if (!achados.length) return null;
 

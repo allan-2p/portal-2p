@@ -1,3 +1,4 @@
+import { formatSapNumero } from "@/lib/sap-numero";
 import { contribuinteDeEnrich } from "@/lib/contribuinte";
 import { numeroExibicao } from "@/lib/proposta-variacoes";
 /**
@@ -81,7 +82,7 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
   return {
     numero: numeroExibicao(p as any) || undefined,
     propostaNome: txt(p['nome']) || null,
-    numeroSap: txt(p['sap_ov_numero'] || p['numero_sap']) || null,
+    numeroSap: formatSapNumero(p['sap_ov_numero'] || p['numero_sap']) || null,
     cliente: {
       nome: txt(p['cliente_nome']),
       nomeFantasia: txt(p['cliente_nome']),

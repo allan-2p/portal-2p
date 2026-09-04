@@ -1,3 +1,4 @@
+import { formatSapNumero } from "@/lib/sap-numero";
 /**
  * Montagem dos payloads da Oferta de Carga da Fretefy (lógica pura, testável).
  *
@@ -81,7 +82,7 @@ export function montarOfertaCarga(ctx: OfertaCargaCtx): Record<string, unknown> 
     cidade: ctx.entrega.cidade ?? "",
     uf: ctx.entrega.uf ?? "",
   };
-  const pedidoEmbarcador = `${ctx.sapOvNumero} - ${ctx.nomeProjeto}`.trim();
+  const pedidoEmbarcador = `${formatSapNumero(ctx.sapOvNumero)} - ${ctx.nomeProjeto}`.trim();
 
   return {
     unidadeNegocioId: UNIDADE_NEGOCIO_ID,
@@ -105,7 +106,7 @@ export function montarOfertaCarga(ctx: OfertaCargaCtx): Record<string, unknown> 
           chave: CHAVE_PLACEHOLDER,
           serie: "001",
           numero: "0000000000",
-          pedido: ctx.numero,
+          pedido: formatSapNumero(ctx.numero),
           dhEmissao: agora.toISOString(),
           dhCriacaoPedido: dataHora(agora),
           emitente: { ...EMPRESA_2P },
@@ -116,7 +117,7 @@ export function montarOfertaCarga(ctx: OfertaCargaCtx): Record<string, unknown> 
           valor: ctx.valorCarga,
         },
       ],
-      observacao: `Peso: ${ctx.pesoTotal} . Pedido: ${ctx.numero} Plataforma - SAP ${ctx.sapOvNumero} - ${ctx.nomeProjeto}`,
+      observacao: `Peso: ${ctx.pesoTotal} . Pedido: ${formatSapNumero(ctx.numero)} Plataforma - SAP ${formatSapNumero(ctx.sapOvNumero)} - ${ctx.nomeProjeto}`,
     },
     paradas: [],
     carga: {
@@ -181,8 +182,8 @@ export function montarAtualizacaoDocumento(ctx: DocumentoNfCtx): Record<string, 
           id: ctx.documentoId,
           chave: ctx.nfChave,
           serie: ctx.nfSerie,
-          numero: ctx.nfNumero,
-          pedido: ctx.sapOvNumero,
+          numero: formatSapNumero(ctx.nfNumero),
+          pedido: formatSapNumero(ctx.sapOvNumero),
           dhEmissao: ctx.dhEmissao,
           dhCriacaoPedido: ctx.dhEmissao,
           emitente: { ...EMPRESA_2P },

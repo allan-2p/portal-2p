@@ -1,3 +1,4 @@
+import { formatSapNumero } from "@/lib/sap-numero";
 /**
  * Aviso de pedido com Kit Fotovoltaico para produção/logística.
  *
@@ -29,7 +30,7 @@ export async function avisarKitFotovoltaico(row: Record<string, any>): Promise<b
       `Kit fotovoltaico — pedido ${numero}`,
       `<p>Novo pedido com <strong>kit fotovoltaico</strong>.</p>` +
       `<p>Pedido: <strong>${numero}</strong><br/>Cliente: ${cliente}<br/>` +
-      `Ordem de venda SAP: ${vbeln || "aguardando"}</p>` +
+      `Ordem de venda SAP: ${formatSapNumero(vbeln) || "aguardando"}</p>` +
       `<p>Material de produção: <strong>100000278</strong> (comercial 200000691).</p>` +
       `<ul>${linhas}</ul>`,
       `Pedido ${numero} — ${cliente}`,

@@ -7,6 +7,7 @@
  * salvamento da proposta (ver `propostas-db.server.ts`), não só no backfill.
  */
 
+import { formatSapNumero } from "@/lib/sap-numero";
 import { grupo2pRest } from "./grupo2p-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 
@@ -51,7 +52,7 @@ export function linhasDaProposta(row: Record<string, any>): PropostaItemRow[] {
         proposta_id: so(row["id"]),
         organizacao: so(row["organizacao"]) || "solar",
         numero: so(row["numero"]) || null,
-        numero_sap: so(row["numero_sap"]) || so(row["sap_ov_numero"]) || null,
+        numero_sap: formatSapNumero(row["sap_ov_numero"]) || formatSapNumero(row["numero_sap"]) || null,
         sf_opp_id: so(row["sf_opp_id"]) || null,
         ordem: idx,
         codigo_sap: so(it?.codigo) || null,

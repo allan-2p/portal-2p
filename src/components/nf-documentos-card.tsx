@@ -3,6 +3,7 @@
  * boleto (quando a forma de pagamento gera um). Os arquivos vêm do bucket
  * privado; se ainda não existirem, o portal busca no SAP sob demanda.
  */
+import { formatSapNumero } from "@/lib/sap-numero";
 import { useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,7 +18,7 @@ const STATUS_COM_NF = ["Faturado", "Coletado", "Entregue"];
 /** Regra única: os documentos só existem depois que o SAP fatura a NF. */
 export function temNotaFiscal(proposta: Record<string, any>) {
   const status = String(proposta['status'] ?? "");
-  const nfNumero = String(proposta['nf_numero'] ?? "").trim();
+  const nfNumero = formatSapNumero(proposta['nf_numero']);
   return STATUS_COM_NF.includes(status) || !!nfNumero;
 }
 
@@ -111,7 +112,7 @@ export function NfDocumentosCard({
 }) {
   const { abrir, carregando } = useDocumentoNf(String(proposta['id'] ?? ""));
   const status = String(proposta['status'] ?? "");
-  const nfNumero = String(proposta['nf_numero'] ?? "").trim();
+  const nfNumero = formatSapNumero(proposta['nf_numero']);
   const temNf = temNotaFiscal(proposta);
 
   return (
