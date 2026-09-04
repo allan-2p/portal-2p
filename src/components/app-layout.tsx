@@ -489,7 +489,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   {clientesOpen && (
                     <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
                       {show("clientes.cadastros") && (
-                        <SubLink to="/solar/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/solar/clientes/cadastros")} />
+                        <SubLink to="/solar/clientes/cadastros" label="Clientes" icon={ClipboardList} active={pathname.startsWith("/solar/clientes/cadastros")} />
                       )}
                       {(show("clientes.segmentacao") || show("clientes.perfil")) && (
                         <SubLink
