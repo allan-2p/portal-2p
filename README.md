@@ -59,14 +59,14 @@ tests/                    testes unitários e de RLS
 ### Rotas do app
 
 <!-- readme:rotas -->
-78 páginas autenticadas em `src/routes/_authenticated` (file routes do TanStack Router).
+79 páginas autenticadas em `src/routes/_authenticated` (file routes do TanStack Router).
 
 | Área | Páginas | Rotas |
 | --- | --- | --- |
 | **admin** | 29 | `/admin/atividade`, `/admin/auditoria`, `/admin/comissoes`, `/admin/configuracoes`, `/admin/emails`, `/admin/estoque`, `/admin/frete-regras`, `/admin`, `/admin/integracoes`, `/admin/integracoes/$slug`, `/admin/logs/gatilhos`, `/admin/logs`, `/admin/logs/integracoes`, `/admin/logs/moderacao`, `/admin/logs/retencao`, `/admin/logs/sap`, `/admin/metas`, `/admin/microinversores-solar`, `/admin/moderacao`, `/admin/modulos-solar`, `/admin/perfis`, `/admin/produtos`, `/admin/produtos-solar`, `/admin/regras`, `/admin/suportes-solar`, `/admin/tabelas`, `/admin/trilhos-solar`, `/admin/usuarios`, `/admin/vinculos` |
 | **atlas-ia** | 2 | `/atlas-ia/$threadId`, `/atlas-ia/radar` |
+| **raiz** | 5 | `/busca`, `/financeiro`, `/index`, `/marketing`, `/perfil` |
 | **carregadores** | 17 | `/carregadores/clientes`, `/carregadores/clientes/cadastros`, `/carregadores/clientes`, `/carregadores/comissoes`, `/carregadores/frete-regras`, `/carregadores`, `/carregadores/metas`, `/carregadores/pedidos`, `/carregadores/produtos`, `/carregadores/propostas`, `/carregadores/propostas/auditoria`, `/carregadores/propostas`, `/carregadores/propostas/nova`, `/carregadores/propostas/visualizar`, `/carregadores/regras`, `/carregadores/tarefas`, `/carregadores/visao-geral` |
-| **raiz** | 4 | `/financeiro`, `/index`, `/marketing`, `/perfil` |
 | **financeiro** | 3 | `/financeiro/condicoes`, `/financeiro/credito`, `/financeiro` |
 | **marketing** | 8 | `/marketing/cac`, `/marketing/cohort`, `/marketing/gargalo`, `/marketing`, `/marketing/metas`, `/marketing/pre-vendas`, `/marketing/social`, `/marketing/trafego` |
 | **solar** | 15 | `/solar/atlas`, `/solar/clientes`, `/solar/clientes/cadastros`, `/solar/clientes/negocios`, `/solar/clientes/perfil`, `/solar/clientes/ranking`, `/solar/clientes/segmentacao`, `/solar/clientes/sugestoes`, `/solar/cupons`, `/solar/dashboards`, `/solar/dashboards/metas`, `/solar/pedidos`, `/solar/propostas`, `/solar/propostas/nova`, `/solar/tarefas` |
@@ -154,6 +154,7 @@ reprocessamento usa exatamente o mesmo executor do disparo original
 | `checkout.finalizar` | Checkout • Finalizar pedido | Conclusão do pedido pelo vendedor (etapa 4). | não |
 | `sap.ov-criar` | SAP • Criar ordem de venda | Envia o pedido concluído ao SAP (ZNFE_OV_CRIAR) e grava o nº da ordem. | sim |
 | `salesforce.pedido` | Salesforce • Enviar pedido | Cria/atualiza a oportunidade do pedido no Salesforce. | sim |
+| `salesforce.numeros` | Salesforce • Forçar número do portal | Regrava o nome das oportunidades com o número do pedido do portal. | sim |
 | `cron.sap-nfs` | Cron • Notas fiscais (SAP) | Consulta o SAP e move Processando → Separação → Faturado. | sim |
 | `cron.pagamento-link` | Cron • Pagamento (boleto Itaú) | Verifica a liquidação do boleto e libera o pedido. | sim |
 | `cron.estoque` | Cron • Estoque (SAP) | Sincroniza estoque, containers e produtos com o SAP a cada 6h. | sim |
@@ -182,6 +183,7 @@ Endpoints públicos (exigem `x-cron-secret`, exceto webhooks com assinatura pró
 - `/api/public/hooks/pix-itau/*`
 - `/api/public/hooks/pix-reconsulta`
 - `/api/public/hooks/salesforce-fila`
+- `/api/public/hooks/salesforce-numeros`
 - `/api/public/hooks/sap-catalogo-vendaveis`
 - `/api/public/hooks/sap-nfs`
 <!-- /readme:jobs -->

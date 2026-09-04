@@ -24,6 +24,11 @@ export const JOBS = {
     descricao: "Cria/atualiza a oportunidade do pedido no Salesforce.",
     reprocessavel: true,
   },
+  "salesforce.numeros": {
+    label: "Salesforce • Forçar número do portal",
+    descricao: "Regrava o nome das oportunidades com o número do pedido do portal.",
+    reprocessavel: true,
+  },
   "cron.sap-nfs": {
     label: "Cron • Notas fiscais (SAP)",
     descricao: "Consulta o SAP e move Processando → Separação → Faturado.",

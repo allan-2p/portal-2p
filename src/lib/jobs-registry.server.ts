@@ -55,6 +55,20 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     return { ...r };
   },
 
+  // Motor real: força o número do portal no nome das oportunidades já
+  // vinculadas (o Salesforce não tem campo próprio para o NROPED).
+  "salesforce.numeros": async (payload) => {
+    const { forcarNumerosSalesforce } = await import("@/lib/salesforce-numeros.server");
+    const p = (payload ?? {}) as Record<string, unknown>;
+    return {
+      ...(await forcarNumerosSalesforce({
+        dryRun: Boolean(p["dryRun"]),
+        ...(p["limite"] ? { limite: Number(p["limite"]) } : {}),
+        ...(p["organizacao"] ? { organizacao: String(p["organizacao"]) } : {}),
+      })),
+    };
+  },
+
   // Motor real: consulta ZNFE_OV_CONSULTAR e avança Processando → Separação →
   // Faturado → Coletado (com NF e DANFE).
   "cron.sap-nfs": async (payload) => {
