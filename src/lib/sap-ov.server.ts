@@ -1189,7 +1189,7 @@ export async function criarOrdemVendaSap(
       if (!aguardaCobranca && String(row["status"] ?? "") === "Aguardando Pagamento") {
         try {
           const { aplicarTransicao } = await import("./proposta-transicao.server");
-          await aplicarTransicao(propostaId, "Processando", "sap-ov", {
+          await aplicarTransicao(propostaId, "Processando", "checkout", {
             de: "Aguardando Pagamento",
           });
         } catch {
