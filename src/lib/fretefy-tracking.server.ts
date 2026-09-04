@@ -32,6 +32,9 @@ async function acharProposta(ev: FretefyEvento): Promise<Record<string, any> | n
     const alt = await db.getPropostaPorNumero(limpo);
     if (alt) return alt as Record<string, any>;
   }
+  // Legados: a carga da plataforma antiga leva a OV do SAP no embarcador.
+  const porOv = await db.getPropostaPorOv(limpo || ev.pedido);
+  if (porOv) return porOv as Record<string, any>;
   return null;
 }
 
