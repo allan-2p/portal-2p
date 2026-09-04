@@ -13,9 +13,9 @@ import { GRUPO_BUSCA, UNIDADE_BUSCA, agruparResultados } from "@/components/glob
 type BuscaSearch = { q?: string };
 
 export const Route = createFileRoute("/_authenticated/busca")({
-  validateSearch: (search: Record<string, unknown>): BuscaSearch => ({
-    q: typeof search["q"] === "string" ? search["q"] : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): BuscaSearch =>
+    typeof search["q"] === "string" ? { q: search["q"] } : {},
+
   head: () => ({
     meta: [
       { title: "Busca | Portal 2P" },
