@@ -40,6 +40,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Revisão em massa do catálogo (planilha de itens)**: 100 itens ficaram ativos e 322 inativos no catálogo 2P Solar; em 2P Carregadores 5 ficaram ativos e 1 inativo. 272 materiais que só existiam no espelho do SAP foram trazidos para o catálogo do portal. Nada de preço, custo, NCM ou permissão foi alterado.
 
 ### Alterado
+- **Calculadora 2P alinhada ao catálogo**: a barra de 3,60m (200000507) saiu do trilho "Trilho", e os suportes "LAJE 10" (200000076/200000077) e "Pris. Concreto" (complemento 200000111) foram desativados — todos inativados na revisão da planilha de itens.
 - **Opções padrão da Calculadora 2P**: parafuso do microinversor passa a ser o M8*25 (200000657), o kit de parafusos Smart passa a ser 100000210 e o suporte Zipado passa a usar 200000658.
 
 
