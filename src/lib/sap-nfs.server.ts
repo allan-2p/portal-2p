@@ -151,7 +151,14 @@ export function lerConsulta(doc: any): ConsultaSap {
     romaneio: txt(achar(dados, "STATUS_ROMANEIO")),
     nfNumero: num(achar(dados, "NUM_NF") ?? achar(dados, "DOCNUM")),
     nfSerie: txt(achar(dados, "SERIE_NF") ?? achar(dados, "SERIE")),
-    nfChave: num(achar(dados, "CHAVE_NFE") ?? achar(dados, "CHAVE") ?? achar(dados, "NFE_CHAVE")),
+    // A chave da NF no SAP vem como CHNFE (antiga calculadora.php:1666).
+    // Mantemos os aliases anteriores como fallback.
+    nfChave: num(
+      achar(dados, "CHNFE") ??
+      achar(dados, "CHAVE_NFE") ??
+      achar(dados, "CHAVE") ??
+      achar(dados, "NFE_CHAVE"),
+    ),
     danfeBase64: txt(achar(doc, "E_DANFE") ?? achar(doc, "DANFE")),
     dataExpedicao: dataExpedicaoSap(achar(dados, "DATA_EXPEDICAO")),
     remessa: remessaSap(dados),
@@ -444,6 +451,68 @@ export type NfAplicacao = {
   vazio?: boolean;
 };
 
+/**
+ * Envia o documento da NF à Fretefy de forma idempotente.
+ *
+ * - Só dispara quando o pedido tem nf_numero + nf_chave + fretefy_oferta_id.
+ * - Cria a oferta de carga automaticamente se ela ainda não existir.
+ * - Grava `nf_fretefy_em` no banco quando o PUT devolve 200, impedindo reenvios.
+ * - Funciona tanto no ciclo de avanço de status quanto em reprocessos (Coletado
+ *   /Entregue que saíram da fila antes do envio).
+ */
+async function tentarEnviarDocumentoFretefy(
+  id: string,
+  row: Record<string, any>,
+  c: ConsultaSap,
+): Promise<void> {
+  const nfNumero = String(c.nfNumero ?? row["nf_numero"] ?? "").trim();
+  const nfChave = String(c.nfChave ?? row["nf_chave"] ?? "").trim();
+  const nfSerie = String(c.nfSerie ?? row["nf_serie"] ?? "").trim();
+  const ofertaId = String(row["fretefy_oferta_id"] ?? "").trim();
+
+  // Guardas: precisamos de NF, chave e oferta; e ainda não ter confirmado envio.
+  if (!nfNumero || !nfChave) return;
+  if (row["nf_fretefy_em"]) return;
+
+  try {
+    const { runJob } = await import("./job-runs.server");
+    const { atualizarDocumentoOferta, criarOfertaCarga } = await import("./fretefy-oferta.server");
+    const r = await runJob(
+      {
+        job: "fretefy.oferta-carga",
+        trigger: "cron",
+        payload: { propostaId: id, acao: "documento" },
+        refId: id,
+      },
+      async () => {
+        if (!ofertaId) {
+          const criada = await criarOfertaCarga(id);
+          if (!criada.ofertaId) return { ...criada, documento: "sem oferta de carga" };
+        }
+        return await atualizarDocumentoOferta(id, { nfNumero, nfSerie, nfChave });
+      },
+    );
+
+    // Se o envio foi bem-sucedido, marca no banco para não reenviar.
+    if (r.ok && r.result && typeof r.result === "object" && (r.result as { ok?: boolean }).ok) {
+      try {
+        await db.atualizarProposta(id, { nf_fretefy_em: new Date().toISOString() });
+      } catch (e) {
+        if (!/42703|PGRST204/i.test((e as Error).message)) throw e;
+        await logIntegrationEvent({
+          slug: "cron.sap-nfs",
+          level: "warn",
+          event: "coluna-ausente",
+          message: `Rode supabase/external/propostas-nf.sql (nf_fretefy_em): ${(e as Error).message}`,
+          detail: { proposta_id: id },
+        });
+      }
+    }
+  } catch {
+    /* best effort: o próximo ciclo/cron tenta novamente */
+  }
+}
+
 async function processarProposta(row: Record<string, any>): Promise<NfAplicacao> {
   const id = String(row["id"]);
   const de = String(row["status"] ?? "");
@@ -453,9 +522,13 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
   const para = proximoStatus(de, c);
 
   const patch: Record<string, unknown> = {};
+  // Desacopla número/série da chave: a chave pode chegar tardia (ex.: NF emitida
+  // e depois o SAP passa a devolver CHNFE). Sempre preenche quando vazio.
   if (c.nfNumero && !row["nf_numero"]) {
     patch["nf_numero"] = c.nfNumero;
     patch["nf_serie"] = c.nfSerie;
+  }
+  if (c.nfChave && !row["nf_chave"]) {
     patch["nf_chave"] = c.nfChave;
   }
   if (c.danfeBase64 && !row["danfe_path"]) {
@@ -518,36 +591,16 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
     } catch {
       /* best effort */
     }
-    // Faturou: a carga na Fretefy troca o documento placeholder pela NF real.
-    // Se a oferta não existe (falhou na etapa da OV, token off), cria agora e
-    // só então empurra a NF — as duas chamadas são idempotentes.
-    if (c.nfNumero) {
-      try {
-        const { runJob } = await import("./job-runs.server");
-        const { atualizarDocumentoOferta, criarOfertaCarga } = await import("./fretefy-oferta.server");
-        await runJob(
-          {
-            job: "fretefy.oferta-carga",
-            trigger: "cron",
-            payload: { propostaId: id, acao: "documento" },
-            refId: id,
-          },
-          async () => {
-            if (!String(row["fretefy_oferta_id"] ?? "").trim()) {
-              const criada = await criarOfertaCarga(id);
-              if (!criada.ofertaId) return { ...criada, documento: "sem oferta de carga" };
-            }
-            return await atualizarDocumentoOferta(id, {
-              nfNumero: c.nfNumero,
-              nfSerie: c.nfSerie,
-              nfChave: c.nfChave,
-            });
-          },
-        );
-      } catch {
-        /* best effort */
-      }
-    }
+  }
+
+  // Envia (ou reenvia) o documento da NF à Fretefy sempre que o pedido tiver
+  // NF + chave + oferta e o envio ainda não foi confirmado. Não depende mais
+  // de `para`: pedidos que já chegaram a Coletado/Entregue antes do envio
+  // continuam elegíveis até o PUT dar 200.
+  await tentarEnviarDocumentoFretefy(id, row, c);
+
+  if (para) {
+
 
     const dono = row["created_by"] ? String(row["created_by"]) : null;
     if (dono) {
@@ -628,13 +681,16 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
   const rows = await db.listarPropostas({
     // "Aguardando Pagamento" só entra com ordem criada (boleto a prazo/cartão);
     // o `naoVazio` abaixo já exclui os pedidos Pix, que ainda não têm OV.
-    statusIn: ["Aguardando Pagamento", "Processando", "Separação", "Faturado"],
+    // Coletado/Entregue continuam na fila enquanto o documento da NF não tiver
+    // sido enviado com sucesso à Fretefy (nf_fretefy_em IS NULL).
+    statusIn: ["Aguardando Pagamento", "Processando", "Separação", "Faturado", "Coletado", "Entregue"],
 
     select:
-      "id,numero,status,created_by,sap_ov_numero,nf_numero,danfe_path,created_at,fretefy_oferta_id,expedido_em",
+      "id,numero,status,created_by,sap_ov_numero,nf_numero,nf_chave,nf_serie,danfe_path,created_at,fretefy_oferta_id,nf_fretefy_em,expedido_em",
 
     order: "asc",
     naoVazio: ["sap_ov_numero"],
+    nulo: ["nf_fretefy_em"],
     limit: 20000,
   });
 
@@ -670,6 +726,69 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
         slug: "cron.sap-nfs",
         level: "error",
         event: "consulta-erro",
+        message: erro,
+        detail: {
+          proposta_id: String(row["id"]),
+          numero: row["numero"] ?? null,
+          sap_ov_numero: row["sap_ov_numero"] ?? null,
+        },
+      });
+    }
+  }
+
+  const atualizados = detalhes.filter((d) => d.para).length;
+  const vazios = detalhes.filter((d) => d.vazio).length;
+  return {
+    verificados: fila.length,
+    atualizados,
+    vazios,
+    erros_total: erros.length,
+    detalhes,
+    ...(erros.length ? { erros } : {}),
+  };
+}
+
+/**
+ * Backfill: reprocessa pedidos já faturados (e subsequentes) que têm NF e
+ * oferta na Fretefy mas ainda não tiveram o documento enviado com sucesso.
+ *
+ * Útil para recuperar os pedidos faturados antes da correção do envio ou para
+ * reenviar após falhas transitórias na Fretefy.
+ */
+export async function reprocessarFretefyFaturados(limite = 50): Promise<NfResultado> {
+  if (!sapNfsConfigurado()) {
+    return { verificados: 0, atualizados: 0, vazios: 0, erros_total: 0, detalhes: [], skipped: true, motivo: "SAP_NFS_URL/credencial não configurada." };
+  }
+
+  const rows = await db.listarPropostas({
+    statusIn: ["Faturado", "Coletado", "Entregue"],
+    select:
+      "id,numero,status,created_by,sap_ov_numero,nf_numero,nf_chave,nf_serie,danfe_path,created_at,fretefy_oferta_id,nf_fretefy_em,expedido_em",
+    order: "asc",
+    naoVazio: ["sap_ov_numero"],
+    nulo: ["nf_fretefy_em"],
+    limit: 20000,
+  });
+
+  const elegiveis = rows.filter(
+    (r) => String(r["sap_ov_numero"] ?? "").trim() && String(r["numero"] ?? "").trim(),
+  );
+
+  const rodada = Math.floor(Date.now() / (20 * 60 * 1000));
+  const fila = selecionarFilaRotativa(elegiveis, limite, rodada);
+
+  const detalhes: NfAplicacao[] = [];
+  const erros: { proposta_id: string; erro: string }[] = [];
+  for (const row of fila) {
+    try {
+      detalhes.push(await processarProposta(row));
+    } catch (e) {
+      const erro = (e as Error).message.slice(0, 300);
+      erros.push({ proposta_id: String(row["id"]), erro });
+      await logIntegrationEvent({
+        slug: "cron.sap-nfs",
+        level: "error",
+        event: "fretefy-backfill-erro",
         message: erro,
         detail: {
           proposta_id: String(row["id"]),

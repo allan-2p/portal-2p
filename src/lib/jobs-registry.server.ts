@@ -154,6 +154,14 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
     return { ...(await criarOfertaCarga(id, { forcar: Boolean(p["forcar"]) })) };
   },
 
+  // Motor real: reenvia o documento da NF à Fretefy para pedidos já
+  // faturados/Coletado/Entregue que ainda não tiveram o envio confirmado.
+  "fretefy.backfill-documentos": async (payload) => {
+    const { reprocessarFretefyFaturados } = await import("@/lib/sap-nfs.server");
+    const limite = Number((payload as Record<string, unknown>)["limite"] ?? 50) || 50;
+    return { ...(await reprocessarFretefyFaturados(limite)) };
+  },
+
 
 
 };

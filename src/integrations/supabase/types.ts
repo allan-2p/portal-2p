@@ -2190,6 +2190,7 @@ export type Database = {
           kit_fotovoltaico: boolean
           motivo_cancelamento: string | null
           motivo_cancelamento_obs: string | null
+          nf_fretefy_em: string | null
           nome: string | null
           numero: string | null
           numero_sap: string | null
@@ -2257,6 +2258,7 @@ export type Database = {
           kit_fotovoltaico?: boolean
           motivo_cancelamento?: string | null
           motivo_cancelamento_obs?: string | null
+          nf_fretefy_em?: string | null
           nome?: string | null
           numero?: string | null
           numero_sap?: string | null
@@ -2324,6 +2326,7 @@ export type Database = {
           kit_fotovoltaico?: boolean
           motivo_cancelamento?: string | null
           motivo_cancelamento_obs?: string | null
+          nf_fretefy_em?: string | null
           nome?: string | null
           numero?: string | null
           numero_sap?: string | null
