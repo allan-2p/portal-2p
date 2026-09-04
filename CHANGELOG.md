@@ -36,6 +36,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ## [Não publicado]
 
 ### Adicionado
+- **Alíquotas visíveis na proposta de carregadores**: IPI, ICMS e PIS/COFINS aparecem por item na prévia e com o percentual ao lado do valor no resumo de impostos, no mesmo formato usado no PDF (duas casas, padrão pt-BR).
 - **Painel "Pedidos parados com OV no SAP"** (Admin › Logs › Monitor de Sync SAP): lista os pedidos com ordem de venda criada que estão há N dias (padrão 1) em "Aguardando Pagamento" ou "Processando" sem avançar, com o **último desfecho da consulta ao SAP** por pedido — "SAP sem progresso" (esperar o ERP) ou "consulta com erro" (bug a tratar).
 - **Auditoria por pedido no cron do SAP**: cada consulta ao `ZNFE_OV_CONSULTAR` agora grava um evento em Logs › Integrações (`cron.sap-nfs`): `avancou` (de → para), `consulta-vazia` (SAP não devolveu picking/expedição/NF) ou `consulta-erro` (falha da chamada), com OV, picking, remessa, NF e data de expedição. O resultado do gatilho passa a trazer também os contadores **vazios** e **erros**.
 

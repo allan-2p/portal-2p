@@ -735,6 +735,17 @@ export const fmtBRL = (v: number) =>
 export const fmtPct = (v: number) =>
   `${(isFinite(v) ? v * 100 : 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
 
+/**
+ * Formatador padrão de alíquotas fiscais (IPI, ICMS, PIS/COFINS).
+ * Aceita fração (0.0325) ou percentual já convertido (3.25) e sempre
+ * devolve duas casas decimais em pt-BR. Valores ausentes viram "—".
+ */
+export const fmtAliquota = (v?: number | null) => {
+  if (typeof v !== "number" || !isFinite(v)) return "—";
+  const fracao = Math.abs(v) > 1 ? v / 100 : v;
+  return fmtPct(fracao);
+};
+
 export function parseMoeda(s: string | number) {
   if (typeof s === "number") return s;
   const clean = (s || "")
