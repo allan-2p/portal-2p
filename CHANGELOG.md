@@ -44,6 +44,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Opções padrão da Calculadora 2P**: parafuso do microinversor passa a ser o M8*25 (200000657), o kit de parafusos Smart passa a ser 100000210 e o suporte Zipado passa a usar 200000658.
 
 
+### Corrigido
+- **PIS/COFINS na proposta solar**: o percentual aparecia como 10,19%–10,22% porque era calculado sobre o valor já sem os tributos. Passa a usar a mesma base do restante do portal (valor sem IPI e sem ICMS), exibindo os 9,25% corretos. Só a exibição do percentual muda — preços e totais seguem iguais.
+
 ### Adicionado
 - **Botão "Reenviar agora" dos documentos pendentes da Fretefy** (Monitoramento › Fretefy): reprocessa os pedidos faturados/Coletado/Entregue sem NF enviada. Passa a rodar direto no portal, com a permissão do usuário, em vez de sair por uma chamada externa autenticada por chave — o que causava o erro 401 no acionamento manual. A execução fica registrada nos gatilhos.
 - **Prévia do PDF com zoom e conferência de folhas** (Solar e Carregadores, na criação da proposta e no detalhe do pedido): visor único com zoom (−/+/ajustar à largura), contagem de folhas A4, marcas tracejadas nas quebras de página e um selo indicando se algum bloco pode ser cortado entre folhas ou se o conteúdo está mais largo que a página.
