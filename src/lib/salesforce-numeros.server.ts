@@ -146,8 +146,11 @@ export async function forcarNumerosSalesforce(
       paraGravar.push({
         Id: id,
         Name: alvoNome,
-        // Regra de validação da org: perdida sem detalhamento bloqueia update.
-        ...(atual.perdidaSemDetalhe
+        // Regra de validação da org: perdida exige detalhamento do motivo de
+        // perda com texto de verdade. Detalhe vazio/lixo ("a", ".") recebe o
+        // texto padrão; detalhe curto demais ("BELENERGY") também é recusado
+        // pela regra — nesses casos o retry abaixo anexa o texto padrão.
+        ...(atual.perdida && atual.detalhe.length < 5
           ? { Descri_o_do_Motivo_de_Perda__c: DETALHAMENTO_PERDA_PADRAO }
           : {}),
       });
