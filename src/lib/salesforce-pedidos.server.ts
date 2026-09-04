@@ -291,7 +291,45 @@ export async function sincronizarPedidoSalesforce(
   const erroMsg = (m: string) => (eraBackfill ? `${m} (backfill)` : m);
 
   try {
-    const accountId = so(row["sf_account_id"]) || (await acharAccount(row["cliente_doc"], clienteNome));
+    let accountId = so(row["sf_account_id"]) || (await acharAccount(row["cliente_doc"], clienteNome));
+    // Conta ainda não existe na org: em vez de só falhar, sincroniza o
+    // cadastro do cliente (Account/Contact) e tenta de novo. É a 2ª maior
+    // fonte de erro da fila de pedidos.
+    if (!accountId && so(row["cliente_doc"])) {
+      try {
+        const { findClienteByDoc } = await import("./clientes-db.server");
+        const achados = await findClienteByDoc(so(row["cliente_doc"]));
+        const alvo =
+          achados.find((a) => a.cliente["organizacao"] === row["organizacao"]) ?? achados[0];
+        if (alvo) {
+          const { sincronizarCliente } = await import("./clientes-integracoes.server");
+          const r = await sincronizarCliente(
+            alvo.instancia,
+            String(alvo.cliente["id"]),
+            alvo.cliente as Record<string, any>,
+            { alvos: ["salesforce"] },
+          );
+          accountId =
+            so((r as any)?.salesforce?.accountId) ||
+            (await acharAccount(row["cliente_doc"], clienteNome));
+          if (accountId) {
+            await logIntegrationEvent({
+              ...base,
+              level: "info",
+              message: `Conta do cliente criada/sincronizada no Salesforce antes do pedido ${numero}.`,
+              detail: { proposta_id: propostaId, numero, cliente: clienteNome, account_id: accountId },
+            });
+          }
+        }
+      } catch (e) {
+        await logIntegrationEvent({
+          ...base,
+          level: "warn",
+          message: `Falha ao sincronizar a conta do cliente antes do pedido ${numero}: ${(e as Error).message}`.slice(0, 500),
+          detail: { proposta_id: propostaId, numero, cliente: clienteNome },
+        });
+      }
+    }
     if (!accountId) {
       const mensagem = "Conta do cliente não encontrada no Salesforce — sincronize o cadastro do cliente primeiro.";
       await gravar(propostaId, { sf_status: "erro", sf_mensagem: erroMsg(mensagem) });
@@ -304,6 +342,7 @@ export async function sincronizarPedidoSalesforce(
       });
       return { enviado: false, ok: false, opportunityId: null, accountId: null, mensagem, motivo: "sem_conta" };
     }
+
 
     // Padrão do Opportunity Name: "número da proposta - nome da proposta".
     // Em grupos com variações o número exibido carrega o sufixo da favorita.
@@ -347,7 +386,14 @@ export async function sincronizarPedidoSalesforce(
     // portal são idênticos aos da picklist. A descrição escrita pelo vendedor
     // vai no campo de texto `Descri_o_do_Motivo_de_Perda__c`.
     if (so(row["status"]) === "Cancelado" && so(row["motivo_cancelamento"])) {
-      custom["Motivo_de_cancelamento__c"] = so(row["motivo_cancelamento"]);
+      // A picklist é restrita: qualquer valor fora da lista (inclusive o
+      // placeholder da migração) vira "Erro Interno", senão o Salesforce
+      // recusa o update inteiro da oportunidade.
+      const { motivoCancelamentoValido } = await import("./cancelamento-motivos");
+      const motivoCanc = so(row["motivo_cancelamento"]);
+      custom["Motivo_de_cancelamento__c"] = motivoCancelamentoValido(motivoCanc)
+        ? motivoCanc
+        : "Erro Interno";
       const obs = so(row["motivo_cancelamento_obs"]);
       if (obs) custom["Descri_o_do_Motivo_de_Perda__c"] = obs;
     }
@@ -374,6 +420,30 @@ export async function sincronizarPedidoSalesforce(
     // Vínculo: usa o sf_opp_id da proposta; se não houver, procura a
     // oportunidade já existente do mesmo pedido antes de criar uma nova.
     let oppId: string | null = existente || (await acharOpp(numero, nomeOpp));
+
+    // Guard anti-duplicata (incidente de 02/09): pedido legado (importado da
+    // plataforma antiga) NUNCA cria oportunidade nova. Se não casar com uma
+    // opp existente, pula e registra — só pedidos nativos do portal criam.
+    if (!oppId && so(row["projeto_antigo_id"])) {
+      const mensagem =
+        "Pedido legado sem oportunidade correspondente no Salesforce — sincronização pulada para não criar duplicata.";
+      await gravar(propostaId, { sf_status: "erro", sf_mensagem: erroMsg(mensagem) });
+      await logIntegrationEvent({
+        ...base,
+        level: "warn",
+        message: mensagem,
+        detail: { proposta_id: propostaId, numero, cliente: clienteNome, projeto_antigo_id: so(row["projeto_antigo_id"]) },
+        durationMs: Date.now() - inicio,
+      });
+      return {
+        enviado: false,
+        ok: false,
+        opportunityId: null,
+        accountId,
+        mensagem,
+        motivo: "legado_sem_opp",
+      };
+    }
 
     // Pedido ainda "Salvo" e oportunidade marcada manualmente como perdida:
     // mantém o estágio da org (os demais campos continuam sincronizando).

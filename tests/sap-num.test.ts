@@ -59,10 +59,10 @@ describe("detecção de ambiguidade milhar/decimal", () => {
   beforeEach(() => iniciarColetaNumerica());
 
   it("registra a leitura ambígua com o valor de risco ×1000", () => {
-    numSap("8.856", "PESO_LIQUIDO");
+    numSap("8.856", "CAMPO_DESCONHECIDO");
     const [s] = coletarSuspeitasNumericas();
     expect(s).toMatchObject({
-      campo: "PESO_LIQUIDO",
+      campo: "CAMPO_DESCONHECIDO",
       bruto: "8.856",
       interpretado: 8.856,
       seFosseMilhar: 8856,
@@ -77,8 +77,14 @@ describe("detecção de ambiguidade milhar/decimal", () => {
     expect(coletarSuspeitasNumericas()).toHaveLength(0);
   });
 
+  it("não alerta em campos com decimal de 3 casas confirmado pelo SAP", () => {
+    numSap("4.280", "VL_PIS");
+    numSap("0.678", "PESO_LIQUIDO");
+    expect(coletarSuspeitasNumericas()).toHaveLength(0);
+  });
+
   it("limpa o coletor a cada leitura", () => {
-    numSap("8.856", "PESO_LIQUIDO");
+    numSap("8.856", "CAMPO_DESCONHECIDO");
     expect(coletarSuspeitasNumericas()).toHaveLength(1);
     expect(coletarSuspeitasNumericas()).toHaveLength(0);
   });

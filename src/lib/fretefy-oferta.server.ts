@@ -210,16 +210,46 @@ export async function atualizarDocumentoOferta(
   if (!nfChave || !nfNumero)
     return { ok: true, skipped: true, motivo: "Pedido ainda sem NF (chave/número)." };
 
-  const atual = await fretefyRequest("GET", `ofertacarga/${ofertaId}`);
-  if (!atual.ok)
-    throw new Error(
-      `Não foi possível consultar a oferta ${ofertaId} na Fretefy (HTTP ${atual.status}).`,
-    );
-  const destino = (atual.json as Record<string, any> | null)?.["destino"] ?? {};
-  const destinoId = String(destino?.["id"] ?? "");
-  const documentoId = String(destino?.["documentos"]?.[0]?.["id"] ?? "");
-  if (!destinoId || !documentoId)
-    throw new Error(`Oferta ${ofertaId} sem destino/documento para atualizar.`);
+  const lerCarga = async (id: string) => {
+    const r = await fretefyRequest("GET", `ofertacarga/${id}`);
+    if (!r.ok)
+      throw new Error(`Não foi possível consultar a oferta ${id} na Fretefy (HTTP ${r.status}).`);
+    const d = (r.json as Record<string, any> | null)?.["destino"] ?? {};
+    return {
+      destinoId: String(d?.["id"] ?? ""),
+      documentoId: String(d?.["documentos"]?.[0]?.["id"] ?? ""),
+    };
+  };
+
+  let ofertaAtualId = ofertaId;
+  let { destinoId, documentoId } = await lerCarga(ofertaAtualId);
+
+  // Carga que nasceu sem o documento placeholder (caso 60277): em vez de
+  // falhar todo ciclo, recria a carga limpa (delete + create) e usa a nova —
+  // create-or-update, sem deixar carga órfã na Fretefy.
+  if (!destinoId || !documentoId) {
+    await logIntegrationEvent({
+      ...base,
+      level: "warn",
+      message: `Oferta ${ofertaAtualId} sem destino/documento — recriando a carga para enviar a NF.`,
+      detail: { proposta_id: propostaId, oferta_id: ofertaAtualId },
+    });
+    try {
+      await deletarOfertaCarga(propostaId, ofertaAtualId);
+    } catch {
+      /* best effort: se a Fretefy recusar o delete, seguimos para a recriação */
+    }
+    const recriada = await criarOfertaCarga(propostaId, { forcar: true });
+    const novoId = String(recriada.ofertaId ?? "").trim();
+    if (!recriada.ok || !novoId)
+      throw new Error(
+        `Oferta ${ofertaAtualId} sem documento e não foi possível recriar a carga: ${recriada.motivo ?? "erro desconhecido"}`,
+      );
+    ofertaAtualId = novoId;
+    ({ destinoId, documentoId } = await lerCarga(ofertaAtualId));
+    if (!destinoId || !documentoId)
+      throw new Error(`Carga recriada ${ofertaAtualId} continua sem destino/documento.`);
+  }
 
   const itens = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
   const totais = (row["totais"] ?? {}) as Record<string, any>;
@@ -239,7 +269,7 @@ export async function atualizarDocumentoOferta(
     valorTotal: Number(totais["valorTotal"] ?? totais["valor"] ?? 0),
   });
 
-  const res = await fretefyRequest("PUT", `ofertacarga/${ofertaId}/documentos`, payload);
+  const res = await fretefyRequest("PUT", `ofertacarga/${ofertaAtualId}/documentos`, payload);
   if (!res.ok) {
     const mensagem = `Fretefy recusou a atualização do documento (HTTP ${res.status}): ${res.response
       .replace(/\s+/g, " ")
@@ -248,7 +278,7 @@ export async function atualizarDocumentoOferta(
       ...base,
       level: "error",
       message: mensagem.slice(0, 500),
-      detail: { proposta_id: propostaId, oferta_id: ofertaId },
+      detail: { proposta_id: propostaId, oferta_id: ofertaAtualId },
       durationMs: res.durationMs,
     });
     throw new Error(mensagem);
@@ -257,11 +287,11 @@ export async function atualizarDocumentoOferta(
   await logIntegrationEvent({
     ...base,
     level: "info",
-    message: `NF ${nfNumero}/${nfSerie} enviada à carga ${ofertaId}`,
-    detail: { proposta_id: propostaId, oferta_id: ofertaId, nf_chave: nfChave },
+    message: `NF ${nfNumero}/${nfSerie} enviada à carga ${ofertaAtualId}`,
+    detail: { proposta_id: propostaId, oferta_id: ofertaAtualId, nf_chave: nfChave },
     durationMs: res.durationMs,
   });
-  return { ok: true, ofertaId, status: res.status };
+  return { ok: true, ofertaId: ofertaAtualId, status: res.status };
 }
 
 /**

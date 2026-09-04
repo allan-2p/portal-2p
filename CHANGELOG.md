@@ -36,6 +36,11 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ## [Não publicado]
 
 ### Corrigido
+- **Cancelamentos param de travar no Salesforce**: motivo de cancelamento fora da lista oficial (inclusive o texto herdado da migração) é enviado como "Erro Interno", em vez de derrubar a atualização inteira da oportunidade.
+- **Pedido não falha mais por falta da conta do cliente**: se a conta ainda não existir no Salesforce, o portal sincroniza o cadastro do cliente na hora e segue com o pedido.
+- **Sem oportunidades duplicadas para pedidos antigos**: pedido importado da plataforma antiga nunca cria oportunidade nova — se não encontrar a existente, o envio é pulado e registrado.
+- **Nota fiscal chega na carga mesmo quando a carga nasce sem documento**: nesse caso a carga é recriada automaticamente e a nota é enviada no ciclo seguinte, sem carga órfã na transportadora.
+- **Fim do alerta falso de valores do SAP**: peso, PIS/COFINS e demais campos com 3 casas decimais deixaram de gerar aviso de "risco de leitura 1000×" — a leitura já estava correta.
 - **Atualização de status dos pedidos destravada**: a verificação automática no SAP deixou de reprocessar pedidos já entregues (milhares deles ocupavam a fila) e passou a olhar só os pedidos em andamento — um pedido recém-coletado agora avança em poucos minutos, não em ~2 dias.
 - **Pedido não congela mais em "Faturado"**: enviar a nota à transportadora não tira mais o pedido da verificação de status, então ele continua avançando para "Coletado".
 - **Fim do retrabalho em pedidos entregues**: pedidos já entregues não geram mais recusa de mudança de status nem reenvio desnecessário ao Salesforce a cada ciclo.

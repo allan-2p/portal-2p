@@ -27,6 +27,18 @@ export type SuspeitaNumerica = {
 /** Ponto seguido de exatamente 3 dígitos e sem vírgula: decimal ou milhar? */
 const AMBIGUO = /^-?\d+\.\d{3}$/;
 
+/**
+ * Campos em que o SAP comprovadamente manda decimal de 3 casas (amostras reais
+ * dos logs: VL_PIS "4.280" = 4,28; PESO_LIQUIDO "0.678" = 0,678 kg). Nesses
+ * campos a leitura decimal é a correta e o alerta é só ruído.
+ */
+const CAMPOS_DECIMAIS =
+  /^(VL_|VALOR|PESO|PES_|BRGEW|NTGEW|QUAN|MENGE|KWMENG|KBETR|NETWR|MWSBP|PRECO|ALIQ)/i;
+
+function campoDecimalConhecido(campo?: string): boolean {
+  return Boolean(campo && CAMPOS_DECIMAIS.test(campo));
+}
+
 const MAX_SUSPEITAS = 200;
 let suspeitas: SuspeitaNumerica[] = [];
 
@@ -62,7 +74,7 @@ export function numSap(v: unknown, campo?: string): number {
   const n = parseFloat(temVirgula ? s.replace(/\./g, "").replace(",", ".") : s);
   const valor = Number.isFinite(n) ? n : 0;
 
-  if (!temVirgula && AMBIGUO.test(s)) {
+  if (!temVirgula && AMBIGUO.test(s) && !campoDecimalConhecido(campo)) {
     const milhar = parseFloat(s.replace(/\./g, ""));
     registrar({
       campo: campo ?? "?",
