@@ -92,7 +92,10 @@ export function PropostaTimeline({
                   <span
                     className="w-1 flex-1 rounded-full"
                     style={{
-                      backgroundColor: concluida(etapa, i + 1) ? s.bg : "var(--border)",
+                      backgroundColor:
+                        i + 1 < ETAPAS_ANDAMENTO.length && concluida(ETAPAS_ANDAMENTO[i + 1]!, i + 1)
+                          ? s.bg
+                          : "var(--border)",
                     }}
                   />
                 )}
@@ -161,6 +164,7 @@ export function PropostaTimeline({
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
