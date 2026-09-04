@@ -295,8 +295,13 @@ export async function simularSap(
       vlIpi,
       aliqIcms: pct("ALIQ_ICMS"),
       aliqIpi: pct("ALIQ_IPI"),
-      // O SAP não devolve % de PIS/COFINS: derivamos dos valores sobre o líquido.
-      aliqPisCofins: liquido > 0 ? (vlPis + vlCofins) / liquido : null,
+      // O SAP não devolve % de PIS/COFINS: derivamos dos valores. A base é o
+      // valor SEM IPI e SEM ICMS (líquido + PIS + COFINS) — dividir pelo
+      // líquido puro dá a alíquota "por dentro" (10,19% em vez de 9,25%).
+      aliqPisCofins: (() => {
+        const base = liquido + vlPis + vlCofins;
+        return base > 0 ? Math.round(((vlPis + vlCofins) / base) * 1e6) / 1e6 : null;
+      })(),
     });
   }
 
