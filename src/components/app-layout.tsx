@@ -336,13 +336,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     </>
                   )}
                 </Link>
-                {show("clientes.sugestoes") && !collapsed && (
+                {!collapsed && (
                   <div className="mb-2 ml-3 pl-3 border-l border-border">
                     <SubLink
-                      to="/solar/clientes/sugestoes"
-                      label="Sugestões do Atlas"
+                      to="/atlas-ia/radar"
+                      label="Radar do Atlas"
                       icon={Sparkles}
-                      active={pathname.startsWith("/solar/clientes/sugestoes")}
+                      active={pathname.startsWith("/atlas-ia/radar")}
                     />
                   </div>
                 )}
@@ -829,15 +829,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Sparkles className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Atlas</span>
               </Link>
-              {show("clientes.sugestoes") && (
-                <Link
-                  to="/solar/clientes/sugestoes"
-                  title="Sugestões do Atlas"
-                  className="inline-flex items-center h-6 px-2 rounded-md hover:bg-surface-2 hover:text-foreground"
-                >
-                  Sugestões
-                </Link>
-              )}
             </>
           )}
           <Link
