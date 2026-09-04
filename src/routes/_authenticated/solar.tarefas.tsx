@@ -247,11 +247,14 @@ function TarefasPage() {
     </div>
   );
 
+  const hojeKey = fmtKey(today);
+
   const CardTarefa = ({ t }: { t: SalesforceTask }) => {
     const type = inferType(t.subject);
     const Icon = TYPE_ICON[type];
     const prio = mapPriority(t.priority);
     const jaInteragiu = !!taskInteractions[t.id];
+    const atrasada = t.date < hojeKey;
     return (
       <div className="rounded-xl border border-border bg-background p-4 hover:border-primary/40 transition-colors">
         <div className="flex items-start gap-3">
@@ -267,6 +270,19 @@ function TarefasPage() {
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
                 {type}
+              </span>
+              <span
+                className={cn(
+                  "text-[10px] px-1.5 py-0.5 rounded capitalize",
+                  atrasada
+                    ? "bg-destructive/15 text-destructive font-semibold"
+                    : t.date === hojeKey
+                      ? "bg-primary/15 text-primary font-semibold"
+                      : "bg-surface-2 text-muted-foreground",
+                )}
+              >
+                {atrasada ? "Atrasada · " : t.date === hojeKey ? "Hoje · " : ""}
+                {fmtDia(t.date)}
               </span>
               {t.status && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-muted-foreground">
